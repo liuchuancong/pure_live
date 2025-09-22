@@ -23,7 +23,13 @@ class CoreLog {
   /// 请求日志模式
   static RequestLogType requestLogType = RequestLogType.none;
   static Logger logger = Logger(
-    printer: PrettyPrinter(methodCount: 0, errorMethodCount: 8, lineLength: 120, colors: true, printEmojis: true),
+    printer: PrettyPrinter(
+      methodCount: 0,
+      errorMethodCount: 8,
+      lineLength: 120,
+      colors: true,
+      printEmojis: true,
+    ),
   );
 
   static void d(String message) {

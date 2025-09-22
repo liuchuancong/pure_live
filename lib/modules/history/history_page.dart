@@ -10,7 +10,6 @@ class HistoryPage extends GetView<HistoryController> {
 
   @override
   Widget build(BuildContext context) {
-    final SettingsService settings = Get.find<SettingsService>();
     return Scaffold(
         appBar: AppBar(
           centerTitle: true,

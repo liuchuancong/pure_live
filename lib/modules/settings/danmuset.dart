@@ -6,7 +6,10 @@ import 'package:pure_live/common/widgets/settings/settings_switch.dart';
 import 'package:pure_live/modules/settings/tmp_tab_controller.dart';
 
 class VideoFitSetting extends StatefulWidget {
-  const VideoFitSetting({super.key, required this.controller});
+  const VideoFitSetting({
+    super.key,
+    required this.controller,
+  });
 
   final SettingsService controller;
 
@@ -209,7 +212,10 @@ class _VideoFitSettingState extends State<VideoFitSetting> {
 }
 
 class DanmakuSetting extends StatelessWidget {
-  const DanmakuSetting({super.key, required this.controller});
+  const DanmakuSetting({
+    super.key,
+    required this.controller,
+  });
 
   final SettingsService controller;
 

@@ -81,7 +81,11 @@ class BiliBiliSite extends LiveSite with BilibiliSiteMixin {
         );
         subs.add(subCategory);
       }
-      var category = LiveCategory(children: subs, id: item["id"].toString(), name: asT<String?>(item["name"]) ?? "");
+      var category = LiveCategory(
+        children: subs,
+        id: item["id"].toString(),
+        name: asT<String?>(item["name"]) ?? "",
+      );
       categories.add(category);
     }
     return categories;
@@ -98,9 +102,6 @@ class BiliBiliSite extends LiveSite with BilibiliSiteMixin {
       header: await getHeader(),
     );
 
-    var queryParams = await getWbiSign(url);
-    var result = await HttpClient.instance.getJson(baseUrl, queryParameters: queryParams, header: await getHeader());
-    developer.log(result.toString(), name: "result");
     var hasMore = result["data"]["has_more"] == 1;
     var items = <LiveRoom>[];
     for (var item in result["data"]["list"]) {
@@ -140,6 +141,7 @@ class BiliBiliSite extends LiveSite with BilibiliSiteMixin {
     for (var item in result["data"]["playurl_info"]["playurl"]["g_qn_desc"]) {
       qualitiesMap[int.tryParse(item["qn"].toString()) ?? 0] = item["desc"].toString();
     }
+
     for (var item in result["data"]["playurl_info"]["playurl"]["stream"][0]["format"][0]["codec"][0]["accept_qn"]) {
       int bitRate = 0;
       switch (item) {
@@ -347,7 +349,7 @@ class BiliBiliSite extends LiveSite with BilibiliSiteMixin {
     20,
     34,
     44,
-    52,
+    52
   ];
 
   Future<(String, String)> getWbiKeys() async {
@@ -444,7 +446,7 @@ class BiliBiliSite extends LiveSite with BilibiliSiteMixin {
           uid: userId,
           token: roomDanmakuResult["data"]["token"].toString(),
           serverHost: serverHosts.isNotEmpty ? serverHosts.first : "broadcastlv.chat.bilibili.com",
-          buvid: buvid3,
+          buvid: buvid,
           cookie: cookie,
         ),
       );
@@ -537,11 +539,15 @@ class BiliBiliSite extends LiveSite with BilibiliSiteMixin {
       var message = LiveSuperChatMessage(
         backgroundBottomColor: item["background_bottom_color"].toString(),
         backgroundColor: item["background_color"].toString(),
-        endTime: DateTime.fromMillisecondsSinceEpoch(item["end_time"] * 1000),
+        endTime: DateTime.fromMillisecondsSinceEpoch(
+          item["end_time"] * 1000,
+        ),
         face: "${item["user_info"]["face"]}@200w.jpg",
         message: item["message"].toString(),
         price: item["price"],
-        startTime: DateTime.fromMillisecondsSinceEpoch(item["start_time"] * 1000),
+        startTime: DateTime.fromMillisecondsSinceEpoch(
+          item["start_time"] * 1000,
+        ),
         userName: item["user_info"]["uname"].toString(),
       );
       ls.add(message);

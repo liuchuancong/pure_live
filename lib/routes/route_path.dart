@@ -1,9 +1,6 @@
 /// 路由路径
 class RoutePath {
   /// 首页
-  static const kSplash = "/splash";
-
-  /// 首页
   static const kInitial = "/home";
 
   /// 关注
@@ -29,6 +26,9 @@ class RoutePath {
 
   /// 设置
   static const kSettings = "/settings";
+
+  /// 联系
+  static const kContact = "/contact";
 
   /// 本地恢复
   static const kBackup = "/backup";

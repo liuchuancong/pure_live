@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:pure_live/core/common/core_log.dart';
 
 class VersionUtil {
-  static const String version = '2.0.0';
+  static const String version = '1.7.4';
   static const String projectUrl = 'https://github.com/liuchuancong/pure_live';
   static const String releaseUrl = 'https://api.github.com/repos/liuchuancong/pure_live/releases';
   static const String issuesUrl = 'https://github.com/liuchuancong/pure_live/issues';

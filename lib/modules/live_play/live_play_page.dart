@@ -26,7 +26,7 @@ class LivePlayPage extends GetView<LivePlayController> {
 
   Future<bool> onWillPop() async {
     try {
-      var exit = await controller.onBackPressed(directiveExit: directiveExit);
+      var exit = await controller.onBackPressed();
       if (exit) {
         Navigator.of(Get.context!).pop();
       }
@@ -433,19 +433,11 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
 
   List<Widget> buildResultionsList() {
     return controller.qualites
-        .map<Widget>(
-          (rate) => PopupMenuButton(
-            tooltip: rate.quality,
-            color: Get.theme.colorScheme.surfaceContainerHighest,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            offset: const Offset(0.0, 5.0),
-            position: PopupMenuPosition.under,
-            icon: Text(
-              rate.quality,
-              style: Get.theme.textTheme.labelSmall?.copyWith(
-                color: rate.quality == controller.qualites[controller.currentQuality.value].quality
-                    ? Get.theme.colorScheme.primary
-                    : null,
+        .map<Widget>((rate) => PopupMenuButton(
+              tooltip: rate.quality,
+              color: Get.theme.colorScheme.surfaceContainerHighest,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
               offset: const Offset(0.0, 5.0),
               position: PopupMenuPosition.under,
@@ -470,13 +462,11 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
                             color: urls[i] == controller.playUrls[controller.currentLineIndex.value] ? Get.theme.colorScheme.primary : null,
                           ),
                     ),
-                  ),
-                );
-              }
-              return items;
-            },
-          ),
-        )
+                  ));
+                }
+                return items;
+              },
+            ))
         .toList();
   }
 
@@ -499,7 +489,10 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
 }
 
 class FavoriteFloatingButton extends StatefulWidget {
-  const FavoriteFloatingButton({super.key, required this.room});
+  const FavoriteFloatingButton({
+    super.key,
+    required this.room,
+  });
 
   final LiveRoom room;
 
@@ -546,7 +539,6 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
                   controller.isFavorite.value = !controller.isFavorite.value;
                   // setState(() => controller.isFavorite.toggle);
                   settings.removeRoom(widget.room);
-                  EventBus.instance.emit('changeFavorite', true);
                 }
               });
             },
@@ -560,7 +552,6 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
               controller.isFavorite.value = !controller.isFavorite.value;
               // setState(() => controller.isFavorite.toggle);
               settings.addRoom(widget.room);
-              EventBus.instance.emit('changeFavorite', true);
             },
             icon: CacheNetWorkUtils.getCircleAvatar(widget.room.avatar, radius: 18),
             label: Column(
@@ -632,29 +623,8 @@ class ErrorVideoWidget extends StatelessWidget {
                 ),
               ),
             ),
-          ),
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      S.of(context).play_video_failed,
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
-                    ),
-                  ),
-                  const Text("所有线路已切换且无法播放", style: TextStyle(color: Colors.white, fontSize: 14)),
-                  const Text("请切换播放器或设置解码方式刷新重试", style: TextStyle(color: Colors.white, fontSize: 14)),
-                  const Text("如仍有问题可能该房间未开播或无法观看", style: TextStyle(color: Colors.white, fontSize: 14)),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ));
   }
 }
 
@@ -705,27 +675,7 @@ class TimeOutVideoWidget extends StatelessWidget {
                 ),
               ),
             ),
-          ),
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      S.of(context).play_video_failed,
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
-                    ),
-                  ),
-                  const Text("该房间未开播或已下播", style: TextStyle(color: Colors.white, fontSize: 14)),
-                  const Text("请刷新或者切换其他直播间进行观看吧", style: TextStyle(color: Colors.white, fontSize: 14)),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ));
   }
 }

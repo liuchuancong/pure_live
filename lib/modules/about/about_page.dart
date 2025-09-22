@@ -1,6 +1,7 @@
 import 'package:extended_image/extended_image.dart';
 import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'widgets/version_dialog.dart';
 

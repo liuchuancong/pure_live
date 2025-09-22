@@ -29,17 +29,15 @@ class IptvUtils {
   }
 
   static Future loadNetworkM3u8() async {
-    Dio dio = Dio(
-      BaseOptions(
-        connectTimeout: const Duration(seconds: 10),
-        //响应时间为3秒
-        receiveTimeout: const Duration(seconds: 10),
-      ),
-    );
+    Dio dio = Dio(BaseOptions(
+      connectTimeout: const Duration(seconds: 10),
+      //响应时间为3秒
+      receiveTimeout: const Duration(seconds: 10),
+    ));
     try {
       var dir = await getApplicationCacheDirectory();
-      final m3ufile = File("${dir.path}${Platform.pathSeparator}hot.m3u");
-      await dio.download('https://raw.githubusercontent.com/YanG-1989/m3u/master/Gather.m3u', m3ufile.path);
+      final m3ufile = File("${dir.path}${Platform.pathSeparator}global.m3u");
+      await dio.download('https://live.fanmingming.com/tv/m3u/global.m3u', m3ufile.path);
     } catch (e) {
       CoreLog.error(e);
     }
@@ -66,21 +64,6 @@ class IptvUtils {
   static Future<List<M3uItem>> readRecommandsItems() async {
     List<M3uItem> list = [];
     try {
-      Dio dio = Dio(
-        BaseOptions(
-          connectTimeout: const Duration(seconds: 30),
-          //响应时间为3秒
-          receiveTimeout: const Duration(seconds: 30),
-        ),
-      );
-      var m3u8Url = 'https://hub.gitmirror.com/https://github.com/YanG-1989/m3u/blob/main/Gather.m3u';
-      Response response = await dio.get(m3u8Url);
-      final m3uList = M3uList.load(response.data);
-      for (M3uItem item in m3uList.items) {
-        list.add(item);
-      }
-    } catch (e) {
-      await loadNetworkM3u8();
       var dir = await getApplicationCacheDirectory();
       final m3ufile = File("${dir.path}${Platform.pathSeparator}hot.m3u");
       if (m3ufile.existsSync()) {
@@ -109,10 +92,18 @@ class IptvCategory {
   IptvCategory({this.id, this.name, this.path});
 
   factory IptvCategory.fromJson(Map<String, dynamic> json) {
-    return IptvCategory(name: json['name'], id: json['id'], path: json['path']);
+    return IptvCategory(
+      name: json['name'],
+      id: json['id'],
+      path: json['path'],
+    );
   }
 
-  Map<String, dynamic> toJson() => <String, dynamic>{'name': name, 'id': id, 'path': path};
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'name': name,
+        'id': id,
+        'path': path,
+      };
 }
 
 class IptvCategoryItem {
@@ -123,6 +114,10 @@ class IptvCategoryItem {
   IptvCategoryItem({required this.id, required this.name, required this.liveUrl});
 
   factory IptvCategoryItem.fromJson(Map<String, dynamic> json) {
-    return IptvCategoryItem(name: json['name'], id: json['id'], liveUrl: json['liveUrl']);
+    return IptvCategoryItem(
+      name: json['name'],
+      id: json['id'],
+      liveUrl: json['liveUrl'],
+    );
   }
 }

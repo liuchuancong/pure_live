@@ -20,6 +20,7 @@ import 'model/video_player_factory.dart';
 import 'video_controller_panel.dart';
 
 class VideoController with ChangeNotifier {
+  final GlobalKey playerKey;
   final LiveRoom room;
   final String datasourceType;
   String datasource;
@@ -64,8 +65,6 @@ class VideoController with ChangeNotifier {
 
   bool enableCodec = true;
 
-  bool playerCompatMode = false;
-
   // 是否手动暂停
   var isActivePause = true.obs;
 
@@ -82,19 +81,10 @@ class VideoController with ChangeNotifier {
   final showSettting = false.obs;
   final showLocked = false.obs;
   final danmuKey = GlobalKey();
+  double volume = 0.0;
 
-  GlobalKey playerKey = GlobalKey();
-  List<Map<String, dynamic>> videoFitType = [
-    {'attr': BoxFit.contain, 'desc': '包含'},
-    {'attr': BoxFit.cover, 'desc': '覆盖'},
-    {'attr': BoxFit.fill, 'desc': '填充'},
-    {'attr': BoxFit.fitHeight, 'desc': '高度适应'},
-    {'attr': BoxFit.fitWidth, 'desc': '宽度适应'},
-    {'attr': BoxFit.scaleDown, 'desc': '缩小适应'},
-  ];
   Timer? _debounceTimer;
-  StreamSubscription? _widthSubscription;
-  StreamSubscription? _heightSubscription;
+
   void enableController() {
     showControllerTimer?.cancel();
     showControllerTimer = Timer(const Duration(seconds: 2), () {
@@ -126,6 +116,7 @@ class VideoController with ChangeNotifier {
   LivePlayController livePlayController;
 
   VideoController({
+    required this.playerKey,
     required this.room,
     required this.datasourceType,
     required this.datasource,
@@ -140,16 +131,7 @@ class VideoController with ChangeNotifier {
     required this.qualiteName,
     required this.currentLineIndex,
     required this.currentQuality,
-    required this.videoPlayerIndex,
   }) {
-    danmakuController = DanmakuController(
-      onAddDanmaku: (item) {},
-      onUpdateOption: (option) {},
-      onPause: () {},
-      onResume: () {},
-      onClear: () {},
-    );
-
     videoFitIndex.value = settings.videoFitIndex.value;
     videoFit.value = settings.videofitArrary[videoFitIndex.value];
     // hideDanmaku.value = settings.hideDanmaku.value;
@@ -340,8 +322,8 @@ class VideoController with ChangeNotifier {
     super.dispose();
   }
 
-  void refresh() async {
-    await destory();
+  void refresh() {
+    destory();
     Timer(const Duration(seconds: 2), () {
       try {
         livePlayController.playUrls.value = [];
@@ -382,8 +364,6 @@ class VideoController with ChangeNotifier {
       CoreLog.error(e);
     }
     hasDestory = true;
-    _widthSubscription?.cancel();
-    _heightSubscription?.cancel();
     if (allowScreenKeepOn) WakelockPlus.disable();
 
     // 关闭时退出全屏
@@ -501,7 +481,7 @@ class VideoController with ChangeNotifier {
     }
     // fix obx setstate when build
     showControllerTimer?.cancel();
-    Timer(const Duration(seconds: 2), () {
+    Timer(const Duration(milliseconds: 500), () {
       enableController();
     });
 
@@ -511,8 +491,7 @@ class VideoController with ChangeNotifier {
     } else {
       exitFull();
     }
-
-    isFullscreen.toggle();
+    refreshView();
   }
 
   /// 进入全屏
@@ -558,13 +537,14 @@ class VideoController with ChangeNotifier {
     }
     // fix obx setstate when build
     showControllerTimer?.cancel();
-    Timer(const Duration(seconds: 2), () {
+    Timer(const Duration(milliseconds: 500), () {
       enableController();
     });
 
     /// 是否 窗口全屏
     videoPlayer.toggleWindowFullScreen();
     enableController();
+    refreshView();
   }
 
   void enterPipMode(BuildContext context) async {
@@ -598,7 +578,6 @@ class VideoController with ChangeNotifier {
       CoreLog.d("$e");
       return 100;
     }
-    settings.volume.value = value;
   }
 
   /// 设置亮度

@@ -245,7 +245,9 @@ class SettingsPage extends GetView<SettingsService> {
       showMaterialName: false,
       showColorName: false,
       showColorCode: true,
-      copyPasteBehavior: const ColorPickerCopyPasteBehavior(longPressMenu: true),
+      copyPasteBehavior: const ColorPickerCopyPasteBehavior(
+        longPressMenu: true,
+      ),
       materialNameTextStyle: Theme.of(context).textTheme.bodySmall,
       colorNameTextStyle: Theme.of(context).textTheme.bodySmall,
       colorCodeTextStyle: Theme.of(context).textTheme.bodyMedium,
@@ -281,11 +283,11 @@ class SettingsPage extends GetView<SettingsService> {
             return RadioListTile<String>(
               activeColor: Theme.of(context).colorScheme.primary,
               groupValue: controller.languageName.value,
-              onChanged: (String? value) {
-                if (value != null) {
-                  controller.changeLanguage(value);
-                  Navigator.of(context).pop();
-                }
+              value: name,
+              title: Text(name),
+              onChanged: (value) {
+                controller.changeLanguage(value!);
+                Navigator.of(context).pop();
               },
             );
           }).toList())
@@ -308,11 +310,11 @@ class SettingsPage extends GetView<SettingsService> {
             return RadioListTile<String>(
               activeColor: Theme.of(context).colorScheme.primary,
               groupValue: playerList[controller.videoPlayerIndex.value],
-              onChanged: (String? value) {
-                if (value != null) {
-                  controller.changePlayer(playerList.indexOf(value));
-                  Navigator.of(context).pop();
-                }
+              value: name,
+              title: Text(name),
+              onChanged: (value) {
+                controller.changePlayer(playerList.indexOf(name));
+                Navigator.of(context).pop();
               },
             );
           }).toList())
@@ -334,11 +336,11 @@ class SettingsPage extends GetView<SettingsService> {
             return RadioListTile<String>(
               activeColor: Theme.of(context).colorScheme.primary,
               groupValue: controller.preferResolution.value,
-              onChanged: (String? value) {
-                if (value != null) {
-                  controller.changePreferResolution(value);
-                  Navigator.of(context).pop();
-                }
+              value: name,
+              title: Text(name),
+              onChanged: (value) {
+                controller.changePreferResolution(value!);
+                Navigator.of(context).pop();
               },
             );
           }).toList())

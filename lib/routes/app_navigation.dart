@@ -2,8 +2,6 @@ import 'dart:io';
 import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/utils.dart';
-import 'package:pure_live/modules/live_play/live_play_controller.dart';
-import 'package:pure_live/modules/live_play/widgets/video_player/fullscreen.dart';
 
 /// APP页面跳转封装
 /// * 需要参数的页面都应使用此类
@@ -16,7 +14,9 @@ class AppNavigator {
 
   /// 跳转至直播间
   static Future<void> toLiveRoomDetail({required LiveRoom liveRoom}) async {
-    Get.toNamed(RoutePath.kLivePlay, arguments: liveRoom, parameters: {"site": liveRoom.platform!});
+    Get.toNamed(RoutePath.kLivePlay, arguments: liveRoom, parameters: {
+      "site": liveRoom.platform!,
+    });
   }
 
   /// 跳转至哔哩哔哩登录
@@ -31,18 +31,6 @@ class AppNavigator {
       }
     } else {
       await Get.toNamed(RoutePath.kBiliBiliQRLogin);
-    }
-  }
-}
-
-class BackButtonObserver extends RouteObserver<PageRoute<dynamic>> {
-  @override
-  void didPop(Route route, Route? previousRoute) {
-    super.didPop(route, previousRoute);
-    // 处理路由弹出事件
-    if (route.settings.name == RoutePath.kLivePlay) {
-      Get.find<LivePlayController>().onDelete();
-      doExitFullScreen();
     }
   }
 }

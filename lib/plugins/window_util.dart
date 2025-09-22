@@ -7,11 +7,7 @@ class WindowUtil {
   static Future<void> init({required double width, required double height}) async {
     double? windowsWidth = PrefUtil.getDouble('windowsWidth') ?? width;
     double? windowsHeight = PrefUtil.getDouble('windowsHeight') ?? height;
-    WindowOptions windowOptions = WindowOptions(
-      size: Size(windowsWidth, windowsHeight),
-      center: false,
-      minimumSize: Size(400, 400),
-    );
+    WindowOptions windowOptions = WindowOptions(size: Size(windowsWidth, windowsHeight), center: false);
     windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.show();
       await windowManager.focus();

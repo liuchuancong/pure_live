@@ -70,10 +70,13 @@ class ToolBoxController extends GetxController {
                   e.quality,
                   textAlign: TextAlign.center,
                 ),
-              )
-              .toList(),
-        ),
-      );
+                onTap: () {
+                  Navigator.of(Get.context!).pop(e);
+                },
+              ),
+            )
+            .toList(),
+      ));
       if (result == null) {
         return;
       }
@@ -132,7 +135,12 @@ class ToolBoxController extends GetxController {
   Future<String> getLocation(String url) async {
     try {
       if (url.isEmpty) return "";
-      await dio.Dio().get(url, options: dio.Options(followRedirects: false));
+      await dio.Dio().get(
+        url,
+        options: dio.Options(
+          followRedirects: false,
+        ),
+      );
     } on dio.DioException catch (e) {
       CoreLog.error(e);
       if (e.response!.statusCode == 302) {

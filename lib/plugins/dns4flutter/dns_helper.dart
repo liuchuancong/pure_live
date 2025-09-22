@@ -1,12 +1,10 @@
+import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
-
-import 'package:async/async.dart';
-import 'package:flutter/foundation.dart';
-import 'package:logger/logger.dart';
-
 import 'dns_response.dart';
+import 'package:async/async.dart';
+import 'package:logger/logger.dart';
+import 'package:flutter/foundation.dart';
 
 // use case
 // Future<void> main() async {
@@ -19,30 +17,30 @@ import 'dns_response.dart';
 class DnsHelper {
   static final Logger _logger = kReleaseMode
       ? Logger(
-    level: Level.warning,
-    printer: PrettyPrinter(
-      methodCount: 0,
-      errorMethodCount: 8,
-      lineLength: 120,
-      colors: true,
-      printEmojis: true,
-      // printTime: true,
-      dateTimeFormat: DateTimeFormat.dateAndTime,
-    ),
-    filter: ProductionFilter(),
-  )
+          level: Level.warning,
+          printer: PrettyPrinter(
+            methodCount: 0,
+            errorMethodCount: 8,
+            lineLength: 120,
+            colors: true,
+            printEmojis: true,
+            // printTime: true,
+            dateTimeFormat: DateTimeFormat.dateAndTime,
+          ),
+          filter: ProductionFilter(),
+        )
       : Logger(
-    level: Level.trace,
-    printer: PrettyPrinter(
-      methodCount: 0,
-      errorMethodCount: 8,
-      lineLength: 120,
-      colors: true,
-      printEmojis: true,
-      // printTime: true,
-      dateTimeFormat: DateTimeFormat.dateAndTime,
-    ),
-  );
+          level: Level.trace,
+          printer: PrettyPrinter(
+            methodCount: 0,
+            errorMethodCount: 8,
+            lineLength: 120,
+            colors: true,
+            printEmojis: true,
+            // printTime: true,
+            dateTimeFormat: DateTimeFormat.dateAndTime,
+          ),
+        );
 
   static var timeoutMilliseconds = 1000;
 
@@ -51,28 +49,24 @@ class DnsHelper {
   static const List<String> _defaultDnsUrls = [
     "https://doh.pub/dns-query", //腾讯云
     "https://doh.360.cn/resolve", //360
-    "https://dns.alidns.com/resolve" //阿里云
+    "https://dns.alidns.com/resolve", //阿里云
   ];
 
   static final _httpClient = HttpClient();
-  static Future<DnsResponse?> lookupTxt(String host,
-      {List<String> dnsUrls = _defaultDnsUrls}) async {
+  static Future<DnsResponse?> lookupTxt(String host, {List<String> dnsUrls = _defaultDnsUrls}) async {
     for (var dnsUrl in dnsUrls) {
       try {
-        var request =
-        await _httpClient.getUrl(Uri.parse("$dnsUrl?name=$host&type=TXT"));
+        var request = await _httpClient.getUrl(Uri.parse("$dnsUrl?name=$host&type=TXT"));
         request.headers.set('accept', 'application/dns-json');
 
         _logger.i('Requesting DNS record for $host from $dnsUrl');
         // Add a timeout to the response
-        var response =
-        await request.close().timeout(const Duration(milliseconds: 500));
+        var response = await request.close().timeout(const Duration(milliseconds: 500));
 
         var responseBody = await utf8.decodeStream(response);
         var jsonResponse = jsonDecode(responseBody);
 
-        if (jsonResponse['Answer'] != null &&
-            jsonResponse['Answer'].isNotEmpty) {
+        if (jsonResponse['Answer'] != null && jsonResponse['Answer'].isNotEmpty) {
           for (var answer in jsonResponse['Answer']) {
             if (answer['type'] == 16) {
               // TXT record type
@@ -121,8 +115,7 @@ class DnsHelper {
 
   static final Map<String, CachedDnsResult> _dnsCache = {};
 
-  static Future<List<String>> lookupARecords(String domain,
-      {List<String> dnsUrls = _defaultDnsUrls}) async {
+  static Future<List<String>> lookupARecords(String domain, {List<String> dnsUrls = _defaultDnsUrls}) async {
     // Skip localhost lookup
     if (domain.toLowerCase() == 'localhost') {
       _logger.i('Skipping DNS lookup for localhost');
@@ -151,8 +144,7 @@ class DnsHelper {
     List<String> allIps = [];
 
     try {
-      var results = await group.future
-          .timeout(Duration(milliseconds: timeoutMilliseconds * 2));
+      var results = await group.future.timeout(Duration(milliseconds: timeoutMilliseconds * 2));
       for (var ips in results) {
         allIps.addAll(ips);
       }
@@ -170,16 +162,12 @@ class DnsHelper {
     return uniqueIps;
   }
 
-  static Future<List<String>> _queryDnsServer(
-      String dnsUrl, String requestQuery) async {
+  static Future<List<String>> _queryDnsServer(String dnsUrl, String requestQuery) async {
     try {
-      var request =
-      await _httpClient.getUrl(Uri.parse("$dnsUrl?$requestQuery"));
+      var request = await _httpClient.getUrl(Uri.parse("$dnsUrl?$requestQuery"));
       _logger.i('Requesting A records from $dnsUrl for $requestQuery');
 
-      var response = await request
-          .close()
-          .timeout(Duration(milliseconds: timeoutMilliseconds));
+      var response = await request.close().timeout(Duration(milliseconds: timeoutMilliseconds));
       var responseBody = await utf8.decodeStream(response);
       var jsonResponse = jsonDecode(responseBody);
 
@@ -193,8 +181,7 @@ class DnsHelper {
         }
       }
 
-      _logger.i(
-          'Parsed ${ips.length} IP(s) from JSON response from $dnsUrl for $requestQuery');
+      _logger.i('Parsed ${ips.length} IP(s) from JSON response from $dnsUrl for $requestQuery');
       return ips;
     } catch (e) {
       if (e is TimeoutException) {

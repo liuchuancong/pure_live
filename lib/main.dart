@@ -27,7 +27,6 @@ Future<void> initService() async {
   await S.load(SettingsService.languages[SettingsService.instance.languageName.value]!);
   Get.put(AuthController());
   Get.put(FavoriteController());
-  Get.put(BiliBiliAccountService());
   Get.put(PopularController());
   Get.put(AreasController());
   Get.put(BiliBiliAccountService());
@@ -48,11 +47,14 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> with WindowListener {
   final settings = Get.find<SettingsService>();
+  late AppLinks _appLinks;
+  StreamSubscription<Uri>? _linkSubscription;
   @override
   void initState() {
     super.initState();
     windowManager.addListener(this);
     _init();
+    initShareM3uState();
   }
 
   String getName(String fullName) {
@@ -83,7 +85,34 @@ class _MyAppState extends State<MyApp> with WindowListener {
   @override
   void dispose() {
     windowManager.removeListener(this);
+    _linkSubscription?.cancel();
     super.dispose();
+  }
+
+  Future<void> initDeepLinks() async {
+    _appLinks = AppLinks();
+
+    // Check initial link if app was in cold state (terminated)
+    final appLink = await _appLinks.getInitialLink();
+    if (appLink != null) {
+      openAppLink(appLink);
+    }
+
+    // Handle link when app is in warm state (front or background)
+    _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
+      openAppLink(uri);
+    });
+  }
+
+  void openAppLink(Uri uri) {
+    final AuthController authController = Get.find<AuthController>();
+    if (Platform.isWindows) {
+      authController.shouldGoReset = true;
+      Timer(const Duration(seconds: 2), () {
+        authController.shouldGoReset = false;
+        Get.offAndToNamed(RoutePath.kUpdatePassword);
+      });
+    }
   }
 
   @override
@@ -99,7 +128,10 @@ class _MyAppState extends State<MyApp> with WindowListener {
 
   void _init() async {
     if (Platform.isWindows) {
+      // Add this line to override the default close handler
+      initDeepLinks();
       await WindowUtil.setTitle();
+      await WindowUtil.setWindowsPort();
       setState(() {});
     }
   }
@@ -107,21 +139,15 @@ class _MyAppState extends State<MyApp> with WindowListener {
   @override
   Widget build(BuildContext context) {
     return Shortcuts(
-      shortcuts: {LogicalKeySet(LogicalKeyboardKey.select): const ActivateIntent()},
+      shortcuts: {
+        LogicalKeySet(LogicalKeyboardKey.select): const ActivateIntent(),
+      },
       child: DynamicColorBuilder(
         builder: (lightDynamic, darkDynamic) {
           return Obx(() {
-            if (Platform.isWindows) {
-              settings.videoPlayerIndex.value = 0;
-            } else {
-              if (settings.videoPlayerIndex.value > 1) {
-                settings.videoPlayerIndex.value = 0;
-              }
-            }
-
             var themeColor = HexColor(settings.themeColorSwitch.value);
-            ThemeData lightTheme = MyTheme(primaryColor: themeColor).lightThemeData;
-            ThemeData darkTheme = MyTheme(primaryColor: themeColor).darkThemeData;
+            var lightTheme = MyTheme(primaryColor: themeColor).lightThemeData;
+            var darkTheme = MyTheme(primaryColor: themeColor).darkThemeData;
             if (settings.enableDynamicTheme.value) {
               lightTheme = MyTheme(colorScheme: lightDynamic).lightThemeData;
               darkTheme = MyTheme(colorScheme: darkDynamic).darkThemeData;
@@ -129,8 +155,8 @@ class _MyAppState extends State<MyApp> with WindowListener {
             return GetMaterialApp(
               title: '纯粹直播',
               themeMode: SettingsService.themeModes[settings.themeModeName.value]!,
-              theme: lightTheme.copyWith(appBarTheme: AppBarTheme(surfaceTintColor: Colors.transparent)),
-              darkTheme: darkTheme.copyWith(appBarTheme: AppBarTheme(surfaceTintColor: Colors.transparent)),
+              theme: lightTheme,
+              darkTheme: darkTheme,
               locale: SettingsService.languages[settings.languageName.value]!,
               navigatorObservers: [FlutterSmartDialog.observer, RouteHistoryObserver()],
               builder: FlutterSmartDialog.init(),
@@ -141,7 +167,7 @@ class _MyAppState extends State<MyApp> with WindowListener {
                 GlobalWidgetsLocalizations.delegate,
                 GlobalCupertinoLocalizations.delegate,
               ],
-              initialRoute: RoutePath.kSplash,
+              initialRoute: RoutePath.kInitial,
               defaultTransition: Transition.native,
               getPages: AppPages.routes,
             );

@@ -1,22 +1,21 @@
-import 'dart:convert';
 import 'dart:io';
-
-import 'package:flex_color_picker/flex_color_picker.dart';
+import 'dart:convert';
 import 'package:get/get.dart';
+import 'setting_mixin/setting_webdav.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/services/bilibili_account_service.dart';
-import 'package:pure_live/common/services/setting_mixin/auto_shut_down.dart';
-import 'package:pure_live/common/services/setting_mixin/setting_part.dart';
+import 'setting_mixin/setting_bit_rate.dart';
 import 'package:pure_live/core/common/core_log.dart';
-import 'package:pure_live/modules/live_play/danmaku/danmaku_controller_factory.dart';
-import 'package:pure_live/modules/live_play/widgets/video_player/model/video_player_factory.dart';
+import 'package:flex_color_picker/flex_color_picker.dart';
+import 'package:pure_live/modules/web_dav/webdav_config.dart';
 import 'package:pure_live/plugins/extension/map_extension.dart';
 import 'package:pure_live/plugins/extension/string_extension.dart';
+import 'package:pure_live/common/services/bilibili_account_service.dart';
+import 'package:pure_live/common/services/setting_mixin/setting_part.dart';
+import 'package:pure_live/common/services/setting_mixin/auto_shut_down.dart';
+import 'package:pure_live/modules/live_play/danmaku/danmaku_controller_factory.dart';
+import 'package:pure_live/modules/live_play/widgets/video_player/model/video_player_factory.dart';
 
-import 'setting_mixin/setting_bit_rate.dart';
-import 'setting_mixin/setting_webdav.dart';
-
-class SettingsService  extends GetxController with AutoShutDownMixin, SettingBitRateMixin, SettingWebdavMixin {
+class SettingsService extends GetxController with AutoShutDownMixin, SettingBitRateMixin, SettingWebdavMixin {
   static SettingsService get instance => Get.find<SettingsService>();
 
   SettingsService() {
@@ -34,10 +33,6 @@ class SettingsService  extends GetxController with AutoShutDownMixin, SettingBit
     autoRefreshTime.listen((value) {
       PrefUtil.setInt('autoRefreshTime', value);
     });
-
-    // debounce(autoShutDownTime, (callback) {
-    //
-    // }, time: 1.seconds);
     enableBackgroundPlay.listen((value) {
       PrefUtil.setBool('enableBackgroundPlay', value);
     });
@@ -65,15 +60,6 @@ class SettingsService  extends GetxController with AutoShutDownMixin, SettingBit
     favoriteRooms.listen((rooms) {
       PrefUtil.setStringList('favoriteRooms', favoriteRooms.map<String>((e) => jsonEncode(e.toJson())).toList());
     });
-
-    webDavConfigs.listen((configs) {
-      PrefUtil.setStringList('webDavConfigs', configs.map<String>((e) => jsonEncode(e.toJson())).toList());
-    });
-
-    currentWebDavConfig.listen((config) {
-      PrefUtil.setString('currentWebDavConfig', config);
-    });
-
     favoriteAreas.listen((rooms) {
       PrefUtil.setStringList('favoriteAreas', favoriteAreas.map<String>((e) => jsonEncode(e.toJson())).toList());
     });
@@ -97,12 +83,8 @@ class SettingsService  extends GetxController with AutoShutDownMixin, SettingBit
       PrefUtil.setBool('showColourDanmaku', value);
     });
 
-    danmakuTopArea.listen((value) {
-      PrefUtil.setDouble('danmakuTopArea', value);
-    });
-
-    danmakuBottomArea.listen((value) {
-      PrefUtil.setDouble('danmakuBottomArea', value);
+    danmakuArea.listen((value) {
+      PrefUtil.setDouble('danmakuArea', value);
     });
 
     danmakuSpeed.listen((value) {
@@ -129,10 +111,6 @@ class SettingsService  extends GetxController with AutoShutDownMixin, SettingBit
       PrefUtil.setBool('enableCodec', value);
     });
 
-    playerCompatMode.listen((value) {
-      PrefUtil.setBool('playerCompatMode', value);
-    });
-
     videoPlayerIndex.listen((value) {
       PrefUtil.setInt('videoPlayerIndex', value);
     });
@@ -145,8 +123,8 @@ class SettingsService  extends GetxController with AutoShutDownMixin, SettingBit
       PrefUtil.setString('bilibiliCookie', value);
     });
 
-    huyaCookie.listen((value) {
-      PrefUtil.setString('huyaCookie', value);
+    mergeDanmuRating.listen((value) {
+      PrefUtil.setDouble('mergeDanmuRating', value);
     });
     filterDanmuUserLevel.listen((value) {
       PrefUtil.setDouble('filterDanmuUserLevel', value);
@@ -160,23 +138,21 @@ class SettingsService  extends GetxController with AutoShutDownMixin, SettingBit
     showDanmuUserLevel.listen((value) {
       PrefUtil.setBool('showDanmuUserLevel', value);
     });
-
-    // webPort.listen((value) {
-    //   PrefUtil.setString('webPort', value);
-    // });
-
-    // webPortEnable.listen((value) {
-    //   changeWebListen(webPort.value, value);
-    //   PrefUtil.setBool('webPortEnable', value);
-    // });
     siteCookies.listen((value) {
       CoreLog.d("save siteCookies: $value");
       PrefUtil.setMap('siteCookies', value);
     });
+    webDavConfigs.listen((configs) {
+      PrefUtil.setStringList('webDavConfigs', configs.map<String>((e) => jsonEncode(e.toJson())).toList());
+    });
+
+    currentWebDavConfig.listen((config) {
+      PrefUtil.setString('currentWebDavConfig', config);
+    });
     init();
   }
 
-  void init(){
+  void init() {
     initAutoShutDown(settingPartList);
     initBitRate(settingPartList);
     initWebdav(settingPartList);
@@ -220,8 +196,6 @@ class SettingsService  extends GetxController with AutoShutDownMixin, SettingBit
     Get.changeTheme(darkTheme);
   }
 
-
-
   static Map<String, Color> themeColors = {
     "Crimson": const Color.fromARGB(255, 220, 20, 60),
     "Orange": Colors.orange,
@@ -240,11 +214,11 @@ class SettingsService  extends GetxController with AutoShutDownMixin, SettingBit
   };
 
   // Make a custom ColorSwatch to name map from the above custom colors.
-  final Map<ColorSwatch<Object>, String> colorsNameMap = themeColors.map((key, value) => MapEntry(ColorTools.createPrimarySwatch(value), key));
-
+  final Map<ColorSwatch<Object>, String> colorsNameMap = themeColors.map(
+    (key, value) => MapEntry(ColorTools.createPrimarySwatch(value), key),
+  );
 
   final themeColorSwitch = (PrefUtil.getString('themeColorSwitch') ?? Colors.blue.hex).obs;
-
 
   static Map<String, Locale> languages = {
     "English": const Locale.fromSubtags(languageCode: 'en'),
@@ -265,6 +239,50 @@ class SettingsService  extends GetxController with AutoShutDownMixin, SettingBit
     await S.load(SettingsService.languages[SettingsService.instance.languageName.value]!);
   }
 
+  final currentWebDavConfig = (PrefUtil.getString('currentWebDavConfig') ?? '').obs;
+
+  final webDavConfigs =
+      ((PrefUtil.getStringList('webDavConfigs') ?? []).map((e) => WebDAVConfig.fromJson(jsonDecode(e))).toList()).obs;
+
+  bool addWebDavConfig(WebDAVConfig config) {
+    if (webDavConfigs.any((element) => element.name == config.name)) {
+      return false;
+    }
+    webDavConfigs.add(config);
+    return true;
+  }
+
+  bool removeWebDavConfig(WebDAVConfig config) {
+    if (!webDavConfigs.any((element) => element.name == config.name)) {
+      return false;
+    }
+    webDavConfigs.remove(config);
+    return true;
+  }
+
+  bool updateWebDavConfig(WebDAVConfig config) {
+    int idx = webDavConfigs.indexWhere((element) => element.name == config.name);
+    if (idx == -1) return false;
+    webDavConfigs[idx] = config;
+    return true;
+  }
+
+  void updateWebDavConfigs(List<WebDAVConfig> configs) {
+    webDavConfigs.value = configs;
+  }
+
+  bool isWebDavConfigExist(String name) {
+    return webDavConfigs.any((element) => element.name == name);
+  }
+
+  WebDAVConfig? getWebDavConfigByName(String name) {
+    if (isWebDavConfigExist(name)) {
+      return webDavConfigs.firstWhere((element) => element.name == name);
+    } else {
+      return null;
+    }
+  }
+
   void changePlayer(int value) {
     videoPlayerIndex.value = value;
     PrefUtil.setInt('videoPlayerIndex', value);
@@ -274,8 +292,6 @@ class SettingsService  extends GetxController with AutoShutDownMixin, SettingBit
 
   // Custom settings
   final autoRefreshTime = (PrefUtil.getInt('autoRefreshTime') ?? 3).obs;
-
-
 
   final enableDenseFavorites = (PrefUtil.getBool('enableDenseFavorites') ?? false).obs;
 
@@ -292,26 +308,19 @@ class SettingsService  extends GetxController with AutoShutDownMixin, SettingBit
   final danmakuArea = (PrefUtil.getDouble('danmakuArea') ?? 1.0).obs;
   final danmakuSpeed = (PrefUtil.getDouble('danmakuSpeed') ?? 8.0).obs;
   final danmakuFontSize = (PrefUtil.getDouble('danmakuFontSize') ?? 16.0).obs;
-  final danmakuFontBorder = (PrefUtil.getDouble('danmakuFontBorder') ?? 4.0).obs;
+  final danmakuFontBorder = (PrefUtil.getDouble('danmakuFontBorder') ?? 0.5).obs;
 
   final danmakuOpacity = (PrefUtil.getDouble('danmakuOpacity') ?? 1.0).obs;
 
   final enableFullScreenDefault = (PrefUtil.getBool('enableFullScreenDefault') ?? false).obs;
 
   final videoPlayerIndex = (PrefUtil.getInt('videoPlayerIndex') ?? 0).obs;
-  final danmakuControllerType = (PrefUtil.getString('danmakuControllerType') ?? DanmakuControllerfactory.getDanmakuControllerTypeList()[0]).obs;
+  final danmakuControllerType =
+      (PrefUtil.getString('danmakuControllerType') ?? DanmakuControllerfactory.getDanmakuControllerTypeList()[0]).obs;
 
   final enableCodec = (PrefUtil.getBool('enableCodec') ?? true).obs;
 
-  final customPlayerOutput = (PrefUtil.getBool('customPlayerOutput') ?? false).obs;
-
-  final videoOutputDriver = (PrefUtil.getString('videoOutputDriver') ?? "gpu").obs;
-
-  final audioOutputDriver = (PrefUtil.getString('audioOutputDriver') ?? "auto").obs;
-
-  final videoHardwareDecoder = (PrefUtil.getString('videoHardwareDecoder') ?? "auto").obs;
-
-  final playerCompatMode = (PrefUtil.getBool('playerCompatMode') ?? false).obs;
+  final mergeDanmuRating = (PrefUtil.getDouble('mergeDanmuRating') ?? 0.0).obs;
 
   final filterDanmuUserLevel = (PrefUtil.getDouble('filterDanmuUserLevel') ?? 0.0).obs;
   final filterDanmuFansLevel = (PrefUtil.getDouble('filterDanmuFansLevel') ?? 0.0).obs;
@@ -325,13 +334,20 @@ class SettingsService  extends GetxController with AutoShutDownMixin, SettingBit
 
   final SettingPartList settingPartList = SettingPartList();
 
-  final volume = (PrefUtil.getDouble('volume') ?? 0.5).obs;
+  // cookie
 
   final bilibiliCookie = (PrefUtil.getString('bilibiliCookie') ?? '').obs;
-  static const List<BoxFit> videofitList = [BoxFit.contain, BoxFit.fill, BoxFit.cover, BoxFit.fitWidth, BoxFit.fitHeight];
+  static const List<BoxFit> videofitList = [
+    BoxFit.contain,
+    BoxFit.fill,
+    BoxFit.cover,
+    BoxFit.fitWidth,
+    BoxFit.fitHeight,
+  ];
 
   final preferResolution = (PrefUtil.getString('preferResolution') ?? resolutions[0]).obs;
-  final preferResolutionMobile = (PrefUtil.getString('preferResolutionMobile') ?? resolutions[resolutions.length - 1]).obs;
+  final preferResolutionMobile =
+      (PrefUtil.getString('preferResolutionMobile') ?? resolutions[resolutions.length - 1]).obs;
 
   void changePreferResolution(String name) {
     if (resolutions.indexWhere((e) => e == name) != -1) {
@@ -408,15 +424,24 @@ class SettingsService  extends GetxController with AutoShutDownMixin, SettingBit
 
   // Favorite rooms storage
   final favoriteRooms =
-      ((PrefUtil.getStringList('favoriteRooms') ?? []).map((e) => LiveRoom.fromJson(jsonDecode(e))).where((room) => !room.roomId.isNullOrEmpty && !room.platform.isNullOrEmpty).toList()).obs;
+      ((PrefUtil.getStringList('favoriteRooms') ?? [])
+              .map((e) => LiveRoom.fromJson(jsonDecode(e)))
+              .where((room) => !room.roomId.isNullOrEmpty && !room.platform.isNullOrEmpty)
+              .toList())
+          .obs;
 
   // 存储关注，用于优化遍历
   late Map<String, LiveRoom> favoriteRoomsMap = toRoomMap(favoriteRooms.value);
 
-  Map<String, LiveRoom> toRoomMap(List<LiveRoom> list) => Map.fromEntries(list.map((e) => MapEntry(getLiveRoomKey(e), e)));
+  Map<String, LiveRoom> toRoomMap(List<LiveRoom> list) =>
+      Map.fromEntries(list.map((e) => MapEntry(getLiveRoomKey(e), e)));
 
   final historyRooms =
-      ((PrefUtil.getStringList('historyRooms') ?? []).map((e) => LiveRoom.fromJson(jsonDecode(e))).where((room) => !room.roomId.isNullOrEmpty && !room.platform.isNullOrEmpty).toList()).obs;
+      ((PrefUtil.getStringList('historyRooms') ?? [])
+              .map((e) => LiveRoom.fromJson(jsonDecode(e)))
+              .where((room) => !room.roomId.isNullOrEmpty && !room.platform.isNullOrEmpty)
+              .toList())
+          .obs;
 
   // 存储历史，用于优化遍历
   late Map<String, LiveRoom> historyRoomsMap = toRoomMap(historyRooms.value);
@@ -440,11 +465,7 @@ class SettingsService  extends GetxController with AutoShutDownMixin, SettingBit
     var liveRoomKey = toLiveRoomKey(platform, roomId);
     return favoriteRoomsMap[liveRoomKey] ??
         historyRoomsMap[liveRoomKey] ??
-        LiveRoom(
-          roomId: roomId,
-          platform: platform,
-          liveStatus: LiveStatus.unknown,
-        );
+        LiveRoom(roomId: roomId, platform: platform, liveStatus: LiveStatus.unknown);
   }
 
   bool addRoom(LiveRoom room) {
@@ -572,14 +593,21 @@ class SettingsService  extends GetxController with AutoShutDownMixin, SettingBit
   }
 
   // Favorite areas storage
-  final favoriteAreas = ((PrefUtil.getStringList('favoriteAreas') ?? []).map((e) => LiveArea.fromJson(jsonDecode(e))).toList()).obs;
+  final favoriteAreas =
+      ((PrefUtil.getStringList('favoriteAreas') ?? []).map((e) => LiveArea.fromJson(jsonDecode(e))).toList()).obs;
 
   bool isFavoriteArea(LiveArea area) {
-    return favoriteAreas.any((element) => element.areaId == area.areaId && element.platform == area.platform && element.areaType == area.areaType);
+    return favoriteAreas.any(
+      (element) =>
+          element.areaId == area.areaId && element.platform == area.platform && element.areaType == area.areaType,
+    );
   }
 
   bool addArea(LiveArea area) {
-    if (favoriteAreas.any((element) => element.areaId == area.areaId && element.platform == area.platform && element.areaType == area.areaType)) {
+    if (favoriteAreas.any(
+      (element) =>
+          element.areaId == area.areaId && element.platform == area.platform && element.areaType == area.areaType,
+    )) {
       return false;
     }
     favoriteAreas.add(area);
@@ -587,7 +615,10 @@ class SettingsService  extends GetxController with AutoShutDownMixin, SettingBit
   }
 
   bool removeArea(LiveArea area) {
-    if (!favoriteAreas.any((element) => element.areaId == area.areaId && element.platform == area.platform && element.areaType == area.areaType)) {
+    if (!favoriteAreas.any(
+      (element) =>
+          element.areaId == area.areaId && element.platform == area.platform && element.areaType == area.areaType,
+    )) {
       return false;
     }
     favoriteAreas.remove(area);
@@ -596,50 +627,6 @@ class SettingsService  extends GetxController with AutoShutDownMixin, SettingBit
 
   // Backup & recover storage
   final backupDirectory = (PrefUtil.getString('backupDirectory') ?? '').obs;
-
-  final currentWebDavConfig = (PrefUtil.getString('currentWebDavConfig') ?? '').obs;
-
-  final webDavConfigs =
-      ((PrefUtil.getStringList('webDavConfigs') ?? []).map((e) => WebDAVConfig.fromJson(jsonDecode(e))).toList()).obs;
-
-  bool addWebDavConfig(WebDAVConfig config) {
-    if (webDavConfigs.any((element) => element.name == config.name)) {
-      return false;
-    }
-    webDavConfigs.add(config);
-    return true;
-  }
-
-  bool removeWebDavConfig(WebDAVConfig config) {
-    if (!webDavConfigs.any((element) => element.name == config.name)) {
-      return false;
-    }
-    webDavConfigs.remove(config);
-    return true;
-  }
-
-  bool updateWebDavConfig(WebDAVConfig config) {
-    int idx = webDavConfigs.indexWhere((element) => element.name == config.name);
-    if (idx == -1) return false;
-    webDavConfigs[idx] = config;
-    return true;
-  }
-
-  void updateWebDavConfigs(List<WebDAVConfig> configs) {
-    webDavConfigs.value = configs;
-  }
-
-  bool isWebDavConfigExist(String name) {
-    return webDavConfigs.any((element) => element.name == name);
-  }
-
-  WebDAVConfig? getWebDavConfigByName(String name) {
-    if (isWebDavConfigExist(name)) {
-      return webDavConfigs.firstWhere((element) => element.name == name);
-    } else {
-      return null;
-    }
-  }
 
   final m3uDirectory = (PrefUtil.getString('m3uDirectory') ?? 'm3uDirectory').obs;
 
@@ -674,10 +661,16 @@ class SettingsService  extends GetxController with AutoShutDownMixin, SettingBit
   }
 
   void fromJson(Map<String, dynamic> json) {
-    favoriteRooms.value = json['favoriteRooms'] != null ? (json['favoriteRooms'] as List).map<LiveRoom>((e) => LiveRoom.fromJson(jsonDecode(e))).toList() : [];
-    favoriteAreas.value = json['favoriteAreas'] != null ? (json['favoriteAreas'] as List).map<LiveArea>((e) => LiveArea.fromJson(jsonDecode(e))).toList() : [];
+    favoriteRooms.value = json['favoriteRooms'] != null
+        ? (json['favoriteRooms'] as List).map<LiveRoom>((e) => LiveRoom.fromJson(jsonDecode(e))).toList()
+        : [];
+    favoriteAreas.value = json['favoriteAreas'] != null
+        ? (json['favoriteAreas'] as List).map<LiveArea>((e) => LiveArea.fromJson(jsonDecode(e))).toList()
+        : [];
     shieldList.value = json['shieldList'] != null ? (json['shieldList'] as List).map((e) => e.toString()).toList() : [];
-    hotAreasList.value = json['hotAreasList'] != null ? (json['hotAreasList'] as List).map((e) => e.toString()).toList() : [];
+    hotAreasList.value = json['hotAreasList'] != null
+        ? (json['hotAreasList'] as List).map((e) => e.toString()).toList()
+        : [];
 
     favoriteRoomsMap = toRoomMap(favoriteRooms.value);
     historyRoomsMap = toRoomMap(historyRooms.value);
@@ -699,22 +692,28 @@ class SettingsService  extends GetxController with AutoShutDownMixin, SettingBit
     videoFitIndex.value = json['videoFitIndex'] ?? 0;
     hideDanmaku.value = json['hideDanmaku'] ?? false;
     showColourDanmaku.value = json['showColourDanmaku'] ?? false;
-    danmakuControllerType.value = json['danmakuControllerType'] ?? DanmakuControllerfactory.getDanmakuControllerTypeList()[0];
+    danmakuControllerType.value =
+        json['danmakuControllerType'] ?? DanmakuControllerfactory.getDanmakuControllerTypeList()[0];
     danmakuArea.value = json['danmakuArea'] != null ? double.parse(json['danmakuArea'].toString()) : 1.0;
     danmakuSpeed.value = json['danmakuSpeed'] != null ? double.parse(json['danmakuSpeed'].toString()) : 8.0;
     danmakuFontSize.value = json['danmakuFontSize'] != null ? double.parse(json['danmakuFontSize'].toString()) : 16.0;
-    danmakuFontBorder.value = json['danmakuFontBorder'] != null ? double.parse(json['danmakuFontBorder'].toString()) : 0.5;
+    danmakuFontBorder.value = json['danmakuFontBorder'] != null
+        ? double.parse(json['danmakuFontBorder'].toString())
+        : 0.5;
     danmakuOpacity.value = json['danmakuOpacity'] != null ? double.parse(json['danmakuOpacity'].toString()) : 1.0;
     doubleExit.value = json['doubleExit'] ?? true;
     videoPlayerIndex.value = json['videoPlayerIndex'] ?? 0;
     enableCodec.value = json['enableCodec'] ?? true;
     mergeDanmuRating.value = json['mergeDanmuRating'] != null ? double.parse(json['mergeDanmuRating'].toString()) : 0.0;
-    filterDanmuUserLevel.value = json['filterDanmuUserLevel'] != null ? double.parse(json['filterDanmuUserLevel'].toString()) : 0.0;
-    filterDanmuFansLevel.value = json['filterDanmuFansLevel'] != null ? double.parse(json['filterDanmuFansLevel'].toString()) : 0.0;
+    filterDanmuUserLevel.value = json['filterDanmuUserLevel'] != null
+        ? double.parse(json['filterDanmuUserLevel'].toString())
+        : 0.0;
+    filterDanmuFansLevel.value = json['filterDanmuFansLevel'] != null
+        ? double.parse(json['filterDanmuFansLevel'].toString())
+        : 0.0;
     showDanmuFans.value = json['showDanmuFans'] ?? true;
     showDanmuUserLevel.value = json['showDanmuUserLevel'] ?? true;
     bilibiliCookie.value = json['bilibiliCookie'] ?? '';
-    huyaCookie.value = json['huyaCookie'] ?? '';
     themeColorSwitch.value = json['themeColorSwitch'] ?? Colors.blue.hex;
     webPort.value = json['webPort'] ?? '8008';
     webPortEnable.value = json['webPortEnable'] ?? false;
@@ -733,16 +732,14 @@ class SettingsService  extends GetxController with AutoShutDownMixin, SettingBit
     for (var f in settingPartList.fromJsonList) {
       f.call(json);
     }
-
   }
 
   Map<String, dynamic> toJson() {
     Map<String, dynamic> json = {};
     json['favoriteRooms'] = favoriteRooms.map<String>((e) => jsonEncode(e.toJson())).toList();
-    json['webDavConfigs'] = webDavConfigs.map<String>((e) => jsonEncode(e.toJson())).toList();
     json['favoriteAreas'] = favoriteAreas.map<String>((e) => jsonEncode(e.toJson())).toList();
     json['themeMode'] = themeModeName.value;
-    json['currentWebDavConfig'] = currentWebDavConfig.value;
+
     json['autoRefreshTime'] = autoRefreshTime.value;
 
     json['enableDynamicTheme'] = enableDynamicTheme.value;
@@ -768,9 +765,7 @@ class SettingsService  extends GetxController with AutoShutDownMixin, SettingBit
     json['doubleExit'] = doubleExit.value;
     json['videoPlayerIndex'] = videoPlayerIndex.value;
     json['enableCodec'] = enableCodec.value;
-    json['playerCompatMode'] = playerCompatMode.value;
     json['bilibiliCookie'] = bilibiliCookie.value;
-    json['huyaCookie'] = huyaCookie.value;
     json['shieldList'] = shieldList.map<String>((e) => e.toString()).toList();
     json['hotAreasList'] = hotAreasList.map<String>((e) => e.toString()).toList();
 
@@ -797,7 +792,6 @@ class SettingsService  extends GetxController with AutoShutDownMixin, SettingBit
   Map<String, dynamic> defaultConfig() {
     Map<String, dynamic> json = {
       "favoriteRooms": [],
-      "webDavConfigs": [],
       "favoriteAreas": [],
       "themeMode": "Light",
       "themeColor": "Chrome",
@@ -819,15 +813,14 @@ class SettingsService  extends GetxController with AutoShutDownMixin, SettingBit
       "danmakuArea": 1.0,
       "danmakuSpeed": 8.0,
       "danmakuFontSize": 16.0,
-      "danmakuFontBorder": 4.0,
+      "danmakuFontBorder": 0.5,
       "danmakuOpacity": 1.0,
       'doubleExit': true,
       "videoPlayerIndex": 0,
       'enableCodec': true,
-      'playerCompatMode': false,
       'bilibiliCookie': '',
-      'huyaCookie': '',
       'shieldList': [],
+      'mergeDanmuRating': 0.0,
       "hotAreasList": [],
       "webPortEnable": false,
       "webPort": "8008",

@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter/material.dart';
 
 /// 水平 排列的 List
 class HorizontalList<T> extends StatefulWidget {
@@ -8,23 +8,17 @@ class HorizontalList<T> extends StatefulWidget {
   ItemChange? itemChange;
   int initialIndex;
 
-  HorizontalList({
-    super.key,
-    required this.children,
-    this.initialIndex = 0,
-    this.itemChange,
-  });
+  HorizontalList({super.key, required this.children, this.initialIndex = 0, this.itemChange});
 
   @override
   State<StatefulWidget> createState() {
-    return HorizontalListState<T>(
-        children: children, itemChange: itemChange, initialIndex: initialIndex);
+    // ignore: no_logic_in_create_state
+    return HorizontalListState<T>(children: children, itemChange: itemChange, initialIndex: initialIndex);
   }
 }
 
 /// 临时 TabController
-class TmpTabController extends GetxController
-    with GetSingleTickerProviderStateMixin {}
+class TmpTabController extends GetxController with GetSingleTickerProviderStateMixin {}
 
 typedef ItemChange = void Function(int index);
 
@@ -33,15 +27,8 @@ class HorizontalListState<T> extends State<HorizontalList<T>> {
   late final TabController tabController;
   ItemChange? itemChange;
 
-  HorizontalListState({
-    required this.children,
-    int initialIndex = 0,
-    this.itemChange,
-  }) {
-    tabController = TabController(
-        initialIndex: initialIndex,
-        length: children.length,
-        vsync: TmpTabController());
+  HorizontalListState({required this.children, int initialIndex = 0, this.itemChange}) {
+    tabController = TabController(initialIndex: initialIndex, length: children.length, vsync: TmpTabController());
     tabController.addListener(tabControllerListener);
   }
 

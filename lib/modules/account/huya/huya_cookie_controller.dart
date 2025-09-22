@@ -8,11 +8,11 @@ class HuyaCookieController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    cookieController.text = settingsService.huyaCookie.value;
+    // cookieController.text = settingsService.huyaCookie.value;
   }
 
   void setCookie(String cookie) {
     cookieController.text = cookie;
-    settingsService.huyaCookie.value = cookie;
+    // settingsService.huyaCookie.value = cookie;
   }
 }

@@ -37,7 +37,6 @@ class _BackupPageState extends State<BackupPage> {
             subtitle: Text(S.current.import_live_streaming_source),
             onTap: () => showImportSetDialog(),
           ),
-          ListTile(title: const Text('网络'), subtitle: const Text('导入M3u直播源'), onTap: () => showImportSetDialog()),
           if (Platform.isAndroid || Platform.isIOS)
             ListTile(
               title: Text(S.current.synchronize_tv_data),
@@ -102,17 +101,13 @@ class _BackupPageState extends State<BackupPage> {
             return RadioListTile<String>(
               activeColor: Theme.of(context).colorScheme.primary,
               groupValue: '',
-              onChanged: (String? value) {
+              value: name,
+              title: Text(name),
+              onChanged: (value) {
                 importFile(value!);
               },
-              child: Column(
-                children: <Widget>[
-                  Radio<String>(value: '本地导入'),
-                  Radio<String>(value: '网络导入'),
-                ],
-              ),
-            ),
-          ],
+            );
+          }).toList(),
         );
       },
     );
@@ -152,9 +147,8 @@ class _BackupPageState extends State<BackupPage> {
                     ),
                     autofocus: false,
                   ),
-                  autofocus: false,
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           actions: [
@@ -186,37 +180,7 @@ class _BackupPageState extends State<BackupPage> {
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(Get.context!).pop();
-            },
-            child: const Text("取消"),
-          ),
-          TextButton(
-            onPressed: () async {
-              if (urlEditingController.text.isEmpty) {
-                SmartDialog.showToast('请输入下载链接');
-                return;
-              }
-              bool validate = FileRecoverUtils.isUrl(urlEditingController.text);
-              if (!validate) {
-                SmartDialog.showToast('请输入正确的下载链接');
-                return;
-              }
-              if (textEditingController.text.isEmpty) {
-                SmartDialog.showToast('请输入文件名');
-                return;
-              }
-              await FileRecoverUtils().recoverNetworkM3u8Backup(urlEditingController.text, textEditingController.text);
-              Navigator.of(Get.context!).pop();
-            },
-            child: const Text("确定"),
-          ),
-        ],
-      ),
-      barrierDismissible: false,
-    );
+        barrierDismissible: false);
     return result;
   }
 

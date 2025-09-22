@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:pure_live/common/index.dart';
 
 Future<void> register(String scheme) async {

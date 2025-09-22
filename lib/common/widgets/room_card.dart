@@ -46,7 +46,9 @@ class RoomCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.all(7.5),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15.0),
+      ),
       child: InkWell(
         borderRadius: BorderRadius.circular(15.0),
         onTap: () {
@@ -66,7 +68,9 @@ class RoomCard extends StatelessWidget {
                   aspectRatio: 16 / 9,
                   child: Card(
                     margin: const EdgeInsets.all(0),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15.0),
+                    ),
                     clipBehavior: Clip.antiAlias,
                     color: Theme.of(context).focusColor,
                     elevation: 0,
@@ -120,12 +124,6 @@ class RoomCard extends StatelessWidget {
                       dense: dense,
                     ),
                   ),
-                if (room.isRecord == false && room.liveStatus == LiveStatus.live)
-                  Positioned(
-                    left: dense ? 10 : 12,
-                    bottom: dense ? 10 : 12,
-                    child: Image.asset('assets/images/live.gif', color: Colors.white, height: 12),
-                  ),
               ],
             ),
             ListTile(
@@ -138,13 +136,19 @@ class RoomCard extends StatelessWidget {
                 room.title ?? '',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: dense ? 12.5 : 15, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  fontSize: dense ? 12.5 : 15,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               subtitle: Text(
                 room.nick ?? '',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: dense ? 12 : 14),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: dense ? 12 : 14,
+                ),
               ),
               trailing: dense
                   ? null
@@ -155,7 +159,7 @@ class RoomCard extends StatelessWidget {
                         fontSize: 12,
                       ),
                     ),
-            ),
+            )
           ],
         ),
       ),
@@ -164,7 +168,10 @@ class RoomCard extends StatelessWidget {
 }
 
 class FollowButton extends StatefulWidget {
-  const FollowButton({super.key, required this.room});
+  const FollowButton({
+    super.key,
+    required this.room,
+  });
 
   final LiveRoom room;
 
@@ -187,7 +194,6 @@ class _FollowButtonState extends State<FollowButton> {
         } else {
           settings.removeRoom(widget.room);
         }
-        Navigator.of(Get.context!).pop();
       },
       style: ElevatedButton.styleFrom(),
       child: Text(isFavorite ? S.current.unfollow : S.current.follow),

@@ -28,14 +28,13 @@ class CCSite extends LiveSite with CCSiteMixin {
   @override
   LiveDanmaku getDanmaku() => CCDanmaku();
 
-  final SettingsService settings = Get.find<SettingsService>();
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async {
     List<LiveCategory> categories = [
-      LiveCategory(id: "1", name: "全部", children: []),
-      LiveCategory(id: "2", name: "端游", children: []),
-      LiveCategory(id: "4", name: "手游", children: []),
-      LiveCategory(id: "5", name: "其他", children: []),
+      LiveCategory(id: "1", name: "网游", children: []),
+      LiveCategory(id: "2", name: "单机", children: []),
+      LiveCategory(id: "4", name: "网游竞技", children: []),
+      LiveCategory(id: "5", name: "娱乐", children: []),
     ];
 
     List<Future> futures = [];
@@ -60,48 +59,46 @@ class CCSite extends LiveSite with CCSiteMixin {
     });
 
     List<LiveArea> subs = [];
-    for (var item in result) {
+    for (var item in result["data"]["category_info"]["game_list"]) {
       var gid = item["gametype"].toString();
       var subCategory = LiveArea(
         areaId: gid,
-        areaName: item["gamename"] ?? '',
+        areaName: item["name"] ?? '',
         areaType: liveCategory.id,
         platform: Sites.ccSite,
-        areaPic: item["img"],
+        areaPic: item["cover"],
         typeName: liveCategory.name,
       );
       subs.add(subCategory);
     }
+
     return subs;
   }
 
   @override
   Future<LiveCategoryResult> getCategoryRooms(LiveArea category, {int page = 1}) async {
     var result = await HttpClient.instance.getJson(
-      "https://cc.163.com/_next/data/nextjs/category/${category.areaId}.json",
-      queryParameters: {"game": category.areaId},
+      "https://cc.163.com/api/category/${category.areaId}",
+      queryParameters: {"format": "json", "tag_id": "0", "start": (page - 1) * 20, "size": 20},
     );
     var items = <LiveRoom>[];
-    try {
-      for (var item in result["pageProps"]["gametypeData"]["lives"]) {
-        var roomItem = LiveRoom(
-          roomId: item["cuteid"].toString(),
-          title: item["title"].toString(),
-          cover: item["cover"].toString(),
-          nick: item["nickname"].toString(),
-          watching: item["webcc_visitor"].toString(),
-          avatar: item["purl"],
-          area: item["game_name"] ?? '',
-          liveStatus: LiveStatus.live,
-          status: true,
-          platform: Sites.ccSite,
-        );
-        items.add(roomItem);
-      }
-    } catch (e) {
-      CoreLog.error(e);
+    for (var item in result["lives"]) {
+      var roomItem = LiveRoom(
+        roomId: item["cuteid"].toString(),
+        title: item["title"].toString(),
+        cover: item["cover"].toString(),
+        nick: item["nickname"].toString(),
+        watching: item["vision_visitor"].toString(),
+        avatar: item["purl"],
+        area: item["game_name"] ?? '',
+        liveStatus: LiveStatus.live,
+        status: true,
+        platform: Sites.ccSite,
+      );
+      items.add(roomItem);
     }
-    return LiveCategoryResult(hasMore: false, items: items);
+    var hasMore = result["lives"].length >= 20;
+    return LiveCategoryResult(hasMore: hasMore, items: items);
   }
 
   @override
@@ -236,7 +233,11 @@ class CCSite extends LiveSite with CCSiteMixin {
   Future<LiveSearchRoomResult> searchRooms(String keyword, {int page = 1}) async {
     var result = await HttpClient.instance.getJson(
       "https://cc.163.com/search/anchor",
-      queryParameters: {"query": keyword, "size": 20, "page": page},
+      queryParameters: {
+        "query": keyword,
+        "size": 20,
+        "page": page,
+      },
     );
     var items = <LiveRoom>[];
     var queryList = result["webcc_anchor"]["result"] ?? [];

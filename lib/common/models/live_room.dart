@@ -1,4 +1,6 @@
-enum LiveStatus { live, offline, replay, unknown, banned }
+enum LiveStatus { live, offline, replay, unknown }
+
+enum Platforms { huya, bilibili, douyu, douyin, unknown }
 
 class LiveRoom {
   String? roomId;
@@ -100,5 +102,5 @@ class LiveRoom {
   bool operator ==(covariant LiveRoom other) => platform == other.platform && roomId == other.roomId;
 
   @override
-  int get hashCode => Object.hash(platform, roomId);
+  int get hashCode => int.parse(roomId!);
 }

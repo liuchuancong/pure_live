@@ -32,14 +32,22 @@ class AreasListController extends BasePageController<LiveCategory> {
 
 class AppLiveCategory extends LiveCategory {
   var showAll = false.obs;
-  AppLiveCategory({required super.id, required super.name, required super.children}) {
+  AppLiveCategory({
+    required super.id,
+    required super.name,
+    required super.children,
+  }) {
     showAll.value = children.length < 19;
   }
 
   List<LiveArea> get take15 => children.take(15).toList();
 
   factory AppLiveCategory.fromLiveCategory(LiveCategory item) {
-    return AppLiveCategory(children: item.children, id: item.id, name: item.name);
+    return AppLiveCategory(
+      children: item.children,
+      id: item.id,
+      name: item.name,
+    );
   }
 
 }

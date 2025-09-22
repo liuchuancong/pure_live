@@ -1,40 +1,36 @@
+import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:math' as math;
-
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:fl_pip/fl_pip.dart';
-// import 'package:floating/floating.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:fl_pip/fl_pip.dart';
+import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/models/live_room_rx.dart';
+import 'package:pure_live/plugins/utils.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pure_live/core/common/core_log.dart';
-import 'package:pure_live/core/interface/live_danmaku.dart';
-import 'package:pure_live/core/iptv/src/general_utils_object_extension.dart';
+import 'package:pure_live/modules/util/rx_util.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 import 'package:pure_live/model/live_play_quality.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import '../../model/live_play_quality_play_url_info.dart';
+import 'package:pure_live/common/models/live_room_rx.dart';
+import '../../core/danmaku/util/danmaku_message_util.dart';
+import 'package:pure_live/core/interface/live_danmaku.dart';
+import 'package:pure_live/modules/live_play/load_type.dart';
+import 'package:pure_live/modules/live_play/danmu_merge.dart';
+import 'package:pure_live/modules/util/listen_list_util.dart';
+import 'package:pure_live/plugins/route_history_observer.dart';
+import 'package:pure_live/plugins/extension/string_extension.dart';
+import 'package:pure_live/core/iptv/src/general_utils_object_extension.dart';
 import 'package:pure_live/modules/live_play/danmaku/danmaku_controller_base.dart';
 import 'package:pure_live/modules/live_play/danmaku/danmaku_controller_factory.dart';
-import 'package:pure_live/modules/live_play/danmu_merge.dart';
-import 'package:pure_live/modules/live_play/load_type.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
-import 'package:pure_live/modules/util/listen_list_util.dart';
-import 'package:pure_live/modules/util/rx_util.dart';
-import 'package:pure_live/plugins/extension/string_extension.dart';
-import 'package:pure_live/plugins/route_history_observer.dart';
-import 'package:pure_live/plugins/utils.dart';
-import 'package:url_launcher/url_launcher_string.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
 
-import '../../core/danmaku/util/danmaku_message_util.dart';
-import '../../model/live_play_quality_play_url_info.dart';
+// import 'package:floating/floating.dart';
 
 class LivePlayController extends StateController {
-  LivePlayController({
-    required this.room,
-    required this.site,
-  });
+  LivePlayController({required this.room, required this.site});
 
   final String site;
 
@@ -48,6 +44,10 @@ class LivePlayController extends StateController {
 
   // 控制唯一子组件
   VideoController? videoController;
+
+  final playerKey = GlobalKey();
+
+  final danmakuViewKey = GlobalKey();
 
   final LiveRoom room;
 
@@ -136,7 +136,6 @@ class LivePlayController extends StateController {
   final StreamController<bool> streamController = StreamController<bool>();
   Stream<bool> get streamState => streamController.stream; // 获取流。
 
-
   /// 释放一些系统状态
   Future resetSystem() async {
     _pipSubscription?.cancel();
@@ -147,10 +146,7 @@ class LivePlayController extends StateController {
     } catch (e) {
       CoreLog.error(e);
     }
-    await SystemChrome.setEnabledSystemUIMode(
-      SystemUiMode.edgeToEdge,
-      overlays: SystemUiOverlay.values,
-    );
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge, overlays: SystemUiOverlay.values);
 
     await videoController?.setPortraitOrientation();
     if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
@@ -201,10 +197,9 @@ class LivePlayController extends StateController {
     //   CoreLog.w(event.toString());
     // }));
     FlPiP().enable(
-        ios: FlPiPiOSConfig(videoPath: "", audioPath: "", packageName: null),
-        android: FlPiPAndroidConfig(
-          aspectRatio: ratio,
-        ));
+      ios: FlPiPiOSConfig(videoPath: "", audioPath: "", packageName: null),
+      android: FlPiPAndroidConfig(aspectRatio: ratio),
+    );
   }
 
   /// flPiP android 画中画状态
@@ -242,7 +237,7 @@ class LivePlayController extends StateController {
       return false;
     }
     bool doubleExit = Get.find<SettingsService>().doubleExit.value;
-    if (!doubleExit || directiveExit) {
+    if (!doubleExit) {
       disPoserPlayer();
       return true;
     }
@@ -276,33 +271,45 @@ class LivePlayController extends StateController {
       safeArea: true,
     );
     danmakuController.updateOption(danmakuSettingOption);
-    subscriptionList.add(settings.danmakuArea.listen((data) {
-      danmakuSettingOption.hideBottom = data < 0.70;
-    }));
-    subscriptionList.add(settings.danmakuOpacity.listen((data) {
-      danmakuSettingOption.opacity = data;
-    }));
-    subscriptionList.add(settings.danmakuFontSize.listen((data) {
-      danmakuSettingOption.fontSize = data;
-    }));
-    subscriptionList.add(settings.danmakuSpeed.listen((data) {
-      danmakuSettingOption.duration = data.toInt();
-    }));
-    subscriptionList.add(settings.danmakuFontBorder.listen((data) {
-      danmakuSettingOption.showStroke = data > 0;
-    }));
+    subscriptionList.add(
+      settings.danmakuArea.listen((data) {
+        danmakuSettingOption.hideBottom = data < 0.70;
+      }),
+    );
+    subscriptionList.add(
+      settings.danmakuOpacity.listen((data) {
+        danmakuSettingOption.opacity = data;
+      }),
+    );
+    subscriptionList.add(
+      settings.danmakuFontSize.listen((data) {
+        danmakuSettingOption.fontSize = data;
+      }),
+    );
+    subscriptionList.add(
+      settings.danmakuSpeed.listen((data) {
+        danmakuSettingOption.duration = data.toInt();
+      }),
+    );
+    subscriptionList.add(
+      settings.danmakuFontBorder.listen((data) {
+        danmakuSettingOption.showStroke = data > 0;
+      }),
+    );
     if (settings.hideDanmaku.value) {
       danmakuController.clear();
       danmakuController.pause();
     }
-    subscriptionList.add(settings.hideDanmaku.listen((data) {
-      if (data) {
-        danmakuController.clear();
-        danmakuController.pause();
-      } else {
-        danmakuController.resume();
-      }
-    }));
+    subscriptionList.add(
+      settings.hideDanmaku.listen((data) {
+        if (data) {
+          danmakuController.clear();
+          danmakuController.pause();
+        } else {
+          danmakuController.resume();
+        }
+      }),
+    );
   }
 
   @override
@@ -321,49 +328,55 @@ class LivePlayController extends StateController {
     // detail.updateValueNotEquate(liveRoomRx;
     isFavorite.updateValueNotEquate(settings.isFavorite(room));
     onInitPlayerState(firstLoad: true);
-    subscriptionList.add(isFirstLoad.listen((p0) {
-      if (isFirstLoad.value) {
-        loadTimeOut.updateValueNotEquate(true);
-        Timer(const Duration(seconds: 8), () {
-          isFirstLoad.updateValueNotEquate(false);
-          loadTimeOut.updateValueNotEquate(false);
-          Timer(const Duration(seconds: 5), () {
-            loadTimeOut.updateValueNotEquate(true);
+    subscriptionList.add(
+      isFirstLoad.listen((p0) {
+        if (isFirstLoad.value) {
+          loadTimeOut.updateValueNotEquate(true);
+          Timer(const Duration(seconds: 8), () {
+            isFirstLoad.updateValueNotEquate(false);
+            loadTimeOut.updateValueNotEquate(false);
+            Timer(const Duration(seconds: 5), () {
+              loadTimeOut.updateValueNotEquate(true);
+            });
           });
-        });
-      } else {
-        // 防止闪屏
-        Timer(const Duration(seconds: 2), () {
-          loadTimeOut.updateValueNotEquate(false);
-          Timer(const Duration(seconds: 5), () {
-            loadTimeOut.updateValueNotEquate(true);
+        } else {
+          // 防止闪屏
+          Timer(const Duration(seconds: 2), () {
+            loadTimeOut.updateValueNotEquate(false);
+            Timer(const Duration(seconds: 5), () {
+              loadTimeOut.updateValueNotEquate(true);
+            });
           });
-        });
-      }
-    }));
-
-    subscriptionList.add(isLastLine.listen((p0) {
-      if (isLastLine.value && hasError.value && isActive.value == false) {
-        // 刷新到了最后一路线 并且有错误
-        SmartDialog.showToast("当前房间无法播放,正在为您刷新直播间信息...", displayTime: const Duration(seconds: 1));
-        isLastLine.updateValueNotEquate(false);
-        isFirstLoad.updateValueNotEquate(true);
-        restoryQualityAndLines();
-        resetRoom(liveRoomRx.toLiveRoom());
-      } else {
-        if (success.value) {
-          isActive.updateValueNotEquate(false);
-          loadRefreshRoomTimer?.cancel();
         }
-      }
-    }));
+      }),
+    );
 
-    subscriptionList.add(getVideoSuccess.listen((p0) {
-      isLoadingVideo.updateValueNotEquate(true);
-      if (p0) {
-        isLoadingVideo.updateValueNotEquate(false);
-      }
-    }));
+    subscriptionList.add(
+      isLastLine.listen((p0) {
+        if (isLastLine.value && hasError.value && isActive.value == false) {
+          // 刷新到了最后一路线 并且有错误
+          SmartDialog.showToast("当前房间无法播放,正在为您刷新直播间信息...", displayTime: const Duration(seconds: 1));
+          isLastLine.updateValueNotEquate(false);
+          isFirstLoad.updateValueNotEquate(true);
+          restoryQualityAndLines();
+          resetRoom(liveRoomRx.toLiveRoom());
+        } else {
+          if (success.value) {
+            isActive.updateValueNotEquate(false);
+            loadRefreshRoomTimer?.cancel();
+          }
+        }
+      }),
+    );
+
+    subscriptionList.add(
+      getVideoSuccess.listen((p0) {
+        isLoadingVideo.updateValueNotEquate(true);
+        if (p0) {
+          isLoadingVideo.updateValueNotEquate(false);
+        }
+      }),
+    );
     initAutoShutDown();
   }
 
@@ -371,7 +384,7 @@ class LivePlayController extends StateController {
     // if (liveRoomRx.platform == site.id && liveRoomRx.roomId == roomId) {
     //   return;
     // }
-    var of = Sites.of(item.platform??"");
+    var of = Sites.of(item.platform ?? "");
     currentSite = of;
 
     // var liveRoom = liveRoomRx;
@@ -403,7 +416,7 @@ class LivePlayController extends StateController {
   }
 
   /// 获取信息出错
-  void getInfoError(String mgs){
+  void getInfoError(String mgs) {
     SmartDialog.showToast(mgs, displayTime: const Duration(seconds: 2));
     liveStatus.updateValueNotEquate(false);
     hasError.updateValueNotEquate(true);
@@ -425,7 +438,7 @@ class LivePlayController extends StateController {
     if (isFirstLoad.value) {
       try {
         liveRoom = await currentSite.liveSite.getRoomDetail(detail: liveRoom);
-      } catch(e){
+      } catch (e) {
         CoreLog.error(e);
         getInfoError("$e");
         return liveRoom;
@@ -460,11 +473,13 @@ class LivePlayController extends StateController {
       }
 
       // 开始播放
-      liveStatus.updateValueNotEquate(liveRoomRx.liveStatus.value != LiveStatus.unknown && liveRoomRx.liveStatus.value != LiveStatus.offline);
+      liveStatus.updateValueNotEquate(
+        liveRoomRx.liveStatus.value != LiveStatus.unknown && liveRoomRx.liveStatus.value != LiveStatus.offline,
+      );
       if (liveStatus.value) {
         try {
           await getPlayQualites();
-        } catch(e) {
+        } catch (e) {
           CoreLog.error(e);
           getInfoError("获取清晰度失败");
           return liveRoom;
@@ -476,7 +491,8 @@ class LivePlayController extends StateController {
           settings.addRoomToHistory(liveRoom);
 
           // 更新录播观看人数信息
-          if ((liveRoom.liveStatus == LiveStatus.live && liveRoom.isRecord == true) || liveRoom.liveStatus == LiveStatus.replay) {
+          if ((liveRoom.liveStatus == LiveStatus.live && liveRoom.isRecord == true) ||
+              liveRoom.liveStatus == LiveStatus.replay) {
             liveRoom.liveStatus = LiveStatus.replay;
             liveRoom.recordWatching = liveRoom.watching;
           }
@@ -489,7 +505,9 @@ class LivePlayController extends StateController {
         // start danmaku server
         List<String> except = ['iptv'];
         // 重新刷新才重新加载弹幕
-        if (firstLoad && except.indexWhere((element) => element == liveRoom.platform!) == -1 && liveRoom.danmakuData != null) {
+        if (firstLoad &&
+            except.indexWhere((element) => element == liveRoom.platform!) == -1 &&
+            liveRoom.danmakuData != null) {
           try {
             liveDanmaku.stop();
           } catch (e) {
@@ -506,12 +524,7 @@ class LivePlayController extends StateController {
         isLoadingVideo.updateValueNotEquate(false);
         SmartDialog.showToast("当前主播未开播或主播已下播", displayTime: const Duration(seconds: 2));
         messages.add(
-          LiveMessage(
-            type: LiveMessageType.chat,
-            userName: "系统消息",
-            message: "当前主播未开播或主播已下播",
-            color: Colors.redAccent,
-          ),
+          LiveMessage(type: LiveMessageType.chat, userName: "系统消息", message: "当前主播未开播或主播已下播", color: Colors.redAccent),
         );
         restoryQualityAndLines();
       }
@@ -544,7 +557,6 @@ class LivePlayController extends StateController {
       resetSystem();
       danmakuController.dispose();
 
-
       channelTimer?.cancel();
       loadRefreshRoomTimer?.cancel();
       networkTimer?.cancel();
@@ -552,7 +564,6 @@ class LivePlayController extends StateController {
       autoExitTimer?.cancel();
 
       streamController.close();
-
     } catch (e) {
       CoreLog.error(e);
     }
@@ -641,9 +652,11 @@ class LivePlayController extends StateController {
       // }));
       FlPiP().status.addListener(flPiPListener);
     }
-    subscriptionList.add(isPiP.listen((e) {
-      streamController.add(e);
-    }));
+    subscriptionList.add(
+      isPiP.listen((e) {
+        streamController.add(e);
+      }),
+    );
   }
 
   /// 初始化弹幕接收事件
@@ -651,21 +664,11 @@ class LivePlayController extends StateController {
     messages.clear();
     if (liveRoomRx.isRecord.value!) {
       messages.add(
-        LiveMessage(
-          type: LiveMessageType.chat,
-          userName: "系统消息",
-          message: "当前主播未开播，正在轮播录像",
-          color: Colors.grey,
-        ),
+        LiveMessage(type: LiveMessageType.chat, userName: "系统消息", message: "当前主播未开播，正在轮播录像", color: Colors.grey),
       );
     }
     messages.add(
-      LiveMessage(
-        type: LiveMessageType.chat,
-        userName: "系统消息",
-        message: "开始连接弹幕服务器",
-        color: Colors.blueGrey,
-      ),
+      LiveMessage(type: LiveMessageType.chat, userName: "系统消息", message: "开始连接弹幕服务器", color: Colors.blueGrey),
     );
     liveDanmaku.onMessage = (msg) {
       if (msg.type == LiveMessageType.chat) {
@@ -694,23 +697,11 @@ class LivePlayController extends StateController {
       }
     };
     liveDanmaku.onClose = (msg) {
-      messages.add(
-        LiveMessage(
-          type: LiveMessageType.chat,
-          userName: "系统消息",
-          message: msg,
-          color: Colors.blueGrey,
-        ),
-      );
+      messages.add(LiveMessage(type: LiveMessageType.chat, userName: "系统消息", message: msg, color: Colors.blueGrey));
     };
     liveDanmaku.onReady = () {
       messages.add(
-        LiveMessage(
-          type: LiveMessageType.chat,
-          userName: "系统消息",
-          message: "弹幕服务器连接正常",
-          color: Colors.blueGrey,
-        ),
+        LiveMessage(type: LiveMessageType.chat, userName: "系统消息", message: "弹幕服务器连接正常", color: Colors.blueGrey),
       );
     };
   }
@@ -781,8 +772,11 @@ class LivePlayController extends StateController {
     var playUrlList = quality.playUrlList;
     if (playUrlList.isNullOrEmpty) {
       try {
-        playUrlList = await currentSite.liveSite.getPlayUrls(detail: liveRoomRx.toLiveRoom(), quality: qualites[currentQuality.value]);
-      } catch(e) {
+        playUrlList = await currentSite.liveSite.getPlayUrls(
+          detail: liveRoomRx.toLiveRoom(),
+          quality: qualites[currentQuality.value],
+        );
+      } catch (e) {
         CoreLog.error(e);
         getInfoError("无法读取播放地址");
         return;
@@ -843,7 +837,7 @@ class LivePlayController extends StateController {
     for (var i = 0; i < playQualites.length; i++) {
       var playQuality = playQualites[i];
       var vBitRate = playQuality.bitRate;
-      if (vBitRate * 1.3 >= bitRate){
+      if (vBitRate * 1.3 >= bitRate) {
         qualityLevel = i;
       } else {
         continue;
@@ -852,8 +846,9 @@ class LivePlayController extends StateController {
         return qualityLevel;
       }
     }
+
     /// 原画清晰度
-    if(bitRate <= 0) {
+    if (bitRate <= 0) {
       return 0;
     }
     return qualityLevel;
@@ -894,10 +889,12 @@ class LivePlayController extends StateController {
         currentLineIndex: currentLineIndex.value,
         currentQuality: currentQuality.value,
       );
-      subscriptionList.add(videoController?.videoPlayer.isFullscreen.listen((e) {
-        isFullscreen.updateValueNotEquate(e);
-        streamController.add(e);
-      }));
+      subscriptionList.add(
+        videoController?.videoPlayer.isFullscreen.listen((e) {
+          isFullscreen.updateValueNotEquate(e);
+          streamController.add(e);
+        }),
+      );
     } else {
       // videoController?.datasource = playUrls.value[currentLineIndex.value].playUrl;
       // videoController?.qualiteName = qualites[currentQuality.value].quality;
@@ -927,10 +924,6 @@ class LivePlayController extends StateController {
           }
         }
       }
-    });
-
-    videoController?.isFullscreen.listen((value) {
-      isFullScreen.value = value;
     });
   }
 
@@ -970,26 +963,42 @@ class LivePlayController extends StateController {
 
   void sendDanmaku(LiveMessage msg) {
     if (settings.hideDanmaku.value) return;
-    danmakuController.addDanmaku(
-      IDanmakuContentItem(msg.message, color: msg.color),
-    );
+    danmakuController.addDanmaku(IDanmakuContentItem(msg.message, color: msg.color));
   }
 
   /// ------------------------- 定时关闭
   void initAutoShutDown() {
     setAutoExit();
-    subscriptionList.add(settings.autoShutDownTime.listen((value) {
-      setAutoExit();
-    }));
-    subscriptionList.add(settings.enableAutoShutDownTime.listen((value) {
-      setAutoExit();
-    }));
+    subscriptionList.add(
+      settings.autoShutDownTime.listen((value) {
+        setAutoExit();
+      }),
+    );
+    subscriptionList.add(
+      settings.enableAutoShutDownTime.listen((value) {
+        setAutoExit();
+      }),
+    );
   }
 
   int getCurrentMinute() {
     return DateTime.now().millisecondsSinceEpoch ~/ 1000 ~/ 60;
   }
 
+  void switchRoom(LiveRoom room) async {
+    success.value = false;
+    hasError.value = false;
+    messages.clear();
+    if (videoController != null && !videoController!.hasDestory) {
+      await videoController?.destory();
+      videoController = null;
+    }
+    isFirstLoad.value = true;
+    getVideoSuccess.value = true;
+    loadTimeOut.value = false;
+    liveRoomRx.updateByLiveRoom(room);
+    onInitPlayerState(firstLoad: true);
+  }
 
   Timer? autoExitTimer;
   var countdown = 0.obs;
@@ -1014,8 +1023,13 @@ class LivePlayController extends StateController {
           exit(0);
         });
         autoExitTimer?.cancel();
-        var delay = await Utils.showAlertDialog(S.current.settings_delay_close_info,
-            title: S.current.settings_delay_close, confirm: S.current.settings_delay, cancel: S.current.settings_close, selectable: true);
+        var delay = await Utils.showAlertDialog(
+          S.current.settings_delay_close_info,
+          title: S.current.settings_delay_close,
+          confirm: S.current.settings_delay,
+          cancel: S.current.settings_close,
+          selectable: true,
+        );
         if (delay) {
           timer.cancel();
           delayAutoExit.value = true;
@@ -1028,7 +1042,4 @@ class LivePlayController extends StateController {
       }
     });
   }
-
-
 }
-

@@ -6,6 +6,10 @@ class MenuButton extends GetView<AuthController> {
   const MenuButton({super.key});
 
   final menuRoutes = const [
+    RoutePath.kSettings,
+    RoutePath.kAbout,
+    RoutePath.kContact,
+    RoutePath.kHistory,
     RoutePath.kSignIn,
     RoutePath.kSettingsAccount,
     RoutePath.kLog,
@@ -22,7 +26,7 @@ class MenuButton extends GetView<AuthController> {
       position: PopupMenuPosition.under,
       icon: const Icon(Icons.menu_rounded),
       onSelected: (int index) {
-        if (index == 0) {
+        if (index == 4) {
           if (controller.isLogin) {
             Get.toNamed(RoutePath.kMine);
           } else {
@@ -34,7 +38,7 @@ class MenuButton extends GetView<AuthController> {
       },
       itemBuilder: (context) => [
         PopupMenuItem(
-          value: 0,
+          value: 4,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: MenuListTile(
             leading: const Icon(Icons.account_circle_outlined),
@@ -50,7 +54,7 @@ class MenuButton extends GetView<AuthController> {
           ),
         ),
         PopupMenuItem(
-          value: 2,
+          value: 0,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: MenuListTile(
             leading: const Icon(Icons.settings_outlined),
@@ -58,7 +62,7 @@ class MenuButton extends GetView<AuthController> {
           ),
         ),
         PopupMenuItem(
-          value: 3,
+          value: 1,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: MenuListTile(
             leading: const Icon(Icons.info_outlined),

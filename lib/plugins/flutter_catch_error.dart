@@ -1,19 +1,17 @@
-import 'dart:async';
 import 'dart:io';
-
-import 'package:catcher_2/catcher_2.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
+import 'dart:async';
 import 'package:fvp/fvp.dart' as fvp;
 import 'package:fvp/mdk.dart' as mdk;
-import 'package:logging/logging.dart';
-import 'package:pure_live/common/index.dart';
-import 'package:pure_live/core/common/core_log.dart';
-import 'package:pure_live/core/common/http_client.dart' as my_http_client;
 import 'package:pure_live/main.dart';
+import 'package:logging/logging.dart';
+import 'package:flutter/foundation.dart';
+import 'package:catcher_2/catcher_2.dart';
+import 'package:pure_live/common/index.dart';
+import 'package:pure_live/plugins/global.dart';
+import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/plugins/cache_to_file.dart';
 import 'package:pure_live/plugins/catcher/file_handler.dart';
-import 'package:pure_live/plugins/global.dart';
+import 'package:pure_live/core/common/http_client.dart' as my_http_client;
 
 ///全局异常的捕捉
 class FlutterCatchError {
@@ -54,22 +52,18 @@ class FlutterCatchError {
     while (true) {
       try {
         // 异常捕获 logo记录
-        final Catcher2Options debugConfig = Catcher2Options(
-          SilentReportMode(),
-          [
-            CustomizeFileHandler(await CoreLog.getLogsPath()),
-            // ConsoleHandler(
-            //   enableDeviceParameters: false,
-            //   enableApplicationParameters: false,
-            //   enableCustomParameters: false,
-            // )
-          ],
-        );
+        final Catcher2Options debugConfig = Catcher2Options(SilentReportMode(), [
+          CustomizeFileHandler(await CoreLog.getLogsPath()),
+          // ConsoleHandler(
+          //   enableDeviceParameters: false,
+          //   enableApplicationParameters: false,
+          //   enableCustomParameters: false,
+          // )
+        ]);
 
-        final Catcher2Options releaseConfig = Catcher2Options(
-          SilentReportMode(),
-          [CustomizeFileHandler(await CoreLog.getLogsPath(), enableCustomParameters: false)],
-        );
+        final Catcher2Options releaseConfig = Catcher2Options(SilentReportMode(), [
+          CustomizeFileHandler(await CoreLog.getLogsPath(), enableCustomParameters: false),
+        ]);
         catcher2!.updateConfig(debugConfig: debugConfig, releaseConfig: releaseConfig);
         CoreLog.i("catcher update config ok");
         return;
@@ -136,33 +130,28 @@ class FlutterCatchError {
         color: Colors.transparent,
         child: SafeArea(
           child: Container(
-              color: Colors.white,
-              padding: const EdgeInsets.all(15),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Center(
-                      child: Icon(
-                        Icons.error,
-                        size: 55,
-                        color: Colors.orange,
-                      ),
-                    ),
-                    Text(
-                      "Current module exception${'，System diagnosis as：${stError.split(':').isNotEmpty ? stError.split(':')[0] : ''}'}，Please contact the administrator！",
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, letterSpacing: 0.4),
-                    ),
-                    Text(
-                      flutterErrorDetails.exceptionAsString(),
-                      style: const TextStyle(color: Colors.blue, fontSize: 14),
-                      textAlign: TextAlign.start,
-                    )
-                  ],
-                ),
-              )),
+            color: Colors.white,
+            padding: const EdgeInsets.all(15),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Center(child: Icon(Icons.error, size: 55, color: Colors.orange)),
+                  Text(
+                    "Current module exception${'，System diagnosis as：${stError.split(':').isNotEmpty ? stError.split(':')[0] : ''}'}，Please contact the administrator！",
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, letterSpacing: 0.4),
+                  ),
+                  Text(
+                    flutterErrorDetails.exceptionAsString(),
+                    style: const TextStyle(color: Colors.blue, fontSize: 14),
+                    textAlign: TextAlign.start,
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       );
     };

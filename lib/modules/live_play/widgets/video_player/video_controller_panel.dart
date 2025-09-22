@@ -20,7 +20,10 @@ import '../slide_animation.dart';
 class VideoControllerPanel extends StatefulWidget {
   final VideoController controller;
 
-  const VideoControllerPanel({super.key, required this.controller});
+  const VideoControllerPanel({
+    super.key,
+    required this.controller,
+  });
 
   @override
   State<StatefulWidget> createState() => _VideoControllerPanelState();
@@ -153,7 +156,7 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                                         ),
                                       ],
                                     ),
-                                  ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -194,7 +197,10 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
 }
 
 class ErrorWidget extends StatelessWidget {
-  const ErrorWidget({super.key, required this.controller});
+  const ErrorWidget({
+    super.key,
+    required this.controller,
+  });
 
   final VideoController controller;
 
@@ -230,7 +236,11 @@ class ErrorWidget extends StatelessWidget {
 
 // Top action bar widgets
 class TopActionBar extends StatelessWidget {
-  const TopActionBar({super.key, required this.controller, required this.barHeight});
+  const TopActionBar({
+    super.key,
+    required this.controller,
+    required this.barHeight,
+  });
 
   final VideoController controller;
   final double barHeight;
@@ -490,7 +500,10 @@ class BackButton extends StatelessWidget {
       child: Container(
         alignment: Alignment.center,
         padding: const EdgeInsets.all(12),
-        child: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+        child: const Icon(
+          Icons.arrow_back_rounded,
+          color: Colors.white,
+        ),
       ),
     );
   }
@@ -508,12 +521,16 @@ class PIPButton extends StatelessWidget {
       child: Container(
         alignment: Alignment.center,
         padding: const EdgeInsets.all(12),
-        child: const Icon(CustomIcons.float_window, color: Colors.white),
+        child: const Icon(
+          CustomIcons.float_window,
+          color: Colors.white,
+        ),
       ),
     );
   }
 }
 
+// Center widgets
 // Center widgets
 class DanmakuViewer extends StatelessWidget {
   const DanmakuViewer({
@@ -637,14 +654,14 @@ class BrightnessVolumeDargAreaState extends State<BrightnessVolumeDargArea> {
       iconData = _updateDargVarVal <= 0
           ? Icons.brightness_low
           : _updateDargVarVal < 0.5
-          ? Icons.brightness_medium
-          : Icons.brightness_high;
+              ? Icons.brightness_medium
+              : Icons.brightness_high;
     } else {
       iconData = _updateDargVarVal <= 0
           ? Icons.volume_mute
           : _updateDargVarVal < 0.5
-          ? Icons.volume_down
-          : Icons.volume_up;
+              ? Icons.volume_down
+              : Icons.volume_up;
     }
 
     return Listener(
@@ -735,15 +752,17 @@ class LockButton extends StatelessWidget {
               ),
             ),
           ),
-        ),
-      ),
-    );
+        ));
   }
 }
 
 // Bottom action bar widgets
 class BottomActionBar extends StatelessWidget {
-  const BottomActionBar({super.key, required this.controller, required this.barHeight});
+  const BottomActionBar({
+    super.key,
+    required this.controller,
+    required this.barHeight,
+  });
 
   final VideoController controller;
   final double barHeight;
@@ -781,27 +800,7 @@ class BottomActionBar extends StatelessWidget {
               ],
             ),
           ),
-          child: Row(
-            children: <Widget>[
-              PlayPauseButton(controller: controller),
-              RefreshButton(controller: controller),
-              FavoriteButton(controller: controller),
-              DanmakuButton(controller: controller),
-              SettingsButton(controller: controller),
-              const Spacer(),
-              VideoFitSetting(controller: controller),
-              SizedBox(width: 8),
-              OverlayVolumeControl(controller: controller),
-              SizedBox(width: 8),
-              if (controller.supportWindowFull && !controller.isFullscreen.value)
-                ExpandWindowButton(controller: controller),
-              if (controller.supportWindowFull && !controller.isFullscreen.value) SizedBox(width: 8),
-              if (!controller.isWindowFullscreen.value) ExpandButton(controller: controller),
-            ],
-          ),
-        ),
-      ),
-    );
+        ));
   }
 }
 
@@ -839,7 +838,10 @@ class RefreshButton extends StatelessWidget {
       child: Container(
         alignment: Alignment.center,
         padding: const EdgeInsets.all(12),
-        child: const Icon(Icons.refresh_rounded, color: Colors.white),
+        child: const Icon(
+          Icons.refresh_rounded,
+          color: Colors.white,
+        ),
       ),
     );
   }
@@ -868,7 +870,10 @@ class ScreenToggleButton extends StatelessWidget {
 }
 
 class DanmakuButton extends StatelessWidget {
-  const DanmakuButton({super.key, required this.controller});
+  const DanmakuButton({
+    super.key,
+    required this.controller,
+  });
 
   final VideoController controller;
 
@@ -903,9 +908,8 @@ class SettingsButton extends StatelessWidget {
       child: Container(
         alignment: Alignment.center,
         padding: const EdgeInsets.all(12),
-        child: SvgPicture.asset(
-          'assets/images/video/danmu_setting.svg',
-          // ignore: deprecated_member_use
+        child: const Icon(
+          CustomIcons.danmaku_setting,
           color: Colors.white,
         ),
       ),
@@ -924,6 +928,7 @@ class ExpandWindowButton extends StatelessWidget {
       onTap: () => controller.toggleWindowFullScreen(),
       child: Container(
         alignment: Alignment.center,
+        padding: const EdgeInsets.all(12),
         child: RotatedBox(
           quarterTurns: 1,
           child: Obx(() => Icon(
@@ -992,8 +997,6 @@ class FavoriteButton extends StatelessWidget {
               color: Colors.white,
             ),
           ),
-        ),
-      ),
-    );
+        ));
   }
 }

@@ -117,7 +117,6 @@ class AppPages {
     GetPage(
       name: RoutePath.kLivePlay,
       page: () => LivePlayPage(),
-      preventDuplicates: false,
       bindings: [LivePlayBinding()],
     ),
     //账号设置
@@ -130,13 +129,17 @@ class AppPages {
     GetPage(
       name: RoutePath.kBiliBiliWebLogin,
       page: () => const BiliBiliWebLoginPage(),
-      bindings: [BilibiliWebLoginBinding()],
+      bindings: [
+        BilibiliWebLoginBinding(),
+      ],
     ),
     //哔哩哔哩二维码登录
     GetPage(
       name: RoutePath.kBiliBiliQRLogin,
       page: () => const BiliBiliQRLoginPage(),
-      bindings: [BilibiliQrLoginBinding()],
+      bindings: [
+        BilibiliQrLoginBinding(),
+      ],
     ),
     // 站点Web登录
     GetPage(
@@ -157,60 +160,35 @@ class AppPages {
     GetPage(
       name: RoutePath.kSettingsDanmuShield,
       page: () => const DanmuShieldPage(),
-      bindings: [DanmuShieldBinding()],
+      bindings: [
+        DanmuShieldBinding(),
+      ],
     ),
-    GetPage(name: RoutePath.kSettingsHotAreas, page: () => const HotAreasPage(), bindings: [HotAreasBinding()]),
+    GetPage(
+      name: RoutePath.kSettingsHotAreas,
+      page: () => const HotAreasPage(),
+      bindings: [
+        HotAreasBinding(),
+      ],
+    ),
     GetPage(name: RoutePath.kUserManage, page: () => const UserManager()),
 
     GetPage(name: RoutePath.kVersionHistory, page: () => const VersionHistoryPage()),
 
-    GetPage(name: RoutePath.kToolbox, page: () => const ToolBoxPage(), bindings: [ToolBoxBinding()]),
-
-    GetPage(name: RoutePath.kFavoriteAreas, page: () => const FavoriteAreasPage(), bindings: [FavoriteAreasBinding()]),
-
-    GetPage(name: RoutePath.kHuyaCookie, page: () => const HuyaCookiePage(), bindings: [HuyaCookieBinding()]),
-
-    GetPage(name: RoutePath.kWebDavPage, page: () => WebDavPage(), bindings: [WebDavBinding()]),
+    GetPage(
+      name: RoutePath.kToolbox,
+      page: () => const ToolBoxPage(),
+      bindings: [
+        ToolBoxBinding(),
+      ],
+    ),
 
     GetPage(
-      name: RoutePath.kSplash,
-      page: () {
-        // 判断是否为夜间模式
-        final bool isDarkMode = Get.isDarkMode;
-
-        // 根据模式选择渐变色
-        final LinearGradient bgGradient = isDarkMode
-            ? const LinearGradient(
-                colors: [Color(0xFF0D1B2A), Color(0xFF1B263B), Color(0xFF141E27)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              )
-            : const LinearGradient(
-                colors: [Color(0xFFE0F7FA), Color(0xFFB2EBF2), Color(0xFF80DEEA)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              );
-
-        // 夜间模式下的文字颜色
-        final Color textColor = isDarkMode ? Colors.white70 : Colors.black54;
-
-        return SplashScreen(
-          bgGradient: bgGradient,
-          logo: Image.asset('assets/icons/icon.png', width: 150),
-          showTextLogo: true,
-          logoText: "欢迎使用",
-          textStyle: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: textColor, // 动态颜色
-          ),
-          loaderType: LoaderType.progressBar,
-          onNextPressed: () {
-            Get.offAllNamed(RoutePath.kInitial);
-          },
-          duration: const Duration(seconds: 2),
-        );
-      },
+      name: RoutePath.kFavoriteAreas,
+      page: () => const FavoriteAreasPage(),
+      bindings: [
+        FavoriteAreasBinding(),
+      ],
     ),
     // 日志
     GetPage(name: RoutePath.kLog, page: () => const LogsPage()),

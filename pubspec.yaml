@@ -16,7 +16,7 @@ dependencies:
   # 优化
   # 分帧优化
   keframe: ^3.0.0
-
+  async: ^2.13.0
   #hashlib
   hashlib: ^1.21.1
   # network
@@ -25,7 +25,7 @@ dependencies:
   http: ^1.1.0
   url_launcher: ^6.3.1
   web_socket_channel: ^3.0.1
-# cached_network_image: ^3.3.0
+  cached_network_image: ^3.3.0
   
   # ui related
   dynamic_color: 1.7.0
@@ -43,6 +43,7 @@ dependencies:
   supabase_flutter: ^2.8.3
   email_validator: ^3.0.0
   font_awesome_flutter: ^10.8.0
+  awesome_video_player: ^1.0.5
   # video player mobile
 #  media_kit: ^1.1.11                          # Primary package.
 #  media_kit_video: ^1.2.5                        # For video rendering.
@@ -165,6 +166,7 @@ dependencies:
 
 #  fix build error
   sqflite_android: 2.4.1
+  auto_orientation_v2: ^2.3.6
 
 
 dependency_overrides:

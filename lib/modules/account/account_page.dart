@@ -1,9 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pure_live/common/l10n/generated/l10n.dart';
 import 'package:pure_live/common/services/bilibili_account_service.dart';
 import 'package:pure_live/core/sites.dart';
 import 'package:pure_live/modules/account/account_controller.dart';
-import 'package:pure_live/common/services/bilibili_account_service.dart';
 
 import '../util/site_logo_widget.dart';
 

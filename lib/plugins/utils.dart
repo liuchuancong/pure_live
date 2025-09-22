@@ -14,7 +14,9 @@ class Utils {
       AlertDialog(
         title: Text(title),
         content: Container(
-          constraints: const BoxConstraints(maxHeight: 400),
+          constraints: const BoxConstraints(
+            maxHeight: 400,
+          ),
           child: SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -42,12 +44,8 @@ class Utils {
   /// - `content` 内容
   /// - `title` 弹窗标题
   /// - `confirm` 确认按钮内容，留空为确定
-  static Future<bool> showMessageDialog(
-    String content, {
-    String title = '',
-    String confirm = '',
-    bool selectable = false,
-  }) async {
+  static Future<bool> showMessageDialog(String content,
+      {String title = '', String confirm = '', bool selectable = false}) async {
     var result = await Get.dialog(
       AlertDialog(
         title: Text(title),
@@ -80,7 +78,10 @@ class Utils {
       animationBuilder: (controller, child, animationParam) {
         //从右到左
         return SlideTransition(
-          position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero).animate(controller.view),
+          position: Tween<Offset>(
+            begin: const Offset(1, 0),
+            end: Offset.zero,
+          ).animate(controller.view),
           child: child,
         );
       },
@@ -92,7 +93,10 @@ class Utils {
         padding: EdgeInsets.only(right: MediaQuery.of(context).padding.right),
         decoration: BoxDecoration(
           color: Get.theme.cardColor,
-          borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), bottomLeft: Radius.circular(4)),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(4),
+            bottomLeft: Radius.circular(4),
+          ),
         ),
         child: SafeArea(
           left: false,
@@ -106,7 +110,9 @@ class Utils {
                   contentPadding: EdgeInsets.zero,
                   leading: IconButton(
                     onPressed: () {
-                      SmartDialog.dismiss(status: SmartStatus.allCustom).then((value) => onDismiss?.call());
+                      SmartDialog.dismiss(status: SmartStatus.allCustom).then(
+                        (value) => onDismiss?.call(),
+                      );
                     },
                     icon: const Icon(Icons.arrow_back),
                   ),
@@ -122,8 +128,6 @@ class Utils {
                 Expanded(
                   child: child,
                 ),
-                Divider(height: 1, color: Colors.grey.withValues(alpha: .1)),
-                Expanded(child: child),
               ],
             ),
           ),
@@ -141,13 +145,8 @@ class Utils {
   /// - `title` 弹窗标题
   /// - `confirm` 确认按钮内容
   /// - `cancel` 取消按钮内容
-  static Future<String?> showEditTextDialog(
-    String content, {
-    String title = '',
-    String? hintText,
-    String confirm = '',
-    String cancel = '',
-  }) async {
+  static Future<String?> showEditTextDialog(String content,
+      {String title = '', String? hintText, String confirm = '', String cancel = ''}) async {
     final TextEditingController textEditingController = TextEditingController(text: content);
     var result = await Get.dialog(
       AlertDialog(
@@ -189,41 +188,26 @@ class Utils {
     return result;
   }
 
-  static Future<T?> showOptionDialog<T>(List<T> contents, T value, {String title = ''}) async {
+  static Future<T?> showOptionDialog<T>(
+    List<T> contents,
+    T value, {
+    String title = '',
+  }) async {
     var result = await Get.dialog(
       SimpleDialog(
         title: Text(title),
-        children: [
-          RadioGroup<T>(
-            groupValue: value,
-            onChanged: (T? e) {
-              if (e != null) {
-                Navigator.of(Get.context!).pop(e);
-              }
-            },
-            child: Padding(
-              padding: const EdgeInsets.only(top: 0, bottom: 10, left: 16, right: 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: contents.map<Widget>((e) {
-                  return Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Radio<T>(value: e, activeColor: Theme.of(Get.context!).colorScheme.primary),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.of(Get.context!).pop(e);
-                        },
-                        child: Text(e.toString(), style: Theme.of(Get.context!).textTheme.bodyLarge),
-                      ),
-                    ],
-                  );
-                }).toList(),
+        children: contents
+            .map(
+              (e) => RadioListTile<T>(
+                title: Text(e.toString()),
+                value: e,
+                groupValue: value,
+                onChanged: (e) {
+                  Navigator.of(Get.context!).pop(e);
+                },
               ),
-            ),
-          ),
-        ],
+            )
+            .toList(),
       ),
     );
     return result;

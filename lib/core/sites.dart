@@ -58,7 +58,6 @@ class Sites {
       iconDataColor: Color(0xffF49F17),
       getSiteName: () => S.current.huya,
     ),
-    Site(id: "huya", name: "虎牙", logo: "assets/images/huya.png", liveSite: HuyaSite()),
     Site(
       id: douyinSite,
       name: "抖音",
@@ -125,9 +124,6 @@ class Sites {
       getSiteName: () => S.current.iptv,
       cacheCategory: false,
     ),
-    Site(id: "kuaishou", name: "快手", logo: "assets/images/kuaishou.png", liveSite: KuaishowSite()),
-    Site(id: "cc", name: "网易CC", logo: "assets/images/cc.png", liveSite: CCSite()),
-    Site(id: "iptv", name: "网络", logo: "assets/images/logo.png", liveSite: IptvSite()),
   ];
 
   static Site of(String id) {

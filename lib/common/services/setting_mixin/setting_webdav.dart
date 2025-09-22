@@ -1,18 +1,18 @@
-import 'dart:convert';
 import 'dart:math';
+import 'dart:convert';
 import 'dart:typed_data';
-
-import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:pure_live/common/services/setting_mixin/setting_part.dart';
-import 'package:pure_live/common/utils/pref_util.dart';
-import 'package:pure_live/core/common/core_log.dart';
-import 'package:pure_live/core/iptv/src/general_utils_object_extension.dart';
-import 'package:pure_live/modules/util/rx_util.dart';
-import 'package:webdav_client/webdav_client.dart';
-
-import '../../utils/snackbar_util.dart';
 import '../settings_service.dart';
+import '../../utils/snackbar_util.dart';
+import 'package:webdav_client/webdav_client.dart';
+import 'package:pure_live/core/common/core_log.dart';
+import 'package:pure_live/modules/util/rx_util.dart';
+import 'package:pure_live/common/utils/pref_util.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:pure_live/common/services/setting_mixin/setting_part.dart';
+import 'package:pure_live/core/iptv/src/general_utils_object_extension.dart';
+
+
 
 /// 码率
 mixin SettingWebdavMixin {
@@ -208,7 +208,6 @@ mixin SettingWebdavMixin {
 
   Future<bool> downloadData() async {
     _isOperating = true;
-    bool force = true;
     try {
       var curWebdavUrl = webdavUrl.value;
       var curWebdavUser = webdavUser.value;

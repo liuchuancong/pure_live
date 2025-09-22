@@ -3,7 +3,11 @@ import 'dart:async';
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:web_socket_channel/io.dart';
 
-enum SocketStatus { connected, failed, closed }
+enum SocketStatus {
+  connected,
+  failed,
+  closed,
+}
 
 class WebScoketUtils {
   SocketStatus status = SocketStatus.closed;
@@ -102,9 +106,12 @@ class WebScoketUtils {
   }
 
   void initHeartBeat() {
-    heartBeatTimer = Timer.periodic(Duration(milliseconds: heartBeatTime), (timer) {
-      onHeartBeat?.call();
-    });
+    heartBeatTimer = Timer.periodic(
+      Duration(milliseconds: heartBeatTime),
+      (timer) {
+        onHeartBeat?.call();
+      },
+    );
   }
 
   void receiveMessage(dynamic data) {

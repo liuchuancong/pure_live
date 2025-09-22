@@ -38,7 +38,11 @@ class JsEngine {
     return jsRuntime.onMessage(channelName, (args) => null);
   }
 
-  static dynamic sendMessage({required String channelName, required List<String> args, String? uuid}) {
+  static dynamic sendMessage({
+    required String channelName,
+    required List<String> args,
+    String? uuid,
+  }) {
     return jsRuntime.sendMessage(channelName: channelName, args: args);
   }
 

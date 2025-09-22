@@ -68,7 +68,6 @@ class DouyinSite extends LiveSite with DouyinSiteMixin {
       queryParameters: {},
       header: await getRequestHeaders(),
     );
-
     var renderData = RegExp(r'\{\\"pathname\\":\\"\/\\",\\"categoryData.*?\]\\n').firstMatch(result)?.group(0) ?? "";
     var renderDataJson = json.decode(renderData.trim().replaceAll('\\"', '"').replaceAll(r"\\", r"\").replaceAll(']\\n', ""));
     for (var item in renderDataJson["categoryData"]) {
@@ -86,18 +85,21 @@ class DouyinSite extends LiveSite with DouyinSiteMixin {
         subs.add(subCategory);
       }
 
-      var category = LiveCategory(children: subs, id: id, name: asT<String?>(item["partition"]["title"]) ?? "");
-      subs.insert(
-        0,
-        LiveArea(
-          areaId: category.id,
-          typeName: category.name,
-          areaType: category.id,
-          areaPic: "",
-          areaName: category.name,
-          platform: Sites.douyinSite,
-        ),
+      var category = LiveCategory(
+        children: subs,
+        id: id,
+        name: asT<String?>(item["partition"]["title"]) ?? "",
       );
+      subs.insert(
+          0,
+          LiveArea(
+            areaId: category.id,
+            typeName: category.name,
+            areaType: category.id,
+            areaPic: "",
+            areaName: category.name,
+            platform: Sites.douyinSite,
+          ));
       categories.add(category);
     }
     return categories;
@@ -124,10 +126,6 @@ class DouyinSite extends LiveSite with DouyinSiteMixin {
       queryParameters: requestparam['params'],
       header: requestparam['headers'],
     );
-    var requestUrl = await getAbogusUrl(uri.toString(), kDefaultUserAgent);
-
-    var result = await HttpClient.instance.getJson(requestUrl, header: await getRequestHeaders());
-
     var hasMore = (result["data"]["data"] as List).length >= 15;
     var items = <LiveRoom>[];
     for (var item in result["data"]["data"]) {
@@ -166,12 +164,10 @@ class DouyinSite extends LiveSite with DouyinSiteMixin {
       queryParameters: requestparam['params'],
       header: requestparam['headers'],
     );
-    var requestUrl = await getAbogusUrl(uri.toString(), kDefaultUserAgent);
-
-    var result = await HttpClient.instance.getJson(requestUrl, header: await getRequestHeaders());
 
     var hasMore = (result["data"]["data"] as List).length >= 15;
     var items = <LiveRoom>[];
+
     for (var item in result["data"]["data"]) {
       var roomItem = LiveRoom(
         roomId: item["web_rid"],
@@ -280,9 +276,7 @@ class DouyinSite extends LiveSite with DouyinSiteMixin {
     }
   }
 
-  /// 进入直播间前需要先获取cookie
-  /// - [webRid] 直播间RID
-  Future<String> _getWebCookie(String webRid) async {
+  Future<Map> getRoomWebDetail(String webRid) async {
     var headResp = await HttpClient.instance.head("https://live.douyin.com/$webRid", header: headers);
     var dyCookie = "";
     headResp.headers["set-cookie"]?.forEach((element) {
@@ -293,17 +287,7 @@ class DouyinSite extends LiveSite with DouyinSiteMixin {
       if (cookie.contains("__ac_nonce")) {
         dyCookie += "$cookie;";
       }
-      if (cookie.contains("msToken")) {
-        dyCookie += "$cookie;";
-      }
     });
-    return dyCookie;
-  }
-
-  /// 通过webRid获取直播间Web信息
-  /// - [webRid] 直播间RID
-  Future<Map> _getRoomDataByHtml(String webRid) async {
-    var dyCookie = await _getWebCookie(webRid);
     var result = await HttpClient.instance.getText(
       "https://live.douyin.com/$webRid",
       queryParameters: {},
@@ -448,7 +432,6 @@ class DouyinSite extends LiveSite with DouyinSiteMixin {
         dyCookie += "$cookie;";
       }
     });
-
     var result = await HttpClient.instance.getJson(
       requlestUrl,
       queryParameters: {},
@@ -472,7 +455,8 @@ class DouyinSite extends LiveSite with DouyinSiteMixin {
       throw Exception("抖音直播搜索被限制，请稍后再试");
     }
     var items = <LiveRoom>[];
-    for (var item in result["data"] ?? []) {
+    var queryList = result["data"] ?? [];
+    for (var item in queryList) {
       var itemData = json.decode(item["lives"]["rawdata"].toString());
       var roomStatus = (asT<int?>(itemData["status"]) ?? 0) == 2;
       var roomItem = LiveRoom(
@@ -489,7 +473,7 @@ class DouyinSite extends LiveSite with DouyinSiteMixin {
       );
       items.add(roomItem);
     }
-    return LiveSearchRoomResult(hasMore: items.length >= 10, items: items);
+    return LiveSearchRoomResult(hasMore: queryList.length > 0, items: items);
   }
 
   @override
@@ -508,14 +492,21 @@ class DouyinSite extends LiveSite with DouyinSiteMixin {
     return stringBuffer.toString();
   }
 
-  // 生成随机的数字
-  int generateRandomNumber(int length) {
-    var random = math.Random.secure();
-    var values = List<int>.generate(length, (i) => random.nextInt(10));
-    StringBuffer stringBuffer = StringBuffer();
-    for (var item in values) {
-      stringBuffer.write(item);
+  Future<String> getAbogusUrl(String url) async {
+    try {
+      // 发起一个签名请求
+      // 服务端代码：https://github.com/5ime/Tiktok_Signature
+      var signResult = await HttpClient.instance.postJson(
+        "https://dy.nsapps.cn/abogus",
+        queryParameters: {},
+        header: {"Content-Type": "application/json"},
+        data: {"url": url, "userAgent": kDefaultUserAgent},
+      );
+
+      return signResult["data"]["url"];
+    } catch (e) {
+      CoreLog.error(e);
+      return url;
     }
-    return int.tryParse(stringBuffer.toString()) ?? math.Random().nextInt(1000000000);
   }
 }

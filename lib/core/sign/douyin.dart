@@ -2,7 +2,7 @@ import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_js/flutter_js.dart';
-import 'package:pure_live/core/site/douyin_site.dart';
+import 'package:pure_live/core/site/douyin/douyin_site.dart';
 
 class DouyinSign {
   static const String defaultUserAgent = DouyinSite.kDefaultUserAgent;

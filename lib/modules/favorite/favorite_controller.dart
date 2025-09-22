@@ -65,7 +65,10 @@ class FavoriteController extends GetxController
 
     // 定时自动刷新
     if (settings.autoRefreshTime.value != 0) {
-      Timer.periodic(Duration(minutes: settings.autoRefreshTime.value), (timer) => onRefresh());
+      Timer.periodic(
+        Duration(minutes: settings.autoRefreshTime.value),
+        (timer) => onRefresh(),
+      );
     }
 
     CoreLog.d("onInit");
