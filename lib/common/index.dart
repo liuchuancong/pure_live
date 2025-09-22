@@ -1,4 +1,3 @@
-library;
 
 export '../core/index.dart';
 export 'l10n/generated/l10n.dart';

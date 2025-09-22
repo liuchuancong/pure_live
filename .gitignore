@@ -50,5 +50,9 @@ key.properties
 **/*.jks
 
 # /assets/keystore/
-/assets/pure_live_web/
-pubspec.lock
+# /assets/pure_live_web/
+# pubspec.lock
+/devtools_options.yaml
+
+# git
+.git

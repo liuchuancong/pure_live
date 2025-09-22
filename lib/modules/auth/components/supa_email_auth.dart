@@ -138,13 +138,13 @@ class _SupaEmailAuthState extends State<SupaEmailAuth> {
             autofillHints: const [AutofillHints.email],
             validator: (value) {
               if (value == null || value.isEmpty || !EmailValidator.validate(_emailController.text)) {
-                return S.of(context).supabase_enter_valid_email;
+                return S.current.supabase_enter_valid_email;
               }
               return null;
             },
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.email),
-              label: Text(S.of(context).supabase_enter_email),
+              label: Text(S.current.supabase_enter_email),
             ),
             controller: _emailController,
           ),
@@ -153,13 +153,13 @@ class _SupaEmailAuthState extends State<SupaEmailAuth> {
             TextFormField(
               validator: (value) {
                 if (value == null || value.isEmpty || value.length < 6) {
-                  return S.of(context).supabase_enter_valid_password;
+                  return S.current.supabase_enter_valid_password;
                 }
                 return null;
               },
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.lock),
-                label: Text(S.of(context).supabase_enter_password),
+                label: Text(S.current.supabase_enter_password),
               ),
               obscureText: true,
               controller: _passwordController,
@@ -189,7 +189,7 @@ class _SupaEmailAuthState extends State<SupaEmailAuth> {
                         strokeWidth: 1.5,
                       ),
                     )
-                  : Text(_isSigningIn ? S.of(context).supabase_sign_in : S.of(context).supabase_sign_up),
+                  : Text(_isSigningIn ? S.current.supabase_sign_in : S.current.supabase_sign_up),
               onPressed: () async {
                 if (!_formKey.currentState!.validate()) {
                   return;
@@ -224,7 +224,7 @@ class _SupaEmailAuthState extends State<SupaEmailAuth> {
                   }
                 } catch (error) {
                   if (widget.onError == null) {
-                    context.showErrorSnackBar(S.of(context).supabase_unexpected_err(error));
+                    context.showErrorSnackBar(S.current.supabase_unexpected_err(error));
                   } else {
                     widget.onError?.call(error);
                   }
@@ -244,7 +244,7 @@ class _SupaEmailAuthState extends State<SupaEmailAuth> {
                     _forgotPassword = true;
                   });
                 },
-                child: Text(S.of(context).supabase_forgot_password),
+                child: Text(S.current.supabase_forgot_password),
               ),
             ],
             TextButton(
@@ -255,7 +255,7 @@ class _SupaEmailAuthState extends State<SupaEmailAuth> {
                   _isSigningIn = !_isSigningIn;
                 });
               },
-              child: Text(_isSigningIn ? S.of(context).supabase_no_account : S.of(context).supabase_has_account),
+              child: Text(_isSigningIn ? S.current.supabase_no_account : S.current.supabase_has_account),
             ),
           ],
           if (_isSigningIn && _forgotPassword && Platform.isAndroid) ...[
@@ -279,7 +279,7 @@ class _SupaEmailAuthState extends State<SupaEmailAuth> {
                   widget.onError?.call(error);
                 }
               },
-              child: Text(S.of(context).supabase_reset_password),
+              child: Text(S.current.supabase_reset_password),
             ),
             spacer(16),
             TextButton(
@@ -289,7 +289,7 @@ class _SupaEmailAuthState extends State<SupaEmailAuth> {
                 });
               },
               child: Text(
-                S.of(context).supabase_back_sign_in,
+                S.current.supabase_back_sign_in,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ),

@@ -1,1 +1,2 @@
-output: build/dist/
+app_name: 'PureLive'
+output: 'dist/'

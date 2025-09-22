@@ -21,10 +21,10 @@ class _ContactPageState extends State<ContactPage> {
       body: ListView(
         physics: const BouncingScrollPhysics(),
         children: [
-          SectionTitle(title: S.of(context).contact),
+          SectionTitle(title: S.current.contact),
           ListTile(
             leading: const Icon(CustomIcons.mail_squared, size: 34),
-            title: Text(S.of(context).email),
+            title: Text(S.current.email),
             subtitle: const Text(VersionUtil.email),
             onLongPress: () => clipboard(VersionUtil.email),
             onTap: () {
@@ -36,7 +36,7 @@ class _ContactPageState extends State<ContactPage> {
           ),
           ListTile(
             leading: const Icon(CustomIcons.github_circled, size: 32),
-            title: Text(S.of(context).github),
+            title: Text(S.current.github),
             subtitle: const Text(VersionUtil.githubUrl),
             onTap: () {
               launchUrl(

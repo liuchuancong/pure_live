@@ -25,7 +25,7 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
 
   @override
   void onInit() {
-    for (var site in Sites().availableSites()) {
+    for (var site in Sites().availableSites(containsAll: true)) {
       Get.put(SearchListController(site), tag: site.id);
     }
 

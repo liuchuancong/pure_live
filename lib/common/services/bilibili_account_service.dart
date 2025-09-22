@@ -1,13 +1,15 @@
 import 'dart:async';
-import 'package:get/get.dart';
-import 'package:pure_live/core/sites.dart';
-import 'package:pure_live/common/utils/pref_util.dart';
-import 'package:pure_live/core/common/http_client.dart';
-import 'package:pure_live/core/site/bilibili_site.dart';
-import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:pure_live/common/services/settings_service.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:get/get.dart';
 import 'package:pure_live/common/models/bilibili_user_info_page.dart';
+import 'package:pure_live/common/services/settings_service.dart';
+import 'package:pure_live/common/utils/pref_util.dart';
+import 'package:pure_live/core/common/core_log.dart';
+import 'package:pure_live/core/common/http_client.dart';
+import 'package:pure_live/core/site/bilibili/bilibili_site.dart';
+import 'package:pure_live/core/sites.dart';
 
 class BiliBiliAccountService extends GetxController {
   static BiliBiliAccountService get instance => Get.find<BiliBiliAccountService>();
@@ -17,7 +19,7 @@ class BiliBiliAccountService extends GetxController {
 
   var cookie = "".obs;
   var uid = 0;
-  var name = "未登录".obs;
+  var name = "".obs;
   static const String kBilibiliCookie = "bilibiliCookie";
   @override
   void onInit() {
@@ -41,7 +43,7 @@ class BiliBiliAccountService extends GetxController {
         );
         if (result["code"] == 0) {
           var info = BiliBiliUserInfoModel.fromJson(result["data"]);
-          name.value = info.uname ?? "未登录";
+          name.value = info.uname ?? "";
           uid = info.mid ?? 0;
           setSite();
         } else {
@@ -49,6 +51,7 @@ class BiliBiliAccountService extends GetxController {
           logout();
         }
       } catch (e) {
+        CoreLog.error(e);
         SmartDialog.showToast("获取哔哩哔哩用户信息失败，可前往账号管理重试");
       }
     });

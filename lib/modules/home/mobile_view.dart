@@ -23,15 +23,15 @@ class HomeMobileView extends StatelessWidget {
               onDoubleTap: onFavoriteDoubleTap,
               child: const Icon(Icons.favorite_rounded),
             ),
-            label: S.of(context).favorites_title,
+            label: S.current.favorites_title,
           ),
           NavigationDestination(
             icon: const Icon(CustomIcons.popular),
-            label: S.of(context).popular_title,
+            label: S.current.popular_title,
           ),
           NavigationDestination(
             icon: const Icon(Icons.area_chart_rounded),
-            label: S.of(context).areas_title,
+            label: S.current.areas_title,
           ),
         ],
         selectedIndex: index,

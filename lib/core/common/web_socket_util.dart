@@ -1,4 +1,6 @@
 import 'dart:async';
+
+import 'package:pure_live/core/common/core_log.dart';
 import 'package:web_socket_channel/io.dart';
 
 enum SocketStatus { connected, failed, closed }
@@ -42,6 +44,7 @@ class WebScoketUtils {
     this.onHeartBeat,
     this.headers,
     this.backupUrl,
+    this.protocols,
   });
   IOWebSocketChannel? webSocket;
   Timer? heartBeatTimer;
@@ -55,23 +58,32 @@ class WebScoketUtils {
 
   StreamSubscription<dynamic>? streamSubscription;
 
-  void connect({bool retry = false}) async {
+  // 协议
+  Iterable<String>? protocols;
+
+  void connect({bool retry = false,}) async {
     close();
     try {
       var wsurl = url;
       if (backupUrl != null && backupUrl!.isNotEmpty && retry) {
         wsurl = backupUrl!;
       }
-      webSocket = IOWebSocketChannel.connect(wsurl, connectTimeout: const Duration(seconds: 10), headers: headers);
+      webSocket = IOWebSocketChannel.connect(
+        wsurl,
+        connectTimeout: const Duration(seconds: 10),
+        protocols: protocols,
+        headers: headers,
+      );
 
       await webSocket?.ready;
       ready();
     } catch (e) {
+      CoreLog.error(e);
       if (!retry) {
         connect(retry: true);
         return;
       }
-      onError(e, e);
+      onError(e, e.toString());
     }
   }
 
@@ -101,7 +113,7 @@ class WebScoketUtils {
     onMessage?.call(data);
   }
 
-  void onError(dynamic e, dynamic s) {
+  void onError(dynamic e, String s) {
     status = SocketStatus.failed;
     onClose?.call(e.toString());
   }
@@ -116,7 +128,11 @@ class WebScoketUtils {
 
   void sendMessage(dynamic message) {
     if (status == SocketStatus.connected) {
-      webSocket?.sink.add(message);
+      try{
+        webSocket?.sink.add(message);
+      }catch(e) {
+        CoreLog.error(e);
+      }
     }
   }
 

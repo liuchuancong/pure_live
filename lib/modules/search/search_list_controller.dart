@@ -1,11 +1,12 @@
 import 'package:get/get.dart';
-import 'package:pure_live/core/sites.dart';
 import 'package:pure_live/common/base/base_controller.dart';
+import 'package:pure_live/common/index.dart';
 
-class SearchListController extends BasePageController {
+class SearchListController extends BasePageController<LiveRoom> {
   final keyword = "".obs;
 
   final Site site;
+
   SearchListController(this.site);
 
   @override
@@ -17,7 +18,7 @@ class SearchListController extends BasePageController {
   }
 
   @override
-  Future<List> getData(int page, int pageSize) async {
+  Future<List<LiveRoom>> getData(int page, int pageSize) async {
     if (keyword.value.isEmpty) {
       return [];
     }

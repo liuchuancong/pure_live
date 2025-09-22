@@ -1,0 +1,391 @@
+name: my-test-build
+
+on:
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      ssh:
+        description: 'SSH connection to Actions'
+        required: false
+        default: 'false'
+  watch:
+    types: [ started ]
+  push:
+    branches:
+      - master
+      - main
+    paths-ignore:
+      - '**.md'
+      - '.github/**'
+      - '!.github/workflows/my-test-build.yml'
+
+      # only one run
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true  # true false
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - platform: android
+            os: ubuntu-latest
+
+        #   - platform: android-tv
+        #     os: ubuntu-latest
+
+        #   - platform: ios
+            # os: macos-latest
+
+          - platform: windows
+            os: windows-latest
+            arch: amd64
+
+          - platform: linux
+            os: ubuntu-latest
+            arch: amd64
+
+        #   - platform: macos
+        #     os: macos-13
+        #     arch: amd64
+
+          # - platform: macos
+            # os: macos-latest
+            # arch: arm64
+
+    steps:
+      - name: Set Projcect Path Base
+        run: |
+          echo "projcect_path=${{ github.workspace }}" >> $GITHUB_ENV
+      - name: Set Projcect Path android-tv
+        if: startsWith(matrix.platform,'android-tv')
+        run: |
+           echo "projcect_path=simple_live_tv_app" >> $GITHUB_ENV
+      - name: Set Projcect Path windows
+        if: startsWith(matrix.platform,'windows')
+        run: |
+           echo "projcect_path=${{ github.workspace }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Show Projcect Path
+        run: |
+           echo "projcect_path:  ${{ env.projcect_path }}"
+
+      - name: Set android env var
+        if: startsWith(matrix.platform,'android')
+        run: |
+          echo "KEYSTORE_BASE64=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" >> $GITHUB_ENV
+          echo "KEY_ALIAS=12345678" >> $GITHUB_ENV
+          echo "STORE_PASSWORD=12345678" >> $GITHUB_ENV
+          echo "KEY_PASSWORD=12345678" >> $GITHUB_ENV
+
+
+      - name: Setup Android SDK
+        if: startsWith(matrix.platform,'android')
+        run: |
+          # 后台运行
+          # nohup ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "build-tools;29.0.3" > ~/out.txt 2>&1 &
+          #  nohup ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "build-tools;35.0.2" > ~/out.txt 2>&1 &
+          #  nohup ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "build-tools;35.1.20" > ~/out.txt 2>&1 &
+          #  nohup ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "build-tools;26.1.1" > ~/out.txt 2>&1 &
+           nohup ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "build-tools;30.0.3" > ~/out.txt 2>&1 &
+
+      - name: Update Linux 
+        if: startsWith(matrix.platform,'linux')
+        run: |
+          # 后台运行
+          nohup sudo apt-get update > ~/out.txt 2>&1 &
+  
+          
+      - name: Setup Mingw64
+        if: startsWith(matrix.platform,'windows')
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: mingw64
+          install: mingw-w64-x86_64-gcc
+          update: true
+
+
+      - name: Set Mingw64 Env
+        if: startsWith(matrix.platform,'windows')
+        run: |
+          echo "${{ runner.temp }}\msys64\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Check Matrix
+        run: |
+          echo "Running on ${{ matrix.os }}"
+          echo "Arch: ${{ runner.arch }}"
+          gcc --version
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+    #   - name: replace
+    #     run: |
+    #         cd ${{ env.projcect_path }}
+    #         sed -i '/path: E:/d' pubspec.yaml
+    #         sed -i 's/gsy_video_player:/gsy_video_player: ^0.0.5/g' pubspec.yaml
+
+    #         cat -n pubspec.yaml
+
+      - name: Setup JAVA
+        if: startsWith(matrix.platform,'android')
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: 17
+          cache: "gradle"
+
+#      - name: Setup NDK
+#        if: startsWith(matrix.platform,'android')
+#        uses: nttld/setup-ndk@v1
+#        id: setup-ndk
+#        with:
+#          ndk-version: r26b
+#          add-to-path: true
+#          link-to-sdk: true
+
+      - name: Download Android keystore
+        id: android_keystore
+        if: startsWith(matrix.platform,'android')
+        uses: timheuer/base64-to-file@v1.2
+        with:
+          fileName: keystore.jks
+          encodedString: ${{ env.KEYSTORE_BASE64 }}
+      - name: Setup Android Signing
+        if: startsWith(matrix.platform,'android')
+        run: |
+          # key
+          echo "${{ env.KEYSTORE_BASE64 }}" | base64 --decode > ${{ env.projcect_path }}/android/app/keystore.jks
+          echo "keyAlias=${{ env.KEY_ALIAS }}" >> ${{ env.projcect_path }}/android/local.properties
+          echo "storePassword=${{ env.STORE_PASSWORD }}" >> ${{ env.projcect_path }}/android/local.properties
+          echo "keyPassword=${{ env.KEY_PASSWORD }}" >> ${{ env.projcect_path }}/android/local.properties
+          
+          echo "storeFile=${{ steps.android_keystore.outputs.filePath }}" > ${{ env.projcect_path }}/android/key.properties
+          echo "storePassword=${{ env.KEY_ALIAS }}" >> ${{ env.projcect_path }}/android/key.properties
+          echo "keyPassword=${{ env.STORE_PASSWORD }}" >> ${{ env.projcect_path }}/android/key.properties
+          echo "keyAlias=${{ env.KEY_PASSWORD }}" >> ${{ env.projcect_path }}/android/key.properties
+
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.35.x
+          channel: 'stable'
+          cache: "true"
+
+      - name: Setup Rust
+        uses: Swatinem/rust-cache@v2
+
+      # 打开MAC Desktop支持
+      - name: Enable Flutter MAC Desktop
+        if: startsWith(matrix.platform,'macos')
+        run: flutter config --enable-macos-desktop
+
+      # 打开Linux Desktop支持
+      - name: Enable Flutter Linux Desktop
+        if: startsWith(matrix.platform,'linux')
+        run: flutter config --enable-linux-desktop
+      
+      # 打开Windows Desktop支持
+      - name: Enable Flutter Windows Desktop
+        if: startsWith(matrix.platform,'windows')
+        run: flutter config --enable-windows-desktop
+
+      - name: Get Flutter Dependency
+        run: |
+          cd ${{ env.projcect_path }}
+          flutter pub get
+
+
+      # 安装appdmg npm install -g appdmg
+      - name: Install appdmg
+        if: startsWith(matrix.platform,'macos')
+        run: npm install -g appdmg
+
+      # 设置flutter_distributor环境
+      - name: Install flutter_distributor
+        run: dart pub global activate flutter_distributor
+
+      # 打包APK
+      - name: Build APK
+        if: startsWith(matrix.platform,'android')
+        run: |
+          cd ${{ env.projcect_path }}
+          # flutter build apk --release --split-per-abi
+          # flutter_distributor package --platform android --target apk --flutter-build-args split-per-abi --build-target-platform arm,arm64,x64  --skip-clean
+          flutter_distributor package --platform android --target apk --flutter-build-args split-per-abi --build-target-platform android-arm,android-arm64,android-x64  --skip-clean
+
+      - name: Rename Android TV APK Name
+        if: startsWith(matrix.platform,'android-tv')
+        run: |
+          sudo apt-get install rename
+          cd ${{ env.projcect_path }}/build/app/outputs/flutter-apk/
+          rename 's/app/android-tv/' *.apk
+
+      #打包iOS
+      - name: Build IPA
+        if: startsWith(matrix.platform,'ios')
+        run: |
+          cd ${{ env.projcect_path }}
+          # flutter build ios --release --no-codesign
+          flutter_distributor package --platform ios --skip-clean  --no-codesign
+
+      #创建未签名ipa
+      - name: Create IPA
+        if: startsWith(matrix.platform,'ios')
+        run: |
+          cd ${{ env.projcect_path }}
+          mkdir build/ios/iphoneos/Payload
+          cp -R build/ios/iphoneos/Runner.app build/ios/iphoneos/Payload/Runner.app
+          cd build/ios/iphoneos/
+          zip -q -r ios_no_sign.ipa Payload
+          cd ../../..
+
+       # 打包MAC
+      - name: Build MacOS
+        if: startsWith(matrix.platform,'macos')
+        run: |
+          cd ${{ env.projcect_path }}
+          flutter_distributor package --platform macos --targets dmg,zip --skip-clean
+
+       # 安装 Linux 依赖
+      - name: Install Linux Dependencies
+        if: startsWith(matrix.platform,'linux')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libmpv-dev mpv libasound2-dev
+#          sudo apt-get install -y --only-upgrade libasound2-dev
+      # 打包 Linux ZIP\DMG
+      - name: Build Linux
+        if: startsWith(matrix.platform,'linux')
+        run: |
+          cd ${{ env.projcect_path }}
+          flutter_distributor package --platform linux --targets deb,zip --skip-clean
+
+      # build Windows inno_setup
+      # 安装特定版本的 Inno Setup 并添加到环境变量
+      - name: Install Inno Setup
+        if: startsWith(matrix.platform,'windows')
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          # 发现异常时报错
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+
+          curl.exe -OL https://files.jrsoftware.org/is/6/innosetup-6.5.0.exe
+          .\innosetup-6.5.0.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
+          "C:\Program Files (x86)\Inno Setup 6" >> $env:GITHUB_PATH
+
+      - name: Setup Windows inno-setup Languages
+        if: startsWith(matrix.platform,'windows')
+        continue-on-error: true
+        run: |
+          git clone https://github.com/maotoumao/inno-setup-action-cli.git inno-setup-action-cli --depth 1
+          xcopy /y /e /s inno-setup-action-cli\src\Languages "C:\Program Files (x86)\Inno Setup 6\Languages"
+
+      # build Windows ZIP\MSIX
+      - name: Build Windows
+        if: startsWith(matrix.platform,'windows')
+        run: |
+          cd ${{ env.projcect_path }}
+          flutter_distributor package --platform windows --targets exe,msix,zip --skip-clean
+
+
+      # 打包文件 至 Artifacts
+      - name: Upload Package to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-${{ matrix.platform }}${{ matrix.arch && format('-{0}', matrix.arch) }}
+          retention-days: 90
+          overwrite: true
+          path: |
+            ${{ env.projcect_path }}/build/*/*/*/*.apk
+            ${{ env.projcect_path }}/build/*/*/*.ipa
+            ${{ env.projcect_path }}/build/*/*/*.dmg
+            ${{ env.projcect_path }}/build/*/*/*.zip
+            ${{ env.projcect_path }}/build/*/*/*.deb
+            ${{ env.projcect_path }}/build/*/*/*.msix
+            ${{ env.projcect_path }}/build/*/*/*.exe
+
+            ${{ env.projcect_path }}/dist/*/*.apk
+            ${{ env.projcect_path }}/dist/*/*.ipa
+            ${{ env.projcect_path }}/dist/*/*.dmg
+            ${{ env.projcect_path }}/dist/*/*.zip
+            ${{ env.projcect_path }}/dist/*/*.deb
+            ${{ env.projcect_path }}/dist/*/*.msix
+            ${{ env.projcect_path }}/dist/*/*.exe
+            ${{ env.projcect_path }}/dist/*/*.zip
+
+
+  upload-release:
+    # if: ${{ !contains(github.ref, '+') }}
+    permissions: write-all
+    needs: [ build ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download
+        uses: actions/download-artifact@v4
+        with:
+          path: ./dist/
+          pattern: artifact-*
+          merge-multiple: true
+
+      - name: Move File
+        run: |
+          mkdir -p dist_2
+          find dist -type f | xargs -i mv {} dist_2
+          ls dist_2
+
+      #读取版本信息
+      - name: Read version
+        id: version
+        uses: juliangruber/read-file-action@v1
+        with:
+          path: assets/version.json
+      - name: Echo version
+        run: echo "${{ fromJson(steps.version.outputs.content).version }}"
+      - name: Echo version content
+        run: echo "${{ fromJson(steps.version.outputs.content).version_desc }}"
+
+
+      #上传至Release
+      - name: Upload Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "${{ fromJson(steps.version.outputs.content).version }}"
+          name: "${{ fromJson(steps.version.outputs.content).version }}"
+          body: "${{ fromJson(steps.version.outputs.content).version_desc }}"
+          prerelease: ${{ fromJson(steps.version.outputs.content).prerelease }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: ./dist_2/*
+          draft: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Publish Release
+      #   uses: ncipollo/release-action@v1
+      #   with:
+      #     name: "${{ fromJson(steps.version.outputs.content).version }}"
+      #     tag: "${{ fromJson(steps.version.outputs.content).version }}"
+      #     body: "${{ fromJson(steps.version.outputs.content).version_desc }}"
+      #     prerelease: ${{ fromJson(steps.version.outputs.content).prerelease }}
+      #     artifacts: ./dist_2/*
+      #完成
+      - run: echo "🍏 This job's status is ${{ job.status }}."
+
+      - name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          retain_days: 0
+          keep_minimum_runs: 3

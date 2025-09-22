@@ -1,9 +1,10 @@
-import 'dart:io';
 import 'dart:convert';
-import 'dart:developer';
+import 'dart:io';
+
 import 'package:dio/dio.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:path_provider/path_provider.dart';
+import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/core/iptv/src/m3u_item.dart';
 import 'package:pure_live/core/iptv/src/m3u_list.dart';
 
@@ -16,11 +17,13 @@ class IptvUtils {
     try {
       var dir = await getApplicationCacheDirectory();
       final categories = File('${dir.path}${Platform.pathSeparator}categories.json');
+      if(!await categories.exists()) return [];
       String jsonData = await categories.readAsString();
       List jsonArr = jsonData.isNotEmpty ? jsonDecode(jsonData) : [];
       List<IptvCategory> categoriesArr = jsonArr.map((e) => IptvCategory.fromJson(e)).toList();
       return categoriesArr;
     } catch (e) {
+      CoreLog.error(e);
       return [];
     }
   }
@@ -38,7 +41,7 @@ class IptvUtils {
       final m3ufile = File("${dir.path}${Platform.pathSeparator}hot.m3u");
       await dio.download('https://raw.githubusercontent.com/YanG-1989/m3u/master/Gather.m3u', m3ufile.path);
     } catch (e) {
-      log(e.toString());
+      CoreLog.error(e);
     }
   }
 
@@ -54,7 +57,8 @@ class IptvUtils {
         list.add(item);
       }
     } catch (e) {
-      log(e.toString());
+      // log(e.toString());
+      CoreLog.error(e);
     }
     return list;
   }
@@ -85,6 +89,9 @@ class IptvUtils {
           list.add(item);
         }
       }
+    } catch (e) {
+      // log(e.toString());
+      CoreLog.error(e);
     }
     return list;
   }

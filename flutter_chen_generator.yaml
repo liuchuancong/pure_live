@@ -1,0 +1,52 @@
+# Flutter Chen Generator 配置文件
+# 配置优先级：命令行参数 > YAML配置 > 默认配置
+# 自定义下面的参数，然后在项目的根目录命令行终端运行下面的命令：
+# dart run flutter_chen_generator assets/iconfont/screenutil
+
+# 资源生成器配置
+assets:
+  # 资源目录
+  assets-dir: assets
+  # 输出文件路径
+  output: lib/generated/assets.dart
+  # 生成的类名
+  class-name: Assets
+  # 使用短命名模式
+  short-naming: true
+  # 忽略的文件夹
+  ignore:
+    - pure_live_web
+    - keystore
+    - index.html
+    - PingFangSC.ttf
+  # 是否更新pubspec.yaml
+  update-pubspec: true
+
+# 图标字体生成器配置  
+iconfont:
+  # JSON输入文件
+  input: assets/fonts/iconfont.json
+  # Dart输出文件
+  output: lib/generated/iconfont.dart
+  # 生成的类名
+  class-name: IconFont
+  # 字体家族名称
+  font-family: ComIcon
+  # 是否生成扩展方法
+  extensions: false
+
+# ScreenUtil适配生成器配置
+screenutil:
+  # 输入目录
+  input: .
+  # 忽略的文件模式
+  ignore:
+    - build/
+    - .dart_tool/
+    - generated/
+    - test/
+    - .git/
+  # 预览模式
+  dry-run: false
+  # 详细输出
+  verbose: false

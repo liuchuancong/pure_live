@@ -3,13 +3,14 @@ import 'package:get/get.dart';
 import 'package:flutter/widgets.dart';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:pure_live/core/common/core_log.dart';
 
 class BaseController extends GetxController {
   /// 加载中，更新页面
   var pageLoadding = false.obs;
 
   /// 加载中,不会更新页面
-  var loadding = false;
+  var loadding = false.obs;
 
   /// 空白页面
   var pageEmpty = false.obs;
@@ -47,13 +48,13 @@ class BaseController extends GetxController {
 }
 
 class BasePageController<T> extends BaseController {
-  final ScrollController scrollController = ScrollController();
-  final EasyRefreshController easyRefreshController = EasyRefreshController();
+  ScrollController scrollController = ScrollController();
+  EasyRefreshController easyRefreshController = EasyRefreshController();
   int currentPage = 1;
   int count = 0;
   int maxPage = 0;
   int pageSize = 30;
-  var canLoadMore = false.obs;
+  var canLoadMore = true.obs;
   var list = <T>[].obs;
 
   @override
@@ -71,18 +72,25 @@ class BasePageController<T> extends BaseController {
 
   Future refreshData() async {
     currentPage = 1;
-    list.value = [];
+    canLoadMore.value = true;
+    pageError.value = false;
+    pageEmpty.value = false;
+    notLogin.value = false;
+    // list.value = [];
     await loadData();
   }
 
   Future loadData() async {
     try {
-      if (loadding) return;
-      loadding = true;
+      if (loadding.value) return;
+      if (canLoadMore.isFalse) return;
+      loadding.value = true;
       pageError.value = false;
       pageEmpty.value = false;
       notLogin.value = false;
       pageLoadding.value = currentPage == 1;
+
+      var tmpPage = currentPage;
 
       var result = await getData(currentPage, pageSize);
       //是否可以加载更多
@@ -97,15 +105,18 @@ class BasePageController<T> extends BaseController {
         }
       }
       // 赋值数据
-      if (currentPage == 1) {
+      if (tmpPage == 1 || currentPage == 1) {
         list.value = result;
       } else {
-        list.addAll(result);
+        if(result.isNotEmpty) {
+          list.addAll(result);
+        }
       }
     } catch (e) {
+      CoreLog.error(e);
       handleError(e, showPageError: currentPage == 1);
     } finally {
-      loadding = false;
+      loadding.value = false;
       pageLoadding.value = false;
     }
   }

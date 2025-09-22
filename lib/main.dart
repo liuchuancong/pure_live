@@ -1,40 +1,42 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
-import 'dart:async';
-import 'package:get/get.dart';
+
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/plugins/global.dart';
-import 'package:pure_live/routes/app_navigation.dart';
-import 'package:pure_live/plugins/file_recover_utils.dart';
 import 'package:pure_live/common/services/bilibili_account_service.dart';
+import 'package:pure_live/modules/home/home_controller.dart';
+import 'package:pure_live/modules/search/search_controller.dart' as pure_live;
+import 'package:pure_live/modules/site_account/site_account_controller.dart';
+import 'package:pure_live/plugins/file_recover_utils.dart';
+import 'package:pure_live/plugins/flutter_catch_error.dart';
+import 'package:pure_live/plugins/route_history_observer.dart';
+
+import 'modules/history/history_controller.dart';
 
 const kWindowsScheme = 'purelive://signin';
 
 void main(List<String> args) async {
-  WidgetsFlutterBinding.ensureInitialized();
-  PrefUtil.prefs = await SharedPreferences.getInstance();
-  MediaKit.ensureInitialized();
-  if (Platform.isWindows) {
-    await WindowsSingleInstance.ensureSingleInstance(args, "pure_live_instance_checker");
-    await windowManager.ensureInitialized();
-    await WindowUtil.init(width: 1280, height: 720);
-  }
-  // 先初始化supdatabase
-  await SupaBaseManager.getInstance().initial();
-  // 初始化服务
-  initService();
-  initRefresh();
-  runApp(const MyApp());
+  FlutterCatchError.run(const MyApp(), args);
+  // runApp(const MyApp());
 }
 
-void initService() {
+Future<void> initService() async {
   Get.put(SettingsService());
+  await S.load(SettingsService.languages[SettingsService.instance.languageName.value]!);
   Get.put(AuthController());
   Get.put(FavoriteController());
   Get.put(BiliBiliAccountService());
   Get.put(PopularController());
   Get.put(AreasController());
+  Get.put(BiliBiliAccountService());
+  Get.put(pure_live.SearchController());
+  Get.put(HomeController());
+  Get.put(SiteAccountController());
+  Get.put(HistoryController());
+
+  SettingsService.instance.syncData();
 }
 
 class MyApp extends StatefulWidget {
@@ -130,7 +132,7 @@ class _MyAppState extends State<MyApp> with WindowListener {
               theme: lightTheme.copyWith(appBarTheme: AppBarTheme(surfaceTintColor: Colors.transparent)),
               darkTheme: darkTheme.copyWith(appBarTheme: AppBarTheme(surfaceTintColor: Colors.transparent)),
               locale: SettingsService.languages[settings.languageName.value]!,
-              navigatorObservers: [FlutterSmartDialog.observer, BackButtonObserver()],
+              navigatorObservers: [FlutterSmartDialog.observer, RouteHistoryObserver()],
               builder: FlutterSmartDialog.init(),
               supportedLocales: S.delegate.supportedLocales,
               localizationsDelegates: const [

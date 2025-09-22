@@ -2,13 +2,16 @@ import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/areas/areas_list_controller.dart';
 
-class AreasController extends GetxController with GetSingleTickerProviderStateMixin {
+class AreasController extends GetxController
+    with GetSingleTickerProviderStateMixin {
   late TabController tabController;
   int index = 0;
   final isCustomSite = false.obs;
+
   AreasController() {
     final preferPlatform = Get.find<SettingsService>().preferPlatform.value;
-    final pIndex = Sites().availableSites().indexWhere((e) => e.id == preferPlatform);
+    final pIndex =
+        Sites().availableSites().indexWhere((e) => e.id == preferPlatform);
     tabController = TabController(
       initialIndex: pIndex == -1 ? 0 : pIndex,
       length: Sites().availableSites().length,
@@ -21,7 +24,8 @@ class AreasController extends GetxController with GetSingleTickerProviderStateMi
         return;
       }
       index = currentIndex;
-      var controller = Get.find<AreasListController>(tag: Sites().availableSites()[index].id);
+      var controller = Get.find<AreasListController>(
+          tag: Sites().availableSites()[index].id);
       isCustomSite.value = controller.site.id == 'custom';
       if (controller.list.isEmpty) {
         controller.loadData();
@@ -31,13 +35,19 @@ class AreasController extends GetxController with GetSingleTickerProviderStateMi
 
   @override
   void onInit() async {
-    for (var site in Sites().availableSites()) {
-      Get.put(AreasListController(site), tag: site.id);
-      var controller = Get.find<AreasListController>(tag: site.id);
-      if (controller.list.isEmpty) {
-        controller.loadData();
-      }
+    List<Future> futures = [];
+    var availableSites = Sites().availableSites();
+    for (var i = 0; i < availableSites.length; i++) {
+      var site = availableSites[i];
+      futures.add(Future(() async {
+        Get.put(AreasListController(site), tag: site.id);
+        var controller = Get.find<AreasListController>(tag: site.id);
+        if (controller.list.isEmpty && index == i) {
+          controller.loadData();
+        }
+      }));
     }
+    await Future.wait(futures);
 
     super.onInit();
   }

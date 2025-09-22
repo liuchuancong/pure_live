@@ -39,7 +39,8 @@
     android:networkSecurityConfig="@xml/network_security_config"
     android:requestLegacyExternalStorage="true" 
     android:enableOnBackInvokedCallback="true"
-    android:allowNativeHeapPointerTagging="false" 
+    android:allowNativeHeapPointerTagging="false"
+    android:extractNativeLibs="true"
     android:icon="@mipmap/ic_launcher">
     <activity android:name=".MainActivity" 
     android:exported="true"
@@ -98,6 +99,11 @@
       <meta-data android:name="android.support.FILE_PROVIDER_PATHS"
         android:resource="@xml/filepaths" tools:replace="android:resource" />
     </provider>
+    <meta-data android:name="com.aliyun.alivc_license.licensekey"
+      android:value="rPbcIXKZlgsLDcmy6301c8c32439b4f28ad49d79d12c46303" />
+    <meta-data
+        android:name="io.flutter.embedding.android.EnableImpeller"
+        android:value="false" />
   </application>
   <uses-feature android:name="android.software.leanback" android:required="false" />
   <uses-feature android:name="android.hardware.touchscreen" android:required="false" />

@@ -66,6 +66,8 @@
     "select_recover_file": "Select backup file",
     "recover_backup_success": "Recover backup success, please restart",
     "recover_backup_failed": "Recover backup failed",
+    "success": "Success",
+    "error": "Error",
 
     "enable_dynamic_color": "Dynamic Color",
     "enable_dynamic_color_subtitle": "Enable Monet dynamic color",
@@ -135,7 +137,7 @@
 
     "settings_danmaku_area": "Danmaku area",
     "settings_danmaku_open": "Danmaku switch",
-    
+    "settings_danmaku_colour": "Only display color Danmaku",
     "settings_danmaku_opacity": "Danmaku opacity",
     "settings_danmaku_speed": "Danmaku speed",
     "settings_danmaku_fontsize": "Danmaku fontsize",
@@ -193,5 +195,168 @@
     "double_click_to_exit": "Double click to exit",
     "change_player": "Change videoPlayer",
     "change_player_subtitle": "Change videoPlayer of liveroom",
-    "enable_codec": "enable hardcodec"
+    "enable_codec": "enable hardcodec",
+    "system": "System",
+    "dark": "Dark",
+    "light": "Light",
+
+    "second": "second",
+    "minute": "minute",
+    "hour": "hour",
+    "day": "day",
+
+    "show": "Show",
+    "fans": "Fans",
+    "user_level": "User Level",
+    "user_level_danmu_format": "Barrage from users below level {level} will be filtered",
+    "fans_level_danmu_format": "The barrage of user fan cards below {level} will be filtered",
+    "danmu_merge": "Danmu Merge",
+    "danmu_merge_format": "The barrage of comments with a similarity greater than {level}% will be merged",
+
+    "danmu_filter": "Danmu Filter",
+    "danmu_filter_info": "Customize keyword filtering barrage",
+    "danmu_filter_keyword": "Bullet screen keyword blocking",
+    "keyword_input": "Please enter keywords",
+    "add": "Add",
+    "danmu_filter_keyword_add_info": "{number} keywords have been added (click to remove)",
+
+    "platform_settings": "Platform Settings",
+    "platform_settings_info": "Customize your favorite viewing platforms",
+    "platform_show": "Platform Show",
+
+    "disclaimer": "Disclaimer",
+    "read_and_agree": "I have read and agree",
+    "exit": "Exit",
+
+    "found_new_version_format": "Discover a new version: {version}",
+    "is_new_version": "The current version is already the latest version",
+    "check_update_failed": "Check update failed",
+    "grant_access_album": "Please grant access to the album",
+    "grant_access_file": "Please grant access to the file",
+    "copy_to_clipboard": "Copy to clipboard",
+    "copy_to_clipboard_failed": "Copy to clipboard failed",
+    "unable_to_read_clipboard_contents": "Unable to read clipboard contents",
+    "reading_clipboard_content_failed": "Reading clipboard content failed",
+
+    "three_party_authentication":"Third-party",
+    "not_supported":"Not supported",
+    "live":"live",
+    "bilibili_need_login_info":"Bilibili accounts require login to view high-definition live streams, and there is currently no such restriction on other platforms.",
+
+    "bilibili":"BiLiBiLi",
+    "cc":"NetEase CC",
+    "douyin":"Tiktok",
+    "douyu":"Douyu",
+    "huya":"Huya",
+    "kuaishou":"Kwai",
+    "iptv":"IPTV",
+    "all":"All",
+    "soop":"Soop",
+    "yy":"YY",
+    "juhe":"JuHe",
+
+    "login_not":"Not Login",
+    "login_expired":"Login has expired, please log in again",
+    "login_failed":"Failed to obtain user information. You can go to account management to retry",
+    "login_by_username_password":"Fill in username and password to log in",
+    "login_by_qr":"QR Login",
+    "login_by_qr_info":"Scan the QR code to log in using the {site} app",
+    "login_by_cookie_info":"Manually enter cookie login",
+    "input_cookie":"Input Cookie",
+    "cookie_check_failed":"Cookie verification failed!",
+    "login_account_exit":"Are you sure you want to log out of your {site} account?",
+    "qr_loading_failed":"QR code loading failed",
+    "qr_loading_expired":"The QR code has expired",
+    "qr_loading_refresh":"Refresh QR code",
+    "qr_confirm":"The QR code has been scanned. Please confirm login on your phone",
+
+    "select_transparency":"Select Transparency",
+    "theme_color_and_transparency":"Theme Color And Transparency",
+
+    "network":"Network",
+    "import_live_streaming_source":"Import M3u live streaming source",
+    "synchronize_tv_data":"Synchronize TV Data",
+    "synchronize_tv_data_info":"Remote synchronization of data to TV",
+
+    "local_import":"Local Import",
+    "network_import":"Network Import",
+
+    "download_address_enter":"Please enter the download address",
+    "download_address":"Download link",
+    "download_address_enter_check":"Please enter the correct download address",
+    "file_name":"file name",
+    "file_name_input":"Please enter a file name",
+
+    "player":"Player",
+    "player_ali":"Ali",
+    "player_system":"system",
+
+    "version_history":"Version History",
+    "version_history_info":"Historical version update records",
+    "version_history_updates":"Version history updates",
+
+    "help_and_support":"Help & Support",
+    "thank_title":"Thank you for using it!",
+    "thank_info":"If you have any better suggestions or opinions, please feel free to contact us.",
+
+    "live_room_link_parsing":"Link Parse",
+    "live_room_jump":"Live Room Jump",
+    "live_room_link_jump":"Link Jump",
+    "live_room_link_direct":"Obtain direct link",
+    "live_room_link_input":"Enter or paste the link of {site} live broadcast",
+    "link_empty":"Link cannot be empty",
+    "live_room_link_parse_failed":"Unable to parse this link",
+    "live_room_clarity_parse_failed":"Reading straight chain failed, unable to read clarity",
+    "live_room_clarity_select":"Select Clarity",
+    "live_room_clarity_line_select":"Select Clarity Line",
+    "live_room_clarity_line":"Clarity Line",
+    "live_room_link_direct_copied":"The straight chain has been copied",
+    "live_room_link_direct_read_failed":"Reading straight chain failed",
+
+    "auto_rotate_screen":"Auto-Rotate Screen",
+    "auto_rotate_screen_info":"When playing in full screen, the screen will automatically rotate",
+
+    "live_room_search":"Search Live",
+    "live_room_link_access":"Link Access",
+    "search":"Search",
+
+    "live_room_open_external":"Externally Open Live",
+    "screen_caste":"Screen Caste",
+
+    "menu":"Menu",
+    "clear_history": "Clear History",
+    "clear_history_confirm": "Are you sure you want to clear the history?",
+
+    "settings_app": "Appearance",
+    "settings_home": "Home",
+    "settings_player": "Player",
+    "settings_favorite": "Favorite",
+    "settings_time_close": "Timing Closure",
+    "settings_other": "Other",
+
+    "prefer_resolution_mobile": "Mobile Resolution Preference",
+    "prefer_resolution_mobile_subtitle": " When entering the live streaming page, the preferred video clarity for mobile networks",
+
+    "settings_log": "Log",
+    "settings_danmuku_controller": "Danmuku Controller",
+    "settings_danmuku_controller_info": "Change Danmuku Controller",
+
+    "settings_close": "Close",
+    "settings_delay": "Delay",
+    "settings_delay_close": "Delay Close",
+    "settings_delay_close_info": "The scheduled shutdown has expired. Would you like to delay the shutdown?",
+
+    "bit_rate_250": "Smooth",
+    "bit_rate_500": "Standard",
+    "bit_rate_1000": "High Definition",
+    "bit_rate_2000": "Ultra HD",
+    "bit_rate_4000": "Blu-ray ",
+    "bit_rate_0": "Origin",
+
+
+    "cache_manage": "Cache Manage",
+    "cache_manage_clear_prompt": "Are you sure you want to clear the cache?",
+    "cache_manage_clear_all": "Clear all cache",
+    "cache_manage_clear_image": "Clear image cache",
+    "cache_manage_clear_area": "Clear area cache"
 }

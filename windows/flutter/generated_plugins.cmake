@@ -10,6 +10,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_inappwebview_windows
   flutter_js
   flutter_volume_controller
+  fvp
   media_kit_libs_windows_video
   media_kit_video
   permission_handler_windows
@@ -22,6 +23,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
+  rhttp
 )
 
 set(PLUGIN_BUNDLED_LIBRARIES)

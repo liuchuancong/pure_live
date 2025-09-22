@@ -1,0 +1,20 @@
+display_name: Pure-Live
+package_name: pure-live
+maintainer:
+  name: liuchuancong
+  email: liuchuancong@52uwp.com
+priority: optional
+section: x11
+installed_size: 24400
+essential: false
+icon: assets/icons/icon.png
+
+keywords:
+  - Pure Live
+
+generic_name: Pure-Live
+
+categories:
+  - Media
+
+startup_notify: true

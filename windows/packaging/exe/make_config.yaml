@@ -1,10 +1,13 @@
-
+script_template: "custom-inno-setup-script.iss"
 app_id: C76CD88E-EB3F-49AD-9191-65691050035A
-publisher: My Company, Inc.
+app_name: 纯粹直播
+publisher: liuchuancong
+publisher_name: liuchuancong
 publisher_url: https://github.com/liuchuancong/pure_live
 display_name: 纯粹直播
+# executable_name: pure_live.exe
+# output_base_file_name: pure_live.exe
 create_desktop_icon: true
-setup_icon_file: windows\runner\resources\app_icon.ico
+setup_icon_file: ..\windows\runner\resources\app_icon.ico
 locales:
-  - en
   - zh

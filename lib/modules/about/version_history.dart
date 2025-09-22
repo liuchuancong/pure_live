@@ -9,9 +9,7 @@ class VersionHistoryPage extends StatefulWidget {
 
 class _VersionHistoryPageState extends State<VersionHistoryPage> {
   List<VersionHistoryModel> loadHistoryList() {
-    return VersionUtil.allReleased
-        .map((e) => VersionHistoryModel(version: e['tag_name'].toString().replaceAll('v', ''), updateBody: e['body']))
-        .toList();
+    return VersionUtil.allReleased.map((e) => VersionHistoryModel(version: e['tag_name'].toString().replaceAll('v', ''), updateBody: e['body'])).toList();
   }
 
   List<Widget> getRichTextList() {
@@ -41,7 +39,7 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('版本历史更新'),
+        title: Text(S.current.version_history_updates),
       ),
       body: ListView(
         scrollDirection: Axis.vertical,
@@ -55,5 +53,6 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
 class VersionHistoryModel {
   final String version;
   final String updateBody;
+
   VersionHistoryModel({required this.version, required this.updateBody});
 }

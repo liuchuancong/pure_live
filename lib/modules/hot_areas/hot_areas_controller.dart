@@ -4,7 +4,7 @@ import 'package:pure_live/common/base/base_controller.dart';
 
 class HotAreasController extends BaseController {
   final SettingsService settingsController = Get.find<SettingsService>();
-  final sites = [].obs;
+  final sites = <HotAreasModel>[].obs;
   @override
   void onInit() {
     for (var element in Sites.supportSites) {

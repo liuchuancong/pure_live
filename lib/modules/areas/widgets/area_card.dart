@@ -1,9 +1,11 @@
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/modules/util/site_logo_widget.dart';
+import 'package:pure_live/plugins/cache_network.dart';
 import 'package:pure_live/routes/app_navigation.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 class AreaCard extends StatefulWidget {
   const AreaCard({super.key, required this.category});
+
   final LiveArea category;
 
   @override
@@ -38,35 +40,37 @@ class _AreaCardState extends State<AreaCard> {
             );
             AppNavigator.toLiveRoomDetail(liveRoom: roomItem);
           } else {
-            AppNavigator.toCategoryDetail(site: Sites.of(widget.category.platform!), category: widget.category);
+            AppNavigator.toCategoryDetail(
+                site: Sites.of(widget.category.platform!),
+                category: widget.category);
           }
         },
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AspectRatio(
-              aspectRatio: 1,
-              child: Card(
-                margin: const EdgeInsets.all(0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15.0),
-                ),
-                clipBehavior: Clip.antiAlias,
-                color: Colors.white,
-                elevation: 0,
-                child: CachedNetworkImage(
-                  imageUrl: widget.category.areaPic!,
-                  cacheManager: CustomCacheManager.instance,
-                  fit: BoxFit.fill,
-                  errorWidget: (context, error, stackTrace) => const Center(
-                    child: Icon(
-                      Icons.live_tv_rounded,
-                      size: 38,
-                    ),
+            Stack(children: [
+              AspectRatio(
+                aspectRatio: 1,
+                child: Card(
+                  margin: const EdgeInsets.all(0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15.0),
                   ),
+                  clipBehavior: Clip.antiAlias,
+                  // color: Colors.white,
+                  elevation: 0,
+                  child: CacheNetWorkUtils.getCacheImageV2(
+                      widget.category.areaPic!, cacheWidth: 300, cacheHeight: 300),
                 ),
               ),
-            ),
+
+              // 平台图标
+              Positioned(
+                left: 5,
+                top: 5,
+                child: SiteWidget.getSiteLogeImage(widget.category.platform!)!,
+              ),
+            ]),
             ListTile(
               dense: true,
               contentPadding: const EdgeInsets.symmetric(horizontal: 10),

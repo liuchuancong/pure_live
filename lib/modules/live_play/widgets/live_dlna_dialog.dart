@@ -71,7 +71,7 @@ class _LiveDlnaPageState extends State<LiveDlnaPage> {
     } else if (_deviceList.isEmpty) {
       cur = Center(
         child: Text(
-          S.of(context).dlan_device_not_found,
+          S.current.dlan_device_not_found,
           style: Theme.of(context).textTheme.bodyLarge,
         ),
       );
@@ -92,7 +92,7 @@ class _LiveDlnaPageState extends State<LiveDlnaPage> {
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(S.of(context).dlan_title),
+          Text(S.current.dlan_title),
           IconButton(
             onPressed: startSearch,
             icon: const Icon(Icons.refresh_rounded),

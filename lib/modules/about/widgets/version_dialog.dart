@@ -9,11 +9,11 @@ class NoNewVersionDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(S.of(context).check_update),
-      content: Text(S.of(context).no_new_version_info),
+      title: Text(S.current.check_update),
+      content: Text(S.current.no_new_version_info),
       actions: <Widget>[
         TextButton(
-          child: Text(S.of(context).confirm),
+          child: Text(S.current.confirm),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -31,12 +31,12 @@ class NewVersionDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(S.of(context).check_update),
+      title: Text(S.current.check_update),
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(S.of(context).new_version_info(VersionUtil.latestVersion)),
+          Text(S.current.new_version_info(VersionUtil.latestVersion)),
           const SizedBox(height: 20),
           Text(
             VersionUtil.latestUpdateLog,
@@ -61,7 +61,7 @@ class NewVersionDialog extends StatelessWidget {
       ),
       actions: <Widget>[
         TextButton(
-          child: Text(S.of(context).cancel),
+          child: Text(S.current.cancel),
           onPressed: () {
             if (entry != null) {
               entry!.remove();
@@ -71,7 +71,7 @@ class NewVersionDialog extends StatelessWidget {
           },
         ),
         ElevatedButton(
-          child: Text(S.of(context).update),
+          child: Text(S.current.update),
           onPressed: () {
             if (entry != null) {
               entry!.remove();

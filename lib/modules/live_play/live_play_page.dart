@@ -1,304 +1,410 @@
 import 'dart:io';
-import 'dart:async';
-import 'widgets/index.dart';
+
+// import 'package:floating/floating.dart';
 import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/plugins/event_bus.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
-import 'package:pure_live/modules/live_play/play_other.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:pure_live/core/common/core_log.dart';
+import 'package:pure_live/core/iptv/src/general_utils_object_extension.dart';
+import 'package:pure_live/modules/areas/areas_list_controller.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
+import 'package:pure_live/modules/settings/settings_page.dart';
+import 'package:pure_live/modules/settings/settings_page_v2.dart';
+import 'package:pure_live/modules/util/site_logo_widget.dart';
+import 'package:pure_live/modules/util/time_util.dart';
+import 'package:pure_live/plugins/cache_network.dart';
+import 'package:pure_live/plugins/extension/string_extension.dart';
+import 'package:pure_live/routes/app_navigation.dart';
+import 'package:remixicon/remixicon.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
+
+import 'widgets/index.dart';
 
 class LivePlayPage extends GetView<LivePlayController> {
   LivePlayPage({super.key});
 
   final SettingsService settings = Get.find<SettingsService>();
-  Future<bool> onWillPop({bool directiveExit = false}) async {
+
+  Future<bool> onWillPop() async {
     try {
       var exit = await controller.onBackPressed(directiveExit: directiveExit);
       if (exit) {
         Navigator.of(Get.context!).pop();
       }
     } catch (e) {
+      CoreLog.error(e);
       Navigator.of(Get.context!).pop();
     }
     return true;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (settings.enableScreenKeepOn.value) {
-      WakelockPlus.toggle(enable: settings.enableScreenKeepOn.value);
-    }
-    return Obx(() {
-      var currentPlayIndex =
-          controller.currentSite.id == Sites.huyaSite && controller.settings.videoPlayerIndex.value == 1
-          ? 0
-          : controller.settings.videoPlayerIndex.value;
-      return BackButtonListener(
-        onBackButtonPressed: () => onWillPop(directiveExit: false),
-        child: currentPlayIndex == 1
-            ? buildNormalPlayerView(context)
-            : controller.isFullScreen.value
-            ? DesktopFullscreen(controller: controller.videoController!)
-            : buildNormalPlayerView(context),
-      );
-    });
-  }
+  /// 顶部左边的UI
+  Row buildTableTarLeft() {
+    return Row(children: [
+      /// 头像
+      CacheNetWorkUtils.getCircleAvatar(controller.liveRoomRx.avatar.value, radius: 20),
+      const SizedBox(width: 8),
 
-  Scaffold buildNormalPlayerView(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Obx(
-          () => controller.getVideoSuccess.value
-              ? Row(
-                  children: [
-                    CircleAvatar(
-                      foregroundImage: controller.detail.value == null && controller.detail.value!.avatar!.isEmpty
-                          ? null
-                          : NetworkImage(controller.detail.value!.avatar!),
-                      radius: 13,
-                      backgroundColor: Theme.of(context).disabledColor,
-                    ),
-                    const SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ConstrainedBox(
-                          constraints: BoxConstraints(maxWidth: 120),
-                          child: Text(
-                            controller.detail.value == null && controller.detail.value!.nick == null
-                                ? ''
-                                : controller.detail.value!.nick!,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.labelSmall,
-                          ),
-                        ),
-                        if (controller.detail.value != null && controller.detail.value!.area != null)
-                          Text(
-                            controller.detail.value!.area!.isEmpty
-                                ? controller.detail.value!.platform!.toUpperCase()
-                                : "${controller.detail.value!.platform!.toUpperCase()} / ${controller.detail.value!.area}",
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 8),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(width: 8),
-                    Obx(
-                      () => controller.getVideoSuccess.value
-                          ? FavoriteFloatingButton(room: controller.detail.value!)
-                          : FavoriteFloatingButton(room: controller.currentPlayRoom.value),
-                    ),
-                  ],
-                )
-              : Row(
-                  children: [
-                    CircleAvatar(
-                      foregroundImage: controller.currentPlayRoom.value.avatar == null
-                          ? null
-                          : NetworkImage(controller.currentPlayRoom.value.avatar!),
-                      radius: 13,
-                      backgroundColor: Theme.of(context).disabledColor,
-                    ),
-                    const SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ConstrainedBox(
-                          constraints: BoxConstraints(maxWidth: 120),
-                          child: Text(
-                            controller.detail.value == null && controller.detail.value!.nick == null
-                                ? ''
-                                : controller.detail.value!.nick!,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.labelSmall,
-                          ),
-                        ),
-                        Text(
-                          controller.currentPlayRoom.value.area!.isEmpty
-                              ? controller.currentPlayRoom.value.platform!.toUpperCase()
-                              : "${controller.currentPlayRoom.value.platform!.toUpperCase()} / ${controller.currentPlayRoom.value.area}",
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 8),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(width: 8),
-                    Obx(
-                      () => controller.getVideoSuccess.value
-                          ? FavoriteFloatingButton(room: controller.detail.value!)
-                          : FavoriteFloatingButton(room: controller.currentPlayRoom.value),
-                    ),
-                  ],
-                ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.swap_horiz_outlined),
-            tooltip: '切换直播间',
-            onPressed: () {
-              Get.dialog(PlayOther(controller: controller));
-            },
+      /// 右边
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          /// 名称
+          Text(
+            controller.liveRoomRx.nick.value.appendTxt(""),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(Get.context!).textTheme.labelSmall,
           ),
-          PopupMenuButton(
-            tooltip: '搜索',
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            offset: const Offset(12, 0),
-            position: PopupMenuPosition.under,
-            icon: const Icon(Icons.more_vert_rounded),
-            onSelected: (int index) {
-              if (index == 0) {
-                controller.openNaviteAPP();
-              } else if (index == 1) {
-                showDlnaCastDialog();
-              } else if (index == 2) {
-                showTimerDialog(context);
-              }
-            },
-            itemBuilder: (BuildContext context) {
-              return [
-                const PopupMenuItem(
-                  value: 0,
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: MenuListTile(leading: Icon(Icons.open_in_new_rounded), text: "打开直播间"),
-                ),
-                const PopupMenuItem(
-                  value: 1,
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: MenuListTile(leading: Icon(Icons.live_tv_rounded), text: "投屏"),
-                ),
-                const PopupMenuItem(
-                  value: 2,
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: MenuListTile(leading: Icon(Icons.watch_later_outlined), text: "定时关闭"),
-                ),
-              ];
-            },
+
+          /// 所属站点
+          Row(
+            /// 横着摆放
+            children: [
+              /// 站点logo
+              if (controller.liveRoomRx.platform.value.isNotNullOrEmpty) SiteWidget.getSiteLogeImage(controller.liveRoomRx.platform.value!) ?? Container(),
+
+              /// 站点logo
+              const SizedBox(width: 5),
+              if (controller.liveRoomRx.platform.value.isNotNullOrEmpty)
+                TextButton(
+                    style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        elevation: 0,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        minimumSize: Size.square(10),
+                        side: BorderSide(
+                          width: 0,
+                          style: BorderStyle.none,
+                          strokeAlign: 0,
+                          color: Colors.grey.withValues(alpha: 0.1),
+                        ),
+                        textStyle: Theme.of(Get.context!).textTheme.labelSmall,
+                        shape: RoundedRectangleBorder(
+                          side: BorderSide(
+                            width: 0,
+                            style: BorderStyle.none,
+                            strokeAlign: 0,
+                            color: Colors.grey.withValues(alpha: 0.1),
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        )),
+                    onPressed: () async {
+                      if (!controller.liveRoomRx.area.value.isNullOrEmpty && !controller.liveRoomRx.platform.value.isNullOrEmpty) {
+                        try {
+                          /// 平台
+                          var site = controller.liveRoomRx.platform.value!;
+                          // CoreLog.d("site: $site");
+                          var areasListController = Get.findOrNull<AreasListController>(tag: site);
+                          if (areasListController == null) {
+                            return;
+                          }
+                          var list = areasListController.list;
+                          // CoreLog.d("list: $list");
+                          if (list.isEmpty) {
+                            CoreLog.d("loading areasList Data ...");
+                            await areasListController.loadData();
+                          }
+
+                          /// 类别
+                          var area = controller.liveRoomRx.area.value!;
+                          LiveArea? liveArea;
+                          bool flag = false;
+                          for (var i = 0; i < list.length && !flag; i++) {
+                            var liveCategory = list[i];
+                            for (var j = 0; j < liveCategory.children.length && !flag; j++) {
+                              var tmpLiveArea = liveCategory.children[j];
+                              if (tmpLiveArea.areaName == area) {
+                                liveArea = tmpLiveArea;
+                                flag = true;
+                                break;
+                              }
+                            }
+                          }
+                          if (liveArea == null) {
+                            CoreLog.w("Not Find $site/$area");
+                            return;
+                          }
+                          Navigator.pop(Get.context!);
+                          AppNavigator.toCategoryDetail(site: Sites.of(site), category: liveArea);
+                        } catch (e) {
+                          CoreLog.error(e);
+                        }
+                      }
+                    },
+                    child: Text(
+                      "${Sites.of(controller.liveRoomRx.platform.value!).name}${controller.liveRoomRx.area.value.isNullOrEmpty ? '' : "/${controller.liveRoomRx.area.value}"}",
+                      style: Theme.of(Get.context!).textTheme.labelSmall,
+                    )),
+            ],
           ),
         ],
       ),
-      body: Builder(
-        builder: (BuildContext context) {
-          return LayoutBuilder(
-            builder: (context, constraint) {
-              final width = Get.width;
-              return SafeArea(
-                child: width <= 680
-                    ? Column(
-                        children: <Widget>[
-                          buildVideoPlayer(),
-                          const ResolutionsRow(),
-                          const Divider(height: 1),
-                          Expanded(child: Obx(() => DanmakuListView(room: controller.detail.value!))),
-                        ],
-                      )
-                    : Row(
-                        children: <Widget>[
-                          Expanded(child: buildVideoPlayer()),
-                          SizedBox(
-                            width: 400,
-                            child: Column(
-                              children: [
-                                const ResolutionsRow(),
-                                const Divider(height: 1),
-                                Expanded(child: Obx(() => DanmakuListView(room: controller.detail.value!))),
-                              ],
+    ]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder(
+        initialData: false,
+        stream: controller.streamState,
+        builder: (context, snapshot) {
+          if (settings.enableScreenKeepOn.value) {
+            WakelockPlus.toggle(enable: settings.enableScreenKeepOn.value);
+          }
+          final page = () {
+            CoreLog.d("isFullscreen.value ${controller.isFullscreen.value}");
+            if (controller.isFullscreen.value || controller.isPiP.value) {
+              return PopScope(
+                canPop: false,
+                onPopInvokedWithResult: (didPop, result) {
+                  controller.videoController?.exitFull();
+                },
+                child: Scaffold(
+                  body: buildVideoPlayerBody(),
+                ),
+              );
+            }
+            return BackButtonListener(
+              onBackButtonPressed: onWillPop,
+              child: Scaffold(
+                appBar: AppBar(
+                  title: Obx(() => buildTableTarLeft()),
+                  actions: [
+                    PopupMenuButton(
+                      tooltip: S.current.search,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      offset: const Offset(12, 0),
+                      position: PopupMenuPosition.under,
+                      icon: const Icon(Icons.more_vert_rounded),
+                      // onSelected: (int index) {
+                      //   if (index == 0) {
+                      //     controller.openNaviteAPP();
+                      //   } else {
+                      //     showDlnaCastDialog();
+                      //   }
+                      // },
+                      itemBuilder: (BuildContext context) {
+                        /// 右边的列表
+                        return [
+                          PopupMenuItem(
+                            value: 0,
+                            padding: EdgeInsets.symmetric(horizontal: 12),
+                            child: MenuListTile(
+                              leading: Icon(Icons.open_in_new_rounded),
+                              text: S.current.live_room_open_external,
+                            ),
+                            onTap: () {
+                              controller.openNaviteAPP();
+                            },
+                          ),
+                          PopupMenuItem(
+                            value: 1,
+                            padding: EdgeInsets.symmetric(horizontal: 12),
+                            onTap: showDlnaCastDialog,
+                            child: MenuListTile(
+                              leading: Icon(Icons.live_tv_rounded),
+                              text: S.current.screen_caste,
                             ),
                           ),
-                        ],
-                      ),
-              );
-            },
-          );
-        },
-      ),
-    );
+                          PopupMenuItem(
+                            value: 2,
+                            padding: EdgeInsets.symmetric(horizontal: 12),
+                            child: MenuListTile(
+                              leading: Icon(Remix.play_circle_line),
+                              text: S.current.settings_player,
+                            ),
+                            onTap: () {
+                              SettingsPageV2.settingPlayerInfoSheet();
+                            },
+                          ),
+                          PopupMenuItem(
+                            value: 3,
+                            padding: EdgeInsets.symmetric(horizontal: 12),
+                            child: MenuListTile(
+                              leading: Icon(Remix.filter_off_line),
+                              text: S.current.danmu_filter,
+                            ),
+                            onTap: () {
+                              Get.toNamed(RoutePath.kSettingsDanmuShield);
+                            },
+                          ),
+                          PopupMenuItem(
+                            value: 4,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: MenuListTile(
+                              leading: const Icon(Remix.bug_line),
+                              text: S.current.settings_log,
+                            ),
+                            onTap: () {
+                              Get.toNamed(RoutePath.kLog);
+                            },
+                          ),
+                          PopupMenuItem(
+                            value: 5,
+                            padding: EdgeInsets.symmetric(horizontal: 12),
+                            child: MenuListTile(
+                              leading: Icon(Icons.timer_outlined),
+                              text: S.current.auto_shutdown_time,
+                            ),
+                            onTap: () {
+                              SettingsPage.showAutoShutDownTimeSetDialog();
+                            },
+                          ),
+                          if (settings.enableAutoShutDownTime.value)
+                            PopupMenuItem(
+                                value: 6,
+                                padding: EdgeInsets.symmetric(horizontal: 12),
+                                child: Obx(() => Visibility(
+                                    visible: settings.enableAutoShutDownTime.value,
+                                    child: MenuListTile(
+                                        leading: Icon(Icons.share_arrival_time_outlined), text: "${S.current.auto_shutdown_time}：${TimeUtil.secondValueToStr(controller.countdown.value)}")))),
+
+                          /// 其他跳转
+                          ...controller.currentSite.liveSite.jumpItems(controller.liveRoomRx.toLiveRoom()).map((e) => PopupMenuItem(
+                                padding: EdgeInsets.symmetric(horizontal: 12),
+                                onTap: e.onTap,
+                                child: MenuListTile(
+                                  leading: Icon(e.iconData),
+                                  text: e.text,
+                                ),
+                              )),
+                        ];
+                      },
+                    )
+                  ],
+                ),
+                body: Builder(
+                  builder: (BuildContext context) {
+                    return LayoutBuilder(builder: (context, constraint) {
+                      final width = constraint.maxWidth;
+                      return SafeArea(
+                        child: width <= 680
+                            ? Column(
+                                children: <Widget>[
+                                  buildVideoPlayer(),
+                                  const ResolutionsRow(),
+                                  const Divider(height: 1),
+                                  Expanded(
+                                    child: Obx(() => DanmakuListView(
+                                          key: controller.danmakuViewKey,
+                                          room: controller.liveRoomRx.toLiveRoom(),
+                                          controller: controller,
+                                        )),
+                                  ),
+                                ],
+                              )
+                            : Row(children: <Widget>[
+                                Expanded(
+                                  child: buildVideoPlayer(),
+                                ),
+                                SizedBox(
+                                  width: 400,
+                                  child: Column(children: [
+                                    const ResolutionsRow(),
+                                    const Divider(height: 1),
+                                    Expanded(
+                                      child: Obx(() => DanmakuListView(
+                                            key: controller.danmakuViewKey,
+                                            room: controller.liveRoomRx.toLiveRoom(),
+                                            controller: controller,
+                                          )),
+                                    ),
+                                  ]),
+                                ),
+                              ]),
+                      );
+                    });
+                  },
+                ),
+                floatingActionButton: Obx(() => controller.getVideoSuccess.value
+                    ? FavoriteFloatingButton(key: UniqueKey(), room: controller.liveRoomRx.toLiveRoom())
+                    : FavoriteFloatingButton(key: UniqueKey(), room: controller.liveRoomRx.toLiveRoom())),
+              ),
+            );
+          }();
+          if (!Platform.isAndroid) {
+            return page;
+          }
+          // return PiPSwitcher(
+          //   floating: controller.pip,
+          //   childWhenDisabled: page,
+          //   childWhenEnabled: buildVideoPlayer(),
+          // );
+          return page;
+        });
   }
 
   void showDlnaCastDialog() {
-    Get.dialog(LiveDlnaPage(datasource: controller.playUrls[controller.currentLineIndex.value]));
+    Get.dialog(LiveDlnaPage(datasource: controller.playUrls[controller.currentLineIndex.value].playUrl));
   }
 
+  /// 播放器主页UI
   Widget buildVideoPlayer() {
     return AspectRatio(
       aspectRatio: 16 / 9,
-      child: Container(
-        color: Colors.black,
-        child: Obx(
-          () => controller.success.value
-              ? VideoPlayer(controller: controller.videoController!)
-              : controller.hasError.value && controller.isActive.value == false || !controller.getVideoSuccess.value
-              ? ErrorVideoWidget(controller: controller)
-              : videoInfo(),
-        ),
-      ),
+      child: buildVideoPlayerBody(),
     );
   }
 
-  Card videoInfo() {
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.all(0),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-      clipBehavior: Clip.antiAlias,
-      color: Get.theme.focusColor,
-      child: Obx(
-        () => controller.isFirstLoad.value || !controller.loadTimeOut.value
-            ? const Center(child: CircularProgressIndicator(color: Colors.white))
-            : controller.loadTimeOut.value
-            ? CachedNetworkImage(
-                imageUrl: controller.currentPlayRoom.value.cover!,
-                cacheManager: CustomCacheManager.instance,
-                fit: BoxFit.fill,
-                errorWidget: (context, error, stackTrace) => const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.live_tv_rounded, size: 48),
-                      Text("无法获取播放信息", style: TextStyle(color: Colors.white, fontSize: 18)),
-                      Text("当前房间未开播或无法观看", style: TextStyle(color: Colors.white, fontSize: 18)),
-                      Text("请刷新重试", style: TextStyle(color: Colors.white, fontSize: 18)),
-                    ],
-                  ),
+  /// 播放器主体内容
+  Widget buildVideoPlayerBody() {
+    return Container(
+      color: Colors.black,
+      child: Obx(() {
+        if (controller.success.value && controller.videoController != null) {
+          return VideoPlayer(controller: controller.videoController!);
+        }
+
+        if (controller.hasError.value && controller.isActive.value == false) {
+          return ErrorVideoWidget(controller: controller);
+        }
+
+        if (!controller.getVideoSuccess.value) {
+          return ErrorVideoWidget(controller: controller);
+        }
+
+        if (controller.getVideoSuccess.value && !controller.success.value && !controller.isFirstLoad.value && !controller.isLoadingVideo.value) {
+          return Center(
+              child: Text(
+            "未开播",
+            style: TextStyle(color: Colors.white, fontSize: 18),
+          ));
+        }
+
+        if (controller.isLoadingVideo.value) {
+          return const Center(
+              child: CircularProgressIndicator(
+            color: Colors.white,
+          ));
+        }
+        if (controller.loadTimeOut.value) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.live_tv_rounded, size: 48),
+                Text(
+                  "无法获取播放信息",
+                  style: TextStyle(color: Colors.white, fontSize: 18),
                 ),
-              )
-            : TimeOutVideoWidget(controller: controller),
-      ),
-    );
-  }
-
-  void showTimerDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        // title: Text(S.of(context).auto_refresh_time),
-        content: Obx(
-          () => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SwitchListTile(
-                title: Text('定时关闭'),
-                contentPadding: EdgeInsets.zero,
-                value: controller.closeTimeFlag.value,
-                activeThumbColor: Theme.of(context).colorScheme.primary,
-                onChanged: (bool value) => controller.closeTimeFlag.value = value,
-              ),
-              Slider(
-                min: 0,
-                max: 240,
-                label: S.of(context).auto_refresh_time,
-                value: controller.closeTimes.toDouble(),
-                onChanged: (value) => controller.closeTimes.value = value.toInt(),
-              ),
-              Text(
-                '自动关闭时间:'
-                ' ${controller.closeTimes}分钟',
-              ),
-            ],
-          ),
-        ),
-      ),
+                Text(
+                  "当前房间未开播或无法观看",
+                  style: TextStyle(color: Colors.white, fontSize: 18),
+                ),
+                Text(
+                  "请按确定按钮刷新重试",
+                  style: TextStyle(color: Colors.white, fontSize: 18),
+                ),
+              ],
+            ),
+          );
+        }
+        return TimeOutVideoWidget(
+          controller: controller,
+        );
+      }),
     );
   }
 }
@@ -312,16 +418,17 @@ class ResolutionsRow extends StatefulWidget {
 
 class _ResolutionsRowState extends State<ResolutionsRow> {
   LivePlayController get controller => Get.find();
+
   Widget buildInfoCount() {
-    // controller.detail.value! watching or followers
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Icon(Icons.whatshot_rounded, size: 14),
-        const SizedBox(width: 4),
-        Text(readableCount(controller.detail.value!.watching!), style: Get.textTheme.bodySmall),
-      ],
-    );
+    // controller.liveRoomRx watching or followers
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      const Icon(Icons.whatshot_rounded, size: 14),
+      const SizedBox(width: 4),
+      Obx(() => Text(
+            readableCount(readableCountStrToNum(controller.liveRoomRx.watching.value).toString()),
+            style: Get.textTheme.bodySmall,
+          )),
+    ]);
   }
 
   List<Widget> buildResultionsList() {
@@ -340,24 +447,28 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
                     ? Get.theme.colorScheme.primary
                     : null,
               ),
-            ),
-            onSelected: (String index) {
-              controller.setResolution(rate.quality, index);
-            },
-            itemBuilder: (context) {
-              final items = <PopupMenuItem<String>>[];
-              final urls = controller.playUrls;
-              for (int i = 0; i < urls.length; i++) {
-                items.add(
-                  PopupMenuItem<String>(
+              offset: const Offset(0.0, 5.0),
+              position: PopupMenuPosition.under,
+              icon: Text(
+                rate.quality,
+                style: Get.theme.textTheme.labelSmall?.copyWith(
+                  color: rate.quality == controller.qualites[controller.currentQuality.value].quality ? Get.theme.colorScheme.primary : null,
+                ),
+              ),
+              onSelected: (String index) {
+                controller.setResolution(rate.quality, index);
+              },
+              itemBuilder: (context) {
+                final items = <PopupMenuItem<String>>[];
+                final urls = controller.playUrls;
+                for (int i = 0; i < urls.length; i++) {
+                  items.add(PopupMenuItem<String>(
                     value: i.toString(),
                     child: Text(
-                      '线路${i + 1}',
+                      '线路${i + 1}\t${urls[i].info}\t${urls[i].playUrl.contains(".flv") ? "FLV" : "HLS"}',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: urls[i] == controller.playUrls[controller.currentLineIndex.value]
-                            ? Get.theme.colorScheme.primary
-                            : null,
-                      ),
+                            color: urls[i] == controller.playUrls[controller.currentLineIndex.value] ? Get.theme.colorScheme.primary : null,
+                          ),
                     ),
                   ),
                 );
@@ -375,13 +486,13 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
       () => Container(
         height: 55,
         padding: const EdgeInsets.all(4.0),
-        child: Row(
-          children: [
-            Padding(padding: const EdgeInsets.all(8), child: buildInfoCount()),
-            const Spacer(),
-            ...controller.success.value ? buildResultionsList() : [],
-          ],
-        ),
+        child: ListView(scrollDirection: Axis.horizontal, children: [
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: buildInfoCount(),
+          ),
+          ...buildResultionsList(),
+        ]),
       ),
     );
   }
@@ -397,102 +508,76 @@ class FavoriteFloatingButton extends StatefulWidget {
 }
 
 class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
-  StreamSubscription<dynamic>? subscription;
-
-  @override
-  void initState() {
-    super.initState();
-    listenFavorite();
-  }
-
-  void listenFavorite() {
-    subscription = EventBus.instance.listen('changeFavorite', (data) {
-      if (mounted) {
-        setState(() {});
-      }
-    });
-  }
+  LivePlayController get controller => Get.find();
 
   @override
   Widget build(BuildContext context) {
     final settings = Get.find<SettingsService>();
-    bool isFavorite = settings.isFavorite(widget.room);
-    return isFavorite
-        ? FilledButton(
-            style: ButtonStyle(
-              // 减小内边距，使按钮更小
-              padding: Platform.isWindows
-                  ? WidgetStateProperty.all(EdgeInsets.all(12.0))
-                  : WidgetStateProperty.all(EdgeInsets.all(5.0)),
-              // 设置背景色
-              backgroundColor: WidgetStateProperty.all(Get.theme.colorScheme.primary.withAlpha(125)),
-              // 设置按钮形状，调整圆角半径
-              shape: WidgetStateProperty.all(
-                RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6.0), // 圆角半径，可根据需要调整
-                ),
-              ),
-              // 可选：减小文字大小
-              textStyle: WidgetStateProperty.all(const TextStyle(fontSize: 12.0)),
-              minimumSize: WidgetStateProperty.all(Size.zero), // 移除默认最小尺寸
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
+    // late bool isFavorite = settings.isFavorite(widget.room);
+    return Obx(() => controller.isFavorite.value
+        ? FloatingActionButton(
+            key: UniqueKey(),
+            heroTag: UniqueKey(),
+            elevation: 2,
+            backgroundColor: Theme.of(context).cardColor,
+            tooltip: S.current.unfollow,
             onPressed: () {
               Get.dialog(
                 AlertDialog(
-                  title: Text(S.of(context).unfollow),
-                  content: Text(S.of(context).unfollow_message(widget.room.nick!)),
+                  title: Text(S.current.unfollow),
+                  content: Text(S.current.unfollow_message(widget.room.nick!)),
                   actions: [
                     TextButton(
                       onPressed: () {
                         Navigator.of(Get.context!).pop(false);
                       },
-                      child: Text(S.of(context).cancel),
+                      child: Text(S.current.cancel),
                     ),
                     ElevatedButton(
                       onPressed: () {
                         Navigator.of(Get.context!).pop(true);
                       },
-                      child: Text(S.of(context).confirm),
+                      child: Text(S.current.confirm),
                     ),
                   ],
                 ),
               ).then((value) {
-                if (value) {
-                  setState(() => isFavorite = !isFavorite);
+                if (value == true) {
+                  controller.isFavorite.value = !controller.isFavorite.value;
+                  // setState(() => controller.isFavorite.toggle);
                   settings.removeRoom(widget.room);
                   EventBus.instance.emit('changeFavorite', true);
                 }
               });
             },
-            child: Text('已关注'),
+            child: CacheNetWorkUtils.getCircleAvatar(widget.room.avatar, radius: 18),
           )
-        : FilledButton(
-            style: ButtonStyle(
-              // 减小内边距，使按钮更小
-              padding: Platform.isWindows
-                  ? WidgetStateProperty.all(EdgeInsets.all(12.0))
-                  : WidgetStateProperty.all(EdgeInsets.all(5.0)),
-              // 设置背景色
-              backgroundColor: WidgetStateProperty.all(Get.theme.colorScheme.primary),
-              // 设置按钮形状，调整圆角半径
-              shape: WidgetStateProperty.all(
-                RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6.0), // 圆角半径，可根据需要调整
-                ),
-              ),
-              // 可选：减小文字大小
-              textStyle: WidgetStateProperty.all(const TextStyle(fontSize: 12.0)),
-              minimumSize: WidgetStateProperty.all(Size.zero), // 移除默认最小尺寸
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
+        : FloatingActionButton.extended(
+            key: UniqueKey(),
+            elevation: 2,
+            backgroundColor: Theme.of(context).cardColor,
             onPressed: () {
-              setState(() => isFavorite = !isFavorite);
+              controller.isFavorite.value = !controller.isFavorite.value;
+              // setState(() => controller.isFavorite.toggle);
               settings.addRoom(widget.room);
               EventBus.instance.emit('changeFavorite', true);
             },
-            child: const Text('关注'),
-          );
+            icon: CacheNetWorkUtils.getCircleAvatar(widget.room.avatar, radius: 18),
+            label: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  S.current.follow,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                Text(
+                  widget.room.nick!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ));
   }
 }
 
@@ -500,20 +585,51 @@ class ErrorVideoWidget extends StatelessWidget {
   const ErrorVideoWidget({super.key, required this.controller});
 
   final LivePlayController controller;
+
   @override
   Widget build(BuildContext context) {
     return Material(
-      type: MaterialType.transparency,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Obx(
-              () => Text(
-                '${controller.currentPlayRoom.value.platform == Sites.iptvSite ? controller.currentPlayRoom.value.title : controller.currentPlayRoom.value.nick ?? ''}',
-                style: const TextStyle(fontSize: 16, color: Colors.white),
+        type: MaterialType.transparency,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Obx(() => Text(
+                    '${controller.liveRoomRx.platform.value == Sites.iptvSite ? controller.liveRoomRx.title.value : controller.liveRoomRx.nick.value ?? ''}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.white,
+                    ),
+                  )),
+            ),
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        S.current.play_video_failed,
+                        style: const TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ),
+                    const Text(
+                      "所有线路已切换且无法播放",
+                      style: TextStyle(color: Colors.white, fontSize: 14),
+                    ),
+                    const Text(
+                      "请切换播放器或设置解码方式刷新重试",
+                      style: TextStyle(color: Colors.white, fontSize: 14),
+                    ),
+                    const Text(
+                      "如仍有问题可能该房间未开播或无法观看",
+                      style: TextStyle(color: Colors.white, fontSize: 14),
+                    )
+                  ],
+                ),
               ),
             ),
           ),
@@ -546,20 +662,47 @@ class TimeOutVideoWidget extends StatelessWidget {
   const TimeOutVideoWidget({super.key, required this.controller});
 
   final LivePlayController controller;
+
   @override
   Widget build(BuildContext context) {
     return Material(
-      type: MaterialType.transparency,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Obx(
-              () => Text(
-                '${controller.currentPlayRoom.value.platform == Sites.iptvSite ? controller.currentPlayRoom.value.title : controller.currentPlayRoom.value.nick ?? ''}',
-                style: const TextStyle(fontSize: 16, color: Colors.white),
+        type: MaterialType.transparency,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Obx(() => Text(
+                    '${controller.liveRoomRx.platform.value == Sites.iptvSite ? controller.liveRoomRx.title.value : controller.liveRoomRx.nick.value ?? ''}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.white,
+                    ),
+                  )),
+            ),
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        S.current.play_video_failed,
+                        style: const TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ),
+                    const Text(
+                      "该房间未开播或已下播",
+                      style: TextStyle(color: Colors.white, fontSize: 14),
+                    ),
+                    const Text(
+                      "请刷新或者切换其他直播间进行观看吧",
+                      style: TextStyle(color: Colors.white, fontSize: 14),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

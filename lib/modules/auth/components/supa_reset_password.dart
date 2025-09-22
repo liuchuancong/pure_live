@@ -46,20 +46,20 @@ class _SupaResetPasswordState extends State<SupaResetPassword> {
           TextFormField(
             validator: (value) {
               if (value == null || value.isEmpty || value.length < 6) {
-                return S.of(context).supabase_enter_valid_password;
+                return S.current.supabase_enter_valid_password;
               }
               return null;
             },
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.lock),
-              label: Text(S.of(context).supabase_enter_password),
+              label: Text(S.current.supabase_enter_password),
             ),
             controller: _password,
           ),
           spacer(16),
           ElevatedButton(
             child: Text(
-              S.of(context).supabase_update_password,
+              S.current.supabase_update_password,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             onPressed: () async {
@@ -81,7 +81,7 @@ class _SupaResetPasswordState extends State<SupaResetPassword> {
                 }
               } catch (error) {
                 if (widget.onError == null) {
-                  context.showErrorSnackBar(S.of(context).supabase_unexpected_err(error));
+                  context.showErrorSnackBar(S.current.supabase_unexpected_err(error));
                 } else {
                   widget.onError?.call(error);
                 }

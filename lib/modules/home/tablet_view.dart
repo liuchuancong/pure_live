@@ -18,7 +18,7 @@ class HomeTabletView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: LayoutBuilder(builder: (context, constraint) {
-        bool showAction = Get.width > 680;
+        bool showAction = constraint.maxWidth > 680;
         return SafeArea(
           child: Row(
             children: [
@@ -42,7 +42,8 @@ class HomeTabletView extends StatelessWidget {
                                 icon: const Icon(Icons.link)),
                           ),
                           FloatingActionButton(
-                            heroTag: 'heroTag',
+                            key: UniqueKey(),
+                            heroTag: UniqueKey(),
                             elevation: 0,
                             onPressed: () {
                               Get.put(pure_live.SearchController());
@@ -56,15 +57,15 @@ class HomeTabletView extends StatelessWidget {
                 destinations: [
                   NavigationRailDestination(
                     icon: const Icon(Icons.favorite_rounded),
-                    label: Text(S.of(context).favorites_title),
+                    label: Text(S.current.favorites_title),
                   ),
                   NavigationRailDestination(
                     icon: const Icon(CustomIcons.popular),
-                    label: Text(S.of(context).popular_title),
+                    label: Text(S.current.popular_title),
                   ),
                   NavigationRailDestination(
                     icon: const Icon(Icons.area_chart_rounded),
-                    label: Text(S.of(context).areas_title),
+                    label: Text(S.current.areas_title),
                   ),
                 ],
                 selectedIndex: index > 2 ? 0 : index,

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 ///This is the new util class for the shared preferences.
@@ -21,6 +23,8 @@ class PrefUtil {
       prefs.setDouble(key, value);
     } else if (value is List<String>) {
       prefs.setStringList(key, value);
+    } else if (value is Map) {
+      setMap(key, value);
     }
   }
 
@@ -62,5 +66,16 @@ class PrefUtil {
 
   static Future<bool> setStringList(String key, List<String> value) {
     return prefs.setStringList(key, value);
+  }
+
+  /// 根据key存储Map类型
+  static Future<bool> setMap(String key, Map value) {
+    return prefs.setString(key, json.encode(value));
+  }
+
+  /// 根据key获取Map类型
+  static Map getMap(String key) {
+    String jsonStr = prefs.getString(key) ?? "";
+    return jsonStr.isEmpty ? {} : json.decode(jsonStr);
   }
 }

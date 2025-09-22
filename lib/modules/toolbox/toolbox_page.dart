@@ -1,7 +1,9 @@
-import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:remixicon/remixicon.dart';
+import 'package:get/get.dart';
+import 'package:pure_live/common/l10n/generated/l10n.dart';
+import 'package:pure_live/core/sites.dart';
 import 'package:pure_live/modules/toolbox/toolbox_controller.dart';
+import 'package:remixicon/remixicon.dart';
 
 class ToolBoxPage extends GetView<ToolBoxController> {
   const ToolBoxPage({super.key});
@@ -10,7 +12,7 @@ class ToolBoxPage extends GetView<ToolBoxController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("链接解析"),
+        title: Text(S.current.live_room_link_parsing),
       ),
       body: ListView(
         padding: const EdgeInsets.all(12.0),
@@ -18,7 +20,7 @@ class ToolBoxPage extends GetView<ToolBoxController> {
           buildCard(
             context: context,
             child: ExpansionTile(
-              title: const Text("直播间跳转"),
+              title: Text(S.current.live_room_jump),
               childrenPadding: const EdgeInsets.symmetric(horizontal: 16.0),
               initiallyExpanded: true,
               children: [
@@ -28,7 +30,7 @@ class ToolBoxPage extends GetView<ToolBoxController> {
                   controller: controller.roomJumpToController,
                   decoration: InputDecoration(
                     border: const OutlineInputBorder(),
-                    hintText: "输入或粘贴哔哩哔哩直播/虎牙直播/斗鱼直播/抖音/网易cc/快手直播的链接",
+                    hintText: S.current.live_room_link_input(Sites.supportSites.where((site) => site.id != Sites.iptvSite).map((site) => Sites.getSiteName(site.id)).toList().join("/")),
                     contentPadding: const EdgeInsets.all(12.0),
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide(
@@ -46,7 +48,7 @@ class ToolBoxPage extends GetView<ToolBoxController> {
                       controller.jumpToRoom(controller.roomJumpToController.text);
                     },
                     icon: const Icon(Remix.play_circle_line),
-                    label: const Text("链接跳转"),
+                    label: Text(S.current.live_room_link_jump),
                   ),
                 ),
               ],
@@ -55,7 +57,7 @@ class ToolBoxPage extends GetView<ToolBoxController> {
           buildCard(
             context: context,
             child: ExpansionTile(
-              title: const Text("获取直链"),
+              title: Text(S.current.live_room_link_direct),
               childrenPadding: const EdgeInsets.symmetric(horizontal: 16.0),
               initiallyExpanded: true,
               children: [
@@ -65,7 +67,7 @@ class ToolBoxPage extends GetView<ToolBoxController> {
                   controller: controller.getUrlController,
                   decoration: InputDecoration(
                     border: const OutlineInputBorder(),
-                    hintText: "输入或粘贴哔哩哔哩直播/虎牙直播/斗鱼直播/抖音/网易cc/快手直播的链接",
+                    hintText: S.current.live_room_link_input(Sites.supportSites.where((site) => site.id != Sites.iptvSite).map((site) => Sites.getSiteName(site.id)).toList().join("/")),
                     contentPadding: const EdgeInsets.all(12.0),
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide(
@@ -83,7 +85,7 @@ class ToolBoxPage extends GetView<ToolBoxController> {
                       controller.getPlayUrl(controller.getUrlController.text);
                     },
                     icon: const Icon(Remix.link),
-                    label: const Text("获取直链"),
+                    label: Text(S.current.live_room_link_direct),
                   ),
                 ),
               ],

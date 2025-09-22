@@ -110,7 +110,17 @@ class Utils {
                     },
                     icon: const Icon(Icons.arrow_back),
                   ),
-                  title: Text(title, style: Get.textTheme.titleMedium),
+                  title: Text(
+                    title,
+                    style: Get.textTheme.titleMedium,
+                  ),
+                ),
+                Divider(
+                  height: 1,
+                  color: Colors.grey.withValues(alpha: .1),
+                ),
+                Expanded(
+                  child: child,
                 ),
                 Divider(height: 1, color: Colors.grey.withValues(alpha: .1)),
                 Expanded(child: child),
@@ -174,7 +184,7 @@ class Utils {
         ],
       ),
       // barrierColor:
-      //     Get.isDarkMode ? Colors.grey.withValues(alpha:.3) : Colors.black38,
+      //     Get.isDarkMode ? Colors.grey.withValues(alpha: .3) : Colors.black38,
     );
     return result;
   }

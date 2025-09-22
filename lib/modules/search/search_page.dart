@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:pure_live/modules/util/site_logo_widget.dart';
 import 'search_list_view.dart';
 import 'package:flutter/material.dart';
 import 'package:pure_live/core/sites.dart';
@@ -14,15 +15,17 @@ class SearchPage extends GetView<pure_live.SearchController> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: TextField(
+          key: ValueKey("Search TextField"),
           controller: controller.searchController,
           autofocus: true,
           decoration: InputDecoration(
-            hintText: S.of(context).search_input_hint,
+            hintText: S.current.search_input_hint,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(24)),
             contentPadding: const EdgeInsets.symmetric(horizontal: 12.0),
             prefixIcon: IconButton(
               onPressed: () {
-                Navigator.of(Get.context!).pop();
+                // Navigator.of(Get.context!).pop();
+                Get.back();
               },
               icon: const Icon(Icons.arrow_back),
             ),
@@ -39,8 +42,9 @@ class SearchPage extends GetView<pure_live.SearchController> {
           controller: controller.tabController,
           padding: EdgeInsets.zero,
           tabAlignment: TabAlignment.center,
-          tabs: Sites().availableSites().map((e) => Tab(text: e.name)).toList(),
-          isScrollable: false,
+          labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          tabs: SiteWidget.availableSitesTabList,
+          isScrollable: true,
           indicatorSize: TabBarIndicatorSize.label,
         ),
       ),

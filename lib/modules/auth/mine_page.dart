@@ -31,7 +31,7 @@ class _MinePageState extends State<MinePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(S.of(context).supabase_mine),
+        title: Text(S.current.supabase_mine),
       ),
       body: ListView(scrollDirection: Axis.vertical, physics: const BouncingScrollPhysics(), children: [
         Padding(
@@ -47,19 +47,19 @@ class _MinePageState extends State<MinePage> {
                 ),
               ListTile(
                 leading: const Icon(Icons.sim_card_download_outlined, size: 32),
-                subtitle: Text(S.of(context).supabase_mine_streams),
+                subtitle: Text(S.current.supabase_mine_streams),
                 title: const Text('下载用户配置'),
                 onTap: downloadUserConifg,
               ),
               ListTile(
                 leading: const Icon(Icons.upload_file_outlined, size: 32),
-                subtitle: Text(S.of(context).supabase_mine_streams),
-                title: Text(S.of(context).supabase_mine_profiles),
+                subtitle: Text(S.current.supabase_mine_streams),
+                title: Text(S.current.supabase_mine_profiles),
                 onTap: uploadUserConifg,
               ),
               ListTile(
                 leading: const Icon(Icons.login_outlined, size: 32),
-                title: Text(S.of(context).supabase_log_out),
+                title: Text(S.current.supabase_log_out),
                 onTap: singOut,
               ),
             ],

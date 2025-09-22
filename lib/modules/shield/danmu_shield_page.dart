@@ -1,5 +1,6 @@
-import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:pure_live/common/l10n/generated/l10n.dart';
 import 'package:pure_live/modules/auth/utils/constants.dart';
 import 'package:pure_live/modules/shield/danmu_shield_controller.dart';
 
@@ -10,7 +11,7 @@ class DanmuShieldPage extends GetView<DanmuShieldController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("弹幕关键词屏蔽"),
+        title: Text(S.current.danmu_filter_keyword),
       ),
       body: ListView(
         padding: const EdgeInsets.all(12.0),
@@ -21,11 +22,11 @@ class DanmuShieldPage extends GetView<DanmuShieldController> {
             decoration: InputDecoration(
               contentPadding: const EdgeInsets.all(12.0),
               border: OutlineInputBorder(borderSide: BorderSide(color: controller.themeColor)),
-              hintText: "请输入关键词",
+              hintText: S.current.keyword_input,
               suffixIcon: TextButton.icon(
                 onPressed: controller.add,
                 icon: const Icon(Icons.add),
-                label: const Text("添加"),
+                label: Text(S.current.add),
               ),
             ),
             onSubmitted: (e) {
@@ -35,7 +36,7 @@ class DanmuShieldPage extends GetView<DanmuShieldController> {
           spacer(12.0),
           Obx(
             () => Text(
-              "已添加${controller.settingsController.shieldList.length}个关键词（点击移除）",
+              S.current.danmu_filter_keyword_add_info(controller.settingsController.shieldList.length),
               style: Get.textTheme.titleMedium,
             ),
           ),

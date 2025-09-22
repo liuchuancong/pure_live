@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/common/services/bilibili_account_service.dart';
 
@@ -47,6 +48,7 @@ class BiliBiliQRLoginController extends GetxController {
       qrStatus.value = QRStatus.unscanned;
       startPoll();
     } catch (e) {
+      CoreLog.error(e);
       SmartDialog.showToast(e.toString());
       qrStatus.value = QRStatus.failed;
     }
@@ -94,6 +96,7 @@ class BiliBiliQRLoginController extends GetxController {
         qrStatus.value = QRStatus.scanned;
       }
     } catch (e) {
+      CoreLog.error(e);
       SmartDialog.showToast(e.toString());
     }
   }

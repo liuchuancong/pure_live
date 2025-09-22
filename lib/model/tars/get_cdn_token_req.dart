@@ -3,16 +3,11 @@ import 'package:tars_dart/tars/codec/tars_displayer.dart';
 import 'package:tars_dart/tars/codec/tars_input_stream.dart';
 import 'package:tars_dart/tars/codec/tars_output_stream.dart';
 // ignore_for_file: no_leading_underscores_for_local_identifiers
-
 class GetCdnTokenReq extends TarsStruct {
   String url = "";
-
   String cdnType = "";
-
   String streamName = "";
-
   int presenterUid = 0;
-
   @override
   void readFrom(TarsInputStream _is) {
     url = _is.read(url, 0, false);
@@ -20,7 +15,6 @@ class GetCdnTokenReq extends TarsStruct {
     streamName = _is.read(streamName, 2, false);
     presenterUid = _is.read(presenterUid, 3, false);
   }
-
   @override
   void writeTo(TarsOutputStream _os) {
     _os.write(url, 0);
@@ -28,7 +22,6 @@ class GetCdnTokenReq extends TarsStruct {
     _os.write(streamName, 2);
     _os.write(presenterUid, 3);
   }
-
   @override
   Object deepCopy() {
     return GetCdnTokenReq()
@@ -37,7 +30,6 @@ class GetCdnTokenReq extends TarsStruct {
       ..streamName = streamName
       ..presenterUid = presenterUid;
   }
-
   @override
   void displayAsString(StringBuffer sb, int level) {
     TarsDisplayer _ds = TarsDisplayer(sb, level: level);

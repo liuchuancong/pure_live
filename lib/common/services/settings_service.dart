@@ -1,15 +1,24 @@
-import 'dart:io';
 import 'dart:convert';
-import 'dart:developer';
+import 'dart:io';
+
+import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:stop_watch_timer/stop_watch_timer.dart';
-import 'package:flutter_exit_app/flutter_exit_app.dart';
-import 'package:flex_color_picker/flex_color_picker.dart';
-import 'package:pure_live/modules/web_dav/webdav_config.dart';
 import 'package:pure_live/common/services/bilibili_account_service.dart';
+import 'package:pure_live/common/services/setting_mixin/auto_shut_down.dart';
+import 'package:pure_live/common/services/setting_mixin/setting_part.dart';
+import 'package:pure_live/core/common/core_log.dart';
+import 'package:pure_live/modules/live_play/danmaku/danmaku_controller_factory.dart';
+import 'package:pure_live/modules/live_play/widgets/video_player/model/video_player_factory.dart';
+import 'package:pure_live/plugins/extension/map_extension.dart';
+import 'package:pure_live/plugins/extension/string_extension.dart';
 
-class SettingsService extends GetxController {
+import 'setting_mixin/setting_bit_rate.dart';
+import 'setting_mixin/setting_webdav.dart';
+
+class SettingsService  extends GetxController with AutoShutDownMixin, SettingBitRateMixin, SettingWebdavMixin {
+  static SettingsService get instance => Get.find<SettingsService>();
+
   SettingsService() {
     enableDynamicTheme.listen((bool value) {
       PrefUtil.setBool('enableDynamicTheme', value);
@@ -25,16 +34,10 @@ class SettingsService extends GetxController {
     autoRefreshTime.listen((value) {
       PrefUtil.setInt('autoRefreshTime', value);
     });
-    debounce(autoShutDownTime, (callback) {
-      PrefUtil.setInt('autoShutDownTime', autoShutDownTime.value);
-      if (enableAutoShutDownTime.isTrue) {
-        _stopWatchTimer.onStopTimer();
-        _stopWatchTimer.setPresetMinuteTime(autoShutDownTime.value, add: false);
-        _stopWatchTimer.onStartTimer();
-      } else {
-        _stopWatchTimer.onStopTimer();
-      }
-    }, time: 1.seconds);
+
+    // debounce(autoShutDownTime, (callback) {
+    //
+    // }, time: 1.seconds);
     enableBackgroundPlay.listen((value) {
       PrefUtil.setBool('enableBackgroundPlay', value);
     });
@@ -44,16 +47,7 @@ class SettingsService extends GetxController {
     enableScreenKeepOn.listen((value) {
       PrefUtil.setBool('enableScreenKeepOn', value);
     });
-    debounce(enableAutoShutDownTime, (callback) {
-      PrefUtil.setBool('enableAutoShutDownTime', enableAutoShutDownTime.value);
-      if (enableAutoShutDownTime.value == true) {
-        _stopWatchTimer.onStopTimer();
-        _stopWatchTimer.setPresetMinuteTime(autoShutDownTime.value, add: false);
-        _stopWatchTimer.onStartTimer();
-      } else {
-        _stopWatchTimer.onStopTimer();
-      }
-    }, time: 1.seconds);
+
     enableAutoCheckUpdate.listen((value) {
       PrefUtil.setBool('enableAutoCheckUpdate', value);
     });
@@ -92,16 +86,15 @@ class SettingsService extends GetxController {
       PrefUtil.setString('backupDirectory', value);
     });
     onInitShutDown();
-    _stopWatchTimer.fetchEnded.listen((value) {
-      _stopWatchTimer.onStopTimer();
-      FlutterExitApp.exitApp();
-    });
 
     videoFitIndex.listen((value) {
       PrefUtil.setInt('videoFitIndex', value);
     });
     hideDanmaku.listen((value) {
       PrefUtil.setBool('hideDanmaku', value);
+    });
+    showColourDanmaku.listen((value) {
+      PrefUtil.setBool('showColourDanmaku', value);
     });
 
     danmakuTopArea.listen((value) {
@@ -144,6 +137,10 @@ class SettingsService extends GetxController {
       PrefUtil.setInt('videoPlayerIndex', value);
     });
 
+    danmakuControllerType.listen((value) {
+      PrefUtil.setString('danmakuControllerType', value);
+    });
+
     bilibiliCookie.listen((value) {
       PrefUtil.setString('bilibiliCookie', value);
     });
@@ -151,26 +148,38 @@ class SettingsService extends GetxController {
     huyaCookie.listen((value) {
       PrefUtil.setString('huyaCookie', value);
     });
-
-    volume.listen((value) {
-      PrefUtil.setDouble('volume', value);
+    filterDanmuUserLevel.listen((value) {
+      PrefUtil.setDouble('filterDanmuUserLevel', value);
+    });
+    filterDanmuFansLevel.listen((value) {
+      PrefUtil.setDouble('filterDanmuFansLevel', value);
+    });
+    showDanmuFans.listen((value) {
+      PrefUtil.setBool('showDanmuFans', value);
+    });
+    showDanmuUserLevel.listen((value) {
+      PrefUtil.setBool('showDanmuUserLevel', value);
     });
 
-    customPlayerOutput.listen((value) {
-      PrefUtil.setBool('customPlayerOutput', value);
-    });
+    // webPort.listen((value) {
+    //   PrefUtil.setString('webPort', value);
+    // });
 
-    videoOutputDriver.listen((value) {
-      PrefUtil.setString('videoOutputDriver', value);
+    // webPortEnable.listen((value) {
+    //   changeWebListen(webPort.value, value);
+    //   PrefUtil.setBool('webPortEnable', value);
+    // });
+    siteCookies.listen((value) {
+      CoreLog.d("save siteCookies: $value");
+      PrefUtil.setMap('siteCookies', value);
     });
+    init();
+  }
 
-    audioOutputDriver.listen((value) {
-      PrefUtil.setString('audioOutputDriver', value);
-    });
-
-    videoHardwareDecoder.listen((value) {
-      PrefUtil.setString('videoHardwareDecoder', value);
-    });
+  void init(){
+    initAutoShutDown(settingPartList);
+    initBitRate(settingPartList);
+    initWebdav(settingPartList);
   }
 
   // Theme settings
@@ -179,6 +188,20 @@ class SettingsService extends GetxController {
     "Dark": ThemeMode.dark,
     "Light": ThemeMode.light,
   };
+
+  static String getThemeTitle(String themeModeName) {
+    switch (themeModeName) {
+      case "System":
+        return S.current.system;
+      case "Dark":
+        return S.current.dark;
+      case "Light":
+        return S.current.light;
+      default:
+        return S.current.system;
+    }
+  }
+
   final themeModeName = (PrefUtil.getString('themeMode') ?? "System").obs;
 
   ThemeMode get themeMode => SettingsService.themeModes[themeModeName.value]!;
@@ -197,12 +220,7 @@ class SettingsService extends GetxController {
     Get.changeTheme(darkTheme);
   }
 
-  void onInitShutDown() {
-    if (enableAutoShutDownTime.isTrue) {
-      _stopWatchTimer.setPresetMinuteTime(autoShutDownTime.value, add: false);
-      _stopWatchTimer.onStartTimer();
-    }
-  }
+
 
   static Map<String, Color> themeColors = {
     "Crimson": const Color.fromARGB(255, 220, 20, 60),
@@ -222,15 +240,11 @@ class SettingsService extends GetxController {
   };
 
   // Make a custom ColorSwatch to name map from the above custom colors.
-  final Map<ColorSwatch<Object>, String> colorsNameMap = themeColors.map(
-    (key, value) => MapEntry(ColorTools.createPrimarySwatch(value), key),
-  );
+  final Map<ColorSwatch<Object>, String> colorsNameMap = themeColors.map((key, value) => MapEntry(ColorTools.createPrimarySwatch(value), key));
 
-  final StopWatchTimer _stopWatchTimer = StopWatchTimer(mode: StopWatchMode.countDown); // Create instance.
 
   final themeColorSwitch = (PrefUtil.getString('themeColorSwitch') ?? Colors.blue.hex).obs;
 
-  StopWatchTimer get stopWatchTimer => _stopWatchTimer;
 
   static Map<String, Locale> languages = {
     "English": const Locale.fromSubtags(languageCode: 'en'),
@@ -238,12 +252,17 @@ class SettingsService extends GetxController {
   };
   final languageName = (PrefUtil.getString('language') ?? "简体中文").obs;
 
+  final webPort = (PrefUtil.getString('webPort') ?? "8008").obs;
+
+  final webPortEnable = (PrefUtil.getBool('webPortEnable') ?? false).obs;
+
   Locale get language => SettingsService.languages[languageName.value]!;
 
-  void changeLanguage(String value) {
+  Future<void> changeLanguage(String value) async {
     languageName.value = value;
     PrefUtil.setString('language', value);
     Get.updateLocale(language);
+    await S.load(SettingsService.languages[SettingsService.instance.languageName.value]!);
   }
 
   void changePlayer(int value) {
@@ -256,7 +275,7 @@ class SettingsService extends GetxController {
   // Custom settings
   final autoRefreshTime = (PrefUtil.getInt('autoRefreshTime') ?? 3).obs;
 
-  final autoShutDownTime = (PrefUtil.getInt('autoShutDownTime') ?? 120).obs;
+
 
   final enableDenseFavorites = (PrefUtil.getBool('enableDenseFavorites') ?? false).obs;
 
@@ -269,8 +288,8 @@ class SettingsService extends GetxController {
   final enableAutoCheckUpdate = (PrefUtil.getBool('enableAutoCheckUpdate') ?? true).obs;
   final videoFitIndex = (PrefUtil.getInt('videoFitIndex') ?? 0).obs;
   final hideDanmaku = (PrefUtil.getBool('hideDanmaku') ?? false).obs;
-  final danmakuTopArea = (PrefUtil.getDouble('danmakuTopArea') ?? 0.0).obs;
-  final danmakuBottomArea = (PrefUtil.getDouble('danmakuBottomArea') ?? 0.5).obs;
+  final showColourDanmaku = (PrefUtil.getBool('showColourDanmaku') ?? false).obs;
+  final danmakuArea = (PrefUtil.getDouble('danmakuArea') ?? 1.0).obs;
   final danmakuSpeed = (PrefUtil.getDouble('danmakuSpeed') ?? 8.0).obs;
   final danmakuFontSize = (PrefUtil.getDouble('danmakuFontSize') ?? 16.0).obs;
   final danmakuFontBorder = (PrefUtil.getDouble('danmakuFontBorder') ?? 4.0).obs;
@@ -280,6 +299,7 @@ class SettingsService extends GetxController {
   final enableFullScreenDefault = (PrefUtil.getBool('enableFullScreenDefault') ?? false).obs;
 
   final videoPlayerIndex = (PrefUtil.getInt('videoPlayerIndex') ?? 0).obs;
+  final danmakuControllerType = (PrefUtil.getString('danmakuControllerType') ?? DanmakuControllerfactory.getDanmakuControllerTypeList()[0]).obs;
 
   final enableCodec = (PrefUtil.getBool('enableCodec') ?? true).obs;
 
@@ -293,26 +313,25 @@ class SettingsService extends GetxController {
 
   final playerCompatMode = (PrefUtil.getBool('playerCompatMode') ?? false).obs;
 
-  final enableAutoShutDownTime = (PrefUtil.getBool('enableAutoShutDownTime') ?? false).obs;
+  final filterDanmuUserLevel = (PrefUtil.getDouble('filterDanmuUserLevel') ?? 0.0).obs;
+  final filterDanmuFansLevel = (PrefUtil.getDouble('filterDanmuFansLevel') ?? 0.0).obs;
+  final showDanmuFans = (PrefUtil.getBool('showDanmuFans') ?? true).obs;
+  final showDanmuUserLevel = (PrefUtil.getBool('showDanmuUserLevel') ?? true).obs;
+
   final doubleExit = (PrefUtil.getBool('doubleExit') ?? true).obs;
-  static const List<String> resolutions = ['原画', '蓝光8M', '蓝光4M', '超清', '流畅'];
+  static const List<String> resolutions = ['原画', '蓝光8M', '蓝光4M', '超清', '高清', '标清', '流畅'];
+
+  final siteCookies = ((PrefUtil.getMap('siteCookies')).toStringMap()).obs;
+
+  final SettingPartList settingPartList = SettingPartList();
 
   final volume = (PrefUtil.getDouble('volume') ?? 0.5).obs;
 
   final bilibiliCookie = (PrefUtil.getString('bilibiliCookie') ?? '').obs;
-
-  final huyaCookie = (PrefUtil.getString('huyaCookie') ?? '').obs;
-
-  static const List<BoxFit> videofitList = [
-    BoxFit.contain,
-    BoxFit.fill,
-    BoxFit.cover,
-    BoxFit.fitWidth,
-    BoxFit.fitHeight,
-    BoxFit.scaleDown,
-  ];
+  static const List<BoxFit> videofitList = [BoxFit.contain, BoxFit.fill, BoxFit.cover, BoxFit.fitWidth, BoxFit.fitHeight];
 
   final preferResolution = (PrefUtil.getString('preferResolution') ?? resolutions[0]).obs;
+  final preferResolutionMobile = (PrefUtil.getString('preferResolutionMobile') ?? resolutions[resolutions.length - 1]).obs;
 
   void changePreferResolution(String name) {
     if (resolutions.indexWhere((e) => e == name) != -1) {
@@ -321,96 +340,55 @@ class SettingsService extends GetxController {
     }
   }
 
+  void changePreferResolutionMobile(String name) {
+    if (resolutions.indexWhere((e) => e == name) != -1) {
+      preferResolutionMobile.value = name;
+      PrefUtil.setString('preferResolutionMobile', name);
+    }
+  }
+
+  void changeDanmakuController(String name) {
+    if (DanmakuControllerfactory.getDanmakuControllerTypeList().indexWhere((e) => e == name) != -1) {
+      danmakuControllerType.value = name;
+      PrefUtil.setString('danmakuControllerType', name);
+    }
+  }
+
+  void changeWebListen(int port, bool enable) {
+    try {
+      if (enable) {
+        // LocalHttpServer().startServer(port);
+      } else {
+        // LocalHttpServer().closeServer();
+      }
+    } catch (e) {
+      CoreLog.error(e);
+      SmartDialog.showToast('打开故障,请稍后重试');
+    }
+  }
+
   List<String> get resolutionsList => resolutions;
 
   List<BoxFit> get videofitArrary => videofitList;
-
-  void changeShutDownConfig(int minutes, bool isAutoShutDown) {
-    autoShutDownTime.value = minutes;
-    enableAutoShutDownTime.value = isAutoShutDown;
-    PrefUtil.setInt('autoShutDownTime', minutes);
-    PrefUtil.setBool('enableAutoShutDownTime', isAutoShutDown);
-    onInitShutDown();
-  }
 
   void changeAutoRefreshConfig(int minutes) {
     autoRefreshTime.value = minutes;
     PrefUtil.setInt('autoRefreshTime', minutes);
   }
 
-  static const List<String> platforms = ['bilibili', 'douyu', 'huya', 'douyin', 'kuaishow', 'cc', '网络'];
+  static List<String> platforms = Sites.supportSites.map((site) => site.id).toList();
 
-  static const videoOutputDrivers = {
-    "gpu": "gpu",
-    "gpu-next": "gpu-next",
-    "xv": "xv (X11 only)",
-    "x11": "x11 (X11 only)",
-    "vdpau": "vdpau (X11 only)",
-    "direct3d": "direct3d (Windows only)",
-    "sdl": "sdl",
-    "dmabuf-wayland": "dmabuf-wayland",
-    "vaapi": "vaapi",
-    "null": "null",
-    "libmpv": "libmpv",
-    "mediacodec_embed": "mediacodec_embed (Android only)",
-  };
-
-  static const audioOutputDrivers = {
-    "null": "null (No audio output)",
-    "pulse": "pulse (Linux, uses PulseAudio)",
-    "pipewire": "pipewire (Linux, via Pulse compatibility or native)",
-    "alsa": "alsa (Linux only)",
-    "oss": "oss (Linux only)",
-    "jack": "jack (Linux/macOS, low-latency audio)",
-    "directsound": "directsound (Windows only)",
-    "wasapi": "wasapi (Windows only)",
-    "winmm": "winmm (Windows only, legacy API)",
-    "audiounit": "audiounit (iOS only)",
-    "coreaudio": "coreaudio (macOS only)",
-    "opensles": "opensles (Android only)",
-    "audiotrack": "audiotrack (Android only)",
-    "aaudio": "aaudio (Android only)",
-    "pcm": "pcm (Cross-platform)",
-    "sdl": "sdl (Cross-platform, via SDL library)",
-    "openal": "openal (Cross-platform, OpenAL backend)",
-    "libao": "libao (Cross-platform, uses libao library)",
-    "auto": "auto (Not available)",
-  };
-
-  static const hardwareDecoder = {
-    "no": "no",
-    "auto": "auto",
-    "auto-safe": "auto-safe",
-    "yes": "yes",
-    "auto-copy": "auto-copy",
-    "d3d11va": "d3d11va",
-    "d3d11va-copy": "d3d11va-copy",
-    "videotoolbox": "videotoolbox",
-    "videotoolbox-copy": "videotoolbox-copy",
-    "vaapi": "vaapi",
-    "vaapi-copy": "vaapi-copy",
-    "nvdec": "nvdec",
-    "nvdec-copy": "nvdec-copy",
-    "drm": "drm",
-    "drm-copy": "drm-copy",
-    "vulkan": "vulkan",
-    "vulkan-copy": "vulkan-copy",
-    "dxva2": "dxva2",
-    "dxva2-copy": "dxva2-copy",
-    "vdpau": "vdpau",
-    "vdpau-copy": "vdpau-copy",
-    "mediacodec": "mediacodec",
-    "mediacodec-copy": "mediacodec-copy",
-    "cuda": "cuda",
-    "cuda-copy": "cuda-copy",
-    "crystalhd": "crystalhd",
-    "rkmpp": "rkmpp",
-  };
-
-  static const List<String> players = ['Mpv播放器', 'Exo播放器'];
+  // static const List<String> players = ['Exo播放器', '系统播放器', 'IJK播放器', '阿里播放器', 'MpvPlayer'];
+  static List<String> players = VideoPlayerFactory.getSupportVideoPlayerList().map((e) => e.playerName).toList();
   final preferPlatform = (PrefUtil.getString('preferPlatform') ?? platforms[0]).obs;
 
-  List<String> get playerlist => players;
+  List<String> get playerlist {
+    if (videoPlayerIndex.value >= players.length) {
+      videoPlayerIndex.value = 0;
+    }
+    return players;
+  }
+
   void changePreferPlatform(String name) {
     if (platforms.indexWhere((e) => e == name) != -1) {
       preferPlatform.value = name;
@@ -419,47 +397,67 @@ class SettingsService extends GetxController {
     }
   }
 
-  static const List<String> supportSites = [
-    Sites.bilibiliSite,
-    Sites.douyuSite,
-    Sites.huyaSite,
-    Sites.douyinSite,
-    Sites.kuaishouSite,
-    Sites.ccSite,
-    Sites.iptvSite,
-  ];
+  static List<String> supportSites = Sites.supportSites.map((site) => site.id).toList();
 
   final shieldList = ((PrefUtil.getStringList('shieldList') ?? [])).obs;
 
   final hotAreasList = ((PrefUtil.getStringList('hotAreasList') ?? supportSites)).obs;
 
+  // 用于标志 关注房间列表长度 是否变化,
+  final favoriteRoomsLengthChangeFlag = false.obs;
+
   // Favorite rooms storage
   final favoriteRooms =
-      ((PrefUtil.getStringList('favoriteRooms') ?? []).map((e) => LiveRoom.fromJson(jsonDecode(e))).toList()).obs;
+      ((PrefUtil.getStringList('favoriteRooms') ?? []).map((e) => LiveRoom.fromJson(jsonDecode(e))).where((room) => !room.roomId.isNullOrEmpty && !room.platform.isNullOrEmpty).toList()).obs;
+
+  // 存储关注，用于优化遍历
+  late Map<String, LiveRoom> favoriteRoomsMap = toRoomMap(favoriteRooms.value);
+
+  Map<String, LiveRoom> toRoomMap(List<LiveRoom> list) => Map.fromEntries(list.map((e) => MapEntry(getLiveRoomKey(e), e)));
 
   final historyRooms =
-      ((PrefUtil.getStringList('historyRooms') ?? []).map((e) => LiveRoom.fromJson(jsonDecode(e))).toList()).obs;
+      ((PrefUtil.getStringList('historyRooms') ?? []).map((e) => LiveRoom.fromJson(jsonDecode(e))).where((room) => !room.roomId.isNullOrEmpty && !room.platform.isNullOrEmpty).toList()).obs;
+
+  // 存储历史，用于优化遍历
+  late Map<String, LiveRoom> historyRoomsMap = toRoomMap(historyRooms.value);
+
+  String getLiveRoomKey(LiveRoom room) {
+    return toLiveRoomKey(room.platform, room.roomId);
+  }
+
+  String toLiveRoomKey(String? platform, String? roomId) {
+    return "${platform ?? ''}__${roomId ?? ''}";
+  }
 
   bool isFavorite(LiveRoom room) {
-    return favoriteRooms.any((element) => element.roomId == room.roomId);
+    if (room.roomId.isNullOrEmpty || room.platform.isNullOrEmpty) {
+      return false;
+    }
+    return favoriteRoomsMap.containsKey(getLiveRoomKey(room));
   }
 
   LiveRoom getLiveRoomByRoomId(String roomId, String platform) {
-    if (!favoriteRooms.any((element) => element.roomId == roomId) &&
-        !historyRooms.any((element) => element.roomId == roomId)) {
-      return LiveRoom(roomId: roomId, platform: platform, liveStatus: LiveStatus.unknown);
-    }
-    return favoriteRooms.firstWhere(
-      (element) => element.roomId == roomId && element.platform == platform,
-      orElse: () => historyRooms.firstWhere((element) => element.roomId == roomId && element.platform == platform),
-    );
+    var liveRoomKey = toLiveRoomKey(platform, roomId);
+    return favoriteRoomsMap[liveRoomKey] ??
+        historyRoomsMap[liveRoomKey] ??
+        LiveRoom(
+          roomId: roomId,
+          platform: platform,
+          liveStatus: LiveStatus.unknown,
+        );
   }
 
   bool addRoom(LiveRoom room) {
-    if (favoriteRooms.any((element) => element.roomId == room.roomId)) {
+    if (room.roomId.isNullOrEmpty || room.platform.isNullOrEmpty) {
       return false;
     }
+    var liveRoomKey = getLiveRoomKey(room);
+    if (favoriteRoomsMap.containsKey(liveRoomKey)) {
+      return false;
+    }
+    favoriteRoomsMap[liveRoomKey] = room;
     favoriteRooms.add(room);
+    favoriteRoomsLengthChangeFlag.toggle();
     return true;
   }
 
@@ -472,61 +470,116 @@ class SettingsService extends GetxController {
   }
 
   bool removeRoom(LiveRoom room) {
-    if (!favoriteRooms.any((element) => element.roomId == room.roomId)) {
+    var liveRoomKey = getLiveRoomKey(room);
+    if (!favoriteRoomsMap.containsKey(liveRoomKey)) {
       return false;
     }
+    favoriteRoomsMap.remove(liveRoomKey);
     favoriteRooms.remove(room);
+    favoriteRoomsLengthChangeFlag.toggle();
     return true;
   }
 
   bool updateRoom(LiveRoom room) {
-    int idx = favoriteRooms.indexWhere((element) => element.roomId == room.roomId);
+    if (room.roomId.isNullOrEmpty || room.platform.isNullOrEmpty) {
+      return false;
+    }
     updateRoomInHistory(room);
-    if (idx == -1) return false;
-    favoriteRooms[idx] = room;
+
+    var liveRoomKey = getLiveRoomKey(room);
+    var containsKey = favoriteRoomsMap.containsKey(liveRoomKey);
+    if (!containsKey) return false;
+    favoriteRoomsMap[liveRoomKey] = room;
+    favoriteRooms.value = favoriteRoomsMap.values.toList();
     return true;
+  }
+
+  LiveRoom updateRecordTag(LiveRoom newLiveRoom, LiveRoom oldLiveRoom) {
+    if (newLiveRoom.recordWatching.isNullOrEmpty) {
+      newLiveRoom.recordWatching = oldLiveRoom.recordWatching;
+    }
+    if (newLiveRoom.liveStatus == LiveStatus.live && newLiveRoom.recordWatching.isNotNullOrEmpty) {
+      var watching = readableCountStrToNum(newLiveRoom.watching);
+      var recordWatching = readableCountStrToNum(newLiveRoom.recordWatching);
+      if (watching <= recordWatching * 1.2) {
+        newLiveRoom.liveStatus = LiveStatus.replay;
+        newLiveRoom.isRecord = true;
+      }
+    }
+    // CoreLog.d(jsonEncode(newLiveRoom));
+    // CoreLog.d(jsonEncode(oldLiveRoom));
+    return newLiveRoom;
+  }
+
+  void innerUpdateRooms(List<LiveRoom> rooms, Map<String, LiveRoom> roomsMap, RxList<LiveRoom> rxList) {
+    bool flag = false;
+    for (var room in rooms) {
+      var liveRoomKey = getLiveRoomKey(room);
+      if (roomsMap.containsKey(liveRoomKey)) {
+        flag = true;
+        roomsMap[liveRoomKey] = updateRecordTag(room, roomsMap[liveRoomKey]!);
+      }
+    }
+    if (flag) {
+      rxList.value = roomsMap.values.toList();
+    }
   }
 
   void updateRooms(List<LiveRoom> rooms) {
-    favoriteRooms.value = rooms;
+    innerUpdateRooms(rooms, favoriteRoomsMap, favoriteRooms);
+    innerUpdateRooms(rooms, historyRoomsMap, historyRooms);
   }
 
   bool updateRoomInHistory(LiveRoom room) {
-    int idx = historyRooms.indexWhere((element) => element.roomId == room.roomId);
-    if (idx == -1) return false;
-    historyRooms[idx] = room;
+    if (room.roomId.isNullOrEmpty || room.platform.isNullOrEmpty) {
+      return false;
+    }
+    var liveRoomKey = getLiveRoomKey(room);
+    var containsKey = historyRoomsMap.containsKey(liveRoomKey);
+    if (!containsKey) return false;
+    historyRoomsMap[liveRoomKey] = room;
+    historyRooms.value = historyRoomsMap.values.toList();
     return true;
   }
 
+  /// 清除历史记录
+  void clearHistory() {
+    historyRoomsMap.clear();
+    historyRooms.clear();
+  }
+
   void addRoomToHistory(LiveRoom room) {
-    if (historyRooms.any((element) => element.roomId == room.roomId)) {
-      historyRooms.remove(room);
+    if (room.roomId.isNullOrEmpty || room.platform.isNullOrEmpty) {
+      return;
+    }
+    var liveRoomKey = getLiveRoomKey(room);
+    if (historyRoomsMap.containsKey(liveRoomKey)) {
+      historyRoomsMap.remove(liveRoomKey);
     }
     updateRoom(room);
     //默认只记录50条，够用了
     // 防止数据量大页面卡顿
-    if (historyRooms.length > 50) {
-      historyRooms.removeRange(0, historyRooms.length - 50);
+    // if (historyRooms.length > 50) {
+    //   historyRooms.removeRange(0, historyRooms.length - 50);
+    // }
+    historyRoomsMap[liveRoomKey] = room;
+    var keys = historyRoomsMap.keys.toList();
+    var length2 = keys.length;
+    for (var i = 0; i < length2 - 50; i++) {
+      historyRoomsMap.remove(keys[i]);
     }
-    historyRooms.insert(0, room);
+    historyRooms.value = historyRoomsMap.values.toList();
   }
 
   // Favorite areas storage
-  final favoriteAreas =
-      ((PrefUtil.getStringList('favoriteAreas') ?? []).map((e) => LiveArea.fromJson(jsonDecode(e))).toList()).obs;
+  final favoriteAreas = ((PrefUtil.getStringList('favoriteAreas') ?? []).map((e) => LiveArea.fromJson(jsonDecode(e))).toList()).obs;
 
   bool isFavoriteArea(LiveArea area) {
-    return favoriteAreas.any(
-      (element) =>
-          element.areaId == area.areaId && element.platform == area.platform && element.areaType == area.areaType,
-    );
+    return favoriteAreas.any((element) => element.areaId == area.areaId && element.platform == area.platform && element.areaType == area.areaType);
   }
 
   bool addArea(LiveArea area) {
-    if (favoriteAreas.any(
-      (element) =>
-          element.areaId == area.areaId && element.platform == area.platform && element.areaType == area.areaType,
-    )) {
+    if (favoriteAreas.any((element) => element.areaId == area.areaId && element.platform == area.platform && element.areaType == area.areaType)) {
       return false;
     }
     favoriteAreas.add(area);
@@ -534,10 +587,7 @@ class SettingsService extends GetxController {
   }
 
   bool removeArea(LiveArea area) {
-    if (!favoriteAreas.any(
-      (element) =>
-          element.areaId == area.areaId && element.platform == area.platform && element.areaType == area.areaType,
-    )) {
+    if (!favoriteAreas.any((element) => element.areaId == area.areaId && element.platform == area.platform && element.areaType == area.areaType)) {
       return false;
     }
     favoriteAreas.remove(area);
@@ -598,6 +648,7 @@ class SettingsService extends GetxController {
       final json = toJson();
       file.writeAsStringSync(jsonEncode(json));
     } catch (e) {
+      CoreLog.error(e);
       return false;
     }
     return true;
@@ -608,6 +659,7 @@ class SettingsService extends GetxController {
       final json = file.readAsStringSync();
       fromJson(jsonDecode(json));
     } catch (e) {
+      CoreLog.error(e);
       return false;
     }
     return true;
@@ -622,24 +674,17 @@ class SettingsService extends GetxController {
   }
 
   void fromJson(Map<String, dynamic> json) {
-    favoriteRooms.value = json['favoriteRooms'] != null
-        ? (json['favoriteRooms'] as List).map<LiveRoom>((e) => LiveRoom.fromJson(jsonDecode(e))).toList()
-        : [];
-    favoriteAreas.value = json['favoriteAreas'] != null
-        ? (json['favoriteAreas'] as List).map<LiveArea>((e) => LiveArea.fromJson(jsonDecode(e))).toList()
-        : [];
-    webDavConfigs.value = json['webDavConfigs'] != null
-        ? (json['webDavConfigs'] as List).map<WebDAVConfig>((e) => WebDAVConfig.fromJson(jsonDecode(e))).toList()
-        : [];
+    favoriteRooms.value = json['favoriteRooms'] != null ? (json['favoriteRooms'] as List).map<LiveRoom>((e) => LiveRoom.fromJson(jsonDecode(e))).toList() : [];
+    favoriteAreas.value = json['favoriteAreas'] != null ? (json['favoriteAreas'] as List).map<LiveArea>((e) => LiveArea.fromJson(jsonDecode(e))).toList() : [];
     shieldList.value = json['shieldList'] != null ? (json['shieldList'] as List).map((e) => e.toString()).toList() : [];
-    hotAreasList.value = json['hotAreasList'] != null
-        ? (json['hotAreasList'] as List).map((e) => e.toString()).toList()
-        : [];
-    autoShutDownTime.value = json['autoShutDownTime'] ?? 120;
-    currentWebDavConfig.value = json['currentWebDavConfig'] ?? '';
+    hotAreasList.value = json['hotAreasList'] != null ? (json['hotAreasList'] as List).map((e) => e.toString()).toList() : [];
+
+    favoriteRoomsMap = toRoomMap(favoriteRooms.value);
+    historyRoomsMap = toRoomMap(historyRooms.value);
+    favoriteRoomsLengthChangeFlag.toggle();
+
     autoRefreshTime.value = json['autoRefreshTime'] ?? 3;
     themeModeName.value = json['themeMode'] ?? "System";
-    enableAutoShutDownTime.value = json['enableAutoShutDownTime'] ?? false;
     enableDynamicTheme.value = json['enableDynamicTheme'] ?? false;
     enableDenseFavorites.value = json['enableDenseFavorites'] ?? false;
     enableBackgroundPlay.value = json['enableBackgroundPlay'] ?? false;
@@ -649,48 +694,46 @@ class SettingsService extends GetxController {
     enableFullScreenDefault.value = json['enableFullScreenDefault'] ?? false;
     languageName.value = json['languageName'] ?? "简体中文";
     preferResolution.value = json['preferResolution'] ?? resolutions[0];
+    preferResolutionMobile.value = json['preferResolutionMobile'] ?? resolutions[resolutions.length - 1];
     preferPlatform.value = json['preferPlatform'] ?? platforms[0];
     videoFitIndex.value = json['videoFitIndex'] ?? 0;
     hideDanmaku.value = json['hideDanmaku'] ?? false;
-    danmakuTopArea.value = json['danmakuTopArea'] != null
-        ? double.parse(json['danmakuTopArea'].toString()) > 0.4
-              ? 0.4
-              : double.parse(json['danmakuTopArea'].toString())
-        : 0.0;
-    danmakuBottomArea.value = double.parse(json['danmakuBottomArea'].toString());
+    showColourDanmaku.value = json['showColourDanmaku'] ?? false;
+    danmakuControllerType.value = json['danmakuControllerType'] ?? DanmakuControllerfactory.getDanmakuControllerTypeList()[0];
+    danmakuArea.value = json['danmakuArea'] != null ? double.parse(json['danmakuArea'].toString()) : 1.0;
     danmakuSpeed.value = json['danmakuSpeed'] != null ? double.parse(json['danmakuSpeed'].toString()) : 8.0;
     danmakuFontSize.value = json['danmakuFontSize'] != null ? double.parse(json['danmakuFontSize'].toString()) : 16.0;
-    danmakuFontBorder.value = json['danmakuFontBorder'] != null
-        ? double.parse(json['danmakuFontBorder'].toString())
-        : 4.0;
+    danmakuFontBorder.value = json['danmakuFontBorder'] != null ? double.parse(json['danmakuFontBorder'].toString()) : 0.5;
     danmakuOpacity.value = json['danmakuOpacity'] != null ? double.parse(json['danmakuOpacity'].toString()) : 1.0;
     doubleExit.value = json['doubleExit'] ?? true;
     videoPlayerIndex.value = json['videoPlayerIndex'] ?? 0;
     enableCodec.value = json['enableCodec'] ?? true;
-    playerCompatMode.value = json['playerCompatMode'] ?? false;
+    mergeDanmuRating.value = json['mergeDanmuRating'] != null ? double.parse(json['mergeDanmuRating'].toString()) : 0.0;
+    filterDanmuUserLevel.value = json['filterDanmuUserLevel'] != null ? double.parse(json['filterDanmuUserLevel'].toString()) : 0.0;
+    filterDanmuFansLevel.value = json['filterDanmuFansLevel'] != null ? double.parse(json['filterDanmuFansLevel'].toString()) : 0.0;
+    showDanmuFans.value = json['showDanmuFans'] ?? true;
+    showDanmuUserLevel.value = json['showDanmuUserLevel'] ?? true;
     bilibiliCookie.value = json['bilibiliCookie'] ?? '';
     huyaCookie.value = json['huyaCookie'] ?? '';
     themeColorSwitch.value = json['themeColorSwitch'] ?? Colors.blue.hex;
-    volume.value = json['volume'] ?? 0.5;
-    customPlayerOutput.value = json['customPlayerOutput'] ?? false;
-    videoOutputDriver.value = (json['videoOutputDriver'] == null || json['videoOutputDriver'] == "")
-        ? 'gpu'
-        : json['videoOutputDriver'];
-    audioOutputDriver.value = (json['audioOutputDriver'] == null || json['audioOutputDriver'] == "")
-        ? 'auto'
-        : json['audioOutputDriver'];
-    videoHardwareDecoder.value = (json['videoHardwareDecoder'] == null || json['videoHardwareDecoder'] == "")
-        ? 'auto'
-        : json['videoHardwareDecoder'];
+    webPort.value = json['webPort'] ?? '8008';
+    webPortEnable.value = json['webPortEnable'] ?? false;
+    Map siteCookiesMap = (json['siteCookies'] ?? {});
+    siteCookies.value = siteCookiesMap.toStringMap();
     changeThemeMode(themeModeName.value);
     changeThemeColorSwitch(themeColorSwitch.value);
     setBilibiliCookit(bilibiliCookie.value);
     changeLanguage(languageName.value);
     changePreferResolution(preferResolution.value);
+    changePreferResolutionMobile(preferResolutionMobile.value);
     changePreferPlatform(preferPlatform.value);
-    changeShutDownConfig(autoShutDownTime.value, enableAutoShutDownTime.value);
+    // changeShutDownConfig(autoShutDownTime.value, enableAutoShutDownTime.value);
     changeAutoRefreshConfig(autoRefreshTime.value);
-    log(json['videoOutputDriver']);
+
+    for (var f in settingPartList.fromJsonList) {
+      f.call(json);
+    }
+
   }
 
   Map<String, dynamic> toJson() {
@@ -701,8 +744,6 @@ class SettingsService extends GetxController {
     json['themeMode'] = themeModeName.value;
     json['currentWebDavConfig'] = currentWebDavConfig.value;
     json['autoRefreshTime'] = autoRefreshTime.value;
-    json['autoShutDownTime'] = autoShutDownTime.value;
-    json['enableAutoShutDownTime'] = enableAutoShutDownTime.value;
 
     json['enableDynamicTheme'] = enableDynamicTheme.value;
     json['enableDenseFavorites'] = enableDenseFavorites.value;
@@ -712,13 +753,14 @@ class SettingsService extends GetxController {
     json['enableAutoCheckUpdate'] = enableAutoCheckUpdate.value;
     json['enableFullScreenDefault'] = enableFullScreenDefault.value;
     json['preferResolution'] = preferResolution.value;
+    json['preferResolutionMobile'] = preferResolutionMobile.value;
     json['preferPlatform'] = preferPlatform.value;
     json['languageName'] = languageName.value;
 
     json['videoFitIndex'] = videoFitIndex.value;
     json['hideDanmaku'] = hideDanmaku.value;
-    json['danmakuTopArea'] = danmakuTopArea.value;
-    json['danmakuBottomArea'] = danmakuBottomArea.value;
+    json['showColourDanmaku'] = showColourDanmaku.value;
+    json['danmakuArea'] = danmakuArea.value;
     json['danmakuSpeed'] = danmakuSpeed.value;
     json['danmakuFontSize'] = danmakuFontSize.value;
     json['danmakuFontBorder'] = danmakuFontBorder.value;
@@ -731,12 +773,24 @@ class SettingsService extends GetxController {
     json['huyaCookie'] = huyaCookie.value;
     json['shieldList'] = shieldList.map<String>((e) => e.toString()).toList();
     json['hotAreasList'] = hotAreasList.map<String>((e) => e.toString()).toList();
+
+    json['mergeDanmuRating'] = mergeDanmuRating.value;
+    json['filterDanmuUserLevel'] = filterDanmuUserLevel.value;
+    json['filterDanmuFansLevel'] = filterDanmuFansLevel.value;
+    json['showDanmuFans'] = showDanmuFans.value;
+    json['showDanmuUserLevel'] = showDanmuUserLevel.value;
     json['themeColorSwitch'] = themeColorSwitch.value;
-    json['volume'] = volume.value;
-    json['customPlayerOutput'] = customPlayerOutput.value;
-    json['videoOutputDriver'] = videoOutputDriver.value;
-    json['audioOutputDriver'] = audioOutputDriver.value;
-    json['videoHardwareDecoder'] = videoHardwareDecoder.value;
+    json['webPort '] = webPort.value;
+    json['webPortEnable'] = webPortEnable.value;
+    json['siteCookies'] = siteCookies.value;
+    CoreLog.d("siteCookies: ${siteCookies.value}");
+
+    json['danmakuControllerType'] = danmakuControllerType.value;
+
+    for (var f in settingPartList.toJsonList) {
+      f.call(json);
+    }
+
     return json;
   }
 
@@ -761,8 +815,8 @@ class SettingsService extends GetxController {
       "preferResolution": "原画",
       "preferPlatform": "bilibili",
       "hideDanmaku": false,
-      "danmakuTopArea": 0.0,
-      "danmakuBottomArea": 0.0,
+      "showColourDanmaku": false,
+      "danmakuArea": 1.0,
       "danmakuSpeed": 8.0,
       "danmakuFontSize": 16.0,
       "danmakuFontBorder": 4.0,
@@ -775,12 +829,18 @@ class SettingsService extends GetxController {
       'huyaCookie': '',
       'shieldList': [],
       "hotAreasList": [],
-      "volume": 0.5,
-      "customPlayerOutput": false,
-      "videoOutputDriver": "",
-      "audioOutputDriver": "",
-      "videoHardwareDecoder": "",
+      "webPortEnable": false,
+      "webPort": "8008",
+      "siteCookies": {},
+      "filterDanmuUserLevel": 0.0,
+      "filterDanmuFansLevel": 0.0,
+      "showDanmuFans": true,
+      "showDanmuUserLevel": true,
+      "danmakuControllerType": 0,
     };
+    for (var f in settingPartList.defaultConfigList) {
+      f.call(json);
+    }
     return json;
   }
 }

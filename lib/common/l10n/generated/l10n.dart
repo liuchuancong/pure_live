@@ -545,6 +545,16 @@ class S {
     );
   }
 
+  /// `Success`
+  String get success {
+    return Intl.message('Success', name: 'success', desc: '', args: []);
+  }
+
+  /// `Error`
+  String get error {
+    return Intl.message('Error', name: 'error', desc: '', args: []);
+  }
+
   /// `Dynamic Color`
   String get enable_dynamic_color {
     return Intl.message(
@@ -1015,6 +1025,16 @@ class S {
     );
   }
 
+  /// `Only display color Danmaku`
+  String get settings_danmaku_colour {
+    return Intl.message(
+      'Only display color Danmaku',
+      name: 'settings_danmaku_colour',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Danmaku opacity`
   String get settings_danmaku_opacity {
     return Intl.message(
@@ -1435,6 +1455,1121 @@ class S {
     return Intl.message(
       'enable hardcodec',
       name: 'enable_codec',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `System`
+  String get system {
+    return Intl.message('System', name: 'system', desc: '', args: []);
+  }
+
+  /// `Dark`
+  String get dark {
+    return Intl.message('Dark', name: 'dark', desc: '', args: []);
+  }
+
+  /// `Light`
+  String get light {
+    return Intl.message('Light', name: 'light', desc: '', args: []);
+  }
+
+  /// `second`
+  String get second {
+    return Intl.message('second', name: 'second', desc: '', args: []);
+  }
+
+  /// `minute`
+  String get minute {
+    return Intl.message('minute', name: 'minute', desc: '', args: []);
+  }
+
+  /// `hour`
+  String get hour {
+    return Intl.message('hour', name: 'hour', desc: '', args: []);
+  }
+
+  /// `day`
+  String get day {
+    return Intl.message('day', name: 'day', desc: '', args: []);
+  }
+
+  /// `Show`
+  String get show {
+    return Intl.message('Show', name: 'show', desc: '', args: []);
+  }
+
+  /// `Fans`
+  String get fans {
+    return Intl.message('Fans', name: 'fans', desc: '', args: []);
+  }
+
+  /// `User Level`
+  String get user_level {
+    return Intl.message('User Level', name: 'user_level', desc: '', args: []);
+  }
+
+  /// `Barrage from users below level {level} will be filtered`
+  String user_level_danmu_format(Object level) {
+    return Intl.message(
+      'Barrage from users below level $level will be filtered',
+      name: 'user_level_danmu_format',
+      desc: '',
+      args: [level],
+    );
+  }
+
+  /// `The barrage of user fan cards below {level} will be filtered`
+  String fans_level_danmu_format(Object level) {
+    return Intl.message(
+      'The barrage of user fan cards below $level will be filtered',
+      name: 'fans_level_danmu_format',
+      desc: '',
+      args: [level],
+    );
+  }
+
+  /// `Danmu Merge`
+  String get danmu_merge {
+    return Intl.message('Danmu Merge', name: 'danmu_merge', desc: '', args: []);
+  }
+
+  /// `The barrage of comments with a similarity greater than {level}% will be merged`
+  String danmu_merge_format(Object level) {
+    return Intl.message(
+      'The barrage of comments with a similarity greater than $level% will be merged',
+      name: 'danmu_merge_format',
+      desc: '',
+      args: [level],
+    );
+  }
+
+  /// `Danmu Filter`
+  String get danmu_filter {
+    return Intl.message(
+      'Danmu Filter',
+      name: 'danmu_filter',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Customize keyword filtering barrage`
+  String get danmu_filter_info {
+    return Intl.message(
+      'Customize keyword filtering barrage',
+      name: 'danmu_filter_info',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Bullet screen keyword blocking`
+  String get danmu_filter_keyword {
+    return Intl.message(
+      'Bullet screen keyword blocking',
+      name: 'danmu_filter_keyword',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Please enter keywords`
+  String get keyword_input {
+    return Intl.message(
+      'Please enter keywords',
+      name: 'keyword_input',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Add`
+  String get add {
+    return Intl.message('Add', name: 'add', desc: '', args: []);
+  }
+
+  /// `{number} keywords have been added (click to remove)`
+  String danmu_filter_keyword_add_info(Object number) {
+    return Intl.message(
+      '$number keywords have been added (click to remove)',
+      name: 'danmu_filter_keyword_add_info',
+      desc: '',
+      args: [number],
+    );
+  }
+
+  /// `Platform Settings`
+  String get platform_settings {
+    return Intl.message(
+      'Platform Settings',
+      name: 'platform_settings',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Customize your favorite viewing platforms`
+  String get platform_settings_info {
+    return Intl.message(
+      'Customize your favorite viewing platforms',
+      name: 'platform_settings_info',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Platform Show`
+  String get platform_show {
+    return Intl.message(
+      'Platform Show',
+      name: 'platform_show',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Disclaimer`
+  String get disclaimer {
+    return Intl.message('Disclaimer', name: 'disclaimer', desc: '', args: []);
+  }
+
+  /// `I have read and agree`
+  String get read_and_agree {
+    return Intl.message(
+      'I have read and agree',
+      name: 'read_and_agree',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Exit`
+  String get exit {
+    return Intl.message('Exit', name: 'exit', desc: '', args: []);
+  }
+
+  /// `Discover a new version: {version}`
+  String found_new_version_format(Object version) {
+    return Intl.message(
+      'Discover a new version: $version',
+      name: 'found_new_version_format',
+      desc: '',
+      args: [version],
+    );
+  }
+
+  /// `The current version is already the latest version`
+  String get is_new_version {
+    return Intl.message(
+      'The current version is already the latest version',
+      name: 'is_new_version',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Check update failed`
+  String get check_update_failed {
+    return Intl.message(
+      'Check update failed',
+      name: 'check_update_failed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Please grant access to the album`
+  String get grant_access_album {
+    return Intl.message(
+      'Please grant access to the album',
+      name: 'grant_access_album',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Please grant access to the file`
+  String get grant_access_file {
+    return Intl.message(
+      'Please grant access to the file',
+      name: 'grant_access_file',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Copy to clipboard`
+  String get copy_to_clipboard {
+    return Intl.message(
+      'Copy to clipboard',
+      name: 'copy_to_clipboard',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Copy to clipboard failed`
+  String get copy_to_clipboard_failed {
+    return Intl.message(
+      'Copy to clipboard failed',
+      name: 'copy_to_clipboard_failed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Unable to read clipboard contents`
+  String get unable_to_read_clipboard_contents {
+    return Intl.message(
+      'Unable to read clipboard contents',
+      name: 'unable_to_read_clipboard_contents',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Reading clipboard content failed`
+  String get reading_clipboard_content_failed {
+    return Intl.message(
+      'Reading clipboard content failed',
+      name: 'reading_clipboard_content_failed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Third-party`
+  String get three_party_authentication {
+    return Intl.message(
+      'Third-party',
+      name: 'three_party_authentication',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Not supported`
+  String get not_supported {
+    return Intl.message(
+      'Not supported',
+      name: 'not_supported',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `live`
+  String get live {
+    return Intl.message('live', name: 'live', desc: '', args: []);
+  }
+
+  /// `Bilibili accounts require login to view high-definition live streams, and there is currently no such restriction on other platforms.`
+  String get bilibili_need_login_info {
+    return Intl.message(
+      'Bilibili accounts require login to view high-definition live streams, and there is currently no such restriction on other platforms.',
+      name: 'bilibili_need_login_info',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `BiLiBiLi`
+  String get bilibili {
+    return Intl.message('BiLiBiLi', name: 'bilibili', desc: '', args: []);
+  }
+
+  /// `NetEase CC`
+  String get cc {
+    return Intl.message('NetEase CC', name: 'cc', desc: '', args: []);
+  }
+
+  /// `Tiktok`
+  String get douyin {
+    return Intl.message('Tiktok', name: 'douyin', desc: '', args: []);
+  }
+
+  /// `Douyu`
+  String get douyu {
+    return Intl.message('Douyu', name: 'douyu', desc: '', args: []);
+  }
+
+  /// `Huya`
+  String get huya {
+    return Intl.message('Huya', name: 'huya', desc: '', args: []);
+  }
+
+  /// `Kwai`
+  String get kuaishou {
+    return Intl.message('Kwai', name: 'kuaishou', desc: '', args: []);
+  }
+
+  /// `IPTV`
+  String get iptv {
+    return Intl.message('IPTV', name: 'iptv', desc: '', args: []);
+  }
+
+  /// `All`
+  String get all {
+    return Intl.message('All', name: 'all', desc: '', args: []);
+  }
+
+  /// `Soop`
+  String get soop {
+    return Intl.message('Soop', name: 'soop', desc: '', args: []);
+  }
+
+  /// `YY`
+  String get yy {
+    return Intl.message('YY', name: 'yy', desc: '', args: []);
+  }
+
+  /// `JuHe`
+  String get juhe {
+    return Intl.message('JuHe', name: 'juhe', desc: '', args: []);
+  }
+
+  /// `Not Login`
+  String get login_not {
+    return Intl.message('Not Login', name: 'login_not', desc: '', args: []);
+  }
+
+  /// `Login has expired, please log in again`
+  String get login_expired {
+    return Intl.message(
+      'Login has expired, please log in again',
+      name: 'login_expired',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Failed to obtain user information. You can go to account management to retry`
+  String get login_failed {
+    return Intl.message(
+      'Failed to obtain user information. You can go to account management to retry',
+      name: 'login_failed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Fill in username and password to log in`
+  String get login_by_username_password {
+    return Intl.message(
+      'Fill in username and password to log in',
+      name: 'login_by_username_password',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `QR Login`
+  String get login_by_qr {
+    return Intl.message('QR Login', name: 'login_by_qr', desc: '', args: []);
+  }
+
+  /// `Scan the QR code to log in using the {site} app`
+  String login_by_qr_info(Object site) {
+    return Intl.message(
+      'Scan the QR code to log in using the $site app',
+      name: 'login_by_qr_info',
+      desc: '',
+      args: [site],
+    );
+  }
+
+  /// `Manually enter cookie login`
+  String get login_by_cookie_info {
+    return Intl.message(
+      'Manually enter cookie login',
+      name: 'login_by_cookie_info',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Input Cookie`
+  String get input_cookie {
+    return Intl.message(
+      'Input Cookie',
+      name: 'input_cookie',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Cookie verification failed!`
+  String get cookie_check_failed {
+    return Intl.message(
+      'Cookie verification failed!',
+      name: 'cookie_check_failed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Are you sure you want to log out of your {site} account?`
+  String login_account_exit(Object site) {
+    return Intl.message(
+      'Are you sure you want to log out of your $site account?',
+      name: 'login_account_exit',
+      desc: '',
+      args: [site],
+    );
+  }
+
+  /// `QR code loading failed`
+  String get qr_loading_failed {
+    return Intl.message(
+      'QR code loading failed',
+      name: 'qr_loading_failed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The QR code has expired`
+  String get qr_loading_expired {
+    return Intl.message(
+      'The QR code has expired',
+      name: 'qr_loading_expired',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Refresh QR code`
+  String get qr_loading_refresh {
+    return Intl.message(
+      'Refresh QR code',
+      name: 'qr_loading_refresh',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The QR code has been scanned. Please confirm login on your phone`
+  String get qr_confirm {
+    return Intl.message(
+      'The QR code has been scanned. Please confirm login on your phone',
+      name: 'qr_confirm',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Select Transparency`
+  String get select_transparency {
+    return Intl.message(
+      'Select Transparency',
+      name: 'select_transparency',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Theme Color And Transparency`
+  String get theme_color_and_transparency {
+    return Intl.message(
+      'Theme Color And Transparency',
+      name: 'theme_color_and_transparency',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Network`
+  String get network {
+    return Intl.message('Network', name: 'network', desc: '', args: []);
+  }
+
+  /// `Import M3u live streaming source`
+  String get import_live_streaming_source {
+    return Intl.message(
+      'Import M3u live streaming source',
+      name: 'import_live_streaming_source',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Synchronize TV Data`
+  String get synchronize_tv_data {
+    return Intl.message(
+      'Synchronize TV Data',
+      name: 'synchronize_tv_data',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Remote synchronization of data to TV`
+  String get synchronize_tv_data_info {
+    return Intl.message(
+      'Remote synchronization of data to TV',
+      name: 'synchronize_tv_data_info',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Local Import`
+  String get local_import {
+    return Intl.message(
+      'Local Import',
+      name: 'local_import',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Network Import`
+  String get network_import {
+    return Intl.message(
+      'Network Import',
+      name: 'network_import',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Please enter the download address`
+  String get download_address_enter {
+    return Intl.message(
+      'Please enter the download address',
+      name: 'download_address_enter',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Download link`
+  String get download_address {
+    return Intl.message(
+      'Download link',
+      name: 'download_address',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Please enter the correct download address`
+  String get download_address_enter_check {
+    return Intl.message(
+      'Please enter the correct download address',
+      name: 'download_address_enter_check',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `file name`
+  String get file_name {
+    return Intl.message('file name', name: 'file_name', desc: '', args: []);
+  }
+
+  /// `Please enter a file name`
+  String get file_name_input {
+    return Intl.message(
+      'Please enter a file name',
+      name: 'file_name_input',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Player`
+  String get player {
+    return Intl.message('Player', name: 'player', desc: '', args: []);
+  }
+
+  /// `Ali`
+  String get player_ali {
+    return Intl.message('Ali', name: 'player_ali', desc: '', args: []);
+  }
+
+  /// `system`
+  String get player_system {
+    return Intl.message('system', name: 'player_system', desc: '', args: []);
+  }
+
+  /// `Version History`
+  String get version_history {
+    return Intl.message(
+      'Version History',
+      name: 'version_history',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Historical version update records`
+  String get version_history_info {
+    return Intl.message(
+      'Historical version update records',
+      name: 'version_history_info',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Version history updates`
+  String get version_history_updates {
+    return Intl.message(
+      'Version history updates',
+      name: 'version_history_updates',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Help & Support`
+  String get help_and_support {
+    return Intl.message(
+      'Help & Support',
+      name: 'help_and_support',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Thank you for using it!`
+  String get thank_title {
+    return Intl.message(
+      'Thank you for using it!',
+      name: 'thank_title',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `If you have any better suggestions or opinions, please feel free to contact us.`
+  String get thank_info {
+    return Intl.message(
+      'If you have any better suggestions or opinions, please feel free to contact us.',
+      name: 'thank_info',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Link Parse`
+  String get live_room_link_parsing {
+    return Intl.message(
+      'Link Parse',
+      name: 'live_room_link_parsing',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Live Room Jump`
+  String get live_room_jump {
+    return Intl.message(
+      'Live Room Jump',
+      name: 'live_room_jump',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Link Jump`
+  String get live_room_link_jump {
+    return Intl.message(
+      'Link Jump',
+      name: 'live_room_link_jump',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Obtain direct link`
+  String get live_room_link_direct {
+    return Intl.message(
+      'Obtain direct link',
+      name: 'live_room_link_direct',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enter or paste the link of {site} live broadcast`
+  String live_room_link_input(Object site) {
+    return Intl.message(
+      'Enter or paste the link of $site live broadcast',
+      name: 'live_room_link_input',
+      desc: '',
+      args: [site],
+    );
+  }
+
+  /// `Link cannot be empty`
+  String get link_empty {
+    return Intl.message(
+      'Link cannot be empty',
+      name: 'link_empty',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Unable to parse this link`
+  String get live_room_link_parse_failed {
+    return Intl.message(
+      'Unable to parse this link',
+      name: 'live_room_link_parse_failed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Reading straight chain failed, unable to read clarity`
+  String get live_room_clarity_parse_failed {
+    return Intl.message(
+      'Reading straight chain failed, unable to read clarity',
+      name: 'live_room_clarity_parse_failed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Select Clarity`
+  String get live_room_clarity_select {
+    return Intl.message(
+      'Select Clarity',
+      name: 'live_room_clarity_select',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Select Clarity Line`
+  String get live_room_clarity_line_select {
+    return Intl.message(
+      'Select Clarity Line',
+      name: 'live_room_clarity_line_select',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Clarity Line`
+  String get live_room_clarity_line {
+    return Intl.message(
+      'Clarity Line',
+      name: 'live_room_clarity_line',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The straight chain has been copied`
+  String get live_room_link_direct_copied {
+    return Intl.message(
+      'The straight chain has been copied',
+      name: 'live_room_link_direct_copied',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Reading straight chain failed`
+  String get live_room_link_direct_read_failed {
+    return Intl.message(
+      'Reading straight chain failed',
+      name: 'live_room_link_direct_read_failed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Auto-Rotate Screen`
+  String get auto_rotate_screen {
+    return Intl.message(
+      'Auto-Rotate Screen',
+      name: 'auto_rotate_screen',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `When playing in full screen, the screen will automatically rotate`
+  String get auto_rotate_screen_info {
+    return Intl.message(
+      'When playing in full screen, the screen will automatically rotate',
+      name: 'auto_rotate_screen_info',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Search Live`
+  String get live_room_search {
+    return Intl.message(
+      'Search Live',
+      name: 'live_room_search',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Link Access`
+  String get live_room_link_access {
+    return Intl.message(
+      'Link Access',
+      name: 'live_room_link_access',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Search`
+  String get search {
+    return Intl.message('Search', name: 'search', desc: '', args: []);
+  }
+
+  /// `Externally Open Live`
+  String get live_room_open_external {
+    return Intl.message(
+      'Externally Open Live',
+      name: 'live_room_open_external',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Screen Caste`
+  String get screen_caste {
+    return Intl.message(
+      'Screen Caste',
+      name: 'screen_caste',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Menu`
+  String get menu {
+    return Intl.message('Menu', name: 'menu', desc: '', args: []);
+  }
+
+  /// `Clear History`
+  String get clear_history {
+    return Intl.message(
+      'Clear History',
+      name: 'clear_history',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Are you sure you want to clear the history?`
+  String get clear_history_confirm {
+    return Intl.message(
+      'Are you sure you want to clear the history?',
+      name: 'clear_history_confirm',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Appearance`
+  String get settings_app {
+    return Intl.message('Appearance', name: 'settings_app', desc: '', args: []);
+  }
+
+  /// `Home`
+  String get settings_home {
+    return Intl.message('Home', name: 'settings_home', desc: '', args: []);
+  }
+
+  /// `Player`
+  String get settings_player {
+    return Intl.message('Player', name: 'settings_player', desc: '', args: []);
+  }
+
+  /// `Favorite`
+  String get settings_favorite {
+    return Intl.message(
+      'Favorite',
+      name: 'settings_favorite',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Timing Closure`
+  String get settings_time_close {
+    return Intl.message(
+      'Timing Closure',
+      name: 'settings_time_close',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Other`
+  String get settings_other {
+    return Intl.message('Other', name: 'settings_other', desc: '', args: []);
+  }
+
+  /// `Mobile Resolution Preference`
+  String get prefer_resolution_mobile {
+    return Intl.message(
+      'Mobile Resolution Preference',
+      name: 'prefer_resolution_mobile',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// ` When entering the live streaming page, the preferred video clarity for mobile networks`
+  String get prefer_resolution_mobile_subtitle {
+    return Intl.message(
+      ' When entering the live streaming page, the preferred video clarity for mobile networks',
+      name: 'prefer_resolution_mobile_subtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Log`
+  String get settings_log {
+    return Intl.message('Log', name: 'settings_log', desc: '', args: []);
+  }
+
+  /// `Danmuku Controller`
+  String get settings_danmuku_controller {
+    return Intl.message(
+      'Danmuku Controller',
+      name: 'settings_danmuku_controller',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Change Danmuku Controller`
+  String get settings_danmuku_controller_info {
+    return Intl.message(
+      'Change Danmuku Controller',
+      name: 'settings_danmuku_controller_info',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Close`
+  String get settings_close {
+    return Intl.message('Close', name: 'settings_close', desc: '', args: []);
+  }
+
+  /// `Delay`
+  String get settings_delay {
+    return Intl.message('Delay', name: 'settings_delay', desc: '', args: []);
+  }
+
+  /// `Delay Close`
+  String get settings_delay_close {
+    return Intl.message(
+      'Delay Close',
+      name: 'settings_delay_close',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The scheduled shutdown has expired. Would you like to delay the shutdown?`
+  String get settings_delay_close_info {
+    return Intl.message(
+      'The scheduled shutdown has expired. Would you like to delay the shutdown?',
+      name: 'settings_delay_close_info',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Smooth`
+  String get bit_rate_250 {
+    return Intl.message('Smooth', name: 'bit_rate_250', desc: '', args: []);
+  }
+
+  /// `Standard`
+  String get bit_rate_500 {
+    return Intl.message('Standard', name: 'bit_rate_500', desc: '', args: []);
+  }
+
+  /// `High Definition`
+  String get bit_rate_1000 {
+    return Intl.message(
+      'High Definition',
+      name: 'bit_rate_1000',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Ultra HD`
+  String get bit_rate_2000 {
+    return Intl.message('Ultra HD', name: 'bit_rate_2000', desc: '', args: []);
+  }
+
+  /// `Blu-ray `
+  String get bit_rate_4000 {
+    return Intl.message('Blu-ray ', name: 'bit_rate_4000', desc: '', args: []);
+  }
+
+  /// `Origin`
+  String get bit_rate_0 {
+    return Intl.message('Origin', name: 'bit_rate_0', desc: '', args: []);
+  }
+
+  /// `Cache Manage`
+  String get cache_manage {
+    return Intl.message(
+      'Cache Manage',
+      name: 'cache_manage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Are you sure you want to clear the cache?`
+  String get cache_manage_clear_prompt {
+    return Intl.message(
+      'Are you sure you want to clear the cache?',
+      name: 'cache_manage_clear_prompt',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Clear all cache`
+  String get cache_manage_clear_all {
+    return Intl.message(
+      'Clear all cache',
+      name: 'cache_manage_clear_all',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Clear image cache`
+  String get cache_manage_clear_image {
+    return Intl.message(
+      'Clear image cache',
+      name: 'cache_manage_clear_image',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Clear area cache`
+  String get cache_manage_clear_area {
+    return Intl.message(
+      'Clear area cache',
+      name: 'cache_manage_clear_area',
       desc: '',
       args: [],
     );

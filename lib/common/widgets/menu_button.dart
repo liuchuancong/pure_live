@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:remixicon/remixicon.dart';
 
 class MenuButton extends GetView<AuthController> {
   const MenuButton({super.key});
@@ -7,15 +8,13 @@ class MenuButton extends GetView<AuthController> {
   final menuRoutes = const [
     RoutePath.kSignIn,
     RoutePath.kSettingsAccount,
-    RoutePath.kSettings,
-    RoutePath.kAbout,
-    RoutePath.kHistory,
+    RoutePath.kLog,
   ];
 
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton(
-      tooltip: 'menu',
+      tooltip: S.current.menu,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
       ),
@@ -38,40 +37,56 @@ class MenuButton extends GetView<AuthController> {
           value: 0,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: MenuListTile(
-            leading: const Icon(Icons.account_circle),
-            text: controller.isLogin ? S.of(context).supabase_mine : S.of(context).supabase_sign_in,
+            leading: const Icon(Icons.account_circle_outlined),
+            text: controller.isLogin ? S.current.supabase_mine : S.current.supabase_sign_in,
           ),
         ),
-        const PopupMenuItem(
-          value: 1,
+        PopupMenuItem(
+          value: 5,
           padding: EdgeInsets.symmetric(horizontal: 12),
           child: MenuListTile(
-            leading: Icon(Icons.assignment_ind_sharp),
-            text: '三方认证',
+            leading: Icon(Icons.assignment_ind_outlined),
+            text: S.current.three_party_authentication,
           ),
         ),
         PopupMenuItem(
           value: 2,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: MenuListTile(
-            leading: const Icon(Icons.settings_rounded),
-            text: S.of(context).settings_title,
+            leading: const Icon(Icons.settings_outlined),
+            text: S.current.settings_title,
           ),
         ),
         PopupMenuItem(
           value: 3,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: MenuListTile(
-            leading: const Icon(Icons.info_rounded),
-            text: S.of(context).about,
+            leading: const Icon(Icons.info_outlined),
+            text: S.current.about,
           ),
         ),
         PopupMenuItem(
-          value: 4,
+          value: 2,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: MenuListTile(
-            leading: const Icon(Icons.history),
-            text: S.of(context).history,
+            leading: const Icon(Icons.contact_support_outlined),
+            text: S.current.contact,
+          ),
+        ),
+        PopupMenuItem(
+          value: 3,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: MenuListTile(
+            leading: const Icon(Icons.history_outlined),
+            text: S.current.history,
+          ),
+        ),
+        PopupMenuItem(
+          value: 6,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: MenuListTile(
+            leading: const Icon(Remix.bug_line),
+            text: S.current.settings_log,
           ),
         ),
       ],

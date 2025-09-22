@@ -1,3 +1,2 @@
-library;
 
 export './theme.dart';

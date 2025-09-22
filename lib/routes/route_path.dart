@@ -76,8 +76,10 @@ class RoutePath {
   /// kToolbox
   static const kToolbox = "/tool_box";
 
-  static const kHuyaCookie = "/huya_cookie";
-
-  // WebDavPage
-  static const kWebDavPage = "/web_dav_page";
+  /// 站点登录
+  /// 站点二维码登录
+  static const kSiteQRLogin = "/site_qr_login";
+  /// 站点web登录
+  static const kSiteWebLogin = "/site_web_login";
+  static const kLog = "/log";
 }

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:pure_live/core/common/core_log.dart';
 
 class VersionUtil {
   static const String version = '2.0.0';
@@ -26,6 +27,7 @@ class VersionUtil {
       latestVersion = latest['tag_name'].replaceAll('v', '');
       latestUpdateLog = latest['body'];
     } catch (e) {
+      CoreLog.error(e);
       latestUpdateLog = e.toString();
     }
   }

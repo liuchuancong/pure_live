@@ -1,4 +1,7 @@
 import 'package:get/get.dart';
+import 'package:pure_live/common/l10n/generated/l10n.dart';
+import 'package:pure_live/common/widgets/keep_alive_wrapper.dart';
+import 'package:pure_live/modules/util/site_logo_widget.dart';
 import 'popular_grid_view.dart';
 import 'package:flutter/material.dart';
 import 'package:pure_live/core/sites.dart';
@@ -12,7 +15,7 @@ class PopularPage extends GetView<PopularController> {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraint) {
-      bool showAction = Get.width <= 680;
+      bool showAction = constraint.maxWidth <= 680;
       return Scaffold(
         appBar: AppBar(
           centerTitle: true,
@@ -21,7 +24,7 @@ class PopularPage extends GetView<PopularController> {
           actions: showAction
               ? [
                   PopupMenuButton(
-                    tooltip: '搜索',
+                    tooltip: S.current.search,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -37,20 +40,20 @@ class PopularPage extends GetView<PopularController> {
                     },
                     itemBuilder: (BuildContext context) {
                       return [
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 0,
                           padding: EdgeInsets.symmetric(horizontal: 12),
                           child: MenuListTile(
                             leading: Icon(CustomIcons.search),
-                            text: "搜索直播",
+                            text: S.current.live_room_search,
                           ),
                         ),
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 1,
                           padding: EdgeInsets.symmetric(horizontal: 12),
                           child: MenuListTile(
                             leading: Icon(Icons.link),
-                            text: "链接访问",
+                            text: S.current.live_room_link_access,
                           ),
                         ),
                       ];
@@ -62,15 +65,15 @@ class PopularPage extends GetView<PopularController> {
             controller: controller.tabController,
             isScrollable: true,
             tabAlignment: TabAlignment.center,
-            labelStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
             labelPadding: const EdgeInsets.symmetric(horizontal: 12),
             indicatorSize: TabBarIndicatorSize.label,
-            tabs: Sites().availableSites().map((e) => Tab(text: e.name)).toList(),
+            tabs: SiteWidget.availableSitesTabList,
           ),
         ),
         body: TabBarView(
           controller: controller.tabController,
-          children: Sites().availableSites().map((e) => PopularGridView(e.id)).toList(),
+          children: Sites().availableSites().map((e) => KeepAliveWrapper(child: PopularGridView(e.id))).toList(),
         ),
       );
     });

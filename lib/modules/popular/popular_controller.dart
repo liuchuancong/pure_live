@@ -34,13 +34,20 @@ class PopularController extends GetxController with GetSingleTickerProviderState
   }
 
   @override
-  void onInit() {
-    for (var site in Sites().availableSites()) {
-      var controller = Get.put(PopularGridController(site), tag: site.id);
-      if (controller.list.isEmpty) {
-        controller.loadData();
-      }
+  Future<void> onInit() async {
+    List<Future> futures = [];
+    var availableSites = Sites().availableSites();
+    for (var i = 0; i < availableSites.length; i++) {
+      var site = availableSites[i];
+      futures.add(Future(() async {
+        Get.put(PopularGridController(site), tag: site.id);
+        var controller = Get.find<PopularGridController>(tag: site.id);
+        if (controller.list.isEmpty && index == i) {
+          controller.loadData();
+        }
+      }));
     }
+    await Future.wait(futures);
     super.onInit();
   }
 }

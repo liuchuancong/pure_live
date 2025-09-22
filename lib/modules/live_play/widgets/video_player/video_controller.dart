@@ -1,23 +1,23 @@
-import 'dart:io';
 import 'dart:async';
-import 'dart:developer';
-import 'package:get/get.dart';
-import 'video_controller_panel.dart';
-import 'package:flutter/services.dart';
-import 'package:floating/floating.dart';
-import 'package:pure_live/common/index.dart';
+import 'dart:io';
+
+import 'package:auto_orientation/auto_orientation.dart';
 import 'package:battery_plus/battery_plus.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
-import 'package:media_kit_video/media_kit_video.dart';
-import 'package:screen_brightness/screen_brightness.dart';
-import 'package:pure_live/modules/live_play/load_type.dart';
-import 'package:pure_live/pkg/canvas_danmaku/danmaku_controller.dart';
-import 'package:pure_live/modules/live_play/live_play_controller.dart';
-import 'package:pure_live/pkg/canvas_danmaku/models/danmaku_option.dart';
-import 'package:media_kit_video/media_kit_video.dart' as media_kit_video;
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_volume_controller/flutter_volume_controller.dart';
-import 'package:pure_live/pkg/canvas_danmaku/models/danmaku_content_item.dart';
-import 'package:pure_live/modules/live_play/widgets/video_player/fullscreen.dart';
+import 'package:get/get.dart';
+import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/common/core_log.dart';
+import 'package:pure_live/modules/live_play/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/load_type.dart';
+import 'package:pure_live/modules/util/rx_util.dart';
+import 'package:screen_brightness/screen_brightness.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
+
+import 'model/video_play_impl.dart';
+import 'model/video_player_factory.dart';
+import 'video_controller_panel.dart';
 
 class VideoController with ChangeNotifier {
   final LiveRoom room;
@@ -30,64 +30,37 @@ class VideoController with ChangeNotifier {
   final bool autoPlay;
   final Map<String, String> headers;
 
-  final int videoPlayerIndex;
-  final isVertical = false.obs;
+  /// 是否为竖屏直播间
   final videoFitIndex = 0.obs;
   final videoFit = BoxFit.contain.obs;
   final mediaPlayerControllerInitialized = false.obs;
 
-  ScreenBrightness brightnessController = ScreenBrightness();
+  /// 是否为竖屏直播间
+  RxBool get isVertical {
+    return videoPlayer.isVertical;
+  }
 
-  double initBrightness = 0.0;
+  late ScreenBrightness brightnessController;
 
-  final String qualiteName;
+  String qualiteName;
 
-  final int currentLineIndex;
+  int currentLineIndex;
 
-  final int currentQuality;
-
-  final hasError = false.obs;
-
-  final isPlaying = false.obs;
-
-  final isBuffering = false.obs;
-
-  final isPipMode = false.obs;
-
-  final isFullscreen = false.obs;
-
-  final isWindowFullscreen = false.obs;
+  int currentQuality;
 
   bool hasDestory = false;
 
-  bool get supportPip => Platform.isAndroid;
+  final refreshCompleted = true.obs;
 
-  bool get supportWindowFull => Platform.isWindows || Platform.isLinux;
-
-  bool get fullscreenUI => isFullscreen.value || isWindowFullscreen.value;
-
-  final videoSizeWidth = 0.0.obs;
-
-  final videoSizeHeight = 0.0.obs;
-
-  // ignore: prefer_typing_uninitialized_variables
-  late final Floating pip;
-  // Video player status
-  // A [GlobalKey<VideoState>] is required to access the programmatic fullscreen interface.
-  late final GlobalKey<media_kit_video.VideoState> key = GlobalKey<media_kit_video.VideoState>();
-
-  // Create a [Player] to control playback.
-  late Player player;
-  // CeoController] to handle video output from [Player].
-  late media_kit_video.VideoController mediaPlayerController;
-  BetterPlayerController? mobileController;
   final playerRefresh = false.obs;
 
-  GlobalKey<BrightnessVolumnDargAreaState> brightnessKey = GlobalKey<BrightnessVolumnDargAreaState>();
+  GlobalKey<BrightnessVolumeDargAreaState> brightnessKey = GlobalKey<BrightnessVolumeDargAreaState>();
 
-  LivePlayController livePlayController = Get.find<LivePlayController>();
+  // LivePlayController livePlayController = Get.find<LivePlayController>();
 
   final SettingsService settings = Get.find<SettingsService>();
+
+  int videoPlayerIndex = 4;
 
   bool enableCodec = true;
 
@@ -125,23 +98,39 @@ class VideoController with ChangeNotifier {
   void enableController() {
     showControllerTimer?.cancel();
     showControllerTimer = Timer(const Duration(seconds: 2), () {
-      showController.value = false;
+      showController.updateValueNotEquate(false);
     });
-    showController.value = true;
+    showController.updateValueNotEquate(true);
   }
 
-  final hideDanmaku = false.obs;
-  final danmakuTopArea = 0.0.obs;
-  final danmakuBottomArea = 0.0.obs;
-  final danmakuSpeed = 8.0.obs;
-  final danmakuFontSize = 16.0.obs;
-  final danmakuFontBorder = 4.0.obs;
-  final danmakuOpacity = 1.0.obs;
+  // Danmaku player control
+  // BarrageWallController danmakuController = BarrageWallController();
+  // final hideDanmaku = false.obs;
+  // final danmakuArea = 1.0.obs;
+  // final danmakuSpeed = 8.0.obs;
+  // final danmakuFontSize = 16.0.obs;
+  // final danmakuFontBorder = 0.5.obs;
+  // final danmakuOpacity = 1.0.obs;
+  // final mergeDanmuRating = 0.0.obs;
+
+  /// 存储 Stream 流监听
+  /// 默认视频 MPV 视频监听流
+  final defaultVideoStreamSubscriptionList = <StreamSubscription>[];
+
+  // GSY 视频监听流
+  final gsyStreamSubscriptionList = <StreamSubscription>[];
+
+  // 其他类型 监听流
+  final otherStreamSubscriptionList = <StreamSubscription>[];
+
+  LivePlayController livePlayController;
+
   VideoController({
     required this.room,
     required this.datasourceType,
     required this.datasource,
     required this.headers,
+    required this.livePlayController,
     this.allowBackgroundPlay = false,
     this.allowScreenKeepOn = false,
     this.allowFullScreen = true,
@@ -163,13 +152,13 @@ class VideoController with ChangeNotifier {
 
     videoFitIndex.value = settings.videoFitIndex.value;
     videoFit.value = settings.videofitArrary[videoFitIndex.value];
-    hideDanmaku.value = settings.hideDanmaku.value;
-    danmakuTopArea.value = settings.danmakuTopArea.value;
-    danmakuBottomArea.value = settings.danmakuBottomArea.value;
-    danmakuSpeed.value = settings.danmakuSpeed.value;
-    danmakuFontSize.value = settings.danmakuFontSize.value;
-    danmakuFontBorder.value = settings.danmakuFontBorder.value;
-    danmakuOpacity.value = settings.danmakuOpacity.value;
+    // hideDanmaku.value = settings.hideDanmaku.value;
+    // danmakuArea.value = settings.danmakuArea.value;
+    // danmakuSpeed.value = settings.danmakuSpeed.value;
+    // danmakuFontSize.value = settings.danmakuFontSize.value;
+    // danmakuFontBorder.value = settings.danmakuFontBorder.value;
+    // danmakuOpacity.value = settings.danmakuOpacity.value;
+    // mergeDanmuRating.value = settings.mergeDanmuRating.value;
     initPagesConfig();
   }
 
@@ -184,205 +173,92 @@ class VideoController with ChangeNotifier {
   final Battery _battery = Battery();
   final batteryLevel = 100.obs;
 
-  late DanmakuController danmakuController;
   void initBattery() {
     if (Platform.isAndroid || Platform.isIOS) {
-      _battery.batteryLevel.then((value) => batteryLevel.value = value);
-      _battery.onBatteryStateChanged.listen((BatteryState state) async {
-        batteryLevel.value = await _battery.batteryLevel;
-      });
+      _battery.batteryLevel.then((value) => batteryLevel.updateValueNotEquate(value));
+      otherStreamSubscriptionList.add(_battery.onBatteryStateChanged.listen((BatteryState state) async {
+        batteryLevel.updateValueNotEquate(await _battery.batteryLevel);
+      }));
     }
   }
+
+  late VideoPlayerInterFace videoPlayer;
 
   void initVideoController() async {
+    try {
+      brightnessController = ScreenBrightness();
+    } catch (e) {
+      CoreLog.w("e");
+    }
     FlutterVolumeController.updateShowSystemUI(false);
-    registerVolumeListener();
-    if (videoPlayerIndex == 0 || Platform.isWindows) {
-      enableCodec = settings.enableCodec.value;
-      playerCompatMode = settings.playerCompatMode.value;
-      player = Player();
-      if (player.platform is NativePlayer) {
-        (player.platform as dynamic).setProperty('cache', 'no'); // --cache=<yes|no|auto>
-        (player.platform as dynamic).setProperty('cache-secs', '0'); // --cache-secs=<seconds> with cache but why not.
-        (player.platform as dynamic).setProperty('demuxer-seekable-cache', 'no');
-        (player.platform as dynamic).setProperty('demuxer-max-back-bytes', '0'); // --demuxer-max-back-bytes=<bytesize>
-        (player.platform as dynamic).setProperty('demuxer-donate-buffer', 'no'); // --demuxer-donate-buffer==<yes|no>
-        if (settings.customPlayerOutput.value) {
-          (player.platform as dynamic).setProperty('ao', settings.audioOutputDriver.value);
+    videoPlayerIndex = settings.videoPlayerIndex.value;
+    enableCodec = settings.enableCodec.value;
+
+    videoPlayer = VideoPlayerFactory.getSupportVideoPlayerList()[videoPlayerIndex];
+    videoPlayer.init(controller: this);
+
+    otherStreamSubscriptionList.add(videoPlayer.hasError.listen((p0) {
+      try {
+        if (videoPlayer.hasError.value && !livePlayController.isLastLine.value) {
+          SmartDialog.showToast("视频播放失败,正在为您切换线路");
+          changeLine();
         }
+      } catch (e) {
+        CoreLog.error(e);
       }
-      mediaPlayerController = media_kit_video.VideoController(
-        player,
-        configuration: settings.customPlayerOutput.value
-            ? VideoControllerConfiguration(
-                vo: settings.videoOutputDriver.value,
-                hwdec: settings.videoHardwareDecoder.value,
-              )
-            : playerCompatMode
-            ? VideoControllerConfiguration(vo: 'mediacodec_embed', hwdec: 'mediacodec')
-            : VideoControllerConfiguration(
-                enableHardwareAcceleration: enableCodec,
-                androidAttachSurfaceAfterVideoParameters: false,
-              ),
-      );
-      setDataSource(datasource);
-      mediaPlayerController.player.stream.playing.listen((bool playing) {
-        isPlaying.value = playing;
-        if (playing && mediaPlayerControllerInitialized.value == false) {
-          mediaPlayerControllerInitialized.value = true;
-          setVolume(settings.volume.value);
-        }
-      });
-      mediaPlayerController.player.stream.error.listen((event) {
-        if (event.toString().contains('Failed to open')) {
-          hasError.value = true;
-          isPlaying.value = false;
-        }
-      });
-      _widthSubscription = player.stream.width.listen((event) {
-        isVertical.value = (player.state.height ?? 9) > (player.state.width ?? 16);
-      });
-      _heightSubscription = player.stream.height.listen((event) {
-        isVertical.value = (player.state.height ?? 9) > (player.state.width ?? 16);
-      });
-      debounce(hasError, (callback) {
+    }));
+    /*debounce(hasError, (callback) {
+      try {
         if (hasError.value && !livePlayController.isLastLine.value) {
           SmartDialog.showToast("视频播放失败,正在为您切换线路");
           changeLine();
         }
-      }, time: const Duration(seconds: 2));
-
-      showController.listen((p0) {
-        if (showController.value) {
-          if (isPlaying.value) {
-            isActivePause.value = false;
-          }
-        }
-        if (isPlaying.value) {
-          hasActivePause?.cancel();
-        }
-      });
-
-      isPlaying.listen((p0) {
-        // 代表手动暂停了
-        if (!isPlaying.value) {
-          if (showController.value) {
-            isActivePause.value = true;
-            hasActivePause?.cancel();
-          } else {
-            if (isActivePause.value) {
-              hasActivePause = Timer(const Duration(seconds: 20), () {
-                // 暂停了
-                SmartDialog.showToast("系统监测视频已停止播放,正在为您刷新视频");
-                isActivePause.value = false;
-                refresh();
-              });
-            }
-          }
-        } else {
-          hasActivePause?.cancel();
-          isActivePause.value = false;
-        }
-      });
-
-      mediaPlayerControllerInitialized.listen((value) {
-        if (fullScreenByDefault && datasource.isNotEmpty && value) {
-          Timer(const Duration(milliseconds: 500), () => toggleFullScreen());
-        }
-      });
-      if (Platform.isAndroid) {
-        pip = Floating();
-        pip.pipStatusStream.listen((status) async {
-          if (status == PiPStatus.enabled) {
-            isPipMode.value = true;
-          } else {
-            isPipMode.value = false;
-            isFullscreen.value = false;
-            doExitFullScreen();
-          }
-        });
+      } catch (e) {
+        CoreLog.error(e);
       }
-    } else {
-      mobileController = BetterPlayerController(
-        BetterPlayerConfiguration(
-          controlsConfiguration: BetterPlayerControlsConfiguration(
-            playerTheme: BetterPlayerTheme.custom,
-            customControlsBuilder: (controller, onControlsVisibilityChanged) => VideoControllerPanel(controller: this),
-          ),
-          autoPlay: true,
-          fit: videoFit.value,
-          allowedScreenSleep: !allowScreenKeepOn,
-          autoDetectFullscreenDeviceOrientation: true,
-          autoDetectFullscreenAspectRatio: true,
-          errorBuilder: (context, errorMessage) => Container(),
-          handleLifecycle: true,
-        ),
-      );
-      mobileController?.setControlsEnabled(false);
-      setDataSource(datasource);
+    }, time: const Duration(seconds: 2));*/
 
-      mobileController?.addEventsListener(mobileStateListener);
-      mediaPlayerControllerInitialized.listen((value) {
-        if (fullScreenByDefault && datasource.isNotEmpty && value) {
-          Timer(const Duration(milliseconds: 500), () => toggleFullScreen());
-        }
-      });
-      debounce(hasError, (callback) {
-        if (hasError.value && !livePlayController.isLastLine.value) {
-          SmartDialog.showToast("视频播放失败,正在为您切换线路");
-          changeLine();
-        }
-      }, time: const Duration(seconds: 2));
+    otherStreamSubscriptionList.add(showController.listen((p0) {
+      if (showController.value) {
+        if (videoPlayer.isPlaying.value) {
+          // 取消手动暂停
 
-      showController.listen((p0) {
-        if (showController.value) {
-          if (isPlaying.value) {
-            isActivePause.value = false;
-          }
+          isActivePause.updateValueNotEquate(false);
         }
-        if (isPlaying.value) {
-          hasActivePause?.cancel();
-        }
-      });
-
-      isPlaying.listen((p0) {
-        // 代表手动暂停了
-        if (!isPlaying.value) {
-          if (showController.value) {
-            isActivePause.value = true;
-            hasActivePause?.cancel();
-          } else {
-            if (isActivePause.value) {
-              hasActivePause = Timer(const Duration(seconds: 20), () {
-                // 暂停了
-                SmartDialog.showToast("系统监测视频已停止播放,正在为您刷新视频");
-                isActivePause.value = false;
-                refresh();
-              });
-            }
-          }
-        } else {
-          hasActivePause?.cancel();
-          isActivePause.value = false;
-        }
-      });
-    }
-  }
-
-  dynamic mobileStateListener(BetterPlayerEvent event) {
-    if (mobileController?.videoPlayerController != null) {
-      hasError.value = mobileController?.videoPlayerController?.value.hasError ?? false;
-      isPlaying.value = mobileController?.isPlaying() ?? false;
-      isBuffering.value = mobileController?.isBuffering() ?? false;
-      isPipMode.value = mobileController?.videoPlayerController?.value.isPip ?? false;
-      if (isPlaying.value && mediaPlayerControllerInitialized.value == false) {
-        mediaPlayerControllerInitialized.value = true;
-        setVolume(settings.volume.value);
-        isVertical.value =
-            (mobileController?.videoPlayerController!.value.size!.height ?? 9) >
-            (mobileController?.videoPlayerController!.value.size!.width ?? 16);
       }
-    }
+      if (videoPlayer.isPlaying.value) {
+        hasActivePause?.cancel();
+      }
+    }));
+
+    otherStreamSubscriptionList.add(videoPlayer.isPlaying.listen((p0) {
+      // 代表手动暂停了
+      if (!videoPlayer.isPlaying.value) {
+        if (showController.value) {
+          isActivePause.updateValueNotEquate(true);
+          hasActivePause?.cancel();
+        } else {
+          if (isActivePause.value) {
+            hasActivePause = Timer(const Duration(seconds: 20), () {
+              // 暂停了
+              SmartDialog.showToast("系统监测视频已停止播放,正在为您刷新视频");
+              isActivePause.updateValueNotEquate(false);
+              refresh();
+            });
+          }
+        }
+      } else {
+        hasActivePause?.cancel();
+        isActivePause.updateValueNotEquate(false);
+      }
+    }));
+
+    otherStreamSubscriptionList.add(mediaPlayerControllerInitialized.listen((value) {
+      // fix auto fullscreen
+      if (fullScreenByDefault && datasource.isNotEmpty && value) {
+        Timer(const Duration(milliseconds: 500), () => toggleFullScreen());
+      }
+    }));
   }
 
   void debounceListen(Function? func, [int delay = 1000]) {
@@ -395,78 +271,70 @@ class VideoController with ChangeNotifier {
     });
   }
 
-  void initDanmaku() {
-    hideDanmaku.value = PrefUtil.getBool('hideDanmaku') ?? false;
-    hideDanmaku.listen((data) {
-      if (data) {
-        danmakuController.clear();
-      }
-      PrefUtil.setBool('hideDanmaku', data);
-      settings.hideDanmaku.value = data;
-    });
-    danmakuTopArea.value = PrefUtil.getDouble('danmakuTopArea') ?? 0.0;
-    danmakuTopArea.listen((data) {
-      PrefUtil.setDouble('danmakuTopArea', data);
-      settings.danmakuTopArea.value = data;
-      updateDanmaku();
-    });
-    danmakuBottomArea.value = PrefUtil.getDouble('danmakuBottomArea') ?? 0.0;
-    danmakuBottomArea.listen((data) {
-      PrefUtil.setDouble('danmakuBottomArea', data);
-      settings.danmakuBottomArea.value = data;
-      updateDanmaku();
-    });
-    danmakuSpeed.value = PrefUtil.getDouble('danmakuSpeed') ?? 8;
-    danmakuSpeed.listen((data) {
-      PrefUtil.setDouble('danmakuSpeed', data);
-      settings.danmakuSpeed.value = data;
-      updateDanmaku();
-    });
-    danmakuFontSize.value = PrefUtil.getDouble('danmakuFontSize') ?? 16;
-    danmakuFontSize.listen((data) {
-      PrefUtil.setDouble('danmakuFontSize', data);
-      settings.danmakuFontSize.value = data;
-      updateDanmaku();
-    });
-    danmakuFontBorder.value = PrefUtil.getDouble('danmakuFontBorder') ?? 4.0;
-    danmakuFontBorder.listen((data) {
-      PrefUtil.setDouble('danmakuFontBorder', data);
-      settings.danmakuFontBorder.value = data;
-      updateDanmaku();
-    });
-    danmakuOpacity.value = PrefUtil.getDouble('danmakuOpacity') ?? 1.0;
-    danmakuOpacity.listen((data) {
-      PrefUtil.setDouble('danmakuOpacity', data);
-      settings.danmakuOpacity.value = data;
-      updateDanmaku();
+  void refreshView() {
+    refreshCompleted.updateValueNotEquate(false);
+    Timer(const Duration(microseconds: 200), () async {
+      await resetScreenBrightness();
+      brightnessKey = GlobalKey<BrightnessVolumeDargAreaState>();
+      refreshCompleted.updateValueNotEquate(true);
     });
   }
 
-  void updateDanmaku() {
-    danmakuController.updateOption(
-      DanmakuOption(
-        fontSize: danmakuFontSize.value,
-        topArea: danmakuTopArea.value,
-        bottomArea: danmakuBottomArea.value,
-        duration: danmakuSpeed.value.toInt(),
-        opacity: danmakuOpacity.value,
-        fontWeight: danmakuFontBorder.value.toInt(),
-      ),
-    );
-  }
-
-  void sendDanmaku(LiveMessage msg) {
-    if (hideDanmaku.value) return;
-    if (isPlaying.value) {
-      danmakuController.addDanmaku(
-        DanmakuContentItem(msg.message, color: Color.fromARGB(255, msg.color.r, msg.color.g, msg.color.b)),
-      );
+  /// 重置屏幕亮度
+  Future<void> resetScreenBrightness() async {
+    try {
+      await brightnessController.resetApplicationScreenBrightness();
+    } catch (e) {
+      // CoreLog.error(e);
     }
   }
+
+  void initDanmaku() {
+    /*hideDanmaku.value = PrefUtil.getBool('hideDanmaku') ?? false;
+    otherStreamSubscriptionList.add(hideDanmaku.listen((data) {
+      PrefUtil.setBool('hideDanmaku', data);
+    }));
+    danmakuArea.value = PrefUtil.getDouble('danmakuArea') ?? 1.0;
+    otherStreamSubscriptionList.add(danmakuArea.listen((data) {
+      PrefUtil.setDouble('danmakuArea', data);
+    }));
+    danmakuSpeed.value = PrefUtil.getDouble('danmakuSpeed') ?? 8;
+    otherStreamSubscriptionList.add(danmakuSpeed.listen((data) {
+      PrefUtil.setDouble('danmakuSpeed', data);
+    }));
+    danmakuFontSize.value = PrefUtil.getDouble('danmakuFontSize') ?? 16;
+    otherStreamSubscriptionList.add(danmakuFontSize.listen((data) {
+      PrefUtil.setDouble('danmakuFontSize', data);
+    }));
+    danmakuFontBorder.value = PrefUtil.getDouble('danmakuFontBorder') ?? 0.5;
+    otherStreamSubscriptionList.add(danmakuFontBorder.listen((data) {
+      PrefUtil.setDouble('danmakuFontBorder', data);
+    }));
+    danmakuOpacity.value = PrefUtil.getDouble('danmakuOpacity') ?? 1.0;
+    otherStreamSubscriptionList.add(danmakuOpacity.listen((data) {
+      PrefUtil.setDouble('danmakuOpacity', data);
+    }));*/
+  }
+
+  // void sendDanmaku(LiveMessage msg) {
+  //   if (settings.hideDanmaku.value) return;
+  //
+  //   danmakuController.send([
+  //     Bullet(
+  //       child: DanmakuText(
+  //         msg.message,
+  //         fontSize: settings.danmakuFontSize.value,
+  //         strokeWidth: settings.danmakuFontBorder.value,
+  //         color: msg.color,
+  //       ),
+  //     ),
+  //   ]);
+  // }
 
   @override
   void dispose() async {
     if (hasDestory == false) {
+      hasDestory == true;
       await destory();
     }
     super.dispose();
@@ -475,7 +343,13 @@ class VideoController with ChangeNotifier {
   void refresh() async {
     await destory();
     Timer(const Duration(seconds: 2), () {
-      livePlayController.onInitPlayerState(reloadDataType: ReloadDataType.refreash);
+      try {
+        livePlayController.playUrls.value = [];
+        livePlayController.qualites.value = [];
+        livePlayController.onInitPlayerState(reloadDataType: ReloadDataType.refreash, firstLoad: true);
+      } catch (e) {
+        CoreLog.error(e);
+      }
     });
   }
 
@@ -483,289 +357,255 @@ class VideoController with ChangeNotifier {
     // 播放错误 不一定是线路问题 先切换路线解决 后面尝试通知用户切换播放器
     await destory();
     Timer(const Duration(seconds: 2), () {
-      livePlayController.onInitPlayerState(
-        reloadDataType: ReloadDataType.changeLine,
-        line: currentLineIndex,
-        active: active,
-      );
+      try {
+        livePlayController.onInitPlayerState(
+          reloadDataType: ReloadDataType.changeLine,
+          line: currentLineIndex,
+          active: active,
+        );
+      } catch (e) {
+        CoreLog.error(e);
+      }
     });
   }
 
   Future<void> destory() async {
-    isPlaying.value = false;
-    hasError.value = false;
-    livePlayController.success.value = false;
+    resetScreenBrightness();
+    disposeAllStream();
+    // danmakuController.disable();
+    // await danmakuController.dispose();
+    videoPlayer.isPlaying.updateValueNotEquate(false);
+    videoPlayer.hasError.updateValueNotEquate(false);
+    try {
+      livePlayController.success.updateValueNotEquate(false);
+    } catch (e) {
+      CoreLog.error(e);
+    }
     hasDestory = true;
     _widthSubscription?.cancel();
     _heightSubscription?.cancel();
     if (allowScreenKeepOn) WakelockPlus.disable();
 
-    FlutterVolumeController.removeListener();
-    if (Platform.isAndroid || Platform.isIOS) {
-      brightnessController.resetApplicationScreenBrightness();
-      if (isFullscreen.value) {
-        if (videoPlayerIndex == 1) {
-          mobileController?.exitFullScreen();
-        } else {
-          doExitFullScreen();
-        }
-      }
-      if (videoPlayerIndex == 0) {
-        player.dispose();
-      } else {
-        mobileController?.dispose();
-      }
-    } else {
-      if (isFullscreen.value) {
-        doExitFullScreen();
-      }
-      player.dispose();
+    // 关闭时退出全屏
+    if (videoPlayer.isFullscreen.value) {
+      videoPlayer.exitFullScreen();
     }
-    isFullscreen.value = false;
+    videoPlayer.dispose();
   }
 
-  void setDataSource(String url) async {
+  void setDataSource(String url, Map<String, String> headers) async {
+    CoreLog.d("play url: $url");
     datasource = url;
     // fix datasource empty error
     if (datasource.isEmpty) {
-      hasError.value = true;
+      videoPlayer.hasError.updateValueNotEquate(true);
       return;
     } else {
-      hasError.value = false;
+      videoPlayer.hasError.updateValueNotEquate(false);
     }
-    if (Platform.isWindows || videoPlayerIndex == 0) {
-      player.pause();
-      player.open(Media(datasource, httpHeaders: headers));
-    } else {
-      BetterPlayerVideoFormat? videoFormat;
-      if (room.platform == Sites.bilibiliSite) {
-        videoFormat = BetterPlayerVideoFormat.hls;
-      }
-      if (room.platform == Sites.huyaSite) {
-        if (url.contains('.m3u8')) {
-          videoFormat = BetterPlayerVideoFormat.hls;
-        }
-      }
-
-      final result = await mobileController?.setupDataSource(
-        BetterPlayerDataSource(
-          BetterPlayerDataSourceType.network,
-          url,
-          videoFormat: videoFormat,
-          liveStream: true,
-          notificationConfiguration: allowBackgroundPlay
-              ? BetterPlayerNotificationConfiguration(
-                  showNotification: true,
-                  title: room.title,
-                  author: room.nick,
-                  imageUrl: room.avatar,
-                  activityName: "MainActivity",
-                )
-              : null,
-          headers: headers,
-          bufferingConfiguration: BetterPlayerBufferingConfiguration(),
-          cacheConfiguration: BetterPlayerCacheConfiguration(
-            useCache: false, // 禁用缓存
-          ),
-        ),
-      );
-      log(result.toString(), name: 'video_player');
-    }
+    await videoPlayer.openVideo(url, headers);
     notifyListeners();
+  }
+
+  void clearStreamSubscription(List<StreamSubscription> list) {
+    for (var s in list) {
+      s.cancel();
+    }
+    list.clear();
+  }
+
+  /// 释放 默认 播放器 Stream 流监听
+  void disposeDefaultVideoStream() {
+    clearStreamSubscription(defaultVideoStreamSubscriptionList);
+  }
+
+  /// 释放 Gsy Stream 流监听
+  void disposeGsyStream() {
+    clearStreamSubscription(gsyStreamSubscriptionList);
+  }
+
+  /// 释放 所有 Stream 流监听
+  void disposeAllStream() {
+    disposeGsyStream();
+    disposeDefaultVideoStream();
+    clearStreamSubscription(otherStreamSubscriptionList);
+    brightnessKey.currentState?.dispose();
   }
 
   void setVideoFit(BoxFit fit) {
     videoFit.value = fit;
-    settings.videoFitIndex.value = videoFitIndex.value;
-    if (videoPlayerIndex == 1) {
-      mobileController?.setOverriddenFit(videoFit.value);
-      mobileController?.retryDataSource();
-    }
+    videoPlayer.setVideoFit(fit);
   }
 
   void togglePlayPause() {
-    if (Platform.isWindows || videoPlayerIndex == 0) {
-      mediaPlayerController.player.playOrPause();
-    } else {
-      isPlaying.value ? mobileController!.pause() : mobileController!.play();
-    }
+    videoPlayer.togglePlayPause();
   }
 
-  void exitFullScreen() {
-    if (videoPlayerIndex == 1) {
-      Future.delayed(const Duration(milliseconds: 100), () {
-        mobileController?.exitFullScreen();
-      });
-    } else {
-      doExitFullScreen();
-    }
-    isFullscreen.value = false;
-    showSettting.value = false;
+  void play() {
+    videoPlayer.play();
+  }
+
+  Future<void> pause() async {
+    videoPlayer.pause();
+  }
+
+  Future<void> exitFullScreen() async {
+    videoPlayer.exitFullScreen();
+    showSettting.updateValueNotEquate(false);
   }
 
   /// 设置横屏
   Future setLandscapeOrientation() async {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
+    if (await beforeIOS16()) {
+      AutoOrientation.landscapeAutoMode();
+    } else {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    }
   }
 
   /// 设置竖屏
   Future setPortraitOrientation() async {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    await SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+    if (await beforeIOS16()) {
+      AutoOrientation.portraitAutoMode();
+    } else {
+      await SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+    }
+  }
+
+  /// 是否是IOS16以下
+  Future<bool> beforeIOS16() async {
+    if (Platform.isIOS) {
+      final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+      var info = await deviceInfo.iosInfo;
+      var version = info.systemVersion;
+      var versionInt = int.tryParse(version.split('.').first) ?? 0;
+      return versionInt < 16;
+    } else {
+      return false;
+    }
   }
 
   void toggleFullScreen() async {
-    showLocked.value = false;
-    showControllerTimer?.cancel();
-    Timer(const Duration(seconds: 2), () {
-      enableController();
-    });
-    if (isFullscreen.value) {
-      if (Platform.isAndroid) {
-        if (videoPlayerIndex == 1) {
-          Future.delayed(const Duration(milliseconds: 100), () {
-            mobileController?.exitFullScreen();
-          });
-        } else {
-          doExitFullScreen();
-          await verticalScreen();
-        }
-      } else {
-        doExitFullScreen();
-      }
-    } else {
-      if (Platform.isAndroid) {
-        if (videoPlayerIndex == 1) {
-          mobileController?.enterFullScreen();
-        } else {
-          await doEnterFullScreen();
-          if (isVertical.value) {
-            await verticalScreen();
-          } else {
-            await landScape();
-          }
-        }
-      } else {
-        await doEnterFullScreen();
-      }
-    }
-
-    isFullscreen.toggle();
-  }
-
-  void toggleWindowFullScreen() {
+    CoreLog.d("toggleFullScreen");
     // disable locked
-    showLocked.value = false;
+    showLocked.updateValueNotEquate(false);
+    // fix danmaku overlap bug
+    if (!settings.hideDanmaku.value) {
+      settings.hideDanmaku.updateValueNotEquate(true);
+      Timer(const Duration(milliseconds: 500), () {
+        settings.hideDanmaku.updateValueNotEquate(false);
+      });
+    }
     // fix obx setstate when build
     showControllerTimer?.cancel();
     Timer(const Duration(seconds: 2), () {
       enableController();
     });
 
-    if (Platform.isWindows || Platform.isLinux) {
-      if (!isWindowFullscreen.value) {
-        Get.to(() => DesktopFullscreen(controller: this, key: UniqueKey()));
-      } else {
-        Navigator.of(Get.context!).pop();
-      }
-      isWindowFullscreen.toggle();
+    videoPlayer.isFullscreen.toggle();
+    if (videoPlayer.isFullscreen.value) {
+      enterFullScreen();
     } else {
-      throw UnimplementedError('Unsupported Platform');
+      exitFull();
     }
+
+    isFullscreen.toggle();
+  }
+
+  /// 进入全屏
+  void enterFullScreen() {
+    videoPlayer.isFullscreen.updateValueNotEquate(true);
+    if (Platform.isAndroid || Platform.isIOS) {
+      //全屏
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
+      if (!videoPlayer.isVertical.value) {
+        //横屏
+        setLandscapeOrientation();
+      }
+    } else {
+      windowManager.setFullScreen(true);
+    }
+    //danmakuController?.clear();
+  }
+
+  /// 退出全屏
+  void exitFull() {
+    if (Platform.isAndroid || Platform.isIOS) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge, overlays: SystemUiOverlay.values);
+      setPortraitOrientation();
+    } else {
+      windowManager.setFullScreen(false);
+    }
+    showSettting.updateValueNotEquate(false);
+    videoPlayer.isFullscreen.updateValueNotEquate(false);
+
+    //danmakuController?.clear();
+  }
+
+  void toggleWindowFullScreen() {
+    windowManager.setAlwaysOnTop(!videoPlayer.isWindowFullscreen.value);
+    // disable locked
+    showLocked.updateValueNotEquate(false);
+    // fix danmaku overlap bug
+    if (!settings.hideDanmaku.value) {
+      settings.hideDanmaku.updateValueNotEquate(true);
+      Timer(const Duration(milliseconds: 500), () {
+        settings.hideDanmaku.updateValueNotEquate(false);
+      });
+    }
+    // fix obx setstate when build
+    showControllerTimer?.cancel();
+    Timer(const Duration(seconds: 2), () {
+      enableController();
+    });
+
+    /// 是否 窗口全屏
+    videoPlayer.toggleWindowFullScreen();
     enableController();
   }
 
   void enterPipMode(BuildContext context) async {
-    if ((Platform.isAndroid || Platform.isIOS)) {
-      danmakuController.clear();
-      danmakuController.resume();
-      if (Platform.isWindows || videoPlayerIndex == 0) {
-        isFullscreen.toggle();
-        if (isVertical.value) {
-          await verticalScreen();
-        }
-        doEnterFullScreen();
-        await pip.enable(ImmediatePiP());
-      } else {
-        if (await mobileController?.isPictureInPictureSupported() ?? false) {
-          isPipMode.value = true;
-          mobileController?.enablePictureInPicture(playerKey);
-        }
+    if (Platform.isAndroid) {
+      try {
+        livePlayController.enablePIP();
+      } catch (e) {
+        CoreLog.error(e);
       }
+      return;
     }
+    videoPlayer.enterPipMode();
   }
 
-  // 注册音量变化监听器
-  void registerVolumeListener() {
-    FlutterVolumeController.addListener((volume) {
-      // 音量变化时的回调
-      if (Platform.isAndroid) {
-        settings.volume.value = volume;
-      }
-    });
-  }
-
-  // volume & brightness
-  Future<double?> volume() async {
-    if (Platform.isWindows) {
-      return mediaPlayerController.player.state.volume / 100;
-    }
+  /////////// 音量 & 亮度
+  /// 获取音量
+  Future<double?> getVolume() async {
     return await FlutterVolumeController.getVolume();
   }
 
-  Future<double> brightness() async {
-    return await brightnessController.application;
+  /// 设置音量
+  void setVolume(double value) async {
+    await FlutterVolumeController.setVolume(value);
   }
 
-  void setVolume(double value) async {
-    if (Platform.isWindows) {
-      mediaPlayerController.player.setVolume(value * 100);
-    } else {
-      await FlutterVolumeController.setVolume(value);
+  /// 获取亮度
+  Future<double> brightness() async {
+    try {
+      return await brightnessController.application;
+    } catch (e) {
+      CoreLog.d("$e");
+      return 100;
     }
     settings.volume.value = value;
   }
 
+  /// 设置亮度
   void setBrightness(double value) async {
-    if (Platform.isAndroid || Platform.isIOS) {
-      await brightnessController.setApplicationScreenBrightness(value);
-    }
+    await brightnessController.setApplicationScreenBrightness(value);
   }
 }
 
 // use fullscreen with controller provider
-
-class DesktopFullscreen extends StatelessWidget {
-  const DesktopFullscreen({super.key, required this.controller});
-  final VideoController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      child: Scaffold(
-        resizeToAvoidBottomInset: true,
-        body: Stack(
-          fit: StackFit.passthrough, // 使Stack填充整个父容器
-          children: [
-            Container(
-              color: Colors.black, // 设置你想要的背景色
-            ),
-            Obx(
-              () => media_kit_video.Video(
-                key: ValueKey(controller.videoFit.value),
-                pauseUponEnteringBackgroundMode: !controller.settings.enableBackgroundPlay.value,
-                resumeUponEnteringForegroundMode: !controller.settings.enableBackgroundPlay.value,
-                controller: controller.mediaPlayerController,
-                fit: controller.videoFit.value,
-                controls: controller.room.platform == Sites.iptvSite
-                    ? media_kit_video.MaterialVideoControls
-                    : (state) => VideoControllerPanel(controller: controller),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// use fullscreen with controller provider

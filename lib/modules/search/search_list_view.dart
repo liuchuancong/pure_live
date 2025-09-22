@@ -1,10 +1,13 @@
-import 'dart:developer';
 import 'package:get/get.dart';
+import 'package:keframe/keframe.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:waterfall_flow/waterfall_flow.dart';
-import 'package:pure_live/routes/app_navigation.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:pure_live/common/widgets/refresh_grid_util.dart';
 import 'package:pure_live/modules/search/search_list_controller.dart';
+import 'package:pure_live/plugins/cache_network.dart';
+import 'package:pure_live/plugins/extension/string_extension.dart';
+import 'package:pure_live/routes/app_navigation.dart';
+
+import '../live_play/widgets/slide_animation.dart';
 
 class SearchListView extends StatelessWidget {
   final String tag;
@@ -15,40 +18,15 @@ class SearchListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraint) {
-        final width = constraint.maxWidth;
-        final crossAxisCount = width > 1280 ? 4 : (width > 960 ? 3 : (width > 640 ? 2 : 1));
-        return Obx(
-          () => EasyRefresh(
-            controller: controller.easyRefreshController,
-            onRefresh: controller.refreshData,
-            onLoad: controller.loadData,
-            child: controller.list.isNotEmpty
-                ? WaterfallFlow.builder(
-                    padding: const EdgeInsets.all(0),
-                    physics: const BouncingScrollPhysics(),
-                    controller: controller.scrollController,
-                    gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: 3,
-                      mainAxisSpacing: 3,
-                    ),
-                    itemCount: controller.list.length,
-                    itemBuilder: (context, index) {
-                      final room = controller.list[index];
-                      return OwnerCard(room: room);
-                    },
-                  )
-                : EmptyView(
-                    icon: Icons.live_tv_rounded,
-                    title: S.of(context).empty_search_title,
-                    subtitle: S.of(context).empty_search_subtitle,
-                  ),
-          ),
-        );
-      },
-    );
+    return RefreshGridUtil.buildRoomCard(controller,
+        itemBuilder: (context, index) => FrameSeparateWidget(
+            index: index,
+            placeHolder: const SizedBox(width: 220.0, height: 200),
+            child: SlideTansWidget(
+                child: RoomCard(
+              room: controller.list[index],
+              dense: true,
+            ))));
   }
 }
 
@@ -70,29 +48,12 @@ class _OwnerCardState extends State<OwnerCard> {
 
   late bool isFavorite = settings.isFavorite(widget.room);
 
-  ImageProvider? getRoomAvatar(String avatar) {
-    try {
-      return CachedNetworkImageProvider(
-        avatar,
-        errorListener: (err) {
-          log("CachedNetworkImageProvider: Image failed to load!");
-        },
-      );
-    } catch (e) {
-      return null;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Card(
       child: ListTile(
         onTap: () => _onTap(context),
-        leading: CircleAvatar(
-          foregroundImage: widget.room.avatar!.isNotEmpty ? getRoomAvatar(widget.room.avatar!) : null,
-          radius: 20,
-          backgroundColor: Theme.of(context).disabledColor,
-        ),
+        leading: CacheNetWorkUtils.getCircleAvatar(widget.room.avatar, radius: 20),
         title: Text(
           widget.room.title != null ? '${widget.room.title}' : '',
           maxLines: 1,
@@ -102,14 +63,18 @@ class _OwnerCardState extends State<OwnerCard> {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.room.nick!, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.w500)),
-            Text(
-              widget.room.area!.isEmpty
-                  ? "${widget.room.platform?.toUpperCase()}"
-                  : "${widget.room.platform?.toUpperCase()} - ${widget.room.area}",
-              maxLines: 1,
-              style: const TextStyle(fontWeight: FontWeight.w500),
-            ),
+            if (widget.room.nick != null)
+              Text(
+                widget.room.nick!,
+                maxLines: 1,
+                style: const TextStyle(fontWeight: FontWeight.w300, fontSize: 12),
+              ),
+            if (widget.room.platform != null)
+              Text(
+                "${Sites.of(widget.room.platform!).name}${widget.room.area?.appendLeftTxt(" - ")}",
+                maxLines: 1,
+                style: const TextStyle(fontWeight: FontWeight.w200, fontSize: 10),
+              ),
           ],
         ),
         trailing: FilledButton.tonal(
@@ -122,7 +87,9 @@ class _OwnerCardState extends State<OwnerCard> {
             }
           },
           style: isFavorite ? null : FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.surface),
-          child: Text(isFavorite ? S.of(context).unfollow : S.of(context).follow),
+          child: Text(
+            isFavorite ? S.current.unfollow : S.current.follow,
+          ),
         ),
       ),
     );

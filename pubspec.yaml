@@ -12,103 +12,220 @@ dependencies:
 
   flutter_localizations:
     sdk: flutter
+
+  # 优化
+  # 分帧优化
+  keframe: ^3.0.0
+
   #hashlib
-  hashlib: ^2.0.0
+  hashlib: ^1.21.1
   # network
-  flutter_js: ^0.8.2
-  flutter_svg: ^2.2.1
-  html: ^0.15.4
+  flutter_js: 0.8.5
+  html: ^0.15.5
   http: ^1.1.0
-  url_launcher: ^6.1.12
+  url_launcher: ^6.3.1
   web_socket_channel: ^3.0.1
-  cached_network_image: ^3.3.0
-  animated_splash_plus: ^1.0.3
+# cached_network_image: ^3.3.0
+  
   # ui related
-  dynamic_color: ^1.8.1
-  waterfall_flow: ^3.1.1
+  dynamic_color: 1.7.0
+  flutter_staggered_grid_view: ^0.7.0
   #Widget
   easy_refresh: ^3.4.0
-  flutter_smart_dialog: ^4.9.5 #各种弹窗 Toast/Dialog/Popup
+  flutter_smart_dialog: ^4.9.8+5 #各种弹窗 Toast/Dialog/Popup
   # barrage wall
   quiver: ^3.2.1
-  flex_color_picker: ^3.7.1
+  flex_color_picker: ^3.7.0
   flutter_exit_app: ^1.1.2
   visibility_detector: ^0.4.0+2
   floating: ^6.0.0
   # database
-  supabase_flutter: ^2.10.0
+  supabase_flutter: ^2.8.3
   email_validator: ^3.0.0
-  font_awesome_flutter: ^10.6.0
+  font_awesome_flutter: ^10.8.0
   # video player mobile
-  media_kit: ^1.2.0                       # Primary package.
-  media_kit_video: ^1.3.0                       # For video rendering.
-  media_kit_libs_video: ^1.0.6                 # Native video dependencies.
-  share_handler: ^0.0.19
+#  media_kit: ^1.1.11                          # Primary package.
+#  media_kit_video: ^1.2.5                        # For video rendering.
+#  media_kit_libs_video: ^1.0.5                   # Native video dependencies.
+  gsy_video_player: ^0.0.6
+#    git: https://github.com/liuchuancong/gsy_video_player.git
+  fvp: ^0.33.1                              # FVP 视频播放器
+  video_player: 2.9.2                      #  视频播放器
+  chewie: ^1.9.0                      #  视频播放器
+  share_handler: ^0.0.22
   uri_to_file: ^1.0.0
   bordered_text: ^2.0.0
-  screen_brightness: ^2.1.2
-  move_to_desktop: ^0.0.2
-  flutter_volume_controller: ^1.2.7
+#  screen_brightness: ^0.2.2+1 # 屏幕亮度
+#  screen_brightness_linux: ^0.1.0-dev.1 # 屏幕亮度
+  screen_brightness: ^2.1.1 # 屏幕亮度
+  flutter_volume_controller: ^1.3.3  # 声音
   flutter_color: ^2.1.0
   crypto_simple: ^3.0.0
-  window_manager: ^0.5.0
-  windows_single_instance: ^1.0.1
-  app_links: ^6.1.4
-  protobuf: ^4.1.0
-  fixnum: ^1.1.0
+  window_manager: ^0.4.3
+#  url_protocol:
+#    git:
+#      url: https://github.com/LucasXu0/flutter_url_protocol
+#      commit: 77a8420
+  win32_registry: ^1.1.5
+  windows_single_instance: ^1.0.0
+  app_links: ^6.3.3
+  protobuf: ^3.1.0
+  fixnum: ^1.1.1 # 32位，64位 数字
   dio: ^5.3.3
   dio_cookie_manager: ^3.1.1
+  dio_cache_interceptor: ^3.5.1
+  dio_cache_interceptor_db_store: ^6.0.0
+  dio_compatibility_layer: ^0.1.0 # 允许 dio 使用 http 包
+  rhttp: ^0.13.0  # 使用 rust 请求http
+#    git:
+#      url: https://ghfast.top/https://github.com/Tienisto/rhttp.git
+#      commit: 8ed4752 # 0.9.2 support text body compressed in gzip and brotli
+#      path: rhttp
+  flutter_cache_manager_dio: ^4.0.0
   cookie_jar: ^4.0.8
   # system hardware utils
-  wakelock_plus: ^1.1.3
-  battery_plus: ^6.0.1
-  stop_watch_timer: ^3.0.2
+  wakelock_plus: ^1.2.10 #屏幕常亮
+  battery_plus: ^6.2.1
+  stop_watch_timer: ^3.2.1
   # storage
-  file_picker: ^10.2.0
-  permission_handler: ^12.0.0+1
-  shared_preferences: ^2.2.2
-  flutter_cache_manager: ^3.4.1
+  file_picker: ^8.1.7
+  permission_handler: ^11.3.1
+  shared_preferences: ^2.3.5
+  flutter_cache_manager: ^3.3.1
   # utils
-  get: ^5.0.0-release-candidate-9.3.2
+  get: 5.0.0-release-candidate-9.2.1
   intl: ^0.20.2
   timezone: ^0.10.0
   date_format: ^2.0.7
   path: ^1.8.5
   file: ^7.0.0
-  path_provider: ^2.1.1
+  path_provider: ^2.1.5
   logger: ^2.0.2+1
   crypto: ^3.0.3
   brotli: ^0.6.0
-  dlna_dart: ^0.1.0
-  dart_tars_protocol:
-    git: https://github.com/xiaoyaocz/dart_tars_protocol.git
+#  flutter_restart:
+#    git: https://ghfast.top/https://github.com/liuchuancong/flutterRestartPluginWip
+  move_to_desktop: ^0.0.2
+  dlna_dart: ^0.0.8
+#  dart_tars_protocol:
+#    git: https://ghfast.top/https://github.com/xiaoyaocz/dart_tars_protocol
   tars_dart:
     git:
-      url:  https://github.com/xiaoyaocz/dart_simple_live.git
+      url: https://ghfast.top/https://github.com/xiaoyaocz/dart_simple_live
       path: ./simple_live_core/packages/tars_dart
   html_unescape: ^2.0.0
-  flutter_inappwebview: ^6.0.0-beta.25
-  connectivity_plus: ^6.0.3 
+  flutter_inappwebview: ^6.1.5
+  connectivity_plus: ^6.1.1
   qr_flutter: ^4.1.0 
-  remixicon: ^1.2.0
-  mobile_scanner: ^7.0.1 #二维码扫描
-  webdav_client: ^1.2.2
-  mime: ^2.0.0
-  awesome_video_player: ^1.0.5
-  device_info_plus: ^11.5.0
-  auto_orientation_v2: ^2.3.6
-  very_good_infinite_list: ^0.9.0
+  # 给web端通信
+#  dia: ^0.1.5
+  remixicon: ^1.3.0
+#  dia_static: ^0.1.2
+#  dia_body: ^0.1.3
+#  dia_router: ^0.1.7
+#  dia_cors: ^0.1.2
+  mobile_scanner: ^6.0.2 #二维码扫描
+  async_locks: ^4.0.2 #同步锁
+  extended_image: ^9.1.0  #图片缓存
+  uuid: ^4.4.2   # 用于生成 UUID
+  auto_orientation: ^2.3.1 #屏幕方向
+  device_info_plus: ^11.2.0 #设备信息
+  canvas_danmaku: ^0.2.7    #弹幕
+  # 防抖节流
+  easy_debounce: ^2.0.3
+#  floating: ^5.0.1 #PIP画中画
+  webdav_client:
+    git:
+      url: https://ghfast.top/https://github.com/wgh136/webdav_client
+      ref: main
+  # PIP画中画
+  fl_pip:
+    git:
+      url: https://ghfast.top/https://github.com/orz12/fl_pip.git
+      ref: main
+
+  catcher_2: ^2.1.0 #异常日志捕获
+  loading_indicator: ^3.1.1 #加载中样式
+ #  MPV 播放器
+  media_kit:
+    git:
+      url: https://ghfast.top/https://github.com/Predidit/media-kit.git
+      ref: main
+      path: ./media_kit
+  media_kit_video:
+    git:
+      url: https://ghfast.top/https://github.com/Predidit/media-kit.git
+      ref: main
+      path: ./media_kit_video
+  media_kit_libs_video:
+    git:
+      url: https://ghfast.top/https://github.com/Predidit/media-kit.git
+      ref: main
+      path: ./libs/universal/media_kit_libs_video
+
+#  fix build error
+  sqflite_android: 2.4.1
+
+
+dependency_overrides:
+  media_kit:
+    git:
+      url: https://ghfast.top/https://github.com/Predidit/media-kit.git
+      ref: main
+      path: ./media_kit
+  media_kit_video:
+    git:
+      url: https://ghfast.top/https://github.com/Predidit/media-kit.git
+      ref: main
+      path: ./media_kit_video
+  media_kit_libs_video:
+    git:
+      url: https://ghfast.top/https://github.com/Predidit/media-kit.git
+      ref: main
+      path: ./libs/universal/media_kit_libs_video
+  media_kit_libs_linux:
+    git:
+      url: https://ghfast.top/https://github.com/Predidit/media-kit.git
+      ref: main
+      path: ./libs/linux/media_kit_libs_linux
+  media_kit_libs_ios_video:
+    git:
+      url: https://ghfast.top/https://github.com/Predidit/media-kit.git
+      ref: main
+      path: ./libs/ios/media_kit_libs_ios_video
+  media_kit_libs_android_video:
+    git:
+      url: https://ghfast.top/https://github.com/Predidit/media-kit.git
+      ref: main
+      path: ./libs/android/media_kit_libs_android_video
+  media_kit_libs_windows_video:
+    git:
+      url: https://ghfast.top/https://github.com/Predidit/media-kit.git
+      ref: main
+      path: ./libs/windows/media_kit_libs_windows_video
+  media_kit_libs_macos_video:
+    git:
+      url: https://ghfast.top/https://github.com/Predidit/media-kit.git
+      ref: main
+      path: ./libs/macos/media_kit_libs_macos_video
+
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   change_app_package_name: any
-  json_serializable: ^6.7.1
-  build_runner: ^2.3.3
+  json_serializable: ^6.9.0
+  build_runner: ^2.4.13
   protoc_builder: ^0.4.1
-  flutter_launcher_icons: ^0.14.1
+  flutter_launcher_icons: ^0.14.2
   msix: ^3.16.7
-  intl_utils: ^2.8.11
-  flutter_lints: ^6.0.0
+
+  # The "flutter_lints" package below contains a set of recommended lints to
+  # encourage good coding practices. The lint set provided by the package is
+  # activated in the `analysis_options.yaml` file located at the root of your
+  # package. See that file for information about deactivating specific lint
+  # rules and activating additional ones.
+  flutter_lints: ^5.0.0
 
 # flutter pub run flutter_launcher_icons
 flutter_icons:
@@ -129,17 +246,26 @@ flutter:
 
   assets:
     - assets/
-    - assets/images/
-    - assets/images/video/
+    - assets/fonts/
     - assets/icons/
-    - assets/keystore/
-    - assets/version.json
+    - assets/images/
     - assets/js/
-    - assets/emo/huya/
-    - assets/emo/douyu/
-    - assets/emo/douyin/
-    - assets/emo/bilibili/
-    - assets/emo/kuaishou/
+    - assets/keystore/
+    - assets/keystore/supabase.json
+    # - assets/pure_live_web/
+    - assets/js/webmssdk.js
+    - assets/js/
+    # - assets/pure_live_web/assets/
+    # - assets/pure_live_web/assets/assets/icons/
+    # - assets/pure_live_web/assets/assets/images/
+    # - assets/pure_live_web/assets/fonts/
+    # - assets/pure_live_web/assets/packages/flex_color_picker/assets/
+    # - assets/pure_live_web/assets/packages/flutter_js/assets/js/
+    # - assets/pure_live_web/assets/packages/font_awesome_flutter/lib/fonts/
+    # - assets/pure_live_web/assets/shaders/
+    # - assets/pure_live_web/canvaskit/
+    # - assets/pure_live_web/canvaskit/chromium/
+    # - assets/pure_live_web/icons/
 
   fonts:
     - family: CustomIcons
@@ -148,6 +274,9 @@ flutter:
     - family: PingFang
       fonts:
         - asset: assets/PingFangSC.ttf
+    - family: ComIcon
+      fonts:
+        - asset: assets/fonts/iconfont.ttf
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
@@ -160,9 +289,13 @@ flutter_intl:
   output_dir: lib/common/l10n/generated
 
 # windows msix package
-msix_config:
-  display_name: 纯粹直播
-  msix_version: 1.0.0.92
-  logo_path: assets/icons/icon.png
-  certificate_path: assets/keystore/CERTIFICATE.pfx
-  certificate_password: xxxx
+# msix_config:
+#   display_name: 纯粹直播
+#   # publisher_display_name: puretech.com
+#   # identity_name: com.puretech.purelive
+#   msix_version: 1.0.0.65
+#   logo_path: assets/icons/icon.png
+#   # capabilities: internetClient
+#   certificate_path: assets/keystore/CERTIFICATE.pfx
+#   certificate_password: xxxx
+#   # publisher: O=puretech.com, C=CN
