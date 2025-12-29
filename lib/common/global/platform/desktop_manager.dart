@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:pure_live/plugins/utils.dart';
 import 'package:tray_manager/tray_manager.dart';
-import 'package:pure_live/player/fullscreen.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
@@ -184,11 +183,6 @@ class DesktopManager {
 }
 
 mixin DesktopWindowMixin<T extends StatefulWidget> on State<T> implements WindowListener, TrayListener {
-  Future<void> saveWindowBounds() async {
-    if (await windowManager.isFullScreen()) return;
-    WindowService.normalWindowBounds = await windowManager.getBounds();
-  }
-
   @override
   void onWindowClose() => DesktopManager.handleWindowClose();
 
@@ -218,19 +212,16 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T> implements Window
   void onWindowMinimize() {}
   @override
   void onWindowRestore() {}
+
   @override
   void onWindowResize() {}
   @override
-  void onWindowResized() async {
-    await saveWindowBounds();
-  }
+  void onWindowResized() {}
 
   @override
   void onWindowMove() {}
   @override
-  void onWindowMoved() async {
-    await saveWindowBounds();
-  }
+  void onWindowMoved() {}
 
   @override
   void onWindowEnterFullScreen() {}

@@ -61,6 +61,7 @@ dependencies:
   flutter_color: ^2.1.0
   crypto_simple: ^3.0.0
   window_manager: ^0.5.1
+  ffi: ^2.1.4
   launch_at_startup: ^0.5.1
   tray_manager: ^0.5.2
   flutter_single_instance: ^1.7.0
@@ -119,11 +120,7 @@ dependencies:
   markdown_widget: ^2.3.2+8
   google_fonts: ^6.3.3
   back_button_interceptor: ^8.0.4
-  screen_retriever:
-     git:
-      url: https://github.com/MSOB7YY/screen_retriever.git
-      path: ./packages/screen_retriever
-      ref: main
+  win32: ^5.15.0
 dependency_overrides:
   media_kit:
     git:
@@ -165,11 +162,6 @@ dependency_overrides:
       url: https://github.com/Predidit/media-kit.git
       ref: main
       path: ./libs/macos/media_kit_libs_macos_video
-  screen_retriever:
-     git:
-      url: https://github.com/MSOB7YY/screen_retriever.git
-      path: ./packages/screen_retriever
-      ref: main
 dev_dependencies:
   flutter_test:
     sdk: flutter
