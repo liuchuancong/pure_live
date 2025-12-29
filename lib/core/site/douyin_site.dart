@@ -38,7 +38,7 @@ class DouyinSite implements LiveSite {
       "ttwid=1%7CB1qls3GdnZhUov9o2NxOMxxYS2ff6OSvEWbv0ytbES4%7C1680522049%7C280d802d6d478e3e78d0c807f7c487e7ffec0ae4e5fdd6a0fe74c3c6af149511";
 
   /// 用户设置的 cookie
-  String cookie = "";
+  static String cookie = "";
 
   Map<String, dynamic> headers = {
     "Authority": kDefaultAuthority,
@@ -615,6 +615,7 @@ class DouyinSite implements LiveSite {
         'user-agent': kDefaultUserAgent,
       },
     );
+    developer.log(result.toString());
     if (result == "" || result == 'blocked') {
       throw Exception("抖音直播搜索被限制，请稍后再试");
     }
