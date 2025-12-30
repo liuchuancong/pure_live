@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
+import 'package:pure_live/modules/live_play/load_type.dart';
 import 'package:pure_live/common/widgets/count_button.dart';
 import 'package:pure_live/modules/live_play/play_other.dart';
 import 'package:pure_live/pkg/canvas_danmaku/danmaku_screen.dart';
@@ -599,6 +600,340 @@ class LockButton extends StatelessWidget {
   }
 }
 
+class LineSelectorButton extends StatelessWidget {
+  const LineSelectorButton({super.key, required this.controller});
+
+  final VideoController controller;
+
+  void _showMobileDialog(BuildContext context) {
+    controller.isMenuOpen.value = true;
+    controller.stopHideController();
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.all(16.0),
+        clipBehavior: Clip.hardEdge,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 500, maxHeight: 400),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 10, 0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('选择线路', style: Theme.of(context).textTheme.titleMedium),
+                    IconButton(icon: const Icon(Icons.close, size: 18), onPressed: () => Navigator.of(context).pop()),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: Obx(
+                  () => ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    itemCount: controller.livePlayController.playUrls.length,
+                    itemBuilder: (context, index) {
+                      final isSelected = index == controller.livePlayController.currentLineIndex.value;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6.0),
+                        child: Center(
+                          child: InkWell(
+                            onTap: () {
+                              controller.livePlayController.setResolution(
+                                ReloadDataType.changeLine,
+                                controller.livePlayController.currentQuality.value,
+                                index,
+                              );
+                              Navigator.of(context).pop();
+                            },
+                            borderRadius: BorderRadius.circular(8),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Container(
+                                width: double.infinity, // 设定按钮固定宽度
+                                height: 38, // 设定按钮高度
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? Get.theme.colorScheme.primary
+                                      : Get.theme.colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  '线路 ${index + 1}',
+                                  style: TextStyle(fontSize: 15, color: isSelected ? Colors.white : null),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('取消'))],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).then((_) {
+      controller.isMenuOpen.value = false;
+      controller.enableController();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      if (controller.livePlayController.playUrls.isEmpty) return const SizedBox.shrink();
+      final bool isMobile =
+          Theme.of(context).platform == TargetPlatform.android || Theme.of(context).platform == TargetPlatform.iOS;
+
+      if (isMobile) {
+        return GestureDetector(onTap: () => _showMobileDialog(context), child: _buildButtonChild());
+      }
+
+      const double itemHeight = 40.0;
+      final double totalMenuHeight = (controller.livePlayController.playUrls.length * itemHeight) + 16;
+      return PopupMenuButton<int>(
+        position: PopupMenuPosition.over,
+        offset: Offset(30, -totalMenuHeight),
+        constraints: const BoxConstraints(minWidth: 110, maxWidth: 110),
+        onOpened: () {
+          controller.isMenuOpen.value = true;
+          controller.stopHideController();
+        },
+        onSelected: (index) {
+          controller.isMenuOpen.value = false;
+          controller.livePlayController.setResolution(
+            ReloadDataType.changeLine,
+            controller.livePlayController.currentQuality.value,
+            index,
+          );
+          controller.enableController();
+        },
+        onCanceled: () {
+          controller.isMenuOpen.value = false;
+          controller.enableController();
+        },
+        color: Colors.black.withValues(alpha: 0.85),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: const BorderSide(color: Colors.white10),
+        ),
+        child: _buildButtonChild(),
+        itemBuilder: (context) => List.generate(controller.livePlayController.playUrls.length, (index) {
+          final isSelected = index == controller.livePlayController.currentLineIndex.value;
+          return PopupMenuItem(
+            value: index,
+            height: itemHeight,
+            child: Center(
+              child: Text(
+                '线路 ${index + 1}',
+                style: TextStyle(fontSize: 13, color: isSelected ? Get.theme.colorScheme.primary : Colors.white),
+              ),
+            ),
+          );
+        }),
+      );
+    });
+  }
+
+  Widget _buildButtonChild() {
+    return Container(
+      height: 30,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
+      child: Text(
+        '线路${controller.livePlayController.currentLineIndex.value + 1}',
+        style: const TextStyle(color: Colors.white, fontSize: 13),
+      ),
+    );
+  }
+}
+
+class ResolutionSelectorButton extends StatelessWidget {
+  const ResolutionSelectorButton({super.key, required this.controller});
+
+  final VideoController controller;
+
+  void _showMobileDialog(BuildContext context) {
+    controller.isMenuOpen.value = true;
+    controller.stopHideController();
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.all(16.0),
+        clipBehavior: Clip.hardEdge,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 500, maxHeight: 400),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 10, 0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('选择清晰度', style: Theme.of(context).textTheme.titleMedium),
+                    IconButton(icon: const Icon(Icons.close, size: 18), onPressed: () => Navigator.of(context).pop()),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: Obx(
+                  () => ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    itemCount: controller.livePlayController.qualites.length,
+                    itemBuilder: (context, index) {
+                      final isSelected = index == controller.livePlayController.currentQuality.value;
+                      final qualityName = controller.livePlayController.qualites[index].quality;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6.0),
+                        child: Center(
+                          child: InkWell(
+                            onTap: () {
+                              controller.livePlayController.setResolution(
+                                ReloadDataType.changeQuality,
+                                index,
+                                controller.livePlayController.currentLineIndex.value,
+                              );
+                              Navigator.of(context).pop();
+                            },
+                            borderRadius: BorderRadius.circular(8),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Container(
+                                width: double.infinity, // 独占一行宽度
+                                height: 38,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? Get.theme.colorScheme.primary
+                                      : Get.theme.colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  qualityName,
+                                  style: TextStyle(fontSize: 15, color: isSelected ? Colors.white : null),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('取消'))],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).then((_) {
+      controller.isMenuOpen.value = false;
+      controller.enableController();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      if (controller.livePlayController.qualites.isEmpty) return const SizedBox.shrink();
+
+      final bool isMobile =
+          Theme.of(context).platform == TargetPlatform.android || Theme.of(context).platform == TargetPlatform.iOS;
+
+      if (isMobile) {
+        return GestureDetector(onTap: () => _showMobileDialog(context), child: _buildButtonChild());
+      }
+
+      // Windows 桌面端样式
+      final qualityCount = controller.livePlayController.qualites.length;
+      const double itemHeight = 40.0;
+      final double totalMenuHeight = (qualityCount * itemHeight) + 16;
+
+      return PopupMenuButton<int>(
+        tooltip: "选择清晰度",
+        position: PopupMenuPosition.over,
+        offset: Offset(15, -totalMenuHeight),
+        padding: EdgeInsets.zero,
+        onOpened: () {
+          controller.isMenuOpen.value = true;
+          controller.stopHideController();
+        },
+        onCanceled: () {
+          controller.isMenuOpen.value = false;
+          controller.enableController();
+        },
+        onSelected: (index) {
+          controller.isMenuOpen.value = false;
+          controller.livePlayController.setResolution(
+            ReloadDataType.changeQuality,
+            index,
+            controller.livePlayController.currentLineIndex.value,
+          );
+          controller.enableController();
+        },
+        color: Colors.black.withValues(alpha: 0.85),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: const BorderSide(color: Colors.white10),
+        ),
+        child: _buildButtonChild(),
+        itemBuilder: (context) => List.generate(qualityCount, (index) {
+          final isSelected = index == controller.livePlayController.currentQuality.value;
+          return PopupMenuItem(
+            value: index,
+            height: itemHeight,
+            child: Center(
+              child: Text(
+                controller.livePlayController.qualites[index].quality,
+                style: TextStyle(fontSize: 13, color: isSelected ? Get.theme.colorScheme.primary : Colors.white),
+              ),
+            ),
+          );
+        }),
+      );
+    });
+  }
+
+  Widget _buildButtonChild() {
+    final currentIndex = controller.livePlayController.currentQuality.value;
+    final qualityName = controller.livePlayController.qualites[currentIndex].quality;
+    return Container(
+      height: 30,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
+      child: Text(qualityName, style: const TextStyle(color: Colors.white, fontSize: 13)),
+    );
+  }
+}
+
 // Bottom action bar widgets
 class BottomActionBar extends StatelessWidget {
   const BottomActionBar({super.key, required this.controller, required this.barHeight});
@@ -608,11 +943,11 @@ class BottomActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => AnimatedPositioned(
-        bottom: (!controller.showSettting.value && controller.showController.value && !controller.showLocked.value)
-            ? 0
-            : -barHeight,
+    return Obx(() {
+      bool shouldShow =
+          (controller.showController.value || controller.isMenuOpen.value) && !controller.showLocked.value;
+      return AnimatedPositioned(
+        bottom: shouldShow ? 0 : -barHeight,
         left: 0,
         right: 0,
         height: barHeight,
@@ -636,6 +971,10 @@ class BottomActionBar extends StatelessWidget {
               DanmakuButton(controller: controller),
               SettingsButton(controller: controller),
               const Spacer(),
+              if (controller.isWindowFullscreen.value || controller.isFullscreen.value) ...[
+                ResolutionSelectorButton(controller: controller),
+                LineSelectorButton(controller: controller),
+              ],
               VideoFitSetting(controller: controller),
               SizedBox(width: 8),
               OverlayVolumeControl(controller: controller),
@@ -648,8 +987,8 @@ class BottomActionBar extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 }
 

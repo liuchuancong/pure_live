@@ -60,7 +60,7 @@ class VideoController with ChangeNotifier {
   final showSettting = false.obs;
   final showLocked = false.obs;
   final danmuKey = GlobalKey();
-
+  final isMenuOpen = false.obs;
   GlobalKey playerKey = GlobalKey();
 
   Timer? _debounceTimer;
@@ -71,6 +71,10 @@ class VideoController with ChangeNotifier {
       showController.value = false;
     });
     showController.value = true;
+  }
+
+  void stopHideController() {
+    showControllerTimer?.cancel();
   }
 
   final hideDanmaku = false.obs;
