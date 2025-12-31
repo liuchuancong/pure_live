@@ -47,7 +47,8 @@ class SwitchableGlobalPlayer {
   StreamSubscription<double?>? _volumeSubscription;
   StreamSubscription<bool>? _isCompleteSubscription;
   StreamSubscription<PiPStatus>? _pipSubscription;
-
+  double _realWidth = 0;
+  double _realHeight = 0;
   // Getter（安全访问）
   UnifiedPlayer? get currentPlayer => _currentPlayer;
 
@@ -154,16 +155,39 @@ class SwitchableGlobalPlayer {
     );
   }
 
+  double get _currentVideoRatio {
+    // 使用缓存的真实宽高进行判断
+    if (_realWidth > 0 && _realHeight > 0) {
+      return _realWidth / _realHeight;
+    }
+    // 如果视频尚未解析出宽高，使用保底比例
+    return isVerticalVideo.value ? (9 / 16) : (16 / 9);
+  }
+
   void showAppFloating(LiveRoom room) {
     floatingManager.disposeFloating(_floatTag);
-    double baseWidth = Platform.isWindows ? 300.0 : 200.0;
-    double ratio = isVerticalVideo.value ? (9 / 16) : (16 / 9);
-    double floatHeight = baseWidth / ratio;
+    double maxSide = Platform.isWindows ? 350.0 : 220.0;
+
+    double ratio = _currentVideoRatio;
+    double floatWidth;
+    double floatHeight;
+
+    if (ratio >= 1) {
+      floatWidth = maxSide;
+      floatHeight = maxSide / ratio;
+    } else {
+      floatHeight = maxSide * 1.2;
+      floatWidth = floatHeight * ratio;
+      if (floatWidth < 120) {
+        floatWidth = 120;
+        floatHeight = floatWidth / ratio;
+      }
+    }
     floatingManager.createFloating(
       _floatTag,
       FloatingOverlay(
         Container(
-          width: baseWidth,
+          width: floatWidth,
           height: floatHeight,
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
@@ -343,7 +367,12 @@ class SwitchableGlobalPlayer {
     final orientationStream = CombineLatestStream.combine2<int?, int?, bool>(
       width.where((w) => w != null && w > 0),
       height.where((h) => h != null && h > 0),
-      (w, h) => h! >= w!,
+      (w, h) {
+        _realWidth = w!.toDouble();
+        _realHeight = h!.toDouble();
+
+        return _realHeight >= _realWidth;
+      },
     );
 
     _orientationSubscription = orientationStream.listen((isVertical) {
