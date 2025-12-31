@@ -8,6 +8,7 @@ import 'package:pure_live/modules/live_play/load_type.dart';
 import 'package:pure_live/common/index.dart' hide BackButton;
 import 'package:pure_live/modules/live_play/play_other.dart';
 import 'package:pure_live/modules/live_play/danmaku_tab.dart';
+import 'package:pure_live/player/switchable_global_player.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller_panel.dart';
 
@@ -31,7 +32,10 @@ class LivePlayPage extends GetView<LivePlayController> {
     });
   }
 
-  Scaffold buildNormalPlayerView(BuildContext context) {
+  Widget buildNormalPlayerView(BuildContext context) {
+    if (SwitchableGlobalPlayer().isInPip.value) {
+      return SwitchableGlobalPlayer().buildPiPOverlay();
+    }
     return Scaffold(
       appBar: AppBar(
         title: Row(

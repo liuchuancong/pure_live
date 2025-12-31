@@ -8,6 +8,7 @@ import 'package:rxdart/rxdart.dart';
 import 'unified_player_interface.dart';
 import 'package:floating/floating.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/player/fullscreen.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:flutter_floating/flutter_floating.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
@@ -31,7 +32,10 @@ class SwitchableGlobalPlayer {
   bool playerHasInit = false;
   bool hasSetVolume = false;
   static const String _floatTag = "global_video_player";
+  // overlay相关
   final isFloating = false.obs;
+  // pip
+  final isInPip = false.obs;
   // 依赖
   final SettingsService settings = Get.find<SettingsService>();
 
@@ -155,7 +159,7 @@ class SwitchableGlobalPlayer {
     );
   }
 
-  double get _currentVideoRatio {
+  double get currentVideoRatio {
     // 使用缓存的真实宽高进行判断
     if (_realWidth > 0 && _realHeight > 0) {
       return _realWidth / _realHeight;
@@ -164,11 +168,44 @@ class SwitchableGlobalPlayer {
     return isVerticalVideo.value ? (9 / 16) : (16 / 9);
   }
 
+  Widget buildPiPOverlay() {
+    return Scaffold(
+      body: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(0), color: Colors.black),
+        child: Stack(
+          children: [
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onPanStart: (_) => windowManager.startDragging(), // 允许鼠标拖动小窗
+              onDoubleTap: () {
+                isInPip.value = false;
+                WindowService().exitWinPiP();
+              },
+              child: getVideoWidget(null),
+            ),
+            Positioned(
+              right: 8,
+              top: 8,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white),
+                onPressed: () async {
+                  isInPip.value = false;
+                  await WindowService().exitWinPiP();
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void showAppFloating(LiveRoom room) {
     floatingManager.disposeFloating(_floatTag);
     double maxSide = Platform.isWindows ? 350.0 : 220.0;
 
-    double ratio = _currentVideoRatio;
+    double ratio = currentVideoRatio;
     double floatWidth;
     double floatHeight;
 
@@ -264,11 +301,23 @@ class SwitchableGlobalPlayer {
   }
 
   void enablePip() async {
-    final status = await floating.pipStatus;
-    if (status == PiPStatus.disabled) {
-      final rational = isVerticalVideo.value ? Rational.vertical() : Rational.landscape();
-      final arguments = ImmediatePiP(aspectRatio: rational);
-      await floating.enable(arguments);
+    if (PlatformUtils.isAndroid) {
+      final status = await floating.pipStatus;
+      if (status == PiPStatus.disabled) {
+        final rational = isVerticalVideo.value ? Rational.vertical() : Rational.landscape();
+        final arguments = ImmediatePiP(aspectRatio: rational);
+        await floating.enable(arguments);
+      }
+    } else {
+      await WindowService().enterWinPiP(currentVideoRatio);
+      isInPip.value = true;
+    }
+  }
+
+  void exitPip() async {
+    if (PlatformUtils.isWindows) {
+      await WindowService().exitWinPiP();
+      isInPip.value = false;
     }
   }
 

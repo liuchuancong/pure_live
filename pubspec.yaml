@@ -122,6 +122,11 @@ dependencies:
   back_button_interceptor: ^8.0.4
   flutter_floating: ^2.0.1
   win32: ^5.15.0
+  screen_retriever:
+    git:
+      url: https://github.com/MSOB7YY/screen_retriever.git
+      path: ./packages/screen_retriever
+      ref: main
 dependency_overrides:
   media_kit:
     git:
@@ -163,6 +168,11 @@ dependency_overrides:
       url: https://github.com/Predidit/media-kit.git
       ref: main
       path: ./libs/macos/media_kit_libs_macos_video
+  screen_retriever:
+     git:
+      url: https://github.com/MSOB7YY/screen_retriever.git
+      path: ./packages/screen_retriever
+      ref: main
 dev_dependencies:
   flutter_test:
     sdk: flutter

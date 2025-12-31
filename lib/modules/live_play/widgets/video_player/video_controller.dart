@@ -41,8 +41,6 @@ class VideoController with ChangeNotifier {
 
   final isWindowFullscreen = false.obs;
 
-  bool get supportPip => Platform.isAndroid;
-
   bool get supportWindowFull => Platform.isWindows || Platform.isLinux;
 
   bool get fullscreenUI => isFullscreen.value || isWindowFullscreen.value;

@@ -10,6 +10,7 @@ import 'package:pure_live/plugins/event_bus.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:pure_live/modules/live_play/load_type.dart';
 import 'package:pure_live/common/widgets/count_button.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/live_play/play_other.dart';
 import 'package:pure_live/pkg/canvas_danmaku/danmaku_screen.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
@@ -257,7 +258,8 @@ class TopActionBar extends StatelessWidget {
                 const DatetimeInfo(),
                 BatteryInfo(controller: controller),
               ],
-              if (!controller.fullscreenUI && controller.supportPip) PIPButton(controller: controller),
+              if (!controller.fullscreenUI && PlatformUtils.isAndroid) PIPButton(controller: controller),
+              if (PlatformUtils.isWindows) PIPButton(controller: controller),
             ],
           ),
         ),

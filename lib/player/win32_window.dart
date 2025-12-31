@@ -110,4 +110,66 @@ class WinFullscreen {
     // 退出后重置缓存，下次全屏再保存
     _originalSaved = false;
   }
+
+  static void enterPipMode({required double width, required double height, required double x, required double y}) {
+    if (!Platform.isWindows) return;
+    final hWnd = _getHwnd();
+
+    // 1. 保存当前状态以便退出恢复
+    saveOriginalWindowRect();
+
+    int style = GetWindowLongPtr(hWnd, GWL_STYLE);
+    style &= ~WS_CAPTION & ~WS_THICKFRAME & ~WS_SYSMENU & ~WS_MAXIMIZEBOX & ~WS_MINIMIZEBOX;
+    style |= WS_POPUP; // 设置为无边框弹出式窗口
+    SetWindowLongPtr(hWnd, GWL_STYLE, style);
+
+    // 3. 修改扩展样式：确保没有窗口边缘阴影（可选）
+    int exStyle = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
+    exStyle |= WS_EX_TOPMOST; // 扩展样式置顶
+    SetWindowLongPtr(hWnd, GWL_EXSTYLE, exStyle);
+
+    // 4. 设置窗口位置和大小，并强制置顶 (HWND_TOPMOST)
+    SetWindowPos(
+      hWnd,
+      HWND_TOPMOST, // 置顶关键
+      x.toInt(),
+      y.toInt(),
+      width.toInt(),
+      height.toInt(),
+      SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE, // NOACTIVATE 防止抢焦点
+    );
+  }
+
+  /// 退出画中画/全屏
+  static void exitSpecialMode() {
+    if (!Platform.isWindows) return;
+    final hWnd = _getHwnd();
+
+    // 1. 恢复标准窗口样式
+    int style = GetWindowLongPtr(hWnd, GWL_STYLE);
+    style |= WS_CAPTION | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
+    style &= ~WS_POPUP;
+    SetWindowLongPtr(hWnd, GWL_STYLE, style);
+
+    // 2. 取消置顶样式
+    int exStyle = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
+    exStyle &= ~WS_EX_TOPMOST;
+    SetWindowLongPtr(hWnd, GWL_EXSTYLE, exStyle);
+
+    // 3. 恢复原始位置并取消置顶 (HWND_NOTOPMOST)
+    if (_originalMaximized) {
+      ShowWindow(hWnd, SW_MAXIMIZE);
+    } else {
+      SetWindowPos(
+        hWnd,
+        HWND_NOTOPMOST, // 取消置顶
+        _originalX,
+        _originalY,
+        _originalWidth,
+        _originalHeight,
+        SWP_SHOWWINDOW | SWP_FRAMECHANGED,
+      );
+    }
+    _originalSaved = false;
+  }
 }
