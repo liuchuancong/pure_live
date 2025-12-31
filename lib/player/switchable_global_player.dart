@@ -219,11 +219,16 @@ class SwitchableGlobalPlayer {
     );
   }
 
-  void showAppFloating(LiveRoom room) {
-    floatingManager.disposeFloating(_floatTag);
-    double maxSide = Platform.isWindows ? 350.0 : 220.0;
+  Timer? _hideTimer;
 
-    double ratio = currentVideoRatio;
+  void showAppFloating(LiveRoom room) {
+    // 1. 每次清理旧的悬浮窗和计时器
+    floatingManager.disposeFloating(_floatTag);
+    _hideTimer?.cancel();
+
+    // 2. 尺寸计算
+    double maxSide = Platform.isWindows ? 350.0 : 220.0;
+    double ratio = currentVideoRatio; // 确保这是一个数值
     double floatWidth;
     double floatHeight;
 
@@ -238,74 +243,110 @@ class SwitchableGlobalPlayer {
         floatHeight = floatWidth / ratio;
       }
     }
+    void resetHideTimer() {
+      if (Platform.isAndroid || Platform.isIOS) {
+        _hideTimer?.cancel();
+        _hideTimer = Timer(const Duration(seconds: 3), () {
+          isHovered.value = false;
+        });
+      }
+    }
+
     floatingManager.createFloating(
       _floatTag,
       FloatingOverlay(
-        Container(
-          width: floatWidth,
-          height: floatHeight,
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: Colors.black,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(100), // 加深一点阴影
-                blurRadius: 15,
-                spreadRadius: 2,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: MouseRegion(
-            onEnter: (_) => isHovered.value = true,
-            onExit: (_) => isHovered.value = false,
+        MouseRegion(
+          // 桌面端鼠标进入显示
+          onEnter: (_) {
+            if (Platform.isWindows || Platform.isMacOS) isHovered.value = true;
+          },
+          // 桌面端鼠标离开隐藏
+          onExit: (_) {
+            if (Platform.isWindows || Platform.isMacOS) isHovered.value = false;
+          },
+          child: Container(
+            width: floatWidth,
+            height: floatHeight,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: Colors.black,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha(100),
+                  blurRadius: 15,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
             child: Stack(
               children: [
-                getVideoWidget(null),
+                Positioned.fill(child: getVideoWidget(null)),
+
                 Positioned.fill(
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () {
-                      closeAppFloating();
-                      AppNavigator.toLiveRoomDetail(liveRoom: currentFloatRoom);
+                      if (Platform.isAndroid || Platform.isIOS) {
+                        if (!isHovered.value) {
+                          isHovered.value = true;
+                          resetHideTimer();
+                        } else {
+                          closeAppFloating();
+                          AppNavigator.toLiveRoomDetail(liveRoom: currentFloatRoom);
+                        }
+                      } else {
+                        closeAppFloating();
+                        AppNavigator.toLiveRoomDetail(liveRoom: currentFloatRoom);
+                      }
                     },
                     child: const SizedBox.expand(),
                   ),
                 ),
+
+                // 层级 3: 播放/暂停控制按钮
                 Center(
                   child: Obx(
                     () => AnimatedOpacity(
                       opacity: isHovered.value ? 1.0 : 0.0,
                       duration: const Duration(milliseconds: 200),
-                      child: IconButton(
-                        iconSize: 32,
-                        style: IconButton.styleFrom(backgroundColor: Colors.black26),
-                        icon: Icon(
-                          isPlaying.value ? Icons.pause_circle_filled : Icons.play_circle_filled,
-                          color: Colors.white,
+                      child: IgnorePointer(
+                        ignoring: !isHovered.value,
+                        child: IconButton(
+                          iconSize: 42,
+                          style: IconButton.styleFrom(backgroundColor: Colors.black45, foregroundColor: Colors.white),
+                          icon: Icon(isPlaying.value ? Icons.pause_circle_filled : Icons.play_circle_filled),
+                          onPressed: () {
+                            togglePlayPause();
+                            resetHideTimer();
+                          },
                         ),
-                        onPressed: () {
-                          togglePlayPause();
-                        },
                       ),
                     ),
                   ),
                 ),
 
                 Positioned(
-                  right: 8,
-                  top: 8,
+                  right: 4,
+                  top: 4,
                   child: Obx(
                     () => AnimatedOpacity(
                       opacity: isHovered.value ? 1.0 : 0.0,
                       duration: const Duration(milliseconds: 200),
-                      child: IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white),
-                        onPressed: () async {
-                          stop();
-                          closeAppFloating();
-                        },
+                      child: IgnorePointer(
+                        ignoring: !isHovered.value,
+                        child: IconButton(
+                          constraints: const BoxConstraints(),
+                          padding: const EdgeInsets.all(4),
+                          style: IconButton.styleFrom(backgroundColor: Colors.black45),
+                          icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                          onPressed: () async {
+                            _hideTimer?.cancel();
+                            stop();
+                            closeAppFloating();
+                          },
+                        ),
                       ),
                     ),
                   ),
@@ -321,9 +362,16 @@ class SwitchableGlobalPlayer {
       ),
     );
 
+    // 打开悬浮窗并更新状态
     floatingManager.getFloating(_floatTag).open(Get.context!);
     currentFloatRoom = room;
     isFloating.value = true;
+
+    // 移动端初始显示 3 秒后自动隐藏按钮
+    if (Platform.isAndroid || Platform.isIOS) {
+      isHovered.value = true;
+      resetHideTimer();
+    }
   }
 
   /// 关闭并销毁悬浮播放器
