@@ -54,6 +54,10 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
       await _dio.download(
         widget.apkUrl,
         file.path,
+        options: Options(
+          headers: {'Cache-Control': 'no-cache', 'Pragma': 'no-cache', 'Expires': '0'},
+          receiveTimeout: const Duration(seconds: 30),
+        ),
         onReceiveProgress: (received, total) {
           if (total > 0 && mounted) {
             final progress = (received / total * 100).toInt();
