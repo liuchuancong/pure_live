@@ -18,7 +18,6 @@ class DanmakuListView extends StatefulWidget {
 }
 
 class DanmakuListViewState extends State<DanmakuListView> with AutomaticKeepAliveClientMixin<DanmakuListView> {
-  // ... (initState, dispose, _scrollToBottom, _userScrollAction 保持不变) ...
   final ScrollController _scrollController = ScrollController();
   bool _scrollHappen = false;
   late StreamSubscription<List<LiveMessage>> _messagesSubscription;
@@ -30,7 +29,9 @@ class DanmakuListViewState extends State<DanmakuListView> with AutomaticKeepAliv
     super.initState();
     _messagesSubscription = controller.messages.listen((p0) {
       if (mounted) {
-        _scrollToBottom();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollToBottom();
+        });
       }
     });
   }
