@@ -23,6 +23,9 @@ class LivePlayPage extends GetView<LivePlayController> {
       WakelockPlus.toggle(enable: settings.enableScreenKeepOn.value);
     }
     return Obx(() {
+      if (SwitchableGlobalPlayer().isInPip.value) {
+        return SwitchableGlobalPlayer().buildPiPOverlay();
+      }
       if (controller.screenMode.value == VideoMode.normal) {
         return buildNormalPlayerView(context);
       } else if (controller.screenMode.value == VideoMode.widescreen) {
@@ -33,9 +36,6 @@ class LivePlayPage extends GetView<LivePlayController> {
   }
 
   Widget buildNormalPlayerView(BuildContext context) {
-    if (SwitchableGlobalPlayer().isInPip.value) {
-      return SwitchableGlobalPlayer().buildPiPOverlay();
-    }
     return Scaffold(
       appBar: AppBar(
         title: Row(

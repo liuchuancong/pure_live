@@ -361,7 +361,7 @@ class SwitchableGlobalPlayer {
                 children: [
                   Container(color: Colors.black),
                   _currentPlayer?.getVideoWidget(settings.videoFitIndex.value, child) ?? const SizedBox(),
-                  if (!isFloatContent) child ?? const SizedBox(),
+                  if (!isFloatContent && !isInPip.value) child ?? const SizedBox(),
                 ],
               ),
               resizeToAvoidBottomInset: true,
