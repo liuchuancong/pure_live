@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 
 class VersionUtil {
-  static const String version = '2.0.10';
+  static const String version = '2.0.11';
   static const String projectUrl = 'https://github.com/liuchuancong/pure_live';
   static const String releaseUrl = 'https://api.github.com/repos/liuchuancong/pure_live/releases?per_page=30';
   static const String issuesUrl = 'https://github.com/liuchuancong/pure_live/issues';

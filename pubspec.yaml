@@ -1,7 +1,7 @@
 name: pure_live
 description: 纯粹直播,一款开源的第三方多平台直播聚合播放器.
 publish_to: none
-version: 2.0.10+21
+version: 2.0.11+22
 
 environment:
   sdk: ^3.10.4
