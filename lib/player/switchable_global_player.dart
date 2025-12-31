@@ -143,25 +143,6 @@ class SwitchableGlobalPlayer {
     }
   }
 
-  /// 构建悬浮窗关闭按钮
-  Widget _buildCloseButton() {
-    return GestureDetector(
-      onTap: () {
-        stop();
-        closeAppFloating();
-      },
-      child: Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: Colors.black.withAlpha(128),
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white24, width: 0.5),
-        ),
-        child: const Icon(Icons.close, color: Colors.white, size: 16),
-      ),
-    );
-  }
-
   double get currentVideoRatio {
     // 使用缓存的真实宽高进行判断
     if (_realWidth > 0 && _realHeight > 0) {
@@ -171,34 +152,68 @@ class SwitchableGlobalPlayer {
     return isVerticalVideo.value ? (9 / 16) : (16 / 9);
   }
 
+  final RxBool isHovered = false.obs;
   Widget buildPiPOverlay() {
     return Scaffold(
-      body: Container(
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(0), color: Colors.black),
-        child: Stack(
-          children: [
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onPanStart: (_) => windowManager.startDragging(), // 允许鼠标拖动小窗
-              onDoubleTap: () {
-                isInPip.value = false;
-                WindowService().exitWinPiP();
-              },
-              child: getVideoWidget(null),
-            ),
-            Positioned(
-              right: 8,
-              top: 8,
-              child: IconButton(
-                icon: const Icon(Icons.close, color: Colors.white),
-                onPressed: () async {
+      backgroundColor: Colors.transparent,
+      body: MouseRegion(
+        onEnter: (_) => isHovered.value = true,
+        onExit: (_) => isHovered.value = false,
+        child: Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(0), color: Colors.black),
+          child: Stack(
+            children: [
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onPanStart: (_) => windowManager.startDragging(),
+                onDoubleTap: () {
                   isInPip.value = false;
-                  await WindowService().exitWinPiP();
+                  WindowService().exitWinPiP();
                 },
+                child: getVideoWidget(null),
               ),
-            ),
-          ],
+
+              Center(
+                child: Obx(
+                  () => AnimatedOpacity(
+                    opacity: isHovered.value ? 1.0 : 0.0,
+                    duration: const Duration(milliseconds: 200),
+                    child: IconButton(
+                      iconSize: 32,
+                      style: IconButton.styleFrom(backgroundColor: Colors.black26),
+                      icon: Icon(
+                        isPlaying.value ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                        color: Colors.white,
+                      ),
+                      onPressed: () {
+                        togglePlayPause();
+                      },
+                    ),
+                  ),
+                ),
+              ),
+
+              Positioned(
+                right: 8, // 这里的定位现在会生效
+                top: 8,
+                child: Obx(
+                  () => AnimatedOpacity(
+                    opacity: isHovered.value ? 1.0 : 0.0,
+                    duration: const Duration(milliseconds: 200),
+                    // 这里的 child 不能再是 Positioned
+                    child: IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () async {
+                        isInPip.value = false;
+                        await WindowService().exitWinPiP();
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -242,24 +257,61 @@ class SwitchableGlobalPlayer {
               ),
             ],
           ),
-          child: Stack(
-            children: [
-              getVideoWidget(null),
-              Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () {
-                    // 点击悬浮窗回到页面的逻辑
-                    closeAppFloating();
-                    AppNavigator.toLiveRoomDetail(liveRoom: currentFloatRoom);
-                  },
-                  child: const SizedBox.expand(),
+          child: MouseRegion(
+            onEnter: (_) => isHovered.value = true,
+            onExit: (_) => isHovered.value = false,
+            child: Stack(
+              children: [
+                getVideoWidget(null),
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      closeAppFloating();
+                      AppNavigator.toLiveRoomDetail(liveRoom: currentFloatRoom);
+                    },
+                    child: const SizedBox.expand(),
+                  ),
                 ),
-              ),
+                Center(
+                  child: Obx(
+                    () => AnimatedOpacity(
+                      opacity: isHovered.value ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: IconButton(
+                        iconSize: 32,
+                        style: IconButton.styleFrom(backgroundColor: Colors.black26),
+                        icon: Icon(
+                          isPlaying.value ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                          color: Colors.white,
+                        ),
+                        onPressed: () {
+                          togglePlayPause();
+                        },
+                      ),
+                    ),
+                  ),
+                ),
 
-              // 3. 顶层：关闭按钮
-              Positioned(right: 8, top: 8, child: _buildCloseButton()),
-            ],
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Obx(
+                    () => AnimatedOpacity(
+                      opacity: isHovered.value ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 200),
+                      child: IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        onPressed: () async {
+                          stop();
+                          closeAppFloating();
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         right: 50,
