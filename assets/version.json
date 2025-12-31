@@ -1,7 +1,7 @@
 {
   "version": "2.0.11",
   "version_num": 10211,
-  "version_desc": "-Fixed: 修复全屏显示问题. \n-Added: 添加窗口播放功能. \n-Add: 添加windows画中画.",
+  "version_desc": "-Fixed: 修复全屏显示问题. \n-Added: 添加窗口播放功能. \n-Add: 添加windows画中画.\n-Fixed: 优化后台播放逻辑（需要忽略电池优化）.",
   "prerelease":false,
   "download_url": "https://github.com/liuchuancong/pure_live/releases"
 }
