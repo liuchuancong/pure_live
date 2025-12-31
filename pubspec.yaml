@@ -122,6 +122,7 @@ dependencies:
   back_button_interceptor: ^8.0.4
   flutter_floating: ^2.0.1
   win32: ^5.15.0
+  flutter_foreground_task: ^9.2.0
   screen_retriever:
     git:
       url: https://github.com/MSOB7YY/screen_retriever.git

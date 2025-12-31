@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 class MobileManager {
   static Future<void> initialize() async {
@@ -56,6 +57,7 @@ class MobileManager {
         DeviceOrientation.landscapeLeft,
         DeviceOrientation.landscapeRight,
       ]);
+      FlutterForegroundTask.initCommunicationPort();
     } catch (e) {
       debugPrint('Android 初始化失败: $e');
     }
@@ -86,5 +88,27 @@ class MobileManager {
     } catch (e) {
       debugPrint('状态栏样式设置失败: $e');
     }
+  }
+}
+
+@pragma('vm:entry-point')
+void startCallback() {
+  FlutterForegroundTask.setTaskHandler(MyTaskHandler());
+}
+
+class MyTaskHandler extends TaskHandler {
+  @override
+  Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
+    debugPrint('onStart(starter: ${starter.name})');
+  }
+
+  @override
+  void onRepeatEvent(DateTime timestamp) {
+    debugPrint('onDestroy(timestamp: $timestamp)');
+  }
+
+  @override
+  Future<void> onDestroy(DateTime timestamp, bool isTimeout) async {
+    debugPrint('onDestroy(isTimeout: $isTimeout)');
   }
 }

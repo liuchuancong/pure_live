@@ -10,6 +10,7 @@ import 'package:pure_live/plugins/file_recover_utils.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/switchable_global_player.dart';
 import 'package:pure_live/common/global/platform/desktop_manager.dart';
+import 'package:pure_live/common/global/platform/background_server.dart';
 
 const kWindowsScheme = 'purelive://signin';
 
@@ -38,6 +39,12 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
     }
     initShareM3uState();
     initGlopalPlayer();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      bool hasPermission = await BackgroundService.requestPlatformPermissions();
+      if (!hasPermission && Platform.isAndroid) {
+        SmartDialog.showToast("如果需要后台播放，建议开启此权限");
+      }
+    });
   }
 
   Future<void> initGlopalPlayer() async {

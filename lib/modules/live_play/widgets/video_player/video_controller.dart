@@ -143,7 +143,7 @@ class VideoController with ChangeNotifier {
       FlutterVolumeController.updateShowSystemUI(false);
       registerVolumeListener();
     }
-    globalPlayer.setDataSource(datasource, headers);
+    globalPlayer.setDataSource(datasource, headers, room);
     globalPlayer.onError.listen((error) {
       if (error != null) {
         log("An error occured while loading the stream: $error", error: error, name: "VideoController");

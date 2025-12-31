@@ -12,6 +12,7 @@ import 'package:pure_live/player/fullscreen.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:flutter_floating/flutter_floating.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/common/global/platform/background_server.dart';
 
 enum PlayerEngine { mediaKit, fijk }
 
@@ -93,7 +94,7 @@ class SwitchableGlobalPlayer {
     playerHasInit = true;
   }
 
-  Future<void> setDataSource(String url, Map<String, String> headers) async {
+  Future<void> setDataSource(String url, Map<String, String> headers, LiveRoom room) async {
     if (_currentPlayer != null || playerHasInit) {
       _currentPlayer!.stop();
       _cleanup();
@@ -119,7 +120,9 @@ class SwitchableGlobalPlayer {
       await _currentPlayer!.init();
       await Future.delayed(const Duration(milliseconds: 100));
       await _currentPlayer!.setDataSource(url, headers);
-
+      if (PlatformUtils.isAndroid) {
+        BackgroundService.startService(room.nick!, room.title!);
+      }
       unawaited(
         Future.microtask(() {
           isInitialized.value = true;
@@ -297,6 +300,9 @@ class SwitchableGlobalPlayer {
 
   Future<void> stop() async {
     _currentPlayer?.stop();
+    if (PlatformUtils.isAndroid) {
+      BackgroundService.stopService();
+    }
     dispose();
   }
 

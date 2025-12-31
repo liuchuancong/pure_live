@@ -122,15 +122,18 @@ class SettingsPage extends GetView<SettingsService> {
                 onChanged: (bool value) => controller.playerCompatMode.value = value,
               ),
             ),
-          Obx(
-            () => SwitchListTile(
-              title: Text(S.of(context).enable_background_play),
-              subtitle: Text(S.of(context).enable_background_play_subtitle),
-              value: controller.enableBackgroundPlay.value,
-              activeThumbColor: Theme.of(context).colorScheme.primary,
-              onChanged: (bool value) => controller.enableBackgroundPlay.value = value,
+          if (Platform.isAndroid)
+            Obx(
+              () => SwitchListTile(
+                title: Text(S.of(context).enable_background_play),
+                subtitle: Text(S.of(context).enable_background_play_subtitle),
+                value: controller.enableBackgroundPlay.value,
+                activeThumbColor: Theme.of(context).colorScheme.primary,
+                onChanged: (bool value) {
+                  controller.enableBackgroundPlay.value = value;
+                },
+              ),
             ),
-          ),
           if (Platform.isAndroid)
             Obx(
               () => SwitchListTile(
