@@ -345,6 +345,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.0.2"
+  cupertino_icons:
+    dependency: transitive
+    description:
+      name: cupertino_icons
+      sha256: ba631d1c7f7bef6b729a622b7b752645a2d076dba9976925b8f25725a30e1ee6
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.0.8"
   dart_quickjs:
     dependency: "direct main"
     description:
@@ -576,6 +584,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.0.0"
+  flutter_floating:
+    dependency: "direct main"
+    description:
+      name: flutter_floating
+      sha256: "9887a378b4f48ed7a29f67562e8da2205d3c39f62baf9d75e376c0a190ab32ce"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "2.0.1"
   flutter_highlight:
     dependency: transitive
     description:

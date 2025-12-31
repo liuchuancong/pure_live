@@ -72,8 +72,6 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
   @override
   void onClose() {
-    success.value = false;
-    SwitchableGlobalPlayer().stop();
     tabController.dispose();
     if (Platform.isAndroid) {
       BackButtonInterceptor.removeByName("live_play_page");
@@ -83,8 +81,6 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
   @override
   void dispose() {
-    success.value = false;
-    SwitchableGlobalPlayer().stop();
     tabController.dispose();
     if (Platform.isAndroid) {
       BackButtonInterceptor.removeByName("live_play_page");
@@ -141,23 +137,18 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   }
 
   bool myInterceptor(bool stopDefaultButtonEvent, RouteInfo info) {
-    // 1. 如果是全屏，退出全屏
     if (videoController.value!.isFullscreen.value) {
       setNormalScreen();
       videoController.value!.exitFullScreen();
-      return true; // 拦截，不让页面关闭
+      return true;
     }
 
-    // 2. 如果显示设置面板，隐藏它
     if (videoController.value!.showSettting.value) {
       videoController.value!.showSettting.toggle();
-      return true; // 拦截，不让页面关闭
+      return true;
     }
-
-    // 3. 所有特殊状态都处理完了，现在决定是否允许退出页面
-    // 如果你想直接退出页面：
     success.value = false;
-    return false; // 不拦截，让系统执行默认的返回（关闭页面）
+    return false;
   }
 
   Future<LiveRoom> onInitPlayerState({

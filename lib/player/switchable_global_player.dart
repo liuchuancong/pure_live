@@ -8,6 +8,8 @@ import 'package:rxdart/rxdart.dart';
 import 'unified_player_interface.dart';
 import 'package:floating/floating.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/routes/app_navigation.dart';
+import 'package:flutter_floating/flutter_floating.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 
 enum PlayerEngine { mediaKit, fijk }
@@ -28,7 +30,8 @@ class SwitchableGlobalPlayer {
   late Floating floating;
   bool playerHasInit = false;
   bool hasSetVolume = false;
-
+  static const String _floatTag = "global_video_player";
+  final isFloating = false.obs;
   // 依赖
   final SettingsService settings = Get.find<SettingsService>();
 
@@ -55,6 +58,8 @@ class SwitchableGlobalPlayer {
   Stream<int?> get width => _currentPlayer?.width ?? Stream.value(null);
   Stream<int?> get height => _currentPlayer?.height ?? Stream.value(null);
 
+  // 全局floating
+  late LiveRoom currentFloatRoom;
   Future<void> init(PlayerEngine engine) async {
     if (_currentPlayer != null) return;
     _currentPlayer = _createPlayer(engine);
@@ -130,6 +135,88 @@ class SwitchableGlobalPlayer {
     }
   }
 
+  /// 构建悬浮窗关闭按钮
+  Widget _buildCloseButton() {
+    return GestureDetector(
+      onTap: () {
+        stop();
+        closeAppFloating();
+      },
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: Colors.black.withAlpha(128),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white24, width: 0.5),
+        ),
+        child: const Icon(Icons.close, color: Colors.white, size: 16),
+      ),
+    );
+  }
+
+  void showAppFloating(LiveRoom room) {
+    floatingManager.disposeFloating(_floatTag);
+    double baseWidth = Platform.isWindows ? 300.0 : 200.0;
+    double ratio = isVerticalVideo.value ? (9 / 16) : (16 / 9);
+    double floatHeight = baseWidth / ratio;
+    floatingManager.createFloating(
+      _floatTag,
+      FloatingOverlay(
+        Container(
+          width: baseWidth,
+          height: floatHeight,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            color: Colors.black,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(100), // 加深一点阴影
+                blurRadius: 15,
+                spreadRadius: 2,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              getVideoWidget(null),
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    // 点击悬浮窗回到页面的逻辑
+                    closeAppFloating();
+                    AppNavigator.toLiveRoomDetail(liveRoom: currentFloatRoom);
+                  },
+                  child: const SizedBox.expand(),
+                ),
+              ),
+
+              // 3. 顶层：关闭按钮
+              Positioned(right: 8, top: 8, child: _buildCloseButton()),
+            ],
+          ),
+        ),
+        right: 50,
+        top: 100,
+        slideType: FloatingEdgeType.onRightAndTop,
+        params: FloatingParams(isSnapToEdge: false, snapToEdgeSpace: 10, dragOpacity: 0.8),
+      ),
+    );
+
+    floatingManager.getFloating(_floatTag).open(Get.context!);
+    currentFloatRoom = room;
+    isFloating.value = true;
+  }
+
+  /// 关闭并销毁悬浮播放器
+  void closeAppFloating() {
+    if (!isFloating.value) return;
+    floatingManager.disposeFloating(_floatTag);
+    isFloating.value = false;
+  }
+
   Future<void> setVolume(double volume) async {
     final clamped = volume.clamp(0.0, 1.0);
     currentVolume.value = clamped;
@@ -168,6 +255,7 @@ class SwitchableGlobalPlayer {
 
   Widget getVideoWidget(Widget? child) {
     return Obx(() {
+      final bool isFloatContent = isFloating.value && child == null;
       if (!isInitialized.value) {
         return Material(
           child: Stack(
@@ -200,7 +288,7 @@ class SwitchableGlobalPlayer {
                 children: [
                   Container(color: Colors.black),
                   _currentPlayer?.getVideoWidget(settings.videoFitIndex.value, child) ?? const SizedBox(),
-                  child ?? const SizedBox(),
+                  if (!isFloatContent) child ?? const SizedBox(),
                 ],
               ),
               resizeToAvoidBottomInset: true,
@@ -238,7 +326,7 @@ class SwitchableGlobalPlayer {
                 children: [
                   Container(color: Colors.black),
                   _currentPlayer?.getVideoWidget(settings.videoFitIndex.value, child) ?? const SizedBox(),
-                  child ?? const SizedBox(),
+                  if (!isFloatContent) child ?? const SizedBox(),
                 ],
               ),
               resizeToAvoidBottomInset: true,

@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'dart:ffi';
 import 'dart:developer';
 import 'package:get/get.dart';
+import 'package:win32/win32.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/global.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
@@ -37,6 +39,30 @@ class AppInitializer {
     // 👇 从启动参数获取实例 ID
     String instanceId = getInstanceIdFromArgs(args);
 
+    // 👇 每个实例使用独立 Hive 路径
+    final appDir = await getApplicationDocumentsDirectory();
+    String path = '${appDir.path}${Platform.pathSeparator}pure_live${Platform.pathSeparator}$instanceId';
+    if (instanceId.isEmpty) {
+      path = '${appDir.path}${Platform.pathSeparator}pure_live';
+    }
+    if (PlatformUtils.isDesktopNotMac) {
+      // Hive 默认锁文件通常叫 'LOCK'，但我们可以自己维护一个实例锁，更加稳定
+      final lockFile = File('$path${Platform.pathSeparator}app_instance.lock');
+
+      try {
+        if (!lockFile.parent.existsSync()) lockFile.parent.createSync(recursive: true);
+        final raf = lockFile.openSync(mode: FileMode.write);
+        raf.lockSync();
+      } catch (e) {
+        log("检测到实例 [$instanceId] 文件夹已被锁定，正在唤醒已有窗口...");
+        final hwnd = FindWindow(nullptr, TEXT('纯粹直播'));
+        if (hwnd != 0) {
+          if (IsIconic(hwnd) != 0) ShowWindow(hwnd, SW_RESTORE);
+          SetForegroundWindow(hwnd);
+        }
+        exit(0);
+      }
+    }
     if (PlatformUtils.isDesktop) {
       await DesktopManager.initialize();
     } else if (PlatformUtils.isMobile) {
@@ -44,14 +70,6 @@ class AppInitializer {
     }
 
     PrefUtil.prefs = await SharedPreferences.getInstance();
-
-    // 👇 每个实例使用独立 Hive 路径
-    final appDir = await getApplicationDocumentsDirectory();
-    String path = '${appDir.path}${Platform.pathSeparator}pure_live${Platform.pathSeparator}$instanceId';
-    if (instanceId.isEmpty) {
-      path = '${appDir.path}${Platform.pathSeparator}pure_live';
-    }
-
     try {
       await Hive.initFlutter(path);
       await HivePrefUtil.init();
@@ -70,13 +88,11 @@ class AppInitializer {
     initService();
 
     if (PlatformUtils.isDesktopNotMac) {
-      if (instanceId == 'default') {
-        if (!await FlutterSingleInstance().isFirstInstance()) {
-          log("Default instance is already running");
-          exit(0);
-        }
-        await _setupLaunchAtStartup();
+      if (!await FlutterSingleInstance().isFirstInstance()) {
+        log("Default instance is already running");
+        exit(0);
       }
+      await _setupLaunchAtStartup();
     }
     _isInitialized = true;
   }

@@ -120,6 +120,7 @@ dependencies:
   markdown_widget: ^2.3.2+8
   google_fonts: ^6.3.3
   back_button_interceptor: ^8.0.4
+  flutter_floating: ^2.0.1
   win32: ^5.15.0
 dependency_overrides:
   media_kit:

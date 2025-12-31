@@ -86,6 +86,15 @@ class SettingsPage extends GetView<SettingsService> {
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BackupPage())),
           ),
           SectionTitle(title: S.of(context).video),
+          Obx(
+            () => SwitchListTile(
+              title: Text('退出小窗播放'),
+              subtitle: Text("应用退出时是否关闭小窗播放"),
+              value: controller.floatPlay.value,
+              activeThumbColor: Theme.of(context).colorScheme.primary,
+              onChanged: (bool value) => controller.floatPlay.value = value,
+            ),
+          ),
           if (Platform.isAndroid)
             Obx(
               () => ListTile(

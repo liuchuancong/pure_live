@@ -75,7 +75,7 @@ class SettingsService extends GetxController {
   final videoOutputDriver = (HivePrefUtil.getString('videoOutputDriver') ?? "gpu").obs;
   final audioOutputDriver = (HivePrefUtil.getString('audioOutputDriver') ?? "auto").obs;
   final videoHardwareDecoder = (HivePrefUtil.getString('videoHardwareDecoder') ?? "auto").obs;
-
+  final floatPlay = (HivePrefUtil.getBool('floatPlay') ?? true).obs;
   // ==============================
   // 🍪 平台 Cookie
   // ==============================
@@ -235,6 +235,10 @@ class SettingsService extends GetxController {
     _stopWatchTimer.fetchEnded.listen((value) {
       _stopWatchTimer.onStopTimer();
       FlutterExitApp.exitApp();
+    });
+
+    floatPlay.listen((value) {
+      HivePrefUtil.setBool('floatPlay', value);
     });
 
     videoFitIndex.listen((value) {
@@ -660,6 +664,7 @@ class SettingsService extends GetxController {
         ? double.parse(json['danmakuFontBorder'].toString())
         : 4.0;
     danmakuOpacity.value = json['danmakuOpacity'] != null ? double.parse(json['danmakuOpacity'].toString()) : 1.0;
+    floatPlay.value = json['floatPlay'] ?? true;
     enableCodec.value = json['enableCodec'] ?? true;
     playerCompatMode.value = json['playerCompatMode'] ?? false;
     bilibiliCookie.value = json['bilibiliCookie'] ?? '';
@@ -725,6 +730,7 @@ class SettingsService extends GetxController {
     json['danmakuFontSize'] = danmakuFontSize.value;
     json['danmakuFontBorder'] = danmakuFontBorder.value;
     json['danmakuOpacity'] = danmakuOpacity.value;
+    json['floatPlay'] = floatPlay.value;
     json['videoPlayerIndex'] = videoPlayerIndex.value;
     json['enableCodec'] = enableCodec.value;
     json['playerCompatMode'] = playerCompatMode.value;

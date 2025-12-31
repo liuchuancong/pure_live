@@ -42,18 +42,34 @@ class BackButtonObserver extends RouteObserver<PageRoute<dynamic>> {
   @override
   void didPop(Route route, Route? previousRoute) {
     super.didPop(route, previousRoute);
-    // 处理路由弹出事件
     if (route.settings.name == RoutePath.kLivePlay) {
       try {
-        SwitchableGlobalPlayer().stop();
-        Get.find<LivePlayController>().success.value = false;
+        final livePlayController = Get.find<LivePlayController>();
+        livePlayController.success.value = false;
+        final settings = Get.find<SettingsService>();
+        if (settings.floatPlay.value) {
+          Future.delayed(Duration(milliseconds: 200), () {
+            SwitchableGlobalPlayer().showAppFloating(livePlayController.detail.value!);
+          });
+          log("BackButtonObserver showAppFloating");
+        } else {
+          SwitchableGlobalPlayer().stop();
+        }
         if (PlatformUtils.isMobile) {
           WindowService().doExitFullScreen();
         }
-        Get.find<LivePlayController>().onDelete();
       } catch (e) {
-        log(e.toString());
+        log("BackButtonObserver Error: ${e.toString()}");
       }
+    }
+  }
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPush(route, previousRoute);
+    if (route.settings.name == RoutePath.kLivePlay) {
+      log("BackButtonObserver enter LivePlay");
+      SwitchableGlobalPlayer().closeAppFloating();
     }
   }
 }
