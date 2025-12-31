@@ -11,6 +11,9 @@ class FijkHelper {
     await player.setOption(FijkOption.playerCategory, 'mediacodec-hevc', enableCodec ? 1 : 0);
     await player.setOption(FijkOption.playerCategory, 'videotoolbox', enableCodec ? 1 : 0);
     await player.setOption(FijkOption.playerCategory, 'enable-accurate-seek', 1);
+    await player.setOption(FijkOption.hostCategory, "enable-background-play", 1);
+    await player.setOption(FijkOption.playerCategory, "start-on-prepared", 1);
+    await player.setOption(FijkOption.playerCategory, "mediacodec-all-videos", 1);
     await player.setOption(FijkOption.playerCategory, 'soundtouch', 1);
     await player.setOption(FijkOption.playerCategory, 'subtitle', 1);
     await player.setOption(FijkOption.hostCategory, "request-screen-on", 1);
