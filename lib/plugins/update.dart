@@ -24,9 +24,12 @@ final List<String> mirrors = [
 ];
 
 List<String> getMirrorUrls(String apkUrl) {
-  final mirrorsUrl = mirrors.map((e) => '$e$apkUrl').toList();
-  mirrorsUrl.add(apkUrl);
-  return mirrorsUrl;
+  final String cacheBuster = "t=${DateTime.now().millisecondsSinceEpoch}";
+  final String separator = apkUrl.contains('?') ? '&' : '?';
+  final String finalUrl = '$apkUrl$separator$cacheBuster';
+  final mirrorUrls = mirrors.map((e) => '$e$finalUrl').toList();
+  mirrorUrls.add(finalUrl);
+  return mirrorUrls;
 }
 
 Future<void> downloadAndInstallApk(String apkUrl) async {
