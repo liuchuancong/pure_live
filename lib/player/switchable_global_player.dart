@@ -12,6 +12,7 @@ import 'package:pure_live/player/fullscreen.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:flutter_floating/flutter_floating.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/common/global/platform/background_server.dart';
 
 enum PlayerEngine { mediaKit, fijk }
@@ -169,6 +170,7 @@ class SwitchableGlobalPlayer {
                 onPanStart: (_) => windowManager.startDragging(),
                 onDoubleTap: () {
                   isInPip.value = false;
+                  GlobalPlayerState.to.isPipMode.value = false;
                   WindowService().exitWinPiP();
                 },
                 child: getVideoWidget(null),
@@ -206,6 +208,7 @@ class SwitchableGlobalPlayer {
                       icon: const Icon(Icons.close, color: Colors.white),
                       onPressed: () async {
                         isInPip.value = false;
+                        GlobalPlayerState.to.isPipMode.value = false;
                         await WindowService().exitWinPiP();
                       },
                     ),
@@ -417,6 +420,7 @@ class SwitchableGlobalPlayer {
     } else {
       await WindowService().enterWinPiP(currentVideoRatio);
       isInPip.value = true;
+      GlobalPlayerState.to.isPipMode.value = true;
     }
   }
 
@@ -424,6 +428,7 @@ class SwitchableGlobalPlayer {
     if (PlatformUtils.isWindows) {
       await WindowService().exitWinPiP();
       isInPip.value = false;
+      GlobalPlayerState.to.isPipMode.value = false;
     }
   }
 

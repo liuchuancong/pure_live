@@ -102,7 +102,8 @@ class DesktopManager {
   static Widget buildWithTitleBar(Widget? child) {
     return Obx(() {
       bool fullscreen = GlobalPlayerState.to.isFullscreen.value;
-      if (!PlatformUtils.isWindows) {
+      bool isPipModel = GlobalPlayerState.to.isPipMode.value;
+      if (!PlatformUtils.isWindows || isPipModel) {
         return child ?? const SizedBox.shrink();
       }
       return Column(

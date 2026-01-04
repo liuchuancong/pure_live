@@ -6,10 +6,14 @@ class GlobalPlayerState extends GetxController {
   var isFullscreen = false.obs;
   // window 半屏
   var isWindowFullscreen = false.obs;
+
+  // 是否画中画
+  var isPipMode = false.obs;
   bool get fullscreenUI => isFullscreen.value || isWindowFullscreen.value;
   void reset() {
     isFullscreen.value = false;
     isWindowFullscreen.value = false;
+    isPipMode.value = false;
   }
 
   String? _currentRoomId;
