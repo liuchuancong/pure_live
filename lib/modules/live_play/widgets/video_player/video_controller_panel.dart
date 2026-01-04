@@ -965,28 +965,32 @@ class BottomActionBar extends StatelessWidget {
               colors: [Colors.transparent, Colors.black45],
             ),
           ),
-          child: Row(
-            children: <Widget>[
-              PlayPauseButton(controller: controller),
-              RefreshButton(controller: controller),
-              FavoriteButton(controller: controller),
-              DanmakuButton(controller: controller),
-              SettingsButton(controller: controller),
-              const Spacer(),
-              if (controller.isWindowFullscreen.value || controller.isFullscreen.value) ...[
-                ResolutionSelectorButton(controller: controller),
-                LineSelectorButton(controller: controller),
-              ],
-              VideoFitSetting(controller: controller),
-              SizedBox(width: 8),
-              OverlayVolumeControl(controller: controller),
-              SizedBox(width: 8),
-              if (controller.supportWindowFull && !controller.isFullscreen.value) ...[
-                ExpandWindowButton(controller: controller),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              children: <Widget>[
+                PlayPauseButton(controller: controller),
+                RefreshButton(controller: controller),
+                FavoriteButton(controller: controller),
+                DanmakuButton(controller: controller),
+                SettingsButton(controller: controller),
+                const Spacer(),
+                if (controller.isWindowFullscreen.value || controller.isFullscreen.value) ...[
+                  ResolutionSelectorButton(controller: controller),
+                  LineSelectorButton(controller: controller),
+                ],
+                VideoFitSetting(controller: controller),
                 SizedBox(width: 8),
+                OverlayVolumeControl(controller: controller),
+                SizedBox(width: 8),
+                if (controller.supportWindowFull && !controller.isFullscreen.value) ...[
+                  ExpandWindowButton(controller: controller),
+                  SizedBox(width: 8),
+                ],
+                if (!controller.isWindowFullscreen.value) ExpandButton(controller: controller),
               ],
-              if (!controller.isWindowFullscreen.value) ExpandButton(controller: controller),
-            ],
+            ),
           ),
         ),
       );
