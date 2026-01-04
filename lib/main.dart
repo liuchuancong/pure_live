@@ -106,6 +106,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
             }
             return GetMaterialApp(
               title: '纯粹直播',
+              scrollBehavior: MyCustomScrollBehavior(),
               debugShowCheckedModeBanner: false,
               themeMode: AppConsts.themeModes[settings.themeModeName.value]!,
               theme: lightTheme.copyWith(

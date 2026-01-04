@@ -236,3 +236,13 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T> implements Window
   @override
   void onTrayIconMouseUp() {}
 }
+
+class MyCustomScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.stylus,
+    PointerDeviceKind.unknown,
+  };
+}
