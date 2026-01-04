@@ -39,10 +39,13 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
     }
     initShareM3uState();
     initGlopalPlayer();
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      bool hasPermission = await BackgroundService.requestPlatformPermissions();
-      if (!hasPermission && Platform.isAndroid) {
-        SmartDialog.showToast("如果需要后台播放，建议开启此权限");
+      if (Platform.isAndroid && settings.enableBackgroundPlay.value) {
+        bool hasPermission = await BackgroundService.requestPlatformPermissions();
+        if (!hasPermission) {
+          SmartDialog.showToast("如果需要后台播放，建议开启此权限");
+        }
       }
     });
   }

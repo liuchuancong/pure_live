@@ -50,7 +50,8 @@ class BackgroundService {
       bool confirm = await _showExplainDialog(title: "需要通知权限", content: "为了在后台播放时显示控制条并防止直播中断，我们需要开启通知权限。");
 
       if (confirm) {
-        notificationPermission = await FlutterForegroundTask.requestNotificationPermission();
+        await Permission.notification.request();
+        notificationPermission = await FlutterForegroundTask.checkNotificationPermission();
       }
 
       if (notificationPermission != NotificationPermission.granted) return false;

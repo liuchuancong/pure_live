@@ -10,6 +10,7 @@ import 'package:pure_live/modules/settings/settings_card.dart';
 import 'package:pure_live/modules/settings/settings_menu.dart';
 import 'package:pure_live/player/switchable_global_player.dart';
 import 'package:pure_live/modules/settings/settings_switch.dart';
+import 'package:pure_live/common/global/platform/background_server.dart';
 
 class SettingsPage extends GetView<SettingsService> {
   const SettingsPage({super.key});
@@ -129,8 +130,15 @@ class SettingsPage extends GetView<SettingsService> {
                 subtitle: Text(S.of(context).enable_background_play_subtitle),
                 value: controller.enableBackgroundPlay.value,
                 activeThumbColor: Theme.of(context).colorScheme.primary,
-                onChanged: (bool value) {
+                onChanged: (bool value) async {
                   controller.enableBackgroundPlay.value = value;
+                  if (Platform.isAndroid && value) {
+                    bool hasPermission = await BackgroundService.requestPlatformPermissions();
+                    if (!hasPermission) {
+                      SmartDialog.showToast("如果需要后台播放，建议开启此权限");
+                    }
+                    controller.enableBackgroundPlay.value = hasPermission;
+                  }
                 },
               ),
             ),
