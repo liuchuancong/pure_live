@@ -28,8 +28,6 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
   late LiveDanmaku liveDanmaku;
 
-  PlayerInstanceState playerState = PlayerInstanceState();
-
   final settings = Get.find<SettingsService>();
 
   late TabController tabController;
@@ -137,7 +135,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   }
 
   bool myInterceptor(bool stopDefaultButtonEvent, RouteInfo info) {
-    if (videoController.value!.isFullscreen.value) {
+    if (GlobalPlayerState.to.isFullscreen.value) {
       setNormalScreen();
       videoController.value!.exitFullScreen();
       return true;
@@ -367,7 +365,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
       headers = {"user-agent": ua, "origin": "https://www.huya.com"};
     }
 
-    playerState = GlobalPlayerState().setCurrentRoom(room.roomId!);
+    GlobalPlayerState().setCurrentRoom(room.roomId!);
     videoController.value = VideoController(
       room: detail.value!,
       datasource: playUrls.value[currentLineIndex.value],
@@ -376,7 +374,6 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
       qualiteName: qualites[currentQuality.value].quality,
       currentLineIndex: currentLineIndex.value,
       currentQuality: currentQuality.value,
-      initialState: playerState,
     );
     success.value = true;
   }

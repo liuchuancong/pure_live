@@ -10,6 +10,7 @@ import 'package:launch_at_startup/launch_at_startup.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:flutter_single_instance/flutter_single_instance.dart';
 import 'package:pure_live/common/global/platform/mobile_manager.dart';
 import 'package:pure_live/common/global/platform/desktop_manager.dart';
@@ -132,6 +133,7 @@ class AppInitializer {
     Get.put(BiliBiliAccountService());
     Get.put(PopularController());
     Get.put(AreasController());
+    Get.put(GlobalPlayerState(), permanent: true);
   }
 
   // 检查是否已初始化

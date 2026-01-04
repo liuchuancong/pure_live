@@ -12,6 +12,7 @@ import 'package:pure_live/modules/live_play/load_type.dart';
 import 'package:pure_live/common/widgets/count_button.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/live_play/play_other.dart';
+import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/pkg/canvas_danmaku/danmaku_screen.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
 import 'package:pure_live/pkg/canvas_danmaku/models/danmaku_option.dart';
@@ -157,7 +158,7 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                     },
                     onDoubleTap: () {
                       if (!controller.showLocked.value) {
-                        controller.isWindowFullscreen.value
+                        GlobalPlayerState.to.isWindowFullscreen.value
                             ? controller.toggleWindowFullScreen()
                             : controller.toggleFullScreen();
                       }
@@ -235,7 +236,7 @@ class TopActionBar extends StatelessWidget {
           ),
           child: Row(
             children: [
-              if (controller.fullscreenUI) BackButton(controller: controller),
+              if (GlobalPlayerState.to.fullscreenUI) BackButton(controller: controller),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(12),
@@ -246,7 +247,7 @@ class TopActionBar extends StatelessWidget {
                   ),
                 ),
               ),
-              if (controller.fullscreenUI) ...[
+              if (GlobalPlayerState.to.fullscreenUI) ...[
                 IconButton(
                   icon: const Icon(Icons.swap_horiz_outlined),
                   tooltip: '切换直播间',
@@ -258,7 +259,7 @@ class TopActionBar extends StatelessWidget {
                 const DatetimeInfo(),
                 BatteryInfo(controller: controller),
               ],
-              if (!controller.fullscreenUI && PlatformUtils.isAndroid) PIPButton(controller: controller),
+              if (!GlobalPlayerState.to.fullscreenUI && PlatformUtils.isAndroid) PIPButton(controller: controller),
               if (PlatformUtils.isWindows) PIPButton(controller: controller),
             ],
           ),
@@ -361,8 +362,9 @@ class BackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () =>
-          controller.isWindowFullscreen.value ? controller.toggleWindowFullScreen() : controller.toggleFullScreen(),
+      onTap: () => GlobalPlayerState.to.isWindowFullscreen.value
+          ? controller.toggleWindowFullScreen()
+          : controller.toggleFullScreen(),
       child: Container(
         alignment: Alignment.center,
         padding: const EdgeInsets.all(12),
@@ -574,7 +576,8 @@ class LockButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(
       () => AnimatedOpacity(
-        opacity: (!controller.showSettting.value && controller.fullscreenUI && controller.showController.value)
+        opacity:
+            (!controller.showSettting.value && GlobalPlayerState.to.fullscreenUI && controller.showController.value)
             ? 0.9
             : 0.0,
         duration: const Duration(milliseconds: 300),
@@ -618,7 +621,7 @@ class LineSelectorButton extends StatelessWidget {
         clipBehavior: Clip.hardEdge,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 500, maxHeight: 400),
+          constraints: const BoxConstraints(maxWidth: 400, maxHeight: 300),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -707,7 +710,7 @@ class LineSelectorButton extends StatelessWidget {
       }
 
       const double itemHeight = 40.0;
-      final double totalMenuHeight = (controller.livePlayController.playUrls.length * itemHeight) + 16;
+      final double totalMenuHeight = (controller.livePlayController.playUrls.length * itemHeight) + 32;
       return PopupMenuButton<int>(
         position: PopupMenuPosition.over,
         offset: Offset(30, -totalMenuHeight),
@@ -875,7 +878,7 @@ class ResolutionSelectorButton extends StatelessWidget {
       // Windows 桌面端样式
       final qualityCount = controller.livePlayController.qualites.length;
       const double itemHeight = 40.0;
-      final double totalMenuHeight = (qualityCount * itemHeight) + 16;
+      final double totalMenuHeight = (qualityCount * itemHeight) + 32;
 
       return PopupMenuButton<int>(
         tooltip: "选择清晰度",
@@ -993,7 +996,8 @@ class BottomActionBar extends StatelessWidget {
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (controller.isWindowFullscreen.value || controller.isFullscreen.value) ...[
+                            if (GlobalPlayerState.to.isWindowFullscreen.value ||
+                                GlobalPlayerState.to.isFullscreen.value) ...[
                               ResolutionSelectorButton(controller: controller),
                               LineSelectorButton(controller: controller),
                             ],
@@ -1001,11 +1005,18 @@ class BottomActionBar extends StatelessWidget {
                             const SizedBox(width: 8),
                             OverlayVolumeControl(controller: controller),
                             const SizedBox(width: 8),
-                            if (controller.supportWindowFull && !controller.isFullscreen.value) ...[
-                              ExpandWindowButton(controller: controller),
-                              const SizedBox(width: 8),
-                            ],
-                            if (!controller.isWindowFullscreen.value) ExpandButton(controller: controller),
+                            Obx(() {
+                              return Row(
+                                children: [
+                                  if (controller.supportWindowFull && !GlobalPlayerState.to.isFullscreen.value) ...[
+                                    ExpandWindowButton(controller: controller),
+                                    const SizedBox(width: 8),
+                                  ],
+                                ],
+                              );
+                            }),
+
+                            if (!GlobalPlayerState.to.isWindowFullscreen.value) ExpandButton(controller: controller),
                           ],
                         ),
                       ],
@@ -1129,7 +1140,7 @@ class ExpandWindowButton extends StatelessWidget {
           quarterTurns: 1,
           child: Obx(
             () => Icon(
-              controller.isWindowFullscreen.value ? Icons.unfold_less_rounded : Icons.unfold_more_rounded,
+              GlobalPlayerState.to.isWindowFullscreen.value ? Icons.unfold_less_rounded : Icons.unfold_more_rounded,
               color: Colors.white,
               size: 26,
             ),
@@ -1153,7 +1164,7 @@ class ExpandButton extends StatelessWidget {
         alignment: Alignment.center,
         child: Obx(
           () => Icon(
-            controller.isFullscreen.value ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
+            GlobalPlayerState.to.isFullscreen.value ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
             color: Colors.white,
             size: 26,
           ),

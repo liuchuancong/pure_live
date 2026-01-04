@@ -28,7 +28,7 @@ class VideoController with ChangeNotifier {
   final isVertical = false.obs;
 
   ScreenBrightness brightnessController = ScreenBrightness();
-  final PlayerInstanceState initialState;
+
   double initBrightness = 0.0;
 
   final String qualiteName;
@@ -37,13 +37,7 @@ class VideoController with ChangeNotifier {
 
   final int currentQuality;
 
-  final isFullscreen = false.obs;
-
-  final isWindowFullscreen = false.obs;
-
   bool get supportWindowFull => Platform.isWindows || Platform.isLinux;
-
-  bool get fullscreenUI => isFullscreen.value || isWindowFullscreen.value;
 
   GlobalKey<BrightnessVolumnDargAreaState> brightnessKey = GlobalKey<BrightnessVolumnDargAreaState>();
 
@@ -93,7 +87,6 @@ class VideoController with ChangeNotifier {
     required this.qualiteName,
     required this.currentLineIndex,
     required this.currentQuality,
-    required this.initialState,
   }) {
     danmakuController = DanmakuController(
       onAddDanmaku: (item) {},
@@ -118,10 +111,6 @@ class VideoController with ChangeNotifier {
     initVideoController();
     initDanmaku();
     initBattery();
-    isFullscreen.value = initialState.isFullscreen;
-    isWindowFullscreen.value = initialState.isWindowFullscreen;
-    isFullscreen.listen((v) => initialState.isFullscreen = v);
-    isWindowFullscreen.listen((v) => initialState.isWindowFullscreen = v);
   }
 
   // Battery level control
@@ -162,7 +151,7 @@ class VideoController with ChangeNotifier {
       if (settings.enableFullScreenDefault.value) {
         livePlayController.setFullScreen();
         enterFullScreen();
-        isFullscreen.value = true;
+        GlobalPlayerState.to.isFullscreen.value = true;
         enableController();
       }
     });
@@ -306,30 +295,34 @@ class VideoController with ChangeNotifier {
   }
 
   void exitFullScreen() async {
-    isFullscreen.value = false;
     showSettting.value = false;
     WindowService().doExitFullScreen();
+    GlobalPlayerState.to.isFullscreen.value = false;
   }
 
   void toggleFullScreen() async {
     showLocked.value = false;
     showControllerTimer?.cancel();
+
+    GlobalPlayerState.to.isWindowFullscreen.value = false;
     Timer(const Duration(seconds: 2), () {
       enableController();
     });
-    if (isFullscreen.value) {
+    if (GlobalPlayerState.to.isFullscreen.value) {
       livePlayController.setNormalScreen();
       WindowService().doExitFullScreen();
+      GlobalPlayerState.to.isFullscreen.value = false;
     } else {
       livePlayController.setFullScreen();
       enterFullScreen();
+      GlobalPlayerState.to.isFullscreen.value = true;
     }
-    isFullscreen.toggle();
     enableController();
   }
 
   void enterFullScreen() {
     WindowService().doEnterFullScreen();
+    GlobalPlayerState.to.isFullscreen.value = true;
     if (globalPlayer.isVerticalVideo.value) {
       WindowService().verticalScreen();
     } else {
@@ -343,12 +336,14 @@ class VideoController with ChangeNotifier {
     Timer(const Duration(seconds: 2), () {
       enableController();
     });
-    if (isWindowFullscreen.value) {
+    if (GlobalPlayerState.to.isWindowFullscreen.value) {
       livePlayController.setNormalScreen();
+      GlobalPlayerState.to.isWindowFullscreen.value = false;
     } else {
       livePlayController.setWidescreen();
+      GlobalPlayerState.to.isWindowFullscreen.value = true;
     }
-    isWindowFullscreen.toggle();
+    GlobalPlayerState.to.isFullscreen.value = false;
     enableController();
   }
 

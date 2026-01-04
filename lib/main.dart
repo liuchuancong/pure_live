@@ -120,7 +120,14 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
               darkTheme: darkTheme.copyWith(appBarTheme: AppBarTheme(surfaceTintColor: Colors.transparent)),
               locale: AppConsts.languages[settings.languageName.value]!,
               navigatorObservers: [FlutterSmartDialog.observer, BackButtonObserver()],
-              builder: FlutterSmartDialog.init(),
+              builder: FlutterSmartDialog.init(
+                builder: (context, child) {
+                  if (PlatformUtils.isDesktopNotMac) {
+                    return DesktopManager.buildWithTitleBar(child);
+                  }
+                  return child ?? const SizedBox.shrink();
+                },
+              ),
               supportedLocales: S.delegate.supportedLocales,
               localizationsDelegates: const [
                 S.delegate,

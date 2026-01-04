@@ -8,6 +8,7 @@ import 'package:pure_live/modules/live_play/load_type.dart';
 import 'package:pure_live/common/index.dart' hide BackButton;
 import 'package:pure_live/modules/live_play/play_other.dart';
 import 'package:pure_live/modules/live_play/danmaku_tab.dart';
+import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/player/switchable_global_player.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller_panel.dart';
@@ -517,12 +518,12 @@ class NotLivingVideoWidget extends StatelessWidget {
             ),
             child: Row(
               children: [
-                if (controller.playerState.isFullscreen || controller.playerState.isWindowFullscreen)
+                if (GlobalPlayerState.to.fullscreenUI)
                   GestureDetector(
                     onTap: () {
                       controller.setNormalScreen();
-                      controller.playerState.isFullscreen = false;
-                      controller.playerState.isWindowFullscreen = false;
+                      GlobalPlayerState.to.isFullscreen.value = false;
+                      GlobalPlayerState.to.isWindowFullscreen.value = false;
                     },
                     child: Container(
                       alignment: Alignment.center,
@@ -540,7 +541,7 @@ class NotLivingVideoWidget extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (controller.playerState.isFullscreen || controller.playerState.isWindowFullscreen) ...[
+                if (GlobalPlayerState.to.fullscreenUI) ...[
                   IconButton(
                     icon: const Icon(Icons.swap_horiz_outlined),
                     tooltip: '切换直播间',

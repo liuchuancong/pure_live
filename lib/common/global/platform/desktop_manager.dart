@@ -1,11 +1,15 @@
 import 'dart:io';
 import 'dart:ui';
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:pure_live/plugins/utils.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
+import 'package:pure_live/common/global/theme_utils.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/modules/live_play/player_state.dart';
 
 class DesktopManager {
   static State? _currentState;
@@ -21,6 +25,9 @@ class DesktopManager {
         size: Size(1080, 720),
         minimumSize: Size(400, 400),
         center: true,
+        backgroundColor: Colors.transparent,
+        skipTaskbar: false,
+        titleBarStyle: TitleBarStyle.hidden,
       );
 
       await windowManager.waitUntilReadyToShow(windowOptions, () async {
@@ -28,7 +35,7 @@ class DesktopManager {
         await windowManager.setPreventClose(true);
         await windowManager.show();
         await windowManager.focus();
-        await windowManager.setTitle('纯粹直播');
+        await windowManager.setBackgroundColor(Colors.transparent);
         if (Platform.isMacOS) {
           await Window.setEffect(
             effect: WindowEffect.hudWindow,
@@ -49,12 +56,19 @@ class DesktopManager {
 
     try {
       if (PlatformUtils.isWindows) {
-        if (Platform.isWindows) {
-          Window.setEffect(
-            effect: WindowEffect.mica,
-            dark: PlatformDispatcher.instance.platformBrightness == Brightness.dark,
-          );
-        }
+        doWhenWindowReady(() {
+          final win = appWindow;
+          win.size = const Size(1080, 720);
+          win.minSize = const Size(400, 400);
+          win.alignment = Alignment.center;
+          win.show();
+          if (Platform.isWindows) {
+            Window.setEffect(
+              effect: WindowEffect.mica,
+              dark: PlatformDispatcher.instance.platformBrightness == Brightness.dark,
+            );
+          }
+        });
       }
     } catch (e) {
       debugPrint('桌面端后初始化失败: $e');
@@ -83,6 +97,21 @@ class DesktopManager {
       trayManager.removeListener(_currentState as TrayListener);
     }
     _currentState = null;
+  }
+
+  static Widget buildWithTitleBar(Widget? child) {
+    return Obx(() {
+      bool fullscreen = GlobalPlayerState.to.isFullscreen.value;
+      if (!PlatformUtils.isWindows) {
+        return child ?? const SizedBox.shrink();
+      }
+      return Column(
+        children: [
+          if (!fullscreen) const CustomTitleBar(),
+          if (child != null) Expanded(child: child),
+        ],
+      );
+    });
   }
 
   static Future<void> _initTray() async {
@@ -182,9 +211,68 @@ class DesktopManager {
   }
 }
 
+class CustomTitleBar extends StatelessWidget {
+  const CustomTitleBar({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Get.theme;
+
+    return Obx(() {
+      bool isFull = GlobalPlayerState.to.isWindowFullscreen.value;
+      final buttonColors = WindowButtonColors(
+        iconNormal: isFull ? Colors.white : ThemeUtils.select(context, light: Colors.black54, dark: Colors.white70),
+        mouseOver: isFull
+            ? Colors.white.withAlpha(50) // 黑色背景下的悬停感
+            : ThemeUtils.select(context, light: theme.colorScheme.primary.withAlpha(100), dark: Colors.grey.shade700),
+        mouseDown: isFull
+            ? Colors.white.withAlpha(25)
+            : ThemeUtils.select(context, light: Colors.grey.shade400, dark: Colors.grey.shade800),
+        iconMouseOver: Colors.white,
+        iconMouseDown: Colors.white,
+      );
+
+      final closeButtonColors = WindowButtonColors(
+        iconNormal: isFull ? Colors.white : ThemeUtils.select(context, light: Colors.black54, dark: Colors.white70),
+        mouseOver: Colors.red.shade700,
+        mouseDown: Colors.red.shade900,
+        iconMouseOver: Colors.white,
+        iconMouseDown: Colors.white,
+      );
+
+      return Container(
+        color: isFull ? Colors.black : theme.scaffoldBackgroundColor,
+        child: WindowTitleBarBox(
+          child: Row(
+            children: [
+              Expanded(child: MoveWindow()),
+              Row(
+                children: [
+                  MinimizeWindowButton(colors: buttonColors, onPressed: () => windowManager.minimize()),
+                  MaximizeWindowButton(
+                    colors: buttonColors,
+                    onPressed: () async {
+                      if (await windowManager.isMaximized()) {
+                        windowManager.restore();
+                      } else {
+                        windowManager.maximize();
+                      }
+                    },
+                  ),
+                  CloseWindowButton(colors: closeButtonColors, onPressed: () => DesktopManager.handleWindowClose()),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+}
+
 mixin DesktopWindowMixin<T extends StatefulWidget> on State<T> implements WindowListener, TrayListener {
   @override
-  void onWindowClose() => DesktopManager.handleWindowClose();
+  void onWindowClose() {}
 
   @override
   void onTrayIconMouseDown() => DesktopManager.handleTrayIconClick();
