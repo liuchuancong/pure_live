@@ -80,6 +80,17 @@ class SettingsPage extends GetView<SettingsService> {
             subtitle: Text(S.of(context).change_language_subtitle),
             onTap: showLanguageSelecterDialog,
           ),
+          StreamBuilder<double>(
+            stream: CustomCacheManager.cacheSizeStream,
+            builder: (context, snapshot) {
+              final size = snapshot.data ?? 0.0;
+              return ListTile(
+                leading: const Icon(Icons.download_for_offline_rounded, size: 32),
+                title: Text("当前缓存大小: ${size.toStringAsFixed(2)} MB"),
+                onTap: CustomCacheManager.clearCache,
+              );
+            },
+          ),
           ListTile(
             leading: const Icon(Icons.backup_rounded, size: 32),
             title: Text(S.of(context).backup_recover),
@@ -113,7 +124,7 @@ class SettingsPage extends GetView<SettingsService> {
               onChanged: (bool value) => controller.enableCodec.value = value,
             ),
           ),
-          if (Platform.isAndroid)
+          if (Platform.isAndroid && controller.videoPlayerIndex.value == 0)
             Obx(
               () => SwitchListTile(
                 title: Text('兼容模式'),
@@ -162,6 +173,7 @@ class SettingsPage extends GetView<SettingsService> {
               onChanged: (bool value) => controller.enableFullScreenDefault.value = value,
             ),
           ),
+
           Obx(
             () => ListTile(
               title: Text(S.of(context).prefer_resolution),
@@ -170,32 +182,34 @@ class SettingsPage extends GetView<SettingsService> {
               onTap: showPreferResolutionSelectorDialog,
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Text("播放器高级设置", style: Get.textTheme.titleMedium),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Text.rich(
-              TextSpan(
-                text: "请勿随意修改以下设置，除非你知道自己在做什么。\n在修改以下设置前，你应该先查阅",
-                children: [
-                  WidgetSpan(
-                    child: GestureDetector(
-                      onTap: () {
-                        launchUrlString("https://mpv.io/manual/stable/#video-output-drivers");
-                      },
-                      child: const Text(
-                        "MPV的文档",
-                        style: TextStyle(color: Colors.blue, fontSize: 12, decoration: TextDecoration.underline),
+          if (Platform.isAndroid && controller.videoPlayerIndex.value == 0)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Text("播放器高级设置", style: Get.textTheme.titleMedium),
+            ),
+          if (Platform.isAndroid && controller.videoPlayerIndex.value == 0)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Text.rich(
+                TextSpan(
+                  text: "请勿随意修改以下设置，除非你知道自己在做什么。\n在修改以下设置前，你应该先查阅",
+                  children: [
+                    WidgetSpan(
+                      child: GestureDetector(
+                        onTap: () {
+                          launchUrlString("https://mpv.io/manual/stable/#video-output-drivers");
+                        },
+                        child: const Text(
+                          "MPV的文档",
+                          style: TextStyle(color: Colors.blue, fontSize: 12, decoration: TextDecoration.underline),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
-          ),
           SettingsCard(
             child: Column(
               children: [

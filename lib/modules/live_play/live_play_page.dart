@@ -20,19 +20,52 @@ class LivePlayPage extends GetView<LivePlayController> {
 
   @override
   Widget build(BuildContext context) {
-    if (settings.enableScreenKeepOn.value) {
-      WakelockPlus.toggle(enable: settings.enableScreenKeepOn.value);
-    }
     return Obx(() {
-      if (SwitchableGlobalPlayer().isInPip.value) {
-        return SwitchableGlobalPlayer().buildPiPOverlay();
+      _updateWakelock();
+      final isInPip = SwitchableGlobalPlayer().isInPip.value;
+      final mode = controller.screenMode.value;
+
+      return Container(
+        color: Colors.black,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 500),
+          child: _buildConstrainedChild(isInPip, mode, context),
+          layoutBuilder: (currentChild, previousChildren) {
+            return Stack(
+              alignment: Alignment.center,
+              children: <Widget>[...previousChildren, if (currentChild != null) currentChild],
+            );
+          },
+        ),
+      );
+    });
+  }
+
+  Widget _buildConstrainedChild(bool isInPip, VideoMode mode, BuildContext context) {
+    if (isInPip) {
+      return Theme(
+        data: ThemeData.dark(),
+        child: Container(
+          key: const ValueKey('pip'),
+          color: Colors.transparent,
+          child: SwitchableGlobalPlayer().buildPiPOverlay(),
+        ),
+      );
+    }
+
+    if (mode == VideoMode.normal) {
+      return Container(key: const ValueKey('normal'), color: Colors.black, child: buildNormalPlayerView(context));
+    }
+
+    return Container(key: const ValueKey('widescreen'), color: Colors.black, child: buildVideoPlayer());
+  }
+
+  void _updateWakelock() {
+    final shouldKeepOn = settings.enableScreenKeepOn.value;
+    WakelockPlus.enabled.then((isEnabled) {
+      if (isEnabled != shouldKeepOn) {
+        WakelockPlus.toggle(enable: shouldKeepOn);
       }
-      if (controller.screenMode.value == VideoMode.normal) {
-        return buildNormalPlayerView(context);
-      } else if (controller.screenMode.value == VideoMode.widescreen) {
-        return buildVideoPlayer();
-      }
-      return buildVideoPlayer();
     });
   }
 

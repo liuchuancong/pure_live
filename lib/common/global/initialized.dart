@@ -79,6 +79,7 @@ class AppInitializer {
       exit(0);
     }
     MediaKit.ensureInitialized();
+    CustomCacheManager.init();
     await SupaBaseManager.getInstance().initial();
 
     if (PlatformUtils.isDesktop) {

@@ -103,12 +103,12 @@ class DesktopManager {
     return Obx(() {
       bool fullscreen = GlobalPlayerState.to.isFullscreen.value;
       bool isPipModel = GlobalPlayerState.to.isPipMode.value;
-      if (!PlatformUtils.isWindows || isPipModel) {
+      if (!PlatformUtils.isWindows) {
         return child ?? const SizedBox.shrink();
       }
       return Column(
         children: [
-          if (!fullscreen) const CustomTitleBar(),
+          if (!fullscreen && !isPipModel) const CustomTitleBar(),
           if (child != null) Expanded(child: child),
         ],
       );
