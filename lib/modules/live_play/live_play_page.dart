@@ -27,12 +27,15 @@ class LivePlayPage extends GetView<LivePlayController> {
 
       return Container(
         color: Colors.black,
+        width: double.infinity,
+        height: double.infinity,
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 500),
           child: _buildConstrainedChild(isInPip, mode, context),
           layoutBuilder: (currentChild, previousChildren) {
             return Stack(
               alignment: Alignment.center,
+              fit: StackFit.expand,
               children: <Widget>[...previousChildren, if (currentChild != null) currentChild],
             );
           },
