@@ -1,6 +1,6 @@
 import 'dart:developer';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 import 'package:pure_live/routes/app_navigation.dart';
@@ -65,30 +65,25 @@ class OwnerCard extends StatefulWidget {
 class _OwnerCardState extends State<OwnerCard> {
   SettingsService settings = Get.find<SettingsService>();
 
-  Future<String?> getFinalUrl(String requestUrl) async {
+  Future<String?> getFinalUrlWithDio(String requestUrl) async {
+    final dio = Dio();
     try {
-      final url = Uri.parse(requestUrl);
-      final client = http.Client();
-      log("requestUrl: $requestUrl");
-      // 1. 发送请求
-      final request = http.Request('GET', url)..followRedirects = false;
-      final response = await client.send(request);
-      log("Status Code: ${response.statusCode}");
-      // 2. 获取重定向地址
-      final redirectUrl = response.headers['location'];
-      log("roomId is 0, skip $redirectUrl");
-      if (redirectUrl == null || redirectUrl.isEmpty) {
-        return null;
+      final response = await dio.get(
+        requestUrl,
+        options: Options(
+          followRedirects: false, // 禁止自动跳转
+          validateStatus: (status) => status! < 500,
+        ),
+      );
+      final redirectUrl = response.headers.value('location');
+      if (redirectUrl != null) {
+        return Uri.parse(redirectUrl).pathSegments.lastOrNull;
       }
-      final segments = Uri.parse(redirectUrl).pathSegments;
-      if (segments.isNotEmpty) {
-        return segments.last;
-      }
-
       return null;
     } catch (e) {
-      log("Error occurred: $e");
       return null;
+    } finally {
+      dio.close(); // 释放资源
     }
   }
 
@@ -96,7 +91,7 @@ class _OwnerCardState extends State<OwnerCard> {
     String roomId = widget.room.roomId!;
     if (widget.room.platform == Sites.huyaSite) {
       if (widget.room.roomId == '0') {
-        var roomIdInfo = await getFinalUrl('https://www.huya.com/yy/${widget.room.userId!}');
+        var roomIdInfo = await getFinalUrlWithDio('https://www.huya.com/yy/${widget.room.userId!}');
         if (roomIdInfo != null) {
           roomId = roomIdInfo;
         }
