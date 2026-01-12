@@ -4,9 +4,8 @@ import 'package:get/get.dart';
 import 'package:flutter/rendering.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/emoji_manager.dart';
+import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
-
-// 假设 LivePlayController, LiveRoom, LiveMessage, parseEmojis 等已定义
 
 class DanmakuListView extends StatefulWidget {
   final LiveRoom room;
@@ -27,12 +26,22 @@ class DanmakuListViewState extends State<DanmakuListView> with AutomaticKeepAliv
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        scrollToBottom();
+      }
+    });
     _messagesSubscription = controller.messages.listen((p0) {
       if (mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _scrollToBottom();
+          scrollToBottom();
         });
       }
+    });
+    GlobalPlayerState.to.isWindowFullscreen.listen((value) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkScrollPosition();
+      });
     });
   }
 
@@ -43,7 +52,7 @@ class DanmakuListViewState extends State<DanmakuListView> with AutomaticKeepAliv
     super.dispose();
   }
 
-  void _scrollToBottom() async {
+  void scrollToBottom() async {
     if (_scrollHappen) return;
     if (!mounted) return;
 
@@ -64,9 +73,22 @@ class DanmakuListViewState extends State<DanmakuListView> with AutomaticKeepAliv
     }
   }
 
+  void _checkScrollPosition() {
+    if (!_scrollController.hasClients) return;
+
+    final pos = _scrollController.position;
+    if (pos.maxScrollExtent - pos.pixels <= 100) {
+      if (_scrollHappen) {
+        setState(() => _scrollHappen = false);
+      }
+    }
+  }
+
   bool _userScrollAction(UserScrollNotification notification) {
     if (notification.direction == ScrollDirection.forward) {
-      setState(() => _scrollHappen = true);
+      if (_scrollController.position.maxScrollExtent - _scrollController.offset > 100) {
+        setState(() => _scrollHappen = true);
+      }
     } else if (notification.direction == ScrollDirection.reverse) {
       final pos = _scrollController.position;
       if (pos.maxScrollExtent - pos.pixels <= 100) {
@@ -84,8 +106,16 @@ class DanmakuListViewState extends State<DanmakuListView> with AutomaticKeepAliv
     super.build(context);
     return Stack(
       children: [
-        NotificationListener<UserScrollNotification>(
-          onNotification: _userScrollAction,
+        NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            if (notification is UserScrollNotification) {
+              return _userScrollAction(notification);
+            }
+            if (notification is ScrollMetricsNotification) {
+              _checkScrollPosition();
+            }
+            return false;
+          },
           child: ListView.builder(
             controller: _scrollController,
             itemCount: controller.messages.length,
@@ -127,9 +157,8 @@ class DanmakuListViewState extends State<DanmakuListView> with AutomaticKeepAliv
               // 在 onPressed 回调中添加 mounted 检查
               onPressed: () {
                 if (mounted) {
-                  // <--- 关键修复点
                   setState(() => _scrollHappen = false);
-                  _scrollToBottom();
+                  scrollToBottom();
                 }
               },
             ),

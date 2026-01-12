@@ -1,6 +1,5 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/routes/app_navigation.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 class AreaCard extends StatefulWidget {
   const AreaCard({super.key, required this.category});

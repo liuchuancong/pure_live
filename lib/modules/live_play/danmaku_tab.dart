@@ -30,7 +30,6 @@ class _DanmakuTabViewState extends State<DanmakuTabView> {
             indicatorSize: TabBarIndicatorSize.label,
           ),
         ),
-        // TabBarView 区域，使用 Expanded 填充剩余空间
         Expanded(
           child: TabBarView(
             controller: controller.tabController,
