@@ -29,6 +29,7 @@ class DanmakuListViewState extends State<DanmakuListView> with AutomaticKeepAliv
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         scrollToBottom();
+        _checkScrollPosition();
       }
     });
     _messagesSubscription = controller.messages.listen((p0) {
