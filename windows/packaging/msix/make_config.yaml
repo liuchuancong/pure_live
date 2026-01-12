@@ -1,5 +1,5 @@
 display_name: 纯粹直播
-msix_version: 1.2.0.11
+msix_version: 1.2.0.12
 publisher: "O=puretech.com, S=Some-State, C=CN"
 identity_name: com.mystyle.purelive
 logo_path: assets/icons/icon.png
