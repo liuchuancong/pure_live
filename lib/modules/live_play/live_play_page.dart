@@ -24,7 +24,6 @@ class LivePlayPage extends GetView<LivePlayController> {
       _updateWakelock();
       final isInPip = SwitchableGlobalPlayer().isInPip.value;
       final mode = controller.screenMode.value;
-
       return Container(
         color: Colors.black,
         width: double.infinity,

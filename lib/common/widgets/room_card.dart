@@ -63,13 +63,7 @@ class RoomCard extends StatelessWidget {
                     elevation: 0,
                     child: room.liveStatus == LiveStatus.offline && room.cover!.isNotEmpty
                         ? Center(child: Icon(Icons.tv_off_rounded, size: dense ? 36 : 60))
-                        : CachedNetworkImage(
-                            imageUrl: room.cover!,
-                            cacheManager: CustomCacheManager.instance,
-                            fit: BoxFit.fill,
-                            errorWidget: (context, error, stackTrace) =>
-                                Center(child: Icon(Icons.live_tv_rounded, size: dense ? 38 : 62)),
-                          ),
+                        : Image.network(room.cover!, fit: BoxFit.cover),
                   ),
                 ),
                 if (room.isRecord == true)

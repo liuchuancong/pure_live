@@ -16,9 +16,7 @@ class _AreaCardState extends State<AreaCard> {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.all(7.5),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15.0),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
       child: InkWell(
         borderRadius: BorderRadius.circular(15.0),
         onTap: () {
@@ -48,23 +46,11 @@ class _AreaCardState extends State<AreaCard> {
               aspectRatio: 1,
               child: Card(
                 margin: const EdgeInsets.all(0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15.0),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
                 clipBehavior: Clip.antiAlias,
                 color: Colors.white,
                 elevation: 0,
-                child: CachedNetworkImage(
-                  imageUrl: widget.category.areaPic!,
-                  cacheManager: CustomCacheManager.instance,
-                  fit: BoxFit.fill,
-                  errorWidget: (context, error, stackTrace) => const Center(
-                    child: Icon(
-                      Icons.live_tv_rounded,
-                      size: 38,
-                    ),
-                  ),
-                ),
+                child: Image.network(widget.category.areaPic!, fit: BoxFit.cover),
               ),
             ),
             ListTile(
@@ -79,16 +65,10 @@ class _AreaCardState extends State<AreaCard> {
               subtitle: Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  Text(
-                    widget.category.typeName!,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 10,
-                    ),
-                  )
+                  Text(widget.category.typeName!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10)),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),

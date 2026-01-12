@@ -80,17 +80,6 @@ class SettingsPage extends GetView<SettingsService> {
             subtitle: Text(S.of(context).change_language_subtitle),
             onTap: showLanguageSelecterDialog,
           ),
-          StreamBuilder<double>(
-            stream: CustomCacheManager.cacheSizeStream,
-            builder: (context, snapshot) {
-              final size = snapshot.data ?? 0.0;
-              return ListTile(
-                leading: const Icon(Icons.download_for_offline_rounded, size: 32),
-                title: Text("当前缓存大小: ${size.toStringAsFixed(2)} MB"),
-                onTap: CustomCacheManager.clearCache,
-              );
-            },
-          ),
           ListTile(
             leading: const Icon(Icons.backup_rounded, size: 32),
             title: Text(S.of(context).backup_recover),
