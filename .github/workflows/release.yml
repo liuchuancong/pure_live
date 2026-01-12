@@ -60,7 +60,7 @@ jobs:
           path: |
             build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
             build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-            build/app/outputs/flutter-apk/app-x86_6x-release.apk
+            build/app/outputs/flutter-apk/app-x86_64-release.apk
           retention-days: 1
 
   build-windows:
