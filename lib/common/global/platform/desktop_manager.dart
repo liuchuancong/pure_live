@@ -240,9 +240,13 @@ class CustomTitleBar extends StatelessWidget {
         iconMouseOver: Colors.white,
         iconMouseDown: Colors.white,
       );
+      final Brightness brightness = theme.brightness;
+      final Color effectiveBackgroundColor = isFull
+          ? Colors.black
+          : (brightness == Brightness.dark ? Colors.black : theme.scaffoldBackgroundColor); // 浅色模式下的背景色
 
       return Container(
-        color: isFull ? Colors.black : theme.scaffoldBackgroundColor,
+        color: effectiveBackgroundColor,
         child: WindowTitleBarBox(
           child: Row(
             children: [
