@@ -60,10 +60,12 @@ class MediaKitPlayerAdapter implements UnifiedPlayer {
 
         // 2. 合并设置 demuxer 参数 (用逗号分隔，不要分两次 set)
         // 这样同时开启了重连和 5 秒超时
-        await native.setProperty('demuxer-lavf-o', 'reconnect=1,timeout=5000000');
-
-        // 3. 设置流重连参数
-        await native.setProperty('stream-lavf-o', 'reconnect_streamed=1,reconnect_delay_max=5');
+        // Optimized reconnection parameters
+        await native.setproperty(
+          'demuxer-lavf-o',
+          'reconnect=1,reconnect_at_eof=1,reconnect_streamed=1,reconnect_on_network_error=1,reconnect_on_http_error=4xx,5xx,timeout=5000000',
+        );
+        await native.setproperty('stream-lavf-o', 'reconnect_streamed=1,reconnect_delay_max=5');
       }
     }
 
