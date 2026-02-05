@@ -52,10 +52,19 @@ class MediaKitPlayerAdapter implements UnifiedPlayer {
       await pp.setProperty('force-seekable', 'yes');
     }
     if (_player.platform is NativePlayer) {
-      await (_player.platform as dynamic).setProperty(
-        'protocol_whitelist',
-        'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto',
-      );
+      if (_player.platform is NativePlayer) {
+        final native = _player.platform as dynamic;
+
+        // 1. 设置协议白名单
+        await native.setProperty('protocol_whitelist', 'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto');
+
+        // 2. 合并设置 demuxer 参数 (用逗号分隔，不要分两次 set)
+        // 这样同时开启了重连和 5 秒超时
+        await native.setProperty('demuxer-lavf-o', 'reconnect=1,timeout=5000000');
+
+        // 3. 设置流重连参数
+        await native.setProperty('stream-lavf-o', 'reconnect_streamed=1,reconnect_delay_max=5');
+      }
     }
 
     // Initialize controller based on settings
