@@ -1,10 +1,13 @@
 import 'dart:io';
 import 'dart:ffi';
+import 'dart:async';
 import 'package:ffi/ffi.dart';
 import 'package:win32/win32.dart';
 
 class WinFullscreen {
   static int? _hwnd;
+
+  static Timer? _escListener;
 
   /// 缓存进入全屏前的窗口状态
   static int _originalX = 0;
@@ -13,6 +16,23 @@ class WinFullscreen {
   static int _originalHeight = 600;
   static bool _originalMaximized = false;
   static bool _originalSaved = false;
+
+  static void startEscListener(Function onEsc) {
+    _escListener?.cancel();
+    _escListener = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      // 0x1B 是 VK_ESCAPE
+      int state = GetAsyncKeyState(0x1B);
+      // 如果最高位为1，表示按键正被按下
+      if ((state & 0x8000) != 0) {
+        timer.cancel();
+        onEsc();
+      }
+    });
+  }
+
+  static void stopEscListener() {
+    _escListener?.cancel();
+  }
 
   static int _getHwnd() {
     _hwnd ??= GetForegroundWindow();
@@ -72,7 +92,8 @@ class WinFullscreen {
       info.ref.rcMonitor.bottom - info.ref.rcMonitor.top,
       SWP_SHOWWINDOW | SWP_FRAMECHANGED,
     );
-
+    SetForegroundWindow(hWnd); // Bring window to front
+    SetFocus(hWnd); // Direct keyboard input to this window
     calloc.free(info);
   }
 

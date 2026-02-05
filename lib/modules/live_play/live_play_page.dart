@@ -11,6 +11,7 @@ import 'package:pure_live/modules/live_play/danmaku_tab.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/player/switchable_global_player.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/widgets/video_keyboard.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller_panel.dart';
 
 class LivePlayPage extends GetView<LivePlayController> {
@@ -24,6 +25,27 @@ class LivePlayPage extends GetView<LivePlayController> {
       _updateWakelock();
       final isInPip = SwitchableGlobalPlayer().isInPip.value;
       final mode = controller.screenMode.value;
+      if (controller.videoController.value != null) {
+        return VideoKeyboardShortcuts(
+          controller: controller.videoController.value!,
+          child: Container(
+            color: Colors.black,
+            width: double.infinity,
+            height: double.infinity,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 50),
+              child: _buildConstrainedChild(isInPip, mode, context),
+              layoutBuilder: (currentChild, previousChildren) {
+                return Stack(
+                  alignment: Alignment.center,
+                  fit: StackFit.expand,
+                  children: <Widget>[...previousChildren, if (currentChild != null) currentChild],
+                );
+              },
+            ),
+          ),
+        );
+      }
       return Container(
         color: Colors.black,
         width: double.infinity,

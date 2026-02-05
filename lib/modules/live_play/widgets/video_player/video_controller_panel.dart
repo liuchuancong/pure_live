@@ -4,7 +4,6 @@ import 'dart:async';
 import 'package:get/get.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
@@ -33,22 +32,6 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
 
   // Video controllers
   VideoController get controller => widget.controller;
-  double currentVolumn = 1.0;
-  bool showVolumn = true;
-  Timer? _hideVolumn;
-  void restartTimer() {
-    _hideVolumn?.cancel();
-    _hideVolumn = Timer(const Duration(seconds: 1), () {
-      setState(() => showVolumn = true);
-    });
-    setState(() => showVolumn = false);
-  }
-
-  @override
-  void dispose() {
-    _hideVolumn?.cancel();
-    super.dispose();
-  }
 
   @override
   void initState() {
@@ -58,119 +41,84 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
     });
   }
 
-  void updateVolumn(double? volume) {
-    restartTimer();
-    setState(() {
-      currentVolumn = volume!;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     IconData iconData;
-    iconData = currentVolumn <= 0
+    iconData = controller.settings.volume.value <= 0
         ? Icons.volume_mute
-        : currentVolumn < 0.5
+        : controller.settings.volume.value < 0.5
         ? Icons.volume_down
         : Icons.volume_up;
     return Material(
       type: MaterialType.transparency,
-      child: CallbackShortcuts(
-        bindings: {
-          const SingleActivator(LogicalKeyboardKey.mediaPlay): () => controller.globalPlayer.play(),
-          const SingleActivator(LogicalKeyboardKey.mediaPause): () => controller.globalPlayer.pause(),
-          const SingleActivator(LogicalKeyboardKey.mediaPlayPause): () => controller.globalPlayer.togglePlayPause(),
-          const SingleActivator(LogicalKeyboardKey.space): () => controller.globalPlayer.togglePlayPause(),
-          const SingleActivator(LogicalKeyboardKey.keyR): () => controller.refresh(),
-          const SingleActivator(LogicalKeyboardKey.arrowUp): () async {
-            double? volume = 1.0;
-            volume = await controller.volume();
-            volume = (volume! + 0.05);
-            volume = min(volume, 1.0);
-            volume = max(volume, 0.0);
-            controller.setVolume(volume);
-            updateVolumn(volume);
-          },
-          const SingleActivator(LogicalKeyboardKey.arrowDown): () async {
-            double? volume = 1.0;
-            volume = await controller.volume();
-            volume = (volume! - 0.05);
-            volume = min(volume, 1.0);
-            volume = max(volume, 0.0);
-            controller.setVolume(volume);
-            updateVolumn(volume);
-          },
-          const SingleActivator(LogicalKeyboardKey.escape): () => controller.toggleFullScreen(),
-        },
-        child: Focus(
-          autofocus: true,
-          child: Obx(
-            () => MouseRegion(
-              onHover: (event) => controller.enableController(),
-              cursor: !controller.showController.value ? SystemMouseCursors.none : SystemMouseCursors.basic,
-              child: Stack(
-                children: [
-                  Container(
-                    color: Colors.transparent,
-                    alignment: Alignment.center,
-                    child: AnimatedOpacity(
-                      opacity: !showVolumn ? 0.8 : 0.0,
-                      duration: const Duration(milliseconds: 300),
-                      child: Card(
-                        color: Colors.black,
-                        child: Padding(
-                          padding: const EdgeInsets.all(10),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: <Widget>[
-                              Icon(iconData, color: Colors.white),
-                              Padding(
-                                padding: const EdgeInsets.only(left: 8, right: 4),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: SizedBox(
-                                    width: 100,
-                                    height: 20,
-                                    child: LinearProgressIndicator(
-                                      value: currentVolumn,
-                                      backgroundColor: Colors.white38,
-                                      valueColor: AlwaysStoppedAnimation(Theme.of(context).tabBarTheme.indicatorColor),
-                                    ),
+      child: Focus(
+        autofocus: true,
+        child: Obx(
+          () => MouseRegion(
+            onHover: (event) => controller.enableController(),
+            cursor: !controller.showController.value ? SystemMouseCursors.none : SystemMouseCursors.basic,
+            child: Stack(
+              children: [
+                Container(
+                  color: Colors.transparent,
+                  alignment: Alignment.center,
+                  child: AnimatedOpacity(
+                    opacity: controller.showVolume.value ? 0.8 : 0.0,
+                    duration: const Duration(milliseconds: 300),
+                    child: Card(
+                      color: Colors.black,
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Icon(iconData, color: Colors.white),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 8, right: 4),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: SizedBox(
+                                  width: 100,
+                                  height: 20,
+                                  child: LinearProgressIndicator(
+                                    value: controller.settings.volume.value,
+                                    backgroundColor: Colors.white38,
+                                    valueColor: AlwaysStoppedAnimation(Colors.white),
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
-                  DanmakuViewer(controller: controller),
-                  GestureDetector(
-                    onTap: () {
-                      if (controller.showSettting.value) {
-                        controller.showSettting.toggle();
-                      } else {
-                        controller.globalPlayer.isPlaying.value
-                            ? controller.enableController()
-                            : controller.globalPlayer.togglePlayPause();
-                      }
-                    },
-                    onDoubleTap: () {
-                      if (!controller.showLocked.value) {
-                        GlobalPlayerState.to.isWindowFullscreen.value
-                            ? controller.toggleWindowFullScreen()
-                            : controller.toggleFullScreen();
-                      }
-                    },
-                    child: BrightnessVolumnDargArea(controller: controller),
-                  ),
-                  SettingsPanel(controller: controller),
-                  LockButton(controller: controller),
-                  TopActionBar(controller: controller, barHeight: barHeight),
-                  BottomActionBar(controller: controller, barHeight: barHeight),
-                ],
-              ),
+                ),
+                DanmakuViewer(controller: controller),
+                GestureDetector(
+                  onTap: () {
+                    if (controller.showSettting.value) {
+                      controller.showSettting.toggle();
+                    } else {
+                      controller.globalPlayer.isPlaying.value
+                          ? controller.enableController()
+                          : controller.globalPlayer.togglePlayPause();
+                    }
+                  },
+                  onDoubleTap: () {
+                    if (!controller.showLocked.value) {
+                      GlobalPlayerState.to.isWindowFullscreen.value
+                          ? controller.toggleWindowFullScreen()
+                          : controller.toggleFullScreen();
+                    }
+                  },
+                  child: BrightnessVolumnDargArea(controller: controller),
+                ),
+                SettingsPanel(controller: controller),
+                LockButton(controller: controller),
+                TopActionBar(controller: controller, barHeight: barHeight),
+                BottomActionBar(controller: controller, barHeight: barHeight),
+              ],
             ),
           ),
         ),

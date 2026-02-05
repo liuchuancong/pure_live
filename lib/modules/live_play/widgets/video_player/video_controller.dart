@@ -56,6 +56,16 @@ class VideoController with ChangeNotifier {
   GlobalKey playerKey = GlobalKey();
 
   Timer? _debounceTimer;
+  Timer? _hideVolumeTimer;
+  var showVolume = false.obs;
+
+  void updateVolumn(double volume) {
+    _hideVolumeTimer?.cancel();
+    showVolume = true.obs;
+    _hideVolumeTimer = Timer(const Duration(seconds: 1), () {
+      showVolume.value = false;
+    });
+  }
 
   void enableController() {
     showControllerTimer?.cancel();
@@ -301,6 +311,7 @@ class VideoController with ChangeNotifier {
   }
 
   void toggleFullScreen() async {
+    log('toggleFullScreen called');
     showLocked.value = false;
     showControllerTimer?.cancel();
 

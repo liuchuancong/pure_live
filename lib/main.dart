@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:async';
 import 'package:get/get.dart';
-import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
@@ -91,57 +90,54 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
 
   @override
   Widget build(BuildContext context) {
-    return Shortcuts(
-      shortcuts: {LogicalKeySet(LogicalKeyboardKey.select): const ActivateIntent()},
-      child: DynamicColorBuilder(
-        builder: (lightDynamic, darkDynamic) {
-          return Obx(() {
-            var themeColor = HexColor(settings.themeColorSwitch.value);
-            var showSplashPage = settings.showSplashPage.value;
-            ThemeData lightTheme = MyTheme(primaryColor: themeColor).lightThemeData;
-            ThemeData darkTheme = MyTheme(primaryColor: themeColor).darkThemeData;
-            if (settings.enableDynamicTheme.value) {
-              lightTheme = MyTheme(colorScheme: lightDynamic).lightThemeData;
-              darkTheme = MyTheme(colorScheme: darkDynamic).darkThemeData;
-            }
-            return GetMaterialApp(
-              title: '纯粹直播',
-              scrollBehavior: MyCustomScrollBehavior(),
-              debugShowCheckedModeBanner: false,
-              themeMode: AppConsts.themeModes[settings.themeModeName.value]!,
-              theme: lightTheme.copyWith(
-                appBarTheme: AppBarTheme(surfaceTintColor: Colors.transparent),
-                pageTransitionsTheme: const PageTransitionsTheme(
-                  builders: <TargetPlatform, PageTransitionsBuilder>{
-                    TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
-                  },
-                ),
-              ),
-              darkTheme: darkTheme.copyWith(appBarTheme: AppBarTheme(surfaceTintColor: Colors.transparent)),
-              locale: AppConsts.languages[settings.languageName.value]!,
-              navigatorObservers: [FlutterSmartDialog.observer, BackButtonObserver()],
-              builder: FlutterSmartDialog.init(
-                builder: (context, child) {
-                  if (PlatformUtils.isDesktopNotMac) {
-                    return DesktopManager.buildWithTitleBar(child);
-                  }
-                  return child ?? const SizedBox.shrink();
+    return DynamicColorBuilder(
+      builder: (lightDynamic, darkDynamic) {
+        return Obx(() {
+          var themeColor = HexColor(settings.themeColorSwitch.value);
+          var showSplashPage = settings.showSplashPage.value;
+          ThemeData lightTheme = MyTheme(primaryColor: themeColor).lightThemeData;
+          ThemeData darkTheme = MyTheme(primaryColor: themeColor).darkThemeData;
+          if (settings.enableDynamicTheme.value) {
+            lightTheme = MyTheme(colorScheme: lightDynamic).lightThemeData;
+            darkTheme = MyTheme(colorScheme: darkDynamic).darkThemeData;
+          }
+          return GetMaterialApp(
+            title: '纯粹直播',
+            scrollBehavior: MyCustomScrollBehavior(),
+            debugShowCheckedModeBanner: false,
+            themeMode: AppConsts.themeModes[settings.themeModeName.value]!,
+            theme: lightTheme.copyWith(
+              appBarTheme: AppBarTheme(surfaceTintColor: Colors.transparent),
+              pageTransitionsTheme: const PageTransitionsTheme(
+                builders: <TargetPlatform, PageTransitionsBuilder>{
+                  TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
                 },
               ),
-              supportedLocales: S.delegate.supportedLocales,
-              localizationsDelegates: const [
-                S.delegate,
-                GlobalMaterialLocalizations.delegate,
-                GlobalWidgetsLocalizations.delegate,
-                GlobalCupertinoLocalizations.delegate,
-              ],
-              initialRoute: showSplashPage ? RoutePath.kSplash : RoutePath.kInitial,
-              defaultTransition: Transition.native,
-              getPages: AppPages.routes,
-            );
-          });
-        },
-      ),
+            ),
+            darkTheme: darkTheme.copyWith(appBarTheme: AppBarTheme(surfaceTintColor: Colors.transparent)),
+            locale: AppConsts.languages[settings.languageName.value]!,
+            navigatorObservers: [FlutterSmartDialog.observer, BackButtonObserver()],
+            builder: FlutterSmartDialog.init(
+              builder: (context, child) {
+                if (PlatformUtils.isDesktopNotMac) {
+                  return DesktopManager.buildWithTitleBar(child);
+                }
+                return child ?? const SizedBox.shrink();
+              },
+            ),
+            supportedLocales: S.delegate.supportedLocales,
+            localizationsDelegates: const [
+              S.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            initialRoute: showSplashPage ? RoutePath.kSplash : RoutePath.kInitial,
+            defaultTransition: Transition.native,
+            getPages: AppPages.routes,
+          );
+        });
+      },
     );
   }
 }

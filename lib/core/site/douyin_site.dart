@@ -70,21 +70,40 @@ class DouyinSite implements LiveSite {
     }
   }
 
+  String extractCategoryDataJson(String source) {
+    final startPattern = r'{\"pathname\":\"/\",\"categoryData\":';
+    int startIndex = source.indexOf(startPattern);
+    if (startIndex == -1) return '';
+    int openBraces = 0;
+    bool foundFirstBrace = false;
+    for (int i = startIndex; i < source.length; i++) {
+      if (source[i] == '{') {
+        openBraces++;
+        foundFirstBrace = true;
+      } else if (source[i] == '}') {
+        openBraces--;
+      }
+      if (foundFirstBrace && openBraces == 0) {
+        String rawData = source.substring(startIndex, i + 1);
+        return rawData.replaceAll('\\"', '"').replaceAll(r'\\', r'\');
+      }
+    }
+    return '';
+  }
+
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async {
     List<LiveCategory> categories = [];
     var result = await HttpClient.instance.getText(
       "https://live.douyin.com/",
-      queryParameters: {},
+      queryParameters: {"from_nav": "1"},
       header: await getRequestHeaders(),
     );
 
-    var renderData = RegExp(r'\{\\"pathname\\":\\"\/\\",\\"categoryData.*?\]\\n').firstMatch(result)?.group(0) ?? "";
-    var renderDataJson = json.decode(
-      renderData.trim().replaceAll('\\"', '"').replaceAll(r"\\", r"\").replaceAll(']\\n', ""),
-    );
-
-    for (var item in renderDataJson["categoryData"]) {
+    String extracted = extractCategoryDataJson(result);
+    var renderDataJson = json.decode(extracted);
+    var data = renderDataJson["categoryData"];
+    for (var item in data) {
       List<LiveArea> subs = [];
       var id = '${item["partition"]["id_str"]},${item["partition"]["type"]}';
       for (var subItem in item["sub_partition"]) {

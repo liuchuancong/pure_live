@@ -240,7 +240,7 @@ class DouyuSite implements LiveSite {
         nick: roomInfo["owner_name"].toString(),
         avatar: roomInfo["owner_avatar"].toString(),
         introduction: roomInfo["show_details"].toString(),
-        area: roomInfo["cate_name"]?.toString() ?? '',
+        area: roomInfo["second_lvl_name"]?.toString() ?? '',
         notice: "",
         liveStatus: roomInfo["show_status"] == 1 ? LiveStatus.live : LiveStatus.offline,
         status: roomInfo["show_status"] == 1,

@@ -35,7 +35,7 @@ class HuyaSite implements LiveSite {
   static String? playUserAgent;
 
   // ignore: constant_identifier_names
-  static const String HYSDK_UA = "HYSDK(Windows, 30000002)_APP(pc_exe&7060000&official)_SDK(trans&2.32.3.5646)";
+  static const String HYSDK_UA = "HYSDK(Windows,30000002)_APP(pc_exe&7070000&official)_SDK(trans&2.33.0.5678)";
   static Map<String, String> requestHeaders = {'Origin': baseUrl, 'Referer': baseUrl, 'User-Agent': HYSDK_UA};
   final BaseTarsHttp tupClient = BaseTarsHttp("http://wup.huya.com", "liveui", headers: requestHeaders);
   @override

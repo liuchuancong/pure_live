@@ -49,7 +49,9 @@ class _AreaCardState extends State<AreaCard> {
                 clipBehavior: Clip.antiAlias,
                 color: Colors.white,
                 elevation: 0,
-                child: Image.network(widget.category.areaPic!, fit: BoxFit.cover),
+                child: widget.category.areaPic!.isNotEmpty
+                    ? Image.network(widget.category.areaPic!, fit: BoxFit.cover)
+                    : const Icon(Icons.live_tv_rounded, color: Colors.black, size: 38),
               ),
             ),
             ListTile(
