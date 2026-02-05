@@ -127,6 +127,8 @@ class DesktopManager {
 
   static Future<void> updateTray() async {
     if (!PlatformUtils.isDesktop) return;
+
+    await trayManager.setToolTip('纯粹直播');
     try {
       bool isWindowVisible = await windowManager.isVisible();
       Menu menu = Menu(
@@ -173,8 +175,12 @@ class DesktopManager {
     if (!PlatformUtils.isDesktop) return;
 
     try {
-      if (!await windowManager.isVisible()) {
+      bool isVisible = await windowManager.isVisible();
+      if (isVisible) {
+        await windowManager.focus();
+      } else {
         await windowManager.show();
+        await windowManager.setSkipTaskbar(false);
       }
     } catch (e) {
       debugPrint('托盘图标点击处理失败: $e');
@@ -285,7 +291,9 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T> implements Window
 
   @override
   void onTrayIconRightMouseUp() {
-    trayManager.popUpContextMenu();
+    windowManager.focus().then((_) {
+      trayManager.popUpContextMenu();
+    });
   }
 
   @override
