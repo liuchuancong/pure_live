@@ -52,21 +52,13 @@ class MediaKitPlayerAdapter implements UnifiedPlayer {
       await pp.setProperty('force-seekable', 'yes');
     }
     if (_player.platform is NativePlayer) {
-      if (_player.platform is NativePlayer) {
-        final native = _player.platform as dynamic;
-
-        // 1. 设置协议白名单
-        await native.setProperty('protocol_whitelist', 'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto');
-
-        // 2. 合并设置 demuxer 参数 (用逗号分隔，不要分两次 set)
-        // 这样同时开启了重连和 5 秒超时
-        // Optimized reconnection parameters
-        await native.setproperty(
-          'demuxer-lavf-o',
-          'reconnect=1,reconnect_at_eof=1,reconnect_streamed=1,reconnect_on_network_error=1,reconnect_on_http_error=4xx,5xx,timeout=5000000',
-        );
-        await native.setproperty('stream-lavf-o', 'reconnect_streamed=1,reconnect_delay_max=5');
-      }
+      await (_player.platform as dynamic).setProperty(
+        'protocol_whitelist',
+        'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto',
+      );
+      await (_player.platform as NativePlayer).setProperty('network-timeout', '30'); // 给 mpv 30秒的总容忍时间
+      await (_player.platform as NativePlayer).setProperty('demuxer-lavf-probsize', '1048576'); // 减半探测大小
+      await (_player.platform as NativePlayer).setProperty('demuxer-lavf-analyzeduration', '3'); // 减少解析时间
     }
 
     // Initialize controller based on settings
@@ -141,10 +133,11 @@ class MediaKitPlayerAdapter implements UnifiedPlayer {
   }
 
   @override
-  Future<void> setDataSource(String url, Map<String, String> headers) async {
+  Future<void> setDataSource(String url, List<String> playUrls, Map<String, String> headers) async {
     if (_disposed) return;
     await _player.stop();
-    await _player.open(Media(url, httpHeaders: headers));
+    Playlist playlist = Playlist(playUrls.map((playUrl) => Media(playUrl, httpHeaders: headers)).toList());
+    await _player.open(playlist);
   }
 
   @override

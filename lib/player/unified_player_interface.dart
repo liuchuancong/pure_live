@@ -6,7 +6,7 @@ abstract class UnifiedPlayer {
   Future<void> init();
 
   // 设置播放源
-  Future<void> setDataSource(String url, Map<String, String> headers);
+  Future<void> setDataSource(String url, List<String> playUrls, Map<String, String> headers);
 
   // 播放 / 暂停
   Future<void> play();

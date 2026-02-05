@@ -87,7 +87,7 @@ class FijkPlayerAdapter implements UnifiedPlayer {
   }
 
   @override
-  Future<void> setDataSource(String url, Map<String, String> headers) async {
+  Future<void> setDataSource(String url, List<String> playUrls, Map<String, String> headers) async {
     if (_disposed) return;
     final SettingsService settings = Get.find<SettingsService>();
     await _player.reset();
