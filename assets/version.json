@@ -1,7 +1,7 @@
 {
-  "version": "2.0.12",
-  "version_num": 10212,
-  "version_desc": "-Fixed: 修复huya搜索. -Featured: 优化部分UI显示.",
+  "version": "2.0.13",
+  "version_num": 10213,
+  "version_desc": "-Fixed: 修复抖音分类. -Fixed: 优化部分UI显示,修复快捷键",
   "prerelease":false,
   "download_url": "https://github.com/liuchuancong/pure_live/releases"
 }
