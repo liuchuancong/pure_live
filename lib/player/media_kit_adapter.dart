@@ -51,6 +51,12 @@ class MediaKitPlayerAdapter implements UnifiedPlayer {
       final pp = _player.platform as NativePlayer;
       await pp.setProperty('force-seekable', 'yes');
     }
+    if (_player.platform is NativePlayer) {
+      await (_player.platform as dynamic).setProperty(
+        'protocol_whitelist',
+        'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto',
+      );
+    }
 
     // Initialize controller based on settings
     _controller = settings.playerCompatMode.value

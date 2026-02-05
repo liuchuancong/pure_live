@@ -63,6 +63,9 @@ class BackgroundService {
 
       if (confirm) {
         isIgnoring = await FlutterForegroundTask.requestIgnoreBatteryOptimization();
+        if (!isIgnoring) {
+          await openAppSettings();
+        }
       }
       isIgnoring = await FlutterForegroundTask.isIgnoringBatteryOptimizations;
     }
