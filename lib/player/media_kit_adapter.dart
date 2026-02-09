@@ -46,7 +46,6 @@ class MediaKitPlayerAdapter implements UnifiedPlayer {
     if (Platform.isAndroid) {
       final pp = _player.platform as NativePlayer;
       await pp.setProperty('force-seekable', 'yes');
-      await pp.setProperty('ao', 'audiotrack');
     }
     if (settings.customPlayerOutput.value) {
       if (_player.platform is NativePlayer) {
