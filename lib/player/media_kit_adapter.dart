@@ -41,24 +41,24 @@ class MediaKitPlayerAdapter implements UnifiedPlayer {
     _disposed = false;
 
     _player = Player();
+
+    // Platform-specific configuration
+    if (Platform.isAndroid) {
+      final pp = _player.platform as NativePlayer;
+      await pp.setProperty('force-seekable', 'yes');
+      await pp.setProperty('ao', 'audiotrack');
+    }
     if (settings.customPlayerOutput.value) {
       if (_player.platform is NativePlayer) {
         await (_player.platform as dynamic).setProperty('ao', settings.audioOutputDriver.value);
       }
     }
-    // Platform-specific configuration
-    if (Platform.isAndroid) {
-      final pp = _player.platform as NativePlayer;
-      await pp.setProperty('force-seekable', 'yes');
-    }
     if (_player.platform is NativePlayer) {
-      await (_player.platform as dynamic).setProperty(
-        'protocol_whitelist',
-        'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto',
-      );
-      await (_player.platform as NativePlayer).setProperty('network-timeout', '30'); // 给 mpv 30秒的总容忍时间
-      await (_player.platform as NativePlayer).setProperty('demuxer-lavf-probsize', '1048576'); // 减半探测大小
-      await (_player.platform as NativePlayer).setProperty('demuxer-lavf-analyzeduration', '3'); // 减少解析时间
+      final native = _player.platform as dynamic;
+      await native.setProperty('protocol_whitelist', 'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto');
+      await native.setProperty('network-timeout', '30'); // 给 mpv 30秒的总容忍时间
+      await native.setProperty('demuxer-lavf-probsize', '1048576'); // 减半探测大小
+      await native.setProperty('demuxer-lavf-analyzeduration', '3'); // 减少解析时间
     }
 
     // Initialize controller based on settings
