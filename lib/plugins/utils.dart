@@ -3,6 +3,16 @@ import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
 
 class Utils {
+  static Future<void> _minimizeOrHideDesktopWindow() async {
+    // macOS 上更符合习惯的是最小化到 Dock；直接 hide 在没有托盘/菜单栏入口时
+    // 容易让用户误以为 App 退出。
+    if (Platform.isMacOS) {
+      await windowManager.minimize();
+    } else {
+      await windowManager.hide();
+    }
+  }
+
   static Future<bool> showAlertDialog(
     String content, {
     String title = '',
@@ -235,9 +245,7 @@ class Utils {
           exit(0);
         });
       } else if (exitChoose == 'minimize') {
-        if (await windowManager.isPreventClose()) {
-          await windowManager.hide();
-        }
+        await _minimizeOrHideDesktopWindow();
         return true;
       }
     }
@@ -281,9 +289,7 @@ class Utils {
                   settings.exitChoose.value = 'minimize';
                   Navigator.of(context).pop();
                   Future.delayed(const Duration(milliseconds: 200), () async {
-                    if (await windowManager.isPreventClose()) {
-                      await windowManager.hide();
-                    }
+                    await _minimizeOrHideDesktopWindow();
                   });
                 },
                 child: Text('最小化'),
