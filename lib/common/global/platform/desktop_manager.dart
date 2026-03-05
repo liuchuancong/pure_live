@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 import 'package:get/get.dart';
@@ -281,7 +282,18 @@ class CustomTitleBar extends StatelessWidget {
 
 mixin DesktopWindowMixin<T extends StatefulWidget> on State<T> implements WindowListener, TrayListener {
   @override
-  void onWindowClose() {}
+  void onWindowClose() {
+    // 临时仅在 macOS 上处理系统标题栏关闭按钮事件，避免其他桌面端窗口管理行为差异。
+    if (!Platform.isMacOS) return;
+
+    // 桌面端默认拦截关闭事件（preventClose=true），这里统一走退出/最小化逻辑，
+    // 避免 macOS 点击关闭按钮无响应。
+    unawaited(
+      DesktopManager.handleWindowClose().catchError((e, _) {
+        debugPrint('处理关闭窗口失败: $e');
+      }),
+    );
+  }
 
   @override
   void onTrayIconMouseDown() => DesktopManager.handleTrayIconClick();
