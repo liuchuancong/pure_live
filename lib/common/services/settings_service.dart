@@ -69,6 +69,7 @@ class SettingsService extends GetxController {
   final volume = (HivePrefUtil.getDouble('volume') ?? 1.0).obs;
 
   final videoPlayerIndex = (HivePrefUtil.getInt('videoPlayerIndex') ?? 0).obs;
+  final useFallbackPlayer = (HivePrefUtil.getInt('useFallbackPlayer') ?? 0).obs;
   final enableCodec = (HivePrefUtil.getBool('enableCodec') ?? true).obs;
   final playerCompatMode = (HivePrefUtil.getBool('playerCompatMode') ?? false).obs;
   final customPlayerOutput = (HivePrefUtil.getBool('customPlayerOutput') ?? false).obs;
@@ -287,6 +288,10 @@ class SettingsService extends GetxController {
 
     videoPlayerIndex.listen((value) {
       HivePrefUtil.setInt('videoPlayerIndex', value);
+    });
+
+    useFallbackPlayer.listen((value) {
+      HivePrefUtil.setInt('useFallbackPlayer', value);
     });
 
     bilibiliCookie.listen((value) {
@@ -732,6 +737,7 @@ class SettingsService extends GetxController {
     json['danmakuOpacity'] = danmakuOpacity.value;
     json['floatPlay'] = floatPlay.value;
     json['videoPlayerIndex'] = videoPlayerIndex.value;
+    json['useFallbackPlayer'] = useFallbackPlayer.value;
     json['enableCodec'] = enableCodec.value;
     json['playerCompatMode'] = playerCompatMode.value;
     json['bilibiliCookie'] = bilibiliCookie.value;

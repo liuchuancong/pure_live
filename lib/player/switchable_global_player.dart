@@ -11,11 +11,12 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/player/fullscreen.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:flutter_floating/flutter_floating.dart';
+import 'package:pure_live/player/video_player_adapter.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/common/global/platform/background_server.dart';
 
-enum PlayerEngine { mediaKit, fijk }
+enum PlayerEngine { mediaKit, fijk, exo }
 
 class SwitchableGlobalPlayer {
   static final SwitchableGlobalPlayer _instance = SwitchableGlobalPlayer._internal();
@@ -82,6 +83,8 @@ class SwitchableGlobalPlayer {
         return MediaKitPlayerAdapter();
       case PlayerEngine.fijk:
         return FijkPlayerAdapter();
+      case PlayerEngine.exo:
+        return VideoPlayerAdapter();
     }
   }
 

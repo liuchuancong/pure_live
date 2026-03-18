@@ -96,15 +96,15 @@ class SettingsPage extends GetView<SettingsService> {
               onChanged: (bool value) => controller.floatPlay.value = value,
             ),
           ),
-          if (Platform.isAndroid)
-            Obx(
-              () => ListTile(
-                title: Text('视频播放器'),
-                subtitle: Text('选择视频播放器'),
-                onTap: showVideoSetDialog,
-                trailing: Text(controller.videoPlayerIndex.value == 0 ? 'Mpv播放器' : 'IJK播放器'),
-              ),
+          // if (Platform.isAndroid)
+          Obx(
+            () => ListTile(
+              title: Text('视频播放器'),
+              subtitle: Text('选择视频播放器'),
+              onTap: showVideoSetDialog,
+              trailing: Text(PlayerConsts.players[controller.videoPlayerIndex.value]),
             ),
+          ),
           Obx(
             () => SwitchListTile(
               title: Text(S.of(context).enable_codec),
@@ -123,6 +123,18 @@ class SettingsPage extends GetView<SettingsService> {
                 onChanged: (bool value) => controller.playerCompatMode.value = value,
               ),
             ),
+          // if (Platform.isAndroid && controller.videoPlayerIndex.value == 2)
+          Obx(
+            () => ListTile(
+              title: Text('ExoPlayer无法播放使用备用播放器'),
+              subtitle: Text('若ExoPlayer无法播放请设置备用播放器'),
+              onTap: showUseFallbackPlayerDialog,
+              trailing: Text(
+                PlayerConsts.players.takeWhile((p) => p != 'Exo播放器').toList()[controller.useFallbackPlayer.value],
+              ),
+            ),
+          ),
+
           if (Platform.isAndroid)
             Obx(
               () => SwitchListTile(
@@ -471,6 +483,51 @@ class SettingsPage extends GetView<SettingsService> {
                             SwitchableGlobalPlayer().switchEngine(
                               PlayerEngine.values[controller.videoPlayerIndex.value],
                             );
+                            Navigator.of(context).pop();
+                          },
+                          child: Text(name, style: Theme.of(context).textTheme.bodyLarge),
+                        ),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void showUseFallbackPlayerDialog() {
+    List<String> playerList = controller.playerlist.takeWhile((p) => p != 'Exo播放器').toList();
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return SimpleDialog(
+          title: Text(S.of(context).change_player),
+          children: [
+            RadioGroup<String>(
+              groupValue: playerList[controller.useFallbackPlayer.value],
+              onChanged: (String? value) {
+                if (value != null) {
+                  controller.useFallbackPlayer.value = playerList.indexOf(value);
+                  Navigator.of(context).pop();
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsets.only(top: 0, bottom: 10, left: 16, right: 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: playerList.map<Widget>((name) {
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Radio<String>(value: name, activeColor: Theme.of(context).colorScheme.primary),
+                        GestureDetector(
+                          onTap: () {
+                            controller.useFallbackPlayer.value = playerList.indexOf(name);
                             Navigator.of(context).pop();
                           },
                           child: Text(name, style: Theme.of(context).textTheme.bodyLarge),
