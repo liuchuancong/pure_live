@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:get/get.dart';
-import 'dart:developer' as developer;
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/model/live_category.dart';
 import 'package:pure_live/core/common/core_log.dart';
@@ -14,6 +13,7 @@ import 'package:pure_live/core/common/convert_helper.dart';
 import 'package:pure_live/model/live_category_result.dart';
 import 'package:pure_live/core/danmaku/douyin_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
+import 'package:pure_live/core/utils/douyin/douyin_request_params.dart';
 
 class DouyinSite implements LiveSite {
   @override
@@ -600,21 +600,8 @@ class DouyinSite implements LiveSite {
       },
     );
     var requlestUrl = uri.toString();
-    var headResp = await HttpClient.instance.head('https://live.douyin.com', header: headers);
-    var dyCookie = "";
-    developer.log(headResp.headers["set-cookie"].toString());
-    headResp.headers["set-cookie"]?.forEach((element) {
-      var cookie = element.split(";")[0];
-      if (cookie.contains("ttwid")) {
-        dyCookie += "$cookie;";
-      } else {
-        dyCookie += settings.douyinCookie.value;
-      }
-      if (cookie.contains("__ac_nonce")) {
-        dyCookie += "$cookie;";
-      }
-    });
-
+    var headResp = await getRequestHeaders();
+    var dyCookie = headResp['cookie'];
     var result = await HttpClient.instance.getJson(
       requlestUrl,
       queryParameters: {},
@@ -631,10 +618,9 @@ class DouyinSite implements LiveSite {
         'sec-fetch-dest': 'empty',
         'sec-fetch-mode': 'cors',
         'sec-fetch-site': 'same-origin',
-        'user-agent': kDefaultUserAgent,
+        'user-agent': DouyinRequestParams.kDefaultUserAgent,
       },
     );
-    developer.log(result.toString());
     if (result == "" || result == 'blocked') {
       throw Exception("抖音直播搜索被限制，请稍后再试");
     }

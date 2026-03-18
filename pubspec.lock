@@ -402,6 +402,14 @@ packages:
       url: "https://github.com/xiaoyaocz/dart_quickjs.git"
     source: git
     version: "1.0.0"
+  dart_sm:
+    dependency: "direct main"
+    description:
+      name: dart_sm
+      sha256: "98051cca380155c21dc33aef8425d4877f44e857801fd622914bd07d9c06d3dc"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.1.5"
   dart_style:
     dependency: transitive
     description:
