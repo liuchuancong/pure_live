@@ -108,18 +108,17 @@ class VideoPlayerAdapter implements UnifiedPlayer {
       height: double.infinity,
       child: Stack(
         children: [
-          if (_player != null && _player!.value.isInitialized)
-            Positioned.fill(
-              child: FittedBox(
-                fit: boxFit,
-                clipBehavior: Clip.hardEdge,
-                child: SizedBox(
-                  width: _player!.value.size.width,
-                  height: _player!.value.size.height,
-                  child: VideoPlayer(_player!),
-                ),
+          Positioned.fill(
+            child: FittedBox(
+              fit: boxFit,
+              clipBehavior: Clip.hardEdge,
+              child: SizedBox(
+                width: _player!.value.size.width,
+                height: _player!.value.size.height,
+                child: VideoPlayer(_player!),
               ),
             ),
+          ),
           if (controls != null) Positioned.fill(child: controls),
         ],
       ),
