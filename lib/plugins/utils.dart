@@ -1,8 +1,21 @@
 import 'dart:io';
+
 import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
 
 class Utils {
+  static Future<void> _minimizeOrHideDesktopWindow() async {
+    // macOS 上更符合习惯的是最小化到 Dock；直接 hide 在没有托盘/菜单栏入口时
+    // 容易让用户误以为 App 退出。
+    if (Platform.isMacOS) {
+      await windowManager.minimize();
+    } else {
+      if (await windowManager.isPreventClose()) {
+        await windowManager.hide();
+      }
+    }
+  }
+
   static Future<bool> showAlertDialog(
     String content, {
     String title = '',
@@ -83,7 +96,10 @@ class Utils {
       animationBuilder: (controller, child, animationParam) {
         //从右到左
         return SlideTransition(
-          position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero).animate(controller.view),
+          position: Tween<Offset>(
+            begin: const Offset(1, 0),
+            end: Offset.zero,
+          ).animate(controller.view),
           child: child,
         );
       },
@@ -95,7 +111,10 @@ class Utils {
         padding: EdgeInsets.only(right: MediaQuery.of(context).padding.right),
         decoration: BoxDecoration(
           color: Get.theme.cardColor,
-          borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), bottomLeft: Radius.circular(4)),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(4),
+            bottomLeft: Radius.circular(4),
+          ),
         ),
         child: SafeArea(
           left: false,
@@ -109,7 +128,9 @@ class Utils {
                   contentPadding: EdgeInsets.zero,
                   leading: IconButton(
                     onPressed: () {
-                      SmartDialog.dismiss(status: SmartStatus.allCustom).then((value) => onDismiss?.call());
+                      SmartDialog.dismiss(
+                        status: SmartStatus.allCustom,
+                      ).then((value) => onDismiss?.call());
                     },
                     icon: const Icon(Icons.arrow_back),
                   ),
@@ -141,7 +162,9 @@ class Utils {
     String confirm = '',
     String cancel = '',
   }) async {
-    final TextEditingController textEditingController = TextEditingController(text: content);
+    final TextEditingController textEditingController = TextEditingController(
+      text: content,
+    );
     var result = await Get.dialog(
       AlertDialog(
         title: Text(title),
@@ -182,7 +205,11 @@ class Utils {
     return result;
   }
 
-  static Future<T?> showOptionDialog<T>(List<T> contents, T value, {String title = ''}) async {
+  static Future<T?> showOptionDialog<T>(
+    List<T> contents,
+    T value, {
+    String title = '',
+  }) async {
     var result = await Get.dialog(
       SimpleDialog(
         title: Text(title),
@@ -195,7 +222,12 @@ class Utils {
               }
             },
             child: Padding(
-              padding: const EdgeInsets.only(top: 0, bottom: 10, left: 16, right: 16),
+              padding: const EdgeInsets.only(
+                top: 0,
+                bottom: 10,
+                left: 16,
+                right: 16,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,12 +235,18 @@ class Utils {
                   return Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Radio<T>(value: e, activeColor: Theme.of(Get.context!).colorScheme.primary),
+                      Radio<T>(
+                        value: e,
+                        activeColor: Theme.of(Get.context!).colorScheme.primary,
+                      ),
                       GestureDetector(
                         onTap: () {
                           Navigator.of(Get.context!).pop(e);
                         },
-                        child: Text(e.toString(), style: Theme.of(Get.context!).textTheme.bodyLarge),
+                        child: Text(
+                          e.toString(),
+                          style: Theme.of(Get.context!).textTheme.bodyLarge,
+                        ),
                       ),
                     ],
                   );
@@ -235,9 +273,7 @@ class Utils {
           exit(0);
         });
       } else if (exitChoose == 'minimize') {
-        if (await windowManager.isPreventClose()) {
-          await windowManager.hide();
-        }
+        await _minimizeOrHideDesktopWindow();
         return true;
       }
     }
@@ -281,15 +317,16 @@ class Utils {
                   settings.exitChoose.value = 'minimize';
                   Navigator.of(context).pop();
                   Future.delayed(const Duration(milliseconds: 200), () async {
-                    if (await windowManager.isPreventClose()) {
-                      await windowManager.hide();
-                    }
+                    await _minimizeOrHideDesktopWindow();
                   });
                 },
                 child: Text('最小化'),
               ),
               ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  foregroundColor: Colors.white,
+                ),
                 onPressed: () async {
                   settings.dontAskExit.value = shouldNotAskAgain;
                   settings.exitChoose.value = 'exit';
