@@ -1,6 +1,6 @@
-import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
+import 'dart:async';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:pure_live/plugins/utils.dart';
@@ -8,7 +8,6 @@ import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
-import 'package:pure_live/common/global/theme_utils.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 
@@ -224,51 +223,60 @@ class CustomTitleBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Get.theme;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Obx(() {
       bool isFull = GlobalPlayerState.to.isWindowFullscreen.value;
+
+      // 背景色控制
+      final Color bgColor = isFull || isDark ? Colors.black : theme.scaffoldBackgroundColor;
+      final Color baseIconColor = isFull || isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black54;
+
+      // 普通按钮颜色配置
       final buttonColors = WindowButtonColors(
-        iconNormal: isFull ? Colors.white : ThemeUtils.select(context, light: Colors.black54, dark: Colors.white70),
-        mouseOver: isFull
-            ? Colors.white.withAlpha(50) // 黑色背景下的悬停感
-            : ThemeUtils.select(context, light: theme.colorScheme.primary.withAlpha(100), dark: Colors.grey.shade700),
-        mouseDown: isFull
-            ? Colors.white.withAlpha(25)
-            : ThemeUtils.select(context, light: Colors.grey.shade400, dark: Colors.grey.shade800),
-        iconMouseOver: Colors.white,
-        iconMouseDown: Colors.white,
+        iconNormal: baseIconColor,
+        mouseOver: isDark ? Colors.white.withValues(alpha: 0.1) : theme.colorScheme.primary.withValues(alpha: 0.1),
+        mouseDown: isDark ? Colors.white.withValues(alpha: 0.2) : Colors.grey.shade300,
+        iconMouseOver: isDark ? Colors.white : theme.colorScheme.primary,
+        iconMouseDown: isDark ? Colors.white : theme.colorScheme.primary,
       );
 
+      // 关闭按钮颜色配置
       final closeButtonColors = WindowButtonColors(
-        iconNormal: isFull ? Colors.white : ThemeUtils.select(context, light: Colors.black54, dark: Colors.white70),
-        mouseOver: Colors.red.shade700,
-        mouseDown: Colors.red.shade900,
+        iconNormal: baseIconColor,
+        mouseOver: const Color(0xFFD32F2F),
+        mouseDown: const Color(0xFFB71C1C),
         iconMouseOver: Colors.white,
         iconMouseDown: Colors.white,
       );
 
       return Container(
-        color: isFull
-            ? Colors.black
-            : ThemeUtils.select(context, light: theme.scaffoldBackgroundColor, dark: Colors.black),
+        height: 32,
+        color: bgColor,
         child: WindowTitleBarBox(
           child: Row(
             children: [
-              Expanded(child: MoveWindow()),
+              // 拖动区域
+              Expanded(
+                child: MoveWindow(
+                  child: Container(
+                    padding: const EdgeInsets.only(left: 12),
+                    alignment: Alignment.centerLeft,
+                    child: isFull
+                        ? null
+                        : Text(
+                            "Pure Live",
+                            style: TextStyle(fontSize: 13, color: baseIconColor, fontWeight: FontWeight.bold),
+                          ),
+                  ),
+                ),
+              ),
+              // 右侧控制按钮
               Row(
                 children: [
                   MinimizeWindowButton(colors: buttonColors, onPressed: () => windowManager.minimize()),
-                  MaximizeWindowButton(
-                    colors: buttonColors,
-                    onPressed: () async {
-                      if (await windowManager.isMaximized()) {
-                        windowManager.restore();
-                      } else {
-                        windowManager.maximize();
-                      }
-                    },
-                  ),
+                  _MaximizeButton(colors: buttonColors),
                   CloseWindowButton(colors: closeButtonColors, onPressed: () => DesktopManager.handleWindowClose()),
                 ],
               ),
@@ -277,6 +285,25 @@ class CustomTitleBar extends StatelessWidget {
         ),
       );
     });
+  }
+}
+
+class _MaximizeButton extends StatelessWidget {
+  final WindowButtonColors colors;
+  const _MaximizeButton({required this.colors});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaximizeWindowButton(
+      colors: colors,
+      onPressed: () async {
+        if (await windowManager.isMaximized()) {
+          windowManager.restore();
+        } else {
+          windowManager.maximize();
+        }
+      },
+    );
   }
 }
 

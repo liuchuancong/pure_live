@@ -128,7 +128,7 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
         padding: const EdgeInsets.only(bottom: 10), // 底部留白，方便鼠标滑向图标
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.85),
+            color: Colors.black.withValues(alpha: 0.85),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: Colors.white10),
           ),
