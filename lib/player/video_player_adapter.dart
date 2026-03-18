@@ -101,23 +101,27 @@ class VideoPlayerAdapter implements UnifiedPlayer {
   @override
   Widget getVideoWidget(int index, Widget? controls) {
     final boxFit = PlayerConsts.videofitList[index];
-    final videoSize = _player!.value.size;
 
     return Container(
       color: Colors.black,
       width: double.infinity,
       height: double.infinity,
-      child: FittedBox(
-        fit: boxFit,
-        clipBehavior: Clip.hardEdge,
-        child: SizedBox(
-          width: videoSize.width,
-          height: videoSize.height,
-          child: AspectRatio(
-            aspectRatio: _player!.value.aspectRatio,
-            child: Stack(fit: StackFit.expand, children: [VideoPlayer(_player!), if (controls != null) controls]),
-          ),
-        ),
+      child: Stack(
+        children: [
+          if (_player != null && _player!.value.isInitialized)
+            Positioned.fill(
+              child: FittedBox(
+                fit: boxFit,
+                clipBehavior: Clip.hardEdge,
+                child: SizedBox(
+                  width: _player!.value.size.width,
+                  height: _player!.value.size.height,
+                  child: VideoPlayer(_player!),
+                ),
+              ),
+            ),
+          if (controls != null) Positioned.fill(child: controls),
+        ],
       ),
     );
   }
