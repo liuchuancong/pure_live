@@ -1,7 +1,7 @@
 {
-  "version": "2.0.13",
-  "version_num": 10213,
-  "version_desc": "-Fixed: 修复抖音分类. -Fixed: 优化部分UI显示,修复快捷键",
+  "version": "2.0.14",
+  "version_num": 10214,
+  "version_desc": "-Fixed: 修复部分UI显示问题.\n-Added: 新增ExoPlaer播放器.",
   "prerelease":false,
   "download_url": "https://github.com/liuchuancong/pure_live/releases"
 }
