@@ -28,8 +28,6 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> with DesktopWindowMixin {
   final settings = Get.find<SettingsService>();
-
-  StreamSubscription<dynamic>? subscription;
   @override
   void initState() {
     super.initState();
@@ -68,7 +66,6 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
   void dispose() {
     if (PlatformUtils.isDesktop) {
       DesktopManager.disposeListeners();
-      subscription?.cancel();
     }
     super.dispose();
   }

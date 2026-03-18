@@ -47,7 +47,6 @@ class AppInitializer {
       path = '${appDir.path}${Platform.pathSeparator}pure_live';
     }
     if (PlatformUtils.isDesktopNotMac) {
-      // Hive 默认锁文件通常叫 'LOCK'，但我们可以自己维护一个实例锁，更加稳定
       final lockFile = File('$path${Platform.pathSeparator}app_instance.lock');
 
       try {

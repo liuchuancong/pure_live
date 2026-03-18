@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class PlayerConsts {
-  static const List<String> players = ['Mpv播放器', 'IJK播放器'];
+  static const List<String> players = ['Mpv播放器', 'IJK播放器', 'Exo播放器'];
   // 分辨率选项
   static const List<String> resolutions = ['原画', '蓝光8M', '蓝光4M', '超清', '流畅'];
   static const List<BoxFit> videofitList = [

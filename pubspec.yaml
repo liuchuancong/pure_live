@@ -39,6 +39,7 @@ dependencies:
   media_kit: ^1.2.6 # Primary package.
   media_kit_video: ^2.0.1 # For video rendering.
   media_kit_libs_video: ^1.0.7 # Native video dependencies.
+  video_player: ^2.11.1
   share_handler: ^0.0.25
   uri_to_file: ^1.0.0
   bordered_text: ^2.0.0
