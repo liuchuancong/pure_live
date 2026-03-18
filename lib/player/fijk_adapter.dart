@@ -184,4 +184,7 @@ class FijkPlayerAdapter implements UnifiedPlayer {
   void release() {
     dispose(); // delegate to dispose to avoid double-release
   }
+
+  @override
+  get lowLevelPlayer => _player;
 }

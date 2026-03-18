@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 // unified_player_interface.dart
 
-abstract class UnifiedPlayer {
+abstract class UnifiedPlayer<T> {
+  T get lowLevelPlayer;
   // 初始化
   Future<void> init();
 

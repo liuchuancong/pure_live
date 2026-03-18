@@ -8,7 +8,8 @@ import 'package:pure_live/player/player_consts.dart';
 class VideoPlayerAdapter implements UnifiedPlayer {
   // 使用可空类型，防止未初始化时调用报错
   VideoPlayerController? _player;
-
+  @override
+  VideoPlayerController? get lowLevelPlayer => _player;
   // Subjects — 保持和原实现一致
   final _playingSubject = BehaviorSubject<bool>.seeded(false);
   final _errorSubject = BehaviorSubject<String?>.seeded(null);
@@ -99,30 +100,25 @@ class VideoPlayerAdapter implements UnifiedPlayer {
 
   @override
   Widget getVideoWidget(int index, Widget? controls) {
-    // 使用 StreamBuilder 监听初始化和尺寸变化，确保 UI 自动刷新
-    return StreamBuilder<int?>(
-      stream: _widthSubject.stream,
-      builder: (context, snapshot) {
-        return Container(
-          color: Colors.black,
-          child: FittedBox(
-            // 设置视频填充模式
-            fit: PlayerConsts.videofitList[index],
-            clipBehavior: Clip.hardEdge,
-            child: SizedBox(
-              width: _player!.value.size.width,
-              height: _player!.value.size.height,
-              child: AspectRatio(
-                aspectRatio: _player!.value.aspectRatio,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [VideoPlayer(_player!), if (controls != null) controls, const SizedBox.shrink()],
-                ),
-              ),
-            ),
+    final boxFit = PlayerConsts.videofitList[index];
+    final videoSize = _player!.value.size;
+
+    return Container(
+      color: Colors.black,
+      width: double.infinity,
+      height: double.infinity,
+      child: FittedBox(
+        fit: boxFit,
+        clipBehavior: Clip.hardEdge,
+        child: SizedBox(
+          width: videoSize.width,
+          height: videoSize.height,
+          child: AspectRatio(
+            aspectRatio: _player!.value.aspectRatio,
+            child: Stack(fit: StackFit.expand, children: [VideoPlayer(_player!), if (controls != null) controls]),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 

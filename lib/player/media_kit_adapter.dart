@@ -231,4 +231,7 @@ class MediaKitPlayerAdapter implements UnifiedPlayer {
   void release() {
     dispose();
   }
+
+  @override
+  get lowLevelPlayer => _player;
 }

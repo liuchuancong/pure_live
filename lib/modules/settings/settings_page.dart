@@ -96,15 +96,15 @@ class SettingsPage extends GetView<SettingsService> {
               onChanged: (bool value) => controller.floatPlay.value = value,
             ),
           ),
-          // if (Platform.isAndroid)
-          Obx(
-            () => ListTile(
-              title: Text('视频播放器'),
-              subtitle: Text('选择视频播放器'),
-              onTap: showVideoSetDialog,
-              trailing: Text(PlayerConsts.players[controller.videoPlayerIndex.value]),
+          if (Platform.isAndroid)
+            Obx(
+              () => ListTile(
+                title: Text('视频播放器'),
+                subtitle: Text('选择视频播放器'),
+                onTap: showVideoSetDialog,
+                trailing: Text(PlayerConsts.players[controller.videoPlayerIndex.value]),
+              ),
             ),
-          ),
           Obx(
             () => SwitchListTile(
               title: Text(S.of(context).enable_codec),
@@ -123,18 +123,18 @@ class SettingsPage extends GetView<SettingsService> {
                 onChanged: (bool value) => controller.playerCompatMode.value = value,
               ),
             ),
-          // if (Platform.isAndroid && controller.videoPlayerIndex.value == 2)
-          Obx(
-            () => ListTile(
-              title: Text('ExoPlayer无法播放使用备用播放器'),
-              subtitle: Text('若ExoPlayer无法播放请设置备用播放器'),
-              onTap: showUseFallbackPlayerDialog,
-              trailing: Text(
-                PlayerConsts.players.takeWhile((p) => p != 'Exo播放器').toList()[controller.useFallbackPlayer.value],
-              ),
-            ),
-          ),
 
+          // if (Platform.isAndroid && controller.videoPlayerIndex.value == 2)
+          //   Obx(
+          //     () => ListTile(
+          //       title: Text('ExoPlayer无法播放使用备用播放器'),
+          //       subtitle: Text('若ExoPlayer无法播放请设置备用播放器'),
+          //       onTap: showUseFallbackPlayerDialog,
+          //       trailing: Text(
+          //         PlayerConsts.players.takeWhile((p) => p != 'Exo播放器').toList()[controller.useFallbackPlayer.value],
+          //       ),
+          //     ),
+          //   ),
           if (Platform.isAndroid)
             Obx(
               () => SwitchListTile(
