@@ -1059,7 +1059,7 @@ class SettingsButton extends StatelessWidget {
       onTap: () => controller.showSettting.toggle(),
       child: Container(
         alignment: Alignment.center,
-        padding: const EdgeInsets.only(right: 6),
+        padding: const EdgeInsets.only(right: 6, left: 6),
         child: SvgPicture.asset(
           'assets/images/video/danmu_setting.svg',
           // ignore: deprecated_member_use
