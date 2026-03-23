@@ -950,21 +950,17 @@ class BottomActionBar extends StatelessWidget {
                               LineSelectorButton(controller: controller),
                             ],
                             VideoFitSetting(controller: controller),
-                            const SizedBox(width: 8),
-                            OverlayVolumeControl(controller: controller),
-                            const SizedBox(width: 8),
+                            if (Platform.isWindows) OverlayVolumeControl(controller: controller),
                             if (Platform.isWindows)
                               Obx(() {
                                 return Row(
                                   children: [
                                     if (controller.supportWindowFull && !GlobalPlayerState.to.isFullscreen.value) ...[
                                       ExpandWindowButton(controller: controller),
-                                      const SizedBox(width: 8),
                                     ],
                                   ],
                                 );
                               }),
-
                             if (!GlobalPlayerState.to.isWindowFullscreen.value) ExpandButton(controller: controller),
                           ],
                         ),

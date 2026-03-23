@@ -119,7 +119,6 @@ class VideoPlayerAdapter implements UnifiedPlayer {
               ),
             ),
           ),
-          if (controls != null) Positioned.fill(child: controls),
         ],
       ),
     );

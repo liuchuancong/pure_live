@@ -162,6 +162,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     if (liveRoom.liveStatus == LiveStatus.unknown) {
       if (Get.currentRoute == '/live_play') {
         SmartDialog.showToast("获取直播间信息失败,请重新获取", displayTime: const Duration(seconds: 2));
+        setNormalScreen();
+        GlobalPlayerState.to.isFullscreen.value = false;
+        GlobalPlayerState.to.isWindowFullscreen.value = false;
       }
       return liveRoom;
     }
@@ -185,6 +188,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     } else {
       success.value = false;
       isLiving.value = false;
+      setNormalScreen();
+      GlobalPlayerState.to.isFullscreen.value = false;
+      GlobalPlayerState.to.isWindowFullscreen.value = false;
       if (liveRoom.liveStatus == LiveStatus.banned) {
         SmartDialog.showToast("服务器错误,请稍后获取", displayTime: const Duration(seconds: 2));
       } else {
