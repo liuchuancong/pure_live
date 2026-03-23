@@ -989,7 +989,7 @@ class PlayPauseButton extends StatelessWidget {
       child: Obx(
         () => Container(
           alignment: Alignment.center,
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.only(right: 6),
           child: Icon(
             controller.globalPlayer.isPlaying.value ? Icons.pause_rounded : Icons.play_arrow_rounded,
             color: Colors.white,
@@ -1011,7 +1011,7 @@ class RefreshButton extends StatelessWidget {
       onTap: () => controller.refresh(),
       child: Container(
         alignment: Alignment.center,
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.only(right: 6),
         child: const Icon(Icons.refresh_rounded, color: Colors.white),
       ),
     );
@@ -1029,7 +1029,7 @@ class DanmakuButton extends StatelessWidget {
       onTap: () => controller.hideDanmaku.toggle(),
       child: Container(
         alignment: Alignment.center,
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.only(right: 6, left: 6),
         child: Obx(
           () => controller.hideDanmaku.value
               ? SvgPicture.asset(
@@ -1059,7 +1059,7 @@ class SettingsButton extends StatelessWidget {
       onTap: () => controller.showSettting.toggle(),
       child: Container(
         alignment: Alignment.center,
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.only(right: 6),
         child: SvgPicture.asset(
           'assets/images/video/danmu_setting.svg',
           // ignore: deprecated_member_use
@@ -1108,10 +1108,13 @@ class ExpandButton extends StatelessWidget {
       child: Container(
         alignment: Alignment.center,
         child: Obx(
-          () => Icon(
-            GlobalPlayerState.to.isFullscreen.value ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
-            color: Colors.white,
-            size: 26,
+          () => Padding(
+            padding: const EdgeInsets.only(left: 6),
+            child: Icon(
+              GlobalPlayerState.to.isFullscreen.value ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
+              color: Colors.white,
+              size: 26,
+            ),
           ),
         ),
       ),
