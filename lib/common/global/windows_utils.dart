@@ -6,29 +6,31 @@ import 'package:win32/win32.dart';
 class WindowUtils {
   static final String _propName = "PureLive_InstanceID";
 
-  /// Corrected NativeCallable for WNDENUMPROC
   static bool _findAndWake(int targetId) {
     bool found = false;
-
-    // The function signature MUST be (int, int) -> int for WNDENUMPROC
     final callback = NativeCallable<WNDENUMPROC>.isolateLocal((int hwnd, int lParam) {
       final propPtr = _propName.toNativeUtf16();
       final val = GetProp(hwnd, propPtr);
       free(propPtr);
-
-      if (val == targetId && val != 0) {
-        if (IsWindowVisible(hwnd) != 0) {
+      if (val == targetId) {
+        // 1. 先检查是否最小化
+        if (IsIconic(hwnd) != 0) {
           ShowWindow(hwnd, SW_RESTORE);
-          SetForegroundWindow(hwnd);
-          found = true;
-          return 0;
         }
+        ShowWindow(hwnd, SW_SHOW);
+        SetForegroundWindow(hwnd);
+        found = true;
+        return 0; // 停止枚举
       }
-      return 1; // Continue
+      return 1; // 继续
     }, exceptionalReturn: 0);
 
-    EnumWindows(callback.nativeFunction, 0);
-    callback.close();
+    try {
+      EnumWindows(callback.nativeFunction, 0);
+    } finally {
+      callback.close();
+    }
+
     return found;
   }
 
