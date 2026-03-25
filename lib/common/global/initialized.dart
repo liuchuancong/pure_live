@@ -46,6 +46,7 @@ class AppInitializer {
       initService();
     } catch (e) {
       log("Hive Init Error: $e");
+      exit(0);
     }
 
     MediaKit.ensureInitialized();
