@@ -34,43 +34,39 @@ class AppInitializer {
       }
     }
 
-    if (PlatformUtils.isDesktop) {
-      await DesktopManager.initialize();
-    } else if (PlatformUtils.isMobile) {
-      await MobileManager.initialize();
-    }
-
     final appDir = await getApplicationDocumentsDirectory();
     String path =
         '${appDir.path}${Platform.pathSeparator}pure_live${instanceId.isNotEmpty ? "${Platform.pathSeparator}$instanceId" : ""}';
 
-    PrefUtil.prefs = await SharedPreferences.getInstance();
-    initService();
-
     try {
+      await SupaBaseManager.getInstance().initial();
+      PrefUtil.prefs = await SharedPreferences.getInstance();
       await Hive.initFlutter(path);
       await HivePrefUtil.init();
+      initService();
     } catch (e) {
       log("Hive Init Error: $e");
     }
 
     MediaKit.ensureInitialized();
-    await SupaBaseManager.getInstance().initial();
-
     if (PlatformUtils.isDesktop) {
+      await DesktopManager.initialize();
       await DesktopManager.postInitialize();
       Future.delayed(const Duration(milliseconds: 800), () {
         WindowUtils.markCurrentWindow(instanceId);
       });
+    } else if (PlatformUtils.isMobile) {
+      await MobileManager.initialize();
     }
+
+    initRefresh();
+
     if (PlatformUtils.isDesktopNotMac) {
       // 只有主实例（instanceId 为空）才注册自启，避免多个实例互相覆盖注册表
       if (instanceId.isEmpty) {
         await _setupLaunchAtStartup();
       }
     }
-
-    initRefresh();
     _isInitialized = true;
   }
 
@@ -84,30 +80,33 @@ class AppInitializer {
     return '';
   }
 
-   Future<void> _setupLaunchAtStartup() async {
-    PackageInfo packageInfo = await PackageInfo.fromPlatform();
-    launchAtStartup.setup(
-      appName: packageInfo.appName,
-      appPath: Platform.resolvedExecutable,
-      packageName: 'dev.leanflutter.puretech.pure_live',
-    );
-    var settings = Get.find<SettingsService>();
-    if (settings.enableStartUp.value) {
-      bool enabled = await launchAtStartup.isEnabled();
-      if (!enabled) {
-        await launchAtStartup.enable();
+  Future<void> _setupLaunchAtStartup() async {
+    try {
+      PackageInfo packageInfo = await PackageInfo.fromPlatform();
+      launchAtStartup.setup(
+        appName: packageInfo.appName,
+        appPath: Platform.resolvedExecutable,
+        packageName: 'dev.leanflutter.puretech.pure_live',
+      );
+      var settings = Get.find<SettingsService>();
+      if (settings.enableStartUp.value) {
+        if (!await launchAtStartup.isEnabled()) {
+          await launchAtStartup.enable();
+        }
       }
+    } catch (e) {
+      log("Auto-start error: $e");
     }
   }
 
   void initService() {
-    Get.put(SettingsService());
-    Get.put(AuthController());
-    Get.put(FavoriteController());
-    Get.put(BiliBiliAccountService());
-    Get.put(PopularController());
-    Get.put(AreasController());
-    Get.put(GlobalPlayerState());
+    Get.put(SettingsService(), permanent: true);
+    Get.put(AuthController(), permanent: true);
+    Get.put(FavoriteController(), permanent: true);
+    Get.put(BiliBiliAccountService(), permanent: true);
+    Get.put(PopularController(), permanent: true);
+    Get.put(AreasController(), permanent: true);
+    Get.put(GlobalPlayerState(), permanent: true);
   }
 
   bool get isInitialized => _isInitialized;

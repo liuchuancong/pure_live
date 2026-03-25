@@ -11,8 +11,6 @@ import 'package:pure_live/player/switchable_global_player.dart';
 import 'package:pure_live/common/global/platform/desktop_manager.dart';
 import 'package:pure_live/common/global/platform/background_server.dart';
 
-const kWindowsScheme = 'purelive://signin';
-
 void main(List<String> args) async {
   // 初始化
   await AppInitializer().initialize(args);

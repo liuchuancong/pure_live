@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:pure_live/plugins/utils.dart';
 import 'package:tray_manager/tray_manager.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
@@ -265,9 +266,24 @@ class CustomTitleBar extends StatelessWidget {
                     alignment: Alignment.centerLeft,
                     child: isFull
                         ? null
-                        : Text(
-                            "Pure Live",
-                            style: TextStyle(fontSize: 13, color: baseIconColor, fontWeight: FontWeight.bold),
+                        : Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () async {
+                                final url = Uri.parse('https://github.com/liuchuancong/pure_live');
+                                if (await canLaunchUrl(url)) await launchUrl(url);
+                              },
+                              child: Text(
+                                "Pure Live",
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: baseIconColor,
+                                  fontWeight: FontWeight.bold,
+                                  decoration: TextDecoration.none,
+                                  decorationColor: baseIconColor,
+                                ),
+                              ),
+                            ),
                           ),
                   ),
                 ),

@@ -26,7 +26,6 @@ class SupaBaseManager {
   SupaBaseManager();
   Future initial() async {
     var mapString = await rootBundle.loadString("assets/keystore/supabase.json");
-
     supabasePolicy = SupabasePolicy.fromJson(jsonDecode(mapString)); // 获取配置信息
     await Supabase.initialize(url: supabasePolicy.supabaseUrl, anonKey: supabasePolicy.supabaseKey);
   }
