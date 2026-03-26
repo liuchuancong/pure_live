@@ -128,14 +128,12 @@ class SwitchableGlobalPlayer {
       if (PlatformUtils.isAndroid) {
         if (_currentPlayer is VideoPlayerAdapter) {
           final mediaItem = MediaItem(
-            id: url, // Unique ID for the current stream
+            id: room.roomId!,
             isLive: true,
-            album: room.avatar ?? '直播',
+            album: room.platform,
             title: room.title ?? '无标题',
             artist: room.nick ?? '未知主播',
-            artUri: (room.cover != null && room.cover!.isNotEmpty)
-                ? Uri.parse(room.cover!)
-                : (room.avatar != null ? Uri.parse(room.avatar!) : null),
+            artUri: Uri.parse(room.avatar!),
             extras: {'roomId': room.roomId, 'platform': room.platform, 'avatar': room.avatar, 'cover': room.cover},
           );
           audioHandler.mediaItem.add(mediaItem);
