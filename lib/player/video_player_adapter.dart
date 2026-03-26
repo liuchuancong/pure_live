@@ -1,8 +1,11 @@
+import 'package:get/get.dart';
 import 'dart:developer' as dev;
 import 'package:rxdart/rxdart.dart';
 import 'unified_player_interface.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:video_player/video_player.dart';
+import 'package:audio_service/audio_service.dart';
+import 'package:pure_live/player/audio_service.dart';
 import 'package:pure_live/player/player_consts.dart';
 
 class VideoPlayerAdapter implements UnifiedPlayer {
@@ -20,10 +23,24 @@ class VideoPlayerAdapter implements UnifiedPlayer {
 
   bool _isPlaying = false;
   bool _disposed = false;
-
+  static late MyAudioHandler _audioHandler;
   @override
   Future<void> init() async {
-    // 基础初始化逻辑
+    // 初始化 audio_service
+    initAudioService();
+  }
+
+  Future<void> initAudioService() async {
+    _audioHandler = await AudioService.init(
+      builder: () => MyAudioHandler(),
+      config: const AudioServiceConfig(
+        androidNotificationChannelId: 'com.mystyle.purelive',
+        androidNotificationChannelName: 'Media Playback',
+        androidNotificationOngoing: false,
+        androidStopForegroundOnPause: true, // 暂停时自动尝试停止前台通知
+        notificationColor: Colors.transparent, // 尽量淡化
+      ),
+    );
   }
 
   void _playerListener() {
@@ -35,6 +52,7 @@ class VideoPlayerAdapter implements UnifiedPlayer {
     if (_isPlaying != state.isPlaying) {
       _isPlaying = state.isPlaying;
       _playingSubject.add(_isPlaying);
+      _audioHandler.updateState(_isPlaying);
     }
 
     // 2. 处理播放完成
@@ -72,11 +90,14 @@ class VideoPlayerAdapter implements UnifiedPlayer {
 
     try {
       _loadingSubject.add(true);
-
+      var settings = Get.find<SettingsService>();
       _player = VideoPlayerController.networkUrl(
         Uri.parse(url),
         httpHeaders: headers,
-        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+        videoPlayerOptions: VideoPlayerOptions(
+          mixWithOthers: true,
+          allowBackgroundPlayback: settings.enableBackgroundPlay.value,
+        ),
       );
 
       _player!.addListener(_playerListener);
@@ -89,6 +110,7 @@ class VideoPlayerAdapter implements UnifiedPlayer {
         _completeSubject.add(false);
         _errorSubject.add(null);
       }
+      _audioHandler.mediaItem.add(MediaItem(id: url, album: 'PureLive', title: '直播中'));
     } catch (e) {
       dev.log('VideoPlayer setDataSource error: $e');
       _errorSubject.add(e.toString());
@@ -133,6 +155,7 @@ class VideoPlayerAdapter implements UnifiedPlayer {
   @override
   void stop() {
     _player?.pause();
+    _audioHandler.stop();
     _player?.seekTo(Duration.zero);
   }
 

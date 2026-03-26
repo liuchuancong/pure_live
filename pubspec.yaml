@@ -124,6 +124,7 @@ dependencies:
   win32: ^5.15.0
   flutter_foreground_task: ^9.2.0
   bitsdojo_window: ^0.1.6
+  audio_service: ^0.18.18
   dart_sm: ^0.1.5
   screen_retriever:
     git:
