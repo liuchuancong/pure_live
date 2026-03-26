@@ -8,6 +8,7 @@ import 'package:rxdart/rxdart.dart';
 import 'unified_player_interface.dart';
 import 'package:floating/floating.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:audio_service/audio_service.dart';
 import 'package:pure_live/player/fullscreen.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:flutter_floating/flutter_floating.dart';
@@ -125,7 +126,22 @@ class SwitchableGlobalPlayer {
       await Future.delayed(const Duration(milliseconds: 100));
       await _currentPlayer!.setDataSource(url, playUrls, headers);
       if (PlatformUtils.isAndroid) {
-        BackgroundService.startService(room.nick!, room.title!);
+        if (_currentPlayer is VideoPlayerAdapter) {
+          final mediaItem = MediaItem(
+            id: url, // Unique ID for the current stream
+            isLive: true,
+            album: room.avatar ?? '直播',
+            title: room.title ?? '无标题',
+            artist: room.nick ?? '未知主播',
+            artUri: (room.cover != null && room.cover!.isNotEmpty)
+                ? Uri.parse(room.cover!)
+                : (room.avatar != null ? Uri.parse(room.avatar!) : null),
+            extras: {'roomId': room.roomId, 'platform': room.platform, 'avatar': room.avatar, 'cover': room.cover},
+          );
+          audioHandler.mediaItem.add(mediaItem);
+        } else {
+          BackgroundService.startService(room.nick!, room.title!);
+        }
       }
       unawaited(
         Future.microtask(() {

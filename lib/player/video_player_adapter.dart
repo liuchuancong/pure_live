@@ -4,9 +4,12 @@ import 'package:rxdart/rxdart.dart';
 import 'unified_player_interface.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:video_player/video_player.dart';
+import 'package:audio_session/audio_session.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:pure_live/player/audio_service.dart';
 import 'package:pure_live/player/player_consts.dart';
+
+late MyAudioHandler audioHandler;
 
 class VideoPlayerAdapter implements UnifiedPlayer {
   // 使用可空类型，防止未初始化时调用报错
@@ -23,22 +26,18 @@ class VideoPlayerAdapter implements UnifiedPlayer {
 
   bool _isPlaying = false;
   bool _disposed = false;
-  static late MyAudioHandler _audioHandler;
   @override
   Future<void> init() async {
-    // 初始化 audio_service
-    initAudioService();
-  }
-
-  Future<void> initAudioService() async {
-    _audioHandler = await AudioService.init(
+    final session = await AudioSession.instance;
+    await session.configure(const AudioSessionConfiguration.music());
+    audioHandler = await AudioService.init(
       builder: () => MyAudioHandler(),
-      config: const AudioServiceConfig(
-        androidNotificationChannelId: 'com.mystyle.purelive',
-        androidNotificationChannelName: 'Media Playback',
+      config: AudioServiceConfig(
+        androidNotificationChannelId: 'com.pure_live.silent_audio',
+        androidNotificationChannelName: 'Background Audio Support',
+        androidStopForegroundOnPause: true,
         androidNotificationOngoing: false,
-        androidStopForegroundOnPause: true, // 暂停时自动尝试停止前台通知
-        notificationColor: Colors.transparent, // 尽量淡化
+        androidShowNotificationBadge: false,
       ),
     );
   }
@@ -52,14 +51,15 @@ class VideoPlayerAdapter implements UnifiedPlayer {
     if (_isPlaying != state.isPlaying) {
       _isPlaying = state.isPlaying;
       _playingSubject.add(_isPlaying);
-      _audioHandler.updateState(_isPlaying);
+      audioHandler.updateState(_isPlaying);
+
+      if (!_isPlaying) audioHandler.stop();
     }
 
     // 2. 处理播放完成
     if (state.position >= state.duration && state.duration > Duration.zero) {
       if (!_completeSubject.value) _completeSubject.add(true);
     }
-
     // 3. 处理错误
     if (state.hasError) {
       final errorMsg = state.errorDescription ?? 'Unknown VideoPlayer error';
@@ -110,7 +110,6 @@ class VideoPlayerAdapter implements UnifiedPlayer {
         _completeSubject.add(false);
         _errorSubject.add(null);
       }
-      _audioHandler.mediaItem.add(MediaItem(id: url, album: 'PureLive', title: '直播中'));
     } catch (e) {
       dev.log('VideoPlayer setDataSource error: $e');
       _errorSubject.add(e.toString());
@@ -155,7 +154,7 @@ class VideoPlayerAdapter implements UnifiedPlayer {
   @override
   void stop() {
     _player?.pause();
-    _audioHandler.stop();
+    audioHandler.stop();
     _player?.seekTo(Duration.zero);
   }
 
