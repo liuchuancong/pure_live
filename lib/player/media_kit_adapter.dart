@@ -41,7 +41,7 @@ class MediaKitPlayerAdapter implements UnifiedPlayer {
     _disposed = false;
 
     _player = Player();
-
+    String proxyUrl = "";
     // Platform-specific configuration
     if (Platform.isAndroid) {
       final pp = _player.platform as NativePlayer;
@@ -55,9 +55,16 @@ class MediaKitPlayerAdapter implements UnifiedPlayer {
     if (_player.platform is NativePlayer) {
       final native = _player.platform as dynamic;
       await native.setProperty('protocol_whitelist', 'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto');
+      await native.setProperty('demuxer-lavf-probsize', '2097152'); // 减半探测大小
+      await native.setProperty('demuxer-lavf-analyzeduration', '10'); // 减少解析时间
       await native.setProperty('network-timeout', '30'); // 给 mpv 30秒的总容忍时间
-      await native.setProperty('demuxer-lavf-probsize', '1048576'); // 减半探测大小
-      await native.setProperty('demuxer-lavf-analyzeduration', '3'); // 减少解析时间
+      if (settings.enableProxy.value && settings.proxyHost.value.isNotEmpty) {
+        // 无论视频是 http 还是 https，这里统一用 http:// 协议头连接代理服务器
+        proxyUrl = "http://${settings.proxyHost.value}:${settings.proxyPort.value}";
+        await native.setProperty('http-proxy', proxyUrl);
+        final currentProxy = await native.getProperty('http-proxy');
+        debugPrint('当前引擎使用的代理地址: $currentProxy');
+      }
     }
 
     // Initialize controller based on settings

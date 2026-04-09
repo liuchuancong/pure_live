@@ -9,6 +9,7 @@ import 'package:pure_live/player/player_consts.dart';
 class FijkPlayerAdapter implements UnifiedPlayer {
   final FijkPlayer _player = FijkPlayer();
 
+  final SettingsService settings = Get.find<SettingsService>();
   // Subjects — all properly typed and seeded
   final _playingSubject = BehaviorSubject<bool>.seeded(false);
   final _errorSubject = BehaviorSubject<String?>.seeded(null);
@@ -89,8 +90,8 @@ class FijkPlayerAdapter implements UnifiedPlayer {
   @override
   Future<void> setDataSource(String url, List<String> playUrls, Map<String, String> headers) async {
     if (_disposed) return;
-    final SettingsService settings = Get.find<SettingsService>();
     await _player.reset();
+    await _setupProxy();
     await FijkHelper.setFijkOption(_player, enableCodec: settings.enableCodec.value, headers: headers);
     await _player.setDataSource(url, autoPlay: true);
   }
@@ -99,6 +100,15 @@ class FijkPlayerAdapter implements UnifiedPlayer {
   Future<void> play() async {
     if (_disposed) return;
     await _player.start();
+  }
+
+  Future<void> _setupProxy() async {
+    if (settings.enableProxy.value) {
+      final String proxyUrl = "http://${settings.proxyHost.value}:${settings.proxyPort.value}";
+      await _player.setOption(FijkOption.formatCategory, "http_proxy", proxyUrl);
+    } else {
+      await _player.setOption(FijkOption.formatCategory, "http_proxy", "");
+    }
   }
 
   @override

@@ -77,6 +77,9 @@ class SettingsService extends GetxController {
   final audioOutputDriver = (HivePrefUtil.getString('audioOutputDriver') ?? "auto").obs;
   final videoHardwareDecoder = (HivePrefUtil.getString('videoHardwareDecoder') ?? "auto").obs;
   final floatPlay = (HivePrefUtil.getBool('floatPlay') ?? true).obs;
+  final enableProxy = (HivePrefUtil.getBool('enableProxy') ?? false).obs;
+  final proxyHost = (HivePrefUtil.getString('proxyHost') ?? '').obs;
+  final proxyPort = (HivePrefUtil.getInt('proxyPort') ?? 1080).obs;
   // ==============================
   // 🍪 平台 Cookie
   // ==============================
@@ -240,6 +243,18 @@ class SettingsService extends GetxController {
 
     floatPlay.listen((value) {
       HivePrefUtil.setBool('floatPlay', value);
+    });
+
+    enableProxy.listen((value) {
+      HivePrefUtil.setBool('enableProxy', value);
+    });
+
+    proxyHost.listen((value) {
+      HivePrefUtil.setString('proxyHost', value);
+    });
+
+    proxyPort.listen((value) {
+      HivePrefUtil.setInt('proxyPort', value);
     });
 
     videoFitIndex.listen((value) {
@@ -670,6 +685,9 @@ class SettingsService extends GetxController {
         : 4.0;
     danmakuOpacity.value = json['danmakuOpacity'] != null ? double.parse(json['danmakuOpacity'].toString()) : 1.0;
     floatPlay.value = json['floatPlay'] ?? true;
+    enableProxy.value = json['enableProxy'] ?? false;
+    proxyHost.value = json['proxyHost'] ?? '';
+    proxyPort.value = json['proxyPort'] ?? 1080;
     enableCodec.value = json['enableCodec'] ?? true;
     playerCompatMode.value = json['playerCompatMode'] ?? false;
     bilibiliCookie.value = json['bilibiliCookie'] ?? '';
@@ -736,6 +754,9 @@ class SettingsService extends GetxController {
     json['danmakuFontBorder'] = danmakuFontBorder.value;
     json['danmakuOpacity'] = danmakuOpacity.value;
     json['floatPlay'] = floatPlay.value;
+    json['enableProxy'] = enableProxy.value;
+    json['proxyHost'] = proxyHost.value;
+    json['proxyPort'] = proxyPort.value;
     json['videoPlayerIndex'] = videoPlayerIndex.value;
     json['useFallbackPlayer'] = useFallbackPlayer.value;
     json['enableCodec'] = enableCodec.value;

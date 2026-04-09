@@ -183,12 +183,18 @@ class SettingsPage extends GetView<SettingsService> {
               onTap: showPreferResolutionSelectorDialog,
             ),
           ),
-          if (Platform.isAndroid && controller.videoPlayerIndex.value == 0)
+          ListTile(
+            title: Text('网络代理设置'),
+            subtitle: Text('配置视频播放的网络代理'),
+            trailing: Obx(() => Text(controller.enableProxy.value ? '已启用' : '未启用')),
+            onTap: showProxySettingsDialog,
+          ),
+          if (controller.videoPlayerIndex.value == 0)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Text("播放器高级设置", style: Get.textTheme.titleMedium),
             ),
-          if (Platform.isAndroid && controller.videoPlayerIndex.value == 0)
+          if (controller.videoPlayerIndex.value == 0)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Text.rich(
@@ -690,6 +696,72 @@ class SettingsPage extends GetView<SettingsService> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void showProxySettingsDialog() {
+    final hostController = TextEditingController(text: controller.proxyHost.value);
+    final portController = TextEditingController(text: controller.proxyPort.value.toString());
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("网络代理配置"),
+        content: Obx(
+          () => SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SwitchListTile(
+                  title: Text("启用播放代理"),
+                  value: controller.enableProxy.value,
+                  activeThumbColor: Theme.of(context).colorScheme.primary,
+                  onChanged: (bool value) {
+                    controller.enableProxy.value = value;
+                  },
+                ),
+                const SizedBox(height: 10),
+
+                // 2. 代理地址输入框
+                TextField(
+                  controller: hostController,
+                  enabled: controller.enableProxy.value,
+                  decoration: InputDecoration(
+                    labelText: "代理主机 (Host)",
+                    hintText: "例如: 127.0.0.1",
+                    prefixIcon: const Icon(Icons.lan),
+                    border: const OutlineInputBorder(),
+                  ),
+                  onChanged: (value) {
+                    controller.proxyHost.value = value;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // 3. 端口输入框 (限定数字)
+                TextField(
+                  controller: portController,
+                  enabled: controller.enableProxy.value,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: "端口 (Port)",
+                    hintText: "例如: 1080",
+                    prefixIcon: const Icon(Icons.numbers),
+                    border: const OutlineInputBorder(),
+                  ),
+                  onChanged: (value) {
+                    int? port = int.tryParse(value);
+                    if (port != null) {
+                      controller.proxyPort.value = port;
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text("完成"))],
       ),
     );
   }
