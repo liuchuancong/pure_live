@@ -74,16 +74,24 @@ class WindowService {
   //退出全屏显示
   Future<void> doExitFullScreen() async {
     dynamic document;
-    late SystemUiMode mode = SystemUiMode.edgeToEdge;
     try {
       if (kIsWeb) {
         document.exitFullscreen();
       } else if (Platform.isAndroid || Platform.isIOS) {
-        if (Platform.isAndroid && (await DeviceInfoPlugin().androidInfo).version.sdkInt < 29) {
-          mode = SystemUiMode.manual;
+        late SystemUiMode mode = SystemUiMode.edgeToEdge;
+
+        if (Platform.isAndroid) {
+          // 缓存设备信息，避免重复获取
+          final deviceInfo = await _getCachedDeviceInfo();
+          if (deviceInfo.version.sdkInt < 29) {
+            mode = SystemUiMode.manual;
+          }
         }
-        await SystemChrome.setEnabledSystemUIMode(mode, overlays: SystemUiOverlay.values);
-        await SystemChrome.setPreferredOrientations([]);
+
+        await Future.wait([
+          SystemChrome.setEnabledSystemUIMode(mode, overlays: SystemUiOverlay.values),
+          SystemChrome.setPreferredOrientations(DeviceOrientation.values),
+        ], eagerError: true);
       } else if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
         await doExitWindowFullScreen();
       }
@@ -115,4 +123,16 @@ class WindowService {
       await windowManager.setFullScreen(true);
     }
   }
+}
+
+// 缓存设备信息，避免重复获取
+final _deviceInfoCache = <String, dynamic>{};
+Future<AndroidDeviceInfo> _getCachedDeviceInfo() async {
+  if (_deviceInfoCache.containsKey('androidInfo')) {
+    return _deviceInfoCache['androidInfo'];
+  }
+
+  final deviceInfo = await DeviceInfoPlugin().androidInfo;
+  _deviceInfoCache['androidInfo'] = deviceInfo;
+  return deviceInfo;
 }
