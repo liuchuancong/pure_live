@@ -1,7 +1,7 @@
 {
-  "version": "2.0.14",
-  "version_num": 10214,
-  "version_desc": "-Fixed: 修复部分UI显示问题.\n-Added: 新增ExoPlayer播放器.",
+  "version": "2.0.15",
+  "version_num": 10215,
+  "version_desc": "-Fixed: 修复部分UI显示问题.\n-Added: 新增播放器代理.",
   "prerelease":false,
   "download_url": "https://github.com/liuchuancong/pure_live/releases"
 }
