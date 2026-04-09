@@ -941,28 +941,30 @@ class BottomActionBar extends StatelessWidget {
                           ],
                         ),
 
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (GlobalPlayerState.to.isWindowFullscreen.value ||
-                                GlobalPlayerState.to.isFullscreen.value) ...[
-                              ResolutionSelectorButton(controller: controller),
-                              LineSelectorButton(controller: controller),
-                            ],
-                            VideoFitSetting(controller: controller),
-                            if (Platform.isWindows) OverlayVolumeControl(controller: controller),
-                            if (Platform.isWindows)
-                              Obx(() {
-                                return Row(
-                                  children: [
-                                    if (controller.supportWindowFull && !GlobalPlayerState.to.isFullscreen.value) ...[
-                                      ExpandWindowButton(controller: controller),
+                        Obx(
+                          () => Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (GlobalPlayerState.to.isWindowFullscreen.value ||
+                                  GlobalPlayerState.to.isFullscreen.value) ...[
+                                ResolutionSelectorButton(controller: controller),
+                                LineSelectorButton(controller: controller),
+                              ],
+                              VideoFitSetting(controller: controller),
+                              if (Platform.isWindows) OverlayVolumeControl(controller: controller),
+                              if (Platform.isWindows)
+                                Obx(() {
+                                  return Row(
+                                    children: [
+                                      if (controller.supportWindowFull && !GlobalPlayerState.to.isFullscreen.value) ...[
+                                        ExpandWindowButton(controller: controller),
+                                      ],
                                     ],
-                                  ],
-                                );
-                              }),
-                            if (!GlobalPlayerState.to.isWindowFullscreen.value) ExpandButton(controller: controller),
-                          ],
+                                  );
+                                }),
+                              if (!GlobalPlayerState.to.isWindowFullscreen.value) ExpandButton(controller: controller),
+                            ],
+                          ),
                         ),
                       ],
                     ),
