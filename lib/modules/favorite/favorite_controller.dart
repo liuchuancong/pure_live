@@ -13,6 +13,8 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
   final tabOnlineIndex = 0.obs;
   bool isFirstLoad = true;
   StreamSubscription<dynamic>? subscription;
+
+  final refreshController = EasyRefreshController(controlFinishRefresh: true, controlFinishLoad: true);
   FavoriteController() {
     tabController = TabController(length: 2, vsync: this);
     tabSiteController = TabController(length: Sites().availableSites().length + 1, vsync: this);
@@ -50,6 +52,11 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
 
   final onlineRooms = [].obs;
   final offlineRooms = [].obs;
+  void reloadPage() async {
+    refreshController.callRefresh();
+    await onRefresh();
+    refreshController.finishRefresh(IndicatorResult.success);
+  }
 
   void syncRooms() {
     onlineRooms.clear();

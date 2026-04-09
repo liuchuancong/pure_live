@@ -46,7 +46,13 @@ class FavoritePage extends GetView<FavoriteController> {
                       },
                     ),
                   ]
-                : null,
+                : [
+                    IconButton(
+                      onPressed: () => controller.reloadPage(),
+                      icon: const Icon(Icons.refresh_rounded),
+                      tooltip: '刷新',
+                    ),
+                  ],
             title: TabBar(
               controller: controller.tabController,
               isScrollable: true,
@@ -100,16 +106,15 @@ class FavoritePage extends GetView<FavoriteController> {
 class _RoomOnlineGridView extends GetView<FavoriteController> {
   _RoomOnlineGridView(this.site);
   final String site;
-  final refreshController = EasyRefreshController(controlFinishRefresh: true, controlFinishLoad: true);
   final dense = Get.find<SettingsService>().enableDenseFavorites.value;
 
   Future onRefresh() async {
     bool result = await controller.onRefresh();
     if (!result) {
-      refreshController.finishRefresh(IndicatorResult.success);
-      refreshController.resetFooter();
+      controller.refreshController.finishRefresh(IndicatorResult.success);
+      controller.refreshController.resetFooter();
     } else {
-      refreshController.finishRefresh(IndicatorResult.fail);
+      controller.refreshController.finishRefresh(IndicatorResult.fail);
     }
   }
 
@@ -124,10 +129,10 @@ class _RoomOnlineGridView extends GetView<FavoriteController> {
         }
         return Obx(
           () => EasyRefresh(
-            controller: refreshController,
+            controller: controller.refreshController,
             onRefresh: onRefresh,
             onLoad: () {
-              refreshController.finishLoad(IndicatorResult.success);
+              controller.refreshController.finishLoad(IndicatorResult.success);
             },
             child: controller.onlineRooms.isNotEmpty
                 ? WaterfallFlow.builder(
