@@ -8,56 +8,53 @@ class WindowUtils {
 
   static bool _findAndWake(int targetId) {
     bool found = false;
+    // 1. 在回调外部分配指针，只分配一次
+    final propPtr = _propName.toNativeUtf16();
+
     final callback = NativeCallable<WNDENUMPROC>.isolateLocal((int hwnd, int lParam) {
-      final propPtr = _propName.toNativeUtf16();
+      // 2. 直接使用外部传入的指针
       final val = GetProp(hwnd, propPtr);
-      free(propPtr);
       if (val == targetId) {
-        // 1. 先检查是否最小化
-        if (IsIconic(hwnd) != 0) {
-          ShowWindow(hwnd, SW_RESTORE);
-        }
+        if (IsIconic(hwnd) != 0) ShowWindow(hwnd, SW_RESTORE);
         ShowWindow(hwnd, SW_SHOW);
         SetForegroundWindow(hwnd);
         found = true;
-        return 0; // 停止枚举
+        return 0;
       }
-      return 1; // 继续
+      return 1;
     }, exceptionalReturn: 0);
 
     try {
       EnumWindows(callback.nativeFunction, 0);
     } finally {
       callback.close();
+      free(propPtr); // 3. 结束后统一释放
     }
-
     return found;
   }
 
-  /// Mark the current window with the instance hash
   static void markCurrentWindow(String instanceId) {
     final int idValue = instanceId.isEmpty ? "default".hashCode : instanceId.hashCode;
+    final propPtr = _propName.toNativeUtf16();
+    final lpdwProcessId = calloc<Uint32>();
 
-    // Find the window belonging to the current process
     final callback = NativeCallable<WNDENUMPROC>.isolateLocal((int hwnd, int lParam) {
-      final lpdwProcessId = calloc<Uint32>();
       GetWindowThreadProcessId(hwnd, lpdwProcessId);
 
-      // If this window belongs to our PID and is a top-level visible window
       if (lpdwProcessId.value == pid && IsWindowVisible(hwnd) != 0) {
-        final propPtr = _propName.toNativeUtf16();
         SetProp(hwnd, propPtr, idValue);
-        free(propPtr);
-        free(lpdwProcessId);
-        return 0; // Found our window, stop
+        return 0;
       }
-
-      free(lpdwProcessId);
       return 1;
     }, exceptionalReturn: 0);
 
-    EnumWindows(callback.nativeFunction, 0);
-    callback.close();
+    try {
+      EnumWindows(callback.nativeFunction, 0);
+    } finally {
+      callback.close();
+      free(propPtr);
+      free(lpdwProcessId); // 确保无论如何都会释放
+    }
   }
 
   static bool wakeUpByProp(String instanceId) {
