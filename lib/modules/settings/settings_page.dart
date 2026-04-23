@@ -217,51 +217,52 @@ class SettingsPage extends GetView<SettingsService> {
                 style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ),
-          SettingsCard(
-            child: Column(
-              children: [
-                Obx(
-                  () => SettingsSwitch(
-                    value: controller.customPlayerOutput.value,
-                    title: "自定义输出驱动与硬件加速",
-                    onChanged: (e) {
-                      controller.customPlayerOutput.value = e;
-                    },
+          if (controller.videoPlayerIndex.value == 0)
+            SettingsCard(
+              child: Column(
+                children: [
+                  Obx(
+                    () => SettingsSwitch(
+                      value: controller.customPlayerOutput.value,
+                      title: "自定义输出驱动与硬件加速",
+                      onChanged: (e) {
+                        controller.customPlayerOutput.value = e;
+                      },
+                    ),
                   ),
-                ),
-                Obx(
-                  () => SettingsMenu(
-                    title: "视频输出驱动(--vo)",
-                    value: controller.videoOutputDriver.value,
-                    valueMap: PlayerConsts.videoOutputDrivers,
-                    onChanged: (e) {
-                      controller.videoOutputDriver.value = e;
-                    },
+                  Obx(
+                    () => SettingsMenu(
+                      title: "视频输出驱动(--vo)",
+                      value: controller.videoOutputDriver.value,
+                      valueMap: PlayerConsts.videoOutputDrivers,
+                      onChanged: (e) {
+                        controller.videoOutputDriver.value = e;
+                      },
+                    ),
                   ),
-                ),
-                Obx(
-                  () => SettingsMenu(
-                    title: "音频输出驱动(--ao)",
-                    value: controller.audioOutputDriver.value,
-                    valueMap: PlayerConsts.audioOutputDrivers,
-                    onChanged: (e) {
-                      controller.audioOutputDriver.value = e;
-                    },
+                  Obx(
+                    () => SettingsMenu(
+                      title: "音频输出驱动(--ao)",
+                      value: controller.audioOutputDriver.value,
+                      valueMap: PlayerConsts.audioOutputDrivers,
+                      onChanged: (e) {
+                        controller.audioOutputDriver.value = e;
+                      },
+                    ),
                   ),
-                ),
-                Obx(
-                  () => SettingsMenu(
-                    title: "硬件解码器(--hwdec)",
-                    value: controller.videoHardwareDecoder.value,
-                    valueMap: PlayerConsts.hardwareDecoder,
-                    onChanged: (e) {
-                      controller.videoHardwareDecoder.value = e;
-                    },
+                  Obx(
+                    () => SettingsMenu(
+                      title: "硬件解码器(--hwdec)",
+                      value: controller.videoHardwareDecoder.value,
+                      valueMap: PlayerConsts.hardwareDecoder,
+                      onChanged: (e) {
+                        controller.videoHardwareDecoder.value = e;
+                      },
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
 
           SectionTitle(title: S.of(context).custom),
           Obx(
