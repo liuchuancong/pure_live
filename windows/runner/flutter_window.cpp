@@ -4,10 +4,14 @@
 
 #include "flutter/generated_plugin_registrant.h"
 
-FlutterWindow::FlutterWindow(const flutter::DartProject& project)
+FlutterWindow::FlutterWindow(const flutter::DartProject &project)
     : project_(project) {}
 
 FlutterWindow::~FlutterWindow() {}
+
+flutter::FlutterEngine *FlutterWindow::GetEngine() {
+  return flutter_controller_ ? flutter_controller_->engine() : nullptr;
+}
 
 bool FlutterWindow::OnCreate() {
   if (!Win32Window::OnCreate()) {
@@ -24,12 +28,15 @@ bool FlutterWindow::OnCreate() {
   if (!flutter_controller_->engine() || !flutter_controller_->view()) {
     return false;
   }
-  RegisterPlugins(flutter_controller_->engine());
+
+  // Set the child content BEFORE registering plugins.
+  // This ensures that plugins (like bitsdojo_window) can access the
+  // parent window handle during registration via GetParent(view_handle).
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
-  flutter_controller_->engine()->SetNextFrameCallback([&]() {
-    this->Show();
-  });
+  RegisterPlugins(flutter_controller_->engine());
+
+  flutter_controller_->engine()->SetNextFrameCallback([&]() { this->Show(); });
 
   // Flutter can complete the first frame before the "show window" callback is
   // registered. The following call ensures a frame is pending to ensure the
@@ -39,7 +46,10 @@ bool FlutterWindow::OnCreate() {
   return true;
 }
 
+#include <bitsdojo_window_windows/multi_window_manager.h>
+
 void FlutterWindow::OnDestroy() {
+  MultiWindowManager::GetInstance().OnWindowDestroyed(GetHandle());
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }
@@ -62,9 +72,9 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
   }
 
   switch (message) {
-    case WM_FONTCHANGE:
-      flutter_controller_->engine()->ReloadSystemFonts();
-      break;
+  case WM_FONTCHANGE:
+    flutter_controller_->engine()->ReloadSystemFonts();
+    break;
   }
 
   return Win32Window::MessageHandler(hwnd, message, wparam, lparam);
