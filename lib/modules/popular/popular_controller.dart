@@ -7,40 +7,56 @@ import 'package:pure_live/modules/popular/popular_grid_controller.dart';
 class PopularController extends GetxController with GetSingleTickerProviderStateMixin {
   late TabController tabController;
   int index = 0;
-
-  PopularController() {
-    final preferPlatform = Get.find<SettingsService>().preferPlatform.value;
-    final pIndex = Sites().availableSites().indexWhere((e) => e.id == preferPlatform);
-    tabController = TabController(
-      initialIndex: pIndex == -1 ? 0 : pIndex,
-      length: Sites().availableSites().length,
-      vsync: this,
-    );
-    index = pIndex == -1 ? 0 : pIndex;
-
-    tabController.animation?.addListener(() {
-      var currentIndex = (tabController.animation?.value ?? 0).round();
-      if (index == currentIndex) {
-        return;
-      }
-
-      index = currentIndex;
-      var controller = Get.find<PopularGridController>(tag: Sites().availableSites()[index].id);
-
-      if (controller.list.isEmpty) {
-        controller.loadData();
-      }
-    });
-  }
+  late List<dynamic> sites;
 
   @override
   void onInit() {
-    for (var site in Sites().availableSites()) {
-      var controller = Get.put(PopularGridController(site), tag: site.id);
-      if (controller.list.isEmpty) {
-        controller.loadData();
+    super.onInit();
+    sites = Sites().availableSites();
+
+    final preferPlatform = Get.find<SettingsService>().preferPlatform.value;
+    final pIndex = sites.indexWhere((e) => e.id == preferPlatform);
+    index = pIndex == -1 ? 0 : pIndex;
+
+    tabController = TabController(length: sites.length, vsync: this);
+
+    for (var site in sites) {
+      Get.lazyPut(() => PopularGridController(site), tag: site.id);
+    }
+
+    if (index > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        tabController.animateTo(index);
+        _loadDataAtIndex(index);
+      });
+    } else {
+      _loadDataAtIndex(0);
+    }
+
+    tabController.addListener(_handleTabChange);
+  }
+
+  void _handleTabChange() {
+    if (!tabController.indexIsChanging) {
+      if (index != tabController.index) {
+        index = tabController.index;
+        _loadDataAtIndex(index);
       }
     }
-    super.onInit();
+  }
+
+  void _loadDataAtIndex(int i) {
+    var siteId = sites[i].id;
+    var controller = Get.find<PopularGridController>(tag: siteId);
+    if (controller.list.isEmpty) {
+      controller.loadData();
+    }
+  }
+
+  @override
+  void onClose() {
+    tabController.removeListener(_handleTabChange);
+    tabController.dispose();
+    super.onClose();
   }
 }

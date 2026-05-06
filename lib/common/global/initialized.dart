@@ -84,11 +84,12 @@ class AppInitializer {
   void initService() {
     Get.put(SettingsService(), permanent: true);
     Get.put(AuthController(), permanent: true);
-    Get.put(FavoriteController(), permanent: true);
-    Get.put(BiliBiliAccountService(), permanent: true);
-    Get.put(PopularController(), permanent: true);
-    Get.put(AreasController(), permanent: true);
-    Get.put(GlobalPlayerState(), permanent: true);
+
+    Get.lazyPut(() => FavoriteController(), fenix: true);
+    Get.lazyPut(() => BiliBiliAccountService(), fenix: true);
+    Get.lazyPut(() => PopularController(), fenix: true);
+    Get.lazyPut(() => AreasController(), fenix: true);
+    Get.lazyPut(() => GlobalPlayerState(), fenix: true);
   }
 
   bool get isInitialized => _isInitialized;
