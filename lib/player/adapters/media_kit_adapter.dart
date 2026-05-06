@@ -54,7 +54,7 @@ class MediaKitAdapter implements UnifiedPlayer {
       _stateSubject.add(PlayerState.initializing);
 
       _player = Player();
-
+      String proxyUrl = "";
       if (_player.platform is NativePlayer) {
         final native = _player.platform as dynamic;
 
@@ -70,6 +70,12 @@ class MediaKitAdapter implements UnifiedPlayer {
 
         if (settings.customPlayerOutput.value) {
           await native.setProperty('ao', settings.audioOutputDriver.value);
+        }
+        if (settings.enableProxy.value && settings.proxyHost.value.isNotEmpty) {
+          proxyUrl = "http://${settings.proxyHost.value}:${settings.proxyPort.value}";
+          await native.setProperty('http-proxy', proxyUrl);
+          final currentProxy = await native.getProperty('http-proxy');
+          debugPrint('当前引擎使用的代理地址: $currentProxy');
         }
       }
 
