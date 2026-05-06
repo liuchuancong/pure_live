@@ -37,9 +37,9 @@ class BetterPlayerService : Service() {
 
 
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setContentTitle("Better Player Notification")
-            .setContentText("Better Player is running")
+            .setContentText("纯粹直播正在运行中...") 
             .setSmallIcon(R.mipmap.ic_launcher)
+            .setVisibility(NotificationCompat.VISIBILITY_SECRET)
             .setPriority(PRIORITY_MIN)
             .setOngoing(true)
             .setContentIntent(pendingIntent)

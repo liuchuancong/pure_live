@@ -1,6 +1,7 @@
 import '../models/player_state.dart';
 import 'package:flutter/material.dart';
 import '../models/player_exception.dart';
+import 'package:pure_live/common/models/live_room.dart';
 
 abstract class UnifiedPlayer {
   Future<void> init();
@@ -9,7 +10,7 @@ abstract class UnifiedPlayer {
   /// [url] 当前播放地址
   /// [playUrls] 备用地址列表
   /// [headers] HTTP 请求头
-  Future<void> setDataSource(String url, List<String> playUrls, Map<String, String> headers);
+  Future<void> setDataSource(String url, List<String> playUrls, Map<String, String> headers, {LiveRoom? room});
 
   Future<void> play();
 

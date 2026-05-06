@@ -12,7 +12,7 @@ class BackgroundService {
         channelName: 'Pure Live Background Service',
         channelDescription: 'This notification appears when the foreground service is running.',
         showWhen: true,
-        priority: NotificationPriority.LOW,
+        priority: NotificationPriority.HIGH,
       ),
 
       iosNotificationOptions: const IOSNotificationOptions(showNotification: true, playSound: false),

@@ -19,3 +19,5 @@
 -keep class tv.danmaku.ijk.media.player.** {*; }
 -dontwarn tv.danmaku.ijk.media.**
 -keep interface tv.danmaku.ijk.media.player.** { *; }
+-keep class androidx.media3.exoplayer.video.** { *; }
+-dontwarn android.view.Choreographer$VsyncCallback

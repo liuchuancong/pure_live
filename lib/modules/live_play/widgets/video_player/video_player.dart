@@ -11,7 +11,19 @@ class VideoPlayer extends StatefulWidget {
   State<VideoPlayer> createState() => _VideoPlayerState();
 }
 
-class _VideoPlayerState extends State<VideoPlayer> {
+class _VideoPlayerState extends State<VideoPlayer> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this); // 注册监听
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this); // 销毁监听
+    super.dispose();
+  }
+
   VideoController get controller => widget.controller;
   Widget _buildVideo() {
     return Obx(
@@ -21,6 +33,32 @@ class _VideoPlayerState extends State<VideoPlayer> {
         controls: VideoControllerPanel(controller: controller),
       ),
     );
+  }
+
+  bool _isPausedByLifecycle = false;
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    final settingsService = Get.find<SettingsService>();
+    final player = GlobalPlayerService.instance.playerManager;
+
+    if (state == AppLifecycleState.paused) {
+      if (!settingsService.enableBackgroundPlay.value) {
+        if (player.isPlayingNow) {
+          _isPausedByLifecycle = true;
+          player.pause();
+        }
+      } else {
+        // 2. 如果开启了后台播放，务必显式再次调用 resume/play
+        // 这是为了防止某些设备在失去 Surface 的瞬间自动暂停
+        player.resume();
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      if (_isPausedByLifecycle) {
+        player.resume();
+        _isPausedByLifecycle = false; // 重置标记
+      }
+    }
   }
 
   @override

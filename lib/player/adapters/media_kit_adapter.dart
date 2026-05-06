@@ -7,6 +7,7 @@ import '../models/player_exception.dart';
 import '../models/player_error_type.dart';
 import '../interface/unified_player_interface.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:pure_live/common/models/live_room.dart';
 import 'package:media_kit/media_kit.dart' hide PlayerState;
 import 'package:pure_live/common/services/settings_service.dart';
 
@@ -121,7 +122,7 @@ class MediaKitAdapter implements UnifiedPlayer {
   // =========================
 
   @override
-  Future<void> setDataSource(String url, List<String> playUrls, Map<String, String> headers) async {
+  Future<void> setDataSource(String url, List<String> playUrls, Map<String, String> headers, {LiveRoom? room}) async {
     if (_disposed) return;
 
     // 相同地址不重复 open

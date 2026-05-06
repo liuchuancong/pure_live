@@ -21,6 +21,7 @@ import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/index.dart' hide PlayerState;
 import 'package:pure_live/modules/live_play/player_state.dart';
+import 'package:pure_live/player/adapters/video_player_adapter.dart';
 import 'package:pure_live/common/global/platform/background_server.dart';
 
 class PlayerManager {
@@ -255,10 +256,11 @@ class PlayerManager {
     try {
       _stateSubject.add(PlayerState.preparing);
 
-      await player.setDataSource(url, playUrls, headers);
-
-      if (PlatformUtils.isAndroid) {
+      if (_currentPlayer is! BetterPlayerAdapter) {
+        await player.setDataSource(url, playUrls, headers);
         BackgroundService.startService(room?.nick ?? "", room?.title ?? "");
+      } else {
+        await player.setDataSource(url, playUrls, headers, room: room);
       }
 
       videoKey.value = ValueKey("video_${DateTime.now().millisecondsSinceEpoch}");
@@ -683,8 +685,7 @@ class PlayerManager {
       stream: onPlaying,
       initialData: isPlayingNow,
       builder: (context, snapshot) {
-        final isPlaying = snapshot.data ?? false;
-        if (_currentPlayer == null || !isPlaying) {
+        if (_currentPlayer == null) {
           return _buildPlaceholder();
         }
         final boxFit = fitList[fitIndex];
@@ -703,9 +704,7 @@ class PlayerManager {
                     child: StreamBuilder<List<int?>>(
                       stream: CombineLatestStream.list([width, height]),
                       builder: (context, snapshot) {
-                        final w = snapshot.data?[0]?.toDouble() ?? 1920;
-                        final h = snapshot.data?[1]?.toDouble() ?? 1080;
-                        return SizedBox(width: w, height: h, child: _currentPlayer!.getVideoWidget());
+                        return SizedBox(width: 1920, height: 1080, child: _currentPlayer!.getVideoWidget());
                       },
                     ),
                   ),

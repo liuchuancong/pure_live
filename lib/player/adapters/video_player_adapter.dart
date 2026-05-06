@@ -2,13 +2,12 @@ import 'dart:async';
 import 'package:get/get.dart';
 import 'package:rxdart/rxdart.dart';
 import '../models/player_state.dart';
-import 'package:flutter/material.dart';
 import '../models/player_exception.dart';
 import '../models/player_error_type.dart';
 import '../core/player_error_dispatcher.dart';
 import '../interface/unified_player_interface.dart';
 import 'package:better_player_plus/better_player_plus.dart';
-import 'package:pure_live/common/services/settings_service.dart';
+import 'package:pure_live/common/index.dart' hide PlayerState;
 
 class BetterPlayerAdapter implements UnifiedPlayer {
   BetterPlayerController? _controller;
@@ -30,21 +29,11 @@ class BetterPlayerAdapter implements UnifiedPlayer {
     BetterPlayerConfiguration betterPlayerConfiguration = BetterPlayerConfiguration(
       autoPlay: true,
       fit: BoxFit.contain,
-      handleLifecycle: true,
+      handleLifecycle: false,
       fullScreenByDefault: false,
       autoDispose: false,
       looping: false,
       controlsConfiguration: BetterPlayerControlsConfiguration(showControls: false),
-      playerVisibilityChangedBehavior: (double visibility) {
-        final SettingsService settingsService = Get.find<SettingsService>();
-        if (visibility == 0.0) {
-          if (!settingsService.enableBackgroundPlay.value) {
-            pause();
-          }
-        } else {
-          play();
-        }
-      },
     );
 
     _controller = BetterPlayerController(betterPlayerConfiguration);
@@ -56,6 +45,15 @@ class BetterPlayerAdapter implements UnifiedPlayer {
   void _bindListeners() {
     _controller!.addEventsListener((BetterPlayerEvent event) {
       switch (event.betterPlayerEventType) {
+        case BetterPlayerEventType.initialized:
+        case BetterPlayerEventType.changedResolution:
+          final size = _controller?.videoPlayerController?.value.size;
+          if (size != null && size.width > 0) {
+            _widthSubject.add(size.width.toInt());
+            _heightSubject.add(size.height.toInt());
+          }
+          break;
+
         case BetterPlayerEventType.play:
           _playingSubject.add(true);
           _stateSubject.add(PlayerState.playing);
@@ -70,6 +68,9 @@ class BetterPlayerAdapter implements UnifiedPlayer {
           break;
         case BetterPlayerEventType.bufferingEnd:
           _loadingSubject.add(false);
+          if (_playingSubject.value) {
+            _stateSubject.add(PlayerState.playing);
+          }
           break;
         case BetterPlayerEventType.finished:
           _completeSubject.add(true);
@@ -90,14 +91,27 @@ class BetterPlayerAdapter implements UnifiedPlayer {
   }
 
   @override
-  Future<void> setDataSource(String url, List<String> playUrls, Map<String, String> headers) async {
+  Future<void> setDataSource(String url, List<String> playUrls, Map<String, String> headers, {LiveRoom? room}) async {
     try {
       _loadingSubject.add(true);
-
+      _widthSubject.add(null);
+      _heightSubject.add(null);
+      _completeSubject.add(false);
       BetterPlayerDataSource dataSource = BetterPlayerDataSource(
         BetterPlayerDataSourceType.network,
         url,
         headers: headers,
+        liveStream: true,
+        notificationConfiguration: room != null
+            ? BetterPlayerNotificationConfiguration(
+                showNotification: true,
+                title: room.nick ?? "",
+                author: room.title ?? "",
+                imageUrl: room.cover,
+                notificationChannelName: "VideoPlayer",
+                activityName: "MainActivity",
+              )
+            : const BetterPlayerNotificationConfiguration(showNotification: false),
       );
 
       await _controller!.setupDataSource(dataSource);

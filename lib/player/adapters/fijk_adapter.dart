@@ -8,6 +8,7 @@ import '../models/player_exception.dart';
 import '../models/player_error_type.dart';
 import '../core/player_error_dispatcher.dart';
 import '../interface/unified_player_interface.dart';
+import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/player/utils/fijk_helper.dart';
 import 'package:pure_live/common/services/settings_service.dart';
 
@@ -108,7 +109,7 @@ class FijkAdapter implements UnifiedPlayer {
   }
 
   @override
-  Future<void> setDataSource(String url, List<String> playUrls, Map<String, String> headers) async {
+  Future<void> setDataSource(String url, List<String> playUrls, Map<String, String> headers, {LiveRoom? room}) async {
     try {
       _loadingSubject.add(true);
       if (_player.state != FijkState.idle) {

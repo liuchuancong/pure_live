@@ -947,8 +947,10 @@ class BottomActionBar extends StatelessWidget {
                             children: [
                               if (GlobalPlayerState.to.isWindowFullscreen.value ||
                                   GlobalPlayerState.to.isFullscreen.value) ...[
-                                ResolutionSelectorButton(controller: controller),
-                                LineSelectorButton(controller: controller),
+                                if (!GlobalPlayerService.instance.playerManager.isVerticalVideo.value)
+                                  ResolutionSelectorButton(controller: controller),
+                                if (!GlobalPlayerService.instance.playerManager.isVerticalVideo.value)
+                                  LineSelectorButton(controller: controller),
                               ],
                               VideoFitSetting(controller: controller),
                               if (Platform.isWindows) OverlayVolumeControl(controller: controller),
