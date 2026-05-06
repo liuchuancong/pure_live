@@ -40,6 +40,8 @@ dependencies:
   media_kit_video: ^2.0.1 # For video rendering.
   media_kit_libs_video: ^1.0.7 # Native video dependencies.
   better_player_plus: ^1.2.1
+  audio_service: ^0.18.18
+  audio_session: ^0.2.3
   share_handler: ^0.0.25
   uri_to_file: ^1.0.0
   bordered_text: ^2.0.0

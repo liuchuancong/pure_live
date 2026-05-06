@@ -21,8 +21,7 @@ import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/index.dart' hide PlayerState;
 import 'package:pure_live/modules/live_play/player_state.dart';
-import 'package:pure_live/player/adapters/video_player_adapter.dart';
-import 'package:pure_live/common/global/platform/background_server.dart';
+import 'package:pure_live/player/core/live_audio_service.dart';
 
 class PlayerManager {
   final PlayerPool playerPool;
@@ -41,6 +40,7 @@ class PlayerManager {
     isInPip.listen((value) {
       GlobalPlayerState.to.isPipMode.value = value;
     });
+    LiveAudioService.init();
   }
 
   // =========================
@@ -186,7 +186,7 @@ class PlayerManager {
       _currentPlayer = await playerPool.getPlayer(engine);
 
       _bindPlayerStreams(_currentPlayer!);
-
+      LiveAudioService.setPlayer(_currentPlayer!);
       if (Platform.isAndroid) {
         floating = Floating();
 
@@ -255,13 +255,14 @@ class PlayerManager {
 
     try {
       _stateSubject.add(PlayerState.preparing);
-
-      if (_currentPlayer is! BetterPlayerAdapter) {
-        await player.setDataSource(url, playUrls, headers);
-        BackgroundService.startService(room?.nick ?? "", room?.title ?? "");
-      } else {
-        await player.setDataSource(url, playUrls, headers, room: room);
-      }
+      await player.setDataSource(url, playUrls, headers);
+      LiveAudioService.setPlayer(player);
+      LiveAudioService.start(
+        room!.roomId!, // 直播流地址
+        room.nick ?? "", // 主播名 (显示在通知栏第一行)
+        room.title ?? "", // 直播间标题 (显示在通知栏第二行)
+        room.avatar, // 封面图 (会自动显示在通知栏左侧)
+      );
 
       videoKey.value = ValueKey("video_${DateTime.now().millisecondsSinceEpoch}");
 
@@ -317,7 +318,7 @@ class PlayerManager {
       }
 
       _bindPlayerStreams(newPlayer);
-
+      LiveAudioService.setPlayer(_currentPlayer!);
       if (oldPlayer != null && oldEngine != null) {
         unawaited(_safeDestroyPlayer(oldPlayer, oldEngine));
       }
@@ -404,9 +405,7 @@ class PlayerManager {
   Future<void> stop() async {
     await _currentPlayer?.stop();
 
-    if (PlatformUtils.isAndroid) {
-      await BackgroundService.stopService();
-    }
+    LiveAudioService.stop();
 
     closeAppFloating();
 
@@ -735,8 +734,8 @@ class PlayerManager {
 
   Future<void> close() async {
     final settings = Get.find<SettingsService>();
-
     settings.useHardStopOnExit.value ? await hardDispose() : await softStop();
+    LiveAudioService.stop();
   }
 
   Future<void> softStop() async {

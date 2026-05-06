@@ -10,8 +10,8 @@ import 'package:pure_live/modules/backup/backup_page.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/modules/settings/settings_card.dart';
 import 'package:pure_live/modules/settings/settings_menu.dart';
+import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/modules/settings/settings_switch.dart';
-import 'package:pure_live/common/global/platform/background_server.dart';
 
 class SettingsPage extends GetView<SettingsService> {
   const SettingsPage({super.key});
@@ -208,7 +208,7 @@ class SettingsPage extends GetView<SettingsService> {
         onChanged: (value) async {
           controller.enableBackgroundPlay.value = value;
           if (value && Platform.isAndroid) {
-            bool hasPermission = await BackgroundService.requestPlatformPermissions();
+            bool hasPermission = await LiveAudioService.requestPlatformPermissions();
             controller.enableBackgroundPlay.value = hasPermission;
           }
         },

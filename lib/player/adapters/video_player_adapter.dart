@@ -102,16 +102,6 @@ class BetterPlayerAdapter implements UnifiedPlayer {
         url,
         headers: headers,
         liveStream: true,
-        notificationConfiguration: room != null
-            ? BetterPlayerNotificationConfiguration(
-                showNotification: true,
-                title: room.nick ?? "",
-                author: room.title ?? "",
-                imageUrl: room.cover,
-                notificationChannelName: "VideoPlayer",
-                activityName: "MainActivity",
-              )
-            : const BetterPlayerNotificationConfiguration(showNotification: false),
       );
 
       await _controller!.setupDataSource(dataSource);

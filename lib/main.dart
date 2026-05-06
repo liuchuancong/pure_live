@@ -8,8 +8,8 @@ import 'package:pure_live/common/global/initialized.dart';
 import 'package:pure_live/plugins/file_recover_utils.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/common/global/platform/desktop_manager.dart';
-import 'package:pure_live/common/global/platform/background_server.dart';
 
 void main(List<String> args) async {
   // 初始化
@@ -37,7 +37,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (Platform.isAndroid && settings.enableBackgroundPlay.value) {
-        bool hasPermission = await BackgroundService.requestPlatformPermissions();
+        bool hasPermission = await LiveAudioService.requestPlatformPermissions();
         if (!hasPermission) {
           ToastUtil.show("如果需要后台播放，建议开启此权限");
         }
