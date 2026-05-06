@@ -11,12 +11,12 @@ class ToolBoxController extends GetxController {
 
   void jumpToRoom(String e) async {
     if (e.isEmpty) {
-      SmartDialog.showToast("链接不能为空");
+      ToastUtil.show("链接不能为空");
       return;
     }
     var parseResult = await parse(e);
     if (parseResult.isEmpty || parseResult.first == "") {
-      SmartDialog.showToast("无法解析此链接");
+      ToastUtil.show("无法解析此链接");
       return;
     }
     String platform = parseResult[1];
@@ -41,12 +41,12 @@ class ToolBoxController extends GetxController {
 
   void getPlayUrl(String e) async {
     if (e.isEmpty) {
-      SmartDialog.showToast("链接不能为空");
+      ToastUtil.show("链接不能为空");
       return;
     }
     var parseResult = await parse(e);
     if (parseResult.isEmpty && parseResult.first == "") {
-      SmartDialog.showToast("无法解析此链接");
+      ToastUtil.show("无法解析此链接");
       return;
     }
     String platform = parseResult[1];
@@ -56,7 +56,7 @@ class ToolBoxController extends GetxController {
       var qualites = await Sites.of(platform).liveSite.getPlayQualites(detail: detail);
       SmartDialog.dismiss(status: SmartStatus.loading);
       if (qualites.isEmpty) {
-        SmartDialog.showToast("读取直链失败,无法读取清晰度");
+        ToastUtil.show("读取直链失败,无法读取清晰度");
 
         return;
       }
@@ -92,7 +92,7 @@ class ToolBoxController extends GetxController {
                   onTap: () {
                     Clipboard.setData(ClipboardData(text: e));
                     Navigator.of(Get.context!).pop();
-                    SmartDialog.showToast("已复制直链");
+                    ToastUtil.show("已复制直链");
                   },
                 ),
               )
@@ -100,7 +100,7 @@ class ToolBoxController extends GetxController {
         ),
       );
     } catch (e) {
-      SmartDialog.showToast("读取直链失败");
+      ToastUtil.show("读取直链失败");
     } finally {
       SmartDialog.dismiss(status: SmartStatus.loading);
     }

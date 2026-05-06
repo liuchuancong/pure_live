@@ -4,13 +4,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/common/services/bilibili_account_service.dart';
 
-enum QRStatus {
-  loading,
-  unscanned,
-  scanned,
-  expired,
-  failed,
-}
+enum QRStatus { loading, unscanned, scanned, expired, failed }
 
 class BiliBiliQRLoginController extends GetxController {
   @override
@@ -47,27 +41,22 @@ class BiliBiliQRLoginController extends GetxController {
       qrStatus.value = QRStatus.unscanned;
       startPoll();
     } catch (e) {
-      SmartDialog.showToast(e.toString());
+      ToastUtil.show(e.toString());
       qrStatus.value = QRStatus.failed;
     }
   }
 
   void startPoll() {
-    timer = Timer.periodic(
-      const Duration(seconds: 3),
-      (timer) {
-        pollQRStatus();
-      },
-    );
+    timer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      pollQRStatus();
+    });
   }
 
   void pollQRStatus() async {
     try {
       var response = await HttpClient.instance.get(
         "https://passport.bilibili.com/x/passport-login/web/qrcode/poll",
-        queryParameters: {
-          "qrcode_key": qrcodeKey,
-        },
+        queryParameters: {"qrcode_key": qrcodeKey},
       );
       if (response.data["code"] != 0) {
         throw response.data["message"];
@@ -94,7 +83,7 @@ class BiliBiliQRLoginController extends GetxController {
         qrStatus.value = QRStatus.scanned;
       }
     } catch (e) {
-      SmartDialog.showToast(e.toString());
+      ToastUtil.show(e.toString());
     }
   }
 

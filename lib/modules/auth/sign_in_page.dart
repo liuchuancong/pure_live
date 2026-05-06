@@ -15,9 +15,7 @@ class _SignInPageState extends State<SignInPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(S.of(context).supabase_sign_in),
-      ),
+      appBar: AppBar(title: Text(S.of(context).supabase_sign_in)),
       body: SingleChildScrollView(
         scrollDirection: Axis.vertical,
         child: Padding(
@@ -29,14 +27,14 @@ class _SignInPageState extends State<SignInPage> {
                 onPasswordResetEmailSent: () {
                   final AuthController authController = Get.find<AuthController>();
                   authController.shouldGoReset = true;
-                  SmartDialog.showToast('请打开邮箱重置密码', animationTime: const Duration(seconds: 2));
+                  ToastUtil.show('请打开邮箱重置密码');
                 },
                 onSignInComplete: (AuthResponse response) {
-                  SmartDialog.showToast(S.of(context).supabase_sign_success);
+                  ToastUtil.show(S.of(context).supabase_sign_success);
                   Get.offAllNamed(RoutePath.kInitial);
                 },
                 onSignUpComplete: (AuthResponse response) {
-                  SmartDialog.showToast(S.of(context).supabase_sign_confirm);
+                  ToastUtil.show(S.of(context).supabase_sign_confirm);
                 },
               ),
             ],

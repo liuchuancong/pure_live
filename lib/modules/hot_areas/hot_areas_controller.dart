@@ -22,7 +22,7 @@ class HotAreasController extends BaseController {
     HotAreasModel origin = sites[index];
     sites.removeAt(index);
     sites.insert(index, HotAreasModel(id: origin.id, name: origin.name, show: !origin.show));
-    SmartDialog.showToast('重启后生效');
+    ToastUtil.show('重启后生效');
     settingsController.hotAreasList.value = sites.where((p0) => p0.show).map((e) => e.id.toString()).toList();
   }
 }

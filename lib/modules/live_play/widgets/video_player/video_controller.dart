@@ -226,7 +226,7 @@ class VideoController with ChangeNotifier {
     ).liveSite.getRoomDetail(roomId: room.roomId!, platform: room.platform!);
     if (liveRoom.liveStatus == LiveStatus.offline) {
       livePlayController.setNormalScreen();
-      SmartDialog.showToast("该房间已下播", displayTime: const Duration(seconds: 2));
+      ToastUtil.show("该房间已下播");
     } else {
       changeLine();
     }

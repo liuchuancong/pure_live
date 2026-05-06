@@ -160,7 +160,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     refreshKey.value = DateTime.now().millisecondsSinceEpoch;
     if (liveRoom.liveStatus == LiveStatus.unknown) {
       if (Get.currentRoute == '/live_play') {
-        SmartDialog.showToast("获取直播间信息失败,请重新获取", displayTime: const Duration(seconds: 2));
+        ToastUtil.show("获取直播间信息失败,请重新获取");
         setNormalScreen();
         GlobalPlayerState.to.isFullscreen.value = false;
         GlobalPlayerState.to.isWindowFullscreen.value = false;
@@ -191,9 +191,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
       GlobalPlayerState.to.isFullscreen.value = false;
       GlobalPlayerState.to.isWindowFullscreen.value = false;
       if (liveRoom.liveStatus == LiveStatus.banned) {
-        SmartDialog.showToast("服务器错误,请稍后获取", displayTime: const Duration(seconds: 2));
+        ToastUtil.show("服务器错误,请稍后获取");
       } else {
-        SmartDialog.showToast("当前主播未开播或主播已下播", displayTime: const Duration(seconds: 2));
+        ToastUtil.show("当前主播未开播或主播已下播");
       }
       restoryQualityAndLines();
     }
@@ -286,7 +286,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     try {
       var playQualites = await currentSite.liveSite.getPlayQualites(detail: detail.value!);
       if (playQualites.isEmpty) {
-        SmartDialog.showToast("无法读取视频信息,请重新获取", displayTime: const Duration(seconds: 2));
+        ToastUtil.show("无法读取视频信息,请重新获取");
         success.value = false;
         return;
       }
@@ -316,7 +316,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
       getPlayUrl();
     } catch (e) {
-      SmartDialog.showToast("读取视频信息失败,请重新获取");
+      ToastUtil.show("读取视频信息失败,请重新获取");
       success.value = false;
     }
   }
@@ -327,7 +327,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
       quality: qualites[currentQuality.value],
     );
     if (playUrl.isEmpty) {
-      SmartDialog.showToast("无法读取播放地址,请重新获取", displayTime: const Duration(seconds: 2));
+      ToastUtil.show("无法读取播放地址,请重新获取");
       success.value = false;
       return;
     }
@@ -414,7 +414,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
         await launchUrlString(webUrl, mode: LaunchMode.externalApplication);
       }
     } catch (e) {
-      SmartDialog.showToast("无法打开APP，将使用浏览器打开");
+      ToastUtil.show("无法打开APP，将使用浏览器打开");
       await launchUrlString(webUrl, mode: LaunchMode.externalApplication);
     }
   }

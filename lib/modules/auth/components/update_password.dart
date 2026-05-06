@@ -6,10 +6,7 @@ import 'package:pure_live/modules/auth/components/supa_reset_password.dart';
 class UpdatePassword extends StatelessWidget {
   const UpdatePassword({super.key});
 
-  AppBar appBar(String title) => AppBar(
-        title: Text(title),
-        automaticallyImplyLeading: false,
-      );
+  AppBar appBar(String title) => AppBar(title: Text(title), automaticallyImplyLeading: false);
 
   @override
   Widget build(BuildContext context) {
@@ -23,15 +20,12 @@ class UpdatePassword extends StatelessWidget {
               accessToken: Supabase.instance.client.auth.currentSession!.accessToken,
               onSuccess: (response) {
                 Supabase.instance.client.auth.refreshSession();
-                SmartDialog.showToast(S.of(context).supabase_sign_success);
+                ToastUtil.show(S.of(context).supabase_sign_success);
                 Get.offAllNamed(RoutePath.kInitial);
               },
             ),
             TextButton(
-              child: Text(
-                S.of(context).supabase_back_sign_in,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
+              child: Text(S.of(context).supabase_back_sign_in, style: const TextStyle(fontWeight: FontWeight.bold)),
               onPressed: () {
                 Get.offAllNamed(RoutePath.kSignIn);
               },

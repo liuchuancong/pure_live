@@ -47,7 +47,10 @@ class AppInitializer {
       log("Hive Init Error: $e");
       exit(0);
     }
-
+    SmartDialog.config.toast = SmartConfigToast(
+      displayTime: const Duration(milliseconds: 3000),
+      intervalTime: const Duration(milliseconds: 100),
+    );
     MediaKit.ensureInitialized();
     if (PlatformUtils.isDesktop) {
       await DesktopManager.initialize();

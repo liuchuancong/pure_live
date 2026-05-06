@@ -49,11 +49,11 @@ dependencies:
   flutter_color: ^2.1.0
   crypto_simple: ^3.0.0
   window_manager: ^0.5.1
-  ffi: ^2.1.4
+  ffi: ^2.2.0
   auto_start_flutter: ^1.4.0
   tray_manager: ^0.5.2
   flutter_single_instance: ^1.7.0
-  package_info_plus: ^10.1.0
+  package_info_plus: ^9.0.1
   flutter_acrylic: ^1.1.4
   protobuf: ^4.1.0
   fixnum: ^1.1.0
@@ -61,7 +61,7 @@ dependencies:
   dio_cookie_manager: ^3.3.0
   cookie_jar: ^4.0.8
   # system hardware utils
-  wakelock_plus: ^1.6.0
+  wakelock_plus: ^1.4.0
   battery_plus: ^7.0.0
   stop_watch_timer: ^3.2.2
   floating: ^6.0.0
@@ -97,7 +97,7 @@ dependencies:
   mime: ^2.0.0
   flv_lzc:
     git: https://github.com/liuchuancong/flv_lzc.git
-  device_info_plus: ^13.1.0
+  device_info_plus: 12.2.0
   auto_orientation_v2: ^2.3.6
   dart_quickjs:
     git: https://github.com/liuchuancong/dart_quickjs.git
@@ -109,13 +109,13 @@ dependencies:
   google_fonts: ^6.3.3
   back_button_interceptor: ^8.0.4
   flutter_floating: ^2.0.1
-  win32: ^6.1.0
+  win32: ^5.1.1
   flutter_foreground_task: ^9.2.0
   bitsdojo_window:
     git:
-      url: https://github.com/Abdulrahman-Al-Sheikh/bitsdojo_window.git
-      ref: master
-      path: bitsdojo_window  
+      url: https://github.com/Twilight-Evd/bitsdojo_window_plus.git
+      ref: main
+      path: bitsdojo_window
   audio_service: ^0.18.18
   audio_session: ^0.2.3
   dart_sm: ^0.1.5
@@ -126,7 +126,6 @@ dependencies:
       ref: main
 dependency_overrides:
   native_toolchain_c: ^0.18.0
-  win32: ^6.1.0
   screen_retriever:
      git:
       url: https://github.com/MSOB7YY/screen_retriever.git
@@ -134,19 +133,9 @@ dependency_overrides:
       ref: main
   bitsdojo_window:
     git:
-      url: https://github.com/Abdulrahman-Al-Sheikh/bitsdojo_window.git
-      ref: master
+      url: https://github.com/Twilight-Evd/bitsdojo_window_plus.git
+      ref: main
       path: bitsdojo_window
-  bitsdojo_window_windows:
-    git:
-      url: https://github.com/Abdulrahman-Al-Sheikh/bitsdojo_window.git
-      ref: master
-      path: bitsdojo_window_windows
-  bitsdojo_window_platform_interface:
-    git:
-      url: https://github.com/Abdulrahman-Al-Sheikh/bitsdojo_window.git
-      ref: master
-      path: bitsdojo_window_platform_interface
 dev_dependencies:
   flutter_test:
     sdk: flutter

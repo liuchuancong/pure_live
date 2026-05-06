@@ -39,7 +39,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
       if (Platform.isAndroid && settings.enableBackgroundPlay.value) {
         bool hasPermission = await BackgroundService.requestPlatformPermissions();
         if (!hasPermission) {
-          SmartDialog.showToast("如果需要后台播放，建议开启此权限");
+          ToastUtil.show("如果需要后台播放，建议开启此权限");
         }
       }
     });

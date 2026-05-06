@@ -10,9 +10,7 @@ class ScanCodePage extends StatefulWidget {
 }
 
 class _ScanCodePageState extends State<ScanCodePage> {
-  MobileScannerController cameraController = MobileScannerController(
-    torchEnabled: true,
-  );
+  MobileScannerController cameraController = MobileScannerController(torchEnabled: true);
   bool hasFound = false;
   bool syncResult = false;
   bool isSuccess = false;
@@ -43,10 +41,7 @@ class _ScanCodePageState extends State<ScanCodePage> {
                             },
                           );
                         case TorchState.unavailable:
-                          return const Icon(
-                            Icons.no_flash,
-                            color: Colors.grey,
-                          );
+                          return const Icon(Icons.no_flash, color: Colors.grey);
                       }
                     },
                   ),
@@ -78,16 +73,8 @@ class _ScanCodePageState extends State<ScanCodePage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         CircularProgressIndicator(),
-                        SizedBox(
-                          height: 20,
-                        ),
-                        Text(
-                          "正在同步...",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
+                        SizedBox(height: 20),
+                        Text("正在同步...", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       ],
                     )
                   : Column(
@@ -95,14 +82,9 @@ class _ScanCodePageState extends State<ScanCodePage> {
                       children: [
                         Text(
                           isSuccess ? '同步成功' : "同步失败",
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                         ),
-                        const SizedBox(
-                          height: 20,
-                        ),
+                        const SizedBox(height: 20),
                         ElevatedButton(
                           onPressed: () {
                             setState(() {
@@ -115,7 +97,8 @@ class _ScanCodePageState extends State<ScanCodePage> {
                           child: const Text("点击同步"),
                         ),
                       ],
-                    ))
+                    ),
+            )
           : MobileScanner(
               // fit: BoxFit.contain,
               controller: cameraController,
@@ -127,7 +110,7 @@ class _ScanCodePageState extends State<ScanCodePage> {
                     syncResult = true;
                   });
                   final result = await FileRecoverUtils().recoverSettingsBackup(barcodes[0].rawValue!);
-                  SmartDialog.showToast(result ? '同步成功' : "同步失败");
+                  ToastUtil.show(result ? '同步成功' : "同步失败");
                   setState(() {
                     isSuccess = result;
                     syncResult = false;

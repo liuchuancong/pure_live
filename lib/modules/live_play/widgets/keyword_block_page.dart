@@ -23,7 +23,7 @@ class _KeywordBlockPageState extends State<KeywordBlockPage> {
   void add() {
     final keyword = textEditingController.text.trim();
     if (keyword.isEmpty) {
-      SmartDialog.showToast("请输入关键词");
+      ToastUtil.show("请输入关键词");
       return;
     }
 
@@ -61,29 +61,25 @@ class _KeywordBlockPageState extends State<KeywordBlockPage> {
           () => Wrap(
             runSpacing: 12,
             spacing: 12,
-            children: controller.shieldList
-                .asMap()
-                .entries
-                .map((entry) {
-                  final index = entry.key;
-                  final item = entry.value;
-                  return InkWell(
+            children: controller.shieldList.asMap().entries.map((entry) {
+              final index = entry.key;
+              final item = entry.value;
+              return InkWell(
+                borderRadius: const BorderRadius.all(Radius.circular(5.0)),
+                onTap: () {
+                  // 直接使用当前循环的索引来移除
+                  remove(index);
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Theme.of(context).primaryColor),
                     borderRadius: const BorderRadius.all(Radius.circular(5.0)),
-                    onTap: () {
-                      // 直接使用当前循环的索引来移除
-                      remove(index);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Theme.of(context).primaryColor),
-                        borderRadius: const BorderRadius.all(Radius.circular(5.0)),
-                      ),
-                      padding: const EdgeInsets.only(top: 10, bottom: 10, left: 8, right: 8),
-                      child: Text(item, style: Get.textTheme.bodyMedium),
-                    ),
-                  );
-                })
-                .toList(),
+                  ),
+                  padding: const EdgeInsets.only(top: 10, bottom: 10, left: 8, right: 8),
+                  child: Text(item, style: Get.textTheme.bodyMedium),
+                ),
+              );
+            }).toList(),
           ),
         ),
       ],

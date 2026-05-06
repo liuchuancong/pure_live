@@ -135,7 +135,7 @@ class SettingsPage extends GetView<SettingsService> {
                   if (Platform.isAndroid && value) {
                     bool hasPermission = await BackgroundService.requestPlatformPermissions();
                     if (!hasPermission) {
-                      SmartDialog.showToast("如果需要后台播放，建议开启此权限");
+                      ToastUtil.show("如果需要后台播放，建议开启此权限");
                     }
                     controller.enableBackgroundPlay.value = hasPermission;
                   }

@@ -164,16 +164,16 @@ class _BackupPageState extends State<BackupPage> {
           TextButton(
             onPressed: () async {
               if (urlEditingController.text.isEmpty) {
-                SmartDialog.showToast('请输入下载链接');
+                ToastUtil.show('请输入下载链接');
                 return;
               }
               bool validate = FileRecoverUtils.isUrl(urlEditingController.text);
               if (!validate) {
-                SmartDialog.showToast('请输入正确的下载链接');
+                ToastUtil.show('请输入正确的下载链接');
                 return;
               }
               if (textEditingController.text.isEmpty) {
-                SmartDialog.showToast('请输入文件名');
+                ToastUtil.show('请输入文件名');
                 return;
               }
               await FileRecoverUtils().recoverNetworkM3u8Backup(urlEditingController.text, textEditingController.text);

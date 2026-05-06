@@ -7,6 +7,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   bitsdojo_window_linux
   dynamic_color
   flutter_acrylic
+  flutter_inappwebview_linux
   flutter_js
   flutter_volume_controller
   gtk
@@ -19,6 +20,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
+  jni
 )
 
 set(PLUGIN_BUNDLED_LIBRARIES)

@@ -56,7 +56,7 @@ class SupaBaseManager {
       return;
     }
     if (!canUploadConfig) {
-      SmartDialog.showToast('暂未开放');
+      ToastUtil.show('暂未开放');
       return;
     }
     final userId = Get.find<AuthController>().userId;
@@ -76,12 +76,12 @@ class SupaBaseManager {
           })
           .eq(supabasePolicy.userId, userId)
           .then(
-            (value) => SmartDialog.showToast('上传成功'),
+            (value) => ToastUtil.show('上传成功'),
             onError: (err) {
-              SmartDialog.showToast('上传失败,请稍后重试');
+              ToastUtil.show('上传失败,请稍后重试');
             },
           )
-          .catchError((err) => {SmartDialog.showToast('上传失败,请稍后重试')});
+          .catchError((err) => {ToastUtil.show('上传失败,请稍后重试')});
     } else {
       client
           .from(supabasePolicy.tableName)
@@ -92,9 +92,9 @@ class SupaBaseManager {
             supabasePolicy.version: VersionUtil.version,
           })
           .then(
-            (value) => SmartDialog.showToast('上传成功'),
+            (value) => ToastUtil.show('上传成功'),
             onError: (err) {
-              SmartDialog.showToast('上传失败,请稍后重试');
+              ToastUtil.show('上传失败,请稍后重试');
             },
           );
     }
@@ -105,7 +105,7 @@ class SupaBaseManager {
     final FavoriteController favoriteController = Get.find<FavoriteController>();
     if (authController.isLogin) {
       if (!canUploadConfig) {
-        SmartDialog.showToast('暂未开放');
+        ToastUtil.show('暂未开放');
         return;
       }
 
@@ -117,18 +117,18 @@ class SupaBaseManager {
           .then(
             (value) => value,
             onError: (err) {
-              SmartDialog.showToast('下载失败,请稍后重试');
+              ToastUtil.show('下载失败,请稍后重试');
             },
           );
       if (data.isNotEmpty) {
-        SmartDialog.showToast('下载成功');
+        ToastUtil.show('下载成功');
         String jsonString = data[0][supabasePolicy.config];
         final jsonData = ArchethicUtils().decrypti(jsonString);
         Map<String, dynamic> back = jsonDecode(jsonData);
         service.fromJson(back);
         favoriteController.onRefresh();
       } else {
-        SmartDialog.showToast('无数据');
+        ToastUtil.show('无数据');
       }
     }
   }

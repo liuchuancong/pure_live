@@ -37,11 +37,11 @@ class _UserManagerState extends State<UserManager> {
 
   void addUser() {
     if (textEditingController.text.isEmpty || !EmailValidator.validate(textEditingController.text)) {
-      SmartDialog.showToast('请输入正确的邮箱');
+      ToastUtil.show('请输入正确的邮箱');
       return;
     }
     if (users.contains(textEditingController.text.trim())) {
-      SmartDialog.showToast('邮箱已存在');
+      ToastUtil.show('邮箱已存在');
       return;
     }
     SupaBaseManager().client
@@ -49,11 +49,11 @@ class _UserManagerState extends State<UserManager> {
         .insert({SupaBaseManager.supabasePolicy.email: textEditingController.text.trim()})
         .then(
           (value) {
-            SmartDialog.showToast('添加成功');
+            ToastUtil.show('添加成功');
             users.add(textEditingController.text.trim());
           },
           onError: (err) {
-            SmartDialog.showToast('添加失败,请稍后重试');
+            ToastUtil.show('添加失败,请稍后重试');
           },
         );
   }
@@ -65,11 +65,11 @@ class _UserManagerState extends State<UserManager> {
         .eq(SupaBaseManager.supabasePolicy.email, email)
         .then(
           (value) {
-            SmartDialog.showToast('删除成功');
+            ToastUtil.show('删除成功');
             users.removeAt(index);
           },
           onError: (err) {
-            SmartDialog.showToast('删除失败,请稍后重试');
+            ToastUtil.show('删除失败,请稍后重试');
           },
         );
   }

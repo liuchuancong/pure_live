@@ -3,8 +3,8 @@ import 'package:get/get.dart';
 import 'package:pure_live/core/sites.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/site/bilibili_site.dart';
+import 'package:pure_live/common/utils/toast_util.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
-import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:pure_live/common/services/settings_service.dart';
 import 'package:pure_live/common/models/bilibili_user_info_page.dart';
@@ -43,11 +43,11 @@ class BiliBiliAccountService extends GetxController {
           uid = info.mid ?? 0;
           setSite();
         } else {
-          SmartDialog.showToast("哔哩哔哩登录已失效，请重新登录");
+          ToastUtil.show("哔哩哔哩登录已失效，请重新登录");
           logout();
         }
       } catch (e) {
-        SmartDialog.showToast("获取哔哩哔哩用户信息失败，可前往账号管理重试");
+        ToastUtil.show("获取哔哩哔哩用户信息失败，可前往账号管理重试");
       }
     });
   }

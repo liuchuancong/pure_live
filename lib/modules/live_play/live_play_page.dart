@@ -39,7 +39,7 @@ class LivePlayPage extends GetView<LivePlayController> {
                 return Stack(
                   alignment: Alignment.center,
                   fit: StackFit.expand,
-                  children: <Widget>[...previousChildren, if (currentChild != null) currentChild],
+                  children: <Widget>[...previousChildren, ?currentChild],
                 );
               },
             ),
@@ -57,7 +57,7 @@ class LivePlayPage extends GetView<LivePlayController> {
             return Stack(
               alignment: Alignment.center,
               fit: StackFit.expand,
-              children: <Widget>[...previousChildren, if (currentChild != null) currentChild],
+              children: <Widget>[...previousChildren, ?currentChild],
             );
           },
         ),

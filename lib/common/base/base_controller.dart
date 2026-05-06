@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:get/get.dart';
 import 'package:flutter/widgets.dart';
 import 'package:easy_refresh/easy_refresh.dart';
-import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:pure_live/common/utils/toast_util.dart';
 
 class BaseController extends GetxController {
   /// 加载中，更新页面
@@ -34,7 +34,7 @@ class BaseController extends GetxController {
       pageError.value = true;
       errorMsg.value = msg;
     } else {
-      SmartDialog.showToast(exceptionToString(msg));
+      ToastUtil.show(exceptionToString(msg));
     }
   }
 
@@ -124,11 +124,7 @@ class BasePageController<T> extends BaseController {
 
   void scrollToTopOrRefresh() {
     if (scrollController.offset > 0) {
-      scrollController.animateTo(
-        0,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.linear,
-      );
+      scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.linear);
     } else {
       easyRefreshController.callRefresh();
     }
