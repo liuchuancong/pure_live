@@ -110,7 +110,7 @@ class LivePlayPage extends GetView<LivePlayController> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: 120),
+                    constraints: BoxConstraints(maxWidth: 60),
                     child: Text(
                       controller.detail.value == null && controller.detail.value!.nick == null
                           ? ''

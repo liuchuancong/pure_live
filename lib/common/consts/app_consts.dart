@@ -38,12 +38,12 @@ class AppConsts {
   ];
 
   List<Map<String, dynamic>> videoFitType = [
-    {'attr': BoxFit.contain, 'desc': '包含'},
-    {'attr': BoxFit.cover, 'desc': '覆盖'},
-    {'attr': BoxFit.fill, 'desc': '填充'},
-    {'attr': BoxFit.fitHeight, 'desc': '高度适应'},
-    {'attr': BoxFit.fitWidth, 'desc': '宽度适应'},
-    {'attr': BoxFit.scaleDown, 'desc': '缩小适应'},
+    {'attr': BoxFit.contain, 'desc': '默认比例'},
+    {'attr': BoxFit.cover, 'desc': '居中裁剪'},
+    {'attr': BoxFit.fill, 'desc': '填充屏幕'},
+    {'attr': BoxFit.fitHeight, 'desc': '适应高度'},
+    {'attr': BoxFit.fitWidth, 'desc': '适应宽度'},
+    {'attr': BoxFit.scaleDown, 'desc': '等比缩小'},
   ];
 
   static Map<String, Color> themeColors = {

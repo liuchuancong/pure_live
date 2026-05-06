@@ -115,8 +115,6 @@ dependencies:
       url: https://github.com/Twilight-Evd/bitsdojo_window_plus.git
       ref: main
       path: bitsdojo_window
-  audio_service: ^0.18.18
-  audio_session: ^0.2.3
   dart_sm: ^0.1.5
   screen_retriever:
     git:

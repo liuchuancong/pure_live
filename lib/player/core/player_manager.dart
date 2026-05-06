@@ -13,12 +13,10 @@ import 'package:floating/floating.dart';
 import '../models/player_exception.dart';
 import '../models/player_error_type.dart';
 import 'package:rxdart/rxdart.dart' hide Rx;
-import 'package:audio_service/audio_service.dart';
 import '../interface/unified_player_interface.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:flutter_floating/flutter_floating.dart';
-import 'package:pure_live/player/core/audio_service.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/index.dart' hide PlayerState;
@@ -33,7 +31,6 @@ class PlayerManager {
   final PreloadPlayerManager preloadManager;
 
   final LineFallbackManager lineManager;
-  late MyAudioHandler audioHandler;
   PlayerManager({
     required this.playerPool,
     required this.fallbackManager,
@@ -261,24 +258,7 @@ class PlayerManager {
       await player.setDataSource(url, playUrls, headers);
 
       if (PlatformUtils.isAndroid) {
-        if (_runtimeEngine == PlayerEngine.exo) {
-          if (room != null) {
-            final mediaItem = MediaItem(
-              id: room.roomId ?? "",
-              title: room.title ?? "",
-              artist: room.nick ?? "",
-              album: room.platform,
-              isLive: true,
-              artUri: Uri.tryParse(room.cover ?? ""),
-            );
-
-            audioHandler.mediaItem.add(mediaItem);
-          }
-        } else {
-          if (room != null) {
-            BackgroundService.startService(room.nick ?? "", room.title ?? "");
-          }
-        }
+        BackgroundService.startService(room?.nick ?? "", room?.title ?? "");
       }
 
       videoKey.value = ValueKey("video_${DateTime.now().millisecondsSinceEpoch}");
@@ -287,6 +267,7 @@ class PlayerManager {
     } on PlayerException catch (e) {
       await _handleError(e);
     } catch (e, s) {
+      log(e.toString());
       final exception = PlayerException(message: 'Play failed', type: PlayerErrorType.unknown, error: e, stackTrace: s);
 
       await _handleError(exception);
@@ -422,11 +403,7 @@ class PlayerManager {
     await _currentPlayer?.stop();
 
     if (PlatformUtils.isAndroid) {
-      if (_runtimeEngine == PlayerEngine.exo) {
-        await audioHandler.stop();
-      } else {
-        await BackgroundService.stopService();
-      }
+      await BackgroundService.stopService();
     }
 
     closeAppFloating();

@@ -107,6 +107,15 @@ class SettingsPage extends GetView<SettingsService> {
             ),
           Obx(
             () => SwitchListTile(
+              title: Text('播放器销毁设置'),
+              subtitle: Text('退出时是否销毁播放器'),
+              value: controller.useHardStopOnExit.value,
+              activeThumbColor: Theme.of(context).colorScheme.primary,
+              onChanged: (bool value) => controller.useHardStopOnExit.value = value,
+            ),
+          ),
+          Obx(
+            () => SwitchListTile(
               title: Text(S.of(context).enable_codec),
               value: controller.enableCodec.value,
               activeThumbColor: Theme.of(context).colorScheme.primary,

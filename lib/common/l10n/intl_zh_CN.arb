@@ -130,6 +130,7 @@
     "videofit_cover": "居中裁剪",
     "videofit_fitwidth": "适应宽度",
     "videofit_fitheight": "适应高度",
+    "videofit_scaleDown": "等比缩小",
 
     "settings_danmaku_title": "弹幕设置",
     "settings_danmaku_open": "弹幕开关",

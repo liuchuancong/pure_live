@@ -27,7 +27,7 @@ class BetterPlayerAdapter implements UnifiedPlayer {
   Future<void> init() async {
     if (_initialized) return;
 
-    const betterPlayerConfiguration = BetterPlayerConfiguration(
+    BetterPlayerConfiguration betterPlayerConfiguration = BetterPlayerConfiguration(
       autoPlay: true,
       fit: BoxFit.contain,
       handleLifecycle: true,
@@ -35,6 +35,16 @@ class BetterPlayerAdapter implements UnifiedPlayer {
       autoDispose: false,
       looping: false,
       controlsConfiguration: BetterPlayerControlsConfiguration(showControls: false),
+      playerVisibilityChangedBehavior: (double visibility) {
+        final SettingsService settingsService = Get.find<SettingsService>();
+        if (visibility == 0.0) {
+          if (!settingsService.enableBackgroundPlay.value) {
+            pause();
+          }
+        } else {
+          play();
+        }
+      },
     );
 
     _controller = BetterPlayerController(betterPlayerConfiguration);
