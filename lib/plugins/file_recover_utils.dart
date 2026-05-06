@@ -26,7 +26,8 @@ class FileRecoverUtils {
   ///验证URL
   static bool isUrl(String value) {
     final urlRegExp = RegExp(
-        r"((https?:www\.)|(https?:\/\/)|(www\.))[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9]{1,6}(\/[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)?");
+      r"((https?:www\.)|(https?:\/\/)|(www\.))[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9]{1,6}(\/[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)?",
+    );
     List<String?> urlMatches = urlRegExp.allMatches(value).map((m) => m.group(0)).toList();
     return urlMatches.isNotEmpty;
   }
@@ -34,7 +35,8 @@ class FileRecoverUtils {
   ///验证URL
   static bool isHostUrl(String value) {
     final urlRegExp = RegExp(
-        r"((https?:www\.)|(https?:\/\/))[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9]{1,6}(\/[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)?");
+      r"((https?:www\.)|(https?:\/\/))[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9]{1,6}(\/[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)?",
+    );
     List<String?> urlMatches = urlRegExp.allMatches(value).map((m) => m.group(0)).toList();
     return urlMatches.isNotEmpty;
   }
@@ -47,11 +49,13 @@ class FileRecoverUtils {
   }
 
   Future<bool> recoverNetworkM3u8Backup(String url, String fileName) async {
-    var dioInstance = dio.Dio(dio.BaseOptions(
-      connectTimeout: const Duration(seconds: 10),
-      //响应时间为3秒
-      receiveTimeout: const Duration(seconds: 10),
-    ));
+    var dioInstance = dio.Dio(
+      dio.BaseOptions(
+        connectTimeout: const Duration(seconds: 10),
+        //响应时间为3秒
+        receiveTimeout: const Duration(seconds: 10),
+      ),
+    );
     var dir = await getApplicationCacheDirectory();
     final m3ufile = File("${dir.path}${Platform.pathSeparator}$fileName.m3u");
     try {
@@ -70,7 +74,8 @@ class FileRecoverUtils {
       bool isNotExit = categoriesArr.indexWhere((element) => element.id == url) == -1;
       if (isNotExit) {
         categoriesArr.add(
-            IptvCategory(id: url, name: getName(m3ufile.path).replaceAll(RegExp(r'.m3u'), ''), path: m3ufile.path));
+          IptvCategory(id: url, name: getName(m3ufile.path).replaceAll(RegExp(r'.m3u'), ''), path: m3ufile.path),
+        );
       } else {
         var index = categoriesArr.indexWhere((element) => element.id == url);
         categoriesArr[index].name = fileName;
@@ -103,15 +108,12 @@ class FileRecoverUtils {
       }
     }
 
-    String? selectedDirectory = await FilePicker.platform.getDirectoryPath(
+    String? selectedDirectory = await FilePicker.getDirectoryPath(
       initialDirectory: backupDirectory.isEmpty ? '/' : backupDirectory,
     );
     if (selectedDirectory == null) return null;
 
-    final dateStr = formatDate(
-      DateTime.now(),
-      [yyyy, '-', mm, '-', dd, 'T', HH, '_', nn, '_', ss],
-    );
+    final dateStr = formatDate(DateTime.now(), [yyyy, '-', mm, '-', dd, 'T', HH, '_', nn, '_', ss]);
     final file = File('$selectedDirectory/purelive_$dateStr.txt');
     if (settings.backup(file)) {
       SnackBarUtil.success(S.of(Get.context!).create_backup_success);
@@ -128,7 +130,7 @@ class FileRecoverUtils {
 
   void recoverBackup() async {
     final settings = Get.find<SettingsService>();
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
+    FilePickerResult? result = await FilePicker.pickFiles(
       dialogTitle: S.of(Get.context!).select_recover_file,
       type: FileType.custom,
       allowedExtensions: ['txt'],
@@ -146,7 +148,7 @@ class FileRecoverUtils {
   // 选择备份目录
   Future<String?> selectBackupDirectory(String backupDirectory) async {
     final settings = Get.find<SettingsService>();
-    String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+    String? selectedDirectory = await FilePicker.getDirectoryPath();
     if (selectedDirectory == null) return null;
     settings.backupDirectory.value = selectedDirectory;
     return selectedDirectory;
@@ -166,8 +168,9 @@ class FileRecoverUtils {
       jsonArr = jsonData.isNotEmpty ? jsonDecode(jsonData) : [];
       List<IptvCategory> categoriesArr = jsonArr.map((e) => IptvCategory.fromJson(e)).toList();
       if (categoriesArr.indexWhere((element) => element.path == m3ufile.path) == -1) {
-        categoriesArr.add(IptvCategory(
-            id: getUUid(), name: getName(m3ufile.path).replaceAll(RegExp(r'.m3u'), ''), path: m3ufile.path));
+        categoriesArr.add(
+          IptvCategory(id: getUUid(), name: getName(m3ufile.path).replaceAll(RegExp(r'.m3u'), ''), path: m3ufile.path),
+        );
       }
       categories.writeAsStringSync(jsonEncode(categoriesArr.map((e) => e.toJson()).toList()));
       SnackBarUtil.success(S.of(Get.context!).recover_backup_success);
@@ -179,7 +182,7 @@ class FileRecoverUtils {
   }
 
   Future<bool> recoverM3u8Backup() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
+    FilePickerResult? result = await FilePicker.pickFiles(
       dialogTitle: S.of(Get.context!).select_recover_file,
       type: FileType.custom,
       allowedExtensions: ['m3u'],
@@ -199,8 +202,9 @@ class FileRecoverUtils {
       jsonArr = jsonData.isNotEmpty ? jsonDecode(jsonData) : [];
       List<IptvCategory> categoriesArr = jsonArr.map((e) => IptvCategory.fromJson(e)).toList();
       if (categoriesArr.indexWhere((element) => element.path == m3ufile.path) == -1) {
-        categoriesArr.add(IptvCategory(
-            id: getUUid(), name: getName(m3ufile.path).replaceAll(RegExp(r'.m3u'), ''), path: m3ufile.path));
+        categoriesArr.add(
+          IptvCategory(id: getUUid(), name: getName(m3ufile.path).replaceAll(RegExp(r'.m3u'), ''), path: m3ufile.path),
+        );
       }
 
       categories.writeAsStringSync(jsonEncode(categoriesArr.map((e) => e.toJson()).toList()));
@@ -216,8 +220,10 @@ class FileRecoverUtils {
   Future<bool> recoverSettingsBackup(String httpAddress) async {
     final SettingsService service = Get.find<SettingsService>();
     try {
-      final response = await await HttpClient.instance
-          .postJson('$httpAddress/api/setSettings', queryParameters: {"settings": jsonEncode(service.toJson())});
+      final response = await await HttpClient.instance.postJson(
+        '$httpAddress/api/setSettings',
+        queryParameters: {"settings": jsonEncode(service.toJson())},
+      );
       return jsonDecode(response)['data'];
     } catch (e) {
       return false;
@@ -238,8 +244,9 @@ class FileRecoverUtils {
       jsonArr = jsonData.isNotEmpty ? jsonDecode(jsonData) : [];
       List<IptvCategory> categoriesArr = jsonArr.map((e) => IptvCategory.fromJson(e)).toList();
       if (categoriesArr.indexWhere((element) => element.path == m3ufile.path) == -1) {
-        categoriesArr.add(IptvCategory(
-            id: getUUid(), name: getName(m3ufile.path).replaceAll(RegExp(r'.m3u'), ''), path: m3ufile.path));
+        categoriesArr.add(
+          IptvCategory(id: getUUid(), name: getName(m3ufile.path).replaceAll(RegExp(r'.m3u'), ''), path: m3ufile.path),
+        );
       }
       categories.writeAsStringSync(jsonEncode(categoriesArr.map((e) => e.toJson()).toList()));
       file.copySync(m3ufile.path);

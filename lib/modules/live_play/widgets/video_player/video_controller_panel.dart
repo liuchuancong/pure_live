@@ -100,9 +100,9 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                     if (controller.showSettting.value) {
                       controller.showSettting.toggle();
                     } else {
-                      controller.globalPlayer.isPlaying.value
+                      GlobalPlayerService.instance.playerManager.isPlayingNow
                           ? controller.enableController()
-                          : controller.globalPlayer.togglePlayPause();
+                          : GlobalPlayerService.instance.playerManager.togglePlayPause();
                     }
                   },
                   onDoubleTap: () {
@@ -331,7 +331,7 @@ class PIPButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        controller.globalPlayer.enablePip();
+        GlobalPlayerService.instance.playerManager.enablePip();
       },
       child: Container(
         alignment: Alignment.center,
@@ -986,17 +986,21 @@ class PlayPauseButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final playerManager = GlobalPlayerService.instance.playerManager;
+
     return GestureDetector(
-      onTap: () => controller.globalPlayer.togglePlayPause(),
-      child: Obx(
-        () => Container(
-          alignment: Alignment.center,
-          padding: const EdgeInsets.only(right: 6),
-          child: Icon(
-            controller.globalPlayer.isPlaying.value ? Icons.pause_rounded : Icons.play_arrow_rounded,
-            color: Colors.white,
-          ),
-        ),
+      onTap: () => playerManager.togglePlayPause(),
+      child: StreamBuilder<bool>(
+        stream: playerManager.onPlaying,
+        initialData: playerManager.isPlayingNow,
+        builder: (context, snapshot) {
+          final isPlaying = snapshot.data ?? false;
+          return Container(
+            alignment: Alignment.center,
+            padding: const EdgeInsets.only(right: 6),
+            child: Icon(isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.white),
+          );
+        },
       ),
     );
   }

@@ -6,8 +6,8 @@ import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:pure_live/common/global/initialized.dart';
 import 'package:pure_live/plugins/file_recover_utils.dart';
+import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
-import 'package:pure_live/player/switchable_global_player.dart';
 import 'package:pure_live/common/global/platform/desktop_manager.dart';
 import 'package:pure_live/common/global/platform/background_server.dart';
 
@@ -46,18 +46,19 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
   }
 
   Future<void> initGlopalPlayer() async {
-    if (Get.isRegistered<SettingsService>()) {
-      final settings = Get.find<SettingsService>();
+    final settings = Get.find<SettingsService>();
+    PlayerEngine defaultEngine;
+
+    try {
       if (PlatformUtils.isDesktop) {
-        await SwitchableGlobalPlayer().init(PlayerEngine.mediaKit);
+        defaultEngine = PlayerEngine.mediaKit;
       } else {
-        await SwitchableGlobalPlayer().init(PlayerEngine.values[settings.videoPlayerIndex.value]);
+        defaultEngine = PlayerEngine.values[settings.videoPlayerIndex.value];
       }
-    } else {
-      Future.delayed(Duration(seconds: 1)).then((value) async {
-        initGlopalPlayer();
-      });
+    } catch (e) {
+      defaultEngine = PlayerEngine.mediaKit;
     }
+    await GlobalPlayerService.instance.initialize(defaultEngine: defaultEngine);
   }
 
   @override

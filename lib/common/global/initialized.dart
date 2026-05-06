@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/global.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:launch_at_startup/launch_at_startup.dart';
+import 'package:auto_start_flutter/auto_start_flutter.dart';
 import 'package:pure_live/common/global/windows_utils.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
@@ -12,7 +12,6 @@ import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/common/global/platform/mobile_manager.dart';
 import 'package:pure_live/common/global/platform/desktop_manager.dart';
 import 'package:pure_live/common/services/bilibili_account_service.dart';
-import 'package:package_info_plus/package_info_plus.dart' show PackageInfo;
 
 class AppInitializer {
   static final AppInitializer _instance = AppInitializer._internal();
@@ -63,7 +62,6 @@ class AppInitializer {
     initRefresh();
 
     if (PlatformUtils.isDesktopNotMac) {
-      // 只有主实例（instanceId 为空）才注册自启，避免多个实例互相覆盖注册表
       if (instanceId.isEmpty) {
         await _setupLaunchAtStartup();
       }
@@ -83,16 +81,12 @@ class AppInitializer {
 
   Future<void> _setupLaunchAtStartup() async {
     try {
-      PackageInfo packageInfo = await PackageInfo.fromPlatform();
-      launchAtStartup.setup(
-        appName: packageInfo.appName,
-        appPath: Platform.resolvedExecutable,
-        packageName: 'dev.leanflutter.puretech.pure_live',
-      );
+      bool? isAutoStartEnabled = await isAutoStartAvailable;
+
       var settings = Get.find<SettingsService>();
       if (settings.enableStartUp.value) {
-        if (!await launchAtStartup.isEnabled()) {
-          await launchAtStartup.enable();
+        if (isAutoStartEnabled == true) {
+          await getAutoStartPermission();
         }
       }
     } catch (e) {

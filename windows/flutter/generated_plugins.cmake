@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
+  auto_start_flutter
   battery_plus
   bitsdojo_window_windows
   dynamic_color

@@ -9,7 +9,6 @@ import 'package:pure_live/common/index.dart' hide BackButton;
 import 'package:pure_live/modules/live_play/play_other.dart';
 import 'package:pure_live/modules/live_play/danmaku_tab.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
-import 'package:pure_live/player/switchable_global_player.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_keyboard.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller_panel.dart';
@@ -23,7 +22,8 @@ class LivePlayPage extends GetView<LivePlayController> {
   Widget build(BuildContext context) {
     return Obx(() {
       _updateWakelock();
-      final isInPip = SwitchableGlobalPlayer().isInPip.value;
+      final manager = GlobalPlayerService.instance.playerManager;
+      final isInPip = manager.isInPip.value;
       final mode = controller.screenMode.value;
       if (controller.videoController.value != null) {
         return VideoKeyboardShortcuts(
@@ -66,14 +66,11 @@ class LivePlayPage extends GetView<LivePlayController> {
   }
 
   Widget _buildConstrainedChild(bool isInPip, VideoMode mode, BuildContext context) {
+    final manager = GlobalPlayerService.instance.playerManager;
     if (isInPip) {
       return Theme(
         data: ThemeData.dark(),
-        child: Container(
-          key: const ValueKey('pip'),
-          color: Colors.transparent,
-          child: SwitchableGlobalPlayer().buildPiPOverlay(),
-        ),
+        child: Container(key: const ValueKey('pip'), color: Colors.transparent, child: manager.buildPiPOverlay()),
       );
     }
 

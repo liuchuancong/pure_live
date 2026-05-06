@@ -12,10 +12,12 @@ class VideoKeyboardShortcuts extends StatelessWidget {
   Widget build(BuildContext context) {
     return CallbackShortcuts(
       bindings: {
-        const SingleActivator(LogicalKeyboardKey.mediaPlay): () => controller.globalPlayer.play(),
-        const SingleActivator(LogicalKeyboardKey.mediaPause): () => controller.globalPlayer.pause(),
-        const SingleActivator(LogicalKeyboardKey.mediaPlayPause): () => controller.globalPlayer.togglePlayPause(),
-        const SingleActivator(LogicalKeyboardKey.space): () => controller.globalPlayer.togglePlayPause(),
+        const SingleActivator(LogicalKeyboardKey.mediaPlay): () => GlobalPlayerService.instance.playerManager.resume(),
+        const SingleActivator(LogicalKeyboardKey.mediaPause): () => GlobalPlayerService.instance.playerManager.pause(),
+        const SingleActivator(LogicalKeyboardKey.mediaPlayPause): () =>
+            GlobalPlayerService.instance.playerManager.togglePlayPause(),
+        const SingleActivator(LogicalKeyboardKey.space): () =>
+            GlobalPlayerService.instance.playerManager.togglePlayPause(),
         const SingleActivator(LogicalKeyboardKey.keyR): () => controller.refresh(),
         const SingleActivator(LogicalKeyboardKey.arrowUp): () async {
           double? volume = await controller.volume();

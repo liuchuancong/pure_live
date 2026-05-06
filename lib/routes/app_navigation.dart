@@ -3,9 +3,8 @@ import 'dart:developer';
 import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/utils.dart';
-import 'package:pure_live/player/fullscreen.dart';
+import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
-import 'package:pure_live/player/switchable_global_player.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
 
 /// APP页面跳转封装
@@ -47,13 +46,13 @@ class BackButtonObserver extends RouteObserver<PageRoute<dynamic>> {
         final livePlayController = Get.find<LivePlayController>();
         livePlayController.success.value = false;
         final settings = Get.find<SettingsService>();
+        final manager = GlobalPlayerService.instance.playerManager;
         if (settings.floatPlay.value) {
           Future.delayed(Duration(milliseconds: 200), () {
-            SwitchableGlobalPlayer().showAppFloating(livePlayController.detail.value!);
+            manager.showAppFloating();
           });
-          log("BackButtonObserver showAppFloating");
         } else {
-          SwitchableGlobalPlayer().stop();
+          manager.stop();
         }
         if (PlatformUtils.isMobile) {
           WindowService().doExitFullScreen();
@@ -68,8 +67,8 @@ class BackButtonObserver extends RouteObserver<PageRoute<dynamic>> {
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     super.didPush(route, previousRoute);
     if (route.settings.name == RoutePath.kLivePlay) {
-      log("BackButtonObserver enter LivePlay");
-      SwitchableGlobalPlayer().closeAppFloating();
+      final manager = GlobalPlayerService.instance.playerManager;
+      manager.closeAppFloating();
     }
   }
 }

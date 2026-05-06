@@ -5,14 +5,15 @@ import 'package:get/get.dart';
 import 'video_controller_panel.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:battery_plus/battery_plus.dart';
-import 'package:pure_live/player/fullscreen.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/modules/live_play/load_type.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/player/models/player_exception.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
-import 'package:pure_live/player/switchable_global_player.dart';
+import 'package:pure_live/player/models/player_error_type.dart';
 import 'package:pure_live/pkg/canvas_danmaku/danmaku_controller.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
 import 'package:pure_live/pkg/canvas_danmaku/models/danmaku_option.dart';
@@ -45,9 +46,7 @@ class VideoController with ChangeNotifier {
   LivePlayController livePlayController = Get.find<LivePlayController>();
 
   final SettingsService settings = Get.find<SettingsService>();
-
-  final globalPlayer = SwitchableGlobalPlayer();
-
+  late StreamSubscription<PlayerException> _errorSub;
   Timer? showControllerTimer;
   final showController = true.obs;
   final showSettting = false.obs;
@@ -139,26 +138,78 @@ class VideoController with ChangeNotifier {
     }
   }
 
+  void initPlayerListener() {
+    final manager = GlobalPlayerService.instance.playerManager;
+    _errorSub = manager.onError.listen((error) {
+      _handlePlayerError(error);
+    });
+  }
+
+  void _handlePlayerError(PlayerException error) {
+    log(error.toString(), name: 'PlayerError');
+    switch (error.type) {
+      // =====================
+      // 网络错误
+      // =====================
+      case PlayerErrorType.network:
+        ToastUtil.show('网络连接失败');
+        break;
+      // =====================
+      // 播放源错误
+      // =====================
+      case PlayerErrorType.source:
+        ToastUtil.show('播放源异常');
+        break;
+      // =====================
+      // 解码错误
+      // =====================
+      case PlayerErrorType.codec:
+        ToastUtil.show('当前播放器解码失败');
+        break;
+      // =====================
+      // native 崩溃
+      // =====================
+      case PlayerErrorType.native:
+        ToastUtil.show('播放器异常');
+        break;
+      // =====================
+      // 初始化失败
+      // =====================
+      case PlayerErrorType.initialization:
+        ToastUtil.show('播放器初始化失败');
+        break;
+      // =====================
+      // texture 错误
+      // =====================
+      case PlayerErrorType.texture:
+        ToastUtil.show('视频渲染失败');
+        break;
+      // =====================
+      // 生命周期错误
+      // =====================
+      case PlayerErrorType.lifecycle:
+        ToastUtil.show('播放器状态异常');
+        break;
+      // =====================
+      // 未知错误
+      // =====================
+      case PlayerErrorType.unknown:
+        ToastUtil.show('未知播放错误');
+
+        break;
+    }
+  }
+
   void initVideoController() async {
+    final playerManager = GlobalPlayerService.instance.playerManager;
     if (PlatformUtils.isMobile) {
       FlutterVolumeController.updateShowSystemUI(false);
       registerVolumeListener();
     }
-    globalPlayer.setDataSource(datasource, playUrs, headers, room);
-    globalPlayer.onError.listen((error) {
-      if (error != null) {
-        log("An error occured while loading the stream: $error", error: error, name: "VideoController");
-        if (error.contains("Failed to open")) {
-          SmartDialog.showToast("当前视频播放出错,正在切换线路");
-          changeLine();
-        }
-      }
-    });
-    globalPlayer.onComplete.listen((bool isComplete) {
-      if (isComplete) {
-        refresh();
-      }
-    });
+    playerManager.play(datasource, playUrs, headers, room: room);
+    initPlayerListener();
+    // 处理默认全屏
+
     Future.delayed(Duration(milliseconds: 1000), () {
       if (settings.enableFullScreenDefault.value) {
         livePlayController.setFullScreen();
@@ -243,7 +294,7 @@ class VideoController with ChangeNotifier {
       updateDanmaku();
     });
 
-    globalPlayer.isInPipMode.listen((isInPip) {
+    GlobalPlayerService.instance.playerManager.isInPip.listen((isInPip) {
       if (isInPip) {
         livePlayController.setFullScreen();
       } else {
@@ -268,7 +319,7 @@ class VideoController with ChangeNotifier {
 
   void sendDanmaku(LiveMessage msg) {
     if (hideDanmaku.value) return;
-    if (globalPlayer.isPlaying.value) {
+    if (GlobalPlayerService.instance.playerManager.isPlayingNow) {
       danmakuController.addDanmaku(
         DanmakuContentItem(msg.message, color: Color.fromARGB(255, msg.color.r, msg.color.g, msg.color.b)),
       );
@@ -277,19 +328,22 @@ class VideoController with ChangeNotifier {
 
   @override
   void dispose() async {
-    globalPlayer.dispose();
+    _errorSub.cancel();
+    GlobalPlayerService.instance.playerManager.close();
     await destory();
     super.dispose();
   }
 
   void refresh() async {
-    globalPlayer.dispose();
+    _errorSub.cancel();
+    GlobalPlayerService.instance.playerManager.close();
     await destory();
     livePlayController.onInitPlayerState(reloadDataType: ReloadDataType.refreash);
   }
 
   void changeLine() async {
-    globalPlayer.dispose();
+    _errorSub.cancel();
+    GlobalPlayerService.instance.playerManager.close();
     await destory();
     livePlayController.onInitPlayerState(reloadDataType: ReloadDataType.changeLine, line: currentLineIndex);
   }
@@ -303,7 +357,7 @@ class VideoController with ChangeNotifier {
   }
 
   void setVideoFit(int index) {
-    globalPlayer.changeVideoFit(index);
+    GlobalPlayerService.instance.playerManager.changeVideoFit(index);
   }
 
   void exitFullScreen() async {
@@ -336,7 +390,7 @@ class VideoController with ChangeNotifier {
   void enterFullScreen() {
     WindowService().doEnterFullScreen();
     GlobalPlayerState.to.isFullscreen.value = true;
-    if (globalPlayer.isVerticalVideo.value) {
+    if (GlobalPlayerService.instance.playerManager.isVerticalVideo.value) {
       WindowService().verticalScreen();
     } else {
       WindowService().landScape();
@@ -372,7 +426,7 @@ class VideoController with ChangeNotifier {
   // volume & brightness
   Future<double?> volume() async {
     if (Platform.isWindows) {
-      return globalPlayer.currentVolume.value;
+      return GlobalPlayerService.instance.playerManager.currentVolume.value;
     }
     return await FlutterVolumeController.getVolume();
   }
@@ -383,11 +437,11 @@ class VideoController with ChangeNotifier {
 
   void setVolume(double value) async {
     if (Platform.isWindows) {
-      globalPlayer.setVolume(value);
+      GlobalPlayerService.instance.playerManager.setVolume(value);
     } else {
       await FlutterVolumeController.setVolume(value);
     }
-    globalPlayer.currentVolume.value = value;
+    GlobalPlayerService.instance.playerManager.currentVolume.value = value;
     settings.volume.value = value;
   }
 

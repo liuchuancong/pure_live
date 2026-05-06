@@ -1,14 +1,14 @@
 import 'dart:io';
 import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/player/player_consts.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
+import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/modules/backup/backup_page.dart';
+import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/modules/settings/settings_card.dart';
 import 'package:pure_live/modules/settings/settings_menu.dart';
-import 'package:pure_live/player/switchable_global_player.dart';
 import 'package:pure_live/modules/settings/settings_switch.dart';
 import 'package:pure_live/common/global/platform/background_server.dart';
 
@@ -123,18 +123,6 @@ class SettingsPage extends GetView<SettingsService> {
                 onChanged: (bool value) => controller.playerCompatMode.value = value,
               ),
             ),
-
-          // if (Platform.isAndroid && controller.videoPlayerIndex.value == 2)
-          //   Obx(
-          //     () => ListTile(
-          //       title: Text('ExoPlayer无法播放使用备用播放器'),
-          //       subtitle: Text('若ExoPlayer无法播放请设置备用播放器'),
-          //       onTap: showUseFallbackPlayerDialog,
-          //       trailing: Text(
-          //         PlayerConsts.players.takeWhile((p) => p != 'Exo播放器').toList()[controller.useFallbackPlayer.value],
-          //       ),
-          //     ),
-          //   ),
           if (Platform.isAndroid)
             Obx(
               () => SwitchListTile(
@@ -470,7 +458,10 @@ class SettingsPage extends GetView<SettingsService> {
               onChanged: (String? value) {
                 if (value != null) {
                   controller.changePlayer(playerList.indexOf(value));
-                  SwitchableGlobalPlayer().switchEngine(PlayerEngine.values[controller.videoPlayerIndex.value]);
+                  GlobalPlayerService.instance.playerManager.switchEngine(
+                    PlayerEngine.values[controller.videoPlayerIndex.value],
+                    isManual: true,
+                  );
                   Navigator.of(context).pop();
                 }
               },
@@ -487,54 +478,10 @@ class SettingsPage extends GetView<SettingsService> {
                         GestureDetector(
                           onTap: () {
                             controller.changePlayer(playerList.indexOf(name));
-                            SwitchableGlobalPlayer().switchEngine(
+                            GlobalPlayerService.instance.playerManager.switchEngine(
                               PlayerEngine.values[controller.videoPlayerIndex.value],
+                              isManual: true,
                             );
-                            Navigator.of(context).pop();
-                          },
-                          child: Text(name, style: Theme.of(context).textTheme.bodyLarge),
-                        ),
-                      ],
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void showUseFallbackPlayerDialog() {
-    List<String> playerList = controller.playerlist.takeWhile((p) => p != 'Exo播放器').toList();
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return SimpleDialog(
-          title: Text(S.of(context).change_player),
-          children: [
-            RadioGroup<String>(
-              groupValue: playerList[controller.useFallbackPlayer.value],
-              onChanged: (String? value) {
-                if (value != null) {
-                  controller.useFallbackPlayer.value = playerList.indexOf(value);
-                  Navigator.of(context).pop();
-                }
-              },
-              child: Padding(
-                padding: const EdgeInsets.only(top: 0, bottom: 10, left: 16, right: 16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: playerList.map<Widget>((name) {
-                    return Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Radio<String>(value: name, activeColor: Theme.of(context).colorScheme.primary),
-                        GestureDetector(
-                          onTap: () {
-                            controller.useFallbackPlayer.value = playerList.indexOf(name);
                             Navigator.of(context).pop();
                           },
                           child: Text(name, style: Theme.of(context).textTheme.bodyLarge),

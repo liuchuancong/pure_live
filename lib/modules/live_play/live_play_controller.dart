@@ -14,7 +14,6 @@ import 'package:pure_live/modules/live_play/load_type.dart';
 import 'package:pure_live/core/danmaku/douyin_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
-import 'package:pure_live/player/switchable_global_player.dart';
 import 'package:back_button_interceptor/back_button_interceptor.dart';
 
 enum VideoMode { normal, widescreen, fullscreen }
@@ -274,7 +273,8 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   }
 
   void setResolution(ReloadDataType reloadDataType, int qualityIndex, int lineIndex) {
-    SwitchableGlobalPlayer().dispose();
+    final manager = GlobalPlayerService.instance.playerManager;
+    manager.close();
     videoController.value!.destory();
     currentQuality.value = qualityIndex;
     currentLineIndex.value = lineIndex;
@@ -420,7 +420,8 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   }
 
   void switchRoom(LiveRoom room) async {
-    SwitchableGlobalPlayer().dispose();
+    final manager = GlobalPlayerService.instance.playerManager;
+    manager.close();
     success.value = false;
     isLiving.value = true;
     messages.clear();

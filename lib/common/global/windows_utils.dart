@@ -11,21 +11,22 @@ class WindowUtils {
     // 1. 在回调外部分配指针，只分配一次
     final propPtr = _propName.toNativeUtf16();
 
-    final callback = NativeCallable<WNDENUMPROC>.isolateLocal((int hwnd, int lParam) {
-      // 2. 直接使用外部传入的指针
-      final val = GetProp(hwnd, propPtr);
-      if (val == targetId) {
-        if (IsIconic(hwnd) != 0) ShowWindow(hwnd, SW_RESTORE);
+    final callback = NativeCallable<WNDENUMPROC>.isolateLocal((Pointer hwndPtr, int lParam) {
+      final hwnd = HWND(hwndPtr.cast<NativeType>());
+
+      // 2. Pass the HWND object (not the address) to Win32 functions
+      final val = GetProp(hwnd, PCWSTR(propPtr));
+
+      if (val.address == targetId) {
+        if (IsIconic(hwnd)) ShowWindow(hwnd, SW_RESTORE);
         ShowWindow(hwnd, SW_SHOW);
         SetForegroundWindow(hwnd);
-        found = true;
-        return 0;
+        return 0; // Stop enumeration (FALSE)
       }
-      return 1;
+      return 1; // Continue enumeration (TRUE)
     }, exceptionalReturn: 0);
-
     try {
-      EnumWindows(callback.nativeFunction, 0);
+      EnumWindows(callback.nativeFunction, LPARAM(0));
     } finally {
       callback.close();
       free(propPtr); // 3. 结束后统一释放
@@ -38,22 +39,26 @@ class WindowUtils {
     final propPtr = _propName.toNativeUtf16();
     final lpdwProcessId = calloc<Uint32>();
 
-    final callback = NativeCallable<WNDENUMPROC>.isolateLocal((int hwnd, int lParam) {
+    // 1. Signature must match (Pointer, int)
+    final callback = NativeCallable<WNDENUMPROC>.isolateLocal((Pointer hwndPtr, int lParam) {
+      final hwnd = HWND(hwndPtr.cast<NativeType>());
+
       GetWindowThreadProcessId(hwnd, lpdwProcessId);
 
-      if (lpdwProcessId.value == pid && IsWindowVisible(hwnd) != 0) {
-        SetProp(hwnd, propPtr, idValue);
+      if (lpdwProcessId.value == pid && IsWindowVisible(hwnd)) {
+        // Correctly wrap the int as a Pointer-based HANDLE
+        SetProp(hwnd, PCWSTR(propPtr), HANDLE(Pointer.fromAddress(idValue)));
         return 0;
       }
       return 1;
     }, exceptionalReturn: 0);
 
     try {
-      EnumWindows(callback.nativeFunction, 0);
+      EnumWindows(callback.nativeFunction, LPARAM(0));
     } finally {
       callback.close();
       free(propPtr);
-      free(lpdwProcessId); // 确保无论如何都会释放
+      free(lpdwProcessId);
     }
   }
 

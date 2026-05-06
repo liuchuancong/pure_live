@@ -3,12 +3,12 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/player/player_consts.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'package:flutter_exit_app/flutter_exit_app.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
-import 'package:launch_at_startup/launch_at_startup.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
+import 'package:pure_live/player/utils/player_consts.dart';
+import 'package:auto_start_flutter/auto_start_flutter.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/modules/web_dav/webdav_config.dart';
 import 'package:pure_live/common/services/bilibili_account_service.dart';
@@ -69,7 +69,7 @@ class SettingsService extends GetxController {
   final volume = (HivePrefUtil.getDouble('volume') ?? 1.0).obs;
 
   final videoPlayerIndex = (HivePrefUtil.getInt('videoPlayerIndex') ?? 0).obs;
-  final useFallbackPlayer = (HivePrefUtil.getInt('useFallbackPlayer') ?? 0).obs;
+  final useHardStopOnExit = (HivePrefUtil.getBool('useHardStopOnExit') ?? true).obs;
   final enableCodec = (HivePrefUtil.getBool('enableCodec') ?? true).obs;
   final playerCompatMode = (HivePrefUtil.getBool('playerCompatMode') ?? false).obs;
   final customPlayerOutput = (HivePrefUtil.getBool('customPlayerOutput') ?? false).obs;
@@ -166,12 +166,13 @@ class SettingsService extends GetxController {
       HivePrefUtil.setBool('enableBackgroundPlay', value);
     });
 
-    enableStartUp.listen((value) {
+    enableStartUp.listen((value) async {
       HivePrefUtil.setBool('enableStartUp', value);
       if (value) {
-        launchAtStartup.enable();
-      } else {
-        launchAtStartup.disable();
+        bool? isAutoStartEnabled = await isAutoStartAvailable;
+        if (isAutoStartEnabled == true) {
+          await getAutoStartPermission();
+        }
       }
     });
 
@@ -305,8 +306,8 @@ class SettingsService extends GetxController {
       HivePrefUtil.setInt('videoPlayerIndex', value);
     });
 
-    useFallbackPlayer.listen((value) {
-      HivePrefUtil.setInt('useFallbackPlayer', value);
+    useHardStopOnExit.listen((value) {
+      HivePrefUtil.setBool('useHardStopOnExit', value);
     });
 
     bilibiliCookie.listen((value) {
@@ -693,6 +694,7 @@ class SettingsService extends GetxController {
     bilibiliCookie.value = json['bilibiliCookie'] ?? '';
     huyaCookie.value = json['huyaCookie'] ?? '';
     dontAskExit.value = json['dontAskExit'] ?? false;
+    useHardStopOnExit.value = json['useHardStopOnExit'] ?? true;
     showSplashPage.value = json['showSplashPage'] ?? true;
     exitChoose.value = json['exitChoose'] ?? '';
     douyinCookie.value = json['douyinCookie'] ?? '';
@@ -716,11 +718,6 @@ class SettingsService extends GetxController {
     changePreferPlatform(preferPlatform.value);
     changeShutDownConfig(autoShutDownTime.value, enableAutoShutDownTime.value);
     changeAutoRefreshConfig(autoRefreshTime.value);
-    if (enableStartUp.value) {
-      launchAtStartup.enable();
-    } else {
-      launchAtStartup.disable();
-    }
   }
 
   Map<String, dynamic> toJson() {
@@ -758,7 +755,7 @@ class SettingsService extends GetxController {
     json['proxyHost'] = proxyHost.value;
     json['proxyPort'] = proxyPort.value;
     json['videoPlayerIndex'] = videoPlayerIndex.value;
-    json['useFallbackPlayer'] = useFallbackPlayer.value;
+    json['useHardStopOnExit'] = useHardStopOnExit.value;
     json['enableCodec'] = enableCodec.value;
     json['playerCompatMode'] = playerCompatMode.value;
     json['bilibiliCookie'] = bilibiliCookie.value;
