@@ -8,8 +8,8 @@ import 'package:flutter_exit_app/flutter_exit_app.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
-import 'package:auto_start_flutter/auto_start_flutter.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:pure_live/common/global/win_auto_start.dart';
 import 'package:pure_live/modules/web_dav/webdav_config.dart';
 import 'package:pure_live/common/services/bilibili_account_service.dart';
 
@@ -168,12 +168,7 @@ class SettingsService extends GetxController {
 
     enableStartUp.listen((value) async {
       HivePrefUtil.setBool('enableStartUp', value);
-      if (value) {
-        bool? isAutoStartEnabled = await isAutoStartAvailable;
-        if (isAutoStartEnabled == true) {
-          await getAutoStartPermission();
-        }
-      }
+      setupLaunchAtStartup();
     });
 
     enableRotateScreenWithSystem.listen((value) {
@@ -538,6 +533,22 @@ class SettingsService extends GetxController {
     }
     favoriteAreas.add(area);
     return true;
+  }
+
+  Future<void> setupLaunchAtStartup() async {
+    try {
+      bool alreadyEnabled = WindowsAutoStart.isEnabled();
+      if (enableStartUp.value) {
+        if (alreadyEnabled == false) {
+          bool result = WindowsAutoStart.enable();
+          log("Enable result: $result");
+        } else {
+          WindowsAutoStart.disable();
+        }
+      }
+    } catch (e) {
+      log("Auto-start error: $e");
+    }
   }
 
   bool removeArea(LiveArea area) {

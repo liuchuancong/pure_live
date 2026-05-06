@@ -50,7 +50,6 @@ dependencies:
   crypto_simple: ^3.0.0
   window_manager: ^0.5.1
   ffi: ^2.2.0
-  auto_start_flutter: ^1.4.0
   tray_manager: ^0.5.2
   flutter_single_instance: ^1.7.0
   package_info_plus: ^9.0.1

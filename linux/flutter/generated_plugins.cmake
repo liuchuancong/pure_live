@@ -3,7 +3,6 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  auto_start_flutter
   bitsdojo_window_linux
   dynamic_color
   flutter_acrylic

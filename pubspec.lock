@@ -121,14 +121,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.3.8"
-  auto_start_flutter:
-    dependency: "direct main"
-    description:
-      name: auto_start_flutter
-      sha256: cb518769b6d4ae3ce4cf62d018b1a2ab78fc7946c2e18edcfcd8c466763251e5
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "1.4.0"
   back_button_interceptor:
     dependency: "direct main"
     description:

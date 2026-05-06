@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/global.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:auto_start_flutter/auto_start_flutter.dart';
 import 'package:pure_live/common/global/windows_utils.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
@@ -66,7 +65,7 @@ class AppInitializer {
 
     if (PlatformUtils.isDesktopNotMac) {
       if (instanceId.isEmpty) {
-        await _setupLaunchAtStartup();
+        await Get.find<SettingsService>().setupLaunchAtStartup();
       }
     }
     _isInitialized = true;
@@ -80,21 +79,6 @@ class AppInitializer {
       }
     }
     return '';
-  }
-
-  Future<void> _setupLaunchAtStartup() async {
-    try {
-      bool? isAutoStartEnabled = await isAutoStartAvailable;
-
-      var settings = Get.find<SettingsService>();
-      if (settings.enableStartUp.value) {
-        if (isAutoStartEnabled == true) {
-          await getAutoStartPermission();
-        }
-      }
-    } catch (e) {
-      log("Auto-start error: $e");
-    }
   }
 
   void initService() {
