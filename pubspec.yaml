@@ -96,10 +96,10 @@ dependencies:
   mime: ^2.0.0
   flv_lzc:
     git: https://github.com/liuchuancong/flv_lzc.git
-  device_info_plus: 12.2.0
+  device_info_plus: ^12.2.0
   auto_orientation_v2: ^2.3.6
   dart_quickjs:
-    git: https://github.com/liuchuancong/dart_quickjs.git
+    git: https://github.com/xiaoyaocz/dart_quickjs.git
   open_filex: ^4.7.0
   rxdart: ^0.28.0
   hive_ce: ^2.15.1
@@ -108,13 +108,9 @@ dependencies:
   google_fonts: ^6.3.3
   back_button_interceptor: ^8.0.4
   flutter_floating: ^2.0.1
-  win32: ^5.1.1
+  win32: ^5.15.0
   flutter_foreground_task: ^9.2.0
-  bitsdojo_window:
-    git:
-      url: https://github.com/Twilight-Evd/bitsdojo_window_plus.git
-      ref: main
-      path: bitsdojo_window
+  bitsdojo_window: ^0.1.6
   dart_sm: ^0.1.5
   screen_retriever:
     git:
@@ -122,17 +118,11 @@ dependencies:
       path: ./packages/screen_retriever
       ref: main
 dependency_overrides:
-  native_toolchain_c: ^0.18.0
   screen_retriever:
      git:
       url: https://github.com/MSOB7YY/screen_retriever.git
       path: ./packages/screen_retriever
       ref: main
-  bitsdojo_window:
-    git:
-      url: https://github.com/Twilight-Evd/bitsdojo_window_plus.git
-      ref: main
-      path: bitsdojo_window
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -191,4 +181,3 @@ flutter_intl:
   enabled: true
   arb_dir: lib/common/l10n
   output_dir: lib/common/l10n/generated
-

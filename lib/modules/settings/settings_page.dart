@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:remixicon/remixicon.dart'; // 引入美化图标库
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
@@ -19,306 +20,287 @@ class SettingsPage extends GetView<SettingsService> {
 
   @override
   Widget build(BuildContext context) {
+    final s = S.of(context);
+    final theme = Theme.of(context);
     double screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
-      appBar: AppBar(scrolledUnderElevation: screenWidth > 640 ? 0 : null, title: Text(S.of(context).settings_title)),
+      appBar: AppBar(
+        scrolledUnderElevation: screenWidth > 640 ? 0 : null,
+        title: Text(s.settings_title, style: const TextStyle(fontWeight: FontWeight.w600)),
+      ),
       body: ListView(
         physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         children: <Widget>[
-          SectionTitle(title: S.of(context).general),
-          if (Platform.isWindows)
-            Obx(
-              () => SwitchListTile(
-                title: Text('开机启动'),
-                subtitle: Text('应用将在每次开机时自动启动'),
-                value: controller.enableStartUp.value,
-                activeThumbColor: Theme.of(context).colorScheme.primary,
-                onChanged: (bool value) => controller.enableStartUp.value = value,
-              ),
-            ),
-          if (Platform.isWindows)
-            Obx(
-              () => SwitchListTile(
-                title: Text('退出每次询问'),
-                subtitle: Text('应用将在每次退出时不再询问是否退出'),
-                value: controller.dontAskExit.value,
-                activeThumbColor: Theme.of(context).colorScheme.primary,
-                onChanged: (bool value) => controller.dontAskExit.value = value,
-              ),
-            ),
-          Obx(
-            () => SwitchListTile(
-              title: Text('展示启动页'),
-              subtitle: Text("应用启动后是否显示启动页"),
-              value: controller.showSplashPage.value,
-              activeThumbColor: Theme.of(context).colorScheme.primary,
-              onChanged: (bool value) => controller.showSplashPage.value = value,
-            ),
-          ),
+          // ================== 1. 主题设置 ==================
+          const SectionTitle(title: "主题定制"),
           ListTile(
-            leading: const Icon(Icons.dark_mode_rounded, size: 32),
-            title: Text(S.of(context).change_theme_mode),
-            subtitle: Text(S.of(context).change_theme_mode_subtitle),
+            leading: Icon(Remix.moon_clear_line, color: theme.colorScheme.primary, size: 24),
+            title: Text(s.change_theme_mode),
+            subtitle: Text(s.change_theme_mode_subtitle),
             onTap: showThemeModeSelectorDialog,
           ),
           ListTile(
-            leading: const Icon(Icons.color_lens, size: 32),
-            title: Text(S.of(context).change_theme_color),
-            subtitle: Text(S.of(context).change_theme_color_subtitle),
-            trailing: ColorIndicator(
-              width: 44,
-              height: 44,
-              borderRadius: 4,
-              color: HexColor(controller.themeColorSwitch.value),
-              onSelectFocus: false,
+            leading: Icon(Remix.palette_line, color: theme.colorScheme.primary, size: 24),
+            title: Text(s.change_theme_color),
+            subtitle: Text(s.change_theme_color_subtitle),
+            trailing: Obx(
+              () => ColorIndicator(
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                color: HexColor(controller.themeColorSwitch.value),
+                onSelectFocus: false,
+              ),
             ),
             onTap: colorPickerDialog,
           ),
-          ListTile(
-            leading: const Icon(Icons.translate_rounded, size: 32),
-            title: Text(S.of(context).change_language),
-            subtitle: Text(S.of(context).change_language_subtitle),
-            onTap: showLanguageSelecterDialog,
-          ),
-          ListTile(
-            leading: const Icon(Icons.backup_rounded, size: 32),
-            title: Text(S.of(context).backup_recover),
-            subtitle: Text(S.of(context).backup_recover_subtitle),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BackupPage())),
-          ),
-          SectionTitle(title: S.of(context).video),
-          Obx(
-            () => SwitchListTile(
-              title: Text('退出小窗播放'),
-              subtitle: Text("应用退出时是否关闭小窗播放"),
-              value: controller.floatPlay.value,
-              activeThumbColor: Theme.of(context).colorScheme.primary,
-              onChanged: (bool value) => controller.floatPlay.value = value,
-            ),
-          ),
-          if (Platform.isAndroid)
-            Obx(
-              () => ListTile(
-                title: Text('视频播放器'),
-                subtitle: Text('选择视频播放器'),
-                onTap: showVideoSetDialog,
-                trailing: Text(PlayerConsts.players[controller.videoPlayerIndex.value]),
-              ),
-            ),
-          Obx(
-            () => SwitchListTile(
-              title: Text('播放器销毁设置'),
-              subtitle: Text('退出时是否销毁播放器'),
-              value: controller.useHardStopOnExit.value,
-              activeThumbColor: Theme.of(context).colorScheme.primary,
-              onChanged: (bool value) => controller.useHardStopOnExit.value = value,
-            ),
-          ),
-          Obx(
-            () => SwitchListTile(
-              title: Text(S.of(context).enable_codec),
-              value: controller.enableCodec.value,
-              activeThumbColor: Theme.of(context).colorScheme.primary,
-              onChanged: (bool value) => controller.enableCodec.value = value,
-            ),
-          ),
-          if (Platform.isAndroid && controller.videoPlayerIndex.value == 0)
-            Obx(
-              () => SwitchListTile(
-                title: Text('兼容模式'),
-                subtitle: Text('若播放卡顿可尝试打开此选项'),
-                value: controller.playerCompatMode.value,
-                activeThumbColor: Theme.of(context).colorScheme.primary,
-                onChanged: (bool value) => controller.playerCompatMode.value = value,
-              ),
-            ),
-          if (Platform.isAndroid)
-            Obx(
-              () => SwitchListTile(
-                title: Text(S.of(context).enable_background_play),
-                subtitle: Text(S.of(context).enable_background_play_subtitle),
-                value: controller.enableBackgroundPlay.value,
-                activeThumbColor: Theme.of(context).colorScheme.primary,
-                onChanged: (bool value) async {
-                  controller.enableBackgroundPlay.value = value;
-                  if (Platform.isAndroid && value) {
-                    bool hasPermission = await BackgroundService.requestPlatformPermissions();
-                    if (!hasPermission) {
-                      ToastUtil.show("如果需要后台播放，建议开启此权限");
-                    }
-                    controller.enableBackgroundPlay.value = hasPermission;
-                  }
-                },
-              ),
-            ),
-          if (Platform.isAndroid)
-            Obx(
-              () => SwitchListTile(
-                title: Text(S.of(context).enable_screen_keep_on),
-                subtitle: Text(S.of(context).enable_screen_keep_on_subtitle),
-                value: controller.enableScreenKeepOn.value,
-                activeThumbColor: Theme.of(context).colorScheme.primary,
-                onChanged: (bool value) => controller.enableScreenKeepOn.value = value,
-              ),
-            ),
-
-          Obx(
-            () => SwitchListTile(
-              title: Text(S.of(context).enable_fullscreen_default),
-              subtitle: Text(S.of(context).enable_fullscreen_default_subtitle),
-              value: controller.enableFullScreenDefault.value,
-              activeThumbColor: Theme.of(context).colorScheme.primary,
-              onChanged: (bool value) => controller.enableFullScreenDefault.value = value,
-            ),
+          _buildSwitchTile(
+            title: s.enable_dynamic_color,
+            subtitle: s.enable_dynamic_color_subtitle,
+            value: controller.enableDynamicTheme,
+            icon: Remix.magic_line,
           ),
 
+          // ================== 2. 视频设置 ==================
+          SectionTitle(title: s.video),
           Obx(
             () => ListTile(
-              title: Text(S.of(context).prefer_resolution),
-              subtitle: Text(S.of(context).prefer_resolution_subtitle),
-              trailing: Text(controller.preferResolution.value),
+              leading: const Icon(Remix.hd_line, size: 24),
+              title: Text(s.prefer_resolution),
+              subtitle: Text(s.prefer_resolution_subtitle),
+              trailing: Text(
+                controller.preferResolution.value,
+                style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+              ),
               onTap: showPreferResolutionSelectorDialog,
             ),
           ),
           ListTile(
-            title: Text('网络代理设置'),
-            subtitle: Text('配置视频播放的网络代理'),
-            trailing: Obx(() => Text(controller.enableProxy.value ? '已启用' : '未启用')),
+            leading: const Icon(Remix.shield_keyhole_line, size: 24),
+            title: const Text('网络代理设置'),
+            subtitle: const Text('配置播放器的网络请求代理'),
+            trailing: Obx(() => Text(controller.enableProxy.value ? '已开启' : '未开启')),
             onTap: showProxySettingsDialog,
           ),
-          if (controller.videoPlayerIndex.value == 0)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Text("播放器高级设置", style: Get.textTheme.titleMedium),
-            ),
-          if (controller.videoPlayerIndex.value == 0)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Text.rich(
-                TextSpan(
-                  text: "请勿随意修改以下设置，除非你知道自己在做什么。\n在修改以下设置前，你应该先查阅",
-                  children: [
-                    WidgetSpan(
-                      child: GestureDetector(
-                        onTap: () {
-                          launchUrlString("https://mpv.io/manual/stable/#video-output-drivers");
-                        },
-                        child: const Text(
-                          "MPV的文档",
-                          style: TextStyle(color: Colors.blue, fontSize: 12, decoration: TextDecoration.underline),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ),
-          if (controller.videoPlayerIndex.value == 0)
-            SettingsCard(
-              child: Column(
-                children: [
-                  Obx(
-                    () => SettingsSwitch(
-                      value: controller.customPlayerOutput.value,
-                      title: "自定义输出驱动与硬件加速",
-                      onChanged: (e) {
-                        controller.customPlayerOutput.value = e;
-                      },
-                    ),
-                  ),
-                  Obx(
-                    () => SettingsMenu(
-                      title: "视频输出驱动(--vo)",
-                      value: controller.videoOutputDriver.value,
-                      valueMap: PlayerConsts.videoOutputDrivers,
-                      onChanged: (e) {
-                        controller.videoOutputDriver.value = e;
-                      },
-                    ),
-                  ),
-                  Obx(
-                    () => SettingsMenu(
-                      title: "音频输出驱动(--ao)",
-                      value: controller.audioOutputDriver.value,
-                      valueMap: PlayerConsts.audioOutputDrivers,
-                      onChanged: (e) {
-                        controller.audioOutputDriver.value = e;
-                      },
-                    ),
-                  ),
-                  Obx(
-                    () => SettingsMenu(
-                      title: "硬件解码器(--hwdec)",
-                      value: controller.videoHardwareDecoder.value,
-                      valueMap: PlayerConsts.hardwareDecoder,
-                      onChanged: (e) {
-                        controller.videoHardwareDecoder.value = e;
-                      },
-                    ),
-                  ),
-                ],
-              ),
+          _buildSwitchTile(
+            title: '退出小窗播放',
+            subtitle: "返回主界面时是否保留悬浮窗",
+            value: controller.floatPlay,
+            icon: Remix.picture_in_picture_2_line,
+          ),
+          _buildSwitchTile(
+            title: s.enable_fullscreen_default,
+            subtitle: s.enable_fullscreen_default_subtitle,
+            value: controller.enableFullScreenDefault,
+            icon: Remix.fullscreen_line,
+          ),
+          if (Platform.isAndroid)
+            _buildSwitchTile(
+              title: s.enable_screen_keep_on,
+              subtitle: s.enable_screen_keep_on_subtitle,
+              value: controller.enableScreenKeepOn,
+              icon: Remix.lightbulb_line,
             ),
 
-          SectionTitle(title: S.of(context).custom),
-          Obx(
-            () => SwitchListTile(
-              title: Text(S.of(context).enable_dynamic_color),
-              subtitle: Text(S.of(context).enable_dynamic_color_subtitle),
-              value: controller.enableDynamicTheme.value,
-              activeThumbColor: Theme.of(context).colorScheme.primary,
-              onChanged: (bool value) => controller.enableDynamicTheme.value = value,
+          // ================== 3. 播放器设置 ==================
+          const SectionTitle(title: "播放器内核"),
+          if (Platform.isAndroid)
+            Obx(
+              () => ListTile(
+                leading: const Icon(Icons.settings_input_component_outlined, size: 24),
+                title: const Text('内核切换'),
+                subtitle: const Text('不同内核影响解码性能与兼容性'),
+                trailing: Text(
+                  PlayerConsts.players[controller.videoPlayerIndex.value],
+                  style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+                ),
+                onTap: showVideoSetDialog,
+              ),
             ),
+          _buildSwitchTile(
+            title: s.enable_codec,
+            subtitle: "优先使用 GPU 进行硬件解码",
+            value: controller.enableCodec,
+            icon: Remix.flashlight_line,
           ),
-          Obx(
-            () => SwitchListTile(
-              title: Text(S.of(context).enable_dense_favorites_mode),
-              subtitle: Text(S.of(context).enable_dense_favorites_mode_subtitle),
-              value: controller.enableDenseFavorites.value,
-              activeThumbColor: Theme.of(context).colorScheme.primary,
-              onChanged: (bool value) => controller.enableDenseFavorites.value = value,
-            ),
+          _buildSwitchTile(
+            title: '播放器强制销毁',
+            subtitle: '彻底关闭播放进程以节省资源',
+            value: controller.useHardStopOnExit,
+            icon: Remix.p2p_line,
           ),
-          Obx(
-            () => SwitchListTile(
-              title: Text(S.of(context).enable_auto_check_update),
-              subtitle: Text(S.of(context).enable_auto_check_update_subtitle),
-              value: controller.enableAutoCheckUpdate.value,
-              activeThumbColor: Theme.of(context).colorScheme.primary,
-              onChanged: (bool value) => controller.enableAutoCheckUpdate.value = value,
-            ),
+          if (Platform.isAndroid) _buildBackgroundPlayTile(context),
+
+          // MPV 高级配置联动显示
+          Obx(() {
+            if (controller.videoPlayerIndex.value != 0) return const SizedBox.shrink();
+            return _buildMpvSettings(context);
+          }),
+
+          // ================== 4. 通用设置 ==================
+          SectionTitle(title: s.general),
+          ListTile(
+            leading: const Icon(Remix.global_line, size: 24),
+            title: Text(s.change_language),
+            onTap: showLanguageSelecterDialog,
           ),
           ListTile(
-            title: Text(S.of(context).prefer_platform),
-            subtitle: Text(S.of(context).prefer_platform_subtitle),
-            onTap: showPreferPlatformSelectorDialog,
+            leading: const Icon(Remix.cloud_windy_line, size: 24),
+            title: const Text("平台显示设置"),
+            subtitle: const Text("管理并排序首页显示的直播平台"),
+            onTap: () => Get.toNamed(RoutePath.kSettingsHotAreas),
           ),
           ListTile(
-            title: Text(S.of(context).auto_refresh_time),
-            subtitle: Text(S.of(context).auto_refresh_time_subtitle),
-            trailing: Obx(() => Text('${controller.autoRefreshTime}分钟')),
-            onTap: showAutoRefreshTimeSetDialog,
-          ),
-          ListTile(
-            title: const Text("弹幕过滤"),
-            subtitle: const Text("自定义关键词过滤弹幕"),
+            leading: const Icon(Remix.filter_2_line, size: 24),
+            title: const Text("弹幕关键词过滤"),
             onTap: () => Get.toNamed(RoutePath.kSettingsDanmuShield),
           ),
           ListTile(
-            title: const Text("平台设置"),
-            subtitle: const Text("自定义观看喜爱的平台"),
-            onTap: () => Get.toNamed(RoutePath.kSettingsHotAreas),
+            leading: const Icon(Remix.save_3_line, size: 24),
+            title: Text(s.backup_recover),
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BackupPage())),
           ),
-          if (Platform.isAndroid)
-            ListTile(
-              title: Text(S.of(context).auto_shutdown_time),
-              subtitle: Text(S.of(context).auto_shutdown_time_subtitle),
-              trailing: Obx(() => Text('${controller.autoShutDownTime} minute')),
-              onTap: showAutoShutDownTimeSetDialog,
-            ),
+          _buildSwitchTile(
+            title: '启动页动画',
+            subtitle: "应用冷启动时显示动态 Logo",
+            value: controller.showSplashPage,
+            icon: Remix.rocket_2_line,
+          ),
+          _buildSwitchTile(
+            title: s.enable_auto_check_update,
+            value: controller.enableAutoCheckUpdate,
+            icon: Remix.refresh_line,
+          ),
+          if (Platform.isWindows) ...[
+            _buildSwitchTile(title: '开机启动', value: controller.enableStartUp, icon: Remix.windows_line),
+            _buildSwitchTile(title: '退出不再询问', value: controller.dontAskExit, icon: Remix.error_warning_line),
+          ],
+          const SizedBox(height: 32),
         ],
       ),
+    );
+  }
+
+  // --- 辅助构建方法 ---
+
+  Widget _buildSwitchTile({required String title, String? subtitle, required RxBool value, required IconData icon}) {
+    return Obx(
+      () => SwitchListTile(
+        secondary: Icon(icon, size: 24),
+        title: Text(title),
+        subtitle: subtitle != null ? Text(subtitle) : null,
+        value: value.value,
+        activeThumbColor: Get.theme.colorScheme.primary,
+        onChanged: (val) => value.value = val,
+      ),
+    );
+  }
+
+  Widget _buildBackgroundPlayTile(BuildContext context) {
+    return Obx(
+      () => SwitchListTile(
+        secondary: const Icon(Remix.music_2_line, size: 24),
+        title: Text(S.of(context).enable_background_play),
+        subtitle: Text(S.of(context).enable_background_play_subtitle),
+        value: controller.enableBackgroundPlay.value,
+        onChanged: (value) async {
+          controller.enableBackgroundPlay.value = value;
+          if (value && Platform.isAndroid) {
+            bool hasPermission = await BackgroundService.requestPlatformPermissions();
+            controller.enableBackgroundPlay.value = hasPermission;
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildMpvSettings(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Divider()),
+        if (Platform.isAndroid)
+          _buildSwitchTile(
+            title: '兼容模式',
+            subtitle: '旧设备播放卡顿时请尝试开启',
+            value: controller.playerCompatMode,
+            icon: Remix.shield_flash_line,
+          ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Row(
+            children: [
+              Icon(Remix.settings_5_line, size: 18, color: theme.colorScheme.primary),
+              const SizedBox(width: 8),
+              Text(
+                "MPV 高级设置",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: Text.rich(
+            TextSpan(
+              text: "调整内核参数可能导致播放异常，详情请参考 ",
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              children: [
+                WidgetSpan(
+                  alignment: PlaceholderAlignment.middle,
+                  child: GestureDetector(
+                    onTap: () => launchUrlString("https://mpv.io"),
+                    child: const Text(
+                      "MPV 官方文档",
+                      style: TextStyle(color: Colors.blue, fontSize: 12, decoration: TextDecoration.underline),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        SettingsCard(
+          child: Column(
+            children: [
+              Obx(
+                () => SettingsSwitch(
+                  value: controller.customPlayerOutput.value,
+                  title: "自定义驱动与硬件加速",
+                  onChanged: (e) => controller.customPlayerOutput.value = e,
+                ),
+              ),
+              Obx(
+                () => SettingsMenu(
+                  title: "视频输出驱动(--vo)",
+                  value: controller.videoOutputDriver.value,
+                  valueMap: PlayerConsts.videoOutputDrivers,
+                  onChanged: (e) => controller.videoOutputDriver.value = e,
+                ),
+              ),
+              Obx(
+                () => SettingsMenu(
+                  title: "音频输出驱动(--ao)",
+                  value: controller.audioOutputDriver.value,
+                  valueMap: PlayerConsts.audioOutputDrivers,
+                  onChanged: (e) => controller.audioOutputDriver.value = e,
+                ),
+              ),
+              Obx(
+                () => SettingsMenu(
+                  title: "硬件解码器(--hwdec)",
+                  value: controller.videoHardwareDecoder.value,
+                  valueMap: PlayerConsts.hardwareDecoder,
+                  onChanged: (e) => controller.videoHardwareDecoder.value = e,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

@@ -8,9 +8,9 @@ import 'package:tray_manager/tray_manager.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
+import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
-import 'package:bitsdojo_window/bitsdojo_window.dart' hide WindowEffect;
 
 class DesktopManager {
   static State? _currentState;

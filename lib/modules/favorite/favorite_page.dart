@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
@@ -17,33 +18,45 @@ class FavoritePage extends GetView<FavoriteController> {
             leading: showAction ? const MenuButton() : null,
             actions: showAction
                 ? [
-                    PopupMenuButton(
-                      tooltip: '搜索',
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      offset: const Offset(12, 0),
+                    PopupMenuButton<int>(
+                      // 更换为更简洁的更多图标
+                      icon: const Icon(Remix.more_2_fill, size: 24),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12), // 增大圆角更圆润
+                      ),
+                      offset: const Offset(0, 10), // 调整垂直偏移，使菜单紧贴按钮
                       position: PopupMenuPosition.under,
-                      icon: const Icon(Icons.read_more_sharp),
-                      onSelected: (int index) {
+                      onSelected: (index) {
                         if (index == 0) {
                           Get.toNamed(RoutePath.kSearch);
                         } else {
                           Get.toNamed(RoutePath.kToolbox);
                         }
                       },
-                      itemBuilder: (BuildContext context) {
-                        return [
-                          const PopupMenuItem(
-                            value: 0,
-                            padding: EdgeInsets.symmetric(horizontal: 12),
-                            child: MenuListTile(leading: Icon(CustomIcons.search), text: "搜索直播"),
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Row(
+                            children: [
+                              Icon(Remix.search_line, size: 20, color: Theme.of(context).primaryColor),
+                              const SizedBox(width: 12),
+                              const Text("搜索直播", style: TextStyle(fontSize: 14)),
+                            ],
                           ),
-                          const PopupMenuItem(
-                            value: 1,
-                            padding: EdgeInsets.symmetric(horizontal: 12),
-                            child: MenuListTile(leading: Icon(Icons.link), text: "链接访问"),
+                        ),
+                        PopupMenuItem(
+                          value: 1,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Row(
+                            children: [
+                              Icon(Remix.link, size: 20, color: Theme.of(context).primaryColor),
+                              const SizedBox(width: 12),
+                              const Text("链接访问", style: TextStyle(fontSize: 14)),
+                            ],
                           ),
-                        ];
-                      },
+                        ),
+                      ],
                     ),
                   ]
                 : [

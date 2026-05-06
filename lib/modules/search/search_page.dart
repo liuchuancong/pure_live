@@ -3,7 +3,6 @@ import 'search_list_view.dart';
 import 'package:flutter/material.dart';
 import 'package:pure_live/core/sites.dart';
 import 'package:pure_live/common/l10n/generated/l10n.dart';
-import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/search/search_controller.dart' as pure_live;
 
 class SearchPage extends GetView<pure_live.SearchController> {
@@ -21,16 +20,14 @@ class SearchPage extends GetView<pure_live.SearchController> {
             hintText: S.of(context).search_input_hint,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(24)),
             contentPadding: const EdgeInsets.symmetric(horizontal: 12.0),
-            prefixIcon: PlatformUtils.isAndroid
-                ? IconButton(
-                    onPressed: () {
-                      if (Navigator.canPop(Get.context!)) {
-                        Navigator.of(Get.context!).pop();
-                      }
-                    },
-                    icon: const Icon(Icons.arrow_back),
-                  )
-                : null,
+            prefixIcon: IconButton(
+              onPressed: () {
+                if (Navigator.canPop(Get.context!)) {
+                  Navigator.of(Get.context!).pop();
+                }
+              },
+              icon: const Icon(Icons.arrow_back),
+            ),
             suffixIcon: IconButton(onPressed: controller.doSearch, icon: const Icon(Icons.search)),
           ),
           onSubmitted: (e) {
