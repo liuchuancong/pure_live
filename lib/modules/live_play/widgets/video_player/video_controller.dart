@@ -329,7 +329,6 @@ class VideoController with ChangeNotifier {
   @override
   void dispose() async {
     _errorSub.cancel();
-    GlobalPlayerService.instance.playerManager.close();
     await destory();
     super.dispose();
   }
@@ -426,7 +425,7 @@ class VideoController with ChangeNotifier {
   // volume & brightness
   Future<double?> volume() async {
     if (Platform.isWindows) {
-      return GlobalPlayerService.instance.playerManager.currentVolume.value;
+      return settings.volume.value;
     }
     return await FlutterVolumeController.getVolume();
   }
@@ -441,7 +440,6 @@ class VideoController with ChangeNotifier {
     } else {
       await FlutterVolumeController.setVolume(value);
     }
-    GlobalPlayerService.instance.playerManager.currentVolume.value = value;
     settings.volume.value = value;
   }
 

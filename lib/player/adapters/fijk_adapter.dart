@@ -118,6 +118,7 @@ class FijkAdapter implements UnifiedPlayer {
       await FijkHelper.setFijkOption(_player, enableCodec: settings.enableCodec.value, headers: headers);
       await _player.setDataSource(url, autoPlay: true);
       _stateSubject.add(PlayerState.ready);
+      await setVolume(settings.volume.value);
     } catch (e, s) {
       final exception = PlayerException(
         message: 'Fijk setDataSource failed',

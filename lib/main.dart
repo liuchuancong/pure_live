@@ -118,6 +118,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
                 if (PlatformUtils.isDesktopNotMac) {
                   return DesktopManager.buildWithTitleBar(child);
                 }
+
                 return child ?? const SizedBox.shrink();
               },
             ),

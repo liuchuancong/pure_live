@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:get/get.dart';
 import 'package:rxdart/rxdart.dart';
 import '../models/player_state.dart';
 import 'package:flutter/material.dart';
@@ -7,13 +8,13 @@ import '../models/player_error_type.dart';
 import '../core/player_error_dispatcher.dart';
 import '../interface/unified_player_interface.dart';
 import 'package:better_player_plus/better_player_plus.dart';
+import 'package:pure_live/common/services/settings_service.dart';
 
 class BetterPlayerAdapter implements UnifiedPlayer {
   BetterPlayerController? _controller;
 
   bool _initialized = false;
   bool _disposed = false;
-  bool _wasSoftStopped = false;
   final _stateSubject = BehaviorSubject<PlayerState>.seeded(PlayerState.idle);
   final _playingSubject = BehaviorSubject<bool>.seeded(false);
   final _loadingSubject = BehaviorSubject<bool>.seeded(false);
@@ -81,10 +82,6 @@ class BetterPlayerAdapter implements UnifiedPlayer {
   @override
   Future<void> setDataSource(String url, List<String> playUrls, Map<String, String> headers) async {
     try {
-      if (_wasSoftStopped) {
-        _wasSoftStopped = false;
-        await _controller?.setVolume(1.0);
-      }
       _loadingSubject.add(true);
 
       BetterPlayerDataSource dataSource = BetterPlayerDataSource(
@@ -96,6 +93,8 @@ class BetterPlayerAdapter implements UnifiedPlayer {
       await _controller!.setupDataSource(dataSource);
 
       _stateSubject.add(PlayerState.ready);
+      final SettingsService settings = Get.find<SettingsService>();
+      await setVolume(settings.volume.value);
     } catch (e, s) {
       final exception = PlayerException(
         message: 'BetterPlayer setDataSource failed',
@@ -131,7 +130,6 @@ class BetterPlayerAdapter implements UnifiedPlayer {
   @override
   Future<void> softStop() async {
     if (_controller != null) {
-      _wasSoftStopped = true;
       await _controller!.setVolume(0.0); // 立即静音
     }
     await _controller?.pause();

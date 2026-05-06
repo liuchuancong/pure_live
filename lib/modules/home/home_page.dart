@@ -19,7 +19,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin, WindowListener {
+class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin {
   Timer? _debounceTimer;
   final FavoriteController favoriteController = Get.find<FavoriteController>();
 
@@ -35,27 +35,12 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
           ),
         );
         SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-      } else {
-        windowManager.addListener(this);
       }
     });
     addToOverlay();
     favoriteController.tabBottomIndex.addListener(() {
       setState(() => _selectedIndex = favoriteController.tabBottomIndex.value);
     });
-  }
-
-  @override
-  void dispose() {
-    if (Platform.isWindows) {
-      windowManager.removeListener(this);
-    }
-    super.dispose();
-  }
-
-  @override
-  void onWindowFocus() {
-    setState(() {});
   }
 
   int _selectedIndex = 0;

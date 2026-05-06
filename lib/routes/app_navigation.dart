@@ -52,7 +52,7 @@ class BackButtonObserver extends RouteObserver<PageRoute<dynamic>> {
             manager.showAppFloating();
           });
         } else {
-          manager.stop();
+          manager.close();
         }
         if (PlatformUtils.isMobile) {
           WindowService().doExitFullScreen();

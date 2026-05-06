@@ -103,7 +103,7 @@ class WindowService {
 
   Future<void> doExitWindowFullScreen() async {
     if (Platform.isWindows) {
-      WinFullscreen.exitFullscreen();
+      WinFullscreen.exitSpecialMode();
       WinFullscreen.stopEscListener();
       return;
     }

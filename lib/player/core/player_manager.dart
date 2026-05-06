@@ -22,6 +22,7 @@ import 'package:pure_live/player/core/audio_service.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/index.dart' hide PlayerState;
+import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/common/global/platform/background_server.dart';
 
 class PlayerManager {
@@ -38,7 +39,11 @@ class PlayerManager {
     required this.fallbackManager,
     required this.preloadManager,
     required this.lineManager,
-  });
+  }) {
+    isInPip.listen((value) {
+      GlobalPlayerState.to.isPipMode.value = value;
+    });
+  }
 
   // =========================
   // player
@@ -75,8 +80,6 @@ class PlayerManager {
   final RxBool isFloating = false.obs;
 
   final RxBool isHovered = false.obs;
-
-  final RxDouble currentVolume = 1.0.obs;
 
   final RxInt videoFitIndex = 0.obs;
 
@@ -438,8 +441,7 @@ class PlayerManager {
   // =========================
 
   Future<void> setVolume(double volume) async {
-    currentVolume.value = volume.clamp(0.0, 1.0);
-    await _currentPlayer?.setVolume(currentVolume.value);
+    await _currentPlayer?.setVolume(volume.clamp(0.0, 1.0));
   }
 
   // =========================
@@ -457,15 +459,12 @@ class PlayerManager {
   Future<void> enablePip() async {
     if (PlatformUtils.isAndroid) {
       final status = await floating.pipStatus;
-
       if (status == PiPStatus.disabled) {
         final rational = isVerticalVideo.value ? Rational.vertical() : Rational.landscape();
-
         await floating.enable(ImmediatePiP(aspectRatio: rational));
       }
     } else if (Platform.isWindows) {
       await WindowService().enterWinPiP(currentVideoRatio);
-
       isInPip.value = true;
     }
   }
@@ -473,7 +472,6 @@ class PlayerManager {
   Future<void> exitPip() async {
     if (Platform.isWindows) {
       await WindowService().exitWinPiP();
-
       isInPip.value = false;
     }
   }
@@ -704,50 +702,48 @@ class PlayerManager {
   // =========================
 
   Widget getVideoWidget(int fitIndex, {Widget? controls, required List<BoxFit> fitList}) {
-    return Obx(() {
-      if (_currentPlayer == null) {
-        return _buildPlaceholder();
-      }
-
-      final boxFit = fitList[fitIndex];
-
-      final content = KeyedSubtree(
-        key: videoKey.value,
-        child: Container(
-          color: Colors.black,
-          width: double.infinity,
-          height: double.infinity,
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: FittedBox(
-                  fit: boxFit,
-                  clipBehavior: Clip.hardEdge,
-                  child: StreamBuilder<List<int?>>(
-                    stream: CombineLatestStream.list([width, height]),
-                    builder: (context, snapshot) {
-                      final w = snapshot.data?[0]?.toDouble() ?? 1920;
-
-                      final h = snapshot.data?[1]?.toDouble() ?? 1080;
-
-                      return SizedBox(width: w, height: h, child: _currentPlayer!.getVideoWidget());
-                    },
+    return StreamBuilder<bool>(
+      stream: onPlaying,
+      initialData: isPlayingNow,
+      builder: (context, snapshot) {
+        final isPlaying = snapshot.data ?? false;
+        if (_currentPlayer == null || !isPlaying) {
+          return _buildPlaceholder();
+        }
+        final boxFit = fitList[fitIndex];
+        final content = KeyedSubtree(
+          key: videoKey.value,
+          child: Container(
+            color: Colors.black,
+            width: double.infinity,
+            height: double.infinity,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: FittedBox(
+                    fit: boxFit,
+                    clipBehavior: Clip.hardEdge,
+                    child: StreamBuilder<List<int?>>(
+                      stream: CombineLatestStream.list([width, height]),
+                      builder: (context, snapshot) {
+                        final w = snapshot.data?[0]?.toDouble() ?? 1920;
+                        final h = snapshot.data?[1]?.toDouble() ?? 1080;
+                        return SizedBox(width: w, height: h, child: _currentPlayer!.getVideoWidget());
+                      },
+                    ),
                   ),
                 ),
-              ),
-
-              if (controls != null) Positioned.fill(child: controls),
-            ],
+                if (controls != null) Positioned.fill(child: controls),
+              ],
+            ),
           ),
-        ),
-      );
-
-      if (!Platform.isAndroid) {
-        return content;
-      }
-
-      return PiPSwitcher(floating: floating, childWhenEnabled: content, childWhenDisabled: content);
-    });
+        );
+        if (!Platform.isAndroid) {
+          return content;
+        }
+        return PiPSwitcher(floating: floating, childWhenEnabled: content, childWhenDisabled: content);
+      },
+    );
   }
 
   Widget _buildPlaceholder() {
