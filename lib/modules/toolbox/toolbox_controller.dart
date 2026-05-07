@@ -19,24 +19,27 @@ class ToolBoxController extends GetxController {
       ToastUtil.show("无法解析此链接");
       return;
     }
-    String platform = parseResult[1];
+    FocusManager.instance.primaryFocus?.unfocus();
 
-    AppNavigator.toLiveRoomDetail(
-      liveRoom: LiveRoom(
-        roomId: parseResult.first,
-        platform: platform,
-        title: "",
-        cover: '',
-        nick: "",
-        watching: '',
-        avatar: "",
-        area: '',
-        liveStatus: LiveStatus.live,
-        status: true,
-        data: '',
-        danmakuData: '',
-      ),
-    );
+    Future.delayed(const Duration(milliseconds: 200), () {
+      String platform = parseResult[1];
+      AppNavigator.toLiveRoomDetail(
+        liveRoom: LiveRoom(
+          roomId: parseResult.first,
+          platform: platform,
+          title: "",
+          cover: '',
+          nick: "",
+          watching: '',
+          avatar: "",
+          area: '',
+          liveStatus: LiveStatus.live,
+          status: true,
+          data: '',
+          danmakuData: '',
+        ),
+      );
+    });
   }
 
   void getPlayUrl(String e) async {
@@ -166,6 +169,11 @@ class ToolBoxController extends GetxController {
       final id = await getRealDouyinUrl(realUrl);
       return [id, Sites.douyinSite];
     }
+    if (url.contains("webcast.amemv.com")) {
+      var regExp = RegExp(r"reflow/(\d+)");
+      id = regExp.firstMatch(url)?.group(1) ?? "";
+      return [id, Sites.douyinSite];
+    }
     if (realUrl.contains("live.kuaishou.com")) {
       var regExp = RegExp(r"live\.kuaishou\.com/u/([a-zA-Z0-9]+)$");
       if (realUrl.endsWith('/')) {
@@ -250,5 +258,28 @@ class ToolBoxController extends GetxController {
       log(e.toString(), name: "getLocation");
     }
     return "";
+  }
+
+  void autoCheckClipboard() async {
+    ClipboardData? data = await Clipboard.getData(Clipboard.kTextPlain);
+    String? text = data?.text;
+    if (text == null || text.isEmpty) return;
+
+    // 简单的正则判断，是否包含常见的直播域名
+    final bool isLiveUrl = RegExp(r"bilibili|huya|douyu|douyin|kuaishou|163").hasMatch(text);
+
+    if (isLiveUrl) {
+      // 自动填充两个输入框（或根据你逻辑选一个）
+      roomJumpToController.text = text;
+      getUrlController.text = text;
+
+      Get.snackbar(
+        "检测到链接",
+        "已自动填充剪贴板中的直播链接",
+        snackPosition: SnackPosition.bottom,
+        duration: const Duration(seconds: 2),
+        margin: const EdgeInsets.all(15),
+      );
+    }
   }
 }
