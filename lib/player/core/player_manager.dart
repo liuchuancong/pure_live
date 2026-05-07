@@ -401,15 +401,8 @@ class PlayerManager {
   }
 
   Future<void> stop() async {
-    await _currentPlayer?.stop();
-
-    LiveAudioService.stop();
-
+    await close();
     closeAppFloating();
-
-    if (Platform.isWindows) {
-      await exitPip();
-    }
   }
 
   // =========================
@@ -520,7 +513,6 @@ class PlayerManager {
                     behavior: HitTestBehavior.opaque,
                     onTap: () {
                       closeAppFloating();
-
                       if (currentFloatRoom != null) {
                         AppNavigator.toLiveRoomDetail(liveRoom: currentFloatRoom!);
                       }
