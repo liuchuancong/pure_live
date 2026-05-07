@@ -97,7 +97,7 @@ class LivePlayPage extends GetView<LivePlayController> {
           children: [
             Obx(
               () => CircleAvatar(
-                foregroundImage: controller.detail.value!.avatar == null
+                foregroundImage: controller.detail.value!.avatar == null || controller.detail.value!.avatar!.isEmpty
                     ? null
                     : NetworkImage(controller.detail.value!.avatar!),
                 radius: 13,
