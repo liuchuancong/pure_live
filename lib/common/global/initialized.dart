@@ -54,8 +54,10 @@ class AppInitializer {
     );
     fvp.registerWith(
       options: {
+        'platforms': ['android', 'ios', 'windows', 'linux', 'macos'],
         'video.decoders': ['D3D11', 'NVDEC', 'FFmpeg'],
-        'lowLatency': 2,
+        'player': {'cc': '0', 'buffer': '3000+60000'},
+        'global': {'logLevel': 'Error'},
       },
     );
     if (PlatformUtils.isDesktop) {
