@@ -49,8 +49,6 @@ class _VideoPlayerState extends State<VideoPlayer> with WidgetsBindingObserver {
           player.pause();
         }
       } else {
-        // 2. 如果开启了后台播放，务必显式再次调用 resume/play
-        // 这是为了防止某些设备在失去 Surface 的瞬间自动暂停
         player.resume();
       }
     } else if (state == AppLifecycleState.resumed) {

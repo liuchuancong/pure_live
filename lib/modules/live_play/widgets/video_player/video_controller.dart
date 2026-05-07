@@ -355,7 +355,6 @@ class VideoController with ChangeNotifier {
   Future<void> destory() async {
     if (Platform.isAndroid || Platform.isIOS) {
       if (allowScreenKeepOn) WakelockPlus.disable();
-      brightnessController.resetApplicationScreenBrightness();
       _subscription.cancel();
       _volumeController.removeListener();
     }
