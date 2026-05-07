@@ -18,6 +18,8 @@ class GlobalPlayerService {
 
   bool _initialized = false;
 
+  bool get initialized => _initialized;
+
   Future<void> initialize({PlayerEngine defaultEngine = PlayerEngine.mediaKit}) async {
     if (_initialized) return;
 

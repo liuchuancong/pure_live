@@ -30,9 +30,6 @@ class LiveAudioService {
   /// 启动播放并显示通知
   static Future<void> start(String roomId, String title, String author, String? cover) async {
     if (!Platform.isAndroid || _handler == null) return;
-    bool hasPermission = await requestPlatformPermissions();
-    if (!hasPermission) return;
-
     await _handler!.playMediaItem(
       MediaItem(
         id: roomId,

@@ -66,6 +66,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
     if (PlatformUtils.isDesktop) {
       DesktopManager.disposeListeners();
     }
+    GlobalPlayerService.instance.playerManager.dispose();
     super.dispose();
   }
 
