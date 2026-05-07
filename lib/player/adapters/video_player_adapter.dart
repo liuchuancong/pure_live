@@ -4,10 +4,10 @@ import 'package:rxdart/rxdart.dart';
 import '../models/player_state.dart';
 import '../models/player_exception.dart';
 import '../models/player_error_type.dart';
+import 'package:pure_live/common/index.dart';
 import '../core/player_error_dispatcher.dart';
 import '../interface/unified_player_interface.dart';
 import 'package:better_player_plus/better_player_plus.dart';
-import 'package:pure_live/common/index.dart' hide PlayerState;
 
 class BetterPlayerAdapter implements UnifiedPlayer {
   BetterPlayerController? _controller;

@@ -18,7 +18,7 @@ export 'package:pure_live/modules/auth/auth_controller.dart';
 export 'package:pure_live/modules/areas/areas_controller.dart';
 export 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 export 'package:flutter_localizations/flutter_localizations.dart';
-export 'package:media_kit/media_kit.dart';
+export 'package:fvp/fvp.dart';
 export 'package:pure_live/common/index.dart';
 export 'package:uri_to_file/uri_to_file.dart';
 export 'package:easy_refresh/easy_refresh.dart';

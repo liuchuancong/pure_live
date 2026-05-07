@@ -13,13 +13,13 @@ import 'package:floating/floating.dart';
 import '../models/player_exception.dart';
 import '../models/player_error_type.dart';
 import 'package:rxdart/rxdart.dart' hide Rx;
+import 'package:pure_live/common/index.dart';
 import '../interface/unified_player_interface.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:flutter_floating/flutter_floating.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
-import 'package:pure_live/common/index.dart' hide PlayerState;
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
 
@@ -139,7 +139,7 @@ class PlayerManager {
 
   UnifiedPlayer? get currentPlayer => _currentPlayer;
 
-  PlayerEngine get currentEngine => _runtimeEngine ?? _defaultEngine ?? PlayerEngine.mediaKit;
+  PlayerEngine get currentEngine => _runtimeEngine ?? _defaultEngine ?? PlayerEngine.fvp;
 
   Stream<PlayerState> get onStateChanged => _stateSubject.stream;
 
@@ -173,7 +173,7 @@ class PlayerManager {
   // initialize
   // =========================
 
-  Future<void> initialize({PlayerEngine engine = PlayerEngine.mediaKit}) async {
+  Future<void> initialize({PlayerEngine engine = PlayerEngine.fvp}) async {
     if (_disposed) return;
 
     _stateSubject.add(PlayerState.initializing);

@@ -51,12 +51,12 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
 
     try {
       if (PlatformUtils.isDesktop) {
-        defaultEngine = PlayerEngine.mediaKit;
+        defaultEngine = PlayerEngine.fvp;
       } else {
         defaultEngine = PlayerEngine.values[settings.videoPlayerIndex.value];
       }
     } catch (e) {
-      defaultEngine = PlayerEngine.mediaKit;
+      defaultEngine = PlayerEngine.fvp;
     }
     await GlobalPlayerService.instance.initialize(defaultEngine: defaultEngine);
   }

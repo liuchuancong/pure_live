@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:developer';
 import 'package:get/get.dart';
+import 'package:fvp/fvp.dart' as fvp;
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/global.dart';
@@ -51,7 +52,12 @@ class AppInitializer {
       displayTime: const Duration(milliseconds: 3000),
       intervalTime: const Duration(milliseconds: 100),
     );
-    MediaKit.ensureInitialized();
+    fvp.registerWith(
+      options: {
+        'video.decoders': ['D3D11', 'NVDEC', 'FFmpeg'],
+        'lowLatency': 2,
+      },
+    );
     if (PlatformUtils.isDesktop) {
       await DesktopManager.initialize();
       await DesktopManager.postInitialize();
