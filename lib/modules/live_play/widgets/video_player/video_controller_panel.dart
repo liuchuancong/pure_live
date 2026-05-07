@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 import 'dart:async';
 import 'package:get/get.dart';
 import 'package:flutter_svg/svg.dart';
@@ -412,42 +411,47 @@ class BrightnessVolumnDargAreaState extends State<BrightnessVolumnDargArea> {
     setState(() => _hideBVStuff = false);
   }
 
-  void _onVerticalDragUpdate(Offset postion, Offset delta) async {
+  void _onVerticalDragUpdate(Offset position, Offset delta) async {
     if (controller.showLocked.value) return;
-    if (delta.distance < 0.2) return;
 
-    // fix darg left change to switch bug
-    final width = MediaQuery.of(context).size.width;
-    final dargLeft = (postion.dx > (width / 2)) ? false : true;
-    // disable windows brightness
+    if (delta.distance < 0.5) return;
+
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+
+    final dargLeft = (position.dx > (width / 2)) ? false : true;
+
     if (Platform.isWindows && dargLeft) return;
+
     if (_hideBVStuff || _isDargLeft != dargLeft) {
       _isDargLeft = dargLeft;
       if (_isDargLeft) {
-        await controller.brightness().then((double v) {
-          setState(() => _updateDargVarVal = v);
-        });
+        double v = await controller.brightness();
+        setState(() => _updateDargVarVal = v);
       } else {
-        await controller.volume().then((double? v) {
-          setState(() => _updateDargVarVal = v!);
-        });
+        double? v = await controller.volume();
+        setState(() => _updateDargVarVal = v ?? 1.0);
       }
     }
+
     _cancelAndRestartHideBVTimer();
 
-    double dragRange = (delta.direction < 0 || delta.direction > pi)
-        ? _updateDargVarVal + 0.01
-        : _updateDargVarVal - 0.01;
-    // 是否溢出
-    dragRange = min(dragRange, 1.0);
-    dragRange = max(dragRange, 0.0);
-    // 亮度 & 音量
-    if (_isDargLeft) {
-      controller.setBrightness(dragRange);
-    } else {
-      controller.setVolume(dragRange);
+    double sensitivity = 0.8; // 灵敏度系数，越小越慢
+    double deltaValue = -(delta.dy / (height / 2)) * sensitivity;
+
+    double dragRange = _updateDargVarVal + deltaValue;
+
+    dragRange = dragRange.clamp(0.0, 1.0);
+
+    if ((dragRange - _updateDargVarVal).abs() > 0.001) {
+      if (_isDargLeft) {
+        controller.setBrightness(dragRange);
+      } else {
+        controller.setVolume(dragRange);
+      }
+      setState(() => _updateDargVarVal = dragRange);
     }
-    setState(() => _updateDargVarVal = dragRange);
   }
 
   @override

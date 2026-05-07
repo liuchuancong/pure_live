@@ -8,13 +8,13 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_acrylic
   flutter_inappwebview_linux
   flutter_js
-  flutter_volume_controller
   gtk
   media_kit_libs_linux
   media_kit_video
   screen_retriever_linux
   tray_manager
   url_launcher_linux
+  volume_controller
   window_manager
 )
 

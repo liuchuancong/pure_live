@@ -185,7 +185,7 @@ class SettingsPage extends GetView<SettingsService> {
           ),
           _buildSwitchTile(
             title: '启动页动画',
-            subtitle: "应用冷启动时显示动态 Logo",
+            subtitle: "应用启动时显示 Logo",
             value: controller.showSplashPage,
             icon: Remix.rocket_2_line,
           ),

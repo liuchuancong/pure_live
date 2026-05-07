@@ -8,6 +8,7 @@ import 'package:battery_plus/battery_plus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:screen_brightness/screen_brightness.dart';
+import 'package:volume_controller/volume_controller.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/modules/live_play/load_type.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
@@ -17,7 +18,6 @@ import 'package:pure_live/player/models/player_error_type.dart';
 import 'package:pure_live/pkg/canvas_danmaku/danmaku_controller.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
 import 'package:pure_live/pkg/canvas_danmaku/models/danmaku_option.dart';
-import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:pure_live/pkg/canvas_danmaku/models/danmaku_content_item.dart';
 
 class VideoController with ChangeNotifier {
@@ -40,6 +40,10 @@ class VideoController with ChangeNotifier {
   final int currentQuality;
 
   bool get supportWindowFull => Platform.isWindows || Platform.isLinux;
+
+  late final VolumeController _volumeController;
+
+  late final StreamSubscription<double> _subscription;
 
   GlobalKey<BrightnessVolumnDargAreaState> brightnessKey = GlobalKey<BrightnessVolumnDargAreaState>();
 
@@ -203,7 +207,8 @@ class VideoController with ChangeNotifier {
   void initVideoController() async {
     final playerManager = GlobalPlayerService.instance.playerManager;
     if (PlatformUtils.isMobile) {
-      FlutterVolumeController.updateShowSystemUI(false);
+      _volumeController = VolumeController.instance;
+      _volumeController.showSystemUI = true;
       registerVolumeListener();
     }
     playerManager.play(datasource, playUrs, headers, room: room);
@@ -351,7 +356,8 @@ class VideoController with ChangeNotifier {
     if (Platform.isAndroid || Platform.isIOS) {
       if (allowScreenKeepOn) WakelockPlus.disable();
       brightnessController.resetApplicationScreenBrightness();
-      FlutterVolumeController.removeListener();
+      _subscription.cancel();
+      _volumeController.removeListener();
     }
   }
 
@@ -415,11 +421,9 @@ class VideoController with ChangeNotifier {
 
   // 注册音量变化监听器
   void registerVolumeListener() {
-    FlutterVolumeController.addListener((volume) {
-      if (Platform.isAndroid) {
-        settings.volume.value = volume;
-      }
-    });
+    _subscription = _volumeController.addListener((volume) {
+      settings.volume.value = volume;
+    }, fetchInitialVolume: true);
   }
 
   // volume & brightness
@@ -427,7 +431,7 @@ class VideoController with ChangeNotifier {
     if (Platform.isWindows) {
       return settings.volume.value;
     }
-    return await FlutterVolumeController.getVolume();
+    return await _volumeController.getVolume();
   }
 
   Future<double> brightness() async {
@@ -438,7 +442,7 @@ class VideoController with ChangeNotifier {
     if (Platform.isWindows) {
       GlobalPlayerService.instance.playerManager.setVolume(value);
     } else {
-      await FlutterVolumeController.setVolume(value);
+      await _volumeController.setVolume(value);
     }
     settings.volume.value = value;
   }
