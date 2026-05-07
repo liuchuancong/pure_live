@@ -29,5 +29,4 @@ export 'package:dynamic_color/dynamic_color.dart';
 export 'package:pure_live/routes/route_path.dart';
 export 'package:share_handler/share_handler.dart';
 export 'package:window_manager/window_manager.dart';
-export 'package:shared_preferences/shared_preferences.dart';
 export 'package:pure_live/player/global_player_service.dart';

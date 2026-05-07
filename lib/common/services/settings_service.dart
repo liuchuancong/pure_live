@@ -128,9 +128,6 @@ class SettingsService extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    migrateOldPrefsData().then((_) {
-      update(['migrate_complete']);
-    });
 
     // === 监听并持久化 ===
     enableDynamicTheme.listen((bool value) {
@@ -415,35 +412,6 @@ class SettingsService extends GetxController {
   void changeAutoRefreshConfig(int minutes) {
     autoRefreshTime.value = minutes;
     HivePrefUtil.setInt('autoRefreshTime', minutes);
-  }
-
-  // --- 数据迁移 ---
-  Future<void> migrateOldPrefsData() async {
-    if (HivePrefUtil.getBool('_migrated_from_sp') == true) {
-      return;
-    }
-    try {
-      final allKeys = PrefUtil.prefs.getKeys();
-      for (final key in allKeys) {
-        final value = PrefUtil.prefs.get(key);
-        if (value == null) continue;
-        if (value is String) {
-          await HivePrefUtil.setString(key, value);
-        } else if (value is int) {
-          await HivePrefUtil.setInt(key, value);
-        } else if (value is bool) {
-          await HivePrefUtil.setBool(key, value);
-        } else if (value is double) {
-          await HivePrefUtil.setDouble(key, value);
-        } else if (value is List<String>) {
-          await HivePrefUtil.setStringList(key, value);
-        }
-      }
-      await HivePrefUtil.setBool('_migrated_from_sp', true);
-      log('旧 SharedPreferences 数据迁移到 Hive 完成！', name: 'SettingsService');
-    } catch (e) {
-      log('数据迁移失败: $e', name: 'SettingsService');
-    }
   }
 
   // --- 收藏 & 历史操作 ---
