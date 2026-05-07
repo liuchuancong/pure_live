@@ -8,6 +8,7 @@ import '../models/player_error_type.dart';
 import 'package:video_player/video_player.dart';
 import '../interface/unified_player_interface.dart';
 import 'package:pure_live/common/models/live_room.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/services/settings_service.dart';
 
 class FvpAdapter implements UnifiedPlayer {
@@ -113,8 +114,11 @@ class FvpAdapter implements UnifiedPlayer {
       _heightSubject.add(size.height.toInt());
 
       _stateSubject.add(PlayerState.ready);
-
-      await setVolume(settings.volume.value);
+      if (PlatformUtils.isMobile) {
+        await setVolume(1.0);
+      } else {
+        await setVolume(settings.volume.value);
+      }
     } catch (e, s) {
       final exception = PlayerException(
         message: 'FVP open failed',
