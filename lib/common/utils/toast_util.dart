@@ -2,15 +2,17 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 
 class ToastUtil {
   static String? _lastMsg;
-  static DateTime? _lastTime;
 
-  static void show(String msg, {Duration interval = const Duration(seconds: 5)}) {
-    final now = DateTime.now();
-    if (msg == _lastMsg && _lastTime != null && now.difference(_lastTime!) < interval) {
-      return;
-    }
+  static void show(String? msg) {
+    if (msg == null || msg.isEmpty) return;
+    if (msg == _lastMsg) return;
+
     _lastMsg = msg;
-    _lastTime = now;
+
     SmartDialog.showToast(msg);
+  }
+
+  static void clear() {
+    _lastMsg = null;
   }
 }
