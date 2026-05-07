@@ -7,18 +7,29 @@ on:
         description: 'Tag name for the release'
         required: false
         default: 'v1.0.0'
+
   push:
     tags:
       - "v*"
 
 jobs:
+
+  # =========================================================
+  # ANDROID
+  # =========================================================
+
   build-android:
     runs-on: macos-latest
+
+    strategy:
+      matrix:
+        branch: [master, fvp]
+
     steps:
       - name: 签出代码
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.tag_name || github.ref }}
+          ref: ${{ matrix.branch }}
 
       - name: 下载Android keystore
         id: android_keystore
@@ -47,62 +58,82 @@ jobs:
           channel: stable
           cache: true
 
-      - name: 更新Flutter的packages
+      - name: 更新Flutter packages
         run: flutter pub get
 
-      - name: 打包APK
+      - name: 打包 APK
         run: flutter build apk --release --split-per-abi
 
-      - name: 上传APK至Artifacts
+      - name: 重命名 APK
+        shell: bash
+        run: |
+          cd build/app/outputs/flutter-apk
+
+          if [ "${{ matrix.branch }}" = "fvp" ]; then
+            for f in app-*-release.apk; do
+              mv "$f" "${f/-release.apk/-fvp.apk}"
+            done
+          fi
+
+      - name: 上传 APK
         uses: actions/upload-artifact@v4
         with:
-          name: android-apks
-          path: |
-            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
-            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-            build/app/outputs/flutter-apk/app-x86_64-release.apk
+          name: android-apks-${{ matrix.branch }}
+          path: build/app/outputs/flutter-apk/*.apk
           retention-days: 1
+
+  # =========================================================
+  # WINDOWS
+  # =========================================================
 
   build-windows:
     runs-on: windows-latest
+
+    strategy:
+      matrix:
+        branch: [master, fvp]
+
     steps:
       - name: 签出代码
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.tag_name || github.ref }}
-          
+          ref: ${{ matrix.branch }}
+
       - name: Decode MSIX Certificate
         shell: pwsh
         run: |
           $certBase64 = "${{ secrets.CERTIFICATE }}".Trim() -replace '\s+', ''
-          if ([string]::IsNullOrEmpty($certBase64)) { Write-Error "Secret is empty!"; exit 1 }
+
+          if ([string]::IsNullOrEmpty($certBase64)) {
+            Write-Error "Secret is empty!"
+            exit 1
+          }
+
           $certBytes = [System.Convert]::FromBase64String($certBase64)
-          
-          # 使用絕對路徑並確保路徑格式一致
+
           $certPath = Join-Path -Path (Get-Location) -ChildPath "certificate.pfx"
+
           [IO.File]::WriteAllBytes($certPath, $certBytes)
-          
-          # 將路徑存入環境變數供下一步使用（選用）
+
           echo "FINAL_CERT_PATH=$certPath" >> $env:GITHUB_ENV
 
-      - name: Update make_config.yaml with real cert path
+      - name: Update make_config.yaml
         shell: pwsh
         run: |
           $configPath = "windows/packaging/msix/make_config.yaml"
-          # 獲取上一步生成的絕對路徑，並將反斜槓轉為正斜槓以避免 YAML 轉義問題
+
           $absolutePath = "${{ env.FINAL_CERT_PATH }}".Replace('\', '/')
-          
+
           if (Test-Path $configPath) {
               $content = Get-Content $configPath -Raw
-              # 正則替換：匹配 certificate_path: 後面跟隨的任何內容，替換為絕對路徑
+
               $content = $content -replace 'certificate_path:\s*.*', "certificate_path: $absolutePath"
-              
-              # 如果密碼也需要從 Secret 填入，可以在這裡一併處理
-              # $content = $content -replace 'certificate_password:\s*.*', 'certificate_password: ${{ secrets.CERT_PASSWORD }}'
-              
+
               Set-Content $configPath $content
+
               Write-Host "Success: certificate_path set to $absolutePath"
-          } else {
+          }
+          else {
               Write-Error "Config file not found!"
               exit 1
           }
@@ -113,84 +144,119 @@ jobs:
           channel: stable
           cache: true
 
-      - name: 启用Flutter桌面支持
+      - name: 启用 Flutter Windows
         run: flutter config --enable-windows-desktop
 
-      - name: 更新Flutter的packages
+      - name: 更新Flutter packages
         run: flutter pub get
 
-      - name: Install Inno Setup 6
+      - name: Install Inno Setup
         run: |
           $url = "https://jrsoftware.org/download.php/is.exe"
           $output = "${{ runner.temp }}\innosetup.exe"
+
           Invoke-WebRequest -Uri $url -OutFile $output
+
           Start-Process -FilePath $output -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait
+
           echo "C:\Program Files (x86)\Inno Setup 6" >> $env:GITHUB_PATH
 
       - name: Copy Chinese language pack
         run: |
           $source = "windows\packaging\exe\ChineseSimplified.isl"
           $target = "C:\Program Files (x86)\Inno Setup 6\Languages\ChineseSimplified.isl"
-          if (Test-Path $source) { Copy-Item $source $target -Force }
+
+          if (Test-Path $source) {
+            Copy-Item $source $target -Force
+          }
 
       - name: Install fastforge
         run: dart pub global activate fastforge
-        
-      - name: Get version from pubspec.yaml
+
+      - name: Get version
         id: get_version
         shell: pwsh
         run: |
           $lines = Get-Content pubspec.yaml
+
           foreach ($line in $lines) {
             if ($line -match '^\s*version:\s*(\S+)') {
               $v = $matches[1] -replace '[`"''`]', ''
+
               "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
               exit 0
             }
           }
-          Write-Error "Version not found"; exit 1
 
-      # 👇 关键修改：同时打包 exe 和 msix
-      - name: Package Windows (exe + msix)
+          Write-Error "Version not found"
+
+          exit 1
+
+      - name: Package Windows
         run: fastforge package --platform windows --targets exe,msix
 
       - name: Rename installers
         shell: pwsh
-        env:
-          MSIX_CERT_PATH: ${{ env.MSIX_CERT_PATH }}
-          MSIX_CERT_PASSWORD: xxxx
         run: |
           $VERSION = "${{ steps.get_version.outputs.version }}"
           $DIST_DIR = "dist"
 
-          # Find and rename .exe
+          $SUFFIX = ""
+
+          if ("${{ matrix.branch }}" -eq "fvp") {
+            $SUFFIX = "-fvp"
+          }
+
+          # EXE
           $EXE_FILE = Get-ChildItem $DIST_DIR -Recurse -Filter "*.exe" | Select-Object -First 1
+
           if ($EXE_FILE) {
-            Copy-Item $EXE_FILE.FullName "PureLive-$VERSION-windows-x64-setup.exe"
+            Copy-Item $EXE_FILE.FullName "PureLive-$VERSION$SUFFIX-windows-x64-setup.exe"
           }
 
-          # Find and rename .msix
+          # MSIX
           $MSIX_FILE = Get-ChildItem $DIST_DIR -Recurse -Filter "*.msix" | Select-Object -First 1
+
           if ($MSIX_FILE) {
-            Copy-Item $MSIX_FILE.FullName "PureLive-$VERSION-windows-x64.msix"
+            Copy-Item $MSIX_FILE.FullName "PureLive-$VERSION$SUFFIX-windows-x64.msix"
           }
 
-      - name: 上传Windows安装包（exe + msix）
+      - name: 上传 Windows 安装包
         uses: actions/upload-artifact@v4
         with:
-          name: windows-installer
+          name: windows-installer-${{ matrix.branch }}
           path: |
-            PureLive-${{ steps.get_version.outputs.version }}-windows-x64-setup.exe
-            PureLive-${{ steps.get_version.outputs.version }}-windows-x64.msix
+            PureLive-*.exe
+            PureLive-*.msix
           retention-days: 1
+
+  # =========================================================
+  # MACOS
+  # =========================================================
 
   build-macos:
     runs-on: macos-latest
+
+    strategy:
+      matrix:
+        branch: [master, fvp]
+
     steps:
       - name: 签出代码
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.tag_name || github.ref }}
+          ref: ${{ matrix.branch }}
+
+      - name: Set suffix
+        id: suffix
+        shell: bash
+        run: |
+          if [ "${{ matrix.branch }}" = "fvp" ]; then
+            echo "suffix=-fvp" >> $GITHUB_OUTPUT
+          else
+            echo "suffix=" >> $GITHUB_OUTPUT
+          fi
 
       - name: 设置Flutter环境
         uses: subosito/flutter-action@v2
@@ -198,16 +264,17 @@ jobs:
           channel: stable
           cache: true
 
-      - name: 更新Flutter的packages
+      - name: 更新Flutter packages
         run: flutter pub get
 
       - name: Build macOS
         run: flutter build macos --release -v
 
-      - name: Get version from pubspec.yaml
+      - name: Get version
         id: get_version
         run: |
           VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //; s/[`"'"'"']//g')
+
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Install create-dmg
@@ -221,26 +288,36 @@ jobs:
             --window-size 800 400 \
             --icon-size 100 \
             --app-drop-link 600 185 \
-            "PureLive-${{ steps.get_version.outputs.version }}-macOS.dmg" \
+            "PureLive-${{ steps.get_version.outputs.version }}${{ steps.suffix.outputs.suffix }}-macOS.dmg" \
             "build/macos/Build/Products/Release/纯粹直播.app"
 
-      - name: 上传DMG
+      - name: 上传 DMG
         uses: actions/upload-artifact@v4
         with:
-          name: macos-dmg
-          path: PureLive-${{ steps.get_version.outputs.version }}-macOS.dmg
+          name: macos-dmg-${{ matrix.branch }}
+          path: PureLive-*.dmg
           retention-days: 1
+
+  # =========================================================
+  # RELEASE
+  # =========================================================
 
   publish-release:
     runs-on: ubuntu-latest
-    needs: [build-android, build-windows, build-macos]
+
+    needs:
+      - build-android
+      - build-windows
+      - build-macos
+
     permissions:
       contents: write
+
     steps:
-      - name: 签出代码（用于读取 version.json）
+      - name: 签出代码
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.tag_name || github.ref }}
+          ref: master
 
       - name: 下载所有构建产物
         uses: actions/download-artifact@v4
@@ -257,10 +334,10 @@ jobs:
         id: release_body
         run: |
           cat << 'EOF' > release_body.txt
+
           # 纯粹直播 ${{ github.ref_name }}
 
-          开源无广告、无病毒，杀毒软件误报可自行斟酌使用。
-          ### 📥 快速下载
+                    ### 📥 快速下载
 
           |版本|下载地址|
           |---|---|
@@ -284,24 +361,36 @@ jobs:
           适配：Android TV 6.0+ | 功能：直播源同步、多播放器、弹幕、应用内更新
 
           ### 📝 本次更新
+
           ${{ fromJson(steps.version.outputs.content).version_desc }}
+
           EOF
+
           echo "body_path=$(pwd)/release_body.txt" >> $GITHUB_OUTPUT
 
       - name: 上传至 Release
         uses: softprops/action-gh-release@v2.2.1
         with:
           name: ${{ github.event.inputs.tag_name || github.ref_name }}
+
           body_path: ${{ steps.release_body.outputs.body_path }}
+
           prerelease: false
+
           token: ${{ secrets.TOKEN }}
+
           files: |
-            artifacts/android-apks/app-armeabi-v7a-release.apk
-            artifacts/android-apks/app-arm64-v8a-release.apk
-            artifacts/android-apks/app-x86_64-release.apk
-            artifacts/windows-installer/*.exe
-            artifacts/windows-installer/*.msix
-            artifacts/macos-dmg/*.dmg
+            artifacts/android-apks-master/*.apk
+            artifacts/android-apks-fvp/*.apk
+
+            artifacts/windows-installer-master/*.exe
+            artifacts/windows-installer-master/*.msix
+
+            artifacts/windows-installer-fvp/*.exe
+            artifacts/windows-installer-fvp/*.msix
+
+            artifacts/macos-dmg-master/*.dmg
+            artifacts/macos-dmg-fvp/*.dmg
 
       - name: 输出状态
         if: always()

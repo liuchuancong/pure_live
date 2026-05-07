@@ -103,6 +103,8 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
     _overlayEntry = null;
     if (mounted && _isVolumeBarVisible) {
       setState(() => _isVolumeBarVisible = false);
+    } else {
+      _isVolumeBarVisible = false;
     }
   }
 
