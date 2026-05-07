@@ -208,7 +208,7 @@ class VideoController with ChangeNotifier {
     final playerManager = GlobalPlayerService.instance.playerManager;
     if (PlatformUtils.isMobile) {
       _volumeController = VolumeController.instance;
-      _volumeController.showSystemUI = true;
+      _volumeController.showSystemUI = false;
       registerVolumeListener();
     }
     playerManager.play(datasource, playUrs, headers, room: room);
