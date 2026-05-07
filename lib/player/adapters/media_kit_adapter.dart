@@ -9,6 +9,7 @@ import '../interface/unified_player_interface.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:media_kit/media_kit.dart' hide PlayerState;
+import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/services/settings_service.dart';
 
 class MediaKitAdapter implements UnifiedPlayer {
@@ -153,8 +154,11 @@ class MediaKitAdapter implements UnifiedPlayer {
       await _player.open(Media(url, httpHeaders: headers), play: true);
 
       _stateSubject.add(PlayerState.ready);
-
-      await setVolume(settings.volume.value);
+      if (PlatformUtils.isMobile) {
+        await setVolume(1.0);
+      } else {
+        await setVolume(settings.volume.value);
+      }
     } catch (e, s) {
       final exception = PlayerException(
         message: 'Media open failed',
