@@ -16,15 +16,6 @@ class MyTheme {
     return null;
   }
 
-  /// 根据明暗主题，生成对应的文字选中样式（自动跟随主题主色）
-  TextSelectionThemeData _textSelectionTheme(Brightness brightness, Color primaryColor) {
-    return TextSelectionThemeData(
-      selectionColor: primaryColor.withValues(alpha: brightness == Brightness.light ? 0.2 : 0.3),
-      cursorColor: primaryColor,
-      selectionHandleColor: primaryColor,
-    );
-  }
-
   /// 提取通用的组件主题配置 (Flutter 3.38+ 推荐)
   ThemeData _buildTheme(Brightness brightness) {
     final bool isDark = brightness == Brightness.dark;
@@ -54,8 +45,6 @@ class MyTheme {
         centerTitle: true,
       ),
       tabBarTheme: const TabBarThemeData(dividerColor: Colors.transparent, indicatorSize: TabBarIndicatorSize.label),
-      // 自动跟随主题主色
-      textSelectionTheme: _textSelectionTheme(brightness, effectiveColorScheme?.primary ?? primaryColor!),
     );
   }
 

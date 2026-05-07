@@ -15,7 +15,7 @@ class AreasController extends GetxController with GetSingleTickerProviderStateMi
 
     final preferPlatform = Get.find<SettingsService>().preferPlatform.value;
     final pIndex = sites.indexWhere((e) => e.id == preferPlatform);
-    index = pIndex == -1 ? 0 : pIndex;
+    index = pIndex.clamp(0, sites.length - 1);
 
     tabController = TabController(length: sites.length, vsync: this);
 

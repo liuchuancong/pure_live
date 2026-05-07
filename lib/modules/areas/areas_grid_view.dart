@@ -8,42 +8,91 @@ class AreaGridView extends StatefulWidget {
   final String tag;
   const AreaGridView(this.tag, {super.key});
   AreasListController get controller => Get.find<AreasListController>(tag: tag);
+
   @override
   State<AreaGridView> createState() => _AreaGridViewState();
 }
 
 class _AreaGridViewState extends State<AreaGridView> with SingleTickerProviderStateMixin {
-  late TabController tabController = TabController(length: widget.controller.list.length, vsync: this);
+  TabController? _tabController;
+  Worker? _listWorker;
 
   @override
   void initState() {
-    widget.controller.tabIndex.addListener(() {
-      tabController.animateTo(widget.controller.tabIndex.value);
-    });
     super.initState();
+    _listWorker = ever(widget.controller.list, (_) => _createTabController());
+    _createTabController();
+    widget.controller.tabIndex.addListener(_handleExternalIndexChange);
+  }
+
+  void _createTabController() {
+    final list = widget.controller.list;
+    if (list.isEmpty) return;
+
+    if (_tabController != null) {
+      _tabController!.removeListener(_handleInternalTabChange);
+      _tabController!.dispose();
+    }
+
+    int initialIndex = widget.controller.tabIndex.value;
+    if (initialIndex >= list.length) initialIndex = 0;
+
+    _tabController = TabController(length: list.length, vsync: this, initialIndex: initialIndex);
+
+    _tabController!.addListener(_handleInternalTabChange);
+
+    if (mounted) setState(() {});
+  }
+
+  void _handleInternalTabChange() {
+    if (_tabController == null || _tabController!.indexIsChanging) return;
+    if (widget.controller.tabIndex.value != _tabController!.index) {
+      widget.controller.tabIndex.value = _tabController!.index;
+    }
+  }
+
+  void _handleExternalIndexChange() {
+    if (_tabController == null) return;
+    final targetIndex = widget.controller.tabIndex.value;
+    if (_tabController!.index != targetIndex && targetIndex < _tabController!.length) {
+      _tabController!.animateTo(targetIndex);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.tabIndex.removeListener(_handleExternalIndexChange);
+    _listWorker?.dispose();
+    if (_tabController != null) {
+      _tabController!.removeListener(_handleInternalTabChange);
+      _tabController!.dispose();
+    }
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        TabBar(
-          controller: tabController,
-          isScrollable: true,
-          tabAlignment: TabAlignment.center,
-          indicatorSize: TabBarIndicatorSize.label,
-          tabs: widget.controller.list.map<Widget>((e) => Tab(text: e.name)).toList(),
-        ),
-        Expanded(
-          child: Obx(
-            () => TabBarView(
-              controller: tabController,
-              children: widget.controller.list.map<Widget>((e) => buildAreasView(e)).toList(),
-            ),
+    return Obx(() {
+      final list = widget.controller.list;
+      if (list.isEmpty || _tabController == null || _tabController!.length != list.length) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      return Column(
+        children: [
+          TabBar(
+            controller: _tabController,
+            isScrollable: true,
+            tabAlignment: TabAlignment.center,
+            indicatorSize: TabBarIndicatorSize.label,
+            tabs: list.map((e) => Tab(text: e.name)).toList(),
           ),
-        ),
-      ],
-    );
+          Expanded(
+            child: TabBarView(controller: _tabController, children: list.map((e) => buildAreasView(e)).toList()),
+          ),
+        ],
+      );
+    });
   }
 
   Widget buildAreasView(AppLiveCategory category) {

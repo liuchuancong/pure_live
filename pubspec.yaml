@@ -53,10 +53,9 @@ dependencies:
   window_manager: ^0.5.1
   ffi: ^2.2.0
   tray_manager: ^0.5.2
-  flutter_single_instance: ^1.7.0
   package_info_plus: ^9.0.1
   flutter_acrylic: ^1.1.4
-  protobuf: ^4.1.0
+  protobuf: ^6.0.0
   fixnum: ^1.1.0
   dio: ^5.9.0
   dio_cookie_manager: ^3.3.0

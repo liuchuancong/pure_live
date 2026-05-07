@@ -196,9 +196,7 @@ class PlayerManager {
           isInPip.value = status == PiPStatus.enabled;
         });
       }
-
       isInitialized.value = true;
-
       _stateSubject.add(PlayerState.initialized);
     } catch (e, s) {
       hasError.value = true;
@@ -758,19 +756,14 @@ class PlayerManager {
 
   Future<void> hardDispose() async {
     final player = _currentPlayer;
-
     if (player != null) {
       await player.hardDispose();
     }
-
     if (_runtimeEngine != null) {
       await playerPool.removeFromCache(_runtimeEngine!);
     }
-
     _currentPlayer = null;
-
     _runtimeEngine = null;
-
     isInitialized.value = false;
   }
 

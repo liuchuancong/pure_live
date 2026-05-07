@@ -67,12 +67,12 @@ class AreasPage extends GetView<AreasController> {
               labelStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               labelPadding: const EdgeInsets.symmetric(horizontal: 12),
               indicatorSize: TabBarIndicatorSize.label,
-              tabs: Sites().availableSites().map((e) => Tab(text: e.name)).toList(),
+              tabs: controller.sites.map((e) => Tab(text: e.name)).toList(),
             ),
           ),
           body: TabBarView(
             controller: controller.tabController,
-            children: Sites().availableSites().map((e) => AreaGridView(e.id)).toList(),
+            children: controller.sites.map((e) => AreaGridView(e.id)).toList(),
           ),
           floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
           floatingActionButton: FloatingActionButton(
