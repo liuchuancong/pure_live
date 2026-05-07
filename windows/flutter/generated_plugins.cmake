@@ -5,7 +5,6 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
   battery_plus
-  bitsdojo_window_windows
   dynamic_color
   flutter_acrylic
   flutter_inappwebview_windows

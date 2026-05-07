@@ -8,7 +8,6 @@ import 'package:tray_manager/tray_manager.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
-import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 
@@ -32,16 +31,30 @@ class DesktopManager {
       );
 
       await windowManager.waitUntilReadyToShow(windowOptions, () async {
-        await windowManager.setBackgroundColor(Colors.transparent);
         await windowManager.setPreventClose(true);
+
+        await windowManager.setBackgroundColor(Colors.transparent);
+
+        if (Platform.isWindows) {
+          await windowManager.setResizable(true);
+        }
+
         await windowManager.show();
         await windowManager.focus();
-        await windowManager.setBackgroundColor(Colors.transparent);
+
+        if (Platform.isWindows) {
+          await Window.setEffect(
+            effect: WindowEffect.mica,
+            dark: PlatformDispatcher.instance.platformBrightness == Brightness.dark,
+          );
+        }
+
         if (Platform.isMacOS) {
           await Window.setEffect(
             effect: WindowEffect.hudWindow,
             dark: PlatformDispatcher.instance.platformBrightness == Brightness.dark,
           );
+
           Window.setBlurViewState(MacOSBlurViewState.active);
         }
       });
@@ -52,37 +65,15 @@ class DesktopManager {
     }
   }
 
-  static Future<void> postInitialize() async {
-    if (!PlatformUtils.isDesktop) return;
-
-    try {
-      if (PlatformUtils.isWindows) {
-        doWhenWindowReady(() {
-          final win = appWindow;
-          win.size = const Size(1080, 720);
-          win.minSize = const Size(400, 300);
-          win.alignment = Alignment.center;
-          win.show();
-          if (Platform.isWindows) {
-            Window.setEffect(
-              effect: WindowEffect.mica,
-              dark: PlatformDispatcher.instance.platformBrightness == Brightness.dark,
-            );
-          }
-        });
-      }
-    } catch (e) {
-      debugPrint('桌面端后初始化失败: $e');
-    }
-  }
-
   static void initializeListeners(State state) {
     if (!PlatformUtils.isDesktop) return;
 
     _currentState = state;
+
     if (state is WindowListener) {
       windowManager.addListener(state as WindowListener);
     }
+
     if (state is TrayListener) {
       trayManager.addListener(state as TrayListener);
     }
@@ -94,22 +85,26 @@ class DesktopManager {
     if (_currentState is WindowListener) {
       windowManager.removeListener(_currentState as WindowListener);
     }
+
     if (_currentState is TrayListener) {
       trayManager.removeListener(_currentState as TrayListener);
     }
+
     _currentState = null;
   }
 
   static Widget buildWithTitleBar(Widget? child) {
     return Obx(() {
-      bool fullscreen = GlobalPlayerState.to.isFullscreen.value;
-      bool isPipModel = GlobalPlayerState.to.isPipMode.value;
+      final fullscreen = GlobalPlayerState.to.isFullscreen.value;
+      final pipMode = GlobalPlayerState.to.isPipMode.value;
+
       if (!PlatformUtils.isWindows) {
         return child ?? const SizedBox.shrink();
       }
+
       return Column(
         children: [
-          if (!fullscreen && !isPipModel) const CustomTitleBar(),
+          if (!fullscreen && !pipMode) const CustomTitleBar(),
           if (child != null) Expanded(child: child),
         ],
       );
@@ -120,7 +115,13 @@ class DesktopManager {
     if (!PlatformUtils.isDesktop) return;
 
     try {
-      await trayManager.setIcon('assets/icons/app_icon.ico');
+      if (Platform.isWindows) {
+        await trayManager.setIcon('assets/icons/app_icon.ico');
+      } else if (Platform.isMacOS) {
+        await trayManager.setIcon('assets/icons/app_icon.ico');
+      }
+
+      await updateTray();
     } catch (e) {
       debugPrint('系统托盘初始化失败: $e');
     }
@@ -129,16 +130,19 @@ class DesktopManager {
   static Future<void> updateTray() async {
     if (!PlatformUtils.isDesktop) return;
 
-    await trayManager.setToolTip('纯粹直播');
     try {
-      bool isWindowVisible = await windowManager.isVisible();
-      Menu menu = Menu(
+      await trayManager.setToolTip('纯粹直播');
+
+      final isVisible = await windowManager.isVisible();
+
+      final menu = Menu(
         items: [
-          MenuItem(key: isWindowVisible ? 'hide_window' : 'show_window', label: isWindowVisible ? '隐藏窗口' : '显示窗口'),
+          MenuItem(key: isVisible ? 'hide_window' : 'show_window', label: isVisible ? '隐藏窗口' : '显示窗口'),
           MenuItem.separator(),
           MenuItem(key: 'exit_app', label: '退出应用'),
         ],
       );
+
       await trayManager.setContextMenu(menu);
     } catch (e) {
       debugPrint('系统托盘更新失败: $e');
@@ -151,11 +155,13 @@ class DesktopManager {
     try {
       switch (menuItem.key) {
         case 'show_window':
-          await windowManager.show();
+          await showWindow();
           break;
+
         case 'hide_window':
-          await windowManager.hide();
+          await hideWindow();
           break;
+
         case 'exit_app':
           await trayManager.destroy();
           await windowManager.setPreventClose(false);
@@ -169,6 +175,7 @@ class DesktopManager {
 
   static Future<void> handleWindowClose() async {
     if (!PlatformUtils.isDesktop) return;
+
     await Utils.showExitDialog();
   }
 
@@ -176,11 +183,13 @@ class DesktopManager {
     if (!PlatformUtils.isDesktop) return;
 
     try {
-      bool isVisible = await windowManager.isVisible();
+      final isVisible = await windowManager.isVisible();
+
       if (isVisible) {
         await windowManager.focus();
       } else {
         await windowManager.show();
+        await windowManager.focus();
         await windowManager.setSkipTaskbar(false);
       }
     } catch (e) {
@@ -201,6 +210,7 @@ class DesktopManager {
 
   static Future<void> hideWindow() async {
     if (!PlatformUtils.isDesktop) return;
+
     try {
       await windowManager.hide();
     } catch (e) {
@@ -213,6 +223,7 @@ class DesktopManager {
 
     try {
       await windowManager.show();
+      await windowManager.focus();
     } catch (e) {
       debugPrint('显示窗口失败: $e');
     }
@@ -228,97 +239,169 @@ class CustomTitleBar extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Obx(() {
-      bool isFull = GlobalPlayerState.to.isWindowFullscreen.value;
+      final isFullscreen = GlobalPlayerState.to.isWindowFullscreen.value;
 
-      // 背景色控制
-      final Color bgColor = isFull || isDark ? Colors.black : theme.scaffoldBackgroundColor;
-      final Color baseIconColor = isFull || isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black54;
+      final bgColor = isFullscreen || isDark ? Colors.black : theme.scaffoldBackgroundColor;
 
-      // 普通按钮颜色配置
-      final buttonColors = WindowButtonColors(
-        iconNormal: baseIconColor,
-        mouseOver: isDark ? Colors.white.withValues(alpha: 0.1) : theme.colorScheme.primary.withValues(alpha: 0.1),
-        mouseDown: isDark ? Colors.white.withValues(alpha: 0.2) : Colors.grey.shade300,
-        iconMouseOver: isDark ? Colors.white : theme.colorScheme.primary,
-        iconMouseDown: isDark ? Colors.white : theme.colorScheme.primary,
-      );
-
-      // 关闭按钮颜色配置
-      final closeButtonColors = WindowButtonColors(
-        iconNormal: baseIconColor,
-        mouseOver: const Color(0xFFD32F2F),
-        mouseDown: const Color(0xFFB71C1C),
-        iconMouseOver: Colors.white,
-        iconMouseDown: Colors.white,
-      );
+      final iconColor = isFullscreen || isDark ? Colors.white.withValues(alpha: 0.75) : Colors.black54;
 
       return Container(
         height: 32,
         color: bgColor,
-        child: WindowTitleBarBox(
-          child: Row(
-            children: [
-              // 拖动区域
-              Expanded(
-                child: MoveWindow(
-                  child: Container(
-                    padding: const EdgeInsets.only(left: 12),
-                    alignment: Alignment.centerLeft,
-                    child: isFull
-                        ? null
-                        : Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () async {
-                                final url = Uri.parse('https://github.com/liuchuancong/pure_live');
-                                if (await canLaunchUrl(url)) await launchUrl(url);
-                              },
-                              child: Text(
-                                "Pure Live",
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: baseIconColor,
-                                  fontWeight: FontWeight.bold,
-                                  decoration: TextDecoration.none,
-                                  decorationColor: baseIconColor,
-                                ),
+        child: Row(
+          children: [
+            Expanded(
+              child: DragToMoveArea(
+                child: Container(
+                  alignment: Alignment.centerLeft,
+                  padding: const EdgeInsets.only(left: 12),
+                  child: isFullscreen
+                      ? null
+                      : Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () async {
+                              final url = Uri.parse('https://github.com/liuchuancong/pure_live');
+
+                              if (await canLaunchUrl(url)) {
+                                await launchUrl(url);
+                              }
+                            },
+                            child: Text(
+                              'Pure Live',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: iconColor,
+                                decoration: TextDecoration.none,
                               ),
                             ),
                           ),
-                  ),
+                        ),
                 ),
               ),
-              // 右侧控制按钮
-              Row(
-                children: [
-                  MinimizeWindowButton(colors: buttonColors, onPressed: () => windowManager.minimize()),
-                  _MaximizeButton(colors: buttonColors),
-                  CloseWindowButton(colors: closeButtonColors, onPressed: () => DesktopManager.handleWindowClose()),
-                ],
-              ),
-            ],
-          ),
+            ),
+
+            /// Window Buttons
+            Row(
+              children: [
+                WindowControlButton(
+                  icon: Icons.remove,
+                  iconColor: iconColor,
+                  hoverColor: isDark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : theme.colorScheme.primary.withValues(alpha: 0.08),
+                  onPressed: () async {
+                    await windowManager.minimize();
+                  },
+                ),
+                WindowControlButton(
+                  icon: Icons.crop_square,
+                  iconColor: iconColor,
+                  hoverColor: isDark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : theme.colorScheme.primary.withValues(alpha: 0.08),
+                  onPressed: () async {
+                    if (await windowManager.isMaximized()) {
+                      await windowManager.restore();
+                    } else {
+                      await windowManager.maximize();
+                    }
+                  },
+                ),
+                WindowControlButton(
+                  icon: Icons.close,
+                  iconColor: iconColor,
+                  hoverIconColor: Colors.white,
+                  hoverColor: const Color(0xFFE81123),
+                  isClose: true,
+                  onPressed: () async {
+                    await DesktopManager.handleWindowClose();
+                  },
+                ),
+              ],
+            ),
+          ],
         ),
       );
     });
   }
 }
 
-class _MaximizeButton extends StatelessWidget {
-  final WindowButtonColors colors;
-  const _MaximizeButton({required this.colors});
+class WindowControlButton extends StatefulWidget {
+  final VoidCallback onPressed;
+  final IconData icon;
+
+  final Color hoverColor;
+  final Color iconColor;
+
+  final Color? hoverIconColor;
+
+  final bool isClose;
+
+  const WindowControlButton({
+    super.key,
+    required this.onPressed,
+    required this.icon,
+    required this.hoverColor,
+    required this.iconColor,
+    this.hoverIconColor,
+    this.isClose = false,
+  });
+
+  @override
+  State<WindowControlButton> createState() => _WindowControlButtonState();
+}
+
+class _WindowControlButtonState extends State<WindowControlButton> {
+  bool hover = false;
+  bool pressed = false;
 
   @override
   Widget build(BuildContext context) {
-    return MaximizeWindowButton(
-      colors: colors,
-      onPressed: () async {
-        if (await windowManager.isMaximized()) {
-          windowManager.restore();
-        } else {
-          windowManager.maximize();
-        }
+    return MouseRegion(
+      onEnter: (_) {
+        setState(() {
+          hover = true;
+        });
       },
+      onExit: (_) {
+        setState(() {
+          hover = false;
+        });
+      },
+      child: GestureDetector(
+        onTapDown: (_) {
+          setState(() {
+            pressed = true;
+          });
+        },
+
+        onTapUp: (_) {
+          setState(() {
+            pressed = false;
+          });
+        },
+
+        onTapCancel: () {
+          setState(() {
+            pressed = false;
+          });
+        },
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onPressed,
+        child: Container(
+          width: 46,
+          height: 32,
+          color: hover ? widget.hoverColor : Colors.transparent,
+          alignment: Alignment.center,
+          child: Icon(
+            widget.icon,
+            size: 16,
+            color: (hover || pressed) ? (widget.hoverIconColor ?? widget.iconColor) : widget.iconColor,
+          ),
+        ),
+      ),
     );
   }
 }
@@ -326,23 +409,22 @@ class _MaximizeButton extends StatelessWidget {
 mixin DesktopWindowMixin<T extends StatefulWidget> on State<T> implements WindowListener, TrayListener {
   @override
   void onWindowClose() {
-    // 临时仅在 macOS 上处理系统标题栏关闭按钮事件，避免其他桌面端窗口管理行为差异。
-    if (!Platform.isMacOS) return;
-
-    // 桌面端默认拦截关闭事件（preventClose=true），这里统一走退出/最小化逻辑，
-    // 避免 macOS 点击关闭按钮无响应。
     unawaited(
       DesktopManager.handleWindowClose().catchError((e, _) {
-        debugPrint('处理关闭窗口失败: $e');
+        debugPrint('处理窗口关闭失败: $e');
       }),
     );
   }
 
   @override
-  void onTrayIconMouseDown() => DesktopManager.handleTrayIconClick();
+  void onTrayIconMouseDown() {
+    DesktopManager.handleTrayIconClick();
+  }
 
   @override
-  void onTrayIconRightMouseDown() => DesktopManager.handleTrayRightClick();
+  void onTrayIconRightMouseDown() {
+    DesktopManager.handleTrayRightClick();
+  }
 
   @override
   void onTrayIconRightMouseUp() {
@@ -352,41 +434,55 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T> implements Window
   }
 
   @override
-  void onTrayMenuItemClick(MenuItem menuItem) => DesktopManager.handleTrayMenuClick(menuItem);
+  void onTrayMenuItemClick(MenuItem menuItem) {
+    DesktopManager.handleTrayMenuClick(menuItem);
+  }
 
   @override
   void onWindowFocus() {}
+
   @override
   void onWindowBlur() {}
+
   @override
   void onWindowMaximize() {}
+
   @override
   void onWindowUnmaximize() {}
+
   @override
   void onWindowMinimize() {}
+
   @override
   void onWindowRestore() {}
 
   @override
   void onWindowResize() {}
+
   @override
   void onWindowResized() {}
 
   @override
   void onWindowMove() {}
+
   @override
   void onWindowMoved() {}
 
   @override
   void onWindowEnterFullScreen() {}
+
   @override
   void onWindowLeaveFullScreen() {}
+
   @override
   void onWindowDocked() {}
+
   @override
   void onWindowUndocked() {}
+
   @override
   void onWindowEvent(String eventName) {}
+
   @override
   void onTrayIconMouseUp() {}
 }

@@ -67,7 +67,6 @@ dependencies:
   # storage
   file_picker: ^11.0.2
   permission_handler: ^12.0.1
-  shared_preferences: ^2.5.3
   flutter_cache_manager: ^3.4.1
   # utils
   get: ^5.0.0-release-candidate-9.3.2
@@ -110,7 +109,6 @@ dependencies:
   flutter_floating: ^2.0.1
   win32: ^5.15.0
   flutter_foreground_task: ^9.2.0
-  bitsdojo_window: ^0.1.6
   dart_sm: ^0.1.5
   screen_retriever:
     git:

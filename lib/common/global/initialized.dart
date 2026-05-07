@@ -40,7 +40,6 @@ class AppInitializer {
 
     try {
       await SupaBaseManager.getInstance().initial();
-      PrefUtil.prefs = await SharedPreferences.getInstance();
       await Hive.initFlutter(path);
       await HivePrefUtil.init();
       initService();
@@ -62,7 +61,7 @@ class AppInitializer {
     );
     if (PlatformUtils.isDesktop) {
       await DesktopManager.initialize();
-      await DesktopManager.postInitialize();
+
       Future.delayed(const Duration(milliseconds: 800), () {
         WindowUtils.markCurrentWindow(instanceId);
       });
