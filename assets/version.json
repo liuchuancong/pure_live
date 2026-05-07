@@ -1,7 +1,7 @@
 {
   "version": "2.0.16",
   "version_num": 10215,
-  "version_desc": "-Fixed: 优化播放器.",
+  "version_desc": "-Fixed: 优化播放器.\n-Fixed: 优化了部分UI.\n-Add: Fvp播放器",
   "prerelease":false,
   "download_url": "https://github.com/liuchuancong/pure_live/releases"
 }
