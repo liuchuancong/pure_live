@@ -36,9 +36,21 @@ dependencies:
   supabase_flutter: ^2.10.3
   email_validator: ^3.0.0
   font_awesome_flutter: ^10.6.0
-  media_kit: ^1.2.6 # Primary package.
-  media_kit_video: ^2.0.1 # For video rendering.
-  media_kit_libs_video: ^1.0.7 # Native video dependencies.
+  media_kit:
+    git:
+      url: https://github.com/Predidit/media-kit.git
+      ref: main
+      path: ./media_kit
+  media_kit_video:
+    git:
+      url: https://github.com/Predidit/media-kit.git
+      ref: main
+      path: ./media_kit_video
+  media_kit_libs_video:
+    git:
+      url: https://github.com/Predidit/media-kit.git
+      ref: main
+      path: ./libs/universal/media_kit_libs_video
   better_player_plus: ^1.2.1
   audio_service: ^0.18.18
   audio_session: ^0.2.3
@@ -119,6 +131,47 @@ dependencies:
       path: ./packages/screen_retriever
       ref: main
 dependency_overrides:
+  wakelock_plus: ^1.4.0
+  media_kit:
+    git:
+      url: https://github.com/Predidit/media-kit.git
+      ref: main
+      path: ./media_kit
+  media_kit_video:
+    git:
+      url: https://github.com/Predidit/media-kit.git
+      ref: main
+      path: ./media_kit_video
+  media_kit_libs_video:
+    git:
+      url: https://github.com/Predidit/media-kit.git
+      ref: main
+      path: ./libs/universal/media_kit_libs_video
+  media_kit_libs_linux:
+    git:
+      url: https://github.com/Predidit/media-kit.git
+      ref: main
+      path: ./libs/linux/media_kit_libs_linux
+  media_kit_libs_ios_video:
+    git:
+      url: https://github.com/Predidit/media-kit.git
+      ref: main
+      path: ./libs/ios/media_kit_libs_ios_video
+  media_kit_libs_android_video:
+    git:
+      url: https://github.com/Predidit/media-kit.git
+      ref: main
+      path: ./libs/android/media_kit_libs_android_video
+  media_kit_libs_windows_video:
+    git:
+      url: https://github.com/Predidit/media-kit.git
+      ref: main
+      path: ./libs/windows/media_kit_libs_windows_video
+  media_kit_libs_macos_video:
+    git:
+      url: https://github.com/Predidit/media-kit.git
+      ref: main
+      path: ./libs/macos/media_kit_libs_macos_video
   screen_retriever:
      git:
       url: https://github.com/MSOB7YY/screen_retriever.git
