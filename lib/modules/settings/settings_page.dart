@@ -77,13 +77,8 @@ class SettingsPage extends GetView<SettingsService> {
               onTap: showPreferResolutionSelectorDialog,
             ),
           ),
-          ListTile(
-            leading: const Icon(Remix.shield_keyhole_line, size: 24),
-            title: const Text('网络代理设置'),
-            subtitle: const Text('配置播放器的网络请求代理'),
-            trailing: Obx(() => Text(controller.enableProxy.value ? '已开启' : '未开启')),
-            onTap: showProxySettingsDialog,
-          ),
+
+          if (Platform.isAndroid) _buildBackgroundPlayTile(context),
           _buildSwitchTile(
             title: '退出小窗播放',
             subtitle: "返回主界面时是否保留悬浮窗",
@@ -119,19 +114,45 @@ class SettingsPage extends GetView<SettingsService> {
                 onTap: showVideoSetDialog,
               ),
             ),
+          Obx(() {
+            if (controller.videoPlayerIndex.value == 2) return const SizedBox.shrink();
+            return ListTile(
+              leading: const Icon(Remix.shield_keyhole_line, size: 24),
+              title: const Text('网络代理设置'),
+              subtitle: const Text('配置播放器的网络请求代理'),
+              trailing: Obx(() => Text(controller.enableProxy.value ? '已开启' : '未开启')),
+              onTap: showProxySettingsDialog,
+            );
+          }),
+
           _buildSwitchTile(
             title: s.enable_codec,
             subtitle: "优先使用 GPU 进行硬件解码",
             value: controller.enableCodec,
             icon: Remix.flashlight_line,
           ),
-          _buildSwitchTile(
-            title: '播放器强制销毁',
-            subtitle: '彻底关闭播放进程以节省资源',
-            value: controller.useHardStopOnExit,
-            icon: Remix.p2p_line,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSwitchTile(
+                title: '播放器强制销毁',
+                subtitle: '彻底关闭播放进程以节省资源',
+                value: controller.useHardStopOnExit,
+                icon: Remix.p2p_line,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Text(
+                  '注意：修改 MPV 播放器核心参数后，需开启此项以确保配置在下次播放时生效。',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.primary.withAlpha(200), // 使用主题色提醒
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
           ),
-          if (Platform.isAndroid) _buildBackgroundPlayTile(context),
 
           // MPV 高级配置联动显示
           Obx(() {
