@@ -670,44 +670,48 @@ class PlayerManager {
   // =========================
 
   Widget getVideoWidget(int fitIndex, {Widget? controls, required List<BoxFit> fitList}) {
-    return StreamBuilder<bool>(
-      stream: onPlaying,
-      initialData: isPlayingNow,
-      builder: (context, snapshot) {
-        if (_currentPlayer == null) {
-          return _buildPlaceholder();
-        }
-        final boxFit = fitList[fitIndex];
-        final content = KeyedSubtree(
-          key: videoKey.value,
-          child: Container(
-            color: Colors.black,
-            width: double.infinity,
-            height: double.infinity,
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: FittedBox(
-                    fit: boxFit,
-                    clipBehavior: Clip.hardEdge,
-                    child: StreamBuilder<List<int?>>(
-                      stream: CombineLatestStream.list([width, height]),
-                      builder: (context, snapshot) {
-                        return SizedBox(width: 1920, height: 1080, child: _currentPlayer!.getVideoWidget());
-                      },
+    return Container(
+      color: Colors.black,
+      padding: const EdgeInsets.all(1),
+      child: StreamBuilder<bool>(
+        stream: onPlaying,
+        initialData: isPlayingNow,
+        builder: (context, snapshot) {
+          if (_currentPlayer == null) {
+            return _buildPlaceholder();
+          }
+          final boxFit = fitList[fitIndex];
+          final content = KeyedSubtree(
+            key: videoKey.value,
+            child: Container(
+              color: Colors.black,
+              width: double.infinity,
+              height: double.infinity,
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: FittedBox(
+                      fit: boxFit,
+                      clipBehavior: Clip.hardEdge,
+                      child: StreamBuilder<List<int?>>(
+                        stream: CombineLatestStream.list([width, height]),
+                        builder: (context, snapshot) {
+                          return SizedBox(width: 1920, height: 1080, child: _currentPlayer!.getVideoWidget());
+                        },
+                      ),
                     ),
                   ),
-                ),
-                if (controls != null) Positioned.fill(child: controls),
-              ],
+                  if (controls != null) Positioned.fill(child: controls),
+                ],
+              ),
             ),
-          ),
-        );
-        if (!Platform.isAndroid) {
-          return content;
-        }
-        return PiPSwitcher(floating: floating, childWhenEnabled: content, childWhenDisabled: content);
-      },
+          );
+          if (!Platform.isAndroid) {
+            return content;
+          }
+          return PiPSwitcher(floating: floating, childWhenEnabled: content, childWhenDisabled: content);
+        },
+      ),
     );
   }
 
