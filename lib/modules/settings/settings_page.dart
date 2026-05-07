@@ -1,17 +1,13 @@
 import 'dart:io';
 import 'package:get/get.dart';
+import 'package:remixicon/remixicon.dart'; 
 import 'package:pure_live/common/index.dart';
-import 'package:remixicon/remixicon.dart'; // 引入美化图标库
-import 'package:url_launcher/url_launcher_string.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/modules/backup/backup_page.dart';
 import 'package:pure_live/player/models/player_engine.dart';
-import 'package:pure_live/modules/settings/settings_card.dart';
-import 'package:pure_live/modules/settings/settings_menu.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
-import 'package:pure_live/modules/settings/settings_switch.dart';
 
 class SettingsPage extends GetView<SettingsService> {
   const SettingsPage({super.key});
@@ -140,25 +136,8 @@ class SettingsPage extends GetView<SettingsService> {
                 value: controller.useHardStopOnExit,
                 icon: Remix.p2p_line,
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Text(
-                  '注意：修改 MPV 播放器核心参数后，需开启此项以确保配置在下次播放时生效。',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Theme.of(context).colorScheme.primary.withAlpha(200), // 使用主题色提醒
-                    height: 1.4,
-                  ),
-                ),
-              ),
             ],
           ),
-
-          // MPV 高级配置联动显示
-          Obx(() {
-            if (controller.videoPlayerIndex.value != 0) return const SizedBox.shrink();
-            return _buildMpvSettings(context);
-          }),
 
           // ================== 4. 通用设置 ==================
           SectionTitle(title: s.general),
@@ -234,94 +213,6 @@ class SettingsPage extends GetView<SettingsService> {
           }
         },
       ),
-    );
-  }
-
-  Widget _buildMpvSettings(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Divider()),
-        if (Platform.isAndroid)
-          _buildSwitchTile(
-            title: '兼容模式',
-            subtitle: '旧设备播放卡顿时请尝试开启',
-            value: controller.playerCompatMode,
-            icon: Remix.shield_flash_line,
-          ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-          child: Row(
-            children: [
-              Icon(Remix.settings_5_line, size: 18, color: theme.colorScheme.primary),
-              const SizedBox(width: 8),
-              Text(
-                "MPV 高级设置",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
-              ),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: Text.rich(
-            TextSpan(
-              text: "调整内核参数可能导致播放异常，详情请参考 ",
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-              children: [
-                WidgetSpan(
-                  alignment: PlaceholderAlignment.middle,
-                  child: GestureDetector(
-                    onTap: () => launchUrlString("https://mpv.io"),
-                    child: const Text(
-                      "MPV 官方文档",
-                      style: TextStyle(color: Colors.blue, fontSize: 12, decoration: TextDecoration.underline),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        SettingsCard(
-          child: Column(
-            children: [
-              Obx(
-                () => SettingsSwitch(
-                  value: controller.customPlayerOutput.value,
-                  title: "自定义驱动与硬件加速",
-                  onChanged: (e) => controller.customPlayerOutput.value = e,
-                ),
-              ),
-              Obx(
-                () => SettingsMenu(
-                  title: "视频输出驱动(--vo)",
-                  value: controller.videoOutputDriver.value,
-                  valueMap: PlayerConsts.videoOutputDrivers,
-                  onChanged: (e) => controller.videoOutputDriver.value = e,
-                ),
-              ),
-              Obx(
-                () => SettingsMenu(
-                  title: "音频输出驱动(--ao)",
-                  value: controller.audioOutputDriver.value,
-                  valueMap: PlayerConsts.audioOutputDrivers,
-                  onChanged: (e) => controller.audioOutputDriver.value = e,
-                ),
-              ),
-              Obx(
-                () => SettingsMenu(
-                  title: "硬件解码器(--hwdec)",
-                  value: controller.videoHardwareDecoder.value,
-                  valueMap: PlayerConsts.hardwareDecoder,
-                  onChanged: (e) => controller.videoHardwareDecoder.value = e,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
