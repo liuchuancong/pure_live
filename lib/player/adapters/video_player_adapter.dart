@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:get/get.dart';
 import 'package:rxdart/rxdart.dart';
 import '../models/player_state.dart';
 import '../models/player_exception.dart';
@@ -107,8 +106,7 @@ class BetterPlayerAdapter implements UnifiedPlayer {
       await _controller!.setupDataSource(dataSource);
 
       _stateSubject.add(PlayerState.ready);
-      final SettingsService settings = Get.find<SettingsService>();
-      await setVolume(settings.volume.value);
+      await setVolume(1.0);
     } catch (e, s) {
       final exception = PlayerException(
         message: 'BetterPlayer setDataSource failed',
