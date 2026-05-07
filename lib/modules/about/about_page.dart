@@ -30,7 +30,6 @@ class _AboutPageState extends State<AboutPage> {
               Get.toNamed(RoutePath.kVersionPage);
             },
           ),
-          ListTile(title: Text(S.of(context).what_is_new), onTap: showNewFeaturesDialog),
           ListTile(
             title: const Text('历史记录'),
             subtitle: const Text('历史版本更新记录'),

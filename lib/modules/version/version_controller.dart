@@ -5,12 +5,43 @@ import 'package:pure_live/common/base/base_controller.dart';
 
 class VersionController extends BaseController {
   final hasNewVersion = false.obs;
+
+  // =========================
+  // Android
+  // =========================
+
   final apkUrl = ''.obs;
+
   final apkUrl2 = ''.obs;
+
+  final apkFvpUrl = ''.obs;
+
+  final apkFvpUrl2 = ''.obs;
+
+  // =========================
+  // Windows
+  // =========================
+
   final windowsUrl = ''.obs;
+
   final windowsUrl2 = ''.obs;
+
+  final windowsFvpUrl = ''.obs;
+
+  final windowsFvpUrl2 = ''.obs;
+
+  // =========================
+  // macOS
+  // =========================
+
+  final macosUrl = ''.obs;
+
+  final macosFvpUrl = ''.obs;
+
   late PackageInfo packageInfo;
+
   final loading = true.obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -23,17 +54,55 @@ class VersionController extends BaseController {
 
   Future<void> checkNewVersion() async {
     await VersionUtil().checkUpdate();
+
     await getPackageInfo();
+
     hasNewVersion.value = VersionUtil.hasNewVersion();
-    apkUrl.value =
-        '${VersionUtil.projectUrl}/releases/download/v${VersionUtil.latestVersion}/app-armeabi-v7a-release.apk';
-    apkUrl2.value =
-        '${VersionUtil.projectUrl}/releases/download/v${VersionUtil.latestVersion}/app-arm64-v8a-release.apk';
-    var buildNumber = hasNewVersion.value ? int.parse(packageInfo.buildNumber) + 1 : int.parse(packageInfo.buildNumber);
-    windowsUrl.value =
-        '${VersionUtil.projectUrl}/releases/download/v${VersionUtil.latestVersion}/PureLive-${VersionUtil.latestVersion}+${buildNumber.toString()}-windows-x64-setup.exe';
-    windowsUrl2.value =
-        '${VersionUtil.projectUrl}/releases/download/v${VersionUtil.latestVersion}/PureLive-${VersionUtil.latestVersion}+${buildNumber.toString()}-windows-x64.msix';
+
+    final latestVersion = VersionUtil.latestVersion;
+
+    final releaseUrl = '${VersionUtil.projectUrl}/releases/download/v$latestVersion';
+
+    final buildNumber = hasNewVersion.value
+        ? int.parse(packageInfo.buildNumber) + 1
+        : int.parse(packageInfo.buildNumber);
+
+    // =====================================================
+    // Android
+    // =====================================================
+
+    apkUrl.value = '$releaseUrl/app-armeabi-v7a-release.apk';
+
+    apkUrl2.value = '$releaseUrl/app-arm64-v8a-release.apk';
+
+    // FVP
+
+    apkFvpUrl.value = '$releaseUrl/app-armeabi-v7a-fvp.apk';
+
+    apkFvpUrl2.value = '$releaseUrl/app-arm64-v8a-fvp.apk';
+
+    // =====================================================
+    // Windows
+    // =====================================================
+
+    windowsUrl.value = '$releaseUrl/PureLive-$latestVersion+$buildNumber-windows-x64-setup.exe';
+
+    windowsUrl2.value = '$releaseUrl/PureLive-$latestVersion+$buildNumber-windows-x64.msix';
+
+    // FVP
+
+    windowsFvpUrl.value = '$releaseUrl/PureLive-$latestVersion+$buildNumber-fvp-windows-x64-setup.exe';
+
+    windowsFvpUrl2.value = '$releaseUrl/PureLive-$latestVersion+$buildNumber-fvp-windows-x64.msix';
+
+    // =====================================================
+    // macOS
+    // =====================================================
+
+    macosUrl.value = '$releaseUrl/PureLive-$latestVersion-macOS.dmg';
+
+    macosFvpUrl.value = '$releaseUrl/PureLive-$latestVersion-fvp-macOS.dmg';
+
     loading.value = false;
   }
 }
