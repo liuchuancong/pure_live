@@ -19,24 +19,32 @@ class RecorderConfig {
 
   static const _defaultRetryDelay = 30;
 
+  static const _defaultPreferBestStream = true;
+
+  /// 默认读写超时（秒）
+  static const _defaultRwTimeout = 15;
+
+  /// 默认线程队列大小（用于高码率缓冲）
+  static const _defaultThreadQueueSize = 2048;
+
   /// =========================
   /// 轮询配置默认值
   /// =========================
 
   /// 是否启用轮询挂机
-  static const _defaultEnablePolling = true;
+  static const _defaultEnablePolling = false;
 
   /// 开播检测间隔（秒）
   static const _defaultLiveCheckInterval = 30;
 
   /// 是否启用指数退避
-  static const _defaultEnableBackoff = true;
+  static const _defaultEnableBackoff = false;
 
   /// 最大轮询间隔（秒）
   static const _defaultMaxCheckInterval = 300;
 
   /// 是否允许后台轮询
-  static const _defaultAllowBackgroundPolling = true;
+  static const _defaultAutoStartOnBoot = false;
 
   /// =========================
   /// 初始化默认配置
@@ -60,14 +68,13 @@ class RecorderConfig {
     /// =========================
 
     await _ensureDefault(RecorderKeys.enablePolling, _defaultEnablePolling);
-
     await _ensureDefault(RecorderKeys.liveCheckInterval, _defaultLiveCheckInterval);
-
     await _ensureDefault(RecorderKeys.enableBackoff, _defaultEnableBackoff);
-
     await _ensureDefault(RecorderKeys.maxCheckInterval, _defaultMaxCheckInterval);
-
-    await _ensureDefault(RecorderKeys.allowBackgroundPolling, _defaultAllowBackgroundPolling);
+    await _ensureDefault(RecorderKeys.autoStartOnBoot, _defaultAutoStartOnBoot);
+    await _ensureDefault(RecorderKeys.preferBestStream, _defaultPreferBestStream);
+    await _ensureDefault(RecorderKeys.rwTimeout, _defaultRwTimeout);
+    await _ensureDefault(RecorderKeys.threadQueueSize, _defaultThreadQueueSize);
   }
 
   /// =========================
@@ -182,11 +189,9 @@ class RecorderConfig {
   /// 后台轮询
   /// =========================
 
-  static bool get allowBackgroundPolling =>
-      HivePrefUtil.getBool(RecorderKeys.allowBackgroundPolling) ?? _defaultAllowBackgroundPolling;
+  static bool get autoStartOnBoot => HivePrefUtil.getBool(RecorderKeys.autoStartOnBoot) ?? _defaultAutoStartOnBoot;
 
-  static Future<void> setAllowBackgroundPolling(bool value) =>
-      HivePrefUtil.setBool(RecorderKeys.allowBackgroundPolling, value);
+  static Future<void> setAutoStartOnBoot(bool value) => HivePrefUtil.setBool(RecorderKeys.autoStartOnBoot, value);
 
   /// =========================
   /// 录制历史
@@ -198,15 +203,29 @@ class RecorderConfig {
 
   static List<dynamic> getRecordHistory() {
     final raw = HivePrefUtil.getAnyPref(RecorderKeys.recordHistory);
-
     if (raw == null || raw is! List) {
       return [];
     }
-
     return raw;
   }
 
   static Future<void> clearRecordHistory() async {
     await HivePrefUtil.remove(RecorderKeys.recordHistory);
   }
+
+  /// 优先选择最高画质轨道 (对应 FFmpeg 的 -map 0:v:0)
+  static bool get preferBestStream => HivePrefUtil.getBool(RecorderKeys.preferBestStream) ?? _defaultPreferBestStream;
+
+  static Future<void> setPreferBestStream(bool value) => HivePrefUtil.setBool(RecorderKeys.preferBestStream, value);
+
+  /// 网络读写超时 (对应 FFmpeg 的 -rw_timeout，单位为秒)
+  static int get rwTimeout => HivePrefUtil.getInt(RecorderKeys.rwTimeout) ?? _defaultRwTimeout;
+
+  static Future<void> setRwTimeout(int value) => HivePrefUtil.setInt(RecorderKeys.rwTimeout, value);
+
+  /// 线程队列大小 (对应 FFmpeg 的 -thread_queue_size)
+  /// 录制原画建议 2048 或更高，防止由于写入慢导致的丢帧
+  static int get threadQueueSize => HivePrefUtil.getInt(RecorderKeys.threadQueueSize) ?? _defaultThreadQueueSize;
+
+  static Future<void> setThreadQueueSize(int value) => HivePrefUtil.setInt(RecorderKeys.threadQueueSize, value);
 }

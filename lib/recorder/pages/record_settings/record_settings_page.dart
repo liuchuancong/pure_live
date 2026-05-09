@@ -11,11 +11,17 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
   bool get isDesktop => Platform.isWindows || Platform.isMacOS || Platform.isLinux;
 
   String _formatDuration(int seconds) {
-    if (seconds < 60) return "${seconds}s";
-    final minutes = seconds ~/ 60;
-    if (minutes < 60) return "${minutes}m";
-    final hours = minutes / 60;
-    return "${hours.toStringAsFixed(hours.truncateToDouble() == hours ? 0 : 1)}h";
+    if (seconds < 60) {
+      return "${seconds}s";
+    } else if (seconds < 3600) {
+      // 分钟显示：1m, 10m, 59m
+      final minutes = seconds / 60;
+      return "${minutes.toStringAsFixed(minutes.truncateToDouble() == minutes ? 0 : 1)}m";
+    } else {
+      // 小时显示：1h, 1.5h, 2h
+      final hours = seconds / 3600;
+      return "${hours.toStringAsFixed(hours.truncateToDouble() == hours ? 0 : 1)}h";
+    }
   }
 
   @override
@@ -54,51 +60,101 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
               _buildTile(theme, Icons.storage_rounded, "缓存限制", "${controller.maxCacheMB.value} MB", _showCacheDialog),
             ]),
 
-            _buildSectionHeader("录制性能"),
+            _buildSectionHeader("录制性能与画质"),
             _buildModernCard(theme, [
-              _buildSliderTile(
+              // 💡 优先原画轨道开关
+              _buildSwitchTile(
+                "优先录制原画轨道",
+                "强制选择最高清晰度流 (0:v:0)",
+                controller.preferBestStream.value,
+                controller.updatePreferBestStream,
+              ),
+
+              // 💡 读写超时滑动条
+              _buildTile(
                 theme,
-                title: "最大并发任务",
-                value: controller.maxTaskCount.value.toDouble(),
-                min: 1,
-                max: 10,
-                displayValue: "${controller.maxTaskCount.value}",
-                onChanged: (v) => controller.updateMaxTask(v.toInt()),
+                Icons.timer_outlined,
+                "录制读写超时",
+                "${controller.rwTimeout.value}s",
+                _showRwTimeoutDialog, // 👈 绑定新弹窗
+              ),
+              _buildTile(
+                theme,
+                Icons.speed_rounded,
+                "输入缓冲队列",
+                "${controller.threadQueueSize.value}",
+                _showQueueSizeDialog,
               ),
               _buildSliderTile(
                 theme,
                 title: "视频切片时长",
                 value: controller.segmentTime.value.toDouble(),
                 min: 60,
-                max: 43200,
+                max: 3600,
                 displayValue: _formatDuration(controller.segmentTime.value),
                 onChanged: (v) => controller.updateSegmentTime(v.toInt()),
               ),
             ]),
 
-            _buildSectionHeader("自动检测与重连"),
+            _buildSectionHeader("自动重连"),
             _buildModernCard(theme, [
               _buildSwitchTile("自动断线重连", "录制异常时尝试恢复", controller.autoReconnect.value, controller.updateAutoReconnect),
               if (controller.autoReconnect.value)
                 _buildSliderTile(
                   theme,
-                  title: "重连间隔时间",
-                  value: controller.retryDelay.value.toDouble(),
-                  min: 5,
-                  max: 120,
-                  displayValue: "${controller.retryDelay.value}s",
-                  onChanged: (v) => controller.updateRetryDelay(v.toInt()),
+                  title: "最大重试次数",
+                  value: controller.maxRetryCount.value.toDouble(),
+                  min: 1,
+                  max: 20,
+                  displayValue: "${controller.maxRetryCount.value}次",
+                  onChanged: (v) => controller.updateMaxRetryCount(v.toInt()),
                 ),
-              _buildSwitchTile("启用挂机检测", "主播未开播时自动轮询", controller.enablePolling.value, controller.updateEnablePolling),
               _buildSliderTile(
                 theme,
-                title: "初始检测间隔",
-                value: controller.liveCheckInterval.value.toDouble(),
-                min: 10,
-                max: 300,
-                displayValue: "${controller.liveCheckInterval.value}s",
-                onChanged: (v) => controller.updateLiveCheckInterval(v.toInt()),
+                title: "重连间隔时间",
+                value: controller.retryDelay.value.toDouble(),
+                min: 5,
+                max: 120,
+                displayValue: "${controller.retryDelay.value}s",
+                onChanged: (v) => controller.updateRetryDelay(v.toInt()),
               ),
+            ]),
+            _buildSectionHeader("挂机轮询检测"),
+            _buildModernCard(theme, [
+              _buildSwitchTile("启用开播检测", "主播未开播时自动轮询", controller.enablePolling.value, controller.updateEnablePolling),
+              if (controller.enablePolling.value) ...[
+                _buildSliderTile(
+                  theme,
+                  title: "检测间隔时间",
+                  value: controller.liveCheckInterval.value.toDouble(),
+                  min: 10,
+                  max: 300,
+                  displayValue: "${controller.liveCheckInterval.value}s",
+                  onChanged: (v) => controller.updateLiveCheckInterval(v.toInt()),
+                ),
+                _buildSwitchTile(
+                  "启用指数退避",
+                  "失败次数越多，检测间隔越长",
+                  controller.enableBackoff.value,
+                  controller.updateEnableBackoff,
+                ),
+                if (controller.enableBackoff.value)
+                  _buildSliderTile(
+                    theme,
+                    title: "最大检测间隔",
+                    value: controller.maxCheckInterval.value.toDouble(),
+                    min: 300,
+                    max: 3600,
+                    displayValue: _formatDuration(controller.maxCheckInterval.value),
+                    onChanged: (v) => controller.updateMaxCheckInterval(v.toInt()),
+                  ),
+                _buildSwitchTile(
+                  "开机自动检测",
+                  "应用开机后继续检测",
+                  controller.autoStartOnBoot.value,
+                  controller.updateAutoStartOnBoot,
+                ),
+              ],
             ]),
             const SizedBox(height: 60),
           ],
@@ -177,33 +233,41 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
     required ValueChanged<double> onChanged,
   }) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)), // Larger font
+              Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   displayValue,
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
                 ),
               ),
             ],
           ),
-          SfSlider(
-            min: min,
-            max: max,
-            value: value,
-            activeColor: theme.colorScheme.primary, // Force Primary Color
-            inactiveColor: theme.colorScheme.primary.withValues(alpha: 0.15),
-            onChanged: (dynamic v) => onChanged(v as double),
+
+          Transform.translate(
+            offset: const Offset(-8, 0),
+            child: SizedBox(
+              width: double.infinity,
+              child: SfSlider(
+                min: min,
+                max: max,
+                value: value,
+                activeColor: theme.colorScheme.primary,
+                inactiveColor: theme.colorScheme.primary.withValues(alpha: 0.15),
+                onChanged: (dynamic v) => onChanged(v as double),
+              ),
+            ),
           ),
         ],
       ),
@@ -218,6 +282,85 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
       activeThumbColor: Get.theme.colorScheme.primary, // Selection Color
       value: val,
       onChanged: onChanged,
+    );
+  }
+
+  void _showRwTimeoutDialog() {
+    final theme = Get.theme;
+    // 定义常用的超时档位
+    final Map<int, String> timeoutOptions = {15: "响应迅速 (推荐，适合稳定网络)", 30: "平衡模式 (兼顾稳定与重连速度)", 60: "保守模式 (适合极端弱网环境)"};
+
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text("录制读写超时", style: TextStyle(fontWeight: FontWeight.bold)),
+        content: RadioGroup<int>(
+          groupValue: controller.rwTimeout.value,
+          onChanged: (v) {
+            if (v != null) controller.updateRwTimeout(v);
+            Navigator.pop(Get.context!);
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: timeoutOptions.entries.map((entry) {
+              return RadioListTile<int>(
+                title: Text("${entry.key}s", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                subtitle: Text(entry.value, style: const TextStyle(fontSize: 12)),
+                value: entry.key,
+                activeColor: theme.colorScheme.primary,
+                selected: controller.rwTimeout.value == entry.key,
+                selectedTileColor: theme.colorScheme.primary.withValues(alpha: 0.05),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showQueueSizeDialog() {
+    final theme = Get.theme;
+    // FFmpeg 规范值
+    final List<int> queueOptions = [512, 1024, 2048, 4096, 8192];
+
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text("输入缓冲队列", style: TextStyle(fontWeight: FontWeight.bold)),
+        content: RadioGroup<int>(
+          // 这里通过 RadioGroup 统一管理选中的值
+          groupValue: controller.threadQueueSize.value,
+          onChanged: (v) {
+            if (v != null) controller.updateThreadQueueSize(v);
+            Navigator.pop(Get.context!);
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: queueOptions.map((value) {
+              String subTitle = "";
+              if (value <= 512) {
+                subTitle = "省电模式";
+              } else if (value == 1024) {
+                subTitle = "标清/高清推荐";
+              } else if (value == 2048) {
+                subTitle = "原画推荐 (1080P)";
+              } else {
+                subTitle = "极致性能 (适用于 4K 录制/高负载环境)";
+              }
+              return RadioListTile<int>(
+                title: Text("$value", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                subtitle: Text(subTitle, style: const TextStyle(fontSize: 12)),
+                value: value,
+                activeColor: theme.colorScheme.primary,
+                selected: controller.threadQueueSize.value == value,
+                selectedTileColor: theme.colorScheme.primary.withValues(alpha: 0.05),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              );
+            }).toList(),
+          ),
+        ),
+      ),
     );
   }
 

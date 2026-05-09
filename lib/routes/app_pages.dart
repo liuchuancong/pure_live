@@ -44,9 +44,7 @@ import 'package:pure_live/modules/account/huya/huya_cookie_binding.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_binding.dart';
 import 'package:pure_live/modules/account/douyin/douyin_cookie_page.dart';
 import 'package:pure_live/modules/account/douyin/douyin_cookie_binding.dart';
-import 'package:pure_live/recorder/pages/record_history/record_history_page.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_page.dart';
-import 'package:pure_live/recorder/pages/record_history/record_history_binding.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_binding.dart';
 
 // auth
@@ -156,6 +154,5 @@ class AppPages {
       page: () => const RecordSettingsPage(),
       bindings: [RecordSettingsBinding()],
     ),
-    GetPage(name: RoutePath.kRecordHistory, page: () => const RecordHistoryPage(), bindings: [RecordHistoryBinding()]),
   ];
 }

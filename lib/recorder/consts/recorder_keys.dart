@@ -42,5 +42,14 @@ class RecorderKeys {
   static const maxCheckInterval = 'max_check_interval';
 
   /// 是否允许后台挂机
-  static const allowBackgroundPolling = 'allow_background_polling';
+  static const autoStartOnBoot = 'auto_start_on_boot';
+
+  /// 优先选择最高画质轨道 (0:v:0)
+  static const String preferBestStream = 'recorder_prefer_best_stream';
+
+  /// 网络读写超时 (单位秒)
+  static const String rwTimeout = 'recorder_rw_timeout';
+
+  /// FFmpeg 线程队列大小
+  static const String threadQueueSize = 'recorder_thread_queue_size';
 }

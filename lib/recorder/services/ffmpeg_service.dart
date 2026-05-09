@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:async';
 import 'package:get/get.dart';
 import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart';
+import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
 
 /// FFmpeg 录制会话状态
 class FFmpegRecordSession {
@@ -25,7 +26,7 @@ class FFmpegRecordSession {
 
 class FFmpegService extends GetxService {
   static FFmpegService get to => Get.find();
-
+  final RecordSettingsController settings = Get.find<RecordSettingsController>();
   final Map<String, FFmpegRecordSession> _sessions = {};
 
   /// 开始录制
@@ -84,19 +85,19 @@ class FFmpegService extends GetxService {
       '-reconnect_streamed', '1',
       '-reconnect_delay_max', '5', // Max wait 5 seconds before giving up
       // Set a socket timeout (15 seconds) to prevent hanging
-      '-rw_timeout', '15000000',
+      '-rw_timeout', '${settings.rwTimeout.value * 1000000}',
 
       // Add an input buffer to handle network jitter
       '-max_delay', '5000000',
-      '-thread_queue_size', '1024',
+      '-thread_queue_size', '${settings.threadQueueSize.value}',
 
       '-user_agent', '"$userAgent"',
       if (headerStr.isNotEmpty) ...['-headers', '"$headerStr"'],
 
       '-i', '"$url"',
 
-      '-map', '0:v',
-      '-map', '0:a',
+      '-map', settings.preferBestStream.value ? '0:v:0' : '0:v',
+      '-map', settings.preferBestStream.value ? '0:a:0' : '0:a',
       '-c', 'copy',
 
       // --- Segment Logic ---

@@ -4,55 +4,38 @@ import 'package:pure_live/recorder/consts/recorder_config.dart';
 
 class RecordSettingsController extends GetxController {
   /// =====================================
-  /// 切片时长
+  /// 基础配置
+  /// =====================================
+  final defaultQuality = RecorderConfig.defaultQuality.obs;
+  final recordSavePath = RecorderConfig.recordSavePath.obs;
+  final maxCacheMB = RecorderConfig.maxCacheMB.obs;
+
+  /// =====================================
+  /// 录制性能与画质
   /// =====================================
   final segmentTime = RecorderConfig.segmentTime.obs;
-
-  /// =====================================
-  /// 最大任务数
-  /// =====================================
   final maxTaskCount = RecorderConfig.maxTaskCount.obs;
+  final preferBestStream = RecorderConfig.preferBestStream.obs;
+  final rwTimeout = RecorderConfig.rwTimeout.obs;
+  final threadQueueSize = RecorderConfig.threadQueueSize.obs;
 
   /// =====================================
-  /// 自动重连
+  /// 自动重连逻辑
   /// =====================================
   final autoReconnect = RecorderConfig.autoReconnect.obs;
-
-  /// =====================================
-  /// 最大重试次数
-  /// =====================================
   final maxRetryCount = RecorderConfig.maxRetryCount.obs;
-
-  /// =====================================
-  /// 重试等待时间
-  /// =====================================
   final retryDelay = RecorderConfig.retryDelay.obs;
 
   /// =====================================
-  /// 开播检测间隔
-  /// =====================================
-  final liveCheckInterval = RecorderConfig.liveCheckInterval.obs;
-
-  /// =====================================
-  /// 最大检测间隔
-  /// =====================================
-  final maxCheckInterval = RecorderConfig.maxCheckInterval.obs;
-
-  /// =====================================
-  /// 启用挂机检测
+  /// 挂机检测轮询
   /// =====================================
   final enablePolling = RecorderConfig.enablePolling.obs;
-
-  /// =====================================
-  /// 启用指数退避
-  /// =====================================
+  final liveCheckInterval = RecorderConfig.liveCheckInterval.obs;
   final enableBackoff = RecorderConfig.enableBackoff.obs;
+  final maxCheckInterval = RecorderConfig.maxCheckInterval.obs;
 
-  final defaultQuality = RecorderConfig.defaultQuality.obs;
-
-  final recordSavePath = RecorderConfig.recordSavePath.obs;
-
-  final maxCacheMB = RecorderConfig.maxCacheMB.obs;
+  // 允许开机自动检测
+  final autoStartOnBoot = RecorderConfig.autoStartOnBoot.obs;
 
   /// =====================================
   /// 更新切片时长
@@ -131,7 +114,6 @@ class RecordSettingsController extends GetxController {
   /// =====================================
   Future<void> updateEnableBackoff(bool v) async {
     enableBackoff.value = v;
-
     await RecorderConfig.setEnableBackoff(v);
   }
 
@@ -155,5 +137,31 @@ class RecordSettingsController extends GetxController {
   Future<void> updateMaxCache(int v) async {
     maxCacheMB.value = v;
     await RecorderConfig.setMaxCacheMB(v);
+  }
+
+  Future<void> updatePreferBestStream(bool v) async {
+    preferBestStream.value = v;
+    await RecorderConfig.setPreferBestStream(v);
+  }
+
+  /// =====================================
+  /// 更新读写超时
+  /// =====================================
+  Future<void> updateRwTimeout(int v) async {
+    rwTimeout.value = v;
+    await RecorderConfig.setRwTimeout(v);
+  }
+
+  /// =====================================
+  /// 更新缓冲队列大小
+  /// =====================================
+  Future<void> updateThreadQueueSize(int v) async {
+    threadQueueSize.value = v;
+    await RecorderConfig.setThreadQueueSize(v);
+  }
+
+  Future<void> updateAutoStartOnBoot(bool v) async {
+    autoStartOnBoot.value = v;
+    await RecorderConfig.setAutoStartOnBoot(v);
   }
 }

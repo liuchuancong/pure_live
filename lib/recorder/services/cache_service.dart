@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:get/get.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/recorder/consts/recorder_keys.dart';
@@ -11,18 +12,35 @@ class CacheService extends GetxService {
   /// =========================
   /// 📁 获取录制目录
   /// =========================
+
   Future<Directory> getRecordDir() async {
     final customPath = HivePrefUtil.getString(RecorderKeys.recordSavePath);
 
     Directory recordDir;
 
+    /// 用户自定义目录
     if (customPath != null && customPath.isNotEmpty) {
-      recordDir = Directory(customPath);
+      recordDir = Directory(p.join(customPath, 'pure_live_records'));
     } else {
       final dir = await getApplicationDocumentsDirectory();
-      recordDir = Directory('${dir.path}/records');
+
+      /// Windows 单独创建 pure_live_records
+      if (Platform.isWindows) {
+        recordDir = Directory(
+          '${dir.path}'
+          '${Platform.pathSeparator}'
+          'pure_live_records',
+        );
+      } else {
+        recordDir = Directory(
+          '${dir.path}'
+          '${Platform.pathSeparator}'
+          'records',
+        );
+      }
     }
 
+    /// 不存在则创建
     if (!await recordDir.exists()) {
       await recordDir.create(recursive: true);
     }
@@ -123,7 +141,7 @@ class CacheService extends GetxService {
   Future<Directory> createRoomDir(String roomId) async {
     final base = await getRecordDir();
 
-    final roomDir = Directory('${base.path}/$roomId');
+    final roomDir = Directory(p.join(base.path, roomId));
 
     if (!await roomDir.exists()) {
       await roomDir.create(recursive: true);

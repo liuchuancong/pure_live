@@ -110,7 +110,7 @@ class LiveRecordTask {
     this.lastUpdate,
 
     /// 状态
-    this.status = RecordStatus.idle,
+    this.status = RecordStatus.waitingLive,
     this.autoReconnect = true,
     this.retryCount = 0,
 

@@ -92,13 +92,12 @@ class AppInitializer {
   void initService() {
     Get.put(SettingsService(), permanent: true);
     Get.put(AuthController(), permanent: true);
-
+    Get.put(RecordSettingsController());
+    Get.put(RecorderController());
     Get.lazyPut(() => FavoriteController(), fenix: true);
     Get.lazyPut(() => BiliBiliAccountService(), fenix: true);
     Get.lazyPut(() => PopularController(), fenix: true);
     Get.lazyPut(() => AreasController(), fenix: true);
-    Get.lazyPut(() => RecordSettingsController(), fenix: true);
-    Get.lazyPut(() => RecorderController(), fenix: true);
     Get.lazyPut(() => CacheService(), fenix: true);
     Get.lazyPut(() => FFmpegService(), fenix: true);
     Get.lazyPut(() => StreamResolverService(), fenix: true);
