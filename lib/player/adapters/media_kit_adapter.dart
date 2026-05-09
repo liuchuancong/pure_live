@@ -343,10 +343,15 @@ class MediaKitAdapter implements UnifiedPlayer {
   // video widget
   // =========================
 
-  @override
+ @override
   Widget getVideoWidget() {
     return RepaintBoundary(
-      child: Video(controller: _controller, controls: NoVideoControls),
+      child: Video(
+        controller: _controller,
+        controls: NoVideoControls,
+        pauseUponEnteringBackgroundMode: !settings.enableBackgroundPlay.value,
+        resumeUponEnteringForegroundMode: !settings.enableBackgroundPlay.value,
+      ),
     );
   }
 
