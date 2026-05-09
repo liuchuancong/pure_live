@@ -15,6 +15,7 @@ import 'package:pure_live/core/danmaku/douyin_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:back_button_interceptor/back_button_interceptor.dart';
+import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 
 enum VideoMode { normal, widescreen, fullscreen }
 
@@ -22,7 +23,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   LivePlayController({required this.room, required this.site});
   final String site;
   final StopWatchTimer _stopWatchTimer = StopWatchTimer(mode: StopWatchMode.countDown);
-
+  final RecorderController recorderController = Get.find<RecorderController>();
   late Site currentSite;
 
   late LiveDanmaku liveDanmaku;

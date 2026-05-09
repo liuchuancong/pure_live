@@ -84,4 +84,10 @@ class RoutePath {
   static const kDouyuCookie = "/douyu_cookie";
 
   static const kVersionPage = "/version_page";
+
+  static const kRecordPage = "/record_mannager";
+
+  static const kRecordSettings = "/record_settings";
+
+  static const kRecordHistory = "/record_history";
 }

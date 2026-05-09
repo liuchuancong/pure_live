@@ -61,10 +61,10 @@ packages:
     dependency: transitive
     description:
       name: archive
-      sha256: cb6a278ef2dbb298455e1a713bda08524a175630ec643a242c399c932a0a1f7d
+      sha256: a96e8b390886ee8abb49b7bd3ac8df6f451c621619f52a26e815fdcf568959ff
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "3.6.1"
+    version: "4.0.9"
   args:
     dependency: transitive
     description:
@@ -555,6 +555,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.2.0"
+  ffmpeg_kit_extended_flutter:
+    dependency: "direct main"
+    description:
+      name: ffmpeg_kit_extended_flutter
+      sha256: "231654e933d2d3dd3e7ec6119e3357fa561ef9ceb91ccb0cd68d7eb3bfcdb49f"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.4.3"
   file:
     dependency: "direct main"
     description:
@@ -988,10 +996,10 @@ packages:
     dependency: transitive
     description:
       name: image
-      sha256: f31d52537dc417fdcde36088fdf11d191026fd5e4fae742491ebd40e5a8bea7d
+      sha256: f9881ff4998044947ec38d098bc7c8316ae1186fa786eddffdb867b9bc94dfce
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "4.3.0"
+    version: "4.8.0"
   intl:
     dependency: "direct main"
     description:
@@ -1466,6 +1474,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "7.0.2"
+  pinyindart:
+    dependency: "direct main"
+    description:
+      name: pinyindart
+      sha256: "742335bb6b9d37880c2f2e1a85457cd5c097868cdc11578e5f908c886bccaa21"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.0.1"
   platform:
     dependency: transitive
     description:
@@ -1498,6 +1514,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.5.2"
+  posix:
+    dependency: transitive
+    description:
+      name: posix
+      sha256: "185ef7606574f789b40f289c233efa52e96dead518aed988e040a10737febb07"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "6.5.0"
   postgrest:
     dependency: transitive
     description:
@@ -1514,14 +1538,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "6.0.0"
-  protoc_builder:
-    dependency: "direct dev"
-    description:
-      name: protoc_builder
-      sha256: "3a1ae025203e99934f33bec2b4fe95f3b27cb1647a17692bf4fc7f174d1f8d75"
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "0.4.1"
   pub_semver:
     dependency: transitive
     description:
@@ -1968,6 +1984,22 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.3.1"
+  syncfusion_flutter_core:
+    dependency: transitive
+    description:
+      name: syncfusion_flutter_core
+      sha256: "25f2e349bc14a1a4f9da95f24484ea1751de2ab13dc11a2d4d96f54c4c7a030a"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "33.2.5"
+  syncfusion_flutter_sliders:
+    dependency: "direct main"
+    description:
+      name: syncfusion_flutter_sliders
+      sha256: "672bf73566595520602335f7c6ffe1f4282a8dc7b3b458a43f3f39db51648ca9"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "33.2.5"
   synchronized:
     dependency: transitive
     description:
@@ -2138,7 +2170,7 @@ packages:
     source: hosted
     version: "3.1.5"
   uuid:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: uuid
       sha256: "1fef9e8e11e2991bb773070d4656b7bd5d850967a2456cfc83cf47925ba79489"

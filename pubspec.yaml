@@ -122,7 +122,11 @@ dependencies:
   flutter_floating: ^2.0.1
   win32: ^5.15.0
   flutter_foreground_task: ^9.2.0
+  ffmpeg_kit_extended_flutter: ^0.4.3
+  pinyindart: ^0.0.1
+  uuid: ^4.5.3
   dart_sm: ^0.1.5
+  syncfusion_flutter_sliders: ^33.2.5
   screen_retriever:
     git:
       url: https://github.com/MSOB7YY/screen_retriever.git
@@ -181,7 +185,6 @@ dev_dependencies:
   change_app_package_name: any
   json_serializable: ^6.7.1
   build_runner: ^2.3.3
-  protoc_builder: ^0.4.1
   flutter_launcher_icons: ^0.14.4
   msix: ^3.16.12
   intl_utils: ^2.8.11
@@ -233,3 +236,8 @@ flutter_intl:
   enabled: true
   arb_dir: lib/common/l10n
   output_dir: lib/common/l10n/generated
+
+ffmpeg_kit_extended_config:
+  type: base
+  gpl: true
+  small: false

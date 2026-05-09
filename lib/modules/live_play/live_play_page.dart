@@ -134,6 +134,31 @@ class LivePlayPage extends GetView<LivePlayController> {
           ],
         ),
         actions: [
+          Obx(() {
+            final room = controller.detail.value!;
+            final isRecording = controller.recorderController.tasks.any(
+              (t) => t.platform == room.platform && t.roomId == room.roomId,
+            );
+            return IconButton(
+              icon: Icon(
+                isRecording ? Icons.fiber_manual_record : Icons.radio_rounded,
+                color: isRecording ? Colors.redAccent : Colors.white,
+              ),
+              tooltip: isRecording ? "停止录制" : "开始录制",
+              onPressed: () {
+                if (isRecording) {
+                  final task = controller.recorderController.tasks.firstWhere(
+                    (t) => t.platform == room.platform && t.roomId == room.roomId,
+                  );
+                  controller.recorderController.stopTask(task);
+                  ToastUtil.show("已停止录制");
+                } else {
+                  controller.recorderController.addTask(room: room);
+                  ToastUtil.show("已添加录制任务");
+                }
+              },
+            );
+          }),
           IconButton(
             icon: const Icon(Icons.swap_horiz_outlined),
             tooltip: '切换直播间',
