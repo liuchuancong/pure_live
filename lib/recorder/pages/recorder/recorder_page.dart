@@ -27,7 +27,7 @@ class RecorderPage extends GetView<RecorderController> {
           actions: [
             IconButton(
               tooltip: "打开文件夹",
-              icon: const Icon(Icons.history_rounded, size: 22),
+              icon: const Icon(Icons.folder, size: 22),
               onPressed: () {
                 controller.openFileDir();
               },
@@ -253,7 +253,8 @@ class _TaskCard extends GetView<RecorderController> {
         children: [
           deleteButton(),
           const SizedBox(width: 6),
-
+          FilledButton(style: smallButtonStyle, onPressed: () => controller.forceStartTask(task), child: Text('启动')),
+          const SizedBox(width: 6),
           FilledButton(
             style: smallButtonStyle.copyWith(backgroundColor: WidgetStateProperty.all(theme.colorScheme.tertiary)),
             onPressed: () => controller.stopTask(task),
@@ -289,7 +290,7 @@ class _TaskCard extends GetView<RecorderController> {
         children: [
           deleteButton(),
           const SizedBox(width: 6),
-          FilledButton(style: smallButtonStyle, onPressed: () => controller.startTask(task), child: Text(text)),
+          FilledButton(style: smallButtonStyle, onPressed: () => controller.forceStartTask(task), child: Text(text)),
         ],
       );
     }

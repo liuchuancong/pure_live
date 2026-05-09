@@ -53,7 +53,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                 theme,
                 Icons.folder_rounded,
                 "存储目录",
-                controller.recordSavePath.value,
+                '${controller.recordSavePath.value}${Platform.pathSeparator}pure_live_records',
                 controller.pickRecordDir,
                 isLong: true,
               ),

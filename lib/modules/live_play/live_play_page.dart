@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:async';
 import 'widgets/index.dart';
 import 'package:get/get.dart';
+import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pure_live/modules/live_play/load_type.dart';
@@ -105,52 +106,57 @@ class LivePlayPage extends GetView<LivePlayController> {
               ),
             ),
             const SizedBox(width: 8),
-            Obx(
-              () => Column(
+            Obx(() {
+              final detail = controller.detail.value;
+
+              if (detail == null) return const SizedBox.shrink();
+
+              return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: 60),
+                    constraints: const BoxConstraints(maxWidth: 60),
                     child: Text(
-                      controller.detail.value == null && controller.detail.value!.nick == null
-                          ? ''
-                          : controller.detail.value!.nick!,
+                      detail.nick ?? '',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.labelSmall,
                     ),
                   ),
                   Text(
-                    controller.detail.value!.area!.isEmpty
-                        ? controller.detail.value!.platform!.toUpperCase()
-                        : "${controller.detail.value!.platform!.toUpperCase()} / ${controller.detail.value!.area}",
+                    (detail.area == null || detail.area!.isEmpty)
+                        ? (detail.platform?.toUpperCase() ?? '')
+                        : "${detail.platform?.toUpperCase()} / ${detail.area}",
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 8),
                   ),
                 ],
-              ),
-            ),
+              );
+            }),
+
             const SizedBox(width: 8),
             Obx(() => FavoriteFloatingButton(room: controller.detail.value!)),
           ],
         ),
         actions: [
           Obx(() {
-            final room = controller.detail.value!;
-            final isRecording = controller.recorderController.tasks.any(
+            final room = controller.detail.value;
+            if (room == null) return const SizedBox.shrink();
+
+            final task = controller.recorderController.tasks.firstWhereOrNull(
               (t) => t.platform == room.platform && t.roomId == room.roomId,
             );
+            final bool isRecording = task != null;
+
             return IconButton(
               icon: Icon(
-                isRecording ? Icons.fiber_manual_record : Icons.radio_rounded,
+                isRecording ? Remix.record_circle_fill : Remix.add_circle_line,
                 color: isRecording ? Colors.redAccent : Colors.white,
               ),
-              tooltip: isRecording ? "停止录制" : "开始录制",
+              tooltip: isRecording ? "已添加录制列表" : "添加到录制列表",
               onPressed: () {
                 if (isRecording) {
-                  final task = controller.recorderController.tasks.firstWhere(
-                    (t) => t.platform == room.platform && t.roomId == room.roomId,
-                  );
-                  controller.recorderController.stopTask(task);
+                  // Reuse the found task directly
+                  controller.recorderController.unRecorder(task);
                   ToastUtil.show("已停止录制");
                 } else {
                   controller.recorderController.addTask(room: room);
@@ -159,6 +165,7 @@ class LivePlayPage extends GetView<LivePlayController> {
               },
             );
           }),
+
           IconButton(
             icon: const Icon(Icons.swap_horiz_outlined),
             tooltip: '切换直播间',

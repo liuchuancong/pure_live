@@ -182,12 +182,72 @@ class RecorderController extends GetxService {
   // =========================================================
   // 内部启动
   // =========================================================
+  Future<void> forceStartTask(LiveRecordTask task) async {
+    /// 有空闲
+    if (runningTasks < settings.maxTaskCount.value) {
+      await startTask(task);
+      return;
+    }
+
+    /// 找一个正在运行的任务
+    final running = tasks.firstWhereOrNull(
+      (e) =>
+          e.taskId != task.taskId &&
+          [RecordStatus.running, RecordStatus.preparing, RecordStatus.reconnecting].contains(e.status),
+    );
+
+    if (running == null) {
+      return;
+    }
+
+    /// 弹窗确认
+    final confirm = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('录制数量已满'),
+        content: Text(
+          '当前已达到最大录制数量。\n\n'
+          '将停止录制：\n'
+          '${running.nick}\n\n'
+          '是否继续？',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(Get.context!).pop(false);
+            },
+            child: const Text('取消'),
+          ),
+
+          FilledButton(
+            onPressed: () {
+              Navigator.of(Get.context!).pop(true);
+            },
+            child: const Text('继续'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) {
+      return;
+    }
+
+    developer.log(
+      'force stop => ${running.taskId}, '
+      'force start => ${task.taskId}',
+    );
+
+    /// 停止旧任务
+    await stopTask(running);
+
+    /// 启动新任务
+    await startTask(task);
+  }
 
   Future<void> _startTask(LiveRecordTask task) async {
     /// 防止重复启动
     if (_startingTasks.contains(task.taskId)) {
       developer.log('task already starting => ${task.taskId}');
-
       return;
     }
 
@@ -718,9 +778,83 @@ class RecorderController extends GetxService {
   }
 
   // =========================================================
-  // 恢复任务
+  // 刷新任务状态
   // =========================================================
 
+  // =========================================================
+  // 刷新直播间状态
+  // =========================================================
+
+  Future<void> refreshTaskStatus(LiveRecordTask task) async {
+    try {
+      developer.log('refreshTaskStatus => ${task.taskId}');
+
+      final room = await Sites.of(task.platform).liveSite.getRoomDetail(roomId: task.roomId, platform: task.platform);
+      task.updateFromRoom(room);
+
+      /// 正在直播
+      if (room.liveStatus == LiveStatus.live) {
+        developer.log('room is live => ${task.roomId}');
+        task.status = RecordStatus.preparing;
+        updateTask(task);
+        await startTask(task);
+
+        return;
+      }
+
+      /// 未开播
+      developer.log('room not live => ${task.roomId}');
+
+      task.status = RecordStatus.waitingLive;
+
+      updateTask(task);
+
+      /// 开始轮询
+      if (settings.autoStartOnBoot.value) {
+        _startPolling(task);
+      }
+    }
+    /// 房间不存在
+    on StreamException catch (e) {
+      developer.log('refreshTaskStatus stream error => ${e.type}');
+
+      switch (e.type) {
+        case StreamErrorType.roomNotFound:
+        case StreamErrorType.banned:
+          task.status = RecordStatus.failed;
+          break;
+
+        case StreamErrorType.notLive:
+          task.status = RecordStatus.waitingLive;
+
+          if (settings.autoStartOnBoot.value) {
+            _startPolling(task);
+          }
+          break;
+
+        default:
+          task.status = RecordStatus.failed;
+          break;
+      }
+
+      updateTask(task);
+    } catch (e, s) {
+      developer.log('refreshTaskStatus error', error: e, stackTrace: s);
+
+      /// 网络异常不要直接 failed
+      task.status = RecordStatus.waitingLive;
+
+      updateTask(task);
+
+      if (settings.autoStartOnBoot.value) {
+        _startPolling(task);
+      }
+    }
+  }
+
+  // =========================================================
+  // 恢复任务
+  // =========================================================
   Future<void> restoreAndAutoPoll() async {
     try {
       final raw = HivePrefUtil.getString(RecorderKeys.recorderTasks);
@@ -728,20 +862,24 @@ class RecorderController extends GetxService {
       if (raw == null || raw.isEmpty) {
         return;
       }
+
       final list = jsonDecode(raw) as List;
+
       final restored = list.map((e) => LiveRecordTask.fromJson(e)).toList();
+
       tasks.assignAll(restored);
 
-      /// 所有任务恢复为等待直播
-      for (final task in tasks) {
-        task.status = RecordStatus.waitingLive;
-        updateTask(task);
-        if (settings.autoStartOnBoot.value) {
-          _startPolling(task);
-        }
+      developer.log('restore tasks => ${restored.length}');
+
+      /// 开机自动恢复
+      if (!settings.autoStartOnBoot.value) {
+        return;
       }
 
-      developer.log('restore tasks => ${restored.length}');
+      /// 逐个刷新状态
+      for (final task in tasks) {
+        unawaited(refreshTaskStatus(task));
+      }
     } catch (e, s) {
       developer.log('restoreAndAutoPoll error', error: e, stackTrace: s);
 
