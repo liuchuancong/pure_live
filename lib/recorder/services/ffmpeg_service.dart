@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'dart:developer';
 import 'package:get/get.dart';
 import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
@@ -19,7 +20,6 @@ class FFmpegRecordSession {
 
   bool manualStop = false;
   bool hasError = false;
-
   FFmpegRecordSession({required this.taskId});
 }
 
@@ -73,8 +73,11 @@ class FFmpegService extends GetxService {
     final headerStr = headerLines.isNotEmpty ? "${headerLines.join('\r\n')}\r\n" : "";
 
     final List<String> args = [
+      '-y',
+      '-nostdin',
+      '-xerror',
       '-hide_banner',
-      '-loglevel', 'info',
+      '-loglevel', 'warning',
 
       // --- Enhanced Reconnect Logic ---
       '-reconnect', '1',
@@ -111,7 +114,8 @@ class FFmpegService extends GetxService {
     FFmpegKit.executeAsync(
       command,
       onLog: (Log log) {
-        record.sessionId ??= log.sessionId;
+        // 关键：实时同步真正的 sessionId
+        record.sessionId = log.sessionId;
       },
       onStatistics: (Statistics s) {
         record.recordedSeconds = s.time ~/ 1000;
@@ -121,9 +125,12 @@ class FFmpegService extends GetxService {
         record.fps = s.videoFps;
         record.lastFrame = s.videoFrameNumber;
         record.lastUpdate = DateTime.now();
+        record.sessionId = s.sessionId;
+        log('onStatistics session ID : ${s.sessionId}');
         onProgress?.call(record);
       },
       onComplete: (session) async {
+        log('onComplete session ID : ${session.sessionId}');
         watchdog?.cancel();
 
         try {
@@ -150,17 +157,29 @@ class FFmpegService extends GetxService {
   Future<void> stopRecord(String taskId) async {
     final record = _sessions[taskId];
     if (record == null) return;
+
     record.manualStop = true;
-    final sessionId = record.sessionId;
-    if (sessionId != null) {
-      final sessions = FFmpegKit.getFFmpegSessions();
-      for (final s in sessions) {
-        if (s.getSessionId() == sessionId) {
-          FFmpegKit.cancel(s);
+    final targetId = record.sessionId;
+
+    if (targetId != null) {
+      log('准备停止任务 $taskId，目标 SessionId: $targetId');
+
+      final activeSessions = FFmpegKit.getFFmpegSessions();
+      bool killed = false;
+      for (var session in activeSessions) {
+        if (session.getSessionId() == targetId) {
+          FFmpegKit.cancel(session);
+          log('成功下发取消指令给 Session: $targetId');
+          killed = true;
           break;
         }
       }
+
+      if (!killed) {
+        log('未在活跃列表中找到 Session $targetId，可能已自动结束');
+      }
     }
+
     _sessions.remove(taskId);
   }
 

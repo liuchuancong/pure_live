@@ -1,5 +1,7 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
+add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+
 set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON)
 project(pure_live LANGUAGES CXX)
 
