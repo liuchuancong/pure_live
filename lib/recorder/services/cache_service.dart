@@ -20,7 +20,7 @@ class CacheService extends GetxService {
 
     /// 用户自定义目录
     if (customPath != null && customPath.isNotEmpty) {
-      recordDir = Directory(p.join(customPath, 'pure_live_records'));
+      recordDir = Directory(customPath);
     } else {
       final dir = await getApplicationDocumentsDirectory();
 
@@ -35,7 +35,7 @@ class CacheService extends GetxService {
         recordDir = Directory(
           '${dir.path}'
           '${Platform.pathSeparator}'
-          'records',
+          'pure_live_records',
         );
       }
     }

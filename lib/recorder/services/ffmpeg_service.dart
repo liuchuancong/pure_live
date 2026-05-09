@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
 
-/// FFmpeg 录制会话状态
 class FFmpegRecordSession {
   final String taskId;
   FFmpegSession? session;
@@ -53,7 +52,6 @@ class FFmpegService extends GetxService {
 
     Timer? watchdog;
 
-    // Watchdog 防卡死逻辑
     watchdog = Timer.periodic(const Duration(seconds: 20), (_) {
       final diff = DateTime.now().difference(record.lastUpdate);
       if (diff.inSeconds > 40 && !record.hasError && !record.manualStop) {
@@ -62,7 +60,6 @@ class FFmpegService extends GetxService {
       }
     });
 
-    // 处理 Headers
     final userAgent =
         headers?['user-agent'] ??
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
@@ -169,9 +166,7 @@ class FFmpegService extends GetxService {
     _sessions.remove(taskId);
   }
 
-  /// 获取 Session 状态
   FFmpegRecordSession? getSession(String taskId) => _sessions[taskId];
 
-  /// 是否录制中
   bool isRecording(String taskId) => _sessions.containsKey(taskId);
 }

@@ -150,7 +150,7 @@ class LivePlayPage extends GetView<LivePlayController> {
             return IconButton(
               icon: Icon(
                 isRecording ? Remix.record_circle_fill : Remix.add_circle_line,
-                color: isRecording ? Colors.redAccent : Colors.white,
+                color: isRecording ? Colors.redAccent : Colors.black,
               ),
               tooltip: isRecording ? "已添加录制列表" : "添加到录制列表",
               onPressed: () {

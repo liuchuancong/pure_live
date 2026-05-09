@@ -266,14 +266,11 @@ class RecorderController extends GetxService {
       /// 正在处理视频
       if (task.status == RecordStatus.processing) {
         developer.log('task processing => ${task.taskId}');
-
-        return;
       }
 
       /// 已在队列
       if (task.status == RecordStatus.queued) {
         developer.log('task already queued => ${task.taskId}');
-
         return;
       }
 
@@ -390,9 +387,7 @@ class RecorderController extends GetxService {
 
         onComplete: () async {
           developer.log('ffmpeg complete => ${task.taskId}');
-
           final session = FFmpegService.to.getSession(task.taskId);
-
           if (session?.manualStop ?? false) {
             return;
           }
@@ -539,11 +534,8 @@ class RecorderController extends GetxService {
 
     try {
       task.status = RecordStatus.processing;
-
       updateTask(task);
-
       _next();
-
       unawaited(_processVideo(task));
     } catch (e, s) {
       developer.log('_onComplete error', error: e, stackTrace: s);
@@ -561,15 +553,12 @@ class RecorderController extends GetxService {
   Future<void> _processVideo(LiveRecordTask task) async {
     try {
       final outputDir = task.outputDir;
-
       if (outputDir == null) {
         task.status = RecordStatus.failed;
-
         updateTask(task);
-
         return;
       }
-
+      await Future.delayed(Duration(seconds: 5));
       await VideoProcessorService.to.convertToMp4(
         task: task,
         tsDir: Directory(outputDir),
@@ -581,13 +570,10 @@ class RecorderController extends GetxService {
             } else {
               task.status = RecordStatus.failed;
             }
-
             updateTask(task);
           } catch (e, s) {
             developer.log('_processVideo onFinish error', error: e, stackTrace: s);
-
             task.status = RecordStatus.failed;
-
             updateTask(task);
           }
         },
