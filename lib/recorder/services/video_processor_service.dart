@@ -24,7 +24,7 @@ class VideoProcessorService extends GetxService {
       if (files.isEmpty) return null;
 
       // 1. 预先计算输出路径并准备配置文件
-      final String listFileName = 'list_${task.taskId}_${DateTime.now().millisecondsSinceEpoch}.txt';
+      final String listFileName = '${task.platform}_${task.roomId}_${DateTime.now().millisecondsSinceEpoch}.txt';
       final listFile = File(p.join(tsDir.path, listFileName));
       final buffer = StringBuffer();
       for (final f in files) {
@@ -49,13 +49,13 @@ class VideoProcessorService extends GetxService {
           await Future.delayed(const Duration(milliseconds: 1000));
           final code = session.getReturnCode();
           bool isSuccess = ReturnCode.isSuccess(code);
-          if (listFile.existsSync()) await listFile.delete();
+          // if (listFile.existsSync()) await listFile.delete();
           await Future.delayed(const Duration(milliseconds: 500));
-          if (isSuccess) {
-            for (var f in files) {
-              if (f.existsSync()) await f.delete();
-            }
-          }
+          // if (isSuccess) {
+          //   for (var f in files) {
+          //     if (f.existsSync()) await f.delete();
+          //   }
+          // }
           await CacheService.to.enforceLimit();
           if (onFinish != null) onFinish(isSuccess, outputPath);
         },

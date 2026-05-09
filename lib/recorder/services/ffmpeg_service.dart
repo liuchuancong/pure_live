@@ -6,7 +6,7 @@ import 'package:pure_live/recorder/pages/record_settings/record_settings_control
 
 class FFmpegRecordSession {
   final String taskId;
-  FFmpegSession? session;
+  int? sessionId;
 
   int recordedSeconds = 0;
   int fileSize = 0;
@@ -91,7 +91,7 @@ class FFmpegService extends GetxService {
       '-user_agent', '"$userAgent"',
       if (headerStr.isNotEmpty) ...['-headers', '"$headerStr"'],
 
-      '-i', '"$url"',
+      '-i', url,
 
       '-map', settings.preferBestStream.value ? '0:v:0' : '0:v',
       '-map', settings.preferBestStream.value ? '0:a:0' : '0:a',
@@ -104,22 +104,16 @@ class FFmpegService extends GetxService {
       '-strftime', '1',
 
       // Use .ts for recording (much safer against EOF errors)
-      '"$outputDir/%Y%m%d_%H%M%S.ts"',
+      '$outputDir${Platform.pathSeparator}%Y%m%d_%H%M%S.ts',
     ];
 
     final command = args.join(' ');
-    final session = FFmpegKit.createSession(command);
-    record.session = session;
-    await session.executeAsync(
-      logCallback: (Log log) {
-        if (record.hasError || record.manualStop) return;
-        final msg = log.message.toLowerCase();
-        // 常见的断流或失败关键字
-        if (msg.contains("failed") || msg.contains("error") || msg.contains("403") || msg.contains("404")) {
-          // 这里可以视情况是否触发 onError
-        }
+    FFmpegKit.executeAsync(
+      command,
+      onLog: (Log log) {
+        record.sessionId ??= log.sessionId;
       },
-      statisticsCallback: (Statistics s) {
+      onStatistics: (Statistics s) {
         record.recordedSeconds = s.time ~/ 1000;
         record.fileSize = s.size;
         record.bitrate = s.bitrate;
@@ -129,23 +123,24 @@ class FFmpegService extends GetxService {
         record.lastUpdate = DateTime.now();
         onProgress?.call(record);
       },
-      completeCallback: (session) async {
+      onComplete: (session) async {
         watchdog?.cancel();
-        _sessions.remove(taskId);
 
-        // 如果是手动停止，拦截所有后续逻辑
-        if (record.manualStop) {
-          onComplete?.call();
-          return;
-        }
+        try {
+          final code = session.getReturnCode();
 
-        final code = session.getReturnCode();
-        if (ReturnCode.isSuccess(code)) {
-          onComplete?.call();
-        } else {
-          if (!record.hasError) {
+          if (record.manualStop) {
+            onComplete?.call();
+            return;
+          }
+
+          if (ReturnCode.isSuccess(code)) {
+            onComplete?.call();
+          } else {
             onError?.call("FFmpeg退出码: $code");
           }
+        } finally {
+          _sessions.remove(taskId);
         }
       },
     );
@@ -156,13 +151,16 @@ class FFmpegService extends GetxService {
     final record = _sessions[taskId];
     if (record == null) return;
     record.manualStop = true;
-    try {
-      final session = record.session;
-      if (session != null) {
-        FFmpegKit.cancel(session);
+    final sessionId = record.sessionId;
+    if (sessionId != null) {
+      final sessions = FFmpegKit.getFFmpegSessions();
+      for (final s in sessions) {
+        if (s.getSessionId() == sessionId) {
+          FFmpegKit.cancel(s);
+          break;
+        }
       }
-      await Future.delayed(const Duration(seconds: 1));
-    } catch (_) {}
+    }
     _sessions.remove(taskId);
   }
 

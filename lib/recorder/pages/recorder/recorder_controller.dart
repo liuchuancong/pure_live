@@ -143,9 +143,7 @@ class RecorderController extends GetxService {
         /// 有录制内容 -> 自动合并
         if (task.outputDir != null && task.recordedSeconds > 0) {
           task.status = RecordStatus.processing;
-
           updateTask(task);
-
           await _processVideo(task);
         }
       }
@@ -490,7 +488,6 @@ class RecorderController extends GetxService {
 
   Future<void> stopTask(LiveRecordTask task) async {
     developer.log('stopTask => ${task.taskId}');
-
     try {
       queue.remove(task);
 
@@ -558,7 +555,6 @@ class RecorderController extends GetxService {
         updateTask(task);
         return;
       }
-      await Future.delayed(Duration(seconds: 5));
       await VideoProcessorService.to.convertToMp4(
         task: task,
         tsDir: Directory(outputDir),
@@ -648,17 +644,12 @@ class RecorderController extends GetxService {
 
   Future<void> _waitSessionRelease(String taskId) async {
     developer.log('wait session release => $taskId');
-
     const maxWait = 30;
-
     int count = 0;
-
     while (FFmpegService.to.getSession(taskId) != null && count < maxWait) {
       await Future.delayed(const Duration(milliseconds: 200));
-
       count++;
     }
-
     developer.log('session released => $taskId');
   }
 

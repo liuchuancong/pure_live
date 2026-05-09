@@ -159,7 +159,7 @@ class CacheService extends GetxService {
     final safePlatform = PathHelper.toSafePinyin(platform);
     final safeNick = PathHelper.toSafePinyin(nick);
     final separator = Platform.pathSeparator;
-    final path = "${base.path}$separator$safePlatform$separator$date$separator$safeNick";
+    final path = "${base.path}$separator$safePlatform$separator$safeNick$separator$date";
     final dir = Directory(path);
     if (!await dir.exists()) {
       await dir.create(recursive: true);
