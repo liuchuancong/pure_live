@@ -49,13 +49,13 @@ class VideoProcessorService extends GetxService {
           await Future.delayed(const Duration(milliseconds: 1000));
           final code = session.getReturnCode();
           bool isSuccess = ReturnCode.isSuccess(code);
-          // if (listFile.existsSync()) await listFile.delete();
+          if (listFile.existsSync()) await listFile.delete();
           await Future.delayed(const Duration(milliseconds: 500));
-          // if (isSuccess) {
-          //   for (var f in files) {
-          //     if (f.existsSync()) await f.delete();
-          //   }
-          // }
+          if (isSuccess) {
+            for (var f in files) {
+              if (f.existsSync()) await f.delete();
+            }
+          }
           await CacheService.to.enforceLimit();
           if (onFinish != null) onFinish(isSuccess, outputPath);
         },

@@ -238,6 +238,6 @@ flutter_intl:
   output_dir: lib/common/l10n/generated
 
 ffmpeg_kit_extended_config:
-  type: full  
-  gpl: true
-  small: false
+  type: "base" # pre-bundled builds: debug, base, full, audio, video, video_hw
+  gpl: true # enable to include GPL libraries
+  small: true # enable to use smaller builds

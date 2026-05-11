@@ -505,7 +505,7 @@ class RecorderController extends GetxService {
 
         _next();
 
-        unawaited(_processVideo(task));
+        // unawaited(_processVideo(task));
       } else {
         task.status = RecordStatus.stopped;
 
@@ -621,8 +621,6 @@ class RecorderController extends GetxService {
       if (task.status == RecordStatus.stopped) {
         return;
       }
-
-      StreamResolverService.to.invalidate(task.roomId);
 
       await _runTask(task);
     } catch (e, s) {

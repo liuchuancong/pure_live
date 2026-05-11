@@ -2,7 +2,7 @@ import 'package:get/get.dart';
 import 'package:pure_live/core/sites.dart';
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/model/live_play_quality.dart';
-import 'package:pure_live/recorder/consts/resolution_mapper.dart';
+import 'package:pure_live/player/utils/player_consts.dart';
 
 enum StreamErrorType { roomNotFound, notLive, noQuality, cdnFailed, networkError, loginExpired, banned, unknown }
 
@@ -24,21 +24,11 @@ class StreamException implements Exception {
 
 class StreamResolverService extends GetxService {
   static StreamResolverService get to => Get.find();
-
-  final Map<String, String> _cache = {};
-
   Future<String> resolveStream({
     required String roomId,
     required String platform,
     required String preferredQuality,
   }) async {
-    final key = "$platform-$roomId";
-
-    /// 缓存
-    if (_cache.containsKey(key)) {
-      return _cache[key]!;
-    }
-
     try {
       final detail = await Sites.of(platform).liveSite.getRoomDetail(roomId: roomId, platform: platform);
 
@@ -61,14 +51,17 @@ class StreamResolverService extends GetxService {
       }
 
       /// 根据用户目标清晰度排序
-      final targetLevel = ResolutionMapper.getLevel(preferredQuality);
-
+      List<String> systemResolutions = PlayerConsts.resolutions;
+      int preferIndex = systemResolutions.indexOf(preferredQuality);
+      if (preferIndex == -1) preferIndex = 0;
+      double targetRatio = preferIndex / (systemResolutions.length - 1).clamp(1, 999);
+      final Map<LivePlayQuality, int> originalIndexMap = {for (int i = 0; i < qualities.length; i++) qualities[i]: i};
       qualities.sort((a, b) {
-        final la = ResolutionMapper.getLevel(a.quality);
-
-        final lb = ResolutionMapper.getLevel(b.quality);
-
-        return (lb - targetLevel).abs().compareTo((la - targetLevel).abs());
+        int indexA = originalIndexMap[a]!;
+        int indexB = originalIndexMap[b]!;
+        double ratioA = indexA / (qualities.length - 1).clamp(1, 999);
+        double ratioB = indexB / (qualities.length - 1).clamp(1, 999);
+        return (ratioA - targetRatio).abs().compareTo((ratioB - targetRatio).abs());
       });
 
       /// 尝试所有线路
@@ -78,9 +71,6 @@ class StreamResolverService extends GetxService {
 
           if (urls.isNotEmpty) {
             final url = urls.first;
-
-            _cache[key] = url;
-
             return url;
           }
         } catch (_) {
@@ -99,9 +89,5 @@ class StreamResolverService extends GetxService {
     catch (e) {
       throw StreamException(type: StreamErrorType.unknown, message: e.toString(), retryable: true);
     }
-  }
-
-  void invalidate(String roomId) {
-    _cache.removeWhere((k, v) => k.contains(roomId));
   }
 }

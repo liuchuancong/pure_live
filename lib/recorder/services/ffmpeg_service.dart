@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'dart:developer';
 import 'package:get/get.dart';
 import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
@@ -73,14 +74,14 @@ class FFmpegService extends GetxService {
     final headerStr = headerLines.isNotEmpty ? "${headerLines.join('\r\n')}\r\n" : "";
 
     final List<String> args = [
+      '-y',
       '-hide_banner',
       '-loglevel', 'info',
-
+      '-protocol_whitelist', 'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto',
       // --- Enhanced Reconnect Logic ---
       '-reconnect', '1',
-      '-reconnect_at_eof', '1',
       '-reconnect_streamed', '1',
-      '-reconnect_delay_max', '5', // Max wait 5 seconds before giving up
+      '-reconnect_delay_max', '2',
       // Set a socket timeout (15 seconds) to prevent hanging
       '-rw_timeout', '${settings.rwTimeout.value * 1000000}',
 
@@ -88,11 +89,11 @@ class FFmpegService extends GetxService {
       '-max_delay', '5000000',
       '-thread_queue_size', '${settings.threadQueueSize.value}',
 
-      '-user_agent', '"$userAgent"',
-      if (headerStr.isNotEmpty) ...['-headers', '"$headerStr"'],
-
+      '-user_agent', userAgent, // 直接传变量，不要加引号
+      if (headerStr.isNotEmpty) ...['-headers', "'$headerStr'"], // 直接传变量
+      // --- 2. 输入 ---
       '-i', url,
-
+      // --- 3. 输出配置 ---
       '-map', settings.preferBestStream.value ? '0:v:0' : '0:v',
       '-map', settings.preferBestStream.value ? '0:a:0' : '0:a',
       '-c', 'copy',
@@ -121,19 +122,18 @@ class FFmpegService extends GetxService {
         record.fps = s.videoFps;
         record.lastFrame = s.videoFrameNumber;
         record.lastUpdate = DateTime.now();
+        record.sessionId = s.sessionId;
         onProgress?.call(record);
       },
       onComplete: (session) async {
+        record.sessionId = session.sessionId;
         watchdog?.cancel();
-
         try {
           final code = session.getReturnCode();
-
           if (record.manualStop) {
             onComplete?.call();
             return;
           }
-
           if (ReturnCode.isSuccess(code)) {
             onComplete?.call();
           } else {
@@ -156,12 +156,13 @@ class FFmpegService extends GetxService {
       final sessions = FFmpegKit.getFFmpegSessions();
       for (final s in sessions) {
         if (s.getSessionId() == sessionId) {
+          log('stopRecord before $taskId');
           FFmpegKit.cancel(s);
+          log('stopRecord $taskId');
           break;
         }
       }
     }
-    _sessions.remove(taskId);
   }
 
   FFmpegRecordSession? getSession(String taskId) => _sessions[taskId];
