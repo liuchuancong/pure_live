@@ -4,14 +4,18 @@ import 'dart:convert';
 import 'dart:collection';
 import 'package:get/get.dart';
 import 'dart:developer' as developer;
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/sites.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
+import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
 import 'package:pure_live/recorder/consts/recorder_keys.dart';
 import 'package:pure_live/recorder/models/record_status.dart';
 import 'package:pure_live/recorder/services/cache_service.dart';
 import 'package:pure_live/recorder/models/live_record_task.dart';
-import 'package:pure_live/recorder/services/ffmpeg_service.dart';
+import 'package:pure_live/recorder/ffmpeg/ffmpeg_command_builder.dart';
+import 'package:pure_live/recorder/ffmpeg/ffmpeg_isolate_manager.dart';
 import 'package:pure_live/recorder/services/ffmpeg_header_factory.dart';
 import 'package:pure_live/recorder/services/stream_resolver_service.dart';
 import 'package:pure_live/recorder/services/video_processor_service.dart';
@@ -20,872 +24,459 @@ import 'package:pure_live/recorder/pages/record_settings/record_settings_control
 class RecorderController extends GetxService {
   final RecordSettingsController settings = Get.find<RecordSettingsController>();
 
-  /// 所有任务
   final tasks = <LiveRecordTask>[].obs;
-
-  /// 排队队列
   final Queue<LiveRecordTask> queue = Queue();
-
-  /// 轮询器
+  final Map<String, FFmpegTaskExecutor> _executors = {};
   final Map<String, Timer> _pollTimers = {};
-
-  /// 防止重复启动
   final Set<String> _startingTasks = {};
+  final Set<String> _runningTasks = {};
 
-  /// 轮询失败次数（指数退避）
-  final Map<String, int> _pollRetryCount = {};
+  int get runningCount => tasks
+      .where(
+        (e) =>
+            e.status == RecordStatus.running ||
+            e.status == RecordStatus.preparing ||
+            e.status == RecordStatus.reconnecting,
+      )
+      .length;
 
-  /// 当前占用录制槽位数量
-  int get runningTasks => tasks.where((e) {
-    return e.status == RecordStatus.running ||
-        e.status == RecordStatus.preparing ||
-        e.status == RecordStatus.reconnecting;
-  }).length;
   @override
-  onInit() {
-    restoreAndAutoPoll();
+  void onInit() {
     super.onInit();
+    restoreAndAutoPoll();
   }
 
   // =========================================================
-  // 更新任务
+  // FFmpeg EVENT
   // =========================================================
+  void _onFFmpegEvent(FFmpegEvent event) {
+    final task = tasks.firstWhereOrNull((e) => e.taskId == event.taskId);
+    if (task == null) return;
 
-  void updateTask(LiveRecordTask task) {
-    final index = tasks.indexWhere((e) => e.taskId == task.taskId);
+    switch (event.type) {
+      case FFmpegEventType.started:
+        task.status = RecordStatus.running;
+        _runningTasks.add(task.taskId);
+        break;
+      case FFmpegEventType.startAck:
+        break;
+      case FFmpegEventType.progress:
+        final d = event.data;
+        task.recordedSeconds = (d['time'] ?? 0) ~/ 1000;
+        task.fileSize = d['size'] ?? 0;
+        task.fps = d['fps'] ?? 0;
+        task.recordSpeed = d['speed'] ?? 0;
+        task.bitrate = d['bitrate'] ?? 0;
+        break;
 
-    if (index == -1) {
-      return;
+      case FFmpegEventType.error:
+        _onFail(task);
+        break;
+
+      case FFmpegEventType.complete:
+        _onComplete(task);
+        break;
+
+      case FFmpegEventType.heartbeat:
+        break;
     }
-
-    tasks[index] = task;
-
-    tasks.assignAll(List<LiveRecordTask>.from(tasks));
-
-    _persist();
-  }
-
-  // =========================================================
-  // 添加任务
-  // =========================================================
-
-  Future<void> addTask({required LiveRoom room}) async {
-    final exists = tasks.any((e) => e.roomId == room.roomId && e.platform == room.platform);
-
-    if (exists) {
-      return;
-    }
-
-    final task = LiveRecordTask.fromRoom(room);
-
-    tasks.insert(0, task);
-
-    tasks.assignAll(List<LiveRecordTask>.from(tasks));
-
-    /// 已开播
-    if (room.liveStatus == LiveStatus.live) {
-      await startTask(task);
-
-      return;
-    }
-
-    /// 未开播
-    task.status = RecordStatus.waitingLive;
 
     updateTask(task);
-
-    _startPolling(task);
   }
 
   // =========================================================
-  // 删除任务
+  // UPDATE
   // =========================================================
+  void updateTask(LiveRecordTask task) {
+    final i = tasks.indexWhere((e) => e.taskId == task.taskId);
+    if (i == -1) return;
 
-  Future<void> removeTask(LiveRecordTask task) async {
-    await stopTask(task);
-
-    queue.remove(task);
-
-    _stopPolling(task.taskId);
-
-    tasks.removeWhere((e) => e.taskId == task.taskId);
-
-    tasks.assignAll(List<LiveRecordTask>.from(tasks));
-
-    await _persist();
+    List<LiveRecordTask> newList = List.from(tasks);
+    newList[i] = task;
+    tasks.value = newList;
+    _persist(); //
   }
 
   // =========================================================
-  // 彻底取消直播间监控
+  // ADD TASK
   // =========================================================
+  Future<void> addTask({required LiveRoom room}) async {
+    if (tasks.any((e) => e.roomId == room.roomId && e.platform == room.platform)) return;
 
-  Future<void> unRecorder(LiveRecordTask task) async {
-    developer.log('unRecorder => ${task.taskId}');
+    final task = LiveRecordTask.fromRoom(room);
+    tasks.insert(0, task);
+    tasks.value = List.from(tasks);
+    _persist();
 
-    try {
-      /// 停止轮询
-      _stopPolling(task.taskId);
-
-      /// 是否正在录制
-      final isRecording = [
-        RecordStatus.running,
-        RecordStatus.preparing,
-        RecordStatus.reconnecting,
-      ].contains(task.status);
-
-      if (isRecording) {
-        /// 停止 ffmpeg
-        await FFmpegService.to.stopRecord(task.taskId);
-
-        /// 等待 session 释放
-        await _waitSessionRelease(task.taskId);
-
-        /// 有录制内容 -> 自动合并
-        if (task.outputDir != null && task.recordedSeconds > 0) {
-          task.status = RecordStatus.processing;
-          updateTask(task);
-          await _processVideo(task);
-        }
-      }
-
-      /// 队列移除
-      queue.remove(task);
-
-      /// 删除任务
-      tasks.removeWhere((e) => e.taskId == task.taskId);
-
-      tasks.assignAll(List<LiveRecordTask>.from(tasks));
-
-      /// 删除持久化
-      await _persist();
-
-      developer.log('unRecorder success => ${task.taskId}');
-    } catch (e, s) {
-      developer.log('unRecorder error', error: e, stackTrace: s);
+    if (room.liveStatus == LiveStatus.live) {
+      await startTask(task);
+    } else {
+      task.status = RecordStatus.waitingLive;
+      updateTask(task);
+      _startPolling(task);
     }
   }
 
   // =========================================================
-  // 外部启动
+  // START TASK (external)
   // =========================================================
-
   Future<void> startTask(LiveRecordTask task) async {
-    developer.log('startTask => ${task.taskId}, status=${task.status}');
-
     task.retryCount = 0;
-
     await _startTask(task);
   }
 
   // =========================================================
-  // 内部启动
+  // FORCE START
   // =========================================================
   Future<void> forceStartTask(LiveRecordTask task) async {
-    /// 有空闲
-    if (runningTasks < settings.maxTaskCount.value) {
+    if (runningCount < settings.maxTaskCount.value) {
       await startTask(task);
       return;
     }
 
-    /// 找一个正在运行的任务
-    final running = tasks.firstWhereOrNull(
-      (e) =>
-          e.taskId != task.taskId &&
-          [RecordStatus.running, RecordStatus.preparing, RecordStatus.reconnecting].contains(e.status),
-    );
+    final running = tasks.firstWhereOrNull((e) => e.taskId != task.taskId && e.status == RecordStatus.running);
 
-    if (running == null) {
-      return;
-    }
+    if (running == null) return;
 
-    /// 弹窗确认
-    final confirm = await Get.dialog<bool>(
-      AlertDialog(
-        title: const Text('录制数量已满'),
-        content: Text(
-          '当前已达到最大录制数量。\n\n'
-          '将停止录制：\n'
-          '${running.nick}\n\n'
-          '是否继续？',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(Get.context!).pop(false);
-            },
-            child: const Text('取消'),
-          ),
-
-          FilledButton(
-            onPressed: () {
-              Navigator.of(Get.context!).pop(true);
-            },
-            child: const Text('继续'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true) {
-      return;
-    }
-
-    developer.log(
-      'force stop => ${running.taskId}, '
-      'force start => ${task.taskId}',
-    );
-
-    /// 停止旧任务
     await stopTask(running);
-
-    /// 启动新任务
     await startTask(task);
   }
 
+  // =========================================================
+  // INTERNAL START
+  // =========================================================
   Future<void> _startTask(LiveRecordTask task) async {
-    /// 防止重复启动
-    if (_startingTasks.contains(task.taskId)) {
-      developer.log('task already starting => ${task.taskId}');
-      return;
-    }
+    if (_startingTasks.contains(task.taskId)) return;
 
     _startingTasks.add(task.taskId);
 
     try {
-      /// 已运行
-      if (task.status == RecordStatus.running ||
-          task.status == RecordStatus.preparing ||
-          task.status == RecordStatus.reconnecting) {
-        developer.log('task already running => ${task.taskId}');
-
-        return;
-      }
-
-      /// 正在处理视频
-      if (task.status == RecordStatus.processing) {
-        developer.log('task processing => ${task.taskId}');
-      }
-
-      /// 已在队列
-      if (task.status == RecordStatus.queued) {
-        developer.log('task already queued => ${task.taskId}');
-        return;
-      }
-
-      /// 超过并发限制
-      if (runningTasks >= settings.maxTaskCount.value) {
+      if (runningCount >= settings.maxTaskCount.value) {
         task.status = RecordStatus.queued;
-
-        if (!queue.contains(task)) {
-          queue.add(task);
-        }
-
+        queue.add(task);
         updateTask(task);
-
-        developer.log('task queued => ${task.taskId}');
-
         return;
       }
 
-      /// 停止轮询
       _stopPolling(task.taskId);
-
-      /// 真正执行录制
       await _runTask(task);
-    } catch (e, s) {
-      developer.log('_startTask error', error: e, stackTrace: s);
-
-      task.status = RecordStatus.failed;
-
-      updateTask(task);
     } finally {
       _startingTasks.remove(task.taskId);
     }
   }
 
   // =========================================================
-  // 真正执行录制
+  // RUN TASK
   // =========================================================
-
   Future<void> _runTask(LiveRecordTask task) async {
+    // 1. 设置状态为准备中
+    task.status = RecordStatus.preparing;
+    updateTask(task);
+
     try {
-      developer.log('_runTask => ${task.taskId}');
-
-      task.status = RecordStatus.preparing;
-
-      updateTask(task);
-
-      /// 解析流地址
+      // 2. 解析流地址、获取保存目录和 Header
       final url = await StreamResolverService.to.resolveStream(
         roomId: task.roomId,
         platform: task.platform,
         preferredQuality: settings.defaultQuality.value,
       );
 
-      /// 创建目录
       final dir = await CacheService.to.getRoomDir(platform: task.platform, nick: task.nick);
 
-      /// headers
       final headers = await FFmpegHeaderFactory.build(platform: task.platform);
 
-      task.outputDir = dir.path;
-
-      task.retryCount = 0;
-
-      task.selectedQuality = settings.defaultQuality.value;
-
-      task.status = RecordStatus.running;
-
-      updateTask(task);
-
-      /// 开始录制
-      await FFmpegService.to.startRecord(
-        taskId: task.taskId,
+      // 3. 构建录制命令
+      final cmd = FFmpegCommandBuilder.buildRecordCommand(
+        headers: headers,
         url: url,
         outputDir: dir.path,
-        headers: headers,
         segmentTime: settings.segmentTime.value,
-        onProgress: (record) {
-          task.recordedSeconds = record.recordedSeconds;
-
-          task.fileSize = record.fileSize;
-
-          task.recordSpeed = record.speed;
-
-          task.bitrate = record.bitrate;
-
-          task.fps = record.fps;
-
-          task.lastUpdate = DateTime.now();
-
-          updateTask(task);
-        },
-
-        onError: (err) async {
-          developer.log('ffmpeg error => $err');
-
-          final session = FFmpegService.to.getSession(task.taskId);
-
-          if (session?.manualStop ?? false) {
-            return;
-          }
-
-          if (!settings.autoReconnect.value) {
-            task.status = RecordStatus.failed;
-
-            updateTask(task);
-
-            _next();
-
-            return;
-          }
-
-          await _onFail(task);
-        },
-
-        onComplete: () async {
-          developer.log('ffmpeg complete => ${task.taskId}');
-          final session = FFmpegService.to.getSession(task.taskId);
-          if (session?.manualStop ?? false) {
-            return;
-          }
-
-          await _onComplete(task);
-        },
+        preferBestStream: settings.preferBestStream.value,
+        rwTimeout: settings.rwTimeout.value,
+        threadQueueSize: settings.threadQueueSize.value,
       );
-    }
-    /// Stream 异常
-    on StreamException catch (e) {
-      switch (e.type) {
-        case StreamErrorType.notLive:
-          developer.log('主播未开播 => ${task.roomId}');
 
-          task.status = RecordStatus.waitingLive;
+      // 4. 更新任务信息
+      task.outputDir = dir.path;
+      _runningTasks.add(task.taskId);
 
-          updateTask(task);
+      // --- 关键优化：每个任务创建独立的执行器 ---
+      // 如果已存在旧的执行器（如重连情况），先销毁它
+      _executors[task.taskId]?.dispose();
 
-          _startPolling(task);
+      // 创建新的执行器实例
+      final executor = FFmpegTaskExecutor(taskId: task.taskId);
 
-          _next();
+      // 监听该任务独立的事件流
+      executor.stream.listen((event) => _onFFmpegEvent(event));
 
-          return;
+      // 存入 Map 管理
+      _executors[task.taskId] = executor;
 
-        case StreamErrorType.noQuality:
-          developer.log('无可用清晰度 => ${task.roomId}');
-
-          await _onFail(task);
-
-          return;
-
-        case StreamErrorType.cdnFailed:
-          developer.log('cdn失败 => ${task.roomId}');
-
-          await _onFail(task);
-
-          return;
-
-        case StreamErrorType.roomNotFound:
-          developer.log('房间不存在 => ${task.roomId}');
-
-          task.status = RecordStatus.failed;
-
-          updateTask(task);
-
-          _next();
-
-          return;
-
-        case StreamErrorType.networkError:
-          developer.log('网络错误 => ${task.roomId}');
-
-          await _onFail(task);
-
-          return;
-
-        case StreamErrorType.loginExpired:
-          developer.log('登录失效 => ${task.roomId}');
-
-          task.status = RecordStatus.failed;
-
-          updateTask(task);
-
-          _next();
-
-          return;
-
-        case StreamErrorType.banned:
-          developer.log('房间封禁 => ${task.roomId}');
-
-          task.status = RecordStatus.failed;
-
-          updateTask(task);
-
-          _next();
-
-          return;
-
-        case StreamErrorType.unknown:
-          developer.log('未知错误 => ${task.roomId}');
-
-          await _onFail(task);
-
-          return;
-      }
-    }
-    /// 未知异常
-    catch (e, s) {
-      developer.log('_runTask unknown error', error: e, stackTrace: s);
-
-      if (task.status != RecordStatus.stopped) {
-        await _onFail(task);
-      }
+      // 启动该任务独占的 Isolate
+      await executor.run(cmd);
+    } catch (e) {
+      developer.log("运行录制任务失败: $e");
+      _onFail(task);
     }
   }
 
   // =========================================================
-  // 停止任务
+  // STOP TASK
   // =========================================================
-
   Future<void> stopTask(LiveRecordTask task) async {
-    developer.log('stopTask => ${task.taskId}');
-    try {
-      queue.remove(task);
+    queue.remove(task);
+    _stopPolling(task.taskId);
 
-      _stopPolling(task.taskId);
-
-      await FFmpegService.to.stopRecord(task.taskId);
-
-      await _waitSessionRelease(task.taskId);
-
-      /// 有录制内容
-      if (task.outputDir != null && task.recordedSeconds > 0) {
-        task.status = RecordStatus.processing;
-
-        updateTask(task);
-
-        _next();
-
-        // unawaited(_processVideo(task));
-      } else {
-        task.status = RecordStatus.stopped;
-
-        updateTask(task);
-
-        _next();
-      }
-    } catch (e, s) {
-      developer.log('stopTask error', error: e, stackTrace: s);
-
-      task.status = RecordStatus.failed;
-
-      updateTask(task);
-    }
-  }
-
-  // =========================================================
-  // 录制完成
-  // =========================================================
-
-  Future<void> _onComplete(LiveRecordTask task) async {
-    developer.log('_onComplete => ${task.taskId}');
-
-    try {
-      task.status = RecordStatus.processing;
-      updateTask(task);
-      _next();
+    final executor = _executors[task.taskId];
+    if (executor != null) {
+      await executor.forceKill();
+      _executors.remove(task.taskId);
+      developer.log("等待底层资源释放...");
+      await Future.delayed(const Duration(seconds: 2));
+      developer.log("[${task.taskId}] 环境已安全，开始合并处理...");
       unawaited(_processVideo(task));
-    } catch (e, s) {
-      developer.log('_onComplete error', error: e, stackTrace: s);
-
-      task.status = RecordStatus.failed;
-
-      updateTask(task);
     }
+
+    _runningTasks.remove(task.taskId);
+    task.status = RecordStatus.stopped;
+    updateTask(task);
+    _next();
+  }
+
+  // In _onComplete or _onFail
+  void _cleanupExecutor(String taskId) {
+    _executors[taskId]?.dispose();
+    _executors.remove(taskId);
   }
 
   // =========================================================
-  // 视频处理
+  // COMPLETE
   // =========================================================
-
-  Future<void> _processVideo(LiveRecordTask task) async {
-    try {
-      final outputDir = task.outputDir;
-      if (outputDir == null) {
-        task.status = RecordStatus.failed;
-        updateTask(task);
-        return;
-      }
-      await VideoProcessorService.to.convertToMp4(
-        task: task,
-        tsDir: Directory(outputDir),
-
-        onFinish: (success, mp4Path) async {
-          try {
-            if (success) {
-              task.status = RecordStatus.completed;
-            } else {
-              task.status = RecordStatus.failed;
-            }
-            updateTask(task);
-          } catch (e, s) {
-            developer.log('_processVideo onFinish error', error: e, stackTrace: s);
-            task.status = RecordStatus.failed;
-            updateTask(task);
-          }
-        },
-      );
-    } catch (e, s) {
-      developer.log('_processVideo error', error: e, stackTrace: s);
-
-      task.status = RecordStatus.failed;
-
-      updateTask(task);
-    }
+  Future<void> _onComplete(LiveRecordTask task) async {
+    _cleanupExecutor(task.taskId); // Cleanup the isolate
+    task.status = RecordStatus.processing;
+    updateTask(task);
+    _runningTasks.remove(task.taskId);
+    _next();
+    unawaited(_processVideo(task));
   }
 
   // =========================================================
-  // 失败重连
+  // FAIL
   // =========================================================
-
   Future<void> _onFail(LiveRecordTask task) async {
-    developer.log('_onFail => ${task.taskId}');
+    task.retryCount++;
 
-    try {
-      await FFmpegService.to.stopRecord(task.taskId);
-
-      await _waitSessionRelease(task.taskId);
-
-      task.retryCount++;
-
-      /// 超过最大重试
-      if (task.retryCount >= settings.maxRetryCount.value) {
-        developer.log('retry max => ${task.taskId}');
-
-        task.status = RecordStatus.waitingLive;
-
-        updateTask(task);
-
-        _startPolling(task);
-
-        _next();
-
-        return;
-      }
-
-      task.status = RecordStatus.reconnecting;
-
-      updateTask(task);
-
-      await Future.delayed(Duration(seconds: settings.retryDelay.value));
-
-      if (task.status == RecordStatus.stopped) {
-        return;
-      }
-
-      await _runTask(task);
-    } catch (e, s) {
-      developer.log('_onFail error', error: e, stackTrace: s);
-
+    if (task.retryCount >= settings.maxRetryCount.value) {
       task.status = RecordStatus.waitingLive;
-
       updateTask(task);
-
       _startPolling(task);
-
       _next();
-    }
-  }
-
-  // =========================================================
-  // 等待 session 释放
-  // =========================================================
-
-  Future<void> _waitSessionRelease(String taskId) async {
-    developer.log('wait session release => $taskId');
-    const maxWait = 30;
-    int count = 0;
-    while (FFmpegService.to.getSession(taskId) != null && count < maxWait) {
-      await Future.delayed(const Duration(milliseconds: 200));
-      count++;
-    }
-    developer.log('session released => $taskId');
-  }
-
-  // =========================================================
-  // 队列调度
-  // =========================================================
-
-  void _next() {
-    if (queue.isEmpty) {
       return;
     }
 
-    if (runningTasks >= settings.maxTaskCount.value) {
-      return;
-    }
-
-    final task = queue.removeFirst();
-
-    developer.log('_next => ${task.taskId}');
-
-    _startTask(task);
-  }
-
-  // =========================================================
-  // 轮询直播状态
-  // =========================================================
-
-  void _startPolling(LiveRecordTask task) {
-    if (!settings.enablePolling.value) {
-      return;
-    }
-
-    if (_pollTimers.containsKey(task.taskId)) {
-      return;
-    }
-
-    developer.log('start polling => ${task.taskId}');
-
-    task.status = RecordStatus.waitingLive;
-
+    task.status = RecordStatus.reconnecting;
     updateTask(task);
 
-    int currentInterval = settings.liveCheckInterval.value;
+    await Future.delayed(Duration(seconds: settings.retryDelay.value));
 
-    _pollTimers[task.taskId] = Timer.periodic(Duration(seconds: currentInterval), (_) async {
+    await _runTask(task);
+  }
+
+  // =========================================================
+  // PROCESS VIDEO
+  // =========================================================
+  Future<void> _processVideo(LiveRecordTask task) async {
+    if (task.outputDir == null) return;
+    final dir = Directory(task.outputDir!);
+    if (!dir.existsSync()) return;
+
+    task.status = RecordStatus.processing;
+    updateTask(task);
+
+    await VideoProcessorService.to.convertToMp4(
+      task: task,
+      tsDir: Directory(task.outputDir!),
+      onFinish: (ok, _) {
+        task.status = ok ? RecordStatus.completed : RecordStatus.failed;
+        updateTask(task);
+        _deleteTsFiles(dir);
+      },
+    );
+  }
+
+  /// 删除指定目录下的所有 .ts 切片和临时配置文件
+  void _deleteTsFiles(Directory dir) {
+    try {
+      if (!dir.existsSync()) return;
+
+      // 1. 获取所有待删除文件
+      final files = dir.listSync();
+
+      for (final file in files) {
+        final path = file.path;
+        // 只删除 .ts 文件和 ffmpeg 的列表文件
+        if (path.endsWith('.ts') || path.endsWith('list.txt')) {
+          file.deleteSync();
+        }
+      }
+      developer.log("清理完成：已删除 ${dir.path} 下的原始切片");
+    } catch (e) {
+      developer.log("清理文件失败: $e");
+    }
+  }
+
+  // =========================================================
+  // QUEUE NEXT
+  // =========================================================
+  void _next() {
+    if (queue.isEmpty) return;
+    if (runningCount >= settings.maxTaskCount.value) return;
+
+    _startTask(queue.removeFirst());
+  }
+
+  // =========================================================
+  // POLLING
+  // =========================================================
+  void _startPolling(LiveRecordTask task) {
+    if (!settings.enablePolling.value) return;
+    if (_pollTimers.containsKey(task.taskId)) return;
+
+    task.status = RecordStatus.waitingLive;
+    updateTask(task);
+
+    _pollTimers[task.taskId] = Timer.periodic(Duration(seconds: settings.liveCheckInterval.value), (_) async {
       try {
         final room = await Sites.of(task.platform).liveSite.getRoomDetail(roomId: task.roomId, platform: task.platform);
 
         task.updateFromRoom(room);
-
         updateTask(task);
 
-        /// 成功恢复
-        _pollRetryCount[task.taskId] = 0;
-
         if (room.liveStatus == LiveStatus.live) {
-          developer.log('room live => ${task.roomId}');
-
           _stopPolling(task.taskId);
-
           await startTask(task);
         }
-      } catch (e, s) {
-        developer.log('_startPolling error', error: e, stackTrace: s);
-
-        /// 指数退避
-        if (settings.enableBackoff.value) {
-          final retry = (_pollRetryCount[task.taskId] ?? 0) + 1;
-
-          _pollRetryCount[task.taskId] = retry;
-
-          currentInterval = (settings.liveCheckInterval.value * retry).clamp(
-            settings.liveCheckInterval.value,
-            settings.maxCheckInterval.value,
-          );
-
-          developer.log('poll backoff => ${task.taskId}, interval=$currentInterval');
-        }
-      }
+      } catch (_) {}
     });
   }
 
-  void _stopPolling(String taskId) {
-    _pollTimers[taskId]?.cancel();
-
-    _pollTimers.remove(taskId);
-
-    _pollRetryCount.remove(taskId);
+  void _stopPolling(String id) {
+    _pollTimers[id]?.cancel();
+    _pollTimers.remove(id);
   }
 
   // =========================================================
-  // 持久化
+  // UNRECORDER
   // =========================================================
+  Future<void> unRecorder(LiveRecordTask task) async {
+    _stopPolling(task.taskId);
+    queue.remove(task);
 
+    final executor = _executors[task.taskId];
+    if (executor != null) {
+      // 1. 直接炸掉 Isolate 进程
+      await executor.forceKill();
+      _executors.remove(task.taskId);
+
+      // 2. 核心：因为进程被杀，不会触发 complete 回调，所以这里手动调用
+      developer.log("[$task.taskId] 进程已炸掉，开始手动触发合并...");
+      _processVideo(task);
+    }
+
+    // 3. 从运行状态集合中移除
+    _runningTasks.remove(task.taskId);
+
+    // 4. 从任务列表中删除并持久化
+    tasks.removeWhere((e) => e.taskId == task.taskId);
+    tasks.value = List.from(tasks);
+    await _persist();
+
+    // 5. 检查是否可以启动队列中的下一个任务
+    _next();
+  }
+
+  // =========================================================
+  // PERSIST
+  // =========================================================
   Future<void> _persist() async {
     try {
       final jsonStr = jsonEncode(tasks.map((e) => e.toJson()).toList());
-
       await HivePrefUtil.setString(RecorderKeys.recorderTasks, jsonStr);
-    } catch (e, s) {
-      developer.log('_persist error', error: e, stackTrace: s);
+    } catch (e) {
+      developer.log("持久化失败: $e");
     }
   }
 
   // =========================================================
-  // 刷新任务状态
-  // =========================================================
-
-  // =========================================================
-  // 刷新直播间状态
-  // =========================================================
-
-  Future<void> refreshTaskStatus(LiveRecordTask task) async {
-    try {
-      developer.log('refreshTaskStatus => ${task.taskId}');
-
-      final room = await Sites.of(task.platform).liveSite.getRoomDetail(roomId: task.roomId, platform: task.platform);
-      task.updateFromRoom(room);
-
-      /// 正在直播
-      if (room.liveStatus == LiveStatus.live) {
-        developer.log('room is live => ${task.roomId}');
-        task.status = RecordStatus.preparing;
-        updateTask(task);
-        await startTask(task);
-
-        return;
-      }
-
-      /// 未开播
-      developer.log('room not live => ${task.roomId}');
-
-      task.status = RecordStatus.waitingLive;
-
-      updateTask(task);
-
-      /// 开始轮询
-      if (settings.autoStartOnBoot.value) {
-        _startPolling(task);
-      }
-    }
-    /// 房间不存在
-    on StreamException catch (e) {
-      developer.log('refreshTaskStatus stream error => ${e.type}');
-
-      switch (e.type) {
-        case StreamErrorType.roomNotFound:
-        case StreamErrorType.banned:
-          task.status = RecordStatus.failed;
-          break;
-
-        case StreamErrorType.notLive:
-          task.status = RecordStatus.waitingLive;
-
-          if (settings.autoStartOnBoot.value) {
-            _startPolling(task);
-          }
-          break;
-
-        default:
-          task.status = RecordStatus.failed;
-          break;
-      }
-
-      updateTask(task);
-    } catch (e, s) {
-      developer.log('refreshTaskStatus error', error: e, stackTrace: s);
-
-      /// 网络异常不要直接 failed
-      task.status = RecordStatus.waitingLive;
-
-      updateTask(task);
-
-      if (settings.autoStartOnBoot.value) {
-        _startPolling(task);
-      }
-    }
-  }
-
-  // =========================================================
-  // 恢复任务
+  // RESTORE 恢复任务并自动刷新状态
   // =========================================================
   Future<void> restoreAndAutoPoll() async {
     try {
       final raw = HivePrefUtil.getString(RecorderKeys.recorderTasks);
-
-      if (raw == null || raw.isEmpty) {
-        return;
-      }
+      if (raw == null || raw.isEmpty) return;
 
       final list = jsonDecode(raw) as List;
-
       final restored = list.map((e) => LiveRecordTask.fromJson(e)).toList();
-
-      tasks.assignAll(restored);
-
-      developer.log('restore tasks => ${restored.length}');
-
-      /// 开机自动恢复
-      if (!settings.autoStartOnBoot.value) {
-        return;
+      tasks.value = List<LiveRecordTask>.from(restored);
+      developer.log('tasks: ${tasks.length}');
+      if (settings.autoStartOnBoot.value) {
+        for (final task in tasks) {
+          unawaited(refreshTaskStatus(task));
+        }
       }
-
-      /// 逐个刷新状态
-      for (final task in tasks) {
-        unawaited(refreshTaskStatus(task));
-      }
-    } catch (e, s) {
-      developer.log('restoreAndAutoPoll error', error: e, stackTrace: s);
-
+    } catch (e) {
       tasks.clear();
     }
   }
 
+  //刷新任务状态
+  Future<void> refreshTaskStatus(LiveRecordTask task) async {
+    try {
+      final room = await Sites.of(task.platform).liveSite.getRoomDetail(roomId: task.roomId, platform: task.platform);
+      task.updateFromRoom(room);
+
+      if (room.liveStatus == LiveStatus.live) {
+        task.status = RecordStatus.preparing;
+        updateTask(task);
+        await startTask(task);
+      } else {
+        task.status = RecordStatus.waitingLive;
+        updateTask(task);
+        _startPolling(task);
+      }
+    } catch (e) {
+      task.status = RecordStatus.waitingLive;
+      updateTask(task);
+      _startPolling(task);
+    }
+  }
+
+  // =========================================================
+  // OPEN DIR
+  // =========================================================
   void openFileDir() async {
     final path = settings.recordSavePath.value;
 
     if (Platform.isWindows) {
       await Process.run('explorer', [path]);
-      return;
-    }
-
-    if (Platform.isMacOS) {
+    } else if (Platform.isMacOS) {
       await Process.run('open', [path]);
-      return;
-    }
-
-    if (Platform.isLinux) {
+    } else if (Platform.isLinux) {
       await Process.run('xdg-open', [path]);
-      return;
-    }
-
-    if (Platform.isAndroid) {
+    } else if (Platform.isAndroid) {
       final uri = Uri.parse('file://$path');
-
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri);
-      }
+      await launchUrl(uri);
     }
+  }
+
+  @override
+  void onClose() {
+    for (var timer in _pollTimers.values) {
+      timer.cancel();
+    }
+    _pollTimers.clear();
+    super.onClose();
   }
 }

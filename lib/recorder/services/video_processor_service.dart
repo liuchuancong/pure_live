@@ -1,70 +1,83 @@
 import 'dart:io';
-import 'dart:developer';
-import 'cache_service.dart';
-import 'package:get/get.dart';
+import 'dart:developer' as developer;
 import 'package:path/path.dart' as p;
-import '../models/live_record_task.dart';
-import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart';
+import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
+import 'package:pure_live/recorder/models/live_record_task.dart';
+import 'package:pure_live/recorder/ffmpeg/ffmpeg_isolate_manager.dart';
 
-class VideoProcessorService extends GetxService {
-  static VideoProcessorService get to => Get.find();
+class VideoProcessorService {
+  static final VideoProcessorService to = VideoProcessorService();
 
-  /// =========================
-  /// 🎬 TS → MP4
-  /// =========================
-  Future<String?> convertToMp4({
+  // 记录合并任务的执行器
+  final Map<String, FFmpegTaskExecutor> _mergeExecutors = {};
+
+  Future<void> convertToMp4({
     required LiveRecordTask task,
     required Directory tsDir,
     Function(bool success, String outPath)? onFinish,
   }) async {
-    try {
-      final files = tsDir.listSync().where((e) => e.path.endsWith('.ts')).toList()
-        ..sort((a, b) => a.path.compareTo(b.path));
+    final mergeId = "${task.taskId}_merge";
 
-      if (files.isEmpty) return null;
+    // 1. 获取所有 .ts 文件并按名称排序（确保时间线正确）
+    final files = tsDir
+        .listSync()
+        .where((e) => e.path.endsWith('.ts'))
+        .where((e) => e is File && e.lengthSync() > 0) // 过滤掉损坏的 0 字节文件
+        .toList();
 
-      // 1. 预先计算输出路径并准备配置文件
-      final String listFileName = '${task.platform}_${task.roomId}_${DateTime.now().millisecondsSinceEpoch}.txt';
-      final listFile = File(p.join(tsDir.path, listFileName));
-      final buffer = StringBuffer();
-      for (final f in files) {
-        String safePath = f.path.replaceAll('\\', '/');
-        buffer.writeln("file '$safePath'");
-      }
-      await listFile.writeAsString(buffer.toString());
+    // 按时间顺序（文件名）排序
+    files.sort((a, b) => a.path.compareTo(b.path));
 
-      // 生成唯一的输出路径
-      final outputName = '${task.taskId}_${DateTime.now().millisecondsSinceEpoch}.mp4';
-      final outputPath = '${tsDir.path}${Platform.pathSeparator}$outputName';
-
-      // 4. 处理 FFmpeg 命令路径（统一为正斜杠并用引号包裹）
-      final safeListPath = listFile.path.replaceAll('\\', '/');
-      final safeOutPath = outputPath.replaceAll('\\', '/');
-      final cmd = '-f concat -safe 0 -i "file:$safeListPath" -c copy "$safeOutPath"';
-
-      // 2. 触发异步执行（不 await）
-      FFmpegKit.executeAsync(
-        cmd,
-        onComplete: (session) async {
-          await Future.delayed(const Duration(milliseconds: 1000));
-          final code = session.getReturnCode();
-          bool isSuccess = ReturnCode.isSuccess(code);
-          if (listFile.existsSync()) await listFile.delete();
-          await Future.delayed(const Duration(milliseconds: 500));
-          if (isSuccess) {
-            for (var f in files) {
-              if (f.existsSync()) await f.delete();
-            }
-          }
-          await CacheService.to.enforceLimit();
-          if (onFinish != null) onFinish(isSuccess, outputPath);
-        },
-        onLog: (msg) => log("[ffmpeg]: ${msg.message}"),
-      );
-      return outputPath;
-    } catch (e) {
-      log("VideoProcessor Error: $e");
-      return null;
+    if (files.isEmpty) {
+      onFinish?.call(false, "");
+      return;
     }
+
+    // 2. 准备 concat 文本文件
+    final listFile = File(p.join(tsDir.path, 'list.txt'));
+    final buffer = StringBuffer();
+    for (final f in files) {
+      // FFmpeg concat 格式要求路径处理
+      buffer.writeln("file '${f.path.replaceAll('\\', '/')}'");
+    }
+    await listFile.writeAsString(buffer.toString());
+
+    // 3. 构建输出路径和命令
+    final outPath = p.join(tsDir.path, "combined_${DateTime.now().millisecondsSinceEpoch}.mp4");
+
+    // 使用 buildRecordCommand 类似的逻辑或直接拼 List
+    final args = [
+      "-f", "concat",
+      "-safe", "0",
+      "-i", listFile.path,
+      "-c", "copy", // 仅封装，不重编码，速度极快
+      outPath,
+    ];
+
+    // 4. 创建专用的合并执行器
+    final executor = FFmpegTaskExecutor(taskId: mergeId);
+    _mergeExecutors[mergeId] = executor;
+
+    // 5. 监听合并任务状态
+    executor.stream.listen((event) {
+      if (event.type == FFmpegEventType.complete) {
+        developer.log("[$mergeId] 合并完成");
+        onFinish?.call(true, outPath);
+        _cleanup(mergeId, listFile);
+      } else if (event.type == FFmpegEventType.error) {
+        developer.log("[$mergeId] 合并失败");
+        onFinish?.call(false, "");
+        _cleanup(mergeId, listFile);
+      }
+    });
+
+    // 6. 运行 Isolate 开始合并
+    await executor.run(args.join(' '));
+  }
+
+  void _cleanup(String mergeId, File listFile) {
+    _mergeExecutors[mergeId]?.dispose();
+    _mergeExecutors.remove(mergeId);
+    if (listFile.existsSync()) listFile.deleteSync();
   }
 }
