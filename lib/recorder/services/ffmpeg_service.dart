@@ -20,7 +20,6 @@ class FFmpegRecordSession {
 
   bool manualStop = false;
   bool hasError = false;
-
   FFmpegRecordSession({required this.taskId});
 }
 
@@ -112,7 +111,8 @@ class FFmpegService extends GetxService {
     FFmpegKit.executeAsync(
       command,
       onLog: (Log log) {
-        record.sessionId ??= log.sessionId;
+        // 关键：实时同步真正的 sessionId
+        record.sessionId = log.sessionId;
       },
       onStatistics: (Statistics s) {
         record.recordedSeconds = s.time ~/ 1000;
@@ -150,6 +150,7 @@ class FFmpegService extends GetxService {
   Future<void> stopRecord(String taskId) async {
     final record = _sessions[taskId];
     if (record == null) return;
+
     record.manualStop = true;
     final sessionId = record.sessionId;
     if (sessionId != null) {
