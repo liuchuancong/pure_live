@@ -40,7 +40,6 @@ class PlayerManager {
     isInPip.listen((value) {
       GlobalPlayerState.to.isPipMode.value = value;
     });
-    LiveAudioService.init();
   }
 
   // =========================
@@ -441,6 +440,7 @@ class PlayerManager {
   Future<void> exitPip() async {
     if (Platform.isWindows) {
       await WindowService().exitWinPiP();
+      GlobalPlayerState.to.reset();
       isInPip.value = false;
     }
   }
@@ -672,7 +672,7 @@ class PlayerManager {
   Widget getVideoWidget(int fitIndex, {Widget? controls, required List<BoxFit> fitList}) {
     return Container(
       color: Colors.black,
-      padding: const EdgeInsets.all(1),
+      padding: const EdgeInsets.all(0),
       child: StreamBuilder<bool>(
         stream: onPlaying,
         initialData: isPlayingNow,
@@ -689,18 +689,26 @@ class PlayerManager {
               height: double.infinity,
               child: Stack(
                 children: [
+                  // 修改后的逻辑
                   Positioned.fill(
-                    child: FittedBox(
-                      fit: boxFit,
-                      clipBehavior: Clip.hardEdge,
-                      child: StreamBuilder<List<int?>>(
-                        stream: CombineLatestStream.list([width, height]),
-                        builder: (context, snapshot) {
-                          return SizedBox(width: 1920, height: 1080, child: _currentPlayer!.getVideoWidget());
-                        },
+                    child: Container(
+                      color: Colors.black,
+                      child: FittedBox(
+                        fit: boxFit,
+                        clipBehavior: Clip.hardEdge,
+                        child: StreamBuilder<List<int?>>(
+                          stream: CombineLatestStream.list([width, height]),
+                          builder: (context, snapshot) {
+                            // 动态使用视频的真实宽高
+                            final vW = snapshot.data?[0]?.toDouble() ?? 1920.0;
+                            final vH = snapshot.data?[1]?.toDouble() ?? 1080.0;
+                            return SizedBox(width: vW, height: vH, child: _currentPlayer!.getVideoWidget());
+                          },
+                        ),
                       ),
                     ),
                   ),
+
                   if (controls != null) Positioned.fill(child: controls),
                 ],
               ),

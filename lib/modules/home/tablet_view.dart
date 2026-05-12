@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/search/search_controller.dart' as pure_live;
 
@@ -43,6 +44,15 @@ class HomeTabletView extends StatelessWidget {
                                   Get.toNamed(RoutePath.kSearch);
                                 },
                                 icon: const Icon(CustomIcons.search),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(top: 0, bottom: 12, left: 12, right: 12),
+                              child: IconButton(
+                                onPressed: () {
+                                  Get.toNamed(RoutePath.kRecordPage);
+                                },
+                                icon: Icon(Remix.download_2_fill),
                               ),
                             ),
                           ],

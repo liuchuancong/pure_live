@@ -73,6 +73,19 @@ class SettingsPage extends GetView<SettingsService> {
               onTap: showPreferResolutionSelectorDialog,
             ),
           ),
+          Obx(
+            () => ListTile(
+              // 使用信号塔图标，更直观代表移动数据
+              leading: const Icon(Remix.signal_tower_line, size: 24),
+              title: const Text("移动网络清晰度"),
+              subtitle: const Text("使用流量时的首选播放画质"),
+              trailing: Text(
+                controller.preferResolutionCellular.value,
+                style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+              ),
+              onTap: showpreferResolutionCellularSelectorDialog,
+            ),
+          ),
 
           if (Platform.isAndroid) _buildBackgroundPlayTile(context),
           _buildSwitchTile(
@@ -429,6 +442,50 @@ class SettingsPage extends GetView<SettingsService> {
                         GestureDetector(
                           onTap: () {
                             controller.changePreferResolution(name);
+                            Navigator.of(context).pop();
+                          },
+                          child: Text(name, style: Theme.of(context).textTheme.bodyLarge),
+                        ),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void showpreferResolutionCellularSelectorDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return SimpleDialog(
+          title: Text(S.of(context).prefer_resolution),
+          children: [
+            RadioGroup<String>(
+              groupValue: controller.preferResolutionCellular.value,
+              onChanged: (String? value) {
+                if (value != null) {
+                  controller.changePreferResolutionCellular(value);
+                  Navigator.of(context).pop();
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsets.only(top: 0, bottom: 10, left: 16, right: 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: PlayerConsts.resolutions.map<Widget>((name) {
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Radio<String>(value: name, activeColor: Theme.of(context).colorScheme.primary),
+                        GestureDetector(
+                          onTap: () {
+                            controller.changePreferResolutionCellular(name);
                             Navigator.of(context).pop();
                           },
                           child: Text(name, style: Theme.of(context).textTheme.bodyLarge),

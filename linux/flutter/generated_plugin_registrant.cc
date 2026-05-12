@@ -7,6 +7,7 @@
 #include "generated_plugin_registrant.h"
 
 #include <dynamic_color/dynamic_color_plugin.h>
+#include <ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter_plugin.h>
 #include <flutter_acrylic/flutter_acrylic_plugin.h>
 #include <flutter_inappwebview_linux/flutter_inappwebview_linux_plugin.h>
 #include <flutter_js/flutter_js_plugin.h>
@@ -22,6 +23,9 @@ void fl_register_plugins(FlPluginRegistry* registry) {
   g_autoptr(FlPluginRegistrar) dynamic_color_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "DynamicColorPlugin");
   dynamic_color_plugin_register_with_registrar(dynamic_color_registrar);
+  g_autoptr(FlPluginRegistrar) ffmpeg_kit_extended_flutter_registrar =
+      fl_plugin_registry_get_registrar_for_plugin(registry, "FfmpegKitExtendedFlutterPlugin");
+  ffmpeg_kit_extended_flutter_plugin_register_with_registrar(ffmpeg_kit_extended_flutter_registrar);
   g_autoptr(FlPluginRegistrar) flutter_acrylic_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "FlutterAcrylicPlugin");
   flutter_acrylic_plugin_register_with_registrar(flutter_acrylic_registrar);
