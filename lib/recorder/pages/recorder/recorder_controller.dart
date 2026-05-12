@@ -230,6 +230,7 @@ class RecorderController extends GetxService {
         platform: task.platform,
         preferredQuality: settings.defaultQuality.value,
       );
+
       final dir = await CacheService.to.getRoomDir(platform: task.platform, nick: task.nick);
       final headers = await FFmpegHeaderFactory.build(platform: task.platform);
 
@@ -242,18 +243,37 @@ class RecorderController extends GetxService {
         rwTimeout: settings.rwTimeout.value,
         threadQueueSize: settings.threadQueueSize.value,
       );
+
       task.outputDir = dir.path;
       updateTask(task);
+
       token.onCancel = () async {
         await ffmpeg.stop(task.taskId);
+        // 确保取消时也能解锁
+        if (!completer.isCompleted) completer.complete();
       };
+
       await ffmpeg.start(taskId: task.taskId, command: cmd);
       await completer.future;
+    } on StreamException catch (e) {
+      developer.log('解析失败: ${e.message}', name: 'RecorderController');
+      ToastUtil.show("${task.nick}: ${e.message}");
+
+      if (!e.retryable) {
+        task.status = RecordStatus.waitingLive;
+        updateTask(task);
+        _startPolling(task);
+        if (!completer.isCompleted) completer.complete();
+        return;
+      }
+      rethrow;
     } catch (e, s) {
       developer.log('任务运行异常: $e', stackTrace: s, name: 'RecorderController');
+      ToastUtil.show("${task.nick} 录制异常: ${e.toString()}");
       _onFail(task);
     } finally {
       _lifecycleCompleters.remove(task.taskId);
+      if (!completer.isCompleted) completer.complete();
     }
   }
 
