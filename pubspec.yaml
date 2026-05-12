@@ -31,21 +31,8 @@ dependencies:
   webdav_client: ^1.2.2 # WebDAV文件存储客户端
 
   # -------------------------- 音视频播放 --------------------------
-  media_kit:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: main
-      path: ./media_kit
-  media_kit_video:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: main
-      path: ./media_kit_video
-  media_kit_libs_video:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: main
-      path: ./libs/universal/media_kit_libs_video
+  fvp: ^0.36.2
+  video_player: ^2.11.1
   better_player_plus: ^1.2.1 # 高级视频播放器
   audio_service: ^0.18.18 # 后台音频服务
   audio_session: ^0.2.3 # 音频会话管理
@@ -158,46 +145,6 @@ dependencies:
 # 依赖覆盖（强制指定版本）
 dependency_overrides:
   wakelock_plus: ^1.4.0
-  media_kit:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: main
-      path: ./media_kit
-  media_kit_video:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: main
-      path: ./media_kit_video
-  media_kit_libs_video:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: main
-      path: ./libs/universal/media_kit_libs_video
-  media_kit_libs_linux:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: main
-      path: ./libs/linux/media_kit_libs_linux
-  media_kit_libs_ios_video:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: main
-      path: ./libs/ios/media_kit_libs_ios_video
-  media_kit_libs_android_video:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: main
-      path: ./libs/android/media_kit_libs_android_video
-  media_kit_libs_windows_video:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: main
-      path: ./libs/windows/media_kit_libs_windows_video
-  media_kit_libs_macos_video:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: main
-      path: ./libs/macos/media_kit_libs_macos_video
   screen_retriever:
     git:
       url: https://github.com/MSOB7YY/screen_retriever.git

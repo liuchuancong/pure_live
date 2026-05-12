@@ -2109,10 +2109,10 @@ packages:
     dependency: transitive
     description:
       name: video_player_avfoundation
-      sha256: af0e5b8a7a4876fb37e7cc8cb2a011e82bb3ecfa45844ef672e32cb14a1f259e
+      sha256: a39d6f28f8069564d8cc17396472f958dd9eaddf2d5c8e90aad4d793ac369bf3
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "2.9.4"
+    version: "2.9.6"
   video_player_platform_interface:
     dependency: transitive
     description:
@@ -2161,14 +2161,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.5.2"
-  wakelock_plus_ohos:
-    dependency: transitive
-    description:
-      name: wakelock_plus_ohos
-      sha256: b22af297411555b5ec0fe43ec2960cd5f019dd23b83853214ebe6dcc97b337bd
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "0.0.3"
   wakelock_plus_platform_interface:
     dependency: transitive
     description:
