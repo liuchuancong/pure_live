@@ -550,12 +550,11 @@ packages:
   ffmpeg_kit_extended_flutter:
     dependency: "direct main"
     description:
-      path: flutter
-      ref: dev
-      resolved-ref: "4925f886903d15a05f33521ad6fc0ec7688fbe9d"
-      url: "https://github.com/akashskypatel/ffmpeg-kit-extended"
-    source: git
-    version: "0.5.0"
+      name: ffmpeg_kit_extended_flutter
+      sha256: "268d140e6b8fe3336e42731e6c7f2068ac39b547a75835a6236b6fb07a70b3b7"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.4.4"
   file:
     dependency: "direct main"
     description:
