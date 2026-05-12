@@ -825,14 +825,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.5.0"
-  fvp:
-    dependency: "direct main"
-    description:
-      name: fvp
-      sha256: "23274616c8ba8e18b9e07d95c5a52c026aa5d0bb240bd24a04b181dd9c2c8b66"
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "0.36.2"
   get:
     dependency: "direct main"
     description:
@@ -1153,6 +1145,87 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.13.0"
+  media_kit:
+    dependency: "direct main"
+    description:
+      path: media_kit
+      ref: main
+      resolved-ref: "21aacaf9600c4bd00f2a3c57310363bc0cc9597f"
+      url: "https://github.com/Predidit/media-kit.git"
+    source: git
+    version: "1.1.11"
+  media_kit_libs_android_video:
+    dependency: "direct overridden"
+    description:
+      path: "libs/android/media_kit_libs_android_video"
+      ref: main
+      resolved-ref: "21aacaf9600c4bd00f2a3c57310363bc0cc9597f"
+      url: "https://github.com/Predidit/media-kit.git"
+    source: git
+    version: "1.3.6"
+  media_kit_libs_ios_video:
+    dependency: "direct overridden"
+    description:
+      path: "libs/ios/media_kit_libs_ios_video"
+      ref: main
+      resolved-ref: "21aacaf9600c4bd00f2a3c57310363bc0cc9597f"
+      url: "https://github.com/Predidit/media-kit.git"
+    source: git
+    version: "1.1.4"
+  media_kit_libs_linux:
+    dependency: "direct overridden"
+    description:
+      path: "libs/linux/media_kit_libs_linux"
+      ref: main
+      resolved-ref: "21aacaf9600c4bd00f2a3c57310363bc0cc9597f"
+      url: "https://github.com/Predidit/media-kit.git"
+    source: git
+    version: "1.1.3"
+  media_kit_libs_macos_video:
+    dependency: "direct overridden"
+    description:
+      path: "libs/macos/media_kit_libs_macos_video"
+      ref: main
+      resolved-ref: "21aacaf9600c4bd00f2a3c57310363bc0cc9597f"
+      url: "https://github.com/Predidit/media-kit.git"
+    source: git
+    version: "1.1.4"
+  media_kit_libs_ohos:
+    dependency: transitive
+    description:
+      path: "libs/ohos/media_kit_libs_ohos"
+      ref: "21aacaf9600c4bd00f2a3c57310363bc0cc9597f"
+      resolved-ref: "21aacaf9600c4bd00f2a3c57310363bc0cc9597f"
+      url: "https://github.com/Predidit/media-kit.git"
+    source: git
+    version: "1.0.0"
+  media_kit_libs_video:
+    dependency: "direct main"
+    description:
+      path: "libs/universal/media_kit_libs_video"
+      ref: main
+      resolved-ref: "21aacaf9600c4bd00f2a3c57310363bc0cc9597f"
+      url: "https://github.com/Predidit/media-kit.git"
+    source: git
+    version: "1.0.5"
+  media_kit_libs_windows_video:
+    dependency: "direct overridden"
+    description:
+      path: "libs/windows/media_kit_libs_windows_video"
+      ref: main
+      resolved-ref: "21aacaf9600c4bd00f2a3c57310363bc0cc9597f"
+      url: "https://github.com/Predidit/media-kit.git"
+    source: git
+    version: "1.0.10"
+  media_kit_video:
+    dependency: "direct main"
+    description:
+      path: media_kit_video
+      ref: main
+      resolved-ref: "21aacaf9600c4bd00f2a3c57310363bc0cc9597f"
+      url: "https://github.com/Predidit/media-kit.git"
+    source: git
+    version: "1.2.5"
   menu_base:
     dependency: transitive
     description:
@@ -1530,6 +1603,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.28.0"
+  safe_local_storage:
+    dependency: transitive
+    description:
+      name: safe_local_storage
+      sha256: "287ea1f667c0b93cdc127dccc707158e2d81ee59fba0459c31a0c7da4d09c755"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "2.0.3"
   screen_brightness:
     dependency: "direct main"
     description:
@@ -1969,6 +2050,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.3.1"
+  universal_platform:
+    dependency: transitive
+    description:
+      name: universal_platform
+      sha256: "64e16458a0ea9b99260ceb5467a214c1f298d647c659af1bff6d3bf82536b1ec"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.1.0"
   upower:
     dependency: transitive
     description:
@@ -1977,6 +2066,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.7.0"
+  uri_parser:
+    dependency: transitive
+    description:
+      name: uri_parser
+      sha256: "051c62e5f693de98ca9f130ee707f8916e2266945565926be3ff20659f7853ce"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "3.0.2"
   uri_to_file:
     dependency: "direct main"
     description:
@@ -2089,46 +2186,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.2.0"
-  video_player:
-    dependency: "direct main"
-    description:
-      name: video_player
-      sha256: "48a7bdaa38a3d50ec10c78627abdbfad863fdf6f0d6e08c7c3c040cfd80ae36f"
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "2.11.1"
-  video_player_android:
-    dependency: transitive
-    description:
-      name: video_player_android
-      sha256: "877a6c7ba772456077d7bfd71314629b3fe2b73733ce503fc77c3314d43a0ca0"
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "2.9.5"
-  video_player_avfoundation:
-    dependency: transitive
-    description:
-      name: video_player_avfoundation
-      sha256: a39d6f28f8069564d8cc17396472f958dd9eaddf2d5c8e90aad4d793ac369bf3
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "2.9.6"
-  video_player_platform_interface:
-    dependency: transitive
-    description:
-      name: video_player_platform_interface
-      sha256: "16eaed5268c571c31840dc58ef8da5f0cd4db2a98490c3b8f1cf70122546c6e0"
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "6.7.0"
-  video_player_web:
-    dependency: transitive
-    description:
-      name: video_player_web
-      sha256: "9f3c00be2ef9b76a95d94ac5119fb843dca6f2c69e6c9968f6f2b6c9e7afbdeb"
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "2.4.0"
   visibility_detector:
     dependency: transitive
     description:
@@ -2161,6 +2218,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.5.2"
+  wakelock_plus_ohos:
+    dependency: transitive
+    description:
+      name: wakelock_plus_ohos
+      sha256: b22af297411555b5ec0fe43ec2960cd5f019dd23b83853214ebe6dcc97b337bd
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.0.3"
   wakelock_plus_platform_interface:
     dependency: transitive
     description:

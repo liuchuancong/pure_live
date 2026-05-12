@@ -138,7 +138,7 @@ class PlayerManager {
 
   UnifiedPlayer? get currentPlayer => _currentPlayer;
 
-  PlayerEngine get currentEngine => _runtimeEngine ?? _defaultEngine ?? PlayerEngine.fvp;
+  PlayerEngine get currentEngine => _runtimeEngine ?? _defaultEngine ?? PlayerEngine.mediaKit;
 
   Stream<PlayerState> get onStateChanged => _stateSubject.stream;
 
@@ -172,7 +172,7 @@ class PlayerManager {
   // initialize
   // =========================
 
-  Future<void> initialize({PlayerEngine engine = PlayerEngine.fvp}) async {
+  Future<void> initialize({PlayerEngine engine = PlayerEngine.mediaKit}) async {
     if (_disposed) return;
 
     _stateSubject.add(PlayerState.initializing);
