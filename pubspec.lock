@@ -633,14 +633,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.0.2"
-  flutter_foreground_task:
-    dependency: "direct main"
-    description:
-      name: flutter_foreground_task
-      sha256: fc5c01a5e1b8f7bb51d0c737714f0c50440dbdf1aeddc5f8cbba313aa6fd4856
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "9.2.2"
   flutter_highlight:
     dependency: transitive
     description:

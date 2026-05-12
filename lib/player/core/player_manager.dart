@@ -40,7 +40,6 @@ class PlayerManager {
     isInPip.listen((value) {
       GlobalPlayerState.to.isPipMode.value = value;
     });
-    LiveAudioService.init();
   }
 
   // =========================
