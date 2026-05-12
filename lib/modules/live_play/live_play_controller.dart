@@ -281,7 +281,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   }
 
   void _addMessage(LiveMessage msg) {
-    if (messages.length > 200) {
+    if (messages.length > 100) {
       messages.removeAt(0);
     }
     messages.add(msg);

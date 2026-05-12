@@ -4,25 +4,20 @@ import 'package:pure_live/common/index.dart';
 
 class EmojiManager {
   static final EmojiManager _instance = EmojiManager._internal();
+  factory EmojiManager() => _instance;
+  EmojiManager._internal();
 
   static final Map<String, ui.Image> _cache = {};
   static final Map<String, String?> _validEmojiPaths = {};
+  static final Map<String, String> _platformCache = {};
 
   static const List<String> _emojiExtensions = ['png', 'gif'];
+  static const int _maxCacheSize = 200;
 
-  /// 防止 cache 无限增长
-  static const int _maxCacheSize = 500;
-
-  factory EmojiManager() => _instance;
-
-  EmojiManager._internal();
+  /// Control peak memory by limiting concurrent decoding
+  static const int _batchSize = 8;
 
   Map<String, ui.Image> get cache => _cache;
-
-  // =========================
-  // platform cache（避免重复 if-else）
-  // =========================
-  static final Map<String, String> _platformCache = {};
 
   String _getPlatform(String site) {
     return _platformCache.putIfAbsent(site, () {
@@ -36,47 +31,52 @@ class EmojiManager {
     });
   }
 
-  // =========================
-  // emoji map
-  // =========================
-  Map<String, String> emojiCodeMap(List<Map<String, String>> list) {
-    return {for (var emoji in list) "[${emoji['text']}]": emoji['code']!};
-  }
-
+  /// Optimized Preload with Concurrency Control
   Future<void> preload(String site) async {
+    // Clear old data to free memory before starting new preload
     clearCache();
 
     final list = getEmojiList(site);
-    _getPlatform(site);
-    await Future.wait(
-      list.map((emoji) async {
-        final code = emoji['code']!;
-        final key = "[${emoji['text']}]";
-        if (!_validEmojiPaths.containsKey(code)) {
-          _validEmojiPaths[code] = await getEmojiAssetPath(site, code);
-        }
-        final path = _validEmojiPaths[code];
-        if (path == null) return;
-        if (_cache.containsKey(key)) return;
-        try {
-          final bytes = await rootBundle.load(path);
-          final codec = await ui.instantiateImageCodec(bytes.buffer.asUint8List());
-          final frame = await codec.getNextFrame();
-          _addToCache(key, frame.image);
-        } catch (e) {
-          debugPrint("Failed to load emoji $key: $e");
-        }
-      }),
-    );
+    if (list.isEmpty) return;
+
+    // Process in batches to avoid OOM (Out Of Memory)
+    for (int i = 0; i < list.length; i += _batchSize) {
+      final batch = list.skip(i).take(_batchSize);
+
+      await Future.wait(
+        batch.map((emoji) async {
+          final code = emoji['code']!;
+          final key = "[${emoji['text']}]";
+
+          // Find path (cached to avoid repeated IO)
+          final path = _validEmojiPaths[code] ??= await getEmojiAssetPath(site, code);
+          if (path == null || _cache.containsKey(key)) return;
+
+          try {
+            final bytes = await rootBundle.load(path);
+            // TARGET SIZE: Prevents high-res images from eating RAM
+            final codec = await ui.instantiateImageCodec(bytes.buffer.asUint8List(), targetWidth: 80, targetHeight: 80);
+            final frame = await codec.getNextFrame();
+            _addToCache(key, frame.image);
+          } catch (e) {
+            debugPrint("Failed to load emoji $key: $e");
+          }
+        }),
+      );
+
+      // Short delay to allow GC to collect temporary byte arrays
+      await Future.delayed(const Duration(milliseconds: 20));
+    }
   }
 
-  // =========================
-  // cache 控制（防内存泄漏核心）
-  // =========================
   void _addToCache(String key, ui.Image image) {
+    if (_cache.containsKey(key)) {
+      _cache[key]?.dispose();
+    }
+
     if (_cache.length >= _maxCacheSize) {
       final firstKey = _cache.keys.first;
-      _cache[firstKey]?.dispose();
+      _cache[firstKey]?.dispose(); // Crucial: Explicitly release native memory
       _cache.remove(firstKey);
     }
     _cache[key] = image;
@@ -90,43 +90,24 @@ class EmojiManager {
     _validEmojiPaths.clear();
   }
 
-  // =========================
-  // asset path（去掉重复 IO）
-  // =========================
   Future<String?> getEmojiAssetPath(String site, String code) async {
     final platform = _getPlatform(site);
+    if (platform.isEmpty) return null;
 
     for (final ext in _emojiExtensions) {
       final path = 'assets/emo/$platform/$code.$ext';
-
       try {
+        // Checking existence via load (Lite check)
         await rootBundle.load(path);
         return path;
-      } catch (_) {}
+      } catch (_) {
+        continue;
+      }
     }
-
-    debugPrint("Emoji asset for code '$code' not found");
     return null;
   }
 
-  // =========================
-  // API 保留（不删原逻辑）
-  // =========================
-  static Future<void> loadEmoji(String emojiText, String assetPath) async {
-    final image = await loadImageFromAsset(assetPath);
-    _cache[emojiText] = image;
-  }
-
-  static Future<ui.Image> loadImageFromAsset(String assetPath) async {
-    final data = await rootBundle.load(assetPath);
-    final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
-    final frame = await codec.getNextFrame();
-    return frame.image;
-  }
-
-  static ui.Image? getEmoji(String emojiText) {
-    return _cache[emojiText];
-  }
+  static ui.Image? getEmoji(String emojiText) => _cache[emojiText];
 
   static List<dynamic> getEmojiList(String siteType) {
     var emotions = [];
@@ -1071,5 +1052,17 @@ class EmojiManager {
       ];
     }
     return emotions;
+  }
+
+  /// Manual load utility
+  static Future<void> loadEmoji(String emojiText, String assetPath) async {
+    try {
+      final data = await rootBundle.load(assetPath);
+      final codec = await ui.instantiateImageCodec(data.buffer.asUint8List(), targetWidth: 80, targetHeight: 80);
+      final frame = await codec.getNextFrame();
+      _instance._addToCache(emojiText, frame.image);
+    } catch (e) {
+      debugPrint("Error loading manual emoji: $e");
+    }
   }
 }
