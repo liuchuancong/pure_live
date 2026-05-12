@@ -21,144 +21,175 @@ enum VideoMode { normal, widescreen, fullscreen }
 
 class LivePlayController extends StateController with GetSingleTickerProviderStateMixin {
   LivePlayController({required this.room, required this.site});
-  final String site;
-  final StopWatchTimer _stopWatchTimer = StopWatchTimer(mode: StopWatchMode.countDown);
-  final RecorderController recorderController = Get.find<RecorderController>();
-  late Site currentSite;
 
+  final String site;
+  final LiveRoom room;
+
+  final RecorderController recorderController = Get.find<RecorderController>();
+  final StopWatchTimer _stopWatchTimer = StopWatchTimer(mode: StopWatchMode.countDown);
+
+  late Site currentSite;
   late LiveDanmaku liveDanmaku;
+  late TabController tabController;
 
   final settings = Get.find<SettingsService>();
-
-  late TabController tabController;
 
   final List<String> tabs = ['弹幕列表', '弹幕设置', '屏蔽管理'];
 
   final messages = <LiveMessage>[].obs;
-
   final isLiving = true.obs;
-  // 控制唯一子组件
   final videoController = Rx<VideoController?>(null);
 
-  final LiveRoom room;
-
-  Rx<LiveRoom?> detail = Rx<LiveRoom?>(LiveRoom());
-
+  final detail = Rx<LiveRoom?>(null);
   final success = false.obs;
 
-  /// 清晰度数据
   RxList<LivePlayQuality> qualites = RxList<LivePlayQuality>();
+  final currentQuality = 0.obs;
 
-  /// 当前清晰度
-  final RxInt currentQuality = 0.obs;
-
-  /// 线路数据
   RxList<String> playUrls = RxList<String>();
-
-  /// 当前线路
-  final RxInt currentLineIndex = 0.obs;
+  final currentLineIndex = 0.obs;
 
   var closeTimes = 240.obs;
-
   var closeTimeFlag = false.obs;
 
   final screenMode = VideoMode.normal.obs;
+  final refreshKey = 0.obs;
 
   bool hasUseDefaultResolution = false;
 
-  final refreshKey = DateTime.now().millisecondsSinceEpoch.obs;
-
-  @override
-  void onClose() {
-    tabController.dispose();
-    if (Platform.isAndroid) {
-      BackButtonInterceptor.removeByName("live_play_page");
-    }
-    super.onClose();
-  }
-
-  @override
-  void dispose() {
-    tabController.dispose();
-    if (Platform.isAndroid) {
-      BackButtonInterceptor.removeByName("live_play_page");
-    }
-    super.dispose();
-  }
+  bool get _hasRoom => detail.value != null;
 
   @override
   void onInit() {
     super.onInit();
+    _initCore();
+  }
+
+  void _initCore() {
+    _initState();
+    _initTab();
+    _initBackInterceptor();
+    _initDanmaku();
+    _initDebounce();
+    _initTimer();
+    _preloadEmoji();
+    _initPlayer();
+  }
+
+  void _initState() {
+    detail.value = room;
+    currentSite = Sites.of(site);
+    liveDanmaku = currentSite.liveSite.getDanmaku();
+  }
+
+  void _initTab() {
+    tabController = TabController(length: tabs.length, vsync: this);
+  }
+
+  void _initBackInterceptor() {
     if (Platform.isAndroid) {
       BackButtonInterceptor.add(myInterceptor, zIndex: 1, name: "live_play_page");
     }
-    detail.value = room;
-    currentSite = Sites.of(site);
-    liveDanmaku = Sites.of(site).liveSite.getDanmaku();
+  }
+
+  void _initPlayer() {
+    if (!_hasRoom) return;
+
     onInitPlayerState(
       reloadDataType: detail.value!.platform == Sites.bilibiliSite
           ? ReloadDataType.changeLine
           : ReloadDataType.refreash,
     );
-    EmojiManager().preload(site);
-    debounce(closeTimeFlag, (callback) {
-      if (closeTimeFlag.isTrue) {
-        _stopWatchTimer.onStopTimer();
-        _stopWatchTimer.setPresetMinuteTime(closeTimes.value, add: false);
-        _stopWatchTimer.onStartTimer();
-      } else {
-        _stopWatchTimer.onStopTimer();
-      }
-    }, time: 1.seconds);
+  }
 
-    debounce(closeTimes, (callback) {
-      if (closeTimeFlag.isTrue) {
-        _stopWatchTimer.onStopTimer();
-        _stopWatchTimer.setPresetMinuteTime(closeTimes.value, add: false);
-        _stopWatchTimer.onStartTimer();
-      } else {
-        _stopWatchTimer.onStopTimer();
-      }
-    }, time: 1.seconds);
-    _stopWatchTimer.fetchEnded.listen((value) {
+  void _initDanmaku() {
+    initDanmau();
+  }
+
+  void _preloadEmoji() {
+    EmojiManager().preload(site);
+  }
+
+  void _initDebounce() {
+    everAll([closeTimeFlag, closeTimes], (_) {
+      _toggleTimer();
+    });
+  }
+
+  void _initTimer() {
+    _stopWatchTimer.fetchEnded.listen((_) {
       _stopWatchTimer.onStopTimer();
       exit(0);
     });
-    tabController = TabController(length: tabs.length, vsync: this);
+  }
+
+  void _toggleTimer() {
+    if (closeTimeFlag.isTrue) {
+      _stopWatchTimer.onStopTimer();
+      _stopWatchTimer.setPresetMinuteTime(closeTimes.value, add: false);
+      _stopWatchTimer.onStartTimer();
+    } else {
+      _stopWatchTimer.onStopTimer();
+    }
   }
 
   bool myInterceptor(bool stopDefaultButtonEvent, RouteInfo info) {
     if (GlobalPlayerState.to.isFullscreen.value) {
       setNormalScreen();
-      videoController.value!.exitFullScreen();
+      videoController.value?.exitFullScreen();
       return true;
     }
 
-    if (videoController.value!.showSettting.value) {
-      videoController.value!.showSettting.toggle();
+    if (videoController.value?.showSettting.value == true) {
+      videoController.value?.showSettting.toggle();
       return true;
     }
+
     success.value = false;
     return false;
   }
+
+  @override
+  void onClose() {
+    _disposeAll();
+    super.onClose();
+  }
+
+  void _disposeAll() {
+    tabController.dispose();
+    _stopWatchTimer.onStopTimer();
+
+    if (Platform.isAndroid) {
+      BackButtonInterceptor.removeByName("live_play_page");
+    }
+
+    liveDanmaku.stop();
+  }
+
+  void setNormalScreen() => screenMode.value = VideoMode.normal;
+  void setWidescreen() => screenMode.value = VideoMode.widescreen;
+  void setFullScreen() => screenMode.value = VideoMode.fullscreen;
 
   Future<LiveRoom> onInitPlayerState({
     ReloadDataType reloadDataType = ReloadDataType.refreash,
     int line = 0,
     bool isReCalculate = true,
   }) async {
-    var liveRoom = await currentSite.liveSite.getRoomDetail(
-      roomId: detail.value!.roomId!,
-      platform: detail.value!.platform!,
-    );
+    final roomId = detail.value?.roomId;
+    if (roomId == null) return LiveRoom();
+
+    var liveRoom = await currentSite.liveSite.getRoomDetail(roomId: roomId, platform: detail.value!.platform!);
+
     if (currentSite.id == Sites.iptvSite) {
       liveRoom = liveRoom.copyWith(title: detail.value!.title!, nick: detail.value!.nick!);
     }
 
     handleCurrentLineAndQuality(reloadDataType: reloadDataType, line: line, isReCalculate: isReCalculate);
+
     detail.value = null;
     detail.value = liveRoom;
-    refreshKey.value = DateTime.now().millisecondsSinceEpoch;
+    refreshKey.value++;
+
     if (liveRoom.liveStatus == LiveStatus.unknown) {
       if (Get.currentRoute == '/live_play') {
         ToastUtil.show("获取直播间信息失败,请重新获取");
@@ -169,18 +200,16 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
       return liveRoom;
     }
 
-    bool liveStatus = liveRoom.status! || liveRoom.isRecord!;
+    final liveStatus = liveRoom.status! || liveRoom.isRecord!;
+
     if (liveStatus) {
       isLiving.value = true;
       await getPlayQualites();
-      if (detail.value!.platform == Sites.iptvSite) {
-        settings.addRoomToHistory(detail.value!);
-      } else {
-        settings.addRoomToHistory(liveRoom);
-      }
-      // start danmaku server
-      List<String> except = ['kuaishou', 'iptv', 'cc'];
-      if (except.indexWhere((element) => element == liveRoom.platform!) == -1) {
+
+      settings.addRoomToHistory(liveRoom);
+
+      const except = ['kuaishou', 'iptv', 'cc'];
+      if (!except.contains(liveRoom.platform)) {
         liveDanmaku.stop();
         initDanmau();
         liveDanmaku.start(liveRoom.danmakuData);
@@ -189,29 +218,16 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
       success.value = false;
       isLiving.value = false;
       setNormalScreen();
+
       GlobalPlayerState.to.isFullscreen.value = false;
       GlobalPlayerState.to.isWindowFullscreen.value = false;
-      if (liveRoom.liveStatus == LiveStatus.banned) {
-        ToastUtil.show("服务器错误,请稍后获取");
-      } else {
-        ToastUtil.show("当前主播未开播或主播已下播");
-      }
+
+      ToastUtil.show(liveRoom.liveStatus == LiveStatus.banned ? "服务器错误,请稍后获取" : "当前主播未开播或已下播");
+
       restoryQualityAndLines();
     }
 
     return liveRoom;
-  }
-
-  void setNormalScreen() {
-    screenMode.value = VideoMode.normal;
-  }
-
-  void setWidescreen() {
-    screenMode.value = VideoMode.widescreen;
-  }
-
-  void setFullScreen() {
-    screenMode.value = VideoMode.fullscreen;
   }
 
   void handleCurrentLineAndQuality({
@@ -219,80 +235,82 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     int line = 0,
     bool isReCalculate = true,
   }) {
-    if (reloadDataType == ReloadDataType.changeLine && isReCalculate) {
-      if (line == playUrls.length - 1) {
-        currentLineIndex.value = 0;
-      } else {
-        currentLineIndex.value = currentLineIndex.value + 1;
-      }
+    if (reloadDataType == ReloadDataType.changeLine && isReCalculate && playUrls.isNotEmpty) {
+      currentLineIndex.value = (currentLineIndex.value + 1) % playUrls.length;
     }
   }
 
   void restoryQualityAndLines() {
-    playUrls.value = [];
+    playUrls.clear();
     currentLineIndex.value = 0;
-    qualites.value = [];
+    qualites.clear();
     currentQuality.value = 0;
   }
 
-  /// 初始化弹幕接收事件
   void initDanmau() {
-    if (detail.value!.isRecord!) {
-      messages.add(
-        LiveMessage(
-          type: LiveMessageType.chat,
-          userName: "系统消息",
-          message: "当前主播未开播，正在轮播录像",
-          color: LiveMessageColor.white,
-        ),
-      );
+    if (!_hasRoom) return;
+
+    if (detail.value!.isRecord == true) {
+      messages.add(_systemMsg("当前主播未开播，正在轮播录像"));
     }
-    messages.add(
-      LiveMessage(type: LiveMessageType.chat, userName: "系统消息", message: "开始连接弹幕服务器", color: LiveMessageColor.white),
-    );
+
+    messages.add(_systemMsg("开始连接弹幕服务器"));
     final rxVideoCtrl = videoController;
     liveDanmaku.onMessage = (msg) {
       if (msg.type == LiveMessageType.chat) {
-        if (settings.shieldList.every((element) => !msg.message.contains(element))) {
-          messages.add(msg);
+        if (settings.shieldList.every((e) => !msg.message.contains(e))) {
+          _addMessage(msg);
           if (rxVideoCtrl.value != null) {
             rxVideoCtrl.value!.sendDanmaku(msg);
           }
         }
       }
     };
+
     liveDanmaku.onClose = (msg) {
-      messages.add(
-        LiveMessage(type: LiveMessageType.chat, userName: "系统消息", message: msg, color: LiveMessageColor.white),
-      );
+      messages.add(_systemMsg(msg));
     };
+
     liveDanmaku.onReady = () {
-      messages.add(
-        LiveMessage(type: LiveMessageType.chat, userName: "系统消息", message: "弹幕服务器连接正常", color: LiveMessageColor.white),
-      );
+      messages.add(_systemMsg("弹幕服务器连接正常"));
     };
+  }
+
+  LiveMessage _systemMsg(String text) {
+    return LiveMessage(type: LiveMessageType.chat, userName: "系统消息", message: text, color: LiveMessageColor.white);
+  }
+
+  void _addMessage(LiveMessage msg) {
+    if (messages.length > 200) {
+      messages.removeAt(0);
+    }
+    messages.add(msg);
   }
 
   void setResolution(ReloadDataType reloadDataType, int qualityIndex, int lineIndex) {
     final manager = GlobalPlayerService.instance.playerManager;
     manager.close();
-    videoController.value!.destory();
+
+    videoController.value?.destory();
+
     currentQuality.value = qualityIndex;
     currentLineIndex.value = lineIndex;
+
     onInitPlayerState(reloadDataType: reloadDataType, line: currentLineIndex.value, isReCalculate: false);
   }
 
-  /// 初始化播放器
   Future<void> getPlayQualites() async {
     try {
       var playQualites = await currentSite.liveSite.getPlayQualites(detail: detail.value!);
+
       if (playQualites.isEmpty) {
-        ToastUtil.show("无法读取视频信息,请重新获取");
+        ToastUtil.show("无法读取视频信息");
         success.value = false;
         return;
       }
 
       qualites.value = playQualites;
+
       if (!hasUseDefaultResolution) {
         String userPrefer = settings.preferResolution.value;
         List<String> availableQualities = playQualites.map((e) => e.quality).toList();
@@ -315,9 +333,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
         hasUseDefaultResolution = true;
       }
 
-      getPlayUrl();
-    } catch (e) {
-      ToastUtil.show("读取视频信息失败,请重新获取");
+      await getPlayUrl();
+    } catch (_) {
+      ToastUtil.show("读取视频信息失败");
       success.value = false;
     }
   }
@@ -327,18 +345,21 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
       detail: detail.value!,
       quality: qualites[currentQuality.value],
     );
+
     if (playUrl.isEmpty) {
-      ToastUtil.show("无法读取播放地址,请重新获取");
+      ToastUtil.show("无法读取播放地址");
       success.value = false;
       return;
     }
-    log(playUrl.toString(), name: "play_url");
+
     playUrls.value = playUrl;
+    log(playUrl.toString(), name: "play_url");
     setPlayer();
   }
 
   void setPlayer() async {
     Map<String, String> headers = {};
+
     if (currentSite.id == Sites.bilibiliSite) {
       headers = {
         "cookie": settings.bilibiliCookie.value,
@@ -362,22 +383,43 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
         "referer": "https://live.bilibili.com",
       };
     } else if (currentSite.id == Sites.huyaSite) {
-      var ua = await HuyaSite().getHuYaUA();
+      final ua = await HuyaSite().getHuYaUA();
       headers = {"user-agent": ua, "origin": "https://www.huya.com"};
     }
 
     GlobalPlayerState().setCurrentRoom(room.roomId!);
+
     videoController.value = VideoController(
       room: detail.value!,
       playUrs: playUrls.value,
-      datasource: playUrls.value[currentLineIndex.value],
+      datasource: playUrls[currentLineIndex.value],
       allowScreenKeepOn: settings.enableScreenKeepOn.value,
       headers: headers,
       qualiteName: qualites[currentQuality.value].quality,
       currentLineIndex: currentLineIndex.value,
       currentQuality: currentQuality.value,
     );
+
     success.value = true;
+  }
+
+  void switchRoom(LiveRoom room) async {
+    final manager = GlobalPlayerService.instance.playerManager;
+    manager.close();
+    success.value = false;
+    isLiving.value = true;
+    messages.clear();
+    liveDanmaku.stop();
+    await videoController.value?.destory();
+    videoController.value = null;
+    hasUseDefaultResolution = false;
+    detail.value = room;
+    currentSite = Sites.of(room.platform!);
+    liveDanmaku = currentSite.liveSite.getDanmaku();
+    EmojiManager().preload(room.platform!);
+    onInitPlayerState(
+      reloadDataType: room.platform == Sites.bilibiliSite ? ReloadDataType.changeLine : ReloadDataType.refreash,
+    );
   }
 
   Future<void> openNaviteAPP() async {
@@ -418,26 +460,5 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
       ToastUtil.show("无法打开APP，将使用浏览器打开");
       await launchUrlString(webUrl, mode: LaunchMode.externalApplication);
     }
-  }
-
-  void switchRoom(LiveRoom room) async {
-    final manager = GlobalPlayerService.instance.playerManager;
-    manager.close();
-    success.value = false;
-    isLiving.value = true;
-    messages.clear();
-    liveDanmaku.stop();
-    await videoController.value!.destory();
-    videoController.value = null;
-    hasUseDefaultResolution = false;
-    detail.value = room;
-    currentSite = Sites.of(room.platform!);
-    liveDanmaku = Sites.of(room.platform!).liveSite.getDanmaku();
-    EmojiManager().preload(room.platform!);
-    onInitPlayerState(
-      reloadDataType: detail.value!.platform == Sites.bilibiliSite
-          ? ReloadDataType.changeLine
-          : ReloadDataType.refreash,
-    );
   }
 }

@@ -3,88 +3,115 @@ import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
 
 class EmojiManager {
-  static final Map<String, ui.Image> _cache = {};
-
   static final EmojiManager _instance = EmojiManager._internal();
+
+  static final Map<String, ui.Image> _cache = {};
+  static final Map<String, String?> _validEmojiPaths = {};
+
   static const List<String> _emojiExtensions = ['png', 'gif'];
-  final Map<String, String?> _validEmojiPaths = {};
-  factory EmojiManager() {
-    return _instance;
-  }
+
+  /// 防止 cache 无限增长
+  static const int _maxCacheSize = 500;
+
+  factory EmojiManager() => _instance;
 
   EmojiManager._internal();
 
+  Map<String, ui.Image> get cache => _cache;
+
+  // =========================
+  // platform cache（避免重复 if-else）
+  // =========================
+  static final Map<String, String> _platformCache = {};
+
+  String _getPlatform(String site) {
+    return _platformCache.putIfAbsent(site, () {
+      if (site == Sites.huyaSite) return 'huya';
+      if (site == Sites.douyuSite) return 'douyu';
+      if (site == Sites.bilibiliSite) return 'bilibili';
+      if (site == Sites.douyinSite) return 'douyin';
+      if (site == Sites.kuaishouSite) return 'kuaishou';
+      if (site == Sites.ccSite) return 'cc';
+      return '';
+    });
+  }
+
+  // =========================
+  // emoji map
+  // =========================
   Map<String, String> emojiCodeMap(List<Map<String, String>> list) {
     return {for (var emoji in list) "[${emoji['text']}]": emoji['code']!};
   }
 
-  Map<String, ui.Image> get cache => _cache;
   Future<void> preload(String site) async {
     clearCache();
-    for (final emoji in getEmojiList(site)) {
-      final code = emoji['code']!;
-      final key = "[${emoji['text']}]";
-      if (!_validEmojiPaths.containsKey(code)) {
-        _validEmojiPaths[code] = await getEmojiAssetPath(site, code);
-      }
-      final path = _validEmojiPaths[code];
 
-      if (path != null && !_cache.containsKey(key)) {
+    final list = getEmojiList(site);
+    _getPlatform(site);
+    await Future.wait(
+      list.map((emoji) async {
+        final code = emoji['code']!;
+        final key = "[${emoji['text']}]";
+        if (!_validEmojiPaths.containsKey(code)) {
+          _validEmojiPaths[code] = await getEmojiAssetPath(site, code);
+        }
+        final path = _validEmojiPaths[code];
+        if (path == null) return;
+        if (_cache.containsKey(key)) return;
         try {
           final bytes = await rootBundle.load(path);
           final codec = await ui.instantiateImageCodec(bytes.buffer.asUint8List());
-          final frameInfo = await codec.getNextFrame();
-          _cache[key] = frameInfo.image;
+          final frame = await codec.getNextFrame();
+          _addToCache(key, frame.image);
         } catch (e) {
           debugPrint("Failed to load emoji $key: $e");
         }
-      }
+      }),
+    );
+  }
+
+  // =========================
+  // cache 控制（防内存泄漏核心）
+  // =========================
+  void _addToCache(String key, ui.Image image) {
+    if (_cache.length >= _maxCacheSize) {
+      final firstKey = _cache.keys.first;
+      _cache[firstKey]?.dispose();
+      _cache.remove(firstKey);
     }
+    _cache[key] = image;
   }
 
   void clearCache() {
+    for (final img in _cache.values) {
+      img.dispose();
+    }
     _cache.clear();
     _validEmojiPaths.clear();
   }
 
-  // 优先检查GIF格式，再检查PNG格式
+  // =========================
+  // asset path（去掉重复 IO）
+  // =========================
   Future<String?> getEmojiAssetPath(String site, String code) async {
-    // 遍历格式列表，按优先级顺序检查
+    final platform = _getPlatform(site);
+
     for (final ext in _emojiExtensions) {
-      var platform = '';
-      if (site == Sites.huyaSite) {
-        platform = 'huya';
-      } else if (site == Sites.douyuSite) {
-        platform = 'douyu';
-      } else if (site == Sites.bilibiliSite) {
-        platform = 'bilibili';
-      } else if (site == Sites.douyinSite) {
-        platform = 'douyin';
-      } else if (site == Sites.kuaishouSite) {
-        platform = 'kuaishou';
-      } else if (site == Sites.ccSite) {
-        platform = 'cc';
-      }
       final path = 'assets/emo/$platform/$code.$ext';
-      if (await assetExists(path)) {
+
+      try {
+        await rootBundle.load(path);
         return path;
-      }
+      } catch (_) {}
     }
-    // 所有格式都不存在
-    debugPrint("Emoji asset for code '$code' not found in any format");
+
+    debugPrint("Emoji asset for code '$code' not found");
     return null;
   }
 
-  // 检查资源是否存在
-  Future<bool> assetExists(String path) async {
-    try {
-      await rootBundle.load(path);
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
-
+  // =========================
+  // API 保留（不删原逻辑）
+  // =========================
   static Future<void> loadEmoji(String emojiText, String assetPath) async {
     final image = await loadImageFromAsset(assetPath);
     _cache[emojiText] = image;
