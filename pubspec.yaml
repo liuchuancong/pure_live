@@ -13,7 +13,6 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
-  # -------------------------- 加密/哈希/编码工具 --------------------------
   hashlib: ^2.0.0 # 哈希计算工具
   crypto: ^3.0.7 # 加密解密工具库
   crypto_simple: ^3.0.0 # 简易加密工具
@@ -27,7 +26,7 @@ dependencies:
   dio_cookie_manager: ^3.3.0 # Dio的Cookie管理插件
   cookie_jar: ^4.0.8 # Cookie持久化存储
   web_socket_channel: ^3.0.1 # WebSocket通信
-  connectivity_plus: ^7.1.1 # 网络连接状态监听
+  connectivity_plus: 6.1.1 # 网络连接状态监听
   webdav_client: ^1.2.2 # WebDAV文件存储客户端
 
   # -------------------------- 音视频播放 --------------------------
