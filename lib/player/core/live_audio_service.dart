@@ -32,9 +32,7 @@ class LiveAudioService {
   static Future<void> start(String roomId, String title, String author, String? cover) async {
     await _ensureInitialized();
     if (!Platform.isAndroid) return;
-    if (_handler == null) {
-      await Future.delayed(Duration(seconds: 1));
-    }
+    await Future.delayed(Duration(seconds: 1));
     await _handler!.playMediaItem(
       MediaItem(
         id: roomId,
