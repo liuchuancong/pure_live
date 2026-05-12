@@ -80,6 +80,8 @@ class LiveRecordTask {
 
   DateTime? lastFailTime;
 
+  bool wasStoppedByUser;
+
   LiveRecordTask({
     required this.taskId,
     required this.roomId,
@@ -113,7 +115,7 @@ class LiveRecordTask {
     this.status = RecordStatus.waitingLive,
     this.autoReconnect = true,
     this.retryCount = 0,
-
+    this.wasStoppedByUser = false,
     this.lastFailTime,
   });
 
@@ -150,6 +152,7 @@ class LiveRecordTask {
       isRecord: room.isRecord ?? false,
 
       createTime: DateTime.now(),
+      wasStoppedByUser: false,
     );
   }
 
@@ -228,6 +231,7 @@ class LiveRecordTask {
     "createTime": createTime.toIso8601String(),
 
     "lastFailTime": lastFailTime?.toIso8601String(),
+    "wasStoppedByUser": wasStoppedByUser,
   };
 
   factory LiveRecordTask.fromJson(Map<String, dynamic> json) {
@@ -287,6 +291,7 @@ class LiveRecordTask {
       createTime: DateTime.tryParse(json["createTime"] ?? "") ?? DateTime.now(),
 
       lastFailTime: json["lastFailTime"] != null ? DateTime.tryParse(json["lastFailTime"]) : null,
+      wasStoppedByUser: json["wasStoppedByUser"] ?? false,
     );
   }
 }

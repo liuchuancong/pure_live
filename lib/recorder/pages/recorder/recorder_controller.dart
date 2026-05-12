@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'package:get/get.dart';
 import 'dart:developer' as developer;
 import 'package:pure_live/core/sites.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:pure_live/common/utils/toast_util.dart';
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
@@ -37,6 +39,8 @@ class RecorderController extends GetxService {
   final Map<String, Timer> _retryTimers = {};
 
   final Set<String> _startingTasks = {};
+  // 用于阻塞 _runTask 直到整个流程（录制+处理）结束
+  final Map<String, Completer<void>> _lifecycleCompleters = {};
 
   Timer? _persistTimer;
 
@@ -67,21 +71,16 @@ class RecorderController extends GetxService {
   void _initVideoProcessorListener() {
     _videoProcessSub = VideoProcessorService.to.stream.listen((event) {
       final task = tasks.firstWhereOrNull((e) => e.taskId == event.taskId);
-
       if (task == null) return;
-
       switch (event.type) {
         case VideoProcessEventType.started:
           task.status = RecordStatus.processing;
           break;
-
         case VideoProcessEventType.progress:
           break;
-
         case VideoProcessEventType.completed:
           task.status = RecordStatus.completed;
           break;
-
         case VideoProcessEventType.failed:
           task.status = RecordStatus.failed;
           break;
@@ -152,7 +151,6 @@ class RecorderController extends GetxService {
 
   void schedulePersist() {
     _persistTimer?.cancel();
-
     _persistTimer = Timer(const Duration(seconds: 2), _persist);
   }
 
@@ -160,22 +158,16 @@ class RecorderController extends GetxService {
     if (tasks.any((e) => e.roomId == room.roomId && e.platform == room.platform)) {
       return;
     }
-
     final task = LiveRecordTask.fromRoom(room);
-
     tasks.insert(0, task);
-
     tasks.value = List.from(tasks);
-
     schedulePersist();
 
     if (room.liveStatus == LiveStatus.live) {
       await startTask(task);
     } else {
       task.status = RecordStatus.waitingLive;
-
       updateTask(task);
-
       _startPolling(task);
     }
   }
@@ -192,10 +184,12 @@ class RecorderController extends GetxService {
 
   Future<void> _startTask(LiveRecordTask task) async {
     if (_startingTasks.contains(task.taskId)) {
+      ToastUtil.show("任务正在启动中，请稍候...");
       return;
     }
 
     if (scheduler.isRunning(task.taskId) || scheduler.isQueued(task.taskId)) {
+      ToastUtil.show("任务已在队列或运行中");
       return;
     }
 
@@ -205,7 +199,6 @@ class RecorderController extends GetxService {
       _stopPolling(task.taskId);
 
       task.status = RecordStatus.queued;
-
       updateTask(task);
 
       scheduler.enqueue(
@@ -214,6 +207,12 @@ class RecorderController extends GetxService {
           await _runTask(task, token);
         },
       );
+    } catch (e) {
+      developer.log('启动任务异常: $e', name: 'RecorderController');
+      ToastUtil.show("启动失败: ${e.toString()}");
+
+      task.status = RecordStatus.failed;
+      updateTask(task);
     } finally {
       _startingTasks.remove(task.taskId);
     }
@@ -221,8 +220,9 @@ class RecorderController extends GetxService {
 
   Future<void> _runTask(LiveRecordTask task, TaskCancelToken token) async {
     task.status = RecordStatus.preparing;
-
     updateTask(task);
+    final completer = Completer<void>();
+    _lifecycleCompleters[task.taskId] = completer;
 
     try {
       final url = await StreamResolverService.to.resolveStream(
@@ -230,9 +230,7 @@ class RecorderController extends GetxService {
         platform: task.platform,
         preferredQuality: settings.defaultQuality.value,
       );
-
       final dir = await CacheService.to.getRoomDir(platform: task.platform, nick: task.nick);
-
       final headers = await FFmpegHeaderFactory.build(platform: task.platform);
 
       final cmd = FFmpegCommandBuilder.buildRecordCommand(
@@ -244,20 +242,18 @@ class RecorderController extends GetxService {
         rwTimeout: settings.rwTimeout.value,
         threadQueueSize: settings.threadQueueSize.value,
       );
-
       task.outputDir = dir.path;
-
       updateTask(task);
-
       token.onCancel = () async {
         await ffmpeg.stop(task.taskId);
       };
-
       await ffmpeg.start(taskId: task.taskId, command: cmd);
+      await completer.future;
     } catch (e, s) {
-      developer.log('任务失败: $e', stackTrace: s);
-
+      developer.log('任务运行异常: $e', stackTrace: s, name: 'RecorderController');
       _onFail(task);
+    } finally {
+      _lifecycleCompleters.remove(task.taskId);
     }
   }
 
@@ -265,10 +261,12 @@ class RecorderController extends GetxService {
     _stopPolling(task.taskId);
     _retryTimers[task.taskId]?.cancel();
     _retryTimers.remove(task.taskId);
+
     await scheduler.cancel(task.taskId);
     await ffmpeg.stop(task.taskId);
     await Future.delayed(Duration(seconds: 3));
-    if (task.outputDir != null && task.recordedSeconds > 0) {
+    if (task.status == RecordStatus.running || task.status == RecordStatus.preparing) {
+      log('Stopping task: ${task.taskId}');
       task.status = RecordStatus.processing;
       updateTask(task);
     } else {
@@ -278,12 +276,34 @@ class RecorderController extends GetxService {
   }
 
   Future<void> _onComplete(LiveRecordTask task) async {
-    task.status = RecordStatus.processing;
-    updateTask(task);
-    unawaited(_processVideo(task));
+    // 1. 状态校验：如果任务已经是停止、失败或正在处理中，则不再重复触发
+    if (task.status == RecordStatus.stopped ||
+        task.status == RecordStatus.failed ||
+        task.status == RecordStatus.processing) {
+      return;
+    }
+    if (task.outputDir != null && task.recordedSeconds > 0) {
+      developer.log('录制完成，开始处理视频: ${task.taskId}', name: 'RecorderController');
+
+      task.status = RecordStatus.processing;
+      updateTask(task);
+      unawaited(_processVideo(task));
+    } else {
+      developer.log('录制时间过短，跳过处理: ${task.taskId}', name: 'RecorderController');
+      task.status = RecordStatus.stopped;
+      updateTask(task);
+      final completer = _lifecycleCompleters[task.taskId];
+      if (completer != null && !completer.isCompleted) {
+        completer.complete();
+      }
+    }
   }
 
   Future<void> _onFail(LiveRecordTask task) async {
+    final completer = _lifecycleCompleters[task.taskId];
+    if (completer != null && !completer.isCompleted) {
+      completer.complete();
+    }
     if (task.status == RecordStatus.stopped) {
       return;
     }
@@ -320,17 +340,26 @@ class RecorderController extends GetxService {
   }
 
   Future<void> _processVideo(LiveRecordTask task) async {
-    if (task.outputDir == null) {
-      return;
-    }
-    task.status = RecordStatus.processing;
-    updateTask(task);
+    try {
+      if (task.outputDir == null) {
+        return;
+      }
+      task.status = RecordStatus.processing;
+      updateTask(task);
 
-    // 有时候会闪退 添加延时
-    await Future.delayed(Duration(seconds: 3));
-    await VideoProcessorService.to.convertToMp4(task: task);
-    final settingsController = Get.find<RecordSettingsController>();
-    await settingsController.refreshCacheSize();
+      // 有时候会闪退 添加延时
+      await Future.delayed(Duration(seconds: 3));
+      await VideoProcessorService.to.convertToMp4(task: task);
+      final settingsController = Get.find<RecordSettingsController>();
+      await settingsController.refreshCacheSize();
+    } catch (e) {
+      developer.log("解析视频出错: $e");
+    } finally {
+      final completer = _lifecycleCompleters[task.taskId];
+      if (completer != null && !completer.isCompleted) {
+        completer.complete();
+      }
+    }
   }
 
   void _startPolling(LiveRecordTask task) {
@@ -398,20 +427,14 @@ class RecorderController extends GetxService {
     await scheduler.cancel(task.taskId);
 
     await ffmpeg.stop(task.taskId);
-
-    if (task.outputDir != null && task.recordedSeconds > 0) {
-      task.status = RecordStatus.processing;
-      updateTask(task);
-      unawaited(() async {
-        tasks.removeWhere((e) => e.taskId == task.taskId);
-        tasks.value = List.from(tasks);
-        schedulePersist();
-      }());
-    } else {
-      tasks.removeWhere((e) => e.taskId == task.taskId);
-      tasks.value = List.from(tasks);
-      schedulePersist();
+    await Future.delayed(Duration(seconds: 3));
+    final completer = _lifecycleCompleters[task.taskId];
+    if (completer != null && !completer.isCompleted) {
+      completer.complete();
     }
+    tasks.removeWhere((e) => e.taskId == task.taskId);
+    tasks.value = List.from(tasks);
+    schedulePersist();
   }
 
   Future<void> _persist() async {

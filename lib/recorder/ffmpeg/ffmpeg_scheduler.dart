@@ -8,14 +8,15 @@ class FFmpegScheduler {
   FFmpegScheduler._internal();
 
   static final FFmpegScheduler instance = FFmpegScheduler._internal();
+  DateTime _lastStartTime = DateTime.fromMillisecondsSinceEpoch(0);
 
   /// 最大并发
   int get maxConcurrentTasks {
-    try {
+    if (Get.isRegistered<RecordSettingsController>()) {
       return Get.find<RecordSettingsController>().maxTaskCount.value;
-    } catch (_) {
-      return 2;
     }
+    log('Warning: RecordSettingsController not found, using fallback 1', name: 'FFmpegScheduler');
+    return 1;
   }
 
   /// 等待队列
@@ -98,7 +99,20 @@ class FFmpegScheduler {
 
     try {
       while (_runningTasks.length < maxConcurrentTasks && _taskQueue.isNotEmpty) {
+        final now = DateTime.now();
+        final diff = now.difference(_lastStartTime);
+
+        if (diff.inSeconds < 5) {
+          Future.delayed(Duration(seconds: 5 - diff.inSeconds), () {
+            _isScheduling = false;
+            _scheduleNext();
+          });
+          return;
+        }
+
         final task = _taskQueue.removeFirst();
+
+        _lastStartTime = DateTime.now();
 
         _runTask(task);
       }
@@ -110,21 +124,11 @@ class FFmpegScheduler {
   /// 执行任务
   void _runTask(_SchedulerTask task) {
     final cancelToken = TaskCancelToken();
-    final future = () async {
-      try {
-        log('Task started: ${task.taskId}', name: 'FFmpegScheduler');
-        await task.taskRunner(cancelToken);
-        log('Task completed successfully: ${task.taskId}', name: 'FFmpegScheduler');
-      } catch (e, stack) {
-        log('Task error: ${task.taskId}\n$e', name: 'FFmpegScheduler', stackTrace: stack);
-      } finally {
-        if (_runningTasks[task.taskId]?.cancelToken == cancelToken) {
-          _runningTasks.remove(task.taskId);
-          log('Task removed from running map: ${task.taskId}', name: 'FFmpegScheduler');
-        }
-        _scheduleNext();
-      }
-    }();
+
+    final future = task.taskRunner(cancelToken).whenComplete(() {
+      _runningTasks.remove(task.taskId);
+      _scheduleNext();
+    });
 
     _runningTasks[task.taskId] = _RunningTask(taskId: task.taskId, future: future, cancelToken: cancelToken);
   }

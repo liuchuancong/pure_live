@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:get/get.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
@@ -230,24 +231,32 @@ class _TaskCard extends GetView<RecorderController> {
       child: Stack(
         children: [
           Container(
-            width: 92,
-            height: 56,
+            width: 150,
+            height: 90,
             decoration: BoxDecoration(
               image: DecorationImage(image: NetworkImage(task.cover), fit: BoxFit.cover),
             ),
           ),
           Positioned(
-            left: 6,
-            top: 6,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: statusColor.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                _statusText(),
-                style: TextStyle(color: statusColor, fontWeight: FontWeight.w700, fontSize: 10),
+            left: 8,
+            top: 8,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), // 模糊背景
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    // 背景色稍深，增加对比度
+                    color: statusColor.withValues(alpha: 0.7),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 0.5),
+                  ),
+                  child: Text(
+                    _statusText(),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
+                  ),
+                ),
               ),
             ),
           ),
@@ -475,7 +484,7 @@ class _TaskCard extends GetView<RecorderController> {
                         Row(
                           children: [
                             CircleAvatar(
-                              radius: 9,
+                              radius: 12,
                               backgroundImage: task.avatar.isNotEmpty ? NetworkImage(task.avatar) : null,
                             ),
                             const SizedBox(width: 7),
@@ -485,7 +494,7 @@ class _TaskCard extends GetView<RecorderController> {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  fontSize: 12.5,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: theme.colorScheme.onSurfaceVariant,
                                 ),
@@ -519,15 +528,6 @@ class _TaskCard extends GetView<RecorderController> {
                   ),
                   child: Column(
                     children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(999),
-                        child: LinearProgressIndicator(
-                          minHeight: 6,
-                          backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
-                          color: Colors.green,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
                       Wrap(
                         spacing: 16,
                         runSpacing: 10,
@@ -539,6 +539,15 @@ class _TaskCard extends GetView<RecorderController> {
                           if (task.isStalled)
                             _statItem(theme, Icons.warning_amber_rounded, "流卡住", color: theme.colorScheme.error),
                         ],
+                      ),
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(999),
+                        child: LinearProgressIndicator(
+                          minHeight: 6,
+                          backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+                          color: theme.colorScheme.primary,
+                        ),
                       ),
                     ],
                   ),

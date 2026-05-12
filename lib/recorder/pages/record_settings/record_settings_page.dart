@@ -143,6 +143,14 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                 displayValue: _formatDuration(controller.segmentTime.value),
                 onChanged: (v) => controller.updateSegmentTime(v.toInt()),
               ),
+              // 最大同时录制任务数（修复多开崩溃的核心UI）
+              _buildTile(
+                theme,
+                Icons.task_alt_rounded,
+                "最大同时录制任务数",
+                "${controller.maxTaskCount.value} 个",
+                _showMaxTaskDialog,
+              ),
             ]),
 
             _buildSectionHeader("自动重连"),
@@ -455,6 +463,85 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
             }).toList(),
           ),
         ),
+      ),
+    );
+  }
+
+  void _showMaxTaskDialog() {
+    final theme = Get.theme;
+
+    final textController = TextEditingController(text: controller.maxTaskCount.value.toString());
+
+    final options = List.generate(10, (i) => i + 1);
+
+    Get.dialog(
+      StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            title: const Text("最大同时录制任务数", style: TextStyle(fontWeight: FontWeight.bold)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: textController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: "手动输入",
+                    hintText: "请输入 1~10",
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text("快速选择", style: TextStyle(fontWeight: FontWeight.w600)),
+                ),
+
+                const SizedBox(height: 8),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: options.map((v) {
+                      final selected = int.tryParse(textController.text) == v;
+
+                      return ChoiceChip(
+                        label: Text("$v"),
+                        selected: selected,
+                        onSelected: (_) {
+                          textController.text = "$v";
+                          setState(() {});
+                        },
+                        selectedColor: theme.colorScheme.primary.withValues(alpha: 0.2),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.of(Get.context!).pop(), child: const Text("取消")),
+              ElevatedButton(
+                onPressed: () {
+                  final val = int.tryParse(textController.text);
+                  if (val == null || val < 1) return;
+                  controller.updateMaxTask(val);
+                  Navigator.of(Get.context!).pop();
+                },
+                child: const Text("确定"),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
