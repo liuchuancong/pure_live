@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
   battery_plus
+  connectivity_plus
   dynamic_color
   ffmpeg_kit_extended_flutter
   flutter_acrylic

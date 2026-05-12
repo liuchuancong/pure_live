@@ -9,6 +9,7 @@ import 'package:pure_live/plugins/emoji_manager.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'package:pure_live/model/live_play_quality.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:pure_live/core/danmaku/huya_danmaku.dart';
 import 'package:pure_live/modules/live_play/load_type.dart';
 import 'package:pure_live/core/danmaku/douyin_danmaku.dart';
@@ -312,9 +313,20 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
       qualites.value = playQualites;
 
       if (!hasUseDefaultResolution) {
-        String userPrefer = settings.preferResolution.value;
+        String userPrefer;
+        final List<ConnectivityResult> connectivityResult = await (Connectivity().checkConnectivity());
+
+        if (connectivityResult.contains(ConnectivityResult.mobile)) {
+          // 包含移动网络逻辑
+          userPrefer = settings.preferResolutionCellular.value;
+        } else {
+          // 其他（WiFi、以太网等）
+          userPrefer = settings.preferResolution.value;
+        }
+
         List<String> availableQualities = playQualites.map((e) => e.quality).toList();
         int matchedIndex = availableQualities.indexOf(userPrefer);
+
         // 尝试直接匹配用户偏好的分辨率
         if (matchedIndex != -1) {
           currentQuality.value = matchedIndex;
@@ -322,12 +334,15 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
           getPlayUrl();
           return;
         }
-        // 未匹配到，根据用户偏好的"级别"选择最接近的清晰度
+
         List<String> systemResolutions = settings.resolutionsList;
         int preferLevel = systemResolutions.indexOf(userPrefer);
+
+        if (preferLevel == -1) preferLevel = 0;
+
         double preferRatio = preferLevel / (systemResolutions.length - 1);
         int targetIndex = (preferRatio * (availableQualities.length - 1)).round();
-        // 确保索引在有效范围内
+
         targetIndex = targetIndex.clamp(0, availableQualities.length - 1);
         currentQuality.value = targetIndex;
         hasUseDefaultResolution = true;
