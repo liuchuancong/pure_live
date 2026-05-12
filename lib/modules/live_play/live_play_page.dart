@@ -8,6 +8,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pure_live/modules/live_play/load_type.dart';
 import 'package:pure_live/common/index.dart' hide BackButton;
 import 'package:pure_live/modules/live_play/play_other.dart';
+import 'package:pure_live/recorder/models/record_status.dart';
 import 'package:pure_live/modules/live_play/danmaku_tab.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
@@ -140,29 +141,144 @@ class LivePlayPage extends GetView<LivePlayController> {
         actions: [
           Obx(() {
             final room = controller.detail.value;
-            if (room == null) return const SizedBox.shrink();
+
+            if (room == null) {
+              return const SizedBox.shrink();
+            }
 
             final task = controller.recorderController.tasks.firstWhereOrNull(
               (t) => t.platform == room.platform && t.roomId == room.roomId,
             );
-            final bool isRecording = task != null;
 
-            return IconButton(
-              icon: Icon(
-                isRecording ? Remix.record_circle_fill : Remix.add_circle_line,
-                color: isRecording ? Colors.redAccent : Colors.black,
+            final bool exists = task != null;
+
+            final bool isRunning =
+                task?.status == RecordStatus.running ||
+                task?.status == RecordStatus.reconnecting ||
+                task?.status == RecordStatus.preparing;
+
+            final theme = Theme.of(Get.context!);
+
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOut,
+              height: 38,
+              child: FilledButton.tonalIcon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: isRunning
+                      ? Colors.redAccent.withValues(alpha: 0.12)
+                      : exists
+                      ? theme.colorScheme.primary.withValues(alpha: 0.10)
+                      : theme.colorScheme.surfaceContainerHighest,
+                  foregroundColor: isRunning
+                      ? Colors.redAccent
+                      : exists
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurfaceVariant,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+
+                icon: Icon(
+                  isRunning
+                      ? Remix.record_circle_fill
+                      : exists
+                      ? Remix.checkbox_circle_fill
+                      : Remix.add_circle_line,
+                  size: 18,
+                ),
+
+                label: Text(
+                  isRunning
+                      ? "录制中"
+                      : exists
+                      ? "已监控"
+                      : "录制",
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+
+                onPressed: () async {
+                  if (!exists) {
+                    await controller.recorderController.addTask(room: room);
+                    ToastUtil.show("已添加录制任务");
+                    return;
+                  }
+
+                  final action = await showDialog<String>(
+                    context: Get.context!,
+                    builder: (context) {
+                      return AlertDialog(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                        title: Row(
+                          children: [
+                            Icon(
+                              isRunning ? Remix.record_circle_fill : Remix.checkbox_circle_fill,
+                              color: isRunning ? Colors.redAccent : theme.colorScheme.primary,
+                              size: 22,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(isRunning ? "录制中" : "录制任务"),
+                          ],
+                        ),
+
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _ActionTile(
+                              icon: Icons.video_library_rounded,
+                              title: "进入录制中心",
+                              color: theme.colorScheme.primary,
+                              onTap: () => Navigator.pop(context, "page"),
+                            ),
+
+                            if (!isRunning)
+                              _ActionTile(
+                                icon: Icons.play_arrow_rounded,
+                                title: "立即启动录制",
+                                color: Colors.green,
+                                onTap: () => Navigator.pop(context, "start"),
+                              ),
+
+                            if (isRunning)
+                              _ActionTile(
+                                icon: Icons.stop_circle_outlined,
+                                title: "停止录制",
+                                color: Colors.orange,
+                                onTap: () => Navigator.pop(context, "stop"),
+                              ),
+
+                            _ActionTile(
+                              icon: Icons.delete_outline_rounded,
+                              title: "取消监控",
+                              color: Colors.redAccent,
+                              onTap: () => Navigator.pop(context, "delete"),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+
+                  switch (action) {
+                    case "page":
+                      Get.toNamed(RoutePath.kRecordPage);
+                      break;
+
+                    case "start":
+                      controller.recorderController.forceStartTask(task);
+                      break;
+
+                    case "stop":
+                      controller.recorderController.stopTask(task);
+                      break;
+
+                    case "delete":
+                      controller.recorderController.unRecorder(task);
+                      break;
+                  }
+                },
               ),
-              tooltip: isRecording ? "已添加录制列表" : "添加到录制列表",
-              onPressed: () {
-                if (isRecording) {
-                  // Reuse the found task directly
-                  controller.recorderController.unRecorder(task);
-                  ToastUtil.show("已停止录制");
-                } else {
-                  controller.recorderController.addTask(room: room);
-                  ToastUtil.show("已添加录制任务");
-                }
-              },
             );
           }),
 
@@ -660,6 +776,47 @@ class NotLivingVideoWidget extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ActionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActionTile({required this.icon, required this.title, required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: color.withValues(alpha: 0.12)),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: color, size: 22),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: color),
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: color.withValues(alpha: 0.7)),
+            ],
+          ),
+        ),
       ),
     );
   }

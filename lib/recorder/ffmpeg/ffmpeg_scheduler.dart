@@ -49,21 +49,19 @@ class FFmpegScheduler {
   }
 
   /// 取消任务
-  ///
-  /// queued:
-  ///   直接移除
-  ///
-  /// running:
-  ///   调用 cancel token
+  /// 调用 cancel token
   Future<void> cancel(String taskId) async {
-    /// 删除等待队列
     _taskQueue.removeWhere((e) => e.taskId == taskId);
 
-    /// 删除运行任务
-    final runningTask = _runningTasks.remove(taskId);
+    final runningTask = _runningTasks[taskId];
 
     if (runningTask != null) {
-      log('Cancelling task: $taskId', name: 'FFmpegScheduler');
+      if (runningTask.cancelToken.isCancelled) {
+        log('Task $taskId is already being cancelled, ignoring duplicate call.', name: 'FFmpegScheduler');
+        return;
+      }
+
+      log('Signalling cancel to task: $taskId', name: 'FFmpegScheduler');
 
       try {
         await runningTask.cancelToken.cancel();
@@ -112,21 +110,18 @@ class FFmpegScheduler {
   /// 执行任务
   void _runTask(_SchedulerTask task) {
     final cancelToken = TaskCancelToken();
-
     final future = () async {
       try {
         log('Task started: ${task.taskId}', name: 'FFmpegScheduler');
-
         await task.taskRunner(cancelToken);
-
-        log('Task completed: ${task.taskId}', name: 'FFmpegScheduler');
+        log('Task completed successfully: ${task.taskId}', name: 'FFmpegScheduler');
       } catch (e, stack) {
         log('Task error: ${task.taskId}\n$e', name: 'FFmpegScheduler', stackTrace: stack);
       } finally {
-        _runningTasks.remove(task.taskId);
-
-        log('Task removed: ${task.taskId}', name: 'FFmpegScheduler');
-
+        if (_runningTasks[task.taskId]?.cancelToken == cancelToken) {
+          _runningTasks.remove(task.taskId);
+          log('Task removed from running map: ${task.taskId}', name: 'FFmpegScheduler');
+        }
         _scheduleNext();
       }
     }();

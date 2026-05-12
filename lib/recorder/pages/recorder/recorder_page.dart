@@ -27,10 +27,8 @@ class RecorderPage extends GetView<RecorderController> {
           actions: [
             IconButton(
               tooltip: "打开文件夹",
-              icon: const Icon(Icons.folder, size: 22),
-              onPressed: () {
-                controller.openFileDir();
-              },
+              icon: const Icon(Icons.folder_rounded, size: 22),
+              onPressed: controller.openFileDir,
             ),
             IconButton(
               tooltip: "设置",
@@ -39,43 +37,40 @@ class RecorderPage extends GetView<RecorderController> {
             ),
             const SizedBox(width: 8),
           ],
-          bottom: TabBar(
-            isScrollable: true,
-            tabAlignment: TabAlignment.center,
-            dividerColor: Colors.transparent,
-            indicatorSize: TabBarIndicatorSize.label,
-            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
-            tabs: tabs.map((e) => Tab(text: e)).toList(),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(54),
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: TabBar(
+                isScrollable: true,
+                tabAlignment: TabAlignment.center,
+                labelColor: theme.colorScheme.primary,
+                unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                tabs: tabs
+                    .map(
+                      (e) => Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Tab(text: e),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
           ),
         ),
         body: TabBarView(
           physics: const BouncingScrollPhysics(),
           children: [
             _TaskList(filter: null),
-
-            /// 录制中
             _TaskList(filter: (e) => e.status == RecordStatus.running),
-
-            /// 等待开播
             _TaskList(filter: (e) => e.status == RecordStatus.waitingLive),
-
-            /// 排队中
             _TaskList(filter: (e) => e.status == RecordStatus.queued),
-
-            /// 重连中
             _TaskList(filter: (e) => e.status == RecordStatus.reconnecting),
-
-            /// 处理中
             _TaskList(filter: (e) => e.status == RecordStatus.processing),
-
-            /// 已完成
             _TaskList(filter: (e) => e.status == RecordStatus.completed),
-
-            /// 失败
             _TaskList(filter: (e) => e.status == RecordStatus.failed),
-
-            /// 已停止
             _TaskList(filter: (e) => e.status == RecordStatus.stopped),
           ],
         ),
@@ -86,20 +81,28 @@ class RecorderPage extends GetView<RecorderController> {
 
 class _TaskList extends GetView<RecorderController> {
   const _TaskList({this.filter});
+
   final bool Function(LiveRecordTask task)? filter;
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
       List<LiveRecordTask> list = controller.tasks;
-      if (filter != null) list = list.where(filter!).toList();
-      if (list.isEmpty) return const _EmptyView();
 
-      // 无论桌面还是移动端，统一使用灵活适配的垂直列表
+      if (filter != null) {
+        list = list.where(filter!).toList();
+      }
+
+      if (list.isEmpty) {
+        return const _EmptyView();
+      }
+
       return ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         itemCount: list.length,
-        itemBuilder: (_, i) => _TaskCard(key: ValueKey(list[i].taskId), task: list[i]),
+        itemBuilder: (_, i) {
+          return _TaskCard(key: ValueKey(list[i].taskId), task: list[i]);
+        },
       );
     });
   }
@@ -159,7 +162,7 @@ class _TaskCard extends GetView<RecorderController> {
         return "重连中";
 
       case RecordStatus.processing:
-        return "视频处理中";
+        return "处理中";
 
       case RecordStatus.completed:
         return "已完成";
@@ -172,26 +175,178 @@ class _TaskCard extends GetView<RecorderController> {
     }
   }
 
+  Color _platformColor() {
+    switch (task.platform.toLowerCase()) {
+      case 'bilibili':
+        return const Color(0xFFFB7299);
+
+      case 'douyu':
+        return const Color(0xFFFF7700);
+
+      case 'huya':
+        return const Color(0xFFFFB000);
+
+      case 'twitch':
+        return const Color(0xFF9146FF);
+
+      default:
+        return Get.theme.colorScheme.primary;
+    }
+  }
+
+  String _formatDuration(int sec) {
+    final d = Duration(seconds: sec);
+
+    String two(int n) => n.toString().padLeft(2, '0');
+
+    return "${two(d.inHours)}:${two(d.inMinutes.remainder(60))}:${two(d.inSeconds.remainder(60))}";
+  }
+
+  String _formatFileSize(int bytes) {
+    if (bytes <= 0) return "0 B";
+
+    const kb = 1024;
+    const mb = kb * 1024;
+    const gb = mb * 1024;
+
+    if (bytes >= gb) {
+      return "${(bytes / gb).toStringAsFixed(2)} GB";
+    }
+
+    if (bytes >= mb) {
+      return "${(bytes / mb).toStringAsFixed(2)} MB";
+    }
+
+    if (bytes >= kb) {
+      return "${(bytes / kb).toStringAsFixed(1)} KB";
+    }
+
+    return "$bytes B";
+  }
+
+  Widget _buildCoverImage(Color statusColor) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: Stack(
+        children: [
+          Container(
+            width: 92,
+            height: 56,
+            decoration: BoxDecoration(
+              image: DecorationImage(image: NetworkImage(task.cover), fit: BoxFit.cover),
+            ),
+          ),
+          Positioned(
+            left: 6,
+            top: 6,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: statusColor.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                _statusText(),
+                style: TextStyle(color: statusColor, fontWeight: FontWeight.w700, fontSize: 10),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _miniInfo(IconData icon, String label, ThemeData theme) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 13, color: theme.colorScheme.onSurfaceVariant),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(fontSize: 11.5, color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500),
+        ),
+      ],
+    );
+  }
+
+  Widget _statItem(ThemeData theme, IconData icon, String label, {Color? color}) {
+    final c = color ?? theme.colorScheme.onSurfaceVariant;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(color: c.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: c),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: c),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildActionButton() {
     final theme = Get.theme;
 
-    final smallButtonStyle = FilledButton.styleFrom(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+    final primaryStyle = FilledButton.styleFrom(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+      minimumSize: const Size(0, 34),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
     );
 
-    final deleteButtonStyle = OutlinedButton.styleFrom(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      side: BorderSide(color: theme.colorScheme.error.withValues(alpha: 0.8)),
-      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+    final outlineStyle = OutlinedButton.styleFrom(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+      minimumSize: const Size(0, 34),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      side: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.2)),
+      textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
     );
 
-    /// 正在运行中的状态
+    final dangerStyle = FilledButton.styleFrom(
+      backgroundColor: Colors.redAccent,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+      minimumSize: const Size(0, 34),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+    );
+
+    Widget deleteButton() {
+      return TextButton(
+        onPressed: () async {
+          final ok = await showDialog<bool>(
+            context: Get.context!,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text("取消监控"),
+                content: const Text("确定不再监控该直播间？"),
+                actions: [
+                  TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text("取消")),
+                  FilledButton(
+                    style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: const Text("确定"),
+                  ),
+                ],
+              );
+            },
+          );
+
+          if (ok == true) {
+            await controller.unRecorder(task);
+          }
+        },
+        child: const Text("删除", style: TextStyle(color: Colors.red)),
+      );
+    }
+
     final isWorking = {RecordStatus.running, RecordStatus.reconnecting, RecordStatus.preparing};
 
-    /// 可重新启动的状态
     final canRestart = {
       RecordStatus.failed,
       RecordStatus.stopped,
@@ -200,73 +355,32 @@ class _TaskCard extends GetView<RecorderController> {
       RecordStatus.processing,
     };
 
-    /// 删除按钮
-    Widget deleteButton() {
-      return OutlinedButton(
-        style: deleteButtonStyle,
-        onPressed: () async {
-          final ok = await showDialog<bool>(
-            context: Get.context!,
-            builder: (context) => AlertDialog(
-              title: const Text("取消监控"),
-              content: const Text("确定不再监控该直播间？"),
-              actions: [
-                TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text("取消")),
-                FilledButton(
-                  style: FilledButton.styleFrom(backgroundColor: Colors.red),
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text("确定"),
-                ),
-              ],
-            ),
-          );
-
-          if (ok == true) {
-            await controller.unRecorder(task);
-          }
-        },
-        child: const Text("删除"),
-      );
-    }
-
-    /// 正在录制
     if (isWorking.contains(task.status)) {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           deleteButton(),
           const SizedBox(width: 6),
-
-          FilledButton(
-            style: smallButtonStyle.copyWith(backgroundColor: WidgetStateProperty.all(Colors.redAccent)),
-            onPressed: () => controller.stopTask(task),
-            child: const Text("停止"),
-          ),
+          FilledButton(style: dangerStyle, onPressed: () => controller.stopTask(task), child: const Text("停止")),
         ],
       );
     }
 
-    /// 排队中
     if (task.status == RecordStatus.queued) {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           deleteButton(),
           const SizedBox(width: 6),
-          FilledButton(style: smallButtonStyle, onPressed: () => controller.forceStartTask(task), child: Text('启动')),
+          FilledButton(style: primaryStyle, onPressed: () => controller.forceStartTask(task), child: const Text("启动")),
           const SizedBox(width: 6),
-          FilledButton(
-            style: smallButtonStyle.copyWith(backgroundColor: WidgetStateProperty.all(theme.colorScheme.tertiary)),
-            onPressed: () => controller.stopTask(task),
-            child: const Text("取消"),
-          ),
+          OutlinedButton(style: outlineStyle, onPressed: () => controller.stopTask(task), child: const Text("取消")),
         ],
       );
     }
 
-    /// 可重新启动
     if (canRestart.contains(task.status)) {
-      String text;
+      String text = "启动";
 
       switch (task.status) {
         case RecordStatus.failed:
@@ -282,7 +396,7 @@ class _TaskCard extends GetView<RecorderController> {
           break;
 
         default:
-          text = "启动";
+          break;
       }
 
       return Row(
@@ -290,7 +404,7 @@ class _TaskCard extends GetView<RecorderController> {
         children: [
           deleteButton(),
           const SizedBox(width: 6),
-          FilledButton(style: smallButtonStyle, onPressed: () => controller.forceStartTask(task), child: Text(text)),
+          FilledButton(style: primaryStyle, onPressed: () => controller.forceStartTask(task), child: Text(text)),
         ],
       );
     }
@@ -298,93 +412,25 @@ class _TaskCard extends GetView<RecorderController> {
     return const SizedBox.shrink();
   }
 
-  String _formatDuration(int sec) {
-    final d = Duration(seconds: sec);
-    String two(int n) => n.toString().padLeft(2, '0');
-    return "${two(d.inHours)}:${two(d.inMinutes.remainder(60))}:${two(d.inSeconds.remainder(60))}";
-  }
-
-  String _formatFileSize(int bytes) {
-    if (bytes <= 0) return "0 B";
-    const kb = 1024;
-    const mb = kb * 1024;
-    const gb = mb * 1024;
-    if (bytes >= gb) return "${(bytes / gb).toStringAsFixed(2)} GB";
-    if (bytes >= mb) return "${(bytes / mb).toStringAsFixed(2)} MB";
-    if (bytes >= kb) return "${(bytes / kb).toStringAsFixed(1)} KB";
-    return "$bytes B";
-  }
-
-  // 更紧凑的封面图（尺寸缩小，与迅雷下载项类似）
-  Widget _buildCoverImage(Color statusColor) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        width: 72, // 缩小宽度
-        height: 44, // 缩小高度
-        decoration: BoxDecoration(
-          image: DecorationImage(image: NetworkImage(task.cover), fit: BoxFit.cover),
-        ),
-        child: Align(
-          alignment: Alignment.topLeft,
-          child: Container(
-            margin: const EdgeInsets.all(4),
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.92),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              _statusText(),
-              style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _miniInfo(IconData icon, String label) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 12, color: Colors.grey.shade600),
-        const SizedBox(width: 3),
-        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade700)),
-      ],
-    );
-  }
-
-  Widget _statItem(IconData icon, String label, {Color? color}) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 13, color: color ?? Colors.grey.shade700),
-        const SizedBox(width: 3),
-        Text(
-          label,
-          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: color ?? Colors.grey.shade800),
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     final color = _statusColor();
+
     final isRecording = [RecordStatus.running, RecordStatus.reconnecting, RecordStatus.preparing].contains(task.status);
 
-    return Container(
-      key: ValueKey(task.taskId),
-      margin: const EdgeInsets.only(bottom: 12),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.08)),
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.08)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 18, offset: const Offset(0, 6))],
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
         onTap: () {
           AppNavigator.toLiveRoomDetail(
             liveRoom: LiveRoom(
@@ -401,49 +447,60 @@ class _TaskCard extends GetView<RecorderController> {
           );
         },
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 第一行：封面 + 标题/主播/状态标签
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildCoverImage(color),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           task.title,
-                          maxLines: 1,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 8,
-                              backgroundImage: task.avatar.isNotEmpty ? NetworkImage(task.avatar) : null,
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                task.nick,
-                                style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12),
-                              ),
-                            ),
-                            _Tag(text: task.platform.toUpperCase(), small: true, icon: Remix.plant_fill),
-                          ],
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15.5,
+                            height: 1.2,
+                            letterSpacing: 0.1,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            _miniInfo(Icons.high_quality_rounded, task.selectedQuality ?? "自动"),
-                            const SizedBox(width: 12),
-                            _miniInfo(Icons.people_alt_rounded, readableCount(task.watching)),
+                            CircleAvatar(
+                              radius: 9,
+                              backgroundImage: task.avatar.isNotEmpty ? NetworkImage(task.avatar) : null,
+                            ),
+                            const SizedBox(width: 7),
+                            Expanded(
+                              child: Text(
+                                task.nick,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                            _Tag(text: task.platform.toUpperCase(), icon: Remix.plant_fill, color: _platformColor()),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 14,
+                          runSpacing: 6,
+                          children: [
+                            _miniInfo(Icons.high_quality_rounded, task.selectedQuality ?? "自动", theme),
+                            _miniInfo(Icons.people_alt_rounded, readableCount(task.watching), theme),
                           ],
                         ),
                       ],
@@ -451,58 +508,57 @@ class _TaskCard extends GetView<RecorderController> {
                   ),
                 ],
               ),
-
-              // 录制中面板（进度条+统计）
               if (isRecording) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.12)),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.08)),
                   ),
                   child: Column(
                     children: [
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(999),
                         child: LinearProgressIndicator(
-                          minHeight: 4,
-                          backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.12),
-                          color: Colors.green, // 迅雷绿
+                          minHeight: 6,
+                          backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+                          color: Colors.green,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 12),
                       Wrap(
-                        spacing: 12,
-                        runSpacing: 6,
+                        spacing: 16,
+                        runSpacing: 10,
                         children: [
-                          _statItem(Icons.timer_outlined, _formatDuration(task.recordedSeconds)),
-                          _statItem(Icons.storage_rounded, _formatFileSize(task.fileSize)),
-                          _statItem(Icons.speed_rounded, "${task.recordSpeed.toStringAsFixed(1)}x"),
-                          _statItem(Icons.graphic_eq_rounded, "${task.bitrate ~/ 1000}M"),
+                          _statItem(theme, Icons.timer_outlined, _formatDuration(task.recordedSeconds)),
+                          _statItem(theme, Icons.storage_rounded, _formatFileSize(task.fileSize)),
+                          _statItem(theme, Icons.speed_rounded, "${task.recordSpeed.toStringAsFixed(1)}x"),
+                          _statItem(theme, Icons.graphic_eq_rounded, "${task.bitrate ~/ 1000}M"),
                           if (task.isStalled)
-                            _statItem(Icons.warning_amber_rounded, "流卡住", color: theme.colorScheme.error),
+                            _statItem(theme, Icons.warning_amber_rounded, "流卡住", color: theme.colorScheme.error),
                         ],
                       ),
                     ],
                   ),
                 ),
               ],
-
-              const SizedBox(height: 10),
-
-              // 底部：时间 + 操作按钮
+              const SizedBox(height: 14),
               Row(
                 children: [
-                  Icon(Icons.schedule_rounded, size: 13, color: theme.hintColor),
-                  const SizedBox(width: 4),
+                  Icon(Icons.schedule_rounded, size: 14, color: theme.colorScheme.onSurfaceVariant),
+                  const SizedBox(width: 5),
                   Text(
                     task.createTime.toString().substring(5, 16),
-                    style: TextStyle(color: theme.hintColor, fontSize: 11),
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   const Spacer(),
-                  Builder(builder: (context) => _buildActionButton()),
+                  _buildActionButton(),
                 ],
               ),
             ],
@@ -516,35 +572,23 @@ class _TaskCard extends GetView<RecorderController> {
 class _Tag extends StatelessWidget {
   final IconData icon;
   final String text;
-  final bool small;
+  final Color color;
 
-  const _Tag({required this.text, this.small = false, required this.icon});
+  const _Tag({required this.text, required this.icon, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary;
-
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: small ? 5 : 7, vertical: small ? 1 : 3),
-      decoration: BoxDecoration(
-        color: primaryColor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(small ? 6 : 8),
-        border: Border.all(color: primaryColor.withValues(alpha: 0.1), width: 0.5),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(999)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: small ? 10 : 12, color: primaryColor.withValues(alpha: 0.8)),
-          const SizedBox(width: 3),
+          Icon(icon, size: 11, color: color),
+          const SizedBox(width: 4),
           Text(
             text,
-            style: TextStyle(
-              fontSize: small ? 9 : 11,
-              fontWeight: FontWeight.bold,
-              color: primaryColor.withValues(alpha: 0.9),
-              letterSpacing: 0.2,
-            ),
+            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color, letterSpacing: 0.2),
           ),
         ],
       ),
@@ -558,24 +602,24 @@ class _EmptyView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.video_collection_outlined,
-            size: 80,
-            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+          Container(
+            width: 92,
+            height: 92,
+            decoration: BoxDecoration(color: theme.colorScheme.primary.withValues(alpha: 0.08), shape: BoxShape.circle),
+            child: Icon(Icons.video_collection_outlined, size: 42, color: theme.colorScheme.primary),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           Text(
             "暂无录制任务",
-            style: TextStyle(
-              fontSize: 16,
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
           ),
+          const SizedBox(height: 8),
+          Text("添加直播间后将在这里显示", style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant)),
         ],
       ),
     );

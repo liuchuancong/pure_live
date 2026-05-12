@@ -267,6 +267,7 @@ class RecorderController extends GetxService {
     _retryTimers.remove(task.taskId);
     await scheduler.cancel(task.taskId);
     await ffmpeg.stop(task.taskId);
+    await Future.delayed(Duration(seconds: 3));
     if (task.outputDir != null && task.recordedSeconds > 0) {
       task.status = RecordStatus.processing;
       updateTask(task);
