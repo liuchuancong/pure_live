@@ -8,8 +8,8 @@ class LiveAudioService {
   static LiveAudioHandler? _handler;
 
   /// 初始化服务
-  static Future<void> init() async {
-    if (!Platform.isAndroid) return;
+  static Future<void> _ensureInitialized() async {
+    if (!Platform.isAndroid || _handler != null) return;
 
     _handler = await AudioService.init(
       builder: () => LiveAudioHandler(),
@@ -18,6 +18,8 @@ class LiveAudioService {
         androidNotificationChannelName: '纯粹直播播放',
         androidNotificationOngoing: true,
         androidStopForegroundOnPause: true,
+        // 确保没有媒体播放时不显示通知
+        androidNotificationClickStartsActivity: true,
       ),
     );
   }
@@ -30,6 +32,7 @@ class LiveAudioService {
   /// 启动播放并显示通知
   static Future<void> start(String roomId, String title, String author, String? cover) async {
     if (!Platform.isAndroid || _handler == null) return;
+    await _ensureInitialized();
     await _handler!.playMediaItem(
       MediaItem(
         id: roomId,

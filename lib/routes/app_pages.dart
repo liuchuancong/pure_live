@@ -35,13 +35,17 @@ import 'package:pure_live/modules/shield/danmu_shield_binding.dart';
 import 'package:pure_live/modules/areas/favorite_areas_binding.dart';
 import 'package:pure_live/modules/account/huya/huya_cookie_page.dart';
 import 'package:pure_live/modules/area_rooms/area_rooms_binding.dart';
+import 'package:pure_live/recorder/pages/recorder/recorder_page.dart';
 import 'package:pure_live/modules/account/bilibili/qr_login_page.dart';
 import 'package:pure_live/modules/account/bilibili/bilibili_bings.dart';
 import 'package:pure_live/modules/account/bilibili/web_login_page.dart';
 import 'package:pure_live/modules/auth/components/update_password.dart';
 import 'package:pure_live/modules/account/huya/huya_cookie_binding.dart';
+import 'package:pure_live/recorder/pages/recorder/recorder_binding.dart';
 import 'package:pure_live/modules/account/douyin/douyin_cookie_page.dart';
 import 'package:pure_live/modules/account/douyin/douyin_cookie_binding.dart';
+import 'package:pure_live/recorder/pages/record_settings/record_settings_page.dart';
+import 'package:pure_live/recorder/pages/record_settings/record_settings_binding.dart';
 
 // auth
 
@@ -144,5 +148,11 @@ class AppPages {
     ),
     // VersionPage
     GetPage(name: RoutePath.kVersionPage, page: () => const VersionPage(), bindings: [VersionBinding()]),
+    GetPage(name: RoutePath.kRecordPage, page: () => const RecorderPage(), bindings: [RecorderBinding()]),
+    GetPage(
+      name: RoutePath.kRecordSettings,
+      page: () => const RecordSettingsPage(),
+      bindings: [RecordSettingsBinding()],
+    ),
   ];
 }

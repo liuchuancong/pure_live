@@ -44,7 +44,7 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
 
   Future<void> _startDownload() async {
     final apkName = widget.apkUrl.split('/').last;
-    final dir = await getApplicationDocumentsDirectory();
+    Directory? dir = await _getSafeDownloadDir();
     final apkDir = Directory('${dir.path}${path.separator}pure_live');
     if (!apkDir.existsSync()) {
       apkDir.createSync(recursive: true);
@@ -86,17 +86,24 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
         Navigator.of(Get.context!).pop(false);
 
         // 安装 APK
-        final result = await OpenFilex.open(file.path);
-        if (PlatformUtils.isDesktopNotMac) {
-          if (await windowManager.isPreventClose()) {
-            await windowManager.setPreventClose(false);
+        if (Platform.isAndroid) {
+          final result = await OpenFilex.open(file.path, type: "application/vnd.android.package-archive");
+          if (result.type != ResultType.done) {
+            Get.snackbar('安装失败', '请检查“安装未知应用”权限：${result.message}');
           }
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            exit(0);
-          });
-        }
-        if (result.type != ResultType.done) {
-          Get.snackbar('安装失败', result.message);
+        } else if (PlatformUtils.isDesktop) {
+          final result = await OpenFilex.open(file.path);
+          if (PlatformUtils.isDesktopNotMac) {
+            if (await windowManager.isPreventClose()) {
+              await windowManager.setPreventClose(false);
+            }
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              exit(0);
+            });
+          }
+          if (result.type != ResultType.done) {
+            Get.snackbar('安装失败', result.message);
+          }
         }
       }
     } catch (e) {
@@ -104,6 +111,16 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
       if (mounted && !_cancelToken.isCancelled) {
         _showErrorAndClose('下载失败: $e');
       }
+    }
+  }
+
+  Future<Directory> _getSafeDownloadDir() async {
+    if (Platform.isAndroid) {
+      final dir = await getExternalStorageDirectory();
+      return Directory('${dir!.path}${path.separator}pure_live');
+    } else {
+      final dir = await getApplicationDocumentsDirectory();
+      return Directory('${dir.path}${path.separator}pure_live');
     }
   }
 

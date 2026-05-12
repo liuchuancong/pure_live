@@ -90,8 +90,6 @@
         <action android:name="android.intent.action.MEDIA_BUTTON" />
       </intent-filter>
     </receiver> 
-		<!-- 注册服务 -->
-		<service android:name="com.pravera.flutter_foreground_task.service.ForegroundService" android:foregroundServiceType="mediaPlayback" android:exported="false" />
 	</application>
 	<uses-feature android:name="android.software.leanback" android:required="false" />
 	<uses-feature android:name="android.hardware.touchscreen" android:required="false" />

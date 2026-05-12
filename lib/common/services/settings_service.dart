@@ -93,6 +93,8 @@ class SettingsService extends GetxController {
   final shieldList = ((HivePrefUtil.getStringList('shieldList') ?? [])).obs;
   final hotAreasList = ((HivePrefUtil.getStringList('hotAreasList') ?? AppConsts.supportSites)).obs;
   final preferResolution = (HivePrefUtil.getString('preferResolution') ?? PlayerConsts.resolutions[0]).obs;
+  final preferResolutionCellular =
+      (HivePrefUtil.getString('preferResolutionCellular') ?? PlayerConsts.resolutions[0]).obs;
   final preferPlatform = (HivePrefUtil.getString('preferPlatform') ?? AppConsts.platforms[0]).obs;
 
   // ==============================
@@ -385,6 +387,13 @@ class SettingsService extends GetxController {
     }
   }
 
+  void changePreferResolutionCellular(String name) {
+    if (PlayerConsts.resolutions.indexWhere((e) => e == name) != -1) {
+      preferResolutionCellular.value = name;
+      HivePrefUtil.setString('preferResolutionCellular', name);
+    }
+  }
+
   void changePreferPlatform(String name) {
     if (AppConsts.platforms.indexWhere((e) => e == name) != -1) {
       preferPlatform.value = name;
@@ -641,6 +650,10 @@ class SettingsService extends GetxController {
       (e) => e == json['preferResolution'],
       orElse: () => PlayerConsts.resolutions[0],
     );
+    preferResolutionCellular.value = PlayerConsts.resolutions.firstWhere(
+      (e) => e == json['preferResolutionCellular'],
+      orElse: () => PlayerConsts.resolutions[0],
+    );
     preferPlatform.value = AppConsts.platforms.firstWhere(
       (e) => e == json['preferPlatform'],
       orElse: () => AppConsts.platforms[0],
@@ -694,6 +707,7 @@ class SettingsService extends GetxController {
     setBilibiliCookit(bilibiliCookie.value);
     changeLanguage(languageName.value);
     changePreferResolution(preferResolution.value);
+    changePreferResolutionCellular(preferResolutionCellular.value);
     changePreferPlatform(preferPlatform.value);
     changeShutDownConfig(autoShutDownTime.value, enableAutoShutDownTime.value);
     changeAutoRefreshConfig(autoRefreshTime.value);
@@ -718,6 +732,7 @@ class SettingsService extends GetxController {
     json['enableAutoCheckUpdate'] = enableAutoCheckUpdate.value;
     json['enableFullScreenDefault'] = enableFullScreenDefault.value;
     json['preferResolution'] = preferResolution.value;
+    json['preferResolutionCellular'] = preferResolutionCellular.value;
     json['preferPlatform'] = preferPlatform.value;
     json['languageName'] = languageName.value;
     json['videoFitIndex'] = videoFitIndex.value;

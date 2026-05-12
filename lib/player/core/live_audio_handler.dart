@@ -10,7 +10,6 @@ class LiveAudioHandler extends BaseAudioHandler {
     _initSession();
   }
 
-  /// 【关键】外部设置当前播放器（支持任意引擎）
   void setPlayer(UnifiedPlayer player) {
     _currentPlayer = player;
     _listenPlayState();

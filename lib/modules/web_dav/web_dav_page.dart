@@ -161,7 +161,12 @@ class WebDavPage extends GetView<WebDavController> {
         title: const Text('确认删除'),
         content: Text('确定要删除配置 "${config.name}" 吗？'),
         actions: [
-          TextButton(onPressed: Get.back, child: const Text('取消')),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(Get.context!);
+            },
+            child: const Text('取消'),
+          ),
           TextButton(
             onPressed: () => controller.deleteConfig(config),
             child: Text('删除', style: TextStyle(color: Theme.of(Get.context!).colorScheme.error)),

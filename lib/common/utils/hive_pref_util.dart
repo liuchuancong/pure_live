@@ -15,25 +15,9 @@ class HivePrefUtil {
     return _box.get(key);
   }
 
-  static Future<bool> setAnyPref(String key, dynamic value) {
-    if (value is String) {
-      _box.put(key, value);
-    } else if (value is int) {
-      _box.put(key, value);
-    } else if (value is bool) {
-      _box.put(key, value);
-    } else if (value is double) {
-      _box.put(key, value);
-    } else if (value is List<String>) {
-      _box.put(key, value);
-    } else {
-      // 如果传入不支持的类型（如 Map、自定义对象），可选择抛异常或忽略
-      throw ArgumentError(
-        'Unsupported value type for key "$key": ${value.runtimeType}. '
-        'Only String, int, bool, double, and List<String> are supported.',
-      );
-    }
-    return Future.value(true);
+  static Future<bool> setAnyPref(String key, dynamic value) async {
+    await _box.put(key, value);
+    return true;
   }
 
   static bool? getBool(String key) {
@@ -84,5 +68,22 @@ class HivePrefUtil {
   static Future<bool> setStringList(String key, List<String> value) {
     _box.put(key, value);
     return Future.value(true);
+  }
+
+  /// 删除指定 key
+  static Future<bool> remove(String key) async {
+    await _box.delete(key);
+    return true;
+  }
+
+  /// 是否存在 key
+  static bool containsKey(String key) {
+    return _box.containsKey(key);
+  }
+
+  /// 清空全部
+  static Future<bool> clear() async {
+    await _box.clear();
+    return true;
   }
 }
