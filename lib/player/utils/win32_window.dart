@@ -23,6 +23,25 @@ class WinFullscreen {
   static const dwmwaNcRenderingPolicy = 2;
   static const dwmncrpDisabled = 1;
 
+  /// 获取当前窗口的 DPI 缩放比例
+  static double getScaleFactor() {
+    if (!Platform.isWindows) return 1.0;
+    final hWnd = _getHwnd();
+    // 获取窗口所在的监控器句柄
+    final hMonitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+    final dpiX = calloc<Uint32>();
+    final dpiY = calloc<Uint32>();
+    try {
+      GetDpiForMonitor(hMonitor, MDT_EFFECTIVE_DPI, dpiX, dpiY);
+      return dpiX.value / 96.0;
+    } catch (_) {
+      return 1.0;
+    } finally {
+      calloc.free(dpiX);
+      calloc.free(dpiY);
+    }
+  }
+
   /// 检测 Windows 11
   static bool get isWindows11 {
     if (!Platform.isWindows) return false;
@@ -147,6 +166,14 @@ class WinFullscreen {
     final hWnd = _getHwnd();
     saveOriginalWindowRect();
 
+    // --- 新增：获取缩放并转换坐标/尺寸 ---
+    final double scale = getScaleFactor();
+    final int scaledWidth = (width * scale).toInt();
+    final int scaledHeight = (height * scale).toInt();
+    final int scaledX = (x * scale).toInt();
+    final int scaledY = (y * scale).toInt();
+    // --------------------------------
+
     int style = GetWindowLongPtr(hWnd, GWL_STYLE);
     style &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU | WS_BORDER);
     style |= WS_POPUP;
@@ -162,10 +189,10 @@ class WinFullscreen {
     SetWindowPos(
       hWnd,
       HWND_TOPMOST,
-      x.toInt(),
-      y.toInt(),
-      width.toInt(),
-      height.toInt(),
+      scaledX, // 使用缩放后的值
+      scaledY,
+      scaledWidth,
+      scaledHeight,
       SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_NOSENDCHANGING,
     );
   }
