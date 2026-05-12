@@ -1,83 +1,207 @@
 import 'dart:io';
-import 'dart:developer' as developer;
+import 'dart:async';
+import 'package:get/get.dart';
 import 'package:path/path.dart' as p;
+import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
+import 'package:pure_live/recorder/ffmpeg/ffmpeg_manager.dart';
 import 'package:pure_live/recorder/models/live_record_task.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_isolate_manager.dart';
 
-class VideoProcessorService {
-  static final VideoProcessorService to = VideoProcessorService();
+class VideoProcessorService extends GetxService {
+  VideoProcessorService._internal();
 
-  // 记录合并任务的执行器
-  final Map<String, FFmpegTaskExecutor> _mergeExecutors = {};
+  static final VideoProcessorService _instance = VideoProcessorService._internal();
 
-  Future<void> convertToMp4({
-    required LiveRecordTask task,
-    required Directory tsDir,
-    Function(bool success, String outPath)? onFinish,
-  }) async {
-    final mergeId = "${task.taskId}_merge";
+  static VideoProcessorService get to => _instance;
 
-    // 1. 获取所有 .ts 文件并按名称排序（确保时间线正确）
-    final files = tsDir
-        .listSync()
-        .where((e) => e.path.endsWith('.ts'))
-        .where((e) => e is File && e.lengthSync() > 0) // 过滤掉损坏的 0 字节文件
-        .toList();
+  final FFmpegManager _ffmpeg = FFmpegManager.to;
 
-    // 按时间顺序（文件名）排序
-    files.sort((a, b) => a.path.compareTo(b.path));
+  final StreamController<VideoProcessEvent> _controller = StreamController<VideoProcessEvent>.broadcast();
 
-    if (files.isEmpty) {
-      onFinish?.call(false, "");
-      return;
-    }
+  Stream<VideoProcessEvent> get stream => _controller.stream;
 
-    // 2. 准备 concat 文本文件
-    final listFile = File(p.join(tsDir.path, 'list.txt'));
-    final buffer = StringBuffer();
-    for (final f in files) {
-      // FFmpeg concat 格式要求路径处理
-      buffer.writeln("file '${f.path.replaceAll('\\', '/')}'");
-    }
-    await listFile.writeAsString(buffer.toString());
+  final Map<String, StreamSubscription<FFmpegEvent>> _subscriptions = {};
 
-    // 3. 构建输出路径和命令
-    final outPath = p.join(tsDir.path, "combined_${DateTime.now().millisecondsSinceEpoch}.mp4");
+  final Set<String> _processingTasks = {};
 
-    // 使用 buildRecordCommand 类似的逻辑或直接拼 List
-    final args = [
-      "-f", "concat",
-      "-safe", "0",
-      "-i", listFile.path,
-      "-c", "copy", // 仅封装，不重编码，速度极快
-      outPath,
-    ];
-
-    // 4. 创建专用的合并执行器
-    final executor = FFmpegTaskExecutor(taskId: mergeId);
-    _mergeExecutors[mergeId] = executor;
-
-    // 5. 监听合并任务状态
-    executor.stream.listen((event) {
-      if (event.type == FFmpegEventType.complete) {
-        developer.log("[$mergeId] 合并完成");
-        onFinish?.call(true, outPath);
-        _cleanup(mergeId, listFile);
-      } else if (event.type == FFmpegEventType.error) {
-        developer.log("[$mergeId] 合并失败");
-        onFinish?.call(false, "");
-        _cleanup(mergeId, listFile);
-      }
-    });
-
-    // 6. 运行 Isolate 开始合并
-    await executor.run(args.join(' '));
+  bool isProcessing(String taskId) {
+    return _processingTasks.contains(taskId);
   }
 
-  void _cleanup(String mergeId, File listFile) {
-    _mergeExecutors[mergeId]?.dispose();
-    _mergeExecutors.remove(mergeId);
-    if (listFile.existsSync()) listFile.deleteSync();
+  Future<bool> convertToMp4({required LiveRecordTask task, bool deleteSourceTs = true}) async {
+    final taskId = task.taskId;
+    if (_processingTasks.contains(taskId)) {
+      return false;
+    }
+    _processingTasks.add(taskId);
+    try {
+      final tsDir = Directory(task.outputDir ?? '');
+      if (!tsDir.existsSync()) {
+        _emitFailed(taskId, '目录不存在');
+        return false;
+      }
+      final files = tsDir
+          .listSync()
+          .whereType<File>()
+          .where((e) => e.path.endsWith('.ts') && e.lengthSync() > 0)
+          .toList();
+
+      files.sort((a, b) => a.path.compareTo(b.path));
+
+      if (files.isEmpty) {
+        _emitFailed(taskId, 'TS 文件为空');
+        return false;
+      }
+
+      _controller.add(VideoProcessEvent(taskId: taskId, type: VideoProcessEventType.started));
+
+      final listFile = File(p.join(tsDir.path, 'list.txt'));
+
+      final buffer = StringBuffer();
+
+      for (final f in files) {
+        buffer.writeln("file '${f.path.replaceAll('\\', '/')}'");
+      }
+
+      await listFile.writeAsString(buffer.toString());
+
+      final t = task.createTime;
+
+      final date =
+          '${t.year}'
+          '${t.month.toString().padLeft(2, '0')}'
+          '${t.day.toString().padLeft(2, '0')}_'
+          '${t.hour.toString().padLeft(2, '0')}'
+          '${t.minute.toString().padLeft(2, '0')}'
+          '${t.second.toString().padLeft(2, '0')}';
+
+      final outputPath = p.join(tsDir.path, '$date.mp4');
+
+      final ffmpegTaskId = 'merge_$taskId';
+
+      final command = [
+        '-y',
+        '-f',
+        'concat',
+        '-safe',
+        '0',
+        '-i',
+        '"${listFile.path}"',
+        '-c',
+        'copy',
+        '"$outputPath"',
+      ].join(' ');
+
+      final completer = Completer<bool>();
+
+      await _subscriptions[ffmpegTaskId]?.cancel();
+
+      _subscriptions[ffmpegTaskId] = _ffmpeg.stream.listen((event) async {
+        if (event.taskId != ffmpegTaskId) {
+          return;
+        }
+
+        switch (event.type) {
+          case FFmpegEventType.progress:
+            final data = event.data;
+            final time = (data['time'] ?? 0).toDouble();
+            final duration = task.recordedSeconds <= 0 ? 1 : task.recordedSeconds * 1000;
+            final progress = (time / duration).clamp(0.0, 1.0);
+            _controller.add(
+              VideoProcessEvent(taskId: taskId, type: VideoProcessEventType.progress, progress: progress),
+            );
+            break;
+
+          case FFmpegEventType.complete:
+            _controller.add(
+              VideoProcessEvent(taskId: taskId, type: VideoProcessEventType.completed, outputPath: outputPath),
+            );
+
+            if (deleteSourceTs) {
+              _deleteTsFiles(tsDir);
+            }
+
+            await _subscriptions[ffmpegTaskId]?.cancel();
+
+            _subscriptions.remove(ffmpegTaskId);
+
+            if (!completer.isCompleted) {
+              completer.complete(true);
+            }
+
+            break;
+
+          case FFmpegEventType.error:
+            _emitFailed(taskId, 'FFmpeg merge failed');
+
+            await _subscriptions[ffmpegTaskId]?.cancel();
+
+            _subscriptions.remove(ffmpegTaskId);
+
+            if (!completer.isCompleted) {
+              completer.complete(false);
+            }
+
+            break;
+
+          default:
+            break;
+        }
+      });
+
+      await _ffmpeg.start(taskId: ffmpegTaskId, command: command);
+
+      return await completer.future;
+    } catch (e) {
+      _emitFailed(taskId, e.toString());
+
+      return false;
+    } finally {
+      _processingTasks.remove(taskId);
+    }
+  }
+
+  void _deleteTsFiles(Directory dir) {
+    try {
+      if (!dir.existsSync()) {
+        return;
+      }
+
+      for (final file in dir.listSync()) {
+        if (file.path.endsWith('.ts') || file.path.endsWith('list.txt')) {
+          file.deleteSync();
+        }
+      }
+    } catch (_) {}
+  }
+
+  void _emitFailed(String taskId, String message) {
+    _controller.add(VideoProcessEvent(taskId: taskId, type: VideoProcessEventType.failed, error: message));
+  }
+
+  @override
+  void onClose() {
+    for (final sub in _subscriptions.values) {
+      sub.cancel();
+    }
+    _subscriptions.clear();
+    _controller.close();
+    super.onClose();
   }
 }
+
+class VideoProcessEvent {
+  final String taskId;
+
+  final VideoProcessEventType type;
+
+  final double progress;
+
+  final String? outputPath;
+
+  final String? error;
+
+  const VideoProcessEvent({required this.taskId, required this.type, this.progress = 0, this.outputPath, this.error});
+}
+
+enum VideoProcessEventType { started, progress, completed, failed }

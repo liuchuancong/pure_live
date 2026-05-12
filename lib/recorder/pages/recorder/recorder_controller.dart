@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
-import 'dart:collection';
 import 'package:get/get.dart';
 import 'dart:developer' as developer;
 import 'package:pure_live/core/sites.dart';
@@ -12,61 +11,116 @@ import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
 import 'package:pure_live/recorder/consts/recorder_keys.dart';
 import 'package:pure_live/recorder/models/record_status.dart';
+import 'package:pure_live/recorder/ffmpeg/ffmpeg_manager.dart';
 import 'package:pure_live/recorder/services/cache_service.dart';
+import 'package:pure_live/recorder/ffmpeg/ffmpeg_scheduler.dart';
 import 'package:pure_live/recorder/models/live_record_task.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_command_builder.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_isolate_manager.dart';
 import 'package:pure_live/recorder/services/ffmpeg_header_factory.dart';
 import 'package:pure_live/recorder/services/stream_resolver_service.dart';
 import 'package:pure_live/recorder/services/video_processor_service.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
 
 class RecorderController extends GetxService {
+  static RecorderController get to => Get.find<RecorderController>();
+
   final RecordSettingsController settings = Get.find<RecordSettingsController>();
 
-  final tasks = <LiveRecordTask>[].obs;
-  final Queue<LiveRecordTask> queue = Queue();
-  final Map<String, FFmpegTaskExecutor> _executors = {};
+  final FFmpegManager ffmpeg = FFmpegManager.to;
+
+  final FFmpegScheduler scheduler = FFmpegScheduler.instance;
+
+  final RxList<LiveRecordTask> tasks = <LiveRecordTask>[].obs;
+
   final Map<String, Timer> _pollTimers = {};
+
+  final Map<String, Timer> _retryTimers = {};
+
   final Set<String> _startingTasks = {};
-  final Set<String> _runningTasks = {};
 
-  int get runningCount => tasks
-      .where(
-        (e) =>
-            e.status == RecordStatus.running ||
-            e.status == RecordStatus.preparing ||
-            e.status == RecordStatus.reconnecting,
-      )
-      .length;
+  Timer? _persistTimer;
 
+  late final Timer _resourceMonitor;
+
+  int get runningCount => scheduler.runningCount;
+
+  int get queuedCount => scheduler.queuedCount;
+
+  late final StreamSubscription _videoProcessSub;
   @override
   void onInit() {
     super.onInit();
+
+    _initResourceMonitor();
+
+    _initVideoProcessorListener();
+
+    _initFFmpegListener();
+
     restoreAndAutoPoll();
   }
 
-  // =========================================================
-  // FFmpeg EVENT
-  // =========================================================
+  void _initResourceMonitor() {
+    _resourceMonitor = Timer.periodic(const Duration(seconds: 30), (_) => _checkResources());
+  }
+
+  void _initVideoProcessorListener() {
+    _videoProcessSub = VideoProcessorService.to.stream.listen((event) {
+      final task = tasks.firstWhereOrNull((e) => e.taskId == event.taskId);
+
+      if (task == null) return;
+
+      switch (event.type) {
+        case VideoProcessEventType.started:
+          task.status = RecordStatus.processing;
+          break;
+
+        case VideoProcessEventType.progress:
+          break;
+
+        case VideoProcessEventType.completed:
+          task.status = RecordStatus.completed;
+          break;
+
+        case VideoProcessEventType.failed:
+          task.status = RecordStatus.failed;
+          break;
+      }
+
+      updateTask(task);
+    });
+  }
+
+  void _initFFmpegListener() {
+    ffmpeg.stream.listen(_onFFmpegEvent);
+  }
+
   void _onFFmpegEvent(FFmpegEvent event) {
     final task = tasks.firstWhereOrNull((e) => e.taskId == event.taskId);
+
     if (task == null) return;
+
+    if (task.status == RecordStatus.stopped) {
+      return;
+    }
 
     switch (event.type) {
       case FFmpegEventType.started:
         task.status = RecordStatus.running;
-        _runningTasks.add(task.taskId);
         break;
-      case FFmpegEventType.startAck:
-        break;
+
       case FFmpegEventType.progress:
         final d = event.data;
+
         task.recordedSeconds = (d['time'] ?? 0) ~/ 1000;
+
         task.fileSize = d['size'] ?? 0;
-        task.fps = d['fps'] ?? 0;
-        task.recordSpeed = d['speed'] ?? 0;
-        task.bitrate = d['bitrate'] ?? 0;
+
+        task.bitrate = d['bitrate'] ?? 0.0;
+
+        task.recordSpeed = d['speed'] ?? 0.0;
+
+        task.fps = d['fps'] ?? 0.0;
         break;
 
       case FFmpegEventType.error:
@@ -77,104 +131,100 @@ class RecorderController extends GetxService {
         _onComplete(task);
         break;
 
-      case FFmpegEventType.heartbeat:
+      default:
         break;
     }
 
     updateTask(task);
   }
 
-  // =========================================================
-  // UPDATE
-  // =========================================================
   void updateTask(LiveRecordTask task) {
-    final i = tasks.indexWhere((e) => e.taskId == task.taskId);
-    if (i == -1) return;
+    final index = tasks.indexWhere((e) => e.taskId == task.taskId);
 
-    List<LiveRecordTask> newList = List.from(tasks);
-    newList[i] = task;
-    tasks.value = newList;
-    _persist(); //
+    if (index == -1) return;
+
+    tasks[index] = task;
+
+    tasks.value = List.from(tasks);
+
+    schedulePersist();
   }
 
-  // =========================================================
-  // ADD TASK
-  // =========================================================
+  void schedulePersist() {
+    _persistTimer?.cancel();
+
+    _persistTimer = Timer(const Duration(seconds: 2), _persist);
+  }
+
   Future<void> addTask({required LiveRoom room}) async {
-    if (tasks.any((e) => e.roomId == room.roomId && e.platform == room.platform)) return;
+    if (tasks.any((e) => e.roomId == room.roomId && e.platform == room.platform)) {
+      return;
+    }
 
     final task = LiveRecordTask.fromRoom(room);
+
     tasks.insert(0, task);
+
     tasks.value = List.from(tasks);
-    _persist();
+
+    schedulePersist();
 
     if (room.liveStatus == LiveStatus.live) {
       await startTask(task);
     } else {
       task.status = RecordStatus.waitingLive;
+
       updateTask(task);
+
       _startPolling(task);
     }
   }
 
-  // =========================================================
-  // START TASK (external)
-  // =========================================================
   Future<void> startTask(LiveRecordTask task) async {
     task.retryCount = 0;
+
     await _startTask(task);
   }
 
-  // =========================================================
-  // FORCE START
-  // =========================================================
   Future<void> forceStartTask(LiveRecordTask task) async {
-    if (runningCount < settings.maxTaskCount.value) {
-      await startTask(task);
-      return;
-    }
-
-    final running = tasks.firstWhereOrNull((e) => e.taskId != task.taskId && e.status == RecordStatus.running);
-
-    if (running == null) return;
-
-    await stopTask(running);
     await startTask(task);
   }
 
-  // =========================================================
-  // INTERNAL START
-  // =========================================================
   Future<void> _startTask(LiveRecordTask task) async {
-    if (_startingTasks.contains(task.taskId)) return;
+    if (_startingTasks.contains(task.taskId)) {
+      return;
+    }
+
+    if (scheduler.isRunning(task.taskId) || scheduler.isQueued(task.taskId)) {
+      return;
+    }
 
     _startingTasks.add(task.taskId);
 
     try {
-      if (runningCount >= settings.maxTaskCount.value) {
-        task.status = RecordStatus.queued;
-        queue.add(task);
-        updateTask(task);
-        return;
-      }
-
       _stopPolling(task.taskId);
-      await _runTask(task);
+
+      task.status = RecordStatus.queued;
+
+      updateTask(task);
+
+      scheduler.enqueue(
+        taskId: task.taskId,
+        taskRunner: (token) async {
+          await _runTask(task, token);
+        },
+      );
     } finally {
       _startingTasks.remove(task.taskId);
     }
   }
 
-  // =========================================================
-  // RUN TASK
-  // =========================================================
-  Future<void> _runTask(LiveRecordTask task) async {
-    // 1. 设置状态为准备中
+  Future<void> _runTask(LiveRecordTask task, TaskCancelToken token) async {
     task.status = RecordStatus.preparing;
+
     updateTask(task);
 
     try {
-      // 2. 解析流地址、获取保存目录和 Header
       final url = await StreamResolverService.to.resolveStream(
         roomId: task.roomId,
         platform: task.platform,
@@ -185,7 +235,6 @@ class RecorderController extends GetxService {
 
       final headers = await FFmpegHeaderFactory.build(platform: task.platform);
 
-      // 3. 构建录制命令
       final cmd = FFmpegCommandBuilder.buildRecordCommand(
         headers: headers,
         url: url,
@@ -196,266 +245,218 @@ class RecorderController extends GetxService {
         threadQueueSize: settings.threadQueueSize.value,
       );
 
-      // 4. 更新任务信息
       task.outputDir = dir.path;
-      _runningTasks.add(task.taskId);
 
-      // --- 关键优化：每个任务创建独立的执行器 ---
-      // 如果已存在旧的执行器（如重连情况），先销毁它
-      _executors[task.taskId]?.dispose();
+      updateTask(task);
 
-      // 创建新的执行器实例
-      final executor = FFmpegTaskExecutor(taskId: task.taskId);
+      token.onCancel = () async {
+        await ffmpeg.stop(task.taskId);
+      };
 
-      // 监听该任务独立的事件流
-      executor.stream.listen((event) => _onFFmpegEvent(event));
+      await ffmpeg.start(taskId: task.taskId, command: cmd);
+    } catch (e, s) {
+      developer.log('任务失败: $e', stackTrace: s);
 
-      // 存入 Map 管理
-      _executors[task.taskId] = executor;
-
-      // 启动该任务独占的 Isolate
-      await executor.run(cmd);
-    } catch (e) {
-      developer.log("运行录制任务失败: $e");
       _onFail(task);
     }
   }
 
-  // =========================================================
-  // STOP TASK
-  // =========================================================
   Future<void> stopTask(LiveRecordTask task) async {
-    queue.remove(task);
     _stopPolling(task.taskId);
-
-    final executor = _executors[task.taskId];
-    if (executor != null) {
-      await executor.forceKill();
-      _executors.remove(task.taskId);
-      developer.log("等待底层资源释放...");
-      await Future.delayed(const Duration(seconds: 2));
-      developer.log("[${task.taskId}] 环境已安全，开始合并处理...");
-      unawaited(_processVideo(task));
+    _retryTimers[task.taskId]?.cancel();
+    _retryTimers.remove(task.taskId);
+    await scheduler.cancel(task.taskId);
+    await ffmpeg.stop(task.taskId);
+    if (task.outputDir != null && task.recordedSeconds > 0) {
+      task.status = RecordStatus.processing;
+      updateTask(task);
+    } else {
+      task.status = RecordStatus.stopped;
+      updateTask(task);
     }
-
-    _runningTasks.remove(task.taskId);
-    task.status = RecordStatus.stopped;
-    updateTask(task);
-    _next();
   }
 
-  // In _onComplete or _onFail
-  void _cleanupExecutor(String taskId) {
-    _executors[taskId]?.dispose();
-    _executors.remove(taskId);
-  }
-
-  // =========================================================
-  // COMPLETE
-  // =========================================================
   Future<void> _onComplete(LiveRecordTask task) async {
-    _cleanupExecutor(task.taskId); // Cleanup the isolate
     task.status = RecordStatus.processing;
     updateTask(task);
-    _runningTasks.remove(task.taskId);
-    _next();
     unawaited(_processVideo(task));
   }
 
-  // =========================================================
-  // FAIL
-  // =========================================================
   Future<void> _onFail(LiveRecordTask task) async {
+    if (task.status == RecordStatus.stopped) {
+      return;
+    }
+
     task.retryCount++;
 
     if (task.retryCount >= settings.maxRetryCount.value) {
       task.status = RecordStatus.waitingLive;
+
       updateTask(task);
+
       _startPolling(task);
-      _next();
+
       return;
     }
 
     task.status = RecordStatus.reconnecting;
+
     updateTask(task);
 
-    await Future.delayed(Duration(seconds: settings.retryDelay.value));
+    _retryTimers[task.taskId]?.cancel();
 
-    await _runTask(task);
+    _retryTimers[task.taskId] = Timer(Duration(seconds: settings.retryDelay.value), () async {
+      if (!tasks.any((e) => e.taskId == task.taskId)) {
+        return;
+      }
+
+      if (task.status == RecordStatus.stopped) {
+        return;
+      }
+
+      await _startTask(task);
+    });
   }
 
-  // =========================================================
-  // PROCESS VIDEO
-  // =========================================================
   Future<void> _processVideo(LiveRecordTask task) async {
-    if (task.outputDir == null) return;
-    final dir = Directory(task.outputDir!);
-    if (!dir.existsSync()) return;
-
+    if (task.outputDir == null) {
+      return;
+    }
     task.status = RecordStatus.processing;
     updateTask(task);
 
-    await VideoProcessorService.to.convertToMp4(
-      task: task,
-      tsDir: Directory(task.outputDir!),
-      onFinish: (ok, _) {
-        task.status = ok ? RecordStatus.completed : RecordStatus.failed;
-        updateTask(task);
-        _deleteTsFiles(dir);
-      },
-    );
+    // 有时候会闪退 添加延时
+    await Future.delayed(Duration(seconds: 3));
+    await VideoProcessorService.to.convertToMp4(task: task);
+    final settingsController = Get.find<RecordSettingsController>();
+    await settingsController.refreshCacheSize();
   }
 
-  /// 删除指定目录下的所有 .ts 切片和临时配置文件
-  void _deleteTsFiles(Directory dir) {
-    try {
-      if (!dir.existsSync()) return;
-
-      // 1. 获取所有待删除文件
-      final files = dir.listSync();
-
-      for (final file in files) {
-        final path = file.path;
-        // 只删除 .ts 文件和 ffmpeg 的列表文件
-        if (path.endsWith('.ts') || path.endsWith('list.txt')) {
-          file.deleteSync();
-        }
-      }
-      developer.log("清理完成：已删除 ${dir.path} 下的原始切片");
-    } catch (e) {
-      developer.log("清理文件失败: $e");
-    }
-  }
-
-  // =========================================================
-  // QUEUE NEXT
-  // =========================================================
-  void _next() {
-    if (queue.isEmpty) return;
-    if (runningCount >= settings.maxTaskCount.value) return;
-
-    _startTask(queue.removeFirst());
-  }
-
-  // =========================================================
-  // POLLING
-  // =========================================================
   void _startPolling(LiveRecordTask task) {
-    if (!settings.enablePolling.value) return;
-    if (_pollTimers.containsKey(task.taskId)) return;
+    if (!settings.enablePolling.value) {
+      return;
+    }
 
-    task.status = RecordStatus.waitingLive;
-    updateTask(task);
+    if (_pollTimers.containsKey(task.taskId)) {
+      return;
+    }
 
     _pollTimers[task.taskId] = Timer.periodic(Duration(seconds: settings.liveCheckInterval.value), (_) async {
       try {
         final room = await Sites.of(task.platform).liveSite.getRoomDetail(roomId: task.roomId, platform: task.platform);
 
         task.updateFromRoom(room);
+
         updateTask(task);
 
         if (room.liveStatus == LiveStatus.live) {
           _stopPolling(task.taskId);
+
           await startTask(task);
         }
       } catch (_) {}
     });
   }
 
-  void _stopPolling(String id) {
-    _pollTimers[id]?.cancel();
-    _pollTimers.remove(id);
+  void _stopPolling(String taskId) {
+    _pollTimers[taskId]?.cancel();
+
+    _pollTimers.remove(taskId);
   }
 
-  // =========================================================
-  // UNRECORDER
-  // =========================================================
-  Future<void> unRecorder(LiveRecordTask task) async {
-    _stopPolling(task.taskId);
-    queue.remove(task);
-
-    final executor = _executors[task.taskId];
-    if (executor != null) {
-      // 1. 直接炸掉 Isolate 进程
-      await executor.forceKill();
-      _executors.remove(task.taskId);
-
-      // 2. 核心：因为进程被杀，不会触发 complete 回调，所以这里手动调用
-      developer.log("[$task.taskId] 进程已炸掉，开始手动触发合并...");
-      _processVideo(task);
-    }
-
-    // 3. 从运行状态集合中移除
-    _runningTasks.remove(task.taskId);
-
-    // 4. 从任务列表中删除并持久化
-    tasks.removeWhere((e) => e.taskId == task.taskId);
-    tasks.value = List.from(tasks);
-    await _persist();
-
-    // 5. 检查是否可以启动队列中的下一个任务
-    _next();
-  }
-
-  // =========================================================
-  // PERSIST
-  // =========================================================
-  Future<void> _persist() async {
+  Future<void> _checkResources() async {
     try {
-      final jsonStr = jsonEncode(tasks.map((e) => e.toJson()).toList());
-      await HivePrefUtil.setString(RecorderKeys.recorderTasks, jsonStr);
-    } catch (e) {
-      developer.log("持久化失败: $e");
-    }
-  }
+      final cacheMB = await CacheService.to.getCacheSize();
+      final rssMB = ProcessInfo.currentRss / 1024 / 1024;
+      final maxMemoryMB = (Platform.numberOfProcessors * 1024).toDouble();
+      developer.log(
+        'Cache: ${cacheMB.toStringAsFixed(2)} MB | '
+        'Memory: ${rssMB.toStringAsFixed(2)} MB',
+        name: 'RecorderController',
+      );
 
-  // =========================================================
-  // RESTORE 恢复任务并自动刷新状态
-  // =========================================================
-  Future<void> restoreAndAutoPoll() async {
-    try {
-      final raw = HivePrefUtil.getString(RecorderKeys.recorderTasks);
-      if (raw == null || raw.isEmpty) return;
+      if (cacheMB > settings.maxCacheMB.value && settings.enableCacheLimit.value) {
+        await CacheService.to.enforceLimit(maxMB: settings.maxCacheMB.value.toDouble());
+      }
 
-      final list = jsonDecode(raw) as List;
-      final restored = list.map((e) => LiveRecordTask.fromJson(e)).toList();
-      tasks.value = List<LiveRecordTask>.from(restored);
-      developer.log('tasks: ${tasks.length}');
-      if (settings.autoStartOnBoot.value) {
-        for (final task in tasks) {
-          unawaited(refreshTaskStatus(task));
-        }
+      if (rssMB > maxMemoryMB * 0.9) {
+        developer.log('Memory usage too high', name: 'RecorderController');
       }
     } catch (e) {
+      developer.log('_checkResources error: $e', name: 'RecorderController');
+    }
+  }
+
+  Future<void> unRecorder(LiveRecordTask task) async {
+    _stopPolling(task.taskId);
+
+    _retryTimers[task.taskId]?.cancel();
+
+    _retryTimers.remove(task.taskId);
+
+    await scheduler.cancel(task.taskId);
+
+    await ffmpeg.stop(task.taskId);
+
+    if (task.outputDir != null && task.recordedSeconds > 0) {
+      task.status = RecordStatus.processing;
+      updateTask(task);
+      unawaited(() async {
+        tasks.removeWhere((e) => e.taskId == task.taskId);
+        tasks.value = List.from(tasks);
+        schedulePersist();
+      }());
+    } else {
+      tasks.removeWhere((e) => e.taskId == task.taskId);
+      tasks.value = List.from(tasks);
+      schedulePersist();
+    }
+  }
+
+  Future<void> _persist() async {
+    try {
+      final json = jsonEncode(tasks.map((e) => e.toJson()).toList());
+      await HivePrefUtil.setString(RecorderKeys.recorderTasks, json);
+    } catch (_) {}
+  }
+
+  Future<void> restoreAndAutoPoll() async {
+    try {
+      final json = HivePrefUtil.getString(RecorderKeys.recorderTasks);
+
+      if (json == null || json.isEmpty) {
+        return;
+      }
+
+      final list = (jsonDecode(json) as List).cast<Map<String, dynamic>>();
+
+      tasks.value = list.map((e) => LiveRecordTask.fromJson(e)).toList();
+
+      if (settings.autoStartOnBoot.value) {
+        for (final task in tasks) {
+          await refreshTaskStatus(task);
+        }
+      }
+    } catch (_) {
       tasks.clear();
     }
   }
 
-  //刷新任务状态
   Future<void> refreshTaskStatus(LiveRecordTask task) async {
     try {
       final room = await Sites.of(task.platform).liveSite.getRoomDetail(roomId: task.roomId, platform: task.platform);
       task.updateFromRoom(room);
-
+      updateTask(task);
       if (room.liveStatus == LiveStatus.live) {
-        task.status = RecordStatus.preparing;
-        updateTask(task);
         await startTask(task);
       } else {
-        task.status = RecordStatus.waitingLive;
-        updateTask(task);
         _startPolling(task);
       }
-    } catch (e) {
-      task.status = RecordStatus.waitingLive;
-      updateTask(task);
+    } catch (_) {
       _startPolling(task);
     }
   }
 
-  // =========================================================
-  // OPEN DIR
-  // =========================================================
   void openFileDir() async {
     final path = settings.recordSavePath.value;
 
@@ -467,16 +468,27 @@ class RecorderController extends GetxService {
       await Process.run('xdg-open', [path]);
     } else if (Platform.isAndroid) {
       final uri = Uri.parse('file://$path');
-      await launchUrl(uri);
+
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 
   @override
   void onClose() {
-    for (var timer in _pollTimers.values) {
-      timer.cancel();
+    for (final t in _pollTimers.values) {
+      t.cancel();
     }
+
+    for (final t in _retryTimers.values) {
+      t.cancel();
+    }
+
+    _persistTimer?.cancel();
+    _resourceMonitor.cancel();
     _pollTimers.clear();
+
+    _retryTimers.clear();
+    _videoProcessSub.cancel();
     super.onClose();
   }
 }

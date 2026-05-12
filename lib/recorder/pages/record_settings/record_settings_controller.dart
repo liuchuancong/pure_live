@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:pure_live/recorder/consts/recorder_config.dart';
+import 'package:pure_live/recorder/services/cache_service.dart';
 
 class RecordSettingsController extends GetxController {
   /// =====================================
@@ -9,6 +10,8 @@ class RecordSettingsController extends GetxController {
   final defaultQuality = RecorderConfig.defaultQuality.obs;
   final recordSavePath = RecorderConfig.recordSavePath.obs;
   final maxCacheMB = RecorderConfig.maxCacheMB.obs;
+  final enableCacheLimit = RecorderConfig.enableCacheLimit.obs;
+  final cacheSizeMB = 0.0.obs;
 
   /// =====================================
   /// 录制性能与画质
@@ -34,15 +37,43 @@ class RecordSettingsController extends GetxController {
   final enableBackoff = RecorderConfig.enableBackoff.obs;
   final maxCheckInterval = RecorderConfig.maxCheckInterval.obs;
 
-  // 允许开机自动检测
   final autoStartOnBoot = RecorderConfig.autoStartOnBoot.obs;
+  final usePinyinForFolder = RecorderConfig.usePinyinForFolder.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    refreshCacheSize();
+  }
+
+  /// =====================================
+  /// 刷新缓存大小
+  /// =====================================
+  Future<void> refreshCacheSize() async {
+    cacheSizeMB.value = await CacheService.to.getCacheSize();
+  }
+
+  /// =====================================
+  /// 更新缓存限制开关
+  /// =====================================
+  Future<void> updateEnableCacheLimit(bool v) async {
+    enableCacheLimit.value = v;
+    await RecorderConfig.setEnableCacheLimit(v);
+  }
+
+  /// =====================================
+  /// 清除缓存
+  /// =====================================
+  Future<void> clearCache() async {
+    await CacheService.to.clearAll();
+    await refreshCacheSize();
+  }
 
   /// =====================================
   /// 更新切片时长
   /// =====================================
   Future<void> updateSegmentTime(int v) async {
     segmentTime.value = v;
-
     await RecorderConfig.setSegmentTime(v);
   }
 
@@ -51,7 +82,6 @@ class RecordSettingsController extends GetxController {
   /// =====================================
   Future<void> updateMaxTask(int v) async {
     maxTaskCount.value = v;
-
     await RecorderConfig.setMaxTaskCount(v);
   }
 
@@ -60,7 +90,6 @@ class RecordSettingsController extends GetxController {
   /// =====================================
   Future<void> updateAutoReconnect(bool v) async {
     autoReconnect.value = v;
-
     await RecorderConfig.setAutoReconnect(v);
   }
 
@@ -69,7 +98,6 @@ class RecordSettingsController extends GetxController {
   /// =====================================
   Future<void> updateMaxRetryCount(int v) async {
     maxRetryCount.value = v;
-
     await RecorderConfig.setMaxRetryCount(v);
   }
 
@@ -78,7 +106,6 @@ class RecordSettingsController extends GetxController {
   /// =====================================
   Future<void> updateRetryDelay(int v) async {
     retryDelay.value = v;
-
     await RecorderConfig.setRetryDelay(v);
   }
 
@@ -87,7 +114,6 @@ class RecordSettingsController extends GetxController {
   /// =====================================
   Future<void> updateLiveCheckInterval(int v) async {
     liveCheckInterval.value = v;
-
     await RecorderConfig.setLiveCheckInterval(v);
   }
 
@@ -96,7 +122,6 @@ class RecordSettingsController extends GetxController {
   /// =====================================
   Future<void> updateMaxCheckInterval(int v) async {
     maxCheckInterval.value = v;
-
     await RecorderConfig.setMaxCheckInterval(v);
   }
 
@@ -105,7 +130,6 @@ class RecordSettingsController extends GetxController {
   /// =====================================
   Future<void> updateEnablePolling(bool v) async {
     enablePolling.value = v;
-
     await RecorderConfig.setEnablePolling(v);
   }
 
@@ -126,6 +150,7 @@ class RecordSettingsController extends GetxController {
     if (result != null) {
       recordSavePath.value = result;
       await RecorderConfig.setRecordSavePath(result);
+      await refreshCacheSize();
     }
   }
 
@@ -163,5 +188,10 @@ class RecordSettingsController extends GetxController {
   Future<void> updateAutoStartOnBoot(bool v) async {
     autoStartOnBoot.value = v;
     await RecorderConfig.setAutoStartOnBoot(v);
+  }
+
+  Future<void> updateUsePinyinForFolder(bool v) async {
+    usePinyinForFolder.value = v;
+    await RecorderConfig.setUsePinyinForFolder(v);
   }
 }

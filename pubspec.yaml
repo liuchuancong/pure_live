@@ -122,7 +122,11 @@ dependencies:
   flutter_floating: ^2.0.1
   win32: ^5.15.0
   flutter_foreground_task: ^9.2.0
-  ffmpeg_kit_extended_flutter: ^0.4.3
+  ffmpeg_kit_extended_flutter:
+    git:
+      url: https://github.com/akashskypatel/ffmpeg-kit-extended
+      path: flutter
+      ref: dev
   pinyindart: ^0.0.1
   uuid: ^4.5.3
   dart_sm: ^0.1.5
@@ -238,6 +242,8 @@ flutter_intl:
   output_dir: lib/common/l10n/generated
 
 ffmpeg_kit_extended_config:
-  type: "base" # pre-bundled builds: debug, base, full, audio, video, video_hw
-  gpl: true # enable to include GPL libraries
-  small: true # enable to use smaller builds
+  windows: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.1-windows/bundle-base-windows-x86_64-shared-debug-lgpl.zip
+  android: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.1-android/bundle-base-shared-debug-lgpl-release.aar
+  linux: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.1-linux/bundle-base-linux-x86_64-shared-debug-lgpl.zip
+  ios: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.1-ios/bundle-base-ios-universal-debug-lgpl.xcframework.zip
+  macos: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.1-macos/bundle-base-macos-universal-debug-lgpl.xcframework.zip

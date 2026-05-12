@@ -52,4 +52,9 @@ class RecorderKeys {
 
   /// FFmpeg 线程队列大小
   static const String threadQueueSize = 'recorder_thread_queue_size';
+
+  /// 是否将中文的主播转为拼音
+  static const folderNamingStrategy = 'recorder_folder_naming_strategy';
+
+  static const enableCacheLimit = 'enableCacheLimit';
 }

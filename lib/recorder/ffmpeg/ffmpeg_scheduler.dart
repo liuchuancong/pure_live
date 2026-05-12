@@ -1,41 +1,215 @@
+import 'dart:async';
+import 'dart:developer';
 import 'dart:collection';
+import 'package:get/get.dart';
+import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
 
 class FFmpegScheduler {
-  static final FFmpegScheduler instance = FFmpegScheduler._();
+  FFmpegScheduler._internal();
 
-  FFmpegScheduler._();
+  static final FFmpegScheduler instance = FFmpegScheduler._internal();
 
-  final Queue<_Task> _queue = Queue();
-  final Set<String> _running = {};
-
-  int maxConcurrent = 2;
-
-  void add(String taskId, Future<void> Function() runner) {
-    _queue.add(_Task(taskId, runner));
-    _next();
+  /// 最大并发
+  int get maxConcurrentTasks {
+    try {
+      return Get.find<RecordSettingsController>().maxTaskCount.value;
+    } catch (_) {
+      return 2;
+    }
   }
 
-  void remove(String taskId) {
-    _running.remove(taskId);
+  /// 等待队列
+  final Queue<_SchedulerTask> _taskQueue = Queue();
+
+  /// 运行中的任务
+  final Map<String, _RunningTask> _runningTasks = {};
+
+  /// 防止重复调度
+  bool _isScheduling = false;
+
+  /// 添加任务
+  void enqueue({required String taskId, required Future<void> Function(TaskCancelToken token) taskRunner}) {
+    /// 已运行
+    if (_runningTasks.containsKey(taskId)) {
+      log('Task already running: $taskId', name: 'FFmpegScheduler');
+      return;
+    }
+
+    /// 已在队列
+    if (_taskQueue.any((e) => e.taskId == taskId)) {
+      log('Task already queued: $taskId', name: 'FFmpegScheduler');
+      return;
+    }
+
+    _taskQueue.add(_SchedulerTask(taskId: taskId, taskRunner: taskRunner));
+
+    log('Task enqueued: $taskId', name: 'FFmpegScheduler');
+
+    _scheduleNext();
   }
 
-  void _next() async {
-    if (_queue.isEmpty) return;
-    if (_running.length >= maxConcurrent) return;
+  /// 取消任务
+  ///
+  /// queued:
+  ///   直接移除
+  ///
+  /// running:
+  ///   调用 cancel token
+  Future<void> cancel(String taskId) async {
+    /// 删除等待队列
+    _taskQueue.removeWhere((e) => e.taskId == taskId);
 
-    final task = _queue.removeFirst();
-    _running.add(task.taskId);
+    /// 删除运行任务
+    final runningTask = _runningTasks.remove(taskId);
 
-    await task.runner();
+    if (runningTask != null) {
+      log('Cancelling task: $taskId', name: 'FFmpegScheduler');
 
-    _running.remove(task.taskId);
-    _next();
+      try {
+        await runningTask.cancelToken.cancel();
+      } catch (e) {
+        log('Cancel task error: $e', name: 'FFmpegScheduler');
+      }
+    }
+
+    _scheduleNext();
+  }
+
+  /// 清空所有
+  Future<void> clearAll() async {
+    _taskQueue.clear();
+
+    final tasks = _runningTasks.values.toList();
+
+    _runningTasks.clear();
+
+    for (final task in tasks) {
+      try {
+        await task.cancelToken.cancel();
+      } catch (e) {
+        log('Clear task error: $e', name: 'FFmpegScheduler');
+      }
+    }
+  }
+
+  /// 调度核心
+  void _scheduleNext() {
+    if (_isScheduling) return;
+
+    _isScheduling = true;
+
+    try {
+      while (_runningTasks.length < maxConcurrentTasks && _taskQueue.isNotEmpty) {
+        final task = _taskQueue.removeFirst();
+
+        _runTask(task);
+      }
+    } finally {
+      _isScheduling = false;
+    }
+  }
+
+  /// 执行任务
+  void _runTask(_SchedulerTask task) {
+    final cancelToken = TaskCancelToken();
+
+    final future = () async {
+      try {
+        log('Task started: ${task.taskId}', name: 'FFmpegScheduler');
+
+        await task.taskRunner(cancelToken);
+
+        log('Task completed: ${task.taskId}', name: 'FFmpegScheduler');
+      } catch (e, stack) {
+        log('Task error: ${task.taskId}\n$e', name: 'FFmpegScheduler', stackTrace: stack);
+      } finally {
+        _runningTasks.remove(task.taskId);
+
+        log('Task removed: ${task.taskId}', name: 'FFmpegScheduler');
+
+        _scheduleNext();
+      }
+    }();
+
+    _runningTasks[task.taskId] = _RunningTask(taskId: task.taskId, future: future, cancelToken: cancelToken);
+  }
+
+  /// 是否运行中
+  bool isRunning(String taskId) {
+    return _runningTasks.containsKey(taskId);
+  }
+
+  /// 是否排队中
+  bool isQueued(String taskId) {
+    return _taskQueue.any((e) => e.taskId == taskId);
+  }
+
+  /// 当前运行数
+  int get runningCount => _runningTasks.length;
+
+  /// 当前排队数
+  int get queuedCount => _taskQueue.length;
+
+  /// 当前全部任务数
+  int get totalCount => runningCount + queuedCount;
+
+  /// 当前运行任务
+  List<String> get runningTaskIds {
+    return _runningTasks.keys.toList();
+  }
+
+  /// 当前排队任务
+  List<String> get queuedTaskIds {
+    return _taskQueue.map((e) => e.taskId).toList();
   }
 }
 
-class _Task {
+/// 队列任务
+class _SchedulerTask {
   final String taskId;
-  final Future<void> Function() runner;
 
-  _Task(this.taskId, this.runner);
+  final Future<void> Function(TaskCancelToken token) taskRunner;
+
+  const _SchedulerTask({required this.taskId, required this.taskRunner});
+}
+
+/// 运行中的任务
+class _RunningTask {
+  final String taskId;
+
+  final Future<void> future;
+
+  final TaskCancelToken cancelToken;
+
+  const _RunningTask({required this.taskId, required this.future, required this.cancelToken});
+}
+
+/// 取消令牌
+///
+/// 用于真正终止 ffmpeg
+///
+/// 示例:
+///
+/// token.onCancel = () {
+///   session.cancel();
+/// };
+///
+class TaskCancelToken {
+  bool _isCancelled = false;
+
+  bool get isCancelled => _isCancelled;
+
+  FutureOr<void> Function()? onCancel;
+
+  Future<void> cancel() async {
+    if (_isCancelled) return;
+
+    _isCancelled = true;
+
+    try {
+      await onCancel?.call();
+    } catch (e) {
+      log('Cancel token error: $e', name: 'FFmpegScheduler');
+    }
+  }
 }

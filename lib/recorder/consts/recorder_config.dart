@@ -15,6 +15,8 @@ class RecorderConfig {
 
   static const _defaultMaxCacheMB = 1024;
 
+  static const _defaultEnableCacheLimit = false;
+
   static const _defaultMaxRetryCount = 5;
 
   static const _defaultRetryDelay = 30;
@@ -46,6 +48,8 @@ class RecorderConfig {
   /// 是否允许后台轮询
   static const _defaultAutoStartOnBoot = false;
 
+  static const _defaultUsePinyinForFolder = false;
+
   /// =========================
   /// 初始化默认配置
   /// =========================
@@ -75,6 +79,8 @@ class RecorderConfig {
     await _ensureDefault(RecorderKeys.preferBestStream, _defaultPreferBestStream);
     await _ensureDefault(RecorderKeys.rwTimeout, _defaultRwTimeout);
     await _ensureDefault(RecorderKeys.threadQueueSize, _defaultThreadQueueSize);
+
+    await _ensureDefault(RecorderKeys.folderNamingStrategy, _defaultUsePinyinForFolder);
   }
 
   /// =========================
@@ -228,4 +234,21 @@ class RecorderConfig {
   static int get threadQueueSize => HivePrefUtil.getInt(RecorderKeys.threadQueueSize) ?? _defaultThreadQueueSize;
 
   static Future<void> setThreadQueueSize(int value) => HivePrefUtil.setInt(RecorderKeys.threadQueueSize, value);
+
+  /// =========================
+  /// Folder Naming Strategy
+  /// =========================
+
+  /// Whether to use Pinyin (true) or Anchor Name (false) as folder name
+  static bool get usePinyinForFolder =>
+      HivePrefUtil.getBool(RecorderKeys.folderNamingStrategy) ?? _defaultUsePinyinForFolder;
+
+  static Future<void> setUsePinyinForFolder(bool value) =>
+      HivePrefUtil.setBool(RecorderKeys.folderNamingStrategy, value);
+
+  static final enableCacheLimit = HivePrefUtil.getBool(RecorderKeys.enableCacheLimit) ?? _defaultEnableCacheLimit;
+
+  static Future<void> setEnableCacheLimit(bool v) async {
+    await HivePrefUtil.setBool(RecorderKeys.enableCacheLimit, v);
+  }
 }

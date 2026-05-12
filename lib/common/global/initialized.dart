@@ -14,8 +14,8 @@ import 'package:pure_live/common/global/platform/mobile_manager.dart';
 import 'package:pure_live/common/global/platform/desktop_manager.dart';
 import 'package:pure_live/common/services/bilibili_account_service.dart';
 import 'package:pure_live/recorder/services/stream_resolver_service.dart';
-import 'package:pure_live/recorder/services/video_processor_service.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
+import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
 
 class AppInitializer {
@@ -65,7 +65,7 @@ class AppInitializer {
     } else if (PlatformUtils.isMobile) {
       await MobileManager.initialize();
     }
-
+    await FFmpegKitExtended.initialize();
     initRefresh();
 
     if (PlatformUtils.isDesktopNotMac) {
@@ -98,7 +98,6 @@ class AppInitializer {
     Get.lazyPut(() => AreasController(), fenix: true);
     Get.lazyPut(() => CacheService(), fenix: true);
     Get.lazyPut(() => StreamResolverService(), fenix: true);
-    Get.lazyPut(() => VideoProcessorService(), fenix: true);
     Get.lazyPut(() => GlobalPlayerState(), fenix: true);
   }
 

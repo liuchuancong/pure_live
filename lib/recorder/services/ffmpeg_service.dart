@@ -35,8 +35,6 @@ class FFmpegService {
     required String command,
     required void Function(FFmpegEvent event) onEvent,
   }) async {
-    await stop(taskId);
-
     final session = FFmpegRecordSession(taskId: taskId);
     _sessions[taskId] = session;
 
@@ -87,13 +85,9 @@ class FFmpegService {
     session.manualStop = true;
     final sessionId = session.sessionId;
     if (sessionId == null) return;
-
     final sessions = FFmpegKit.getFFmpegSessions();
     for (final s in sessions) {
       if (s.getSessionId() == sessionId) {
-        FFmpegKitConfig.enableStatisticsCallback(null);
-        FFmpegKitConfig.enableLogCallback(null);
-
         log('FFmpeg stop => $taskId');
         FFmpegKit.cancel(s);
         break;

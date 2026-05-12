@@ -23,8 +23,6 @@ class CacheService extends GetxService {
       recordDir = Directory(customPath);
     } else {
       final dir = await getApplicationDocumentsDirectory();
-
-      /// Windows 单独创建 pure_live_records
       if (Platform.isWindows) {
         recordDir = Directory(
           '${dir.path}'
@@ -53,17 +51,13 @@ class CacheService extends GetxService {
   /// =========================
   Future<double> getCacheSize() async {
     final dir = await getRecordDir();
-
     double size = 0;
-
     final files = dir.listSync(recursive: true);
-
     for (final file in files) {
       if (file is File) {
         size += await file.length();
       }
     }
-
     return size / 1024 / 1024;
   }
 
@@ -93,14 +87,22 @@ class CacheService extends GetxService {
   Future<void> clearAll() async {
     final dir = await getRecordDir();
 
-    if (!await dir.exists()) return;
+    if (!await dir.exists()) {
+      return;
+    }
 
-    final files = dir.listSync(recursive: true);
+    final entities = dir.listSync(recursive: true);
 
-    for (final file in files) {
-      if (file is File) {
-        await file.delete();
-      }
+    for (final entity in entities) {
+      try {
+        if (entity is File) {
+          await entity.delete();
+        } else if (entity is Directory) {
+          if (entity.existsSync()) {
+            await entity.delete(recursive: true);
+          }
+        }
+      } catch (_) {}
     }
   }
 
@@ -151,19 +153,36 @@ class CacheService extends GetxService {
   }
 
   /// =========================
-  /// 📁 获取房间录制目录（平台 + 日期 + 主播）
+  /// 获取房间录制目录（平台 + 日期 + 主播）
   /// =========================
-  Future<Directory> getRoomDir({required String platform, required String nick}) async {
+  Future<Directory> getRoomDir({
+    required String platform,
+    required String nick,
+    bool usePinyinForFolder = false,
+  }) async {
     final base = await getRecordDir();
-    final date = DateTime.now().toIso8601String().substring(0, 10);
-    final safePlatform = PathHelper.toSafePinyin(platform);
-    final safeNick = PathHelper.toSafePinyin(nick);
-    final separator = Platform.pathSeparator;
-    final path = "${base.path}$separator$safePlatform$separator$safeNick$separator$date";
+
+    final now = DateTime.now();
+
+    final date = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
+    final time =
+        '${now.hour.toString().padLeft(2, '0')}-'
+        '${now.minute.toString().padLeft(2, '0')}-'
+        '${now.second.toString().padLeft(2, '0')}';
+
+    final safePlatform = usePinyinForFolder ? PathHelper.toSafePinyin(platform) : platform;
+
+    final safeNick = usePinyinForFolder ? PathHelper.toSafePinyin(nick) : nick;
+
+    final path = p.join(base.path, safePlatform, safeNick, date, time);
+
     final dir = Directory(path);
+
     if (!await dir.exists()) {
       await dir.create(recursive: true);
     }
+
     return dir;
   }
 }
