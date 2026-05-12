@@ -89,6 +89,7 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
     setState(() => _isVolumeBarVisible = true);
   }
 
+  // 检查并隐藏（核心修复：延时判断）
   void _checkAndHide() {
     Future.delayed(const Duration(milliseconds: 100), () {
       if (!_isMouseInIcon && !_isMouseInBar && _isVolumeBarVisible) {
@@ -98,9 +99,17 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
   }
 
   void _removeOverlay() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-    _isVolumeBarVisible = false;
+    try {
+      _overlayEntry?.remove();
+      _overlayEntry = null;
+      if (mounted && _isVolumeBarVisible) {
+        setState(() => _isVolumeBarVisible = false);
+      } else {
+        _isVolumeBarVisible = false;
+      }
+    } catch (e) {
+      _isVolumeBarVisible = false;
+    }
   }
 
   void _handleVolumeDrag(DragUpdateDetails details) {
