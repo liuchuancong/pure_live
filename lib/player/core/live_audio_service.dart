@@ -10,7 +10,6 @@ class LiveAudioService {
   /// 初始化服务
   static Future<void> _ensureInitialized() async {
     if (!Platform.isAndroid || _handler != null) return;
-
     _handler = await AudioService.init(
       builder: () => LiveAudioHandler(),
       config: const AudioServiceConfig(
@@ -31,8 +30,11 @@ class LiveAudioService {
 
   /// 启动播放并显示通知
   static Future<void> start(String roomId, String title, String author, String? cover) async {
-    if (!Platform.isAndroid || _handler == null) return;
     await _ensureInitialized();
+    if (!Platform.isAndroid) return;
+    if (_handler == null) {
+      await Future.delayed(Duration(seconds: 1));
+    }
     await _handler!.playMediaItem(
       MediaItem(
         id: roomId,
