@@ -672,7 +672,7 @@ class PlayerManager {
   Widget getVideoWidget(int fitIndex, {Widget? controls, required List<BoxFit> fitList}) {
     return Container(
       color: Colors.black,
-      padding: const EdgeInsets.all(1),
+      padding: const EdgeInsets.all(0),
       child: StreamBuilder<bool>(
         stream: onPlaying,
         initialData: isPlayingNow,
