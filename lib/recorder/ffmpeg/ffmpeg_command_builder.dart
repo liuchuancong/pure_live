@@ -3,6 +3,10 @@ import 'dart:io';
 class FFmpegCommandBuilder {
   static const String defaultUserAgent =
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+  static String _quote(String value) {
+    final escaped = value.replaceAll('"', r'\"');
+    return '"$escaped"';
+  }
 
   static String buildRecordCommand({
     required String url,
@@ -15,7 +19,7 @@ class FFmpegCommandBuilder {
   }) {
     final ua = headers?['user-agent'] ?? defaultUserAgent;
     final headerStr = _buildHeader(headers);
-
+    final normalizedOutputPath = '$outputDir${Platform.pathSeparator}%Y%m%d_%H%M%S.ts';
     final args = <String>[
       '-y',
       '-hide_banner',
@@ -27,15 +31,16 @@ class FFmpegCommandBuilder {
       '-reconnect', '1',
       '-reconnect_streamed', '1',
       '-reconnect_delay_max', '2',
+      '-reconnect_at_eof', '1',
       '-rw_timeout', '${rwTimeout * 1000000}', // 转化为微秒
       '-max_delay', '5000000',
       '-thread_queue_size', threadQueueSize.toString(),
 
       // --- 身份伪装 ---
-      '-user_agent', ua,
-      if (headerStr.isNotEmpty) ...['-headers', "'$headerStr'"], // 关键：headers必须包裹在引号内
+      '-user_agent', _quote(ua),
+      if (headerStr.isNotEmpty) ...['-headers', _quote(headerStr)], // 关键：headers必须包裹在引号内
       // --- 输入 ---
-      '-i', '"$url"',
+      '-i', _quote(url),
 
       // --- 轨道处理 ---
       // 使用 copy 模式避免 CPU 占用过高
@@ -45,12 +50,13 @@ class FFmpegCommandBuilder {
 
       // --- 分段逻辑 ---
       '-f', 'segment',
+      '-segment_format', 'mpegts',
       '-segment_time', segmentTime.toString(),
       '-reset_timestamps', '1',
       '-strftime', '1',
 
       // 输出路径 (使用 .ts 格式以防断流导致文件损坏)
-      '$outputDir${Platform.pathSeparator}%Y%m%d_%H%M%S.ts',
+      _quote(normalizedOutputPath),
     ];
 
     return args.join(' ');

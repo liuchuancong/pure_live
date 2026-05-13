@@ -1,7 +1,7 @@
 {
-  "version": "2.0.17",
-  "version_num": 10217,
-  "version_desc": "-Fixed: 优化播放器.\n-Fixed: 优化了弹幕UI.\n-Add: 添加视频录制.插件原因目前仅支持录制一个直播间否则闪退",
+  "version": "2.0.16",
+  "version_num": 10216,
+  "version_desc": "-Fixed: 优化播放器.\n-Fixed: 优化了部分UI.\n-Add: 添加视频录制",
   "prerelease":false,
   "download_url": "https://github.com/liuchuancong/pure_live/releases"
 }
