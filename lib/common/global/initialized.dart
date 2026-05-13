@@ -1,11 +1,13 @@
 import 'dart:io';
 import 'dart:developer';
 import 'package:get/get.dart';
+import 'app_path_manager.dart';
 import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/global.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
+import 'package:pure_live/plugins/cache_manager.dart';
 import 'package:pure_live/common/global/windows_utils.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
@@ -38,14 +40,11 @@ class AppInitializer {
         exit(0);
       }
     }
-
-    final appDir = await getApplicationDocumentsDirectory();
-    String path =
-        '${appDir.path}${Platform.pathSeparator}pure_live${instanceId.isNotEmpty ? "${Platform.pathSeparator}$instanceId" : ""}';
-
+    await AppPathManager().initialize(instanceId: instanceId);
+    await CustomImageCacheManager.initialize();
+    final Directory hiveDir = await AppPathManager().getDir(AppPathManager.dirHiveDB);
     try {
-      await SupaBaseManager.getInstance().initial();
-      await Hive.initFlutter(path);
+      await Hive.initFlutter(hiveDir.path);
       await HivePrefUtil.init();
       initService();
     } catch (e) {
@@ -89,7 +88,6 @@ class AppInitializer {
 
   void initService() {
     Get.put(SettingsService(), permanent: true);
-    Get.put(AuthController(), permanent: true);
     Get.put(CacheService());
     Get.put(RecordSettingsController());
     Get.put(RecorderController());

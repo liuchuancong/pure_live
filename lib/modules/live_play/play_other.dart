@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:pure_live/common/utils/text_util.dart';
 import 'package:pure_live/common/models/live_room.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:pure_live/common/widgets/common_avatar.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
 
 class PlayOther extends StatefulWidget {
@@ -132,14 +132,7 @@ class EnhancedListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       dense: dense,
-      leading: CircleAvatar(
-        radius: dense ? 18 : 20,
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-        foregroundImage: room.avatar?.isNotEmpty == true ? CachedNetworkImageProvider(room.avatar!) : null,
-        child: room.avatar?.isNotEmpty != true
-            ? Icon(Icons.person, color: Theme.of(context).colorScheme.onSurface, size: dense ? 24 : 28)
-            : null,
-      ),
+      leading: CommonAvatar(avatarUrl: room.avatar, fallbackName: room.nick, dense: dense),
       title: Text(
         room.title!,
         maxLines: 1,

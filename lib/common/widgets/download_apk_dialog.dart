@@ -8,6 +8,7 @@ import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/common/global/app_path_manager.dart';
 
 // download_apk_dialog.dart
 
@@ -115,13 +116,19 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
   }
 
   Future<Directory> _getSafeDownloadDir() async {
+    Directory downloadDir;
+
     if (Platform.isAndroid) {
       final dir = await getExternalStorageDirectory();
-      return Directory('${dir!.path}${path.separator}pure_live');
+      downloadDir = Directory(path.join(dir!.path, 'pure_live'));
     } else {
-      final dir = await getApplicationDocumentsDirectory();
-      return Directory('${dir.path}${path.separator}pure_live');
+      downloadDir = await AppPathManager().getDir(AppPathManager.dirDownload);
     }
+    if (!await downloadDir.exists()) {
+      await downloadDir.create(recursive: true);
+    }
+
+    return downloadDir;
   }
 
   void _showErrorAndClose(String message) {

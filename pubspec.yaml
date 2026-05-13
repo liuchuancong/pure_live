@@ -96,7 +96,6 @@ dependencies:
   mobile_scanner: ^7.1.3 # 二维码扫描
 
   # -------------------------- 数据存储/数据库 --------------------------
-  supabase_flutter: ^2.10.3 # Supabase云数据库
   hive_ce: ^2.15.1 # Hive本地数据库
   hive_ce_flutter: ^2.3.3 # Hive Flutter集成
   flutter_cache_manager: ^3.4.1 # 通用缓存管理
@@ -145,7 +144,6 @@ dependencies:
   share_handler: ^0.0.25 # 分享功能
   animated_splash_plus: ^1.0.3 # 启动动画
   flutter_exit_app: ^2.0.0 # 退出应用
-  email_validator: ^3.0.0 # 邮箱验证
   move_to_desktop: ^0.0.2 # 移动到桌面
   package_info_plus: ^9.0.1 # 应用包信息
   stop_watch_timer: ^3.2.2 # 计时器

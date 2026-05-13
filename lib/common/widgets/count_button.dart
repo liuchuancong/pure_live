@@ -7,7 +7,7 @@ class CountButton extends StatefulWidget {
     required this.minValue,
     required this.maxValue,
     required this.selectedValue,
-    this.step = 1.0,
+    this.step = 1,
     this.backgroundColor,
     this.foregroundColor,
     this.buttonSize = const Size(35, 35),
@@ -21,32 +21,23 @@ class CountButton extends StatefulWidget {
        assert(selectedValue >= minValue && selectedValue <= maxValue),
        assert(step > 0);
 
-  ///minimum value user can set
-  final double minValue;
-
-  ///maximum value user can set
-  final double maxValue;
-
-  ///Currently selected integer value
-  final double selectedValue;
-
-  final double step;
+  final int minValue;
+  final int maxValue;
+  final int selectedValue;
+  final int step;
 
   final Color? backgroundColor;
-
   final Color? foregroundColor;
-
   final Size buttonSize;
 
   final Widget? incrementIcon;
-
   final Widget? decrementIcon;
 
   final double borderRadius;
 
-  final Function(double value) onChanged;
+  final ValueChanged<int> onChanged;
 
-  final Widget Function(double value)? valueBuilder;
+  final Widget Function(int value)? valueBuilder;
 
   final TextStyle? textStyle;
 
@@ -65,107 +56,97 @@ class _CountButtonState extends State<CountButton> {
 
     return Directionality(
       textDirection: TextDirection.ltr,
-      child: Container(
-        padding: const EdgeInsets.all(1.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: widget.buttonSize.width,
-              height: widget.buttonSize.height,
-              child: GestureDetector(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: backgroundColor,
-                    foregroundColor: foregroundColor,
-                    padding: EdgeInsets.zero,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(widget.borderRadius),
-                        bottomLeft: Radius.circular(widget.borderRadius),
-                      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: widget.buttonSize.width,
+            height: widget.buttonSize.height,
+            child: GestureDetector(
+              onLongPress: startDecrementTimer,
+              onLongPressEnd: (_) {
+                decrementTimer?.cancel();
+                decrementTimer = null;
+              },
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: backgroundColor,
+                  foregroundColor: foregroundColor,
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(widget.borderRadius),
+                      bottomLeft: Radius.circular(widget.borderRadius),
                     ),
                   ),
-                  onPressed: _decrementCounter,
-                  child: widget.decrementIcon ?? Icon(Icons.remove_outlined, color: foregroundColor),
                 ),
-                onLongPress: () {
-                  startDecrementTimer();
-                },
-                onLongPressEnd: (details) {
-                  decrementTimer?.cancel();
-                  decrementTimer = null;
-                },
+                onPressed: _decrement,
+                child: widget.decrementIcon ?? Icon(Icons.remove, color: foregroundColor),
               ),
             ),
-            Expanded(
-              child: Container(
-                height: widget.buttonSize.height,
-                decoration: BoxDecoration(
-                  border: Border.symmetric(horizontal: BorderSide(color: backgroundColor, width: 2)),
-                ),
-                child: Center(
-                  child: widget.valueBuilder != null
-                      ? widget.valueBuilder!.call(widget.selectedValue.round().toDouble())
-                      : Text(widget.selectedValue.round().toString(), style: widget.textStyle),
-                ),
-              ),
+          ),
+
+          Container(
+            height: widget.buttonSize.height,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              border: Border.symmetric(horizontal: BorderSide(color: backgroundColor, width: 2)),
             ),
-            SizedBox(
-              width: widget.buttonSize.width,
-              height: widget.buttonSize.height,
-              child: GestureDetector(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: backgroundColor,
-                    foregroundColor: foregroundColor,
-                    padding: EdgeInsets.zero,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.only(
-                        topRight: Radius.circular(widget.borderRadius),
-                        bottomRight: Radius.circular(widget.borderRadius),
-                      ),
+            child: widget.valueBuilder != null
+                ? widget.valueBuilder!(widget.selectedValue)
+                : Text(widget.selectedValue.toString(), style: widget.textStyle),
+          ),
+
+          SizedBox(
+            width: widget.buttonSize.width,
+            height: widget.buttonSize.height,
+            child: GestureDetector(
+              onLongPress: startIncrementTimer,
+              onLongPressEnd: (_) {
+                incrementTimer?.cancel();
+                incrementTimer = null;
+              },
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: backgroundColor,
+                  foregroundColor: foregroundColor,
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topRight: Radius.circular(widget.borderRadius),
+                      bottomRight: Radius.circular(widget.borderRadius),
                     ),
                   ),
-                  onPressed: _incrementCounter,
-                  child: widget.incrementIcon ?? Icon(Icons.add, color: foregroundColor),
                 ),
-                onLongPress: () {
-                  startIncrementTimer();
-                },
-                onLongPressEnd: (details) {
-                  incrementTimer?.cancel();
-                  incrementTimer = null;
-                },
+                onPressed: _increment,
+                child: widget.incrementIcon ?? Icon(Icons.add, color: foregroundColor),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  void _incrementCounter() {
+  void _increment() {
     final value = widget.selectedValue + widget.step;
-
     if (value <= widget.maxValue) {
       widget.onChanged(value);
     }
   }
 
-  void _decrementCounter() {
+  void _decrement() {
     final value = widget.selectedValue - widget.step;
-
     if (value >= widget.minValue) {
       widget.onChanged(value);
     }
   }
 
   void startIncrementTimer() {
-    incrementTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+    incrementTimer?.cancel();
+    incrementTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
       final value = widget.selectedValue + widget.step;
-
       if (value <= widget.maxValue) {
         widget.onChanged(value);
       } else {
@@ -176,9 +157,9 @@ class _CountButtonState extends State<CountButton> {
   }
 
   void startDecrementTimer() {
-    decrementTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+    decrementTimer?.cancel();
+    decrementTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
       final value = widget.selectedValue - widget.step;
-
       if (value >= widget.minValue) {
         widget.onChanged(value);
       } else {

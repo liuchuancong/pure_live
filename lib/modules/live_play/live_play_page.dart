@@ -340,9 +340,13 @@ class LivePlayPage extends GetView<LivePlayController> {
                           const Divider(height: 1),
                           Obx(() {
                             if (controller.success.value == false) {
-                              return SizedBox.shrink();
+                              return const SizedBox.shrink();
                             }
-                            return Expanded(child: DanmakuTabView());
+                            final state = GlobalPlayerState.to;
+                            if (state.isFullscreen.value || state.isWindowFullscreen.value) {
+                              return const SizedBox.shrink();
+                            }
+                            return Expanded(child: DanmakuTabView(key: ValueKey(state.isFullscreen.value)));
                           }),
                         ],
                       )
@@ -357,9 +361,13 @@ class LivePlayPage extends GetView<LivePlayController> {
                                 const Divider(height: 1),
                                 Obx(() {
                                   if (controller.success.value == false) {
-                                    return SizedBox.shrink();
+                                    return const SizedBox.shrink();
                                   }
-                                  return Expanded(child: DanmakuTabView());
+                                  final state = GlobalPlayerState.to;
+                                  if (state.isFullscreen.value || state.isWindowFullscreen.value) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return Expanded(child: DanmakuTabView(key: ValueKey(state.isFullscreen.value)));
                                 }),
                               ],
                             ),

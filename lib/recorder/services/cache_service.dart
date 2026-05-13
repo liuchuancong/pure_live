@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/recorder/consts/recorder_keys.dart';
 import 'package:pure_live/recorder/services/path_helper.dart';
+import 'package:pure_live/common/global/app_path_manager.dart';
 
 class CacheService extends GetxService {
   static CacheService get to => Get.find();
@@ -15,34 +16,15 @@ class CacheService extends GetxService {
 
   Future<Directory> getRecordDir() async {
     final customPath = HivePrefUtil.getString(RecorderKeys.recordSavePath);
-
     Directory recordDir;
-
-    /// 用户自定义目录
     if (customPath != null && customPath.isNotEmpty) {
       recordDir = Directory(customPath);
     } else {
-      final dir = await getApplicationDocumentsDirectory();
-      if (Platform.isWindows) {
-        recordDir = Directory(
-          '${dir.path}'
-          '${Platform.pathSeparator}'
-          'pure_live_records',
-        );
-      } else {
-        recordDir = Directory(
-          '${dir.path}'
-          '${Platform.pathSeparator}'
-          'pure_live_records',
-        );
-      }
+      recordDir = await AppPathManager().getDir(AppPathManager.dirRecords);
     }
-
-    /// 不存在则创建
     if (!await recordDir.exists()) {
       await recordDir.create(recursive: true);
     }
-
     return recordDir;
   }
 

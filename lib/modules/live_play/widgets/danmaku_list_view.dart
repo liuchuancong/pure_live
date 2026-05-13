@@ -18,95 +18,89 @@ class DanmakuListView extends StatefulWidget {
 
 class DanmakuListViewState extends State<DanmakuListView> {
   final ScrollController _scrollController = ScrollController();
-  bool _scrollHappen = false;
-  StreamSubscription? _messagesSubscription;
 
-  // 节流相关变量
+  bool _userScrolling = false;
+
+  StreamSubscription? _messagesSub;
   Timer? _throttleTimer;
-  bool _needsScroll = false;
-  static const _throttleDuration = Duration(milliseconds: 150);
+  bool _pendingScroll = false;
+
+  static const _throttleDuration = Duration(milliseconds: 120);
 
   LivePlayController get controller => Get.find<LivePlayController>();
 
   @override
   void initState() {
     super.initState();
-    // 监听消息变化，使用节流逻辑处理滚动
-    _messagesSubscription = controller.messages.listen((p0) {
-      _throttledScroll();
+    _messagesSub = controller.messages.listen((_) => _scheduleScroll());
+    ever(GlobalPlayerState.to.isWindowFullscreen, (_) {
+      _forceScrollToBottom();
     });
-
-    // 监听全屏切换，确保状态同步
-    GlobalPlayerState.to.isWindowFullscreen.listen((value) {
-      if (mounted) {
-        Future.delayed(const Duration(milliseconds: 100), _checkScrollPositionManually);
-      }
+    ever(GlobalPlayerState.to.isFullscreen, (_) {
+      _forceScrollToBottom();
     });
   }
 
   @override
   void dispose() {
-    _messagesSubscription?.cancel();
+    _messagesSub?.cancel();
     _throttleTimer?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
 
-  void scrollToBottom() {
-    _throttledScroll();
-  }
+  void _forceScrollToBottom() {
+    if (!mounted) return;
 
-  /// 核心节流滚动逻辑
-  void _throttledScroll() {
-    if (!mounted || _scrollHappen) return;
-
-    _needsScroll = true;
-    if (_throttleTimer?.isActive ?? false) return;
-
-    _throttleTimer = Timer(_throttleDuration, () {
-      if (_needsScroll && mounted && _scrollController.hasClients) {
-        final maxScroll = _scrollController.position.maxScrollExtent;
-        // 使用 jumpTo 替代 animateTo 性能更好
-        _scrollController.jumpTo(maxScroll);
-        _needsScroll = false;
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (!_scrollController.hasClients) return;
+        final max = _scrollController.position.maxScrollExtent;
+        _scrollController.jumpTo(max);
+        debugPrint("📌 Danmaku scroll -> $max");
+      });
     });
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_scrollHappen) {
-      _throttledScroll();
-    }
+  void _scheduleScroll() {
+    if (!mounted || _userScrolling) return;
+
+    _pendingScroll = true;
+
+    _throttleTimer?.cancel();
+
+    _throttleTimer = Timer(_throttleDuration, () {
+      if (!_pendingScroll || !_scrollController.hasClients) return;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_scrollController.hasClients) return;
+
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      });
+
+      _pendingScroll = false;
+    });
   }
 
-  void _checkScrollPositionManually() {
-    if (!_scrollController.hasClients) return;
-    final pos = _scrollController.position;
-    final isAtBottom = pos.maxScrollExtent - pos.pixels <= 100;
-    if (isAtBottom && _scrollHappen) {
-      setState(() => _scrollHappen = false);
-    }
-  }
+  void _onScrollNotification(ScrollNotification n) {
+    if (n is UserScrollNotification) {
+      final pos = _scrollController.position;
 
-  void _onNotification(ScrollNotification notification) {
-    // This handles the user manual scroll action
-    if (notification is UserScrollNotification) {
-      if (notification.direction == ScrollDirection.forward) {
-        // User is scrolling up
-        if (_scrollController.position.maxScrollExtent - _scrollController.offset > 100) {
-          if (!_scrollHappen) setState(() => _scrollHappen = true);
+      if (n.direction == ScrollDirection.forward) {
+        if (pos.maxScrollExtent - pos.pixels > 80) {
+          if (!_userScrolling) {
+            setState(() => _userScrolling = true);
+          }
         }
-      } else if (notification.direction == ScrollDirection.reverse) {
-        // User is scrolling back down
-        final pos = _scrollController.position;
-        if (pos.maxScrollExtent - pos.pixels <= 50) {
-          if (_scrollHappen) setState(() => _scrollHappen = false);
+      } else if (n.direction == ScrollDirection.reverse) {
+        if (pos.maxScrollExtent - pos.pixels < 60) {
+          if (_userScrolling) {
+            setState(() => _userScrolling = false);
+          }
         }
       }
-    } else if (notification is ScrollMetricsNotification) {
-      _checkScrollPositionManually();
     }
   }
 
@@ -115,27 +109,28 @@ class DanmakuListViewState extends State<DanmakuListView> {
     return Stack(
       children: [
         NotificationListener<ScrollNotification>(
-          onNotification: (notification) {
-            _onNotification(notification);
+          onNotification: (n) {
+            _onScrollNotification(n);
             return false;
           },
-          child: Obx(
-            () => ListView.separated(
+          child: Obx(() {
+            final list = controller.messages;
+
+            return ListView.builder(
               controller: _scrollController,
-              itemCount: controller.messages.length,
               padding: const EdgeInsets.symmetric(vertical: 8),
-              cacheExtent: 600,
-              separatorBuilder: (_, _) => const SizedBox(height: 6),
-              itemBuilder: (context, index) {
-                return DanmakuItem(
-                  key: ValueKey(controller.messages[index].hashCode),
-                  danmaku: controller.messages[index],
-                );
+              cacheExtent: 500,
+              itemCount: list.length,
+              itemBuilder: (_, i) {
+                final msg = list[i];
+
+                return DanmakuItem(key: ValueKey(msg.hashCode), danmaku: msg);
               },
-            ),
-          ),
+            );
+          }),
         ),
-        if (_scrollHappen)
+
+        if (_userScrolling)
           Positioned(
             left: 12,
             bottom: 12,
@@ -143,8 +138,8 @@ class DanmakuListViewState extends State<DanmakuListView> {
               icon: const Icon(Icons.arrow_downward_rounded),
               label: const Text('回到底部'),
               onPressed: () {
-                setState(() => _scrollHappen = false);
-                _throttledScroll();
+                setState(() => _userScrolling = false);
+                _forceScrollToBottom();
               },
             ),
           ),
@@ -153,7 +148,6 @@ class DanmakuListViewState extends State<DanmakuListView> {
   }
 }
 
-/// 弹幕条目：使用 RepaintBoundary 隔离绘制，防止列表滚动时重复解析文本
 class DanmakuItem extends StatelessWidget {
   final LiveMessage danmaku;
 
@@ -161,25 +155,42 @@ class DanmakuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final baseColor = Color.fromARGB(255, danmaku.color.r, danmaku.color.g, danmaku.color.b);
+    final vibrantColor = baseColor.asHexString == '#FFFFFFFF'
+        ? Colors.black
+        : HSLColor.fromColor(baseColor).withLightness(0.5).withSaturation(1).toColor();
+
     return RepaintBoundary(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 12),
-        alignment: Alignment.centerLeft,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.onSurface.withAlpha(10),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(
-                  text: "${danmaku.userName}: ",
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-                ...parseEmojis(danmaku.message, 14),
-              ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(0),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: "${danmaku.userName}: ",
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black),
+                          ),
+                          TextSpan(
+                            children: parseEmojis(danmaku.message, 14),
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: vibrantColor),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -188,73 +199,79 @@ class DanmakuItem extends StatelessWidget {
   }
 }
 
-/// 表情解析逻辑
-List<InlineSpan> parseEmojis(String text, double fontSize) {
-  final List<InlineSpan> spans = [];
+List<InlineSpan> parseEmojis(String text, double size) {
+  final spans = <InlineSpan>[];
   final regex = RegExp(r'\[(.*?)\]');
-  int lastIndex = 0;
 
-  for (final match in regex.allMatches(text)) {
-    if (match.start > lastIndex) {
+  int last = 0;
+
+  for (final m in regex.allMatches(text)) {
+    if (m.start > last) {
       spans.add(
         TextSpan(
-          text: text.substring(lastIndex, match.start),
-          style: TextStyle(fontSize: fontSize),
+          text: text.substring(last, m.start),
+          style: TextStyle(fontSize: size),
         ),
       );
     }
 
-    final emojiKey = match.group(0)!;
-    final image = EmojiManager.getEmoji(emojiKey);
+    final key = m.group(0)!;
+    final img = EmojiManager.getEmoji(key);
 
-    if (image != null) {
+    if (img != null) {
       spans.add(
         WidgetSpan(
           alignment: PlaceholderAlignment.middle,
           child: SizedBox(
-            width: fontSize * 1.3,
-            height: fontSize * 1.3,
-            child: CustomPaint(painter: EmojiPainter(image)),
+            width: size * 1.25,
+            height: size * 1.25,
+            child: RepaintBoundary(child: CustomPaint(painter: EmojiPainter(img))),
           ),
         ),
       );
     } else {
       spans.add(
         TextSpan(
-          text: emojiKey,
-          style: TextStyle(fontSize: fontSize),
+          text: key,
+          style: TextStyle(fontSize: size),
         ),
       );
     }
-    lastIndex = match.end;
+
+    last = m.end;
   }
 
-  if (lastIndex < text.length) {
+  if (last < text.length) {
     spans.add(
       TextSpan(
-        text: text.substring(lastIndex),
-        style: TextStyle(fontSize: fontSize),
+        text: text.substring(last),
+        style: TextStyle(fontSize: size),
       ),
     );
   }
+
   return spans;
 }
 
-/// 表情绘制
 class EmojiPainter extends CustomPainter {
   final ui.Image image;
+
   EmojiPainter(this.image);
 
   @override
   void paint(Canvas canvas, Size size) {
+    final paint = Paint()..isAntiAlias = true;
+
     canvas.drawImageRect(
       image,
       Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      Paint()..isAntiAlias = true,
+      Offset.zero & size,
+      paint,
     );
   }
 
   @override
-  bool shouldRepaint(EmojiPainter old) => image != old.image;
+  bool shouldRepaint(covariant EmojiPainter oldDelegate) {
+    return oldDelegate.image != image;
+  }
 }

@@ -1312,8 +1312,8 @@ class DanmakuSetting extends StatelessWidget {
                 () => CountButton(
                   maxValue: 300,
                   minValue: 0,
-                  selectedValue: controller.danmakuTopArea.value,
-                  onChanged: (val) => controller.danmakuTopArea.value = val,
+                  selectedValue: controller.danmakuTopArea.value.toInt(),
+                  onChanged: (val) => controller.danmakuTopArea.value = val.toDouble(),
                 ),
               ),
             ),
@@ -1329,8 +1329,8 @@ class DanmakuSetting extends StatelessWidget {
                 () => CountButton(
                   maxValue: 300,
                   minValue: 0,
-                  selectedValue: controller.danmakuBottomArea.value,
-                  onChanged: (val) => controller.danmakuBottomArea.value = val,
+                  selectedValue: controller.danmakuBottomArea.value.toInt(),
+                  onChanged: (val) => controller.danmakuBottomArea.value = val.toDouble(),
                 ),
               ),
             ),

@@ -1,10 +1,9 @@
-import 'dart:developer';
 import 'package:get/get.dart';
 import 'package:dio/dio.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 import 'package:pure_live/routes/app_navigation.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:pure_live/common/widgets/common_avatar.dart';
 import 'package:pure_live/modules/search/search_list_controller.dart';
 
 class SearchListView extends StatelessWidget {
@@ -102,29 +101,12 @@ class _OwnerCardState extends State<OwnerCard> {
 
   late bool isFavorite = settings.isFavorite(widget.room);
 
-  ImageProvider? getRoomAvatar(String avatar) {
-    try {
-      return CachedNetworkImageProvider(
-        avatar,
-        errorListener: (err) {
-          log("CachedNetworkImageProvider: Image failed to load!");
-        },
-      );
-    } catch (e) {
-      return null;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Card(
       child: ListTile(
         onTap: () => _onTap(context),
-        leading: CircleAvatar(
-          foregroundImage: widget.room.avatar!.isNotEmpty ? getRoomAvatar(widget.room.avatar!) : null,
-          radius: 20,
-          backgroundColor: Theme.of(context).disabledColor,
-        ),
+        leading: CommonAvatar(avatarUrl: widget.room.avatar, fallbackName: widget.room.nick, radius: 20),
         title: Text(
           widget.room.title != null ? '${widget.room.title}' : '',
           maxLines: 1,
