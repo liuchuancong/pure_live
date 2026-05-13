@@ -231,7 +231,11 @@ class RecorderController extends GetxService {
         preferredQuality: settings.defaultQuality.value,
       );
 
-      final dir = await CacheService.to.getRoomDir(platform: task.platform, nick: task.nick);
+      final dir = await CacheService.to.getRoomDir(
+        platform: task.platform,
+        nick: task.nick,
+        usePinyinForFolder: settings.usePinyinForFolder.value,
+      );
       final headers = await FFmpegHeaderFactory.build(platform: task.platform);
 
       final cmd = FFmpegCommandBuilder.buildRecordCommand(
@@ -283,7 +287,6 @@ class RecorderController extends GetxService {
     _retryTimers.remove(task.taskId);
 
     await scheduler.cancel(task.taskId);
-    await ffmpeg.stop(task.taskId);
     await Future.delayed(Duration(seconds: 3));
     if (task.status == RecordStatus.running || task.status == RecordStatus.preparing) {
       log('Stopping task: ${task.taskId}');
@@ -445,8 +448,6 @@ class RecorderController extends GetxService {
     _retryTimers.remove(task.taskId);
 
     await scheduler.cancel(task.taskId);
-
-    await ffmpeg.stop(task.taskId);
     await Future.delayed(Duration(seconds: 3));
     final completer = _lifecycleCompleters[task.taskId];
     if (completer != null && !completer.isCompleted) {

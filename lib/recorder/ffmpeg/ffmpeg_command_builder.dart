@@ -15,7 +15,7 @@ class FFmpegCommandBuilder {
   }) {
     final ua = headers?['user-agent'] ?? defaultUserAgent;
     final headerStr = _buildHeader(headers);
-
+    final normalizedOutputPath = '$outputDir${Platform.pathSeparator}%Y%m%d_%H%M%S.ts';
     final args = <String>[
       '-y',
       '-hide_banner',
@@ -50,7 +50,7 @@ class FFmpegCommandBuilder {
       '-strftime', '1',
 
       // 输出路径 (使用 .ts 格式以防断流导致文件损坏)
-      '$outputDir${Platform.pathSeparator}%Y%m%d_%H%M%S.ts',
+      '"$normalizedOutputPath"',
     ];
 
     return args.join(' ');
