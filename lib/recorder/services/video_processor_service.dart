@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'dart:developer';
 import 'package:get/get.dart';
 import 'package:path/path.dart' as p;
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
@@ -51,6 +52,8 @@ class VideoProcessorService extends GetxService {
       if (files.isEmpty) {
         _emitFailed(taskId, 'TS 文件为空');
         return false;
+      } else {
+        log('$taskId： 共${files.length}个.ts 文件需要合并');
       }
 
       _controller.add(VideoProcessEvent(taskId: taskId, type: VideoProcessEventType.started));
@@ -118,7 +121,7 @@ class VideoProcessorService extends GetxService {
             );
 
             if (deleteSourceTs) {
-              _deleteTsFiles(tsDir);
+              _deleteTsFiles(tsDir, taskId);
             }
 
             await _subscriptions[ffmpegTaskId]?.cancel();
@@ -161,12 +164,12 @@ class VideoProcessorService extends GetxService {
     }
   }
 
-  void _deleteTsFiles(Directory dir) {
+  void _deleteTsFiles(Directory dir, String taskId) {
     try {
       if (!dir.existsSync()) {
         return;
       }
-
+      log('$taskId：处理完成删掉.ts以及txt文件');
       for (final file in dir.listSync()) {
         if (file.path.endsWith('.ts') || file.path.endsWith('list.txt')) {
           file.deleteSync();

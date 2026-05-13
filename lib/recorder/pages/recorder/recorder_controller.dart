@@ -144,7 +144,10 @@ class RecorderController extends GetxService {
 
     tasks[index] = task;
 
-    tasks.value = List.from(tasks);
+    tasks.value = [...tasks.value]
+      ..sort((a, b) {
+        return a.status.order.compareTo(b.status.order);
+      });
 
     schedulePersist();
   }
@@ -160,7 +163,10 @@ class RecorderController extends GetxService {
     }
     final task = LiveRecordTask.fromRoom(room);
     tasks.insert(0, task);
-    tasks.value = List.from(tasks);
+    tasks.value = [...tasks.value]
+      ..sort((a, b) {
+        return a.status.order.compareTo(b.status.order);
+      });
     schedulePersist();
 
     if (room.liveStatus == LiveStatus.live) {
@@ -285,13 +291,9 @@ class RecorderController extends GetxService {
     _stopPolling(task.taskId);
     _retryTimers[task.taskId]?.cancel();
     _retryTimers.remove(task.taskId);
-
     await scheduler.cancel(task.taskId);
-    await Future.delayed(Duration(seconds: 3));
     if (task.status == RecordStatus.running || task.status == RecordStatus.preparing) {
       log('Stopping task: ${task.taskId}');
-      task.status = RecordStatus.processing;
-      updateTask(task);
     } else {
       task.status = RecordStatus.stopped;
       updateTask(task);
@@ -299,7 +301,6 @@ class RecorderController extends GetxService {
   }
 
   Future<void> _onComplete(LiveRecordTask task) async {
-    // 1. 状态校验：如果任务已经是停止、失败或正在处理中，则不再重复触发
     if (task.status == RecordStatus.stopped ||
         task.status == RecordStatus.failed ||
         task.status == RecordStatus.processing) {
@@ -307,9 +308,9 @@ class RecorderController extends GetxService {
     }
     if (task.outputDir != null && task.recordedSeconds > 0) {
       developer.log('录制完成，开始处理视频: ${task.taskId}', name: 'RecorderController');
-
       task.status = RecordStatus.processing;
       updateTask(task);
+      await Future.delayed(Duration(seconds: 2));
       unawaited(_processVideo(task));
     } else {
       developer.log('录制时间过短，跳过处理: ${task.taskId}', name: 'RecorderController');
@@ -369,9 +370,6 @@ class RecorderController extends GetxService {
       }
       task.status = RecordStatus.processing;
       updateTask(task);
-
-      // 有时候会闪退 添加延时
-      await Future.delayed(Duration(seconds: 3));
       await VideoProcessorService.to.convertToMp4(task: task);
       final settingsController = Get.find<RecordSettingsController>();
       await settingsController.refreshCacheSize();
@@ -448,13 +446,16 @@ class RecorderController extends GetxService {
     _retryTimers.remove(task.taskId);
 
     await scheduler.cancel(task.taskId);
-    await Future.delayed(Duration(seconds: 3));
+    await Future.delayed(Duration(seconds: 1));
     final completer = _lifecycleCompleters[task.taskId];
     if (completer != null && !completer.isCompleted) {
       completer.complete();
     }
     tasks.removeWhere((e) => e.taskId == task.taskId);
-    tasks.value = List.from(tasks);
+    tasks.value = [...tasks.value]
+      ..sort((a, b) {
+        return a.status.order.compareTo(b.status.order);
+      });
     schedulePersist();
   }
 
@@ -475,8 +476,9 @@ class RecorderController extends GetxService {
 
       final list = (jsonDecode(json) as List).cast<Map<String, dynamic>>();
 
-      tasks.value = list.map((e) => LiveRecordTask.fromJson(e)).toList();
-
+      List<LiveRecordTask> recorderTasks = list.map((e) => LiveRecordTask.fromJson(e)).toList();
+      recorderTasks.sort((a, b) => a.status.order.compareTo(b.status.order));
+      tasks.value = recorderTasks;
       if (settings.autoStartOnBoot.value) {
         for (final task in tasks) {
           await refreshTaskStatus(task);
