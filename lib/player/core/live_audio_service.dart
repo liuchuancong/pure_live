@@ -6,47 +6,64 @@ import 'package:pure_live/player/interface/unified_player_interface.dart';
 
 class LiveAudioService {
   static LiveAudioHandler? _handler;
+  static bool _isInitializing = false;
 
-  /// 初始化服务
-  static Future<void> _ensureInitialized() async {
-    if (!Platform.isAndroid || _handler != null) return;
-    _handler = await AudioService.init(
-      builder: () => LiveAudioHandler(),
-      config: const AudioServiceConfig(
-        androidNotificationChannelId: 'com.mystyle.purelive.audio',
-        androidNotificationChannelName: '纯粹直播播放',
-        androidNotificationOngoing: true,
-        androidStopForegroundOnPause: true,
-        // 确保没有媒体播放时不显示通知
-        androidNotificationClickStartsActivity: true,
-      ),
-    );
-  }
+  static Future<LiveAudioHandler?> _ensureInitialized() async {
+    if (!Platform.isAndroid) return null;
+    if (_handler != null) return _handler;
 
-  static void setPlayer(UnifiedPlayer player) {
-    if (!Platform.isAndroid || _handler == null) return;
-    _handler!.setPlayer(player);
-  }
-
-  /// 启动播放并显示通知
-  static Future<void> start(String roomId, String title, String author, String? cover) async {
-    await _ensureInitialized();
-    if (!Platform.isAndroid) return;
-    if (_handler == null) {
-      await Future.delayed(Duration(seconds: 1));
+    if (_isInitializing) {
+      while (_handler == null) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+      return _handler;
     }
-    await _handler!.playMediaItem(
-      MediaItem(
-        id: roomId,
-        album: "纯粹直播",
-        title: title,
-        artist: author,
-        artUri: cover != null ? Uri.parse(cover) : null,
-      ),
-    );
+
+    _isInitializing = true;
+    try {
+      _handler = await AudioService.init(
+        builder: () => LiveAudioHandler(),
+        config: const AudioServiceConfig(
+          androidNotificationChannelId: 'com.mystyle.purelive.audio',
+          androidNotificationChannelName: '纯粹直播播放',
+          androidNotificationOngoing: true,
+          androidStopForegroundOnPause: true,
+          androidNotificationClickStartsActivity: true,
+          // 增加一个默认图标（确保在 AndroidManifest 中有对应的 ic_launcher）
+          notificationColor: Colors.blue,
+        ),
+      );
+    } finally {
+      _isInitializing = false;
+    }
+    return _handler;
   }
 
-  /// 停止服务
+  /// 关联播放器实例
+  static void setPlayer(UnifiedPlayer player) async {
+    final handler = await _ensureInitialized();
+    handler?.setPlayer(player);
+  }
+
+  static Future<void> start(String roomId, String title, String author, String? cover) async {
+    if (!Platform.isAndroid) return;
+
+    final handler = await _ensureInitialized();
+    if (handler == null) return;
+
+    // 2. 构造媒体信息
+    final item = MediaItem(
+      id: roomId,
+      album: "纯粹直播",
+      title: title,
+      artist: author,
+      artUri: (cover != null && cover.isNotEmpty) ? Uri.tryParse(cover) : null,
+    );
+
+    await handler.playMediaItem(item);
+  }
+
+  /// 停止服务并销毁通知
   static Future<void> stop() async {
     if (!Platform.isAndroid || _handler == null) return;
     await _handler!.stop();
@@ -63,7 +80,7 @@ class LiveAudioService {
       if (await Permission.notification.status != PermissionStatus.granted) return false;
     }
 
-    // 2. 电池优化
+    // 2. 电池优化 (提高后台存活率)
     if (await Permission.ignoreBatteryOptimizations.status != PermissionStatus.granted) {
       bool confirm = await _showExplainDialog(title: "需要忽略电池优化", content: "开启此选项能确保直播在手机锁屏或后台时不会被强制关闭。");
       if (confirm) await Permission.ignoreBatteryOptimizations.request();
@@ -71,15 +88,14 @@ class LiveAudioService {
     return true;
   }
 
+  /// 解释弹窗
   static Future<bool> _showExplainDialog({required String title, required String content}) async {
-    if (!Platform.isAndroid) return true;
     bool isConfirm = false;
-
     await SmartDialog.show(
       builder: (context) => Container(
         width: 300,
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15)),
+        decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(15)),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
