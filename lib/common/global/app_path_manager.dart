@@ -29,6 +29,23 @@ class AppPathManager {
     if (instanceId.isNotEmpty) {
       oldRootPath = p.join(oldRootPath, instanceId);
     }
+    final supportDir = await getApplicationSupportDirectory();
+
+    final List<String> extraOldPaths = [
+      p.join(appDir.path, softNameDir),
+      p.join(supportDir.path, softNameDir),
+      p.join(appDir.path, softNameDir.toLowerCase()),
+      p.join(supportDir.path, softNameDir.toLowerCase()),
+    ];
+
+    for (final path in extraOldPaths) {
+      final dir = Directory(path);
+      if (await dir.exists()) {
+        oldRootPath = path;
+        log("✔ 找到真实旧数据路径: $oldRootPath");
+        break;
+      }
+    }
     String rootPath = '';
     if (kIsWeb) {
       rootPath = softNameDir;
@@ -47,51 +64,37 @@ class AppPathManager {
     if (instanceId.isNotEmpty) {
       rootPath = p.join(rootPath, instanceId);
     }
-    final bool isAlreadyMigrated = !kIsWeb && await Directory(rootPath).exists();
+    final dir = Directory(rootPath);
+
+    final bool isAlreadyMigrated = !kIsWeb && await dir.exists() && await dir.list().isEmpty == false;
 
     if (!kIsWeb && oldRootPath != rootPath && !isAlreadyMigrated) {
-      await _migrateFolder(oldRootPath, rootPath);
+      await _migrateHiveFiles(oldRootPath, rootPath);
     }
     _basePath = rootPath;
-
-    if (!kIsWeb && !isAlreadyMigrated) {
-      await _migrateSubFolder('iptv_cache', dirIptvCache);
-      await _migrateSubFolder('download', dirDownload);
-      await _migrateSubFolder('logs', dirLogs);
-      await _migrateSubFolder('hive_db', dirHiveDB);
-      await _migrateSubFolder('image_cache', dirImageCache);
-      await _migrateSubFolder('records', dirRecords);
-    }
   }
 
-  Future<void> _migrateFolder(String oldPath, String newPath) async {
-    final Directory oldDir = Directory(oldPath);
-    final Directory newDir = Directory(newPath);
+  Future<void> _migrateHiveFiles(String oldRoot, String rootPath) async {
+    final oldDir = Directory(oldRoot);
+    if (!await oldDir.exists()) return;
 
-    if (await oldDir.exists() && !await newDir.exists()) {
-      try {
-        await Directory(p.dirname(newPath)).create(recursive: true);
-        await oldDir.rename(newPath);
-        log('成功还原旧路径数据至: $newPath');
-      } catch (e) {
-        log('外部根数据还原失败: $e');
-      }
-    }
-  }
+    final newDir = Directory(p.join(rootPath, dirHiveDB));
+    await newDir.create(recursive: true);
 
-  Future<void> _migrateSubFolder(String oldLowerName, String newUpperName) async {
-    final String oldSubPath = p.join(basePath, oldLowerName);
-    final String newSubPath = p.join(basePath, newUpperName);
+    final files = ['app_settings.hive', 'app_instance.lock', 'app_settings.lock'];
 
-    final Directory oldSubDir = Directory(oldSubPath);
-    final Directory newSubDir = Directory(newSubPath);
+    for (final name in files) {
+      final oldFile = File(p.join(oldRoot, name));
+      final newFile = File(p.join(newDir.path, name));
 
-    if (await oldSubDir.exists() && !await newSubDir.exists()) {
-      try {
-        await oldSubDir.rename(newSubPath);
-        log('子文件夹成功转换: $oldLowerName -> $newUpperName');
-      } catch (e) {
-        log('子文件夹还原失败: $e');
+      if (await oldFile.exists()) {
+        try {
+          await oldFile.copy(newFile.path);
+          await oldFile.delete();
+          log('迁移成功: $name');
+        } catch (e) {
+          log('迁移失败: $name -> $e');
+        }
       }
     }
   }
