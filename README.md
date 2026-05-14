@@ -22,8 +22,7 @@
 
 ## 📺 支持平台
 <h1 align="center">
-  <br>
-  <img src="https://github.com/liuchuancong/pure_live/blob/master/assets/images/banner.png" width="600"/>
+  <img src="https://github.com/liuchuancong/pure_live/blob/master/assets/images/banner.png" width="860"/>
 </h1>
 
 - 哔哩哔哩（Bilibili）  
