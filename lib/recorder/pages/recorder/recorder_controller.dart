@@ -250,18 +250,17 @@ class RecorderController extends GetxService {
         rwTimeout: settings.rwTimeout.value,
         threadQueueSize: settings.threadQueueSize.value,
       );
-      log(cmd);
-      // task.outputDir = dir.path;
-      // updateTask(task);
+      task.outputDir = dir.path;
+      updateTask(task);
 
-      // token.onCancel = () async {
-      //   await ffmpeg.stop(task.taskId);
-      //   // 确保取消时也能解锁
-      //   if (!completer.isCompleted) completer.complete();
-      // };
+      token.onCancel = () async {
+        await ffmpeg.stop(task.taskId);
+        // 确保取消时也能解锁
+        if (!completer.isCompleted) completer.complete();
+      };
 
-      // await ffmpeg.start(taskId: task.taskId, command: cmd);
-      // await completer.future;
+      await ffmpeg.start(taskId: task.taskId, command: cmd);
+      await completer.future;
     } on StreamException catch (e) {
       developer.log('解析失败: ${e.message}', name: 'RecorderController');
       ToastUtil.show("${task.nick}: ${e.message}");
