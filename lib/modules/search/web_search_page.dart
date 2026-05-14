@@ -1,0 +1,43 @@
+import 'package:get/get.dart';
+import 'web_search_controller.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+
+class WebSearchPage extends GetView<WebSearchController> {
+  const WebSearchPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("网页搜索"),
+        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: controller.goBack),
+      ),
+      body: Obx(() {
+        return Stack(
+          children: [
+            InAppWebView(
+              onWebViewCreated: controller.onWebViewCreated,
+              onLoadStart: controller.onLoadStart,
+              onLoadStop: controller.onLoadStop,
+              onUpdateVisitedHistory: controller.onUpdateVisitedHistory,
+              initialSettings: InAppWebViewSettings(
+                userAgent: controller.getDynamicUserAgent(),
+                javaScriptEnabled: true,
+                useWideViewPort: true,
+                loadWithOverviewMode: true,
+                supportZoom: true,
+                builtInZoomControls: true,
+                displayZoomControls: false,
+                useShouldOverrideUrlLoading: true,
+              ),
+              shouldOverrideUrlLoading: controller.shouldOverrideUrlLoading,
+            ),
+
+            if (controller.loading.value) const Center(child: CircularProgressIndicator()),
+          ],
+        );
+      }),
+    );
+  }
+}

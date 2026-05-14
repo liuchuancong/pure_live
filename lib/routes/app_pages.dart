@@ -15,6 +15,7 @@ import 'package:pure_live/modules/popular/popular_page.dart';
 import 'package:pure_live/modules/history/history_page.dart';
 import 'package:pure_live/modules/about/version_history.dart';
 import 'package:pure_live/modules/search/search_binding.dart';
+import 'package:pure_live/modules/search/web_search_page.dart';
 import 'package:pure_live/modules/favorite/favorite_page.dart';
 import 'package:pure_live/modules/settings/settings_page.dart';
 import 'package:pure_live/modules/version/version_binding.dart';
@@ -23,6 +24,7 @@ import 'package:pure_live/modules/toolbox/boolbox_binding.dart';
 import 'package:pure_live/modules/hot_areas/hot_areas_page.dart';
 import 'package:pure_live/modules/live_play/live_play_page.dart';
 import 'package:pure_live/modules/shield/danmu_shield_page.dart';
+import 'package:pure_live/modules/search/web_search_binding.dart';
 import 'package:pure_live/modules/settings/settings_binding.dart';
 import 'package:pure_live/modules/areas/favorite_areas_page.dart';
 import 'package:pure_live/modules/area_rooms/area_rooms_page.dart';
@@ -146,5 +148,6 @@ class AppPages {
       page: () => const RecordSettingsPage(),
       bindings: [RecordSettingsBinding()],
     ),
+    GetPage(name: RoutePath.kWebSearch, page: () => const WebSearchPage(), bindings: [WebSearchBinding()]),
   ];
 }
