@@ -13,6 +13,7 @@
   <img alt="License" src="https://img.shields.io/github/license/liuchuancong/pure_live?color=blue">
   <img alt="Latest Release" src="https://img.shields.io/github/v/release/liuchuancong/pure_live">
   <img alt="Stars" src="https://img.shields.io/github/stars/liuchuancong/pure_live?color=yellow">
+  <img alt="Downloads" src="https://img.shields.io/github/downloads/liuchuancong/pure_live/total?style=flat-square">
 </p>
 
 > ⚠️ **本软件仅用于个人学习与技术交流，请勿用于商业用途。下载后请于 24 小时内删除。**
