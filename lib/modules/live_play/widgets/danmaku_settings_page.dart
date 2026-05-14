@@ -148,9 +148,9 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
   Widget _card(ThemeData theme, List<Widget> children) {
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+        color: theme.canvasColor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.08)),
+        border: Border.all(color: theme.primaryColor.withValues(alpha: 0.08)),
       ),
       child: Column(children: children),
     );

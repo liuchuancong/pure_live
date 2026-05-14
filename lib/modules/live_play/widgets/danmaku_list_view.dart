@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui' as ui;
 import 'package:get/get.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/emoji_manager.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
@@ -19,86 +20,141 @@ class DanmakuListView extends StatefulWidget {
 class DanmakuListViewState extends State<DanmakuListView> {
   final ScrollController _scrollController = ScrollController();
 
-  bool _userScrolling = false;
+  static const Duration throttleDuration = Duration(milliseconds: 120);
 
-  StreamSubscription? _messagesSub;
-  Timer? _throttleTimer;
-  bool _pendingScroll = false;
+  bool userScrolling = false;
 
-  static const _throttleDuration = Duration(milliseconds: 120);
+  bool pendingScroll = false;
+
+  Timer? throttleTimer;
+
+  Worker? fullscreenWorker;
+  Worker? windowFullscreenWorker;
+
+  StreamSubscription? messagesSub;
 
   LivePlayController get controller => Get.find<LivePlayController>();
 
   @override
   void initState() {
     super.initState();
-    _messagesSub = controller.messages.listen((_) => _scheduleScroll());
-    ever(GlobalPlayerState.to.isWindowFullscreen, (_) {
-      _forceScrollToBottom();
+
+    messagesSub = controller.messages.listen((_) {
+      scheduleAutoScroll();
     });
-    ever(GlobalPlayerState.to.isFullscreen, (_) {
-      _forceScrollToBottom();
+
+    fullscreenWorker = ever(GlobalPlayerState.to.isFullscreen, (value) {
+      if (value == false) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          forceScrollToBottom();
+        });
+      }
+    });
+
+    windowFullscreenWorker = ever(GlobalPlayerState.to.isWindowFullscreen, (value) {
+      if (value == false) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          forceScrollToBottom();
+        });
+      }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      forceScrollToBottom();
     });
   }
 
   @override
   void dispose() {
-    _messagesSub?.cancel();
-    _throttleTimer?.cancel();
+    messagesSub?.cancel();
+
+    fullscreenWorker?.dispose();
+    windowFullscreenWorker?.dispose();
+
+    throttleTimer?.cancel();
+
     _scrollController.dispose();
+
     super.dispose();
   }
 
-  void _forceScrollToBottom() {
+  Future<void> forceScrollToBottom() async {
     if (!mounted) return;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
-      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (!_scrollController.hasClients) return;
-        final max = _scrollController.position.maxScrollExtent;
-        _scrollController.jumpTo(max);
-        debugPrint("📌 Danmaku scroll -> $max");
-      });
+    for (int i = 0; i < 3; i++) {
+      await SchedulerBinding.instance.endOfFrame;
+
+      if (!mounted) return;
+
+      if (!_scrollController.hasClients) {
+        continue;
+      }
+
+      final position = _scrollController.position;
+
+      if (!position.hasContentDimensions) {
+        continue;
+      }
+
+      final maxScroll = position.maxScrollExtent;
+
+      if (position.pixels != maxScroll) {
+        _scrollController.jumpTo(maxScroll);
+      }
+    }
+  }
+
+  void scheduleAutoScroll() {
+    if (!mounted) return;
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    bool shouldAutoScroll = true;
+    if (position.hasContentDimensions) {
+      final distanceToBottom = position.maxScrollExtent - position.pixels;
+      shouldAutoScroll = distanceToBottom <= 120;
+    }
+    if (!shouldAutoScroll) {
+      return;
+    }
+    pendingScroll = true;
+    throttleTimer?.cancel();
+    throttleTimer = Timer(throttleDuration, () async {
+      if (!mounted) return;
+      if (!pendingScroll) return;
+      await forceScrollToBottom();
+      pendingScroll = false;
     });
   }
 
-  void _scheduleScroll() {
-    if (!mounted || _userScrolling) return;
+  void onScrollNotification(ScrollNotification notification) {
+    if (notification is! UserScrollNotification) {
+      return;
+    }
 
-    _pendingScroll = true;
+    if (!_scrollController.hasClients) {
+      return;
+    }
 
-    _throttleTimer?.cancel();
+    final position = _scrollController.position;
 
-    _throttleTimer = Timer(_throttleDuration, () {
-      if (!_pendingScroll || !_scrollController.hasClients) return;
+    final distanceToBottom = position.maxScrollExtent - position.pixels;
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!_scrollController.hasClients) return;
-
-        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-      });
-
-      _pendingScroll = false;
-    });
-  }
-
-  void _onScrollNotification(ScrollNotification n) {
-    if (n is UserScrollNotification) {
-      final pos = _scrollController.position;
-
-      if (n.direction == ScrollDirection.forward) {
-        if (pos.maxScrollExtent - pos.pixels > 80) {
-          if (!_userScrolling) {
-            setState(() => _userScrolling = true);
-          }
+    if (notification.direction == ScrollDirection.forward) {
+      if (distanceToBottom > 80) {
+        if (!userScrolling) {
+          setState(() {
+            userScrolling = true;
+          });
         }
-      } else if (n.direction == ScrollDirection.reverse) {
-        if (pos.maxScrollExtent - pos.pixels < 60) {
-          if (_userScrolling) {
-            setState(() => _userScrolling = false);
-          }
+      }
+    }
+
+    if (notification.direction == ScrollDirection.reverse) {
+      if (distanceToBottom < 60) {
+        if (userScrolling) {
+          setState(() {
+            userScrolling = false;
+          });
         }
       }
     }
@@ -106,44 +162,66 @@ class DanmakuListViewState extends State<DanmakuListView> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        NotificationListener<ScrollNotification>(
-          onNotification: (n) {
-            _onScrollNotification(n);
-            return false;
-          },
-          child: Obx(() {
-            final list = controller.messages;
-
-            return ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              cacheExtent: 500,
-              itemCount: list.length,
-              itemBuilder: (_, i) {
-                final msg = list[i];
-
-                return DanmakuItem(key: ValueKey(msg.hashCode), danmaku: msg);
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
+      decoration: BoxDecoration(
+        color: Get.theme.colorScheme.surface.withValues(alpha: 0.88),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Get.theme.colorScheme.outline.withValues(alpha: 0.02), width: 0.5),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4))],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Stack(
+          children: [
+            NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                onScrollNotification(notification);
+                return false;
               },
-            );
-          }),
-        ),
+              child: Obx(() {
+                final list = controller.messages;
 
-        if (_userScrolling)
-          Positioned(
-            left: 12,
-            bottom: 12,
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.arrow_downward_rounded),
-              label: const Text('回到底部'),
-              onPressed: () {
-                setState(() => _userScrolling = false);
-                _forceScrollToBottom();
-              },
+                return ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+                  cacheExtent: 800,
+                  itemCount: list.length,
+                  itemBuilder: (_, index) {
+                    final msg = list[index];
+
+                    return DanmakuItem(key: ValueKey("${msg.userName}-${msg.message}-$index"), danmaku: msg);
+                  },
+                );
+              }),
             ),
-          ),
-      ],
+
+            if (userScrolling)
+              Positioned(
+                right: 12,
+                bottom: 12,
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    backgroundColor: Get.theme.colorScheme.primary.withValues(alpha: 0.92),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  icon: const Icon(Icons.arrow_downward_rounded, size: 18),
+                  label: const Text('回到底部', style: TextStyle(fontWeight: FontWeight.w600)),
+                  onPressed: () async {
+                    setState(() {
+                      userScrolling = false;
+                    });
+
+                    await forceScrollToBottom();
+                  },
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -156,41 +234,67 @@ class DanmakuItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final baseColor = Color.fromARGB(255, danmaku.color.r, danmaku.color.g, danmaku.color.b);
-    final vibrantColor = baseColor.asHexString == '#FFFFFFFF'
+
+    final vibrantColor = baseColor.toARGB32() == Colors.white.toARGB32()
         ? Colors.black
-        : HSLColor.fromColor(baseColor).withLightness(0.5).withSaturation(1).toColor();
+        : HSLColor.fromColor(baseColor).withLightness(0.52).withSaturation(1).toColor();
 
     return RepaintBoundary(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(0),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Flexible(
-                    child: Text.rich(
-                      TextSpan(
-                        children: [
-                          TextSpan(
-                            text: "${danmaku.userName}: ",
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.72),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: vibrantColor.withValues(alpha: 0.01), width: 0.5),
+            boxShadow: [
+              BoxShadow(color: vibrantColor.withValues(alpha: 0.02), blurRadius: 6, offset: const Offset(0, 2)),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  margin: const EdgeInsets.only(top: 6, right: 10),
+                  decoration: BoxDecoration(
+                    color: vibrantColor,
+                    shape: BoxShape.circle,
+                    boxShadow: [BoxShadow(color: vibrantColor.withValues(alpha: 0.1), blurRadius: 6)],
+                  ),
+                ),
+
+                Expanded(
+                  child: Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: "${danmaku.userName}: ",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87,
+                            letterSpacing: 0.2,
                           ),
-                          TextSpan(
-                            children: parseEmojis(danmaku.message, 14),
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: vibrantColor),
+                        ),
+                        TextSpan(
+                          children: parseEmojis(danmaku.message, 14, vibrantColor),
+                          style: TextStyle(
+                            fontSize: 14,
+                            height: 1.45,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black87,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -199,33 +303,45 @@ class DanmakuItem extends StatelessWidget {
   }
 }
 
-List<InlineSpan> parseEmojis(String text, double size) {
+final Map<String, List<InlineSpan>> emojiCache = {};
+
+List<InlineSpan> parseEmojis(String text, double size, Color color) {
+  final cacheKey = "$text-$size-${color.toARGB32()}";
+
+  final cached = emojiCache[cacheKey];
+
+  if (cached != null) {
+    return cached;
+  }
+
   final spans = <InlineSpan>[];
+
   final regex = RegExp(r'\[(.*?)\]');
 
   int last = 0;
 
-  for (final m in regex.allMatches(text)) {
-    if (m.start > last) {
+  for (final match in regex.allMatches(text)) {
+    if (match.start > last) {
       spans.add(
         TextSpan(
-          text: text.substring(last, m.start),
+          text: text.substring(last, match.start),
           style: TextStyle(fontSize: size),
         ),
       );
     }
 
-    final key = m.group(0)!;
-    final img = EmojiManager.getEmoji(key);
+    final key = match.group(0)!;
 
-    if (img != null) {
+    final image = EmojiManager.getEmoji(key);
+
+    if (image != null) {
       spans.add(
         WidgetSpan(
           alignment: PlaceholderAlignment.middle,
           child: SizedBox(
             width: size * 1.25,
             height: size * 1.25,
-            child: RepaintBoundary(child: CustomPaint(painter: EmojiPainter(img))),
+            child: RepaintBoundary(child: CustomPaint(painter: EmojiPainter(image))),
           ),
         ),
       );
@@ -238,7 +354,7 @@ List<InlineSpan> parseEmojis(String text, double size) {
       );
     }
 
-    last = m.end;
+    last = match.end;
   }
 
   if (last < text.length) {
@@ -249,6 +365,8 @@ List<InlineSpan> parseEmojis(String text, double size) {
       ),
     );
   }
+
+  emojiCache[cacheKey] = spans;
 
   return spans;
 }
