@@ -250,6 +250,7 @@ class RecorderController extends GetxService {
         rwTimeout: settings.rwTimeout.value,
         threadQueueSize: settings.threadQueueSize.value,
       );
+      log('Running command: ${cmd.toString()}', name: 'RecorderController');
       task.outputDir = dir.path;
       updateTask(task);
 
@@ -474,6 +475,10 @@ class RecorderController extends GetxService {
       List<LiveRecordTask> recorderTasks = list.map((e) => LiveRecordTask.fromJson(e)).toList();
       recorderTasks.sort((a, b) => a.status.order.compareTo(b.status.order));
       tasks.value = recorderTasks;
+      for (final task in tasks) {
+        task.status = RecordStatus.stopped;
+        updateTask(task);
+      }
       if (settings.autoStartOnBoot.value) {
         for (final task in tasks) {
           await refreshTaskStatus(task);
