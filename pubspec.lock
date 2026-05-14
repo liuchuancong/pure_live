@@ -504,7 +504,7 @@ packages:
     description:
       path: flutter
       ref: dev
-      resolved-ref: "4925f886903d15a05f33521ad6fc0ec7688fbe9d"
+      resolved-ref: db063a66d9643423232d099cbac0dbb70c3fa822
       url: "https://github.com/akashskypatel/ffmpeg-kit-extended"
     source: git
     version: "0.5.0"

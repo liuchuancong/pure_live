@@ -42,8 +42,6 @@ class RecorderController extends GetxService {
   // 用于阻塞 _runTask 直到整个流程（录制+处理）结束
   final Map<String, Completer<void>> _lifecycleCompleters = {};
 
-  Timer? _persistTimer;
-
   late final Timer _resourceMonitor;
 
   int get runningCount => scheduler.runningCount;
@@ -153,8 +151,7 @@ class RecorderController extends GetxService {
   }
 
   void schedulePersist() {
-    _persistTimer?.cancel();
-    _persistTimer = Timer(const Duration(seconds: 2), _persist);
+    _persist();
   }
 
   Future<void> addTask({required LiveRoom room}) async {
@@ -253,18 +250,18 @@ class RecorderController extends GetxService {
         rwTimeout: settings.rwTimeout.value,
         threadQueueSize: settings.threadQueueSize.value,
       );
+      log(cmd);
+      // task.outputDir = dir.path;
+      // updateTask(task);
 
-      task.outputDir = dir.path;
-      updateTask(task);
+      // token.onCancel = () async {
+      //   await ffmpeg.stop(task.taskId);
+      //   // 确保取消时也能解锁
+      //   if (!completer.isCompleted) completer.complete();
+      // };
 
-      token.onCancel = () async {
-        await ffmpeg.stop(task.taskId);
-        // 确保取消时也能解锁
-        if (!completer.isCompleted) completer.complete();
-      };
-
-      await ffmpeg.start(taskId: task.taskId, command: cmd);
-      await completer.future;
+      // await ffmpeg.start(taskId: task.taskId, command: cmd);
+      // await completer.future;
     } on StreamException catch (e) {
       developer.log('解析失败: ${e.message}', name: 'RecorderController');
       ToastUtil.show("${task.nick}: ${e.message}");
@@ -310,7 +307,6 @@ class RecorderController extends GetxService {
       developer.log('录制完成，开始处理视频: ${task.taskId}', name: 'RecorderController');
       task.status = RecordStatus.processing;
       updateTask(task);
-      await Future.delayed(Duration(seconds: 2));
       unawaited(_processVideo(task));
     } else {
       developer.log('录制时间过短，跳过处理: ${task.taskId}', name: 'RecorderController');
@@ -529,8 +525,6 @@ class RecorderController extends GetxService {
     for (final t in _retryTimers.values) {
       t.cancel();
     }
-
-    _persistTimer?.cancel();
     _resourceMonitor.cancel();
     _pollTimers.clear();
 

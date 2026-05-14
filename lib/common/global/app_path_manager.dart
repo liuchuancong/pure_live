@@ -24,27 +24,28 @@ class AppPathManager {
   String? _basePath;
 
   Future<void> initialize({String instanceId = ''}) async {
-    final Directory appDir = await getApplicationDocumentsDirectory();
-    String oldRootPath = p.join(appDir.path, softNameDir);
-    if (instanceId.isNotEmpty) {
-      oldRootPath = p.join(oldRootPath, instanceId);
-    }
-    final supportDir = await getApplicationSupportDirectory();
+    final sanitizedInstanceId = instanceId.replaceAll(RegExp(r'[\\/]'), '');
 
-    final List<String> extraOldPaths = [
+    final Directory appDir = await getApplicationDocumentsDirectory();
+    final supportDir = await getApplicationSupportDirectory();
+    final List<String> extraOldBasePaths = [
       p.join(appDir.path, softNameDir),
       p.join(supportDir.path, softNameDir),
       p.join(appDir.path, softNameDir.toLowerCase()),
       p.join(supportDir.path, softNameDir.toLowerCase()),
     ];
-
-    for (final path in extraOldPaths) {
+    String oldBaseRoot = p.join(appDir.path, softNameDir);
+    for (final path in extraOldBasePaths) {
       final dir = Directory(path);
       if (await dir.exists()) {
-        oldRootPath = path;
-        log("✔ 找到真实旧数据路径: $oldRootPath");
+        oldBaseRoot = path;
+        log("✔ 找到真实旧基准数据路径: $oldBaseRoot");
         break;
       }
+    }
+    String oldRootPath = oldBaseRoot;
+    if (sanitizedInstanceId.isNotEmpty) {
+      oldRootPath = p.join(oldBaseRoot, sanitizedInstanceId);
     }
     String rootPath = '';
     if (kIsWeb) {
@@ -57,15 +58,12 @@ class AppPathManager {
         rootPath = p.join(exeDir, dirAppData);
       }
     } else {
-      final Directory appDir = await getApplicationDocumentsDirectory();
       rootPath = p.join(appDir.path, softNameDir);
     }
-
-    if (instanceId.isNotEmpty) {
-      rootPath = p.join(rootPath, instanceId);
+    if (sanitizedInstanceId.isNotEmpty) {
+      rootPath = p.join(rootPath, sanitizedInstanceId);
     }
     final dir = Directory(rootPath);
-
     final bool isAlreadyMigrated = !kIsWeb && await dir.exists() && await dir.list().isEmpty == false;
 
     if (!kIsWeb && oldRootPath != rootPath && !isAlreadyMigrated) {
