@@ -3,7 +3,6 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  app_links
   battery_plus
   connectivity_plus
   dynamic_color

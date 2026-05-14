@@ -11,15 +11,12 @@ class LivePlayQuality {
 
   LivePlayQuality({
     required this.quality,
-    required this.data,
+    this.data, // 👈 去掉 required
     this.sort = 0,
   });
 
   @override
   String toString() {
-    return json.encode({
-      "quality": quality,
-      "data": data.toString(),
-    });
+    return json.encode({"quality": quality, "data": data?.toString()});
   }
 }

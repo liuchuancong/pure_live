@@ -1,16 +1,19 @@
 import 'dart:io';
 import 'dart:developer';
 import 'package:get/get.dart';
+import 'app_path_manager.dart';
 import 'package:fvp/fvp.dart' as fvp;
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/global.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
+import 'package:pure_live/plugins/cache_manager.dart';
 import 'package:pure_live/common/global/windows_utils.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/recorder/services/cache_service.dart';
+import 'package:pure_live/routes/route_observer_controller.dart';
 import 'package:pure_live/common/global/platform/mobile_manager.dart';
 import 'package:pure_live/common/global/platform/desktop_manager.dart';
 import 'package:pure_live/common/services/bilibili_account_service.dart';
@@ -38,14 +41,11 @@ class AppInitializer {
         exit(0);
       }
     }
-
-    final appDir = await getApplicationDocumentsDirectory();
-    String path =
-        '${appDir.path}${Platform.pathSeparator}pure_live${instanceId.isNotEmpty ? "${Platform.pathSeparator}$instanceId" : ""}';
-
+    await AppPathManager().initialize(instanceId: instanceId);
+    await CustomImageCacheManager.initialize();
+    final Directory hiveDir = await AppPathManager().getDir(AppPathManager.dirHiveDB);
     try {
-      await SupaBaseManager.getInstance().initial();
-      await Hive.initFlutter(path);
+      await Hive.initFlutter(hiveDir.path);
       await HivePrefUtil.init();
       initService();
     } catch (e) {
@@ -96,11 +96,10 @@ class AppInitializer {
 
   void initService() {
     Get.put(SettingsService(), permanent: true);
-    Get.put(AuthController(), permanent: true);
     Get.put(CacheService());
     Get.put(RecordSettingsController());
     Get.put(RecorderController());
-
+    Get.put(RouteObserverController(), permanent: true);
     Get.lazyPut(() => FavoriteController(), fenix: true);
     Get.lazyPut(() => BiliBiliAccountService(), fenix: true);
     Get.lazyPut(() => PopularController(), fenix: true);

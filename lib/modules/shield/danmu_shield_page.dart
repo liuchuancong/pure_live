@@ -1,17 +1,17 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:pure_live/modules/auth/utils/constants.dart';
 import 'package:pure_live/modules/shield/danmu_shield_controller.dart';
 
 class DanmuShieldPage extends GetView<DanmuShieldController> {
   const DanmuShieldPage({super.key});
+  SizedBox spacer(double height) {
+    return SizedBox(height: height);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("弹幕关键词屏蔽"),
-      ),
+      appBar: AppBar(title: const Text("弹幕关键词屏蔽")),
       body: ListView(
         padding: const EdgeInsets.all(12.0),
         children: [
@@ -58,10 +58,7 @@ class DanmuShieldPage extends GetView<DanmuShieldController> {
                           borderRadius: const BorderRadius.all(Radius.circular(5.0)),
                         ),
                         padding: const EdgeInsets.only(top: 10, bottom: 10, left: 8, right: 8),
-                        child: Text(
-                          item,
-                          style: Get.textTheme.bodyMedium,
-                        ),
+                        child: Text(item, style: Get.textTheme.bodyMedium),
                       ),
                     ),
                   )

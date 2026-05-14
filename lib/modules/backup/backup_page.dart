@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/backup/scan_page.dart';
 import 'package:pure_live/plugins/file_recover_utils.dart';
-import 'package:pure_live/modules/auth/utils/constants.dart';
 
 class BackupPage extends StatefulWidget {
   const BackupPage({super.key});
@@ -16,6 +15,10 @@ class _BackupPageState extends State<BackupPage> {
   final settings = Get.find<SettingsService>();
   late String backupDirectory = settings.backupDirectory.value;
   late String m3uDirectory = settings.m3uDirectory.value;
+  SizedBox spacer(double height) {
+    return SizedBox(height: height);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

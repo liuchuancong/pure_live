@@ -1,7 +1,8 @@
-import 'dart:developer';
 import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/plugins/cache_manager.dart';
 import 'package:pure_live/routes/app_navigation.dart';
+import 'package:pure_live/common/widgets/common_avatar.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 // ignore: must_be_immutable
@@ -24,19 +25,6 @@ class RoomCard extends StatelessWidget {
         actions: [FollowButton(room: room)],
       ),
     );
-  }
-
-  ImageProvider? getRoomAvatar(String avatar) {
-    try {
-      return CachedNetworkImageProvider(
-        avatar,
-        errorListener: (err) {
-          log("CachedNetworkImageProvider: Image failed to load!");
-        },
-      );
-    } catch (e) {
-      return null;
-    }
   }
 
   @override
@@ -63,7 +51,35 @@ class RoomCard extends StatelessWidget {
                     elevation: 0,
                     child: room.liveStatus == LiveStatus.offline && room.cover!.isNotEmpty
                         ? Center(child: Icon(Icons.tv_off_rounded, size: dense ? 36 : 60))
-                        : Image.network(room.cover!, fit: BoxFit.cover),
+                        : CachedNetworkImage(
+                            imageUrl: room.cover!,
+                            cacheManager: CustomImageCacheManager.instance,
+                            fit: BoxFit.cover,
+                            fadeInDuration: const Duration(milliseconds: 250),
+                            fadeOutDuration: const Duration(milliseconds: 250),
+                            placeholder: (context, url) => Container(
+                              color: Theme.of(context).focusColor,
+                              child: const Center(
+                                child: SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) {
+                              return Container(
+                                color: Theme.of(context).focusColor,
+                                child: Center(
+                                  child: Icon(
+                                    Icons.broken_image_rounded,
+                                    size: dense ? 36 : 60,
+                                    color: Theme.of(context).disabledColor,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                   ),
                 ),
                 if (room.isRecord == true)
@@ -94,11 +110,7 @@ class RoomCard extends StatelessWidget {
               minLeadingWidth: dense ? 34 : null,
               contentPadding: dense ? const EdgeInsets.only(left: 8, right: 10) : null,
               horizontalTitleGap: dense ? 8 : null,
-              leading: CircleAvatar(
-                foregroundImage: room.avatar!.isNotEmpty ? getRoomAvatar(room.avatar!) : null,
-                radius: dense ? 17 : null,
-                backgroundColor: Theme.of(context).disabledColor,
-              ),
+              leading: CommonAvatar(avatarUrl: room.avatar, fallbackName: room.nick, dense: dense),
               title: Text(
                 room.title ?? '',
                 maxLines: 1,

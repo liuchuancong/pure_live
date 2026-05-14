@@ -2,10 +2,13 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:developer';
 import 'package:dio/dio.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
+import 'package:pure_live/plugins/race_http.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:pure_live/core/iptv/src/m3u_item.dart';
 import 'package:pure_live/core/iptv/src/m3u_list.dart';
+import 'package:pure_live/common/utils/githup_mirror.dart';
+import 'package:pure_live/common/global/app_path_manager.dart';
 
 class IptvUtils {
   static const String directoryPath = '/assets/iptv/';
@@ -14,8 +17,8 @@ class IptvUtils {
 
   static Future<List<IptvCategory>> readCategory() async {
     try {
-      var dir = await getApplicationCacheDirectory();
-      final categories = File('${dir.path}${Platform.pathSeparator}categories.json');
+      var dir = await AppPathManager().getDir(AppPathManager.dirIptvCache);
+      final categories = File(p.join(dir.path, AppPathManager.iptvCategoryFile));
       String jsonData = await categories.readAsString();
       List jsonArr = jsonData.isNotEmpty ? jsonDecode(jsonData) : [];
       List<IptvCategory> categoriesArr = jsonArr.map((e) => IptvCategory.fromJson(e)).toList();
@@ -27,16 +30,15 @@ class IptvUtils {
 
   static Future loadNetworkM3u8() async {
     Dio dio = Dio(
-      BaseOptions(
-        connectTimeout: const Duration(seconds: 10),
-        //响应时间为3秒
-        receiveTimeout: const Duration(seconds: 10),
-      ),
+      BaseOptions(connectTimeout: const Duration(seconds: 10), receiveTimeout: const Duration(seconds: 10)),
     );
     try {
-      var dir = await getApplicationCacheDirectory();
-      final m3ufile = File("${dir.path}${Platform.pathSeparator}hot.m3u");
-      await dio.download('https://raw.githubusercontent.com/YanG-1989/m3u/master/Gather.m3u', m3ufile.path);
+      var dir = await AppPathManager().getDir(AppPathManager.dirIptvCache);
+      final m3ufile = File(p.join(dir.path, AppPathManager.iptvHotFile));
+      await dio.download(
+        'https://ghfast.top/https://raw.githubusercontent.com/YueChan/Live/main/IPTV.m3u',
+        m3ufile.path,
+      );
     } catch (e) {
       log(e.toString());
     }
@@ -62,28 +64,22 @@ class IptvUtils {
   static Future<List<M3uItem>> readRecommandsItems() async {
     List<M3uItem> list = [];
     try {
-      Dio dio = Dio(
-        BaseOptions(
-          connectTimeout: const Duration(seconds: 30),
-          //响应时间为3秒
-          receiveTimeout: const Duration(seconds: 30),
-        ),
-      );
-      var m3u8Url = 'https://hub.gitmirror.com/https://github.com/YanG-1989/m3u/blob/main/Gather.m3u';
-      Response response = await dio.get(m3u8Url);
-      final m3uList = M3uList.load(response.data);
-      for (M3uItem item in m3uList.items) {
-        list.add(item);
+      final mirror = GitHubMirror(owner: 'YueChan', repo: 'Live', branch: 'main');
+      final urls = mirror.mirrors('GNTV.m3u');
+      final m3uText = await RaceHttp.fetchText(urls);
+
+      if (m3uText == null || m3uText.isEmpty) {
+        throw Exception("m3u download failed");
       }
+      final m3uList = M3uList.load(m3uText);
+      list.addAll(m3uList.items);
     } catch (e) {
       await loadNetworkM3u8();
-      var dir = await getApplicationCacheDirectory();
-      final m3ufile = File("${dir.path}${Platform.pathSeparator}hot.m3u");
+      var dir = await AppPathManager().getDir(AppPathManager.dirIptvCache);
+      final m3ufile = File(p.join(dir.path, 'hot.m3u'));
       if (m3ufile.existsSync()) {
         final m3uList = await M3uList.loadFromFile(m3ufile.path);
-        for (M3uItem item in m3uList.items) {
-          list.add(item);
-        }
+        list.addAll(m3uList.items);
       }
     }
     return list;

@@ -1,1 +1,0 @@
-enum SupaAuthAction { signIn, signUp }

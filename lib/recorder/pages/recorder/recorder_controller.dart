@@ -42,8 +42,6 @@ class RecorderController extends GetxService {
   // 用于阻塞 _runTask 直到整个流程（录制+处理）结束
   final Map<String, Completer<void>> _lifecycleCompleters = {};
 
-  Timer? _persistTimer;
-
   late final Timer _resourceMonitor;
 
   int get runningCount => scheduler.runningCount;
@@ -153,8 +151,7 @@ class RecorderController extends GetxService {
   }
 
   void schedulePersist() {
-    _persistTimer?.cancel();
-    _persistTimer = Timer(const Duration(seconds: 2), _persist);
+    _persist();
   }
 
   Future<void> addTask({required LiveRoom room}) async {
@@ -253,7 +250,7 @@ class RecorderController extends GetxService {
         rwTimeout: settings.rwTimeout.value,
         threadQueueSize: settings.threadQueueSize.value,
       );
-
+      log('Running command: ${cmd.toString()}', name: 'RecorderController');
       task.outputDir = dir.path;
       updateTask(task);
 
@@ -294,10 +291,9 @@ class RecorderController extends GetxService {
     await scheduler.cancel(task.taskId);
     if (task.status == RecordStatus.running || task.status == RecordStatus.preparing) {
       log('Stopping task: ${task.taskId}');
-    } else {
-      task.status = RecordStatus.stopped;
-      updateTask(task);
     }
+    task.status = RecordStatus.stopped;
+    updateTask(task);
   }
 
   Future<void> _onComplete(LiveRecordTask task) async {
@@ -306,12 +302,21 @@ class RecorderController extends GetxService {
         task.status == RecordStatus.processing) {
       return;
     }
+
     if (task.outputDir != null && task.recordedSeconds > 0) {
-      developer.log('录制完成，开始处理视频: ${task.taskId}', name: 'RecorderController');
+      developer.log('录制信号完成，进入安全等待期: ${task.taskId}', name: 'RecorderController');
+      await Future.delayed(const Duration(seconds: 2));
+      developer.log('安全期结束，正式开始合并处理视频: ${task.taskId}', name: 'RecorderController');
       task.status = RecordStatus.processing;
       updateTask(task);
-      await Future.delayed(Duration(seconds: 2));
-      unawaited(_processVideo(task));
+      try {
+        developer.log('开始合并视频: ${task.taskId}', name: 'RecorderController');
+        await _processVideo(task);
+      } catch (e) {
+        developer.log('视频处理期间发生错误: ${task.taskId} -> $e', name: 'RecorderController');
+        task.status = RecordStatus.failed;
+        updateTask(task);
+      }
     } else {
       developer.log('录制时间过短，跳过处理: ${task.taskId}', name: 'RecorderController');
       task.status = RecordStatus.stopped;
@@ -479,6 +484,10 @@ class RecorderController extends GetxService {
       List<LiveRecordTask> recorderTasks = list.map((e) => LiveRecordTask.fromJson(e)).toList();
       recorderTasks.sort((a, b) => a.status.order.compareTo(b.status.order));
       tasks.value = recorderTasks;
+      for (final task in tasks) {
+        task.status = RecordStatus.stopped;
+        updateTask(task);
+      }
       if (settings.autoStartOnBoot.value) {
         for (final task in tasks) {
           await refreshTaskStatus(task);
@@ -529,8 +538,6 @@ class RecorderController extends GetxService {
     for (final t in _retryTimers.values) {
       t.cancel();
     }
-
-    _persistTimer?.cancel();
     _resourceMonitor.cancel();
     _pollTimers.clear();
 

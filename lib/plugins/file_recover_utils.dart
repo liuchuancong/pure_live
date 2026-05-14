@@ -3,11 +3,13 @@ import 'dart:math';
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:dio/dio.dart' as dio;
+import 'package:path/path.dart' as p;
 import 'package:pure_live/common/index.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:date_format/date_format.dart' hide S;
 import 'package:pure_live/core/iptv/iptv_utils.dart';
 import 'package:pure_live/core/common/http_client.dart';
+import 'package:pure_live/common/global/app_path_manager.dart';
 
 class FileRecoverUtils {
   ///获取后缀
@@ -49,39 +51,36 @@ class FileRecoverUtils {
   }
 
   Future<bool> recoverNetworkM3u8Backup(String url, String fileName) async {
-    var dioInstance = dio.Dio(
-      dio.BaseOptions(
-        connectTimeout: const Duration(seconds: 10),
-        //响应时间为3秒
-        receiveTimeout: const Duration(seconds: 10),
-      ),
+    final dioInstance = dio.Dio(
+      dio.BaseOptions(connectTimeout: const Duration(seconds: 10), receiveTimeout: const Duration(seconds: 10)),
     );
-    var dir = await getApplicationCacheDirectory();
-    final m3ufile = File("${dir.path}${Platform.pathSeparator}$fileName.m3u");
+
     try {
+      final Directory cacheDir = await AppPathManager().getDir(AppPathManager.dirIptvCache);
+      final File m3ufile = File(p.join(cacheDir.path, '$fileName.m3u'));
+      final File categories = File(p.join(cacheDir.path, AppPathManager.iptvCategoryFile));
       dio.Response response = await dioInstance.download(url, m3ufile.path);
       if (response.statusCode != 200 && response.statusCode != 304) {
         SnackBarUtil.error('文件下载失败请重试');
+        return false;
       }
-      List jsonArr = [];
-      final categories = File('${dir.path}${Platform.pathSeparator}categories.json');
       if (!categories.existsSync()) {
         categories.createSync();
       }
+
       String jsonData = await categories.readAsString();
-      jsonArr = jsonData.isNotEmpty ? jsonDecode(jsonData) : [];
+      List jsonArr = jsonData.isNotEmpty ? jsonDecode(jsonData) : [];
       List<IptvCategory> categoriesArr = jsonArr.map((e) => IptvCategory.fromJson(e)).toList();
-      bool isNotExit = categoriesArr.indexWhere((element) => element.id == url) == -1;
-      if (isNotExit) {
-        categoriesArr.add(
-          IptvCategory(id: url, name: getName(m3ufile.path).replaceAll(RegExp(r'.m3u'), ''), path: m3ufile.path),
-        );
+      final int existingIndex = categoriesArr.indexWhere((element) => element.id == url);
+
+      if (existingIndex == -1) {
+        categoriesArr.add(IptvCategory(id: url, name: p.basenameWithoutExtension(m3ufile.path), path: m3ufile.path));
       } else {
-        var index = categoriesArr.indexWhere((element) => element.id == url);
-        categoriesArr[index].name = fileName;
+        categoriesArr[existingIndex].name = fileName;
       }
 
       categories.writeAsStringSync(jsonEncode(categoriesArr.map((e) => e.toJson()).toList()));
+
       SnackBarUtil.success(S.of(Get.context!).recover_backup_success);
       return true;
     } catch (e) {
@@ -156,11 +155,11 @@ class FileRecoverUtils {
 
   Future<bool> recoverM3u8BackupByWeb(String fileString, String fileName) async {
     try {
-      var dir = await getApplicationCacheDirectory();
-      final m3ufile = File('${dir.path}${Platform.pathSeparator}$fileName');
+      var dir = await AppPathManager().getDir(AppPathManager.dirIptvCache);
+      final m3ufile = File(p.join(dir.path, fileName));
       m3ufile.writeAsStringSync(fileString);
       List jsonArr = [];
-      final categories = File('${dir.path}${Platform.pathSeparator}categories.json');
+      final categories = File(p.join(dir.path, AppPathManager.iptvCategoryFile));
       if (!categories.existsSync()) {
         categories.createSync();
       }
@@ -191,10 +190,10 @@ class FileRecoverUtils {
 
     try {
       final file = File(result.files.single.path!);
-      var dir = await getApplicationCacheDirectory();
-      final m3ufile = File('${dir.path}${Platform.pathSeparator}${getName(file.path)}');
+      var dir = await AppPathManager().getDir(AppPathManager.dirIptvCache);
+      final m3ufile = File(p.join(dir.path, getName(file.path)));
       List jsonArr = [];
-      final categories = File('${dir.path}${Platform.pathSeparator}categories.json');
+      final categories = File(p.join(dir.path, AppPathManager.iptvCategoryFile));
       if (!categories.existsSync()) {
         categories.createSync();
       }
@@ -233,10 +232,10 @@ class FileRecoverUtils {
   Future<bool> recoverM3u8BackupByShare(SharedMedia media) async {
     try {
       File file = await toFile(media.content!);
-      var dir = await getApplicationCacheDirectory();
-      final m3ufile = File('${dir.path}${Platform.pathSeparator}${getName(file.path)}');
+      var dir = await AppPathManager().getDir(AppPathManager.dirIptvCache);
+      final m3ufile = File(p.join(dir.path, getName(file.path)));
       List jsonArr = [];
-      final categories = File('${dir.path}${Platform.pathSeparator}categories.json');
+      final categories = File(p.join(dir.path, AppPathManager.iptvCategoryFile));
       if (!categories.existsSync()) {
         categories.createSync();
       }

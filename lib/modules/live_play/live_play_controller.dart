@@ -60,6 +60,24 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
   bool get _hasRoom => detail.value != null;
 
+  bool get isIptv => currentSite.id == Sites.iptvSite;
+
+  LivePlayQuality get _qualitySafe {
+    if (qualites.isEmpty) {
+      return LivePlayQuality(quality: '原画');
+    }
+    final i = currentQuality.value;
+    if (i < 0 || i >= qualites.length) return qualites.first;
+    return qualites[i];
+  }
+
+  String get _playUrlSafe {
+    if (playUrls.isEmpty) return '';
+    final i = currentLineIndex.value;
+    if (i < 0 || i >= playUrls.length) return playUrls.first;
+    return playUrls[i];
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -70,7 +88,6 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     _initState();
     _initTab();
     _initBackInterceptor();
-    _initDanmaku();
     _initDebounce();
     _initTimer();
     _preloadEmoji();
@@ -95,7 +112,6 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
   void _initPlayer() {
     if (!_hasRoom) return;
-
     onInitPlayerState(
       reloadDataType: detail.value!.platform == Sites.bilibiliSite
           ? ReloadDataType.changeLine
@@ -103,18 +119,10 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     );
   }
 
-  void _initDanmaku() {
-    initDanmau();
-  }
-
-  void _preloadEmoji() {
-    EmojiManager().preload(site);
-  }
+  void _preloadEmoji() => EmojiManager().preload(site);
 
   void _initDebounce() {
-    everAll([closeTimeFlag, closeTimes], (_) {
-      _toggleTimer();
-    });
+    everAll([closeTimeFlag, closeTimes], (_) => _toggleTimer());
   }
 
   void _initTimer() {
@@ -159,11 +167,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   void _disposeAll() {
     tabController.dispose();
     _stopWatchTimer.onStopTimer();
-
     if (Platform.isAndroid) {
       BackButtonInterceptor.removeByName("live_play_page");
     }
-
     liveDanmaku.stop();
   }
 
@@ -171,6 +177,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   void setWidescreen() => screenMode.value = VideoMode.widescreen;
   void setFullScreen() => screenMode.value = VideoMode.fullscreen;
 
+  // =========================================================
+  // 初始化播放
+  // =========================================================
   Future<LiveRoom> onInitPlayerState({
     ReloadDataType reloadDataType = ReloadDataType.refreash,
     int line = 0,
@@ -181,8 +190,12 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
     var liveRoom = await currentSite.liveSite.getRoomDetail(roomId: roomId, platform: detail.value!.platform!);
 
-    if (currentSite.id == Sites.iptvSite) {
+    // ================= IPTV =================
+    if (isIptv) {
       liveRoom = liveRoom.copyWith(title: detail.value!.title!, nick: detail.value!.nick!);
+
+      _initIptvPlayer();
+      return detail.value!;
     }
 
     handleCurrentLineAndQuality(reloadDataType: reloadDataType, line: line, isReCalculate: isReCalculate);
@@ -218,8 +231,8 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     } else {
       success.value = false;
       isLiving.value = false;
-      setNormalScreen();
 
+      setNormalScreen();
       GlobalPlayerState.to.isFullscreen.value = false;
       GlobalPlayerState.to.isWindowFullscreen.value = false;
 
@@ -229,6 +242,43 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     }
 
     return liveRoom;
+  }
+
+  void switchRoom(LiveRoom newRoom) async {
+    final manager = GlobalPlayerService.instance.playerManager;
+    manager.close();
+    success.value = false;
+    isLiving.value = true;
+    messages.clear();
+    liveDanmaku.stop();
+    await videoController.value?.destory();
+    videoController.value = null;
+    hasUseDefaultResolution = false;
+    detail.value = newRoom;
+    currentSite = Sites.of(newRoom.platform!);
+    liveDanmaku = currentSite.liveSite.getDanmaku();
+    EmojiManager().preload(newRoom.platform!);
+    onInitPlayerState(
+      reloadDataType: newRoom.platform == Sites.bilibiliSite ? ReloadDataType.changeLine : ReloadDataType.refreash,
+    );
+  }
+
+  // ================= IPTV =================
+  void _initIptvPlayer() {
+    final link = detail.value?.link;
+
+    if (link == null || link.isEmpty) {
+      ToastUtil.show("无效播放地址");
+      return;
+    }
+
+    qualites = RxList([LivePlayQuality(quality: '原画')]);
+    currentQuality.value = 0;
+    currentLineIndex.value = 0;
+    playUrls.value = [link];
+
+    setPlayer();
+    liveDanmaku.stop();
   }
 
   void handleCurrentLineAndQuality({
@@ -248,6 +298,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     currentQuality.value = 0;
   }
 
+  // =========================================================
+  // 弹幕
+  // =========================================================
   void initDanmau() {
     if (!_hasRoom) return;
 
@@ -256,7 +309,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     }
 
     messages.add(_systemMsg("开始连接弹幕服务器"));
+
     final rxVideoCtrl = videoController;
+
     liveDanmaku.onMessage = (msg) {
       if (msg.type == LiveMessageType.chat) {
         if (settings.shieldList.every((e) => !msg.message.contains(e))) {
@@ -277,21 +332,68 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     };
   }
 
-  LiveMessage _systemMsg(String text) {
-    return LiveMessage(type: LiveMessageType.chat, userName: "系统消息", message: text, color: LiveMessageColor.white);
-  }
+  LiveMessage _systemMsg(String text) =>
+      LiveMessage(type: LiveMessageType.chat, userName: "系统消息", message: text, color: LiveMessageColor.white);
 
   void _addMessage(LiveMessage msg) {
-    if (messages.length > 100) {
-      messages.removeAt(0);
-    }
+    if (messages.length > 100) messages.removeAt(0);
     messages.add(msg);
   }
 
-  void setResolution(ReloadDataType reloadDataType, int qualityIndex, int lineIndex) {
-    final manager = GlobalPlayerService.instance.playerManager;
-    manager.close();
+  // =========================================================
+  // 设置播放器
+  // =========================================================
+  void setPlayer() async {
+    Map<String, String> headers = {};
 
+    if (currentSite.id == Sites.bilibiliSite) {
+      headers = {
+        "cookie": settings.bilibiliCookie.value,
+        "authority": "api.bilibili.com",
+        "accept":
+            "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "accept-language": "zh-CN,zh;q=0.9",
+        "cache-control": "no-cache",
+        "dnt": "1",
+        "pragma": "no-cache",
+        "sec-ch-ua": '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"macOS"',
+        "sec-fetch-dest": "document",
+        "sec-fetch-mode": "navigate",
+        "sec-fetch-site": "none",
+        "sec-fetch-user": "?1",
+        "upgrade-insecure-requests": "1",
+        "user-agent":
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+        "referer": "https://live.bilibili.com",
+      };
+    } else if (currentSite.id == Sites.huyaSite) {
+      final ua = await HuyaSite().getHuYaUA();
+      headers = {"user-agent": ua, "origin": "https://www.huya.com"};
+    }
+
+    GlobalPlayerState().setCurrentRoom(room.roomId!);
+
+    videoController.value = VideoController(
+      room: detail.value!,
+      playUrs: playUrls.value,
+      datasource: _playUrlSafe,
+      allowScreenKeepOn: settings.enableScreenKeepOn.value,
+      headers: headers,
+      qualiteName: _qualitySafe.quality,
+      currentLineIndex: currentLineIndex.value,
+      currentQuality: currentQuality.value,
+    );
+
+    success.value = true;
+  }
+
+  // =========================================================
+  // 切换清晰度
+  // =========================================================
+  void setResolution(ReloadDataType reloadDataType, int qualityIndex, int lineIndex) {
+    GlobalPlayerService.instance.playerManager.close();
     videoController.value?.destory();
 
     currentQuality.value = qualityIndex;
@@ -300,6 +402,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     onInitPlayerState(reloadDataType: reloadDataType, line: currentLineIndex.value, isReCalculate: false);
   }
 
+  // =========================================================
+  // 清晰度
+  // =========================================================
   Future<void> getPlayQualites() async {
     try {
       var playQualites = await currentSite.liveSite.getPlayQualites(detail: detail.value!);
@@ -372,71 +477,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     setPlayer();
   }
 
-  void setPlayer() async {
-    Map<String, String> headers = {};
-
-    if (currentSite.id == Sites.bilibiliSite) {
-      headers = {
-        "cookie": settings.bilibiliCookie.value,
-        "authority": "api.bilibili.com",
-        "accept":
-            "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        "accept-language": "zh-CN,zh;q=0.9",
-        "cache-control": "no-cache",
-        "dnt": "1",
-        "pragma": "no-cache",
-        "sec-ch-ua": '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": '"macOS"',
-        "sec-fetch-dest": "document",
-        "sec-fetch-mode": "navigate",
-        "sec-fetch-site": "none",
-        "sec-fetch-user": "?1",
-        "upgrade-insecure-requests": "1",
-        "user-agent":
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-        "referer": "https://live.bilibili.com",
-      };
-    } else if (currentSite.id == Sites.huyaSite) {
-      final ua = await HuyaSite().getHuYaUA();
-      headers = {"user-agent": ua, "origin": "https://www.huya.com"};
-    }
-
-    GlobalPlayerState().setCurrentRoom(room.roomId!);
-
-    videoController.value = VideoController(
-      room: detail.value!,
-      playUrs: playUrls.value,
-      datasource: playUrls[currentLineIndex.value],
-      allowScreenKeepOn: settings.enableScreenKeepOn.value,
-      headers: headers,
-      qualiteName: qualites[currentQuality.value].quality,
-      currentLineIndex: currentLineIndex.value,
-      currentQuality: currentQuality.value,
-    );
-
-    success.value = true;
-  }
-
-  void switchRoom(LiveRoom room) async {
-    final manager = GlobalPlayerService.instance.playerManager;
-    manager.close();
-    success.value = false;
-    isLiving.value = true;
-    messages.clear();
-    liveDanmaku.stop();
-    await videoController.value?.destory();
-    videoController.value = null;
-    hasUseDefaultResolution = false;
-    detail.value = room;
-    currentSite = Sites.of(room.platform!);
-    liveDanmaku = currentSite.liveSite.getDanmaku();
-    EmojiManager().preload(room.platform!);
-    onInitPlayerState(
-      reloadDataType: room.platform == Sites.bilibiliSite ? ReloadDataType.changeLine : ReloadDataType.refreash,
-    );
-  }
-
+  // =========================================================
+  // 打开外部APP
+  // =========================================================
   Future<void> openNaviteAPP() async {
     var naviteUrl = "";
     var webUrl = "";

@@ -9,6 +9,7 @@ import 'package:pure_live/plugins/file_recover_utils.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
+import 'package:pure_live/routes/route_observer_controller.dart';
 import 'package:pure_live/common/global/platform/desktop_manager.dart';
 
 void main(List<String> args) async {
@@ -132,6 +133,11 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
             ],
             initialRoute: showSplashPage ? RoutePath.kSplash : RoutePath.kInitial,
             defaultTransition: Transition.native,
+            routingCallback: (routing) {
+              if (routing != null) {
+                RouteObserverController.to.updateRoute(routing.current);
+              }
+            },
             getPages: AppPages.routes,
           );
         });

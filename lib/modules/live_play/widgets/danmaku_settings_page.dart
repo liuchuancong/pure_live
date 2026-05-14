@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
+import 'package:flutter/material.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:pure_live/common/widgets/count_button.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 
@@ -16,165 +18,226 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final Color labelColor = Theme.of(context).colorScheme.onSurface;
-    final Color digitColor = Theme.of(context).colorScheme.onSurfaceVariant;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 16),
-      child: Obx(
-        () => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              height: 50,
-              child: ListTile(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                leading: Text('显示区域', style: TextStyle(color: labelColor, fontSize: 15)), // 应用 labelColor
-                title: Slider(
-                  divisions: 10,
-                  min: 0.0,
-                  max: 1.0,
+    final theme = Theme.of(context);
+    final Color labelColor = theme.colorScheme.onSurface;
+    final Color digitColor = theme.colorScheme.primary;
+
+    return Scaffold(
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Obx(
+          () => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _section(theme, "显示区域"),
+              _card(theme, [
+                _slider(
+                  theme,
+                  title: "显示区域",
                   value: controller.danmakuArea.value,
-                  onChanged: (val) => controller.danmakuArea.value = val,
-                ),
-                trailing: Text(
-                  '${(controller.danmakuArea.value * 100).toInt()}%',
-                  style: TextStyle(color: digitColor),
-                ), // 应用 digitColor
-              ),
-            ),
-            SizedBox(
-              height: 50,
-              child: ListTile(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                leading: Text('距离顶部', style: TextStyle(color: labelColor, fontSize: 15)), // 应用 labelColor
-                title: CountButton(
-                  maxValue: 300,
-                  minValue: 0,
-                  selectedValue: controller.danmakuTopArea.value,
-                  onChanged: (val) => controller.danmakuTopArea.value = val,
-                  textStyle: TextStyle(color: digitColor, fontSize: 18),
-                ),
-              ),
-            ),
-            SizedBox(
-              height: 50,
-              child: ListTile(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                leading: Text('距离底部', style: TextStyle(color: labelColor, fontSize: 15)), // 应用 labelColor
-                title: CountButton(
-                  maxValue: 300,
-                  minValue: 0,
-                  selectedValue: controller.danmakuBottomArea.value,
-                  onChanged: (val) => controller.danmakuBottomArea.value = val,
-                  textStyle: TextStyle(color: digitColor, fontSize: 18),
-                ),
-              ),
-            ),
-
-            SizedBox(
-              height: 50,
-              child: ListTile(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                leading: Text(
-                  S.of(context).settings_danmaku_opacity,
-                  style: TextStyle(color: labelColor, fontSize: 15),
-                ), // 应用 labelColor
-                title: Slider(
+                  min: 0,
+                  max: 1,
                   divisions: 10,
-                  min: 0.0,
-                  max: 1.0,
+                  display: "${(controller.danmakuArea.value * 100).toInt()}%",
+                  onChanged: (v) => controller.danmakuArea.value = v,
+                  labelColor: labelColor,
+                  digitColor: digitColor,
+                ),
+              ]),
+
+              const SizedBox(height: 12),
+
+              _section(theme, "位置"),
+              _card(theme, [
+                _counter(
+                  theme,
+                  title: "距离顶部",
+                  value: controller.danmakuTopArea.value.toInt(),
+                  max: 300,
+                  onChanged: (v) => controller.danmakuTopArea.value = v.toDouble(),
+                  labelColor: labelColor,
+                  digitColor: digitColor,
+                ),
+                _counter(
+                  theme,
+                  title: "距离底部",
+                  value: controller.danmakuBottomArea.value.toInt(),
+                  max: 300,
+                  onChanged: (v) => controller.danmakuBottomArea.value = v.toDouble(),
+                  labelColor: labelColor,
+                  digitColor: digitColor,
+                ),
+              ]),
+
+              const SizedBox(height: 12),
+
+              _section(theme, "样式"),
+              _card(theme, [
+                _slider(
+                  theme,
+                  title: "透明度",
                   value: controller.danmakuOpacity.value,
-                  onChanged: (val) => controller.danmakuOpacity.value = val,
+                  min: 0,
+                  max: 1,
+                  divisions: 10,
+                  display: "${(controller.danmakuOpacity.value * 100).toInt()}%",
+                  onChanged: (v) => controller.danmakuOpacity.value = v,
+                  labelColor: labelColor,
+                  digitColor: digitColor,
                 ),
-                trailing: Text(
-                  '${(controller.danmakuOpacity.value * 100).toInt()}%',
-                  style: TextStyle(color: digitColor),
-                ), // 应用 digitColor
-              ),
-            ),
 
-            SizedBox(
-              height: 50,
-              child: ListTile(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                leading: Text(
-                  S.of(context).settings_danmaku_speed,
-                  style: TextStyle(color: labelColor, fontSize: 15),
-                ), // 应用 labelColor
-                title: Slider(
+                _slider(
+                  theme,
+                  title: "速度",
+                  value: controller.danmakuSpeed.value.toDouble(),
+                  min: 5,
+                  max: 20,
                   divisions: 15,
-                  min: 5.0,
-                  max: 20.0,
-                  value: controller.danmakuSpeed.value,
-                  onChanged: (val) => controller.danmakuSpeed.value = val,
+                  display: controller.danmakuSpeed.value.toStringAsFixed(2),
+                  onChanged: (v) => controller.danmakuSpeed.value = v,
+                  labelColor: labelColor,
+                  digitColor: digitColor,
                 ),
-                trailing: Text(
-                  controller.danmakuSpeed.value.toInt().toString(),
-                  style: TextStyle(color: digitColor),
-                ), // 应用 digitColor
-              ),
-            ),
 
-            SizedBox(
-              height: 50,
-              child: ListTile(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                leading: Text(
-                  S.of(context).settings_danmaku_fontsize,
-                  style: TextStyle(color: labelColor, fontSize: 15),
-                ), // 应用 labelColor
-                title: Slider(
+                _slider(
+                  theme,
+                  title: "字体大小",
+                  value: controller.danmakuFontSize.value.toDouble(),
+                  min: 10,
+                  max: 30,
                   divisions: 20,
-                  min: 10.0,
-                  max: 30.0,
-                  value: controller.danmakuFontSize.value,
-                  onChanged: (val) => controller.danmakuFontSize.value = val,
+                  display: controller.danmakuFontSize.value.toStringAsFixed(2),
+                  onChanged: (v) => controller.danmakuFontSize.value = v,
+                  labelColor: labelColor,
+                  digitColor: digitColor,
                 ),
-                trailing: Text(
-                  controller.danmakuFontSize.value.toInt().toString(),
-                  style: TextStyle(color: digitColor),
-                ), // 应用 digitColor
-              ),
-            ),
 
-            SizedBox(
-              height: 50,
-              child: ListTile(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                leading: Text(
-                  S.of(context).settings_danmaku_fontBorder,
-                  style: TextStyle(color: labelColor, fontSize: 15),
-                ), // 应用 labelColor
-                title: Slider(
+                _slider(
+                  theme,
+                  title: "描边",
+                  value: controller.danmakuFontBorder.value.toDouble(),
+                  min: 0,
+                  max: 8,
                   divisions: 8,
-                  min: 0.0,
-                  max: 8.0,
-                  value: controller.danmakuFontBorder.value,
-                  onChanged: (val) => controller.danmakuFontBorder.value = val,
+                  display: controller.danmakuFontBorder.value.toStringAsFixed(1),
+                  onChanged: (v) => controller.danmakuFontBorder.value = v,
+                  labelColor: labelColor,
+                  digitColor: digitColor,
                 ),
-                trailing: Text(
-                  controller.danmakuFontBorder.value.toStringAsFixed(2),
-                  style: TextStyle(color: digitColor),
-                ), // 应用 digitColor
+              ]),
+
+              const SizedBox(height: 30),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _section(ThemeData theme, String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8, top: 0),
+      child: Text(
+        title,
+        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+      ),
+    );
+  }
+
+  Widget _card(ThemeData theme, List<Widget> children) {
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.canvasColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: theme.primaryColor.withValues(alpha: 0.08)),
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _slider(
+    ThemeData theme, {
+    required String title,
+    required double value,
+    required double min,
+    required double max,
+    required int divisions,
+    required String display,
+    required ValueChanged<double> onChanged,
+    required Color labelColor,
+    required Color digitColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: labelColor),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  display,
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: digitColor),
+                ),
+              ),
+            ],
+          ),
+          Transform.translate(
+            offset: const Offset(-8, 0),
+            child: SizedBox(
+              width: double.infinity,
+              child: SfSlider(
+                min: min,
+                max: max,
+                value: value,
+                activeColor: theme.colorScheme.primary,
+                inactiveColor: theme.colorScheme.primary.withValues(alpha: 0.15),
+                onChanged: (dynamic v) => onChanged(v as double),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _counter(
+    ThemeData theme, {
+    required String title,
+    required int value,
+    required int max,
+    required ValueChanged<int> onChanged,
+    required Color labelColor,
+    required Color digitColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: labelColor),
+          ),
+          CountButton(
+            maxValue: max,
+            minValue: 0,
+            selectedValue: value,
+            onChanged: onChanged,
+            textStyle: TextStyle(color: digitColor, fontSize: 16),
+          ),
+        ],
       ),
     );
   }

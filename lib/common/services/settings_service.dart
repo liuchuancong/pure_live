@@ -76,7 +76,7 @@ class SettingsService extends GetxController {
   final videoOutputDriver = (HivePrefUtil.getString('videoOutputDriver') ?? "gpu").obs;
   final audioOutputDriver = (HivePrefUtil.getString('audioOutputDriver') ?? "auto").obs;
   final videoHardwareDecoder = (HivePrefUtil.getString('videoHardwareDecoder') ?? "auto").obs;
-  final floatPlay = (HivePrefUtil.getBool('floatPlay') ?? true).obs;
+  final floatPlay = (HivePrefUtil.getBool('floatPlay') ?? false).obs;
   final enableProxy = (HivePrefUtil.getBool('enableProxy') ?? false).obs;
   final proxyHost = (HivePrefUtil.getString('proxyHost') ?? '').obs;
   final proxyPort = (HivePrefUtil.getInt('proxyPort') ?? 1080).obs;
