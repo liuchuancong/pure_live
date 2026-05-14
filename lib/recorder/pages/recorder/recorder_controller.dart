@@ -291,10 +291,9 @@ class RecorderController extends GetxService {
     await scheduler.cancel(task.taskId);
     if (task.status == RecordStatus.running || task.status == RecordStatus.preparing) {
       log('Stopping task: ${task.taskId}');
-    } else {
-      task.status = RecordStatus.stopped;
-      updateTask(task);
     }
+    task.status = RecordStatus.stopped;
+    updateTask(task);
   }
 
   Future<void> _onComplete(LiveRecordTask task) async {
@@ -303,11 +302,21 @@ class RecorderController extends GetxService {
         task.status == RecordStatus.processing) {
       return;
     }
+
     if (task.outputDir != null && task.recordedSeconds > 0) {
-      developer.log('录制完成，开始处理视频: ${task.taskId}', name: 'RecorderController');
+      developer.log('录制信号完成，进入安全等待期: ${task.taskId}', name: 'RecorderController');
+      await Future.delayed(const Duration(seconds: 2));
+      developer.log('安全期结束，正式开始合并处理视频: ${task.taskId}', name: 'RecorderController');
       task.status = RecordStatus.processing;
       updateTask(task);
-      unawaited(_processVideo(task));
+      try {
+        developer.log('开始合并视频: ${task.taskId}', name: 'RecorderController');
+        await _processVideo(task);
+      } catch (e) {
+        developer.log('视频处理期间发生错误: ${task.taskId} -> $e', name: 'RecorderController');
+        task.status = RecordStatus.failed;
+        updateTask(task);
+      }
     } else {
       developer.log('录制时间过短，跳过处理: ${task.taskId}', name: 'RecorderController');
       task.status = RecordStatus.stopped;
