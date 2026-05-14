@@ -6,10 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:pure_live/plugins/utils.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:pure_live/routes/route_path.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
+import 'package:pure_live/routes/route_observer_controller.dart';
 
 class DesktopManager {
   static State? _currentState;
@@ -237,17 +239,31 @@ class CustomTitleBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final LinearGradient bgGradient = isDark
+        ? const LinearGradient(
+            colors: [Color(0xFF0D1B2A), Color(0xFF1B263B), Color(0xFF141E27)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          )
+        : const LinearGradient(
+            colors: [Color(0xFFE8FAFC), Color(0xFFC8F1F5), Color(0xFF9BE7F0)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          );
 
     return Obx(() {
       final isFullscreen = GlobalPlayerState.to.isWindowFullscreen.value;
-
       final bgColor = isFullscreen || isDark ? Colors.black : theme.scaffoldBackgroundColor;
-
-      final iconColor = isFullscreen || isDark ? Colors.white.withValues(alpha: 0.75) : Colors.black54;
+      final iconColor = isFullscreen || isDark ? Colors.white.withValues(alpha: 0.75) : Colors.black;
+      final currentRoute = RouteObserverController.to.currentRoute.value;
+      final currentRouteIskSplash = currentRoute == RoutePath.kSplash;
 
       return Container(
         height: 32,
-        color: bgColor,
+        decoration: BoxDecoration(
+          gradient: currentRouteIskSplash ? bgGradient : null,
+          color: currentRouteIskSplash ? null : bgColor,
+        ),
         child: Row(
           children: [
             Expanded(
@@ -262,19 +278,25 @@ class CustomTitleBar extends StatelessWidget {
                           child: InkWell(
                             onTap: () async {
                               final url = Uri.parse('https://github.com/liuchuancong/pure_live');
-
                               if (await canLaunchUrl(url)) {
                                 await launchUrl(url);
                               }
                             },
-                            child: Text(
-                              'Pure Live',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: iconColor,
-                                decoration: TextDecoration.none,
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Image.asset('assets/icons/icon.png', width: 16, height: 16),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '纯粹直播',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: iconColor,
+                                    decoration: TextDecoration.none,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),

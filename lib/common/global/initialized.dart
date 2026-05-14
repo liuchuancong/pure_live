@@ -13,6 +13,7 @@ import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/recorder/services/cache_service.dart';
+import 'package:pure_live/routes/route_observer_controller.dart';
 import 'package:pure_live/common/global/platform/mobile_manager.dart';
 import 'package:pure_live/common/global/platform/desktop_manager.dart';
 import 'package:pure_live/common/services/bilibili_account_service.dart';
@@ -91,7 +92,7 @@ class AppInitializer {
     Get.put(CacheService());
     Get.put(RecordSettingsController());
     Get.put(RecorderController());
-
+    Get.put(RouteObserverController(), permanent: true);
     Get.lazyPut(() => FavoriteController(), fenix: true);
     Get.lazyPut(() => BiliBiliAccountService(), fenix: true);
     Get.lazyPut(() => PopularController(), fenix: true);
