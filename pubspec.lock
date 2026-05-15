@@ -503,10 +503,10 @@ packages:
     dependency: "direct main"
     description:
       name: ffmpeg_kit_extended_flutter
-      sha256: "268d140e6b8fe3336e42731e6c7f2068ac39b547a75835a6236b6fb07a70b3b7"
+      sha256: e14d722995fa19736c46e78be2e8b842930f4d439b15ee1e86b87d9b6664f56b
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "0.4.4"
+    version: "0.4.6"
   file:
     dependency: "direct main"
     description:
@@ -768,14 +768,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "10.12.0"
-  functions_client:
-    dependency: transitive
-    description:
-      name: functions_client
-      sha256: "94074d62167ae634127ef6095f536835063a7dc80f2b1aa306d2346ff9023996"
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "2.5.0"
   fvp:
     dependency: "direct main"
     description:
