@@ -1235,7 +1235,7 @@ class _VideoFitSettingState extends State<VideoFitSetting> {
   VideoController get controller => widget.controller;
   @override
   Widget build(BuildContext context) {
-    List<String> descs = AppConsts().videoFitType.map((e) => e['desc'] as String).toList();
+    List<String> descs = AppConsts().videoFitType.map((e) => i18n(e['desc'])).toList();
     List<BoxFit> attrs = AppConsts().videoFitList;
     return GestureDetector(
       onTap: () {

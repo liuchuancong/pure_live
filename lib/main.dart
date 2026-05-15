@@ -14,7 +14,6 @@ import 'package:pure_live/routes/route_observer_controller.dart';
 import 'package:pure_live/common/global/platform/desktop_manager.dart';
 
 void main(List<String> args) async {
-  // 初始化
   await AppInitializer().initialize(args);
   runApp(
     EasyLocalization(
@@ -48,7 +47,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
       if (Platform.isAndroid && settings.enableBackgroundPlay.value) {
         bool hasPermission = await LiveAudioService.requestPlatformPermissions();
         if (!hasPermission) {
-          ToastUtil.show("如果需要后台播放，建议开启此权限");
+          ToastUtil.show(i18n("background_play_permission_tip"));
         }
       }
     });
@@ -108,7 +107,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
             darkTheme = MyTheme(colorScheme: darkDynamic).darkThemeData;
           }
           return GetMaterialApp(
-            title: '纯粹直播',
+            title: i18n('app_name'),
             scrollBehavior: MyCustomScrollBehavior(),
             debugShowCheckedModeBanner: false,
             themeMode: AppConsts.themeModes[settings.themeModeName.value]!,

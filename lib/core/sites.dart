@@ -5,6 +5,7 @@ import 'site/douyin_site.dart';
 import 'interface/live_site.dart';
 import 'package:pure_live/core/site/cc_site.dart';
 import 'package:pure_live/core/site/iptv_site.dart';
+import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/core/site/bilibili_site.dart';
 import 'package:pure_live/core/site/kuaishou_site.dart';
 import 'package:pure_live/common/services/settings_service.dart';
@@ -19,13 +20,13 @@ class Sites {
   static const String ccSite = "cc";
   static const String iptvSite = "iptv";
   static List<Site> supportSites = [
-    Site(id: "bilibili", name: "哔哩", logo: "assets/images/bilibili_2.png", liveSite: BiliBiliSite()),
-    Site(id: "douyu", name: "斗鱼", logo: "assets/images/douyu.png", liveSite: DouyuSite()),
-    Site(id: "huya", name: "虎牙", logo: "assets/images/huya.png", liveSite: HuyaSite()),
-    Site(id: "douyin", name: "抖音", logo: "assets/images/douyin.png", liveSite: DouyinSite()),
-    Site(id: "kuaishou", name: "快手", logo: "assets/images/kuaishou.png", liveSite: KuaishowSite()),
-    Site(id: "cc", name: "网易CC", logo: "assets/images/cc.png", liveSite: CCSite()),
-    Site(id: "iptv", name: "网络", logo: "assets/images/logo.png", liveSite: IptvSite()),
+    Site(id: "bilibili", name: i18n("site_bilibili"), logo: "assets/images/bilibili_2.png", liveSite: BiliBiliSite()),
+    Site(id: "douyu", name: i18n("site_douyu"), logo: "assets/images/douyu.png", liveSite: DouyuSite()),
+    Site(id: "huya", name: i18n("site_huya"), logo: "assets/images/huya.png", liveSite: HuyaSite()),
+    Site(id: "douyin", name: i18n("site_douyin"), logo: "assets/images/douyin.png", liveSite: DouyinSite()),
+    Site(id: "kuaishou", name: i18n("site_kuaishou"), logo: "assets/images/kuaishou.png", liveSite: KuaishowSite()),
+    Site(id: "cc", name: i18n("site_cc"), logo: "assets/images/cc.png", liveSite: CCSite()),
+    Site(id: "iptv", name: i18n("site_iptv"), logo: "assets/images/logo.png", liveSite: IptvSite()),
   ];
 
   static Site of(String id) {
@@ -36,7 +37,7 @@ class Sites {
     final SettingsService settingsService = Get.find<SettingsService>();
     if (containsAll) {
       var result = supportSites.where((element) => settingsService.hotAreasList.value.contains(element.id)).toList();
-      result.insert(0, Site(id: "all", name: "全部", logo: "assets/images/all.png", liveSite: LiveSite()));
+      result.insert(0, Site(id: "all", name: i18n("site_all"), logo: "assets/images/all.png", liveSite: LiveSite()));
       return result;
     }
     return supportSites.where((element) => settingsService.hotAreasList.value.contains(element.id)).toList();

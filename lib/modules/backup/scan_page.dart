@@ -18,7 +18,7 @@ class _ScanCodePageState extends State<ScanCodePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('扫描二维码'),
+        title: Text(i18n("scan_qr_code")),
         actions: [
           hasFound
               ? Container()
@@ -69,19 +69,19 @@ class _ScanCodePageState extends State<ScanCodePage> {
       body: hasFound
           ? Center(
               child: syncResult
-                  ? const Column(
+                  ? Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         CircularProgressIndicator(),
                         SizedBox(height: 20),
-                        Text("正在同步...", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text(i18n("syncing"), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       ],
                     )
                   : Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          isSuccess ? '同步成功' : "同步失败",
+                       isSuccess ? i18n("sync_success") : i18n("sync_failed"),
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                         ),
                         const SizedBox(height: 20),
@@ -94,7 +94,7 @@ class _ScanCodePageState extends State<ScanCodePage> {
                             });
                             cameraController = MobileScannerController();
                           },
-                          child: const Text("点击同步"),
+                        child: Text(i18n("tap_to_sync"))
                         ),
                       ],
                     ),

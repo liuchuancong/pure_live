@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:pure_live/modules/account/bilibili/web_login_controller.dart';
 
@@ -10,9 +11,13 @@ class BiliBiliWebLoginPage extends GetView<BiliBiliWebLoginController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("哔哩哔哩账号登录"),
+        title: Text(i18n("bilibili_login")),
         actions: [
-          TextButton.icon(onPressed: controller.toQRLogin, icon: const Icon(Icons.qr_code), label: const Text("二维码登录")),
+          TextButton.icon(
+            onPressed: controller.toQRLogin,
+            icon: const Icon(Icons.qr_code),
+            label: Text(i18n("qr_login")),
+          ),
         ],
       ),
       body: InAppWebView(

@@ -40,7 +40,7 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('版本历史更新')),
+      appBar: AppBar(title: Text(i18n("version_history_desc"))),
       body: ListView(
         scrollDirection: Axis.vertical,
         physics: const AlwaysScrollableScrollPhysics(),

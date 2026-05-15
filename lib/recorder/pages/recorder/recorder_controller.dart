@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'dart:developer' as developer;
 import 'package:pure_live/core/sites.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/common/utils/toast_util.dart';
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
@@ -181,12 +182,12 @@ class RecorderController extends GetxService {
 
   Future<void> _startTask(LiveRecordTask task) async {
     if (_startingTasks.contains(task.taskId)) {
-      ToastUtil.show("任务正在启动中，请稍候...");
+      ToastUtil.show(i18n("recorder_task_starting"));
       return;
     }
 
     if (scheduler.isRunning(task.taskId) || scheduler.isQueued(task.taskId)) {
-      ToastUtil.show("任务已在队列或运行中");
+      ToastUtil.show(i18n("recorder_task_already_running"));
       return;
     }
 
@@ -206,7 +207,7 @@ class RecorderController extends GetxService {
       );
     } catch (e) {
       developer.log('启动任务异常: $e', name: 'RecorderController');
-      ToastUtil.show("启动失败: ${e.toString()}");
+      ToastUtil.show(i18n("recorder_start_failed", args: {"error": e.toString()}));
 
       task.status = RecordStatus.failed;
       updateTask(task);
@@ -258,7 +259,7 @@ class RecorderController extends GetxService {
       await completer.future;
     } on StreamException catch (e) {
       developer.log('解析失败: ${e.message}', name: 'RecorderController');
-      ToastUtil.show("${task.nick}: ${e.message}");
+      ToastUtil.show(i18n("recorder_resolve_failed", args: {"name": task.nick, "error": e.message}));
 
       if (!e.retryable) {
         task.status = RecordStatus.waitingLive;
@@ -270,7 +271,7 @@ class RecorderController extends GetxService {
       rethrow;
     } catch (e, s) {
       developer.log('任务运行异常: $e', stackTrace: s, name: 'RecorderController');
-      ToastUtil.show("${task.nick} 录制异常: ${e.toString()}");
+      ToastUtil.show(i18n("recorder_exception", args: {"name": task.nick, "error": e.toString()}));
       _onFail(task);
     } finally {
       _lifecycleCompleters.remove(task.taskId);

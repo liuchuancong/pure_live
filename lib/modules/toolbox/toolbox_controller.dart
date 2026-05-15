@@ -11,12 +11,12 @@ class ToolBoxController extends GetxController {
 
   void jumpToRoom(String e) async {
     if (e.isEmpty) {
-      ToastUtil.show("链接不能为空");
+      ToastUtil.show(i18n("toolbox_empty_link"));
       return;
     }
     var parseResult = await parse(e);
     if (parseResult.isEmpty || parseResult.first == "") {
-      ToastUtil.show("无法解析此链接");
+      ToastUtil.show(i18n("toolbox_parse_failed"));
       return;
     }
     FocusManager.instance.primaryFocus?.unfocus();
@@ -44,12 +44,12 @@ class ToolBoxController extends GetxController {
 
   void getPlayUrl(String e) async {
     if (e.isEmpty) {
-      ToastUtil.show("链接不能为空");
+      ToastUtil.show(i18n("toolbox_empty_link"));
       return;
     }
     var parseResult = await parse(e);
     if (parseResult.isEmpty && parseResult.first == "") {
-      ToastUtil.show("无法解析此链接");
+      ToastUtil.show(i18n("toolbox_quality_failed"));
       return;
     }
     String platform = parseResult[1];
@@ -59,13 +59,13 @@ class ToolBoxController extends GetxController {
       var qualites = await Sites.of(platform).liveSite.getPlayQualites(detail: detail);
       SmartDialog.dismiss(status: SmartStatus.loading);
       if (qualites.isEmpty) {
-        ToastUtil.show("读取直链失败,无法读取清晰度");
+        ToastUtil.show(i18n("toolbox_quality_failed"));
 
         return;
       }
       var result = await Get.dialog(
         SimpleDialog(
-          title: const Text("选择清晰度"),
+          title: Text(i18n("toolbox_select_quality")),
           children: qualites
               .map(
                 (e) => ListTile(
@@ -86,16 +86,16 @@ class ToolBoxController extends GetxController {
       SmartDialog.dismiss(status: SmartStatus.loading);
       await Get.dialog(
         SimpleDialog(
-          title: const Text("选择线路"),
+          title: Text(i18n("toolbox_select_line")),
           children: playUrls
               .map(
                 (e) => ListTile(
-                  title: Text("线路${playUrls.indexOf(e) + 1}"),
+                  title: Text(i18n("toolbox_line", args: {"index": "${playUrls.indexOf(e) + 1}"})),
                   subtitle: Text(e, maxLines: 1, overflow: TextOverflow.ellipsis),
                   onTap: () {
                     Clipboard.setData(ClipboardData(text: e));
                     Navigator.of(Get.context!).pop();
-                    ToastUtil.show("已复制直链");
+                    ToastUtil.show(i18n("toolbox_copy_success"));
                   },
                 ),
               )
@@ -103,7 +103,7 @@ class ToolBoxController extends GetxController {
         ),
       );
     } catch (e) {
-      ToastUtil.show("读取直链失败");
+      ToastUtil.show(i18n("toolbox_get_url_failed"));
     } finally {
       SmartDialog.dismiss(status: SmartStatus.loading);
     }
@@ -274,8 +274,8 @@ class ToolBoxController extends GetxController {
       getUrlController.text = text;
 
       Get.snackbar(
-        "检测到链接",
-        "已自动填充剪贴板中的直播链接",
+        i18n("toolbox_detect_link"),
+        i18n("toolbox_auto_fill"),
         snackPosition: SnackPosition.bottom,
         duration: const Duration(seconds: 2),
         margin: const EdgeInsets.all(15),

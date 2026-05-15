@@ -96,7 +96,7 @@ class SettingsService extends GetxController {
   final preferResolution = (HivePrefUtil.getString('preferResolution') ?? PlayerConsts.resolutions[0]).obs;
   final preferResolutionCellular =
       (HivePrefUtil.getString('preferResolutionCellular') ?? PlayerConsts.resolutions[0]).obs;
-  final preferPlatform = (HivePrefUtil.getString('preferPlatform') ?? AppConsts.platforms[0]).obs;
+  final preferPlatform = (HivePrefUtil.getString('preferPlatform') ?? Sites.bilibiliSite).obs;
 
   // ==============================
   // ❤️ 收藏 & 历史
@@ -397,7 +397,8 @@ class SettingsService extends GetxController {
   }
 
   void changePreferPlatform(String name) {
-    if (AppConsts.platforms.indexWhere((e) => e == name) != -1) {
+    List<String> platforms = Sites.supportSites.map((site) => site.id).toList();
+    if (platforms.indexWhere((e) => e == name) != -1) {
       preferPlatform.value = name;
       update(['myapp']);
       HivePrefUtil.setString('preferPlatform', name);
@@ -656,10 +657,8 @@ class SettingsService extends GetxController {
       (e) => e == json['preferResolutionCellular'],
       orElse: () => PlayerConsts.resolutions[0],
     );
-    preferPlatform.value = AppConsts.platforms.firstWhere(
-      (e) => e == json['preferPlatform'],
-      orElse: () => AppConsts.platforms[0],
-    );
+    List<String> platforms = Sites.supportSites.map((site) => site.id).toList();
+    preferPlatform.value = platforms.firstWhere((e) => e == json['preferPlatform'], orElse: () => Sites.bilibiliSite);
     videoFitIndex.value = json['videoFitIndex'] ?? 0;
     hideDanmaku.value = json['hideDanmaku'] ?? false;
     danmakuTopArea.value = json['danmakuTopArea'] != null

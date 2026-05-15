@@ -39,7 +39,6 @@ class AppPathManager {
       final dir = Directory(path);
       if (await dir.exists()) {
         oldBaseRoot = path;
-        log("✔ 找到真实旧基准数据路径: $oldBaseRoot");
         break;
       }
     }
@@ -89,7 +88,6 @@ class AppPathManager {
         try {
           await oldFile.copy(newFile.path);
           await oldFile.delete();
-          log('迁移成功: $name');
         } catch (e) {
           log('迁移失败: $name -> $e');
         }

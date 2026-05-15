@@ -11,14 +11,17 @@ class AppConsts {
     Sites.ccSite,
     Sites.iptvSite,
   ];
-  // 平台列表
-  static const List<String> platforms = ['bilibili', 'douyu', 'huya', 'douyin', 'kuaishow', 'cc', '网络'];
 
   // 主题模式映射
   static const Map<String, ThemeMode> themeModes = {
     "System": ThemeMode.system,
     "Dark": ThemeMode.dark,
     "Light": ThemeMode.light,
+  };
+  static const Map<String, String> themeModeI18n = {
+    "System": "theme_mode_system",
+    "Dark": "theme_mode_dark",
+    "Light": "theme_mode_light",
   };
 
   // 语言映射
@@ -34,13 +37,14 @@ class AppConsts {
     BoxFit.scaleDown,
   ];
 
+  /// desc 改成 key
   List<Map<String, dynamic>> videoFitType = [
-    {'attr': BoxFit.contain, 'desc': '默认比例'},
-    {'attr': BoxFit.cover, 'desc': '居中裁剪'},
-    {'attr': BoxFit.fill, 'desc': '填充屏幕'},
-    {'attr': BoxFit.fitHeight, 'desc': '适应高度'},
-    {'attr': BoxFit.fitWidth, 'desc': '适应宽度'},
-    {'attr': BoxFit.scaleDown, 'desc': '等比缩小'},
+    {'attr': BoxFit.contain, 'desc': 'video_fit_default'},
+    {'attr': BoxFit.cover, 'desc': 'video_fit_crop_center'},
+    {'attr': BoxFit.fill, 'desc': 'video_fit_fill_screen'},
+    {'attr': BoxFit.fitHeight, 'desc': 'video_fit_fit_height'},
+    {'attr': BoxFit.fitWidth, 'desc': 'video_fit_fit_width'},
+    {'attr': BoxFit.scaleDown, 'desc': 'video_fit_scale_down'},
   ];
 
   static Map<String, Color> themeColors = {

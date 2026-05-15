@@ -24,15 +24,15 @@ class _AboutPageState extends State<AboutPage> {
         children: <Widget>[
           SectionTitle(title: i18n("about")),
           ListTile(
-            title: Text("在线更新"),
-            trailing: Text('当前版本：v${VersionUtil.version}', style: Get.textTheme.bodyMedium),
+            title: Text(i18n("online_update")),
+            trailing: Text('${i18n("current_version")} v${VersionUtil.version}', style: Get.textTheme.bodyMedium),
             onTap: () {
               Get.toNamed(RoutePath.kVersionPage);
             },
           ),
           ListTile(
-            title: const Text('历史记录'),
-            subtitle: const Text('历史版本更新记录'),
+            title: Text(i18n("history")),
+            subtitle: Text(i18n("history_desc")),
             onTap: () => Get.toNamed(RoutePath.kVersionHistory),
           ),
           ListTile(title: Text(i18n("license")), onTap: showLicenseDialog),
@@ -94,7 +94,7 @@ class _AboutPageState extends State<AboutPage> {
                         mode: LaunchMode.externalApplication,
                       );
                     },
-                    child: const Text('本软件开源免费', style: TextStyle(fontSize: 20)),
+                    child: Text(i18n("open_source_free"), style: const TextStyle(fontSize: 20)),
                   ),
                   MarkdownBlock(data: VersionUtil.latestUpdateLog, config: config),
                   const SizedBox(height: 10),

@@ -250,13 +250,19 @@ class SettingsPage extends GetView<SettingsService> {
                     return Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Radio(value: name, activeColor: Theme.of(Get.context!).colorScheme.primary),
+                        Radio(
+                          value: i18n(AppConsts.themeModeI18n[name]!),
+                          activeColor: Theme.of(Get.context!).colorScheme.primary,
+                        ),
                         GestureDetector(
                           onTap: () {
                             controller.changeThemeMode(name);
                             Navigator.of(context).pop();
                           },
-                          child: Text(name, style: Theme.of(context).textTheme.bodyLarge),
+                          child: Text(
+                            i18n(AppConsts.themeModeI18n[name]!),
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
                         ),
                       ],
                     );
@@ -521,17 +527,17 @@ class SettingsPage extends GetView<SettingsService> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: AppConsts.platforms.map<Widget>((name) {
+                  children: Sites.supportSites.map<Widget>((Site site) {
                     return Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Radio<String>(value: name, activeColor: Theme.of(context).colorScheme.primary),
+                        Radio<String>(value: site.name, activeColor: Theme.of(context).colorScheme.primary),
                         GestureDetector(
                           onTap: () {
-                            controller.changePreferPlatform(name);
+                            controller.changePreferPlatform(site.id);
                             Navigator.of(context).pop();
                           },
-                          child: Text(name.toUpperCase(), style: Theme.of(context).textTheme.bodyLarge),
+                          child: Text(site.name, style: Theme.of(context).textTheme.bodyLarge),
                         ),
                       ],
                     );

@@ -9,13 +9,13 @@ class AccountPage extends GetView<AccountController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("三方认证")),
+      appBar: AppBar(title: Text(i18n('third_party_auth'))),
       body: ListView(
         children: [
           Obx(
             () => ListTile(
               leading: Image.asset('assets/images/bilibili_2.png', width: 36, height: 36),
-              title: const Text("哔哩哔哩"),
+              title: Text(i18n("bilibili")),
               subtitle: Text(BiliBiliAccountService.instance.name.value),
               trailing: BiliBiliAccountService.instance.logined.value
                   ? const Icon(Icons.logout)
@@ -23,28 +23,31 @@ class AccountPage extends GetView<AccountController> {
               onTap: controller.bilibiliTap,
             ),
           ),
+
           ListTile(
             leading: Image.asset('assets/images/huya.png', width: 36, height: 36),
-            title: const Text("虎牙直播"),
-            subtitle: const Text("设置cookie"),
+            title: Text(i18n("huya")),
+            subtitle: Text(i18n("set_cookie")),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               Get.toNamed(RoutePath.kHuyaCookie);
             },
           ),
+
           ListTile(
             leading: Image.asset('assets/images/douyin.png', width: 36, height: 36),
-            title: const Text("抖音直播"),
-            subtitle: const Text("设置cookie"),
+            title: Text(i18n("douyin")),
+            subtitle: Text(i18n("set_cookie")),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               Get.toNamed(RoutePath.kDouyuCookie);
             },
           ),
+
           ListTile(
             leading: Image.asset('assets/images/douyu.png', width: 36, height: 36),
-            title: const Text("斗鱼直播"),
-            subtitle: const Text("设置cookie"),
+            title: Text(i18n("douyu")),
+            subtitle: Text(i18n("set_cookie")),
             enabled: false,
             trailing: const Icon(Icons.chevron_right),
             onTap: () {

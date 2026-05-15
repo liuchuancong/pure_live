@@ -18,10 +18,10 @@ class MenuButton extends StatelessWidget {
         Get.toNamed(menuRoutes[index]);
       },
       itemBuilder: (context) => [
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 0,
-          padding: EdgeInsets.symmetric(horizontal: 12),
-          child: MenuListTile(leading: Icon(Icons.assignment_ind_sharp), text: '三方认证'),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: MenuListTile(leading: const Icon(Icons.assignment_ind_sharp), text: i18n('third_party_auth')),
         ),
         PopupMenuItem(
           value: 1,
