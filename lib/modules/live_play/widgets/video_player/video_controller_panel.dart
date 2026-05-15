@@ -139,12 +139,12 @@ class ErrorWidget extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Text(S.of(context).play_video_failed, style: const TextStyle(color: Colors.white, fontSize: 16)),
+            child: Text(i18n("play_video_failed"), style: const TextStyle(color: Colors.white, fontSize: 16)),
           ),
           ElevatedButton(
             onPressed: () => controller.refresh(),
             style: ElevatedButton.styleFrom(elevation: 0, backgroundColor: Colors.white.withValues(alpha: 0.2)),
-            child: Text(S.of(context).retry, style: const TextStyle(color: Colors.white)),
+            child: Text(i18n("retry"), style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -1280,7 +1280,7 @@ class DanmakuSetting extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 0),
             child: Text(
-              S.of(context).settings_danmaku_title,
+              i18n("settings_danmaku_title"),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white),
             ),
           ),
@@ -1341,7 +1341,7 @@ class DanmakuSetting extends StatelessWidget {
               dense: true,
               contentPadding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
-              leading: Text(S.of(context).settings_danmaku_opacity, style: label),
+              leading: Text(i18n("settings_danmaku_opacity"), style: label),
               title: Slider(
                 divisions: 10,
                 min: 0.0,
@@ -1358,7 +1358,7 @@ class DanmakuSetting extends StatelessWidget {
               dense: true,
               contentPadding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
-              leading: Text(S.of(context).settings_danmaku_speed, style: label),
+              leading: Text(i18n("settings_danmaku_speed"), style: label),
               title: Slider(
                 divisions: 15,
                 min: 5.0,
@@ -1375,7 +1375,7 @@ class DanmakuSetting extends StatelessWidget {
               dense: true,
               contentPadding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
-              leading: Text(S.of(context).settings_danmaku_fontsize, style: label),
+              leading: Text(i18n("settings_danmaku_fontsize"), style: label),
               title: Slider(
                 divisions: 20,
                 min: 10.0,
@@ -1392,7 +1392,7 @@ class DanmakuSetting extends StatelessWidget {
               dense: true,
               contentPadding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
-              leading: Text(S.of(context).settings_danmaku_fontBorder, style: label),
+              leading: Text(i18n("settings_danmaku_fontBorder"), style: label),
               title: Slider(
                 divisions: 8,
                 min: 0.0,

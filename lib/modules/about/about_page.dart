@@ -22,7 +22,7 @@ class _AboutPageState extends State<AboutPage> {
       body: ListView(
         physics: const BouncingScrollPhysics(),
         children: <Widget>[
-          SectionTitle(title: S.of(context).about),
+          SectionTitle(title: i18n("about")),
           ListTile(
             title: Text("在线更新"),
             trailing: Text('当前版本：v${VersionUtil.version}', style: Get.textTheme.bodyMedium),
@@ -35,21 +35,18 @@ class _AboutPageState extends State<AboutPage> {
             subtitle: const Text('历史版本更新记录'),
             onTap: () => Get.toNamed(RoutePath.kVersionHistory),
           ),
-          ListTile(title: Text(S.of(context).license), onTap: showLicenseDialog),
-          SectionTitle(title: S.of(context).project),
+          ListTile(title: Text(i18n("license")), onTap: showLicenseDialog),
+          SectionTitle(title: i18n("project")),
           ListTile(
-            title: Text(S.of(context).project_page),
+            title: Text(i18n("project_page")),
             subtitle: const Text(VersionUtil.projectUrl),
             onTap: () {
               launchUrl(Uri.parse(VersionUtil.projectUrl), mode: LaunchMode.externalApplication);
             },
           ),
           ListTile(
-            title: Text(S.of(context).project_alert),
-            subtitle: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text(S.of(context).app_legalese),
-            ),
+            title: Text(i18n("project_alert")),
+            subtitle: Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text(i18n("app_legalese"))),
           ),
         ],
       ),
@@ -66,7 +63,7 @@ class _AboutPageState extends State<AboutPage> {
   void showLicenseDialog() {
     showLicensePage(
       context: context,
-      applicationName: S.of(context).app_name,
+      applicationName: i18n("app_name"),
       applicationVersion: VersionUtil.version,
       applicationIcon: SizedBox(width: 60, child: Center(child: Image.asset('assets/icons/icon.png'))),
     );
@@ -81,7 +78,7 @@ class _AboutPageState extends State<AboutPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text(S.of(context).what_is_new),
+          title: Text(i18n("what_is_new")),
           content: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: maxWidth, maxHeight: maxHeight),
             child: SingleChildScrollView(

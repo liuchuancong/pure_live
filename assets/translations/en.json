@@ -162,30 +162,6 @@
 
     "history": "History",
     "empty_history": "No history here",
-
-    "supabase_sign_in": "Sign In",
-    "supabase_sign_up": "Sign Up",
-    "supabase_sign_success": "Sign in successful!",
-    "supabase_sign_failure": "Sign in failure!",
-    "supabase_sign_confirm": "Please open the email to confirm",
-
-    "supabase_mine": "Mine",
-    "supabase_mine_profiles": "Uploading user profiles",
-    "supabase_mine_streams": "Follow the live streams as well as topics, etc.",
-    "supabase_log_out": "Log out",
-
-    "supabase_enter_email": "Enter your email",
-    "supabase_enter_valid_email": "Please enter a valid email address",
-    "supabase_enter_valid_password": "Please enter a password that is at least 6 characters long",
-    "supabase_enter_password": "Enter your password",
-    "supabase_unexpected_err": "Unexpected error has occurred: {error}",
-    "supabase_forgot_password": "Forgot your password?",
-    "supabase_no_account": "Don't have an account? Sign up",
-    "supabase_has_account": "Already have an account? Sign in",
-    "supabase_reset_password": "Send password reset email",
-
-    "supabase_back_sign_in": "Back to sign in",
-    "supabase_update_password": "Update Password",
     
     "exit_app": "Are you sure want to exit?",
     "exit_yes": "Yes",

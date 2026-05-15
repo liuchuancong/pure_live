@@ -114,8 +114,8 @@ class _AreaGridViewState extends State<AreaGridView> with SingleTickerProviderSt
               )
             : EmptyView(
                 icon: Icons.area_chart_outlined,
-                title: S.of(context).empty_areas_title,
-                subtitle: S.of(context).empty_areas_subtitle,
+                title: i18n("empty_areas_title"),
+                subtitle: i18n("empty_areas_subtitle"),
               );
       },
     );

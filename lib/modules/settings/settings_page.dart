@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:get/get.dart';
-import 'package:remixicon/remixicon.dart'; 
+import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
@@ -16,14 +16,13 @@ class SettingsPage extends GetView<SettingsService> {
 
   @override
   Widget build(BuildContext context) {
-    final s = S.of(context);
     final theme = Theme.of(context);
     double screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
       appBar: AppBar(
         scrolledUnderElevation: screenWidth > 640 ? 0 : null,
-        title: Text(s.settings_title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(i18n("settings_title"), style: const TextStyle(fontWeight: FontWeight.w600)),
       ),
       body: ListView(
         physics: const BouncingScrollPhysics(),
@@ -33,14 +32,14 @@ class SettingsPage extends GetView<SettingsService> {
           const SectionTitle(title: "主题定制"),
           ListTile(
             leading: Icon(Remix.moon_clear_line, color: theme.colorScheme.primary, size: 24),
-            title: Text(s.change_theme_mode),
-            subtitle: Text(s.change_theme_mode_subtitle),
+            title: Text(i18n("change_theme_mode")),
+            subtitle: Text(i18n("change_theme_mode_subtitle")),
             onTap: showThemeModeSelectorDialog,
           ),
           ListTile(
             leading: Icon(Remix.palette_line, color: theme.colorScheme.primary, size: 24),
-            title: Text(s.change_theme_color),
-            subtitle: Text(s.change_theme_color_subtitle),
+            title: Text(i18n("change_theme_color")),
+            subtitle: Text(i18n("change_theme_color_subtitle")),
             trailing: Obx(
               () => ColorIndicator(
                 width: 32,
@@ -53,19 +52,19 @@ class SettingsPage extends GetView<SettingsService> {
             onTap: colorPickerDialog,
           ),
           _buildSwitchTile(
-            title: s.enable_dynamic_color,
-            subtitle: s.enable_dynamic_color_subtitle,
+            title: i18n("enable_dynamic_color"),
+            subtitle: i18n("enable_dynamic_color_subtitle"),
             value: controller.enableDynamicTheme,
             icon: Remix.magic_line,
           ),
 
           // ================== 2. 视频设置 ==================
-          SectionTitle(title: s.video),
+          SectionTitle(title: i18n("video")),
           Obx(
             () => ListTile(
               leading: const Icon(Remix.hd_line, size: 24),
-              title: Text(s.prefer_resolution),
-              subtitle: Text(s.prefer_resolution_subtitle),
+              title: Text(i18n("prefer_resolution")),
+              subtitle: Text(i18n("prefer_resolution_subtitle")),
               trailing: Text(
                 controller.preferResolution.value,
                 style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
@@ -95,15 +94,15 @@ class SettingsPage extends GetView<SettingsService> {
             icon: Remix.picture_in_picture_2_line,
           ),
           _buildSwitchTile(
-            title: s.enable_fullscreen_default,
-            subtitle: s.enable_fullscreen_default_subtitle,
+            title: i18n('enable_fullscreen_default'),
+            subtitle: i18n('enable_fullscreen_default_subtitle'),
             value: controller.enableFullScreenDefault,
             icon: Remix.fullscreen_line,
           ),
           if (Platform.isAndroid)
             _buildSwitchTile(
-              title: s.enable_screen_keep_on,
-              subtitle: s.enable_screen_keep_on_subtitle,
+              title: i18n('enable_screen_keep_on'),
+              subtitle: i18n('enable_screen_keep_on_subtitle'),
               value: controller.enableScreenKeepOn,
               icon: Remix.lightbulb_line,
             ),
@@ -135,7 +134,7 @@ class SettingsPage extends GetView<SettingsService> {
           }),
 
           _buildSwitchTile(
-            title: s.enable_codec,
+            title: i18n('enable_codec'),
             subtitle: "优先使用 GPU 进行硬件解码",
             value: controller.enableCodec,
             icon: Remix.flashlight_line,
@@ -153,10 +152,10 @@ class SettingsPage extends GetView<SettingsService> {
           ),
 
           // ================== 4. 通用设置 ==================
-          SectionTitle(title: s.general),
+          SectionTitle(title: i18n("general")),
           ListTile(
             leading: const Icon(Remix.global_line, size: 24),
-            title: Text(s.change_language),
+            title: Text(i18n("change_language")),
             onTap: showLanguageSelecterDialog,
           ),
           ListTile(
@@ -172,7 +171,7 @@ class SettingsPage extends GetView<SettingsService> {
           ),
           ListTile(
             leading: const Icon(Remix.save_3_line, size: 24),
-            title: Text(s.backup_recover),
+            title: Text(i18n("backup_recover")),
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BackupPage())),
           ),
           _buildSwitchTile(
@@ -182,7 +181,7 @@ class SettingsPage extends GetView<SettingsService> {
             icon: Remix.rocket_2_line,
           ),
           _buildSwitchTile(
-            title: s.enable_auto_check_update,
+            title: i18n('enable_auto_check_update'),
             value: controller.enableAutoCheckUpdate,
             icon: Remix.refresh_line,
           ),
@@ -215,8 +214,8 @@ class SettingsPage extends GetView<SettingsService> {
     return Obx(
       () => SwitchListTile(
         secondary: const Icon(Remix.music_2_line, size: 24),
-        title: Text(S.of(context).enable_background_play),
-        subtitle: Text(S.of(context).enable_background_play_subtitle),
+        title: Text(i18n("enable_background_play")),
+        subtitle: Text(i18n("enable_background_play_subtitle")),
         value: controller.enableBackgroundPlay.value,
         onChanged: (value) async {
           controller.enableBackgroundPlay.value = value;
@@ -234,7 +233,7 @@ class SettingsPage extends GetView<SettingsService> {
       context: context,
       builder: (BuildContext context) {
         return SimpleDialog(
-          title: Text(S.of(Get.context!).change_theme_mode),
+          title: Text(i18n('change_theme_mode')),
           children: [
             RadioGroup<String>(
               groupValue: controller.themeModeName.value,
@@ -322,7 +321,7 @@ class SettingsPage extends GetView<SettingsService> {
       context: context,
       builder: (BuildContext context) {
         return SimpleDialog(
-          title: Text(S.of(context).change_language),
+          title: Text(i18n("change_language")),
           children: [
             RadioGroup<String>(
               groupValue: controller.languageName.value,
@@ -367,7 +366,7 @@ class SettingsPage extends GetView<SettingsService> {
       context: context,
       builder: (BuildContext context) {
         return SimpleDialog(
-          title: Text(S.of(context).change_player),
+          title: Text(i18n("change_player")),
           children: [
             RadioGroup<String>(
               groupValue: playerList[controller.videoPlayerIndex.value],
@@ -419,7 +418,7 @@ class SettingsPage extends GetView<SettingsService> {
       context: context,
       builder: (BuildContext context) {
         return SimpleDialog(
-          title: Text(S.of(context).prefer_resolution),
+          title: Text(i18n("prefer_resolution")),
           children: [
             RadioGroup<String>(
               groupValue: controller.preferResolution.value,
@@ -463,7 +462,7 @@ class SettingsPage extends GetView<SettingsService> {
       context: context,
       builder: (BuildContext context) {
         return SimpleDialog(
-          title: Text(S.of(context).prefer_resolution),
+          title: Text(i18n("prefer_resolution")),
           children: [
             RadioGroup<String>(
               groupValue: controller.preferResolutionCellular.value,
@@ -507,7 +506,7 @@ class SettingsPage extends GetView<SettingsService> {
       context: context,
       builder: (BuildContext context) {
         return SimpleDialog(
-          title: Text(S.of(context).prefer_platform),
+          title: Text(i18n("prefer_platform")),
           children: [
             RadioGroup<String>(
               groupValue: controller.preferPlatform.value,
@@ -550,7 +549,7 @@ class SettingsPage extends GetView<SettingsService> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        // title: Text(S.of(context).auto_refresh_time),
+        // title: Text(i18n("auto_refresh_time")),
         content: Obx(
           () => Column(
             mainAxisSize: MainAxisSize.min,
@@ -558,12 +557,12 @@ class SettingsPage extends GetView<SettingsService> {
               Slider(
                 min: 0,
                 max: 120,
-                label: S.of(context).auto_refresh_time,
+                label: i18n("auto_refresh_time"),
                 value: controller.autoRefreshTime.toDouble(),
                 onChanged: (value) => controller.autoRefreshTime.value = value.toInt(),
               ),
               Text(
-                '${S.of(context).auto_refresh_time}:'
+                '${i18n("auto_refresh_time")}:'
                 ' ${controller.autoRefreshTime}分钟',
               ),
             ],
@@ -577,13 +576,13 @@ class SettingsPage extends GetView<SettingsService> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        // title: Text(S.of(context).auto_refresh_time),
+        // title: Text(i18n("auto_refresh_time")),
         content: Obx(
           () => Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               SwitchListTile(
-                title: Text(S.of(context).auto_shutdown_time_subtitle),
+                title: Text(i18n("auto_shutdown_time_subtitle")),
                 value: controller.enableAutoShutDownTime.value,
                 activeThumbColor: Theme.of(context).colorScheme.primary,
                 onChanged: (bool value) => controller.enableAutoShutDownTime.value = value,
@@ -591,14 +590,14 @@ class SettingsPage extends GetView<SettingsService> {
               Slider(
                 min: 1,
                 max: 1200,
-                label: S.of(context).auto_refresh_time,
+                label: i18n("auto_refresh_time"),
                 value: controller.autoShutDownTime.toDouble(),
                 onChanged: (value) {
                   controller.autoShutDownTime.value = value.toInt();
                 },
               ),
               Text(
-                '${S.of(context).auto_shutdown_time}:'
+                '${i18n("auto_shutdown_time")}:'
                 ' ${controller.autoShutDownTime} minute',
               ),
             ],

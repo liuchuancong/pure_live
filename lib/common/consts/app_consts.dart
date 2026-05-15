@@ -22,7 +22,7 @@ class AppConsts {
   };
 
   // 语言映射
-  static const Map<String, Locale> languages = {"English": Locale('en'), "简体中文": Locale('zh', 'CN')};
+  static const Map<String, Locale> languages = {"English": Locale('en'), "简体中文": Locale('zh')};
 
   // 视频 Fit 模式
   List<BoxFit> videoFitList = [

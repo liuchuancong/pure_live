@@ -429,7 +429,7 @@ class LivePlayPage extends GetView<LivePlayController> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        // title: Text(S.of(context).auto_refresh_time),
+        // title: Text(i18n("auto_refresh_time")),
         content: Obx(
           () => Column(
             mainAxisSize: MainAxisSize.min,
@@ -444,7 +444,7 @@ class LivePlayPage extends GetView<LivePlayController> {
               Slider(
                 min: 0,
                 max: 240,
-                label: S.of(context).auto_refresh_time,
+                label: i18n("auto_refresh_time"),
                 value: controller.closeTimes.toDouble(),
                 onChanged: (value) => controller.closeTimes.value = value.toInt(),
               ),
@@ -647,20 +647,20 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
             onPressed: () {
               Get.dialog(
                 AlertDialog(
-                  title: Text(S.of(context).unfollow),
-                  content: Text(S.of(context).unfollow_message(widget.room.nick!)),
+                  title: Text(i18n("unfollow")),
+                  content: Text(i18n("unfollow_message", args: {"name": widget.room.nick!})),
                   actions: [
                     TextButton(
                       onPressed: () {
                         Navigator.of(Get.context!).pop(false);
                       },
-                      child: Text(S.of(context).cancel),
+                      child: Text(i18n("cancel")),
                     ),
                     ElevatedButton(
                       onPressed: () {
                         Navigator.of(Get.context!).pop(true);
                       },
-                      child: Text(S.of(context).confirm),
+                      child: Text(i18n("confirm")),
                     ),
                   ],
                 ),
@@ -772,10 +772,7 @@ class NotLivingVideoWidget extends StatelessWidget {
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      S.of(context).play_video_failed,
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
-                    ),
+                    child: Text(i18n("play_video_failed"), style: const TextStyle(color: Colors.white, fontSize: 16)),
                   ),
                   const Text("该房间未开播或已下播", style: TextStyle(color: Colors.white, fontSize: 14)),
                   const Text("请切换其他直播间进行观看吧", style: TextStyle(color: Colors.white, fontSize: 14)),

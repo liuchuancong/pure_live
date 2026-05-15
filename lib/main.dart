@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/common/global/initialized.dart';
 import 'package:pure_live/plugins/file_recover_utils.dart';
 import 'package:pure_live/player/models/player_engine.dart';
@@ -15,7 +16,14 @@ import 'package:pure_live/common/global/platform/desktop_manager.dart';
 void main(List<String> args) async {
   // 初始化
   await AppInitializer().initialize(args);
-  runApp(const MyApp());
+  runApp(
+    EasyLocalization(
+      supportedLocales: const [Locale('en'), Locale('zh')],
+      path: 'assets/translations',
+      fallbackLocale: const Locale('en'),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -113,7 +121,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
               ),
             ),
             darkTheme: darkTheme.copyWith(appBarTheme: AppBarTheme(surfaceTintColor: Colors.transparent)),
-            locale: AppConsts.languages[settings.languageName.value]!,
+            locale: context.locale,
             navigatorObservers: [FlutterSmartDialog.observer, BackButtonObserver()],
             builder: FlutterSmartDialog.init(
               builder: (context, child) {
@@ -124,13 +132,8 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
                 return child ?? const SizedBox.shrink();
               },
             ),
-            supportedLocales: S.delegate.supportedLocales,
-            localizationsDelegates: const [
-              S.delegate,
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
+            supportedLocales: context.supportedLocales,
+            localizationsDelegates: context.localizationDelegates,
             initialRoute: showSplashPage ? RoutePath.kSplash : RoutePath.kInitial,
             defaultTransition: Transition.native,
             routingCallback: (routing) {

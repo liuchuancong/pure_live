@@ -25,8 +25,8 @@ class FavoritePage extends GetView<FavoriteController> {
               labelPadding: const EdgeInsets.symmetric(horizontal: 12),
               indicatorSize: TabBarIndicatorSize.label,
               tabs: [
-                Tab(text: S.of(context).online_room_title),
-                Tab(text: S.of(context).offline_room_title),
+                Tab(text: i18n("online_room_title")),
+                Tab(text: i18n("offline_room_title")),
               ],
             ),
           ),
@@ -119,8 +119,8 @@ class _RoomOnlineGridView extends GetView<FavoriteController> {
                   )
                 : EmptyView(
                     icon: Icons.favorite_rounded,
-                    title: S.of(context).empty_favorite_online_title,
-                    subtitle: S.of(context).empty_favorite_online_subtitle,
+                    title: i18n("empty_favorite_online_title"),
+                    subtitle: i18n("empty_favorite_online_subtitle"),
                   ),
           ),
         );
@@ -178,8 +178,8 @@ class _RoomOfflineGridView extends GetView<FavoriteController> {
                   )
                 : EmptyView(
                     icon: Icons.favorite_rounded,
-                    title: S.of(context).empty_favorite_offline_title,
-                    subtitle: S.of(context).empty_favorite_offline_subtitle,
+                    title: i18n("empty_favorite_offline_title"),
+                    subtitle: i18n("empty_favorite_offline_subtitle"),
                   ),
           ),
         );

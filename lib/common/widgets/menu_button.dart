@@ -26,17 +26,17 @@ class MenuButton extends StatelessWidget {
         PopupMenuItem(
           value: 1,
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: MenuListTile(leading: const Icon(Icons.settings_rounded), text: S.of(context).settings_title),
+          child: MenuListTile(leading: const Icon(Icons.settings_rounded), text: i18n("settings_title")),
         ),
         PopupMenuItem(
           value: 2,
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: MenuListTile(leading: const Icon(Icons.info_rounded), text: S.of(context).about),
+          child: MenuListTile(leading: const Icon(Icons.info_rounded), text: i18n("about")),
         ),
         PopupMenuItem(
           value: 3,
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: MenuListTile(leading: const Icon(Icons.history), text: S.of(context).history),
+          child: MenuListTile(leading: const Icon(Icons.history), text: i18n("history")),
         ),
       ],
     );

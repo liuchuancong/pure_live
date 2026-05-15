@@ -26,7 +26,7 @@ class _BackupPageState extends State<BackupPage> {
       body: ListView(
         physics: const BouncingScrollPhysics(),
         children: [
-          SectionTitle(title: S.of(context).backup_recover),
+          SectionTitle(title: i18n("backup_recover")),
           ListTile(
             title: Text('WebDav'),
             subtitle: Text('备份到WebDav服务器'),
@@ -44,8 +44,8 @@ class _BackupPageState extends State<BackupPage> {
               },
             ),
           ListTile(
-            title: Text(S.of(context).create_backup),
-            subtitle: Text(S.of(context).create_backup_subtitle),
+            title: Text(i18n("create_backup")),
+            subtitle: Text(i18n("create_backup_subtitle")),
             onTap: () async {
               final selectedDirectory = await FileRecoverUtils().createBackup(backupDirectory);
               if (selectedDirectory != null) {
@@ -56,13 +56,13 @@ class _BackupPageState extends State<BackupPage> {
             },
           ),
           ListTile(
-            title: Text(S.of(context).recover_backup),
-            subtitle: Text(S.of(context).recover_backup_subtitle),
+            title: Text(i18n("recover_backup")),
+            subtitle: Text(i18n("recover_backup_subtitle")),
             onTap: () => FileRecoverUtils().recoverBackup(),
           ),
-          SectionTitle(title: S.of(context).auto_backup),
+          SectionTitle(title: i18n("auto_backup")),
           ListTile(
-            title: Text(S.of(context).backup_directory),
+            title: Text(i18n("backup_directory")),
             subtitle: Text(backupDirectory),
             onTap: () async {
               final selectedDirectory = await FileRecoverUtils().selectBackupDirectory(backupDirectory);

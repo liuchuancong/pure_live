@@ -1,7 +1,6 @@
 library;
 
 export '../core/index.dart';
-export 'l10n/generated/l10n.dart';
 export 'models/index.dart';
 export 'services/index.dart';
 export 'style/index.dart';
@@ -16,7 +15,6 @@ export 'package:permission_handler/permission_handler.dart';
 export 'package:flv_lzc/fijkplayer.dart';
 export 'package:pure_live/modules/areas/areas_controller.dart';
 export 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-export 'package:flutter_localizations/flutter_localizations.dart';
 export 'package:pure_live/common/index.dart';
 export 'package:uri_to_file/uri_to_file.dart';
 export 'package:easy_refresh/easy_refresh.dart';
@@ -27,3 +25,4 @@ export 'package:pure_live/routes/route_path.dart';
 export 'package:share_handler/share_handler.dart';
 export 'package:window_manager/window_manager.dart';
 export 'package:pure_live/player/global_player_service.dart';
+export 'package:pure_live/plugins/locale_helper.dart';

@@ -36,7 +36,7 @@ class HistoryPage extends GetView {
       appBar: AppBar(
         centerTitle: true,
         scrolledUnderElevation: 0,
-        title: Text('${S.of(context).history}(${settings.historyRooms.length}/20)'),
+        title: Text('${i18n("history")}(${settings.historyRooms.length}/20)'),
         actions: [
           IconButton(
             icon: Icon(Icons.delete_forever),
@@ -64,7 +64,7 @@ class HistoryPage extends GetView {
                 refreshController.finishLoad(IndicatorResult.noMore);
               },
               child: rooms.isEmpty
-                  ? EmptyView(icon: Icons.history_rounded, title: S.of(context).empty_history, subtitle: '')
+                  ? EmptyView(icon: Icons.history_rounded, title: i18n("empty_history"), subtitle: '')
                   : WaterfallFlow.builder(
                       padding: const EdgeInsets.all(0),
                       controller: ScrollController(),

@@ -21,28 +21,22 @@ class _ContactPageState extends State<ContactPage> {
       body: ListView(
         physics: const BouncingScrollPhysics(),
         children: [
-          SectionTitle(title: S.of(context).contact),
+          SectionTitle(title: i18n("contact")),
           ListTile(
             leading: const Icon(CustomIcons.mail_squared, size: 34),
-            title: Text(S.of(context).email),
+            title: Text(i18n("email")),
             subtitle: const Text(VersionUtil.email),
             onLongPress: () => clipboard(VersionUtil.email),
             onTap: () {
-              launchUrl(
-                Uri.parse(VersionUtil.emailUrl),
-                mode: LaunchMode.externalApplication,
-              );
+              launchUrl(Uri.parse(VersionUtil.emailUrl), mode: LaunchMode.externalApplication);
             },
           ),
           ListTile(
             leading: const Icon(CustomIcons.github_circled, size: 32),
-            title: Text(S.of(context).github),
+            title: Text(i18n("github")),
             subtitle: const Text(VersionUtil.githubUrl),
             onTap: () {
-              launchUrl(
-                Uri.parse(VersionUtil.githubUrl),
-                mode: LaunchMode.externalApplication,
-              );
+              launchUrl(Uri.parse(VersionUtil.githubUrl), mode: LaunchMode.externalApplication);
             },
           ),
         ],

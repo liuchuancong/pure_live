@@ -48,8 +48,8 @@ class _AreasRoomPageState extends State<AreasRoomPage> {
                       )
                     : EmptyView(
                         icon: Icons.live_tv_rounded,
-                        title: S.of(context).empty_areas_room_title,
-                        subtitle: S.of(context).empty_areas_room_subtitle,
+                        title: i18n("empty_areas_room_title"),
+                        subtitle: i18n("empty_areas_room_subtitle"),
                       ),
               ),
             );
@@ -81,21 +81,15 @@ class _FavoriteAreaFloatingButtonState extends State<FavoriteAreaFloatingButton>
         ? FloatingActionButton(
             elevation: 2,
             backgroundColor: Theme.of(context).cardColor,
-            tooltip: S.of(context).unfollow,
+            tooltip: i18n("unfollow"),
             onPressed: () {
               Get.dialog(
                 AlertDialog(
-                  title: Text(S.of(context).unfollow),
-                  content: Text(S.of(context).unfollow_message(widget.area.areaName!)),
+                  title: Text(i18n("unfollow")),
+                  content: Text(i18n("unfollow_message", args: {"name": widget.area.areaName!})),
                   actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(Get.context!).pop(false),
-                      child: Text(S.of(context).cancel),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => Navigator.of(Get.context!).pop(true),
-                      child: Text(S.of(context).confirm),
-                    ),
+                    TextButton(onPressed: () => Navigator.of(Get.context!).pop(false), child: Text(i18n("cancel"))),
+                    ElevatedButton(onPressed: () => Navigator.of(Get.context!).pop(true), child: Text(i18n("confirm"))),
                   ],
                 ),
               ).then((value) {
@@ -126,7 +120,7 @@ class _FavoriteAreaFloatingButtonState extends State<FavoriteAreaFloatingButton>
             label: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(S.of(context).follow, style: Theme.of(context).textTheme.bodySmall),
+                Text(i18n("follow"), style: Theme.of(context).textTheme.bodySmall),
                 Text(widget.area.areaName!, maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),

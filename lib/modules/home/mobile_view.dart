@@ -19,20 +19,11 @@ class HomeMobileView extends StatelessWidget {
       bottomNavigationBar: NavigationBar(
         destinations: [
           NavigationDestination(
-            icon: GestureDetector(
-              onDoubleTap: onFavoriteDoubleTap,
-              child: const Icon(Icons.favorite_rounded),
-            ),
-            label: S.of(context).favorites_title,
+            icon: GestureDetector(onDoubleTap: onFavoriteDoubleTap, child: const Icon(Icons.favorite_rounded)),
+            label: i18n("favorites_title"),
           ),
-          NavigationDestination(
-            icon: const Icon(CustomIcons.popular),
-            label: S.of(context).popular_title,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.area_chart_rounded),
-            label: S.of(context).areas_title,
-          ),
+          NavigationDestination(icon: const Icon(CustomIcons.popular), label: i18n("popular_title")),
+          NavigationDestination(icon: const Icon(Icons.area_chart_rounded), label: i18n("areas_title")),
         ],
         selectedIndex: index,
         onDestinationSelected: onDestinationSelected,
