@@ -628,5 +628,10 @@
 "record_completed": "已完成",
 "record_failed": "失败",
 "record_waiting_live": "等待开播",
-"record_stopped": "已停止"
+"record_stopped": "已停止",
+"video_dir_not_exist": "目录不存在",
+"video_ts_empty": "TS 文件为空",
+"video_ts_total": "共{count}个.ts 文件需要合并",
+"video_ffmpeg_failed": "FFmpeg merge failed",
+"video_delete_temp_files": "处理完成删掉.ts以及txt文件"
 }
