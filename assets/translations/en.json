@@ -196,6 +196,8 @@
     "history_desc": "Update history records",
     "huya_cookie_hint": "Enter Huya live cookie",
     "huya_cookie_tip": "Open browser F12, run document.cookie, copy cookie into the field below and click set",
+    "kuaishou_cookie_tip": "After logging in, enter the live room. Press F12 in the browser, copy the Cookie from the request header of the same URL (usually the first one), paste it into the input box below, and click the Set button to configure the Kuaishou Live Cookie.",
+    "kuaishou_cookie_hint": "Enter Kuaishou Live Cookie",
     "import_m3u": "Import M3U playlist",
     "import_m3u_title": "Import M3U playlist",
     "info_is_offline": "{name} is offline.",
@@ -553,5 +555,7 @@
     "select_play_line": "Select Play Line/Node",
     "stream_get_quality_failed": "Failed to get quality",
     "stream_no_available_quality": "No available quality",
-    "stream_all_cdn_failed": "All CDN lines failed"
+    "stream_all_cdn_failed": "All CDN lines failed",
+    "detected_room_id_open": "Room ID detected, open live stream?",
+    "no_room_id_open_url": "No Room ID detected, open webpage instead?"
 }

@@ -87,6 +87,7 @@ class SettingsService extends GetxController {
   final bilibiliCookie = (HivePrefUtil.getString('bilibiliCookie') ?? '').obs;
   final huyaCookie = (HivePrefUtil.getString('huyaCookie') ?? '').obs;
   final douyinCookie = (HivePrefUtil.getString('douyinCookie') ?? '').obs;
+  final kuaishouCookie = (HivePrefUtil.getString('kuaishouCookie') ?? '').obs;
 
   // ==============================
   // 📋 列表数据：屏蔽、热区、偏好
@@ -327,6 +328,10 @@ class SettingsService extends GetxController {
 
     douyinCookie.listen((value) {
       HivePrefUtil.setString('douyinCookie', value);
+    });
+
+    kuaishouCookie.listen((value) {
+      HivePrefUtil.setString('kuaishouCookie', value);
     });
 
     volume.listen((value) {
@@ -691,6 +696,7 @@ class SettingsService extends GetxController {
     showSplashPage.value = json['showSplashPage'] ?? true;
     exitChoose.value = json['exitChoose'] ?? '';
     douyinCookie.value = json['douyinCookie'] ?? '';
+    kuaishouCookie.value = json['kuaishouCookie'] ?? '';
     themeColorSwitch.value = json['themeColorSwitch'] ?? Colors.blue.hex;
     volume.value = json['volume'] ?? 1.0;
     customPlayerOutput.value = json['customPlayerOutput'] ?? false;
@@ -759,6 +765,8 @@ class SettingsService extends GetxController {
     json['showSplashPage'] = showSplashPage.value;
     json['exitChoose'] = exitChoose.value;
     json['douyinCookie'] = douyinCookie.value;
+    json['kuaishouCookie'] = kuaishouCookie.value;
+
     json['shieldList'] = shieldList.map<String>((e) => e.toString()).toList();
     json['hotAreasList'] = hotAreasList.map<String>((e) => e.toString()).toList();
     json['themeColorSwitch'] = themeColorSwitch.value;

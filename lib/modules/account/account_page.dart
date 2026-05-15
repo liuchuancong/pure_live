@@ -15,7 +15,7 @@ class AccountPage extends GetView<AccountController> {
           Obx(
             () => ListTile(
               leading: Image.asset('assets/images/bilibili_2.png', width: 36, height: 36),
-              title: Text(i18n("bilibili")),
+              title: Text(i18n("site_bilibili")),
               subtitle: Text(BiliBiliAccountService.instance.name.value),
               trailing: BiliBiliAccountService.instance.logined.value
                   ? const Icon(Icons.logout)
@@ -26,7 +26,7 @@ class AccountPage extends GetView<AccountController> {
 
           ListTile(
             leading: Image.asset('assets/images/huya.png', width: 36, height: 36),
-            title: Text(i18n("huya")),
+            title: Text(i18n("site_huya")),
             subtitle: Text(i18n("set_cookie")),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
@@ -36,17 +36,25 @@ class AccountPage extends GetView<AccountController> {
 
           ListTile(
             leading: Image.asset('assets/images/douyin.png', width: 36, height: 36),
-            title: Text(i18n("douyin")),
+            title: Text(i18n("site_douyin")),
             subtitle: Text(i18n("set_cookie")),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               Get.toNamed(RoutePath.kDouyuCookie);
             },
           ),
-
+          ListTile(
+            leading: Image.asset('assets/images/kuaishou.png', width: 36, height: 36),
+            title: Text(i18n("site_kuaishou")),
+            subtitle: Text(i18n("set_cookie")),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Get.toNamed(RoutePath.kKuaishouCookie);
+            },
+          ),
           ListTile(
             leading: Image.asset('assets/images/douyu.png', width: 36, height: 36),
-            title: Text(i18n("douyu")),
+            title: Text(i18n("site_douyu")),
             subtitle: Text(i18n("set_cookie")),
             enabled: false,
             trailing: const Icon(Icons.chevron_right),

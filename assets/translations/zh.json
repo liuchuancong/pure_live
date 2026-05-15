@@ -195,6 +195,8 @@
     "history_desc": "历史版本更新记录",
     "huya_cookie_hint": "输入虎牙直播cookie",
     "huya_cookie_tip": "浏览器F12，输入document.cookie，复制cookie到下方输入框，点击设置按钮即可设置虎牙直播cookie",
+    "kuaishou_cookie_tip": "登陆后,进入直播间,浏览器F12,复制和浏览器一样地址请求头cookie(一般是第一个),复制cookie到下方输入框，点击设置按钮即可设置快手直播cookie",
+    "kuaishou_cookie_hint": "输入快手直播cookie",
     "import_m3u": "导入M3U直播源",
     "import_m3u_title": "导入M3U直播源",
     "info_is_offline": "{name}未开始直播.",
@@ -553,5 +555,7 @@
     "select_play_line": "选择播放线路/节点",
     "stream_get_quality_failed": "获取清晰度失败",
     "stream_no_available_quality": "无可用清晰度",
-    "stream_all_cdn_failed": "所有清晰度线路失败"
+    "stream_all_cdn_failed": "所有清晰度线路失败",
+    "detected_room_id_open": "检测到房间号，是否打开直播间？",
+    "no_room_id_open_url": "未检测到房间号，是否使用网页打开直播间？"
 }

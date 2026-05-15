@@ -21,6 +21,10 @@ class AppNavigator {
     Get.toNamed(RoutePath.kLivePlay, arguments: liveRoom, parameters: {"site": liveRoom.platform!});
   }
 
+  static Future<void> offAndToRoomDetail({required LiveRoom liveRoom}) async {
+    Get.offAndToNamed(RoutePath.kLivePlay, arguments: liveRoom, parameters: {"site": liveRoom.platform!});
+  }
+
   /// 跳转至哔哩哔哩登录
   static Future toBiliBiliLogin() async {
     var contents = [i18n("sms_login"), i18n("qrcode_login")];
