@@ -621,7 +621,7 @@ class LineSelectorButton extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
-                                  '线路 ${index + 1}',
+                                  i18n("toolbox_line", args: {"index": (index + 1).toString()}),
                                   style: TextStyle(fontSize: 15, color: isSelected ? Colors.white : null),
                                 ),
                               ),
@@ -697,7 +697,7 @@ class LineSelectorButton extends StatelessWidget {
             height: itemHeight,
             child: Center(
               child: Text(
-                '线路 ${index + 1}',
+                i18n("toolbox_line", args: {"index": (index + 1).toString()}),
                 style: TextStyle(fontSize: 13, color: isSelected ? Get.theme.colorScheme.primary : Colors.white),
               ),
             ),
@@ -714,7 +714,7 @@ class LineSelectorButton extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
       child: Text(
-        '线路${controller.livePlayController.currentLineIndex.value + 1}',
+        i18n("toolbox_line", args: {"index": (controller.livePlayController.currentLineIndex.value + 1).toString()}),
         style: const TextStyle(color: Colors.white, fontSize: 13),
       ),
     );

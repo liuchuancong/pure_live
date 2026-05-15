@@ -536,15 +536,14 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
         return const SizedBox.shrink();
       }
       final currentIndex = controller.currentLineIndex.value;
-      final currentLineName = '线路${currentIndex + 1}';
+      final currentLineName = i18n("toolbox_line", args: {"index": (currentIndex + 1).toString()});
 
       return PopupMenuButton<int>(
-        tooltip: "选择播放线路/节点",
+        tooltip: i18n("select_play_line"),
         color: Get.theme.colorScheme.surfaceContainerHighest,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         offset: const Offset(0.0, 5.0),
         position: PopupMenuPosition.under,
-        // 按钮显示当前选中的线路名称
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
           child: Text(
@@ -561,7 +560,7 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
             return PopupMenuItem<int>(
               value: index,
               child: Text(
-                '线路${index + 1}',
+                i18n("toolbox_line", args: {"index": (index + 1).toString()}),
                 style: Theme.of(
                   context,
                 ).textTheme.labelSmall?.copyWith(color: isSelected ? Get.theme.colorScheme.primary : null),
