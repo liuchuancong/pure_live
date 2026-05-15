@@ -81,7 +81,7 @@ class _ScanCodePageState extends State<ScanCodePage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                       isSuccess ? i18n("sync_success") : i18n("sync_failed"),
+                          isSuccess ? i18n("sync_success") : i18n("sync_failed"),
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                         ),
                         const SizedBox(height: 20),
@@ -94,7 +94,7 @@ class _ScanCodePageState extends State<ScanCodePage> {
                             });
                             cameraController = MobileScannerController();
                           },
-                        child: Text(i18n("tap_to_sync"))
+                          child: Text(i18n("tap_to_sync")),
                         ),
                       ],
                     ),
@@ -110,7 +110,7 @@ class _ScanCodePageState extends State<ScanCodePage> {
                     syncResult = true;
                   });
                   final result = await FileRecoverUtils().recoverSettingsBackup(barcodes[0].rawValue!);
-                  ToastUtil.show(result ? '同步成功' : "同步失败");
+                  ToastUtil.show(result ? i18n("sync_success") : i18n("sync_failed"));
                   setState(() {
                     isSuccess = result;
                     syncResult = false;

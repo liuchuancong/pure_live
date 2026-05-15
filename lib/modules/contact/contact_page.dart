@@ -11,7 +11,7 @@ class ContactPage extends StatefulWidget {
 
 class _ContactPageState extends State<ContactPage> {
   void clipboard(String text) {
-    Clipboard.setData(ClipboardData(text: text)).then((value) => SnackBarUtil.success('已复制到剪贴板'));
+    Clipboard.setData(ClipboardData(text: text)).then((value) => SnackBarUtil.success(i18n('copied_to_clipboard')));
   }
 
   @override
