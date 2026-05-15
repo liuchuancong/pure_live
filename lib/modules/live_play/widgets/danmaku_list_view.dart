@@ -1,10 +1,14 @@
+import 'dart:io';
 import 'dart:async';
 import 'dart:ui' as ui;
 import 'package:get/get.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/foundation.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/emoji_manager.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
 
@@ -32,7 +36,7 @@ class DanmakuListViewState extends State<DanmakuListView> {
   Worker? windowFullscreenWorker;
 
   StreamSubscription? messagesSub;
-
+  bool _autoScrollEnabled = true;
   LivePlayController get controller => Get.find<LivePlayController>();
 
   @override
@@ -106,6 +110,7 @@ class DanmakuListViewState extends State<DanmakuListView> {
 
   void scheduleAutoScroll() {
     if (!mounted) return;
+    if (!_autoScrollEnabled) return;
     if (!_scrollController.hasClients) return;
     final position = _scrollController.position;
     bool shouldAutoScroll = true;
@@ -144,6 +149,7 @@ class DanmakuListViewState extends State<DanmakuListView> {
         if (!userScrolling) {
           setState(() {
             userScrolling = true;
+            _autoScrollEnabled = false;
           });
         }
       }
@@ -213,6 +219,7 @@ class DanmakuListViewState extends State<DanmakuListView> {
                   onPressed: () async {
                     setState(() {
                       userScrolling = false;
+                      _autoScrollEnabled = true;
                     });
 
                     await forceScrollToBottom();
@@ -269,21 +276,16 @@ class DanmakuItem extends StatelessWidget {
                 ),
 
                 Expanded(
-                  child: Text.rich(
+                  child: SelectableText.rich(
                     TextSpan(
                       children: [
                         TextSpan(
                           text: "${danmaku.userName}: ",
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.black87,
-                            letterSpacing: 0.2,
-                          ),
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black87),
                         ),
                         TextSpan(
                           children: parseEmojis(danmaku.message, 14, vibrantColor),
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 14,
                             height: 1.45,
                             fontWeight: FontWeight.w500,
@@ -292,6 +294,43 @@ class DanmakuItem extends StatelessWidget {
                         ),
                       ],
                     ),
+                    contextMenuBuilder: (BuildContext context, EditableTextState editableTextState) {
+                      return AdaptiveTextSelectionToolbar.buttonItems(
+                        anchors: editableTextState.contextMenuAnchors,
+                        buttonItems: [
+                          ContextMenuButtonItem(
+                            label: i18n('copy_danmaku'),
+                            type: ContextMenuButtonType.copy,
+                            onPressed: () async {
+                              final String textToCopy = "${danmaku.userName}: ${danmaku.message}";
+                              await Clipboard.setData(ClipboardData(text: textToCopy));
+                              ContextMenuController.removeAny();
+                              bool shouldShowToast = false;
+                              if (kIsWeb) {
+                                shouldShowToast = true;
+                              } else if (Platform.isWindows) {
+                                shouldShowToast = true;
+                              } else if (Platform.isAndroid) {
+                                final androidInfo = await DeviceInfoPlugin().androidInfo;
+                                if (androidInfo.version.sdkInt < 33) {
+                                  shouldShowToast = true;
+                                }
+                              }
+                              if (shouldShowToast && context.mounted) {
+                                ScaffoldMessenger.of(context).clearSnackBars(); // 清除之前的气泡
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(i18n('copied_to_clipboard')),
+                                    duration: const Duration(seconds: 2),
+                                    behavior: SnackBarBehavior.floating, // 让气泡悬浮，更好看
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ],

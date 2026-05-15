@@ -187,7 +187,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   }) async {
     final roomId = detail.value?.roomId;
     if (roomId == null) return LiveRoom();
-
+    log('Enter Room => roomId: $roomId');
     var liveRoom = await currentSite.liveSite.getRoomDetail(roomId: roomId, platform: detail.value!.platform!);
 
     // ================= IPTV =================
@@ -294,9 +294,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   }
 
   void restoryQualityAndLines() {
-    playUrls.clear();
+    playUrls.value = [];
     currentLineIndex.value = 0;
-    qualites.clear();
+    qualites.value = [];
     currentQuality.value = 0;
   }
 

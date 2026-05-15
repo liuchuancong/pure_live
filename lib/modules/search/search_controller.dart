@@ -39,6 +39,6 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
     }
     final site = Sites().availableSites()[index.value];
     String url = buildSearchUrl(site.id, searchController.text);
-    Get.toNamed(RoutePath.kWebSearch, arguments: url);
+    Get.toNamed(RoutePath.kWebSearch, arguments: {'url': url, 'platform': site.id});
   }
 }

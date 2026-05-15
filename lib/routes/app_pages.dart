@@ -42,6 +42,8 @@ import 'package:pure_live/modules/account/huya/huya_cookie_binding.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_binding.dart';
 import 'package:pure_live/modules/account/douyin/douyin_cookie_page.dart';
 import 'package:pure_live/modules/account/douyin/douyin_cookie_binding.dart';
+import 'package:pure_live/modules/account/kuaishou/kuaishou_cookie_page.dart';
+import 'package:pure_live/modules/account/kuaishou/kuaishou_cookie_binding.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_page.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_binding.dart';
 
@@ -97,6 +99,12 @@ class AppPages {
     GetPage(name: RoutePath.kHuyaCookie, page: () => const HuyaCookiePage(), bindings: [HuyaCookieBinding()]),
 
     GetPage(name: RoutePath.kDouyuCookie, page: () => const DouyinCookiePage(), bindings: [DouyinCookieBinding()]),
+
+    GetPage(
+      name: RoutePath.kKuaishouCookie,
+      page: () => const KuaishouCookiePage(),
+      bindings: [KuaishouCookieBinding()],
+    ),
 
     GetPage(name: RoutePath.kWebDavPage, page: () => WebDavPage(), bindings: [WebDavBinding()]),
 

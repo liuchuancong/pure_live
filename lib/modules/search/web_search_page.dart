@@ -11,8 +11,18 @@ class WebSearchPage extends GetView<WebSearchController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-       title: Text(i18n("web_search")),
+        title: Text(i18n("web_search")),
         leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: controller.goBack),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: IconButton(
+              icon: const Icon(Icons.close),
+              tooltip: i18n('close'),
+              onPressed: () => controller.closePage(), // 调用刚刚添加的关闭方法
+            ),
+          ),
+        ],
       ),
       body: Obx(() {
         return Stack(
