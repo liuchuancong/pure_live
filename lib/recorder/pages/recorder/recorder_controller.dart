@@ -94,13 +94,7 @@ class RecorderController extends GetxService {
 
   void _onFFmpegEvent(FFmpegEvent event) {
     final task = tasks.firstWhereOrNull((e) => e.taskId == event.taskId);
-
     if (task == null) return;
-
-    if (task.status == RecordStatus.stopped) {
-      return;
-    }
-
     switch (event.type) {
       case FFmpegEventType.started:
         task.status = RecordStatus.running;
@@ -292,11 +286,10 @@ class RecorderController extends GetxService {
     if (task.status == RecordStatus.running || task.status == RecordStatus.preparing) {
       log('Stopping task: ${task.taskId}');
     }
-    task.status = RecordStatus.stopped;
-    updateTask(task);
   }
 
   Future<void> _onComplete(LiveRecordTask task) async {
+    log('FFmpeg complete => $task.taskId');
     if (task.status == RecordStatus.stopped ||
         task.status == RecordStatus.failed ||
         task.status == RecordStatus.processing) {
@@ -304,21 +297,15 @@ class RecorderController extends GetxService {
     }
 
     if (task.outputDir != null && task.recordedSeconds > 0) {
-      developer.log('录制信号完成，进入安全等待期: ${task.taskId}', name: 'RecorderController');
-      await Future.delayed(const Duration(seconds: 2));
-      developer.log('安全期结束，正式开始合并处理视频: ${task.taskId}', name: 'RecorderController');
       task.status = RecordStatus.processing;
       updateTask(task);
       try {
-        developer.log('开始合并视频: ${task.taskId}', name: 'RecorderController');
         await _processVideo(task);
       } catch (e) {
-        developer.log('视频处理期间发生错误: ${task.taskId} -> $e', name: 'RecorderController');
         task.status = RecordStatus.failed;
         updateTask(task);
       }
     } else {
-      developer.log('录制时间过短，跳过处理: ${task.taskId}', name: 'RecorderController');
       task.status = RecordStatus.stopped;
       updateTask(task);
       final completer = _lifecycleCompleters[task.taskId];
