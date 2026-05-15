@@ -557,5 +557,7 @@
     "stream_no_available_quality": "无可用清晰度",
     "stream_all_cdn_failed": "所有清晰度线路失败",
     "detected_room_id_open": "检测到房间号，是否打开直播间？",
-    "no_room_id_open_url": "未检测到房间号，是否使用网页打开直播间？"
+    "no_room_id_open_url": "未检测到房间号，是否使用网页打开直播间？",
+    "cancel_mute": "取消静音",
+    "mute": "静音"
 }

@@ -557,5 +557,7 @@
     "stream_no_available_quality": "No available quality",
     "stream_all_cdn_failed": "All CDN lines failed",
     "detected_room_id_open": "Room ID detected, open live stream?",
-    "no_room_id_open_url": "No Room ID detected, open webpage instead?"
+    "no_room_id_open_url": "No Room ID detected, open webpage instead?",
+    "cancel_mute": "Unmute",
+    "mute": "Mute"
 }

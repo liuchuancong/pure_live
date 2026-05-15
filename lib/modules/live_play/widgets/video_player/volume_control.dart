@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'package:get/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 
 class OverlayVolumeControl extends StatefulWidget {
@@ -15,13 +15,18 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
   double _volume = 0.5;
   double _lastVolume = 0.5;
   OverlayEntry? _overlayEntry;
-  bool _isVolumeBarVisible = false;
 
-  // 鼠标追踪标志位，防止 Hover 闪烁
+  // 用于连接图标和弹出面板的轴心
+  final LayerLink _layerLink = LayerLink();
+
+  // 鼠标追踪标志位
   bool _isMouseInIcon = false;
   bool _isMouseInBar = false;
+  Timer? _hideTimer;
 
-  static const double _barHeight = 160; // 稍微增加高度以容纳填充
+  static const double _barHeight = 150.0;
+  static const double _barWidth = 44.0;
+
   VideoController get controller => widget.controller;
 
   @override
@@ -32,6 +37,7 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
 
   @override
   void dispose() {
+    _hideTimer?.cancel();
     _removeOverlay();
     super.dispose();
   }
@@ -45,7 +51,6 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
     });
   }
 
-  // 静音/还原逻辑
   void _handleToggleMute() {
     setState(() {
       if (_volume > 0) {
@@ -61,62 +66,108 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
 
   // 显示音量条
   void _showVolumeBar() {
-    if (_isVolumeBarVisible || !mounted) return;
-
-    final renderBox = context.findRenderObject() as RenderBox;
-    final position = renderBox.localToGlobal(Offset.zero);
+    if (_overlayEntry != null || !mounted) return;
 
     _overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
-        // 居中对齐图标
-        left: position.dx + (renderBox.size.width - 40) / 2,
-        // 在图标上方显示，留出小空隙
-        top: position.dy - _barHeight - 20,
-        width: 40,
-        height: _barHeight,
-        child: MouseRegion(
-          onEnter: (_) => _isMouseInBar = true,
-          onExit: (_) {
-            _isMouseInBar = false;
-            _checkAndHide();
-          },
-          child: _buildVolumeBarUI(),
+        width: _barWidth,
+        height: _barHeight + 20, // 增加额外高度作为无缝缓冲区
+        child: CompositedTransformFollower(
+          link: _layerLink,
+          showWhenUnlinked: false,
+          // 将面板的底部中心，对齐到图标的顶部中心
+          followerAnchor: Alignment.bottomCenter,
+          targetAnchor: Alignment.topCenter,
+          offset: const Offset(0, 5), // 微调向下偏移，覆盖两组件之间的空隙
+          child: MouseRegion(
+            onEnter: (_) => _isMouseInBar = true,
+            onExit: (_) {
+              _isMouseInBar = false;
+              _startHideTimer();
+            },
+            child: _buildVolumeBarUI(),
+          ),
         ),
       ),
     );
 
     Overlay.of(context).insert(_overlayEntry!);
-    setState(() => _isVolumeBarVisible = true);
   }
 
-  // 检查并隐藏（核心修复：延时判断）
-  void _checkAndHide() {
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (!_isMouseInIcon && !_isMouseInBar && _isVolumeBarVisible) {
+  // 延时关闭定时器（防闪烁防抖）
+  void _startHideTimer() {
+    _hideTimer?.cancel();
+    _hideTimer = Timer(const Duration(milliseconds: 150), () {
+      if (!_isMouseInIcon && !_isMouseInBar) {
         _removeOverlay();
       }
     });
   }
 
   void _removeOverlay() {
-    try {
-      _overlayEntry?.remove();
-      _overlayEntry = null;
-      if (mounted && _isVolumeBarVisible) {
-        setState(() => _isVolumeBarVisible = false);
-      } else {
-        _isVolumeBarVisible = false;
-      }
-    } catch (e) {
-      _isVolumeBarVisible = false;
-    }
+    _overlayEntry?.remove();
+    _overlayEntry = null;
   }
 
-  void _handleVolumeDrag(DragUpdateDetails details) {
-    // 允许更细腻的滑动控制
-    final deltaRatio = -details.delta.dy / (_barHeight - 40);
-    final newVolume = (_volume + deltaRatio).clamp(0.0, 1.0);
+  Widget _buildVolumeBarUI() {
+    return Material(
+      color: Colors.transparent,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 12), // 底部的 Padding 可以充当鼠标滑过的桥梁，防止断连
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.black.withAlpha(220),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: Colors.white10),
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // 实际可滑动区域的高度（扣除上下 Padding）
+              final double trackHeight = constraints.maxHeight - 40;
+              return GestureDetector(
+                onVerticalDragUpdate: (details) => _handleVolumeDrag(details, trackHeight),
+                child: Stack(
+                  alignment: Alignment.bottomCenter,
+                  children: [
+                    // 背景音量槽
+                    Container(
+                      width: 4,
+                      margin: const EdgeInsets.symmetric(vertical: 20),
+                      decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+                    ),
+                    // 进度条填充
+                    Positioned(
+                      bottom: 20,
+                      child: Container(
+                        width: 4,
+                        height: _volume * trackHeight,
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(2)),
+                      ),
+                    ),
+                    // 顶端滑块圆点
+                    Positioned(
+                      bottom: 20 + (_volume * trackHeight) - 6,
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
 
+  void _handleVolumeDrag(DragUpdateDetails details, double trackHeight) {
+    if (trackHeight <= 0) return;
+    // 根据实际高度精准计算灵敏度
+    final deltaRatio = -details.delta.dy / trackHeight;
+    final newVolume = (_volume + deltaRatio).clamp(0.0, 1.0);
     if (newVolume != _volume) {
       setState(() {
         _volume = newVolume;
@@ -127,73 +178,27 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
     }
   }
 
-  Widget _buildVolumeBarUI() {
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        padding: const EdgeInsets.only(bottom: 10), // 底部留白，方便鼠标滑向图标
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.85),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white10),
-          ),
-          child: GestureDetector(
-            onVerticalDragUpdate: _handleVolumeDrag,
-            child: Stack(
-              alignment: Alignment.bottomCenter,
-              children: [
-                // 背景背景槽
-                Container(
-                  width: 4,
-                  margin: const EdgeInsets.symmetric(vertical: 20),
-                  decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(2)),
-                ),
-                // 音量填充
-                Positioned(
-                  bottom: 20,
-                  child: Container(
-                    width: 4,
-                    height: _volume * (_barHeight - 50),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(2)),
-                  ),
-                ),
-                // 滑块
-                Positioned(
-                  bottom: 20 + (_volume * (_barHeight - 50)) - 6,
-                  child: Container(
-                    width: 12,
-                    height: 12,
-                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     IconData icon = _volume == 0 ? Icons.volume_off : (_volume < 0.5 ? Icons.volume_down : Icons.volume_up);
 
-    return MouseRegion(
-      onEnter: (_) {
-        _isMouseInIcon = true;
-        Duration(milliseconds: 300).delay(() {
+    // 将原生的图标组件包裹在联动 Target 中
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: MouseRegion(
+        onEnter: (_) {
+          _isMouseInIcon = true;
           _showVolumeBar();
-        });
-      },
-      onExit: (_) {
-        _isMouseInIcon = false;
-        _checkAndHide();
-      },
-      child: IconButton(
-        onPressed: _handleToggleMute,
-        icon: Icon(icon, color: Colors.white, size: 24),
-        tooltip: _volume == 0 ? "取消静音" : "静音",
+        },
+        onExit: (_) {
+          _isMouseInIcon = false;
+          _startHideTimer();
+        },
+        child: IconButton(
+          onPressed: _handleToggleMute,
+          icon: Icon(icon, color: Colors.white, size: 24),
+          tooltip: _volume == 0 ? i18n('cancel_mute') : i18n('mute'),
+        ),
       ),
     );
   }
