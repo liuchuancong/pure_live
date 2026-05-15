@@ -559,5 +559,6 @@
     "detected_room_id_open": "检测到房间号，是否打开直播间？",
     "no_room_id_open_url": "未检测到房间号，是否使用网页打开直播间？",
     "cancel_mute": "取消静音",
-    "mute": "静音"
+    "mute": "静音",
+    "copy_danmaku": "复制弹幕"
 }
