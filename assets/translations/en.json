@@ -168,7 +168,7 @@
     "double_click_to_exit": "Double click to exit",
     "change_player": "Change videoPlayer",
     "change_player_subtitle": "Change videoPlayer of liveroom",
-    "enable_codec": "enable hardcodec",
+    "enable_codec": "Enable hardcodec",
     "third_party_auth": "Third-party Authentication",
 
     "site_bilibili": "Bilibili",
@@ -388,5 +388,144 @@
     "tap_to_sync": "Tap to sync",
     "copied_to_clipboard": "Copied to clipboard",
     "effective_after_restart": "Takes effect after restart",
-    "platform_display": "Platform Display"
+    "platform_display": "Platform Display",
+    "danmaku_list": "Danmaku List",
+    "danmaku_settings": "Danmaku Settings",
+    "block_list": "Block List",
+
+    "get_room_info_failed_retry": "Failed to get room info, please retry",
+    "server_error_retry_later": "Server error, please try again later",
+    "stream_not_live": "The streamer is offline",
+
+    "invalid_play_url": "Invalid play URL",
+
+    "connect_danmaku_server": "Connecting to danmaku server",
+    "danmaku_connected": "Danmaku server connected",
+    "recording_mode_notice": "Streamer is offline, playing recorded stream",
+
+    "cannot_read_video_info": "Failed to read video info",
+    "cannot_read_play_url": "Failed to read play URL",
+    "read_video_failed": "Failed to read video information",
+
+    "open_app_failed_fallback_browser": "Cannot open app, fallback to browser",
+
+    "check_unknown_sources_permission": "Please check unknown sources permission: {msg}",
+    "recording": "Recording",
+    "monitored": "Monitored",
+    "record": "Record",
+
+    "record_task_added": "Recording task added",
+    "record_task": "Recording task",
+
+    "go_record_center": "Go to Record Center",
+    "start_record_now": "Start recording now",
+    "stop_record": "Stop recording",
+    "remove_monitor": "Remove monitor",
+
+    "switch_live_room": "Switch live room",
+
+    "room_not_live": "This room is offline",
+    "switch_other_room": "Please switch to another room",
+
+    "menu": "Menu",
+    "open_live_room": "Open Live Room",
+    "cast_screen": "Cast Screen",
+    "sleep_timer": "Sleep Timer",
+    "auto_close_time": "Auto close in {time} minutes",
+    "room_offline": "This room is offline",
+    "switch_other_room_hint": "Please switch to another live room",
+    "live_now": "Live",
+    "refresh": "Refresh",
+    "close": "Close",
+    "danmaku_area": "Display Area",
+    "position": "Position",
+    "style": "Style",
+    "display_area": "Display Area",
+    "margin_top": "Top Margin",
+    "margin_bottom": "Bottom Margin",
+    "opacity": "Opacity",
+    "speed": "Speed",
+    "font_size": "Font Size",
+    "stroke": "Stroke",
+    "scroll_to_bottom": "Scroll to bottom",
+    "please_enter_keyword": "Please enter a keyword",
+    "add": "Add",
+    "keyword_added_count": "Added {count} keywords",
+    "click_to_remove_suffix": " (tap to remove)",
+    "select_line": "Select line",
+    "select_quality": "Select quality",
+
+    "network_proxy_config": "Proxy Settings",
+    "enable_play_proxy": "Enable Proxy",
+    "proxy_host": "Proxy Host",
+    "proxy_host_hint": "e.g. 127.0.0.1",
+    "port": "Port",
+    "port_hint": "e.g. 1080",
+
+    "theme_color": "Theme Color",
+    "choose_opacity": "Opacity",
+    "theme_color_and_transparency": "Color & Transparency",
+
+    "moving_network_quality": "Mobile Network Quality",
+    "moving_network_quality_subtitle": "Preferred quality on mobile data",
+
+    "exit_pip": "Exit PiP",
+    "exit_pip_subtitle": "Keep floating window when leaving",
+
+    "kernel_switch": "Player Engine",
+    "kernel_switch_subtitle": "Different engines affect performance",
+
+    "network_proxy": "Proxy Settings",
+    "network_proxy_subtitle": "Configure network proxy",
+
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+
+    "gpu_decode": "Prefer GPU Decoding",
+    "force_destroy_player": "Force Stop Player",
+    "force_destroy_player_subtitle": "Completely stop playback process",
+
+    "platform_settings": "Platform Settings",
+    "danmaku_filter": "Danmaku Filter",
+
+    "startup_animation": "Startup Animation",
+    "startup_animation_subtitle": "Show logo on launch",
+
+    "auto_check_update": "Auto Check Updates",
+
+    "boot_start": "Start on Boot",
+    "exit_without_ask": "Exit Without Prompt",
+
+    "no_keywords": "Please enter keywords",
+
+    "keywords_count": "{{count}} keywords added (tap to remove)",
+
+    "go_bottom": "Go to Bottom",
+
+    "live_not_started": "Stream is offline",
+    "switch_room_tip": "Please switch to another room",
+
+    "live": "Live",
+
+    "theme_mode": "Theme Mode",
+    "select_opacity": "Select Opacity",
+    "theme_color_opacity": "Theme Color & Opacity",
+    "prefer_resolution_cellular": "Cellular Preferred Resolution",
+    "auto_refresh_time_with_value": "Auto Refresh Time: {time} Minutes",
+    "auto_shutdown_time_with_value": "Auto Shutdown Time: {time} Minutes",
+    "proxy_settings": "Network Proxy Settings",
+    "enable_player_proxy": "Enable Player Proxy",
+    "proxy_port": "Proxy Port",
+    "proxy_port_hint": "e.g. 1080",
+    "mobile_quality": "Mobile Network Quality",
+    "mobile_quality_subtitle": "Default quality on cellular data",
+    "exit_float_window": "Exit Floating Window",
+    "exit_float_window_subtitle": "Keep PiP when returning",
+    "platform_display_subtitle": "Manage home platform order",
+    "splash_animation": "Splash Animation",
+    "splash_animation_subtitle": "Show logo on startup",
+    "startup": "Start on Boot",
+    "no_exit_confirm": "No Exit Confirm",
+    "theme_customization": "Theme Customization",
+    "player_kernel": "Player Engine"
 }

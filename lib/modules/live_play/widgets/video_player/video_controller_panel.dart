@@ -582,7 +582,7 @@ class LineSelectorButton extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('选择线路', style: Theme.of(context).textTheme.titleMedium),
+                   Text(i18n("select_line"), style: Theme.of(context).textTheme.titleMedium),
                     IconButton(icon: const Icon(Icons.close, size: 18), onPressed: () => Navigator.of(context).pop()),
                   ],
                 ),
@@ -746,7 +746,7 @@ class ResolutionSelectorButton extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('选择清晰度', style: Theme.of(context).textTheme.titleMedium),
+                 Text(i18n("select_quality"), style: Theme.of(context).textTheme.titleMedium),
                     IconButton(icon: const Icon(Icons.close, size: 18), onPressed: () => Navigator.of(context).pop()),
                   ],
                 ),

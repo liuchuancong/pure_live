@@ -94,12 +94,10 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
           final result = await OpenFilex.open(file.path, type: "application/vnd.android.package-archive");
 
           if (result.type != ResultType.done) {
-           Get.snackbar(
-  i18n("install_failed"),
-  i18n("install_unknown_app_permission_tip", args: {
-    "message": result.message,
-  }),
-);
+            Get.snackbar(
+              i18n("install_failed"),
+              i18n("install_unknown_app_permission_tip", args: {"message": result.message}),
+            );
           }
         } else if (PlatformUtils.isDesktop) {
           final result = await OpenFilex.open(file.path);
@@ -115,7 +113,10 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
           }
 
           if (result.type != ResultType.done) {
-            Get.snackbar(i18n("install_failed"), result.message);
+            Get.snackbar(
+              i18n('install_failed'),
+              i18n('check_unknown_sources_permission', args: {'msg': result.message}),
+            );
           }
         }
       }

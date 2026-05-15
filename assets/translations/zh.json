@@ -380,5 +380,145 @@
     "tap_to_sync": "点击同步",
     "copied_to_clipboard": "已复制到剪贴板",
     "effective_after_restart": "重启后生效",
-    "platform_display": "平台显示"
+    "platform_display": "平台显示",
+    "danmaku_list": "弹幕列表",
+    "danmaku_settings": "弹幕设置",
+    "block_list": "屏蔽管理",
+
+    "get_room_info_failed_retry": "获取直播间信息失败,请重新获取",
+    "server_error_retry_later": "服务器错误,请稍后获取",
+    "stream_not_live": "当前主播未开播或已下播",
+
+    "invalid_play_url": "无效播放地址",
+
+    "connect_danmaku_server": "开始连接弹幕服务器",
+    "danmaku_connected": "弹幕服务器连接正常",
+    "recording_mode_notice": "当前主播未开播，正在轮播录像",
+
+    "cannot_read_video_info": "无法读取视频信息",
+    "cannot_read_play_url": "无法读取播放地址",
+    "read_video_failed": "读取视频信息失败",
+
+    "open_app_failed_fallback_browser": "无法打开APP，将使用浏览器打开",
+
+    "check_unknown_sources_permission": "请检查未知应用权限: {msg}",
+    "recording": "录制中",
+    "monitored": "已监控",
+    "record": "录制",
+
+    "record_task_added": "已添加录制任务",
+    "record_task": "录制任务",
+
+    "go_record_center": "进入录制中心",
+    "start_record_now": "立即启动录制",
+    "stop_record": "停止录制",
+    "remove_monitor": "取消监控",
+
+    "switch_live_room": "切换直播间",
+
+    "room_not_live": "该房间未开播或已下播",
+    "switch_other_room": "请切换其他直播间进行观看吧",
+
+    "menu": "菜单",
+    "open_live_room": "打开直播间",
+    "cast_screen": "投屏",
+    "sleep_timer": "定时关闭",
+    "auto_close_time": "自动关闭时间: {time}分钟",
+    "room_offline": "该房间未开播或已下播",
+    "switch_other_room_hint": "请切换其他直播间进行观看吧",
+    "live_now": "正在直播",
+    "refresh": "刷新",
+    "close": "关闭",
+    "danmaku_area": "显示区域",
+    "position": "位置",
+    "style": "样式",
+    "display_area": "显示区域",
+    "margin_top": "距离顶部",
+    "margin_bottom": "距离底部",
+    "opacity": "透明度",
+    "speed": "速度",
+    "font_size": "字体大小",
+    "stroke": "描边",
+    "scroll_to_bottom": "回到底部",
+    "please_enter_keyword": "请输入关键词",
+    "add": "添加",
+    "keyword_added_count": "已添加{count}个关键词",
+    "click_to_remove_suffix": "（点击移除）",
+    "select_line": "选择线路",
+    "select_quality": "选择清晰度",
+
+    "network_proxy_config": "网络代理配置",
+    "enable_play_proxy": "启用播放代理",
+    "proxy_host": "代理主机 (Host)",
+    "proxy_host_hint": "例如: 127.0.0.1",
+    "port": "端口 (Port)",
+    "port_hint": "例如: 1080",
+
+    "theme_color": "主题颜色",
+    "choose_opacity": "选择透明度",
+    "theme_color_and_transparency": "主题颜色及透明度",
+
+    "moving_network_quality": "移动网络清晰度",
+    "moving_network_quality_subtitle": "使用流量时的首选播放画质",
+
+    "exit_pip": "退出小窗播放",
+    "exit_pip_subtitle": "返回主界面时是否保留悬浮窗",
+
+    "kernel_switch": "内核切换",
+    "kernel_switch_subtitle": "不同内核影响解码性能与兼容性",
+
+    "network_proxy": "网络代理设置",
+    "network_proxy_subtitle": "配置播放器的网络请求代理",
+
+    "enabled": "已开启",
+    "disabled": "未开启",
+
+    "gpu_decode": "优先使用 GPU 硬件解码",
+    "force_destroy_player": "播放器强制销毁",
+    "force_destroy_player_subtitle": "彻底关闭播放进程以节省资源",
+
+    "platform_settings": "平台显示设置",
+    "danmaku_filter": "弹幕关键词过滤",
+
+    "startup_animation": "启动页动画",
+    "startup_animation_subtitle": "启动时显示 Logo",
+
+    "auto_check_update": "自动检查更新",
+
+    "boot_start": "开机启动",
+    "exit_without_ask": "退出不再询问",
+
+    "no_keywords": "请输入关键词",
+
+    "keywords_count": "已添加{{count}}个关键词（点击移除）",
+
+    "go_bottom": "回到底部",
+
+    "live_not_started": "该房间未开播或已下播",
+    "switch_room_tip": "请切换其他直播间进行观看吧",
+
+    "live": "正在直播",
+
+    "theme_mode": "主题模式",
+    "select_opacity": "选择透明度",
+    "theme_color_opacity": "主题颜色及透明度",
+    "prefer_resolution_cellular": "移动网络首选清晰度",
+
+    "auto_refresh_time_with_value": "自动刷新时间：{time} 分钟",
+    "auto_shutdown_time_with_value": "自动关机时间：{time} 分钟",
+    "proxy_settings": "网络代理配置",
+    "enable_player_proxy": "启用播放代理",
+    "proxy_port": "端口 (Port)",
+    "proxy_port_hint": "例如: 1080",
+    "mobile_quality": "移动网络清晰度",
+    "mobile_quality_subtitle": "使用流量时的默认画质",
+    "exit_float_window": "退出小窗播放",
+    "exit_float_window_subtitle": "返回时是否保留悬浮窗",
+    "platform_display_subtitle": "管理首页直播平台排序",
+    "splash_animation": "启动动画",
+    "splash_animation_subtitle": "启动时显示 Logo",
+    "startup": "开机启动",
+    "no_exit_confirm": "退出不再询问",
+    "theme_customization": "主题定制",
+    "player_kernel": "播放器内核"
 }

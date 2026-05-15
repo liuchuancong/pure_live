@@ -23,7 +23,7 @@ class _KeywordBlockPageState extends State<KeywordBlockPage> {
   void add() {
     final keyword = textEditingController.text.trim();
     if (keyword.isEmpty) {
-      ToastUtil.show("请输入关键词");
+      ToastUtil.show(i18n("please_enter_keyword"));
       return;
     }
 
@@ -46,8 +46,8 @@ class _KeywordBlockPageState extends State<KeywordBlockPage> {
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.all(12.0),
             border: OutlineInputBorder(borderSide: BorderSide(color: Theme.of(context).primaryColor)),
-            hintText: "请输入关键词",
-            suffixIcon: TextButton.icon(onPressed: add, icon: const Icon(Icons.add), label: const Text("添加")),
+            hintText: i18n("please_enter_keyword"),
+            suffixIcon: TextButton.icon(onPressed: add, icon: const Icon(Icons.add), label: Text(i18n('add'))),
           ),
           onSubmitted: (e) {
             add();
@@ -55,7 +55,13 @@ class _KeywordBlockPageState extends State<KeywordBlockPage> {
         ),
         // 使用 SizedBox 代替假设的 spacer 函数
         const SizedBox(height: 12.0),
-        Obx(() => Text("已添加${controller.shieldList.length}个关键词（点击移除）", style: Get.textTheme.titleMedium)),
+        Obx(
+          () => Text(
+            i18n("keyword_added_count", args: {"count": controller.shieldList.length.toString()}) +
+                i18n("click_to_remove_suffix"),
+            style: Get.textTheme.titleMedium,
+          ),
+        ),
         const SizedBox(height: 12.0),
         Obx(
           () => Wrap(

@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import 'package:flutter/material.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:pure_live/common/widgets/count_button.dart';
@@ -30,11 +29,11 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
           () => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _section(theme, "显示区域"),
+              _section(theme, i18n("danmaku_area")),
               _card(theme, [
                 _slider(
                   theme,
-                  title: "显示区域",
+                  title: i18n("danmaku_area"),
                   value: controller.danmakuArea.value,
                   min: 0,
                   max: 1,
@@ -48,11 +47,11 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
 
               const SizedBox(height: 12),
 
-              _section(theme, "位置"),
+              _section(theme, i18n("position")),
               _card(theme, [
                 _counter(
                   theme,
-                  title: "距离顶部",
+                  title: i18n("margin_top"),
                   value: controller.danmakuTopArea.value.toInt(),
                   max: 300,
                   onChanged: (v) => controller.danmakuTopArea.value = v.toDouble(),
@@ -61,7 +60,7 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
                 ),
                 _counter(
                   theme,
-                  title: "距离底部",
+                  title: i18n("margin_bottom"),
                   value: controller.danmakuBottomArea.value.toInt(),
                   max: 300,
                   onChanged: (v) => controller.danmakuBottomArea.value = v.toDouble(),
@@ -72,11 +71,11 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
 
               const SizedBox(height: 12),
 
-              _section(theme, "样式"),
+              _section(theme, i18n("style")),
               _card(theme, [
                 _slider(
                   theme,
-                  title: "透明度",
+                  title: i18n("opacity"),
                   value: controller.danmakuOpacity.value,
                   min: 0,
                   max: 1,
@@ -89,7 +88,7 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
 
                 _slider(
                   theme,
-                  title: "速度",
+                  title: i18n("speed"),
                   value: controller.danmakuSpeed.value.toDouble(),
                   min: 5,
                   max: 20,
@@ -102,7 +101,7 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
 
                 _slider(
                   theme,
-                  title: "字体大小",
+                  title: i18n("font_size"),
                   value: controller.danmakuFontSize.value.toDouble(),
                   min: 10,
                   max: 30,
@@ -115,7 +114,7 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
 
                 _slider(
                   theme,
-                  title: "描边",
+                  title: i18n("stroke"),
                   value: controller.danmakuFontBorder.value.toDouble(),
                   min: 0,
                   max: 8,

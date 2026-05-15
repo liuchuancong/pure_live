@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:pure_live/plugins/event_bus.dart';
+import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/common/utils/text_util.dart';
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/common/widgets/common_avatar.dart';
@@ -67,7 +68,7 @@ class _PlayOtherState extends State<PlayOther> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(children: [Text('正在直播', style: Theme.of(context).textTheme.titleMedium)]),
+                  Row(children: [Text(i18n("live_now"), style: Theme.of(context).textTheme.titleMedium)]),
                   IconButton(
                     icon: const Icon(Icons.close, size: 18),
                     onPressed: () {
@@ -103,13 +104,13 @@ class _PlayOtherState extends State<PlayOther> {
                       loadingFinish.value = false;
                       EventBus.instance.emit('refresh_favorite_rooms', true);
                     },
-                    child: const Text('刷新'),
+                    child: Text(i18n("refresh")),
                   ),
                   TextButton(
                     onPressed: () {
                       Navigator.of(context).pop();
                     },
-                    child: const Text('关闭'),
+                    child: Text(i18n("close")),
                   ),
                 ],
               ),
