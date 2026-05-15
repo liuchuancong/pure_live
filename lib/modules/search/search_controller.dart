@@ -34,7 +34,7 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
 
   void doSearch() {
     if (searchController.text.isEmpty) {
-      ToastUtil.show('请输入关键字');
+      ToastUtil.show(i18n("please_input_keyword"));
       return;
     }
     final site = Sites().availableSites()[index.value];

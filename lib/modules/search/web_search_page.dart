@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'web_search_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 class WebSearchPage extends GetView<WebSearchController> {
@@ -10,7 +11,7 @@ class WebSearchPage extends GetView<WebSearchController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("网页搜索"),
+       title: Text(i18n("web_search")),
         leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: controller.goBack),
       ),
       body: Obx(() {

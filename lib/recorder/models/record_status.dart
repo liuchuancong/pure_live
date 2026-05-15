@@ -1,3 +1,5 @@
+import 'package:pure_live/plugins/locale_helper.dart';
+
 enum RecordStatus {
   queued, // 排队中（达到并发上限）
   preparing, // 准备中（解析流/线路/清晰度）
@@ -15,61 +17,44 @@ extension RecordStatusExt on RecordStatus {
     switch (this) {
       case RecordStatus.running:
         return 0;
-
       case RecordStatus.reconnecting:
         return 1;
-
       case RecordStatus.processing:
         return 2;
-
       case RecordStatus.preparing:
         return 3;
-
       case RecordStatus.queued:
         return 4;
-
       case RecordStatus.waitingLive:
         return 5;
-
       case RecordStatus.failed:
         return 6;
-
       case RecordStatus.completed:
         return 7;
-
       case RecordStatus.stopped:
         return 8;
     }
   }
-
   String get label {
     switch (this) {
       case RecordStatus.queued:
-        return "排队中";
-
+        return i18n("record_queued");
       case RecordStatus.preparing:
-        return "准备中";
-
+        return i18n("record_preparing");
       case RecordStatus.running:
-        return "录制中";
-
+        return i18n("record_running");
       case RecordStatus.reconnecting:
-        return "重连中";
-
+        return i18n("record_reconnecting");
       case RecordStatus.processing:
-        return "处理中";
-
+        return i18n("record_processing");
       case RecordStatus.completed:
-        return "已完成";
-
+        return i18n("record_completed");
       case RecordStatus.failed:
-        return "失败";
-
+        return i18n("record_failed");
       case RecordStatus.waitingLive:
-        return "等待开播";
-
+        return i18n("record_waiting_live");
       case RecordStatus.stopped:
-        return "已停止";
+        return i18n("record_stopped");
     }
   }
 
@@ -80,7 +65,6 @@ extension RecordStatusExt on RecordStatus {
       case RecordStatus.processing:
       case RecordStatus.preparing:
         return true;
-
       default:
         return false;
     }
@@ -92,7 +76,6 @@ extension RecordStatusExt on RecordStatus {
       case RecordStatus.failed:
       case RecordStatus.stopped:
         return true;
-
       default:
         return false;
     }

@@ -23,13 +23,12 @@ class LiveAudioService {
     try {
       _handler = await AudioService.init(
         builder: () => LiveAudioHandler(),
-        config: const AudioServiceConfig(
+        config: AudioServiceConfig(
           androidNotificationChannelId: 'com.mystyle.purelive.audio',
-          androidNotificationChannelName: '纯粹直播播放',
+          androidNotificationChannelName: i18n("audio_channel_name"),
           androidNotificationOngoing: true,
           androidStopForegroundOnPause: true,
           androidNotificationClickStartsActivity: true,
-          // 增加一个默认图标（确保在 AndroidManifest 中有对应的 ic_launcher）
           notificationColor: Colors.blue,
         ),
       );
@@ -39,7 +38,6 @@ class LiveAudioService {
     return _handler;
   }
 
-  /// 关联播放器实例
   static void setPlayer(UnifiedPlayer player) async {
     final handler = await _ensureInitialized();
     handler?.setPlayer(player);
@@ -51,10 +49,9 @@ class LiveAudioService {
     final handler = await _ensureInitialized();
     if (handler == null) return;
 
-    // 2. 构造媒体信息
     final item = MediaItem(
       id: roomId,
-      album: "纯粹直播",
+      album: i18n("app_name"),
       title: title,
       artist: author,
       artUri: (cover != null && cover.isNotEmpty) ? Uri.tryParse(cover) : null,
@@ -63,32 +60,33 @@ class LiveAudioService {
     await handler.playMediaItem(item);
   }
 
-  /// 停止服务并销毁通知
   static Future<void> stop() async {
     if (!Platform.isAndroid || _handler == null) return;
     await _handler!.stop();
   }
 
-  /// 权限请求逻辑
   static Future<bool> requestPlatformPermissions() async {
     if (!Platform.isAndroid) return true;
 
-    // 1. 通知权限
     if (await Permission.notification.status != PermissionStatus.granted) {
-      bool confirm = await _showExplainDialog(title: "需要通知权限", content: "为了在后台播放时显示控制条并防止直播中断，我们需要开启通知权限。");
+      bool confirm = await _showExplainDialog(
+        title: i18n("permission_notification_title"),
+        content: i18n("permission_notification_content"),
+      );
       if (confirm) await Permission.notification.request();
       if (await Permission.notification.status != PermissionStatus.granted) return false;
     }
 
-    // 2. 电池优化 (提高后台存活率)
     if (await Permission.ignoreBatteryOptimizations.status != PermissionStatus.granted) {
-      bool confirm = await _showExplainDialog(title: "需要忽略电池优化", content: "开启此选项能确保直播在手机锁屏或后台时不会被强制关闭。");
+      bool confirm = await _showExplainDialog(
+        title: i18n("permission_battery_title"),
+        content: i18n("permission_battery_content"),
+      );
       if (confirm) await Permission.ignoreBatteryOptimizations.request();
     }
     return true;
   }
 
-  /// 解释弹窗
   static Future<bool> _showExplainDialog({required String title, required String content}) async {
     bool isConfirm = false;
     await SmartDialog.show(
@@ -106,13 +104,13 @@ class LiveAudioService {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                TextButton(onPressed: () => SmartDialog.dismiss(), child: const Text("取消")),
+                TextButton(onPressed: () => SmartDialog.dismiss(), child: Text(i18n("permission_cancel"))),
                 ElevatedButton(
                   onPressed: () {
                     isConfirm = true;
                     SmartDialog.dismiss();
                   },
-                  child: const Text("去开启"),
+                  child: Text(i18n("permission_go_enable")),
                 ),
               ],
             ),

@@ -152,54 +152,29 @@ class VideoController with ChangeNotifier {
   void _handlePlayerError(PlayerException error) {
     log(error.toString(), name: 'PlayerError');
     switch (error.type) {
-      // =====================
-      // 网络错误
-      // =====================
       case PlayerErrorType.network:
-        ToastUtil.show('网络连接失败');
+        ToastUtil.show(i18n("error_network"));
         break;
-      // =====================
-      // 播放源错误
-      // =====================
       case PlayerErrorType.source:
-        ToastUtil.show('播放源异常');
+        ToastUtil.show(i18n("error_source"));
         break;
-      // =====================
-      // 解码错误
-      // =====================
       case PlayerErrorType.codec:
-        ToastUtil.show('当前播放器解码失败');
+        ToastUtil.show(i18n("error_codec"));
         break;
-      // =====================
-      // native 崩溃
-      // =====================
       case PlayerErrorType.native:
-        ToastUtil.show('播放器异常');
+        ToastUtil.show(i18n("error_native"));
         break;
-      // =====================
-      // 初始化失败
-      // =====================
       case PlayerErrorType.initialization:
-        ToastUtil.show('播放器初始化失败');
+        ToastUtil.show(i18n("error_initialization"));
         break;
-      // =====================
-      // texture 错误
-      // =====================
       case PlayerErrorType.texture:
-        ToastUtil.show('视频渲染失败');
+        ToastUtil.show(i18n("error_texture"));
         break;
-      // =====================
-      // 生命周期错误
-      // =====================
       case PlayerErrorType.lifecycle:
-        ToastUtil.show('播放器状态异常');
+        ToastUtil.show(i18n("error_lifecycle"));
         break;
-      // =====================
-      // 未知错误
-      // =====================
       case PlayerErrorType.unknown:
-        ToastUtil.show('未知播放错误');
-
+        ToastUtil.show(i18n("error_unknown"));
         break;
     }
   }
@@ -231,7 +206,7 @@ class VideoController with ChangeNotifier {
     ).liveSite.getRoomDetail(roomId: room.roomId!, platform: room.platform!);
     if (liveRoom.liveStatus == LiveStatus.offline) {
       livePlayController.setNormalScreen();
-      ToastUtil.show("该房间已下播");
+      ToastUtil.show(i18n("room_offline"));
     } else {
       changeLine();
     }

@@ -292,7 +292,7 @@ class CustomTitleBar extends StatelessWidget {
                                 Image.asset('assets/icons/icon.png', width: 16, height: 16),
                                 const SizedBox(width: 6),
                                 Text(
-                                  '纯粹直播',
+                                  i18n('app_name'),
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,

@@ -582,7 +582,7 @@ class LineSelectorButton extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                   Text(i18n("select_line"), style: Theme.of(context).textTheme.titleMedium),
+                    Text(i18n("select_line"), style: Theme.of(context).textTheme.titleMedium),
                     IconButton(icon: const Icon(Icons.close, size: 18), onPressed: () => Navigator.of(context).pop()),
                   ],
                 ),
@@ -637,7 +637,7 @@ class LineSelectorButton extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
-                  children: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('取消'))],
+                  children: [TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n('cancel')))],
                 ),
               ),
             ],
@@ -746,7 +746,7 @@ class ResolutionSelectorButton extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                 Text(i18n("select_quality"), style: Theme.of(context).textTheme.titleMedium),
+                    Text(i18n("select_quality"), style: Theme.of(context).textTheme.titleMedium),
                     IconButton(icon: const Icon(Icons.close, size: 18), onPressed: () => Navigator.of(context).pop()),
                   ],
                 ),
@@ -802,7 +802,7 @@ class ResolutionSelectorButton extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
-                  children: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('取消'))],
+                  children: [TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n('cancel')))],
                 ),
               ),
             ],
@@ -1184,7 +1184,7 @@ class _FavoriteButtonState extends State<FavoriteButton> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Icon(isFavorite ? Icons.check_rounded : Icons.close, color: Colors.white, size: 15),
-            Text(isFavorite ? '已关注' : '关注', style: TextStyle(color: Colors.white, fontSize: 15)),
+            Text(isFavorite ? i18n('followed') : i18n('follow'), style: TextStyle(color: Colors.white, fontSize: 15)),
           ],
         ),
       ),
@@ -1290,7 +1290,7 @@ class DanmakuSetting extends StatelessWidget {
               dense: true,
               contentPadding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
-              leading: Text('显示区域', style: label),
+              leading: Text(i18n('display_area'), style: label),
               title: Slider(
                 divisions: 10,
                 min: 0.0,
@@ -1307,7 +1307,7 @@ class DanmakuSetting extends StatelessWidget {
               dense: true,
               contentPadding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
-              leading: Text('距离顶部', style: label),
+              leading: Text(i18n('margin_top'), style: label),
               title: Obx(
                 () => CountButton(
                   maxValue: 300,
@@ -1324,7 +1324,7 @@ class DanmakuSetting extends StatelessWidget {
               dense: true,
               contentPadding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
-              leading: Text('距离底部', style: label),
+              leading: Text(i18n('margin_bottom'), style: label),
               title: Obx(
                 () => CountButton(
                   maxValue: 300,

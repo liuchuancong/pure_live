@@ -126,7 +126,7 @@ class AppPages {
           bgGradient: bgGradient,
           logo: Image.asset('assets/icons/icon.png', width: 150),
           showTextLogo: true,
-          logoText: "欢迎使用",
+          logoText: i18n("welcome_use"),
           textStyle: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,

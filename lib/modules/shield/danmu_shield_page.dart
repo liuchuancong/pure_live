@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/modules/shield/danmu_shield_controller.dart';
 
 class DanmuShieldPage extends GetView<DanmuShieldController> {
@@ -11,7 +12,7 @@ class DanmuShieldPage extends GetView<DanmuShieldController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("弹幕关键词屏蔽")),
+      appBar: AppBar(title: Text(i18n("danmaku_keyword_block"))),
       body: ListView(
         padding: const EdgeInsets.all(12.0),
         children: [
@@ -21,11 +22,11 @@ class DanmuShieldPage extends GetView<DanmuShieldController> {
             decoration: InputDecoration(
               contentPadding: const EdgeInsets.all(12.0),
               border: OutlineInputBorder(borderSide: BorderSide(color: controller.themeColor)),
-              hintText: "请输入关键词",
+              hintText: i18n('please_input_keyword'),
               suffixIcon: TextButton.icon(
                 onPressed: controller.add,
                 icon: const Icon(Icons.add),
-                label: const Text("添加"),
+                label: Text(i18n('add')),
               ),
             ),
             onSubmitted: (e) {

@@ -61,7 +61,7 @@ class FileRecoverUtils {
       final File categories = File(p.join(cacheDir.path, AppPathManager.iptvCategoryFile));
       dio.Response response = await dioInstance.download(url, m3ufile.path);
       if (response.statusCode != 200 && response.statusCode != 304) {
-        SnackBarUtil.error('文件下载失败请重试');
+        SnackBarUtil.error(i18n("file_download_failed_retry"));
         return false;
       }
       if (!categories.existsSync()) {
@@ -102,7 +102,7 @@ class FileRecoverUtils {
     if (Platform.isAndroid || Platform.isIOS) {
       final granted = await requestStoragePermission();
       if (!granted) {
-        SnackBarUtil.error('请先授予读写文件权限');
+        SnackBarUtil.error(i18n("grant_storage_permission_first"));
         return null;
       }
     }

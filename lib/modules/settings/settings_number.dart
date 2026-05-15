@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:pure_live/plugins/locale_helper.dart';
 
 class SettingsNumber extends StatelessWidget {
   final String title;
@@ -113,7 +114,7 @@ class SettingsNumber extends StatelessWidget {
                   onChanged?.call(newValue.value);
                   Navigator.of(Get.context!).pop();
                 },
-                child: const Text("确定"),
+                child: Text(i18n('confirm')),
               ),
             ),
           ],

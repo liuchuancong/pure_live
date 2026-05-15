@@ -1,24 +1,24 @@
 import 'package:pure_live/common/index.dart';
 
 void initRefresh() {
-  EasyRefresh.defaultHeaderBuilder = () => const ClassicHeader(
-        armedText: '松开加载',
-        dragText: '上拉刷新',
-        readyText: '加载中...',
-        processingText: '正在刷新...',
-        noMoreText: '没有更多数据了',
-        failedText: '加载失败',
-        messageText: '上次加载时间 %T',
-        processedText: '加载成功',
-      );
-  EasyRefresh.defaultFooterBuilder = () => const ClassicFooter(
-        armedText: '松开加载',
-        dragText: '下拉刷新',
-        readyText: '加载中...',
-        processingText: '正在刷新...',
-        noMoreText: '没有更多数据了',
-        failedText: '加载失败',
-        messageText: '上次加载时间 %T',
-        processedText: '加载成功',
-      );
+  EasyRefresh.defaultHeaderBuilder = () => ClassicHeader(
+    armedText: i18n("refresh_release_to_load"),
+    dragText: i18n("refresh_pull_up_to_refresh"),
+    readyText: i18n("refresh_loading"),
+    processingText: i18n("refresh_refreshing"),
+    noMoreText: i18n("refresh_no_more_data"),
+    failedText: i18n("refresh_load_failed"),
+    messageText: i18n("refresh_last_updated_at"),
+    processedText: i18n("refresh_load_success"),
+  );
+  EasyRefresh.defaultFooterBuilder = () => ClassicFooter(
+    armedText: i18n("refresh_release_to_load"),
+    dragText: i18n("refresh_pull_down_to_load"),
+    readyText: i18n("refresh_loading"),
+    processingText: i18n("refresh_refreshing"),
+    noMoreText: i18n("refresh_no_more_data"),
+    failedText: i18n("refresh_load_failed"),
+    messageText: i18n("refresh_last_updated_at"),
+    processedText: i18n("refresh_load_success"),
+  );
 }
