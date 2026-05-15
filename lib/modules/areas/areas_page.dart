@@ -24,7 +24,7 @@ class AreasPage extends GetView<AreasController> {
               labelStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               labelPadding: const EdgeInsets.symmetric(horizontal: 12),
               indicatorSize: TabBarIndicatorSize.label,
-              tabs: controller.sites.map((e) => Tab(text: e.name)).toList(),
+              tabs: Sites().availableSites().map((e) => Tab(text: e.name)).toList(),
             ),
           ),
           body: TabBarView(
