@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:pure_live/core/sites.dart';
+import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
@@ -34,7 +35,7 @@ class StreamResolverService extends GetxService {
 
       /// 未开播
       if (detail.liveStatus != LiveStatus.live) {
-        throw const StreamException(type: StreamErrorType.notLive, message: "主播未开播", retryable: false);
+        throw StreamException(type: StreamErrorType.notLive, message: i18n("stream_not_live"), retryable: false);
       }
 
       List<LivePlayQuality> qualities = [];
@@ -42,12 +43,20 @@ class StreamResolverService extends GetxService {
       try {
         qualities = await Sites.of(platform).liveSite.getPlayQualites(detail: detail);
       } catch (e) {
-        throw const StreamException(type: StreamErrorType.noQuality, message: "获取清晰度失败", retryable: false);
+        throw StreamException(
+          type: StreamErrorType.noQuality,
+          message: i18n("stream_get_quality_failed"),
+          retryable: false,
+        );
       }
 
       /// 无清晰度
       if (qualities.isEmpty) {
-        throw const StreamException(type: StreamErrorType.noQuality, message: "无可用清晰度", retryable: false);
+        throw StreamException(
+          type: StreamErrorType.noQuality,
+          message: i18n("stream_no_available_quality"),
+          retryable: false,
+        );
       }
 
       /// 根据用户目标清晰度排序
@@ -79,7 +88,7 @@ class StreamResolverService extends GetxService {
       }
 
       /// 所有线路失败
-      throw const StreamException(type: StreamErrorType.cdnFailed, message: "所有清晰度线路失败", retryable: true);
+      throw StreamException(type: StreamErrorType.cdnFailed, message: i18n("stream_all_cdn_failed"), retryable: true);
     }
     /// 已知业务异常
     on StreamException {

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:get/get.dart';
 import 'package:pure_live/core/sites.dart';
+import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/site/bilibili_site.dart';
 import 'package:pure_live/common/utils/toast_util.dart';
@@ -17,7 +18,7 @@ class BiliBiliAccountService extends GetxController {
 
   var cookie = "".obs;
   var uid = 0;
-  var name = "未登录".obs;
+  var name = i18n("not_logged_in").obs;
   static const String kBilibiliCookie = "bilibiliCookie";
   @override
   void onInit() {
@@ -39,15 +40,15 @@ class BiliBiliAccountService extends GetxController {
         );
         if (result["code"] == 0) {
           var info = BiliBiliUserInfoModel.fromJson(result["data"]);
-          name.value = info.uname ?? "未登录";
+          name.value = info.uname ?? i18n("not_logged_in");
           uid = info.mid ?? 0;
           setSite();
         } else {
-          ToastUtil.show("哔哩哔哩登录已失效，请重新登录");
+          ToastUtil.show(i18n("bilibili_login_expired"));
           logout();
         }
       } catch (e) {
-        ToastUtil.show("获取哔哩哔哩用户信息失败，可前往账号管理重试");
+        ToastUtil.show(i18n("bilibili_user_info_failed"));
       }
     });
   }
@@ -72,7 +73,7 @@ class BiliBiliAccountService extends GetxController {
   void logout() async {
     cookie.value = "";
     uid = 0;
-    name.value = "未登录";
+    name.value = i18n("not_logged_in");
     setSite();
     HivePrefUtil.setString(kBilibiliCookie, '');
     logined.value = false;

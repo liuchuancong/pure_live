@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
 
@@ -40,11 +39,11 @@ class Utils {
         actions: [
           TextButton(
             onPressed: (() => Navigator.of(Get.context!).pop(false)),
-            child: Text(cancel.isEmpty ? "取消" : cancel),
+            child: Text(cancel.isEmpty ? i18n("cancel") : cancel),
           ),
           TextButton(
             onPressed: (() => Navigator.of(Get.context!).pop(true)),
-            child: Text(confirm.isEmpty ? "确定" : confirm),
+            child: Text(confirm.isEmpty ? i18n("confirm") : confirm),
           ),
           ...?actions,
         ],
@@ -76,7 +75,7 @@ class Utils {
             onPressed: () {
               Navigator.of(Get.context!).pop(true);
             },
-            child: Text(confirm.isEmpty ? "确定" : confirm),
+            child: Text(confirm.isEmpty ? i18n("confirm") : confirm),
           ),
         ],
       ),
@@ -96,10 +95,7 @@ class Utils {
       animationBuilder: (controller, child, animationParam) {
         //从右到左
         return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(1, 0),
-            end: Offset.zero,
-          ).animate(controller.view),
+          position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero).animate(controller.view),
           child: child,
         );
       },
@@ -111,10 +107,7 @@ class Utils {
         padding: EdgeInsets.only(right: MediaQuery.of(context).padding.right),
         decoration: BoxDecoration(
           color: Get.theme.cardColor,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(4),
-            bottomLeft: Radius.circular(4),
-          ),
+          borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), bottomLeft: Radius.circular(4)),
         ),
         child: SafeArea(
           left: false,
@@ -128,9 +121,7 @@ class Utils {
                   contentPadding: EdgeInsets.zero,
                   leading: IconButton(
                     onPressed: () {
-                      SmartDialog.dismiss(
-                        status: SmartStatus.allCustom,
-                      ).then((value) => onDismiss?.call());
+                      SmartDialog.dismiss(status: SmartStatus.allCustom).then((value) => onDismiss?.call());
                     },
                     icon: const Icon(Icons.arrow_back),
                   ),
@@ -162,9 +153,7 @@ class Utils {
     String confirm = '',
     String cancel = '',
   }) async {
-    final TextEditingController textEditingController = TextEditingController(
-      text: content,
-    );
+    final TextEditingController textEditingController = TextEditingController(text: content);
     var result = await Get.dialog(
       AlertDialog(
         title: Text(title),
@@ -189,13 +178,13 @@ class Utils {
             onPressed: () {
               Navigator.of(Get.context!).pop();
             },
-            child: const Text("取消"),
+            child: Text(i18n("cancel")),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(Get.context!).pop(textEditingController.text);
             },
-            child: const Text("确定"),
+            child: Text(i18n("confirm")),
           ),
         ],
       ),
@@ -205,11 +194,7 @@ class Utils {
     return result;
   }
 
-  static Future<T?> showOptionDialog<T>(
-    List<T> contents,
-    T value, {
-    String title = '',
-  }) async {
+  static Future<T?> showOptionDialog<T>(List<T> contents, T value, {String title = ''}) async {
     var result = await Get.dialog(
       SimpleDialog(
         title: Text(title),
@@ -222,12 +207,7 @@ class Utils {
               }
             },
             child: Padding(
-              padding: const EdgeInsets.only(
-                top: 0,
-                bottom: 10,
-                left: 16,
-                right: 16,
-              ),
+              padding: const EdgeInsets.only(top: 0, bottom: 10, left: 16, right: 16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -235,18 +215,12 @@ class Utils {
                   return Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Radio<T>(
-                        value: e,
-                        activeColor: Theme.of(Get.context!).colorScheme.primary,
-                      ),
+                      Radio<T>(value: e, activeColor: Theme.of(Get.context!).colorScheme.primary),
                       GestureDetector(
                         onTap: () {
                           Navigator.of(Get.context!).pop(e);
                         },
-                        child: Text(
-                          e.toString(),
-                          style: Theme.of(Get.context!).textTheme.bodyLarge,
-                        ),
+                        child: Text(e.toString(), style: Theme.of(Get.context!).textTheme.bodyLarge),
                       ),
                     ],
                   );
@@ -282,7 +256,7 @@ class Utils {
       StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            title: Text('提示', style: Get.textTheme.titleLarge),
+            title: Text(i18n("tip"), style: Get.textTheme.titleLarge),
             content: Container(
               constraints: const BoxConstraints(maxHeight: 400),
               child: SingleChildScrollView(
@@ -292,11 +266,11 @@ class Utils {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('确定要退出吗？', style: Get.textTheme.titleMedium),
+                      Text(i18n("confirm_exit"), style: Get.textTheme.titleMedium),
                       SizedBox(height: 12),
                       const Divider(height: 1),
                       CheckboxListTile(
-                        title: Text('不再询问', style: Get.textTheme.titleSmall),
+                        title: Text(i18n("dont_ask_again"), style: Get.textTheme.titleSmall),
                         value: shouldNotAskAgain,
                         onChanged: (bool? value) {
                           setState(() {
@@ -320,13 +294,10 @@ class Utils {
                     await _minimizeOrHideDesktopWindow();
                   });
                 },
-                child: Text('最小化'),
+                child: Text(i18n("minimize")),
               ),
               ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                  foregroundColor: Colors.white,
-                ),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
                 onPressed: () async {
                   settings.dontAskExit.value = shouldNotAskAgain;
                   settings.exitChoose.value = 'exit';
@@ -338,7 +309,7 @@ class Utils {
                     exit(0);
                   });
                 },
-                child: Text('退出'),
+                child: Text(i18n("exit_app")),
               ),
             ],
           );

@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/modules/account/douyin/douyin_cookie_controller.dart';
 
 class DouyinCookiePage extends GetView<DouyinCookieController> {
@@ -9,18 +10,18 @@ class DouyinCookiePage extends GetView<DouyinCookieController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("设置cookie")),
+      appBar: AppBar(title: Text(i18n("set_cookie"))),
       body: ListView(
         padding: const EdgeInsets.all(12.0),
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Text('浏览器F12,输入document.cookie,复制cookie到下方输入框，点击设置按钮，即可设置抖音直播cookie'),
+            child: Text(i18n("douyin_cookie_tip")),
           ),
           buildCard(
             context: context,
             child: ExpansionTile(
-              title: const Text("cookie"),
+              title: Text(i18n("cookie")),
               childrenPadding: const EdgeInsets.symmetric(horizontal: 16.0),
               initiallyExpanded: true,
               children: [
@@ -30,9 +31,13 @@ class DouyinCookiePage extends GetView<DouyinCookieController> {
                   controller: controller.cookieController,
                   decoration: InputDecoration(
                     border: const OutlineInputBorder(),
-                    hintText: "输入抖音直播cookie",
+                    hintText: i18n("douyin_cookie_hint"),
                     contentPadding: const EdgeInsets.all(12.0),
-                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey.withValues(alpha: .2))),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
+                        color: Colors.grey.withValues(alpha: .2),
+                      ),
+                    ),
                   ),
                   onSubmitted: controller.setCookie,
                 ),
@@ -44,7 +49,7 @@ class DouyinCookiePage extends GetView<DouyinCookieController> {
                       controller.setCookie(controller.cookieController.text);
                     },
                     icon: const Icon(Remix.settings_2_fill),
-                    label: const Text("设置"),
+                    label: Text(i18n("set")),
                   ),
                 ),
               ],
@@ -60,7 +65,14 @@ class DouyinCookiePage extends GetView<DouyinCookieController> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-        boxShadow: Get.isDarkMode ? [] : [BoxShadow(blurRadius: 8, color: Colors.grey.withValues(alpha: .2))],
+        boxShadow: Get.isDarkMode
+            ? []
+            : [
+                BoxShadow(
+                  blurRadius: 8,
+                  color: Colors.grey.withValues(alpha: .2),
+                ),
+              ],
       ),
       margin: const EdgeInsets.only(bottom: 8.0),
       child: Theme(

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:get/get.dart';
+import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/common/utils/toast_util.dart';
 import 'package:pure_live/common/utils/version_util.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -34,21 +35,23 @@ Future<void> downloadAndInstallApk(String apkUrl) async {
     try {
       final hasInstallPermission = await requestStorageInstallPermission();
       if (!hasInstallPermission) {
-        ToastUtil.show('请授予安装权限后再尝试下载安装');
+        ToastUtil.show(i18n("grant_install_permission"));
         openAppSettings();
         return;
       }
     } catch (e) {
-      ToastUtil.show('请求安装权限失败，${e.toString()}');
+      ToastUtil.show('${i18n("request_install_permission_failed")}${e.toString()}');
     }
   }
-  ToastUtil.show('正在下载 纯粹直播v${VersionUtil.latestVersion}...');
+  ToastUtil.show(i18n("downloading_apk", args: {
+    "version": VersionUtil.latestVersion
+  }));
 
   Get.dialog(
     DownloadApkDialog(
       apkUrl: apkUrl,
-      version: VersionUtil.latestVersion, // 你的版本号
+      version: VersionUtil.latestVersion,
     ),
-    barrierDismissible: false, // 禁止点击遮罩关闭（可选）
+    barrierDismissible: false,
   );
 }

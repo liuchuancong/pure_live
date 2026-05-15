@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'package:get/get.dart';
 import 'package:path/path.dart' as p;
+import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_manager.dart';
@@ -38,7 +39,7 @@ class VideoProcessorService extends GetxService {
     try {
       final tsDir = Directory(task.outputDir ?? '');
       if (!tsDir.existsSync()) {
-        _emitFailed(taskId, '目录不存在');
+        _emitFailed(taskId, i18n("video_dir_not_exist"));
         return false;
       }
       final files = tsDir
@@ -50,10 +51,10 @@ class VideoProcessorService extends GetxService {
       files.sort((a, b) => a.path.compareTo(b.path));
 
       if (files.isEmpty) {
-        _emitFailed(taskId, 'TS 文件为空');
+        _emitFailed(taskId, i18n("video_ts_empty"));
         return false;
       } else {
-        log('$taskId： 共${files.length}个.ts 文件需要合并');
+        log('$taskId： ${i18n("video_ts_total", args: {"count": files.length.toString()})}');
       }
 
       _controller.add(VideoProcessEvent(taskId: taskId, type: VideoProcessEventType.started));
@@ -135,7 +136,7 @@ class VideoProcessorService extends GetxService {
             break;
 
           case FFmpegEventType.error:
-            _emitFailed(taskId, 'FFmpeg merge failed');
+            _emitFailed(taskId, i18n("video_ffmpeg_failed"));
 
             await _subscriptions[ffmpegTaskId]?.cancel();
 
@@ -169,7 +170,7 @@ class VideoProcessorService extends GetxService {
       if (!dir.existsSync()) {
         return;
       }
-      log('$taskId：处理完成删掉.ts以及txt文件');
+      log('$taskId： ${i18n("video_delete_temp_files")}');
       for (final file in dir.listSync()) {
         if (file.path.endsWith('.ts') || file.path.endsWith('list.txt')) {
           file.deleteSync();

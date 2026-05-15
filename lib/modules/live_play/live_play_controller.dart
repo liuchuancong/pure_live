@@ -35,7 +35,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
   final settings = Get.find<SettingsService>();
 
-  final List<String> tabs = ['弹幕列表', '弹幕设置', '屏蔽管理'];
+  final List<String> tabs = [i18n('danmaku_list'), i18n('danmaku_settings'), i18n('block_list')];
 
   final messages = <LiveMessage>[].obs;
   final isLiving = true.obs;
@@ -206,7 +206,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
     if (liveRoom.liveStatus == LiveStatus.unknown) {
       if (Get.currentRoute == '/live_play') {
-        ToastUtil.show("获取直播间信息失败,请重新获取");
+        ToastUtil.show(i18n('get_room_info_failed_retry'));
         setNormalScreen();
         GlobalPlayerState.to.isFullscreen.value = false;
         GlobalPlayerState.to.isWindowFullscreen.value = false;
@@ -236,7 +236,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
       GlobalPlayerState.to.isFullscreen.value = false;
       GlobalPlayerState.to.isWindowFullscreen.value = false;
 
-      ToastUtil.show(liveRoom.liveStatus == LiveStatus.banned ? "服务器错误,请稍后获取" : "当前主播未开播或已下播");
+      ToastUtil.show(
+        liveRoom.liveStatus == LiveStatus.banned ? i18n('server_error_retry_later') : i18n('stream_not_live'),
+      );
 
       restoryQualityAndLines();
     }
@@ -268,7 +270,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     final link = detail.value?.link;
 
     if (link == null || link.isEmpty) {
-      ToastUtil.show("无效播放地址");
+      ToastUtil.show(i18n('invalid_play_url'));
       return;
     }
 
@@ -305,10 +307,10 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     if (!_hasRoom) return;
 
     if (detail.value!.isRecord == true) {
-      messages.add(_systemMsg("当前主播未开播，正在轮播录像"));
+      messages.add(_systemMsg(i18n('recording_mode_notice')));
     }
 
-    messages.add(_systemMsg("开始连接弹幕服务器"));
+    messages.add(_systemMsg(i18n('connect_danmaku_server')));
 
     final rxVideoCtrl = videoController;
 
@@ -328,7 +330,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     };
 
     liveDanmaku.onReady = () {
-      messages.add(_systemMsg("弹幕服务器连接正常"));
+      messages.add(_systemMsg(i18n('danmaku_connected')));
     };
   }
 
@@ -410,7 +412,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
       var playQualites = await currentSite.liveSite.getPlayQualites(detail: detail.value!);
 
       if (playQualites.isEmpty) {
-        ToastUtil.show("无法读取视频信息");
+        ToastUtil.show(i18n('cannot_read_video_info'));
         success.value = false;
         return;
       }
@@ -455,7 +457,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
       await getPlayUrl();
     } catch (_) {
-      ToastUtil.show("读取视频信息失败");
+      ToastUtil.show(i18n('read_video_failed'));
       success.value = false;
     }
   }
@@ -467,7 +469,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     );
 
     if (playUrl.isEmpty) {
-      ToastUtil.show("无法读取播放地址");
+      ToastUtil.show(i18n('cannot_read_play_url'));
       success.value = false;
       return;
     }
@@ -515,7 +517,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
         await launchUrlString(webUrl, mode: LaunchMode.externalApplication);
       }
     } catch (e) {
-      ToastUtil.show("无法打开APP，将使用浏览器打开");
+      ToastUtil.show(i18n('open_app_failed_fallback_browser'));
       await launchUrlString(webUrl, mode: LaunchMode.externalApplication);
     }
   }

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
@@ -45,7 +44,6 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
   void listenFavorite() {
     // 监听刷新关注页事件
     subscription = EventBus.instance.listen('refresh_favorite_rooms', (data) {
-      log('listenFavorite');
       onRefresh();
     });
   }

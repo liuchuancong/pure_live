@@ -69,21 +69,18 @@ class _LiveDlnaPageState extends State<LiveDlnaPage> {
     if (isSearching && _deviceList.isEmpty) {
       cur = const Center(child: CircularProgressIndicator());
     } else if (_deviceList.isEmpty) {
-      cur = Center(
-        child: Text(
-          S.of(context).dlan_device_not_found,
-          style: Theme.of(context).textTheme.bodyLarge,
-        ),
-      );
+      cur = Center(child: Text(i18n("dlan_device_not_found"), style: Theme.of(context).textTheme.bodyLarge));
     } else {
       cur = ListView(
         children: _deviceList.keys
-            .map<Widget>((key) => ListTile(
-                  contentPadding: const EdgeInsets.all(2),
-                  title: Text(_deviceList[key]!.info.friendlyName),
-                  subtitle: Text(key),
-                  onTap: () => selectDevice(key),
-                ))
+            .map<Widget>(
+              (key) => ListTile(
+                contentPadding: const EdgeInsets.all(2),
+                title: Text(_deviceList[key]!.info.friendlyName),
+                subtitle: Text(key),
+                onTap: () => selectDevice(key),
+              ),
+            )
             .toList(),
       );
     }
@@ -92,18 +89,11 @@ class _LiveDlnaPageState extends State<LiveDlnaPage> {
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(S.of(context).dlan_title),
-          IconButton(
-            onPressed: startSearch,
-            icon: const Icon(Icons.refresh_rounded),
-          ),
+          Text(i18n("dlan_title")),
+          IconButton(onPressed: startSearch, icon: const Icon(Icons.refresh_rounded)),
         ],
       ),
-      content: SizedBox(
-        height: 200,
-        width: 200,
-        child: cur,
-      ),
+      content: SizedBox(height: 200, width: 200, child: cur),
     );
   }
 }

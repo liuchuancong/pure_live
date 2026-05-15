@@ -20,7 +20,16 @@ class RoomCard extends StatelessWidget {
       AlertDialog(
         title: Text(room.title!),
         content: Text(
-          S.of(context).room_info_content(room.roomId!, room.platform!, room.nick!, room.title!, room.liveStatus!.name),
+          i18n(
+            "room_info_content",
+            args: {
+              "roomid": room.roomId!,
+              "platform": room.platform!,
+              "nickname": room.nick!,
+              "title": room.title!,
+              "livestatus": room.liveStatus!.name,
+            },
+          ),
         ),
         actions: [FollowButton(room: room)],
       ),
@@ -88,7 +97,7 @@ class RoomCard extends StatelessWidget {
                     top: dense ? 0 : 2,
                     child: CountChip(
                       icon: Icons.videocam_rounded,
-                      count: S.of(context).replay,
+                      count: i18n("replay"),
                       dense: dense,
                       color: Theme.of(context).colorScheme.error,
                     ),
@@ -164,7 +173,7 @@ class _FollowButtonState extends State<FollowButton> {
         Navigator.of(Get.context!).pop();
       },
       style: ElevatedButton.styleFrom(),
-      child: Text(isFavorite ? S.of(context).unfollow : S.of(context).follow),
+      child: Text(isFavorite ? i18n("unfollow") : i18n("follow")),
     );
   }
 }

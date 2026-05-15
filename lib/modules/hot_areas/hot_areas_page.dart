@@ -19,7 +19,7 @@ class HotAreasPage extends GetView<HotAreasController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("平台显示"),
+        title: Text(i18n('platform_display')),
       ),
       body: Obx(() => ListView(
             padding: const EdgeInsets.all(12.0),

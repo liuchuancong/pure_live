@@ -7,6 +7,7 @@ import 'scroll_danmaku_painter.dart';
 import 'static_danmaku_painter.dart';
 import 'special_danmaku_painter.dart';
 import 'package:flutter/material.dart';
+import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/pkg/canvas_danmaku/utils/utils.dart';
 import 'package:pure_live/pkg/canvas_danmaku/models/danmaku_content_item.dart';
 
@@ -523,7 +524,7 @@ class _DanmakuScreenState extends State<DanmakuScreen> with TickerProviderStateM
     /// 计算弹幕轨道
     final textPainter = TextPainter(
       text: TextSpan(
-        text: '弹幕',
+        text: i18n("danmaku"),
         style: TextStyle(fontSize: _option.fontSize),
       ),
       textDirection: TextDirection.ltr,

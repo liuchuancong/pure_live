@@ -12,7 +12,7 @@ class CommonAppBarActions extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
-          tooltip: "录制中心",
+          tooltip: i18n("record_center"),
           onPressed: () {
             Get.toNamed(RoutePath.kRecordPage);
           },
@@ -20,7 +20,7 @@ class CommonAppBarActions extends StatelessWidget {
         ),
 
         PopupMenuButton<int>(
-          tooltip: "更多",
+          tooltip: i18n("more"),
           icon: const Icon(Remix.more_2_fill, size: 24),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           offset: const Offset(0, 10),
@@ -47,7 +47,7 @@ class CommonAppBarActions extends StatelessWidget {
                 children: [
                   Icon(Remix.search_line, size: 20, color: Theme.of(context).colorScheme.primary),
                   const SizedBox(width: 12),
-                  const Text("搜索直播", style: TextStyle(fontSize: 14)),
+                  Text(i18n("search_live"), style: TextStyle(fontSize: 14)),
                 ],
               ),
             ),
@@ -59,7 +59,7 @@ class CommonAppBarActions extends StatelessWidget {
                 children: [
                   Icon(Remix.link, size: 20, color: Theme.of(context).colorScheme.primary),
                   const SizedBox(width: 12),
-                  const Text("链接访问", style: TextStyle(fontSize: 14)),
+                  Text(i18n("open_link"), style: TextStyle(fontSize: 14)),
                 ],
               ),
             ),

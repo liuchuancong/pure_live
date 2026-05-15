@@ -191,17 +191,17 @@ class LivePlayPage extends GetView<LivePlayController> {
 
                 label: Text(
                   isRunning
-                      ? "录制中"
+                      ? i18n("recording")
                       : exists
-                      ? "已监控"
-                      : "录制",
+                      ? i18n("monitored")
+                      : i18n("record"),
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                 ),
 
                 onPressed: () async {
                   if (!exists) {
                     await controller.recorderController.addTask(room: room);
-                    ToastUtil.show("已添加录制任务");
+                    ToastUtil.show(i18n("record_task_added"));
                     return;
                   }
 
@@ -218,7 +218,7 @@ class LivePlayPage extends GetView<LivePlayController> {
                               size: 22,
                             ),
                             const SizedBox(width: 10),
-                            Text(isRunning ? "录制中" : "录制任务"),
+                            Text(isRunning ? i18n("recording") : i18n("record_task")),
                           ],
                         ),
 
@@ -227,7 +227,7 @@ class LivePlayPage extends GetView<LivePlayController> {
                           children: [
                             _ActionTile(
                               icon: Icons.video_library_rounded,
-                              title: "进入录制中心",
+                              title: i18n("go_record_center"),
                               color: theme.colorScheme.primary,
                               onTap: () => Navigator.pop(context, "page"),
                             ),
@@ -235,7 +235,7 @@ class LivePlayPage extends GetView<LivePlayController> {
                             if (!isRunning)
                               _ActionTile(
                                 icon: Icons.play_arrow_rounded,
-                                title: "立即启动录制",
+                                title: i18n("start_record_now"),
                                 color: Colors.green,
                                 onTap: () => Navigator.pop(context, "start"),
                               ),
@@ -243,14 +243,14 @@ class LivePlayPage extends GetView<LivePlayController> {
                             if (isRunning)
                               _ActionTile(
                                 icon: Icons.stop_circle_outlined,
-                                title: "停止录制",
+                                title: i18n("stop_record"),
                                 color: Colors.orange,
                                 onTap: () => Navigator.pop(context, "stop"),
                               ),
 
                             _ActionTile(
                               icon: Icons.delete_outline_rounded,
-                              title: "取消监控",
+                              title: i18n("remove_monitor"),
                               color: Colors.redAccent,
                               onTap: () => Navigator.pop(context, "delete"),
                             ),
@@ -284,13 +284,13 @@ class LivePlayPage extends GetView<LivePlayController> {
 
           IconButton(
             icon: const Icon(Icons.swap_horiz_outlined),
-            tooltip: '切换直播间',
+            tooltip: i18n("switch_live_room"),
             onPressed: () {
               Get.dialog(PlayOther(controller: controller));
             },
           ),
           PopupMenuButton(
-            tooltip: '搜索',
+            tooltip: i18n("menu"),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             offset: const Offset(12, 0),
             position: PopupMenuPosition.under,
@@ -306,20 +306,20 @@ class LivePlayPage extends GetView<LivePlayController> {
             },
             itemBuilder: (BuildContext context) {
               return [
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 0,
                   padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: MenuListTile(leading: Icon(Icons.open_in_new_rounded), text: "打开直播间"),
+                  child: MenuListTile(leading: Icon(Icons.open_in_new_rounded), text: i18n("open_live_room")),
                 ),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 1,
                   padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: MenuListTile(leading: Icon(Icons.live_tv_rounded), text: "投屏"),
+                  child: MenuListTile(leading: const Icon(Icons.live_tv_rounded), text: i18n("cast_screen")),
                 ),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 2,
                   padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: MenuListTile(leading: Icon(Icons.watch_later_outlined), text: "定时关闭"),
+                  child: MenuListTile(leading: const Icon(Icons.watch_later_outlined), text: i18n("sleep_timer")),
                 ),
               ];
             },
@@ -429,13 +429,13 @@ class LivePlayPage extends GetView<LivePlayController> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        // title: Text(S.of(context).auto_refresh_time),
+        // title: Text(i18n("auto_refresh_time")),
         content: Obx(
           () => Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               SwitchListTile(
-                title: Text('定时关闭'),
+                title: Text(i18n("sleep_timer")),
                 contentPadding: EdgeInsets.zero,
                 value: controller.closeTimeFlag.value,
                 activeThumbColor: Theme.of(context).colorScheme.primary,
@@ -444,14 +444,11 @@ class LivePlayPage extends GetView<LivePlayController> {
               Slider(
                 min: 0,
                 max: 240,
-                label: S.of(context).auto_refresh_time,
+                label: i18n("auto_refresh_time"),
                 value: controller.closeTimes.toDouble(),
                 onChanged: (value) => controller.closeTimes.value = value.toInt(),
               ),
-              Text(
-                '自动关闭时间:'
-                ' ${controller.closeTimes}分钟',
-              ),
+              Text(i18n("auto_close_time", args: {"time": controller.closeTimes.toString()})),
             ],
           ),
         ),
@@ -539,15 +536,14 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
         return const SizedBox.shrink();
       }
       final currentIndex = controller.currentLineIndex.value;
-      final currentLineName = '线路${currentIndex + 1}';
+      final currentLineName = i18n("toolbox_line", args: {"index": (currentIndex + 1).toString()});
 
       return PopupMenuButton<int>(
-        tooltip: "选择播放线路/节点",
+        tooltip: i18n("select_play_line"),
         color: Get.theme.colorScheme.surfaceContainerHighest,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         offset: const Offset(0.0, 5.0),
         position: PopupMenuPosition.under,
-        // 按钮显示当前选中的线路名称
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
           child: Text(
@@ -564,7 +560,7 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
             return PopupMenuItem<int>(
               value: index,
               child: Text(
-                '线路${index + 1}',
+                i18n("toolbox_line", args: {"index": (index + 1).toString()}),
                 style: Theme.of(
                   context,
                 ).textTheme.labelSmall?.copyWith(color: isSelected ? Get.theme.colorScheme.primary : null),
@@ -647,20 +643,20 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
             onPressed: () {
               Get.dialog(
                 AlertDialog(
-                  title: Text(S.of(context).unfollow),
-                  content: Text(S.of(context).unfollow_message(widget.room.nick!)),
+                  title: Text(i18n("unfollow")),
+                  content: Text(i18n("unfollow_message", args: {"name": widget.room.nick!})),
                   actions: [
                     TextButton(
                       onPressed: () {
                         Navigator.of(Get.context!).pop(false);
                       },
-                      child: Text(S.of(context).cancel),
+                      child: Text(i18n("cancel")),
                     ),
                     ElevatedButton(
                       onPressed: () {
                         Navigator.of(Get.context!).pop(true);
                       },
-                      child: Text(S.of(context).confirm),
+                      child: Text(i18n("confirm")),
                     ),
                   ],
                 ),
@@ -672,7 +668,7 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
                 }
               });
             },
-            child: Text('已关注'),
+            child: Text(i18n("followed")),
           )
         : FilledButton(
             style: ButtonStyle(
@@ -698,7 +694,7 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
               settings.addRoom(widget.room);
               EventBus.instance.emit('changeFavorite', true);
             },
-            child: const Text('关注'),
+            child: Text(i18n("follow")),
           );
   }
 }
@@ -772,13 +768,10 @@ class NotLivingVideoWidget extends StatelessWidget {
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      S.of(context).play_video_failed,
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
-                    ),
+                    child: Text(i18n("play_video_failed"), style: const TextStyle(color: Colors.white, fontSize: 16)),
                   ),
-                  const Text("该房间未开播或已下播", style: TextStyle(color: Colors.white, fontSize: 14)),
-                  const Text("请切换其他直播间进行观看吧", style: TextStyle(color: Colors.white, fontSize: 14)),
+                  Text(i18n("room_offline"), style: const TextStyle(color: Colors.white, fontSize: 14)),
+                  Text(i18n("switch_other_room_hint"), style: const TextStyle(color: Colors.white, fontSize: 14)),
                 ],
               ),
             ),

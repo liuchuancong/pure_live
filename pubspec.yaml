@@ -35,7 +35,7 @@ dependencies:
   better_player_plus: ^1.2.1 # 高级视频播放器
   audio_service: ^0.18.18 # 后台音频服务
   audio_session: ^0.2.3 # 音频会话管理
-  ffmpeg_kit_extended_flutter: ^0.4.5
+  ffmpeg_kit_extended_flutter: ^0.4.6
   flv_lzc:
     git: https://github.com/liuchuancong/flv_lzc.git # ijk视频解析
 
@@ -94,7 +94,6 @@ dependencies:
 
   # -------------------------- 工具/通用库 --------------------------
   get: ^5.0.0-release-candidate-9.3.2 # 状态管理/路由
-  intl: ^0.20.2 # 国际化/日期格式化
   timezone: ^0.10.1 # 时区处理
   date_format: ^2.0.9 # 日期格式化
   logger: ^2.6.2 # 日志打印
@@ -134,7 +133,7 @@ dependencies:
   flutter_floating: ^2.0.1 # 悬浮窗
   qr_flutter: ^4.1.0 # 二维码生成
   back_button_interceptor: ^8.0.4 # 返回键拦截
-
+  easy_localization: ^3.0.8 #多语言
 # 依赖覆盖（强制指定版本）
 dependency_overrides:
   wakelock_plus: ^1.4.0
@@ -191,7 +190,7 @@ flutter:
     - assets/emo/douyin/
     - assets/emo/bilibili/
     - assets/emo/kuaishou/
-
+    - assets/translations/
   # 字体配置
   fonts:
     - family: CustomIcons
@@ -200,12 +199,6 @@ flutter:
     - family: PingFang
       fonts:
         - asset: assets/PingFangSC.ttf
-
-# 国际化配置
-flutter_intl:
-  enabled: true
-  arb_dir: lib/common/l10n
-  output_dir: lib/common/l10n/generated
 
 # FFmpeg配置
 ffmpeg_kit_extended_config:

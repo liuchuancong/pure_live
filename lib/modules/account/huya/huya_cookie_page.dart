@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/modules/account/huya/huya_cookie_controller.dart';
 
 class HuyaCookiePage extends GetView<HuyaCookieController> {
@@ -10,19 +11,19 @@ class HuyaCookiePage extends GetView<HuyaCookieController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("设置cookie"),
+        title: Text(i18n("set_cookie")),
       ),
       body: ListView(
         padding: const EdgeInsets.all(12.0),
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Text('浏览器F12,输入document.cookie,复制cookie到下方输入框，点击设置按钮，即可设置虎牙直播cookie'),
+            child: Text(i18n("huya_cookie_tip")),
           ),
           buildCard(
             context: context,
             child: ExpansionTile(
-              title: const Text("cookie"),
+              title: Text(i18n("cookie")),
               childrenPadding: const EdgeInsets.symmetric(horizontal: 16.0),
               initiallyExpanded: true,
               children: [
@@ -32,7 +33,7 @@ class HuyaCookiePage extends GetView<HuyaCookieController> {
                   controller: controller.cookieController,
                   decoration: InputDecoration(
                     border: const OutlineInputBorder(),
-                    hintText: "输入虎牙直播cookie",
+                    hintText: i18n("huya_cookie_hint"),
                     contentPadding: const EdgeInsets.all(12.0),
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide(
@@ -50,7 +51,7 @@ class HuyaCookiePage extends GetView<HuyaCookieController> {
                       controller.setCookie(controller.cookieController.text);
                     },
                     icon: const Icon(Remix.settings_2_fill),
-                    label: const Text("设置"),
+                    label: Text(i18n("set")),
                   ),
                 ),
               ],

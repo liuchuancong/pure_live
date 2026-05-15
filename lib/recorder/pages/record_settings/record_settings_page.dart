@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
@@ -29,7 +30,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: const Text("录制设置", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+        title: Text(i18n("record_settings"), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
         centerTitle: true,
         elevation: 0,
       ),
@@ -38,31 +39,30 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.all(20),
           children: [
-            _buildSectionHeader("基础配置"),
+            _buildSectionHeader(i18n("basic_config")),
             _buildModernCard(theme, [
               _buildTile(
                 theme,
                 Icons.high_quality_rounded,
-                "默认录制清晰度",
+                i18n("default_record_quality"),
                 controller.defaultQuality.value,
                 _showQualityDialog,
               ),
-
               _buildSwitchTile(
                 Icons.translate_rounded,
-                "使用拼音文件夹名",
-                "开启后使用主播拼音命名录制文件夹，关闭则使用主播原名",
+                i18n("use_pinyin_folder"),
+                i18n("use_pinyin_folder_desc"),
                 controller.usePinyinForFolder.value,
                 (val) => controller.updateUsePinyinForFolder(val),
               ),
             ]),
 
-            _buildSectionHeader("缓存管理"),
+            _buildSectionHeader(i18n("cache_management")),
             _buildModernCard(theme, [
               _buildTile(
                 theme,
                 Icons.folder_rounded,
-                "存储目录",
+                i18n("storage_directory"),
                 controller.recordSavePath.value,
                 controller.pickRecordDir,
                 isLong: true,
@@ -70,14 +70,20 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
 
               _buildSwitchTile(
                 Icons.all_inbox_rounded,
-                "启用缓存限制",
-                "超过限制后自动清理旧录制",
+                i18n("enable_cache_limit"),
+                i18n("enable_cache_limit_desc"),
                 controller.enableCacheLimit.value,
                 controller.updateEnableCacheLimit,
               ),
 
               if (controller.enableCacheLimit.value)
-                _buildTile(theme, Icons.storage_rounded, "缓存限制", "${controller.maxCacheMB.value} MB", _showCacheDialog),
+                _buildTile(
+                  theme,
+                  Icons.storage_rounded,
+                  i18n("cache_limit"),
+                  "${controller.maxCacheMB.value} MB",
+                  _showCacheDialog,
+                ),
 
               Obx(() {
                 final size = controller.cacheSizeMB.value;
@@ -85,50 +91,65 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                 return _buildTile(
                   theme,
                   Icons.sd_storage_rounded,
-                  "当前缓存大小",
+                  i18n("current_cache_size"),
                   "${size.toStringAsFixed(2)} MB",
                   () {},
                   showRightRounded: false,
                 );
               }),
 
-              _buildTile(theme, Icons.cleaning_services_rounded, "清除全部缓存", "删除录制缓存文件", () async {
-                final ok = await Get.dialog<bool>(
-                  AlertDialog(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                    title: const Text("确认清除缓存？", style: TextStyle(fontWeight: FontWeight.bold)),
-                    content: const Text("该操作会删除所有录制缓存文件，无法恢复。"),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.of(Get.context!).pop(false), child: const Text("取消")),
-                      ElevatedButton(onPressed: () => Navigator.of(Get.context!).pop(true), child: const Text("清除")),
-                    ],
-                  ),
-                );
+              _buildTile(
+                theme,
+                Icons.cleaning_services_rounded,
+                i18n("clear_all_cache"),
+                i18n("clear_all_cache_desc"),
+                () async {
+                  final ok = await Get.dialog<bool>(
+                    AlertDialog(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                      title: Text(i18n("confirm_clear_cache"), style: const TextStyle(fontWeight: FontWeight.bold)),
+                      content: Text(i18n("confirm_clear_cache_desc")),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.of(Get.context!).pop(false), child: Text(i18n("cancel"))),
+                        ElevatedButton(
+                          onPressed: () => Navigator.of(Get.context!).pop(true),
+                          child: Text(i18n("clear")),
+                        ),
+                      ],
+                    ),
+                  );
 
-                if (ok == true) {
-                  await controller.clearCache();
+                  if (ok == true) {
+                    await controller.clearCache();
 
-                  Get.snackbar("清理完成", "缓存已清除", snackPosition: SnackPosition.bottom);
-                }
-              }),
+                    Get.snackbar(i18n("done"), i18n("cache_cleared"), snackPosition: SnackPosition.bottom);
+                  }
+                },
+              ),
             ]),
 
-            _buildSectionHeader("录制性能与画质"),
+            _buildSectionHeader(i18n("record_performance_quality")),
             _buildModernCard(theme, [
               _buildSwitchTile(
                 Icons.hd_rounded,
-                "优先录制原画轨道",
-                "强制选择最高清晰度流 (0:v:0)",
+                i18n("prefer_best_stream"),
+                i18n("prefer_best_stream_desc"),
                 controller.preferBestStream.value,
                 controller.updatePreferBestStream,
               ),
 
-              _buildTile(theme, Icons.timer_outlined, "录制读写超时", "${controller.rwTimeout.value}s", _showRwTimeoutDialog),
+              _buildTile(
+                theme,
+                Icons.timer_outlined,
+                i18n("rw_timeout"),
+                "${controller.rwTimeout.value}s",
+                _showRwTimeoutDialog,
+              ),
 
               _buildTile(
                 theme,
                 Icons.speed_rounded,
-                "输入缓冲队列",
+                i18n("queue_size"),
                 "${controller.threadQueueSize.value}",
                 _showQueueSizeDialog,
               ),
@@ -136,29 +157,29 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
               _buildSliderTile(
                 theme,
                 icon: Icons.video_settings_rounded,
-                title: "视频切片时长",
+                title: i18n("segment_duration"),
                 value: controller.segmentTime.value.toDouble(),
                 min: 60,
                 max: 3600,
                 displayValue: _formatDuration(controller.segmentTime.value),
                 onChanged: (v) => controller.updateSegmentTime(v.toInt()),
               ),
-              // 最大同时录制任务数（修复多开崩溃的核心UI）
+
               _buildTile(
                 theme,
                 Icons.task_alt_rounded,
-                "最大同时录制任务数",
-                "${controller.maxTaskCount.value} 个",
+                i18n("max_record_tasks"),
+                "${controller.maxTaskCount.value}",
                 _showMaxTaskDialog,
               ),
             ]),
 
-            _buildSectionHeader("自动重连"),
+            _buildSectionHeader(i18n("auto_reconnect")),
             _buildModernCard(theme, [
               _buildSwitchTile(
                 Icons.refresh_rounded,
-                "自动断线重连",
-                "录制异常时尝试恢复",
+                i18n("auto_reconnect_switch"),
+                i18n("auto_reconnect_desc"),
                 controller.autoReconnect.value,
                 controller.updateAutoReconnect,
               ),
@@ -167,18 +188,18 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                 _buildSliderTile(
                   theme,
                   icon: Icons.repeat_rounded,
-                  title: "最大重试次数",
+                  title: i18n("max_retry_count"),
                   value: controller.maxRetryCount.value.toDouble(),
                   min: 1,
                   max: 20,
-                  displayValue: "${controller.maxRetryCount.value}次",
+                  displayValue: "${controller.maxRetryCount.value}",
                   onChanged: (v) => controller.updateMaxRetryCount(v.toInt()),
                 ),
 
               _buildSliderTile(
                 theme,
                 icon: Icons.timer_rounded,
-                title: "重连间隔时间",
+                title: i18n("retry_delay"),
                 value: controller.retryDelay.value.toDouble(),
                 min: 5,
                 max: 120,
@@ -187,12 +208,12 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
               ),
             ]),
 
-            _buildSectionHeader("挂机轮询检测"),
+            _buildSectionHeader(i18n("polling_detection")),
             _buildModernCard(theme, [
               _buildSwitchTile(
                 Icons.radar_rounded,
-                "启用开播检测",
-                "主播未开播时自动轮询",
+                i18n("enable_polling"),
+                i18n("enable_polling_desc"),
                 controller.enablePolling.value,
                 controller.updateEnablePolling,
               ),
@@ -201,7 +222,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                 _buildSliderTile(
                   theme,
                   icon: Icons.schedule_rounded,
-                  title: "检测间隔时间",
+                  title: i18n("check_interval"),
                   value: controller.liveCheckInterval.value.toDouble(),
                   min: 10,
                   max: 300,
@@ -211,8 +232,8 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
 
                 _buildSwitchTile(
                   Icons.trending_up_rounded,
-                  "启用指数退避",
-                  "失败次数越多，检测间隔越长",
+                  i18n("enable_backoff"),
+                  i18n("enable_backoff_desc"),
                   controller.enableBackoff.value,
                   controller.updateEnableBackoff,
                 ),
@@ -221,7 +242,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                   _buildSliderTile(
                     theme,
                     icon: Icons.hourglass_bottom_rounded,
-                    title: "最大检测间隔",
+                    title: i18n("max_check_interval"),
                     value: controller.maxCheckInterval.value.toDouble(),
                     min: 300,
                     max: 3600,
@@ -231,8 +252,8 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
 
                 _buildSwitchTile(
                   Icons.power_settings_new_rounded,
-                  "开机自动检测",
-                  "应用开机后继续检测",
+                  i18n("auto_start_boot"),
+                  i18n("auto_start_boot_desc"),
                   controller.autoStartOnBoot.value,
                   controller.updateAutoStartOnBoot,
                 ),
@@ -346,7 +367,6 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                     ),
                   ],
                 ),
-
                 Transform.translate(
                   offset: const Offset(-8, 0),
                   child: SizedBox(
@@ -384,12 +404,16 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
   void _showRwTimeoutDialog() {
     final theme = Get.theme;
 
-    final Map<int, String> timeoutOptions = {15: "响应迅速 (推荐，适合稳定网络)", 30: "平衡模式 (兼顾稳定与重连速度)", 60: "保守模式 (适合极端弱网环境)"};
+    final Map<int, String> timeoutOptions = {
+      15: i18n("timeout_fast"),
+      30: i18n("timeout_balanced"),
+      60: i18n("timeout_safe"),
+    };
 
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text("录制读写超时", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(i18n("rw_timeout"), style: const TextStyle(fontWeight: FontWeight.bold)),
         content: RadioGroup<int>(
           groupValue: controller.rwTimeout.value,
           onChanged: (v) {
@@ -426,7 +450,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text("输入缓冲队列", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(i18n("queue_size"), style: const TextStyle(fontWeight: FontWeight.bold)),
         content: RadioGroup<int>(
           groupValue: controller.threadQueueSize.value,
           onChanged: (v) {
@@ -442,13 +466,13 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
               String subTitle = "";
 
               if (value <= 512) {
-                subTitle = "省电模式";
+                subTitle = i18n("power_saving_mode");
               } else if (value == 1024) {
-                subTitle = "标清/高清推荐";
+                subTitle = i18n("hd_recommend");
               } else if (value == 2048) {
-                subTitle = "原画推荐 (1080P)";
+                subTitle = i18n("fhd_recommend");
               } else {
-                subTitle = "极致性能 (适用于 4K 录制/高负载环境)";
+                subTitle = i18n("extreme_performance");
               }
 
               return RadioListTile<int>(
@@ -479,7 +503,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
         builder: (context, setState) {
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            title: const Text("最大同时录制任务数", style: TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(i18n("max_record_tasks"), style: const TextStyle(fontWeight: FontWeight.bold)),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -487,8 +511,8 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                   controller: textController,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: "手动输入",
-                    hintText: "请输入 1~10",
+                    labelText: i18n("manual_input"),
+                    hintText: i18n("input_range"),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -499,9 +523,9 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
 
                 const SizedBox(height: 16),
 
-                const Align(
+                Align(
                   alignment: Alignment.centerLeft,
-                  child: Text("快速选择", style: TextStyle(fontWeight: FontWeight.w600)),
+                  child: Text(i18n("quick_select"), style: const TextStyle(fontWeight: FontWeight.w600)),
                 ),
 
                 const SizedBox(height: 8),
@@ -529,15 +553,18 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
               ],
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.of(Get.context!).pop(), child: const Text("取消")),
+              TextButton(onPressed: () => Navigator.of(Get.context!).pop(), child: Text(i18n("cancel"))),
               ElevatedButton(
                 onPressed: () {
                   final val = int.tryParse(textController.text);
+
                   if (val == null || val < 1) return;
+
                   controller.updateMaxTask(val);
+
                   Navigator.of(Get.context!).pop();
                 },
-                child: const Text("确定"),
+                child: Text(i18n("confirm")),
               ),
             ],
           );
@@ -552,7 +579,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text("默认录制清晰度", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(i18n("default_record_quality"), style: const TextStyle(fontWeight: FontWeight.bold)),
         content: RadioGroup<String>(
           groupValue: controller.defaultQuality.value,
           onChanged: (v) {
@@ -585,13 +612,13 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text("设置最大缓存 (MB)", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(i18n("set_max_cache"), style: const TextStyle(fontWeight: FontWeight.bold)),
         content: TextField(
           controller: textController,
           keyboardType: TextInputType.number,
           style: const TextStyle(fontSize: 18),
           decoration: InputDecoration(
-            hintText: "请输入数字",
+            hintText: i18n("please_input_number"),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -602,7 +629,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(Get.context!),
-            child: const Text("取消", style: TextStyle(fontSize: 16)),
+            child: Text(i18n("cancel"), style: const TextStyle(fontSize: 16)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -614,7 +641,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
 
               Navigator.pop(Get.context!);
             },
-            child: const Text("确定", style: TextStyle(fontSize: 16)),
+            child: Text(i18n("confirm"), style: const TextStyle(fontSize: 16)),
           ),
         ],
       ),

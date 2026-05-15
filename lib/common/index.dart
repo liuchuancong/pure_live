@@ -1,7 +1,6 @@
 library;
 
 export '../core/index.dart';
-export 'l10n/generated/l10n.dart';
 export 'models/index.dart';
 export 'services/index.dart';
 export 'style/index.dart';
@@ -28,3 +27,4 @@ export 'package:pure_live/routes/route_path.dart';
 export 'package:share_handler/share_handler.dart';
 export 'package:window_manager/window_manager.dart';
 export 'package:pure_live/player/global_player_service.dart';
+export 'package:pure_live/plugins/locale_helper.dart';

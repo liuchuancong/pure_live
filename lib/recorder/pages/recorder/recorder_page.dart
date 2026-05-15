@@ -10,7 +10,17 @@ import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 class RecorderPage extends GetView<RecorderController> {
   const RecorderPage({super.key});
 
-  static const tabs = ["全部", "录制中", "等待开播", "排队中", "重连中", "处理中", "已完成", "失败", "已停止"];
+  static const tabs = [
+    "recorder_tab_all",
+    "recorder_tab_recording",
+    "recorder_tab_waiting",
+    "recorder_tab_queue",
+    "recorder_tab_reconnecting",
+    "recorder_tab_processing",
+    "recorder_tab_completed",
+    "recorder_tab_failed",
+    "recorder_tab_stopped",
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -21,18 +31,18 @@ class RecorderPage extends GetView<RecorderController> {
       child: Scaffold(
         backgroundColor: theme.colorScheme.surface,
         appBar: AppBar(
-          title: const Text("录制中心", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+          title: Text(i18n("recorder_title"), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
           centerTitle: true,
           elevation: 0,
           backgroundColor: Colors.transparent,
           actions: [
             IconButton(
-              tooltip: "打开文件夹",
+              tooltip: i18n("recorder_open_folder"),
               icon: const Icon(Icons.folder_rounded, size: 22),
               onPressed: controller.openFileDir,
             ),
             IconButton(
-              tooltip: "设置",
+              tooltip: i18n("settings_title"),
               icon: const Icon(Icons.settings_suggest_rounded, size: 22),
               onPressed: () => Get.toNamed(RoutePath.kRecordSettings),
             ),
@@ -53,7 +63,7 @@ class RecorderPage extends GetView<RecorderController> {
                     .map(
                       (e) => Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: Tab(text: e),
+                        child: Tab(text: i18n(e)),
                       ),
                     )
                     .toList(),
@@ -148,50 +158,53 @@ class _TaskCard extends GetView<RecorderController> {
   String _statusText() {
     switch (task.status) {
       case RecordStatus.running:
-        return "录制中";
+        return i18n("recorder_status_recording");
 
       case RecordStatus.preparing:
-        return "准备中";
+        return i18n("recorder_status_preparing");
 
       case RecordStatus.queued:
-        return "排队中";
+        return i18n("recorder_status_queue");
 
       case RecordStatus.waitingLive:
-        return "等待开播";
+        return i18n("recorder_status_waiting");
 
       case RecordStatus.reconnecting:
-        return "重连中";
+        return i18n("recorder_status_reconnecting");
 
       case RecordStatus.processing:
-        return "处理中";
+        return i18n("recorder_status_processing");
 
       case RecordStatus.completed:
-        return "已完成";
+        return i18n("recorder_status_completed");
 
       case RecordStatus.failed:
-        return "失败";
+        return i18n("recorder_status_failed");
 
       case RecordStatus.stopped:
-        return "已停止";
+        return i18n("recorder_status_stopped");
     }
   }
 
   Color _platformColor() {
     switch (task.platform.toLowerCase()) {
-      case 'bilibili':
+      case Sites.bilibiliSite:
         return const Color(0xFFFB7299);
 
-      case 'douyu':
+      case Sites.douyuSite:
         return const Color(0xFFFF7700);
 
-      case 'huya':
+      case Sites.huyaSite:
         return const Color(0xFFFFB000);
 
-      case 'twitch':
-        return const Color(0xFF9146FF);
-
+      case Sites.douyinSite:
+        return const Color(0xFF000000);
+      case Sites.ccSite:
+        return const Color.fromARGB(253, 13, 145, 233);
+      case Sites.iptvSite:
+        return const Color.fromARGB(255, 204, 71, 9);
       default:
-        return Get.theme.colorScheme.primary;
+        return const Color.fromARGB(255, 11, 223, 117);
     }
   }
 
@@ -204,25 +217,25 @@ class _TaskCard extends GetView<RecorderController> {
   }
 
   String _formatFileSize(int bytes) {
-    if (bytes <= 0) return "0 B";
+    if (bytes <= 0) return "0 ${i18n("unit_b")}";
 
     const kb = 1024;
     const mb = kb * 1024;
     const gb = mb * 1024;
 
     if (bytes >= gb) {
-      return "${(bytes / gb).toStringAsFixed(2)} GB";
+      return "${(bytes / gb).toStringAsFixed(2)} ${i18n("unit_gb")}";
     }
 
     if (bytes >= mb) {
-      return "${(bytes / mb).toStringAsFixed(2)} MB";
+      return "${(bytes / mb).toStringAsFixed(2)} ${i18n("unit_mb")}";
     }
 
     if (bytes >= kb) {
-      return "${(bytes / kb).toStringAsFixed(1)} KB";
+      return "${(bytes / kb).toStringAsFixed(1)} ${i18n("unit_kb")}";
     }
 
-    return "$bytes B";
+    return "$bytes ${i18n("unit_b")}";
   }
 
   Widget _buildCoverImage(Color statusColor) {
@@ -332,14 +345,14 @@ class _TaskCard extends GetView<RecorderController> {
             context: Get.context!,
             builder: (context) {
               return AlertDialog(
-                title: const Text("取消监控"),
-                content: const Text("确定不再监控该直播间？"),
+                title: Text(i18n("recorder_cancel_monitor")),
+                content: Text(i18n("recorder_cancel_monitor_confirm")),
                 actions: [
-                  TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text("取消")),
+                  TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(i18n("cancel"))),
                   FilledButton(
                     style: FilledButton.styleFrom(backgroundColor: Colors.red),
                     onPressed: () => Navigator.of(context).pop(true),
-                    child: const Text("确定"),
+                    child: Text(i18n("confirm")),
                   ),
                 ],
               );
@@ -350,7 +363,7 @@ class _TaskCard extends GetView<RecorderController> {
             await controller.unRecorder(task);
           }
         },
-        child: const Text("删除", style: TextStyle(color: Colors.red)),
+        child: Text(i18n("remove"), style: const TextStyle(color: Colors.red)),
       );
     }
 
@@ -370,7 +383,11 @@ class _TaskCard extends GetView<RecorderController> {
         children: [
           deleteButton(),
           const SizedBox(width: 6),
-          FilledButton(style: dangerStyle, onPressed: () => controller.stopTask(task), child: const Text("停止")),
+          FilledButton(
+            style: dangerStyle,
+            onPressed: () => controller.stopTask(task),
+            child: Text(i18n("recorder_stop")),
+          ),
         ],
       );
     }
@@ -381,27 +398,31 @@ class _TaskCard extends GetView<RecorderController> {
         children: [
           deleteButton(),
           const SizedBox(width: 6),
-          FilledButton(style: primaryStyle, onPressed: () => controller.forceStartTask(task), child: const Text("启动")),
+          FilledButton(
+            style: primaryStyle,
+            onPressed: () => controller.forceStartTask(task),
+            child: Text(i18n("recorder_start")),
+          ),
           const SizedBox(width: 6),
-          OutlinedButton(style: outlineStyle, onPressed: () => controller.stopTask(task), child: const Text("取消")),
+          OutlinedButton(style: outlineStyle, onPressed: () => controller.stopTask(task), child: Text(i18n("cancel"))),
         ],
       );
     }
 
     if (canRestart.contains(task.status)) {
-      String text = "启动";
+      String text = i18n("recorder_start");
 
       switch (task.status) {
         case RecordStatus.failed:
-          text = "重试";
+          text = i18n("retry");
           break;
 
         case RecordStatus.waitingLive:
-          text = "立即检测";
+          text = i18n("recorder_check_now");
           break;
 
         case RecordStatus.completed:
-          text = "重新录制";
+          text = i18n("recorder_restart_record");
           break;
 
         default:
@@ -508,7 +529,7 @@ class _TaskCard extends GetView<RecorderController> {
                           spacing: 14,
                           runSpacing: 6,
                           children: [
-                            _miniInfo(Icons.high_quality_rounded, task.selectedQuality ?? "自动", theme),
+                            _miniInfo(Icons.high_quality_rounded, task.selectedQuality ?? i18n("recorder_auto"), theme),
                             _miniInfo(Icons.people_alt_rounded, readableCount(task.watching), theme),
                           ],
                         ),
@@ -537,7 +558,12 @@ class _TaskCard extends GetView<RecorderController> {
                           _statItem(theme, Icons.speed_rounded, "${task.recordSpeed.toStringAsFixed(1)}x"),
                           _statItem(theme, Icons.graphic_eq_rounded, "${task.bitrate ~/ 1000}M"),
                           if (task.isStalled)
-                            _statItem(theme, Icons.warning_amber_rounded, "流卡住", color: theme.colorScheme.error),
+                            _statItem(
+                              theme,
+                              Icons.warning_amber_rounded,
+                              i18n("recorder_stream_stalled"),
+                              color: theme.colorScheme.error,
+                            ),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -624,11 +650,14 @@ class _EmptyView extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Text(
-            "暂无录制任务",
+            i18n("recorder_empty_title"),
             style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
           ),
           const SizedBox(height: 8),
-          Text("添加直播间后将在这里显示", style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant)),
+          Text(
+            i18n("recorder_empty_subtitle"),
+            style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant),
+          ),
         ],
       ),
     );

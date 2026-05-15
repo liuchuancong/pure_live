@@ -1,8 +1,7 @@
 import 'package:get/get.dart';
-import 'search_list_view.dart';
 import 'package:flutter/material.dart';
 import 'package:pure_live/core/sites.dart';
-import 'package:pure_live/common/l10n/generated/l10n.dart';
+import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/modules/search/search_controller.dart' as pure_live;
 
 class SearchPage extends GetView<pure_live.SearchController> {
@@ -17,7 +16,7 @@ class SearchPage extends GetView<pure_live.SearchController> {
           controller: controller.searchController,
           autofocus: true,
           decoration: InputDecoration(
-            hintText: S.of(context).search_input_hint,
+            hintText: i18n("search_input_hint"),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(24)),
             contentPadding: const EdgeInsets.symmetric(horizontal: 12.0),
             prefixIcon: IconButton(
@@ -42,10 +41,6 @@ class SearchPage extends GetView<pure_live.SearchController> {
           isScrollable: false,
           indicatorSize: TabBarIndicatorSize.label,
         ),
-      ),
-      body: TabBarView(
-        controller: controller.tabController,
-        children: Sites().availableSites().map((e) => SearchListView(e.id)).toList(),
       ),
     );
   }

@@ -8,6 +8,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/global.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:pure_live/plugins/cache_manager.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/common/global/windows_utils.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
@@ -74,6 +75,7 @@ class AppInitializer {
       await MobileManager.initialize();
     }
     await FFmpegKitExtended.initialize();
+    await EasyLocalization.ensureInitialized();
     initRefresh();
 
     if (PlatformUtils.isDesktopNotMac) {

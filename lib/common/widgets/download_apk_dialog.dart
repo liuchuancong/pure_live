@@ -7,6 +7,7 @@ import 'package:path/path.dart' as path;
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
 
@@ -27,7 +28,7 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
   late CancelToken _cancelToken;
   int _progress = 0;
   bool _isDownloading = true;
-  String _statusText = '准备中...';
+  String _statusText = i18n("download_preparing");
 
   @override
   void initState() {
@@ -51,6 +52,7 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
       apkDir.createSync(recursive: true);
     }
     final file = File('${apkDir.path}${path.separator}$apkName');
+
     try {
       await _dio.download(
         widget.apkUrl,
@@ -62,15 +64,18 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
         onReceiveProgress: (received, total) {
           if (total > 0 && mounted) {
             final progress = (received / total * 100).toInt();
-            final status = '正在下载 v${widget.version}... $progress%';
+
+            final status = i18n("downloading_progress", args: {"version": widget.version, "progress": "$progress"});
+
             setState(() {
               _progress = progress;
               _statusText = status;
             });
           } else if (mounted) {
             final mb = received ~/ (1024 * 1024);
+
             setState(() {
-              _statusText = '已下载: $mb MB';
+              _statusText = i18n("downloaded_mb", args: {"mb": "$mb"});
             });
           }
         },
@@ -80,37 +85,46 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
       if (mounted) {
         setState(() {
           _isDownloading = false;
-          _statusText = '下载完成，正在安装...';
+          _statusText = i18n("download_complete_installing");
         });
 
-        // 关闭当前对话框
         Navigator.of(Get.context!).pop(false);
 
-        // 安装 APK
         if (Platform.isAndroid) {
           final result = await OpenFilex.open(file.path, type: "application/vnd.android.package-archive");
+
           if (result.type != ResultType.done) {
-            Get.snackbar('安装失败', '请检查“安装未知应用”权限：${result.message}');
+            Get.snackbar(
+              i18n("install_failed"),
+              i18n("install_unknown_app_permission_tip", args: {"message": result.message}),
+            );
           }
         } else if (PlatformUtils.isDesktop) {
           final result = await OpenFilex.open(file.path);
+
           if (PlatformUtils.isDesktopNotMac) {
             if (await windowManager.isPreventClose()) {
               await windowManager.setPreventClose(false);
             }
+
             WidgetsBinding.instance.addPostFrameCallback((_) {
               exit(0);
             });
           }
+
           if (result.type != ResultType.done) {
-            Get.snackbar('安装失败', result.message);
+            Get.snackbar(
+              i18n('install_failed'),
+              i18n('check_unknown_sources_permission', args: {'msg': result.message}),
+            );
           }
         }
       }
     } catch (e) {
       log(e.toString(), name: 'DownloadApkDialog');
+
       if (mounted && !_cancelToken.isCancelled) {
-        _showErrorAndClose('下载失败: $e');
+        _showErrorAndClose(i18n("download_failed", args: {"error": "$e"}));
       }
     }
   }
@@ -124,6 +138,7 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
     } else {
       downloadDir = await AppPathManager().getDir(AppPathManager.dirDownload);
     }
+
     if (!await downloadDir.exists()) {
       await downloadDir.create(recursive: true);
     }
@@ -133,7 +148,7 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
 
   void _showErrorAndClose(String message) {
     Navigator.of(Get.context!).pop(false);
-    Get.snackbar('错误', message, snackPosition: SnackPosition.bottom);
+    Get.snackbar(i18n("error"), message, snackPosition: SnackPosition.bottom);
   }
 
   @override
@@ -147,7 +162,10 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('正在下载 v${widget.version}...', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(
+              i18n("downloading_version", args: {"version": widget.version}),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 12),
             Text(_statusText),
             const SizedBox(height: 16),
@@ -156,7 +174,7 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
               child: LinearProgressIndicator(
                 value: _progress / 100,
                 backgroundColor: Colors.grey[300],
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
               ),
             ),
             const SizedBox(height: 16),
@@ -166,10 +184,10 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
                 if (_isDownloading)
                   TextButton(
                     onPressed: () {
-                      _cancelToken.cancel('用户取消');
+                      _cancelToken.cancel(i18n("cancel"));
                       Navigator.of(Get.context!).pop(false);
                     },
-                    child: const Text('取消'),
+                    child: Text(i18n("cancel")),
                   ),
               ],
             ),

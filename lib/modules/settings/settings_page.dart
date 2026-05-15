@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:get/get.dart';
-import 'package:remixicon/remixicon.dart'; 
+import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
@@ -16,31 +16,31 @@ class SettingsPage extends GetView<SettingsService> {
 
   @override
   Widget build(BuildContext context) {
-    final s = S.of(context);
     final theme = Theme.of(context);
     double screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
       appBar: AppBar(
         scrolledUnderElevation: screenWidth > 640 ? 0 : null,
-        title: Text(s.settings_title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(i18n("settings_title"), style: const TextStyle(fontWeight: FontWeight.w600)),
       ),
       body: ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: <Widget>[
-          // ================== 1. 主题设置 ==================
-          const SectionTitle(title: "主题定制"),
+          SectionTitle(title: i18n("theme_customization")),
+
           ListTile(
             leading: Icon(Remix.moon_clear_line, color: theme.colorScheme.primary, size: 24),
-            title: Text(s.change_theme_mode),
-            subtitle: Text(s.change_theme_mode_subtitle),
+            title: Text(i18n("change_theme_mode")),
+            subtitle: Text(i18n("change_theme_mode_subtitle")),
             onTap: showThemeModeSelectorDialog,
           ),
+
           ListTile(
             leading: Icon(Remix.palette_line, color: theme.colorScheme.primary, size: 24),
-            title: Text(s.change_theme_color),
-            subtitle: Text(s.change_theme_color_subtitle),
+            title: Text(i18n("change_theme_color")),
+            subtitle: Text(i18n("change_theme_color_subtitle")),
             trailing: Obx(
               () => ColorIndicator(
                 width: 32,
@@ -52,20 +52,21 @@ class SettingsPage extends GetView<SettingsService> {
             ),
             onTap: colorPickerDialog,
           ),
+
           _buildSwitchTile(
-            title: s.enable_dynamic_color,
-            subtitle: s.enable_dynamic_color_subtitle,
+            title: i18n("enable_dynamic_color"),
+            subtitle: i18n("enable_dynamic_color_subtitle"),
             value: controller.enableDynamicTheme,
             icon: Remix.magic_line,
           ),
 
-          // ================== 2. 视频设置 ==================
-          SectionTitle(title: s.video),
+          SectionTitle(title: i18n("video")),
+
           Obx(
             () => ListTile(
               leading: const Icon(Remix.hd_line, size: 24),
-              title: Text(s.prefer_resolution),
-              subtitle: Text(s.prefer_resolution_subtitle),
+              title: Text(i18n("prefer_resolution")),
+              subtitle: Text(i18n("prefer_resolution_subtitle")),
               trailing: Text(
                 controller.preferResolution.value,
                 style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
@@ -73,12 +74,12 @@ class SettingsPage extends GetView<SettingsService> {
               onTap: showPreferResolutionSelectorDialog,
             ),
           ),
+
           Obx(
             () => ListTile(
-              // 使用信号塔图标，更直观代表移动数据
               leading: const Icon(Remix.signal_tower_line, size: 24),
-              title: const Text("移动网络清晰度"),
-              subtitle: const Text("使用流量时的首选播放画质"),
+              title: Text(i18n("mobile_quality")),
+              subtitle: Text(i18n("mobile_quality_subtitle")),
               trailing: Text(
                 controller.preferResolutionCellular.value,
                 style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
@@ -88,34 +89,37 @@ class SettingsPage extends GetView<SettingsService> {
           ),
 
           if (Platform.isAndroid) _buildBackgroundPlayTile(context),
+
           _buildSwitchTile(
-            title: '退出小窗播放',
-            subtitle: "返回主界面时是否保留悬浮窗",
+            title: i18n("exit_float_window"),
+            subtitle: i18n("exit_float_window_subtitle"),
             value: controller.floatPlay,
             icon: Remix.picture_in_picture_2_line,
           ),
+
           _buildSwitchTile(
-            title: s.enable_fullscreen_default,
-            subtitle: s.enable_fullscreen_default_subtitle,
+            title: i18n('enable_fullscreen_default'),
+            subtitle: i18n('enable_fullscreen_default_subtitle'),
             value: controller.enableFullScreenDefault,
             icon: Remix.fullscreen_line,
           ),
+
           if (Platform.isAndroid)
             _buildSwitchTile(
-              title: s.enable_screen_keep_on,
-              subtitle: s.enable_screen_keep_on_subtitle,
+              title: i18n('enable_screen_keep_on'),
+              subtitle: i18n('enable_screen_keep_on_subtitle'),
               value: controller.enableScreenKeepOn,
               icon: Remix.lightbulb_line,
             ),
 
-          // ================== 3. 播放器设置 ==================
-          const SectionTitle(title: "播放器内核"),
+          SectionTitle(title: i18n("player_kernel")),
+
           if (Platform.isAndroid)
             Obx(
               () => ListTile(
                 leading: const Icon(Icons.settings_input_component_outlined, size: 24),
-                title: const Text('内核切换'),
-                subtitle: const Text('不同内核影响解码性能与兼容性'),
+                title: Text(i18n("kernel_switch")),
+                subtitle: Text(i18n("kernel_switch_subtitle")),
                 trailing: Text(
                   PlayerConsts.players[controller.videoPlayerIndex.value],
                   style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
@@ -123,73 +127,81 @@ class SettingsPage extends GetView<SettingsService> {
                 onTap: showVideoSetDialog,
               ),
             ),
+
           Obx(() {
             if (controller.videoPlayerIndex.value == 2) return const SizedBox.shrink();
             return ListTile(
               leading: const Icon(Remix.shield_keyhole_line, size: 24),
-              title: const Text('网络代理设置'),
-              subtitle: const Text('配置播放器的网络请求代理'),
-              trailing: Obx(() => Text(controller.enableProxy.value ? '已开启' : '未开启')),
+              title: Text(i18n("network_proxy")),
+              subtitle: Text(i18n("network_proxy_subtitle")),
+              trailing: Obx(() => Text(controller.enableProxy.value ? i18n("enabled") : i18n("disabled"))),
               onTap: showProxySettingsDialog,
             );
           }),
 
           _buildSwitchTile(
-            title: s.enable_codec,
-            subtitle: "优先使用 GPU 进行硬件解码",
+            title: i18n('enable_codec'),
+            subtitle: i18n("gpu_decode"),
             value: controller.enableCodec,
             icon: Remix.flashlight_line,
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSwitchTile(
-                title: '播放器强制销毁',
-                subtitle: '彻底关闭播放进程以节省资源',
-                value: controller.useHardStopOnExit,
-                icon: Remix.p2p_line,
-              ),
-            ],
+
+          _buildSwitchTile(
+            title: i18n('force_destroy_player'),
+            subtitle: i18n('force_destroy_player_subtitle'),
+            value: controller.useHardStopOnExit,
+            icon: Remix.p2p_line,
           ),
 
-          // ================== 4. 通用设置 ==================
-          SectionTitle(title: s.general),
+          SectionTitle(title: i18n("general")),
+
           ListTile(
             leading: const Icon(Remix.global_line, size: 24),
-            title: Text(s.change_language),
+            title: Text(i18n("change_language")),
             onTap: showLanguageSelecterDialog,
           ),
+
           ListTile(
             leading: const Icon(Remix.cloud_windy_line, size: 24),
-            title: const Text("平台显示设置"),
-            subtitle: const Text("管理并排序首页显示的直播平台"),
+            title: Text(i18n("platform_display")),
+            subtitle: Text(i18n("platform_display_subtitle")),
             onTap: () => Get.toNamed(RoutePath.kSettingsHotAreas),
           ),
+
           ListTile(
             leading: const Icon(Remix.filter_2_line, size: 24),
-            title: const Text("弹幕关键词过滤"),
+            title: Text(i18n("danmaku_filter")),
             onTap: () => Get.toNamed(RoutePath.kSettingsDanmuShield),
           ),
+
           ListTile(
             leading: const Icon(Remix.save_3_line, size: 24),
-            title: Text(s.backup_recover),
+            title: Text(i18n("backup_recover")),
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BackupPage())),
           ),
+
           _buildSwitchTile(
-            title: '启动页动画',
-            subtitle: "应用启动时显示 Logo",
+            title: i18n('splash_animation'),
+            subtitle: i18n("splash_animation_subtitle"),
             value: controller.showSplashPage,
             icon: Remix.rocket_2_line,
           ),
+
           _buildSwitchTile(
-            title: s.enable_auto_check_update,
+            title: i18n('enable_auto_check_update'),
             value: controller.enableAutoCheckUpdate,
             icon: Remix.refresh_line,
           ),
+
           if (Platform.isWindows) ...[
-            _buildSwitchTile(title: '开机启动', value: controller.enableStartUp, icon: Remix.windows_line),
-            _buildSwitchTile(title: '退出不再询问', value: controller.dontAskExit, icon: Remix.error_warning_line),
+            _buildSwitchTile(title: i18n("startup"), value: controller.enableStartUp, icon: Remix.windows_line),
+            _buildSwitchTile(
+              title: i18n("no_exit_confirm"),
+              value: controller.dontAskExit,
+              icon: Remix.error_warning_line,
+            ),
           ],
+
           const SizedBox(height: 32),
         ],
       ),
@@ -215,8 +227,8 @@ class SettingsPage extends GetView<SettingsService> {
     return Obx(
       () => SwitchListTile(
         secondary: const Icon(Remix.music_2_line, size: 24),
-        title: Text(S.of(context).enable_background_play),
-        subtitle: Text(S.of(context).enable_background_play_subtitle),
+        title: Text(i18n("enable_background_play")),
+        subtitle: Text(i18n("enable_background_play_subtitle")),
         value: controller.enableBackgroundPlay.value,
         onChanged: (value) async {
           controller.enableBackgroundPlay.value = value;
@@ -234,7 +246,7 @@ class SettingsPage extends GetView<SettingsService> {
       context: context,
       builder: (BuildContext context) {
         return SimpleDialog(
-          title: Text(S.of(Get.context!).change_theme_mode),
+          title: Text(i18n('change_theme_mode')),
           children: [
             RadioGroup<String>(
               groupValue: controller.themeModeName.value,
@@ -251,13 +263,19 @@ class SettingsPage extends GetView<SettingsService> {
                     return Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Radio(value: name, activeColor: Theme.of(Get.context!).colorScheme.primary),
+                        Radio(
+                          value: i18n(AppConsts.themeModeI18n[name]!),
+                          activeColor: Theme.of(Get.context!).colorScheme.primary,
+                        ),
                         GestureDetector(
                           onTap: () {
                             controller.changeThemeMode(name);
                             Navigator.of(context).pop();
                           },
-                          child: Text(name, style: Theme.of(context).textTheme.bodyLarge),
+                          child: Text(
+                            i18n(AppConsts.themeModeI18n[name]!),
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
                         ),
                       ],
                     );
@@ -288,9 +306,9 @@ class SettingsPage extends GetView<SettingsService> {
       spacing: 5,
       runSpacing: 5,
       wheelDiameter: 155,
-      heading: Text('主题颜色', style: Theme.of(context).textTheme.titleMedium),
-      subheading: Text('选择透明度', style: Theme.of(context).textTheme.titleMedium),
-      wheelSubheading: Text('主题颜色及透明度', style: Theme.of(context).textTheme.titleMedium),
+      heading: Text(i18n("theme_color"), style: Theme.of(context).textTheme.titleMedium),
+      subheading: Text(i18n("select_opacity"), style: Theme.of(context).textTheme.titleMedium),
+      wheelSubheading: Text(i18n("theme_color_opacity"), style: Theme.of(context).textTheme.titleMedium),
       showMaterialName: false,
       showColorName: false,
       showColorCode: true,
@@ -309,7 +327,6 @@ class SettingsPage extends GetView<SettingsService> {
         ColorPickerType.custom: true,
         ColorPickerType.wheel: true,
       },
-      // customColorSwatchesAndNames: colorsNameMap,
     ).showPickerDialog(
       context,
       actionsPadding: const EdgeInsets.all(16),
@@ -322,7 +339,7 @@ class SettingsPage extends GetView<SettingsService> {
       context: context,
       builder: (BuildContext context) {
         return SimpleDialog(
-          title: Text(S.of(context).change_language),
+          title: Text(i18n("change_language")),
           children: [
             RadioGroup<String>(
               groupValue: controller.languageName.value,
@@ -367,7 +384,7 @@ class SettingsPage extends GetView<SettingsService> {
       context: context,
       builder: (BuildContext context) {
         return SimpleDialog(
-          title: Text(S.of(context).change_player),
+          title: Text(i18n("change_player")),
           children: [
             RadioGroup<String>(
               groupValue: playerList[controller.videoPlayerIndex.value],
@@ -419,7 +436,7 @@ class SettingsPage extends GetView<SettingsService> {
       context: context,
       builder: (BuildContext context) {
         return SimpleDialog(
-          title: Text(S.of(context).prefer_resolution),
+          title: Text(i18n("prefer_resolution")),
           children: [
             RadioGroup<String>(
               groupValue: controller.preferResolution.value,
@@ -463,7 +480,7 @@ class SettingsPage extends GetView<SettingsService> {
       context: context,
       builder: (BuildContext context) {
         return SimpleDialog(
-          title: Text(S.of(context).prefer_resolution),
+          title: Text(i18n("prefer_resolution_cellular")),
           children: [
             RadioGroup<String>(
               groupValue: controller.preferResolutionCellular.value,
@@ -507,7 +524,7 @@ class SettingsPage extends GetView<SettingsService> {
       context: context,
       builder: (BuildContext context) {
         return SimpleDialog(
-          title: Text(S.of(context).prefer_platform),
+          title: Text(i18n("prefer_platform")),
           children: [
             RadioGroup<String>(
               groupValue: controller.preferPlatform.value,
@@ -522,17 +539,17 @@ class SettingsPage extends GetView<SettingsService> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: AppConsts.platforms.map<Widget>((name) {
+                  children: Sites.supportSites.map<Widget>((Site site) {
                     return Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Radio<String>(value: name, activeColor: Theme.of(context).colorScheme.primary),
+                        Radio<String>(value: site.name, activeColor: Theme.of(context).colorScheme.primary),
                         GestureDetector(
                           onTap: () {
-                            controller.changePreferPlatform(name);
+                            controller.changePreferPlatform(site.id);
                             Navigator.of(context).pop();
                           },
-                          child: Text(name.toUpperCase(), style: Theme.of(context).textTheme.bodyLarge),
+                          child: Text(site.name, style: Theme.of(context).textTheme.bodyLarge),
                         ),
                       ],
                     );
@@ -550,7 +567,6 @@ class SettingsPage extends GetView<SettingsService> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        // title: Text(S.of(context).auto_refresh_time),
         content: Obx(
           () => Column(
             mainAxisSize: MainAxisSize.min,
@@ -558,14 +574,11 @@ class SettingsPage extends GetView<SettingsService> {
               Slider(
                 min: 0,
                 max: 120,
-                label: S.of(context).auto_refresh_time,
+                label: i18n("auto_refresh_time"),
                 value: controller.autoRefreshTime.toDouble(),
                 onChanged: (value) => controller.autoRefreshTime.value = value.toInt(),
               ),
-              Text(
-                '${S.of(context).auto_refresh_time}:'
-                ' ${controller.autoRefreshTime}分钟',
-              ),
+              Text(i18n("auto_refresh_time_with_value", args: {'time': '${controller.autoRefreshTime}'})),
             ],
           ),
         ),
@@ -577,13 +590,12 @@ class SettingsPage extends GetView<SettingsService> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        // title: Text(S.of(context).auto_refresh_time),
         content: Obx(
           () => Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               SwitchListTile(
-                title: Text(S.of(context).auto_shutdown_time_subtitle),
+                title: Text(i18n("auto_shutdown_time_subtitle")),
                 value: controller.enableAutoShutDownTime.value,
                 activeThumbColor: Theme.of(context).colorScheme.primary,
                 onChanged: (bool value) => controller.enableAutoShutDownTime.value = value,
@@ -591,16 +603,13 @@ class SettingsPage extends GetView<SettingsService> {
               Slider(
                 min: 1,
                 max: 1200,
-                label: S.of(context).auto_refresh_time,
+                label: i18n("auto_shutdown_time"),
                 value: controller.autoShutDownTime.toDouble(),
                 onChanged: (value) {
                   controller.autoShutDownTime.value = value.toInt();
                 },
               ),
-              Text(
-                '${S.of(context).auto_shutdown_time}:'
-                ' ${controller.autoShutDownTime} minute',
-              ),
+              Text(i18n("auto_shutdown_time_with_value", args: {'time': '${controller.autoShutDownTime}'})),
             ],
           ),
         ),
@@ -615,14 +624,14 @@ class SettingsPage extends GetView<SettingsService> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("网络代理配置"),
+        title: Text(i18n("proxy_settings")),
         content: Obx(
           () => SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 SwitchListTile(
-                  title: Text("启用播放代理"),
+                  title: Text(i18n("enable_player_proxy")),
                   value: controller.enableProxy.value,
                   activeThumbColor: Theme.of(context).colorScheme.primary,
                   onChanged: (bool value) {
@@ -630,14 +639,12 @@ class SettingsPage extends GetView<SettingsService> {
                   },
                 ),
                 const SizedBox(height: 10),
-
-                // 2. 代理地址输入框
                 TextField(
                   controller: hostController,
                   enabled: controller.enableProxy.value,
                   decoration: InputDecoration(
-                    labelText: "代理主机 (Host)",
-                    hintText: "例如: 127.0.0.1",
+                    labelText: i18n("proxy_host"),
+                    hintText: i18n("proxy_host_hint"),
                     prefixIcon: const Icon(Icons.lan),
                     border: const OutlineInputBorder(),
                   ),
@@ -646,15 +653,13 @@ class SettingsPage extends GetView<SettingsService> {
                   },
                 ),
                 const SizedBox(height: 16),
-
-                // 3. 端口输入框 (限定数字)
                 TextField(
                   controller: portController,
                   enabled: controller.enableProxy.value,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: "端口 (Port)",
-                    hintText: "例如: 1080",
+                    labelText: i18n("proxy_port"),
+                    hintText: i18n("proxy_port_hint"),
                     prefixIcon: const Icon(Icons.numbers),
                     border: const OutlineInputBorder(),
                   ),
@@ -669,7 +674,7 @@ class SettingsPage extends GetView<SettingsService> {
             ),
           ),
         ),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text("完成"))],
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n("confirm")))],
       ),
     );
   }

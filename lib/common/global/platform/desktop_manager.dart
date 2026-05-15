@@ -8,6 +8,7 @@ import 'package:tray_manager/tray_manager.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pure_live/routes/route_path.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
@@ -133,21 +134,24 @@ class DesktopManager {
     if (!PlatformUtils.isDesktop) return;
 
     try {
-      await trayManager.setToolTip('纯粹直播');
+      await trayManager.setToolTip(i18n('app_name'));
 
       final isVisible = await windowManager.isVisible();
 
       final menu = Menu(
         items: [
-          MenuItem(key: isVisible ? 'hide_window' : 'show_window', label: isVisible ? '隐藏窗口' : '显示窗口'),
+          MenuItem(
+            key: isVisible ? 'hide_window' : 'show_window',
+            label: isVisible ? i18n('hide_window') : i18n('show_window'),
+          ),
           MenuItem.separator(),
-          MenuItem(key: 'exit_app', label: '退出应用'),
+          MenuItem(key: 'exit_app', label: i18n('exit_app')),
         ],
       );
 
       await trayManager.setContextMenu(menu);
     } catch (e) {
-      debugPrint('系统托盘更新失败: $e');
+      debugPrint('${i18n("tray_update_failed")}: $e');
     }
   }
 
@@ -288,7 +292,7 @@ class CustomTitleBar extends StatelessWidget {
                                 Image.asset('assets/icons/icon.png', width: 16, height: 16),
                                 const SizedBox(width: 6),
                                 Text(
-                                  '纯粹直播',
+                                  i18n('app_name'),
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,

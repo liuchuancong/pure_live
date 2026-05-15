@@ -6,6 +6,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'package:flutter_exit_app/flutter_exit_app.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
@@ -95,7 +96,7 @@ class SettingsService extends GetxController {
   final preferResolution = (HivePrefUtil.getString('preferResolution') ?? PlayerConsts.resolutions[0]).obs;
   final preferResolutionCellular =
       (HivePrefUtil.getString('preferResolutionCellular') ?? PlayerConsts.resolutions[0]).obs;
-  final preferPlatform = (HivePrefUtil.getString('preferPlatform') ?? AppConsts.platforms[0]).obs;
+  final preferPlatform = (HivePrefUtil.getString('preferPlatform') ?? Sites.bilibiliSite).obs;
 
   // ==============================
   // ❤️ 收藏 & 历史
@@ -371,6 +372,7 @@ class SettingsService extends GetxController {
   void changeLanguage(String value) {
     languageName.value = value;
     HivePrefUtil.setString('language', value);
+    EasyLocalization.of(Get.context!)!.setLocale(AppConsts.languages[value]!);
     Get.updateLocale(language);
   }
 
@@ -395,7 +397,8 @@ class SettingsService extends GetxController {
   }
 
   void changePreferPlatform(String name) {
-    if (AppConsts.platforms.indexWhere((e) => e == name) != -1) {
+    List<String> platforms = Sites.supportSites.map((site) => site.id).toList();
+    if (platforms.indexWhere((e) => e == name) != -1) {
       preferPlatform.value = name;
       update(['myapp']);
       HivePrefUtil.setString('preferPlatform', name);
@@ -654,10 +657,8 @@ class SettingsService extends GetxController {
       (e) => e == json['preferResolutionCellular'],
       orElse: () => PlayerConsts.resolutions[0],
     );
-    preferPlatform.value = AppConsts.platforms.firstWhere(
-      (e) => e == json['preferPlatform'],
-      orElse: () => AppConsts.platforms[0],
-    );
+    List<String> platforms = Sites.supportSites.map((site) => site.id).toList();
+    preferPlatform.value = platforms.firstWhere((e) => e == json['preferPlatform'], orElse: () => Sites.bilibiliSite);
     videoFitIndex.value = json['videoFitIndex'] ?? 0;
     hideDanmaku.value = json['hideDanmaku'] ?? false;
     danmakuTopArea.value = json['danmakuTopArea'] != null

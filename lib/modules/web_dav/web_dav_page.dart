@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:mime/mime.dart';
 import 'package:flutter/material.dart';
+import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/common/widgets/menu_button.dart';
 import 'package:webdav_client/webdav_client.dart' as webdav;
 import 'package:pure_live/modules/web_dav/webdav_config.dart';
@@ -23,7 +24,9 @@ class WebDavPage extends GetView<WebDavController> {
 
     Get.dialog(
       AlertDialog(
-        title: Text(isEditing ? '编辑配置: ${existingConfig.name}' : '添加新配置'),
+        title: Text(
+          isEditing ? i18n("webdav_edit_config", args: {"name": existingConfig.name}) : i18n("webdav_add_new_config"),
+        ),
         content: Form(
           key: formKey,
           child: SingleChildScrollView(
@@ -31,12 +34,12 @@ class WebDavPage extends GetView<WebDavController> {
               children: [
                 TextFormField(
                   controller: nameController,
-                  decoration: InputDecoration(labelText: '配置名称'),
+                  decoration: InputDecoration(labelText: i18n("webdav_config_name")),
                   enabled: !isEditing,
                   validator: (value) {
-                    if (value == null || value.isEmpty) return '配置名称不能为空';
+                    if (value == null || value.isEmpty) return i18n("webdav_config_name_empty");
                     if (!isEditing && controller.configs.any((c) => c.name == value)) {
-                      return '配置名称已存在';
+                      return i18n("webdav_config_name_exists");
                     }
                     return null;
                   },
@@ -47,29 +50,29 @@ class WebDavPage extends GetView<WebDavController> {
                       flex: 2,
                       child: TextFormField(
                         controller: addressController,
-                        decoration: InputDecoration(labelText: '地址'),
-                        validator: (value) => value == null || value.isEmpty ? '地址不能为空' : null,
+                        decoration: InputDecoration(labelText: i18n("webdav_address")),
+                        validator: (value) => value == null || value.isEmpty ? i18n("webdav_address_empty") : null,
                       ),
                     ),
                   ],
                 ),
                 TextFormField(
                   controller: userController,
-                  decoration: InputDecoration(labelText: '用户名'),
-                  validator: (value) => value == null || value.isEmpty ? '用户名不能为空' : null,
+                  decoration: InputDecoration(labelText: i18n("webdav_username")),
+                  validator: (value) => value == null || value.isEmpty ? i18n("webdav_username_empty") : null,
                 ),
                 TextFormField(
                   controller: pwdController,
-                  decoration: InputDecoration(labelText: '密码'),
+                  decoration: InputDecoration(labelText: i18n("webdav_password")),
                   obscureText: true,
-                  validator: (value) => value == null || value.isEmpty ? '密码不能为空' : null,
+                  validator: (value) => value == null || value.isEmpty ? i18n("webdav_password_empty") : null,
                 ),
               ],
             ),
           ),
         ),
         actions: [
-          TextButton(onPressed: Navigator.of(Get.context!).pop, child: const Text('取消')),
+          TextButton(onPressed: Navigator.of(Get.context!).pop, child: Text(i18n("webdav_cancel"))),
           TextButton(
             onPressed: () {
               if (formKey.currentState?.validate() ?? false) {
@@ -93,7 +96,7 @@ class WebDavPage extends GetView<WebDavController> {
                 Navigator.of(Get.context!).pop();
               }
             },
-            child: Text(isEditing ? '更新' : '添加'),
+            child: Text(isEditing ? i18n("webdav_update") : i18n("webdav_add")),
           ),
         ],
       ),
@@ -146,7 +149,11 @@ class WebDavPage extends GetView<WebDavController> {
                     selected: controller.currentConfig.value?.name == config.name,
                     onTap: () => controller.onConfigSelected(config),
                   ),
-                ListTile(title: const Text('添加新配置'), leading: const Icon(Icons.add), onTap: () => _showConfigDialog()),
+                ListTile(
+                  title: Text(i18n("webdav_add_new_config")),
+                  leading: const Icon(Icons.add),
+                  onTap: () => _showConfigDialog(),
+                ),
               ],
             ),
           ),
@@ -158,18 +165,18 @@ class WebDavPage extends GetView<WebDavController> {
   void _showDeleteDialog(WebDAVConfig config) {
     Get.dialog(
       AlertDialog(
-        title: const Text('确认删除'),
-        content: Text('确定要删除配置 "${config.name}" 吗？'),
+        title: Text(i18n("webdav_confirm_delete")),
+        content: Text(i18n("webdav_confirm_delete_config", args: {"name": config.name})),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.pop(Get.context!);
             },
-            child: const Text('取消'),
+            child: Text(i18n("webdav_cancel")),
           ),
           TextButton(
             onPressed: () => controller.deleteConfig(config),
-            child: Text('删除', style: TextStyle(color: Theme.of(Get.context!).colorScheme.error)),
+            child: Text(i18n("webdav_delete"), style: TextStyle(color: Theme.of(Get.context!).colorScheme.error)),
           ),
         ],
       ),
@@ -183,11 +190,11 @@ class WebDavPage extends GetView<WebDavController> {
       snap: false,
       backgroundColor: Theme.of(Get.context!).colorScheme.surface,
       surfaceTintColor: Colors.transparent,
-      title: const Text('WebDAV', style: TextStyle(fontWeight: FontWeight.w400)),
+      title: Text(i18n("webdav"), style: const TextStyle(fontWeight: FontWeight.w400)),
       actions: [
         PopupMenuButton<int>(
           icon: Icon(Icons.more_vert, color: Theme.of(Get.context!).colorScheme.onPrimaryContainer),
-          tooltip: '更多操作',
+          tooltip: i18n("webdav_more_actions"),
           onSelected: (int value) {
             if (value == 1) {
               controller.loadFiles();
@@ -198,11 +205,11 @@ class WebDavPage extends GetView<WebDavController> {
           itemBuilder: (BuildContext context) => [
             PopupMenuItem(
               value: 1,
-              child: MenuListTile(leading: const Icon(Icons.refresh), text: '刷新'),
+              child: MenuListTile(leading: const Icon(Icons.refresh), text: i18n("webdav_refresh")),
             ),
             PopupMenuItem(
               value: 2,
-              child: MenuListTile(leading: const Icon(Icons.menu), text: '打开配置列表'),
+              child: MenuListTile(leading: const Icon(Icons.menu), text: i18n("webdav_open_config_list")),
             ),
           ],
         ),
@@ -239,7 +246,7 @@ class WebDavPage extends GetView<WebDavController> {
     String accumulatedPath = '/';
 
     buttons.add(const SizedBox(width: 48));
-    buttons.add(_buildCrumbButton(label: '我的文件', targetPath: accumulatedPath));
+    buttons.add(_buildCrumbButton(label: i18n("webdav_my_files"), targetPath: accumulatedPath));
 
     for (String part in controller.breadcrumbParts) {
       buttons.add(Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: const Icon(Icons.navigate_next)));
@@ -293,8 +300,8 @@ class WebDavPage extends GetView<WebDavController> {
               children: [
                 const Icon(Icons.add_circle_outline, size: 48),
                 const SizedBox(height: 16),
-                const Text('暂无配置，请先创建WebDAV配置'),
-                TextButton(onPressed: () => _showConfigDialog(), child: const Text('创建新配置')),
+                Text(i18n("webdav_no_config_create_first")),
+                TextButton(onPressed: () => _showConfigDialog(), child: Text(i18n("webdav_create_new_config"))),
               ],
             ),
           ),
@@ -309,8 +316,11 @@ class WebDavPage extends GetView<WebDavController> {
               children: [
                 const Icon(Icons.cloud_queue, size: 48),
                 const SizedBox(height: 16),
-                const Text('请从侧边栏选择WebDAV配置'),
-                TextButton(onPressed: () => _scaffoldKey.currentState?.openEndDrawer(), child: const Text('打开配置列表')),
+                Text(i18n("webdav_select_config_from_sidebar")),
+                TextButton(
+                  onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+                  child: Text(i18n("webdav_open_config_list")),
+                ),
               ],
             ),
           ),
@@ -348,16 +358,19 @@ class WebDavPage extends GetView<WebDavController> {
         color: Theme.of(Get.context!).colorScheme.primary,
         size: 28,
       ),
-      title: Text(file.name ?? '未命名文件', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+      title: Text(
+        file.name ?? i18n("webdav_unnamed_file"),
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+      ),
       subtitle: Text(
-        file.mTime?.toString() ?? '未知时间',
+        file.mTime?.toString() ?? i18n("webdav_unknown_time"),
         style: TextStyle(color: Theme.of(Get.context!).colorScheme.onSurfaceVariant),
       ),
       trailing: PopupMenuButton<String>(
         icon: Icon(Icons.more_vert, color: Theme.of(Get.context!).colorScheme.onSurface),
         itemBuilder: (context) => [
-          const PopupMenuItem(value: 'Download', child: Text('同步到本地')),
-          const PopupMenuItem(value: 'Delete', child: Text('删除')),
+          PopupMenuItem(value: 'Download', child: Text(i18n("webdav_sync_to_local"))),
+          PopupMenuItem(value: 'Delete', child: Text(i18n("webdav_delete"))),
         ],
         onSelected: (value) {
           if (value == 'Download') {

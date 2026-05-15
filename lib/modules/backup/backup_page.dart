@@ -15,6 +15,7 @@ class _BackupPageState extends State<BackupPage> {
   final settings = Get.find<SettingsService>();
   late String backupDirectory = settings.backupDirectory.value;
   late String m3uDirectory = settings.m3uDirectory.value;
+
   SizedBox spacer(double height) {
     return SizedBox(height: height);
   }
@@ -26,28 +27,37 @@ class _BackupPageState extends State<BackupPage> {
       body: ListView(
         physics: const BouncingScrollPhysics(),
         children: [
-          SectionTitle(title: S.of(context).backup_recover),
+          SectionTitle(title: i18n("backup_recover")),
+
           ListTile(
-            title: Text('WebDav'),
-            subtitle: Text('备份到WebDav服务器'),
+            title: Text(i18n("webdav")),
+            subtitle: Text(i18n("backup_to_webdav")),
             onTap: () async {
               Get.toNamed(RoutePath.kWebDavPage);
             },
           ),
-          ListTile(title: const Text('网络'), subtitle: const Text('导入M3u直播源'), onTap: () => showImportSetDialog()),
+
+          ListTile(
+            title: Text(i18n("network")),
+            subtitle: Text(i18n("import_m3u")),
+            onTap: () => showImportSetDialog(),
+          ),
+
           if (Platform.isAndroid || Platform.isIOS)
             ListTile(
-              title: const Text("同步TV数据"),
-              subtitle: const Text("将数据远程同步到TV"),
+              title: Text(i18n("sync_tv_data")),
+              subtitle: Text(i18n("sync_tv_data_subtitle")),
               onTap: () async {
                 Get.to(() => const ScanCodePage());
               },
             ),
+
           ListTile(
-            title: Text(S.of(context).create_backup),
-            subtitle: Text(S.of(context).create_backup_subtitle),
+            title: Text(i18n("create_backup")),
+            subtitle: Text(i18n("create_backup_subtitle")),
             onTap: () async {
               final selectedDirectory = await FileRecoverUtils().createBackup(backupDirectory);
+
               if (selectedDirectory != null) {
                 setState(() {
                   backupDirectory = selectedDirectory;
@@ -55,17 +65,21 @@ class _BackupPageState extends State<BackupPage> {
               }
             },
           ),
+
           ListTile(
-            title: Text(S.of(context).recover_backup),
-            subtitle: Text(S.of(context).recover_backup_subtitle),
+            title: Text(i18n("recover_backup")),
+            subtitle: Text(i18n("recover_backup_subtitle")),
             onTap: () => FileRecoverUtils().recoverBackup(),
           ),
-          SectionTitle(title: S.of(context).auto_backup),
+
+          SectionTitle(title: i18n("auto_backup")),
+
           ListTile(
-            title: Text(S.of(context).backup_directory),
+            title: Text(i18n("backup_directory")),
             subtitle: Text(backupDirectory),
             onTap: () async {
               final selectedDirectory = await FileRecoverUtils().selectBackupDirectory(backupDirectory);
+
               if (selectedDirectory != null) {
                 setState(() {
                   backupDirectory = selectedDirectory;
@@ -83,7 +97,7 @@ class _BackupPageState extends State<BackupPage> {
       context: context,
       builder: (BuildContext context) {
         return SimpleDialog(
-          title: const Text('导入M3u直播源'),
+          title: Text(i18n("import_m3u_title")),
           children: [
             RadioGroup<String>(
               groupValue: '',
@@ -95,7 +109,7 @@ class _BackupPageState extends State<BackupPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: ['本地导入', '网络导入'].map<Widget>((name) {
+                  children: [i18n("local_import"), i18n("network_import")].map<Widget>((name) {
                     return Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -122,9 +136,10 @@ class _BackupPageState extends State<BackupPage> {
   Future<String?> showEditTextDialog() async {
     final TextEditingController urlEditingController = TextEditingController();
     final TextEditingController textEditingController = TextEditingController();
+
     var result = await Get.dialog(
       AlertDialog(
-        title: const Text('请输入下载地址'),
+        title: Text(i18n("enter_download_url")),
         content: SizedBox(
           width: 400.0,
           height: 300.0,
@@ -134,24 +149,21 @@ class _BackupPageState extends State<BackupPage> {
               children: [
                 TextField(
                   controller: urlEditingController,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    //prefixText: title,
-                    contentPadding: EdgeInsets.all(12),
-                    hintText: '下载地址',
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.all(12),
+                    hintText: i18n("download_url"),
                   ),
                   autofocus: true,
                 ),
                 spacer(12.0),
                 TextField(
                   controller: textEditingController,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    //prefixText: title,
-                    contentPadding: EdgeInsets.all(12),
-                    hintText: '文件名',
+                  decoration: InputDecoration(
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.all(12),
+                    hintText: i18n("file_name"),
                   ),
-                  autofocus: false,
                 ),
               ],
             ),
@@ -162,37 +174,43 @@ class _BackupPageState extends State<BackupPage> {
             onPressed: () {
               Navigator.of(Get.context!).pop();
             },
-            child: const Text("取消"),
+            child: Text(i18n("cancel")),
           ),
           TextButton(
             onPressed: () async {
               if (urlEditingController.text.isEmpty) {
-                ToastUtil.show('请输入下载链接');
+                ToastUtil.show(i18n("enter_download_link"));
                 return;
               }
+
               bool validate = FileRecoverUtils.isUrl(urlEditingController.text);
+
               if (!validate) {
-                ToastUtil.show('请输入正确的下载链接');
+                ToastUtil.show(i18n("invalid_download_link"));
                 return;
               }
+
               if (textEditingController.text.isEmpty) {
-                ToastUtil.show('请输入文件名');
+                ToastUtil.show(i18n("enter_file_name"));
                 return;
               }
+
               await FileRecoverUtils().recoverNetworkM3u8Backup(urlEditingController.text, textEditingController.text);
+
               Navigator.of(Get.context!).pop();
             },
-            child: const Text("确定"),
+            child: Text(i18n("confirm")),
           ),
         ],
       ),
       barrierDismissible: false,
     );
+
     return result;
   }
 
   void importFile(String value) {
-    if (value == '本地导入') {
+    if (value == i18n("local_import")) {
       FileRecoverUtils().recoverM3u8Backup();
       Navigator.of(context).pop();
     } else {

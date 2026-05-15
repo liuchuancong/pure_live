@@ -40,8 +40,8 @@ class _PopularGridViewState extends State<PopularGridView> {
                   )
                 : EmptyView(
                     icon: Icons.live_tv_rounded,
-                    title: S.of(context).empty_live_title,
-                    subtitle: S.of(context).empty_live_subtitle,
+                    title: i18n("empty_live_title"),
+                    subtitle: i18n("empty_live_subtitle"),
                   ),
           ),
         );

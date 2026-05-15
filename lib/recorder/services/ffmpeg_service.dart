@@ -15,7 +15,7 @@ class FFmpegRecordSession {
   double speed = 0;
   double fps = 0;
   DateTime lastUpdate = DateTime.now();
-
+  FFmpegSession? session;
   FFmpegRecordSession({required this.taskId});
 }
 
@@ -35,64 +35,57 @@ class FFmpegService {
     required String command,
     required void Function(FFmpegEvent event) onEvent,
   }) async {
-    final session = FFmpegRecordSession(taskId: taskId);
-    _sessions[taskId] = session;
-
     onEvent(FFmpegEvent(taskId: taskId, type: FFmpegEventType.started));
 
-    FFmpegKit.executeAsync(
-      command,
-      onComplete: (s) {
-        session.sessionId = s.sessionId;
-        final code = s.getReturnCode();
-        final success = ReturnCode.isSuccess(code);
-        onEvent(
-          FFmpegEvent(
-            taskId: taskId,
-            type: success ? FFmpegEventType.complete : FFmpegEventType.error,
-            data: {"code": code},
-          ),
-        );
-        _sessions.remove(taskId);
-      },
-      onLog: (log) {
-        session.sessionId = log.sessionId;
-      },
-      onStatistics: (s) {
-        session
-          ..recordedSeconds = s.time ~/ 1000
-          ..fileSize = s.size
-          ..bitrate = s.bitrate
-          ..speed = s.speed
-          ..fps = s.videoFps
-          ..lastUpdate = DateTime.now()
-          ..sessionId = s.sessionId;
+    final ffempgSession = FFmpegKit.createSession(command);
 
-        onEvent(
-          FFmpegEvent(
-            taskId: taskId,
-            type: FFmpegEventType.progress,
-            data: {"time": s.time, "size": s.size, "bitrate": s.bitrate, "speed": s.speed, "fps": s.videoFps},
-          ),
-        );
-      },
-    );
+    final session = FFmpegRecordSession(taskId: taskId);
+    _sessions[taskId] = session;
+    session.session = ffempgSession;
+    session.sessionId = ffempgSession.getSessionId();
+    ffempgSession.setStatisticsCallback((s) {
+      session
+        ..recordedSeconds = s.time ~/ 1000
+        ..fileSize = s.size
+        ..bitrate = s.bitrate
+        ..speed = s.speed
+        ..fps = s.videoFps
+        ..lastUpdate = DateTime.now();
+
+      onEvent(
+        FFmpegEvent(
+          taskId: taskId,
+          type: FFmpegEventType.progress,
+          data: {"time": s.time, "size": s.size, "bitrate": s.bitrate, "speed": s.speed, "fps": s.videoFps},
+        ),
+      );
+    });
+    ffempgSession.setCompleteCallback((completedSession) {
+      log('FFmpeg complete => $taskId');
+      final code = completedSession.getReturnCode();
+      final success = ReturnCode.isSuccess(code);
+      onEvent(
+        FFmpegEvent(
+          taskId: taskId,
+          type: success ? FFmpegEventType.complete : FFmpegEventType.error,
+          data: {"code": code},
+        ),
+      );
+      _sessions.remove(taskId);
+    });
+    await ffempgSession.executeAsync();
   }
 
   Future<void> stop(String taskId) async {
     final session = _sessions[taskId];
     if (session == null) return;
     session.manualStop = true;
-    final sessionId = session.sessionId;
-    if (sessionId == null) return;
-    final sessions = FFmpegKit.getFFmpegSessions();
-    for (final s in sessions) {
-      if (s.getSessionId() == sessionId) {
-        log('FFmpeg stop => $taskId');
-        FFmpegKit.cancel(s);
-        break;
-      }
+    final ffempgSession = session.session;
+    if (ffempgSession == null) {
+      return;
     }
+    log('FFmpeg stop => $taskId');
+    FFmpegKit.cancel(ffempgSession);
   }
 
   FFmpegRecordSession? getSession(String taskId) => _sessions[taskId];

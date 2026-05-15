@@ -10,11 +10,11 @@ class NoNewVersionDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(S.of(context).check_update),
-      content: Text(S.of(context).no_new_version_info),
+      title: Text(i18n("check_update")),
+      content: Text(i18n("no_new_version_info")),
       actions: <Widget>[
         TextButton(
-          child: Text(S.of(context).confirm),
+          child: Text(i18n("confirm")),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -36,7 +36,7 @@ class NewVersionDialog extends StatelessWidget {
     final maxHeight = mediaQuery.size.height * 0.7;
     final config = Get.isDarkMode ? MarkdownConfig.darkConfig : MarkdownConfig.defaultConfig;
     return AlertDialog(
-      title: Text(S.of(context).check_update),
+      title: Text(i18n("check_update")),
       content: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth, maxHeight: maxHeight),
         child: SingleChildScrollView(
@@ -56,7 +56,7 @@ class NewVersionDialog extends StatelessWidget {
                     mode: LaunchMode.externalApplication,
                   );
                 },
-                child: const Text('本软件开源免费', style: TextStyle(fontSize: 20)),
+                child: Text(i18n('open_source_free'), style: TextStyle(fontSize: 20)),
               ),
               MarkdownBlock(data: VersionUtil.latestUpdateLog, config: config),
               const SizedBox(height: 10),
@@ -71,7 +71,7 @@ class NewVersionDialog extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             TextButton(
-              child: Text(S.of(context).cancel),
+              child: Text(i18n("cancel")),
               onPressed: () {
                 if (entry != null) {
                   entry!.remove();
@@ -81,7 +81,7 @@ class NewVersionDialog extends StatelessWidget {
               },
             ),
             ElevatedButton(
-              child: Text(S.of(context).update),
+              child: Text(i18n("update")),
               onPressed: () {
                 if (entry != null) {
                   entry!.remove();

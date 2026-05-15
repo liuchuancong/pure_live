@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/modules/toolbox/toolbox_controller.dart';
 
 class ToolBoxPage extends GetView<ToolBoxController> {
@@ -12,18 +13,18 @@ class ToolBoxPage extends GetView<ToolBoxController> {
     WidgetsBinding.instance.addPostFrameCallback((_) => controller.autoCheckClipboard());
 
     return Scaffold(
-      appBar: AppBar(title: const Text("链接解析"), centerTitle: true, elevation: 0),
+      appBar: AppBar(title: Text(i18n("toolbox_title")), centerTitle: true, elevation: 0),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
         children: [
           // Section 1: Jump to Room
           _buildToolCard(
             context,
-            title: "直播间跳转",
+            title: i18n("toolbox_room_jump"),
             icon: Remix.external_link_line,
             controller: controller.roomJumpToController,
             btnIcon: Remix.play_circle_line,
-            btnLabel: "链接跳转",
+            btnLabel: i18n("toolbox_link_jump"),
             onAction: controller.jumpToRoom,
           ),
 
@@ -32,11 +33,11 @@ class ToolBoxPage extends GetView<ToolBoxController> {
           // Section 2: Get Direct Link (Description is persistent outside the fold)
           _buildToolCard(
             context,
-            title: "获取直链",
+            title: i18n("toolbox_get_direct_link"),
             icon: Remix.link_m,
             controller: controller.getUrlController,
             btnIcon: Remix.download_2_line,
-            btnLabel: "获取解析",
+            btnLabel: i18n("toolbox_get_parse"),
             onAction: controller.getPlayUrl,
             extraFooter: _buildDescription(),
           ),
@@ -78,7 +79,7 @@ class ToolBoxPage extends GetView<ToolBoxController> {
                 controller: controller,
                 style: const TextStyle(fontSize: 14),
                 decoration: InputDecoration(
-                  hintText: "请在此处粘贴平台链接...",
+                  hintText: i18n("toolbox_input_hint"),
                   hintStyle: const TextStyle(fontSize: 13),
                   filled: true,
                   fillColor: Theme.of(context).dividerColor.withValues(alpha: .05),
@@ -121,38 +122,17 @@ class ToolBoxPage extends GetView<ToolBoxController> {
           children: [
             Icon(Remix.information_line, size: 14, color: Colors.grey[600]),
             const SizedBox(width: 6),
-            const Text(
-              "支持解析列表",
+            Text(
+              i18n("toolbox_support_list"),
               style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 13),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        const SelectableText('''支持以下类型的链接解析：
-哔哩哔哩：
-https://live.bilibili.com/xxxxx
-https://www.bilibili.com/xxxxx
-https://b23.tv/xxxxx
-
-虎牙直播：
-https://www.huya.com/xxxxx
-
-斗鱼直播：
-https://www.douyu.com/xxxxx
-
-抖音直播/视频：
-https://live.douyin.com/xxxxx
-https://www.douyin.com/xxxxx
-https://v.douyin.com/xxxxx
-https://webcast.amemv.com/douyin/webcast/reflow/xxxxx
-
-快手直播：
-https://live.kuaishou.com/u/xxxxx
-https://live.kuaishou.cn/u/xxxxx
-
-网易CC直播：
-https://cc.163.com/xxxxx
-''', style: TextStyle(color: Colors.grey, fontSize: 12, height: 1.6)),
+        SelectableText(
+          i18n("toolbox_support_content"),
+          style: TextStyle(color: Colors.grey, fontSize: 12, height: 1.6),
+        ),
       ],
     );
   }

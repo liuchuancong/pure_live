@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:pure_live/plugins/update.dart';
 import 'package:markdown_widget/config/configs.dart';
+import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/common/utils/version_util.dart';
 import 'package:markdown_widget/widget/markdown_block.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
@@ -13,7 +14,7 @@ class VersionPage extends GetView<VersionController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('版本更新')),
+      appBar: AppBar(title: Text(i18n("version_update"))),
       body: Obx(() {
         if (controller.loading.value) {
           return const Center(child: CircularProgressIndicator.adaptive());
@@ -31,15 +32,13 @@ class VersionPage extends GetView<VersionController> {
                 if (PlatformUtils.isAndroid) ...[
                   _buildPlatformCard(
                     context,
-                    title: 'Android MediaKit版',
-                    subtitle: '使用 MediaKit 播放器内核',
+                    title: i18n("android_mediakit"),
+                    subtitle: i18n("using_mediakit_player"),
                     icon: Icons.android,
                     children: [
-                      _buildDownloadSection(title: 'ARM64 (arm64-v8a)', urls: controller.apkUrl2.value),
-
+                      _buildDownloadSection(title: i18n("arm64"), urls: controller.apkUrl2.value),
                       const SizedBox(height: 16),
-
-                      _buildDownloadSection(title: 'ARM32 (armeabi-v7a)', urls: controller.apkUrl.value),
+                      _buildDownloadSection(title: i18n("arm32"), urls: controller.apkUrl.value),
                     ],
                   ),
 
@@ -47,15 +46,13 @@ class VersionPage extends GetView<VersionController> {
 
                   _buildPlatformCard(
                     context,
-                    title: 'Android FVP版',
-                    subtitle: '使用 FVP 播放器内核',
+                    title: i18n("android_fvp"),
+                    subtitle: i18n("using_fvp_player"),
                     icon: Icons.live_tv,
                     children: [
-                      _buildDownloadSection(title: 'ARM64 FVP', urls: controller.apkFvpUrl2.value),
-
+                      _buildDownloadSection(title: i18n("arm64_fvp"), urls: controller.apkFvpUrl2.value),
                       const SizedBox(height: 16),
-
-                      _buildDownloadSection(title: 'ARM32 FVP', urls: controller.apkFvpUrl.value),
+                      _buildDownloadSection(title: i18n("arm32_fvp"), urls: controller.apkFvpUrl.value),
                     ],
                   ),
 
@@ -65,15 +62,13 @@ class VersionPage extends GetView<VersionController> {
                 if (PlatformUtils.isWindows) ...[
                   _buildPlatformCard(
                     context,
-                    title: 'Windows MediaKit版',
-                    subtitle: '使用 MediaKit 播放器内核',
+                    title: i18n("windows_mediakit"),
+                    subtitle: i18n("using_mediakit_player"),
                     icon: Icons.desktop_windows,
                     children: [
-                      _buildDownloadSection(title: 'EXE 安装包', urls: controller.windowsUrl.value),
-
+                      _buildDownloadSection(title: i18n("exe_installer"), urls: controller.windowsUrl.value),
                       const SizedBox(height: 16),
-
-                      _buildDownloadSection(title: 'MSIX 安装包', urls: controller.windowsUrl2.value),
+                      _buildDownloadSection(title: i18n("msix_installer"), urls: controller.windowsUrl2.value),
                     ],
                   ),
 
@@ -81,15 +76,13 @@ class VersionPage extends GetView<VersionController> {
 
                   _buildPlatformCard(
                     context,
-                    title: 'Windows FVP版',
-                    subtitle: '使用 FVP 播放器内核',
+                    title: i18n("windows_fvp"),
+                    subtitle: i18n("using_fvp_player"),
                     icon: Icons.live_tv,
                     children: [
-                      _buildDownloadSection(title: 'FVP EXE', urls: controller.windowsFvpUrl.value),
-
+                      _buildDownloadSection(title: i18n("fvp_exe"), urls: controller.windowsFvpUrl.value),
                       const SizedBox(height: 16),
-
-                      _buildDownloadSection(title: 'FVP MSIX', urls: controller.windowsFvpUrl2.value),
+                      _buildDownloadSection(title: i18n("fvp_msix"), urls: controller.windowsFvpUrl2.value),
                     ],
                   ),
 
@@ -99,20 +92,20 @@ class VersionPage extends GetView<VersionController> {
                 if (PlatformUtils.isMacOS) ...[
                   _buildPlatformCard(
                     context,
-                    title: 'macOS MediaKit版',
-                    subtitle: '使用 MediaKit 播放器内核',
+                    title: i18n("macos_mediakit"),
+                    subtitle: i18n("using_mediakit_player"),
                     icon: Icons.laptop_mac,
-                    children: [_buildDownloadSection(title: 'macOS DMG', urls: controller.macosUrl.value)],
+                    children: [_buildDownloadSection(title: i18n("macos_dmg"), urls: controller.macosUrl.value)],
                   ),
 
                   const SizedBox(height: 20),
 
                   _buildPlatformCard(
                     context,
-                    title: 'macOS FVP版',
-                    subtitle: '使用 FVP 播放器内核',
+                    title: i18n("macos_fvp"),
+                    subtitle: i18n("using_fvp_player"),
                     icon: Icons.live_tv,
-                    children: [_buildDownloadSection(title: 'macOS FVP DMG', urls: controller.macosFvpUrl.value)],
+                    children: [_buildDownloadSection(title: i18n("macos_fvp_dmg"), urls: controller.macosFvpUrl.value)],
                   ),
 
                   const SizedBox(height: 24),
@@ -121,7 +114,10 @@ class VersionPage extends GetView<VersionController> {
                 // =====================================================
                 // 更新日志
                 // =====================================================
-                Text('更新日志', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                Text(
+                  i18n("update_log"),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
 
                 const SizedBox(height: 12),
 
@@ -146,7 +142,6 @@ class VersionPage extends GetView<VersionController> {
   // =========================================================
   // 平台卡片
   // =========================================================
-
   Widget _buildPlatformCard(
     BuildContext context, {
     required String title,
@@ -165,9 +160,7 @@ class VersionPage extends GetView<VersionController> {
             Row(
               children: [
                 Icon(icon),
-
                 const SizedBox(width: 12),
-
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -176,18 +169,14 @@ class VersionPage extends GetView<VersionController> {
                         title,
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                       ),
-
                       const SizedBox(height: 2),
-
                       Text(subtitle, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey)),
                     ],
                   ),
                 ),
               ],
             ),
-
             const SizedBox(height: 20),
-
             ...children,
           ],
         ),
@@ -198,7 +187,6 @@ class VersionPage extends GetView<VersionController> {
   // =========================================================
   // 下载区
   // =========================================================
-
   Widget _buildDownloadSection({required String title, required String urls}) {
     final List<String> mirrorUrls = getMirrorUrls(urls);
 
@@ -210,17 +198,12 @@ class VersionPage extends GetView<VersionController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title, style: Theme.of(Get.context!).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-
         const SizedBox(height: 10),
-
         LayoutBuilder(
           builder: (context, constraints) {
             final double maxWidth = constraints.maxWidth;
-
             final int maxColumns = PlatformUtils.isDesktop ? 4 : 2;
-
             const double spacing = 10.0;
-
             final double buttonWidth = (maxWidth - spacing * (maxColumns - 1)) / maxColumns;
 
             return Wrap(
@@ -239,7 +222,11 @@ class VersionPage extends GetView<VersionController> {
                           downloadAndInstallApk(mirrorUrls[i]);
                         },
                         icon: const Icon(Icons.download_rounded, size: 18),
-                        label: Text('下载源 ${i + 1}', maxLines: 1, overflow: TextOverflow.ellipsis),
+                        label: Text(
+                          i18n("download_source", args: {"num": "${i + 1}"}),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ),
                   ),

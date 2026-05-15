@@ -139,12 +139,12 @@ class ErrorWidget extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Text(S.of(context).play_video_failed, style: const TextStyle(color: Colors.white, fontSize: 16)),
+            child: Text(i18n("play_video_failed"), style: const TextStyle(color: Colors.white, fontSize: 16)),
           ),
           ElevatedButton(
             onPressed: () => controller.refresh(),
             style: ElevatedButton.styleFrom(elevation: 0, backgroundColor: Colors.white.withValues(alpha: 0.2)),
-            child: Text(S.of(context).retry, style: const TextStyle(color: Colors.white)),
+            child: Text(i18n("retry"), style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -582,7 +582,7 @@ class LineSelectorButton extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('选择线路', style: Theme.of(context).textTheme.titleMedium),
+                    Text(i18n("select_line"), style: Theme.of(context).textTheme.titleMedium),
                     IconButton(icon: const Icon(Icons.close, size: 18), onPressed: () => Navigator.of(context).pop()),
                   ],
                 ),
@@ -621,7 +621,7 @@ class LineSelectorButton extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
-                                  '线路 ${index + 1}',
+                                  i18n("toolbox_line", args: {"index": (index + 1).toString()}),
                                   style: TextStyle(fontSize: 15, color: isSelected ? Colors.white : null),
                                 ),
                               ),
@@ -637,7 +637,7 @@ class LineSelectorButton extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
-                  children: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('取消'))],
+                  children: [TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n('cancel')))],
                 ),
               ),
             ],
@@ -697,7 +697,7 @@ class LineSelectorButton extends StatelessWidget {
             height: itemHeight,
             child: Center(
               child: Text(
-                '线路 ${index + 1}',
+                i18n("toolbox_line", args: {"index": (index + 1).toString()}),
                 style: TextStyle(fontSize: 13, color: isSelected ? Get.theme.colorScheme.primary : Colors.white),
               ),
             ),
@@ -714,7 +714,7 @@ class LineSelectorButton extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
       child: Text(
-        '线路${controller.livePlayController.currentLineIndex.value + 1}',
+        i18n("toolbox_line", args: {"index": (controller.livePlayController.currentLineIndex.value + 1).toString()}),
         style: const TextStyle(color: Colors.white, fontSize: 13),
       ),
     );
@@ -746,7 +746,7 @@ class ResolutionSelectorButton extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('选择清晰度', style: Theme.of(context).textTheme.titleMedium),
+                    Text(i18n("select_quality"), style: Theme.of(context).textTheme.titleMedium),
                     IconButton(icon: const Icon(Icons.close, size: 18), onPressed: () => Navigator.of(context).pop()),
                   ],
                 ),
@@ -802,7 +802,7 @@ class ResolutionSelectorButton extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
-                  children: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('取消'))],
+                  children: [TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n('cancel')))],
                 ),
               ),
             ],
@@ -1184,7 +1184,7 @@ class _FavoriteButtonState extends State<FavoriteButton> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Icon(isFavorite ? Icons.check_rounded : Icons.close, color: Colors.white, size: 15),
-            Text(isFavorite ? '已关注' : '关注', style: TextStyle(color: Colors.white, fontSize: 15)),
+            Text(isFavorite ? i18n('followed') : i18n('follow'), style: TextStyle(color: Colors.white, fontSize: 15)),
           ],
         ),
       ),
@@ -1235,7 +1235,7 @@ class _VideoFitSettingState extends State<VideoFitSetting> {
   VideoController get controller => widget.controller;
   @override
   Widget build(BuildContext context) {
-    List<String> descs = AppConsts().videoFitType.map((e) => e['desc'] as String).toList();
+    List<String> descs = AppConsts().videoFitType.map((e) => i18n(e['desc'])).toList();
     List<BoxFit> attrs = AppConsts().videoFitList;
     return GestureDetector(
       onTap: () {
@@ -1280,7 +1280,7 @@ class DanmakuSetting extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 0),
             child: Text(
-              S.of(context).settings_danmaku_title,
+              i18n("settings_danmaku_title"),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white),
             ),
           ),
@@ -1290,7 +1290,7 @@ class DanmakuSetting extends StatelessWidget {
               dense: true,
               contentPadding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
-              leading: Text('显示区域', style: label),
+              leading: Text(i18n('display_area'), style: label),
               title: Slider(
                 divisions: 10,
                 min: 0.0,
@@ -1307,7 +1307,7 @@ class DanmakuSetting extends StatelessWidget {
               dense: true,
               contentPadding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
-              leading: Text('距离顶部', style: label),
+              leading: Text(i18n('margin_top'), style: label),
               title: Obx(
                 () => CountButton(
                   maxValue: 300,
@@ -1324,7 +1324,7 @@ class DanmakuSetting extends StatelessWidget {
               dense: true,
               contentPadding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
-              leading: Text('距离底部', style: label),
+              leading: Text(i18n('margin_bottom'), style: label),
               title: Obx(
                 () => CountButton(
                   maxValue: 300,
@@ -1341,7 +1341,7 @@ class DanmakuSetting extends StatelessWidget {
               dense: true,
               contentPadding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
-              leading: Text(S.of(context).settings_danmaku_opacity, style: label),
+              leading: Text(i18n("settings_danmaku_opacity"), style: label),
               title: Slider(
                 divisions: 10,
                 min: 0.0,
@@ -1358,7 +1358,7 @@ class DanmakuSetting extends StatelessWidget {
               dense: true,
               contentPadding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
-              leading: Text(S.of(context).settings_danmaku_speed, style: label),
+              leading: Text(i18n("settings_danmaku_speed"), style: label),
               title: Slider(
                 divisions: 15,
                 min: 5.0,
@@ -1375,7 +1375,7 @@ class DanmakuSetting extends StatelessWidget {
               dense: true,
               contentPadding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
-              leading: Text(S.of(context).settings_danmaku_fontsize, style: label),
+              leading: Text(i18n("settings_danmaku_fontsize"), style: label),
               title: Slider(
                 divisions: 20,
                 min: 10.0,
@@ -1392,7 +1392,7 @@ class DanmakuSetting extends StatelessWidget {
               dense: true,
               contentPadding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
-              leading: Text(S.of(context).settings_danmaku_fontBorder, style: label),
+              leading: Text(i18n("settings_danmaku_fontBorder"), style: label),
               title: Slider(
                 divisions: 8,
                 min: 0.0,

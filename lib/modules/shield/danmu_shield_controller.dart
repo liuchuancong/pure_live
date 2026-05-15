@@ -7,7 +7,7 @@ class DanmuShieldController extends BaseController {
   final SettingsService settingsController = Get.find<SettingsService>();
   void add() {
     if (textEditingController.text.isEmpty) {
-      ToastUtil.show("请输入关键词");
+      ToastUtil.show(i18n('please_input_keyword'));
       return;
     }
 

@@ -209,7 +209,7 @@ class DanmakuListViewState extends State<DanmakuListView> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   icon: const Icon(Icons.arrow_downward_rounded, size: 18),
-                  label: const Text('回到底部', style: TextStyle(fontWeight: FontWeight.w600)),
+                  label: Text(i18n("scroll_to_bottom"), style: const TextStyle(fontWeight: FontWeight.w600)),
                   onPressed: () async {
                     setState(() {
                       userScrolling = false;

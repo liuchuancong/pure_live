@@ -90,4 +90,6 @@ class RoutePath {
   static const kRecordSettings = "/record_settings";
 
   static const kRecordHistory = "/record_history";
+
+  static const kWebSearch = "/web_search";
 }
