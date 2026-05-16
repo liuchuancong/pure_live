@@ -561,5 +561,6 @@
     "cancel_mute": "Unmute",
     "mute": "Mute",
     "copy_danmaku": "Copy Danmaku",
-    "no_storage": "No storage permission, unable to save recorded file"
+    "no_storage": "No storage permission, unable to save recorded file",
+    "system_message": "System Message"
 }
