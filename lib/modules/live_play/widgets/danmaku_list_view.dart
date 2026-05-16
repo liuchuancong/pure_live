@@ -276,61 +276,52 @@ class DanmakuItem extends StatelessWidget {
                 ),
 
                 Expanded(
-                  child: SelectableText.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: "${danmaku.userName}: ",
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black87),
-                        ),
-                        TextSpan(
-                          children: parseEmojis(danmaku.message, 14, vibrantColor),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            height: 1.45,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black87,
+                  child: GestureDetector(
+                    onDoubleTap: () async {
+                      final String textToCopy = "${danmaku.userName}: ${danmaku.message}";
+                      await Clipboard.setData(ClipboardData(text: textToCopy));
+                      if (!context.mounted) return;
+                      bool shouldShowToast = kIsWeb || (!kIsWeb && Platform.isWindows);
+
+                      if (!shouldShowToast && !kIsWeb && Platform.isAndroid) {
+                        try {
+                          final androidInfo = await DeviceInfoPlugin().androidInfo;
+                          shouldShowToast = androidInfo.version.sdkInt < 33;
+                        } catch (_) {
+                          shouldShowToast = true;
+                        }
+                      }
+
+                      if (shouldShowToast && context.mounted) {
+                        ScaffoldMessenger.of(context).clearSnackBars();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(i18n('copied_to_clipboard')),
+                            duration: const Duration(seconds: 1),
+                            behavior: SnackBarBehavior.floating,
                           ),
-                        ),
-                      ],
-                    ),
-                    contextMenuBuilder: (BuildContext context, EditableTextState editableTextState) {
-                      return AdaptiveTextSelectionToolbar.buttonItems(
-                        anchors: editableTextState.contextMenuAnchors,
-                        buttonItems: [
-                          ContextMenuButtonItem(
-                            label: i18n('copy_danmaku'),
-                            type: ContextMenuButtonType.copy,
-                            onPressed: () async {
-                              final String textToCopy = "${danmaku.userName}: ${danmaku.message}";
-                              await Clipboard.setData(ClipboardData(text: textToCopy));
-                              ContextMenuController.removeAny();
-                              bool shouldShowToast = false;
-                              if (kIsWeb) {
-                                shouldShowToast = true;
-                              } else if (Platform.isWindows) {
-                                shouldShowToast = true;
-                              } else if (Platform.isAndroid) {
-                                final androidInfo = await DeviceInfoPlugin().androidInfo;
-                                if (androidInfo.version.sdkInt < 33) {
-                                  shouldShowToast = true;
-                                }
-                              }
-                              if (shouldShowToast && context.mounted) {
-                                ScaffoldMessenger.of(context).clearSnackBars(); // 清除之前的气泡
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(i18n('copied_to_clipboard')),
-                                    duration: const Duration(seconds: 2),
-                                    behavior: SnackBarBehavior.floating, // 让气泡悬浮，更好看
-                                  ),
-                                );
-                              }
-                            },
+                        );
+                      }
+                    },
+                    child: Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: "${danmaku.userName}: ",
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black87),
+                          ),
+                          TextSpan(
+                            children: parseEmojis(danmaku.message, 14, vibrantColor),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              height: 1.45,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black87,
+                            ),
                           ),
                         ],
-                      );
-                    },
+                      ),
+                    ),
                   ),
                 ),
               ],

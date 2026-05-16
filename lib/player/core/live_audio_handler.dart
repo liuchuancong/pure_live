@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:developer' as developer;
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:pure_live/player/interface/unified_player_interface.dart';
@@ -5,7 +7,7 @@ import 'package:pure_live/player/interface/unified_player_interface.dart';
 class LiveAudioHandler extends BaseAudioHandler {
   UnifiedPlayer? _currentPlayer; // 动态绑定
   late AudioSession _session;
-
+  StreamSubscription? _playStateSubscription;
   LiveAudioHandler() {
     _initSession();
   }
@@ -53,8 +55,8 @@ class LiveAudioHandler extends BaseAudioHandler {
   /// 监听播放状态同步到通知栏
   void _listenPlayState() {
     if (_currentPlayer == null) return;
-
-    _currentPlayer!.onPlaying.listen((playing) {
+    _playStateSubscription?.cancel();
+    _playStateSubscription = _currentPlayer!.onPlaying.listen((playing) {
       playbackState.add(
         playbackState.value.copyWith(
           controls: [playing ? MediaControl.pause : MediaControl.play, MediaControl.stop],
@@ -87,8 +89,14 @@ class LiveAudioHandler extends BaseAudioHandler {
   @override
   Future<void> stop() async {
     if (_currentPlayer == null) return;
-    await _currentPlayer!.stop();
-    await _session.setActive(false);
-    playbackState.add(playbackState.value.copyWith(playing: false, processingState: AudioProcessingState.idle));
+
+    try {
+      await _currentPlayer!.stop();
+    } catch (e) {
+      developer.log("Player already disposed or failed to stop: $e");
+    } finally {
+      await _session.setActive(false);
+      playbackState.add(playbackState.value.copyWith(playing: false, processingState: AudioProcessingState.idle));
+    }
   }
 }

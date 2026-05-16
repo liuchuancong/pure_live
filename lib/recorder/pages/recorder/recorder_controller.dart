@@ -5,7 +5,7 @@ import 'dart:developer';
 import 'package:get/get.dart';
 import 'dart:developer' as developer;
 import 'package:pure_live/core/sites.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/common/utils/toast_util.dart';
 import 'package:pure_live/common/models/live_room.dart';
@@ -511,9 +511,7 @@ class RecorderController extends GetxService {
     } else if (Platform.isLinux) {
       await Process.run('xdg-open', [path]);
     } else if (Platform.isAndroid) {
-      final uri = Uri.parse('file://$path');
-
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      await OpenFilex.open(path);
     }
   }
 

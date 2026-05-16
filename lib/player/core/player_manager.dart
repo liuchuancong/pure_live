@@ -736,8 +736,8 @@ class PlayerManager {
 
   Future<void> close() async {
     final settings = Get.find<SettingsService>();
+    await LiveAudioService.stop();
     settings.useHardStopOnExit.value ? await hardDispose() : await softStop();
-    LiveAudioService.stop();
   }
 
   Future<void> softStop() async {
