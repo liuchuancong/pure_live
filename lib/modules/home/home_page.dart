@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:async';
 import 'package:get/get.dart';
-import '../search/search_page.dart';
 import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:move_to_desktop/move_to_desktop.dart';
