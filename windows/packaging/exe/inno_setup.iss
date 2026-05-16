@@ -6,7 +6,7 @@ AppPublisher={{PUBLISHER_NAME}}
 AppPublisherURL={{PUBLISHER_URL}}
 AppSupportURL={{PUBLISHER_URL}}
 AppUpdatesURL={{PUBLISHER_URL}}
-DefaultDirName={{INSTALL_DIR_NAME}}
+DefaultDirName={code:GetDefaultDir}
 DisableProgramGroupPage=yes
 OutputDir=.
 OutputBaseFilename={{OUTPUT_BASE_FILENAME}}
@@ -14,7 +14,7 @@ Compression=lzma
 SolidCompression=yes
 SetupIconFile={{SETUP_ICON_FILE}}
 WizardStyle=modern
-PrivilegesRequired={{PRIVILEGES_REQUIRED}}
+PrivilegesRequired=lowest
 CloseApplications=yes
 CloseApplicationsFilter=*.exe
 [Languages]
@@ -59,3 +59,28 @@ Name: "{autodesktop}\\{{DISPLAY_NAME}}"; Filename: "{app}\\{{EXECUTABLE_NAME}}";
 Name: "{userstartup}\\{{DISPLAY_NAME}}"; Filename: "{app}\\{{EXECUTABLE_NAME}}"; WorkingDir: "{app}"; Tasks: launchAtStartup
 [Run]
 Filename: "{app}\\{{EXECUTABLE_NAME}}"; Description: "{cm:LaunchProgram,{{DISPLAY_NAME}}}"; Flags: {% if PRIVILEGES_REQUIRED == 'admin' %}runascurrentuser{% endif %} nowait postinstall skipifsilent
+
+[Code]
+function GetDefaultDir(Param: String): String;
+var
+  DriveLetter: Char;
+  DrivePath: String;
+  FoundDrive: Boolean;
+begin
+  FoundDrive := False;
+  Result := '';
+  for DriveLetter := 'D' to 'Z' do
+  begin
+    DrivePath := DriveLetter + ':\';
+    if DirExists(DrivePath) then
+    begin
+      Result := DrivePath + '{{INSTALL_DIR_NAME}}';
+      FoundDrive := True;
+      Break; 
+    end;
+  end;
+  if not FoundDrive then
+  begin
+    Result := ExpandConstant('{localappdata}\') + '{{INSTALL_DIR_NAME}}';
+  end;
+end;
