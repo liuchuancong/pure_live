@@ -248,22 +248,34 @@ class DanmakuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     final baseColor = Color.fromARGB(255, danmaku.color.r, danmaku.color.g, danmaku.color.b);
 
-    final vibrantColor = baseColor.toARGB32() == Colors.white.toARGB32()
-        ? Colors.black
-        : HSLColor.fromColor(baseColor).withLightness(0.52).withSaturation(1).toColor();
+    final vibrantColor =
+        baseColor.toARGB32() == Colors.white.toARGB32() || baseColor.toARGB32() == Colors.black.toARGB32()
+        ? (isDark ? Colors.white : Colors.black)
+        : HSLColor.fromColor(baseColor).withLightness(isDark ? 0.75 : 0.52).withSaturation(1).toColor();
+
+    final cardBgColor = isDark ? theme.cardColor.withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.72);
+
+    final textColor = isDark ? Colors.white70 : Colors.black87;
 
     return RepaintBoundary(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.72),
+            color: cardBgColor, // 动态背景色
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: vibrantColor.withValues(alpha: 0.01), width: 0.5),
+            border: Border.all(color: vibrantColor.withValues(alpha: 0.08), width: 0.5),
             boxShadow: [
-              BoxShadow(color: vibrantColor.withValues(alpha: 0.02), blurRadius: 6, offset: const Offset(0, 2)),
+              BoxShadow(
+                color: vibrantColor.withValues(alpha: isDark ? 0.05 : 0.02),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
             ],
           ),
           child: Padding(
@@ -279,16 +291,15 @@ class DanmakuItem extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: vibrantColor,
                     shape: BoxShape.circle,
-                    boxShadow: [BoxShadow(color: vibrantColor.withValues(alpha: 0.1), blurRadius: 6)],
+                    boxShadow: [BoxShadow(color: vibrantColor.withValues(alpha: 0.2), blurRadius: 6)],
                   ),
                 ),
 
                 Expanded(
                   child: GestureDetector(
-                    behavior: HitTestBehavior.translucent, // Ensure double-tap is detected anywhere
+                    behavior: HitTestBehavior.translucent,
                     onDoubleTap: () async {
                       final String textToCopy = "${danmaku.userName}: ${danmaku.message}";
-
                       try {
                         await Clipboard.setData(ClipboardData(text: textToCopy));
                         ToastUtil.show(i18n('copied_to_clipboard'));
@@ -301,16 +312,11 @@ class DanmakuItem extends StatelessWidget {
                         children: [
                           TextSpan(
                             text: "${danmaku.userName}: ",
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black87),
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: textColor),
                           ),
                           TextSpan(
                             children: parseEmojis(danmaku.message, 14, vibrantColor),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              height: 1.45,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black87,
-                            ),
+                            style: TextStyle(fontSize: 14, height: 1.45, fontWeight: FontWeight.w500, color: textColor),
                           ),
                         ],
                       ),

@@ -248,36 +248,22 @@ class SettingsPage extends GetView<SettingsService> {
         return SimpleDialog(
           title: Text(i18n('change_theme_mode')),
           children: [
-            RadioGroup<String>(
-              groupValue: controller.themeModeName.value,
-              onChanged: (String? value) {
-                controller.changeThemeMode(value!);
-                Navigator.of(context).pop();
-              },
-              child: Padding(
-                padding: const EdgeInsets.only(top: 0, bottom: 10, left: 16, right: 16),
+            Obx(
+              () => RadioGroup<String>(
+                groupValue: controller.themeModeName.value,
+                onChanged: (String? value) {
+                  if (value != null) {
+                    controller.changeThemeMode(value);
+                    Navigator.of(context).pop();
+                  }
+                },
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: AppConsts.themeModes.keys.map<Widget>((name) {
-                    return Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Radio(
-                          value: i18n(AppConsts.themeModeI18n[name]!),
-                          activeColor: Theme.of(Get.context!).colorScheme.primary,
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            controller.changeThemeMode(name);
-                            Navigator.of(context).pop();
-                          },
-                          child: Text(
-                            i18n(AppConsts.themeModeI18n[name]!),
-                            style: Theme.of(context).textTheme.bodyLarge,
-                          ),
-                        ),
-                      ],
+                    return RadioListTile<String>(
+                      title: Text(i18n(AppConsts.themeModeI18n[name]!)),
+                      value: name,
+                      activeColor: Theme.of(context).colorScheme.primary,
                     );
                   }).toList(),
                 ),
