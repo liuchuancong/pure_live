@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:async';
 import 'package:get/get.dart';
-import '../search/search_page.dart';
 import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:move_to_desktop/move_to_desktop.dart';
@@ -11,6 +10,7 @@ import 'package:pure_live/modules/home/tablet_view.dart';
 import 'package:pure_live/modules/popular/popular_page.dart';
 import 'package:pure_live/modules/favorite/favorite_page.dart';
 import 'package:pure_live/modules/about/widgets/version_dialog.dart';
+import 'package:pure_live/recorder/pages/recorder/recorder_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -44,7 +44,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
   }
 
   int _selectedIndex = 0;
-  final List<Widget> bodys = const [FavoritePage(), PopularPage(), AreasPage(), SearchPage()];
+  final List<Widget> bodys = const [FavoritePage(), PopularPage(), AreasPage(), RecorderPage()];
   void debounceListen(Function? func, [int delay = 1000]) {
     if (_debounceTimer != null) {
       _debounceTimer?.cancel();

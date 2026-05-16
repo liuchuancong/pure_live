@@ -33,6 +33,7 @@ class MenuButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: MenuListTile(leading: const Icon(Icons.info_rounded), text: i18n("about")),
         ),
+
         PopupMenuItem(
           value: 3,
           padding: const EdgeInsets.symmetric(horizontal: 12),

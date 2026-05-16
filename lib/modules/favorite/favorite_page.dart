@@ -17,26 +17,17 @@ class FavoritePage extends GetView<FavoriteController> {
             scrolledUnderElevation: 0,
             leading: showAction ? const MenuButton() : null,
             actions: showAction ? [CommonAppBarActions()] : null,
-            flexibleSpace: SafeArea(
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: Container(
-                  height: kToolbarHeight,
-                  alignment: Alignment.center,
-                  child: TabBar(
-                    controller: controller.tabController,
-                    isScrollable: true,
-                    tabAlignment: TabAlignment.center,
-                    labelStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                    labelPadding: const EdgeInsets.symmetric(horizontal: 12),
-                    indicatorSize: TabBarIndicatorSize.label,
-                    tabs: [
-                      Tab(text: i18n("online_room_title")),
-                      Tab(text: i18n("offline_room_title")),
-                    ],
-                  ),
-                ),
-              ),
+            title: TabBar(
+              controller: controller.tabController,
+              isScrollable: true,
+              tabAlignment: TabAlignment.center,
+              labelStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              labelPadding: const EdgeInsets.symmetric(horizontal: 12),
+              indicatorSize: TabBarIndicatorSize.label,
+              tabs: [
+                Tab(text: i18n("online_room_title")),
+                Tab(text: i18n("offline_room_title")),
+              ],
             ),
           ),
           body: Column(

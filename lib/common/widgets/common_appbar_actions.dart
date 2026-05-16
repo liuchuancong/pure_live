@@ -11,28 +11,18 @@ class CommonAppBarActions extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        IconButton(
-          tooltip: i18n("record_center"),
-          onPressed: () {
-            Get.toNamed(RoutePath.kRecordPage);
-          },
-          icon: const Icon(Remix.download_2_fill, size: 22),
-        ),
-
         PopupMenuButton<int>(
           tooltip: i18n("more"),
           icon: const Icon(Remix.more_2_fill, size: 24),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           offset: const Offset(0, 10),
           position: PopupMenuPosition.under,
-
           onSelected: (index) {
             switch (index) {
               case 0:
                 Get.put(pure_live.SearchController());
                 Get.toNamed(RoutePath.kSearch);
                 break;
-
               case 1:
                 Get.toNamed(RoutePath.kToolbox);
                 break;
