@@ -62,12 +62,18 @@ class FFmpegService {
     });
     ffempgSession.setCompleteCallback((completedSession) {
       final code = completedSession.getReturnCode();
-      final success = ReturnCode.isSuccess(code);
-      log('FFmpeg complete => taskId: $taskId;successCode: $code ');
+      bool isNormalExit = [
+        0, // 正常完成
+        255, // 手动停止
+        -1094995529, // 断流/无数据
+        -1077350400, // 超时/网络断开
+        -1005272104, // 读取中断
+      ].contains(code);
+      log('FFmpeg complete => taskId: $taskId; code: $code ');
       onEvent(
         FFmpegEvent(
           taskId: taskId,
-          type: success ? FFmpegEventType.complete : FFmpegEventType.error,
+          type: isNormalExit ? FFmpegEventType.complete : FFmpegEventType.error,
           data: {"code": code},
         ),
       );
