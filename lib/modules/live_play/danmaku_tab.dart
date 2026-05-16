@@ -21,6 +21,7 @@ class DanmakuTabView extends GetView<LivePlayController> {
             color: Get.theme.colorScheme.surface,
             child: TabBar(
               isScrollable: true,
+              tabAlignment: TabAlignment.center,
               controller: controller.tabController,
               tabs: controller.tabs.map((name) => Tab(text: name)).toList(),
               labelColor: Get.theme.colorScheme.primary,
