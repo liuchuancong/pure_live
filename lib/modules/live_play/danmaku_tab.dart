@@ -21,15 +21,13 @@ class DanmakuTabView extends GetView<LivePlayController> {
             color: Get.theme.colorScheme.surface,
             child: TabBar(
               isScrollable: true,
+              tabAlignment: TabAlignment.center,
               controller: controller.tabController,
               tabs: controller.tabs.map((name) => Tab(text: name)).toList(),
               labelColor: Get.theme.colorScheme.primary,
               unselectedLabelColor: Get.theme.colorScheme.onSurfaceVariant,
               indicatorColor: Get.theme.colorScheme.primary,
               indicatorSize: TabBarIndicatorSize.label,
-              labelStyle: const TextStyle(fontSize: 12),
-              unselectedLabelStyle: const TextStyle(fontSize: 12),
-              labelPadding: const EdgeInsets.symmetric(horizontal: 16),
             ),
           ),
           Expanded(

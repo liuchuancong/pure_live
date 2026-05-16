@@ -334,8 +334,12 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     };
   }
 
-  LiveMessage _systemMsg(String text) =>
-      LiveMessage(type: LiveMessageType.chat, userName: "系统消息", message: text, color: LiveMessageColor.white);
+  LiveMessage _systemMsg(String text) => LiveMessage(
+    type: LiveMessageType.chat,
+    userName: i18n('system_message'),
+    message: text,
+    color: LiveMessageColor.white,
+  );
 
   void _addMessage(LiveMessage msg) {
     if (messages.length > 100) messages.removeAt(0);

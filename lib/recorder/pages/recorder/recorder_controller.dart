@@ -4,11 +4,8 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:get/get.dart';
 import 'dart:developer' as developer;
-import 'package:pure_live/core/sites.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:pure_live/plugins/locale_helper.dart';
-import 'package:pure_live/common/utils/toast_util.dart';
-import 'package:pure_live/common/models/live_room.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
@@ -149,7 +146,29 @@ class RecorderController extends GetxService {
     _persist();
   }
 
+  Future<bool> requestStoragePermission() async {
+    if (!Platform.isAndroid) return true;
+    if (Platform.version.compareTo('11') >= 0) {
+      if (await Permission.manageExternalStorage.isGranted) return true;
+      final status = await Permission.manageExternalStorage.request();
+      if (status.isGranted) return true;
+    } else {
+      final statuses = await [Permission.storage, Permission.manageExternalStorage].request();
+
+      if (statuses[Permission.storage]?.isGranted ?? false) return true;
+    }
+
+    ToastUtil.show(i18n('no_storage'));
+    return false;
+  }
+
   Future<void> addTask({required LiveRoom room}) async {
+    final granted = await requestStoragePermission();
+    if (!granted) {
+      ToastUtil.show(i18n('no_storage'));
+      return;
+    }
+
     if (tasks.any((e) => e.roomId == room.roomId && e.platform == room.platform)) {
       return;
     }
@@ -286,6 +305,10 @@ class RecorderController extends GetxService {
     await scheduler.cancel(task.taskId);
     if (task.status == RecordStatus.running || task.status == RecordStatus.preparing) {
       log('Stopping task: ${task.taskId}');
+    }
+    if (task.status == RecordStatus.reconnecting) {
+      task.status = RecordStatus.stopped;
+      updateTask(task);
     }
   }
 
@@ -511,9 +534,7 @@ class RecorderController extends GetxService {
     } else if (Platform.isLinux) {
       await Process.run('xdg-open', [path]);
     } else if (Platform.isAndroid) {
-      final uri = Uri.parse('file://$path');
-
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      await OpenFilex.open(path);
     }
   }
 

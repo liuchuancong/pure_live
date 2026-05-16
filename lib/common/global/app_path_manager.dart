@@ -8,6 +8,7 @@ class AppPathManager {
   static final AppPathManager _instance = AppPathManager._internal();
   factory AppPathManager() => _instance;
   AppPathManager._internal();
+
   static const String dirAppData = 'AppData';
   static const String softNameDir = 'PURE_LIVE';
   static const String dirIptvCache = 'IPTV_CACHE';
@@ -19,6 +20,7 @@ class AppPathManager {
 
   static const String iptvCategoryFile = 'categories.json';
   static const String iptvHotFile = 'hot.m3u';
+
   static const String iptvHotRemoteFile = 'https://raw.githubusercontent.com/YueChan/Live/main/GNTV.m3u';
 
   String? _basePath;
@@ -27,14 +29,16 @@ class AppPathManager {
     final sanitizedInstanceId = instanceId.replaceAll(RegExp(r'[\\/]'), '');
 
     final Directory appDir = await getApplicationDocumentsDirectory();
-    final supportDir = await getApplicationSupportDirectory();
+    final Directory supportDir = await getApplicationSupportDirectory();
+
     final List<String> extraOldBasePaths = [
       p.join(appDir.path, softNameDir),
       p.join(supportDir.path, softNameDir),
       p.join(appDir.path, softNameDir.toLowerCase()),
       p.join(supportDir.path, softNameDir.toLowerCase()),
     ];
-    String oldBaseRoot = p.join(appDir.path, softNameDir);
+
+    String oldBaseRoot = p.join(appDir.path, softNameDir.toLowerCase());
     for (final path in extraOldBasePaths) {
       final dir = Directory(path);
       if (await dir.exists()) {
@@ -42,36 +46,55 @@ class AppPathManager {
         break;
       }
     }
+
     String oldRootPath = oldBaseRoot;
     if (sanitizedInstanceId.isNotEmpty) {
       oldRootPath = p.join(oldBaseRoot, sanitizedInstanceId);
     }
+
     String rootPath = '';
     if (kIsWeb) {
       rootPath = softNameDir;
     } else if (Platform.isWindows) {
       final String exeDir = p.dirname(Platform.resolvedExecutable);
-      if (exeDir.toLowerCase().contains('windowsapps')) {
-        rootPath = p.join(appDir.path, softNameDir);
+      final String exeDirLower = exeDir.toLowerCase();
+      if (exeDirLower.contains('windowsapps') || exeDirLower.contains('program files')) {
+        rootPath = p.join(supportDir.path, softNameDir);
       } else {
-        rootPath = p.join(exeDir, dirAppData);
+        final testDir = Directory(p.join(exeDir, dirAppData));
+        try {
+          await testDir.create(recursive: true);
+          rootPath = testDir.path;
+        } catch (e) {
+          log('Windows 运行目录无写入权限，安全切换至应用支持目录: $e');
+          rootPath = p.join(supportDir.path, softNameDir);
+        }
       }
     } else {
       rootPath = p.join(appDir.path, softNameDir);
     }
+
     if (sanitizedInstanceId.isNotEmpty) {
       rootPath = p.join(rootPath, sanitizedInstanceId);
     }
-    final dir = Directory(rootPath);
-    final bool isAlreadyMigrated = !kIsWeb && await dir.exists() && await dir.list().isEmpty == false;
 
-    if (!kIsWeb && oldRootPath != rootPath && !isAlreadyMigrated) {
-      await _migrateHiveFiles(oldRootPath, rootPath);
+    // 3. 规范化 Windows 的物理路径字符串（消除 pure_live 和 PURE_LIVE 的大小写异同带来的冲突）
+    final String canonicalOldRoot = p.canonicalize(oldRootPath);
+    final String canonicalNewRoot = p.canonicalize(rootPath);
+
+    // 4. 迁移保险锁文件
+    final lockFile = File(p.join(rootPath, 'migrated.lock'));
+    final bool isAlreadyMigrated = !kIsWeb && await lockFile.exists();
+
+    // 只有在“新旧物理路径不同”且“历史上从未成功迁移过”时才复制文件
+    if (!kIsWeb && canonicalOldRoot != canonicalNewRoot && !isAlreadyMigrated) {
+      await _migrateHiveFiles(oldRootPath, rootPath, lockFile);
     }
+
     _basePath = rootPath;
   }
 
-  Future<void> _migrateHiveFiles(String oldRoot, String rootPath) async {
+  Future<void> _migrateHiveFiles(String oldRoot, String rootPath, File lockFile) async {
     final oldDir = Directory(oldRoot);
     if (!await oldDir.exists()) return;
 
@@ -86,12 +109,21 @@ class AppPathManager {
 
       if (await oldFile.exists()) {
         try {
+          // 只复制，不执行旧文件的 delete 操作，确保原始数据 100% 完好留存
           await oldFile.copy(newFile.path);
-          await oldFile.delete();
+          log('数据迁移成功 (原文件已保留): $name');
         } catch (e) {
-          log('迁移失败: $name -> $e');
+          log('数据迁移失败: $name -> $e');
         }
       }
+    }
+
+    // 迁移成功后生成锁文件，下次打开应用直接跳过此段逻辑
+    try {
+      await lockFile.create(recursive: true);
+      await lockFile.writeAsString('Migrated on ${DateTime.now()}');
+    } catch (e) {
+      log('创建迁移锁文件失败: $e');
     }
   }
 

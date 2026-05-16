@@ -61,9 +61,9 @@ class FFmpegService {
       );
     });
     ffempgSession.setCompleteCallback((completedSession) {
-      log('FFmpeg complete => $taskId');
       final code = completedSession.getReturnCode();
       final success = ReturnCode.isSuccess(code);
+      log('FFmpeg complete => taskId: $taskId;successCode: $code ');
       onEvent(
         FFmpegEvent(
           taskId: taskId,

@@ -560,5 +560,7 @@
     "no_room_id_open_url": "未检测到房间号，是否使用网页打开直播间？",
     "cancel_mute": "取消静音",
     "mute": "静音",
-    "copy_danmaku": "复制弹幕"
+    "copy_danmaku": "复制弹幕",
+    "no_storage": "没有获得存储权限，无法保存录制文件",
+    "system_message": "系统消息"
 }
