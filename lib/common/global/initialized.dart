@@ -101,9 +101,10 @@ class AppInitializer {
     Get.put(CacheService());
     Get.put(RecordSettingsController());
     Get.put(RecorderController());
+    Get.put(BiliBiliAccountService());
     Get.put(RouteObserverController(), permanent: true);
     Get.lazyPut(() => FavoriteController(), fenix: true);
-    Get.lazyPut(() => BiliBiliAccountService(), fenix: true);
+
     Get.lazyPut(() => PopularController(), fenix: true);
     Get.lazyPut(() => AreasController(), fenix: true);
 
