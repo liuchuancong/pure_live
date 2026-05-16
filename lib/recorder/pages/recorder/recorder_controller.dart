@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'dart:developer' as developer;
 import 'package:open_filex/open_filex.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
@@ -149,20 +150,30 @@ class RecorderController extends GetxService {
   Future<bool> requestStoragePermission() async {
     if (!Platform.isAndroid) return true;
 
-    if (Platform.isAndroid && int.parse(Platform.operatingSystemVersion.split('.')[0]) >= 11) {
-      // 先检查是否已经授权
-      if (await Permission.manageExternalStorage.isGranted) {
-        return true;
+    try {
+      final deviceInfo = DeviceInfoPlugin();
+      final androidInfo = await deviceInfo.androidInfo;
+      final sdkInt = androidInfo.version.sdkInt;
+      if (sdkInt >= 30) {
+        if (await Permission.manageExternalStorage.isGranted) {
+          return true;
+        }
+        final status = await Permission.manageExternalStorage.request();
+        if (status.isGranted) {
+          return true;
+        }
+      } else {
+        if (await Permission.storage.isGranted) {
+          return true;
+        }
+        final status = await Permission.storage.request();
+        if (status.isGranted) {
+          return true;
+        }
       }
-      final status = await Permission.manageExternalStorage.request();
-      if (status.isGranted) {
-        return true;
-      }
-    } else {
+    } catch (e) {
       final status = await Permission.storage.request();
-      if (status.isGranted) {
-        return true;
-      }
+      if (status.isGranted) return true;
     }
 
     ToastUtil.show(i18n('no_storage'));
