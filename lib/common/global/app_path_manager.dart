@@ -58,12 +58,9 @@ class AppPathManager {
     } else if (Platform.isWindows) {
       final String exeDir = p.dirname(Platform.resolvedExecutable);
       final String exeDirLower = exeDir.toLowerCase();
-
-      // 1. 如果安装在受保护的系统目录，直接回退到用户 AppData 目录
       if (exeDirLower.contains('windowsapps') || exeDirLower.contains('program files')) {
         rootPath = p.join(supportDir.path, softNameDir);
       } else {
-        // 2. 如果是绿色版/解压版，动态测试 C 盘当前目录是否有写入权限
         final testDir = Directory(p.join(exeDir, dirAppData));
         try {
           await testDir.create(recursive: true);

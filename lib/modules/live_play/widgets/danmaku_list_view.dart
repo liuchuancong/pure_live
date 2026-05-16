@@ -1,14 +1,11 @@
-import 'dart:io';
 import 'dart:async';
 import 'dart:ui' as ui;
 import 'package:get/get.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter/foundation.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/emoji_manager.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
 
@@ -277,30 +274,15 @@ class DanmakuItem extends StatelessWidget {
 
                 Expanded(
                   child: GestureDetector(
+                    behavior: HitTestBehavior.translucent, // Ensure double-tap is detected anywhere
                     onDoubleTap: () async {
                       final String textToCopy = "${danmaku.userName}: ${danmaku.message}";
-                      await Clipboard.setData(ClipboardData(text: textToCopy));
-                      if (!context.mounted) return;
-                      bool shouldShowToast = kIsWeb || (!kIsWeb && Platform.isWindows);
 
-                      if (!shouldShowToast && !kIsWeb && Platform.isAndroid) {
-                        try {
-                          final androidInfo = await DeviceInfoPlugin().androidInfo;
-                          shouldShowToast = androidInfo.version.sdkInt < 33;
-                        } catch (_) {
-                          shouldShowToast = true;
-                        }
-                      }
-
-                      if (shouldShowToast && context.mounted) {
-                        ScaffoldMessenger.of(context).clearSnackBars();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(i18n('copied_to_clipboard')),
-                            duration: const Duration(seconds: 1),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
+                      try {
+                        await Clipboard.setData(ClipboardData(text: textToCopy));
+                        ToastUtil.show(i18n('copied_to_clipboard'));
+                      } catch (e) {
+                        debugPrint('Failed to copy to clipboard: $e');
                       }
                     },
                     child: Text.rich(
