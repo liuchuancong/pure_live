@@ -31,6 +31,15 @@ class AppPathManager {
     final Directory appDir = await getApplicationDocumentsDirectory();
     final Directory supportDir = await getApplicationSupportDirectory();
 
+    bool isRunningOnCDrive = false;
+    if (!kIsWeb && Platform.isWindows) {
+      final String exeDir = p.dirname(Platform.resolvedExecutable);
+      if (exeDir.startsWith(RegExp(r'^[cC]:'))) {
+        isRunningOnCDrive = true;
+        log('检测到当前程序运行在 C 盘，将强制跳过历史数据迁移。');
+      }
+    }
+
     final List<String> extraOldBasePaths = [
       p.join(appDir.path, softNameDir),
       p.join(supportDir.path, softNameDir),
@@ -78,7 +87,7 @@ class AppPathManager {
       rootPath = p.join(rootPath, sanitizedInstanceId);
     }
 
-    // 3. 规范化 Windows 的物理路径字符串（消除 pure_live 和 PURE_LIVE 的大小写异同带来的冲突）
+    // 3. 规范化 Windows 的物理路径字符串
     final String canonicalOldRoot = p.canonicalize(oldRootPath);
     final String canonicalNewRoot = p.canonicalize(rootPath);
 
@@ -86,12 +95,36 @@ class AppPathManager {
     final lockFile = File(p.join(rootPath, 'migrated.lock'));
     final bool isAlreadyMigrated = !kIsWeb && await lockFile.exists();
 
-    // 只有在“新旧物理路径不同”且“历史上从未成功迁移过”时才复制文件
-    if (!kIsWeb && canonicalOldRoot != canonicalNewRoot && !isAlreadyMigrated) {
-      await _migrateHiveFiles(oldRootPath, rootPath, lockFile);
+    // 核心修改：非 Web 平台 + 新旧路径不同 + 未迁移过 +【非 C 盘运行】时才触发迁移
+    if (!kIsWeb && canonicalOldRoot != canonicalNewRoot && !isAlreadyMigrated && !isRunningOnCDrive) {
+      // 验证目标目录是否有写入权限
+      final bool hasWritePermission = await _checkDirectoryWritable(rootPath);
+      if (hasWritePermission) {
+        await _migrateHiveFiles(oldRootPath, rootPath, lockFile);
+      } else {
+        log('迁移终止：目标新目录 $rootPath 没有写入权限！');
+      }
     }
 
     _basePath = rootPath;
+  }
+
+  /// 新增：测试目标目录是否真正具备物理写入权限
+  Future<bool> _checkDirectoryWritable(String path) async {
+    try {
+      final testDir = Directory(path);
+      if (!await testDir.exists()) {
+        await testDir.create(recursive: true);
+      }
+      // 创建一个临时测试文件
+      final testFile = File(p.join(path, '.permission_test_${DateTime.now().millisecondsSinceEpoch}'));
+      await testFile.writeAsString('test');
+      await testFile.delete(); // 成功写入后立即删除
+      return true;
+    } catch (e) {
+      log('目录写入权限检测失败 ($path): $e');
+      return false;
+    }
   }
 
   Future<void> _migrateHiveFiles(String oldRoot, String rootPath, File lockFile) async {
@@ -109,7 +142,6 @@ class AppPathManager {
 
       if (await oldFile.exists()) {
         try {
-          // 只复制，不执行旧文件的 delete 操作，确保原始数据 100% 完好留存
           await oldFile.copy(newFile.path);
           log('数据迁移成功 (原文件已保留): $name');
         } catch (e) {
@@ -118,7 +150,6 @@ class AppPathManager {
       }
     }
 
-    // 迁移成功后生成锁文件，下次打开应用直接跳过此段逻辑
     try {
       await lockFile.create(recursive: true);
       await lockFile.writeAsString('Migrated on ${DateTime.now()}');
