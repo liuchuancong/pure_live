@@ -161,6 +161,17 @@ class DanmakuListViewState extends State<DanmakuListView> {
         }
       }
     }
+    if (notification.direction == ScrollDirection.reverse || notification.direction == ScrollDirection.idle) {
+      final distanceToBottom = position.maxScrollExtent - position.pixels;
+      if (distanceToBottom <= 20) {
+        if (!_autoScrollEnabled) {
+          setState(() {
+            _autoScrollEnabled = true;
+            userScrolling = false;
+          });
+        }
+      }
+    }
   }
 
   @override
