@@ -1,3 +1,4 @@
+import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 
 class HomeMobileView extends StatelessWidget {
@@ -24,6 +25,7 @@ class HomeMobileView extends StatelessWidget {
           ),
           NavigationDestination(icon: const Icon(CustomIcons.popular), label: i18n("popular_title")),
           NavigationDestination(icon: const Icon(Icons.area_chart_rounded), label: i18n("areas_title")),
+          NavigationDestination(icon: const Icon(Remix.download_2_fill), label: i18n("record_center")),
         ],
         selectedIndex: index,
         onDestinationSelected: onDestinationSelected,
