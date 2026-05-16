@@ -197,7 +197,7 @@ class TopActionBar extends StatelessWidget {
               if (GlobalPlayerState.to.fullscreenUI) ...[
                 IconButton(
                   icon: const Icon(Icons.swap_horiz_outlined),
-                  tooltip: '切换直播间',
+                  tooltip: i18n('switch_live_room'),
                   color: Colors.white,
                   onPressed: () {
                     Get.dialog(PlayOther(controller: Get.find<LivePlayController>()));
@@ -833,7 +833,7 @@ class ResolutionSelectorButton extends StatelessWidget {
       final double totalMenuHeight = (qualityCount * itemHeight) + 32;
 
       return PopupMenuButton<int>(
-        tooltip: "选择清晰度",
+        tooltip: i18n('toolbox_select_quality'),
         position: PopupMenuPosition.over,
         offset: Offset(15, -totalMenuHeight),
         padding: EdgeInsets.zero,

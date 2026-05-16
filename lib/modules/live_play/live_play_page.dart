@@ -282,13 +282,6 @@ class LivePlayPage extends GetView<LivePlayController> {
             );
           }),
 
-          IconButton(
-            icon: const Icon(Icons.swap_horiz_outlined),
-            tooltip: i18n("switch_live_room"),
-            onPressed: () {
-              Get.dialog(PlayOther(controller: controller));
-            },
-          ),
           PopupMenuButton(
             tooltip: i18n("menu"),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -302,6 +295,8 @@ class LivePlayPage extends GetView<LivePlayController> {
                 showDlnaCastDialog();
               } else if (index == 2) {
                 showTimerDialog(context);
+              } else if (index == 3) {
+                Get.dialog(PlayOther(controller: controller));
               }
             },
             itemBuilder: (BuildContext context) {
@@ -311,6 +306,12 @@ class LivePlayPage extends GetView<LivePlayController> {
                   padding: EdgeInsets.symmetric(horizontal: 12),
                   child: MenuListTile(leading: Icon(Icons.open_in_new_rounded), text: i18n("open_live_room")),
                 ),
+                PopupMenuItem(
+                  value: 3,
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: MenuListTile(leading: Icon(Icons.swap_horiz_outlined), text: i18n("switch_live_room")),
+                ),
+
                 PopupMenuItem(
                   value: 1,
                   padding: EdgeInsets.symmetric(horizontal: 12),
@@ -492,7 +493,7 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
       final currentQualityName = controller.qualites[currentIndex].quality;
 
       return PopupMenuButton<int>(
-        tooltip: "选择清晰度",
+        tooltip: i18n('toolbox_select_quality'),
         color: Get.theme.colorScheme.surfaceContainerHighest,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         offset: const Offset(0.0, 5.0),
@@ -750,7 +751,7 @@ class NotLivingVideoWidget extends StatelessWidget {
                 if (GlobalPlayerState.to.fullscreenUI) ...[
                   IconButton(
                     icon: const Icon(Icons.swap_horiz_outlined),
-                    tooltip: '切换直播间',
+                    tooltip: i18n('switch_live_room'),
                     color: Colors.white,
                     onPressed: () {
                       Get.dialog(PlayOther(controller: Get.find<LivePlayController>()));

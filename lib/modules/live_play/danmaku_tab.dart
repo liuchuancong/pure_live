@@ -27,9 +27,6 @@ class DanmakuTabView extends GetView<LivePlayController> {
               unselectedLabelColor: Get.theme.colorScheme.onSurfaceVariant,
               indicatorColor: Get.theme.colorScheme.primary,
               indicatorSize: TabBarIndicatorSize.label,
-              labelStyle: const TextStyle(fontSize: 12),
-              unselectedLabelStyle: const TextStyle(fontSize: 12),
-              labelPadding: const EdgeInsets.symmetric(horizontal: 16),
             ),
           ),
           Expanded(

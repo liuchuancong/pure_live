@@ -557,13 +557,6 @@ class _TaskCard extends GetView<RecorderController> {
                           _statItem(theme, Icons.storage_rounded, _formatFileSize(task.fileSize)),
                           _statItem(theme, Icons.speed_rounded, "${task.recordSpeed.toStringAsFixed(1)}x"),
                           _statItem(theme, Icons.graphic_eq_rounded, "${task.bitrate ~/ 1000}M"),
-                          if (task.isStalled)
-                            _statItem(
-                              theme,
-                              Icons.warning_amber_rounded,
-                              i18n("recorder_stream_stalled"),
-                              color: theme.colorScheme.error,
-                            ),
                         ],
                       ),
                       const SizedBox(height: 8),

@@ -38,21 +38,24 @@ class FFmpegCommandBuilder {
 
       // --- 身份伪装 ---
       '-user_agent', _quote(ua),
-      if (headerStr.isNotEmpty) ...['-headers', _quote(headerStr)], // headers
+      if (headerStr.isNotEmpty) ...['-headers', _quote(headerStr)], // 关键：headers必须包裹在引号内
       // --- 输入 ---
       '-i', _quote(url),
 
       // --- 轨道处理 ---
+      // 使用 copy 模式避免 CPU 占用过高
       '-map', preferBestStream ? '0:v:0' : '0:v',
       '-map', preferBestStream ? '0:a:0' : '0:a',
       '-c', 'copy',
 
+      // --- 分段逻辑 ---
       '-f', 'segment',
       '-segment_format', 'mpegts',
       '-segment_time', segmentTime.toString(),
       '-reset_timestamps', '1',
       '-strftime', '1',
 
+      // 输出路径 (使用 .ts 格式以防断流导致文件损坏)
       _quote(normalizedOutputPath),
     ];
 
@@ -66,6 +69,7 @@ class FFmpegCommandBuilder {
         .map((e) => '${e.key}: ${e.value}')
         .join('\r\n');
 
+    // FFmpeg 要求 headers 末尾也必须有换行符
     return lines.isEmpty ? '' : '$lines\r\n';
   }
 }
