@@ -148,14 +148,21 @@ class RecorderController extends GetxService {
 
   Future<bool> requestStoragePermission() async {
     if (!Platform.isAndroid) return true;
-    if (Platform.version.compareTo('11') >= 0) {
-      if (await Permission.manageExternalStorage.isGranted) return true;
-      final status = await Permission.manageExternalStorage.request();
-      if (status.isGranted) return true;
-    } else {
-      final statuses = await [Permission.storage, Permission.manageExternalStorage].request();
 
-      if (statuses[Permission.storage]?.isGranted ?? false) return true;
+    if (Platform.isAndroid && int.parse(Platform.operatingSystemVersion.split('.')[0]) >= 11) {
+      // 先检查是否已经授权
+      if (await Permission.manageExternalStorage.isGranted) {
+        return true;
+      }
+      final status = await Permission.manageExternalStorage.request();
+      if (status.isGranted) {
+        return true;
+      }
+    } else {
+      final status = await Permission.storage.request();
+      if (status.isGranted) {
+        return true;
+      }
     }
 
     ToastUtil.show(i18n('no_storage'));
