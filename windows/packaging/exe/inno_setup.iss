@@ -63,7 +63,7 @@ Filename: "{app}\\{{EXECUTABLE_NAME}}"; Description: "{cm:LaunchProgram,{{DISPLA
 [Code]
 function GetDefaultDir(Param: String): String;
 var
-  DriveLetter: Char;
+  DriveLetter: String;  { Changed from Char to String }
   DrivePath: String;
   FoundDrive: Boolean;
 begin
@@ -71,7 +71,7 @@ begin
   Result := '';
   for DriveLetter := 'D' to 'Z' do
   begin
-    DrivePath := DriveLetter + ':\';
+    DrivePath := DriveLetter + ':\'; { Both sides are now Strings }
     if DirExists(DrivePath) then
     begin
       Result := DrivePath + '{{INSTALL_DIR_NAME}}';
