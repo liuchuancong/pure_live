@@ -287,6 +287,10 @@ class RecorderController extends GetxService {
     if (task.status == RecordStatus.running || task.status == RecordStatus.preparing) {
       log('Stopping task: ${task.taskId}');
     }
+    if (task.status == RecordStatus.reconnecting) {
+      task.status = RecordStatus.stopped;
+      updateTask(task);
+    }
   }
 
   Future<void> _onComplete(LiveRecordTask task) async {
