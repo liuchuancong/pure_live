@@ -1,8 +1,6 @@
 import 'dart:io';
 
 class FFmpegCommandBuilder {
-  static const String defaultUserAgent =
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
   static String _quote(String value) {
     final escaped = value.replaceAll('"', r'\"');
     return '"$escaped"';
@@ -17,7 +15,7 @@ class FFmpegCommandBuilder {
     required int threadQueueSize,
     Map<String, String>? headers,
   }) {
-    final ua = headers?['user-agent'] ?? defaultUserAgent;
+    final ua = headers?['user-agent'];
     final headerStr = _buildHeader(headers);
     final normalizedOutputPath = '$outputDir${Platform.pathSeparator}%Y%m%d_%H%M%S.ts';
     final rwTimeoutMicro = (rwTimeout * 1000000).clamp(0, 2147483647);
@@ -26,16 +24,22 @@ class FFmpegCommandBuilder {
       '-y',
       '-hide_banner',
       '-loglevel', 'info',
+      '-analyzeduration', '1000000',
+      '-probesize', '1048576',
+      '-fflags', 'igndts+genpts+nobuffer+flush_packets+fastseek',
+      '-flags', 'low_delay',
+      '-seekable', '1',
       '-protocol_whitelist', 'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto',
       '-reconnect', '1',
       '-reconnect_streamed', '1',
-      '-reconnect_delay_max', '2',
+      '-reconnect_delay_max', '10',
       '-reconnect_at_eof', '1',
       '-rw_timeout', rwTimeoutMicro.toString(),
+      '-timeout', rwTimeoutMicro.toString(),
       '-max_delay', '5000000',
       '-thread_queue_size', threadQueueSize.toString(),
-      '-user_agent', ua,
-      if (headerStr.isNotEmpty) ...['-headers', _quote(headerStr)], //关键：headers
+      if (ua != null && ua.isNotEmpty) ...['-user_agent', _quote(ua)], //ua
+      if (headerStr.isNotEmpty) ...['-headers', _quote(headerStr)], //headers
       '-i', url,
       '-map', preferBestStream ? '0:v:0' : '0:v',
       '-map', preferBestStream ? '0:a:0' : '0:a',

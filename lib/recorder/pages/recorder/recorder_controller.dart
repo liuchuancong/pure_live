@@ -114,7 +114,21 @@ class RecorderController extends GetxService {
         break;
 
       case FFmpegEventType.error:
-        _onFail(task);
+        final String errorMessage = event.data['message'] ?? '录制遇到未知错误';
+        final int errorCode = event.data['code'] ?? 0;
+        ToastUtil.show(errorMessage);
+        bool canRetry = true;
+        final bool isInitializationCrash = errorCode >= -5 && errorCode < 0;
+        if (isInitializationCrash ||
+            errorMessage.contains('路径不存在') ||
+            errorMessage.contains('参数错误') ||
+            errorMessage.contains('格式有误') ||
+            errorMessage.contains('已失效') ||
+            errorMessage.contains('拒绝访问')) {
+          canRetry = false; // Kill the retry loop immediately!
+          log('【Safety Intercept】Fatal error detected (Code: $errorCode). Terminating retry loop.');
+        }
+        _onFail(task, shouldRetry: canRetry);
         break;
 
       case FFmpegEventType.complete:
@@ -282,7 +296,6 @@ class RecorderController extends GetxService {
         rwTimeout: settings.rwTimeout.value,
         threadQueueSize: settings.threadQueueSize.value,
       );
-      log('Running command: ${cmd.toString()}', name: 'RecorderController');
       task.outputDir = dir.path;
       updateTask(task);
 
@@ -331,7 +344,7 @@ class RecorderController extends GetxService {
   }
 
   Future<void> _onComplete(LiveRecordTask task) async {
-    log('FFmpeg complete => $task.taskId');
+    log('FFmpeg complete => ${task.taskId}');
     if (task.status == RecordStatus.stopped ||
         task.status == RecordStatus.failed ||
         task.status == RecordStatus.processing) {
@@ -357,12 +370,18 @@ class RecorderController extends GetxService {
     }
   }
 
-  Future<void> _onFail(LiveRecordTask task) async {
+  Future<void> _onFail(LiveRecordTask task, {bool shouldRetry = true}) async {
     final completer = _lifecycleCompleters[task.taskId];
     if (completer != null && !completer.isCompleted) {
       completer.complete();
     }
     if (task.status == RecordStatus.stopped) {
+      return;
+    }
+    if (!shouldRetry) {
+      task.status = RecordStatus.failed;
+      task.retryCount = 0;
+      updateTask(task);
       return;
     }
 
