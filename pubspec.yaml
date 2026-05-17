@@ -206,6 +206,6 @@ flutter:
 
 # FFmpeg配置
 ffmpeg_kit_extended_config:
-  windows: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-windows/bundle-audio-windows-x86_64-shared-lgpl.zip
-  android: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-android/bundle-base-shared-debug-lgpl-release.aar
+  windows: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-windows/bundle-base-windows-x86_64-shared-lgpl.zip
+  android: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-android/bundle-base-shared-lgpl-release.aar
   macos: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-macos/bundle-base-macos-universal-lgpl.xcframework.zip

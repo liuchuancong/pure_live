@@ -6,6 +6,7 @@ import 'dart:developer' as developer;
 import 'package:pure_live/core/sites.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:pure_live/model/live_category.dart';
+import 'package:pure_live/plugins/fake_useragent.dart';
 import 'package:pure_live/common/models/live_area.dart';
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/core/common/http_client.dart';
@@ -27,8 +28,6 @@ class KuaishowSite implements LiveSite {
   String name = "快手直播";
 
   String cookie = '';
-  String defaultCookie =
-      'kuaishou.live.bfb1s=ac5f27b3b62895859c4c1622f49856a4; clientid=3; did=web_f1da20eb423e7f1df66dded2c5091402; client_key=65890b29; kpn=GAME_ZONE; _did=web_1519865925BB190E; kwpsecproductname=PCLive; did=web_6598f99710f97b51f068074f79147ab2ed47; userId=499774792; userId=499774792; kuaishou.live.web_st=ChRrdWFpc2hvdS5saXZlLndlYi5zdBKgAVVZvEvxd-lQzxchi0P_bU2cDBCbbWjQMiejWFqUeW9dzIqY7bac6dZhEhmKgpVuuj4Zk61VLt2BeVey4OLMxtNqza1gQ4wJjdnEHRwQrcwKVYgoilaJEHZNTZXuo9ZDH6xI-96gtMX8MoVIRqxRcuXREEEDbW6MjHNNeN9EXgxByk8s9jeY2Nd0zpoAxHidWV4lXAsLB-Zyy8HVxlASIOIaEoJNhwQ4OUDtgURWN6k9Xgm8PSIg40YnJOFm8axC7mZRDGMjroVu9NxUu3LBpie6V3KA5TooBTAB; kuaishou.live.web_ph=8faa599b84429beda42ae83e284f418e4fa5; kwssectoken=y6oDq5XDSV2f65wQFt3HJXGUc+TH4oGwb8rKlUzKIjm97YEukJ7KEQjouwzFyp/EebjbwH/5KfVrW3iKo8ibMA==; kwscode=221e9b74fd391ece5b7009f34d24ccb1e330605d70e7fcab17150fd8c6f4f944; kwfv1=PnGU+9+Y8008S+nH0U+0mjPf8fP08f+98f+nLlwnrIP9+Y8/HFPBzj80D9+fcMPfHAPBG7PfHlPBHEwBHl+/Sj+0PAwBHF8BHlGfcEG0YD80cF8BpSw/Q0+erFP/WIwn8D+/GMP0QfG/8f8f8fGAQYw/GU+9QYG0YjP0Yf+AY0G0r=';
   Map<String, String> cookieObj = {};
   List<String> imageExtensions = [
     'svgz',
@@ -71,7 +70,7 @@ class KuaishowSite implements LiveSite {
     return categories;
   }
 
-  Map<String, dynamic> get headers => {
+  final Map<String, dynamic> headers = {
     'User-Agent':
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',
     'accept':
@@ -83,8 +82,6 @@ class KuaishowSite implements LiveSite {
     'Sec-Fetch-Mode': 'navigate',
     'Sec-Fetch-Site': 'same-origin',
     'Sec-Fetch-User': '?1',
-    "cookie": settings.kuaishouCookie.value.isNotEmpty ? settings.kuaishouCookie.value : defaultCookie,
-    "referer": "https://live.kuaishou.com/live/HOT",
   };
 
   final SettingsService settings = Get.find<SettingsService>();
@@ -326,14 +323,26 @@ class KuaishowSite implements LiveSite {
     headers['cookie'] = cookie;
     var url = "https://live.kuaishou.com/u/$roomId";
     var mHeaders = headers;
-    mHeaders['User-Agent'] =
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36";
-    mHeaders['cookie'] = settings.kuaishouCookie.value.isNotEmpty ? settings.kuaishouCookie.value : defaultCookie;
-    mHeaders["referer"] = "https://live.kuaishou.com/live/HOT";
+    var fakeUseragent = FakeUserAgent.getRandomUserAgent();
+    mHeaders['User-Agent'] = fakeUseragent['userAgent'];
+    mHeaders['sec-ch-ua'] = 'Google Chrome;v=${fakeUseragent['v']}, Chromium;v=${fakeUseragent['v']}, Not=A?Brand;v=24';
+    mHeaders['sec-ch-ua-platform'] = fakeUseragent['device'];
+    mHeaders['sec-fetch-dest'] = 'document';
+    mHeaders['sec-fetch-mode'] = 'navigate';
+    mHeaders['sec-fetch-site'] = 'same-origin';
+    mHeaders['sec-fetch-user'] = '?1';
+    if (settings.kuaishouCookie.value.isNotEmpty) {
+      mHeaders['cookie'] = settings.kuaishouCookie.value;
+    }
+    mHeaders['accept'] =
+        'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9';
+    await getCookie(url);
+    await registerDid();
     var resultText = await HttpClient.instance.getText(url, queryParameters: {}, header: mHeaders);
 
     try {
       var text = RegExp(r"window\.__INITIAL_STATE__=(.*?);", multiLine: false).firstMatch(resultText)?.group(1);
+
       var transferData = text!.replaceAll("undefined", "null");
 
       var jsonObj = jsonDecode(transferData);
