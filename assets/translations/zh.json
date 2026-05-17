@@ -562,5 +562,12 @@
     "mute": "静音",
     "copy_danmaku": "复制弹幕",
     "no_storage": "没有获得存储权限，无法保存录制文件",
-    "system_message": "系统消息"
+    "system_message": "系统消息",
+    "path_or_permission_error": "录制失败：保存路径不存在、包含非法字符，或软件没有存储权限。请前往设置修改下载目录。",
+    "param_error": "参数错误,请联系开发者解决",
+    "url_expired_404": "录制失败：当前直播源地址已失效 (404 Not Found)。",
+    "url_forbidden_403": "录制失败：直播源拒绝访问 (403 Forbidden)，防盗链可能已过期。",
+    "timeout": "录制失败：连接直播间服务器超时，请检查网络或代理设置。",
+    "invalid_stream_format": "录制失败：输入的直播流地址格式有误，无法打开。",
+    "unknown_error": "录制错误：发生未知异常，底层日志：\"{error_log}\""
 }

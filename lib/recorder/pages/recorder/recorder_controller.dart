@@ -114,20 +114,31 @@ class RecorderController extends GetxService {
         break;
 
       case FFmpegEventType.error:
-        final String errorMessage = event.data['message'] ?? '录制遇到未知错误';
+        // 1. 获取并弹出国际化后的错误提示
+        final String errorMessage = event.data['message'] ?? i18n('unknown_error', args: {'error_log': ''});
         final int errorCode = event.data['code'] ?? 0;
         ToastUtil.show(errorMessage);
+
         bool canRetry = true;
+
         final bool isInitializationCrash = errorCode >= -5 && errorCode < 0;
-        if (isInitializationCrash ||
-            errorMessage.contains('路径不存在') ||
-            errorMessage.contains('参数错误') ||
-            errorMessage.contains('格式有误') ||
-            errorMessage.contains('已失效') ||
-            errorMessage.contains('拒绝访问')) {
-          canRetry = false; // Kill the retry loop immediately!
+
+        final bool isPathOrPermissionError = errorCode == -2;
+
+        final String rawLogs = event.data['raw_logs'] ?? '';
+        final bool isFatalNetworkOrParam =
+            rawLogs.contains('404') ||
+            rawLogs.contains('403') ||
+            rawLogs.contains('invalid argument') ||
+            rawLogs.contains('no such file') ||
+            rawLogs.contains('permission denied') ||
+            rawLogs.contains('unable to open');
+
+        if (isInitializationCrash || isPathOrPermissionError || isFatalNetworkOrParam) {
+          canRetry = false;
           log('【Safety Intercept】Fatal error detected (Code: $errorCode). Terminating retry loop.');
         }
+
         _onFail(task, shouldRetry: canRetry);
         break;
 

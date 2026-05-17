@@ -562,5 +562,12 @@
     "mute": "Mute",
     "copy_danmaku": "Copy Danmaku",
     "no_storage": "No storage permission, unable to save recorded file",
-    "system_message": "System Message"
+    "system_message": "System Message",
+    "path_or_permission_error": "Recording failed: The save path does not exist, contains invalid characters, or the app lacks storage permissions. Please update the download directory in settings.",
+    "param_error": "Parameter error. Please contact the developer for assistance.",
+    "url_expired_404": "Recording failed: The current live stream URL has expired (404 Not Found).",
+    "url_forbidden_403": "Recording failed: Access to the live stream was denied (403 Forbidden). The anti-leech token may have expired.",
+    "timeout": "Recording failed: Connection to the live server timed out. Please check your network or proxy settings.",
+    "invalid_stream_format": "Recording failed: The input stream URL format is invalid and cannot be opened.",
+    "unknown_error": "Recording error: An unknown exception occurred, raw log: \"{error_log}\""
 }

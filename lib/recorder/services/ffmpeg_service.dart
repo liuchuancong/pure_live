@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer';
 import 'package:flutter/services.dart';
+import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
 import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart';
@@ -79,21 +80,35 @@ class FFmpegService {
           final String logs = completedSession.getLogs() ?? '';
           log('FFmpeg 原始错误日志:\n$logs');
           final lowerLogs = logs.toLowerCase();
-          // 根据纯文本中的关键字，为用户转换出看得懂的大白话提示
+          errorData["raw_logs"] = lowerLogs;
+          // 1. 路径与权限错误
           if (code == -2 || lowerLogs.contains('no such file') || lowerLogs.contains('permission denied')) {
-            userFriendlyMessage = '录制失败：保存路径不存在、包含非法字符，或软件没有存储权限。请前往设置修改下载目录。';
-          } else if (lowerLogs.contains('server returned 404') || lowerLogs.contains('invalid argument')) {
-            userFriendlyMessage = '参数错误,请联系开发者解决';
-          } else if (lowerLogs.contains('server returned 404') || lowerLogs.contains('http error 404')) {
-            userFriendlyMessage = '录制失败：当前直播源地址已失效 (404 Not Found)。';
-          } else if (lowerLogs.contains('server returned 403') || lowerLogs.contains('http error 403')) {
-            userFriendlyMessage = '录制失败：直播源拒绝访问 (403 Forbidden)，防盗链可能已过期。';
-          } else if (lowerLogs.contains('connection timed out') || lowerLogs.contains('timed out')) {
-            userFriendlyMessage = '录制失败：连接直播间服务器超时，请检查网络或代理设置。';
-          } else if (lowerLogs.contains('invalid argument') || lowerLogs.contains('unable to open')) {
-            userFriendlyMessage = '录制失败：输入的直播流地址格式有误，无法打开。';
-          } else if (logs.trim().isNotEmpty) {
-            userFriendlyMessage = '录制错误: ${logs.trim().split('\n').last}';
+            userFriendlyMessage = i18n('path_or_permission_error');
+          }
+          // 2. 拦截 404 错误（原逻辑在此处有重复条件，现已优化合并）
+          else if (lowerLogs.contains('server returned 404') || lowerLogs.contains('http error 404')) {
+            userFriendlyMessage = i18n('url_expired_404');
+          }
+          // 3. 拦截 403 错误
+          else if (lowerLogs.contains('server returned 403') || lowerLogs.contains('http error 403')) {
+            userFriendlyMessage = i18n('url_forbidden_403');
+          }
+          // 4. 拦截连接超时
+          else if (lowerLogs.contains('connection timed out') || lowerLogs.contains('timed out')) {
+            userFriendlyMessage = i18n('timeout');
+          }
+          // 5. 拦截参数错误
+          else if (lowerLogs.contains('invalid argument')) {
+            userFriendlyMessage = i18n('param_error');
+          }
+          // 6. 拦截流地址格式无法打开
+          else if (lowerLogs.contains('unable to open')) {
+            userFriendlyMessage = i18n('invalid_stream_format');
+          }
+          // 7. 兜底未知错误：提取最后一行并使用具名参数传给国际化
+          else if (logs.trim().isNotEmpty) {
+            final lastLogLine = logs.trim().split('\n').last;
+            userFriendlyMessage = i18n('unknown_error', args: {'error_log': lastLogLine});
           }
         } catch (e) {
           log('解析 FFmpeg 日志时发生异常: $e');
