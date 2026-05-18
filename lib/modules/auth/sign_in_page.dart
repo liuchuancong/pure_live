@@ -28,7 +28,7 @@ class _SignInPageState extends State<SignInPage> {
                 onPasswordResetEmailSent: () {
                   final AuthController authController = Get.find<AuthController>();
                   authController.shouldGoReset = true;
-                  ToastUtil.show('请打开邮箱重置密码');
+                  ToastUtil.show(i18n('reset_password_email'));
                 },
                 onSignInComplete: (AuthResponse response) {
                   ToastUtil.show(i18n('supabase_sign_success'));

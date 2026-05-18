@@ -570,7 +570,7 @@
     "timeout": "Recording failed: Connection to the live server timed out. Please check your network or proxy settings.",
     "invalid_stream_format": "Recording failed: The input stream URL format is invalid and cannot be opened.",
     "unknown_error": "Recording error: An unknown exception occurred, raw log: \"{error_log}\"",
-        "supabase_sign_in": "Sign In",
+    "supabase_sign_in": "Sign In",
     "supabase_sign_up": "Sign Up",
     "supabase_sign_success": "Sign in successful!",
     "supabase_sign_failure": "Sign in failure!",
@@ -592,5 +592,22 @@
     "supabase_reset_password": "Send password reset email",
 
     "supabase_back_sign_in": "Back to sign in",
-    "supabase_update_password": "Update Password"
+    "supabase_update_password": "Update Password",
+    "supabase_account_unauthorized": "Account Unauthorized",
+    "no_data": "No data available",
+    "allow_user_uploads": "Allow user uploads",
+    "download_user_configs": "Download user configs",
+    "manage_users": "Manage users",
+    "reset_password_email": "Please open your email to reset your password",
+    "hint_text": "Please enter an email address",
+    "add_btn": "Add",
+    "user_count": "{count} users added (Click to remove)",
+    "invalid_email": "Please enter a valid email address",
+    "email_exists": "Email address already exists",
+    "add_success": "Added successfully",
+    "add_failed": "Failed to add, please try again later",
+    "delete_success": "Deleted successfully",
+    "delete_failed": "Failed to delete, please try again later",
+    "download_failed": "Download failed, please try again later",
+    "download_success": "Downloaded successfully"
 }

@@ -43,14 +43,14 @@ class _MinePageState extends State<MinePage> {
                 if (isManager())
                   ListTile(
                     leading: const Icon(Icons.verified_user_outlined, size: 32),
-                    subtitle: const Text("允许用户是否可以上传"),
-                    title: const Text("用户管理"),
+                    subtitle: Text(i18n('allow_user_uploads')),
+                    title: Text(i18n('manage_users')),
                     onTap: () => Get.toNamed(RoutePath.kUserManage),
                   ),
                 ListTile(
                   leading: const Icon(Icons.sim_card_download_outlined, size: 32),
                   subtitle: Text(i18n('supabase_mine_streams')),
-                  title: const Text('下载用户配置'),
+                  title: Text(i18n('download_user_configs')),
                   onTap: downloadUserConifg,
                 ),
                 ListTile(

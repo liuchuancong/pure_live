@@ -16,16 +16,17 @@ class _UserManagerState extends State<UserManager> {
   Color get themeColor => HexColor(settingsController.themeColorSwitch.value);
   final refreshController = EasyRefreshController(controlFinishRefresh: true, controlFinishLoad: true);
 
-  Future onRefresh() async {
-    getCurrentUsers();
-    refreshController.finishRefresh(IndicatorResult.success);
-  }
+  final users = <String>[].obs;
 
-  final users = [].obs;
   @override
   void initState() {
     getCurrentUsers();
     super.initState();
+  }
+
+  Future onRefresh() async {
+    await getCurrentUsers();
+    refreshController.finishRefresh(IndicatorResult.success);
   }
 
   Future<void> getCurrentUsers() async {
@@ -36,24 +37,26 @@ class _UserManagerState extends State<UserManager> {
   }
 
   void addUser() {
-    if (textEditingController.text.isEmpty || !EmailValidator.validate(textEditingController.text)) {
-      ToastUtil.show('请输入正确的邮箱');
+    final text = textEditingController.text.trim();
+    if (text.isEmpty || !EmailValidator.validate(text)) {
+      ToastUtil.show(i18n('invalid_email'));
       return;
     }
-    if (users.contains(textEditingController.text.trim())) {
-      ToastUtil.show('邮箱已存在');
+    if (users.contains(text)) {
+      ToastUtil.show(i18n('email_exists'));
       return;
     }
     SupaBaseManager().client
         .from(SupaBaseManager.supabasePolicy.checkTable)
-        .insert({SupaBaseManager.supabasePolicy.email: textEditingController.text.trim()})
+        .insert({SupaBaseManager.supabasePolicy.email: text})
         .then(
           (value) {
-            ToastUtil.show('添加成功');
-            users.add(textEditingController.text.trim());
+            ToastUtil.show(i18n('add_success'));
+            users.add(text);
+            textEditingController.clear();
           },
           onError: (err) {
-            ToastUtil.show('添加失败,请稍后重试');
+            ToastUtil.show(i18n('add_failed'));
           },
         );
   }
@@ -65,11 +68,11 @@ class _UserManagerState extends State<UserManager> {
         .eq(SupaBaseManager.supabasePolicy.email, email)
         .then(
           (value) {
-            ToastUtil.show('删除成功');
+            ToastUtil.show(i18n('delete_success'));
             users.removeAt(index);
           },
           onError: (err) {
-            ToastUtil.show('删除失败,请稍后重试');
+            ToastUtil.show(i18n('delete_failed'));
           },
         );
   }
@@ -77,61 +80,62 @@ class _UserManagerState extends State<UserManager> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('用户管理')),
-      body: Obx(
-        () => EasyRefresh(
-          controller: refreshController,
-          onRefresh: onRefresh,
-          onLoad: () {
-            refreshController.finishLoad(IndicatorResult.success);
-          },
-          child: ListView(
-            padding: const EdgeInsets.all(24.0),
-            children: [
-              TextField(
-                keyboardType: TextInputType.emailAddress,
-                controller: textEditingController,
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.email),
-                  contentPadding: const EdgeInsets.all(12.0),
-                  border: OutlineInputBorder(borderSide: BorderSide(color: themeColor)),
-                  hintText: "请输入邮箱",
-                  suffixIcon: TextButton.icon(onPressed: addUser, icon: const Icon(Icons.add), label: const Text("添加")),
-                ),
-                onSubmitted: (e) {
-                  addUser();
-                },
-              ),
-              spacer(12.0),
-              Obx(() => Text("已添加${users.length}个用户（点击移除）", style: Get.textTheme.titleMedium)),
-              spacer(12.0),
-              Obx(
-                () => Wrap(
-                  runSpacing: 12,
-                  spacing: 12,
-                  children: users
-                      .map(
-                        (email) => InkWell(
-                          borderRadius: const BorderRadius.all(Radius.circular(5.0)),
-                          onTap: () {
-                            var index = users.indexWhere((element) => element == email);
-                            removeUser(email, index);
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Theme.of(context).primaryColor),
-                              borderRadius: const BorderRadius.all(Radius.circular(5.0)),
-                            ),
-                            padding: const EdgeInsets.only(top: 10, bottom: 10, left: 8, right: 8),
-                            child: Text(email, style: Get.textTheme.bodyMedium),
-                          ),
-                        ),
-                      )
-                      .toList(),
+      appBar: AppBar(title: Text(i18n('manage_users'))),
+      body: EasyRefresh(
+        controller: refreshController,
+        onRefresh: onRefresh,
+        onLoad: () {
+          refreshController.finishLoad(IndicatorResult.success);
+        },
+        child: ListView(
+          padding: const EdgeInsets.all(24.0),
+          children: [
+            TextField(
+              keyboardType: TextInputType.emailAddress,
+              controller: textEditingController,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.email),
+                contentPadding: const EdgeInsets.all(12.0),
+                border: OutlineInputBorder(borderSide: BorderSide(color: themeColor)),
+                hintText: i18n('hint_text'),
+                suffixIcon: TextButton.icon(
+                  onPressed: addUser,
+                  icon: const Icon(Icons.add),
+                  label: Text(i18n('add_btn')),
                 ),
               ),
-            ],
-          ),
+              onSubmitted: (e) => addUser(),
+            ),
+            spacer(12.0),
+            // Using your custom helper with named parameters here
+            Obx(
+              () =>
+                  Text(i18n('user_count', args: {'count': users.length.toString()}), style: Get.textTheme.titleMedium),
+            ),
+            spacer(12.0),
+            Obx(
+              () => Wrap(
+                runSpacing: 12,
+                spacing: 12,
+                children: users.asMap().entries.map((entry) {
+                  int index = entry.key;
+                  String email = entry.value;
+                  return InkWell(
+                    borderRadius: const BorderRadius.all(Radius.circular(5.0)),
+                    onTap: () => removeUser(email, index),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Theme.of(context).primaryColor),
+                        borderRadius: const BorderRadius.all(Radius.circular(5.0)),
+                      ),
+                      padding: const EdgeInsets.only(top: 10, bottom: 10, left: 8, right: 8),
+                      child: Text(email, style: Get.textTheme.bodyMedium),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
         ),
       ),
     );

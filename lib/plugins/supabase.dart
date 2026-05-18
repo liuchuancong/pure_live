@@ -57,7 +57,7 @@ class SupaBaseManager {
       return;
     }
     if (!canUploadConfig) {
-      ToastUtil.show('暂未开放');
+      ToastUtil.show(i18n('supabase_account_unauthorized'));
       return;
     }
     final userId = Get.find<AuthController>().userId;
@@ -77,12 +77,12 @@ class SupaBaseManager {
           })
           .eq(supabasePolicy.userId, userId)
           .then(
-            (value) => ToastUtil.show('上传成功'),
+            (value) => ToastUtil.show(i18n('webdav_upload_success')),
             onError: (err) {
-              ToastUtil.show('上传失败,请稍后重试');
+              ToastUtil.show(i18n('webdav_upload_failed'));
             },
           )
-          .catchError((err) => {ToastUtil.show('上传失败,请稍后重试')});
+          .catchError((err) => {ToastUtil.show(i18n('webdav_upload_failed'))});
     } else {
       client
           .from(supabasePolicy.tableName)
@@ -93,9 +93,9 @@ class SupaBaseManager {
             supabasePolicy.version: VersionUtil.version,
           })
           .then(
-            (value) => ToastUtil.show('上传成功'),
+            (value) => ToastUtil.show(i18n('webdav_upload_success')),
             onError: (err) {
-              ToastUtil.show('上传失败,请稍后重试');
+              ToastUtil.show(i18n('webdav_upload_failed'));
             },
           );
     }
@@ -106,7 +106,7 @@ class SupaBaseManager {
     final FavoriteController favoriteController = Get.find<FavoriteController>();
     if (authController.isLogin) {
       if (!canUploadConfig) {
-        ToastUtil.show('暂未开放');
+        ToastUtil.show(i18n('supabase_account_unauthorized'));
         return;
       }
 
@@ -118,18 +118,18 @@ class SupaBaseManager {
           .then(
             (value) => value,
             onError: (err) {
-              ToastUtil.show('下载失败,请稍后重试');
+              ToastUtil.show(i18n('download_failed'));
             },
           );
       if (data.isNotEmpty) {
-        ToastUtil.show('下载成功');
+        ToastUtil.show(i18n('download_success'));
         String jsonString = data[0][supabasePolicy.config];
         final jsonData = ArchethicUtils().decrypti(jsonString);
         Map<String, dynamic> back = jsonDecode(jsonData);
         service.fromJson(back);
         favoriteController.onRefresh();
       } else {
-        ToastUtil.show('无数据');
+        ToastUtil.show(i18n('no_data'));
       }
     }
   }

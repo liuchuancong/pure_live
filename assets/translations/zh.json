@@ -591,6 +591,22 @@
     "supabase_has_account": "已有帐户? 登录",
     "supabase_reset_password": "重置邮箱密码",
     "supabase_back_sign_in": "返回登录",
-    "supabase_update_password": "更新密码"
-
+    "supabase_update_password": "更新密码",
+    "supabase_account_unauthorized": "账号未授权",
+    "no_data": "无数据",
+    "allow_user_uploads": "允许用户上传配置文件",
+    "download_user_configs": "下载用户配置",
+    "manage_users": "管理用户",
+    "reset_password_email": "请打开邮箱重置密码",
+    "hint_text": "请输入邮箱",
+    "add_btn": "添加",
+    "user_count": "已添加 {count} 个用户（点击移除）",
+    "invalid_email": "请输入正确的邮箱",
+    "email_exists": "邮箱已存在",
+    "add_success": "添加成功",
+    "add_failed": "添加失败，请稍后重试",
+    "delete_success": "删除成功",
+    "delete_failed": "删除失败，请稍后重试",
+    "download_failed": "下载失败，请稍后重试",
+    "download_success": "下载成功"
 }
