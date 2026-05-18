@@ -28,6 +28,8 @@ dependencies:
   web_socket_channel: ^3.0.1 # WebSocket通信
   connectivity_plus: 6.1.1 # 网络连接状态监听
   webdav_client: ^1.2.2 # WebDAV文件存储客户端
+  supabase_flutter: ^2.10.3 # Supabase客户端
+  email_validator: ^3.0.0
 
   # -------------------------- 音视频播放 --------------------------
   fvp: ^0.36.2

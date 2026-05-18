@@ -11,6 +11,7 @@ import 'package:pure_live/plugins/cache_manager.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/common/global/windows_utils.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:pure_live/modules/auth/auth_controller.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/recorder/services/cache_service.dart';
@@ -45,6 +46,7 @@ class AppInitializer {
     await AppPathManager().initialize(instanceId: instanceId);
     await CustomImageCacheManager.initialize();
     final Directory hiveDir = await AppPathManager().getDir(AppPathManager.dirHiveDB);
+    await SupaBaseManager.getInstance().initial();
     try {
       await Hive.initFlutter(hiveDir.path);
       await HivePrefUtil.init();
@@ -99,6 +101,7 @@ class AppInitializer {
   void initService() {
     Get.put(SettingsService(), permanent: true);
     Get.put(CacheService());
+    Get.put(AuthController(), permanent: true);
     Get.put(RecordSettingsController());
     Get.put(RecorderController());
     Get.put(BiliBiliAccountService());
