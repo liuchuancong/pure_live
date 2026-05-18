@@ -9,6 +9,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_inappwebview_linux
   flutter_js
   fvp
+  gtk
   screen_retriever_linux
   tray_manager
   url_launcher_linux

@@ -833,6 +833,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "10.12.0"
+  functions_client:
+    dependency: transitive
+    description:
+      name: functions_client
+      sha256: "94074d62167ae634127ef6095f536835063a7dc80f2b1aa306d2346ff9023996"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "2.5.0"
   fvp:
     dependency: "direct main"
     description:
