@@ -569,5 +569,28 @@
     "url_forbidden_403": "录制失败：直播源拒绝访问 (403 Forbidden)，防盗链可能已过期。",
     "timeout": "录制失败：连接直播间服务器超时，请检查网络或代理设置。",
     "invalid_stream_format": "录制失败：输入的直播流地址格式有误，无法打开。",
-    "unknown_error": "录制错误：发生未知异常，底层日志：\"{error_log}\""
+    "unknown_error": "录制错误：发生未知异常，底层日志：\"{error_log}\"",
+    "supabase_sign_in": "登录",
+    "supabase_sign_up": "注册",
+    "supabase_sign_success": "登录成功!",
+    "supabase_sign_failure": "登录失败!",
+    "supabase_sign_confirm": "请打开邮箱确认",
+
+    "supabase_mine": "我的",
+    "supabase_mine_profiles": "上传用户配置文件",
+    "supabase_mine_streams": "关注直播间以及主题等",
+    "supabase_log_out": "退出登录",
+
+    "supabase_enter_email": "请输入邮箱地址",
+    "supabase_enter_valid_email": "请输入有效的邮箱地址",
+    "supabase_enter_valid_password": "请输入至少6个字符的密码",
+    "supabase_enter_password": "请输入密码",
+    "supabase_unexpected_err": "发生意外错误：\"{error}\"",
+    "supabase_forgot_password": "忘记密码?",
+    "supabase_no_account": "没有账户? 注册",
+    "supabase_has_account": "已有帐户? 登录",
+    "supabase_reset_password": "重置邮箱密码",
+    "supabase_back_sign_in": "返回登录",
+    "supabase_update_password": "更新密码"
+
 }
