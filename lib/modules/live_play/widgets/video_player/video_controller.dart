@@ -185,6 +185,7 @@ class VideoController with ChangeNotifier {
       _volumeController = VolumeController.instance;
       _volumeController.showSystemUI = false;
       registerVolumeListener();
+      _volumeController.setVolume(room.getSavedVolume());
     }
     playerManager.play(datasource, playUrs, headers, room: room);
     initPlayerListener();
@@ -395,14 +396,14 @@ class VideoController with ChangeNotifier {
   // 注册音量变化监听器
   void registerVolumeListener() {
     _subscription = _volumeController.addListener((volume) {
-      settings.volume.value = volume;
+      room.saveCurrentVolume(volume);
     }, fetchInitialVolume: true);
   }
 
   // volume & brightness
   Future<double?> volume() async {
     if (Platform.isWindows) {
-      return settings.volume.value;
+      return room.getSavedVolume();
     }
     return await _volumeController.getVolume();
   }
@@ -417,7 +418,7 @@ class VideoController with ChangeNotifier {
     } else {
       await _volumeController.setVolume(value);
     }
-    settings.volume.value = value;
+    room.saveCurrentVolume(value);
   }
 
   void setBrightness(double value) async {

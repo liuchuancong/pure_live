@@ -1,3 +1,5 @@
+import 'package:pure_live/player/core/live_room_volume_manager.dart';
+
 enum LiveStatus { live, offline, replay, unknown, banned }
 
 class LiveRoom {
@@ -139,5 +141,13 @@ class LiveRoom {
   @override
   String toString() {
     return 'LiveRoom{roomId: $roomId, userId: $userId, link: $link, title: $title, nick: $nick, avatar: $avatar, cover: $cover, area: $area, watching: $watching, followers: $followers, platform: $platform, introduction: $introduction, notice: $notice, status: $status, data: $data, danmakuData: $danmakuData, isRecord: $isRecord, liveStatus: $liveStatus}';
+  }
+
+  double getSavedVolume() {
+    return LiveRoomVolumeManager.getRoomVolume(platform ?? 'UNKNOWN', roomId ?? '');
+  }
+
+  Future<void> saveCurrentVolume(double volume) async {
+    await LiveRoomVolumeManager.saveRoomVolume(platform ?? 'UNKNOWN', roomId ?? '', volume);
   }
 }

@@ -3,9 +3,12 @@ class LineFallbackManager {
 
   String next(List<String> lines) {
     if (lines.isEmpty) throw Exception('No playable line');
+    if (_currentIndex >= lines.length) {
+      _currentIndex = 0;
+    }
+    final line = lines[_currentIndex];
+    _currentIndex = (_currentIndex + 1) % lines.length;
 
-    final line = lines[_currentIndex]; // 先取当前
-    _currentIndex = (_currentIndex + 1) % lines.length; // 再推进
     return line;
   }
 

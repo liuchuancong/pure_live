@@ -68,7 +68,6 @@ class SettingsService extends GetxController {
   final danmakuFontSize = (HivePrefUtil.getDouble('danmakuFontSize') ?? 16.0).obs;
   final danmakuFontBorder = (HivePrefUtil.getDouble('danmakuFontBorder') ?? 4.0).obs;
   final danmakuOpacity = (HivePrefUtil.getDouble('danmakuOpacity') ?? 1.0).obs;
-  final volume = (HivePrefUtil.getDouble('volume') ?? 1.0).obs;
 
   final videoPlayerIndex = (HivePrefUtil.getInt('videoPlayerIndex') ?? 0).obs;
   final useHardStopOnExit = (HivePrefUtil.getBool('useHardStopOnExit') ?? true).obs;
@@ -334,10 +333,6 @@ class SettingsService extends GetxController {
 
     kuaishouCookie.listen((value) {
       HivePrefUtil.setString('kuaishouCookie', value);
-    });
-
-    volume.listen((value) {
-      HivePrefUtil.setDouble('volume', value);
     });
 
     customPlayerOutput.listen((value) {
@@ -757,7 +752,6 @@ class SettingsService extends GetxController {
     kuaishouCookie.value = json['kuaishouCookie'] ?? '';
     enableDanmakuDisplay.value = json['enableDanmakuDisplay'] ?? true;
     themeColorSwitch.value = json['themeColorSwitch'] ?? Colors.blue.hex;
-    volume.value = json['volume'] ?? 1.0;
     customPlayerOutput.value = json['customPlayerOutput'] ?? false;
     videoOutputDriver.value = PlayerConsts.videoOutputDrivers.keys.contains(json['videoOutputDriver'])
         ? json['videoOutputDriver']
@@ -829,7 +823,6 @@ class SettingsService extends GetxController {
     json['shieldList'] = shieldList.map<String>((e) => e.toString()).toList();
     json['hotAreasList'] = hotAreasList.map<String>((e) => e.toString()).toList();
     json['themeColorSwitch'] = themeColorSwitch.value;
-    json['volume'] = volume.value;
     json['customPlayerOutput'] = customPlayerOutput.value;
     json['videoOutputDriver'] = videoOutputDriver.value;
     json['audioOutputDriver'] = audioOutputDriver.value;

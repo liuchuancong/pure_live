@@ -158,7 +158,8 @@ class MediaKitAdapter implements UnifiedPlayer {
       if (PlatformUtils.isMobile) {
         await setVolume(1.0);
       } else {
-        await setVolume(settings.volume.value);
+        double targetVolume = room!.getSavedVolume();
+        await setVolume(targetVolume);
       }
     } catch (e, s) {
       final exception = PlayerException(
