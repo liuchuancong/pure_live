@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 
 class VideoKeyboardShortcuts extends StatefulWidget {
@@ -34,6 +35,9 @@ class _VideoKeyboardShortcutsState extends State<VideoKeyboardShortcuts> {
   }
 
   void _handleEscExit() async {
+    if (GlobalPlayerState.to.isPipMode.value) {
+      return;
+    }
     widget.controller.toggleFullScreen();
   }
 

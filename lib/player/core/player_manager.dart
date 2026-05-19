@@ -20,6 +20,7 @@ import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:flutter_floating/flutter_floating.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/player/utils/pip_window_widget.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
 
@@ -670,55 +671,57 @@ class PlayerManager {
   // =========================
 
   Widget getVideoWidget(int fitIndex, {Widget? controls, required List<BoxFit> fitList}) {
-    return Container(
-      color: Colors.black,
-      padding: const EdgeInsets.all(0),
-      child: StreamBuilder<bool>(
-        stream: onPlaying,
-        initialData: isPlayingNow,
-        builder: (context, snapshot) {
-          if (_currentPlayer == null) {
-            return _buildPlaceholder();
-          }
-          final boxFit = fitList[fitIndex];
-          final content = KeyedSubtree(
-            key: videoKey.value,
-            child: Container(
-              color: Colors.black,
-              width: double.infinity,
-              height: double.infinity,
-              child: Stack(
-                children: [
-                  // 修改后的逻辑
-                  Positioned.fill(
-                    child: Container(
-                      color: Colors.black,
-                      child: FittedBox(
-                        fit: boxFit,
-                        clipBehavior: Clip.hardEdge,
-                        child: StreamBuilder<List<int?>>(
-                          stream: CombineLatestStream.list([width, height]),
-                          builder: (context, snapshot) {
-                            // 动态使用视频的真实宽高
-                            final vW = snapshot.data?[0]?.toDouble() ?? 1920.0;
-                            final vH = snapshot.data?[1]?.toDouble() ?? 1080.0;
-                            return SizedBox(width: vW, height: vH, child: _currentPlayer!.getVideoWidget());
-                          },
+    return PureLivePipWidget(
+      child: Container(
+        color: Colors.black,
+        padding: const EdgeInsets.all(0),
+        child: StreamBuilder<bool>(
+          stream: onPlaying,
+          initialData: isPlayingNow,
+          builder: (context, snapshot) {
+            if (_currentPlayer == null) {
+              return _buildPlaceholder();
+            }
+            final boxFit = fitList[fitIndex];
+            final content = KeyedSubtree(
+              key: videoKey.value,
+              child: Container(
+                color: Colors.black,
+                width: double.infinity,
+                height: double.infinity,
+                child: Stack(
+                  children: [
+                    // 修改后的逻辑
+                    Positioned.fill(
+                      child: Container(
+                        color: Colors.black,
+                        child: FittedBox(
+                          fit: boxFit,
+                          clipBehavior: Clip.hardEdge,
+                          child: StreamBuilder<List<int?>>(
+                            stream: CombineLatestStream.list([width, height]),
+                            builder: (context, snapshot) {
+                              // 动态使用视频的真实宽高
+                              final vW = snapshot.data?[0]?.toDouble() ?? 1920.0;
+                              final vH = snapshot.data?[1]?.toDouble() ?? 1080.0;
+                              return SizedBox(width: vW, height: vH, child: _currentPlayer!.getVideoWidget());
+                            },
+                          ),
                         ),
                       ),
                     ),
-                  ),
 
-                  if (controls != null) Positioned.fill(child: controls),
-                ],
+                    if (controls != null) Positioned.fill(child: controls),
+                  ],
+                ),
               ),
-            ),
-          );
-          if (!Platform.isAndroid) {
-            return content;
-          }
-          return PiPSwitcher(floating: floating, childWhenEnabled: content, childWhenDisabled: content);
-        },
+            );
+            if (!Platform.isAndroid) {
+              return content;
+            }
+            return PiPSwitcher(floating: floating, childWhenEnabled: content, childWhenDisabled: content);
+          },
+        ),
       ),
     );
   }

@@ -193,6 +193,11 @@ class WinFullscreen {
     }
   }
 
+  int getMyWindowHandle() {
+    final int hWnd = FindWindow(TEXT("FLUTTER_RUNNER_WIN32_WINDOW"), nullptr);
+    return hWnd;
+  }
+
   /// ------------------------------------------------------------
   /// Remove window frame
   /// ------------------------------------------------------------
@@ -353,11 +358,9 @@ class WinFullscreen {
     if (!Platform.isWindows) return;
 
     final hWnd = hwnd;
-
     if (hWnd == 0) return;
 
     _saveWindowState();
-
     _isFullscreen = false;
     _isPip = true;
 
@@ -367,7 +370,6 @@ class WinFullscreen {
 
     final px = logicalToPhysical(x);
     final py = logicalToPhysical(y);
-
     final pw = logicalToPhysical(width);
     final ph = logicalToPhysical(height);
 
