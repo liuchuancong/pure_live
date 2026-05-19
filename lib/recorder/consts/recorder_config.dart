@@ -1,5 +1,6 @@
 import 'recorder_keys.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:pure_live/common/global/app_path_manager.dart';
 import 'package:pure_live/recorder/models/record_file_item.dart';
 
 class RecorderConfig {
@@ -49,6 +50,8 @@ class RecorderConfig {
   static const _defaultAutoStartOnBoot = false;
 
   static const _defaultUsePinyinForFolder = false;
+
+  static final _defaultRecordPath = AppPathManager().recordSavePath;
 
   /// =========================
   /// 初始化默认配置
@@ -131,7 +134,7 @@ class RecorderConfig {
   /// 保存目录
   /// =========================
 
-  static String get recordSavePath => HivePrefUtil.getString(RecorderKeys.recordSavePath) ?? "";
+  static String get recordSavePath => HivePrefUtil.getString(RecorderKeys.recordSavePath) ?? _defaultRecordPath;
 
   static Future<void> setRecordSavePath(String value) => HivePrefUtil.setString(RecorderKeys.recordSavePath, value);
 

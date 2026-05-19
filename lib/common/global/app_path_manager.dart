@@ -175,4 +175,6 @@ class AppPathManager {
   Future<Directory> get recordsDir => getDir(dirRecords);
 
   String get basePath => _basePath ?? (throw StateError("AppPathManager 尚未初始化"));
+
+  String get recordSavePath => p.join(basePath, dirRecords);
 }
