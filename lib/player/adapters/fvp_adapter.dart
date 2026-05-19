@@ -117,7 +117,8 @@ class FvpAdapter implements UnifiedPlayer {
       if (PlatformUtils.isMobile) {
         await setVolume(1.0);
       } else {
-        await setVolume(settings.volume.value);
+        double targetVolume = room!.getSavedVolume();
+        await setVolume(targetVolume);
       }
     } catch (e, s) {
       final exception = PlayerException(
@@ -331,4 +332,18 @@ class FvpAdapter implements UnifiedPlayer {
 
   @override
   Stream<int?> get height => _heightSubject.stream;
+  @override
+  void clearListener() {
+    for (final sub in _subscriptions) {
+      sub.cancel();
+    }
+    _subscriptions.clear();
+
+    if (!_disposed) {
+      if (!_loadingSubject.isClosed) _loadingSubject.add(false);
+      if (!_playingSubject.isClosed) _playingSubject.add(false);
+      if (!_completeSubject.isClosed) _completeSubject.add(false);
+      if (!_errorSubject.isClosed) _errorSubject.drain();
+    }
+  }
 }
