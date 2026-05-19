@@ -4,14 +4,19 @@ import '../models/player_exception.dart';
 import '../models/player_error_type.dart';
 
 class EngineFallbackManager {
-  EngineFallbackManager({required this.defaultEngine, this.maxRetryCount = 2});
+  EngineFallbackManager({required this.defaultEngine, this.maxRetryCount = 2, required this.supportedEngines});
+  final List<PlayerEngine> supportedEngines;
 
   final PlayerEngine defaultEngine;
   final int maxRetryCount;
-  final Map<PlayerEngine, int> _retryMap = {};
-  final Map<PlayerEngine, bool> _permanentlyFailed = {}; // 标记永久失败的引擎
 
-  late final List<PlayerEngine> _priority = [defaultEngine, ...PlayerEngine.values.where((e) => e != defaultEngine)];
+  final Map<PlayerEngine, int> _retryMap = {};
+  final Set<PlayerEngine> _permanentlyFailed = {};
+
+  late final List<PlayerEngine> _priority = [
+    defaultEngine,
+    ...PlayerEngine.values,
+  ].where((e) => supportedEngines.contains(e)).toList();
 
   bool shouldFallback(PlayerException error) {
     switch (error.type) {
@@ -19,6 +24,7 @@ class EngineFallbackManager {
       case PlayerErrorType.native:
       case PlayerErrorType.texture:
       case PlayerErrorType.initialization:
+      case PlayerErrorType.source:
         return true;
       default:
         return false;
@@ -26,38 +32,35 @@ class EngineFallbackManager {
   }
 
   Future<PlayerEngine> fallback(PlayerEngine current, PlayerException error) async {
-    // 标记当前引擎已失败一次
-    final retry = _retryMap[current] ?? 0;
-    _retryMap[current] = retry + 1;
+    if (supportedEngines.length <= 1) {
+      return defaultEngine;
+    }
+    final currentRetry = _retryMap[current] ?? 0;
+    final nextRetry = currentRetry + 1;
+    _retryMap[current] = nextRetry;
 
-    // 如果达到最大重试次数，标记此引擎为永久失败
-    if (retry + 1 >= maxRetryCount) {
-      _permanentlyFailed[current] = true;
-      log("❌ 引擎 $current 已被标记为永久失败");
+    if (nextRetry < maxRetryCount) {
+      return current;
     }
 
-    // 查找一个未失败的引擎
+    _permanentlyFailed.add(current);
     for (final engine in _priority) {
-      if (!_permanentlyFailed.containsKey(engine) || !_permanentlyFailed[engine]!) {
-        if (engine != current) {
-          // 不返回当前引擎
-          log("🔄 引擎降级: $current -> $engine");
-          return engine;
-        }
+      if (!_permanentlyFailed.contains(engine)) {
+        log("🔄 引擎降级成功: $current -> $engine");
+        _retryMap[engine] = 0;
+        return engine;
       }
     }
 
-    log("⚠️ 所有引擎都失败了，返回默认引擎并重置");
-    _permanentlyFailed.clear();
-    return defaultEngine;
+    resetAll();
+    throw error;
   }
 
   void reset(PlayerEngine engine) {
     _retryMap[engine] = 0;
-    _permanentlyFailed.remove(engine); // 移除永久失败标记
+    _permanentlyFailed.remove(engine);
   }
 
-  // 新增：重置所有状态
   void resetAll() {
     _retryMap.clear();
     _permanentlyFailed.clear();

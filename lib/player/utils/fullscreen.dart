@@ -7,7 +7,6 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:screen_retriever/screen_retriever.dart';
 import 'package:pure_live/player/utils/win32_window.dart';
 import 'package:auto_orientation_v2/auto_orientation_v2.dart';
-import 'package:pure_live/modules/live_play/live_play_controller.dart';
 
 class WindowService {
   static final WindowService _instance = WindowService._internal();
@@ -33,7 +32,7 @@ class WindowService {
     }
     double x = (safeOffset.dx + safeSize.width) - w - 20;
     double y = (safeOffset.dy + safeSize.height) - h - 20;
-    WinFullscreen.enterPipMode(width: w, height: h, x: x, y: y);
+    WinFullscreen.enterPip(width: w, height: h, x: x, y: y);
   }
 
   Future<void> exitWinPiP() async {
@@ -96,7 +95,6 @@ class WindowService {
   Future<void> doExitWindowFullScreen() async {
     if (Platform.isWindows) {
       WinFullscreen.exitSpecialMode();
-      WinFullscreen.stopEscListener();
       return;
     }
     if (Platform.isMacOS || Platform.isLinux) {
@@ -107,21 +105,6 @@ class WindowService {
   Future<void> doEnterWindowFullScreen({bool enableEscListener = true, VoidCallback? onEsc}) async {
     if (Platform.isWindows) {
       WinFullscreen.enterFullscreen();
-      if (!enableEscListener) {
-        WinFullscreen.stopEscListener();
-        return;
-      }
-
-      if (onEsc != null) {
-        WinFullscreen.startEscListener(onEsc);
-        return;
-      }
-
-      if (Get.isRegistered<LivePlayController>()) {
-        final LivePlayController livePlayController = Get.find<LivePlayController>();
-        WinFullscreen.startEscListener(() => livePlayController.videoController.value!.toggleFullScreen());
-      }
-      return;
     }
     if (Platform.isMacOS || Platform.isLinux) {
       await windowManager.setFullScreen(true);

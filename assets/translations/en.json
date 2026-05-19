@@ -58,6 +58,8 @@
     "clear": "Clear",
     "clear_all_cache": "Clear All Cache",
     "clear_all_cache_desc": "Delete all recording cache files",
+    "clear_all_cache_meida_desc": "Clear all local cache",
+    "confirm_clear_meida_desc": "Are you sure you want to clear all local cache?",
     "click_to_remove_suffix": " (tap to remove)",
     "close": "Close",
     "confirm": "Confirm",
@@ -609,5 +611,7 @@
     "delete_success": "Deleted successfully",
     "delete_failed": "Failed to delete, please try again later",
     "download_failed": "Download failed, please try again later",
-    "download_success": "Downloaded successfully"
+    "download_success": "Downloaded successfully",
+    "show_danmaku": "Show Danmaku",
+    "show_danmaku_subtitle": "Enable danmaku display by default during playback"
 }

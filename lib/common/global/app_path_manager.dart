@@ -175,4 +175,5 @@ class AppPathManager {
   Future<Directory> get recordsDir => getDir(dirRecords);
 
   String get basePath => _basePath ?? (throw StateError("AppPathManager 尚未初始化"));
+
 }

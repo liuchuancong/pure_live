@@ -1,9 +1,7 @@
 import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/plugins/cache_manager.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/common/widgets/common_avatar.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 // ignore: must_be_immutable
 class RoomCard extends StatelessWidget {
@@ -60,23 +58,24 @@ class RoomCard extends StatelessWidget {
                     elevation: 0,
                     child: room.liveStatus == LiveStatus.offline && room.cover!.isNotEmpty
                         ? Center(child: Icon(Icons.tv_off_rounded, size: dense ? 36 : 60))
-                        : CachedNetworkImage(
-                            imageUrl: room.cover!,
-                            cacheManager: CustomImageCacheManager.instance,
+                        : Image.network(
+                            room.cover!,
                             fit: BoxFit.cover,
-                            fadeInDuration: const Duration(milliseconds: 250),
-                            fadeOutDuration: const Duration(milliseconds: 250),
-                            placeholder: (context, url) => Container(
-                              color: Theme.of(context).focusColor,
-                              child: const Center(
-                                child: SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                            gaplessPlayback: false,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                color: Theme.of(context).focusColor,
+                                child: const Center(
+                                  child: SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
                                 ),
-                              ),
-                            ),
-                            errorWidget: (context, url, error) {
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
                               return Container(
                                 color: Theme.of(context).focusColor,
                                 child: Center(

@@ -1,51 +1,92 @@
 import 'dart:io';
 import 'dart:ffi';
-import 'dart:async';
 import 'package:ffi/ffi.dart';
 import 'package:win32/win32.dart';
+import 'package:flutter/services.dart';
 
 class WinFullscreen {
-  static int? _hwnd;
-  static Timer? _escListener;
+  /// -----------------------------
+  /// State
+  /// -----------------------------
 
-  /// 缓存窗口状态
+  static bool _isFullscreen = false;
+  static bool _isPip = false;
+
+  static bool get isFullscreen => _isFullscreen;
+
+  static bool get isPip => _isPip;
+
+  static int? _cachedHwnd;
+
+  /// -----------------------------
+  /// Original window state
+  /// -----------------------------
+
+  static bool _saved = false;
+
+  static int _originalStyle = 0;
+  static int _originalExStyle = 0;
+
   static int _originalX = 0;
   static int _originalY = 0;
-  static int _originalWidth = 800;
-  static int _originalHeight = 600;
+  static int _originalWidth = 0;
+  static int _originalHeight = 0;
+
   static bool _originalMaximized = false;
-  static bool _originalSaved = false;
 
-  // Win32 常量定义
-  static const dwmwaWindowCornerPreference = 33;
-  static const dwmwcpDoNotRound = 1;
-  static const dwmwaUseImmersiveDarkMode = 20;
-  static const dwmwaNcRenderingPolicy = 2;
-  static const dwmncrpDisabled = 1;
+  /// -----------------------------
+  /// DWM
+  /// -----------------------------
 
-  /// 获取当前窗口的 DPI 缩放比例
-  static double getScaleFactor() {
-    if (!Platform.isWindows) return 1.0;
-    final hWnd = _getHwnd();
-    // 获取窗口所在的监控器句柄
-    final hMonitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
-    final dpiX = calloc<Uint32>();
-    final dpiY = calloc<Uint32>();
-    try {
-      GetDpiForMonitor(hMonitor, MDT_EFFECTIVE_DPI, dpiX, dpiY);
-      return dpiX.value / 96.0;
-    } catch (_) {
-      return 1.0;
-    } finally {
-      calloc.free(dpiX);
-      calloc.free(dpiY);
+  static const int dwmwaWindowCornerPreference = 33;
+  static const int dwmwcpRound = 2;
+  static const int dwmwcpDoNotRound = 1;
+
+  static const int dwmwaUseImmersiveDarkMode = 20;
+
+  /// ------------------------------------------------------------
+  /// HWND
+  /// ------------------------------------------------------------
+
+  static int get hwnd {
+    if (!Platform.isWindows) return 0;
+
+    if (_cachedHwnd != null && _cachedHwnd != 0 && IsWindow(_cachedHwnd!) != 0) {
+      return _cachedHwnd!;
     }
+
+    final className = TEXT('FLUTTER_RUNNER_WIN32_WINDOW');
+
+    try {
+      final found = FindWindow(className, nullptr);
+
+      calloc.free(className);
+
+      if (found != 0 && IsWindow(found) != 0) {
+        _cachedHwnd = found;
+        return found;
+      }
+    } catch (_) {
+      calloc.free(className);
+    }
+
+    final foreground = GetForegroundWindow();
+
+    if (foreground != 0 && IsWindow(foreground) != 0) {
+      _cachedHwnd = foreground;
+      return foreground;
+    }
+
+    return 0;
   }
 
-  /// 检测 Windows 11
+  /// ------------------------------------------------------------
+  /// Windows Version
+  /// ------------------------------------------------------------
+
   static bool get isWindows11 {
-    if (!Platform.isWindows) return false;
     final versionInfo = calloc<OSVERSIONINFOEX>()..ref.dwOSVersionInfoSize = sizeOf<OSVERSIONINFOEX>();
+
     try {
       if (GetVersionEx(versionInfo.cast()) != 0) {
         return versionInfo.ref.dwMajorVersion == 10 && versionInfo.ref.dwBuildNumber >= 22000;
@@ -53,176 +94,325 @@ class WinFullscreen {
     } finally {
       calloc.free(versionInfo);
     }
+
     return false;
   }
 
-  static void startEscListener(Function onEsc) {
-    _escListener?.cancel();
-    _escListener = Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      int state = GetAsyncKeyState(0x1B); // VK_ESCAPE
-      if ((state & 0x8000) != 0) {
-        timer.cancel();
-        onEsc();
-      }
-    });
-  }
+  /// ------------------------------------------------------------
+  /// DPI
+  /// ------------------------------------------------------------
 
-  static void stopEscListener() => _escListener?.cancel();
+  static double getWindowScale() {
+    final hWnd = hwnd;
 
-  static int _getHwnd() {
-    _hwnd ??= GetForegroundWindow();
-    return _hwnd!;
-  }
+    if (hWnd == 0) return 1.0;
 
-  /// 核心修复：强制抹除窗口帧边距（去除灰边的关键）
-  static void _removeFrameMargins(int hWnd) {
-    final margins = calloc<MARGINS>()
-      ..ref.cxLeftWidth = 0
-      ..ref.cxRightWidth = 0
-      ..ref.cyTopHeight = 0
-      ..ref.cyBottomHeight = 0;
     try {
+      final dpi = GetDpiForWindow(hWnd);
+
+      if (dpi == 0) return 1.0;
+
+      return dpi / 96.0;
+    } catch (_) {
+      return 1.0;
+    }
+  }
+
+  static int logicalToPhysical(double logical) {
+    return (logical * getWindowScale()).round();
+  }
+
+  /// ------------------------------------------------------------
+  /// Save current window state
+  /// ------------------------------------------------------------
+
+  static void _saveWindowState() {
+    if (_saved) return;
+
+    final hWnd = hwnd;
+
+    if (hWnd == 0) return;
+
+    _originalStyle = GetWindowLongPtr(hWnd, GWL_STYLE);
+    _originalExStyle = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
+
+    _originalMaximized = IsZoomed(hWnd) != 0;
+
+    final rect = calloc<RECT>();
+
+    try {
+      if (GetWindowRect(hWnd, rect) != 0) {
+        _originalX = rect.ref.left;
+        _originalY = rect.ref.top;
+
+        _originalWidth = rect.ref.right - rect.ref.left;
+        _originalHeight = rect.ref.bottom - rect.ref.top;
+
+        _saved = true;
+      }
+    } finally {
+      calloc.free(rect);
+    }
+  }
+
+  /// ------------------------------------------------------------
+  /// DWM Visual Fix
+  /// ------------------------------------------------------------
+
+  static void _applyDwmFix(int hWnd) {
+    final value = calloc<Int32>();
+
+    try {
+      /// Win11 corner
+      if (isWindows11) {
+        value.value = dwmwcpDoNotRound;
+
+        DwmSetWindowAttribute(hWnd, dwmwaWindowCornerPreference, value, sizeOf<Int32>());
+      }
+
+      /// Dark mode
+      value.value = 1;
+
+      DwmSetWindowAttribute(hWnd, dwmwaUseImmersiveDarkMode, value, sizeOf<Int32>());
+    } finally {
+      calloc.free(value);
+    }
+  }
+
+  static void _restoreDwm(int hWnd) {
+    if (!isWindows11) return;
+
+    final value = calloc<Int32>();
+
+    try {
+      value.value = dwmwcpRound;
+
+      DwmSetWindowAttribute(hWnd, dwmwaWindowCornerPreference, value, sizeOf<Int32>());
+    } finally {
+      calloc.free(value);
+    }
+  }
+
+  int getMyWindowHandle() {
+    final int hWnd = FindWindow(TEXT("FLUTTER_RUNNER_WIN32_WINDOW"), nullptr);
+    return hWnd;
+  }
+
+  /// ------------------------------------------------------------
+  /// Remove window frame
+  /// ------------------------------------------------------------
+
+  static void _applyBorderless(int hWnd, {required bool topMost}) {
+    int style = GetWindowLongPtr(hWnd, GWL_STYLE);
+
+    style &= ~WS_CAPTION;
+    style &= ~WS_THICKFRAME;
+    style &= ~WS_MINIMIZEBOX;
+    style &= ~WS_MAXIMIZEBOX;
+    style &= ~WS_SYSMENU;
+
+    style |= WS_POPUP;
+
+    SetWindowLongPtr(hWnd, GWL_STYLE, style);
+
+    int exStyle = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
+
+    if (topMost) {
+      exStyle |= WS_EX_TOPMOST;
+    } else {
+      exStyle &= ~WS_EX_TOPMOST;
+    }
+
+    SetWindowLongPtr(hWnd, GWL_EXSTYLE, exStyle);
+
+    final margins = calloc<MARGINS>();
+
+    try {
+      margins.ref.cxLeftWidth = 0;
+      margins.ref.cxRightWidth = 0;
+      margins.ref.cyTopHeight = 0;
+      margins.ref.cyBottomHeight = 0;
+
       DwmExtendFrameIntoClientArea(hWnd, margins);
     } finally {
       calloc.free(margins);
     }
+
+    _applyDwmFix(hWnd);
   }
 
-  /// 适配 UI 修复：处理圆角、暗色模式和投影
-  static void _applyVersionSpecificFix(int hWnd, {bool isFullscreen = true}) {
-    final pvAttribute = calloc<Int32>();
-    try {
-      // 1. 处理 Win11 圆角
-      if (isWindows11) {
-        pvAttribute.value = isFullscreen ? DWMWCP_DONOTROUND : 0;
-        DwmSetWindowAttribute(hWnd, DWMWA_WINDOW_CORNER_PREFERENCE, pvAttribute, sizeOf<Int32>());
-      }
+  /// ------------------------------------------------------------
+  /// ESC Exit
+  /// ------------------------------------------------------------
 
-      // 2. 禁用非客户区渲染（彻底关掉外围投影/阴影造成的灰边）
-      pvAttribute.value = isFullscreen ? dwmwcpDoNotRound : 0;
-      DwmSetWindowAttribute(hWnd, DWMWA_NCRENDERING_POLICY, pvAttribute, sizeOf<Int32>());
+  static void _initKeyboardHook() {
+    HardwareKeyboard.instance.removeHandler(_keyboardHandler);
+    HardwareKeyboard.instance.addHandler(_keyboardHandler);
+  }
 
-      // 3. 启用沉浸式深色模式（防止标题栏区域泛白）
-      pvAttribute.value = 1;
-      DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, pvAttribute, sizeOf<Int32>());
-    } finally {
-      calloc.free(pvAttribute);
+  static bool _keyboardHandler(KeyEvent event) {
+    if (event is! KeyDownEvent) return false;
+
+    if (event.logicalKey == LogicalKeyboardKey.escape && _isFullscreen) {
+      exitSpecialMode();
+
+      return true;
     }
+
+    return false;
   }
 
-  static void saveOriginalWindowRect() {
-    if (!Platform.isWindows || _originalSaved) return;
-    final hWnd = _getHwnd();
-    _originalMaximized = IsZoomed(hWnd) != 0;
-    final rect = calloc<RECT>();
-    if (GetWindowRect(hWnd, rect) != 0) {
-      _originalX = rect.ref.left;
-      _originalY = rect.ref.top;
-      _originalWidth = rect.ref.right - rect.ref.left;
-      _originalHeight = rect.ref.bottom - rect.ref.top;
-      _originalSaved = true;
-    }
-    calloc.free(rect);
-  }
+  /// ------------------------------------------------------------
+  /// Fullscreen
+  /// ------------------------------------------------------------
 
   static void enterFullscreen() {
     if (!Platform.isWindows) return;
-    final hWnd = _getHwnd();
-    saveOriginalWindowRect();
 
-    // 修改样式：额外移除了 WS_BORDER 和 WS_DLGFRAME 以消除灰边
-    int style = GetWindowLongPtr(hWnd, GWL_STYLE);
-    style &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU | WS_BORDER | WS_DLGFRAME);
-    style |= WS_POPUP;
-    SetWindowLongPtr(hWnd, GWL_STYLE, style);
+    final hWnd = hwnd;
 
-    int exStyle = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
-    exStyle &= ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE | WS_EX_DLGMODALFRAME);
-    SetWindowLongPtr(hWnd, GWL_EXSTYLE, exStyle);
+    if (hWnd == 0) return;
 
-    _applyVersionSpecificFix(hWnd, isFullscreen: true);
-    _removeFrameMargins(hWnd);
+    /// 已经全屏
+    if (_isFullscreen) return;
 
+    /// 保存窗口状态
+    _saveWindowState();
+
+    _isFullscreen = true;
+    _isPip = false;
+
+    /// ESC 退出
+    _initKeyboardHook();
+
+    /// 应用无边框
+    _applyBorderless(hWnd, topMost: false);
+
+    /// 获取当前显示器
     final monitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+
     final info = calloc<MONITORINFO>()..ref.cbSize = sizeOf<MONITORINFO>();
-    GetMonitorInfo(monitor, info);
 
-    SetWindowPos(
-      hWnd,
-      HWND_TOP,
-      info.ref.rcMonitor.left,
-      info.ref.rcMonitor.top,
-      info.ref.rcMonitor.right - info.ref.rcMonitor.left,
-      info.ref.rcMonitor.bottom - info.ref.rcMonitor.top,
-      SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOSENDCHANGING,
-    );
+    try {
+      if (GetMonitorInfo(monitor, info) == 0) {
+        return;
+      }
 
-    SetForegroundWindow(hWnd);
-    calloc.free(info);
+      final monitorLeft = info.ref.rcMonitor.left;
+      final monitorTop = info.ref.rcMonitor.top;
+
+      final monitorWidth = info.ref.rcMonitor.right - info.ref.rcMonitor.left;
+
+      final monitorHeight = info.ref.rcMonitor.bottom - info.ref.rcMonitor.top;
+
+      SetWindowPos(
+        hWnd,
+        HWND_TOP,
+        monitorLeft,
+        monitorTop,
+        monitorWidth,
+        monitorHeight,
+        SWP_FRAMECHANGED | SWP_SHOWWINDOW | SWP_NOOWNERZORDER | SWP_NOZORDER,
+      );
+
+      ShowWindow(hWnd, SW_SHOW);
+
+      UpdateWindow(hWnd);
+
+      RedrawWindow(hWnd, nullptr, 0, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN | RDW_FRAME);
+
+      SetForegroundWindow(hWnd);
+
+      final rect = calloc<RECT>();
+
+      try {
+        if (GetWindowRect(hWnd, rect) != 0) {
+          final currentWidth = rect.ref.right - rect.ref.left;
+
+          final currentHeight = rect.ref.bottom - rect.ref.top;
+          if (currentWidth != monitorWidth || currentHeight != monitorHeight) {
+            SetWindowPos(
+              hWnd,
+              HWND_TOP,
+              monitorLeft,
+              monitorTop,
+              monitorWidth,
+              monitorHeight,
+              SWP_FRAMECHANGED | SWP_SHOWWINDOW | SWP_NOOWNERZORDER | SWP_NOZORDER,
+            );
+          }
+        }
+      } finally {
+        calloc.free(rect);
+      }
+    } finally {
+      calloc.free(info);
+    }
   }
 
-  static void enterPipMode({required double width, required double height, required double x, required double y}) {
+  /// ------------------------------------------------------------
+  /// Picture in Picture
+  /// ------------------------------------------------------------
+
+  static void enterPip({required double x, required double y, required double width, required double height}) {
     if (!Platform.isWindows) return;
-    final hWnd = _getHwnd();
-    saveOriginalWindowRect();
 
-    // --- 新增：获取缩放并转换坐标/尺寸 ---
-    final double scale = getScaleFactor();
-    final int scaledWidth = (width * scale).toInt();
-    final int scaledHeight = (height * scale).toInt();
-    final int scaledX = (x * scale).toInt();
-    final int scaledY = (y * scale).toInt();
-    // --------------------------------
+    final hWnd = hwnd;
+    if (hWnd == 0) return;
 
-    int style = GetWindowLongPtr(hWnd, GWL_STYLE);
-    style &= ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU | WS_BORDER);
-    style |= WS_POPUP;
-    SetWindowLongPtr(hWnd, GWL_STYLE, style);
+    _saveWindowState();
+    _isFullscreen = false;
+    _isPip = true;
 
-    int exStyle = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
-    exStyle |= WS_EX_TOPMOST;
-    SetWindowLongPtr(hWnd, GWL_EXSTYLE, exStyle);
+    HardwareKeyboard.instance.removeHandler(_keyboardHandler);
 
-    _applyVersionSpecificFix(hWnd, isFullscreen: false);
-    _removeFrameMargins(hWnd);
+    _applyBorderless(hWnd, topMost: true);
+
+    final px = logicalToPhysical(x);
+    final py = logicalToPhysical(y);
+    final pw = logicalToPhysical(width);
+    final ph = logicalToPhysical(height);
 
     SetWindowPos(
       hWnd,
       HWND_TOPMOST,
-      scaledX, // 使用缩放后的值
-      scaledY,
-      scaledWidth,
-      scaledHeight,
-      SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_NOSENDCHANGING,
+      px,
+      py,
+      pw,
+      ph,
+      SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_NOOWNERZORDER,
     );
+
+    ShowWindow(hWnd, SW_SHOW);
   }
 
+  /// ------------------------------------------------------------
+  /// Exit fullscreen / pip
+  /// ------------------------------------------------------------
+
   static void exitSpecialMode() {
-    if (!Platform.isWindows || !_originalSaved) return;
-    final hWnd = _getHwnd();
+    if (!Platform.isWindows) return;
 
-    int style = GetWindowLongPtr(hWnd, GWL_STYLE);
-    style |= (WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU);
-    style &= ~WS_POPUP;
-    SetWindowLongPtr(hWnd, GWL_STYLE, style);
+    final hWnd = hwnd;
 
-    int exStyle = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
-    exStyle &= ~WS_EX_TOPMOST;
-    exStyle |= WS_EX_WINDOWEDGE;
-    SetWindowLongPtr(hWnd, GWL_EXSTYLE, exStyle);
+    if (hWnd == 0) return;
 
-    // 恢复 Win11 默认渲染策略
-    if (isWindows11) {
-      final pvAttribute = calloc<Int32>()..value = 0;
-      DwmSetWindowAttribute(hWnd, DWMWA_WINDOW_CORNER_PREFERENCE, pvAttribute, sizeOf<Int32>());
-      pvAttribute.value = 0; // DWMNCRP_USEWINDOWSTYLE
-      DwmSetWindowAttribute(hWnd, DWMWA_NCRENDERING_POLICY, pvAttribute, sizeOf<Int32>());
-      calloc.free(pvAttribute);
-    }
+    _isFullscreen = false;
+    _isPip = false;
 
+    HardwareKeyboard.instance.removeHandler(_keyboardHandler);
+
+    /// Restore styles
+    SetWindowLongPtr(hWnd, GWL_STYLE, _originalStyle);
+
+    SetWindowLongPtr(hWnd, GWL_EXSTYLE, _originalExStyle);
+
+    _restoreDwm(hWnd);
+
+    /// Restore maximized
     if (_originalMaximized) {
-      ShowWindow(hWnd, SW_MAXIMIZE);
-    } else {
+      ShowWindow(hWnd, SW_RESTORE);
+
       SetWindowPos(
         hWnd,
         HWND_NOTOPMOST,
@@ -230,9 +420,52 @@ class WinFullscreen {
         _originalY,
         _originalWidth,
         _originalHeight,
-        SWP_SHOWWINDOW | SWP_FRAMECHANGED,
+        SWP_FRAMECHANGED | SWP_NOOWNERZORDER,
+      );
+
+      ShowWindow(hWnd, SW_MAXIMIZE);
+    } else {
+      ShowWindow(hWnd, SW_RESTORE);
+
+      SetWindowPos(
+        hWnd,
+        HWND_NOTOPMOST,
+        _originalX,
+        _originalY,
+        _originalWidth,
+        _originalHeight,
+        SWP_FRAMECHANGED | SWP_SHOWWINDOW | SWP_NOOWNERZORDER,
       );
     }
-    _originalSaved = false;
+
+    _saved = false;
+  }
+
+  /// ------------------------------------------------------------
+  /// Toggle Fullscreen
+  /// ------------------------------------------------------------
+
+  static void toggleFullscreen() {
+    if (_isFullscreen) {
+      exitSpecialMode();
+    } else {
+      enterFullscreen();
+    }
+  }
+
+  /// ------------------------------------------------------------
+  /// Toggle PiP
+  /// ------------------------------------------------------------
+
+  static void togglePip({double width = 420, double height = 240}) {
+    if (_isPip) {
+      exitSpecialMode();
+      return;
+    }
+
+    final screenWidth = GetSystemMetrics(SM_CXSCREEN);
+    final screenHeight = GetSystemMetrics(SM_CYSCREEN);
+
+    enterPip(width: width, height: height, x: screenWidth - width - 24, y: screenHeight - height - 48);
   }
 }
