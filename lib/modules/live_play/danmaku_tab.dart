@@ -14,6 +14,9 @@ class DanmakuTabView extends GetView<LivePlayController> {
       if (controller.detail.value == null || controller.videoController.value == null) {
         return const Center(child: CircularProgressIndicator());
       }
+      if (!controller.settings.enableDanmakuDisplay.value) {
+        return Padding(padding: EdgeInsetsGeometry.all(12), child: const KeywordBlockPage());
+      }
 
       return Column(
         children: [

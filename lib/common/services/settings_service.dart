@@ -98,6 +98,7 @@ class SettingsService extends GetxController {
   final preferResolutionCellular =
       (HivePrefUtil.getString('preferResolutionCellular') ?? PlayerConsts.resolutions[0]).obs;
   final preferPlatform = (HivePrefUtil.getString('preferPlatform') ?? Sites.bilibiliSite).obs;
+  final enableDanmakuDisplay = (HivePrefUtil.getBool('enableDanmakuDisplay') ?? true).obs;
 
   // ==============================
   // ❤️ 收藏 & 历史
@@ -352,6 +353,10 @@ class SettingsService extends GetxController {
 
     videoHardwareDecoder.listen((value) {
       HivePrefUtil.setString('videoHardwareDecoder', value);
+    });
+
+    enableDanmakuDisplay.listen((value) {
+      HivePrefUtil.setBool('enableDanmakuDisplay', value);
     });
   }
 
@@ -697,6 +702,7 @@ class SettingsService extends GetxController {
     exitChoose.value = json['exitChoose'] ?? '';
     douyinCookie.value = json['douyinCookie'] ?? '';
     kuaishouCookie.value = json['kuaishouCookie'] ?? '';
+    enableDanmakuDisplay.value = json['enableDanmakuDisplay'] ?? true;
     themeColorSwitch.value = json['themeColorSwitch'] ?? Colors.blue.hex;
     volume.value = json['volume'] ?? 1.0;
     customPlayerOutput.value = json['customPlayerOutput'] ?? false;
@@ -766,7 +772,7 @@ class SettingsService extends GetxController {
     json['exitChoose'] = exitChoose.value;
     json['douyinCookie'] = douyinCookie.value;
     json['kuaishouCookie'] = kuaishouCookie.value;
-
+    json['enableDanmakuDisplay'] = enableDanmakuDisplay.value;
     json['shieldList'] = shieldList.map<String>((e) => e.toString()).toList();
     json['hotAreasList'] = hotAreasList.map<String>((e) => e.toString()).toList();
     json['themeColorSwitch'] = themeColorSwitch.value;

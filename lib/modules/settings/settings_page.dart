@@ -103,7 +103,12 @@ class SettingsPage extends GetView<SettingsService> {
             value: controller.enableFullScreenDefault,
             icon: Remix.fullscreen_line,
           ),
-
+          _buildSwitchTile(
+            title: i18n('show_danmaku'),
+            subtitle: i18n('show_danmaku_subtitle'),
+            value: controller.enableDanmakuDisplay,
+            icon: Remix.chat_smile_2_line,
+          ),
           if (Platform.isAndroid)
             _buildSwitchTile(
               title: i18n('enable_screen_keep_on'),

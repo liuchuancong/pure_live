@@ -608,5 +608,7 @@
     "delete_success": "删除成功",
     "delete_failed": "删除失败，请稍后重试",
     "download_failed": "下载失败，请稍后重试",
-    "download_success": "下载成功"
+    "download_success": "下载成功",
+    "show_danmaku": "显示弹幕",
+    "show_danmaku_subtitle": "播放直播时默认开启弹幕显示"
 }
