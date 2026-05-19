@@ -28,17 +28,11 @@ class MediaKitAdapter implements UnifiedPlayer {
   String? _currentUrl;
 
   final _stateSubject = BehaviorSubject<PlayerState>.seeded(PlayerState.idle);
-
   final _playingSubject = BehaviorSubject<bool>.seeded(false);
-
   final _loadingSubject = BehaviorSubject<bool>.seeded(false);
-
   final _errorSubject = BehaviorSubject<PlayerException>();
-
   final _completeSubject = BehaviorSubject<bool>.seeded(false);
-
   final _widthSubject = BehaviorSubject<int?>.seeded(null);
-
   final _heightSubject = BehaviorSubject<int?>.seeded(null);
 
   final List<StreamSubscription> _subscriptions = [];
@@ -60,13 +54,9 @@ class MediaKitAdapter implements UnifiedPlayer {
         final native = _player.platform as dynamic;
 
         await native.setProperty('force-seekable', 'yes');
-
         await native.setProperty('protocol_whitelist', 'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto');
-
         await native.setProperty('demuxer-lavf-probsize', '2097152');
-
         await native.setProperty('demuxer-lavf-analyzeduration', '10');
-
         await native.setProperty('network-timeout', '30');
 
         if (settings.customPlayerOutput.value) {
@@ -119,7 +109,6 @@ class MediaKitAdapter implements UnifiedPlayer {
       );
 
       _errorSubject.add(exception);
-
       throw exception;
     }
   }
@@ -141,18 +130,14 @@ class MediaKitAdapter implements UnifiedPlayer {
 
     try {
       _loadingSubject.add(true);
-
       _stateSubject.add(PlayerState.preparing);
-
       _completeSubject.add(false);
 
       // 重置宽高
       _widthSubject.add(null);
-
       _heightSubject.add(null);
 
       await _player.open(Media(url, httpHeaders: headers), play: true);
-
       _stateSubject.add(PlayerState.ready);
 
       if (PlatformUtils.isMobile) {
@@ -170,9 +155,7 @@ class MediaKitAdapter implements UnifiedPlayer {
       );
 
       _errorSubject.add(exception);
-
       _stateSubject.add(PlayerState.error);
-
       throw exception;
     } finally {
       _loadingSubject.add(false);
@@ -243,7 +226,6 @@ class MediaKitAdapter implements UnifiedPlayer {
     _subscriptions.add(
       _player.stream.width.listen((val) {
         if (_disposed) return;
-
         _widthSubject.add(val);
       }),
     );
@@ -255,7 +237,6 @@ class MediaKitAdapter implements UnifiedPlayer {
     _subscriptions.add(
       _player.stream.height.listen((val) {
         if (_disposed) return;
-
         _heightSubject.add(val);
       }),
     );
@@ -268,11 +249,9 @@ class MediaKitAdapter implements UnifiedPlayer {
       _player.stream.completed.listen(
         (completed) {
           if (_disposed) return;
-
           if (!completed) return;
 
           _completeSubject.add(true);
-
           _stateSubject.add(PlayerState.completed);
         },
         onError: (e, s) {
@@ -303,7 +282,6 @@ class MediaKitAdapter implements UnifiedPlayer {
     if (_disposed) return;
 
     _errorSubject.add(PlayerException(message: error.toString(), type: type, error: error, stackTrace: stackTrace));
-
     _stateSubject.add(PlayerState.error);
   }
 
@@ -315,25 +293,21 @@ class MediaKitAdapter implements UnifiedPlayer {
     final lower = error.toLowerCase();
 
     // network
-
     if (lower.contains('network') || lower.contains('timeout') || lower.contains('io')) {
       return PlayerErrorType.network;
     }
 
     // codec
-
     if (lower.contains('codec') || lower.contains('mediacodec') || lower.contains('decode')) {
       return PlayerErrorType.codec;
     }
 
     // source
-
     if (lower.contains('404') || lower.contains('source') || lower.contains('open')) {
       return PlayerErrorType.source;
     }
 
     // texture
-
     if (lower.contains('surface') || lower.contains('texture')) {
       return PlayerErrorType.texture;
     }
@@ -382,9 +356,7 @@ class MediaKitAdapter implements UnifiedPlayer {
   @override
   Future<void> stop() async {
     await _player.pause();
-
     await _player.seek(Duration.zero);
-
     _stateSubject.add(PlayerState.stopped);
   }
 
@@ -394,6 +366,7 @@ class MediaKitAdapter implements UnifiedPlayer {
 
   @override
   Future<void> softStop() async {
+    clearListener();
     await _player.setVolume(0.0);
     await _player.pause();
   }
@@ -405,7 +378,6 @@ class MediaKitAdapter implements UnifiedPlayer {
   @override
   Future<void> setVolume(double volume) async {
     final vol = (volume * 100).clamp(0.0, 100.0);
-
     await _player.setVolume(vol);
   }
 
@@ -418,14 +390,8 @@ class MediaKitAdapter implements UnifiedPlayer {
     if (_disposed) return;
 
     _disposed = true;
+    clearListener();
 
-    _listenerBound = false;
-
-    for (final item in _subscriptions) {
-      await item.cancel();
-    }
-
-    _subscriptions.clear();
     await _player.dispose();
 
     await Future.wait([
@@ -437,6 +403,27 @@ class MediaKitAdapter implements UnifiedPlayer {
       _widthSubject.close(),
       _heightSubject.close(),
     ]);
+  }
+
+  @override
+  void clearListener() {
+    // 1. 取消所有流订阅
+    for (final sub in _subscriptions) {
+      sub.cancel();
+    }
+    _subscriptions.clear();
+
+    // 2. 重置监听绑定标记
+    _listenerBound = false;
+
+    // 3. 重置状态，清空残留事件
+    if (!_disposed) {
+      if (!_loadingSubject.isClosed) _loadingSubject.add(false);
+      if (!_playingSubject.isClosed) _playingSubject.add(false);
+      if (!_completeSubject.isClosed) _completeSubject.add(false);
+      // 清空错误流缓存
+      if (!_errorSubject.isClosed) _errorSubject.drain();
+    }
   }
 
   // =========================
@@ -454,22 +441,16 @@ class MediaKitAdapter implements UnifiedPlayer {
 
   @override
   Stream<PlayerState> get onStateChanged => _stateSubject.stream;
-
   @override
   Stream<bool> get onPlaying => _playingSubject.stream;
-
   @override
   Stream<PlayerException> get onError => _errorSubject.stream;
-
   @override
   Stream<bool> get onLoading => _loadingSubject.stream;
-
   @override
   Stream<bool> get onComplete => _completeSubject.stream;
-
   @override
   Stream<int?> get width => _widthSubject.stream;
-
   @override
   Stream<int?> get height => _heightSubject.stream;
 }

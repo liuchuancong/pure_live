@@ -50,7 +50,8 @@ class VideoController with ChangeNotifier {
   LivePlayController livePlayController = Get.find<LivePlayController>();
 
   final SettingsService settings = Get.find<SettingsService>();
-  late StreamSubscription<PlayerException> _errorSub;
+  StreamSubscription<PlayerException>? _errorSub;
+  StreamSubscription<bool>? _pipSub;
   Timer? showControllerTimer;
   final showController = true.obs;
   final showSettting = false.obs;
@@ -144,13 +145,14 @@ class VideoController with ChangeNotifier {
 
   void initPlayerListener() {
     final manager = GlobalPlayerService.instance.playerManager;
+    _errorSub?.cancel();
     _errorSub = manager.onError.listen((error) {
       _handlePlayerError(error);
     });
   }
 
   void _handlePlayerError(PlayerException error) {
-    log(error.toString(), name: 'PlayerError');
+    log(error.toString(), name: '_handlePlayerError');
     switch (error.type) {
       case PlayerErrorType.network:
         ToastUtil.show(i18n("error_network"));
@@ -275,7 +277,7 @@ class VideoController with ChangeNotifier {
       updateDanmaku();
     });
 
-    GlobalPlayerService.instance.playerManager.isInPip.listen((isInPip) {
+    _pipSub = GlobalPlayerService.instance.playerManager.isInPip.listen((isInPip) {
       if (isInPip) {
         livePlayController.setFullScreen();
       } else {
@@ -309,20 +311,32 @@ class VideoController with ChangeNotifier {
 
   @override
   void dispose() async {
-    _errorSub.cancel();
+    _errorSub?.cancel();
+    _errorSub = null;
+    _pipSub?.cancel();
+    _pipSub = null;
+    showControllerTimer?.cancel();
+    _debounceTimer?.cancel();
+    _hideVolumeTimer?.cancel();
     await destory();
     super.dispose();
   }
 
   void refresh() async {
-    _errorSub.cancel();
+    _errorSub?.cancel();
+    _errorSub = null;
+    _pipSub?.cancel();
+    _pipSub = null;
     GlobalPlayerService.instance.playerManager.close();
     await destory();
     livePlayController.onInitPlayerState(reloadDataType: ReloadDataType.refreash);
   }
 
   void changeLine() async {
-    _errorSub.cancel();
+    _errorSub?.cancel();
+    _errorSub = null;
+    _pipSub?.cancel();
+    _pipSub = null;
     GlobalPlayerService.instance.playerManager.close();
     await destory();
     livePlayController.onInitPlayerState(reloadDataType: ReloadDataType.changeLine, line: currentLineIndex);
@@ -331,7 +345,7 @@ class VideoController with ChangeNotifier {
   Future<void> destory() async {
     if (Platform.isAndroid || Platform.isIOS) {
       if (allowScreenKeepOn) WakelockPlus.disable();
-      _subscription.cancel();
+      unawaited(_subscription.cancel());
       _volumeController.removeListener();
     }
   }

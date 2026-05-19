@@ -8,7 +8,6 @@ import '../models/player_state.dart';
 import 'preload_player_manager.dart';
 import '../models/player_engine.dart';
 import 'engine_fallback_manager.dart';
-import 'player_error_dispatcher.dart';
 import 'package:floating/floating.dart';
 import '../models/player_exception.dart';
 import '../models/player_error_type.dart';
@@ -192,7 +191,7 @@ class PlayerManager {
 
       _currentPlayer = await playerPool.getPlayer(engine);
 
-      _bindPlayerStreams(_currentPlayer!);
+      await _bindPlayerStreams(_currentPlayer!);
       LiveAudioService.setPlayer(_currentPlayer!);
       if (Platform.isAndroid) {
         floating = Floating();
@@ -229,14 +228,10 @@ class PlayerManager {
 
   Future<void> play(String url, List<String> playUrls, Map<String, String> headers, {LiveRoom? room}) async {
     if (_disposed) return;
-
     if (_currentPlayer == null || _runtimeEngine == null) {
       final settings = Get.find<SettingsService>();
-
       _defaultEngine = PlayerEngine.values[settings.videoPlayerIndex.value];
-
       _runtimeEngine = _defaultEngine;
-
       await initialize(engine: _defaultEngine!);
     } else if (_runtimeEngine != _defaultEngine && !_isSwitchingDueToFallback) {
       await switchEngine(_defaultEngine!, isManual: false);
@@ -326,7 +321,7 @@ class PlayerManager {
         _defaultEngine = engine;
       }
 
-      _bindPlayerStreams(newPlayer);
+      await _bindPlayerStreams(newPlayer);
       LiveAudioService.setPlayer(_currentPlayer!);
       if (oldPlayer != null && oldEngine != null) {
         await _safeDestroyPlayer(oldPlayer, oldEngine);
@@ -386,7 +381,7 @@ class PlayerManager {
 
     _currentPlayer = player;
 
-    _bindPlayerStreams(player);
+    await _bindPlayerStreams(player);
   }
 
   // =========================
@@ -756,7 +751,7 @@ class PlayerManager {
 
   Future<void> softStop() async {
     try {
-      _clearSubscriptions();
+      await _clearSubscriptions();
       if (_stateSubject.value == PlayerState.error) {
         await hardDispose();
 
@@ -774,7 +769,7 @@ class PlayerManager {
   }
 
   Future<void> hardDispose() async {
-    _clearSubscriptions();
+    await _clearSubscriptions();
     final player = _currentPlayer;
     if (player != null) {
       await player.hardDispose();
@@ -822,8 +817,6 @@ class PlayerManager {
       hasError.value = true;
 
       _errorSubject.add(error);
-
-      PlayerErrorDispatcher.instance.dispatch(error);
 
       _stateSubject.add(PlayerState.error);
 
@@ -919,22 +912,17 @@ class PlayerManager {
   // bind
   // =========================
 
-  void _bindPlayerStreams(UnifiedPlayer player) {
-    _clearSubscriptions();
-
+  Future<void> _bindPlayerStreams(UnifiedPlayer player) async {
+    await _clearSubscriptions();
     _subscriptions.add(
       player.onPlaying.listen((event) async {
         _playingSubject.add(event);
-
         if (event) {
           _replayCount = 0;
           hasError.value = false;
-
           _stateSubject.add(PlayerState.playing);
-
           if (_isSwitchingDueToFallback) {
             _errorCount = 0;
-
             _isSwitchingDueToFallback = false;
           }
         } else {
@@ -946,38 +934,48 @@ class PlayerManager {
     _subscriptions.add(
       player.onLoading.listen((event) {
         _loadingSubject.add(event);
-
         if (event && _stateSubject.value != PlayerState.buffering) {
           _stateSubject.add(PlayerState.buffering);
         }
       }),
     );
 
-    _subscriptions.add(player.onComplete.listen(_completeSubject.add));
-
-    _subscriptions.add(player.onStateChanged.listen(_stateSubject.add));
-
     _subscriptions.add(
-      player.onError
-          .distinct((a, b) {
-            return a.message == b.message && a.type == b.type;
-          })
-          .throttleTime(const Duration(seconds: 1))
-          .listen((error) {
-            unawaited(_handleError(error));
-          }),
+      player.onComplete.listen((event) {
+        _completeSubject.add(event);
+      }),
     );
 
-    _subscriptions.add(player.width.listen(_widthSubject.add));
+    _subscriptions.add(
+      player.onStateChanged.listen((event) {
+        _stateSubject.add(event);
+      }),
+    );
 
-    _subscriptions.add(player.height.listen(_heightSubject.add));
+    _subscriptions.add(
+      player.onError.listen((error) {
+        _handleError(error);
+      }),
+    );
+
+    _subscriptions.add(
+      player.width.listen((event) {
+        _widthSubject.add(event);
+      }),
+    );
+
+    _subscriptions.add(
+      player.height.listen((event) {
+        _heightSubject.add(event);
+      }),
+    );
 
     _subscriptions.add(
       CombineLatestStream.combine2<int?, int?, bool>(
         width.where((w) => w != null && w > 0),
         height.where((h) => h != null && h > 0),
         (w, h) => h! >= w!,
-      ).listen((event) {
+      ).distinct().listen((event) {
         isVerticalVideo.value = event;
       }),
     );
@@ -988,10 +986,13 @@ class PlayerManager {
   // =========================
 
   Future<void> _clearSubscriptions() async {
+    if (_subscriptions.isEmpty) return;
+
+    _subscriptions.clear();
+
     for (final item in _subscriptions) {
       await item.cancel();
     }
-
     _subscriptions.clear();
   }
 

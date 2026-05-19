@@ -4,7 +4,6 @@ import '../models/player_state.dart';
 import '../models/player_exception.dart';
 import '../models/player_error_type.dart';
 import 'package:pure_live/common/index.dart';
-import '../core/player_error_dispatcher.dart';
 import '../interface/unified_player_interface.dart';
 import 'package:better_player_plus/better_player_plus.dart';
 
@@ -13,6 +12,9 @@ class BetterPlayerAdapter implements UnifiedPlayer {
 
   bool _initialized = false;
   bool _disposed = false;
+
+  void Function(BetterPlayerEvent)? _eventListener;
+
   final _stateSubject = BehaviorSubject<PlayerState>.seeded(PlayerState.idle);
   final _playingSubject = BehaviorSubject<bool>.seeded(false);
   final _loadingSubject = BehaviorSubject<bool>.seeded(false);
@@ -42,7 +44,10 @@ class BetterPlayerAdapter implements UnifiedPlayer {
   }
 
   void _bindListeners() {
-    _controller!.addEventsListener((BetterPlayerEvent event) {
+    clearListener();
+
+    // 保存监听器回调
+    _eventListener = (BetterPlayerEvent event) {
       switch (event.betterPlayerEventType) {
         case BetterPlayerEventType.initialized:
         case BetterPlayerEventType.changedResolution:
@@ -81,12 +86,13 @@ class BetterPlayerAdapter implements UnifiedPlayer {
             type: PlayerErrorType.native,
           );
           _errorSubject.add(exception);
-          PlayerErrorDispatcher.instance.dispatch(exception);
           break;
         default:
           break;
       }
-    });
+    };
+
+    _controller!.addEventsListener(_eventListener!);
   }
 
   @override
@@ -139,10 +145,11 @@ class BetterPlayerAdapter implements UnifiedPlayer {
   }
 
   @override
-  @override
   Future<void> softStop() async {
+    clearListener();
+
     if (_controller != null) {
-      await _controller!.setVolume(0.0); // 立即静音
+      await _controller!.setVolume(0.0);
     }
     await _controller?.pause();
     await _controller?.seekTo(Duration.zero);
@@ -153,6 +160,8 @@ class BetterPlayerAdapter implements UnifiedPlayer {
     if (_disposed) return;
     _disposed = true;
     _initialized = false;
+    clearListener();
+
     if (_controller != null) {
       try {
         await _controller!.setVolume(0.0);
@@ -170,6 +179,24 @@ class BetterPlayerAdapter implements UnifiedPlayer {
     await _completeSubject.close();
     await _widthSubject.close();
     await _heightSubject.close();
+  }
+
+  @override
+  void clearListener() {
+    // 1. 移除 BetterPlayer 事件监听
+    if (_controller != null && _eventListener != null) {
+      _controller!.removeEventsListener(_eventListener!);
+      _eventListener = null;
+    }
+
+    // 2. 重置所有流状态，清空残留事件
+    if (!_disposed) {
+      if (!_loadingSubject.isClosed) _loadingSubject.add(false);
+      if (!_playingSubject.isClosed) _playingSubject.add(false);
+      if (!_completeSubject.isClosed) _completeSubject.add(false);
+      // 清空错误流缓存
+      if (!_errorSubject.isClosed) _errorSubject.drain();
+    }
   }
 
   @override

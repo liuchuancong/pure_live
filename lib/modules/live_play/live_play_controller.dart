@@ -491,7 +491,6 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     }
 
     playUrls.value = playUrl;
-    log(playUrl.toString(), name: "play_url");
     setPlayer();
   }
 
