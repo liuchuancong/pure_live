@@ -1,6 +1,5 @@
 import 'recorder_keys.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
-import 'package:pure_live/common/global/app_path_manager.dart';
 import 'package:pure_live/recorder/models/record_file_item.dart';
 
 class RecorderConfig {
@@ -51,53 +50,6 @@ class RecorderConfig {
 
   static const _defaultUsePinyinForFolder = false;
 
-  static final _defaultRecordPath = AppPathManager().recordSavePath;
-
-  /// =========================
-  /// 初始化默认配置
-  /// =========================
-
-  static Future<void> init() async {
-    await _ensureDefault(RecorderKeys.segmentTime, _defaultSegmentTime);
-
-    await _ensureDefault(RecorderKeys.maxTaskCount, _defaultMaxTaskCount);
-
-    await _ensureDefault(RecorderKeys.autoReconnect, _defaultAutoReconnect);
-
-    await _ensureDefault(RecorderKeys.maxCacheMB, _defaultMaxCacheMB);
-
-    await _ensureDefault(RecorderKeys.maxRetryCount, _defaultMaxRetryCount);
-
-    await _ensureDefault(RecorderKeys.retryDelay, _defaultRetryDelay);
-
-    /// =========================
-    /// 轮询配置
-    /// =========================
-
-    await _ensureDefault(RecorderKeys.enablePolling, _defaultEnablePolling);
-    await _ensureDefault(RecorderKeys.liveCheckInterval, _defaultLiveCheckInterval);
-    await _ensureDefault(RecorderKeys.enableBackoff, _defaultEnableBackoff);
-    await _ensureDefault(RecorderKeys.maxCheckInterval, _defaultMaxCheckInterval);
-    await _ensureDefault(RecorderKeys.autoStartOnBoot, _defaultAutoStartOnBoot);
-    await _ensureDefault(RecorderKeys.preferBestStream, _defaultPreferBestStream);
-    await _ensureDefault(RecorderKeys.rwTimeout, _defaultRwTimeout);
-    await _ensureDefault(RecorderKeys.threadQueueSize, _defaultThreadQueueSize);
-
-    await _ensureDefault(RecorderKeys.folderNamingStrategy, _defaultUsePinyinForFolder);
-  }
-
-  /// =========================
-  /// 默认值写入
-  /// =========================
-
-  static Future<void> _ensureDefault(String key, dynamic defaultValue) async {
-    final v = HivePrefUtil.getAnyPref(key);
-
-    if (v == null) {
-      await HivePrefUtil.setAnyPref(key, defaultValue);
-    }
-  }
-
   /// =========================
   /// 分段时长
   /// =========================
@@ -134,7 +86,7 @@ class RecorderConfig {
   /// 保存目录
   /// =========================
 
-  static String get recordSavePath => HivePrefUtil.getString(RecorderKeys.recordSavePath) ?? _defaultRecordPath;
+  static String get recordSavePath => HivePrefUtil.getString(RecorderKeys.recordSavePath) ?? '';
 
   static Future<void> setRecordSavePath(String value) => HivePrefUtil.setString(RecorderKeys.recordSavePath, value);
 

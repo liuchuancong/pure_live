@@ -1,5 +1,9 @@
+import 'dart:io';
 import 'package:get/get.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:pure_live/common/global/app_path_manager.dart';
 import 'package:pure_live/recorder/consts/recorder_config.dart';
 import 'package:pure_live/recorder/services/cache_service.dart';
 
@@ -44,6 +48,7 @@ class RecordSettingsController extends GetxController {
   void onInit() {
     super.onInit();
     refreshCacheSize();
+    initRecordPath();
   }
 
   /// =====================================
@@ -145,12 +150,22 @@ class RecordSettingsController extends GetxController {
   /// 选择录制目录
   /// =====================================
   Future<void> pickRecordDir() async {
-    final result = await FilePicker.getDirectoryPath();
+    final path = recordSavePath.value;
+    if (path.isNotEmpty) {
+      // 调用系统默认应用打开该文件夹
+      final result = await OpenFilex.open(path);
 
-    if (result != null) {
-      recordSavePath.value = result;
-      await RecorderConfig.setRecordSavePath(result);
-      await refreshCacheSize();
+      if (result.type != ResultType.done) {
+        ToastUtil.show(result.message);
+      }
+    } else {
+      final result = await FilePicker.getDirectoryPath();
+
+      if (result != null) {
+        recordSavePath.value = result;
+        await RecorderConfig.setRecordSavePath(result);
+        await refreshCacheSize();
+      }
     }
   }
 
@@ -193,5 +208,13 @@ class RecordSettingsController extends GetxController {
   Future<void> updateUsePinyinForFolder(bool v) async {
     usePinyinForFolder.value = v;
     await RecorderConfig.setUsePinyinForFolder(v);
+  }
+
+  Future<void> initRecordPath() async {
+    if (recordSavePath.isEmpty) {
+      final Directory recordDir = await AppPathManager().getDir(AppPathManager.dirRecords);
+      recordSavePath.value = recordDir.path;
+      await RecorderConfig.setRecordSavePath(recordDir.path);
+    }
   }
 }
