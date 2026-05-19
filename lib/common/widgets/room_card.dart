@@ -59,14 +59,11 @@ class RoomCard extends StatelessWidget {
                     child: room.liveStatus == LiveStatus.offline && room.cover!.isNotEmpty
                         ? Center(child: Icon(Icons.tv_off_rounded, size: dense ? 36 : 60))
                         : Image.network(
-                            // 拼接时间戳参数，确保每次都从网络下载，绕过任何潜在的缓存
-                            "${room.cover!}?v=${DateTime.now().millisecondsSinceEpoch}",
+                            room.cover!,
                             fit: BoxFit.cover,
-                            // 控制淡入动画（类似原组件的 fadeInDuration）
                             gaplessPlayback: false,
-                            // 替代 placeholder
                             loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child; // 加载完成显示原图
+                              if (loadingProgress == null) return child;
                               return Container(
                                 color: Theme.of(context).focusColor,
                                 child: const Center(
@@ -78,7 +75,6 @@ class RoomCard extends StatelessWidget {
                                 ),
                               );
                             },
-                            // 替代 errorWidget
                             errorBuilder: (context, error, stackTrace) {
                               return Container(
                                 color: Theme.of(context).focusColor,
