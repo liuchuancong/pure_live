@@ -756,6 +756,7 @@ class PlayerManager {
 
   Future<void> softStop() async {
     try {
+      _clearSubscriptions();
       if (_stateSubject.value == PlayerState.error) {
         await hardDispose();
 
@@ -773,6 +774,7 @@ class PlayerManager {
   }
 
   Future<void> hardDispose() async {
+    _clearSubscriptions();
     final player = _currentPlayer;
     if (player != null) {
       await player.hardDispose();
@@ -918,6 +920,8 @@ class PlayerManager {
   // =========================
 
   void _bindPlayerStreams(UnifiedPlayer player) {
+    _clearSubscriptions();
+
     _subscriptions.add(
       player.onPlaying.listen((event) async {
         _playingSubject.add(event);
