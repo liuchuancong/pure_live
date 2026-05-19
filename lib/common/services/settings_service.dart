@@ -12,6 +12,7 @@ import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/win_auto_start.dart';
 import 'package:pure_live/modules/web_dav/webdav_config.dart';
+import 'package:pure_live/common/global/app_path_manager.dart';
 import 'package:pure_live/common/services/bilibili_account_service.dart';
 
 class SettingsService extends GetxController {
@@ -126,7 +127,7 @@ class SettingsService extends GetxController {
   final Map<ColorSwatch<Object>, String> colorsNameMap = AppConsts.themeColors.map(
     (key, value) => MapEntry(ColorTools.createPrimarySwatch(value), key),
   );
-
+  final cacheSizeMB = 0.0.obs;
   // ==============================
   // 🧩 Lifecycle: onInit
   // ==============================
@@ -358,6 +359,7 @@ class SettingsService extends GetxController {
     enableDanmakuDisplay.listen((value) {
       HivePrefUtil.setBool('enableDanmakuDisplay', value);
     });
+    getCacheSize();
   }
 
   // ==============================
@@ -621,8 +623,59 @@ class SettingsService extends GetxController {
     }
   }
 
+  Future<double> getCacheSize() async {
+    final recordsDir = await AppPathManager().recordsDir;
+    final imageCacheDir = await AppPathManager().imageCacheDir;
+    final downloadDir = await AppPathManager().downloadDir;
+    final iptvCacheDir = await AppPathManager().iptvCacheDir;
+    final List<Directory> targetDirs = [recordsDir, imageCacheDir, downloadDir, iptvCacheDir];
+    double totalSizeBytes = 0;
+    for (final dir in targetDirs) {
+      if (!dir.existsSync()) continue;
+
+      try {
+        final files = dir.listSync(recursive: true);
+        for (final file in files) {
+          if (file is File) {
+            totalSizeBytes += file.lengthSync();
+          }
+        }
+      } catch (e) {
+        debugPrint("计算目录 ${dir.path} 尺寸时出错: $e");
+      }
+    }
+    cacheSizeMB.value = totalSizeBytes / 1024 / 1024;
+    return totalSizeBytes / 1024 / 1024;
+  }
+
+  Future<void> clearCache() async {
+    final recordsDir = await AppPathManager().recordsDir;
+    final imageCacheDir = await AppPathManager().imageCacheDir;
+    final downloadDir = await AppPathManager().downloadDir;
+    final iptvCacheDir = await AppPathManager().iptvCacheDir;
+
+    final List<Directory> targetDirs = [recordsDir, imageCacheDir, downloadDir, iptvCacheDir];
+    for (final dir in targetDirs) {
+      if (!dir.existsSync()) continue;
+
+      try {
+        dir.deleteSync(recursive: true);
+        dir.createSync(recursive: true);
+      } catch (e) {
+        debugPrint("清空目录 ${dir.path} 失败: $e");
+      }
+    }
+    cacheSizeMB.value = 0;
+  }
+
+  final refreshTurns = 0.0.obs;
+  Future<void> handleManualRefresh() async {
+    refreshTurns.value += 1.0;
+
+    await getCacheSize();
+  }
+
   void fromJson(Map<String, dynamic> json) {
-    // 1. 定義內部輔助解析函數，處理兼容性邏輯
     List<T> safeParseList<T>(dynamic data, T Function(Map<String, dynamic>) fromJsonFactory) {
       if (data == null || data is! List) return [];
       return data.map<T>((e) {

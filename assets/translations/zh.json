@@ -58,6 +58,8 @@
     "clear": "清除",
     "clear_all_cache": "清除全部缓存",
     "clear_all_cache_desc": "删除录制缓存文件",
+    "clear_all_cache_meida_desc": "清空本地所有缓存",
+    "confirm_clear_meida_desc": "确认清空本地所有缓存吗？",
     "click_to_remove_suffix": "（点击移除）",
     "close": "关闭",
     "confirm": "确认",
