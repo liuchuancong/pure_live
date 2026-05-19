@@ -55,7 +55,7 @@ jobs:
       - name: 设置Flutter环境
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: '3.41.8'
           cache: true
 
       - name: 更新Flutter packages
@@ -141,7 +141,7 @@ jobs:
       - name: 设置Flutter环境
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: '3.41.8'
           cache: true
 
       - name: 启用 Flutter Windows
@@ -261,7 +261,7 @@ jobs:
       - name: 设置Flutter环境
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: '3.41.8'
           cache: true
 
       - name: 更新Flutter packages
