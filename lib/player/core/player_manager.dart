@@ -117,20 +117,6 @@ class PlayerManager {
   bool _isSwitchingDueToFallback = false;
   bool _isHandlingError = false;
 
-  DateTime? _lastRecoveryTime;
-
-  static const Duration _recoveryCooldown = Duration(seconds: 2);
-
-  int _errorCount = 0;
-
-  DateTime? _lastErrorTime;
-
-  static const int _maxErrorCount = 5;
-  int _replayCount = 0;
-  static const int _maxReplayCount = 3;
-
-  static const Duration _errorResetDuration = Duration(seconds: 10);
-
   static const String _floatTag = "global_video_player";
 
   Timer? _hideTimer;
@@ -228,6 +214,9 @@ class PlayerManager {
 
   Future<void> play(String url, List<String> playUrls, Map<String, String> headers, {LiveRoom? room}) async {
     if (_disposed) return;
+    if (room?.roomId != currentFloatRoom?.roomId) {
+      lineManager.reset();
+    }
     if (_currentPlayer == null || _runtimeEngine == null) {
       final settings = Get.find<SettingsService>();
       _defaultEngine = PlayerEngine.values[settings.videoPlayerIndex.value];
@@ -289,7 +278,6 @@ class PlayerManager {
 
   Future<void> replay() async {
     if (_currentUrl == null) return;
-    _replayCount = 0;
     await play(_currentUrl!, _currentPlayUrls, _currentHeaders, room: currentFloatRoom);
   }
 
@@ -750,6 +738,7 @@ class PlayerManager {
   }
 
   Future<void> softStop() async {
+    lineManager.reset();
     try {
       await _clearSubscriptions();
       if (_stateSubject.value == PlayerState.error) {
@@ -769,6 +758,7 @@ class PlayerManager {
   }
 
   Future<void> hardDispose() async {
+    lineManager.reset();
     await _clearSubscriptions();
     final player = _currentPlayer;
     if (player != null) {
@@ -793,91 +783,54 @@ class PlayerManager {
   // =========================
   // error
   // =========================
-
   Future<void> _handleError(PlayerException error) async {
     if (_disposed) return;
-
-    // 防止并发错误恢复
     if (_isHandlingError) {
       log("skip duplicated error handling: ${error.message}");
       return;
     }
-
-    // 恢复冷却时间
-    final now = DateTime.now();
-
-    if (_lastRecoveryTime != null && now.difference(_lastRecoveryTime!) < _recoveryCooldown) {
-      log("error recovery cooldown...");
-      return;
-    }
-
     _isHandlingError = true;
 
     try {
       hasError.value = true;
-
       _errorSubject.add(error);
-
       _stateSubject.add(PlayerState.error);
 
-      // 错误计数
-      if (_lastErrorTime != null && now.difference(_lastErrorTime!) > _errorResetDuration) {
-        _errorCount = 0;
-      }
-
-      _errorCount++;
-
-      _lastErrorTime = now;
-
-      log(
-        "[PlayerError] [${error.type.name}] "
-        "${error.message} "
-        "count=$_errorCount "
-        "engine=${_runtimeEngine?.name}",
-      );
-
-      // 超过最大恢复次数
-      if (_errorCount >= _maxErrorCount) {
-        log("max error count reached");
-        return;
-      }
-
-      // =========================
-      // 1. 优先切线路
-      // =========================
+      bool lineSwitched = false;
 
       if ((error.type == PlayerErrorType.network || error.type == PlayerErrorType.source) &&
           _currentPlayUrls.length > 1) {
-        final nextLine = lineManager.next(_currentPlayUrls);
+        lineManager.markFailed(_currentUrl!);
 
-        // 避免重复线路
-        if (nextLine != _currentUrl) {
-          log("switch line => $nextLine");
+        if (!lineManager.hasAvailable(_currentPlayUrls)) {
+          log("no available lines, fallback engine");
+        } else {
+          final nextLine = lineManager.next(_currentPlayUrls);
 
-          _lastRecoveryTime = DateTime.now();
+          if (nextLine != _currentUrl) {
+            lineSwitched = true;
 
-          await Future.delayed(const Duration(milliseconds: 800));
-          if (_replayCount >= _maxReplayCount) {
-            log("max replay count reached");
+            log("switch line => $nextLine");
+
+            await Future.delayed(const Duration(seconds: 2));
+
+            await play(nextLine, _currentPlayUrls, _currentHeaders, room: currentFloatRoom);
+
             return;
           }
-
-          _replayCount++;
-          await play(nextLine, _currentPlayUrls, _currentHeaders, room: currentFloatRoom);
-
-          return;
         }
       }
-
+      log(error.type.toString());
       // =========================
       // 2. 再尝试切播放器
       // =========================
 
-      if (fallbackManager.shouldFallback(error)) {
+      if (!lineSwitched && fallbackManager.shouldFallback(error)) {
         final nextEngine = await fallbackManager.fallback(_runtimeEngine!, error);
 
         // 防止重复切换
         if (nextEngine == _runtimeEngine) {
+          log("skip fallback: nextEngine(${nextEngine.name}) == currentEngine(${_runtimeEngine?.name})");
           return;
         }
 
@@ -885,10 +838,7 @@ class PlayerManager {
           "fallback engine: "
           "${_runtimeEngine?.name} -> ${nextEngine.name}",
         );
-
         _isSwitchingDueToFallback = true;
-
-        _lastRecoveryTime = DateTime.now();
 
         // 给底层播放器一点释放时间
         await Future.delayed(const Duration(milliseconds: 1200));
@@ -907,7 +857,6 @@ class PlayerManager {
       _isHandlingError = false;
     }
   }
-
   // =========================
   // bind
   // =========================
@@ -918,11 +867,9 @@ class PlayerManager {
       player.onPlaying.listen((event) async {
         _playingSubject.add(event);
         if (event) {
-          _replayCount = 0;
           hasError.value = false;
           _stateSubject.add(PlayerState.playing);
           if (_isSwitchingDueToFallback) {
-            _errorCount = 0;
             _isSwitchingDueToFallback = false;
           }
         } else {
@@ -954,7 +901,9 @@ class PlayerManager {
 
     _subscriptions.add(
       player.onError.listen((error) {
-        _handleError(error);
+        if (!_isHandlingError) {
+          _handleError(error);
+        }
       }),
     );
 

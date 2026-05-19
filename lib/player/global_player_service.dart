@@ -8,6 +8,7 @@ import 'core/line_fallback_manager.dart';
 import 'core/preload_player_manager.dart';
 import 'core/engine_fallback_manager.dart';
 import 'adapters/video_player_adapter.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
 
 class GlobalPlayerService {
   GlobalPlayerService._();
@@ -40,7 +41,10 @@ class GlobalPlayerService {
     // 2. Instantiate the Orchestrator with all its specialized managers
     playerManager = PlayerManager(
       playerPool: playerPool,
-      fallbackManager: EngineFallbackManager(defaultEngine: defaultEngine),
+      fallbackManager: EngineFallbackManager(
+        defaultEngine: PlayerEngine.mediaKit,
+        supportedEngines: PlatformUtils.isMobile ? PlayerEngine.values : [PlayerEngine.mediaKit],
+      ),
       preloadManager: PreloadPlayerManager(),
       lineManager: LineFallbackManager(),
     );

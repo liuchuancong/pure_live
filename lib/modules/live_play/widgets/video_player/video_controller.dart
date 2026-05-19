@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:async';
-import 'dart:developer';
 import 'package:get/get.dart';
 import 'video_controller_panel.dart';
 import 'package:pure_live/common/index.dart';
@@ -152,7 +151,6 @@ class VideoController with ChangeNotifier {
   }
 
   void _handlePlayerError(PlayerException error) {
-    log(error.toString(), name: '_handlePlayerError');
     switch (error.type) {
       case PlayerErrorType.network:
         ToastUtil.show(i18n("error_network"));
