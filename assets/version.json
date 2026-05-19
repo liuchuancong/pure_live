@@ -1,7 +1,7 @@
 {
-  "version": "2.0.17",
-  "version_num": 10217,
-  "version_desc": "-Fixed: 优化播放器.\n-Fixed: 优化了页面完善翻译.\n-Add: 添加视频录制.\n-Add: 更换Iptv链接.\n-Add: 添加快手cookie",
+  "version": "2.0.18",
+  "version_num": 10218,
+  "version_desc": "-Fixed: 优化播放器.添加自动切换线路以及自动切换播放器.\n-Add: 添加缓存清除.\n-Add: 添加是否显示弹幕.\n-Add: 优化全屏",
   "prerelease":false,
   "download_url": "https://github.com/liuchuancong/pure_live/releases"
 }
