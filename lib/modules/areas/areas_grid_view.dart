@@ -9,6 +9,8 @@ class AreaGridView extends StatefulWidget {
   const AreaGridView(this.tag, {super.key});
   AreasListController get controller => Get.find<AreasListController>(tag: tag);
 
+  bool get isFlatten => tag == Sites.douyinSite;
+
   @override
   State<AreaGridView> createState() => _AreaGridViewState();
 }
@@ -20,12 +22,15 @@ class _AreaGridViewState extends State<AreaGridView> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    _listWorker = ever(widget.controller.list, (_) => _createTabController());
-    _createTabController();
-    widget.controller.tabIndex.addListener(_handleExternalIndexChange);
+    if (!widget.isFlatten) {
+      _listWorker = ever(widget.controller.list, (_) => _createTabController());
+      _createTabController();
+      widget.controller.tabIndex.addListener(_handleExternalIndexChange);
+    }
   }
 
   void _createTabController() {
+    if (widget.isFlatten) return;
     final list = widget.controller.list;
     if (list.isEmpty) return;
 
@@ -38,7 +43,6 @@ class _AreaGridViewState extends State<AreaGridView> with SingleTickerProviderSt
     if (initialIndex >= list.length) initialIndex = 0;
 
     _tabController = TabController(length: list.length, vsync: this, initialIndex: initialIndex);
-
     _tabController!.addListener(_handleInternalTabChange);
 
     if (mounted) setState(() {});
@@ -61,11 +65,13 @@ class _AreaGridViewState extends State<AreaGridView> with SingleTickerProviderSt
 
   @override
   void dispose() {
-    widget.controller.tabIndex.removeListener(_handleExternalIndexChange);
-    _listWorker?.dispose();
-    if (_tabController != null) {
-      _tabController!.removeListener(_handleInternalTabChange);
-      _tabController!.dispose();
+    if (!widget.isFlatten) {
+      widget.controller.tabIndex.removeListener(_handleExternalIndexChange);
+      _listWorker?.dispose();
+      if (_tabController != null) {
+        _tabController!.removeListener(_handleInternalTabChange);
+        _tabController!.dispose();
+      }
     }
     super.dispose();
   }
@@ -74,7 +80,14 @@ class _AreaGridViewState extends State<AreaGridView> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     return Obx(() {
       final list = widget.controller.list;
-      if (list.isEmpty || _tabController == null || _tabController!.length != list.length) {
+      if (list.isEmpty) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      if (widget.isFlatten) {
+        final allChildren = list.expand((e) => e.children).toList();
+        return buildFlattenAreasView(allChildren);
+      }
+      if (_tabController == null || _tabController!.length != list.length) {
         return const Center(child: CircularProgressIndicator());
       }
 
@@ -96,11 +109,15 @@ class _AreaGridViewState extends State<AreaGridView> with SingleTickerProviderSt
   }
 
   Widget buildAreasView(AppLiveCategory category) {
+    return buildFlattenAreasView(category.children);
+  }
+
+  Widget buildFlattenAreasView(List<dynamic> childrenList) {
     return LayoutBuilder(
       builder: (context, constraint) {
         final width = constraint.maxWidth;
         final crossAxisCount = width > 1280 ? 9 : (width > 960 ? 7 : (width > 640 ? 5 : 3));
-        return widget.controller.list.isNotEmpty
+        return childrenList.isNotEmpty
             ? WaterfallFlow.builder(
                 padding: const EdgeInsets.all(0),
                 controller: ScrollController(),
@@ -109,8 +126,8 @@ class _AreaGridViewState extends State<AreaGridView> with SingleTickerProviderSt
                   crossAxisSpacing: 3,
                   mainAxisSpacing: 3,
                 ),
-                itemCount: category.children.length,
-                itemBuilder: (context, index) => AreaCard(category: category.children[index]),
+                itemCount: childrenList.length,
+                itemBuilder: (context, index) => AreaCard(category: childrenList[index]),
               )
             : EmptyView(
                 icon: Icons.area_chart_outlined,
