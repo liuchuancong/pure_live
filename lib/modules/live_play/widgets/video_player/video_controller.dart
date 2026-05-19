@@ -346,7 +346,6 @@ class VideoController with ChangeNotifier {
   }
 
   void toggleFullScreen() async {
-    log('toggleFullScreen called');
     showLocked.value = false;
     showControllerTimer?.cancel();
 

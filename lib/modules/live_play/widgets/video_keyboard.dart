@@ -34,9 +34,7 @@ class _VideoKeyboardShortcutsState extends State<VideoKeyboardShortcuts> {
   }
 
   void _handleEscExit() async {
-    if (await windowManager.isFullScreen()) {
-      widget.controller.toggleFullScreen();
-    }
+    widget.controller.toggleFullScreen();
   }
 
   @override
@@ -64,7 +62,6 @@ class _VideoKeyboardShortcutsState extends State<VideoKeyboardShortcuts> {
           widget.controller.setVolume(volume);
           widget.controller.updateVolumn(volume);
         },
-        const SingleActivator(LogicalKeyboardKey.escape): () => widget.controller.toggleFullScreen(),
       },
       child: widget.child,
     );
