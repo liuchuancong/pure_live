@@ -50,11 +50,7 @@ dependencies:
   better_player_plus: ^1.2.1 # 高级视频播放器
   audio_service: ^0.18.18 # 后台音频服务
   audio_session: ^0.2.3 # 音频会话管理
-  ffmpeg_kit_extended_flutter:
-    git:
-      url: https://github.com/akashskypatel/ffmpeg-kit-extended
-      path: flutter
-      ref: dev
+  ffmpeg_kit_extended_flutter: ^0.5.0
   flv_lzc:
     git: https://github.com/liuchuancong/flv_lzc.git # ijk视频解析
 
@@ -261,6 +257,6 @@ flutter:
 
 # FFmpeg配置
 ffmpeg_kit_extended_config:
-  windows: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-windows/bundle-base-windows-x86_64-shared-lgpl.zip
-  android: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-android/bundle-base-shared-lgpl-release.aar
-  macos: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-macos/bundle-base-macos-universal-lgpl.xcframework.zip
+  type: "base" # pre-bundled builds: debug, base, full, audio, video, video_hw
+  gpl: true # enable to include GPL libraries
+  small: false # enable to use smaller builds
