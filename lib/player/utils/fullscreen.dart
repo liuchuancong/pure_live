@@ -72,16 +72,16 @@ class WindowService {
   //退出全屏显示
   Future<void> doExitFullScreen() async {
     dynamic document;
-    late SystemUiMode mode = SystemUiMode.edgeToEdge;
     try {
       if (kIsWeb) {
         document.exitFullscreen();
       } else if (Platform.isAndroid || Platform.isIOS) {
-        if (Platform.isAndroid && (await DeviceInfoPlugin().androidInfo).version.sdkInt < 29) {
-          mode = SystemUiMode.manual;
-        }
-        await SystemChrome.setEnabledSystemUIMode(mode, overlays: SystemUiOverlay.values);
-        await SystemChrome.setPreferredOrientations([]);
+        await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
+        await Future.microtask(() {});
+        SystemChrome.setSystemUIOverlayStyle(
+          const SystemUiOverlayStyle(statusBarIconBrightness: Brightness.dark, statusBarBrightness: Brightness.light),
+        );
+        await SystemChrome.setPreferredOrientations(DeviceOrientation.values);
       } else if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
         await doExitWindowFullScreen();
       }
