@@ -42,8 +42,8 @@ class GlobalPlayerService {
     playerManager = PlayerManager(
       playerPool: playerPool,
       fallbackManager: EngineFallbackManager(
-        defaultEngine: PlayerEngine.mediaKit,
-        supportedEngines: PlatformUtils.isMobile ? PlayerEngine.values : [PlayerEngine.mediaKit],
+        defaultEngine: PlayerEngine.fvp,
+        supportedEngines: PlatformUtils.isMobile ? PlayerEngine.values : [PlayerEngine.fvp],
       ),
       preloadManager: PreloadPlayerManager(),
       lineManager: LineFallbackManager(),
