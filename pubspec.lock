@@ -848,14 +848,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.36.2"
-  get:
-    dependency: "direct main"
-    description:
-      name: get
-      sha256: b3294002946e99314c341bff0b4f3094e631a1f8cf37785e93aa7c2f04b0768e
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "5.0.0-release-candidate-9.3.2"
   get_it:
     dependency: transitive
     description:
