@@ -199,7 +199,7 @@ class DanmakuListViewState extends State<DanmakuListView> {
                 return ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-                  cacheExtent: 800,
+                  scrollCacheExtent: const ScrollCacheExtent.pixels(800),
                   itemCount: list.length,
                   itemBuilder: (_, index) {
                     final msg = list[index];
