@@ -1,9 +1,8 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:developer';
-import 'package:get/get.dart';
 import 'package:path/path.dart' as p;
-import 'package:pure_live/plugins/locale_helper.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_manager.dart';

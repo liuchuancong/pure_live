@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:pure_live/get/get.dart';
 import 'package:pure_live/plugins/locale_helper.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/common/services/settings_service.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 
 class OverlayVolumeControl extends StatefulWidget {
@@ -15,17 +18,15 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
   double _volume = 0.5;
   double _lastVolume = 0.5;
   OverlayEntry? _overlayEntry;
-
-  // 用于连接图标和弹出面板的轴心
   final LayerLink _layerLink = LayerLink();
-
-  // 鼠标追踪标志位
   bool _isMouseInIcon = false;
   bool _isMouseInBar = false;
   Timer? _hideTimer;
+  StreamSubscription? _volumeListener; // 监听全局音量变化
 
   static const double _barHeight = 150.0;
   static const double _barWidth = 44.0;
+  final SettingsService settings = Get.find<SettingsService>();
 
   VideoController get controller => widget.controller;
 
@@ -33,13 +34,47 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
   void initState() {
     super.initState();
     initVolume();
+    _listenGlobalVolume();
   }
 
   @override
   void dispose() {
     _hideTimer?.cancel();
+    _volumeListener?.cancel();
     _removeOverlay();
     super.dispose();
+  }
+
+  void _listenGlobalVolume() {
+    _volumeListener = settings.globalVolumeMute.listen((_) {
+      _updateVolumeFromGlobal();
+    });
+    _volumeListener = settings.defaultMobileVolume.listen((_) {
+      _updateVolumeFromGlobal();
+    });
+    _volumeListener = settings.defaultDesktopVolume.listen((_) {
+      _updateVolumeFromGlobal();
+    });
+  }
+
+  void _updateVolumeFromGlobal() {
+    setState(() {
+      double platformVolume = PlatformUtils.isMobile
+          ? settings.defaultMobileVolume.value
+          : settings.defaultDesktopVolume.value;
+
+      if (settings.globalVolumeMute.value) {
+        _lastVolume = _volume;
+        _volume = 0.0;
+      } else {
+        _volume = platformVolume;
+        _lastVolume = _volume;
+      }
+    });
+
+    // 应用到播放器
+    controller.setVolume(_volume);
+    _overlayEntry?.markNeedsBuild();
   }
 
   Future<void> initVolume() async {
@@ -64,21 +99,19 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
     _overlayEntry?.markNeedsBuild();
   }
 
-  // 显示音量条
   void _showVolumeBar() {
     if (_overlayEntry != null || !mounted) return;
 
     _overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
         width: _barWidth,
-        height: _barHeight + 20, // 增加额外高度作为无缝缓冲区
+        height: _barHeight + 20,
         child: CompositedTransformFollower(
           link: _layerLink,
           showWhenUnlinked: false,
-          // 将面板的底部中心，对齐到图标的顶部中心
           followerAnchor: Alignment.bottomCenter,
           targetAnchor: Alignment.topCenter,
-          offset: const Offset(0, 5), // 微调向下偏移，覆盖两组件之间的空隙
+          offset: const Offset(0, 5),
           child: MouseRegion(
             onEnter: (_) => _isMouseInBar = true,
             onExit: (_) {
@@ -94,7 +127,6 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
     Overlay.of(context).insert(_overlayEntry!);
   }
 
-  // 延时关闭定时器（防闪烁防抖）
   void _startHideTimer() {
     _hideTimer?.cancel();
     _hideTimer = Timer(const Duration(milliseconds: 150), () {
@@ -113,7 +145,7 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
     return Material(
       color: Colors.transparent,
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 12), // 底部的 Padding 可以充当鼠标滑过的桥梁，防止断连
+        padding: const EdgeInsets.only(bottom: 12),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.black.withAlpha(220),
@@ -122,20 +154,17 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
           ),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              // 实际可滑动区域的高度（扣除上下 Padding）
               final double trackHeight = constraints.maxHeight - 40;
               return GestureDetector(
                 onVerticalDragUpdate: (details) => _handleVolumeDrag(details, trackHeight),
                 child: Stack(
                   alignment: Alignment.bottomCenter,
                   children: [
-                    // 背景音量槽
                     Container(
                       width: 4,
                       margin: const EdgeInsets.symmetric(vertical: 20),
                       decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
                     ),
-                    // 进度条填充
                     Positioned(
                       bottom: 20,
                       child: Container(
@@ -144,7 +173,6 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
                         decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(2)),
                       ),
                     ),
-                    // 顶端滑块圆点
                     Positioned(
                       bottom: 20 + (_volume * trackHeight) - 6,
                       child: Container(
@@ -165,7 +193,6 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
 
   void _handleVolumeDrag(DragUpdateDetails details, double trackHeight) {
     if (trackHeight <= 0) return;
-    // 根据实际高度精准计算灵敏度
     final deltaRatio = -details.delta.dy / trackHeight;
     final newVolume = (_volume + deltaRatio).clamp(0.0, 1.0);
     if (newVolume != _volume) {
@@ -182,7 +209,6 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
   Widget build(BuildContext context) {
     IconData icon = _volume == 0 ? Icons.volume_off : (_volume < 0.5 ? Icons.volume_down : Icons.volume_up);
 
-    // 将原生的图标组件包裹在联动 Target 中
     return CompositedTransformTarget(
       link: _layerLink,
       child: MouseRegion(

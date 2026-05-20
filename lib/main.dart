@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:async';
-import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/common/consts/app_consts.dart';

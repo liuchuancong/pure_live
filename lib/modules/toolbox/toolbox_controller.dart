@@ -1,5 +1,4 @@
 import 'dart:developer';
-import 'package:get/get.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';

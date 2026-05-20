@@ -1,11 +1,10 @@
 import 'dart:async';
-import 'package:get/get.dart';
 import '../models/player_state.dart';
 import '../models/player_engine.dart';
-import 'package:flutter/material.dart';
 import '../models/player_exception.dart';
 import '../models/player_error_type.dart';
 import 'package:rxdart/rxdart.dart' as rx;
+import 'package:pure_live/common/index.dart';
 import 'package:pure_live/player/core/player_pool.dart';
 import 'package:pure_live/player/interface/unified_player_interface.dart';
 

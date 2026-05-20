@@ -29,3 +29,4 @@ export 'package:window_manager/window_manager.dart';
 export 'package:pure_live/player/global_player_service.dart';
 export 'package:pure_live/plugins/locale_helper.dart';
 export 'package:pure_live/plugins/supabase.dart';
+export 'package:pure_live/get/get.dart' hide VoidCallback;

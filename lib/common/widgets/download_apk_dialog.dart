@@ -1,13 +1,9 @@
 import 'dart:io';
 import 'dart:developer';
-import 'package:get/get.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:open_filex/open_filex.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:window_manager/window_manager.dart';
-import 'package:pure_live/plugins/locale_helper.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
 

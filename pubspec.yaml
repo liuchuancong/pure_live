@@ -1,7 +1,7 @@
 name: pure_live
 description: 纯粹直播,一款开源的第三方多平台直播聚合播放器.
 publish_to: none
-version: 2.0.17+28
+version: 2.0.18+29
 
 environment:
   sdk: ^3.10.4
@@ -99,7 +99,7 @@ dependencies:
   mime: ^2.0.0 # MIME类型处理
 
   # -------------------------- 工具/通用库 --------------------------
-  get: ^5.0.0-release-candidate-9.3.2 # 状态管理/路由
+
   timezone: ^0.10.1 # 时区处理
   date_format: ^2.0.9 # 日期格式化
   logger: ^2.6.2 # 日志打印

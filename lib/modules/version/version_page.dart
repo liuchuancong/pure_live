@@ -1,9 +1,6 @@
-import 'package:get/get.dart';
-import 'package:flutter/material.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/update.dart';
 import 'package:markdown_widget/config/configs.dart';
-import 'package:pure_live/plugins/locale_helper.dart';
-import 'package:pure_live/common/utils/version_util.dart';
 import 'package:markdown_widget/widget/markdown_block.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/version/version_controller.dart';

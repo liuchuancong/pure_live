@@ -1,5 +1,4 @@
-import 'package:get/get.dart';
-import 'package:pure_live/common/services/settings_service.dart';
+import 'package:pure_live/common/index.dart';
 
 class SettingsBinding extends Binding {
   @override

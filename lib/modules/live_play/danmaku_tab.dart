@@ -1,5 +1,4 @@
-import 'package:get/get.dart';
-import 'package:flutter/material.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku_list_view.dart';
 import 'package:pure_live/modules/live_play/widgets/keyword_block_page.dart';
@@ -13,6 +12,9 @@ class DanmakuTabView extends GetView<LivePlayController> {
     return Obx(() {
       if (controller.detail.value == null || controller.videoController.value == null) {
         return const Center(child: CircularProgressIndicator());
+      }
+      if (!controller.settings.enableDanmakuDisplay.value) {
+        return Padding(padding: EdgeInsetsGeometry.all(12), child: const KeywordBlockPage());
       }
 
       return Column(

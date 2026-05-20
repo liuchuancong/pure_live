@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:developer';
-import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/utils.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';

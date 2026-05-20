@@ -1,7 +1,5 @@
-import 'package:get/get.dart';
-import 'package:flutter/material.dart';
 import 'package:remixicon/remixicon.dart';
-import 'package:pure_live/plugins/locale_helper.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/account/huya/huya_cookie_controller.dart';
 
 class HuyaCookiePage extends GetView<HuyaCookieController> {
@@ -10,16 +8,11 @@ class HuyaCookiePage extends GetView<HuyaCookieController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(i18n("set_cookie")),
-      ),
+      appBar: AppBar(title: Text(i18n("set_cookie"))),
       body: ListView(
         padding: const EdgeInsets.all(12.0),
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(i18n("huya_cookie_tip")),
-          ),
+          Padding(padding: const EdgeInsets.all(8.0), child: Text(i18n("huya_cookie_tip"))),
           buildCard(
             context: context,
             child: ExpansionTile(
@@ -35,11 +28,7 @@ class HuyaCookiePage extends GetView<HuyaCookieController> {
                     border: const OutlineInputBorder(),
                     hintText: i18n("huya_cookie_hint"),
                     contentPadding: const EdgeInsets.all(12.0),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(
-                        color: Colors.grey.withValues(alpha: .2),
-                      ),
-                    ),
+                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey.withValues(alpha: .2))),
                   ),
                   onSubmitted: controller.setCookie,
                 ),
@@ -67,20 +56,11 @@ class HuyaCookiePage extends GetView<HuyaCookieController> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-        boxShadow: Get.isDarkMode
-            ? []
-            : [
-                BoxShadow(
-                  blurRadius: 8,
-                  color: Colors.grey.withValues(alpha: .2),
-                )
-              ],
+        boxShadow: Get.isDarkMode ? [] : [BoxShadow(blurRadius: 8, color: Colors.grey.withValues(alpha: .2))],
       ),
       margin: const EdgeInsets.only(bottom: 8.0),
       child: Theme(
-        data: Theme.of(context).copyWith(
-          dividerColor: Colors.transparent,
-        ),
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: child,
       ),
     );

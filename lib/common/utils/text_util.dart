@@ -1,5 +1,4 @@
-import 'package:get/get.dart';
-import 'package:pure_live/plugins/locale_helper.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 String readableCount(String info) {

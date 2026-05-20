@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:math';
 import 'dart:convert';
-import 'package:get/get.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:path/path.dart' as p;
 import 'package:pure_live/common/index.dart';

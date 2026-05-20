@@ -1,6 +1,5 @@
-import 'package:get/get.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/utils.dart';
-import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/common/services/bilibili_account_service.dart';
 

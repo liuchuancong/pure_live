@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
 import 'dart:developer';
-import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'package:flutter_exit_app/flutter_exit_app.dart';
@@ -12,6 +11,7 @@ import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/win_auto_start.dart';
 import 'package:pure_live/modules/web_dav/webdav_config.dart';
+import 'package:pure_live/common/global/app_path_manager.dart';
 import 'package:pure_live/common/services/bilibili_account_service.dart';
 
 class SettingsService extends GetxController {
@@ -67,7 +67,6 @@ class SettingsService extends GetxController {
   final danmakuFontSize = (HivePrefUtil.getDouble('danmakuFontSize') ?? 16.0).obs;
   final danmakuFontBorder = (HivePrefUtil.getDouble('danmakuFontBorder') ?? 4.0).obs;
   final danmakuOpacity = (HivePrefUtil.getDouble('danmakuOpacity') ?? 1.0).obs;
-  final volume = (HivePrefUtil.getDouble('volume') ?? 1.0).obs;
 
   final videoPlayerIndex = (HivePrefUtil.getInt('videoPlayerIndex') ?? 0).obs;
   final useHardStopOnExit = (HivePrefUtil.getBool('useHardStopOnExit') ?? true).obs;
@@ -98,6 +97,7 @@ class SettingsService extends GetxController {
   final preferResolutionCellular =
       (HivePrefUtil.getString('preferResolutionCellular') ?? PlayerConsts.resolutions[0]).obs;
   final preferPlatform = (HivePrefUtil.getString('preferPlatform') ?? Sites.bilibiliSite).obs;
+  final enableDanmakuDisplay = (HivePrefUtil.getBool('enableDanmakuDisplay') ?? true).obs;
 
   // ==============================
   // ❤️ 收藏 & 历史
@@ -125,7 +125,15 @@ class SettingsService extends GetxController {
   final Map<ColorSwatch<Object>, String> colorsNameMap = AppConsts.themeColors.map(
     (key, value) => MapEntry(ColorTools.createPrimarySwatch(value), key),
   );
+  final cacheSizeMB = 0.0.obs;
 
+  // ==============================
+  // 🔊 音量设置 (新增)
+  // ==============================
+  final defaultMobileVolume = (HivePrefUtil.getDouble('defaultMobileVolume') ?? 0.5).obs;
+  final defaultDesktopVolume = (HivePrefUtil.getDouble('defaultDesktopVolume') ?? 1.0).obs;
+  final globalVolumeMute = (HivePrefUtil.getBool('globalVolumeMute') ?? false).obs;
+  final roomVolumes = <String, double>{}.obs;
   // ==============================
   // 🧩 Lifecycle: onInit
   // ==============================
@@ -334,10 +342,6 @@ class SettingsService extends GetxController {
       HivePrefUtil.setString('kuaishouCookie', value);
     });
 
-    volume.listen((value) {
-      HivePrefUtil.setDouble('volume', value);
-    });
-
     customPlayerOutput.listen((value) {
       HivePrefUtil.setBool('customPlayerOutput', value);
     });
@@ -352,6 +356,26 @@ class SettingsService extends GetxController {
 
     videoHardwareDecoder.listen((value) {
       HivePrefUtil.setString('videoHardwareDecoder', value);
+    });
+
+    enableDanmakuDisplay.listen((value) {
+      HivePrefUtil.setBool('enableDanmakuDisplay', value);
+    });
+    getCacheSize();
+
+    defaultMobileVolume.listen((value) {
+      HivePrefUtil.setDouble('defaultMobileVolume', value.clamp(0.0, 1.0));
+    });
+
+    defaultDesktopVolume.listen((value) {
+      HivePrefUtil.setDouble('defaultDesktopVolume', value.clamp(0.0, 1.0));
+    });
+
+    globalVolumeMute.listen((value) {
+      HivePrefUtil.setBool('globalVolumeMute', value);
+    });
+    roomVolumes.listen((value) {
+      HivePrefUtil.setString('roomVolumes', jsonEncode(value));
     });
   }
 
@@ -616,8 +640,81 @@ class SettingsService extends GetxController {
     }
   }
 
+  Future<double> getCacheSize() async {
+    final recordsDir = await AppPathManager().recordsDir;
+    final imageCacheDir = await AppPathManager().imageCacheDir;
+    final downloadDir = await AppPathManager().downloadDir;
+    final iptvCacheDir = await AppPathManager().iptvCacheDir;
+    final List<Directory> targetDirs = [recordsDir, imageCacheDir, downloadDir, iptvCacheDir];
+    double totalSizeBytes = 0;
+    for (final dir in targetDirs) {
+      if (!dir.existsSync()) continue;
+
+      try {
+        final files = dir.listSync(recursive: true);
+        for (final file in files) {
+          if (file is File) {
+            totalSizeBytes += file.lengthSync();
+          }
+        }
+      } catch (e) {
+        debugPrint("计算目录 ${dir.path} 尺寸时出错: $e");
+      }
+    }
+    cacheSizeMB.value = totalSizeBytes / 1024 / 1024;
+    return totalSizeBytes / 1024 / 1024;
+  }
+
+  Future<void> clearCache() async {
+    final recordsDir = await AppPathManager().recordsDir;
+    final imageCacheDir = await AppPathManager().imageCacheDir;
+    final downloadDir = await AppPathManager().downloadDir;
+    final iptvCacheDir = await AppPathManager().iptvCacheDir;
+
+    final List<Directory> targetDirs = [recordsDir, imageCacheDir, downloadDir, iptvCacheDir];
+    for (final dir in targetDirs) {
+      if (!dir.existsSync()) continue;
+
+      try {
+        dir.deleteSync(recursive: true);
+        dir.createSync(recursive: true);
+      } catch (e) {
+        debugPrint("清空目录 ${dir.path} 失败: $e");
+      }
+    }
+    cacheSizeMB.value = 0;
+  }
+
+  final refreshTurns = 0.0.obs;
+  Future<void> handleManualRefresh() async {
+    refreshTurns.value += 1.0;
+
+    await getCacheSize();
+  }
+
+  // 🔊 ==============================
+  // 音量方法
+  // ==============================
+  double get currentPlatformDefaultVolume {
+    return Platform.isAndroid || Platform.isIOS ? defaultMobileVolume.value : defaultDesktopVolume.value;
+  }
+
+  Future<void> setCurrentPlatformDefaultVolume(double volume) async {
+    final v = volume.clamp(0.0, 1.0);
+    if (Platform.isAndroid || Platform.isIOS) {
+      defaultMobileVolume.value = v;
+    } else {
+      defaultDesktopVolume.value = v;
+    }
+  }
+
+  void resetVolumeToDefault() {
+    defaultMobileVolume.value = 0.5;
+    defaultDesktopVolume.value = 1.0;
+    globalVolumeMute.value = false;
+  }
+
   void fromJson(Map<String, dynamic> json) {
-    // 1. 定義內部輔助解析函數，處理兼容性邏輯
     List<T> safeParseList<T>(dynamic data, T Function(Map<String, dynamic>) fromJsonFactory) {
       if (data == null || data is! List) return [];
       return data.map<T>((e) {
@@ -697,8 +794,8 @@ class SettingsService extends GetxController {
     exitChoose.value = json['exitChoose'] ?? '';
     douyinCookie.value = json['douyinCookie'] ?? '';
     kuaishouCookie.value = json['kuaishouCookie'] ?? '';
+    enableDanmakuDisplay.value = json['enableDanmakuDisplay'] ?? true;
     themeColorSwitch.value = json['themeColorSwitch'] ?? Colors.blue.hex;
-    volume.value = json['volume'] ?? 1.0;
     customPlayerOutput.value = json['customPlayerOutput'] ?? false;
     videoOutputDriver.value = PlayerConsts.videoOutputDrivers.keys.contains(json['videoOutputDriver'])
         ? json['videoOutputDriver']
@@ -709,6 +806,15 @@ class SettingsService extends GetxController {
     videoHardwareDecoder.value = PlayerConsts.hardwareDecoder.keys.contains(json['videoHardwareDecoder'])
         ? json['audioOutputDriver']
         : 'auto';
+    // 房间音量
+    if (json['roomVolumes'] != null) {
+      try {
+        roomVolumes.value = Map<String, double>.from(jsonDecode(json['roomVolumes']));
+      } catch (_) {}
+    }
+    defaultMobileVolume.value = json['defaultMobileVolume'] ?? 0.5;
+    defaultDesktopVolume.value = json['defaultDesktopVolume'] ?? 1.0;
+    globalVolumeMute.value = json['globalVolumeMute'] ?? false;
     changeThemeMode(themeModeName.value);
     changeThemeColorSwitch(themeColorSwitch.value);
     setBilibiliCookit(bilibiliCookie.value);
@@ -766,15 +872,18 @@ class SettingsService extends GetxController {
     json['exitChoose'] = exitChoose.value;
     json['douyinCookie'] = douyinCookie.value;
     json['kuaishouCookie'] = kuaishouCookie.value;
-
+    json['enableDanmakuDisplay'] = enableDanmakuDisplay.value;
     json['shieldList'] = shieldList.map<String>((e) => e.toString()).toList();
     json['hotAreasList'] = hotAreasList.map<String>((e) => e.toString()).toList();
     json['themeColorSwitch'] = themeColorSwitch.value;
-    json['volume'] = volume.value;
     json['customPlayerOutput'] = customPlayerOutput.value;
     json['videoOutputDriver'] = videoOutputDriver.value;
     json['audioOutputDriver'] = audioOutputDriver.value;
     json['videoHardwareDecoder'] = videoHardwareDecoder.value;
+    json['defaultMobileVolume'] = defaultMobileVolume.value;
+    json['defaultDesktopVolume'] = defaultDesktopVolume.value;
+    json['globalVolumeMute'] = globalVolumeMute.value;
+    json['roomVolumes'] = jsonEncode(roomVolumes.value);
     return json;
   }
 }

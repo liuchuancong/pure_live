@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:async';
-import 'package:get/get.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:flutter/gestures.dart';
 import 'package:pure_live/common/index.dart';
@@ -43,9 +42,9 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
   @override
   Widget build(BuildContext context) {
     IconData iconData;
-    iconData = controller.settings.volume.value <= 0
+    iconData = controller.room.getSavedVolume() <= 0
         ? Icons.volume_mute
-        : controller.settings.volume.value < 0.5
+        : controller.room.getSavedVolume() < 0.5
         ? Icons.volume_down
         : Icons.volume_up;
     return Material(
@@ -80,7 +79,7 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                                   width: 100,
                                   height: 20,
                                   child: LinearProgressIndicator(
-                                    value: controller.settings.volume.value,
+                                    value: controller.room.getSavedVolume(),
                                     backgroundColor: Colors.white38,
                                     valueColor: AlwaysStoppedAnimation(Colors.white),
                                   ),
@@ -940,8 +939,10 @@ class BottomActionBar extends StatelessWidget {
                             PlayPauseButton(controller: controller),
                             RefreshButton(controller: controller),
                             FavoriteButton(controller: controller),
-                            DanmakuButton(controller: controller),
-                            SettingsButton(controller: controller),
+                            if (controller.settings.enableDanmakuDisplay.value) ...[
+                              DanmakuButton(controller: controller),
+                              SettingsButton(controller: controller),
+                            ],
                           ],
                         ),
 

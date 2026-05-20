@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:get/get.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
@@ -61,7 +60,58 @@ class SettingsPage extends GetView<SettingsService> {
           ),
 
           SectionTitle(title: i18n("video")),
+          Obx(() {
+            return _buildSwitchTile(
+              title: i18n("global_mute"),
+              subtitle: i18n("global_mute_subtitle"),
+              value: controller.globalVolumeMute,
+              icon: controller.globalVolumeMute.value ? Remix.volume_mute_line : Remix.volume_up_line,
+            );
+          }),
 
+          Obx(
+            () => ListTile(
+              leading: Icon(Remix.phone_line, color: theme.colorScheme.primary, size: 24),
+              title: Text(i18n("mobile_default_volume")),
+              subtitle: Slider(
+                value: controller.defaultMobileVolume.value.clamp(0.0, 1.0),
+                min: 0.0,
+                max: 1.0,
+                onChanged: (val) => controller.defaultMobileVolume.value = val,
+              ),
+              trailing: Text(
+                "${(controller.defaultMobileVolume.value * 100).toInt()}%",
+                style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+
+          Obx(
+            () => ListTile(
+              leading: Icon(Remix.computer_line, color: theme.colorScheme.primary, size: 24),
+              title: Text(i18n("desktop_default_volume")),
+              subtitle: Slider(
+                value: controller.defaultDesktopVolume.value.clamp(0.0, 1.0),
+                min: 0.0,
+                max: 1.0,
+                onChanged: (val) => controller.defaultDesktopVolume.value = val,
+              ),
+              trailing: Text(
+                "${(controller.defaultDesktopVolume.value * 100).toInt()}%",
+                style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+
+          ListTile(
+            leading: Icon(Remix.restart_line, color: theme.colorScheme.primary, size: 24),
+            title: Text(i18n("reset_volume_default")),
+            subtitle: Text(i18n("reset_volume_default_desc")),
+            onTap: () {
+              controller.resetVolumeToDefault();
+              Get.snackbar(i18n("done"), i18n("volume_reset_success"), snackPosition: SnackPosition.bottom);
+            },
+          ),
           Obx(
             () => ListTile(
               leading: const Icon(Remix.hd_line, size: 24),
@@ -103,7 +153,12 @@ class SettingsPage extends GetView<SettingsService> {
             value: controller.enableFullScreenDefault,
             icon: Remix.fullscreen_line,
           ),
-
+          _buildSwitchTile(
+            title: i18n('show_danmaku'),
+            subtitle: i18n('show_danmaku_subtitle'),
+            value: controller.enableDanmakuDisplay,
+            icon: Remix.chat_smile_2_line,
+          ),
           if (Platform.isAndroid)
             _buildSwitchTile(
               title: i18n('enable_screen_keep_on'),
@@ -152,14 +207,7 @@ class SettingsPage extends GetView<SettingsService> {
             value: controller.useHardStopOnExit,
             icon: Remix.p2p_line,
           ),
-
           SectionTitle(title: i18n("general")),
-
-          ListTile(
-            leading: const Icon(Remix.global_line, size: 24),
-            title: Text(i18n("change_language")),
-            onTap: showLanguageSelecterDialog,
-          ),
 
           ListTile(
             leading: const Icon(Remix.cloud_windy_line, size: 24),
@@ -173,11 +221,70 @@ class SettingsPage extends GetView<SettingsService> {
             title: Text(i18n("danmaku_filter")),
             onTap: () => Get.toNamed(RoutePath.kSettingsDanmuShield),
           ),
-
+          SectionTitle(title: i18n("set")),
+          ListTile(
+            leading: const Icon(Remix.global_line, size: 24),
+            title: Text(i18n("change_language")),
+            onTap: showLanguageSelecterDialog,
+          ),
           ListTile(
             leading: const Icon(Remix.save_3_line, size: 24),
             title: Text(i18n("backup_recover")),
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BackupPage())),
+          ),
+
+          Obx(() {
+            final size = controller.cacheSizeMB.value;
+            final turns = controller.refreshTurns.value;
+            return ListTile(
+              leading: const Icon(Icons.sd_storage_rounded),
+              title: Text(i18n("current_cache_size")),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text("${size.toStringAsFixed(2)} MB", style: const TextStyle(color: Colors.grey)),
+                  const SizedBox(width: 4),
+                  AnimatedRotation(
+                    turns: turns,
+                    duration: const Duration(milliseconds: 600),
+                    curve: Curves.easeInOutCubic,
+                    child: Icon(Remix.refresh_line, size: 16, color: theme.colorScheme.primary),
+                  ),
+                ],
+              ),
+              onTap: () {
+                controller.handleManualRefresh();
+              },
+              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(left: Radius.circular(12))),
+            );
+          }),
+
+          ListTile(
+            leading: const Icon(Icons.cleaning_services_rounded),
+            title: Text(i18n("clear_all_cache")),
+            subtitle: Text(i18n("clear_all_cache_meida_desc")),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(left: Radius.circular(12))),
+            onTap: () async {
+              final ok = await Get.dialog<bool>(
+                AlertDialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  title: Text(i18n("confirm_clear_cache"), style: const TextStyle(fontWeight: FontWeight.bold)),
+                  content: Text(i18n("confirm_clear_meida_desc")),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.of(Get.context!).pop(false), child: Text(i18n("cancel"))),
+                    ElevatedButton(onPressed: () => Navigator.of(Get.context!).pop(true), child: Text(i18n("clear"))),
+                  ],
+                ),
+              );
+
+              if (ok == true) {
+                await controller.clearCache();
+
+                Get.snackbar(i18n("done"), i18n("cache_cleared"), snackPosition: SnackPosition.bottom);
+              }
+            },
           ),
 
           _buildSwitchTile(

@@ -1,4 +1,3 @@
-import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:pure_live/common/widgets/count_button.dart';

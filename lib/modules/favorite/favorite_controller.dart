@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 

@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:developer';
-import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/site/huya_site.dart';
 import 'widgets/video_player/video_controller.dart';
@@ -97,7 +96,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   void _initState() {
     detail.value = room;
     currentSite = Sites.of(site);
-    liveDanmaku = currentSite.liveSite.getDanmaku();
+    if (settings.enableDanmakuDisplay.value) {
+      liveDanmaku = currentSite.liveSite.getDanmaku();
+    }
   }
 
   void _initTab() {
@@ -170,7 +171,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     if (Platform.isAndroid) {
       BackButtonInterceptor.removeByName("live_play_page");
     }
-    liveDanmaku.stop();
+    if (settings.enableDanmakuDisplay.value) {
+      liveDanmaku.stop();
+    }
   }
 
   void setNormalScreen() => screenMode.value = VideoMode.normal;
@@ -223,7 +226,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
       settings.addRoomToHistory(liveRoom);
 
       const except = ['kuaishou', 'iptv', 'cc'];
-      if (!except.contains(liveRoom.platform)) {
+      if (!except.contains(liveRoom.platform) && settings.enableDanmakuDisplay.value) {
         liveDanmaku.stop();
         initDanmau();
         liveDanmaku.start(liveRoom.danmakuData);
@@ -252,13 +255,17 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     success.value = false;
     isLiving.value = true;
     messages.clear();
-    liveDanmaku.stop();
+    if (settings.enableDanmakuDisplay.value) {
+      liveDanmaku.stop();
+    }
     await videoController.value?.destory();
     videoController.value = null;
     hasUseDefaultResolution = false;
     detail.value = newRoom;
     currentSite = Sites.of(newRoom.platform!);
-    liveDanmaku = currentSite.liveSite.getDanmaku();
+    if (settings.enableDanmakuDisplay.value) {
+      liveDanmaku = currentSite.liveSite.getDanmaku();
+    }
     EmojiManager().preload(newRoom.platform!);
     onInitPlayerState(
       reloadDataType: newRoom.platform == Sites.bilibiliSite ? ReloadDataType.changeLine : ReloadDataType.refreash,
@@ -280,7 +287,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     playUrls.value = [link];
 
     setPlayer();
-    liveDanmaku.stop();
+    if (settings.enableDanmakuDisplay.value) {
+      liveDanmaku.stop();
+    }
   }
 
   void handleCurrentLineAndQuality({
@@ -305,7 +314,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   // =========================================================
   void initDanmau() {
     if (!_hasRoom) return;
-
+    if (!settings.enableDanmakuDisplay.value) {
+      return;
+    }
     if (detail.value!.isRecord == true) {
       messages.add(_systemMsg(i18n('recording_mode_notice')));
     }
@@ -479,7 +490,6 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     }
 
     playUrls.value = playUrl;
-    log(playUrl.toString(), name: "play_url");
     setPlayer();
   }
 

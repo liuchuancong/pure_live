@@ -1,4 +1,3 @@
-import 'package:get/get.dart';
 import 'widgets/version_dialog.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:url_launcher/url_launcher.dart';

@@ -1,4 +1,3 @@
-import 'package:get/get.dart';
 import 'dart:developer' as developer;
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/utils.dart';

@@ -1,7 +1,5 @@
 import 'dart:io';
 import 'dart:async';
-import 'dart:developer';
-import 'package:get/get.dart';
 import 'video_controller_panel.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:battery_plus/battery_plus.dart';
@@ -50,7 +48,8 @@ class VideoController with ChangeNotifier {
   LivePlayController livePlayController = Get.find<LivePlayController>();
 
   final SettingsService settings = Get.find<SettingsService>();
-  late StreamSubscription<PlayerException> _errorSub;
+  StreamSubscription<PlayerException>? _errorSub;
+  StreamSubscription<bool>? _pipSub;
   Timer? showControllerTimer;
   final showController = true.obs;
   final showSettting = false.obs;
@@ -144,13 +143,13 @@ class VideoController with ChangeNotifier {
 
   void initPlayerListener() {
     final manager = GlobalPlayerService.instance.playerManager;
+    _errorSub?.cancel();
     _errorSub = manager.onError.listen((error) {
       _handlePlayerError(error);
     });
   }
 
   void _handlePlayerError(PlayerException error) {
-    log(error.toString(), name: 'PlayerError');
     switch (error.type) {
       case PlayerErrorType.network:
         ToastUtil.show(i18n("error_network"));
@@ -185,6 +184,7 @@ class VideoController with ChangeNotifier {
       _volumeController = VolumeController.instance;
       _volumeController.showSystemUI = false;
       registerVolumeListener();
+      _volumeController.setVolume(room.getSavedVolume());
     }
     playerManager.play(datasource, playUrs, headers, room: room);
     initPlayerListener();
@@ -274,7 +274,7 @@ class VideoController with ChangeNotifier {
       updateDanmaku();
     });
 
-    GlobalPlayerService.instance.playerManager.isInPip.listen((isInPip) {
+    _pipSub = GlobalPlayerService.instance.playerManager.isInPip.listen((isInPip) {
       if (isInPip) {
         livePlayController.setFullScreen();
       } else {
@@ -308,20 +308,32 @@ class VideoController with ChangeNotifier {
 
   @override
   void dispose() async {
-    _errorSub.cancel();
+    _errorSub?.cancel();
+    _errorSub = null;
+    _pipSub?.cancel();
+    _pipSub = null;
+    showControllerTimer?.cancel();
+    _debounceTimer?.cancel();
+    _hideVolumeTimer?.cancel();
     await destory();
     super.dispose();
   }
 
   void refresh() async {
-    _errorSub.cancel();
+    _errorSub?.cancel();
+    _errorSub = null;
+    _pipSub?.cancel();
+    _pipSub = null;
     GlobalPlayerService.instance.playerManager.close();
     await destory();
     livePlayController.onInitPlayerState(reloadDataType: ReloadDataType.refreash);
   }
 
   void changeLine() async {
-    _errorSub.cancel();
+    _errorSub?.cancel();
+    _errorSub = null;
+    _pipSub?.cancel();
+    _pipSub = null;
     GlobalPlayerService.instance.playerManager.close();
     await destory();
     livePlayController.onInitPlayerState(reloadDataType: ReloadDataType.changeLine, line: currentLineIndex);
@@ -330,7 +342,7 @@ class VideoController with ChangeNotifier {
   Future<void> destory() async {
     if (Platform.isAndroid || Platform.isIOS) {
       if (allowScreenKeepOn) WakelockPlus.disable();
-      _subscription.cancel();
+      unawaited(_subscription.cancel());
       _volumeController.removeListener();
     }
   }
@@ -346,7 +358,6 @@ class VideoController with ChangeNotifier {
   }
 
   void toggleFullScreen() async {
-    log('toggleFullScreen called');
     showLocked.value = false;
     showControllerTimer?.cancel();
 
@@ -396,14 +407,14 @@ class VideoController with ChangeNotifier {
   // 注册音量变化监听器
   void registerVolumeListener() {
     _subscription = _volumeController.addListener((volume) {
-      settings.volume.value = volume;
+      room.saveCurrentVolume(volume);
     }, fetchInitialVolume: true);
   }
 
   // volume & brightness
   Future<double?> volume() async {
     if (Platform.isWindows) {
-      return settings.volume.value;
+      return room.getSavedVolume();
     }
     return await _volumeController.getVolume();
   }
@@ -418,7 +429,7 @@ class VideoController with ChangeNotifier {
     } else {
       await _volumeController.setVolume(value);
     }
-    settings.volume.value = value;
+    room.saveCurrentVolume(value);
   }
 
   void setBrightness(double value) async {

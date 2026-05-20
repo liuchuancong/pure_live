@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:ui' as ui;
-import 'package:get/get.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -199,7 +198,7 @@ class DanmakuListViewState extends State<DanmakuListView> {
                 return ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-                  cacheExtent: 800,
+                  scrollCacheExtent: const ScrollCacheExtent.pixels(800),
                   itemCount: list.length,
                   itemBuilder: (_, index) {
                     final msg = list[index];

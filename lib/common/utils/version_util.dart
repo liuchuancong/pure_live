@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/race_http.dart';
 import 'package:pure_live/common/utils/githup_mirror.dart';
 
@@ -10,7 +9,7 @@ class VersionUtil {
   // =========================================================
   // 当前版本
   // =========================================================
-  static const String version = '2.0.17';
+  static const String version = '2.0.18';
 
   // =========================================================
   // 项目地址

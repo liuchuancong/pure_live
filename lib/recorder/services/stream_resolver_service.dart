@@ -1,7 +1,4 @@
-import 'package:get/get.dart';
-import 'package:pure_live/core/sites.dart';
-import 'package:pure_live/plugins/locale_helper.dart';
-import 'package:pure_live/common/models/live_room.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 

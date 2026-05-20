@@ -1,16 +1,11 @@
 import 'dart:async';
-import 'package:get/get.dart';
 import 'package:rxdart/rxdart.dart';
 import '../models/player_state.dart';
-import 'package:flutter/material.dart';
-import 'package:flv_lzc/fijkplayer.dart';
 import '../models/player_exception.dart';
 import '../models/player_error_type.dart';
-import '../core/player_error_dispatcher.dart';
+import 'package:pure_live/common/index.dart';
 import '../interface/unified_player_interface.dart';
-import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/player/utils/fijk_helper.dart';
-import 'package:pure_live/common/services/settings_service.dart';
 
 class FijkAdapter implements UnifiedPlayer {
   late final FijkPlayer _player;
@@ -18,6 +13,8 @@ class FijkAdapter implements UnifiedPlayer {
   bool _initialized = false;
 
   bool _disposed = false;
+
+  VoidCallback? _playerListener;
 
   final _stateSubject = BehaviorSubject<PlayerState>.seeded(PlayerState.idle);
 
@@ -62,7 +59,8 @@ class FijkAdapter implements UnifiedPlayer {
   }
 
   void _bindListeners() {
-    _player.addListener(() {
+    clearListener();
+    _playerListener = () {
       final value = _player.value;
       final state = value.state;
 
@@ -100,12 +98,12 @@ class FijkAdapter implements UnifiedPlayer {
           final exception = PlayerException(message: 'Fijk native error', type: PlayerErrorType.native);
           _errorSubject.add(exception);
           _player.reset();
-          PlayerErrorDispatcher.instance.dispatch(exception);
           break;
         default:
           break;
       }
-    });
+    };
+    _player.addListener(_playerListener!);
   }
 
   Future<void> _setupProxy() async {
@@ -172,6 +170,7 @@ class FijkAdapter implements UnifiedPlayer {
   @override
   Future<void> softStop() async {
     if (!_initialized) return;
+    clearListener();
     await _player.reset();
     _playingSubject.add(false);
     _loadingSubject.add(false);
@@ -183,7 +182,7 @@ class FijkAdapter implements UnifiedPlayer {
     if (_disposed) return;
 
     _disposed = true;
-
+    clearListener();
     await _player.release();
     _initialized = false;
     _stateSubject.add(PlayerState.idle);
@@ -232,4 +231,20 @@ class FijkAdapter implements UnifiedPlayer {
 
   @override
   Stream<int?> get height => _heightSubject.stream;
+
+  @override
+  void clearListener() {
+    if (_playerListener != null) {
+      _player.removeListener(_playerListener!);
+      _playerListener = null;
+    }
+
+    if (!_stateSubject.isClosed) _stateSubject.add(PlayerState.idle);
+    if (!_playingSubject.isClosed) _playingSubject.add(false);
+    if (!_loadingSubject.isClosed) _loadingSubject.add(false);
+    if (!_completeSubject.isClosed) _completeSubject.add(false);
+    if (!_errorSubject.isClosed) {
+      _errorSubject.drain();
+    }
+  }
 }

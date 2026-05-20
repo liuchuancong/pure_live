@@ -1,14 +1,12 @@
 import 'site/huya_site.dart';
-import 'package:get/get.dart';
 import 'site/douyu_site.dart';
 import 'site/douyin_site.dart';
 import 'interface/live_site.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/site/cc_site.dart';
 import 'package:pure_live/core/site/iptv_site.dart';
-import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/core/site/bilibili_site.dart';
 import 'package:pure_live/core/site/kuaishou_site.dart';
-import 'package:pure_live/common/services/settings_service.dart';
 
 class Sites {
   static const String allSite = "all";

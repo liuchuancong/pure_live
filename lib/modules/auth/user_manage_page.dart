@@ -1,4 +1,3 @@
-import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:pure_live/modules/auth/utils/constants.dart';

@@ -58,6 +58,8 @@
     "clear": "清除",
     "clear_all_cache": "清除全部缓存",
     "clear_all_cache_desc": "删除录制缓存文件",
+    "clear_all_cache_meida_desc": "清空本地所有缓存",
+    "confirm_clear_meida_desc": "确认清空本地所有缓存吗？",
     "click_to_remove_suffix": "（点击移除）",
     "close": "关闭",
     "confirm": "确认",
@@ -608,5 +610,16 @@
     "delete_success": "删除成功",
     "delete_failed": "删除失败，请稍后重试",
     "download_failed": "下载失败，请稍后重试",
-    "download_success": "下载成功"
+    "download_success": "下载成功",
+    "show_danmaku": "显示弹幕",
+    "show_danmaku_subtitle": "播放直播时默认开启弹幕显示",
+    "global_mute": "全局静音",
+    "global_mute_subtitle": "所有直播间统一静音",
+    "mobile_default_volume": "手机端默认音量",
+    "desktop_default_volume": "电脑端默认音量",
+    "reset_volume_default": "还原默认音量",
+    "reset_volume_default_desc": "手机、电脑音量恢复为 100%",
+    "volume_reset_success": "音量已恢复默认",
+    "room_volume": "房间音量",
+    "reset_default": "恢复默认"
 }

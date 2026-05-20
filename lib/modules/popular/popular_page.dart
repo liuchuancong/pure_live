@@ -1,9 +1,5 @@
-import 'package:get/get.dart';
 import 'popular_grid_view.dart';
-import 'package:flutter/material.dart';
-import 'package:pure_live/core/sites.dart';
-import 'package:pure_live/common/widgets/index.dart';
-import 'package:pure_live/modules/popular/popular_controller.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/widgets/common_appbar_actions.dart';
 
 class PopularPage extends GetView<PopularController> {

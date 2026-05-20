@@ -1,11 +1,12 @@
 import 'dart:io';
 import 'dart:async';
 import 'widgets/index.dart';
-import 'package:get/get.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pure_live/modules/live_play/load_type.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/index.dart' hide BackButton;
 import 'package:pure_live/modules/live_play/play_other.dart';
 import 'package:pure_live/recorder/models/record_status.dart';
@@ -292,11 +293,13 @@ class LivePlayPage extends GetView<LivePlayController> {
               if (index == 0) {
                 controller.openNaviteAPP();
               } else if (index == 1) {
-                showDlnaCastDialog();
-              } else if (index == 2) {
-                showTimerDialog(context);
-              } else if (index == 3) {
                 Get.dialog(PlayOther(controller: controller));
+              } else if (index == 2) {
+                showDlnaCastDialog();
+              } else if (index == 3) {
+                showTimerDialog(context);
+              } else if (index == 4) {
+                showVolumeSettingsDialog(context);
               }
             },
             itemBuilder: (BuildContext context) {
@@ -307,20 +310,25 @@ class LivePlayPage extends GetView<LivePlayController> {
                   child: MenuListTile(leading: Icon(Icons.open_in_new_rounded), text: i18n("open_live_room")),
                 ),
                 PopupMenuItem(
-                  value: 3,
+                  value: 1,
                   padding: EdgeInsets.symmetric(horizontal: 12),
                   child: MenuListTile(leading: Icon(Icons.swap_horiz_outlined), text: i18n("switch_live_room")),
                 ),
 
                 PopupMenuItem(
-                  value: 1,
+                  value: 2,
                   padding: EdgeInsets.symmetric(horizontal: 12),
                   child: MenuListTile(leading: const Icon(Icons.live_tv_rounded), text: i18n("cast_screen")),
                 ),
                 PopupMenuItem(
-                  value: 2,
+                  value: 3,
                   padding: EdgeInsets.symmetric(horizontal: 12),
                   child: MenuListTile(leading: const Icon(Icons.watch_later_outlined), text: i18n("sleep_timer")),
+                ),
+                PopupMenuItem(
+                  value: 4,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: MenuListTile(leading: const Icon(Icons.volume_up_rounded), text: i18n("room_volume")),
                 ),
               ];
             },
@@ -423,6 +431,132 @@ class LivePlayPage extends GetView<LivePlayController> {
           ),
         ],
       ),
+    );
+  }
+
+  void showVolumeSettingsDialog(BuildContext context) {
+    final RxBool tempMute = controller.settings.globalVolumeMute.value.obs;
+    final RxDouble tempMobileVol = controller.settings.defaultMobileVolume.value.obs;
+    final RxDouble tempDesktopVol = controller.settings.defaultDesktopVolume.value.obs;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        final theme = Theme.of(context);
+        return AlertDialog(
+          title: Text(i18n("room_volume")),
+          content: Container(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Obx(
+              () => SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SwitchListTile(
+                      title: Text(i18n("global_mute")),
+                      secondary: Icon(
+                        tempMute.value ? Icons.volume_off : Icons.volume_up,
+                        color: tempMute.value ? theme.colorScheme.error : theme.colorScheme.primary,
+                      ),
+                      value: tempMute.value,
+                      activeThumbColor: theme.colorScheme.primary,
+                      contentPadding: EdgeInsets.zero,
+                      onChanged: (val) => tempMute.value = val,
+                    ),
+                    const Divider(height: 32),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.phone_android, size: 20),
+                            const SizedBox(width: 8),
+                            Text(i18n("mobile_default_volume")),
+                          ],
+                        ),
+                        Text(
+                          "${(tempMobileVol.value * 100).toInt()}%",
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: tempMute.value ? theme.disabledColor : theme.colorScheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Slider(
+                      value: tempMobileVol.value.clamp(0.0, 1.0),
+                      min: 0.0,
+                      max: 1.0,
+                      onChanged: tempMute.value ? null : (val) => tempMobileVol.value = val,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.computer, size: 20),
+                            const SizedBox(width: 8),
+                            Text(i18n("desktop_default_volume")),
+                          ],
+                        ),
+                        Text(
+                          "${(tempDesktopVol.value * 100).toInt()}%",
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: tempMute.value ? theme.disabledColor : theme.colorScheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Slider(
+                      value: tempDesktopVol.value.clamp(0.0, 1.0),
+                      min: 0.0,
+                      max: 1.0,
+                      onChanged: tempMute.value ? null : (val) => tempDesktopVol.value = val,
+                    ),
+                    const SizedBox(height: 16),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: () {
+                          tempMute.value = false;
+                          tempMobileVol.value = 0.5;
+                          tempDesktopVol.value = 1.0;
+                        },
+                        icon: const Icon(Icons.refresh, size: 18),
+                        label: Text(i18n("reset_default")),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n("cancel"))),
+            FilledButton(
+              onPressed: () {
+                controller.settings.globalVolumeMute.value = tempMute.value;
+                controller.settings.defaultMobileVolume.value = tempMobileVol.value.clamp(0.0, 1.0);
+                controller.settings.defaultDesktopVolume.value = tempDesktopVol.value.clamp(0.0, 1.0);
+                if (tempMute.value) {
+                  controller.videoController.value?.setVolume(0.0);
+                } else {
+                  if (PlatformUtils.isMobile) {
+                    controller.videoController.value?.setVolume(tempMobileVol.value);
+                  } else {
+                    controller.videoController.value?.setVolume(tempDesktopVol.value);
+                  }
+                }
+                Navigator.pop(context);
+              },
+              child: Text(i18n("confirm")),
+            ),
+          ],
+        );
+      },
     );
   }
 

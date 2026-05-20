@@ -2,7 +2,6 @@ import 'dart:math';
 import 'dart:async';
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:get/get.dart';
 import 'package:crypto/crypto.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:timezone/timezone.dart' as tz;

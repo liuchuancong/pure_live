@@ -1,14 +1,10 @@
 import 'dart:io';
 import 'dart:ui';
 import 'dart:async';
-import 'package:get/get.dart';
-import 'package:flutter/material.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/utils.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:pure_live/routes/route_path.dart';
-import 'package:window_manager/window_manager.dart';
-import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';

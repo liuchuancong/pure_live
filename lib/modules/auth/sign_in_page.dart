@@ -1,4 +1,3 @@
-import 'package:get/get.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
