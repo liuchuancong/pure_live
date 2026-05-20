@@ -613,5 +613,14 @@
     "download_failed": "Download failed, please try again later",
     "download_success": "Downloaded successfully",
     "show_danmaku": "Show Danmaku",
-    "show_danmaku_subtitle": "Enable danmaku display by default during playback"
+    "show_danmaku_subtitle": "Enable danmaku display by default during playback",
+    "global_mute": "Global Mute",
+    "global_mute_subtitle": "Mute all live rooms",
+    "mobile_default_volume": "Mobile Default Volume",
+    "desktop_default_volume": "Desktop Default Volume",
+    "reset_volume_default": "Reset Volume Default",
+    "reset_volume_default_desc": "Reset mobile & desktop volume to 100%",
+    "volume_reset_success": "Volume has been reset to default",
+    "room_volume": "Room Volume",
+    "reset_default": "Reset Default"
 }

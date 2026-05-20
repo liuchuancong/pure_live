@@ -126,6 +126,14 @@ class SettingsService extends GetxController {
     (key, value) => MapEntry(ColorTools.createPrimarySwatch(value), key),
   );
   final cacheSizeMB = 0.0.obs;
+
+  // ==============================
+  // 🔊 音量设置 (新增)
+  // ==============================
+  final defaultMobileVolume = (HivePrefUtil.getDouble('defaultMobileVolume') ?? 0.5).obs;
+  final defaultDesktopVolume = (HivePrefUtil.getDouble('defaultDesktopVolume') ?? 1.0).obs;
+  final globalVolumeMute = (HivePrefUtil.getBool('globalVolumeMute') ?? false).obs;
+  final roomVolumes = <String, double>{}.obs;
   // ==============================
   // 🧩 Lifecycle: onInit
   // ==============================
@@ -354,6 +362,21 @@ class SettingsService extends GetxController {
       HivePrefUtil.setBool('enableDanmakuDisplay', value);
     });
     getCacheSize();
+
+    defaultMobileVolume.listen((value) {
+      HivePrefUtil.setDouble('defaultMobileVolume', value.clamp(0.0, 1.0));
+    });
+
+    defaultDesktopVolume.listen((value) {
+      HivePrefUtil.setDouble('defaultDesktopVolume', value.clamp(0.0, 1.0));
+    });
+
+    globalVolumeMute.listen((value) {
+      HivePrefUtil.setBool('globalVolumeMute', value);
+    });
+    roomVolumes.listen((value) {
+      HivePrefUtil.setString('roomVolumes', jsonEncode(value));
+    });
   }
 
   // ==============================
@@ -669,6 +692,28 @@ class SettingsService extends GetxController {
     await getCacheSize();
   }
 
+  // 🔊 ==============================
+  // 音量方法
+  // ==============================
+  double get currentPlatformDefaultVolume {
+    return Platform.isAndroid || Platform.isIOS ? defaultMobileVolume.value : defaultDesktopVolume.value;
+  }
+
+  Future<void> setCurrentPlatformDefaultVolume(double volume) async {
+    final v = volume.clamp(0.0, 1.0);
+    if (Platform.isAndroid || Platform.isIOS) {
+      defaultMobileVolume.value = v;
+    } else {
+      defaultDesktopVolume.value = v;
+    }
+  }
+
+  void resetVolumeToDefault() {
+    defaultMobileVolume.value = 0.5;
+    defaultDesktopVolume.value = 1.0;
+    globalVolumeMute.value = false;
+  }
+
   void fromJson(Map<String, dynamic> json) {
     List<T> safeParseList<T>(dynamic data, T Function(Map<String, dynamic>) fromJsonFactory) {
       if (data == null || data is! List) return [];
@@ -761,6 +806,15 @@ class SettingsService extends GetxController {
     videoHardwareDecoder.value = PlayerConsts.hardwareDecoder.keys.contains(json['videoHardwareDecoder'])
         ? json['audioOutputDriver']
         : 'auto';
+    // 房间音量
+    if (json['roomVolumes'] != null) {
+      try {
+        roomVolumes.value = Map<String, double>.from(jsonDecode(json['roomVolumes']));
+      } catch (_) {}
+    }
+    defaultMobileVolume.value = json['defaultMobileVolume'] ?? 0.5;
+    defaultDesktopVolume.value = json['defaultDesktopVolume'] ?? 1.0;
+    globalVolumeMute.value = json['globalVolumeMute'] ?? false;
     changeThemeMode(themeModeName.value);
     changeThemeColorSwitch(themeColorSwitch.value);
     setBilibiliCookit(bilibiliCookie.value);
@@ -826,6 +880,10 @@ class SettingsService extends GetxController {
     json['videoOutputDriver'] = videoOutputDriver.value;
     json['audioOutputDriver'] = audioOutputDriver.value;
     json['videoHardwareDecoder'] = videoHardwareDecoder.value;
+    json['defaultMobileVolume'] = defaultMobileVolume.value;
+    json['defaultDesktopVolume'] = defaultDesktopVolume.value;
+    json['globalVolumeMute'] = globalVolumeMute.value;
+    json['roomVolumes'] = jsonEncode(roomVolumes.value);
     return json;
   }
 }

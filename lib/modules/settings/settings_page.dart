@@ -60,7 +60,58 @@ class SettingsPage extends GetView<SettingsService> {
           ),
 
           SectionTitle(title: i18n("video")),
+          Obx(() {
+            return _buildSwitchTile(
+              title: i18n("global_mute"),
+              subtitle: i18n("global_mute_subtitle"),
+              value: controller.globalVolumeMute,
+              icon: controller.globalVolumeMute.value ? Remix.volume_mute_line : Remix.volume_up_line,
+            );
+          }),
 
+          Obx(
+            () => ListTile(
+              leading: Icon(Remix.phone_line, color: theme.colorScheme.primary, size: 24),
+              title: Text(i18n("mobile_default_volume")),
+              subtitle: Slider(
+                value: controller.defaultMobileVolume.value.clamp(0.0, 1.0),
+                min: 0.0,
+                max: 1.0,
+                onChanged: (val) => controller.defaultMobileVolume.value = val,
+              ),
+              trailing: Text(
+                "${(controller.defaultMobileVolume.value * 100).toInt()}%",
+                style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+
+          Obx(
+            () => ListTile(
+              leading: Icon(Remix.computer_line, color: theme.colorScheme.primary, size: 24),
+              title: Text(i18n("desktop_default_volume")),
+              subtitle: Slider(
+                value: controller.defaultDesktopVolume.value.clamp(0.0, 1.0),
+                min: 0.0,
+                max: 1.0,
+                onChanged: (val) => controller.defaultDesktopVolume.value = val,
+              ),
+              trailing: Text(
+                "${(controller.defaultDesktopVolume.value * 100).toInt()}%",
+                style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+
+          ListTile(
+            leading: Icon(Remix.restart_line, color: theme.colorScheme.primary, size: 24),
+            title: Text(i18n("reset_volume_default")),
+            subtitle: Text(i18n("reset_volume_default_desc")),
+            onTap: () {
+              controller.resetVolumeToDefault();
+              Get.snackbar(i18n("done"), i18n("volume_reset_success"), snackPosition: SnackPosition.bottom);
+            },
+          ),
           Obx(
             () => ListTile(
               leading: const Icon(Remix.hd_line, size: 24),
