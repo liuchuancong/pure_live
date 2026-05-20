@@ -33,7 +33,6 @@ class RecorderPage extends GetView<RecorderController> {
           title: Text(i18n("recorder_title"), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
           centerTitle: true,
           elevation: 0,
-          backgroundColor: Colors.transparent,
           actions: [
             IconButton(
               tooltip: i18n("recorder_open_folder"),
