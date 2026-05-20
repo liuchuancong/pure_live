@@ -18,10 +18,12 @@ class BetterPlayerAdapter implements UnifiedPlayer {
   final _stateSubject = BehaviorSubject<PlayerState>.seeded(PlayerState.idle);
   final _playingSubject = BehaviorSubject<bool>.seeded(false);
   final _loadingSubject = BehaviorSubject<bool>.seeded(false);
-  final _errorSubject = BehaviorSubject<PlayerException>();
+  final _errorSubject = PublishSubject<PlayerException>();
   final _completeSubject = BehaviorSubject<bool>.seeded(false);
   final _widthSubject = BehaviorSubject<int?>.seeded(null);
   final _heightSubject = BehaviorSubject<int?>.seeded(null);
+
+  final List<StreamSubscription> _subscriptions = [];
 
   @override
   Future<void> init() async {
@@ -44,9 +46,9 @@ class BetterPlayerAdapter implements UnifiedPlayer {
   }
 
   void _bindListeners() {
-    clearListener();
+    // 先移除旧监听
+    _removeEventListener();
 
-    // 保存监听器回调
     _eventListener = (BetterPlayerEvent event) {
       switch (event.betterPlayerEventType) {
         case BetterPlayerEventType.initialized:
@@ -85,7 +87,7 @@ class BetterPlayerAdapter implements UnifiedPlayer {
             message: event.parameters?['exception']?.toString() ?? 'BetterPlayer Error',
             type: PlayerErrorType.native,
           );
-          _errorSubject.add(exception);
+          _safeAddError(exception);
           break;
         default:
           break;
@@ -93,6 +95,27 @@ class BetterPlayerAdapter implements UnifiedPlayer {
     };
 
     _controller!.addEventsListener(_eventListener!);
+  }
+
+  Future<void> _cancelAllSubscriptions() async {
+    _removeEventListener();
+
+    for (final sub in _subscriptions) {
+      await sub.cancel();
+    }
+    _subscriptions.clear();
+  }
+
+  void _removeEventListener() {
+    if (_eventListener != null && _controller != null) {
+      _controller!.removeEventsListener(_eventListener!);
+      _eventListener = null;
+    }
+  }
+
+  void _safeAddError(PlayerException exception) {
+    if (_disposed || _errorSubject.isClosed) return;
+    _errorSubject.add(exception);
   }
 
   @override
@@ -120,7 +143,7 @@ class BetterPlayerAdapter implements UnifiedPlayer {
         error: e,
         stackTrace: s,
       );
-      _errorSubject.add(exception);
+      _safeAddError(exception);
       throw exception;
     } finally {
       _loadingSubject.add(false);
@@ -134,7 +157,6 @@ class BetterPlayerAdapter implements UnifiedPlayer {
 
   @override
   Future<void> play() => _controller?.play() ?? Future.value();
-
   @override
   Future<void> pause() => _controller?.pause() ?? Future.value();
 
@@ -146,8 +168,6 @@ class BetterPlayerAdapter implements UnifiedPlayer {
 
   @override
   Future<void> softStop() async {
-    clearListener();
-
     if (_controller != null) {
       await _controller!.setVolume(0.0);
     }
@@ -160,13 +180,15 @@ class BetterPlayerAdapter implements UnifiedPlayer {
     if (_disposed) return;
     _disposed = true;
     _initialized = false;
-    clearListener();
+
+    await _cancelAllSubscriptions();
 
     if (_controller != null) {
       try {
         await _controller!.setVolume(0.0);
         await _controller!.pause();
         _controller!.dispose();
+        _controller = null;
       } catch (e) {
         debugPrint("BetterPlayer dispose error: $e");
       }
@@ -179,24 +201,6 @@ class BetterPlayerAdapter implements UnifiedPlayer {
     await _completeSubject.close();
     await _widthSubject.close();
     await _heightSubject.close();
-  }
-
-  @override
-  void clearListener() {
-    // 1. 移除 BetterPlayer 事件监听
-    if (_controller != null && _eventListener != null) {
-      _controller!.removeEventsListener(_eventListener!);
-      _eventListener = null;
-    }
-
-    // 2. 重置所有流状态，清空残留事件
-    if (!_disposed) {
-      if (!_loadingSubject.isClosed) _loadingSubject.add(false);
-      if (!_playingSubject.isClosed) _playingSubject.add(false);
-      if (!_completeSubject.isClosed) _completeSubject.add(false);
-      // 清空错误流缓存
-      if (!_errorSubject.isClosed) _errorSubject.drain();
-    }
   }
 
   @override

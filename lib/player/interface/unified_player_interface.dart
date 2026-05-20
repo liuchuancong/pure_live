@@ -52,6 +52,4 @@ abstract class UnifiedPlayer {
   Stream<int?> get width;
 
   Stream<int?> get height;
-
-  void clearListener() {}
 }

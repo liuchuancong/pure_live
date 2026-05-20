@@ -739,7 +739,6 @@ class PlayerManager {
   Future<void> softStop() async {
     lineManager.reset();
     try {
-      await _clearSubscriptions();
       if (_stateSubject.value == PlayerState.error) {
         await hardDispose();
 
@@ -759,10 +758,6 @@ class PlayerManager {
   Future<void> hardDispose() async {
     lineManager.reset();
     await _clearSubscriptions();
-    final player = _currentPlayer;
-    if (player != null) {
-      await player.hardDispose();
-    }
     if (_runtimeEngine != null) {
       await playerPool.removeFromCache(_runtimeEngine!);
     }
@@ -935,9 +930,6 @@ class PlayerManager {
 
   Future<void> _clearSubscriptions() async {
     if (_subscriptions.isEmpty) return;
-
-    _subscriptions.clear();
-
     for (final item in _subscriptions) {
       await item.cancel();
     }

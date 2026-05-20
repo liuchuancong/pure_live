@@ -267,14 +267,28 @@ jobs:
       - name: 更新Flutter packages
         run: flutter pub get
 
+      # 🔥 【新增步骤 1】关闭 Xcode 脚本沙盒限制，防止 PhaseScriptExecution 失败
+      - name: Disable Xcode Script Sandboxing
+        run: |
+          cd macos
+          sed -i '' 's/ENABLE_USER_SCRIPT_SANDBOXING = YES;/ENABLE_USER_SCRIPT_SANDBOXING = NO;/g' Runner.xcodeproj/project.pbxproj || true
+
+      # 🔥 【新增步骤 2】在 CI 干净环境下，强制拉取并安装 CocoaPods 依赖
+      - name: Install Pods Dependencies
+        run: |
+          cd macos
+          pod repo update
+          pod install
+          cd ..
+
+      # 🔥 【关键修改】加入 --no-codesign，解决由于无证书导致的执行策略拦截异常
       - name: Build macOS
-        run: flutter build macos --release -v
+        run: flutter build macos --release --no-codesign -v
 
       - name: Get version
         id: get_version
         run: |
           VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //; s/[`"'"'"']//g')
-
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Install create-dmg
@@ -297,6 +311,7 @@ jobs:
           name: macos-dmg-${{ matrix.branch }}
           path: PureLive-*.dmg
           retention-days: 1
+
 
   # =========================================================
   # RELEASE

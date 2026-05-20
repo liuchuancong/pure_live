@@ -998,14 +998,14 @@ class PlayPauseButton extends StatelessWidget {
     return GestureDetector(
       onTap: () => playerManager.togglePlayPause(),
       child: StreamBuilder<bool>(
-        stream: playerManager.onPlaying,
+        stream: playerManager.onPlaying.distinct(),
         initialData: playerManager.isPlayingNow,
         builder: (context, snapshot) {
-          final isPlaying = snapshot.data ?? false;
+          final isPlaying = snapshot.data ?? playerManager.isPlayingNow;
           return Container(
             alignment: Alignment.center,
             padding: const EdgeInsets.only(right: 6),
-            child: Icon(isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.white),
+            child: Icon(isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.white, size: 28),
           );
         },
       ),

@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:screen_retriever/screen_retriever.dart';
 import 'package:pure_live/player/utils/win32_window.dart';
 import 'package:auto_orientation_v2/auto_orientation_v2.dart';
