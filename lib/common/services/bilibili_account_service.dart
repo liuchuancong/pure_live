@@ -1,13 +1,9 @@
 import 'dart:async';
-import 'package:get/get.dart';
-import 'package:pure_live/core/sites.dart';
-import 'package:pure_live/plugins/locale_helper.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/site/bilibili_site.dart';
-import 'package:pure_live/common/utils/toast_util.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:pure_live/common/services/settings_service.dart';
 import 'package:pure_live/common/models/bilibili_user_info_page.dart';
 
 class BiliBiliAccountService extends GetxController {

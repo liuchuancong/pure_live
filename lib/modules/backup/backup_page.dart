@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/backup/scan_page.dart';
 import 'package:pure_live/plugins/file_recover_utils.dart';

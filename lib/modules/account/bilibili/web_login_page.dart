@@ -1,6 +1,4 @@
-import 'package:get/get.dart';
-import 'package:flutter/material.dart';
-import 'package:pure_live/plugins/locale_helper.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:pure_live/modules/account/bilibili/web_login_controller.dart';
 

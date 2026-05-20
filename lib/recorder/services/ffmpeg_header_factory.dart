@@ -1,4 +1,3 @@
-import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/site/huya_site.dart';
 

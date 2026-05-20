@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/archethic.dart';
 import 'package:flutter/services.dart' show rootBundle;

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:get/get.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:file_picker/file_picker.dart';

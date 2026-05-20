@@ -1,6 +1,5 @@
-import 'package:get/get.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:pure_live/common/utils/version_util.dart';
 import 'package:pure_live/common/base/base_controller.dart';
 
 class VersionController extends BaseController {

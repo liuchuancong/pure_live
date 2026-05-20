@@ -1,5 +1,4 @@
 import 'dart:ui';
-import 'package:get/get.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/routes/app_navigation.dart';

@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
-import 'package:get/get.dart';
 import 'dart:developer' as developer;
 import 'package:open_filex/open_filex.dart';
 import 'package:pure_live/common/index.dart';

@@ -1,5 +1,4 @@
-import 'package:get/get.dart';
-import 'package:flutter/material.dart';
+import 'package:pure_live/common/index.dart';
 
 class SettingsMenu<T> extends StatelessWidget {
   final String title;

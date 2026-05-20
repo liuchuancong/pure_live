@@ -1,10 +1,6 @@
 import 'dart:async';
-import 'package:get/get.dart';
-import 'package:flutter/material.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
-import 'package:pure_live/plugins/locale_helper.dart';
-import 'package:pure_live/common/utils/text_util.dart';
-import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/common/widgets/common_avatar.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
 

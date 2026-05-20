@@ -1,15 +1,11 @@
 import 'dart:async';
-import 'package:get/get.dart';
 import 'package:rxdart/rxdart.dart';
 import '../models/player_state.dart';
-import 'package:flutter/material.dart';
-import 'package:flv_lzc/fijkplayer.dart';
 import '../models/player_exception.dart';
 import '../models/player_error_type.dart';
+import 'package:pure_live/common/index.dart';
 import '../interface/unified_player_interface.dart';
-import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/player/utils/fijk_helper.dart';
-import 'package:pure_live/common/services/settings_service.dart';
 
 class FijkAdapter implements UnifiedPlayer {
   late final FijkPlayer _player;

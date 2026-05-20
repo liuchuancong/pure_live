@@ -1,4 +1,3 @@
-import 'package:get/get.dart';
 import 'areas_grid_view.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/widgets/common_appbar_actions.dart';

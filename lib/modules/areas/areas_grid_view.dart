@@ -1,4 +1,3 @@
-import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 import 'package:pure_live/modules/areas/widgets/area_card.dart';

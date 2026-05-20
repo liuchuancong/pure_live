@@ -566,10 +566,11 @@ packages:
   ffmpeg_kit_extended_flutter:
     dependency: "direct main"
     description:
-      name: ffmpeg_kit_extended_flutter
-      sha256: "83a1896c9232554b41195188cc2ab6d599bb74f5b848c9e7d8e6fcb52ceb5f0e"
-      url: "https://pub.flutter-io.cn"
-    source: hosted
+      path: flutter
+      ref: dev
+      resolved-ref: ae955110cc17eabcf4cd6df3b16420dc6f595b95
+      url: "https://github.com/akashskypatel/ffmpeg-kit-extended"
+    source: git
     version: "0.5.0"
   file:
     dependency: "direct main"
@@ -840,14 +841,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.5.0"
-  get:
-    dependency: "direct main"
-    description:
-      name: get
-      sha256: b3294002946e99314c341bff0b4f3094e631a1f8cf37785e93aa7c2f04b0768e
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "5.0.0-release-candidate-9.3.2"
   get_it:
     dependency: transitive
     description:

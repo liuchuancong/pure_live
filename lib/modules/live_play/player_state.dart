@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+import 'package:pure_live/common/index.dart';
 
 class GlobalPlayerState extends GetxController {
   static GlobalPlayerState get to => Get.find<GlobalPlayerState>();

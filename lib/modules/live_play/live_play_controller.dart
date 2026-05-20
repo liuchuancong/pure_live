@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:developer';
-import 'package:get/get.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/site/huya_site.dart';
 import 'widgets/video_player/video_controller.dart';

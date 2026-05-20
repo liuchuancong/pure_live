@@ -1,16 +1,13 @@
 import 'dart:async';
-import 'package:get/get.dart';
 import 'package:rxdart/rxdart.dart';
 import '../models/player_state.dart';
-import 'package:flutter/material.dart';
 import '../models/player_exception.dart';
 import '../models/player_error_type.dart';
+import 'package:pure_live/common/index.dart';
 import '../interface/unified_player_interface.dart';
 import 'package:media_kit_video/media_kit_video.dart';
-import 'package:pure_live/common/models/live_room.dart';
 import 'package:media_kit/media_kit.dart' hide PlayerState;
 import 'package:pure_live/common/global/platform_utils.dart';
-import 'package:pure_live/common/services/settings_service.dart';
 
 class MediaKitAdapter implements UnifiedPlayer {
   late final Player _player;

@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:developer';
 import 'player_pool.dart';
-import 'package:get/get.dart';
 import 'line_fallback_manager.dart';
 import '../models/player_state.dart';
 import 'preload_player_manager.dart';

@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:async';
-import 'package:get/get.dart';
 import 'video_controller_panel.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:battery_plus/battery_plus.dart';

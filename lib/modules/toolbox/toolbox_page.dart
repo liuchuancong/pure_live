@@ -1,7 +1,5 @@
-import 'package:get/get.dart';
-import 'package:flutter/material.dart';
 import 'package:remixicon/remixicon.dart';
-import 'package:pure_live/plugins/locale_helper.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/toolbox/toolbox_controller.dart';
 
 class ToolBoxPage extends GetView<ToolBoxController> {

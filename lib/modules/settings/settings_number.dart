@@ -1,6 +1,4 @@
-import 'package:get/get.dart';
-import 'package:flutter/material.dart';
-import 'package:pure_live/plugins/locale_helper.dart';
+import 'package:pure_live/common/index.dart';
 
 class SettingsNumber extends StatelessWidget {
   final String title;

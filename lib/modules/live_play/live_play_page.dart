@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'dart:async';
 import 'widgets/index.dart';
-import 'package:get/get.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pure_live/modules/live_play/load_type.dart';

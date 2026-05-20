@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:developer';
-import 'package:get/get.dart';
 import 'app_path_manager.dart';
 import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';

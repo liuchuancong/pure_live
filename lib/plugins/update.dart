@@ -1,9 +1,5 @@
 import 'dart:io';
-import 'package:get/get.dart';
-import 'package:pure_live/plugins/locale_helper.dart';
-import 'package:pure_live/common/utils/toast_util.dart';
-import 'package:pure_live/common/utils/version_util.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/widgets/download_apk_dialog.dart';
 
 Future<bool> requestStorageInstallPermission() async {
@@ -43,15 +39,7 @@ Future<void> downloadAndInstallApk(String apkUrl) async {
       ToastUtil.show('${i18n("request_install_permission_failed")}${e.toString()}');
     }
   }
-  ToastUtil.show(i18n("downloading_apk", args: {
-    "version": VersionUtil.latestVersion
-  }));
+  ToastUtil.show(i18n("downloading_apk", args: {"version": VersionUtil.latestVersion}));
 
-  Get.dialog(
-    DownloadApkDialog(
-      apkUrl: apkUrl,
-      version: VersionUtil.latestVersion,
-    ),
-    barrierDismissible: false,
-  );
+  Get.dialog(DownloadApkDialog(apkUrl: apkUrl, version: VersionUtil.latestVersion), barrierDismissible: false);
 }

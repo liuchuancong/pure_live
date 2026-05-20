@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:async';
-import 'package:get/get.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:flutter/gestures.dart';
 import 'package:pure_live/common/index.dart';

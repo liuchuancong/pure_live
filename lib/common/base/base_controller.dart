@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'package:get/get.dart';
-import 'package:flutter/widgets.dart';
-import 'package:easy_refresh/easy_refresh.dart';
-import 'package:pure_live/common/utils/toast_util.dart';
+import 'package:pure_live/common/index.dart';
+
 
 class BaseController extends GetxController {
   /// 加载中，更新页面

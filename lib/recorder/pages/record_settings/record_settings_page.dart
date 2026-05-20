@@ -1,7 +1,5 @@
 import 'dart:io';
-import 'package:get/get.dart';
-import 'package:flutter/material.dart';
-import 'package:pure_live/plugins/locale_helper.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';

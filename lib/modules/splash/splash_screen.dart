@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:pure_live/common/index.dart';
 
 enum LoaderType { spinner, dots, progressBar }
 
