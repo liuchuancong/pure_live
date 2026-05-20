@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'dart:developer';
 import 'video_controller_panel.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:battery_plus/battery_plus.dart';
@@ -145,6 +146,7 @@ class VideoController with ChangeNotifier {
     final manager = GlobalPlayerService.instance.playerManager;
     _errorSub?.cancel();
     _errorSub = manager.onError.listen((error) {
+      log('error: ${error.toString()}', name: 'initPlayerListener');
       _handlePlayerError(error);
     });
   }
@@ -327,6 +329,13 @@ class VideoController with ChangeNotifier {
     GlobalPlayerService.instance.playerManager.close();
     await destory();
     livePlayController.onInitPlayerState(reloadDataType: ReloadDataType.refreash);
+  }
+
+  void clearListener() {
+    _errorSub?.cancel();
+    _errorSub = null;
+    _pipSub?.cancel();
+    _pipSub = null;
   }
 
   void changeLine() async {
