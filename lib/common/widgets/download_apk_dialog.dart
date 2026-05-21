@@ -88,14 +88,8 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
         Navigator.of(Get.context!).pop(false);
 
         if (Platform.isAndroid) {
-          final result = await OpenFilex.open(file.path, type: "application/vnd.android.package-archive");
+          ToastUtil.show(i18n("install_tip"));
           await InstallApk().installApk(file.path);
-          if (result.type != ResultType.done) {
-            Get.snackbar(
-              i18n("install_failed"),
-              i18n("install_unknown_app_permission_tip", args: {"message": result.message}),
-            );
-          }
         } else if (PlatformUtils.isDesktop) {
           final result = await OpenFilex.open(file.path);
 
