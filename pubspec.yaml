@@ -217,7 +217,7 @@ dev_dependencies:
     sdk: flutter
   change_app_package_name: any # 修改应用包名
   json_serializable: ^6.7.1 # JSON序列化
-  build_runner: ^2.3.3 # 代码生成器
+  build_runner: ^2.4.15 # 代码生成器
   flutter_launcher_icons: ^0.14.4 # 应用图标生成
   msix: ^3.16.12 # Windows安装包打包
   intl_utils: ^2.8.11 # 国际化工具

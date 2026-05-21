@@ -666,7 +666,11 @@
     "manage_page_delete_success": "订阅源已成功卸载并清除",
     "manage_page_single_syncing": "正在同步当前订阅源，请稍候...",
     "dialog_import_playlist_title": "导入播放列表 (M3U / TXT)",
-"dialog_import_epg_title": "导入电视节目单 (XML / GZ / JSON)"
-
-
+    "dialog_import_epg_title": "导入电视节目单 (XML / GZ / JSON)",
+    "auto_sync_settings": "自动化周期同步设置",
+    "enable_auto_sync": "应用启动自动同步",
+    "enable_auto_sync_subtitle": "开机冷启动时检测并静默升级已过期的网络源",
+    "sync_interval": "数据源更新周期间隔",
+    "hours": "小时",
+    "auto_sync_tag": "自动更新"
 }

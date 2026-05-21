@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
+import 'package:drift/drift.dart' as drift;
 import 'package:pure_live/common/global/app_path_manager.dart';
 
 part 'database.g.dart';
@@ -33,7 +34,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -54,6 +55,10 @@ class AppDatabase extends _$AppDatabase {
       if (from < 5) {
         await m.createTable(failoverGroups);
         await m.createTable(failoverGroupChannels);
+      }
+      if (from < 6) {
+        await m.addColumn(providers, providers.isAutoUpdate);
+        await m.addColumn(epgSources, epgSources.isAutoUpdate);
       }
     },
   );
@@ -221,6 +226,38 @@ class AppDatabase extends _$AppDatabase {
   Future<void> deleteProviderCascading(String providerId) async {
     await (delete(channels)..where((t) => t.providerId.equals(providerId))).go();
     await (delete(providers)..where((t) => t.id.equals(providerId))).go();
+  }
+  // --- Add inside your Drift Database implementation block ---
+
+  /// Fetches playlist records that haven't been synchronized for a specific duration
+  Future<void> updateProviderUpdateStatus(String providerId, bool status) async {
+    await (update(providers)..where((t) => t.id.equals(providerId))).write(
+      ProvidersCompanion(isAutoUpdate: drift.Value(status)),
+    ); // 🔒 必须使用 drift.Value 包装
+  }
+
+  Future<void> updateEpgSourceUpdateStatus(String sourceId, bool status) async {
+    await (update(epgSources)..where((t) => t.id.equals(sourceId))).write(
+      EpgSourcesCompanion(isAutoUpdate: drift.Value(status)),
+    ); // 🔒 必须使用 drift.Value 包装
+  }
+
+  // 💡 精准获取：不仅要超时，而且必须是用户开启了自动更新开关（isAutoUpdate == true）的文件才会被查出来
+
+  Future<List<Provider>> getExpiredNetworkProviders(Duration checkInterval) {
+    final threshold = DateTime.now().subtract(checkInterval);
+    return (select(providers)..where(
+          (t) => t.url.like('http%') & t.lastRefresh.isSmallerThan(Variable(threshold)) & t.isAutoUpdate.equals(true),
+        ))
+        .get();
+  }
+
+  Future<List<EpgSource>> getExpiredEpgSources(Duration checkInterval) {
+    final threshold = DateTime.now().subtract(checkInterval);
+    return (select(epgSources)..where(
+          (t) => t.url.like('http%') & t.lastRefresh.isSmallerThan(Variable(threshold)) & t.isAutoUpdate.equals(true),
+        ))
+        .get();
   }
 
   Future<void> deleteEpgProgrammesForSource(String sourceId) =>

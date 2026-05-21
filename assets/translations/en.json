@@ -667,7 +667,11 @@
     "manage_page_delete_success": "Subscription source has been uninstalled and cleared",
     "manage_page_single_syncing": "Syncing current subscription source, please wait...",
     "dialog_import_playlist_title": "Import Playlist (M3U / TXT)",
-"dialog_import_epg_title": "Import TV Guide (XML / GZ / JSON)"
-
-
+    "dialog_import_epg_title": "Import TV Guide (XML / GZ / JSON)",
+    "auto_sync_settings": "Automated Sync Settings",
+    "enable_auto_sync": "Sync Automatically on Boot",
+    "enable_auto_sync_subtitle": "Silently upgrade expired cloud sources when app opens",
+    "sync_interval": "Data Refresh Interval",
+    "hours": "Hours",
+    "auto_sync_tag": "Auto Sync"
 }

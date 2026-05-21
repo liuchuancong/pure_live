@@ -13,6 +13,7 @@ import 'package:pure_live/common/global/win_auto_start.dart';
 import 'package:pure_live/modules/web_dav/webdav_config.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
 import 'package:pure_live/common/services/bilibili_account_service.dart';
+import 'package:pure_live/core/iptv/services/iptv_auto_sync_scheduler.dart';
 
 class SettingsService extends GetxController {
   // ==============================
@@ -140,6 +141,8 @@ class SettingsService extends GetxController {
   // ==============================
   final selectedSourceName = (HivePrefUtil.getString('selectedSourceName') ?? '').obs;
   final selectedSourceId = (HivePrefUtil.getString('selectedSourceId') ?? '').obs;
+  final isAutoSyncEnabled = (HivePrefUtil.getBool('isAutoSyncEnabled') ?? false).obs;
+  final autoSyncHoursInterval = (HivePrefUtil.getInt('autoSyncHoursInterval') ?? 24).obs;
 
   // ==============================
   // 🧩 Lifecycle: onInit
@@ -147,7 +150,9 @@ class SettingsService extends GetxController {
   @override
   void onInit() {
     super.onInit();
-
+    Future.delayed(const Duration(seconds: 3), () {
+      IptvAutoSyncScheduler.instance.checkAndExecuteAutoSync();
+    });
     // === 监听并持久化 ===
     enableDynamicTheme.listen((bool value) {
       HivePrefUtil.setBool('enableDynamicTheme', value);
@@ -391,6 +396,12 @@ class SettingsService extends GetxController {
 
     selectedSourceId.listen((value) {
       HivePrefUtil.setString('selectedSourceId', value);
+    });
+    isAutoSyncEnabled.listen((value) {
+      HivePrefUtil.setBool('isAutoSyncEnabled', value);
+    });
+    autoSyncHoursInterval.listen((value) {
+      HivePrefUtil.setInt('autoSyncHoursInterval', value);
     });
   }
 

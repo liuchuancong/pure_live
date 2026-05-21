@@ -13,9 +13,8 @@ class Providers extends Table {
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   BoolColumn get enabled => boolean().withDefault(const Constant(true))();
   DateTimeColumn get lastRefresh => dateTime().nullable()();
-  DateTimeColumn get createdAt =>
-      dateTime().withDefault(currentDateAndTime)();
-
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  BoolColumn get isAutoUpdate => boolean().withDefault(const Constant(true))();
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -35,7 +34,7 @@ class Channels extends Table {
   BoolColumn get favorite => boolean().withDefault(const Constant(false))();
   BoolColumn get hidden => boolean().withDefault(const Constant(false))();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
-
+  BoolColumn get isAutoUpdate => boolean().withDefault(const Constant(true))();
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -46,12 +45,10 @@ class EpgSources extends Table {
   TextColumn get name => text()();
   TextColumn get url => text()();
   BoolColumn get enabled => boolean().withDefault(const Constant(true))();
-  IntColumn get refreshIntervalHours =>
-      integer().withDefault(const Constant(12))();
+  IntColumn get refreshIntervalHours => integer().withDefault(const Constant(12))();
   DateTimeColumn get lastRefresh => dateTime().nullable()();
-  DateTimeColumn get createdAt =>
-      dateTime().withDefault(currentDateAndTime)();
-
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  BoolColumn get isAutoUpdate => boolean().withDefault(const Constant(true))();
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -89,11 +86,9 @@ class EpgMappings extends Table {
   TextColumn get epgChannelId => text()();
   TextColumn get epgSourceId => text().references(EpgSources, #id)();
   RealColumn get confidence => real().withDefault(const Constant(0.0))();
-  TextColumn get source =>
-      text().withDefault(const Constant('auto'))(); // auto, manual, suggested
+  TextColumn get source => text().withDefault(const Constant('auto'))(); // auto, manual, suggested
   BoolColumn get locked => boolean().withDefault(const Constant(false))();
-  DateTimeColumn get updatedAt =>
-      dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {channelId, providerId};
