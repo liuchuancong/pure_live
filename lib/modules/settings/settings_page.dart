@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/modules/iptv/iptv_page.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
@@ -226,6 +227,16 @@ class SettingsPage extends GetView<SettingsService> {
             leading: const Icon(Remix.global_line, size: 24),
             title: Text(i18n("change_language")),
             onTap: showLanguageSelecterDialog,
+          ),
+          ListTile(
+            leading: const Icon(Remix.tv_2_line, size: 24),
+            title: Text(i18n("iptv_settings")),
+            subtitle: Text(
+              i18n("manage_iptv_sources"),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+            ),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const IptvPage())),
           ),
           ListTile(
             leading: const Icon(Remix.save_3_line, size: 24),

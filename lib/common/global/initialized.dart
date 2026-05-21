@@ -22,6 +22,7 @@ import 'package:pure_live/common/global/platform/desktop_manager.dart';
 import 'package:pure_live/common/services/bilibili_account_service.dart';
 import 'package:pure_live/recorder/services/stream_resolver_service.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
+import 'package:pure_live/core/iptv/services/channel_detail_controller.dart';
 import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
 
@@ -103,6 +104,7 @@ class AppInitializer {
     Get.put(RouteObserverController(), permanent: true);
     Get.lazyPut(() => FavoriteController(), fenix: true);
     Get.lazyPut<DbService>(() => DbService()..init(), fenix: true);
+    Get.lazyPut(() => ChannelDetailController(), fenix: true);
     Get.lazyPut<IptvRepository>(() => IptvRepository()..init(), fenix: true);
     Get.lazyPut<IptvRepository>(() => IptvRepository()..init(), fenix: true);
     Get.lazyPut(() => PopularController(), fenix: true);

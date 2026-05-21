@@ -533,4 +533,15 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
       await launchUrlString(webUrl, mode: LaunchMode.externalApplication);
     }
   }
+
+  void switchPlayUrl(String catchupUrl) {
+    var room = detail.value!;
+    room = room.copyWith(link: catchupUrl);
+    detail.value = null;
+    videoController.value = null;
+    success.value = false;
+    playUrls.value = [];
+    playUrls.add(catchupUrl);
+    setPlayer();
+  }
 }

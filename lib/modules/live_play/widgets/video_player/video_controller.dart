@@ -5,7 +5,9 @@ import 'video_controller_panel.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:volume_controller/volume_controller.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
@@ -14,6 +16,7 @@ import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/models/player_exception.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/player/models/player_error_type.dart';
+import 'package:pure_live/core/iptv/local/database.dart' as database;
 import 'package:pure_live/pkg/canvas_danmaku/danmaku_controller.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
 import 'package:pure_live/pkg/canvas_danmaku/models/danmaku_option.dart';
@@ -49,6 +52,7 @@ class VideoController with ChangeNotifier {
   LivePlayController livePlayController = Get.find<LivePlayController>();
 
   final SettingsService settings = Get.find<SettingsService>();
+  final RxList<database.EpgProgramme> currentChannelSchedule = <database.EpgProgramme>[].obs;
   StreamSubscription<PlayerException>? _errorSub;
   StreamSubscription<bool>? _pipSub;
   Timer? showControllerTimer;
@@ -180,6 +184,50 @@ class VideoController with ChangeNotifier {
     }
   }
 
+  String generateCatchupUrl({
+    required String originalUrl,
+    required database.EpgProgramme programme,
+    String type = 'default',
+  }) {
+    final Uri uri = Uri.parse(originalUrl);
+    final formatter = DateFormat('yyyyMMddHHmmss');
+    final String startStr = formatter.format(programme.start);
+    final String stopStr = formatter.format(programme.stop);
+
+    if (type == 'playseek') {
+      final Map<String, String> newParams = Map<String, String>.from(uri.queryParameters);
+      newParams['playseek'] = '$startStr-$stopStr';
+      return uri.replace(queryParameters: newParams).toString();
+    } else if (type == 'offset') {
+      final int offsetSeconds = DateTime.now().difference(programme.start).inSeconds;
+      final Map<String, String> newParams = Map<String, String>.from(uri.queryParameters);
+      newParams['catchup'] = 'default';
+      newParams['offset'] = offsetSeconds.toString();
+      return uri.replace(queryParameters: newParams).toString();
+    }
+
+    return originalUrl.contains('?') ? '$originalUrl&timeshift=$startStr' : '$originalUrl?timeshift=$startStr';
+  }
+
+  void onProgrammeTapped(database.EpgProgramme programme) {
+    final now = DateTime.now();
+
+    if (programme.start.isAfter(now)) {
+      ToastUtil.show(i18n('program_scheduled_hint'));
+      return;
+    }
+
+    if (programme.start.isBefore(now) && programme.stop.isAfter(now)) {
+      Navigator.of(Get.context!).pop();
+      return;
+    }
+
+    String catchupUrl = generateCatchupUrl(originalUrl: room.link!, programme: programme, type: 'playseek');
+    Navigator.of(Get.context!).pop(); // 关闭节目单弹窗
+    livePlayController.switchPlayUrl(catchupUrl);
+    ToastUtil.show('${i18n('playing_catchup')}: ${programme.title}');
+  }
+
   void initVideoController() async {
     final playerManager = GlobalPlayerService.instance.playerManager;
     if (PlatformUtils.isMobile) {
@@ -200,6 +248,10 @@ class VideoController with ChangeNotifier {
         enableController();
       }
     });
+
+    if (room.platform == Sites.iptvSite) {
+      loadFullChannelSchedule(room.epgId);
+    }
   }
 
   void retryRoom() async {
@@ -305,6 +357,25 @@ class VideoController with ChangeNotifier {
       danmakuController.addDanmaku(
         DanmakuContentItem(msg.message, color: Color.fromARGB(255, msg.color.r, msg.color.g, msg.color.b)),
       );
+    }
+  }
+
+  Future<void> loadFullChannelSchedule(String? epgId) async {
+    currentChannelSchedule.clear();
+    if (epgId == null || epgId.isEmpty) return;
+    try {
+      final db = Get.find<DbService>().db;
+      final now = DateTime.now();
+      final startTime = now.subtract(const Duration(minutes: 5));
+      final endTime = now.add(const Duration(days: 1));
+      List<database.EpgProgramme> dbProgrammes = await db.getProgrammes(
+        epgChannelId: epgId,
+        start: startTime,
+        end: endTime,
+      );
+      currentChannelSchedule.value = dbProgrammes.where((p) => p.stop.isAfter(now)).toList();
+    } catch (e) {
+      debugPrint("$e");
     }
   }
 

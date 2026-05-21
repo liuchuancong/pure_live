@@ -134,6 +134,13 @@ class SettingsService extends GetxController {
   final defaultDesktopVolume = (HivePrefUtil.getDouble('defaultDesktopVolume') ?? 1.0).obs;
   final globalVolumeMute = (HivePrefUtil.getBool('globalVolumeMute') ?? false).obs;
   final roomVolumes = <String, double>{}.obs;
+
+  // ==============================
+  //  电视设置 (新增)
+  // ==============================
+  final selectedSourceName = (HivePrefUtil.getString('selectedSourceName') ?? '').obs;
+  final selectedSourceId = (HivePrefUtil.getString('selectedSourceId') ?? '').obs;
+
   // ==============================
   // 🧩 Lifecycle: onInit
   // ==============================
@@ -376,6 +383,14 @@ class SettingsService extends GetxController {
     });
     roomVolumes.listen((value) {
       HivePrefUtil.setString('roomVolumes', jsonEncode(value));
+    });
+
+    selectedSourceName.listen((value) {
+      HivePrefUtil.setString('selectedSourceName', value);
+    });
+
+    selectedSourceId.listen((value) {
+      HivePrefUtil.setString('selectedSourceId', value);
     });
   }
 

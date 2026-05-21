@@ -208,6 +208,21 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
+  Future<void> deleteEpgSourceCascading(String sourceId) async {
+    await (delete(epgProgrammes)..where((t) => t.sourceId.equals(sourceId))).go();
+    await (delete(epgChannels)..where((t) => t.sourceId.equals(sourceId))).go();
+    await (delete(epgSources)..where((t) => t.id.equals(sourceId))).go();
+  }
+
+  Future<List<Provider>> getNetworkProviders() {
+    return (select(providers)..where((t) => t.url.like('http%') | t.url.like('https%'))).get();
+  }
+
+  Future<void> deleteProviderCascading(String providerId) async {
+    await (delete(channels)..where((t) => t.providerId.equals(providerId))).go();
+    await (delete(providers)..where((t) => t.id.equals(providerId))).go();
+  }
+
   Future<void> deleteEpgProgrammesForSource(String sourceId) =>
       (delete(epgProgrammes)..where((t) => t.sourceId.equals(sourceId))).go();
 

@@ -6,6 +6,7 @@ import 'package:pure_live/core/iptv/local/database.dart';
 import 'package:pure_live/model/live_search_result.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/iptv/iptv_repository.dart';
+import 'package:pure_live/core/iptv/core/fuzzy_match.dart';
 import 'package:pure_live/model/live_category_result.dart';
 import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
@@ -97,13 +98,46 @@ class IptvSite implements LiveSite {
   Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
     final channel = await db.getChannelById(roomId);
     if (channel == null) throw Exception('Channel not found');
-    final mapping = await db.getMappingByChannelId(channel.id);
+
+    String? finalEpgChannelId;
+    final String currentEpgSourceId = Get.find<SettingsService>().selectedSourceId.value;
+
+    if (currentEpgSourceId.isNotEmpty) {
+      final dbChannels = await db.getEpgChannelsForSource(currentEpgSourceId);
+
+      if (dbChannels.isNotEmpty) {
+        final cleanRegex = RegExp(r'[^a-zA-Z0-9\u4e00-\u9fa5]');
+        final targetClean = channel.name.toLowerCase().replaceAll(cleanRegex, '');
+
+        final matchedDbChannels = dbChannels.where((dbCh) {
+          final dbChClean = dbCh.displayName.toLowerCase().replaceAll(cleanRegex, '');
+          if (targetClean.contains(dbChClean) || dbChClean.contains(targetClean)) {
+            return true;
+          }
+          return fuzzyMatchPasses(channel.name, [dbCh.displayName]);
+        }).toList();
+
+        if (matchedDbChannels.isNotEmpty) {
+          matchedDbChannels.sort((a, b) {
+            final aClean = a.displayName.toLowerCase().replaceAll(cleanRegex, '');
+            final bClean = b.displayName.toLowerCase().replaceAll(cleanRegex, '');
+
+            if (aClean == targetClean && bClean != targetClean) return -1;
+            if (bClean == targetClean && aClean != targetClean) return 1;
+
+            return fuzzyMatch(channel.name, [b.displayName]).compareTo(fuzzyMatch(channel.name, [a.displayName]));
+          });
+          finalEpgChannelId = matchedDbChannels.first.id;
+        }
+      }
+    }
+
     EpgProgramme? nowProg;
-    if (mapping?.epgChannelId != null) {
-      final nowList = await db.getNowPlaying([mapping!.epgChannelId]);
+    if (finalEpgChannelId != null && finalEpgChannelId.isNotEmpty) {
+      final nowList = await db.getNowPlaying([finalEpgChannelId]);
       if (nowList.isNotEmpty) nowProg = nowList.first;
     }
-    debugPrint('channel.streamUrl ${channel.streamUrl}');
+
     return LiveRoom(
       roomId: channel.id,
       title: channel.name,
@@ -118,7 +152,7 @@ class IptvSite implements LiveSite {
       platform: Sites.iptvSite,
       link: channel.streamUrl,
       data: channel.streamUrl,
-      epgId: mapping?.epgChannelId,
+      epgId: finalEpgChannelId,
       currentProgramme: nowProg?.title,
       currentProgrammeDescription: nowProg?.description,
     );

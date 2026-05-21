@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:math';
 import 'dart:convert';
-import 'package:uuid/uuid.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:path/path.dart' as p;
 import 'package:archive/archive.dart';
@@ -17,6 +16,7 @@ import 'package:pure_live/core/iptv/parsers/txt_parser.dart';
 import 'package:pure_live/core/iptv/parsers/xmltv_parser.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
 import 'package:pure_live/core/iptv/parsers/json_epg_parser.dart';
+import 'package:pure_live/core/iptv/local/database.dart' as database;
 
 class FileRecoverUtils {
   static String getName(String fullName) {
@@ -71,10 +71,59 @@ class FileRecoverUtils {
     return true;
   }
 
-  Future<bool> importIptvFile({required File file, required String providerName, bool isHot = false}) async {
+  Future<bool> importIptvFile({
+    required File file,
+    required String providerName,
+    bool isHot = false,
+    String url = '',
+    bool forceUpdate = false,
+  }) async {
     try {
       final db = Get.find<DbService>().db;
-      final providerId = isHot ? 'hot' : FileRecoverUtils.getUUid();
+      final cleanName = providerName.trim().toLowerCase();
+      String providerId = isHot ? 'hot' : FileRecoverUtils.getUUid();
+
+      if (!isHot) {
+        final existing = await db.getAllProviders();
+        final matchedList = existing.where((p) => p.name.trim().toLowerCase() == cleanName).toList();
+
+        if (matchedList.isNotEmpty) {
+          if (!forceUpdate) {
+            Get.dialog(
+              AlertDialog(
+                title: Text(i18n("provider_name_exists_tip")),
+                content: Text('${i18n("active_epg_source")} "$providerName" ${i18n("delete_confirm_message")}'),
+                actions: [
+                  TextButton(onPressed: () => Navigator.of(Get.context!).pop(), child: Text(i18n("cancel"))),
+                  TextButton(
+                    onPressed: () async {
+                      Navigator.of(Get.context!).pop();
+                      await importIptvFile(
+                        file: file,
+                        providerName: providerName,
+                        isHot: isHot,
+                        url: url,
+                        forceUpdate: true,
+                      );
+                    },
+                    child: Text(i18n("confirm")),
+                  ),
+                ],
+              ),
+            );
+            return false;
+          }
+          providerId = matchedList.first.id;
+          if (matchedList.length > 1) {
+            for (int i = 1; i < matchedList.length; i++) {
+              final duplicateItem = matchedList[i];
+              await (db.delete(db.channels)..where((t) => t.providerId.equals(duplicateItem.id))).go();
+              await (db.delete(db.providers)..where((t) => t.id.equals(duplicateItem.id))).go();
+            }
+          }
+        }
+      }
+
       final dir = await AppPathManager().getDir(AppPathManager.dirIptvCache);
       final ext = p.extension(file.path);
       final savedFile = File(p.join(dir.path, '$providerId$ext'));
@@ -89,21 +138,25 @@ class FileRecoverUtils {
       }
 
       await db.upsertProvider(
-        ProvidersCompanion.insert(
+        database.ProvidersCompanion.insert(
           id: providerId,
-          name: providerName,
+          name: providerName.trim(),
           type: ext.replaceAll('.', ''),
-          url: drift.Value<String?>(file.path),
+          url: drift.Value<String?>(url.isNotEmpty ? url : savedFile.path),
         ),
       );
+
       final content = await savedFile.readAsString();
       final result = ext.toLowerCase() == '.txt'
           ? TxtParser().parse(content, providerId: providerId)
           : M3uParser().parse(content, providerId: providerId);
 
+      await (db.delete(db.channels)..where((t) => t.providerId.equals(providerId))).go();
+      await (db.delete(db.epgMappings)..where((t) => t.providerId.equals(providerId))).go();
+
       await db.upsertChannels(
         result.channels.map((e) {
-          return ChannelsCompanion.insert(
+          return database.ChannelsCompanion.insert(
             id: e.id,
             providerId: e.providerId,
             name: e.name,
@@ -116,11 +169,10 @@ class FileRecoverUtils {
         }).toList(),
       );
 
-      SnackBarUtil.success(i18n("recover_backup_success"));
-
+      ToastUtil.show(i18n("sync_success"));
       return true;
     } catch (e) {
-      SnackBarUtil.error(i18n("recover_backup_failed"));
+      ToastUtil.show(i18n("sync_failed"));
       return false;
     }
   }
@@ -149,14 +201,53 @@ class FileRecoverUtils {
     if (ext == '.xml' || ext == '.gz' || ext == '.json') {
       return await importEpgFile(file: file, sourceName: name);
     }
-    SnackBarUtil.error('Unsupported file format');
+    ToastUtil.show(i18n('unsupported_file_format'));
     return false;
   }
 
-  Future<bool> importEpgFile({required File file, required String sourceName}) async {
+  Future<bool> importEpgFile({required File file, required String sourceName, bool forceUpdate = false}) async {
     try {
       final db = Get.find<DbService>().db;
+      final cleanName = sourceName.trim().toLowerCase();
       final ext = p.extension(file.path).toLowerCase();
+      String sourceId = FileRecoverUtils.getUUid();
+
+      final existing = await db.getAllEpgSources();
+      final matchedList = existing.where((e) => (e.name).trim().toLowerCase() == cleanName).toList();
+
+      if (matchedList.isNotEmpty) {
+        if (!forceUpdate) {
+          Get.dialog(
+            AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Text(i18n("provider_name_exists_tip")),
+              content: Text('${i18n("active_epg_source")} "$sourceName" ${i18n("delete_confirm_message")}'),
+              actions: [
+                TextButton(onPressed: () => Navigator.of(Get.context!).pop(), child: Text(i18n("cancel"))),
+                TextButton(
+                  onPressed: () async {
+                    Navigator.of(Get.context!).pop();
+                    await importEpgFile(file: file, sourceName: sourceName, forceUpdate: true);
+                  },
+                  child: Text(i18n("confirm")),
+                ),
+              ],
+            ),
+          );
+          return false;
+        }
+
+        sourceId = matchedList.first.id;
+        if (matchedList.length > 1) {
+          for (int i = 1; i < matchedList.length; i++) {
+            final duplicateItem = matchedList[i];
+            await (db.delete(db.epgProgrammes)..where((t) => t.sourceId.equals(duplicateItem.id))).go();
+            await (db.delete(db.epgChannels)..where((t) => t.sourceId.equals(duplicateItem.id))).go();
+            await (db.delete(db.epgSources)..where((t) => t.id.equals(duplicateItem.id))).go();
+          }
+        }
+      }
+
       String content;
       if (ext == '.gz') {
         final bytes = await file.readAsBytes();
@@ -165,12 +256,23 @@ class FileRecoverUtils {
       } else {
         content = await file.readAsString();
       }
-      final sourceId = Uuid().v4();
-      await db.upsertEpgSource(EpgSourcesCompanion.insert(id: sourceId, name: sourceName, url: file.path));
+
+      await db.upsertEpgSource(
+        EpgSourcesCompanion.insert(
+          id: sourceId,
+          name: sourceName,
+          url: file.path,
+          lastRefresh: drift.Value(DateTime.now()),
+        ),
+      );
+
+      await (db.delete(db.epgProgrammes)..where((t) => t.sourceId.equals(sourceId))).go();
+      await (db.delete(db.epgChannels)..where((t) => t.sourceId.equals(sourceId))).go();
+
       if (ext == '.xml' || ext == '.gz') {
         final parser = XmltvParser();
         final result = parser.parse(content, sourceId: sourceId);
-        // channels
+
         await db.upsertEpgChannels(
           result.channels.map((e) {
             return EpgChannelsCompanion.insert(
@@ -183,7 +285,6 @@ class FileRecoverUtils {
           }).toList(),
         );
 
-        // programmes
         await db.insertProgrammes(
           result.programmes.map((e) {
             return EpgProgrammesCompanion.insert(
@@ -198,13 +299,8 @@ class FileRecoverUtils {
             );
           }).toList(),
         );
-      }
-      // =========================================================
-      // JSON EPG
-      // =========================================================
-      else if (ext == '.json') {
+      } else if (ext == '.json') {
         final parser = JsonEpgParser();
-
         final result = parser.parse(content, sourceId: sourceId);
 
         await db.upsertEpgChannels(
@@ -219,7 +315,6 @@ class FileRecoverUtils {
           }).toList(),
         );
 
-        // programmes
         await db.insertProgrammes(
           result.programmes.map((e) {
             return EpgProgrammesCompanion.insert(
@@ -235,27 +330,41 @@ class FileRecoverUtils {
           }).toList(),
         );
       }
-      SnackBarUtil.success('EPG imported');
+
+      await db.pruneOldProgrammes(maxAge: const Duration(days: 2));
+      ToastUtil.show(i18n("epg_import_success"));
       return true;
     } catch (e) {
-      SnackBarUtil.error('EPG import failed');
-
+      debugPrint("$e");
+      ToastUtil.show(i18n("epg_import_failed"));
       return false;
     }
   }
 
   Future<bool> recoverNetworkM3u8Backup(String url, String fileName) async {
     try {
+      final lowercaseUrl = url.toLowerCase().trim();
+      if (!lowercaseUrl.endsWith('.m3u') && !lowercaseUrl.endsWith('.txt') && !lowercaseUrl.endsWith('.m3u8')) {
+        ToastUtil.show(i18n("unsupported_file_format"));
+        return false;
+      }
       final dioInstance = dio.Dio(
         dio.BaseOptions(connectTimeout: const Duration(seconds: 10), receiveTimeout: const Duration(seconds: 10)),
       );
       final dir = await AppPathManager().getDir(AppPathManager.dirIptvCache);
       final file = File(p.join(dir.path, '$fileName.m3u'));
-      await dioInstance.download(url, file.path);
-      return await importIptvFile(file: file, providerName: fileName, isHot: fileName == 'hot');
-    } catch (e) {
-      SnackBarUtil.error(i18n("recover_backup_failed"));
 
+      await dioInstance.download(url, file.path);
+      return await importIptvFile(
+        file: file,
+        providerName: fileName,
+        isHot: fileName == 'hot',
+        url: url,
+        forceUpdate: false,
+      );
+    } catch (e) {
+      debugPrint("$e");
+      ToastUtil.show(i18n("network_import_failed"));
       return false;
     }
   }
@@ -274,7 +383,7 @@ class FileRecoverUtils {
         isHot: fileName == 'hot',
       );
     } catch (e) {
-      SnackBarUtil.error(i18n("recover_backup_failed"));
+      ToastUtil.show(i18n("network_import_failed"));
 
       return false;
     }
@@ -285,7 +394,7 @@ class FileRecoverUtils {
       File file = await toFile(media.content!);
       return await importIptvFile(file: file, providerName: p.basenameWithoutExtension(file.path));
     } catch (e) {
-      SnackBarUtil.error(i18n("recover_backup_failed"));
+      ToastUtil.show(i18n("local_import_failed"));
       return false;
     }
   }
@@ -295,7 +404,7 @@ class FileRecoverUtils {
     if (Platform.isAndroid || Platform.isIOS) {
       final granted = await requestStoragePermission();
       if (!granted) {
-        SnackBarUtil.error(i18n("grant_storage_permission_first"));
+        ToastUtil.show(i18n("grant_storage_permission_first"));
         return null;
       }
     }
@@ -309,13 +418,13 @@ class FileRecoverUtils {
     final dateStr = formatDate(DateTime.now(), [yyyy, '-', mm, '-', dd, 'T', HH, '_', nn, '_', ss]);
     final file = File('$selectedDirectory/purelive_$dateStr.txt');
     if (settings.backup(file)) {
-      SnackBarUtil.success(i18n("create_backup_success"));
+      ToastUtil.show(i18n("create_backup_success"));
       if (settings.backupDirectory.isEmpty) {
         settings.backupDirectory.value = selectedDirectory;
       }
       return selectedDirectory;
     } else {
-      SnackBarUtil.error(i18n("create_backup_failed"));
+      ToastUtil.show(i18n("create_backup_failed"));
 
       return null;
     }
@@ -337,9 +446,9 @@ class FileRecoverUtils {
     final file = File(result.files.single.path!);
 
     if (settings.recover(file)) {
-      SnackBarUtil.success(i18n("recover_backup_success"));
+      ToastUtil.show(i18n("recover_backup_success"));
     } else {
-      SnackBarUtil.error(i18n("recover_backup_failed"));
+      ToastUtil.show(i18n("recover_backup_failed"));
     }
   }
 
