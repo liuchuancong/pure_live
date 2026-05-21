@@ -24,15 +24,43 @@ class MediaKitAdapter implements UnifiedPlayer {
 
   String? _currentUrl;
 
+  // =========================
+  // subjects
+  // =========================
+
   final _stateSubject = BehaviorSubject<PlayerState>.seeded(PlayerState.idle);
+
   final _playingSubject = BehaviorSubject<bool>.seeded(false);
+
   final _loadingSubject = BehaviorSubject<bool>.seeded(false);
-  final _errorSubject = BehaviorSubject<PlayerException>();
+
+  /// IMPORTANT:
+  /// error 不要用 BehaviorSubject
+  final _errorSubject = PublishSubject<PlayerException>();
+
   final _completeSubject = BehaviorSubject<bool>.seeded(false);
+
   final _widthSubject = BehaviorSubject<int?>.seeded(null);
+
   final _heightSubject = BehaviorSubject<int?>.seeded(null);
 
+  // =========================
+  // subscriptions
+  // =========================
+
   final List<StreamSubscription> _subscriptions = [];
+
+  StreamSubscription? _playingSub;
+
+  StreamSubscription? _bufferingSub;
+
+  StreamSubscription? _widthSub;
+
+  StreamSubscription? _heightSub;
+
+  StreamSubscription? _completeSub;
+
+  StreamSubscription? _errorSub;
 
   // =========================
   // init
@@ -42,34 +70,44 @@ class MediaKitAdapter implements UnifiedPlayer {
   Future<void> init() async {
     if (_initialized) return;
 
+    _disposed = false;
+
+    _listenerBound = false;
+
+    _currentUrl = null;
+
     try {
       _stateSubject.add(PlayerState.initializing);
 
       _player = Player();
-      String proxyUrl = "";
+
       if (_player.platform is NativePlayer) {
         final native = _player.platform as dynamic;
 
         await native.setProperty('force-seekable', 'yes');
+
         await native.setProperty('protocol_whitelist', 'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto');
+
         await native.setProperty('demuxer-lavf-probsize', '2097152');
+
         await native.setProperty('demuxer-lavf-analyzeduration', '10');
+
         await native.setProperty('network-timeout', '30');
 
         if (settings.customPlayerOutput.value) {
           await native.setProperty('ao', settings.audioOutputDriver.value);
         }
+
         if (settings.enableProxy.value && settings.proxyHost.value.isNotEmpty) {
-          proxyUrl = "http://${settings.proxyHost.value}:${settings.proxyPort.value}";
+          final proxyUrl = "http://${settings.proxyHost.value}:${settings.proxyPort.value}";
+
           await native.setProperty('http-proxy', proxyUrl);
-          final currentProxy = await native.getProperty('http-proxy');
-          debugPrint('当前引擎使用的代理地址: $currentProxy');
         }
       }
 
-      // =====================
+      // =========================
       // controller
-      // =====================
+      // =========================
 
       _controller = settings.playerCompatMode.value
           ? VideoController(
@@ -92,7 +130,7 @@ class MediaKitAdapter implements UnifiedPlayer {
               ),
             );
 
-      _bindListeners();
+      await _bindListeners();
 
       _initialized = true;
 
@@ -105,20 +143,20 @@ class MediaKitAdapter implements UnifiedPlayer {
         stackTrace: s,
       );
 
-      _errorSubject.add(exception);
+      _safeAddError(exception);
+
       throw exception;
     }
   }
 
   // =========================
-  // set data source
+  // datasource
   // =========================
 
   @override
   Future<void> setDataSource(String url, List<String> playUrls, Map<String, String> headers, {LiveRoom? room}) async {
     if (_disposed) return;
 
-    // 相同地址不重复 open
     if (_currentUrl == url && isPlayingNow) {
       return;
     }
@@ -127,20 +165,24 @@ class MediaKitAdapter implements UnifiedPlayer {
 
     try {
       _loadingSubject.add(true);
+
       _stateSubject.add(PlayerState.preparing);
+
       _completeSubject.add(false);
 
-      // 重置宽高
       _widthSubject.add(null);
+
       _heightSubject.add(null);
 
       await _player.open(Media(url, httpHeaders: headers), play: true);
+
       _stateSubject.add(PlayerState.ready);
 
       if (PlatformUtils.isMobile) {
         await setVolume(1.0);
       } else {
-        double targetVolume = room!.getSavedVolume();
+        final targetVolume = room?.getSavedVolume() ?? 1.0;
+
         await setVolume(targetVolume);
       }
     } catch (e, s) {
@@ -151,11 +193,15 @@ class MediaKitAdapter implements UnifiedPlayer {
         stackTrace: s,
       );
 
-      _errorSubject.add(exception);
+      _safeAddError(exception);
+
       _stateSubject.add(PlayerState.error);
+
       throw exception;
     } finally {
-      _loadingSubject.add(false);
+      if (!_disposed) {
+        _loadingSubject.add(false);
+      }
     }
   }
 
@@ -163,112 +209,130 @@ class MediaKitAdapter implements UnifiedPlayer {
   // listeners
   // =========================
 
-  void _bindListeners() {
+  Future<void> _bindListeners() async {
     if (_listenerBound) return;
 
     _listenerBound = true;
 
-    // =====================
+    await _cancelAllSubscriptions();
+
+    // =========================
     // playing
-    // =====================
+    // =========================
 
-    _subscriptions.add(
-      _player.stream.playing.listen(
-        (playing) {
-          if (_disposed) return;
+    _playingSub = _player.stream.playing.listen(
+      (playing) {
+        if (_disposed) return;
 
-          _playingSubject.add(playing);
+        _playingSubject.add(playing);
 
-          if (!_loadingSubject.value) {
-            _stateSubject.add(playing ? PlayerState.playing : PlayerState.paused);
-          }
-        },
-        onError: (e, s) {
-          _emitError(e, s, PlayerErrorType.native);
-        },
-      ),
+        if (!_loadingSubject.value) {
+          _stateSubject.add(playing ? PlayerState.playing : PlayerState.paused);
+        }
+      },
+      onError: (e, s) {
+        _emitError(e, s, PlayerErrorType.native);
+      },
     );
 
-    // =====================
+    // =========================
     // buffering
-    // =====================
+    // =========================
 
-    _subscriptions.add(
-      _player.stream.buffering.listen(
-        (loading) {
-          if (_disposed) return;
+    _bufferingSub = _player.stream.buffering.listen(
+      (loading) {
+        if (_disposed) return;
 
-          _loadingSubject.add(loading);
+        _loadingSubject.add(loading);
 
-          if (loading) {
-            _stateSubject.add(PlayerState.buffering);
-          } else {
-            if (_playingSubject.value) {
-              _stateSubject.add(PlayerState.playing);
-            } else {
-              _stateSubject.add(PlayerState.paused);
-            }
-          }
-        },
-        onError: (e, s) {
-          _emitError(e, s, PlayerErrorType.native);
-        },
-      ),
+        if (loading) {
+          _stateSubject.add(PlayerState.buffering);
+        } else {
+          _stateSubject.add(_playingSubject.value ? PlayerState.playing : PlayerState.paused);
+        }
+      },
+      onError: (e, s) {
+        _emitError(e, s, PlayerErrorType.native);
+      },
     );
 
-    // =====================
+    // =========================
     // width
-    // =====================
+    // =========================
 
-    _subscriptions.add(
-      _player.stream.width.listen((val) {
-        if (_disposed) return;
-        _widthSubject.add(val);
-      }),
-    );
+    _widthSub = _player.stream.width.listen((val) {
+      if (_disposed) return;
 
-    // =====================
+      _widthSubject.add(val);
+    });
+
+    // =========================
     // height
-    // =====================
+    // =========================
 
-    _subscriptions.add(
-      _player.stream.height.listen((val) {
-        if (_disposed) return;
-        _heightSubject.add(val);
-      }),
-    );
+    _heightSub = _player.stream.height.listen((val) {
+      if (_disposed) return;
 
-    // =====================
+      _heightSubject.add(val);
+    });
+
+    // =========================
     // completed
-    // =====================
+    // =========================
 
-    _subscriptions.add(
-      _player.stream.completed.listen(
-        (completed) {
-          if (_disposed) return;
-          if (!completed) return;
-
-          _completeSubject.add(true);
-          _stateSubject.add(PlayerState.completed);
-        },
-        onError: (e, s) {
-          _emitError(e, s, PlayerErrorType.native);
-        },
-      ),
-    );
-
-    // =====================
-    // error
-    // =====================
-
-    _subscriptions.add(
-      _player.stream.error.listen((error) {
+    _completeSub = _player.stream.completed.listen(
+      (completed) {
         if (_disposed) return;
-        final type = _mapErrorType(error.toString());
-        _errorSubject.add(PlayerException(message: error.toString(), type: type));
-        _stateSubject.add(PlayerState.error);
-      }),
+
+        if (!completed) return;
+
+        _completeSubject.add(true);
+
+        _stateSubject.add(PlayerState.completed);
+      },
+      onError: (e, s) {
+        _emitError(e, s, PlayerErrorType.native);
+      },
     );
+
+    // =========================
+    // error
+    // =========================
+
+    _errorSub = _player.stream.error.distinct().listen((error) {
+      if (_disposed) return;
+
+      final type = _mapErrorType(error.toString());
+
+      _safeAddError(PlayerException(message: error.toString(), type: type));
+
+      _stateSubject.add(PlayerState.error);
+    });
+
+    // =========================
+    // collect
+    // =========================
+
+    _subscriptions.addAll([_playingSub!, _bufferingSub!, _widthSub!, _heightSub!, _completeSub!, _errorSub!]);
+  }
+
+  // =========================
+  // cancel subscriptions
+  // =========================
+
+  Future<void> _cancelAllSubscriptions() async {
+    for (final sub in _subscriptions) {
+      await sub.cancel();
+    }
+
+    _subscriptions.clear();
+
+    _playingSub = null;
+    _bufferingSub = null;
+    _widthSub = null;
+    _heightSub = null;
+    _completeSub = null;
+    _errorSub = null;
   }
 
   // =========================
@@ -278,33 +342,38 @@ class MediaKitAdapter implements UnifiedPlayer {
   void _emitError(Object error, StackTrace stackTrace, PlayerErrorType type) {
     if (_disposed) return;
 
-    _errorSubject.add(PlayerException(message: error.toString(), type: type, error: error, stackTrace: stackTrace));
+    _safeAddError(PlayerException(message: error.toString(), type: type, error: error, stackTrace: stackTrace));
+
     _stateSubject.add(PlayerState.error);
   }
 
+  void _safeAddError(PlayerException exception) {
+    if (_disposed) return;
+
+    if (_errorSubject.isClosed) return;
+
+    _errorSubject.add(exception);
+  }
+
   // =========================
-  // error mapper
+  // error type
   // =========================
 
   PlayerErrorType _mapErrorType(String error) {
     final lower = error.toLowerCase();
 
-    // network
     if (lower.contains('network') || lower.contains('timeout') || lower.contains('io')) {
       return PlayerErrorType.network;
     }
 
-    // codec
     if (lower.contains('codec') || lower.contains('mediacodec') || lower.contains('decode')) {
       return PlayerErrorType.codec;
     }
 
-    // source
     if (lower.contains('404') || lower.contains('source') || lower.contains('open')) {
       return PlayerErrorType.source;
     }
 
-    // texture
     if (lower.contains('surface') || lower.contains('texture')) {
       return PlayerErrorType.texture;
     }
@@ -313,7 +382,7 @@ class MediaKitAdapter implements UnifiedPlayer {
   }
 
   // =========================
-  // video widget
+  // widget
   // =========================
 
   @override
@@ -337,44 +406,31 @@ class MediaKitAdapter implements UnifiedPlayer {
     await _player.play();
   }
 
-  // =========================
-  // pause
-  // =========================
-
   @override
   Future<void> pause() async {
     await _player.pause();
   }
 
-  // =========================
-  // stop
-  // =========================
-
   @override
   Future<void> stop() async {
     await _player.pause();
+
     await _player.seek(Duration.zero);
+
     _stateSubject.add(PlayerState.stopped);
   }
 
-  // =========================
-  // soft stop
-  // =========================
-
   @override
   Future<void> softStop() async {
-    clearListener();
     await _player.setVolume(0.0);
+
     await _player.pause();
   }
-
-  // =========================
-  // volume
-  // =========================
 
   @override
   Future<void> setVolume(double volume) async {
     final vol = (volume * 100).clamp(0.0, 100.0);
+
     await _player.setVolume(vol);
   }
 
@@ -387,9 +443,22 @@ class MediaKitAdapter implements UnifiedPlayer {
     if (_disposed) return;
 
     _disposed = true;
-    clearListener();
 
-    await _player.dispose();
+    _initialized = false;
+
+    _listenerBound = false;
+
+    await _cancelAllSubscriptions();
+
+    try {
+      await _player.stop();
+    } catch (_) {}
+
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    try {
+      await _player.dispose();
+    } catch (_) {}
 
     await Future.wait([
       _stateSubject.close(),
@@ -402,29 +471,8 @@ class MediaKitAdapter implements UnifiedPlayer {
     ]);
   }
 
-  @override
-  void clearListener() {
-    // 1. 取消所有流订阅
-    for (final sub in _subscriptions) {
-      sub.cancel();
-    }
-    _subscriptions.clear();
-
-    // 2. 重置监听绑定标记
-    _listenerBound = false;
-
-    // 3. 重置状态，清空残留事件
-    if (!_disposed) {
-      if (!_loadingSubject.isClosed) _loadingSubject.add(false);
-      if (!_playingSubject.isClosed) _playingSubject.add(false);
-      if (!_completeSubject.isClosed) _completeSubject.add(false);
-      // 清空错误流缓存
-      if (!_errorSubject.isClosed) _errorSubject.drain();
-    }
-  }
-
   // =========================
-  // getters
+  // getter
   // =========================
 
   @override
@@ -434,20 +482,26 @@ class MediaKitAdapter implements UnifiedPlayer {
   bool get isPlayingNow => _playingSubject.value;
 
   @override
-  bool get isReusable => true;
+  bool get isReusable => false;
 
   @override
   Stream<PlayerState> get onStateChanged => _stateSubject.stream;
+
   @override
   Stream<bool> get onPlaying => _playingSubject.stream;
+
   @override
   Stream<PlayerException> get onError => _errorSubject.stream;
+
   @override
   Stream<bool> get onLoading => _loadingSubject.stream;
+
   @override
   Stream<bool> get onComplete => _completeSubject.stream;
+
   @override
   Stream<int?> get width => _widthSubject.stream;
+
   @override
   Stream<int?> get height => _heightSubject.stream;
 }

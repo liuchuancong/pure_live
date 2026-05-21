@@ -55,6 +55,9 @@ class BackButtonObserver extends RouteObserver<PageRoute<dynamic>> {
             manager.showAppFloating();
           });
         } else {
+          if (livePlayController.videoController.value != null) {
+            livePlayController.videoController.value?.clearListener();
+          }
           manager.close();
         }
         if (PlatformUtils.isMobile) {

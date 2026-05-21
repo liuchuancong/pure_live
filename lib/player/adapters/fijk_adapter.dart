@@ -11,24 +11,21 @@ class FijkAdapter implements UnifiedPlayer {
   late final FijkPlayer _player;
 
   bool _initialized = false;
-
   bool _disposed = false;
 
   VoidCallback? _playerListener;
 
   final _stateSubject = BehaviorSubject<PlayerState>.seeded(PlayerState.idle);
-
   final _playingSubject = BehaviorSubject<bool>.seeded(false);
-
   final _loadingSubject = BehaviorSubject<bool>.seeded(false);
 
-  final _errorSubject = BehaviorSubject<PlayerException>();
+  final _errorSubject = PublishSubject<PlayerException>();
 
   final _completeSubject = BehaviorSubject<bool>.seeded(false);
-
   final _widthSubject = BehaviorSubject<int?>.seeded(null);
-
   final _heightSubject = BehaviorSubject<int?>.seeded(null);
+
+  final List<StreamSubscription> _subscriptions = [];
 
   @override
   Future<void> init() async {
@@ -36,13 +33,9 @@ class FijkAdapter implements UnifiedPlayer {
 
     try {
       _stateSubject.add(PlayerState.initializing);
-
       _player = FijkPlayer();
-
       _bindListeners();
-
       _initialized = true;
-
       _stateSubject.add(PlayerState.initialized);
     } catch (e, s) {
       final exception = PlayerException(
@@ -51,28 +44,28 @@ class FijkAdapter implements UnifiedPlayer {
         error: e,
         stackTrace: s,
       );
-
-      _errorSubject.add(exception);
-
+      _safeAddError(exception);
       throw exception;
     }
   }
 
   void _bindListeners() {
-    clearListener();
+    // 先移除旧监听
+    _removePlayerListener();
+
     _playerListener = () {
       final value = _player.value;
       final state = value.state;
 
-      // 1. 同步宽高 (修复宽高流为空的问题)
       if (value.size != null) {
-        if (_widthSubject.value != value.size!.width.toInt()) {
-          _widthSubject.add(value.size!.width.toInt());
-          _heightSubject.add(value.size!.height.toInt());
+        final w = value.size!.width.toInt();
+        final h = value.size!.height.toInt();
+        if (_widthSubject.value != w) {
+          _widthSubject.add(w);
+          _heightSubject.add(h);
         }
       }
 
-      // 2. 完善状态映射
       switch (state) {
         case FijkState.asyncPreparing:
         case FijkState.prepared:
@@ -96,14 +89,36 @@ class FijkAdapter implements UnifiedPlayer {
         case FijkState.error:
           _loadingSubject.add(false);
           final exception = PlayerException(message: 'Fijk native error', type: PlayerErrorType.native);
-          _errorSubject.add(exception);
+          _safeAddError(exception);
           _player.reset();
           break;
         default:
           break;
       }
     };
+
     _player.addListener(_playerListener!);
+  }
+
+  Future<void> _cancelAllSubscriptions() async {
+    _removePlayerListener();
+
+    for (final sub in _subscriptions) {
+      await sub.cancel();
+    }
+    _subscriptions.clear();
+  }
+
+  void _removePlayerListener() {
+    if (_playerListener != null) {
+      _player.removeListener(_playerListener!);
+      _playerListener = null;
+    }
+  }
+
+  void _safeAddError(PlayerException exception) {
+    if (_disposed || _errorSubject.isClosed) return;
+    _errorSubject.add(exception);
   }
 
   Future<void> _setupProxy() async {
@@ -136,9 +151,7 @@ class FijkAdapter implements UnifiedPlayer {
         error: e,
         stackTrace: s,
       );
-
-      _errorSubject.add(exception);
-
+      _safeAddError(exception);
       throw exception;
     } finally {
       _loadingSubject.add(false);
@@ -160,17 +173,14 @@ class FijkAdapter implements UnifiedPlayer {
 
   @override
   Future<void> play() => _player.start();
-
   @override
   Future<void> pause() => _player.pause();
-
   @override
   Future<void> stop() => _player.stop();
 
   @override
   Future<void> softStop() async {
     if (!_initialized) return;
-    clearListener();
     await _player.reset();
     _playingSubject.add(false);
     _loadingSubject.add(false);
@@ -180,14 +190,18 @@ class FijkAdapter implements UnifiedPlayer {
   @override
   Future<void> hardDispose() async {
     if (_disposed) return;
-
     _disposed = true;
-    clearListener();
-    await _player.release();
+
+    //  取消所有监听
+    await _cancelAllSubscriptions();
+
+    try {
+      await _player.release();
+    } catch (_) {}
+
     _initialized = false;
-    _stateSubject.add(PlayerState.idle);
-    _playingSubject.add(false);
-    _loadingSubject.add(false);
+
+    // 关闭所有流
     await _stateSubject.close();
     await _playingSubject.close();
     await _loadingSubject.close();
@@ -202,49 +216,28 @@ class FijkAdapter implements UnifiedPlayer {
     await _player.setVolume(volume);
   }
 
+  // =========================
+  // GETTER
+  // =========================
   @override
   bool get isInitialized => _initialized;
-
   @override
   bool get isPlayingNow => _playingSubject.value;
-
   @override
   bool get isReusable => true;
 
   @override
   Stream<PlayerState> get onStateChanged => _stateSubject.stream;
-
   @override
   Stream<bool> get onPlaying => _playingSubject.stream;
-
   @override
   Stream<PlayerException> get onError => _errorSubject.stream;
-
   @override
   Stream<bool> get onLoading => _loadingSubject.stream;
-
   @override
   Stream<bool> get onComplete => _completeSubject.stream;
-
   @override
   Stream<int?> get width => _widthSubject.stream;
-
   @override
   Stream<int?> get height => _heightSubject.stream;
-
-  @override
-  void clearListener() {
-    if (_playerListener != null) {
-      _player.removeListener(_playerListener!);
-      _playerListener = null;
-    }
-
-    if (!_stateSubject.isClosed) _stateSubject.add(PlayerState.idle);
-    if (!_playingSubject.isClosed) _playingSubject.add(false);
-    if (!_loadingSubject.isClosed) _loadingSubject.add(false);
-    if (!_completeSubject.isClosed) _completeSubject.add(false);
-    if (!_errorSubject.isClosed) {
-      _errorSubject.drain();
-    }
-  }
 }
