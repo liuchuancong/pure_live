@@ -85,7 +85,7 @@
 ### 📥 导入 M3U 源
 1. 打开 App → 设置 → 备份与还原 → 导入 M3U 源  
 2. 支持从 [123云盘](https://www.123pan.com/s/Jucxjv-NwYYd.html) 下载示例源  
-3. 源转换工具推荐：[直播源转换器](https://guihet.com/tvlistconvert.html)
+3. 源转换工具推荐：[直播源转换器](https://kukuqi666.github.io/Tvbox-decrypt)
 
 > 📂 存储位置：
 > - **Android**：清除缓存即可移除导入内容  
