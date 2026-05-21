@@ -624,5 +624,7 @@
     "reset_default": "恢复默认",
     "webview2_missing_title": "系统组件缺失",
     "webview2_missing_content": "您的 Windows 系统缺少网页核心组件 (WebView2 Runtime)。如果不安装，应用内的网页搜索功能将完全无法使用。\n\n是否立即前往微软官网下载安装？",
-    "webview2_open_error": "无法打开下载链接，请手动前往微软官网下载"
+    "webview2_open_error": "无法打开下载链接，请手动前往微软官网下载",
+    "install_tip": "如果系统提示安全警告，请选择“本次允许”或“信任该来源”以继续安装更新。"
+
 }

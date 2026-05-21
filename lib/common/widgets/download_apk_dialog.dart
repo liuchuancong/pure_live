@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:path/path.dart' as path;
 import 'package:open_filex/open_filex.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:apk_sideload/install_apk.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
 
@@ -87,14 +88,8 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
         Navigator.of(Get.context!).pop(false);
 
         if (Platform.isAndroid) {
-          final result = await OpenFilex.open(file.path, type: "application/vnd.android.package-archive");
-
-          if (result.type != ResultType.done) {
-            Get.snackbar(
-              i18n("install_failed"),
-              i18n("install_unknown_app_permission_tip", args: {"message": result.message}),
-            );
-          }
+          ToastUtil.show(i18n("install_tip"));
+          await InstallApk().installApk(file.path);
         } else if (PlatformUtils.isDesktop) {
           final result = await OpenFilex.open(file.path);
 

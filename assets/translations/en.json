@@ -625,5 +625,7 @@
     "reset_default": "Reset Default",
     "webview2_missing_title": "System Component Missing",
     "webview2_missing_content": "Your Windows system is missing the core web component (WebView2 Runtime). Without it, the in-app web search feature will not work.\n\nWould you like to download and install it now?",
-    "webview2_open_error": "Cannot open URL, please go to Microsoft website manually."
+    "webview2_open_error": "Cannot open URL, please go to Microsoft website manually.",
+    "install_tip": "If a security warning appears, please select 'Allow this time' or 'Trust this source' to proceed with the installation."
+
 }
