@@ -462,7 +462,7 @@ class LivePlayPage extends GetView<LivePlayController> {
         return AlertDialog(
           title: Text(i18n("room_volume")),
           content: Container(
-            constraints: const BoxConstraints(maxWidth: 400),
+            constraints: BoxConstraints(minWidth: PlatformUtils.isMobile ? Get.mediaQuery.size.width * 0.8 : 500),
             child: Obx(
               () => SingleChildScrollView(
                 child: Column(
