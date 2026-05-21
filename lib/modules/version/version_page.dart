@@ -33,6 +33,8 @@ class VersionPage extends GetView<VersionController> {
                       _buildDownloadSection(title: i18n("arm64"), urls: controller.apkUrl2.value),
                       const SizedBox(height: 16),
                       _buildDownloadSection(title: i18n("arm32"), urls: controller.apkUrl.value),
+                      const SizedBox(height: 16),
+                      _buildDownloadSection(title: i18n("arch_x86_64"), urls: controller.apkUrl3.value),
                     ],
                   ),
 
@@ -47,6 +49,8 @@ class VersionPage extends GetView<VersionController> {
                       _buildDownloadSection(title: i18n("arm64_fvp"), urls: controller.apkFvpUrl2.value),
                       const SizedBox(height: 16),
                       _buildDownloadSection(title: i18n("arm32_fvp"), urls: controller.apkFvpUrl.value),
+                      const SizedBox(height: 16),
+                      _buildDownloadSection(title: i18n("arch_x86_64_fvp"), urls: controller.apkFvpUrl3.value),
                     ],
                   ),
 

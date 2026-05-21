@@ -121,6 +121,7 @@ class _AreaGridViewState extends State<AreaGridView> with SingleTickerProviderSt
                 padding: const EdgeInsets.all(0),
                 controller: ScrollController(),
                 gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
+                  lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                   crossAxisCount: crossAxisCount,
                   crossAxisSpacing: 3,
                   mainAxisSpacing: 3,
