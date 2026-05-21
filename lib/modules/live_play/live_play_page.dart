@@ -5,6 +5,7 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:pure_live/common/utils/live_url_tool.dart';
 import 'package:pure_live/modules/live_play/load_type.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/index.dart' hide BackButton;
@@ -300,6 +301,13 @@ class LivePlayPage extends GetView<LivePlayController> {
                 showTimerDialog(context);
               } else if (index == 4) {
                 showVolumeSettingsDialog(context);
+              } else if (index == 5) {
+                if (controller.detail.value != null) {
+                  LiveUrlTool.getPlayUrlByRoomId(
+                    roomId: controller.detail.value?.roomId ?? '',
+                    platform: controller.detail.value?.platform ?? '',
+                  );
+                }
               }
             },
             itemBuilder: (BuildContext context) {
@@ -329,6 +337,11 @@ class LivePlayPage extends GetView<LivePlayController> {
                   value: 4,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: MenuListTile(leading: const Icon(Icons.volume_up_rounded), text: i18n("room_volume")),
+                ),
+                PopupMenuItem(
+                  value: 5,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: MenuListTile(leading: const Icon(Icons.link_rounded), text: i18n("toolbox_get_direct_link")),
                 ),
               ];
             },
@@ -392,7 +405,10 @@ class LivePlayPage extends GetView<LivePlayController> {
   }
 
   void showDlnaCastDialog() {
-    Get.dialog(LiveDlnaPage(datasource: controller.playUrls[controller.currentLineIndex.value]));
+    LiveUrlTool.castPlayUrlByRoomId(
+      roomId: controller.detail.value?.roomId ?? '',
+      platform: controller.detail.value?.platform ?? '',
+    );
   }
 
   Widget buildVideoPlayer() {
