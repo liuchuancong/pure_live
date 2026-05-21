@@ -90,7 +90,7 @@
 > 📂 存储位置：
 > - **Android**：清除缓存即可移除导入内容  
 > - **Windows**：配置文件位于  
->   `C:\Users\<用户名>\AppData\Local\com.mystyle\pure_live\categories.json`
+>   `安装目录\AppData\*`
 
 ---
 
