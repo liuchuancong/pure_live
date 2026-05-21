@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:path/path.dart' as path;
 import 'package:open_filex/open_filex.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:apk_sideload/install_apk.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
 
@@ -88,7 +89,7 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
 
         if (Platform.isAndroid) {
           final result = await OpenFilex.open(file.path, type: "application/vnd.android.package-archive");
-
+          await InstallApk().installApk(file.path);
           if (result.type != ResultType.done) {
             Get.snackbar(
               i18n("install_failed"),

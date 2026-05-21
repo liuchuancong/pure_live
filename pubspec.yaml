@@ -109,6 +109,7 @@ dependencies:
   file_picker: ^11.0.2 # 文件选择器
   uri_to_file: ^1.0.0 # URI转文件
   open_filex: ^4.7.0 # 打开本地文件
+  apk_sideload: ^0.0.2 # 安装APK
   mime: ^2.0.0 # MIME类型处理
 
   # -------------------------- 工具/通用库 --------------------------
