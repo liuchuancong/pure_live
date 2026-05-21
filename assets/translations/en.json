@@ -622,5 +622,8 @@
     "reset_volume_default_desc": "Reset mobile & desktop volume to 100%",
     "volume_reset_success": "Volume has been reset to default",
     "room_volume": "Room Volume",
-    "reset_default": "Reset Default"
+    "reset_default": "Reset Default",
+    "webview2_missing_title": "System Component Missing",
+    "webview2_missing_content": "Your Windows system is missing the core web component (WebView2 Runtime). Without it, the in-app web search feature will not work.\n\nWould you like to download and install it now?",
+    "webview2_open_error": "Cannot open URL, please go to Microsoft website manually."
 }

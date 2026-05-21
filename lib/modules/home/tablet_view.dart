@@ -1,6 +1,5 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/modules/search/search_controller.dart' as pure_live;
 
 class HomeTabletView extends StatelessWidget {
   final Widget body;
@@ -39,7 +38,6 @@ class HomeTabletView extends StatelessWidget {
                               padding: const EdgeInsets.only(top: 0, bottom: 12, left: 12, right: 12),
                               child: IconButton(
                                 onPressed: () {
-                                  Get.put(pure_live.SearchController());
                                   Get.toNamed(RoutePath.kSearch);
                                 },
                                 icon: const Icon(CustomIcons.search),
