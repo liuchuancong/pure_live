@@ -10,6 +10,8 @@
     "arm32_fvp": "ARM32 FVP",
     "arm64": "ARM64 (arm64-v8a)",
     "arm64_fvp": "ARM64 FVP",
+    "arch_x86_64": "x86_64 (Arch)",
+    "arch_x86_64_fvp": "x86_64 (Arch) FVP",
     "audio_channel_name": "Pure Live Playback",
     "auto_backup": "Auto Backup",
     "auto_check_update": "Auto Check Updates",
