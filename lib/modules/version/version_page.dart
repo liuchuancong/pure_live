@@ -23,9 +23,6 @@ class VersionPage extends GetView<VersionController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // =====================================================
-                // Android
-                // =====================================================
                 if (PlatformUtils.isAndroid) ...[
                   _buildPlatformCard(
                     context,
@@ -107,10 +104,6 @@ class VersionPage extends GetView<VersionController> {
 
                   const SizedBox(height: 24),
                 ],
-
-                // =====================================================
-                // 更新日志
-                // =====================================================
                 Text(
                   i18n("update_log"),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
@@ -136,9 +129,6 @@ class VersionPage extends GetView<VersionController> {
     );
   }
 
-  // =========================================================
-  // 平台卡片
-  // =========================================================
   Widget _buildPlatformCard(
     BuildContext context, {
     required String title,
@@ -181,9 +171,6 @@ class VersionPage extends GetView<VersionController> {
     );
   }
 
-  // =========================================================
-  // 下载区
-  // =========================================================
   Widget _buildDownloadSection({required String title, required String urls}) {
     final List<String> mirrorUrls = getMirrorUrls(urls);
 

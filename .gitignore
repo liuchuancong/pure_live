@@ -55,4 +55,5 @@ key.properties
 Podfile.lock
 # FVM Version Cache
 .fvm/
-./linux/
+linux/
+macos/

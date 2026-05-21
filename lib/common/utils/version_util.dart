@@ -45,6 +45,7 @@ class VersionUtil {
   final isHasNewVersion = false.obs;
 
   static String latestVersion = version;
+  static int? latestBuildNumber;
   static int latestVersionNum = 0;
   static String latestUpdateLog = '';
   static bool prerelease = false;
@@ -61,7 +62,6 @@ class VersionUtil {
   // =========================================================
   Future<void> checkUpdate() async {
     if (_cachedVersionJson != null) {
-      debugPrint("✅ 使用缓存版本信息");
       _applyVersionData(_cachedVersionJson!);
       return;
     }
@@ -88,6 +88,7 @@ class VersionUtil {
   static void _applyVersionData(Map<String, dynamic> data) {
     latestVersion = data['version']?.toString() ?? version;
     latestVersionNum = data['version_num'] ?? 0;
+    latestBuildNumber = data['build_number'];
     latestUpdateLog = data['version_desc']?.toString() ?? '';
     prerelease = data['prerelease'] == true;
     downloadUrl = data['download_url']?.toString() ?? '';
@@ -95,19 +96,14 @@ class VersionUtil {
 
   Future<void> loadReleaseHistory() async {
     try {
-      final response = await http.get(
-        Uri.parse(releaseUrl),
-        headers: {'User-Agent': 'PureLive', 'Accept': 'application/vnd.github+json'},
-      );
+      final response = await http.get(Uri.parse(releaseUrl));
       if (response.statusCode != 200) {
-        debugPrint('⚠️ 获取历史版本失败: ${response.statusCode}');
         return;
       }
       final data = jsonDecode(response.body);
 
       if (data is List) {
         allReleased = data;
-        debugPrint('✅ 历史版本加载成功: ${allReleased.length}');
       }
     } catch (e) {
       debugPrint("⚠️ 获取历史版本失败: $e");
