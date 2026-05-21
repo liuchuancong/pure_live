@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
   battery_plus
+  charset_converter
   connectivity_plus
   dynamic_color
   ffmpeg_kit_extended_flutter
@@ -16,6 +17,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   permission_handler_windows
   screen_brightness_windows
   screen_retriever_windows
+  sqlite3_flutter_libs
   tray_manager
   url_launcher_windows
   volume_controller

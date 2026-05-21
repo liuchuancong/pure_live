@@ -33,6 +33,15 @@ class LiveRoom {
   // 直播状态
   LiveStatus? liveStatus = LiveStatus.offline;
 
+  /// EPG channel id
+  String? epgId;
+
+  /// 当前节目
+  String? currentProgramme;
+
+  /// 当前节目描述
+  String? currentProgrammeDescription;
+
   // 添加未命名的默认构造函数
   LiveRoom({
     this.roomId,
@@ -53,6 +62,9 @@ class LiveRoom {
     this.status = false,
     this.notice,
     this.introduction,
+    this.epgId,
+    this.currentProgramme,
+    this.currentProgrammeDescription,
   });
 
   LiveRoom.fromJson(Map<String, dynamic> json)
@@ -71,7 +83,10 @@ class LiveRoom {
       status = json['status'] ?? false,
       notice = json['notice'] ?? '',
       introduction = json['introduction'] ?? '',
-      isRecord = json['isRecord'] ?? false;
+      isRecord = json['isRecord'] ?? false,
+      epgId = json['epgId'] ?? '',
+      currentProgramme = json['currentProgramme'] ?? '',
+      currentProgrammeDescription = json['currentProgrammeDescription'] ?? '';
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     'roomId': roomId,
@@ -89,6 +104,9 @@ class LiveRoom {
     'status': status,
     'notice': notice,
     'introduction': introduction,
+    'epgId': epgId,
+    'currentProgramme': currentProgramme,
+    'currentProgrammeDescription': currentProgrammeDescription,
   };
 
   /// 创建一个新的LiveRoom实例，并用提供的值更新指定字段
@@ -111,6 +129,9 @@ class LiveRoom {
     dynamic danmakuData,
     bool? isRecord,
     LiveStatus? liveStatus,
+    String? epgId,
+    String? currentProgramme,
+    String? currentProgrammeDescription,
   }) {
     return LiveRoom(
       roomId: roomId ?? this.roomId,
@@ -129,6 +150,9 @@ class LiveRoom {
       status: status ?? this.status,
       isRecord: isRecord ?? this.isRecord,
       liveStatus: liveStatus ?? this.liveStatus,
+      epgId: epgId ?? this.epgId,
+      currentProgramme: currentProgramme ?? this.currentProgramme,
+      currentProgrammeDescription: currentProgrammeDescription ?? this.currentProgrammeDescription,
     );
   }
 

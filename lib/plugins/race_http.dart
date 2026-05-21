@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'package:charset_converter/charset_converter.dart';
 
 class RaceHttp {
   static final http.Client _client = http.Client();
@@ -37,10 +38,15 @@ class RaceHttp {
       timeout: timeout,
       task: (url) async {
         final res = await _client.get(Uri.parse(url), headers: headers).timeout(timeout);
-
         if (res.statusCode != 200) return null;
+        final bytes = res.bodyBytes;
 
-        return res.body;
+        try {
+          return utf8.decode(bytes);
+        } catch (_) {
+          // 🔥 fallback GBK
+          return await CharsetConverter.decode("gbk", bytes);
+        }
       },
     );
   }

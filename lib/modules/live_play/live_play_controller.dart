@@ -274,7 +274,8 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
   // ================= IPTV =================
   void _initIptvPlayer() {
-    final link = detail.value?.roomId;
+    final link = detail.value?.link;
+    log(' IPTV link: ${detail.value?.cover}');
     if (link == null || link.isEmpty) {
       ToastUtil.show(i18n('invalid_play_url'));
       return;

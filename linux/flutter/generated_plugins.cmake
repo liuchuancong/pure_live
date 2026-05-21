@@ -3,6 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  charset_converter
   dynamic_color
   ffmpeg_kit_extended_flutter
   flutter_acrylic
@@ -12,6 +13,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   media_kit_libs_linux
   media_kit_video
   screen_retriever_linux
+  sqlite3_flutter_libs
   tray_manager
   url_launcher_linux
   volume_controller
