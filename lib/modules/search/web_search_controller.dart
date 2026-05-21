@@ -145,13 +145,13 @@ class WebSearchController extends GetxController {
     if (await webViewController?.canGoBack() ?? false) {
       webViewController?.goBack();
     } else {
-      Get.back();
+      Navigator.pop(Get.context!);
     }
   }
 
   void closePage() {
     webViewController?.stopLoading();
-    Get.back();
+    Navigator.pop(Get.context!);
   }
 
   @override
