@@ -8,42 +8,52 @@ import 'package:pure_live/core/iptv/parsers/playlist_parse_result.dart';
 /// - M3U Plus extended attributes (tvg-id, tvg-name, tvg-logo, group-title, etc.)
 /// - Xtream Codes style attributes (tvg-chno, tvg-shift)
 /// - Multiple URL formats (HTTP, HTTPS, RTMP, RTSP, UDP)
+/// - Auto extract EPG url from header
 class M3uParser {
-  /// Parse M3U content from a string.
+  static const String _extM3U = '#EXTM3U';
+  static const String _extInf = '#EXTINF:';
+  static const String _extGrp = '#EXTGRP:';
+
+  static String? lastEpgUrl;
+
   PlaylistParseResult parse(String content, {required String providerId}) {
     final lines = content.split(RegExp(r'\r?\n'));
     final channels = <Channel>[];
     final errors = <String>[];
-
-    if (lines.isEmpty || !lines.first.trim().startsWith('#EXTM3U')) {
-      errors.add('Missing #EXTM3U header');
+    if (lines.isEmpty) {
+      errors.add('Playlist content is empty');
+    } else {
+      final firstLine = lines.first.trim();
+      if (!firstLine.startsWith(_extM3U)) {
+        errors.add('Missing #EXTM3U header');
+      }
     }
 
     String? currentExtInf;
+    int lineIndex = 0;
 
-    for (var i = 0; i < lines.length; i++) {
-      final line = lines[i].trim();
+    for (var line in lines) {
+      lineIndex++;
+      final trimLine = line.trim();
+      if (trimLine.isEmpty || trimLine == _extM3U) continue;
+      if (trimLine.startsWith('$_extM3U ')) continue;
 
-      if (line.isEmpty || line == '#EXTM3U') continue;
-
-      // Skip global EXTM3U attributes line
-      if (line.startsWith('#EXTM3U ')) continue;
-
-      if (line.startsWith('#EXTINF:')) {
-        currentExtInf = line;
+      if (trimLine.startsWith(_extInf)) {
+        currentExtInf = trimLine;
         continue;
       }
+      // 兼容分组标签
+      if (trimLine.startsWith(_extGrp)) continue;
+      // 跳过其他注释行
+      if (trimLine.startsWith('#')) continue;
 
-      // Skip other directives
-      if (line.startsWith('#')) continue;
-
-      // This should be a URL
+      // 解析流地址
       if (currentExtInf != null) {
         try {
-          final channel = _parseEntry(currentExtInf, line, providerId);
+          final channel = _parseEntry(currentExtInf, trimLine, providerId);
           if (channel != null) channels.add(channel);
         } catch (e) {
-          errors.add('Line $i: $e');
+          errors.add('Line $lineIndex: ${e.toString()}');
         }
         currentExtInf = null;
       }
@@ -53,26 +63,31 @@ class M3uParser {
   }
 
   Channel? _parseEntry(String extInf, String url, String providerId) {
-    if (url.isEmpty) return null;
+    if (url.isEmpty || !_isValidStreamUrl(url)) return null;
 
-    // Parse #EXTINF:-1 tvg-id="..." tvg-name="..." ... , Channel Name
     final attrs = _parseAttributes(extInf);
     final displayName = _parseDisplayName(extInf);
+    final name = displayName.isNotEmpty ? displayName : attrs['tvg-name'];
+    if (name == null || name.isEmpty) return null;
 
-    if (displayName.isEmpty && attrs['tvg-name'] == null) return null;
-
-    final name = displayName.isNotEmpty ? displayName : attrs['tvg-name']!;
-
-    // Generate a stable ID from provider + tvg-id or URL
+    // 生成唯一频道ID
     final tvgId = attrs['tvg-id'];
-    final channelId = tvgId != null && tvgId.isNotEmpty ? '${providerId}_$tvgId' : '${providerId}_${url.hashCode}';
+    final String uniqueKey;
 
-    // Parse channel number
+    // 智能生成唯一键：优先 tvg-id → 其次频道名 → 最后链接
+    if (tvgId != null && tvgId.isNotEmpty) {
+      uniqueKey = tvgId;
+    } else if (name.isNotEmpty) {
+      uniqueKey = name;
+    } else {
+      uniqueKey = url;
+    }
+    final channelId = '${providerId}_${uniqueKey.hashCode}';
+
+    // 解析频道序号
     int? channelNumber;
     final chnoStr = attrs['tvg-chno'];
-    if (chnoStr != null && chnoStr.isNotEmpty) {
-      channelNumber = int.tryParse(chnoStr);
-    }
+    if (chnoStr != null) channelNumber = int.tryParse(chnoStr);
 
     return Channel(
       id: channelId,
@@ -88,48 +103,63 @@ class M3uParser {
     );
   }
 
-  /// Parse M3U Plus extended attributes from an #EXTINF line.
-  /// Example: #EXTINF:-1 tvg-id="ESPN.us" tvg-name="ESPN HD" group-title="Sports",ESPN HD
-  Map<String, String> _parseAttributes(String extInf) {
-    final attrs = <String, String>{};
+  /// 增强属性解析：支持双引号/单引号/无引号
+  static Map<String, String> _parseAttributes(String content) {
+    final Map<String, String> attributes = {};
 
-    // Match key="value" pairs
-    final regex = RegExp(r'([\w-]+)="([^"]*)"');
-    for (final match in regex.allMatches(extInf)) {
-      attrs[match.group(1)!.toLowerCase()] = match.group(2)!;
+    // Regular expression to match key="value" or key=value patterns
+    final RegExp attrRegex = RegExp(r'(\S+?)=["\u0027]?([^"\u0027]+)["\u0027]?(?:\s|$)');
+
+    for (final match in attrRegex.allMatches(content)) {
+      if (match.groupCount >= 2) {
+        final key = match.group(1)?.toLowerCase();
+        final value = match.group(2);
+        if (key != null && value != null) {
+          attributes[key] = value.trim();
+        }
+      }
     }
 
-    return attrs;
+    return attributes;
   }
 
-  /// Extract the display name (after the last comma in #EXTINF line).
+  /// 截取逗号后的频道名称
   String _parseDisplayName(String extInf) {
     final commaIndex = extInf.lastIndexOf(',');
-    if (commaIndex == -1) return '';
-    return extInf.substring(commaIndex + 1).trim();
+    return commaIndex == -1 ? '' : extInf.substring(commaIndex + 1).trim();
   }
 
+  /// 自动判断流类型：直播/电影/剧集
   StreamType _inferStreamType(Map<String, String> attrs, String url) {
-    final groupTitle = (attrs['group-title'] ?? '').toLowerCase();
-    if (groupTitle.contains('vod') || groupTitle.contains('movie')) {
+    final group = attrs['group-title']?.toLowerCase() ?? '';
+    final lowerUrl = url.toLowerCase();
+
+    if (group.contains('vod') || group.contains('movie') || lowerUrl.contains('/movie/')) {
       return StreamType.vod;
     }
-    if (groupTitle.contains('series')) {
+    if (group.contains('series') || lowerUrl.contains('/series/')) {
       return StreamType.series;
     }
-    // Xtream Codes URL patterns
-    if (url.contains('/movie/')) return StreamType.vod;
-    if (url.contains('/series/')) return StreamType.series;
     return StreamType.live;
   }
 
+  /// 校验直播地址协议合法性
+  bool _isValidStreamUrl(String url) {
+    try {
+      final uri = Uri.parse(url);
+      return uri.hasScheme && const {'http', 'https', 'rtmp', 'rtsp', 'udp', 'mms'}.contains(uri.scheme);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// 空字符串转为null
   String? _emptyToNull(String? value) {
-    if (value == null || value.isEmpty) return null;
-    return value;
+    return (value == null || value.isEmpty) ? null : value;
   }
 }
 
-/// Result of parsing an M3U playlist.
+/// 解析结果实体
 class M3uResult {
   final List<Channel> channels;
   final List<String> errors;

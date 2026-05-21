@@ -34,8 +34,6 @@ class MediaKitAdapter implements UnifiedPlayer {
 
   final _loadingSubject = BehaviorSubject<bool>.seeded(false);
 
-  /// IMPORTANT:
-  /// error 不要用 BehaviorSubject
   final _errorSubject = PublishSubject<PlayerException>();
 
   final _completeSubject = BehaviorSubject<bool>.seeded(false);

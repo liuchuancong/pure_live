@@ -1,16 +1,12 @@
-import 'package:pure_live/get/get.dart';
-import 'package:pure_live/core/sites.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/model/live_category.dart';
 import 'package:pure_live/model/live_play_quality.dart';
-import 'package:pure_live/common/models/live_area.dart';
-import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/core/iptv/local/database.dart';
 import 'package:pure_live/model/live_search_result.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/iptv/iptv_repository.dart';
 import 'package:pure_live/model/live_category_result.dart';
-import 'package:pure_live/common/models/live_message.dart';
 import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 
@@ -26,26 +22,29 @@ class IptvSite implements LiveSite {
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async {
     final providers = await db.getAllProviders();
-    final result = <LiveCategory>[];
+
+    final categoryTypes = <LiveCategory>[];
+
     for (final provider in providers) {
-      result.add(
-        LiveCategory(
-          id: provider.id,
-          name: provider.name,
-          children: [
-            LiveArea(
-              areaId: provider.id,
-              areaName: provider.name,
-              areaPic: '',
-              areaType: provider.type,
-              typeName: provider.name,
-              platform: Sites.iptvSite,
-            ),
-          ],
-        ),
-      );
+      final channels = await db.getChannelsForProvider(provider.id);
+
+      final subs = <LiveArea>[];
+      for (final ch in channels) {
+        subs.add(
+          LiveArea(
+            areaId: ch.id,
+            areaName: ch.name,
+            areaPic: ch.tvgLogo ?? '',
+            typeName: provider.name,
+            areaType: provider.id,
+            platform: Sites.iptvSite,
+          ),
+        );
+      }
+
+      categoryTypes.add(LiveCategory(id: provider.id, name: provider.name, children: subs));
     }
-    return result;
+    return categoryTypes;
   }
 
   // =========================================================
@@ -54,63 +53,38 @@ class IptvSite implements LiveSite {
 
   @override
   Future<LiveCategoryResult> getCategoryRooms(LiveArea category, {int page = 1}) async {
-    final channels = await db.getChannelsForProvider(category.areaId!);
-
-    final mappings = await db.getAllMappings();
-
-    final mappingMap = <String, EpgMapping>{};
-
-    for (final m in mappings) {
-      mappingMap[m.channelId] = m;
-    }
-
     final items = <LiveRoom>[];
 
-    for (final ch in channels) {
-      final mapping = mappingMap[ch.id];
+    final ch = await db.getChannelById(category.areaId!);
+    if (ch == null) return LiveCategoryResult(hasMore: false, items: []);
 
-      items.add(
-        LiveRoom(
-          roomId: ch.id,
-
-          title: ch.name,
-
-          nick: ch.groupTitle ?? '',
-
-          cover: ch.tvgLogo ?? '',
-
-          area: ch.groupTitle ?? '',
-
-          watching: '',
-
-          avatar:
-              'https://img95.699pic.com/xsj/0q/x6/7p.jpg'
-              '%21/fw/700/watermark/url/'
-              'L3hzai93YXRlcl9kZXRhaWwyLnBuZw/'
-              'align/southeast',
-
-          introduction: ch.name,
-
-          notice: '',
-
-          status: true,
-
-          liveStatus: LiveStatus.live,
-
-          platform: Sites.iptvSite,
-
-          link: ch.streamUrl,
-
-          data: ch.streamUrl,
-
-          epgId: mapping?.epgChannelId,
-
-          currentProgramme: null,
-
-          currentProgrammeDescription: null,
-        ),
-      );
+    final mapping = await db.getMappingByChannelId(ch.id);
+    EpgProgramme? nowProg;
+    if (mapping?.epgChannelId != null) {
+      final nowList = await db.getNowPlaying([mapping!.epgChannelId]);
+      if (nowList.isNotEmpty) nowProg = nowList.first;
     }
+
+    items.add(
+      LiveRoom(
+        roomId: ch.id,
+        title: ch.name,
+        nick: ch.groupTitle ?? '',
+        cover: ch.tvgLogo ?? '',
+        area: ch.groupTitle ?? '',
+        watching: '',
+        avatar:
+            'https://img95.699pic.com/xsj/0q/x6/7p.jpg%21/fw/700/watermark/url/L3hzai93YXRlcl9kZXRhaWwyLnBuZw/align/southeast',
+        status: true,
+        liveStatus: LiveStatus.live,
+        platform: Sites.iptvSite,
+        link: ch.streamUrl,
+        data: ch.streamUrl,
+        epgId: mapping?.epgChannelId,
+        currentProgramme: nowProg?.title,
+        currentProgrammeDescription: nowProg?.description,
+      ),
+    );
 
     return LiveCategoryResult(hasMore: false, items: items);
   }
@@ -122,28 +96,14 @@ class IptvSite implements LiveSite {
   @override
   Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
     final channel = await db.getChannelById(roomId);
-
-    if (channel == null) {
-      print("roomId = $roomId");
-      print("db channels = ${(await db.getAllChannels()).map((e) => e.id).toList()}");
-      throw Exception('Channel not found');
-    }
-    final mappings = await db.getAllMappings();
-    EpgMapping? mapping;
-    for (final m in mappings) {
-      if (m.channelId == channel.id) {
-        mapping = m;
-        break;
-      }
-    }
-    EpgProgramme? nowProgramme;
+    if (channel == null) throw Exception('Channel not found');
+    final mapping = await db.getMappingByChannelId(channel.id);
+    EpgProgramme? nowProg;
     if (mapping?.epgChannelId != null) {
       final nowList = await db.getNowPlaying([mapping!.epgChannelId]);
-
-      if (nowList.isNotEmpty) {
-        nowProgramme = nowList.first;
-      }
+      if (nowList.isNotEmpty) nowProg = nowList.first;
     }
+    debugPrint('channel.streamUrl ${channel.streamUrl}');
     return LiveRoom(
       roomId: channel.id,
       title: channel.name,
@@ -153,24 +113,14 @@ class IptvSite implements LiveSite {
       watching: '',
       avatar:
           'https://img95.699pic.com/xsj/0q/x6/7p.jpg%21/fw/700/watermark/url/L3hzai93YXRlcl9kZXRhaWwyLnBuZw/align/southeast',
-      introduction: channel.name,
-      notice: '',
-
       status: true,
-
       liveStatus: LiveStatus.live,
-
       platform: Sites.iptvSite,
-
       link: channel.streamUrl,
-
       data: channel.streamUrl,
-
       epgId: mapping?.epgChannelId,
-
-      currentProgramme: nowProgramme?.title,
-
-      currentProgrammeDescription: nowProgramme?.description,
+      currentProgramme: nowProg?.title,
+      currentProgrammeDescription: nowProg?.description,
     );
   }
 
@@ -268,48 +218,25 @@ class IptvSite implements LiveSite {
 
   @override
   Future<LiveSearchRoomResult> searchRooms(String keyword, {int page = 1}) async {
-    final channels = await db.getAllChannels();
-
-    final matched = channels.where((e) {
-      return e.name.toLowerCase().contains(keyword.toLowerCase());
-    }).toList();
-
+    if (keyword.trim().isEmpty) return LiveSearchRoomResult(hasMore: false, items: []);
+    final matched = await db.searchChannelsByName(keyword);
     final items = matched.map((ch) {
       return LiveRoom(
         roomId: ch.id,
-
         title: ch.name,
-
         nick: ch.groupTitle ?? '',
-
         cover: ch.tvgLogo ?? '',
-
         area: ch.groupTitle ?? '',
-
         watching: '',
-
         avatar:
-            'https://img95.699pic.com/xsj/0q/x6/7p.jpg'
-            '%21/fw/700/watermark/url/'
-            'L3hzai93YXRlcl9kZXRhaWwyLnBuZw/'
-            'align/southeast',
-
-        introduction: ch.name,
-
-        notice: '',
-
+            'https://img95.699pic.com/xsj/0q/x6/7p.jpg%21/fw/700/watermark/url/L3hzai93YXRlcl9kZXRhaWwyLnBuZw/align/southeast',
         status: true,
-
         liveStatus: LiveStatus.live,
-
         platform: Sites.iptvSite,
-
         link: ch.streamUrl,
-
         data: ch.streamUrl,
       );
     }).toList();
-
     return LiveSearchRoomResult(hasMore: false, items: items);
   }
 }

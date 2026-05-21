@@ -57,7 +57,9 @@ class AppDatabase extends _$AppDatabase {
       }
     },
   );
-
+  Future<EpgMapping?> getMappingByChannelId(String channelId) {
+    return (select(epgMappings)..where((t) => t.channelId.equals(channelId))).getSingleOrNull();
+  }
   // --- Provider queries ---
 
   Future<List<Provider>> getAllProviders() => select(providers).get();
@@ -66,9 +68,23 @@ class AppDatabase extends _$AppDatabase {
     return (select(providers)..where((t) => t.id.equals(id))).getSingleOrNull();
   }
 
+  Future<List<Channel>> searchChannelsByName(String keyword) {
+    return (select(channels)
+          ..where((t) => t.name.like('%$keyword%'))
+          ..orderBy([(t) => OrderingTerm.asc(t.name)]))
+        .get();
+  }
+
   Future<void> upsertProvider(ProvidersCompanion entry) => into(providers).insertOnConflictUpdate(entry);
 
   Future<void> deleteProvider(String id) => (delete(providers)..where((t) => t.id.equals(id))).go();
+
+  Future<void> deleteProviderAndChannels(String providerId) async {
+    await transaction(() async {
+      await (delete(channels)..where((t) => t.providerId.equals(providerId))).go();
+      await (delete(providers)..where((t) => t.id.equals(providerId))).go();
+    });
+  }
 
   // --- Channel queries ---
 

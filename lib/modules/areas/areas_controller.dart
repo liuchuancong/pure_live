@@ -4,7 +4,6 @@ import 'package:pure_live/modules/areas/areas_list_controller.dart';
 class AreasController extends GetxController with GetSingleTickerProviderStateMixin {
   late TabController tabController;
   int index = 0;
-  final isCustomSite = false.obs;
   late List<dynamic> sites;
 
   @override
@@ -45,8 +44,6 @@ class AreasController extends GetxController with GetSingleTickerProviderStateMi
 
   void _loadCurrentTabData(int i) {
     var siteId = sites[i].id;
-    isCustomSite.value = siteId == 'custom';
-    // 只有在真的需要时才去找 Controller 并触发 loadData
     var listController = Get.find<AreasListController>(tag: siteId);
     if (listController.list.isEmpty) {
       listController.loadData();

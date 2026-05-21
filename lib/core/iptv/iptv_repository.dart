@@ -24,7 +24,7 @@ class IptvRepository extends GetxService {
 
   Future<void> _saveToDb(String providerId, List<models.Channel> channels) async {
     if (channels.isEmpty) return;
-    await db.deleteProvider(providerId);
+    await db.deleteProviderAndChannels(providerId);
     await db.upsertChannels(
       channels.map((e) {
         return database.ChannelsCompanion.insert(
