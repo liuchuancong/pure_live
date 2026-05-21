@@ -30,6 +30,7 @@ class _PopularGridViewState extends State<PopularGridView> {
                     padding: const EdgeInsets.all(0),
                     controller: controller.scrollController,
                     gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
+                      lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                       crossAxisCount: crossAxisCount,
                       crossAxisSpacing: 3,
                       mainAxisSpacing: 3,

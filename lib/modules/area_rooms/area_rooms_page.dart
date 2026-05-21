@@ -36,6 +36,7 @@ class _AreasRoomPageState extends State<AreasRoomPage> {
                 child: controller.list.isNotEmpty
                     ? WaterfallFlow.builder(
                         gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
+                          lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                           crossAxisCount: crossAxisCount,
                           crossAxisSpacing: 3,
                           mainAxisSpacing: 3,

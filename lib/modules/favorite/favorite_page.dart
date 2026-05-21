@@ -102,6 +102,7 @@ class _RoomOnlineGridView extends GetView<FavoriteController> {
                     padding: const EdgeInsets.all(0),
                     controller: ScrollController(),
                     gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
+                      lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                       crossAxisCount: crossAxisCount,
                       crossAxisSpacing: 3,
                       mainAxisSpacing: 3,
@@ -161,6 +162,7 @@ class _RoomOfflineGridView extends GetView<FavoriteController> {
                     padding: const EdgeInsets.all(0),
                     controller: ScrollController(),
                     gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
+                      lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                       crossAxisCount: crossAxisCount,
                       crossAxisSpacing: 3,
                       mainAxisSpacing: 3,
