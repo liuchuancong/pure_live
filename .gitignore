@@ -56,3 +56,4 @@ Podfile.lock
 # FVM Version Cache
 .fvm/
 linux/
+macos/

@@ -62,9 +62,13 @@ class VersionController extends BaseController {
 
     final releaseUrl = '${VersionUtil.projectUrl}/releases/download/v$latestVersion';
 
-    final buildNumber = hasNewVersion.value
-        ? int.parse(packageInfo.buildNumber) + 1
-        : int.parse(packageInfo.buildNumber);
+    final localBuild = int.tryParse(packageInfo.buildNumber) ?? 0;
+    final int buildNumber;
+    if (hasNewVersion.value) {
+      buildNumber = VersionUtil.latestBuildNumber ?? (localBuild + 1);
+    } else {
+      buildNumber = localBuild;
+    }
 
     // =====================================================
     // Android
