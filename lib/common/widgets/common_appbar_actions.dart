@@ -1,6 +1,5 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/modules/search/search_controller.dart' as pure_live;
 
 class CommonAppBarActions extends StatelessWidget {
   const CommonAppBarActions({super.key});
@@ -19,7 +18,6 @@ class CommonAppBarActions extends StatelessWidget {
           onSelected: (index) {
             switch (index) {
               case 0:
-                Get.put(pure_live.SearchController());
                 Get.toNamed(RoutePath.kSearch);
                 break;
               case 1:

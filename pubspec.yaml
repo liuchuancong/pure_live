@@ -125,7 +125,7 @@ dependencies:
   # -------------------------- 网页/JS解析 --------------------------
   flutter_js: ^0.8.5 # JS引擎执行
   html: ^0.15.4 # HTML解析
-  flutter_inappwebview: ^6.2.0-beta.2 # 内置浏览器
+  flutter_inappwebview: ^6.2.0-beta.3 # 内置浏览器
   dart_quickjs:
     git: https://github.com/xiaoyaocz/dart_quickjs.git # QuickJS引擎
 
