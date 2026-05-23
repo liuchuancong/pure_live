@@ -7,43 +7,98 @@ class DouyinCookiePage extends GetView<DouyinCookieController> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: Text(i18n("set_cookie"))),
+      appBar: AppBar(
+        title: Text(i18n("set_cookie"), style: const TextStyle(fontWeight: FontWeight.w600)),
+      ),
       body: ListView(
-        padding: const EdgeInsets.all(12.0),
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          Padding(padding: const EdgeInsets.all(8.0), child: Text(i18n("douyin_cookie_tip"))),
-          buildCard(
-            context: context,
-            child: ExpansionTile(
-              title: Text(i18n("cookie")),
-              childrenPadding: const EdgeInsets.symmetric(horizontal: 16.0),
-              initiallyExpanded: true,
-              children: [
-                TextField(
-                  minLines: 3,
-                  maxLines: 3,
-                  controller: controller.cookieController,
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    hintText: i18n("douyin_cookie_hint"),
-                    contentPadding: const EdgeInsets.all(12.0),
-                    enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey.withValues(alpha: .2))),
+          _buildTipBanner(theme),
+          const SizedBox(height: 20),
+          _buildGroupTitle(theme, i18n("cookie")),
+          _buildModernCard(theme, [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    minLines: 3,
+                    maxLines: 5,
+                    controller: controller.cookieController,
+                    style: const TextStyle(fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: i18n("douyin_cookie_hint"),
+                      hintStyle: TextStyle(color: theme.hintColor.withValues(alpha: 0.5)),
+                      contentPadding: const EdgeInsets.all(14.0),
+                      filled: true,
+                      fillColor: theme.colorScheme.surfaceContainerLowest,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
+                      ),
+                    ),
+                    onSubmitted: controller.setCookie,
                   ),
-                  onSubmitted: controller.setCookie,
-                ),
-                Container(
-                  margin: const EdgeInsets.only(bottom: 4.0),
-                  width: double.infinity,
-                  child: TextButton.icon(
-                    onPressed: () {
-                      controller.setCookie(controller.cookieController.text);
-                    },
-                    icon: const Icon(Remix.settings_2_fill),
-                    label: Text(i18n("set")),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 44,
+                    child: FilledButton.icon(
+                      onPressed: () => controller.setCookie(controller.cookieController.text),
+                      style: FilledButton.styleFrom(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      icon: const Icon(Remix.settings_line, size: 18),
+                      label: Text(
+                        i18n("set"),
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 1),
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
+            ),
+          ]),
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTipBanner(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Remix.information_line, size: 18, color: theme.colorScheme.primary.withValues(alpha: 0.8)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              i18n("douyin_cookie_tip"),
+              style: TextStyle(
+                fontSize: 13,
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                height: 1.4,
+              ),
             ),
           ),
         ],
@@ -51,17 +106,29 @@ class DouyinCookiePage extends GetView<DouyinCookieController> {
     );
   }
 
-  Widget buildCard({required BuildContext context, required Widget child}) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-        boxShadow: Get.isDarkMode ? [] : [BoxShadow(blurRadius: 8, color: Colors.grey.withValues(alpha: .2))],
+  Widget _buildModernCard(ThemeData theme, List<Widget> children) {
+    return Material(
+      clipBehavior: Clip.antiAlias,
+      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
       ),
-      margin: const EdgeInsets.only(bottom: 8.0),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: child,
+      child: Column(children: children),
+    );
+  }
+
+  Widget _buildGroupTitle(ThemeData theme, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, bottom: 8),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: theme.colorScheme.primary.withValues(alpha: 0.65),
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }

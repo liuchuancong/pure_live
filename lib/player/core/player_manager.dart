@@ -930,7 +930,7 @@ class PlayerManager {
 
   Future<void> _clearSubscriptions() async {
     if (_subscriptions.isEmpty) return;
-    for (final item in _subscriptions) {
+    for (final item in _subscriptions.toList()) {
       await item.cancel();
     }
     _subscriptions.clear();

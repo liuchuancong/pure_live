@@ -33,12 +33,18 @@ class Sites {
 
   List<Site> availableSites({bool containsAll = false}) {
     final SettingsService settingsService = Get.find<SettingsService>();
-    if (containsAll) {
-      var result = supportSites.where((element) => settingsService.hotAreasList.value.contains(element.id)).toList();
-      result.insert(0, Site(id: "all", name: i18n("site_all"), logo: "assets/images/all.png", liveSite: LiveSite()));
-      return result;
+    final List<String> savedIds = settingsService.hotAreasList.value;
+    List<Site> result = [];
+    for (String id in savedIds) {
+      final match = supportSites.firstWhereOrNull((element) => element.id == id);
+      if (match != null) {
+        result.add(match);
+      }
     }
-    return supportSites.where((element) => settingsService.hotAreasList.value.contains(element.id)).toList();
+    if (containsAll) {
+      result.insert(0, Site(id: "all", name: i18n("site_all"), logo: "assets/images/all.png", liveSite: LiveSite()));
+    }
+    return result;
   }
 }
 

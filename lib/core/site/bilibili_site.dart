@@ -150,30 +150,12 @@ class BiliBiliSite implements LiveSite {
     for (var streamItem in streamList) {
       var formatList = streamItem["format"];
       for (var formatItem in formatList) {
-        var formatName = formatItem["format_name"];
         var codecList = formatItem["codec"];
-        if (formatName != 'flv') {
-          for (var codecItem in codecList) {
-            var urlList = codecItem["url_info"];
-            var baseUrl = codecItem["base_url"].toString();
-            for (var urlItem in urlList) {
-              var videoUrl = "${urlItem["host"]}$baseUrl${urlItem["extra"]}";
-              if (videoUrl.contains(".mcdn.bilivideo")) {
-                videoUrl = 'https://proxy-tf-all-ws.bilivideo.com/?url=${Uri.encodeComponent(videoUrl)}';
-              } else if (videoUrl.contains("/upgcxcode/")) {
-                //CDN列表
-                var cdnList = {
-                  'ali': 'upos-sz-mirrorali.bilivideo.com',
-                  'cos': 'upos-sz-mirrorcos.bilivideo.com',
-                  'hw': 'upos-sz-mirrorhw.bilivideo.com',
-                };
-                //取一个CDN
-                var cdn = cdnList['ali'] ?? "";
-                var reg = RegExp(r'(http|https)://(.*?)/upgcxcode/');
-                videoUrl = videoUrl.replaceAll(reg, "https://$cdn/upgcxcode/");
-              }
-              urls.add(videoUrl);
-            }
+        for (var codecItem in codecList) {
+          var urlList = codecItem["url_info"];
+          var baseUrl = codecItem["base_url"].toString();
+          for (var urlItem in urlList) {
+            urls.add("${urlItem["host"]}$baseUrl${urlItem["extra"]}");
           }
         }
       }
@@ -191,28 +173,32 @@ class BiliBiliSite implements LiveSite {
 
   @override
   Future<LiveCategoryResult> getRecommendRooms({int page = 1, required String nick}) async {
-    const baseUrl = "https://api.live.bilibili.com/xlive/web-interface/v1/second/getListByArea";
-    var url = "$baseUrl?platform=web&sort=online&page_size=30&page=$page";
-    var queryParams = await getWbiSign(url);
-    var result = await HttpClient.instance.getJson(baseUrl, queryParameters: queryParams, header: await getHeader());
+    try {
+      const baseUrl = "https://api.live.bilibili.com/xlive/web-interface/v1/second/getListByArea";
+      var url = "$baseUrl?platform=web&sort=online&page_size=30&page=$page";
+      var queryParams = await getWbiSign(url);
+      var result = await HttpClient.instance.getJson(baseUrl, queryParameters: queryParams, header: await getHeader());
 
-    var hasMore = (result["data"]["list"] as List).isNotEmpty;
-    var items = <LiveRoom>[];
-    for (var item in result["data"]["list"]) {
-      var roomItem = LiveRoom(
-        roomId: item["roomid"].toString(),
-        title: item["title"].toString(),
-        cover: "${item["cover"]}@400w.jpg",
-        area: item["area_name"].toString(),
-        nick: item["uname"].toString(),
-        avatar: item["face"].toString(),
-        watching: item["online"].toString(),
-        liveStatus: LiveStatus.live,
-        platform: Sites.bilibiliSite,
-      );
-      items.add(roomItem);
+      var hasMore = (result["data"]["list"] as List).isNotEmpty;
+      var items = <LiveRoom>[];
+      for (var item in result["data"]["list"]) {
+        var roomItem = LiveRoom(
+          roomId: item["roomid"].toString(),
+          title: item["title"].toString(),
+          cover: "${item["cover"]}@400w.jpg",
+          area: item["area_name"].toString(),
+          nick: item["uname"].toString(),
+          avatar: item["face"].toString(),
+          watching: item["online"].toString(),
+          liveStatus: LiveStatus.live,
+          platform: Sites.bilibiliSite,
+        );
+        items.add(roomItem);
+      }
+      return LiveCategoryResult(hasMore: hasMore, items: items);
+    } catch (e) {
+      throw Exception(e.toString());
     }
-    return LiveCategoryResult(hasMore: hasMore, items: items);
   }
 
   Future<Map<String, dynamic>> getRoomInfo({required String roomId}) async {

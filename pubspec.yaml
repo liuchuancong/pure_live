@@ -1,7 +1,7 @@
 name: pure_live
 description: 纯粹直播,一款开源的第三方多平台直播聚合播放器.
 publish_to: none
-version: 2.0.18+29
+version: 2.0.19+30
 
 environment:
   sdk: ^3.10.4
@@ -19,7 +19,16 @@ dependencies:
   uuid: ^4.5.3 # 生成唯一标识符
   html_unescape: ^2.0.0 # HTML转义字符解码
   brotli: ^0.6.0 # Brotli压缩解压
-
+  equatable: ^2.0.7
+  xml: ^6.5.0
+  archive: ^4.0.4
+  string_similarity: ^2.0.0
+  fuzzywuzzy: ^1.1.6
+  scrollview_observer: ^1.26.3
+  # Local database (SQLite)
+  drift: ^2.22.1
+  sqlite3_flutter_libs: ^0.5.28
+  charset_converter: ^2.3.0
   # -------------------------- 网络请求/网络状态 --------------------------
   http: ^1.1.0 # 基础HTTP请求
   dio: ^5.9.0 # 强大的Dart HTTP客户端
@@ -47,6 +56,7 @@ dependencies:
 
   # -------------------------- UI组件/界面样式 --------------------------
   flutter_svg: ^2.2.1 # SVG图片渲染
+  lottie: ^3.3.3 #动画
   cached_network_image: ^3.3.0 # 网络图片缓存
   dynamic_color: ^1.8.1 # 动态主题色
   waterfall_flow: ^3.1.1 # 瀑布流布局
@@ -155,12 +165,13 @@ dev_dependencies:
     sdk: flutter
   change_app_package_name: any # 修改应用包名
   json_serializable: ^6.7.1 # JSON序列化
-  build_runner: ^2.3.3 # 代码生成器
+  build_runner: ^2.4.15 # 代码生成器
   flutter_launcher_icons: ^0.14.4 # 应用图标生成
   msix: ^3.16.12 # Windows安装包打包
   intl_utils: ^2.8.11 # 国际化工具
   flutter_lints: ^6.0.0 # 代码规范检查
   dmg: ^0.1.7 # macOS安装包打包
+  drift_dev: ^2.22.1
 
 # 应用图标配置
 flutter_icons:
@@ -197,6 +208,9 @@ flutter:
     - assets/emo/bilibili/
     - assets/emo/kuaishou/
     - assets/translations/
+    - assets/animations/loading.json
+    - assets/animations/empty.json
+    - assets/animations/error.json
   # 字体配置
   fonts:
     - family: CustomIcons

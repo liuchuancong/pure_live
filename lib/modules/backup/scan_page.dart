@@ -1,6 +1,7 @@
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/plugins/file_utils.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:pure_live/plugins/file_recover_utils.dart';
+import 'package:pure_live/plugins/backup_recovery_service.dart';
 
 class ScanCodePage extends StatefulWidget {
   const ScanCodePage({super.key});
@@ -104,12 +105,12 @@ class _ScanCodePageState extends State<ScanCodePage> {
               controller: cameraController,
               onDetect: (capture) async {
                 final List<Barcode> barcodes = capture.barcodes;
-                if (barcodes.isNotEmpty && FileRecoverUtils.isHostUrl(barcodes[0].rawValue!)) {
+                if (barcodes.isNotEmpty && FileUtils.isHostUrl(barcodes[0].rawValue!)) {
                   setState(() {
                     hasFound = true;
                     syncResult = true;
                   });
-                  final result = await FileRecoverUtils().recoverSettingsBackup(barcodes[0].rawValue!);
+                  final result = await BackupRecoveryService().pushSettingsToRemoteServer(barcodes[0].rawValue!);
                   ToastUtil.show(result ? i18n("sync_success") : i18n("sync_failed"));
                   setState(() {
                     isSuccess = result;

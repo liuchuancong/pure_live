@@ -169,32 +169,36 @@ class DouyuSite implements LiveSite {
 
   @override
   Future<LiveCategoryResult> getRecommendRooms({int page = 1, required String nick}) async {
-    var result = await HttpClient.instance.getJson(
-      "https://www.douyu.com/japi/weblist/apinc/allpage/6/$page",
-      queryParameters: {},
-    );
-
-    var items = <LiveRoom>[];
-    for (var item in result['data']['rl']) {
-      if (item["type"] != 1) {
-        continue;
-      }
-      var roomItem = LiveRoom(
-        cover: item['rs16'].toString(),
-        watching: item['ol'].toString(),
-        roomId: item['rid'].toString(),
-        title: item['rn'].toString(),
-        nick: item['nn'].toString(),
-        area: item['c2name'].toString(),
-        avatar: item['av'].toString().isNotEmpty ? 'https://apic.douyucdn.cn/upload/${item['av']}_middle.jpg' : '',
-        platform: Sites.douyuSite,
-        status: true,
-        liveStatus: LiveStatus.live,
+    try {
+      var result = await HttpClient.instance.getJson(
+        "https://www.douyu.com/japi/weblist/apinc/allpage/6/$page",
+        queryParameters: {},
       );
-      items.add(roomItem);
+
+      var items = <LiveRoom>[];
+      for (var item in result['data']['rl']) {
+        if (item["type"] != 1) {
+          continue;
+        }
+        var roomItem = LiveRoom(
+          cover: item['rs16'].toString(),
+          watching: item['ol'].toString(),
+          roomId: item['rid'].toString(),
+          title: item['rn'].toString(),
+          nick: item['nn'].toString(),
+          area: item['c2name'].toString(),
+          avatar: item['av'].toString().isNotEmpty ? 'https://apic.douyucdn.cn/upload/${item['av']}_middle.jpg' : '',
+          platform: Sites.douyuSite,
+          status: true,
+          liveStatus: LiveStatus.live,
+        );
+        items.add(roomItem);
+      }
+      var hasMore = page < result['data']['pgcnt'];
+      return LiveCategoryResult(hasMore: hasMore, items: items);
+    } catch (e) {
+      throw Exception(e.toString());
     }
-    var hasMore = page < result['data']['pgcnt'];
-    return LiveCategoryResult(hasMore: hasMore, items: items);
   }
 
   @override

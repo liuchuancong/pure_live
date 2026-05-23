@@ -94,4 +94,6 @@ class RoutePath {
   static const kRecordHistory = "/record_history";
 
   static const kWebSearch = "/web_search";
+
+  static const kIptv = "/iptv";
 }

@@ -187,36 +187,43 @@ class KuaishowSite implements LiveSite {
 
   @override
   Future<LiveCategoryResult> getRecommendRooms({int page = 1, required String nick}) async {
-    var resultText = await HttpClient.instance.getJson("https://live.kuaishou.com/live_api/home/list", header: headers);
+    try {
+      var resultText = await HttpClient.instance.getJson(
+        "https://live.kuaishou.com/live_api/home/list",
+        header: headers,
+      );
 
-    var result = resultText['data']['list'] ?? [];
-    var items = <LiveRoom>[];
-    for (var item in result) {
-      for (var sitem in item["gameLiveInfo"]) {
-        for (var titem in sitem["liveInfo"]) {
-          var author = titem["author"];
-          var gameInfo = titem["gameInfo"];
-          var roomItems = LiveRoom(
-            cover: gameInfo['poster'].toString(),
-            watching: titem["watchingCount"].toString(),
-            roomId: author["id"],
-            area: gameInfo["name"],
-            title: author["description"] != null ? author["description"].replaceAll("\n", " ") : '',
-            nick: author["name"].toString(),
-            avatar: author["avatar"].toString(),
-            introduction: author["description"] != null ? author["description"].replaceAll("\n", " ") : '',
-            notice: author["description"],
-            status: true,
-            liveStatus: LiveStatus.live,
-            platform: Sites.kuaishouSite,
-            data: titem["playUrls"],
-          );
-          items.add(roomItems);
+      var result = resultText['data']['list'] ?? [];
+      var items = <LiveRoom>[];
+      for (var item in result) {
+        for (var sitem in item["gameLiveInfo"]) {
+          for (var titem in sitem["liveInfo"]) {
+            var author = titem["author"];
+            var gameInfo = titem["gameInfo"];
+            var roomItems = LiveRoom(
+              cover: gameInfo['poster'].toString(),
+              watching: titem["watchingCount"].toString(),
+              roomId: author["id"],
+              area: gameInfo["name"],
+              title: author["description"] != null ? author["description"].replaceAll("\n", " ") : '',
+              nick: author["name"].toString(),
+              avatar: author["avatar"].toString(),
+              introduction: author["description"] != null ? author["description"].replaceAll("\n", " ") : '',
+              notice: author["description"],
+              status: true,
+              liveStatus: LiveStatus.live,
+              platform: Sites.kuaishouSite,
+              data: titem["playUrls"],
+            );
+            items.add(roomItems);
+          }
         }
       }
+      var hasMore = false;
+      return LiveCategoryResult(hasMore: hasMore, items: items);
+    } catch (e) {
+      throw Exception(e.toString());
     }
-    var hasMore = false;
-    return LiveCategoryResult(hasMore: hasMore, items: items);
   }
 
   Future registerDid() async {

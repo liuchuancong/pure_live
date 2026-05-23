@@ -12,6 +12,7 @@ import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/win_auto_start.dart';
 import 'package:pure_live/modules/web_dav/webdav_config.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
+import 'package:pure_live/core/iptv/services/auto_sync_scheduler.dart';
 import 'package:pure_live/common/services/bilibili_account_service.dart';
 
 class SettingsService extends GetxController {
@@ -93,6 +94,7 @@ class SettingsService extends GetxController {
   // ==============================
   final shieldList = ((HivePrefUtil.getStringList('shieldList') ?? [])).obs;
   final hotAreasList = ((HivePrefUtil.getStringList('hotAreasList') ?? AppConsts.supportSites)).obs;
+  final savedMenuIds = ((HivePrefUtil.getStringList('savedMenuIds') ?? HomeMenu.values.map((e) => e.id).toList())).obs;
   final preferResolution = (HivePrefUtil.getString('preferResolution') ?? PlayerConsts.resolutions[0]).obs;
   final preferResolutionCellular =
       (HivePrefUtil.getString('preferResolutionCellular') ?? PlayerConsts.resolutions[0]).obs;
@@ -134,13 +136,26 @@ class SettingsService extends GetxController {
   final defaultDesktopVolume = (HivePrefUtil.getDouble('defaultDesktopVolume') ?? 1.0).obs;
   final globalVolumeMute = (HivePrefUtil.getBool('globalVolumeMute') ?? false).obs;
   final roomVolumes = <String, double>{}.obs;
+
+  // ==============================
+  //  电视设置 (新增)
+  // ==============================
+  final selectedSourceName = (HivePrefUtil.getString('selectedSourceName') ?? '').obs;
+  final selectedSourceId = (HivePrefUtil.getString('selectedSourceId') ?? '').obs;
+  final isAutoSyncEnabled = (HivePrefUtil.getBool('isAutoSyncEnabled') ?? false).obs;
+  final autoSyncHoursInterval = (HivePrefUtil.getInt('autoSyncHoursInterval') ?? 24).obs;
+
   // ==============================
   // 🧩 Lifecycle: onInit
   // ==============================
   @override
   void onInit() {
     super.onInit();
-
+    Future.delayed(const Duration(seconds: 3), () {
+      AutoSyncScheduler.instance.checkAndExecuteAutoSync();
+      AutoSyncScheduler.instance.loadHotResources();
+      AutoSyncScheduler.instance.loadDefaultEpgResources();
+    });
     // === 监听并持久化 ===
     enableDynamicTheme.listen((bool value) {
       HivePrefUtil.setBool('enableDynamicTheme', value);
@@ -213,6 +228,9 @@ class SettingsService extends GetxController {
 
     hotAreasList.listen((value) {
       HivePrefUtil.setStringList('hotAreasList', value);
+    });
+    savedMenuIds.listen((value) {
+      HivePrefUtil.setStringList('savedMenuIds', value);
     });
 
     favoriteRooms.listen((rooms) {
@@ -376,6 +394,20 @@ class SettingsService extends GetxController {
     });
     roomVolumes.listen((value) {
       HivePrefUtil.setString('roomVolumes', jsonEncode(value));
+    });
+
+    selectedSourceName.listen((value) {
+      HivePrefUtil.setString('selectedSourceName', value);
+    });
+
+    selectedSourceId.listen((value) {
+      HivePrefUtil.setString('selectedSourceId', value);
+    });
+    isAutoSyncEnabled.listen((value) {
+      HivePrefUtil.setBool('isAutoSyncEnabled', value);
+    });
+    autoSyncHoursInterval.listen((value) {
+      HivePrefUtil.setInt('autoSyncHoursInterval', value);
     });
   }
 
@@ -714,6 +746,20 @@ class SettingsService extends GetxController {
     globalVolumeMute.value = false;
   }
 
+  void toggleMenuVisibility(HomeMenu menu, bool isVisible) {
+    if (isVisible) {
+      if (!savedMenuIds.contains(menu.id)) {
+        savedMenuIds.add(menu.id);
+      }
+    } else {
+      if (savedMenuIds.length <= 1) {
+        ToastUtil.show(i18n('at_least_one_menu_required'));
+        return;
+      }
+      savedMenuIds.remove(menu.id);
+    }
+  }
+
   void fromJson(Map<String, dynamic> json) {
     List<T> safeParseList<T>(dynamic data, T Function(Map<String, dynamic>) fromJsonFactory) {
       if (data == null || data is! List) return [];
@@ -737,6 +783,12 @@ class SettingsService extends GetxController {
     hotAreasList.value = json['hotAreasList'] != null
         ? (json['hotAreasList'] as List).map((e) => e.toString()).toList()
         : [];
+    if (json['savedMenuIds'] != null) {
+      savedMenuIds.value = (json['savedMenuIds'] as List).map((e) => e.toString()).toList();
+    } else {
+      savedMenuIds.value = HomeMenu.values.map((e) => e.id).toList();
+    }
+
     autoShutDownTime.value = json['autoShutDownTime'] ?? 120;
     currentWebDavConfig.value = json['currentWebDavConfig'] ?? '';
     autoRefreshTime.value = json['autoRefreshTime'] ?? 3;
@@ -875,6 +927,7 @@ class SettingsService extends GetxController {
     json['enableDanmakuDisplay'] = enableDanmakuDisplay.value;
     json['shieldList'] = shieldList.map<String>((e) => e.toString()).toList();
     json['hotAreasList'] = hotAreasList.map<String>((e) => e.toString()).toList();
+    json['savedMenuIds'] = savedMenuIds.map<String>((e) => e.toString()).toList();
     json['themeColorSwitch'] = themeColorSwitch.value;
     json['customPlayerOutput'] = customPlayerOutput.value;
     json['videoOutputDriver'] = videoOutputDriver.value;

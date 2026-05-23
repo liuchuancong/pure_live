@@ -111,9 +111,7 @@ class LivePlayPage extends GetView<LivePlayController> {
             const SizedBox(width: 8),
             Obx(() {
               final detail = controller.detail.value;
-
               if (detail == null) return const SizedBox.shrink();
-
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -135,7 +133,6 @@ class LivePlayPage extends GetView<LivePlayController> {
                 ],
               );
             }),
-
             const SizedBox(width: 8),
             Obx(() => FavoriteFloatingButton(room: controller.detail.value!)),
           ],
@@ -143,24 +140,16 @@ class LivePlayPage extends GetView<LivePlayController> {
         actions: [
           Obx(() {
             final room = controller.detail.value;
-
-            if (room == null) {
-              return const SizedBox.shrink();
-            }
-
+            if (room == null) return const SizedBox.shrink();
             final task = controller.recorderController.tasks.firstWhereOrNull(
               (t) => t.platform == room.platform && t.roomId == room.roomId,
             );
-
             final bool exists = task != null;
-
             final bool isRunning =
                 task?.status == RecordStatus.running ||
                 task?.status == RecordStatus.reconnecting ||
                 task?.status == RecordStatus.preparing;
-
             final theme = Theme.of(Get.context!);
-
             return AnimatedContainer(
               duration: const Duration(milliseconds: 220),
               curve: Curves.easeOut,
@@ -181,7 +170,6 @@ class LivePlayPage extends GetView<LivePlayController> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
-
                 icon: Icon(
                   isRunning
                       ? Remix.record_circle_fill
@@ -190,7 +178,6 @@ class LivePlayPage extends GetView<LivePlayController> {
                       : Remix.add_circle_line,
                   size: 18,
                 ),
-
                 label: Text(
                   isRunning
                       ? i18n("recording")
@@ -199,14 +186,12 @@ class LivePlayPage extends GetView<LivePlayController> {
                       : i18n("record"),
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                 ),
-
                 onPressed: () async {
                   if (!exists) {
                     await controller.recorderController.addTask(room: room);
                     ToastUtil.show(i18n("record_task_added"));
                     return;
                   }
-
                   final action = await showDialog<String>(
                     context: Get.context!,
                     builder: (context) {
@@ -223,7 +208,6 @@ class LivePlayPage extends GetView<LivePlayController> {
                             Text(isRunning ? i18n("recording") : i18n("record_task")),
                           ],
                         ),
-
                         content: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -233,7 +217,6 @@ class LivePlayPage extends GetView<LivePlayController> {
                               color: theme.colorScheme.primary,
                               onTap: () => Navigator.pop(context, "page"),
                             ),
-
                             if (!isRunning)
                               _ActionTile(
                                 icon: Icons.play_arrow_rounded,
@@ -241,7 +224,6 @@ class LivePlayPage extends GetView<LivePlayController> {
                                 color: Colors.green,
                                 onTap: () => Navigator.pop(context, "start"),
                               ),
-
                             if (isRunning)
                               _ActionTile(
                                 icon: Icons.stop_circle_outlined,
@@ -249,7 +231,6 @@ class LivePlayPage extends GetView<LivePlayController> {
                                 color: Colors.orange,
                                 onTap: () => Navigator.pop(context, "stop"),
                               ),
-
                             _ActionTile(
                               icon: Icons.delete_outline_rounded,
                               title: i18n("remove_monitor"),
@@ -261,20 +242,16 @@ class LivePlayPage extends GetView<LivePlayController> {
                       );
                     },
                   );
-
                   switch (action) {
                     case "page":
                       Get.toNamed(RoutePath.kRecordPage);
                       break;
-
                     case "start":
                       controller.recorderController.forceStartTask(task);
                       break;
-
                     case "stop":
                       controller.recorderController.stopTask(task);
                       break;
-
                     case "delete":
                       controller.recorderController.unRecorder(task);
                       break;
@@ -283,7 +260,6 @@ class LivePlayPage extends GetView<LivePlayController> {
               ),
             );
           }),
-
           PopupMenuButton(
             tooltip: i18n("menu"),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -322,7 +298,6 @@ class LivePlayPage extends GetView<LivePlayController> {
                   padding: EdgeInsets.symmetric(horizontal: 12),
                   child: MenuListTile(leading: Icon(Icons.swap_horiz_outlined), text: i18n("switch_live_room")),
                 ),
-
                 PopupMenuItem(
                   value: 2,
                   padding: EdgeInsets.symmetric(horizontal: 12),
@@ -330,7 +305,7 @@ class LivePlayPage extends GetView<LivePlayController> {
                 ),
                 PopupMenuItem(
                   value: 3,
-                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: MenuListTile(leading: const Icon(Icons.watch_later_outlined), text: i18n("sleep_timer")),
                 ),
                 PopupMenuItem(
@@ -360,8 +335,9 @@ class LivePlayPage extends GetView<LivePlayController> {
                           buildVideoPlayer(),
                           const ResolutionsRow(),
                           const Divider(height: 1),
+                          // ====================== IPTV 优化 ======================
                           Obx(() {
-                            if (controller.success.value == false) {
+                            if (controller.success.isFalse || controller.site == Sites.iptvSite) {
                               return const SizedBox.shrink();
                             }
                             final state = GlobalPlayerState.to;
@@ -375,25 +351,33 @@ class LivePlayPage extends GetView<LivePlayController> {
                     : Row(
                         children: <Widget>[
                           Expanded(child: buildVideoPlayer()),
-                          SizedBox(
-                            width: 400,
-                            child: Column(
-                              children: [
-                                const ResolutionsRow(),
-                                const Divider(height: 1),
-                                Obx(() {
-                                  if (controller.success.value == false) {
-                                    return const SizedBox.shrink();
-                                  }
-                                  final state = GlobalPlayerState.to;
-                                  if (state.isFullscreen.value || state.isWindowFullscreen.value) {
-                                    return const SizedBox.shrink();
-                                  }
-                                  return Expanded(child: DanmakuTabView(key: ValueKey(state.isFullscreen.value)));
-                                }),
-                              ],
-                            ),
-                          ),
+                          Obx(() {
+                            bool isRoomExits = controller.detail.value != null;
+                            return isRoomExits
+                                ? SizedBox(
+                                    width: controller.detail.value!.platform == Sites.iptvSite ? 0 : 400,
+                                    child: Column(
+                                      children: [
+                                        const ResolutionsRow(),
+                                        const Divider(height: 1),
+                                        Obx(() {
+                                          if (controller.success.isFalse ||
+                                              controller.detail.value!.platform == Sites.iptvSite) {
+                                            return const SizedBox.shrink();
+                                          }
+                                          final state = GlobalPlayerState.to;
+                                          if (state.isFullscreen.value || state.isWindowFullscreen.value) {
+                                            return const SizedBox.shrink();
+                                          }
+                                          return Expanded(
+                                            child: DanmakuTabView(key: ValueKey(state.isFullscreen.value)),
+                                          );
+                                        }),
+                                      ],
+                                    ),
+                                  )
+                                : Container();
+                          }),
                         ],
                       ),
               );
@@ -428,21 +412,16 @@ class LivePlayPage extends GetView<LivePlayController> {
   }
 
   Widget buildLoading() {
-    return Material(
+    return const Material(
       child: Stack(
         fit: StackFit.passthrough,
         children: [
-          Container(
-            color: Colors.black, // 设置你想要的背景色
-          ),
-          Container(
-            color: Colors.black,
-            child: const Center(
-              child: SizedBox(
-                width: 32,
-                height: 32,
-                child: CircularProgressIndicator(strokeWidth: 4, color: Colors.white),
-              ),
+          ColoredBox(color: Colors.black),
+          Center(
+            child: SizedBox(
+              width: 32,
+              height: 32,
+              child: CircularProgressIndicator(strokeWidth: 4, color: Colors.white),
             ),
           ),
         ],
@@ -580,7 +559,6 @@ class LivePlayPage extends GetView<LivePlayController> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        // title: Text(i18n("auto_refresh_time")),
         content: Obx(
           () => Column(
             mainAxisSize: MainAxisSize.min,
@@ -619,15 +597,15 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
   LivePlayController get controller => Get.find<LivePlayController>();
 
   Widget buildInfoCount() {
+    // ====================== IPTV 不显示观看人数 ======================
+    if (controller.site == Sites.iptvSite) return const SizedBox.shrink();
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         const Icon(Icons.whatshot_rounded, size: 14),
         const SizedBox(width: 4),
         Text(
-          controller.detail.value?.watching != null
-              ? readableCount(controller.detail.value!.watching!) // 假设 readableCount 已定义
-              : '0',
+          controller.detail.value?.watching != null ? readableCount(controller.detail.value!.watching!) : '0',
           style: Get.textTheme.bodySmall,
         ),
       ],
@@ -652,9 +630,7 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
           child: Text(
             currentQualityName,
-            style: Get.theme.textTheme.labelSmall?.copyWith(
-              color: Get.theme.colorScheme.primary, // 高亮当前选项
-            ),
+            style: Get.theme.textTheme.labelSmall?.copyWith(color: Get.theme.colorScheme.primary),
           ),
         ),
         onSelected: (newQualityIndex) {
@@ -664,7 +640,6 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
           return List.generate(controller.qualites.length, (index) {
             final qualityRate = controller.qualites[index];
             final isSelected = index == currentIndex;
-
             return PopupMenuItem<int>(
               value: index,
               child: Text(
@@ -680,7 +655,6 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
     });
   }
 
-  // 构建播放线路选择器
   Widget _buildLineSelector() {
     return Obx(() {
       if (!controller.success.value || controller.playUrls.isEmpty) {
@@ -736,8 +710,8 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
           children: [
             Padding(padding: const EdgeInsets.all(8), child: buildInfoCount()),
             const Spacer(),
-            _buildResolutionSelector(), // 添加清晰度选择器
-            _buildLineSelector(), // 添加线路选择器
+            _buildResolutionSelector(),
+            _buildLineSelector(),
           ],
         ),
       );
@@ -782,11 +756,7 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
                   ? WidgetStateProperty.all(EdgeInsets.all(12.0))
                   : WidgetStateProperty.all(EdgeInsets.all(5.0)),
               backgroundColor: WidgetStateProperty.all(Get.theme.colorScheme.primary.withAlpha(125)),
-              shape: WidgetStateProperty.all(
-                RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6.0), // 圆角半径，可根据需要调整
-                ),
-              ),
+              shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(6.0))),
               textStyle: WidgetStateProperty.all(const TextStyle(fontSize: 12.0)),
               minimumSize: WidgetStateProperty.all(Size.zero),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -797,22 +767,12 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
                   title: Text(i18n("unfollow")),
                   content: Text(i18n("unfollow_message", args: {"name": widget.room.nick!})),
                   actions: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(Get.context!).pop(false);
-                      },
-                      child: Text(i18n("cancel")),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(Get.context!).pop(true);
-                      },
-                      child: Text(i18n("confirm")),
-                    ),
+                    TextButton(onPressed: () => Navigator.of(Get.context!).pop(false), child: Text(i18n("cancel"))),
+                    ElevatedButton(onPressed: () => Navigator.of(Get.context!).pop(true), child: Text(i18n("confirm"))),
                   ],
                 ),
               ).then((value) {
-                if (value) {
+                if (value ?? false) {
                   setState(() => isFavorite = !isFavorite);
                   settings.removeRoom(widget.room);
                   EventBus.instance.emit('changeFavorite', true);
@@ -823,21 +783,13 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
           )
         : FilledButton(
             style: ButtonStyle(
-              // 减小内边距，使按钮更小
               padding: Platform.isWindows
                   ? WidgetStateProperty.all(EdgeInsets.all(12.0))
                   : WidgetStateProperty.all(EdgeInsets.all(5.0)),
-              // 设置背景色
               backgroundColor: WidgetStateProperty.all(Get.theme.colorScheme.primary),
-              // 设置按钮形状，调整圆角半径
-              shape: WidgetStateProperty.all(
-                RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6.0), // 圆角半径，可根据需要调整
-                ),
-              ),
-              // 可选：减小文字大小
+              shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(6.0))),
               textStyle: WidgetStateProperty.all(const TextStyle(fontSize: 12.0)),
-              minimumSize: WidgetStateProperty.all(Size.zero), // 移除默认最小尺寸
+              minimumSize: WidgetStateProperty.all(Size.zero),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             onPressed: () {
@@ -903,9 +855,7 @@ class NotLivingVideoWidget extends StatelessWidget {
                     icon: const Icon(Icons.swap_horiz_outlined),
                     tooltip: i18n('switch_live_room'),
                     color: Colors.white,
-                    onPressed: () {
-                      Get.dialog(PlayOther(controller: Get.find<LivePlayController>()));
-                    },
+                    onPressed: () => Get.dialog(PlayOther(controller: Get.find<LivePlayController>())),
                   ),
                   const DatetimeInfo(),
                 ],
