@@ -672,5 +672,12 @@
     "enable_auto_sync_subtitle": "开机冷启动时检测并静默升级已过期的网络源",
     "sync_interval": "数据源更新周期间隔",
     "hours": "小时",
-    "auto_sync_tag": "自动更新"
+    "auto_sync_tag": "自动更新",
+    "permission_denied": "未获得文件选择器所需的系统存储权限",
+    "invalid_backup_archive": "无效的备份压缩包，未找到 manifest 配置文件",
+    "backup_success": "全量数据备份打包成功",
+    "backup_failed": "全量数据备份失败",
+    "restore_success": "应用数据已成功恢复，配置已激活",
+    "restore_failed": "备份数据解析或恢复失败",
+     "contains_old_data": "(包含旧的 {} 数据)"
 }

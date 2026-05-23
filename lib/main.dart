@@ -5,12 +5,15 @@ import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/common/global/initialized.dart';
-import 'package:pure_live/plugins/file_recover_utils.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/routes/route_observer_controller.dart';
+import 'package:pure_live/core/iptv/services/epg_import_manager.dart';
 import 'package:pure_live/common/global/platform/desktop_manager.dart';
+import 'package:pure_live/core/iptv/services/iptv_import_manager.dart';
+
+// 引入统一解耦重构后的两个核心数据流解析管理器
 
 void main(List<String> args) async {
   await AppInitializer().initialize(args);
@@ -33,13 +36,14 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> with DesktopWindowMixin {
   final settings = Get.find<SettingsService>();
+
   @override
   void initState() {
     super.initState();
     if (PlatformUtils.isDesktop) {
       DesktopManager.initializeListeners(this);
     }
-    initShareM3uState();
+    initSharedMediaListener();
     initGlopalPlayer();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -77,16 +81,23 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
     super.dispose();
   }
 
-  bool isDataSourceM3u(String url) => url.contains('.m3u');
-
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initShareM3uState() async {
+  Future<void> initSharedMediaListener() async {
     if (Platform.isAndroid) {
       final handler = ShareHandler.instance;
       await handler.getInitialSharedMedia();
+
       handler.sharedMediaStream.listen((SharedMedia media) async {
-        if (isDataSourceM3u(media.content!)) {
-          FileRecoverUtils().recoverM3u8BackupByShare(media);
+        final path = media.content?.trim().toLowerCase() ?? '';
+        if (path.isEmpty) return;
+        // 1. 判断是否属于 IPTV 列表文件类型后缀 (.m3u 或 .txt)
+        if (path.endsWith('.m3u') || path.endsWith('.txt') || path.contains('.m3u8')) {
+          await IptvImportManager().importFromSharedMedia(media);
+        }
+        // 2. 判断是否属于 EPG 电子节目单类型后缀 (.xml、.gz 压缩包、.json)
+        else if (path.endsWith('.xml') || path.endsWith('.gz') || path.endsWith('.json')) {
+          await EpgImportManager().importFromSharedMedia(media);
+        } else {
+          ToastUtil.show(i18n("unsupported_file_format"));
         }
       });
     }
@@ -126,7 +137,6 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
                 if (PlatformUtils.isDesktopNotMac) {
                   return DesktopManager.buildWithTitleBar(child);
                 }
-
                 return child ?? const SizedBox.shrink();
               },
             ),

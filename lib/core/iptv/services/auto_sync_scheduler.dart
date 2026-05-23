@@ -1,12 +1,12 @@
 import 'dart:developer';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/db_service.dart';
-import 'package:pure_live/core/iptv/services/epg_sync_manager.dart';
+import 'package:pure_live/core/iptv/services/epg_sync_engine.dart';
 import 'package:pure_live/core/iptv/services/iptv_sync_engine.dart';
 
-class IptvAutoSyncScheduler {
-  static final IptvAutoSyncScheduler instance = IptvAutoSyncScheduler._internal();
-  IptvAutoSyncScheduler._internal();
+class AutoSyncScheduler {
+  static final AutoSyncScheduler instance = AutoSyncScheduler._internal();
+  AutoSyncScheduler._internal();
 
   Future<void> checkAndExecuteAutoSync() async {
     final settings = Get.find<SettingsService>();
@@ -24,7 +24,7 @@ class IptvAutoSyncScheduler {
 
       final expiredEpgs = await db.getExpiredEpgSources(checkInterval);
       for (var epg in expiredEpgs) {
-        await EpgSyncManager().updateEpgCache(sourceName: epg.name, downloadUrl: epg.url, forceUpdate: true);
+        await EpgSyncEngine.updateEpgCache(epg, forceUpdate: true);
       }
     } catch (e) {
       log("Auto sync background task working failed: $e");

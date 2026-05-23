@@ -1,0 +1,71 @@
+import 'dart:io';
+import 'dart:math';
+import 'package:path/path.dart' as p;
+import 'package:permission_handler/permission_handler.dart';
+
+class FileUtils {
+  /// 获取文件路径中的纯文件名
+  static String getFileName(String fullPath) {
+    return fullPath.split(Platform.pathSeparator).last;
+  }
+
+  /// 获取不带后缀的文件名
+  static String getBaseName(String fullPath) {
+    return p.basenameWithoutExtension(fullPath);
+  }
+
+  /// 生成基于时间戳和随机数的唯一长整数 ID 字符串
+  static String generateUuid() {
+    final currentTime = DateTime.now().millisecondsSinceEpoch;
+    final randomValue = Random().nextInt(4294967295);
+    final result = (currentTime % 10000000000 * 1000 + randomValue) % 4294967295;
+    return result.toString();
+  }
+
+  /// 验证是否为合法 URL 链接
+  static bool isValidUrl(String value) {
+    final urlRegExp = RegExp(
+      r"((https?:www\.)|(https?:\/\/)|(www\.))[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9]{1,6}(\/[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)?",
+    );
+    return urlRegExp.allMatches(value).isNotEmpty;
+  }
+
+  /// 验证是否包含 Host 域名的 URL 链接
+  static bool isHostUrl(String value) {
+    final urlRegExp = RegExp(
+      r"((https?:www\.)|(https?:\/\/))[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9]{1,6}(\/[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)?",
+    );
+    return urlRegExp.allMatches(value).isNotEmpty;
+  }
+
+  /// 验证字符串是否为纯数字（端口号校验）
+  static bool isNumericPort(String value) {
+    return RegExp(r"^\d+$").hasMatch(value);
+  }
+
+  /// 请求外部存储管理权限
+  static Future<bool> requestStoragePermission() async {
+    if (Platform.isAndroid || Platform.isIOS) {
+      if (await Permission.manageExternalStorage.isDenied) {
+        final status = await Permission.manageExternalStorage.request();
+        return status.isGranted;
+      }
+    }
+    return true;
+  }
+
+  static Future<File> convertPhysicalFile(String shareContent) async {
+    if (shareContent.isEmpty) {
+      throw const FileSystemException("Shared data string content stream is fully empty");
+    }
+    if (shareContent.startsWith('file://')) {
+      return File(Uri.parse(shareContent).toFilePath());
+    }
+
+    final fileRef = File(shareContent);
+    if (await fileRef.exists()) {
+      return fileRef;
+    }
+    throw FileSystemException("Shared media target path cannot be verified on flash drive storage", shareContent);
+  }
+}

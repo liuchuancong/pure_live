@@ -1,7 +1,7 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/db_service.dart';
-import 'package:pure_live/core/iptv/services/epg_sync_manager.dart';
+import 'package:pure_live/core/iptv/services/epg_sync_engine.dart';
 import 'package:pure_live/core/iptv/services/iptv_sync_engine.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
 
@@ -64,7 +64,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
         await IptvSyncEngine.instance.syncPlaylist(playlist);
       }
       for (var epg in networkEpgs) {
-        await EpgSyncManager().updateEpgCache(downloadUrl: epg.url, sourceName: epg.name);
+        await EpgSyncEngine.updateEpgCache(epg);
       }
       await _refreshData();
       ToastUtil.show(i18n("manage_page_success"));
@@ -396,11 +396,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
                 color: theme.colorScheme.primary,
                 onPressed: () async {
                   ToastUtil.show(i18n("manage_page_single_syncing"));
-                  await EpgSyncManager().updateEpgCache(
-                    downloadUrl: source.url,
-                    sourceName: source.name,
-                    forceUpdate: true,
-                  );
+                  await EpgSyncEngine.updateEpgCache(source, forceUpdate: true);
                   await _refreshData();
                 },
               ),

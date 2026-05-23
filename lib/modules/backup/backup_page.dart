@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/backup/scan_page.dart';
-import 'package:pure_live/plugins/file_recover_utils.dart';
+import 'package:pure_live/plugins/backup_recovery_service.dart';
 
 class BackupPage extends StatefulWidget {
   const BackupPage({super.key});
@@ -52,7 +52,7 @@ class _BackupPageState extends State<BackupPage> {
                 ToastUtil.show(i18n('please_set_backup_directory'));
                 return;
               }
-              final selectedDirectory = await FileRecoverUtils().createBackup(backupDirectory);
+              final selectedDirectory = await BackupRecoveryService().createAppSettingsBackup(backupDirectory);
               if (selectedDirectory != null) {
                 setState(() {
                   backupDirectory = selectedDirectory;
@@ -64,7 +64,7 @@ class _BackupPageState extends State<BackupPage> {
           ListTile(
             title: Text(i18n("recover_backup")),
             subtitle: Text(i18n("recover_backup_subtitle")),
-            onTap: () => FileRecoverUtils().recoverBackup(),
+            onTap: () => BackupRecoveryService().recoverSettingsFromFile(),
           ),
 
           SectionTitle(title: i18n("auto_backup")),
@@ -73,7 +73,7 @@ class _BackupPageState extends State<BackupPage> {
             title: Text(i18n("backup_directory")),
             subtitle: Text(backupDirectory),
             onTap: () async {
-              final selectedDirectory = await FileRecoverUtils().selectBackupDirectory(backupDirectory);
+              final selectedDirectory = await BackupRecoveryService().updateBackupDirectory();
 
               if (selectedDirectory != null) {
                 setState(() {

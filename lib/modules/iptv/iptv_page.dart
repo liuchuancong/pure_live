@@ -1,11 +1,12 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/modules/iptv/iptv_manage.dart';
-import 'package:pure_live/plugins/file_recover_utils.dart';
 import 'package:pure_live/modules/auth/utils/constants.dart';
-import 'package:pure_live/core/iptv/services/epg_sync_manager.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
+import 'package:pure_live/core/iptv/services/epg_import_manager.dart';
+import 'package:pure_live/core/iptv/services/iptv_import_manager.dart';
 
 class IptvPage extends StatefulWidget {
   const IptvPage({super.key});
@@ -195,7 +196,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
                   title: Text(i18n("local_import")),
                   onTap: () {
                     Navigator.of(context).pop();
-                    FileRecoverUtils().recoverM3u8Backup().then((_) => _refreshData());
+                    IptvImportManager().importFromLocalPicker().then((_) => _refreshData());
                   },
                 ),
               ),
@@ -251,7 +252,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
                   title: Text(i18n("local_import")),
                   onTap: () {
                     Navigator.of(context).pop();
-                    FileRecoverUtils().recoverM3u8Backup().then((_) => _refreshData());
+                    IptvImportManager().importFromLocalPicker().then((_) => _refreshData());
                   },
                 ),
               ),
@@ -322,7 +323,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
                 ToastUtil.show(i18n("enter_download_link"));
                 return;
               }
-              if (!FileRecoverUtils.isUrl(urlText)) {
+              if (!FileUtils.isValidUrl(urlText)) {
                 ToastUtil.show(i18n("invalid_download_link"));
                 return;
               }
@@ -334,18 +335,16 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
               bool isSuccess = false;
 
               if (isEpg) {
-                isSuccess = await EpgSyncManager().updateEpgCache(
-                  sourceName: fileNameText,
-                  downloadUrl: urlText,
-                  forceUpdate: false,
-                );
+                // 1. 调用重构后的 EpgSyncEngine 静态方法（无需任何实例化）
+                isSuccess = await EpgImportManager().importFromNetworkUrl(urlText, fileNameText);
               } else {
-                isSuccess = await FileRecoverUtils().recoverNetworkM3u8Backup(urlText, fileNameText);
+                // 2. 抛弃原本的 FileRecoverUtils，直接调用规范化解耦后的 IptvImportManager 网络下载方法
+                isSuccess = await IptvImportManager().importFromNetworkUrl(urlText, fileNameText);
               }
 
               if (isSuccess) {
                 Navigator.of(Get.context!).pop();
-                await _refreshData();
+                await _refreshData(); // 如果你在当前类有实现这个数据刷新方法，它将被正常调用
               }
             },
             child: Text(i18n("confirm")),

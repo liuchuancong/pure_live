@@ -12,8 +12,8 @@ import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/win_auto_start.dart';
 import 'package:pure_live/modules/web_dav/webdav_config.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
+import 'package:pure_live/core/iptv/services/auto_sync_scheduler.dart';
 import 'package:pure_live/common/services/bilibili_account_service.dart';
-import 'package:pure_live/core/iptv/services/iptv_auto_sync_scheduler.dart';
 
 class SettingsService extends GetxController {
   // ==============================
@@ -151,7 +151,7 @@ class SettingsService extends GetxController {
   void onInit() {
     super.onInit();
     Future.delayed(const Duration(seconds: 3), () {
-      IptvAutoSyncScheduler.instance.checkAndExecuteAutoSync();
+      AutoSyncScheduler.instance.checkAndExecuteAutoSync();
     });
     // === 监听并持久化 ===
     enableDynamicTheme.listen((bool value) {

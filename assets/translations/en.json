@@ -673,5 +673,12 @@
     "enable_auto_sync_subtitle": "Silently upgrade expired cloud sources when app opens",
     "sync_interval": "Data Refresh Interval",
     "hours": "Hours",
-    "auto_sync_tag": "Auto Sync"
+    "auto_sync_tag": "Auto Sync",
+    "permission_denied": "System storage permission required for file picker was denied",
+    "invalid_backup_archive": "Invalid backup archive, master manifest file not found",
+    "backup_success": "Full application backup compiled successfully",
+    "backup_failed": "Failed to compile full application backup archive",
+    "restore_success": "Application state and data restored successfully",
+    "restore_failed": "Failed to parse or restore backup archive data",
+     "contains_old_data": "(including legacy {} data)"
 }
