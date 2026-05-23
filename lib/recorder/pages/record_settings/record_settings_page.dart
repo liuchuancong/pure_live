@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/plugins/file_utils.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
@@ -55,7 +57,32 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
               ),
             ]),
 
-            _buildSectionHeader(i18n("cache_management")),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildSectionHeader(i18n("cache_management")),
+                Padding(
+                  padding: EdgeInsetsGeometry.only(right: 8),
+                  child: TextButton.icon(
+                    onPressed: () => FileUtils.openFileOrUrl(controller.recordSavePath.value),
+                    // 彻底清空按钮自带的内边距，让它和边框完美贴合对齐
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      foregroundColor: theme.colorScheme.primary, // 保持主题色
+                    ),
+                    icon: const Icon(Remix.folder_open_line, size: 16), // 加上精细的小图标，视觉上更清晰
+                    label: Text(
+                      i18n("recorder_open_folder"),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
             _buildModernCard(theme, [
               _buildTile(
                 theme,
@@ -281,12 +308,12 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
   }
 
   Widget _buildModernCard(ThemeData theme, List<Widget> children) {
-    return Container(
+    return Material(
       clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
+        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1), width: 1),
       ),
       child: Column(children: children),
     );
@@ -301,6 +328,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
     bool isLong = false,
     bool showRightRounded = true,
   }) {
+    bool compat = Get.width >= 680;
     return ListTile(
       leading: Icon(icon, size: 24, color: theme.colorScheme.primary),
       title: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
@@ -308,7 +336,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            constraints: BoxConstraints(maxWidth: isDesktop ? 400 : 150),
+            constraints: BoxConstraints(maxWidth: compat ? 400 : 100),
             child: Text(
               val,
               overflow: TextOverflow.ellipsis,
