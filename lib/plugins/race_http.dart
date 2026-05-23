@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:charset_converter/charset_converter.dart';
@@ -26,6 +27,37 @@ class RaceHttp {
         return null;
       },
     );
+  }
+
+  /// Finds the fastest responsive URL from a list of mirrors without modifying RaceHttp.
+  static Future<String?> findFastestUrl(
+    List<String> urls, {
+    Duration timeout = const Duration(seconds: 5),
+    Map<String, String>? headers,
+  }) async {
+    final completer = Completer<String?>();
+
+    for (final url in urls) {
+      unawaited(
+        Future(() async {
+          try {
+            final client = http.Client();
+            final res = await client.get(Uri.parse(url), headers: headers).timeout(timeout);
+
+            if (res.statusCode == 200 && !completer.isCompleted) {
+              log(url, name: 'findFastestUrl');
+              completer.complete(url);
+            }
+          } catch (_) {}
+        }),
+      );
+    }
+    Future.delayed(timeout, () {
+      if (!completer.isCompleted) {
+        completer.complete(null);
+      }
+    });
+    return completer.future;
   }
 
   static Future<String?> fetchText(

@@ -85,16 +85,12 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
     if (Platform.isAndroid) {
       final handler = ShareHandler.instance;
       await handler.getInitialSharedMedia();
-
       handler.sharedMediaStream.listen((SharedMedia media) async {
         final path = media.content?.trim().toLowerCase() ?? '';
         if (path.isEmpty) return;
-        // 1. 判断是否属于 IPTV 列表文件类型后缀 (.m3u 或 .txt)
         if (path.endsWith('.m3u') || path.endsWith('.txt') || path.contains('.m3u8')) {
           await IptvImportManager().importFromSharedMedia(media);
-        }
-        // 2. 判断是否属于 EPG 电子节目单类型后缀 (.xml、.gz 压缩包、.json)
-        else if (path.endsWith('.xml') || path.endsWith('.gz') || path.endsWith('.json')) {
+        } else if (path.endsWith('.xml') || path.endsWith('.gz') || path.endsWith('.json')) {
           await EpgImportManager().importFromSharedMedia(media);
         } else {
           ToastUtil.show(i18n("unsupported_file_format"));

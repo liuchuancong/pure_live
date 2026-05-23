@@ -1,9 +1,31 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/core/iptv/services/epg_sync_engine.dart';
 import 'package:pure_live/core/iptv/services/iptv_sync_engine.dart';
-import 'package:pure_live/core/iptv/local/database.dart' as database;
+
+enum ManageItemType { iptv, epg }
+
+class ManageItem {
+  final String id;
+  final String name;
+  final String url;
+  final bool isNetwork;
+  final bool isAutoSync;
+  final ManageItemType type;
+  final dynamic raw;
+
+  ManageItem({
+    required this.id,
+    required this.name,
+    required this.url,
+    required this.isNetwork,
+    required this.isAutoSync,
+    required this.type,
+    required this.raw,
+  });
+}
 
 class IptvManagePage extends StatefulWidget {
   const IptvManagePage({super.key});
@@ -13,8 +35,8 @@ class IptvManagePage extends StatefulWidget {
 }
 
 class _IptvManagePageState extends State<IptvManagePage> {
-  final RxList<database.Provider> playlists = <database.Provider>[].obs;
-  final RxList<database.EpgSource> epgSources = <database.EpgSource>[].obs;
+  final RxList<ManageItem> allItems = <ManageItem>[].obs;
+
   final RxBool isSyncingAll = false.obs;
 
   @override
@@ -23,53 +45,93 @@ class _IptvManagePageState extends State<IptvManagePage> {
     _refreshData();
   }
 
+  bool _isNetwork(String url) {
+    return url.startsWith("http://") || url.startsWith("https://");
+  }
+
   Future<void> _refreshData() async {
-    SmartDialog.showLoading();
     final db = Get.find<DbService>().db;
-    playlists.value = await db.getAllProviders();
-    epgSources.value = await db.getAllEpgSources();
-    SmartDialog.dismiss();
+
+    SmartDialog.showLoading();
+
+    try {
+      final playlists = await db.getAllProviders();
+
+      final epgs = await db.getAllEpgSources();
+
+      final List<ManageItem> items = [];
+
+      for (final item in playlists) {
+        items.add(
+          ManageItem(
+            id: item.id,
+            name: item.name,
+            url: item.url ?? "",
+            isNetwork: _isNetwork(item.url ?? ""),
+            isAutoSync: item.isAutoUpdate,
+            type: ManageItemType.iptv,
+            raw: item,
+          ),
+        );
+      }
+
+      for (final item in epgs) {
+        items.add(
+          ManageItem(
+            id: item.id,
+            name: item.name,
+            url: item.url,
+            isNetwork: _isNetwork(item.url),
+            isAutoSync: item.isAutoUpdate,
+            type: ManageItemType.epg,
+            raw: item,
+          ),
+        );
+      }
+
+      items.sort((a, b) {
+        if (a.isNetwork == b.isNetwork) {
+          return 0;
+        }
+
+        return a.isNetwork ? -1 : 1;
+      });
+
+      allItems.value = items;
+    } finally {
+      SmartDialog.dismiss();
+    }
   }
 
   Future<void> _syncAll() async {
     if (isSyncingAll.value) return;
 
-    final networkPlaylists = playlists
-        .where(
-          (p) =>
-              p.url != null &&
-              (p.url!.startsWith('http://') || p.url!.startsWith('https://')) &&
-              p.isAutoUpdate == true,
-        )
-        .toList();
-    final networkEpgs = epgSources
-        .where(
-          (e) =>
-              e.url.isNotEmpty &&
-              (e.url.startsWith('http://') || e.url.startsWith('https://')) &&
-              e.isAutoUpdate == true,
-        )
-        .toList();
+    final syncItems = allItems.where((e) => e.isNetwork && e.isAutoSync).toList();
 
-    if (networkPlaylists.isEmpty && networkEpgs.isEmpty) {
+    if (syncItems.isEmpty) {
       ToastUtil.show(i18n("manage_page_empty_tip"));
       return;
     }
 
     isSyncingAll.value = true;
+
     ToastUtil.show(i18n("manage_page_syncing"));
 
     try {
-      for (var playlist in networkPlaylists) {
-        await IptvSyncEngine.instance.syncPlaylist(playlist);
+      for (final item in syncItems) {
+        if (item.type == ManageItemType.iptv) {
+          await IptvSyncEngine.instance.syncPlaylist(item.raw);
+        } else {
+          await EpgSyncEngine.instance.updateEpgCache(item.raw, forceUpdate: true);
+        }
       }
-      for (var epg in networkEpgs) {
-        await EpgSyncEngine.updateEpgCache(epg);
-      }
+
       await _refreshData();
+
       ToastUtil.show(i18n("manage_page_success"));
     } catch (e) {
       debugPrint("$e");
+
       ToastUtil.show(i18n("manage_page_failed"));
     } finally {
       isSyncingAll.value = false;
@@ -79,140 +141,286 @@ class _IptvManagePageState extends State<IptvManagePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final settings = Get.find<SettingsService>();
+
     return Scaffold(
       appBar: AppBar(
         title: Text(i18n("manage_page_title")),
+        centerTitle: true,
         actions: [
           Obx(
             () => IconButton(
+              onPressed: isSyncingAll.value ? null : _syncAll,
               icon: isSyncingAll.value
                   ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                   : const Icon(Remix.refresh_line),
-              onPressed: isSyncingAll.value ? null : () => _syncAll(),
             ),
           ),
         ],
       ),
-      body: ListView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      body: Obx(() {
+        final networkItems = allItems.where((e) => e.isNetwork).toList();
+
+        final localItems = allItems.where((e) => !e.isNetwork).toList();
+
+        return CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              sliver: SliverToBoxAdapter(child: _buildStatsCard(theme)),
+            ),
+
+            if (networkItems.isNotEmpty) ...[
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+                sliver: SliverToBoxAdapter(
+                  child: _buildSectionTitle(theme, i18n("network_resource"), Remix.global_line),
+                ),
+              ),
+
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverList.builder(
+                  itemCount: networkItems.length,
+                  itemBuilder: (_, index) {
+                    return _buildItemCard(theme, networkItems[index]);
+                  },
+                ),
+              ),
+            ],
+
+            if (localItems.isNotEmpty) ...[
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+                sliver: SliverToBoxAdapter(
+                  child: _buildSectionTitle(theme, i18n("local_resource"), Remix.folder_2_line),
+                ),
+              ),
+
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverList.builder(
+                  itemCount: localItems.length,
+                  itemBuilder: (_, index) {
+                    return _buildItemCard(theme, localItems[index]);
+                  },
+                ),
+              ),
+            ],
+
+            const SliverPadding(padding: EdgeInsets.only(bottom: 40)),
+          ],
+        );
+      }),
+    );
+  }
+
+  Widget _buildStatsCard(ThemeData theme) {
+    final networkCount = allItems.where((e) => e.isNetwork).length;
+
+    final playlistCount = allItems.where((e) => e.type == ManageItemType.iptv).length;
+
+    final epgCount = allItems.where((e) => e.type == ManageItemType.epg).length;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: LinearGradient(colors: [theme.colorScheme.primary.withValues(alpha: 0.12), theme.cardColor]),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          SectionTitle(title: i18n("manage_page_network_section")),
-          Obx(() => _buildPlaylistSection(theme)),
-
-          const SizedBox(height: 16),
-          SectionTitle(title: i18n("manage_page_epg_section")),
-          Obx(() => _buildEpgSection(theme)),
-
-          const SizedBox(height: 16),
-          SectionTitle(title: i18n("auto_sync_settings")),
-
-          Container(
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1), width: 1),
-              boxShadow: [
-                BoxShadow(color: theme.shadowColor.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
-              ],
-            ),
-            child: Column(
-              children: [
-                Obx(
-                  () => SwitchListTile(
-                    secondary: Icon(
-                      Remix.time_line,
-                      color: settings.isAutoSyncEnabled.value ? theme.colorScheme.primary : theme.hintColor,
-                    ),
-                    title: Text(
-                      i18n("enable_auto_sync"),
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-                    ),
-                    subtitle: Text(
-                      i18n("enable_auto_sync_subtitle"),
-                      style: TextStyle(color: theme.hintColor, fontSize: 12),
-                    ),
-                    value: settings.isAutoSyncEnabled.value,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(20), bottom: Radius.circular(20)),
-                    ),
-                    onChanged: (bool value) {
-                      settings.isAutoSyncEnabled.value = value;
-                    },
-                  ),
-                ),
-
-                Obx(
-                  () => AnimatedCrossFade(
-                    firstChild: const SizedBox.shrink(),
-                    secondChild: Column(
-                      children: [
-                        Divider(height: 1, thickness: 0.5, color: theme.dividerColor.withValues(alpha: 0.1)),
-                        ListTile(
-                          leading: Icon(Remix.hourglass_line, color: theme.colorScheme.primary),
-                          title: Text(
-                            i18n("sync_interval"),
-                            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
-                          ),
-                          subtitle: Text(
-                            "${settings.autoSyncHoursInterval.value} ${i18n("hours")}",
-                            style: TextStyle(
-                              color: theme.colorScheme.primary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          trailing: Icon(Icons.chevron_right, color: theme.hintColor, size: 20),
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
-                          ),
-                          onTap: () => _showIntervalSelectionDialog(context),
-                        ),
-                      ],
-                    ),
-                    crossFadeState: settings.isAutoSyncEnabled.value
-                        ? CrossFadeState.showSecond
-                        : CrossFadeState.showFirst,
-                    duration: const Duration(milliseconds: 250),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          _buildStatItem(theme, "IPTV", playlistCount.toString(), Remix.play_list_2_line),
+          _buildStatItem(theme, "EPG", epgCount.toString(), Remix.tv_2_line),
+          _buildStatItem(theme, i18n("network_tag"), networkCount.toString(), Remix.global_line),
         ],
       ),
     );
   }
 
-  void _showIntervalSelectionDialog(BuildContext context) {
-    final intervals = [6, 12, 24, 48];
-    final settings = Get.find<SettingsService>();
+  Widget _buildStatItem(ThemeData theme, String title, String value, IconData icon) {
+    return Column(
+      children: [
+        Container(
+          width: 46,
+          height: 46,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(icon, color: theme.colorScheme.primary),
+        ),
+        const SizedBox(height: 10),
+        Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        Text(title, style: TextStyle(color: theme.hintColor, fontSize: 12)),
+      ],
+    );
+  }
 
-    Get.dialog(
-      AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(i18n("sync_interval")),
-        content: SizedBox(
-          width: 280,
-          child: Obx(
-            () => RadioGroup<int>(
-              groupValue: settings.autoSyncHoursInterval.value,
-              onChanged: (int? value) {
-                if (value != null) {
-                  settings.autoSyncHoursInterval.value = value;
-                  Navigator.of(context).pop();
-                  ToastUtil.show(i18n("manage_page_success"));
-                }
-              },
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: intervals.length,
-                itemBuilder: (context, index) {
-                  final hours = intervals[index];
-                  return RadioListTile<int>(title: Text("$hours ${i18n("hours")}"), value: hours);
-                },
-              ),
+  Widget _buildSectionTitle(ThemeData theme, String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: theme.colorScheme.primary),
+        const SizedBox(width: 8),
+        Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  Widget _buildItemCard(ThemeData theme, ManageItem item) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.08)),
+        boxShadow: [
+          BoxShadow(color: theme.shadowColor.withValues(alpha: 0.03), blurRadius: 12, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(22),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: () {
+            FileUtils.openFileOrUrl(item.url);
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    _buildLeadingIcon(theme, item),
+
+                    const SizedBox(width: 14),
+
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                          ),
+
+                          const SizedBox(height: 6),
+
+                          Text(
+                            item.url,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: theme.hintColor, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(width: 10),
+
+                    _buildTag(theme, item),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final compact = constraints.maxWidth <= 680;
+                    if (compact) {
+                      return Column(
+                        children: [
+                          Row(
+                            children: [
+                              if (item.isNetwork) ...[
+                                Expanded(
+                                  child: _buildActionButton(
+                                    theme,
+                                    icon: Remix.download_cloud_2_line,
+                                    label: i18n("sync"),
+                                    onTap: () async {
+                                      ToastUtil.show(i18n("manage_page_single_syncing"));
+                                      if (item.type == ManageItemType.iptv) {
+                                        await IptvSyncEngine.instance.syncPlaylist(item.raw, showTips: true);
+                                      } else {
+                                        await EpgSyncEngine.instance.updateEpgCache(item.raw, forceUpdate: true);
+                                      }
+
+                                      await _refreshData();
+                                    },
+                                  ),
+                                ),
+
+                                const SizedBox(width: 10),
+                              ],
+
+                              Expanded(
+                                child: _buildActionButton(
+                                  theme,
+                                  icon: Remix.delete_bin_6_line,
+                                  label: i18n("webdav_delete"),
+                                  danger: true,
+                                  onTap: () {
+                                    _showDeleteDialog(item);
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (item.isNetwork) ...[const SizedBox(height: 10), _buildSwitchButton(theme, item)],
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      children: [
+                        if (item.isNetwork) ...[
+                          Expanded(
+                            child: _buildActionButton(
+                              theme,
+                              icon: Remix.download_cloud_2_line,
+                              label: i18n("sync"),
+                              onTap: () async {
+                                ToastUtil.show(i18n("manage_page_single_syncing"));
+
+                                if (item.type == ManageItemType.iptv) {
+                                  await IptvSyncEngine.instance.syncPlaylist(item.raw, showTips: true);
+                                } else {
+                                  await EpgSyncEngine.instance.updateEpgCache(item.raw, forceUpdate: true);
+                                }
+
+                                await _refreshData();
+                              },
+                            ),
+                          ),
+
+                          const SizedBox(width: 10),
+
+                          Expanded(child: _buildSwitchButton(theme, item)),
+
+                          const SizedBox(width: 10),
+                        ],
+                        Expanded(
+                          child: _buildActionButton(
+                            theme,
+                            icon: Remix.delete_bin_6_line,
+                            label: i18n("webdav_delete"),
+                            danger: true,
+                            onTap: () {
+                              _showDeleteDialog(item);
+                            },
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         ),
@@ -220,217 +428,166 @@ class _IptvManagePageState extends State<IptvManagePage> {
     );
   }
 
-  Widget _buildPlaylistSection(ThemeData theme) {
-    final networkLists = playlists
-        .where((p) => p.url != null && (p.url!.startsWith('http://') || p.url!.startsWith('https://')))
-        .toList();
-    if (networkLists.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.all(16),
-        child: Text(i18n("manage_page_empty_tip"), style: TextStyle(color: theme.hintColor)),
-      );
-    }
+  Widget _buildLeadingIcon(ThemeData theme, ManageItem item) {
+    final isPlaylist = item.type == ManageItemType.iptv;
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: networkLists.length,
-      itemBuilder: (context, index) {
-        final item = networkLists[index];
-        return ListTile(
-          leading: Icon(Remix.file_list_3_line, color: theme.colorScheme.primary),
-          title: Text(item.name, style: TextStyle(color: theme.textTheme.bodyLarge?.color)),
-          subtitle: Text(
-            item.url!,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: theme.hintColor),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(right: 4),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      i18n("auto_sync_tag"),
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: item.isAutoUpdate ? theme.colorScheme.primary : theme.hintColor,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    SizedBox(
-                      height: 24,
-                      child: Transform.scale(
-                        scale: 0.75,
-                        child: Switch(
-                          value: item.isAutoUpdate,
-                          activeThumbColor: theme.colorScheme.primary,
-                          onChanged: (bool value) async {
-                            final db = Get.find<DbService>().db;
-                            await db.updateProviderUpdateStatus(item.id, value);
-                            await _refreshData();
-                            ToastUtil.show(value ? "${item.name} ${i18n('enable_auto_sync')}" : "${item.name} 已跳过自动同步");
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Remix.download_cloud_line),
-                color: theme.colorScheme.primary,
-                onPressed: () async {
-                  ToastUtil.show(i18n("manage_page_single_syncing"));
-                  await IptvSyncEngine.instance.syncPlaylist(item);
-                  await _refreshData();
-                },
-              ),
-              IconButton(
-                icon: Icon(Remix.delete_bin_line, color: theme.colorScheme.error),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text(i18n("delete_confirm_title")),
-                        content: Text(i18n("delete_confirm_message")),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n("cancel"))),
-                          TextButton(
-                            onPressed: () async {
-                              final db = Get.find<DbService>().db;
-                              await db.deleteProviderCascading(item.id);
-                              playlists.remove(item);
-                              Navigator.of(Get.context!).pop();
-                              ToastUtil.show(i18n("manage_page_delete_success"));
-                            },
-                            child: Text(i18n("confirm"), style: TextStyle(color: theme.colorScheme.error)),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-              ),
-            ],
-          ),
-        );
-      },
+    return Container(
+      width: 52,
+      height: 52,
+      decoration: BoxDecoration(
+        color: isPlaylist ? theme.colorScheme.primary.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Icon(
+        isPlaylist ? Remix.play_list_2_line : Remix.tv_2_line,
+        color: isPlaylist ? theme.colorScheme.primary : Colors.orange,
+      ),
     );
   }
 
-  Widget _buildEpgSection(ThemeData theme) {
-    final networkEpgs = epgSources
-        .where((e) => e.url.isNotEmpty && (e.url.startsWith('http://') || e.url.startsWith('https://')))
-        .toList();
-    if (networkEpgs.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.all(16),
-        child: Text(i18n("manage_page_empty_tip"), style: TextStyle(color: theme.hintColor)),
-      );
-    }
+  Widget _buildTag(ThemeData theme, ManageItem item) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: item.isNetwork ? Colors.green.withValues(alpha: 0.12) : Colors.orange.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        item.isNetwork ? i18n("network_tag") : i18n("local_tag"),
+        style: TextStyle(
+          color: item.isNetwork ? Colors.green : Colors.orange,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: networkEpgs.length,
-      itemBuilder: (context, index) {
-        final source = networkEpgs[index];
-        return ListTile(
-          leading: Icon(Remix.tv_2_line, color: theme.hintColor.withValues(alpha: 0.6)),
-          title: Text(source.name, style: TextStyle(color: theme.textTheme.bodyLarge?.color)),
-          subtitle: Text(
-            source.url,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: theme.hintColor),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
+  Widget _buildActionButton(
+    ThemeData theme, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    bool danger = false,
+  }) {
+    final color = danger ? theme.colorScheme.error : theme.colorScheme.primary;
+
+    return Material(
+      color: color.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Container(
+          height: 46,
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Padding(
-                padding: const EdgeInsets.only(right: 4),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      i18n("auto_sync_tag"),
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: source.isAutoUpdate ? theme.colorScheme.primary : theme.hintColor,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    SizedBox(
-                      height: 24,
-                      child: Transform.scale(
-                        scale: 0.75,
-                        child: Switch(
-                          value: source.isAutoUpdate,
-                          activeThumbColor: theme.colorScheme.primary,
-                          onChanged: (bool value) async {
-                            final db = Get.find<DbService>().db;
-                            await db.updateEpgSourceUpdateStatus(source.id, value);
-                            await _refreshData();
-                            ToastUtil.show(
-                              value ? "${source.name} ${i18n('enable_auto_sync')}" : "${source.name} 已跳过自动同步",
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
+              Icon(icon, size: 16, color: color),
+
+              const SizedBox(width: 6),
+
+              Flexible(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 12),
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Remix.download_cloud_line),
-                color: theme.colorScheme.primary,
-                onPressed: () async {
-                  ToastUtil.show(i18n("manage_page_single_syncing"));
-                  await EpgSyncEngine.updateEpgCache(source, forceUpdate: true);
-                  await _refreshData();
-                },
-              ),
-              IconButton(
-                icon: Icon(Remix.delete_bin_line, color: theme.colorScheme.error),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text(i18n("delete_confirm_title")),
-                        content: Text(i18n("delete_confirm_message")),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n("cancel"))),
-                          TextButton(
-                            onPressed: () async {
-                              final db = Get.find<DbService>().db;
-                              await db.deleteEpgSourceCascading(source.id);
-                              epgSources.remove(source);
-                              Navigator.of(Get.context!).pop();
-                              ToastUtil.show(i18n("manage_page_delete_success"));
-                            },
-                            child: Text(i18n("confirm"), style: TextStyle(color: theme.colorScheme.error)),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
               ),
             ],
           ),
-        );
-      },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSwitchButton(ThemeData theme, ManageItem item) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 48),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Icon(Remix.repeat_line, size: 16, color: theme.colorScheme.primary),
+
+              const SizedBox(width: 6),
+
+              Text(
+                i18n("auto_sync"),
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: theme.colorScheme.primary),
+              ),
+            ],
+          ),
+
+          Switch(
+            value: item.isAutoSync,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            activeThumbColor: theme.colorScheme.primary,
+
+            onChanged: (value) async {
+              final db = Get.find<DbService>().db;
+
+              if (item.type == ManageItemType.iptv) {
+                await db.updateProviderUpdateStatus(item.id, value);
+              } else {
+                await db.updateEpgSourceUpdateStatus(item.id, value);
+              }
+
+              final index = allItems.indexOf(item);
+
+              allItems[index] = ManageItem(
+                id: item.id,
+                name: item.name,
+                url: item.url,
+                isNetwork: item.isNetwork,
+                isAutoSync: value,
+                type: item.type,
+                raw: item.raw,
+              );
+
+              allItems.value = [...allItems];
+
+              ToastUtil.show(value ? i18n("auto_sync_tag") : i18n("auto_sync_disabled"));
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteDialog(ManageItem item) {
+    final theme = Theme.of(context);
+
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(i18n("delete_confirm_title")),
+        content: Text(i18n("delete_confirm_message")),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(Get.context!).pop(), child: Text(i18n("cancel"))),
+          TextButton(
+            onPressed: () async {
+              final db = Get.find<DbService>().db;
+              if (item.type == ManageItemType.iptv) {
+                await db.deleteProviderCascading(item.id);
+              } else {
+                await db.deleteEpgSourceCascading(item.id);
+              }
+              allItems.remove(item);
+              Navigator.of(Get.context!).pop();
+              ToastUtil.show(i18n("manage_page_delete_success"));
+            },
+            child: Text(i18n("confirm"), style: TextStyle(color: theme.colorScheme.error)),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -13,6 +13,7 @@ import 'package:volume_controller/volume_controller.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/modules/live_play/load_type.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:scrollview_observer/scrollview_observer.dart';
 import 'package:pure_live/player/models/player_exception.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/player/models/player_error_type.dart';
@@ -126,6 +127,7 @@ class VideoController with ChangeNotifier {
   }
 
   void initPagesConfig() {
+    scheduleObserverController = ListObserverController(controller: scheduleScrollController);
     if (allowScreenKeepOn) WakelockPlus.enable();
     initVideoController();
     initDanmaku();
@@ -137,6 +139,10 @@ class VideoController with ChangeNotifier {
   final batteryLevel = 100.obs;
 
   late DanmakuController danmakuController;
+
+  final ScrollController scheduleScrollController = ScrollController();
+  late ListObserverController scheduleObserverController;
+  bool hasScrolledToLive = false;
   void initBattery() {
     if (Platform.isAndroid || Platform.isIOS) {
       _battery.batteryLevel.then((value) => batteryLevel.value = value);
@@ -209,7 +215,7 @@ class VideoController with ChangeNotifier {
     return originalUrl.contains('?') ? '$originalUrl&timeshift=$startStr' : '$originalUrl?timeshift=$startStr';
   }
 
-  void onProgrammeTapped(database.EpgProgramme programme) {
+  void onProgrammeTapped(database.EpgProgramme programme) async {
     final now = DateTime.now();
 
     if (programme.start.isAfter(now)) {
@@ -224,7 +230,13 @@ class VideoController with ChangeNotifier {
 
     String catchupUrl = generateCatchupUrl(originalUrl: room.link!, programme: programme, type: 'playseek');
     Navigator.of(Get.context!).pop(); // 关闭节目单弹窗
-    livePlayController.switchPlayUrl(catchupUrl);
+    _errorSub?.cancel();
+    _errorSub = null;
+    _pipSub?.cancel();
+    _pipSub = null;
+    await GlobalPlayerService.instance.playerManager.close();
+    await destory();
+    livePlayController.startCatchUp(catchUpUrl: catchupUrl, startTime: programme.start.millisecondsSinceEpoch);
     ToastUtil.show('${i18n('playing_catchup')}: ${programme.title}');
   }
 
@@ -363,19 +375,28 @@ class VideoController with ChangeNotifier {
   Future<void> loadFullChannelSchedule(String? epgId) async {
     currentChannelSchedule.clear();
     if (epgId == null || epgId.isEmpty) return;
+
     try {
       final db = Get.find<DbService>().db;
       final now = DateTime.now();
-      final startTime = now.subtract(const Duration(minutes: 5));
+
+      final startTime = now.subtract(const Duration(days: 2));
+
       final endTime = now.add(const Duration(days: 1));
+
       List<database.EpgProgramme> dbProgrammes = await db.getProgrammes(
         epgChannelId: epgId,
         start: startTime,
         end: endTime,
       );
-      currentChannelSchedule.value = dbProgrammes.where((p) => p.stop.isAfter(now)).toList();
+
+      currentChannelSchedule.value = dbProgrammes;
+
+      debugPrint(
+        "📅 [EPG Matrix] Loaded ${currentChannelSchedule.length} total program rows spanning the (-48h to +24h) timeline.",
+      );
     } catch (e) {
-      debugPrint("$e");
+      debugPrint("❌ EPG Schedule Loading Failure: $e");
     }
   }
 
@@ -414,6 +435,7 @@ class VideoController with ChangeNotifier {
     _errorSub = null;
     _pipSub?.cancel();
     _pipSub = null;
+
     GlobalPlayerService.instance.playerManager.close();
     await destory();
     livePlayController.onInitPlayerState(reloadDataType: ReloadDataType.changeLine, line: currentLineIndex);

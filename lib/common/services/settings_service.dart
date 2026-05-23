@@ -152,6 +152,8 @@ class SettingsService extends GetxController {
     super.onInit();
     Future.delayed(const Duration(seconds: 3), () {
       AutoSyncScheduler.instance.checkAndExecuteAutoSync();
+      AutoSyncScheduler.instance.loadHotResources();
+      AutoSyncScheduler.instance.loadDefaultEpgResources();
     });
     // === 监听并持久化 ===
     enableDynamicTheme.listen((bool value) {

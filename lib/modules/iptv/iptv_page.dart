@@ -54,12 +54,30 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
     final RxBool isDialogLoading = true.obs;
     List<database.EpgSource> sources = [];
     final screenSize = MediaQuery.of(context).size;
-    final double dialogWidth = screenSize.width > 600 ? 460.0 : screenSize.width * 0.88;
+    final double dialogWidth = screenSize.width > 600 ? 520.0 : screenSize.width * 0.90;
+
+    try {
+      final db = Get.find<DbService>().db;
+      sources = await db.getAllEpgSources();
+    } catch (e) {
+      debugPrint("Dialog source fetch failure: $e");
+    } finally {
+      isDialogLoading.value = false;
+    }
 
     Get.dialog(
       AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(i18n("select_epg_source")),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        titlePadding: const EdgeInsets.only(left: 24, top: 16, right: 12, bottom: 8),
+        contentPadding: const EdgeInsets.only(left: 12, right: 12, bottom: 8),
+        actionsPadding: const EdgeInsets.only(right: 16, bottom: 12),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(i18n("select_epg_source"), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            IconButton(icon: const Icon(Icons.close, size: 22), onPressed: () => Navigator.of(context).pop()),
+          ],
+        ),
         content: SizedBox(
           width: dialogWidth,
           height: 400,
@@ -68,46 +86,91 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
               return const Center(child: CircularProgressIndicator());
             }
             if (sources.isEmpty) {
-              return Center(child: Text(i18n("no_epg_sources_found")));
+              return Center(
+                child: Text(i18n("no_epg_sources_found"), style: TextStyle(color: Theme.of(context).hintColor)),
+              );
             }
-            return RadioGroup<String>(
-              groupValue: settings.selectedSourceId.value,
-              onChanged: (String? value) {
-                if (value != null) {
-                  settings.selectedSourceId.value = value;
-                  final selectedSource = sources.firstWhereOrNull((s) => s.id == value);
-                  if (selectedSource != null) {
-                    settings.selectedSourceName.value = selectedSource.name;
-                  }
-                  Navigator.of(context).pop();
-                  ToastUtil.show(i18n("epg_source_updated"));
-                }
+
+            return ListView.separated(
+              physics: const BouncingScrollPhysics(),
+              shrinkWrap: true,
+              itemCount: sources.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 4),
+              itemBuilder: (context, index) {
+                final source = sources[index];
+
+                return Obx(() {
+                  final isSelected = settings.selectedSourceId.value == source.id;
+
+                  return Card(
+                    elevation: 0,
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.25)
+                        : Colors.transparent,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: () {
+                        settings.selectedSourceId.value = source.id;
+                        final selectedSource = sources.firstWhereOrNull((s) => s.id == source.id);
+                        if (selectedSource != null) {
+                          settings.selectedSourceName.value = selectedSource.name;
+                        }
+                        Navigator.of(context).pop();
+                        ToastUtil.show(i18n("epg_source_switched"));
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Row(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(4.0),
+                              child: Icon(
+                                isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                                color: isSelected
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(context).unselectedWidgetColor,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    source.name,
+                                    style: TextStyle(
+                                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      source.url,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(color: Theme.of(context).hintColor, fontSize: 11),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                });
               },
-              child: ListView.builder(
-                physics: const BouncingScrollPhysics(),
-                shrinkWrap: true,
-                itemCount: sources.length,
-                itemBuilder: (context, index) {
-                  final source = sources[index];
-                  final displayName = source.name;
-                  return RadioListTile<String>(title: Text(displayName), value: source.id);
-                },
-              ),
             );
           }),
         ),
+        actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n("cancel")))],
       ),
       barrierDismissible: true,
     );
-
-    try {
-      final db = Get.find<DbService>().db;
-      sources = await db.getAllEpgSources();
-    } catch (e) {
-      debugPrint("$e");
-    } finally {
-      isDialogLoading.value = false;
-    }
   }
 
   @override
@@ -125,7 +188,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
             leading: const Icon(Remix.download_2_line, size: 22),
             title: Text(i18n("import_action")),
             subtitle: const Text("M3U / TXT"),
-            onTap: () => showPlaylistImportDialog(),
+            onTap: () => showIptvImportDialog(),
           ),
 
           ListTile(
@@ -164,7 +227,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
     );
   }
 
-  void showPlaylistImportDialog() {
+  void showIptvImportDialog() {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -191,7 +254,6 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
               Material(
                 color: Colors.transparent,
                 child: ListTile(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   leading: Icon(Remix.folder_open_line, color: theme.colorScheme.primary),
                   title: Text(i18n("local_import")),
                   onTap: () {
@@ -204,7 +266,6 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
               Material(
                 color: Colors.transparent,
                 child: ListTile(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   leading: Icon(Remix.global_line, color: theme.colorScheme.primary),
                   title: Text(i18n("network_import")),
                   onTap: () {
@@ -247,12 +308,11 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
               Material(
                 color: Colors.transparent,
                 child: ListTile(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   leading: Icon(Remix.draft_line, color: theme.colorScheme.primary),
                   title: Text(i18n("local_import")),
                   onTap: () {
                     Navigator.of(context).pop();
-                    IptvImportManager().importFromLocalPicker().then((_) => _refreshData());
+                    EpgImportManager().importFromLocalPicker().then((_) => _refreshData());
                   },
                 ),
               ),
@@ -260,7 +320,6 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
               Material(
                 color: Colors.transparent,
                 child: ListTile(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   leading: Icon(Remix.cloud_windy_line, color: theme.colorScheme.primary),
                   title: Text(i18n("network_import")),
                   onTap: () {
@@ -335,16 +394,14 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
               bool isSuccess = false;
 
               if (isEpg) {
-                // 1. 调用重构后的 EpgSyncEngine 静态方法（无需任何实例化）
                 isSuccess = await EpgImportManager().importFromNetworkUrl(urlText, fileNameText);
               } else {
-                // 2. 抛弃原本的 FileRecoverUtils，直接调用规范化解耦后的 IptvImportManager 网络下载方法
                 isSuccess = await IptvImportManager().importFromNetworkUrl(urlText, fileNameText);
               }
 
               if (isSuccess) {
                 Navigator.of(Get.context!).pop();
-                await _refreshData(); // 如果你在当前类有实现这个数据刷新方法，它将被正常调用
+                await _refreshData();
               }
             },
             child: Text(i18n("confirm")),

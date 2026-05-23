@@ -534,14 +534,17 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     }
   }
 
-  void switchPlayUrl(String catchupUrl) {
+  Future<void> startCatchUp({required String catchUpUrl, int? startTime, int? endTime}) async {
     var room = detail.value!;
-    room = room.copyWith(link: catchupUrl);
     detail.value = null;
-    videoController.value = null;
+    detail.value = room.copyWith(catchUpUrl: catchUpUrl, isCatchUp: true, catchUpStart: startTime, catchUpEnd: endTime);
+    await _switchToUrl(catchUpUrl);
+  }
+
+  Future<void> _switchToUrl(String url) async {
     success.value = false;
-    playUrls.value = [];
-    playUrls.add(catchupUrl);
+    playUrls.value = [url];
+    currentLineIndex.value = 0;
     setPlayer();
   }
 }

@@ -1,70 +1,98 @@
 import 'dart:io';
-import 'dart:typed_data';
-import 'package:dio/dio.dart' as dio;
 import 'package:path/path.dart' as p;
-import 'package:flutter/material.dart';
-import 'package:pure_live/plugins/locale_helper.dart';
-import 'package:pure_live/common/utils/toast_util.dart';
+import 'package:pure_live/common/index.dart';
+import 'package:pure_live/plugins/db_service.dart';
+import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/core/common/http_client.dart';
+import 'package:pure_live/common/global/app_path_manager.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
 import 'package:pure_live/core/iptv/services/iptv_import_manager.dart';
 
 class IptvSyncEngine {
   static final IptvSyncEngine instance = IptvSyncEngine._internal();
   IptvSyncEngine._internal();
+
   final _iptvImportManager = IptvImportManager();
 
-  Future<bool> syncPlaylist(database.Provider provider) async {
-    if (provider.url == null || provider.url!.isEmpty) return false;
+  Future<bool> syncPlaylist(database.Provider provider, {bool showTips = false}) async {
+    if (provider.url == null || provider.url!.trim().isEmpty) return false;
 
+    File? tempFile;
     try {
-      final response = await HttpClient.instance.get(
-        provider.url!,
-        header: dio.Options(responseType: dio.ResponseType.bytes).headers,
-      );
-      if (response.statusCode != 200) {
-        throw Exception("Network Error with status: ${response.statusCode}");
+      final String rawStringContent = await HttpClient.instance.getText(provider.url!);
+      final String trimmedContent = rawStringContent.trim();
+
+      if (trimmedContent.isEmpty) {
+        return false;
       }
+
+      final String ext = provider.type.startsWith('.') ? provider.type : '.${provider.type}';
+
+      if (ext.toLowerCase() == '.m3u' || ext.toLowerCase() == '.m3u8') {
+        if (!trimmedContent.startsWith('#EXTM3U')) {
+          return false;
+        }
+      } else if (ext.toLowerCase() == '.txt') {
+        if (!trimmedContent.contains(',') && !trimmedContent.contains('#genre#')) {
+          return false;
+        }
+      }
+
+      await deletePlaylistsByName(provider.name);
 
       final tempDir = Directory.systemTemp;
-      final String ext = provider.type.startsWith('.') ? provider.type : '.${provider.type}';
-      final tempFile = File(p.join(tempDir.path, 'sync_${provider.id}$ext'));
-
-      List<int> bytes;
-      if (response.data is Uint8List) {
-        bytes = response.data as Uint8List;
-      } else if (response.data is List<int>) {
-        bytes = response.data as List<int>;
-      } else if (response.data is String) {
-        bytes = (response.data as String).codeUnits;
-      } else {
-        throw Exception("Unsupported payload data type returned from HttpClient");
-      }
-
-      await tempFile.writeAsBytes(bytes);
+      tempFile = File(p.join(tempDir.path, 'sync_${provider.id}$ext'));
+      await tempFile.writeAsString(rawStringContent);
 
       final bool success = await _iptvImportManager.importIptvFile(
         file: tempFile,
         providerName: provider.name,
-        isHot: provider.id == 'hot',
+        isHot: provider.id == FileUtils.systemHotProviderId,
         url: provider.url!,
         forceUpdate: true,
+        showTips: false,
       );
 
       if (await tempFile.exists()) {
         await tempFile.delete();
       }
-
-      if (success) {
-        ToastUtil.show("${provider.name} ${i18n('epg_source_updated')}");
-      } else {
-        ToastUtil.show("${provider.name} ${i18n('epg_import_failed')}");
+      if (showTips) {
+        ToastUtil.show(i18n('sync_success'));
       }
-
       return success;
     } catch (e) {
-      debugPrint("IPTV Sync Process Error: $e");
-      ToastUtil.show("${provider.name} ${i18n('epg_import_failed')}");
+      debugPrint("❌ IPTV Sync Process Error (Network or IO Fails): $e");
+      if (tempFile != null && await tempFile.exists()) {
+        await tempFile.delete();
+      }
+      return false;
+    }
+  }
+
+  Future<bool> deletePlaylistsByName(String providerName) async {
+    try {
+      final db = Get.find<DbService>().db;
+      final cleanName = providerName.trim().toLowerCase();
+      final dir = await AppPathManager().getDir(AppPathManager.dirIptvCache);
+
+      final List<database.Provider> existingProviders = await db.getAllProviders();
+      final matchedItems = existingProviders.where((p) => p.name.trim().toLowerCase() == cleanName).toList();
+
+      if (matchedItems.isNotEmpty) {
+        for (final item in matchedItems) {
+          await db.deleteProviderAndChannels(item.id);
+          await db.deleteMappingsByProviderId(item.id);
+
+          final String dotExt = item.type.startsWith('.') ? item.type : '.${item.type}';
+          final cachedFile = File(p.join(dir.path, '${item.id}$dotExt'));
+          if (await cachedFile.exists()) {
+            await cachedFile.delete();
+          }
+        }
+      }
+      return true;
+    } catch (e) {
+      debugPrint("Delete playlists by name crashed: $e");
       return false;
     }
   }

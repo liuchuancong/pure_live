@@ -42,6 +42,11 @@ class LiveRoom {
   /// 当前节目描述
   String? currentProgrammeDescription;
 
+  String? catchUpUrl; // 时移播放地址
+  bool? isCatchUp; // 是否正在时移
+  int? catchUpStart; // 时移开始时间戳
+  int? catchUpEnd; // 时移结束时间戳
+
   // 添加未命名的默认构造函数
   LiveRoom({
     this.roomId,
@@ -65,6 +70,10 @@ class LiveRoom {
     this.epgId,
     this.currentProgramme,
     this.currentProgrammeDescription,
+    this.catchUpUrl,
+    this.isCatchUp = false,
+    this.catchUpStart,
+    this.catchUpEnd,
   });
 
   LiveRoom.fromJson(Map<String, dynamic> json)
@@ -86,7 +95,11 @@ class LiveRoom {
       isRecord = json['isRecord'] ?? false,
       epgId = json['epgId'] ?? '',
       currentProgramme = json['currentProgramme'] ?? '',
-      currentProgrammeDescription = json['currentProgrammeDescription'] ?? '';
+      currentProgrammeDescription = json['currentProgrammeDescription'] ?? '',
+      catchUpUrl = json['catchUpUrl'],
+      isCatchUp = json['isCatchUp'] ?? false,
+      catchUpStart = json['catchUpStart'],
+      catchUpEnd = json['catchUpEnd'];
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     'roomId': roomId,
@@ -107,6 +120,10 @@ class LiveRoom {
     'epgId': epgId,
     'currentProgramme': currentProgramme,
     'currentProgrammeDescription': currentProgrammeDescription,
+    'catchUpUrl': catchUpUrl,
+    'isCatchUp': isCatchUp,
+    'catchUpStart': catchUpStart,
+    'catchUpEnd': catchUpEnd,
   };
 
   /// 创建一个新的LiveRoom实例，并用提供的值更新指定字段
@@ -132,6 +149,10 @@ class LiveRoom {
     String? epgId,
     String? currentProgramme,
     String? currentProgrammeDescription,
+    String? catchUpUrl,
+    bool? isCatchUp,
+    int? catchUpStart,
+    int? catchUpEnd,
   }) {
     return LiveRoom(
       roomId: roomId ?? this.roomId,
@@ -153,6 +174,10 @@ class LiveRoom {
       epgId: epgId ?? this.epgId,
       currentProgramme: currentProgramme ?? this.currentProgramme,
       currentProgrammeDescription: currentProgrammeDescription ?? this.currentProgrammeDescription,
+      catchUpUrl: catchUpUrl ?? this.catchUpUrl,
+      isCatchUp: isCatchUp ?? this.isCatchUp,
+      catchUpStart: catchUpStart ?? this.catchUpStart,
+      catchUpEnd: catchUpEnd ?? this.catchUpEnd,
     );
   }
 
@@ -164,7 +189,7 @@ class LiveRoom {
 
   @override
   String toString() {
-    return 'LiveRoom{roomId: $roomId, userId: $userId, link: $link, title: $title, nick: $nick, avatar: $avatar, cover: $cover, area: $area, watching: $watching, followers: $followers, platform: $platform, introduction: $introduction, notice: $notice, status: $status, data: $data, danmakuData: $danmakuData, isRecord: $isRecord, liveStatus: $liveStatus}';
+    return 'LiveRoom{roomId: $roomId, userId: $userId, link: $link, title: $title, nick: $nick, avatar: $avatar, cover: $cover, area: $area, watching: $watching, followers: $followers, platform: $platform, introduction: $introduction, notice: $notice, status: $status, data: $data, danmakuData: $danmakuData, isRecord: $isRecord, liveStatus: $liveStatus, catchUpUrl: $catchUpUrl, isCatchUp: $isCatchUp}';
   }
 
   double getSavedVolume() {

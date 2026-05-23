@@ -8,7 +8,6 @@ import 'package:pure_live/plugins/global.dart';
 import 'package:pure_live/plugins/db_service.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:pure_live/plugins/cache_manager.dart';
-import 'package:pure_live/core/iptv/iptv_repository.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/common/global/windows_utils.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
@@ -105,8 +104,6 @@ class AppInitializer {
     Get.lazyPut(() => FavoriteController(), fenix: true);
     Get.lazyPut<DbService>(() => DbService()..init(), fenix: true);
     Get.lazyPut(() => ChannelDetailController(), fenix: true);
-    Get.lazyPut<IptvRepository>(() => IptvRepository()..init(), fenix: true);
-    Get.lazyPut<IptvRepository>(() => IptvRepository()..init(), fenix: true);
     Get.lazyPut(() => PopularController(), fenix: true);
     Get.lazyPut(() => AreasController(), fenix: true);
 

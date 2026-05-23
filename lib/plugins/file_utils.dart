@@ -1,9 +1,12 @@
 import 'dart:io';
 import 'dart:math';
 import 'package:path/path.dart' as p;
+import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class FileUtils {
+  static const String systemHotProviderId = "88888";
+
   /// 获取文件路径中的纯文件名
   static String getFileName(String fullPath) {
     return fullPath.split(Platform.pathSeparator).last;
@@ -67,5 +70,47 @@ class FileUtils {
       return fileRef;
     }
     throw FileSystemException("Shared media target path cannot be verified on flash drive storage", shareContent);
+  }
+
+  static Future<bool> openFileOrUrl(String pathOrUrl) async {
+    if (pathOrUrl.trim().isEmpty) return false;
+
+    // Handle standard Web/Network URLs across all systems natively
+    if (isValidUrl(pathOrUrl)) {
+      final Uri uri = Uri.parse(pathOrUrl);
+      if (await canLaunchUrl(uri)) {
+        return await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+      return false;
+    }
+
+    final file = File(pathOrUrl);
+    final directory = Directory(pathOrUrl);
+
+    final bool targetExists = await file.exists() || await directory.exists();
+    if (!targetExists) return false;
+
+    if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+      try {
+        if (Platform.isWindows) {
+          await Process.run('explorer.exe', [p.context.canonicalize(pathOrUrl)]);
+        } else if (Platform.isMacOS) {
+          await Process.run('open', [pathOrUrl]);
+        } else if (Platform.isLinux) {
+          await Process.run('xdg-open', [pathOrUrl]);
+        }
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+    final String cleanPath = pathOrUrl.startsWith('file://') ? pathOrUrl : 'file://$pathOrUrl';
+    final Uri fileUri = Uri.parse(cleanPath);
+
+    if (await canLaunchUrl(fileUri)) {
+      return await launchUrl(fileUri);
+    }
+
+    return false;
   }
 }

@@ -1,8 +1,6 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
-import 'package:dio/dio.dart' as dio;
 import 'package:path/path.dart' as p;
 import 'package:archive/archive.dart';
 import 'package:drift/drift.dart' as drift;
@@ -33,36 +31,43 @@ class EpgImportManager {
   }
 
   /// 2. 远程网络订阅 URL 下载导入
-  Future<bool> importFromNetworkUrl(String url, String sourceName) async {
+  Future<bool> importFromNetworkUrl(
+    String url,
+    String sourceName, {
+    bool forceUpdate = false,
+    bool showTips = true,
+  }) async {
     final dir = await AppPathManager().getDir(AppPathManager.dirIptvCache);
+
+    String cleanName = p.basename(sourceName);
+    while (p.extension(cleanName).isNotEmpty) {
+      cleanName = p.basenameWithoutExtension(cleanName);
+    }
+    sourceName = cleanName;
 
     final lowercaseUrl = url.toLowerCase().trim();
     final String ext = lowercaseUrl.endsWith('.json') ? '.json' : (lowercaseUrl.endsWith('.gz') ? '.gz' : '.xml');
     final file = File(p.join(dir.path, 'download_epg_${FileUtils.generateUuid()}$ext'));
 
     try {
-      final response = await HttpClient.instance.get(
+      await HttpClient.instance.download(
         url,
-        header: dio.Options(responseType: dio.ResponseType.bytes).headers,
+        file.path,
+        header: {
+          "user-agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+        },
       );
-      if (response.statusCode != 200) throw Exception("Download failed");
 
-      List<int> bytes;
-      if (response.data is Uint8List) {
-        bytes = response.data as Uint8List;
-      } else if (response.data is List<int>) {
-        bytes = response.data as List<int>;
-      } else {
-        bytes = (response.data as String).codeUnits;
-      }
-      await file.writeAsBytes(bytes);
+      final success = await importEpgFile(file: file, sourceName: sourceName, url: url, forceUpdate: forceUpdate);
 
-      final success = await importEpgFile(file: file, sourceName: sourceName);
       if (await file.exists()) await file.delete();
       return success;
     } catch (e) {
       debugPrint("Network EPG Download Failure: $e");
-      ToastUtil.show(i18n("epg_import_failed"));
+      if (showTips) {
+        ToastUtil.show(i18n("epg_import_failed"));
+      }
       if (await file.exists()) await file.delete();
       return false;
     }
@@ -109,208 +114,206 @@ class EpgImportManager {
     }
   }
 
-  /// 5. 核心：EPG 处理与【已修复的同名弹窗】拦截逻辑
-  Future<bool> importEpgFile({required File file, required String sourceName, bool forceUpdate = false}) async {
+  Future<bool> importEpgFile({
+    required File file,
+    required String sourceName,
+    bool forceUpdate = false,
+    String url = '',
+    bool showTips = true,
+  }) async {
     try {
       final db = Get.find<DbService>().db;
       final cleanName = sourceName.trim().toLowerCase();
       final ext = p.extension(file.path).toLowerCase();
-      String sourceId = FileUtils.generateUuid();
-
-      final existing = await db.getAllEpgSources();
-      final matchedList = existing.where((e) => (e.name).trim().toLowerCase() == cleanName).toList();
-
-      // 【核心修复：检测到同名节目单，阻断并弹出 Dialog】
-      if (matchedList.isNotEmpty && !forceUpdate) {
-        final completer = Completer<bool>();
-        Get.dialog(
-          AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Text(i18n("provider_name_exists_tip")),
-            content: Text('${i18n("active_epg_source")} "$sourceName" ${i18n("delete_confirm_message")}'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(Get.context!).pop();
-                  completer.complete(false); // 取消则返回 false
-                },
-                child: Text(i18n("cancel")),
-              ),
-              TextButton(
-                onPressed: () async {
-                  Navigator.of(Get.context!).pop();
-                  // 确认后，带上 forceUpdate = true 递归调用
-                  final success = await importEpgFile(file: file, sourceName: sourceName, forceUpdate: true);
-                  completer.complete(success);
-                },
-                child: Text(i18n("confirm")),
-              ),
-            ],
-          ),
-          barrierDismissible: false,
-        );
-        return await completer.future; // 挂起挂起，等待弹窗用户的选择结果
-      }
-
-      if (matchedList.isNotEmpty && forceUpdate) {
-        sourceId = matchedList.first.id;
-        if (matchedList.length > 1) {
-          await db.transaction(() async {
-            for (int i = 1; i < matchedList.length; i++) {
-              final duplicateItem = matchedList[i];
-              await (db.delete(db.epgProgrammes)..where((t) => t.sourceId.equals(duplicateItem.id))).go();
-              await (db.delete(db.epgChannels)..where((t) => t.sourceId.equals(duplicateItem.id))).go();
-              await (db.delete(db.epgSources)..where((t) => t.id.equals(duplicateItem.id))).go();
-            }
-          });
-        }
-      }
-
+      final typeName = ext.replaceAll('.', '').toUpperCase();
       String content;
       if (ext == '.gz') {
         final bytes = await file.readAsBytes();
         final decoded = GZipDecoder().decodeBytes(bytes);
         content = utf8.decode(decoded);
       } else {
-        content = await file.readAsString();
+        content = await file.readAsString(encoding: latin1);
       }
 
-      await db.upsertEpgSource(
-        database.EpgSourcesCompanion.insert(
-          id: sourceId,
-          name: sourceName,
-          url: file.path,
-          lastRefresh: drift.Value(DateTime.now()),
-        ),
+      dynamic parsedResult;
+      if (ext == '.xml' || ext == '.gz') {
+        parsedResult = XmltvParser().parse(content, sourceId: '');
+      } else if (ext == '.json') {
+        parsedResult = JsonEpgParser().parse(content, sourceId: '');
+      } else {
+        if (showTips) ToastUtil.show(i18n("unsupported_file_format"));
+        return false;
+      }
+
+      if (parsedResult == null || (parsedResult.channels.isEmpty && parsedResult.programmes.isEmpty)) {
+        if (showTips) ToastUtil.show(i18n("unsupported_file_format"));
+        return false;
+      }
+
+      final existing = await db.getAllEpgSources();
+      final matchedList = existing.where((e) => (e.name).trim().toLowerCase() == cleanName).toList();
+
+      String finalSourceId = FileUtils.generateUuid();
+
+      if (matchedList.isNotEmpty) {
+        finalSourceId = matchedList.first.id;
+      }
+
+      if (!forceUpdate) {
+        if (matchedList.isNotEmpty) {
+          final completer = Completer<bool>();
+          Get.dialog(
+            AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Text(i18n("provider_name_exists_tip")),
+              content: Text('"$sourceName"\n\n${i18n("replace_confirm_message").replaceAll("{}", typeName)}'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(Get.context!).pop();
+                    completer.complete(false);
+                  },
+                  child: Text(i18n("cancel")),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    Navigator.of(Get.context!).pop();
+
+                    if (matchedList.length > 1) {
+                      for (int i = 1; i < matchedList.length; i++) {
+                        final duplicateItem = matchedList[i];
+                        await db.deleteEpgSourceCascading(duplicateItem.id);
+                      }
+                    }
+                    await db.deleteEpgProgrammesForSource(finalSourceId);
+                    await db.deleteEpgSourceCascading(finalSourceId);
+
+                    final success = await _executeDatabaseWrite(
+                      db: db,
+                      file: file,
+                      sourceId: finalSourceId,
+                      sourceName: sourceName,
+                      ext: ext,
+                      parsedResult: parsedResult,
+                      url: url,
+                    );
+                    completer.complete(success);
+                  },
+                  child: Text(i18n("confirm")),
+                ),
+              ],
+            ),
+            barrierDismissible: false,
+          );
+          return await completer.future;
+        }
+      }
+
+      if (matchedList.isNotEmpty) {
+        if (matchedList.length > 1) {
+          for (int i = 1; i < matchedList.length; i++) {
+            await db.deleteEpgSourceCascading(matchedList[i].id);
+          }
+        }
+        await db.deleteEpgProgrammesForSource(finalSourceId);
+        await db.deleteEpgSourceCascading(finalSourceId);
+      }
+
+      final success = await _executeDatabaseWrite(
+        db: db,
+        file: file,
+        sourceId: finalSourceId,
+        sourceName: sourceName,
+        ext: ext,
+        parsedResult: parsedResult,
+        url: url,
       );
 
-      await db.transaction(() async {
-        await (db.delete(db.epgProgrammes)..where((t) => t.sourceId.equals(sourceId))).go();
-        await (db.delete(db.epgChannels)..where((t) => t.sourceId.equals(sourceId))).go();
-      });
-
-      if (ext == '.xml' || ext == '.gz') {
-        await _parseAndInsertXmltvOptimized(content, sourceId, db);
-      } else if (ext == '.json') {
-        await _parseAndInsertJsonEpgOptimized(content, sourceId, db);
+      if (success) {
+        if (showTips) ToastUtil.show(i18n("epg_import_success"));
+      } else {
+        if (showTips) ToastUtil.show(i18n("epg_import_failed"));
       }
-
-      await db.pruneOldProgrammes(maxAge: const Duration(days: 2));
-
-      ToastUtil.show(i18n("epg_import_success")); // 补充回上层成功提示
-      return true;
+      return success;
     } catch (e) {
       debugPrint("EPG Import Failure: $e");
-      ToastUtil.show(i18n("epg_import_failed")); // 补充回上层失败提示
+      if (showTips) ToastUtil.show(i18n("epg_import_failed"));
       return false;
     }
   }
 
-  Future<void> _parseAndInsertXmltvOptimized(String content, String sourceId, dynamic db) async {
-    final parser = XmltvParser();
-    final result = parser.parse(content, sourceId: sourceId);
+  Future<bool> _executeDatabaseWrite({
+    required dynamic db,
+    required File file,
+    required String sourceId,
+    required String sourceName,
+    required String ext,
+    required dynamic parsedResult,
+    String url = '',
+  }) async {
+    try {
+      await db.upsertEpgSource(
+        database.EpgSourcesCompanion.insert(
+          id: sourceId,
+          name: sourceName,
+          url: url.isNotEmpty ? url : file.path,
+          lastRefresh: drift.Value(DateTime.now()),
+        ),
+      );
 
-    if (result.channels.isNotEmpty) {
-      final channelCompanions = result.channels.map((e) {
-        return database.EpgChannelsCompanion.insert(
-          id: e.id,
-          sourceId: e.sourceId,
-          channelId: e.id,
-          displayName: e.displayNames.isNotEmpty ? e.displayNames.first : e.id,
-          iconUrl: drift.Value(e.iconUrl),
-        );
-      }).toList();
-      await db.upsertEpgChannels(channelCompanions);
-    }
+      if (parsedResult.channels.isNotEmpty) {
+        final channelCompanions = parsedResult.channels.map<database.EpgChannelsCompanion>((e) {
+          return database.EpgChannelsCompanion.insert(
+            id: e.id,
+            sourceId: sourceId, // 绑定正确的映射主键
+            channelId: e.id,
+            displayName: e.displayNames.isNotEmpty ? e.displayNames.first : e.id,
+            iconUrl: drift.Value(e.iconUrl),
+          );
+        }).toList();
+        await db.upsertEpgChannels(channelCompanions);
+      }
 
-    if (result.programmes.isNotEmpty) {
-      const int batchSize = 500;
-      List<database.EpgProgrammesCompanion> chunk = [];
+      if (parsedResult.programmes.isNotEmpty) {
+        const int batchSize = 500;
+        List<database.EpgProgrammesCompanion> chunk = [];
+        for (var e in parsedResult.programmes) {
+          if (e.channelId.isEmpty || e.title.isEmpty) continue;
+          chunk.add(
+            database.EpgProgrammesCompanion.insert(
+              sourceId: sourceId, // 绑定正确的映射主键
+              epgChannelId: e.channelId,
+              title: e.title,
+              start: e.start,
+              stop: e.stop,
+              description: drift.Value(e.description),
+              subtitle: drift.Value(e.subtitle),
+              episodeNum: drift.Value(e.episodeNum),
+            ),
+          );
 
-      for (var e in result.programmes) {
-        if (e.channelId.isEmpty || e.title.isEmpty) continue;
+          if (chunk.length >= batchSize) {
+            await db.transaction(() async {
+              await db.insertProgrammes(chunk);
+            });
+            chunk.clear();
+            await Future.delayed(Duration.zero);
+          }
+        }
 
-        chunk.add(
-          database.EpgProgrammesCompanion.insert(
-            sourceId: e.sourceId,
-            epgChannelId: e.channelId,
-            title: e.title,
-            start: e.start,
-            stop: e.stop,
-            description: drift.Value(e.description),
-            subtitle: drift.Value(e.subtitle),
-            episodeNum: drift.Value(e.episodeNum),
-          ),
-        );
-
-        if (chunk.length >= batchSize) {
+        if (chunk.isNotEmpty) {
           await db.transaction(() async {
             await db.insertProgrammes(chunk);
           });
           chunk.clear();
-          await Future.delayed(Duration.zero);
         }
       }
 
-      if (chunk.isNotEmpty) {
-        await db.transaction(() async {
-          await db.insertProgrammes(chunk);
-        });
-        chunk.clear();
-      }
-    }
-  }
-
-  Future<void> _parseAndInsertJsonEpgOptimized(String content, String sourceId, dynamic db) async {
-    final parser = JsonEpgParser();
-    final result = parser.parse(content, sourceId: sourceId);
-
-    if (result.channels.isNotEmpty) {
-      final channelCompanions = result.channels.map((e) {
-        return database.EpgChannelsCompanion.insert(
-          id: e.id,
-          sourceId: e.sourceId,
-          channelId: e.id,
-          displayName: e.displayNames.isNotEmpty ? e.displayNames.first : e.id,
-          iconUrl: drift.Value(e.iconUrl),
-        );
-      }).toList();
-      await db.upsertEpgChannels(channelCompanions);
-    }
-
-    if (result.programmes.isNotEmpty) {
-      const int batchSize = 500;
-      List<database.EpgProgrammesCompanion> chunk = [];
-
-      for (var e in result.programmes) {
-        if (e.channelId.isEmpty || e.title.isEmpty) continue;
-
-        chunk.add(
-          database.EpgProgrammesCompanion.insert(
-            sourceId: e.sourceId,
-            epgChannelId: e.channelId,
-            title: e.title,
-            start: e.start,
-            stop: e.stop,
-            description: drift.Value(e.description),
-            subtitle: drift.Value(e.subtitle),
-            episodeNum: drift.Value(e.episodeNum),
-          ),
-        );
-        if (chunk.length >= batchSize) {
-          await db.transaction(() async {
-            await db.insertProgrammes(chunk);
-          });
-          chunk.clear();
-          await Future.delayed(Duration.zero);
-        }
-      }
-      if (chunk.isNotEmpty) {
-        await db.transaction(() async {
-          await db.insertProgrammes(chunk);
-        });
-        chunk.clear();
-      }
+      await db.pruneOldProgrammes(maxAge: const Duration(days: 2));
+      return true;
+    } catch (e) {
+      debugPrint("EPG Database Exec Commit Crash: $e");
+      return false;
     }
   }
 }

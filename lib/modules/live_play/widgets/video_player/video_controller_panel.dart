@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'dart:developer';
 import 'package:flutter_svg/svg.dart';
 import 'package:flutter/gestures.dart';
 import 'package:remixicon/remixicon.dart';
@@ -10,6 +11,7 @@ import 'package:pure_live/modules/live_play/load_type.dart';
 import 'package:pure_live/common/widgets/count_button.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/live_play/play_other.dart';
+import 'package:scrollview_observer/scrollview_observer.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/pkg/canvas_danmaku/danmaku_screen.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
@@ -254,13 +256,15 @@ class TopActionBar extends StatelessWidget {
   }
 
   Widget _buildFullSchedulePanel() {
-    final now = DateTime.now();
+    final now = controller.room.catchUpStart != null
+        ? DateTime.fromMillisecondsSinceEpoch(controller.room.catchUpStart!)
+        : DateTime.now();
     final theme = Theme.of(Get.context!);
     final screenSize = MediaQuery.of(Get.context!).size;
 
     final double dialogWidth = screenSize.width > 600 ? 460.0 : screenSize.width * 0.88;
     final double dialogHeight = screenSize.height > 800 ? 550.0 : screenSize.height * 0.65;
-
+    controller.hasScrolledToLive = false;
     return Container(
       width: dialogWidth,
       height: dialogHeight,
@@ -307,94 +311,131 @@ class TopActionBar extends StatelessWidget {
                   ),
                 );
               }
+              final int liveIndex = controller.currentChannelSchedule.indexWhere((p) {
+                final pStart = p.start.toLocal();
+                final pStop = p.stop.toLocal();
+                return !now.isBefore(pStart) && !now.isAfter(pStop);
+              });
+              if (liveIndex != -1) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  Future.delayed(const Duration(milliseconds: 20), () {
+                    if (controller.scheduleScrollController.hasClients) {
+                      final int totalItems = controller.currentChannelSchedule.length;
 
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                physics: const BouncingScrollPhysics(),
-                itemCount: controller.currentChannelSchedule.length,
-                itemBuilder: (context, index) {
-                  final prog = controller.currentChannelSchedule[index];
-                  final isCurrent = prog.start.isBefore(now) && prog.stop.isAfter(now);
+                      int targetIndex = liveIndex;
+                      if (totalItems < 8) {
+                        targetIndex = 0;
+                      } else if (liveIndex >= totalItems - 4) {
+                        targetIndex = totalItems - 1;
+                      } else if (liveIndex >= 3) {
+                        targetIndex = liveIndex - 3;
+                      }
+                      controller.scheduleObserverController.animateTo(
+                        index: targetIndex,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                  });
+                });
+              }
 
-                  final activePrimary = theme.colorScheme.primary;
-                  final unselectedTextColor = theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.85);
-                  final secondaryTextColor = theme.textTheme.bodySmall?.color?.withValues(alpha: 0.5);
+              return ListViewObserver(
+                controller: controller.scheduleObserverController,
+                child: ListView.builder(
+                  controller: controller.scheduleScrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: controller.currentChannelSchedule.length,
+                  itemBuilder: (context, index) {
+                    final prog = controller.currentChannelSchedule[index];
+                    final isCurrent = index == liveIndex; // Optimized matching via index comparison
 
-                  return Container(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isCurrent ? activePrimary.withValues(alpha: 0.06) : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isCurrent ? activePrimary.withValues(alpha: 0.15) : Colors.transparent,
-                        width: 1,
-                      ),
-                    ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                      dense: true,
-                      onTap: () => controller.onProgrammeTapped(prog),
-                      leading: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isCurrent
-                              ? activePrimary.withValues(alpha: 0.1)
-                              : theme.cardColor.withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          "${prog.start.hour.toString().padLeft(2, '0')}:${prog.start.minute.toString().padLeft(2, '0')}",
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
-                            color: isCurrent ? activePrimary : secondaryTextColor,
+                    final activePrimary = theme.colorScheme.primary;
+                    final unselectedTextColor = theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.85);
+                    final secondaryTextColor = theme.textTheme.bodySmall?.color?.withValues(alpha: 0.5);
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Material(
+                        type: MaterialType.card,
+                        elevation: 0,
+                        color: isCurrent ? activePrimary.withValues(alpha: 0.06) : Colors.transparent,
+                        clipBehavior: Clip.antiAlias,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: isCurrent ? activePrimary.withValues(alpha: 0.15) : Colors.transparent,
+                            width: 1,
                           ),
                         ),
-                      ),
-                      title: Text(
-                        prog.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                          color: isCurrent ? activePrimary : unselectedTextColor,
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                          dense: true,
+                          onTap: () => controller.onProgrammeTapped(prog),
+                          leading: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: isCurrent
+                                  ? activePrimary.withValues(alpha: 0.1)
+                                  : theme.cardColor.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              "${prog.start.hour.toString().padLeft(2, '0')}:${prog.start.minute.toString().padLeft(2, '0')}",
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
+                                color: isCurrent ? activePrimary : secondaryTextColor,
+                              ),
+                            ),
+                          ),
+                          title: Text(
+                            prog.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                              color: isCurrent ? activePrimary : unselectedTextColor,
+                            ),
+                          ),
+                          trailing: isCurrent
+                              ? Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: activePrimary,
+                                    borderRadius: BorderRadius.circular(6),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: activePrimary.withValues(alpha: 0.3),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Remix.live_line, size: 11, color: Colors.white),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        i18n('live_tag'),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : _buildHistoryTag(prog, theme),
                         ),
                       ),
-                      trailing: isCurrent
-                          ? Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: activePrimary,
-                                borderRadius: BorderRadius.circular(6),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: activePrimary.withValues(alpha: 0.3),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Remix.live_line, size: 11, color: Colors.white),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    i18n('live_tag'),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : _buildHistoryTag(prog, theme),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               );
             }),
           ),

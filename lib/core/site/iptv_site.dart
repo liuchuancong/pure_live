@@ -1,15 +1,21 @@
+import 'dart:developer';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/plugins/race_http.dart';
 import 'package:pure_live/plugins/db_service.dart';
+import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/model/live_category.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/core/iptv/local/database.dart';
 import 'package:pure_live/model/live_search_result.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/iptv/iptv_repository.dart';
+import 'package:pure_live/common/utils/githup_mirror.dart';
 import 'package:pure_live/core/iptv/core/fuzzy_match.dart';
 import 'package:pure_live/model/live_category_result.dart';
 import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
+import 'package:pure_live/common/global/app_path_manager.dart';
+import 'package:pure_live/core/iptv/services/iptv_import_manager.dart';
 
 class IptvSite implements LiveSite {
   final db = Get.find<DbService>().db;
@@ -19,6 +25,9 @@ class IptvSite implements LiveSite {
 
   @override
   String name = '网络';
+
+  String defaultAvatar =
+      "https://img95.699pic.com/xsj/0q/x6/7p.jpg%21/fw/700/watermark/url/L3hzai93YXRlcl9kZXRhaWwyLnBuZw/align/southeast";
 
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async {
@@ -74,8 +83,7 @@ class IptvSite implements LiveSite {
         cover: ch.tvgLogo ?? '',
         area: ch.groupTitle ?? '',
         watching: '',
-        avatar:
-            'https://img95.699pic.com/xsj/0q/x6/7p.jpg%21/fw/700/watermark/url/L3hzai93YXRlcl9kZXRhaWwyLnBuZw/align/southeast',
+        avatar: defaultAvatar,
         status: true,
         liveStatus: LiveStatus.live,
         platform: Sites.iptvSite,
@@ -102,59 +110,109 @@ class IptvSite implements LiveSite {
     String? finalEpgChannelId;
     final String currentEpgSourceId = Get.find<SettingsService>().selectedSourceId.value;
 
-    if (currentEpgSourceId.isNotEmpty) {
+    if (currentEpgSourceId.isEmpty) {
+      return _buildLiveRoom(channel, null);
+    }
+
+    EpgMapping? existingMapping = await db.getMappingByChannelId(roomId);
+    if (existingMapping == null && channel.tvgId != null && channel.tvgId!.isNotEmpty) {
+      existingMapping = await db.getMappingByTvid(channel.tvgId!);
+    }
+    if (existingMapping != null && existingMapping.epgSourceId == currentEpgSourceId) {
+      finalEpgChannelId = existingMapping.epgChannelId;
+    } else {
       final dbChannels = await db.getEpgChannelsForSource(currentEpgSourceId);
 
+      log(dbChannels.length.toString());
       if (dbChannels.isNotEmpty) {
-        final cleanRegex = RegExp(r'[^a-zA-Z0-9\u4e00-\u9fa5]');
-        final targetClean = channel.name.toLowerCase().replaceAll(cleanRegex, '');
-
-        final matchedDbChannels = dbChannels.where((dbCh) {
-          final dbChClean = dbCh.displayName.toLowerCase().replaceAll(cleanRegex, '');
-          if (targetClean.contains(dbChClean) || dbChClean.contains(targetClean)) {
-            return true;
-          }
-          return fuzzyMatchPasses(channel.name, [dbCh.displayName]);
-        }).toList();
-
-        if (matchedDbChannels.isNotEmpty) {
-          matchedDbChannels.sort((a, b) {
-            final aClean = a.displayName.toLowerCase().replaceAll(cleanRegex, '');
-            final bClean = b.displayName.toLowerCase().replaceAll(cleanRegex, '');
-
-            if (aClean == targetClean && bClean != targetClean) return -1;
-            if (bClean == targetClean && aClean != targetClean) return 1;
-
-            return fuzzyMatch(channel.name, [b.displayName]).compareTo(fuzzyMatch(channel.name, [a.displayName]));
+        final cleanTvgId = channel.tvgId?.trim().toLowerCase();
+        if (cleanTvgId != null && cleanTvgId.isNotEmpty) {
+          final matchedTvg = dbChannels.firstWhereOrNull((dbCh) {
+            return dbCh.channelId.trim().toLowerCase() == cleanTvgId;
           });
-          finalEpgChannelId = matchedDbChannels.first.id;
+          if (matchedTvg != null) {
+            finalEpgChannelId = matchedTvg.id;
+          }
+        }
+        if (finalEpgChannelId == null) {
+          final cleanRegex = RegExp(r'[^a-zA-Z0-9\u4e00-\u9fa5]');
+          final suffixRegex = RegExp(r'(综合|高清|超清|中央|电视台|频道|hd)', caseSensitive: false);
+
+          String targetClean = channel.name.trim().split(' ').first;
+          targetClean = targetClean.toLowerCase().replaceAll(cleanRegex, '');
+          targetClean = targetClean.replaceAll(suffixRegex, '').trim();
+
+          var matchedList = dbChannels.where((dbCh) {
+            String dbClean = dbCh.displayName.trim().split(' ').first;
+            dbClean = dbClean.toLowerCase().replaceAll(cleanRegex, '');
+            dbClean = dbClean.replaceAll(suffixRegex, '').trim();
+
+            return targetClean.contains(dbClean) || dbClean.contains(targetClean);
+          }).toList();
+
+          if (matchedList.isNotEmpty) {
+            matchedList.sort((a, b) {
+              String aClean = a.displayName
+                  .trim()
+                  .split(' ')
+                  .first
+                  .toLowerCase()
+                  .replaceAll(cleanRegex, '')
+                  .replaceAll(suffixRegex, '')
+                  .trim();
+              String bClean = b.displayName
+                  .trim()
+                  .split(' ')
+                  .first
+                  .toLowerCase()
+                  .replaceAll(cleanRegex, '')
+                  .replaceAll(suffixRegex, '')
+                  .trim();
+
+              final aPerfect = aClean == targetClean;
+              final bPerfect = bClean == targetClean;
+
+              if (aPerfect && !bPerfect) return -1;
+              if (bPerfect && !aPerfect) return 1;
+              if (aPerfect && bPerfect) return 0;
+
+              final scoreA = fuzzyMatch(channel.name, [a.displayName]);
+              final scoreB = fuzzyMatch(channel.name, [b.displayName]);
+              return scoreB.compareTo(scoreA);
+            });
+
+            finalEpgChannelId = matchedList.first.id;
+          }
         }
       }
     }
 
     EpgProgramme? nowProg;
-    if (finalEpgChannelId != null && finalEpgChannelId.isNotEmpty) {
-      final nowList = await db.getNowPlaying([finalEpgChannelId]);
-      if (nowList.isNotEmpty) nowProg = nowList.first;
+    if (finalEpgChannelId != null) {
+      final list = await db.getNowPlaying([finalEpgChannelId]);
+      if (list.isNotEmpty) nowProg = list.first;
     }
 
+    return _buildLiveRoom(channel, nowProg, epgId: finalEpgChannelId);
+  }
+
+  LiveRoom _buildLiveRoom(Channel channel, EpgProgramme? prog, {String? epgId}) {
     return LiveRoom(
       roomId: channel.id,
       title: channel.name,
-      nick: channel.groupTitle ?? '',
+      nick: channel.tvgName ?? channel.name,
       cover: channel.tvgLogo ?? '',
       area: channel.groupTitle ?? '',
       watching: '',
-      avatar:
-          'https://img95.699pic.com/xsj/0q/x6/7p.jpg%21/fw/700/watermark/url/L3hzai93YXRlcl9kZXRhaWwyLnBuZw/align/southeast',
+      avatar: defaultAvatar,
       status: true,
       liveStatus: LiveStatus.live,
       platform: Sites.iptvSite,
       link: channel.streamUrl,
       data: channel.streamUrl,
-      epgId: finalEpgChannelId,
-      currentProgramme: nowProg?.title,
-      currentProgrammeDescription: nowProg?.description,
+      epgId: epgId,
+      currentProgramme: prog?.title,
+      currentProgrammeDescription: prog?.description,
     );
   }
 
@@ -164,8 +222,19 @@ class IptvSite implements LiveSite {
 
   @override
   Future<LiveCategoryResult> getRecommendRooms({int page = 1, required String nick}) async {
-    final repo = Get.find<IptvRepository>();
-    final channels = await repo.getChannels('hot');
+    var channels = await IptvRepository().getChannels(FileUtils.systemHotProviderId);
+    if (channels.isEmpty) {
+      final mirror = GitHubMirror(owner: 'YueChan', repo: 'Live', branch: 'main');
+      final urls = mirror.mirrors('GNTV.m3u');
+      final fastUrl = await RaceHttp.findFastestUrl(urls);
+      await IptvImportManager().importFromNetworkUrl(
+        fastUrl!,
+        AppPathManager.iptvHotFile,
+        forceUpdate: true,
+        showTips: false,
+      );
+    }
+    channels = await IptvRepository().getChannels(FileUtils.systemHotProviderId);
     final items = <LiveRoom>[];
     for (final ch in channels) {
       items.add(
@@ -176,8 +245,7 @@ class IptvSite implements LiveSite {
           cover: ch.tvgLogo ?? '',
           area: ch.groupTitle ?? '',
           watching: '',
-          avatar:
-              'https://img95.699pic.com/xsj/0q/x6/7p.jpg%21/fw/700/watermark/url/L3hzai93YXRlcl9kZXRhaWwyLnBuZw/align/southeast',
+          avatar: defaultAvatar,
           introduction: ch.name,
           notice: '',
           status: true,
@@ -262,8 +330,7 @@ class IptvSite implements LiveSite {
         cover: ch.tvgLogo ?? '',
         area: ch.groupTitle ?? '',
         watching: '',
-        avatar:
-            'https://img95.699pic.com/xsj/0q/x6/7p.jpg%21/fw/700/watermark/url/L3hzai93YXRlcl9kZXRhaWwyLnBuZw/align/southeast',
+        avatar: defaultAvatar,
         status: true,
         liveStatus: LiveStatus.live,
         platform: Sites.iptvSite,

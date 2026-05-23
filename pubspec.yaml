@@ -24,6 +24,7 @@ dependencies:
   archive: ^4.0.4
   string_similarity: ^2.0.0
   fuzzywuzzy: ^1.1.6
+  scrollview_observer: ^1.26.3
   # Local database (SQLite)
   drift: ^2.22.1
   sqlite3_flutter_libs: ^0.5.28

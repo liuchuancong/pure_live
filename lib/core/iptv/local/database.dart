@@ -65,6 +65,10 @@ class AppDatabase extends _$AppDatabase {
   Future<EpgMapping?> getMappingByChannelId(String channelId) {
     return (select(epgMappings)..where((t) => t.channelId.equals(channelId))).getSingleOrNull();
   }
+
+  Future<EpgMapping?> getMappingByTvid(String epgChannelId) {
+    return (select(epgMappings)..where((t) => t.epgChannelId.equals(epgChannelId))).getSingleOrNull();
+  }
   // --- Provider queries ---
 
   Future<List<Provider>> getAllProviders() => select(providers).get();
@@ -92,7 +96,8 @@ class AppDatabase extends _$AppDatabase {
   }
 
   // --- Channel queries ---
-
+  Future<void> deleteMappingsByProviderId(String providerId) =>
+      (delete(epgMappings)..where((t) => t.providerId.equals(providerId))).go();
   Future<List<Channel>> getChannelsForProvider(String providerId) =>
       (select(channels)..where((t) => t.providerId.equals(providerId))).get();
 
@@ -227,13 +232,11 @@ class AppDatabase extends _$AppDatabase {
     await (delete(channels)..where((t) => t.providerId.equals(providerId))).go();
     await (delete(providers)..where((t) => t.id.equals(providerId))).go();
   }
-  // --- Add inside your Drift Database implementation block ---
 
-  /// Fetches playlist records that haven't been synchronized for a specific duration
   Future<void> updateProviderUpdateStatus(String providerId, bool status) async {
-    await (update(providers)..where((t) => t.id.equals(providerId))).write(
-      ProvidersCompanion(isAutoUpdate: drift.Value(status)),
-    ); // 🔒 必须使用 drift.Value 包装
+    await (update(
+      providers,
+    )..where((t) => t.id.equals(providerId))).write(ProvidersCompanion(isAutoUpdate: drift.Value(status)));
   }
 
   Future<void> updateEpgSourceUpdateStatus(String sourceId, bool status) async {
