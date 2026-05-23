@@ -9,6 +9,12 @@ class NavigationSettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final settings = Get.find<SettingsService>();
+    final allMenus = [
+      HomeMenu.favorites,
+      HomeMenu.popular,
+      HomeMenu.areas,
+      HomeMenu.record,
+    ];
 
     return Scaffold(
       appBar: AppBar(
@@ -23,8 +29,6 @@ class NavigationSettingsPage extends StatelessWidget {
           _buildGroupTitle(theme, i18n("navigation_display_settings")),
           Obx(() {
             final activeIds = settings.savedMenuIds;
-            if (activeIds.isEmpty) return const SizedBox.shrink();
-
             return Container(
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
@@ -36,19 +40,18 @@ class NavigationSettingsPage extends StatelessWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 buildDefaultDragHandles: false,
-                itemCount: activeIds.length,
+                itemCount: allMenus.length,
                 onReorderItem: (oldIndex, newIndex) {
                   if (newIndex > oldIndex) newIndex -= 1;
-                  List<String> currentOrder = List.from(settings.savedMenuIds);
+                  List<String> currentOrder = List.from(activeIds);
                   final String movedId = currentOrder.removeAt(oldIndex);
                   currentOrder.insert(newIndex, movedId);
-
                   settings.savedMenuIds.value = currentOrder;
                 },
                 itemBuilder: (context, index) {
-                  final String menuId = activeIds[index];
-                  final menu = HomeMenu.fromId(menuId);
-                  if (menu == null) return const SizedBox.shrink();
+                  final menu = allMenus[index];
+                  bool isChecked = settings.isMenuVisible(menu);
+
                   String titleText = "";
                   IconData menuIcon = Remix.question_line;
                   switch (menu) {
@@ -81,9 +84,9 @@ class NavigationSettingsPage extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Switch(
-                            value: true,
+                            value: isChecked,
                             activeThumbColor: theme.colorScheme.primary,
-                            onChanged: (bool value) => settings.toggleMenuVisibility(menu, value),
+                            onChanged: (value) => settings.toggleMenuVisibility(menu, value),
                           ),
                           const SizedBox(width: 8),
                           ReorderableDragStartListener(
