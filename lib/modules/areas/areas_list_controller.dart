@@ -11,10 +11,12 @@ class AreasListController extends BasePageController<AppLiveCategory> {
 
   @override
   Future<List<AppLiveCategory>> getData(int page, int pageSize) async {
+    list.value = [];
     var result = await site.liveSite.getCategores(page, pageSize);
-    var list = result.map((e) => AppLiveCategory.fromLiveCategory(e)).toList();
-    AreaPicMapper.updateAreaListMaps(list);
-    return list;
+    var channels = result.map((e) => AppLiveCategory.fromLiveCategory(e)).toList();
+    AreaPicMapper.updateAreaListMaps(channels);
+
+    return channels;
   }
 }
 

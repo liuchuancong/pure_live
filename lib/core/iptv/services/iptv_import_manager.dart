@@ -16,6 +16,20 @@ import 'package:pure_live/core/iptv/local/database.dart' as database;
 
 class IptvImportManager {
   /// 1. 本地文件浏览器选择导入
+  Future<bool> importFromLocalPicker() async {
+    FilePickerResult? result = await FilePicker.pickFiles(
+      dialogTitle: i18n("select_recover_file"),
+      type: FileType.custom,
+      allowedExtensions: ['m3u', 'txt'],
+    );
+
+    if (result == null || result.files.single.path == null) return false;
+
+    final file = File(result.files.single.path!);
+    final name = FileUtils.getBaseName(file.path);
+    return await importIptvFile(file: file, providerName: name);
+  }
+
   Future<bool> importFromNetworkUrl(
     String url,
     String fileName, {
@@ -194,7 +208,9 @@ class IptvImportManager {
         content = await CharsetConverter.decode("gbk", bytes);
       }
 
-      String finalProviderId = isHot ? FileUtils.systemHotProviderId : FileUtils.generateUuid();
+      String finalProviderId = isHot || providerName == 'hot'
+          ? FileUtils.systemHotProviderId
+          : FileUtils.generateUuid();
       final parsedResult = ext == '.txt'
           ? TxtParser().parse(content, providerId: finalProviderId)
           : M3uParser().parse(content, providerId: finalProviderId);

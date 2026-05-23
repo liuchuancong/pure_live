@@ -34,25 +34,28 @@ class IptvSite implements LiveSite {
     final providers = await db.getAllProviders();
 
     final categoryTypes = <LiveCategory>[];
-
     for (final provider in providers) {
-      final channels = await db.getChannelsForProvider(provider.id);
+      if (provider.id == FileUtils.systemHotProviderId || provider.name == 'hot') {
+        continue;
+      } else {
+        final channels = await db.getChannelsForProvider(provider.id);
 
-      final subs = <LiveArea>[];
-      for (final ch in channels) {
-        subs.add(
-          LiveArea(
-            areaId: ch.id,
-            areaName: ch.name,
-            areaPic: ch.tvgLogo ?? '',
-            typeName: provider.name,
-            areaType: provider.id,
-            platform: Sites.iptvSite,
-          ),
-        );
+        final subs = <LiveArea>[];
+        for (final ch in channels) {
+          subs.add(
+            LiveArea(
+              areaId: ch.id,
+              areaName: ch.name,
+              areaPic: ch.tvgLogo ?? '',
+              typeName: provider.name,
+              areaType: provider.id,
+              platform: Sites.iptvSite,
+            ),
+          );
+        }
+
+        categoryTypes.add(LiveCategory(id: provider.id, name: provider.name, children: subs));
       }
-
-      categoryTypes.add(LiveCategory(id: provider.id, name: provider.name, children: subs));
     }
     return categoryTypes;
   }
