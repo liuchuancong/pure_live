@@ -192,53 +192,57 @@ class DouyinSite implements LiveSite {
 
   @override
   Future<LiveCategoryResult> getRecommendRooms({int page = 1, required String nick}) async {
-    String serverUrl = "https://live.douyin.com/webcast/web/partition/detail/room/v2/";
-    var uri = Uri.parse(serverUrl).replace(
-      scheme: "https",
-      port: 443,
-      queryParameters: {
-        "aid": '6383',
-        "app_name": "douyin_web",
-        "live_id": '1',
-        "device_platform": "web",
-        "language": "zh-CN",
-        "enter_from": "link_share",
-        "cookie_enabled": "true",
-        "screen_width": "1980",
-        "screen_height": "1080",
-        "browser_language": "zh-CN",
-        "browser_platform": "Win32",
-        "browser_name": "Edge",
-        "browser_version": "125.0.0.0",
-        "browser_online": "true",
-        "count": '15',
-        "offset": ((page - 1) * 15).toString(),
-        "partition": '720',
-        "partition_type": '1',
-        "req_from": '2',
-      },
-    );
-    var requestUrl = DouyinSign.getAbogusUrl(uri.toString(), kDefaultUserAgent);
-
-    var result = await HttpClient.instance.getJson(requestUrl, header: await getRequestHeaders());
-
-    var hasMore = (result["data"]["data"] as List).length >= 15;
-    var items = <LiveRoom>[];
-    for (var item in result["data"]["data"]) {
-      var roomItem = LiveRoom(
-        roomId: item["web_rid"],
-        title: item["room"]["title"].toString(),
-        cover: item["room"]["cover"]["url_list"][0].toString(),
-        nick: item["room"]["owner"]["nickname"].toString(),
-        platform: Sites.douyinSite,
-        area: item["tag_name"] ?? '热门推荐',
-        avatar: item["room"]["owner"]["avatar_thumb"]["url_list"][0].toString(),
-        watching: item["room"]?["room_view_stats"]?["display_value"].toString() ?? '',
-        liveStatus: LiveStatus.live,
+    try {
+      String serverUrl = "https://live.douyin.com/webcast/web/partition/detail/room/v2/";
+      var uri = Uri.parse(serverUrl).replace(
+        scheme: "https",
+        port: 443,
+        queryParameters: {
+          "aid": '6383',
+          "app_name": "douyin_web",
+          "live_id": '1',
+          "device_platform": "web",
+          "language": "zh-CN",
+          "enter_from": "link_share",
+          "cookie_enabled": "true",
+          "screen_width": "1980",
+          "screen_height": "1080",
+          "browser_language": "zh-CN",
+          "browser_platform": "Win32",
+          "browser_name": "Edge",
+          "browser_version": "125.0.0.0",
+          "browser_online": "true",
+          "count": '15',
+          "offset": ((page - 1) * 15).toString(),
+          "partition": '720',
+          "partition_type": '1',
+          "req_from": '2',
+        },
       );
-      items.add(roomItem);
+      var requestUrl = DouyinSign.getAbogusUrl(uri.toString(), kDefaultUserAgent);
+
+      var result = await HttpClient.instance.getJson(requestUrl, header: await getRequestHeaders());
+
+      var hasMore = (result["data"]["data"] as List).length >= 15;
+      var items = <LiveRoom>[];
+      for (var item in result["data"]["data"]) {
+        var roomItem = LiveRoom(
+          roomId: item["web_rid"],
+          title: item["room"]["title"].toString(),
+          cover: item["room"]["cover"]["url_list"][0].toString(),
+          nick: item["room"]["owner"]["nickname"].toString(),
+          platform: Sites.douyinSite,
+          area: item["tag_name"] ?? '热门推荐',
+          avatar: item["room"]["owner"]["avatar_thumb"]["url_list"][0].toString(),
+          watching: item["room"]?["room_view_stats"]?["display_value"].toString() ?? '',
+          liveStatus: LiveStatus.live,
+        );
+        items.add(roomItem);
+      }
+      return LiveCategoryResult(hasMore: hasMore, items: items);
+    } catch (e) {
+      throw Exception(e.toString());
     }
-    return LiveCategoryResult(hasMore: hasMore, items: items);
   }
 
   @override

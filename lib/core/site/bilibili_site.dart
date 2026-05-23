@@ -173,28 +173,32 @@ class BiliBiliSite implements LiveSite {
 
   @override
   Future<LiveCategoryResult> getRecommendRooms({int page = 1, required String nick}) async {
-    const baseUrl = "https://api.live.bilibili.com/xlive/web-interface/v1/second/getListByArea";
-    var url = "$baseUrl?platform=web&sort=online&page_size=30&page=$page";
-    var queryParams = await getWbiSign(url);
-    var result = await HttpClient.instance.getJson(baseUrl, queryParameters: queryParams, header: await getHeader());
+    try {
+      const baseUrl = "https://api.live.bilibili.com/xlive/web-interface/v1/second/getListByArea";
+      var url = "$baseUrl?platform=web&sort=online&page_size=30&page=$page";
+      var queryParams = await getWbiSign(url);
+      var result = await HttpClient.instance.getJson(baseUrl, queryParameters: queryParams, header: await getHeader());
 
-    var hasMore = (result["data"]["list"] as List).isNotEmpty;
-    var items = <LiveRoom>[];
-    for (var item in result["data"]["list"]) {
-      var roomItem = LiveRoom(
-        roomId: item["roomid"].toString(),
-        title: item["title"].toString(),
-        cover: "${item["cover"]}@400w.jpg",
-        area: item["area_name"].toString(),
-        nick: item["uname"].toString(),
-        avatar: item["face"].toString(),
-        watching: item["online"].toString(),
-        liveStatus: LiveStatus.live,
-        platform: Sites.bilibiliSite,
-      );
-      items.add(roomItem);
+      var hasMore = (result["data"]["list"] as List).isNotEmpty;
+      var items = <LiveRoom>[];
+      for (var item in result["data"]["list"]) {
+        var roomItem = LiveRoom(
+          roomId: item["roomid"].toString(),
+          title: item["title"].toString(),
+          cover: "${item["cover"]}@400w.jpg",
+          area: item["area_name"].toString(),
+          nick: item["uname"].toString(),
+          avatar: item["face"].toString(),
+          watching: item["online"].toString(),
+          liveStatus: LiveStatus.live,
+          platform: Sites.bilibiliSite,
+        );
+        items.add(roomItem);
+      }
+      return LiveCategoryResult(hasMore: hasMore, items: items);
+    } catch (e) {
+      throw Exception(e.toString());
     }
-    return LiveCategoryResult(hasMore: hasMore, items: items);
   }
 
   Future<Map<String, dynamic>> getRoomInfo({required String roomId}) async {

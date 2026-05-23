@@ -716,5 +716,10 @@
     "navigation_display_settings": "导航栏显示控制",
     "navigation_display_settings_desc": "自由定制隐藏或显示底部导航栏特定功能板块",
     "at_least_one_menu_required": "请至少保留一个底部菜单标签页。",
-    "drag_menu_to_sort_tip": "长按右侧图标并上下拖动，即可自定义底部菜单栏的功能展示顺序。"
+    "drag_menu_to_sort_tip": "长按右侧图标并上下拖动，即可自定义底部菜单栏的功能展示顺序。",
+    "network_error_title": "网络请求失败",
+    "network_error_subtitle": "无法连接到该直播平台，请稍后重试",
+    "login_required_title": "需要登录账号",
+    "login_required_subtitle": "该平台数据已被风控隐藏，请登录账号后重试",
+    "go_to_login": "前往登录"
 }

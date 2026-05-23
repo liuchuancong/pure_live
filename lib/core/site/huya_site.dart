@@ -216,43 +216,47 @@ class HuyaSite implements LiveSite {
 
   @override
   Future<LiveCategoryResult> getRecommendRooms({int page = 1, required String nick}) async {
-    var resultText = await HttpClient.instance.getJson(
-      "https://www.huya.com/cache.php",
-      queryParameters: {"m": "LiveList", "do": "getLiveListByPage", "tagAll": 0, "page": page},
-      header: {
-        "user-agent": kUserAgent,
-        "Cookie": settings.huyaCookie.value,
-        "Origin": "https://www.huya.com",
-        "Referer": "https://www.huya.com/",
-      },
-    );
-    var result = json.decode(resultText);
-    var items = <LiveRoom>[];
-    for (var item in result["data"]["datas"]) {
-      var cover = item["screenshot"].toString();
-      if (!cover.contains("?")) {
-        cover += "?x-oss-process=style/w338_h190&";
-      }
-      var title = item["introduction"]?.toString() ?? "";
-      if (title.isEmpty) {
-        title = item["roomName"]?.toString() ?? "";
-      }
-      var roomItem = LiveRoom(
-        roomId: item["profileRoom"].toString(),
-        title: title,
-        cover: cover,
-        area: item["gameFullName"].toString(),
-        nick: item["nick"].toString(),
-        avatar: item["avatar180"],
-        watching: item["totalCount"].toString(),
-        platform: Sites.huyaSite,
-        liveStatus: LiveStatus.live,
-        status: true,
+    try {
+      var resultText = await HttpClient.instance.getJson(
+        "https://www.huya.com/cache.php",
+        queryParameters: {"m": "LiveList", "do": "getLiveListByPage", "tagAll": 0, "page": page},
+        header: {
+          "user-agent": kUserAgent,
+          "Cookie": settings.huyaCookie.value,
+          "Origin": "https://www.huya.com",
+          "Referer": "https://www.huya.com/",
+        },
       );
-      items.add(roomItem);
+      var result = json.decode(resultText);
+      var items = <LiveRoom>[];
+      for (var item in result["data"]["datas"]) {
+        var cover = item["screenshot"].toString();
+        if (!cover.contains("?")) {
+          cover += "?x-oss-process=style/w338_h190&";
+        }
+        var title = item["introduction"]?.toString() ?? "";
+        if (title.isEmpty) {
+          title = item["roomName"]?.toString() ?? "";
+        }
+        var roomItem = LiveRoom(
+          roomId: item["profileRoom"].toString(),
+          title: title,
+          cover: cover,
+          area: item["gameFullName"].toString(),
+          nick: item["nick"].toString(),
+          avatar: item["avatar180"],
+          watching: item["totalCount"].toString(),
+          platform: Sites.huyaSite,
+          liveStatus: LiveStatus.live,
+          status: true,
+        );
+        items.add(roomItem);
+      }
+      var hasMore = result["data"]["page"] < result["data"]["totalPage"];
+      return LiveCategoryResult(hasMore: hasMore, items: items);
+    } catch (e) {
+      throw Exception(e.toString());
     }
-    var hasMore = result["data"]["page"] < result["data"]["totalPage"];
-    return LiveCategoryResult(hasMore: hasMore, items: items);
   }
 
   @override
