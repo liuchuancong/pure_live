@@ -29,7 +29,7 @@ class AutoSyncScheduler {
       }
       final expiredEpgs = await db.getExpiredEpgSources(checkInterval);
       for (var epg in expiredEpgs) {
-        await EpgSyncEngine.instance.updateEpgCache(epg, forceUpdate: true);
+        await EpgSyncEngine.instance.updateEpgCache(epg, forceUpdate: true, showTips: false);
       }
     } catch (e) {
       log("Auto sync background task working failed: $e");

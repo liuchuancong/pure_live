@@ -16,8 +16,6 @@ class _PopularGridViewState extends State<PopularGridView> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return LayoutBuilder(
       builder: (context, constraint) {
         final width = constraint.maxWidth;
@@ -31,30 +29,13 @@ class _PopularGridViewState extends State<PopularGridView> {
                 children: [
                   SizedBox(
                     height: constraint.maxHeight * 0.8,
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.account_circle_outlined, size: 48, color: theme.hintColor.withValues(alpha: 0.5)),
-                          const SizedBox(height: 12),
-                          Text(
-                            i18n("login_required_title"),
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: theme.textTheme.titleMedium?.color,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(i18n("login_required_subtitle"), style: TextStyle(fontSize: 13, color: theme.hintColor)),
-                          const SizedBox(height: 16),
-                          TextButton.icon(
-                            onPressed: () => Get.toNamed(RoutePath.kSettingsAccount),
-                            icon: const Icon(Icons.login_rounded, size: 18),
-                            label: Text(i18n("go_to_login")),
-                          ),
-                        ],
-                      ),
+                    child: AppStatusView(
+                      type: AppStatusType.error,
+                      icon: Icons.account_circle_outlined,
+                      title: i18n("login_required_title"),
+                      subtitle: i18n("login_required_subtitle"),
+                      buttonText: i18n("go_to_login"),
+                      onButtonPressed: () => Get.toNamed(RoutePath.kSettingsAccount),
                     ),
                   ),
                 ],
@@ -67,57 +48,53 @@ class _PopularGridViewState extends State<PopularGridView> {
                 children: [
                   SizedBox(
                     height: constraint.maxHeight * 0.8,
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.wifi_off_rounded, size: 48, color: theme.hintColor.withValues(alpha: 0.5)),
-                          const SizedBox(height: 12),
-                          Text(
-                            i18n("network_error_title"),
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: theme.textTheme.titleMedium?.color,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(i18n("network_error_subtitle"), style: TextStyle(fontSize: 13, color: theme.hintColor)),
-                          const SizedBox(height: 16),
-                          TextButton.icon(
-                            onPressed: () => controller.easyRefreshController.callRefresh(),
-                            icon: const Icon(Icons.refresh_rounded, size: 18),
-                            label: Text(i18n("retry")),
-                          ),
-                        ],
-                      ),
+                    child: AppStatusView(
+                      type: AppStatusType.error,
+                      icon: Icons.wifi_off_rounded,
+                      title: i18n("network_error_title"),
+                      subtitle: i18n("network_error_subtitle"),
+                      buttonText: i18n("retry"),
+                      onButtonPressed: () => controller.easyRefreshController.callRefresh(),
                     ),
                   ),
                 ],
               );
             }
 
-            // 🎯 ✨【核心修正】：如果不是断网，也不是需要登录，且数据列表为空
-            // 这说明此时必然正处于“网络请求正在路上”的【初始首屏加载状态】，直接常驻转圈，不给它滑入 EmptyView 的机会！
-            return Center(child: CircularProgressIndicator(color: theme.colorScheme.primary, strokeWidth: 3));
+            return const AppStatusView(type: AppStatusType.loading, title: '', subtitle: '');
           }
 
           return EasyRefresh(
             controller: controller.easyRefreshController,
             onRefresh: controller.refreshData,
             onLoad: controller.loadData,
-            child: WaterfallFlow.builder(
-              padding: const EdgeInsets.all(0),
-              controller: controller.scrollController,
-              gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
-                lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
-                crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 3,
-                mainAxisSpacing: 3,
-              ),
-              itemCount: controller.list.length,
-              itemBuilder: (context, index) => RoomCard(room: controller.list[index], dense: true),
-            ),
+            child: controller.list.isNotEmpty
+                ? WaterfallFlow.builder(
+                    padding: const EdgeInsets.all(0),
+                    controller: controller.scrollController,
+                    gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
+                      lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
+                      crossAxisCount: crossAxisCount,
+                      crossAxisSpacing: 3,
+                      mainAxisSpacing: 3,
+                    ),
+                    itemCount: controller.list.length,
+                    itemBuilder: (context, index) => RoomCard(room: controller.list[index], dense: true),
+                  )
+                : ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      SizedBox(
+                        height: constraint.maxHeight * 0.8,
+                        child: AppStatusView(
+                          type: AppStatusType.empty,
+                          icon: Icons.live_tv_rounded,
+                          title: i18n("empty_live_title"),
+                          subtitle: i18n("empty_live_subtitle"),
+                        ),
+                      ),
+                    ],
+                  ),
           );
         });
       },

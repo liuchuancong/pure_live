@@ -37,6 +37,7 @@ class EpgSyncEngine {
         sourceName: source.name,
         forceUpdate: forceUpdate,
         url: source.url,
+        showTips: showTips,
       );
 
       if (await tempFile.exists()) {
