@@ -66,7 +66,6 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                   padding: EdgeInsetsGeometry.only(right: 8),
                   child: TextButton.icon(
                     onPressed: () => FileUtils.openFileOrUrl(controller.recordSavePath.value),
-                    // 彻底清空按钮自带的内边距，让它和边框完美贴合对齐
                     style: TextButton.styleFrom(
                       padding: EdgeInsets.zero,
                       minimumSize: Size.zero,

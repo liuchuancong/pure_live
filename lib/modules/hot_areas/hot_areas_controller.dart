@@ -3,33 +3,76 @@ import 'package:pure_live/common/base/base_controller.dart';
 
 class HotAreasController extends BaseController {
   final SettingsService settingsController = Get.find<SettingsService>();
-  final sites = [].obs;
+  final sites = <Site>[].obs;
+
   @override
   void onInit() {
-    for (var element in Sites.supportSites) {
-      var show = settingsController.hotAreasList.value.contains(element.id);
-      var area = HotAreasModel(id: element.id, name: element.name, show: show);
-      sites.add(area);
+    final savedIds = settingsController.hotAreasList.value;
+    final supported = Sites.supportSites;
+
+    List<String> orderIds = List.from(savedIds);
+    for (var site in supported) {
+      if (!orderIds.contains(site.id)) {
+        orderIds.add(site.id);
+      }
+    }
+
+    for (var id in orderIds) {
+      final siteElement = supported.firstWhereOrNull((element) => element.id == id);
+      if (siteElement != null) {
+        sites.add(siteElement);
+      }
     }
     super.onInit();
   }
 
   Color get themeColor => HexColor(settingsController.themeColorSwitch.value);
 
-  void onChanged(String id, bool value) {
-    var index = sites.map((element) => element.id).toList().indexWhere((note) => note == id);
-    HotAreasModel origin = sites[index];
-    sites.removeAt(index);
-    sites.insert(index, HotAreasModel(id: origin.id, name: origin.name, show: !origin.show));
-    ToastUtil.show(i18n('effective_after_restart'));
-    settingsController.hotAreasList.value = sites.where((p0) => p0.show).map((e) => e.id.toString()).toList();
+  bool isSiteVisible(String id) {
+    return settingsController.hotAreasList.value.contains(id);
   }
-}
 
-class HotAreasModel {
-  String id;
-  String name;
-  bool show;
+  void onChanged(String id, bool value) {
+    List<String> currentList = List.from(settingsController.hotAreasList.value);
+    if (value) {
+      if (!currentList.contains(id)) {
+        currentList.add(id);
+      }
+    } else {
+      currentList.remove(id);
+    }
 
-  HotAreasModel({required this.id, required this.name, required this.show});
+    List<Site> sortedSites = [];
+    for (var item in sites) {
+      if (currentList.contains(item.id)) {
+        sortedSites.add(item);
+      }
+    }
+    for (var item in sites) {
+      if (!currentList.contains(item.id)) {
+        sortedSites.add(item);
+      }
+    }
+
+    sites.assignAll(sortedSites);
+    settingsController.hotAreasList.value = currentList;
+    ToastUtil.show(i18n('effective_after_restart'));
+  }
+
+  void onReorder(int oldIndex, int newIndex) {
+    if (newIndex > oldIndex) {
+      newIndex -= 1;
+    }
+    final item = sites.removeAt(oldIndex);
+    sites.insert(newIndex, item);
+
+    final currentSavedIds = settingsController.hotAreasList.value;
+    List<String> newOrderSavedIds = [];
+    for (var site in sites) {
+      if (currentSavedIds.contains(site.id)) {
+        newOrderSavedIds.add(site.id);
+      }
+    }
+    settingsController.hotAreasList.value = newOrderSavedIds;
+  }
 }

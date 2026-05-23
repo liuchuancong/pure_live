@@ -1,25 +1,127 @@
+import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/hot_areas/hot_areas_controller.dart';
 
 class HotAreasPage extends GetView<HotAreasController> {
   const HotAreasPage({super.key});
 
-  List<SwitchListTile> _initListData() {
-    return controller.sites.map((e) {
-      return SwitchListTile(
-        title: Text(e.name),
-        value: e.show,
-        activeThumbColor: Theme.of(Get.context!).colorScheme.primary,
-        onChanged: (bool value) => controller.onChanged(e.id, value),
-      );
-    }).toList();
-  }
-
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: Text(i18n('platform_display'))),
-      body: Obx(() => ListView(padding: const EdgeInsets.all(12.0), children: _initListData())),
+      appBar: AppBar(
+        title: Text(i18n('platform_display'), style: const TextStyle(fontWeight: FontWeight.w600)),
+      ),
+      body: ListView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        children: [
+          _buildTipBanner(theme),
+          const SizedBox(height: 16),
+          _buildGroupTitle(theme, i18n('platform_display')),
+          Obx(() {
+            if (controller.sites.isEmpty) return const SizedBox.shrink();
+
+            return Container(
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
+              ),
+              child: ReorderableListView.builder(
+                buildDefaultDragHandles: false,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: controller.sites.length,
+                onReorderItem: (oldIndex, newIndex) => controller.onReorder(oldIndex, newIndex),
+                itemBuilder: (context, index) {
+                  final item = controller.sites[index];
+                  final bool isShow = controller.isSiteVisible(item.id);
+
+                  return Material(
+                    key: ValueKey(item.id),
+                    color: Colors.transparent,
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                      title: Text(item.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                      leading: Image.asset(
+                        item.logo,
+                        width: 24,
+                        height: 24,
+                        color: isShow ? null : theme.hintColor.withValues(alpha: 0.5),
+                        colorBlendMode: isShow ? null : BlendMode.modulate,
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Switch(
+                            value: isShow,
+                            activeThumbColor: theme.colorScheme.primary,
+                            onChanged: (bool value) => controller.onChanged(item.id, value),
+                          ),
+                          const SizedBox(width: 8),
+                          ReorderableDragStartListener(
+                            index: index,
+                            child: Padding(
+                              padding: const EdgeInsets.all(4.0),
+                              child: Icon(RemixIcons.sort_asc, size: 20),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            );
+          }),
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTipBanner(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Remix.information_line, size: 18, color: theme.colorScheme.primary.withValues(alpha: 0.8)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              i18n('drag_to_sort_tip'),
+              style: TextStyle(
+                fontSize: 13,
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGroupTitle(ThemeData theme, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, bottom: 8),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: theme.colorScheme.primary.withValues(alpha: 0.65),
+          letterSpacing: 0.5,
+        ),
+      ),
     );
   }
 }

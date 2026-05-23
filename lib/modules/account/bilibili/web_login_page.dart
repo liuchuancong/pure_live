@@ -1,3 +1,4 @@
+import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:pure_live/modules/account/bilibili/web_login_controller.dart';
@@ -7,14 +8,23 @@ class BiliBiliWebLoginPage extends GetView<BiliBiliWebLoginController> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(i18n("bilibili_login")),
+        title: Text(i18n("bilibili_login"), style: const TextStyle(fontWeight: FontWeight.w600)),
         actions: [
-          TextButton.icon(
-            onPressed: controller.toQRLogin,
-            icon: const Icon(Icons.qr_code),
-            label: Text(i18n("qr_login")),
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: TextButton.icon(
+              onPressed: controller.toQRLogin,
+              style: TextButton.styleFrom(
+                foregroundColor: theme.colorScheme.primary,
+                textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+              ),
+              icon: const Icon(Remix.qr_code_line, size: 16),
+              label: Text(i18n("qr_login")),
+            ),
           ),
         ],
       ),

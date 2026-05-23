@@ -1,6 +1,6 @@
+import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:email_validator/email_validator.dart';
-import 'package:pure_live/modules/auth/utils/constants.dart';
 
 class UserManager extends StatefulWidget {
   const UserManager({super.key});
@@ -12,7 +12,6 @@ class UserManager extends StatefulWidget {
 class _UserManagerState extends State<UserManager> {
   final TextEditingController textEditingController = TextEditingController();
   final SettingsService settingsController = Get.find<SettingsService>();
-  Color get themeColor => HexColor(settingsController.themeColorSwitch.value);
   final refreshController = EasyRefreshController(controlFinishRefresh: true, controlFinishLoad: true);
 
   final users = <String>[].obs;
@@ -78,8 +77,12 @@ class _UserManagerState extends State<UserManager> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: Text(i18n('manage_users'))),
+      appBar: AppBar(
+        title: Text(i18n('manage_users'), style: const TextStyle(fontWeight: FontWeight.w600)),
+      ),
       body: EasyRefresh(
         controller: refreshController,
         onRefresh: onRefresh,
@@ -87,54 +90,135 @@ class _UserManagerState extends State<UserManager> {
           refreshController.finishLoad(IndicatorResult.success);
         },
         child: ListView(
-          padding: const EdgeInsets.all(24.0),
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           children: [
-            TextField(
-              keyboardType: TextInputType.emailAddress,
-              controller: textEditingController,
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.email),
-                contentPadding: const EdgeInsets.all(12.0),
-                border: OutlineInputBorder(borderSide: BorderSide(color: themeColor)),
-                hintText: i18n('hint_text'),
-                suffixIcon: TextButton.icon(
-                  onPressed: addUser,
-                  icon: const Icon(Icons.add),
-                  label: Text(i18n('add_btn')),
+            _buildGroupTitle(theme, i18n('manage_users')),
+            _buildModernCard(theme, [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      keyboardType: TextInputType.emailAddress,
+                      controller: textEditingController,
+                      style: const TextStyle(fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: i18n('hint_text'),
+                        hintStyle: TextStyle(color: theme.hintColor.withValues(alpha: 0.5)),
+                        prefixIcon: Icon(Remix.mail_line, size: 20, color: theme.hintColor.withValues(alpha: 0.7)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                        filled: true,
+                        fillColor: theme.colorScheme.surfaceContainerLowest,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
+                        ),
+                      ),
+                      onSubmitted: (e) => addUser(),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 44,
+                      child: FilledButton.icon(
+                        onPressed: addUser,
+                        style: FilledButton.styleFrom(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                        icon: const Icon(Remix.user_add_line, size: 18),
+                        label: Text(i18n('add_btn'), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              onSubmitted: (e) => addUser(),
-            ),
-            spacer(12.0),
-            // Using your custom helper with named parameters here
-            Obx(
-              () =>
-                  Text(i18n('user_count', args: {'count': users.length.toString()}), style: Get.textTheme.titleMedium),
-            ),
-            spacer(12.0),
-            Obx(
-              () => Wrap(
-                runSpacing: 12,
-                spacing: 12,
-                children: users.asMap().entries.map((entry) {
+            ]),
+            const SizedBox(height: 24),
+            Obx(() => _buildGroupTitle(theme, i18n('user_count', args: {'count': users.length.toString()}))),
+            Obx(() {
+              if (users.isEmpty) return const SizedBox.shrink();
+              return _buildModernCard(
+                theme,
+                users.asMap().entries.map((entry) {
                   int index = entry.key;
                   String email = entry.value;
-                  return InkWell(
-                    borderRadius: const BorderRadius.all(Radius.circular(5.0)),
-                    onTap: () => removeUser(email, index),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Theme.of(context).primaryColor),
-                        borderRadius: const BorderRadius.all(Radius.circular(5.0)),
+                  return ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                    leading: Icon(Remix.user_line, size: 20, color: theme.colorScheme.primary),
+                    title: Text(email, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                    trailing: IconButton(
+                      icon: Icon(
+                        Remix.delete_bin_6_line,
+                        size: 18,
+                        color: theme.colorScheme.error.withValues(alpha: 0.7),
                       ),
-                      padding: const EdgeInsets.only(top: 10, bottom: 10, left: 8, right: 8),
-                      child: Text(email, style: Get.textTheme.bodyMedium),
+                      splashRadius: 20,
+                      onPressed: () async {
+                        final confirm = await Get.dialog<bool>(
+                          AlertDialog(
+                            title: Text(i18n("confirm_delete")),
+                            content: Text("${i18n("confirm_delete_user")} $email?"),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(Get.context!, false),
+                                child: Text(i18n("cancel")),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(Get.context!, true),
+                                child: Text(i18n("delete"), style: TextStyle(color: theme.colorScheme.error)),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          removeUser(email, index);
+                        }
+                      },
                     ),
                   );
                 }).toList(),
-              ),
-            ),
+              );
+            }),
+            const SizedBox(height: 32),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernCard(ThemeData theme, List<Widget> children) {
+    return Material(
+      clipBehavior: Clip.antiAlias,
+      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _buildGroupTitle(ThemeData theme, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, bottom: 8),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: theme.colorScheme.primary.withValues(alpha: 0.65),
+          letterSpacing: 0.5,
         ),
       ),
     );

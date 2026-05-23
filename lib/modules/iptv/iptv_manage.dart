@@ -145,7 +145,6 @@ class _IptvManagePageState extends State<IptvManagePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(i18n("manage_page_title")),
-        centerTitle: true,
         actions: [
           Obx(
             () => IconButton(

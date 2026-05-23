@@ -178,51 +178,113 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        title: Text(i18n("iptv_settings"), style: const TextStyle(fontWeight: FontWeight.w600)),
+      ),
       body: ListView(
         physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          SectionTitle(title: i18n("iptv_settings")),
-
-          ListTile(
-            leading: const Icon(Remix.download_2_line, size: 22),
-            title: Text(i18n("import_action")),
-            subtitle: const Text("M3U / TXT"),
-            onTap: () => showIptvImportDialog(),
-          ),
-
-          ListTile(
-            leading: const Icon(Remix.cloud_line, size: 22),
-            title: Text(i18n("manage_page_title")),
-            subtitle: Text(i18n("download_guide_sub")),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Get.to(() => const IptvManagePage()),
-          ),
-
-          SectionTitle(title: i18n("epg_settings")),
-
-          ListTile(
-            leading: const Icon(Remix.file_add_line, size: 22),
-            title: Text(i18n("import_action")),
-            subtitle: const Text("XML / GZ / JSON"),
-            onTap: () => showEpgImportDialog(),
-          ),
-
-          Obx(
-            () => ListTile(
-              leading: const Icon(Remix.tv_2_line, size: 22),
-              title: Text(i18n("active_epg_source"), style: TextStyle(color: theme.textTheme.bodyLarge?.color)),
-              subtitle: Text(
-                settings.selectedSourceId.value.isEmpty
+          _buildGroupTitle(theme, i18n("manage_page_title")),
+          _buildModernCard(theme, [
+            _buildTile(
+              context,
+              icon: Remix.cloud_line,
+              title: i18n("manage_page_title"),
+              subtitle: i18n("download_guide_sub"),
+              onTap: () => Get.to(() => const IptvManagePage()),
+            ),
+          ]),
+          const SizedBox(height: 20),
+          _buildGroupTitle(theme, i18n("iptv_settings")),
+          _buildModernCard(theme, [
+            _buildTile(
+              context,
+              icon: Remix.download_2_line,
+              title: i18n("import_action"),
+              subtitle: "M3U / TXT",
+              onTap: () => showIptvImportDialog(),
+            ),
+          ]),
+          const SizedBox(height: 20),
+          _buildGroupTitle(theme, i18n("epg_settings")),
+          _buildModernCard(theme, [
+            _buildTile(
+              context,
+              icon: Remix.file_add_line,
+              title: i18n("import_action"),
+              subtitle: "XML / GZ / JSON",
+              onTap: () => showEpgImportDialog(),
+            ),
+            Obx(
+              () => _buildTile(
+                context,
+                icon: Remix.tv_2_line,
+                title: i18n("active_epg_source"),
+                subtitle: settings.selectedSourceId.value.isEmpty
                     ? i18n("please_select_epg_source")
                     : settings.selectedSourceName.value,
-                style: TextStyle(color: settings.selectedSourceId.value.isEmpty ? Colors.orange : theme.hintColor),
+                subtitleColor: settings.selectedSourceId.value.isEmpty ? Colors.orange : null,
+                onTap: () => _showSourceSelectionDialog(),
               ),
-              trailing: Icon(Icons.chevron_right, color: theme.hintColor),
-              onTap: () => _showSourceSelectionDialog(),
             ),
-          ),
+          ]),
+          const SizedBox(height: 32),
         ],
+      ),
+    );
+  }
+
+  Widget _buildModernCard(ThemeData theme, List<Widget> children) {
+    return Material(
+      clipBehavior: Clip.antiAlias,
+      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _buildTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    Color? subtitleColor,
+  }) {
+    final theme = Theme.of(context);
+    return ListTile(
+      leading: Icon(icon, color: theme.colorScheme.primary, size: 22),
+      title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 2),
+        child: Text(
+          subtitle,
+          style: TextStyle(fontSize: 12, color: subtitleColor ?? theme.hintColor.withValues(alpha: 0.75)),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+      trailing: Icon(Icons.chevron_right_rounded, color: theme.hintColor.withValues(alpha: 0.4), size: 20),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+    );
+  }
+
+  Widget _buildGroupTitle(ThemeData theme, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, bottom: 8),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: theme.colorScheme.primary.withValues(alpha: 0.65),
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
