@@ -219,20 +219,21 @@ class TopActionBar extends StatelessWidget {
                   ),
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.assignment_outlined), // 节目单账本图标
-                tooltip: i18n('view_schedule'),
-                color: Colors.white,
-                onPressed: () async {
-                  Get.dialog(
-                    AlertDialog(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      contentPadding: EdgeInsets.zero,
-                      content: _buildFullSchedulePanel(),
-                    ),
-                  );
-                },
-              ),
+              if (controller.room.platform == Sites.iptvSite)
+                IconButton(
+                  icon: const Icon(Icons.assignment_outlined), // 节目单账本图标
+                  tooltip: i18n('view_schedule'),
+                  color: Colors.white,
+                  onPressed: () async {
+                    Get.dialog(
+                      AlertDialog(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        contentPadding: EdgeInsets.zero,
+                        content: _buildFullSchedulePanel(),
+                      ),
+                    );
+                  },
+                ),
               if (GlobalPlayerState.to.fullscreenUI) ...[
                 IconButton(
                   icon: const Icon(Icons.swap_horiz_outlined),
