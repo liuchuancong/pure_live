@@ -150,30 +150,12 @@ class BiliBiliSite implements LiveSite {
     for (var streamItem in streamList) {
       var formatList = streamItem["format"];
       for (var formatItem in formatList) {
-        var formatName = formatItem["format_name"];
         var codecList = formatItem["codec"];
-        if (formatName != 'flv') {
-          for (var codecItem in codecList) {
-            var urlList = codecItem["url_info"];
-            var baseUrl = codecItem["base_url"].toString();
-            for (var urlItem in urlList) {
-              var videoUrl = "${urlItem["host"]}$baseUrl${urlItem["extra"]}";
-              if (videoUrl.contains(".mcdn.bilivideo")) {
-                videoUrl = 'https://proxy-tf-all-ws.bilivideo.com/?url=${Uri.encodeComponent(videoUrl)}';
-              } else if (videoUrl.contains("/upgcxcode/")) {
-                //CDN列表
-                var cdnList = {
-                  'ali': 'upos-sz-mirrorali.bilivideo.com',
-                  'cos': 'upos-sz-mirrorcos.bilivideo.com',
-                  'hw': 'upos-sz-mirrorhw.bilivideo.com',
-                };
-                //取一个CDN
-                var cdn = cdnList['ali'] ?? "";
-                var reg = RegExp(r'(http|https)://(.*?)/upgcxcode/');
-                videoUrl = videoUrl.replaceAll(reg, "https://$cdn/upgcxcode/");
-              }
-              urls.add(videoUrl);
-            }
+        for (var codecItem in codecList) {
+          var urlList = codecItem["url_info"];
+          var baseUrl = codecItem["base_url"].toString();
+          for (var urlItem in urlList) {
+            urls.add("${urlItem["host"]}$baseUrl${urlItem["extra"]}");
           }
         }
       }
