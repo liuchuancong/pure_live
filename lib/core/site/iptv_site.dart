@@ -232,6 +232,7 @@ class IptvSite implements LiveSite {
         AppPathManager.iptvHotFile,
         forceUpdate: true,
         showTips: false,
+        isHot: true,
       );
     }
     channels = await IptvRepository().getChannels(FileUtils.systemHotProviderId);

@@ -35,6 +35,7 @@ class IptvImportManager {
     String fileName, {
     bool forceUpdate = false,
     bool showTips = true,
+    bool isHot = false,
   }) async {
     final dir = await AppPathManager().getDir(AppPathManager.dirIptvCache);
     final file = File(p.join(dir.path, 'download_iptv_${FileUtils.generateUuid()}.m3u'));
@@ -70,6 +71,7 @@ class IptvImportManager {
         url: url,
         forceUpdate: forceUpdate,
         showTips: showTips,
+        isHot: isHot,
       );
       if (await file.exists()) await file.delete();
       return success;

@@ -59,7 +59,13 @@ class EpgImportManager {
         },
       );
 
-      final success = await importEpgFile(file: file, sourceName: sourceName, url: url, forceUpdate: forceUpdate);
+      final success = await importEpgFile(
+        file: file,
+        sourceName: sourceName,
+        url: url,
+        forceUpdate: forceUpdate,
+        showTips: showTips,
+      );
 
       if (await file.exists()) await file.delete();
       return success;
