@@ -29,37 +29,34 @@ class FavoritePage extends GetView<FavoriteController> {
               ],
             ),
           ),
-          body: Column(
-            children: [
-              TabBar(
-                controller: controller.tabSiteController,
-                isScrollable: true,
-                tabAlignment: TabAlignment.center,
-                indicatorSize: TabBarIndicatorSize.label,
-                tabs: Sites().availableSites(containsAll: true).map<Widget>((e) => Tab(text: e.name)).toList(),
-              ),
-              Expanded(
-                child: Obx(() {
-                  return TabBarView(
+          // 🎯 ✨【核心修正】：用一个总的 Obx 包裹整个平台切换体系
+          body: Obx(() {
+            // 1. 实时获取经过排序和过滤的最新平台列表
+            final availableSitesList = Sites().availableSites(containsAll: true);
+
+            if (availableSitesList.isEmpty) return const SizedBox.shrink();
+
+            return Column(
+              children: [
+                // 2. 这里的 TabBar 已经安全地吃到了响应式状态，会跟着设置实时刷新顺序和增减
+                TabBar(
+                  controller: controller.tabSiteController,
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.center,
+                  indicatorSize: TabBarIndicatorSize.label,
+                  tabs: availableSitesList.map<Widget>((e) => Tab(text: e.name)).toList(),
+                ),
+                Expanded(
+                  child: TabBarView(
                     controller: controller.tabSiteController,
                     children: controller.tabOnlineIndex.value == 0
-                        ? Sites()
-                              .availableSites(containsAll: true)
-                              .map((e) => e.id)
-                              .toList()
-                              .map((e) => _RoomOnlineGridView(e))
-                              .toList()
-                        : Sites()
-                              .availableSites(containsAll: true)
-                              .map((e) => e.id)
-                              .toList()
-                              .map((e) => _RoomOfflineGridView(e))
-                              .toList(),
-                  );
-                }),
-              ),
-            ],
-          ),
+                        ? availableSitesList.map((e) => e.id).map((e) => _RoomOnlineGridView(e)).toList()
+                        : availableSitesList.map((e) => e.id).map((e) => _RoomOfflineGridView(e)).toList(),
+                  ),
+                ),
+              ],
+            );
+          }),
         );
       },
     );

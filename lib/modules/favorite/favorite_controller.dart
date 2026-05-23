@@ -4,51 +4,84 @@ import 'package:pure_live/plugins/event_bus.dart';
 
 class FavoriteController extends GetxController with GetTickerProviderStateMixin {
   final SettingsService settings = Get.find<SettingsService>();
+
   late TabController tabController;
   late TabController tabSiteController;
+
   final tabBottomIndex = 0.obs;
   final tabSiteIndex = 0.obs;
   final tabOnlineIndex = 0.obs;
   bool isFirstLoad = true;
   StreamSubscription<dynamic>? subscription;
+  Timer? _autoRefreshTimer;
 
   final refreshController = EasyRefreshController(controlFinishRefresh: true, controlFinishLoad: true);
-  FavoriteController() {
-    tabController = TabController(length: 2, vsync: this);
-    tabSiteController = TabController(length: Sites().availableSites().length + 1, vsync: this);
-  }
-
+  final onlineRooms = [].obs;
+  final offlineRooms = [].obs;
+  bool _isTabSiteControllerInitialized = false;
   @override
   void onInit() {
     super.onInit();
-    // 初始化关注页
+
+    tabController = TabController(length: 2, vsync: this);
+    _initTabSiteController();
+
     syncRooms();
-    // 监听settings rooms变化
+
     debounce(settings.favoriteRooms, (rooms) => syncRooms(), time: const Duration(milliseconds: 1000));
 
+    ever(settings.hotAreasList, (_) {
+      _initTabSiteController();
+    });
+
     onRefresh();
+
     tabController.addListener(() {
       tabOnlineIndex.value = tabController.index;
     });
-    tabSiteController.addListener(() {
-      tabSiteIndex.value = tabSiteController.index;
-    });
-    // 定时自动刷新
+
     if (settings.autoRefreshTime.value != 0) {
-      Timer.periodic(Duration(minutes: settings.autoRefreshTime.value), (timer) => onRefresh());
+      _autoRefreshTimer = Timer.periodic(Duration(minutes: settings.autoRefreshTime.value), (timer) => onRefresh());
     }
     listenFavorite();
   }
 
+  @override
+  void onClose() {
+    tabController.dispose();
+    tabSiteController.dispose();
+    subscription?.cancel();
+    _autoRefreshTimer?.cancel();
+    super.onClose();
+  }
+
+  void _initTabSiteController() {
+    if (_isTabSiteControllerInitialized) {
+      tabSiteController.removeListener(_onTabSiteChanged);
+      tabSiteController.dispose();
+    }
+
+    final int targetLength = Sites().availableSites(containsAll: true).length;
+    tabSiteController = TabController(length: targetLength, vsync: this);
+
+    // 绑定抽离后的独立监听函数
+    tabSiteController.addListener(_onTabSiteChanged);
+
+    // 标记已成功创建
+    _isTabSiteControllerInitialized = true;
+    tabSiteIndex.value = 0;
+  }
+
+  void _onTabSiteChanged() {
+    tabSiteIndex.value = tabSiteController.index;
+  }
+
   void listenFavorite() {
-    // 监听刷新关注页事件
     subscription = EventBus.instance.listen('refresh_favorite_rooms', (data) {
       onRefresh();
     });
   }
 
-  final onlineRooms = [].obs;
-  final offlineRooms = [].obs;
   void reloadPage() async {
     refreshController.callRefresh();
     await onRefresh();
@@ -69,8 +102,7 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
   }
 
   Future<bool> onRefresh() async {
-    // 如果是首次加载，则等待一秒
-    if (isFirstLoad) await Future.delayed(Duration(seconds: 1));
+    if (isFirstLoad) await Future.delayed(const Duration(seconds: 1));
 
     if (settings.favoriteRooms.value.isEmpty) return false;
 

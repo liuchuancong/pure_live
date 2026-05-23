@@ -46,13 +46,7 @@ class HotAreasPage extends GetView<HotAreasController> {
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                       title: Text(item.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                      leading: Image.asset(
-                        item.logo,
-                        width: 24,
-                        height: 24,
-                        color: isShow ? null : theme.hintColor.withValues(alpha: 0.5),
-                        colorBlendMode: isShow ? null : BlendMode.modulate,
-                      ),
+                      leading: Image.asset(item.logo, width: 24, height: 24),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
