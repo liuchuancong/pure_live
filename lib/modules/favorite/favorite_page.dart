@@ -101,7 +101,7 @@ class _RoomOnlineGridView extends GetView<FavoriteController> {
               : controller.onlineRooms.where((el) => el.platform == site).toList();
 
           if (controller.onlineRooms.isEmpty && controller.refreshController.controlFinishRefresh) {
-            return const AppStatusView(type: AppStatusType.loading, title: '', subtitle: '');
+            return AppStatusView(type: AppStatusType.loading, title: i18n('refresh_loading'), subtitle: '');
           }
 
           return EasyRefresh(
@@ -172,7 +172,7 @@ class _RoomOfflineGridView extends GetView<FavoriteController> {
               : controller.offlineRooms.where((el) => el.platform == site).toList();
 
           if (controller.offlineRooms.isEmpty && refreshController.controlFinishRefresh) {
-            return const AppStatusView(type: AppStatusType.loading, title: '', subtitle: '');
+            return AppStatusView(type: AppStatusType.loading, title: i18n('refresh_loading'), subtitle: '');
           }
 
           return EasyRefresh(

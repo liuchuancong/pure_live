@@ -61,7 +61,7 @@ class _PopularGridViewState extends State<PopularGridView> {
               );
             }
 
-            return const AppStatusView(type: AppStatusType.loading, title: '', subtitle: '');
+            return AppStatusView(type: AppStatusType.loading, title: i18n('refresh_loading'), subtitle: '');
           }
 
           return EasyRefresh(
