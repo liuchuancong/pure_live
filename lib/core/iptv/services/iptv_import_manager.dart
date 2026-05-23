@@ -16,20 +16,6 @@ import 'package:pure_live/core/iptv/local/database.dart' as database;
 
 class IptvImportManager {
   /// 1. 本地文件浏览器选择导入
-  Future<bool> importFromLocalPicker() async {
-    FilePickerResult? result = await FilePicker.pickFiles(
-      dialogTitle: i18n("select_recover_file"),
-      type: FileType.custom,
-      allowedExtensions: ['m3u', 'txt'],
-    );
-
-    if (result == null || result.files.single.path == null) return false;
-
-    final file = File(result.files.single.path!);
-    final name = FileUtils.getBaseName(file.path);
-    return await importIptvFile(file: file, providerName: name);
-  }
-
   Future<bool> importFromNetworkUrl(
     String url,
     String fileName, {
@@ -37,33 +23,44 @@ class IptvImportManager {
     bool showTips = true,
     bool isHot = false,
   }) async {
-    final dir = await AppPathManager().getDir(AppPathManager.dirIptvCache);
-    final file = File(p.join(dir.path, 'download_iptv_${FileUtils.generateUuid()}.m3u'));
-
     try {
+      final String rawStringContent = await HttpClient.instance.getText(url);
+      final trimmedContent = rawStringContent.trim();
+
+      if (trimmedContent.isEmpty) {
+        if (showTips) {
+          ToastUtil.show("不支持的文件格式，仅限 M3U 或 TXT");
+        }
+        return false;
+      }
+
+      String extension = '.m3u';
+      final lowercaseUrl = url.toLowerCase().trim();
+
+      if (trimmedContent.startsWith('#EXTM3U')) {
+        extension = '.m3u';
+      } else if (trimmedContent.contains(',#genre#')) {
+        extension = '.txt';
+      } else if (lowercaseUrl.endsWith('.txt')) {
+        extension = '.txt';
+      } else if (lowercaseUrl.endsWith('.m3u') || lowercaseUrl.endsWith('.m3u8')) {
+        extension = '.m3u';
+      } else {
+        if (showTips) {
+          ToastUtil.show("不支持的文件格式，仅限 M3U 或 TXT");
+        }
+        return false;
+      }
+
+      final dir = await AppPathManager().getDir(AppPathManager.dirIptvCache);
+      final file = File(p.join(dir.path, 'download_iptv_${FileUtils.generateUuid()}$extension'));
+      await file.writeAsString(rawStringContent);
+
       String cleanName = p.basename(fileName);
       while (p.extension(cleanName).isNotEmpty) {
         cleanName = p.basenameWithoutExtension(cleanName);
       }
       fileName = cleanName;
-
-      final lowercaseUrl = url.toLowerCase().trim();
-      if (!{'.m3u', '.txt', '.m3u8'}.any((ext) => lowercaseUrl.endsWith(ext))) {
-        if (showTips) {
-          ToastUtil.show(i18n("unsupported_file_format"));
-        }
-        return false;
-      }
-
-      final String rawStringContent = await HttpClient.instance.getText(url);
-      if (rawStringContent.trim().isEmpty) {
-        if (showTips) {
-          ToastUtil.show(i18n("unsupported_file_format"));
-        }
-        return false;
-      }
-
-      await file.writeAsString(rawStringContent);
 
       final success = await importIptvFile(
         file: file,
@@ -78,9 +75,8 @@ class IptvImportManager {
     } catch (e) {
       debugPrint("Network IPTV Download Failure: $e");
       if (showTips) {
-        ToastUtil.show(i18n("network_import_failed"));
+        ToastUtil.show("网络订阅源下载或解析失败");
       }
-      if (await file.exists()) await file.delete();
       return false;
     }
   }
@@ -92,11 +88,30 @@ class IptvImportManager {
     bool showTips = true,
   }) async {
     try {
+      String extension = '.m3u';
+      final lowerName = fileName.toLowerCase();
+      final trimmedContent = fileString.trim();
+
+      if (trimmedContent.startsWith('#EXTM3U')) {
+        extension = '.m3u';
+      } else if (trimmedContent.startsWith('{') || trimmedContent.startsWith('[')) {
+        extension = '.json';
+      } else if (lowerName.contains('.txt') || trimmedContent.contains(',#genre#')) {
+        extension = '.txt';
+      } else {
+        final lastDotIndex = lowerName.lastIndexOf('.');
+        if (lastDotIndex != -1) {
+          final rawExt = lowerName.substring(lastDotIndex);
+          if (rawExt == '.m3u' || rawExt == '.m3u8' || rawExt == '.txt' || rawExt == '.json') {
+            extension = rawExt;
+          }
+        }
+      }
+
       final dir = await AppPathManager().getDir(AppPathManager.dirIptvCache);
-      final file = File(p.join(dir.path, 'web_iptv_${FileUtils.generateUuid()}.m3u'));
+      final file = File(p.join(dir.path, 'web_iptv_${FileUtils.generateUuid()}$extension'));
       await file.writeAsString(fileString);
 
-      // 彻底剥离 Web 字符串文件名的多重后缀
       String cleanName = p.basename(fileName);
       while (p.extension(cleanName).isNotEmpty) {
         cleanName = p.basenameWithoutExtension(cleanName);
@@ -113,7 +128,7 @@ class IptvImportManager {
       return success;
     } catch (e) {
       if (showTips) {
-        ToastUtil.show(i18n("network_import_failed"));
+        ToastUtil.show("网络订阅源下载或解析失败");
       }
       return false;
     }
