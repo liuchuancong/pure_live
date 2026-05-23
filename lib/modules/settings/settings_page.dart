@@ -6,6 +6,7 @@ import 'package:pure_live/modules/settings/theme_settings_page.dart';
 import 'package:pure_live/modules/settings/video_settings_page.dart';
 import 'package:pure_live/modules/settings/general_settings_page.dart';
 import 'package:pure_live/modules/settings/platform_settings_page.dart';
+import 'package:pure_live/modules/settings/navigation_settings_page.dart';
 import 'package:pure_live/modules/settings/cache_data_settings_page.dart';
 import 'package:pure_live/modules/settings/player_kernel_settings_page.dart';
 
@@ -33,28 +34,28 @@ class SettingsPage extends GetView<SettingsService> {
           _buildModernCard(theme, [
             _buildTile(
               context,
-              icon: Remix.palette_line, // 🎨 调色盘：完美对应外观主题自定义
+              icon: Remix.palette_line,
               title: i18n("theme_customization"),
               subtitle: i18n("theme_customization_desc"),
               onTap: () => Get.to(() => const ThemeSettingsPage()),
             ),
             _buildTile(
               context,
-              icon: Remix.tv_line, // 📺 电视机：代表 IPTV 直播源渠道管理
+              icon: Remix.tv_line,
               title: i18n("iptv_settings"),
               subtitle: i18n("manage_iptv_sources"),
               onTap: () => Get.to(() => const IptvPage()),
             ),
             _buildTile(
               context,
-              icon: Remix.film_line, // 🎬 胶片：代表视频解码、画质与全屏播放
+              icon: Remix.film_line,
               title: i18n("video"),
               subtitle: i18n("video_desc"),
               onTap: () => Get.to(() => const VideoSettingsPage()),
             ),
             _buildTile(
               context,
-              icon: Remix.cpu_line, // 🧠 CPU核心：代表底层播放器内核核心切换
+              icon: Remix.cpu_line,
               title: i18n("player_kernel"),
               subtitle: i18n("player_kernel_desc"),
               onTap: () => Get.to(() => const PlayerKernelSettingsPage()),
@@ -62,34 +63,39 @@ class SettingsPage extends GetView<SettingsService> {
           ]),
 
           const SizedBox(height: 20),
-
-          // 📦 分组二：系统、数据与多平台 (System, Data & Sync)
           _buildGroupTitle(theme, i18n("general")),
           _buildModernCard(theme, [
             _buildTile(
               context,
-              icon: Remix.settings_4_line, // ⚙️ 现代齿轮：代表系统、语言等通用全局配置
+              icon: Remix.settings_4_line,
               title: i18n("general"),
               subtitle: i18n("general_desc"),
               onTap: () => Get.to(() => const GeneralSettingsPage()),
             ),
             _buildTile(
               context,
-              icon: Remix.database_2_line, // 💾 数据库：代表缓存、图片、录制视频等存储数据管理
+              icon: Remix.menu_line,
+              title: i18n("navigation_display_settings"),
+              subtitle: i18n("navigation_display_settings_desc"),
+              onTap: () => Get.to(() => NavigationSettingsPage()),
+            ),
+            _buildTile(
+              context,
+              icon: Remix.database_2_line,
               title: i18n("cache_and_data"),
               subtitle: i18n("cache_and_data_desc"),
               onTap: () => Get.to(() => const CacheDataSettingsPage()),
             ),
             _buildTile(
               context,
-              icon: Remix.apps_2_line, // 🧩 多应用矩阵：代表接入、同步第三方多平台聚合直播源
+              icon: Remix.apps_2_line,
               title: i18n("platform_settings"),
               subtitle: i18n("platform_settings_desc"),
               onTap: () => Get.to(() => const PlatformSettingsPage()),
             ),
             _buildTile(
               context,
-              icon: Remix.refresh_line, // 🔄 循环同步：代表一键配置备份与从云端覆盖恢复
+              icon: Remix.refresh_line,
               title: i18n("backup_recover"),
               subtitle: i18n("backup_recover_desc"),
               onTap: () => Get.to(() => const BackupPage()),

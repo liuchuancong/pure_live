@@ -9,16 +9,18 @@ class PopularPage extends GetView<PopularController> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraint) {
-        bool showAction = Get.width <= 680;
-
         return Obx(() {
+          bool showAction = Get.width <= 680;
+          final int menuCount = Get.find<SettingsService>().savedMenuIds.length;
           final availableSitesList = Sites().availableSites();
+
           if (availableSitesList.isEmpty) return const Scaffold();
+
           return Scaffold(
             appBar: AppBar(
               centerTitle: true,
               scrolledUnderElevation: 0,
-              leading: showAction ? const MenuButton() : null,
+              leading: (showAction || menuCount <= 1) ? const MenuButton() : null,
               actions: showAction ? [CommonAppBarActions()] : null,
               title: TabBar(
                 controller: controller.tabController,

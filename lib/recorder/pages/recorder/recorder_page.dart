@@ -25,66 +25,72 @@ class RecorderPage extends GetView<RecorderController> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return DefaultTabController(
-      length: tabs.length,
-      child: Scaffold(
-        backgroundColor: theme.colorScheme.surface,
-        appBar: AppBar(
-          title: Text(i18n("recorder_title"), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-          centerTitle: true,
-          elevation: 0,
-          actions: [
-            IconButton(
-              tooltip: i18n("recorder_open_folder"),
-              icon: const Icon(Icons.folder_rounded, size: 22),
-              onPressed: controller.openFileDir,
-            ),
-            IconButton(
-              tooltip: i18n("settings_title"),
-              icon: const Icon(Icons.settings_suggest_rounded, size: 22),
-              onPressed: () => Get.toNamed(RoutePath.kRecordSettings),
-            ),
-            const SizedBox(width: 8),
-          ],
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(54),
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: TabBar(
-                isScrollable: true,
-                tabAlignment: TabAlignment.center,
-                labelColor: theme.colorScheme.primary,
-                unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
-                tabs: tabs
-                    .map(
-                      (e) => Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: Tab(text: i18n(e)),
-                      ),
-                    )
-                    .toList(),
+    return Obx(() {
+      bool showAction = Get.width <= 680;
+      final int menuCount = Get.find<SettingsService>().savedMenuIds.length;
+
+      return DefaultTabController(
+        length: tabs.length,
+        child: Scaffold(
+          backgroundColor: theme.colorScheme.surface,
+          appBar: AppBar(
+            title: Text(i18n("recorder_title"), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+            centerTitle: true,
+            leading: (showAction || menuCount <= 1) ? const MenuButton() : null,
+            elevation: 0,
+            actions: [
+              IconButton(
+                tooltip: i18n("recorder_open_folder"),
+                icon: const Icon(Icons.folder_rounded, size: 22),
+                onPressed: controller.openFileDir,
+              ),
+              IconButton(
+                tooltip: i18n("settings_title"),
+                icon: const Icon(Icons.settings_suggest_rounded, size: 22),
+                onPressed: () => Get.toNamed(RoutePath.kRecordSettings),
+              ),
+              const SizedBox(width: 8),
+            ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(54),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: TabBar(
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.center,
+                  labelColor: theme.colorScheme.primary,
+                  unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+                  labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                  tabs: tabs
+                      .map(
+                        (e) => Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Tab(text: i18n(e)),
+                        ),
+                      )
+                      .toList(),
+                ),
               ),
             ),
           ),
+          body: TabBarView(
+            physics: const BouncingScrollPhysics(),
+            children: [
+              _TaskList(filter: null),
+              _TaskList(filter: (e) => e.status == RecordStatus.running),
+              _TaskList(filter: (e) => e.status == RecordStatus.waitingLive),
+              _TaskList(filter: (e) => e.status == RecordStatus.queued),
+              _TaskList(filter: (e) => e.status == RecordStatus.reconnecting),
+              _TaskList(filter: (e) => e.status == RecordStatus.processing),
+              _TaskList(filter: (e) => e.status == RecordStatus.completed),
+              _TaskList(filter: (e) => e.status == RecordStatus.failed),
+              _TaskList(filter: (e) => e.status == RecordStatus.stopped),
+            ],
+          ),
         ),
-        body: TabBarView(
-          physics: const BouncingScrollPhysics(),
-          children: [
-            _TaskList(filter: null),
-            _TaskList(filter: (e) => e.status == RecordStatus.running),
-            _TaskList(filter: (e) => e.status == RecordStatus.waitingLive),
-            _TaskList(filter: (e) => e.status == RecordStatus.queued),
-            _TaskList(filter: (e) => e.status == RecordStatus.reconnecting),
-            _TaskList(filter: (e) => e.status == RecordStatus.processing),
-            _TaskList(filter: (e) => e.status == RecordStatus.completed),
-            _TaskList(filter: (e) => e.status == RecordStatus.failed),
-            _TaskList(filter: (e) => e.status == RecordStatus.stopped),
-          ],
-        ),
-      ),
-    );
+      );
+    });
   }
 }
 

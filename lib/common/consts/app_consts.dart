@@ -1,5 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:pure_live/get/get.dart';
 import 'package:pure_live/core/sites.dart';
+
+enum HomeMenu {
+  favorites('favorites'),
+  popular('popular'),
+  areas('areas'),
+  record('record');
+
+  final String id;
+  const HomeMenu(this.id);
+
+  static HomeMenu? fromId(String id) {
+    return HomeMenu.values.firstWhereOrNull((e) => e.id == id);
+  }
+}
 
 class AppConsts {
   static const List<String> supportSites = [

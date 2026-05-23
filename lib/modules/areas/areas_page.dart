@@ -9,16 +9,16 @@ class AreasPage extends GetView<AreasController> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraint) {
-        bool showAction = Get.width <= 680;
-
         return Obx(() {
           final availableSitesList = Sites().availableSites();
           if (availableSitesList.isEmpty) return const Scaffold();
+          final int menuCount = Get.find<SettingsService>().savedMenuIds.length;
+          bool showAction = Get.width <= 680;
           return Scaffold(
             appBar: AppBar(
               centerTitle: true,
               scrolledUnderElevation: 0,
-              leading: showAction ? const MenuButton() : null,
+              leading: (showAction || menuCount <= 1) ? const MenuButton() : null,
               actions: showAction ? [CommonAppBarActions()] : null,
               title: TabBar(
                 controller: controller.tabController,

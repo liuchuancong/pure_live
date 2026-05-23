@@ -712,5 +712,9 @@
     "qr_waiting_scan": "请使用 哔哩哔哩 手机客户端扫码登录",
     "confirm_delete": "确认删除",
     "confirm_delete_user": "您确定要移除该受邀用户吗？",
-    "supabase_update_password_tip": "请输入您新的安全凭证，系统将自动加密并同步保存到您的云端账户中。"
+    "supabase_update_password_tip": "请输入您新的安全凭证，系统将自动加密并同步保存到您的云端账户中。",
+    "navigation_display_settings": "导航栏显示控制",
+    "navigation_display_settings_desc": "自由定制隐藏或显示底部导航栏特定功能板块",
+    "at_least_one_menu_required": "请至少保留一个底部菜单标签页。",
+    "drag_menu_to_sort_tip": "长按右侧图标并上下拖动，即可自定义底部菜单栏的功能展示顺序。"
 }
