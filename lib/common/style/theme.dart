@@ -9,42 +9,52 @@ class MyTheme {
   MyTheme({this.primaryColor, this.colorScheme})
     : assert(colorScheme == null || primaryColor == null, 'colorScheme 和 primaryColor 不能同时提供');
 
-  /// 获取当前平台的默认字体
   String? get _platformFontFamily {
     if (PlatformUtils.isWindows) return 'PingFang';
     if (PlatformUtils.isAndroid) return GoogleFonts.roboto().fontFamily;
     return null;
   }
 
-  /// 提取通用的组件主题配置 (Flutter 3.38+ 推荐)
   ThemeData _buildTheme(Brightness brightness) {
     final bool isDark = brightness == Brightness.dark;
     final String? fontFamily = _platformFontFamily;
-    // 处理暗色模式下的特殊颜色修正
+
     ColorScheme? effectiveColorScheme = colorScheme;
     if (isDark && effectiveColorScheme != null) {
-      effectiveColorScheme = effectiveColorScheme.copyWith(
-        error: const Color(0xFFFF6347), // Tomato color
-      );
+      effectiveColorScheme = effectiveColorScheme.copyWith(error: const Color(0xFFFF6347));
     }
+
+    // 1. Create a typography base matched to the targeted font configuration
+    final TextTheme baseTextTheme = isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme;
+
+    final TextTheme localizedTextTheme = fontFamily != null
+        ? baseTextTheme.apply(fontFamily: fontFamily)
+        : baseTextTheme;
+
     final baseTheme = ThemeData(
       useMaterial3: true,
       brightness: brightness,
+      fontFamily: fontFamily, // 2. Hard-lock root typography scoping for internal elements
       colorSchemeSeed: primaryColor,
-      colorScheme: colorScheme,
+      colorScheme: effectiveColorScheme,
+      textTheme: localizedTextTheme,
+      primaryTextTheme: localizedTextTheme,
     );
 
     return baseTheme.copyWith(
-      brightness: brightness,
-      colorScheme: effectiveColorScheme,
-      textTheme: fontFamily != null ? baseTheme.textTheme.apply(fontFamily: fontFamily) : baseTheme.textTheme,
       splashFactory: NoSplash.splashFactory,
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         scrolledUnderElevation: 0.0,
         surfaceTintColor: Colors.transparent,
         centerTitle: true,
+        titleTextStyle: localizedTextTheme.titleLarge?.copyWith(fontSize: 20, fontWeight: FontWeight.bold),
       ),
-      tabBarTheme: const TabBarThemeData(dividerColor: Colors.transparent, indicatorSize: TabBarIndicatorSize.label),
+      tabBarTheme: TabBarThemeData(
+        dividerColor: Colors.transparent,
+        indicatorSize: TabBarIndicatorSize.label,
+        labelStyle: localizedTextTheme.titleMedium,
+        unselectedLabelStyle: localizedTextTheme.bodyMedium,
+      ),
     );
   }
 
