@@ -16,35 +16,36 @@ class _PopularGridViewState extends State<PopularGridView> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return LayoutBuilder(
       builder: (context, constraint) {
         final width = constraint.maxWidth;
         final crossAxisCount = width > 1280 ? 5 : (width > 960 ? 4 : (width > 640 ? 3 : 2));
-        return Obx(
-          () => EasyRefresh(
+
+        return Obx(() {
+          if (controller.list.isEmpty) {
+            return Center(child: CircularProgressIndicator(color: theme.colorScheme.primary, strokeWidth: 3));
+          }
+
+          return EasyRefresh(
             controller: controller.easyRefreshController,
             onRefresh: controller.refreshData,
             onLoad: controller.loadData,
-            child: controller.list.isNotEmpty
-                ? WaterfallFlow.builder(
-                    padding: const EdgeInsets.all(0),
-                    controller: controller.scrollController,
-                    gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
-                      lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
-                      crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: 3,
-                      mainAxisSpacing: 3,
-                    ),
-                    itemCount: controller.list.length,
-                    itemBuilder: (context, index) => RoomCard(room: controller.list[index], dense: true),
-                  )
-                : EmptyView(
-                    icon: Icons.live_tv_rounded,
-                    title: i18n("empty_live_title"),
-                    subtitle: i18n("empty_live_subtitle"),
-                  ),
-          ),
-        );
+            child: WaterfallFlow.builder(
+              padding: const EdgeInsets.all(0),
+              controller: controller.scrollController,
+              gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
+                lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
+                crossAxisCount: crossAxisCount,
+                crossAxisSpacing: 3,
+                mainAxisSpacing: 3,
+              ),
+              itemCount: controller.list.length,
+              itemBuilder: (context, index) => RoomCard(room: controller.list[index], dense: true),
+            ),
+          );
+        });
       },
     );
   }

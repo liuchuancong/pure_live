@@ -6,7 +6,6 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
   final SettingsService settings = Get.find<SettingsService>();
 
   late TabController tabController;
-  late TabController tabSiteController;
 
   final tabBottomIndex = 0.obs;
   final tabSiteIndex = 0.obs;
@@ -18,21 +17,16 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
   final refreshController = EasyRefreshController(controlFinishRefresh: true, controlFinishLoad: true);
   final onlineRooms = [].obs;
   final offlineRooms = [].obs;
-  bool _isTabSiteControllerInitialized = false;
+
   @override
   void onInit() {
     super.onInit();
 
     tabController = TabController(length: 2, vsync: this);
-    _initTabSiteController();
 
     syncRooms();
 
     debounce(settings.favoriteRooms, (rooms) => syncRooms(), time: const Duration(milliseconds: 1000));
-
-    ever(settings.hotAreasList, (_) {
-      _initTabSiteController();
-    });
 
     onRefresh();
 
@@ -49,31 +43,9 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
   @override
   void onClose() {
     tabController.dispose();
-    tabSiteController.dispose();
     subscription?.cancel();
     _autoRefreshTimer?.cancel();
     super.onClose();
-  }
-
-  void _initTabSiteController() {
-    if (_isTabSiteControllerInitialized) {
-      tabSiteController.removeListener(_onTabSiteChanged);
-      tabSiteController.dispose();
-    }
-
-    final int targetLength = Sites().availableSites(containsAll: true).length;
-    tabSiteController = TabController(length: targetLength, vsync: this);
-
-    // 绑定抽离后的独立监听函数
-    tabSiteController.addListener(_onTabSiteChanged);
-
-    // 标记已成功创建
-    _isTabSiteControllerInitialized = true;
-    tabSiteIndex.value = 0;
-  }
-
-  void _onTabSiteChanged() {
-    tabSiteIndex.value = tabSiteController.index;
   }
 
   void listenFavorite() {

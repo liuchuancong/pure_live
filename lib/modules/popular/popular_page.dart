@@ -10,27 +10,32 @@ class PopularPage extends GetView<PopularController> {
     return LayoutBuilder(
       builder: (context, constraint) {
         bool showAction = Get.width <= 680;
-        return Scaffold(
-          appBar: AppBar(
-            centerTitle: true,
-            scrolledUnderElevation: 0,
-            leading: showAction ? const MenuButton() : null,
-            actions: showAction ? [CommonAppBarActions()] : null,
-            title: TabBar(
-              controller: controller.tabController,
-              isScrollable: true,
-              tabAlignment: TabAlignment.center,
-              labelStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              labelPadding: const EdgeInsets.symmetric(horizontal: 12),
-              indicatorSize: TabBarIndicatorSize.label,
-              tabs: Sites().availableSites().map((e) => Tab(text: e.name)).toList(),
+
+        return Obx(() {
+          final availableSitesList = Sites().availableSites();
+          if (availableSitesList.isEmpty) return const Scaffold();
+          return Scaffold(
+            appBar: AppBar(
+              centerTitle: true,
+              scrolledUnderElevation: 0,
+              leading: showAction ? const MenuButton() : null,
+              actions: showAction ? [CommonAppBarActions()] : null,
+              title: TabBar(
+                controller: controller.tabController,
+                isScrollable: true,
+                tabAlignment: TabAlignment.center,
+                labelStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                labelPadding: const EdgeInsets.symmetric(horizontal: 12),
+                indicatorSize: TabBarIndicatorSize.label,
+                tabs: availableSitesList.map((e) => Tab(text: e.name)).toList(),
+              ),
             ),
-          ),
-          body: TabBarView(
-            controller: controller.tabController,
-            children: Sites().availableSites().map((e) => PopularGridView(e.id)).toList(),
-          ),
-        );
+            body: TabBarView(
+              controller: controller.tabController,
+              children: availableSitesList.map((e) => PopularGridView(e.id)).toList(),
+            ),
+          );
+        });
       },
     );
   }

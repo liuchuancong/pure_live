@@ -34,20 +34,16 @@ class Sites {
   List<Site> availableSites({bool containsAll = false}) {
     final SettingsService settingsService = Get.find<SettingsService>();
     final List<String> savedIds = settingsService.hotAreasList.value;
-
     List<Site> result = [];
-
     for (String id in savedIds) {
       final match = supportSites.firstWhereOrNull((element) => element.id == id);
       if (match != null) {
         result.add(match);
       }
     }
-
     if (containsAll) {
       result.insert(0, Site(id: "all", name: i18n("site_all"), logo: "assets/images/all.png", liveSite: LiveSite()));
     }
-
     return result;
   }
 }

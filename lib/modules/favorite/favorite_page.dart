@@ -29,32 +29,39 @@ class FavoritePage extends GetView<FavoriteController> {
               ],
             ),
           ),
-          // 🎯 ✨【核心修正】：用一个总的 Obx 包裹整个平台切换体系
           body: Obx(() {
-            // 1. 实时获取经过排序和过滤的最新平台列表
+            // 1. 实时获取最新排序、最精准的平台列表数据
             final availableSitesList = Sites().availableSites(containsAll: true);
 
             if (availableSitesList.isEmpty) return const SizedBox.shrink();
 
-            return Column(
-              children: [
-                // 2. 这里的 TabBar 已经安全地吃到了响应式状态，会跟着设置实时刷新顺序和增减
-                TabBar(
-                  controller: controller.tabSiteController,
-                  isScrollable: true,
-                  tabAlignment: TabAlignment.center,
-                  indicatorSize: TabBarIndicatorSize.label,
-                  tabs: availableSitesList.map<Widget>((e) => Tab(text: e.name)).toList(),
-                ),
-                Expanded(
-                  child: TabBarView(
-                    controller: controller.tabSiteController,
-                    children: controller.tabOnlineIndex.value == 0
-                        ? availableSitesList.map((e) => e.id).map((e) => _RoomOnlineGridView(e)).toList()
-                        : availableSitesList.map((e) => e.id).map((e) => _RoomOfflineGridView(e)).toList(),
-                  ),
-                ),
-              ],
+            // 2. 🎯 ✨【终极修正】：使用 DefaultTabController 动态托管底层滑块
+            // 它的 length 属性与当前数组长度实时计算绑定，绝对不会产生时间差导致的错位闪退！
+            return DefaultTabController(
+              length: availableSitesList.length,
+              child: Builder(
+                builder: (context) {
+                  return Column(
+                    children: [
+                      // 3. 此处不传 controller，TabBar 会自适应从上级 DefaultTabController 绑定状态
+                      TabBar(
+                        isScrollable: true,
+                        tabAlignment: TabAlignment.center,
+                        indicatorSize: TabBarIndicatorSize.label,
+                        tabs: availableSitesList.map<Widget>((e) => Tab(text: e.name)).toList(),
+                      ),
+                      Expanded(
+                        // 4. 此处同样不传 controller，保持同步
+                        child: TabBarView(
+                          children: controller.tabOnlineIndex.value == 0
+                              ? availableSitesList.map((e) => e.id).map((e) => _RoomOnlineGridView(e)).toList()
+                              : availableSitesList.map((e) => e.id).map((e) => _RoomOfflineGridView(e)).toList(),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
             );
           }),
         );
