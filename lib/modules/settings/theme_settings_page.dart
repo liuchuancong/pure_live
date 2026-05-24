@@ -3,6 +3,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:pure_live/modules/settings/font_settings_page.dart';
+import 'package:pure_live/modules/settings/font_family_manager_page.dart';
 
 class ThemeSettingsPage extends GetView<SettingsService> {
   const ThemeSettingsPage({super.key});
@@ -17,8 +18,8 @@ class ThemeSettingsPage extends GetView<SettingsService> {
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          _buildGroupTitle(theme, i18n("theme_customization")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("theme_customization")),
+          context.buildModernCard([
             _buildTile(
               context,
               icon: Remix.moon_clear_line,
@@ -51,8 +52,8 @@ class ThemeSettingsPage extends GetView<SettingsService> {
             ),
           ]),
           const SizedBox(height: 20),
-          _buildGroupTitle(theme, i18n("localization_settings")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("localization_settings")),
+          context.buildModernCard([
             _buildTile(
               context,
               icon: Remix.global_line,
@@ -62,8 +63,21 @@ class ThemeSettingsPage extends GetView<SettingsService> {
             ),
           ]),
           const SizedBox(height: 20),
-          _buildGroupTitle(theme, i18n("text_size_settings")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("font_family_settings")),
+          context.buildModernCard([
+            Obx(
+              () => _buildTile(
+                context,
+                icon: Remix.font_color,
+                title: i18n("change_font_family"),
+                subtitle: "${i18n("current_font_prefix")}: ${controller.fontFamilyName.value}",
+                onTap: () => Get.to(() => const FontFamilyManagerPage()),
+              ),
+            ),
+          ]),
+          const SizedBox(height: 20),
+          context.buildGroupTitle(i18n("text_size_settings")),
+          context.buildModernCard([
             _buildTile(
               context,
               icon: Remix.font_size,
@@ -71,6 +85,8 @@ class ThemeSettingsPage extends GetView<SettingsService> {
               subtitle: i18n("font_settings_desc"),
               onTap: () => Get.to(() => const FontSettingsPage()),
             ),
+            const SizedBox(height: 20),
+
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
               child: Row(
@@ -122,18 +138,6 @@ class ThemeSettingsPage extends GetView<SettingsService> {
           const SizedBox(height: 32),
         ],
       ),
-    );
-  }
-
-  Widget _buildModernCard(ThemeData theme, List<Widget> children) {
-    return Material(
-      clipBehavior: Clip.antiAlias,
-      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
-      ),
-      child: Column(children: children),
     );
   }
 
@@ -189,20 +193,6 @@ class ThemeSettingsPage extends GetView<SettingsService> {
         activeThumbColor: theme.colorScheme.primary,
         onChanged: (val) => value.value = val,
         contentPadding: const EdgeInsets.only(left: 16, top: 2, bottom: 2, right: 8),
-      ),
-    );
-  }
-
-  Widget _buildGroupTitle(ThemeData theme, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 8),
-      child: Text(
-        text,
-        style: AppTextStyles.t12.copyWith(
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary.withValues(alpha: 0.65),
-          letterSpacing: 0.5,
-        ),
       ),
     );
   }

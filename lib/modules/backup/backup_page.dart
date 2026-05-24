@@ -19,7 +19,6 @@ class _BackupPageState extends State<BackupPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final auth = Get.find<AuthController>();
     return Scaffold(
       appBar: AppBar(title: Text(i18n("backup_recover"))),
@@ -27,8 +26,8 @@ class _BackupPageState extends State<BackupPage> {
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          _buildGroupTitle(theme, "Supabase"),
-          _buildModernCard(theme, [
+          context.buildGroupTitle("Supabase"),
+          context.buildModernCard([
             _buildTile(
               context,
               icon: Remix.account_circle_line,
@@ -43,8 +42,8 @@ class _BackupPageState extends State<BackupPage> {
               },
             ),
           ]),
-          _buildGroupTitle(theme, i18n("webdav")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("webdav")),
+          context.buildModernCard([
             _buildTile(
               context,
               icon: Remix.cloud_line,
@@ -65,8 +64,8 @@ class _BackupPageState extends State<BackupPage> {
           const SizedBox(height: 20),
 
           // 📦 分组二：本地数据快照
-          _buildGroupTitle(theme, i18n("create_backup")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("create_backup")),
+          context.buildModernCard([
             _buildTile(
               context,
               icon: Remix.file_download_line,
@@ -97,8 +96,8 @@ class _BackupPageState extends State<BackupPage> {
           const SizedBox(height: 20),
 
           // 📦 分组三：自动化存储
-          _buildGroupTitle(theme, i18n("auto_backup")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("auto_backup")),
+          context.buildModernCard([
             _buildTile(
               context,
               icon: Remix.folder_open_line,
@@ -117,18 +116,6 @@ class _BackupPageState extends State<BackupPage> {
           const SizedBox(height: 32),
         ],
       ),
-    );
-  }
-
-  Widget _buildModernCard(ThemeData theme, List<Widget> children) {
-    return Material(
-      clipBehavior: Clip.antiAlias,
-      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
-      ),
-      child: Column(children: children),
     );
   }
 
@@ -155,20 +142,6 @@ class _BackupPageState extends State<BackupPage> {
       trailing: Icon(Icons.chevron_right_rounded, color: theme.hintColor.withValues(alpha: 0.4), size: 20),
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-    );
-  }
-
-  Widget _buildGroupTitle(ThemeData theme, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 8),
-      child: Text(
-        text,
-        style: AppTextStyles.t12.copyWith(
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary.withValues(alpha: 0.65),
-          letterSpacing: 0.5,
-        ),
-      ),
     );
   }
 }

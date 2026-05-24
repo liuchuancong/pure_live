@@ -17,7 +17,6 @@ class SettingsPage extends GetView<SettingsService> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     double screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
@@ -26,8 +25,8 @@ class SettingsPage extends GetView<SettingsService> {
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          _buildGroupTitle(theme, i18n("theme_customization")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("theme_customization")),
+          context.buildModernCard([
             _buildTile(
               context,
               icon: Remix.palette_line,
@@ -38,8 +37,8 @@ class SettingsPage extends GetView<SettingsService> {
           ]),
 
           const SizedBox(height: 20),
-          _buildGroupTitle(theme, i18n("iptv_settings")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("iptv_settings")),
+          context.buildModernCard([
             _buildTile(
               context,
               icon: Remix.tv_line,
@@ -50,8 +49,8 @@ class SettingsPage extends GetView<SettingsService> {
           ]),
 
           const SizedBox(height: 20),
-          _buildGroupTitle(theme, i18n("video")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("video")),
+          context.buildModernCard([
             _buildTile(
               context,
               icon: Remix.film_line,
@@ -62,8 +61,8 @@ class SettingsPage extends GetView<SettingsService> {
           ]),
 
           const SizedBox(height: 20),
-          _buildGroupTitle(theme, i18n("player_kernel")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("player_kernel")),
+          context.buildModernCard([
             _buildTile(
               context,
               icon: Remix.cpu_line,
@@ -74,8 +73,8 @@ class SettingsPage extends GetView<SettingsService> {
           ]),
 
           const SizedBox(height: 20),
-          _buildGroupTitle(theme, i18n("general")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("general")),
+          context.buildModernCard([
             _buildTile(
               context,
               icon: Remix.settings_4_line,
@@ -100,8 +99,8 @@ class SettingsPage extends GetView<SettingsService> {
           ]),
 
           const SizedBox(height: 20),
-          _buildGroupTitle(theme, i18n("cache_and_data")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("cache_and_data")),
+          context.buildModernCard([
             _buildTile(
               context,
               icon: Remix.database_2_line,
@@ -112,8 +111,8 @@ class SettingsPage extends GetView<SettingsService> {
           ]),
 
           const SizedBox(height: 20),
-          _buildGroupTitle(theme, i18n("create_backup")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("create_backup")),
+          context.buildModernCard([
             _buildTile(
               context,
               icon: Remix.refresh_line,
@@ -129,17 +128,6 @@ class SettingsPage extends GetView<SettingsService> {
   }
 
   // 统一封装的圆角卡片
-  Widget _buildModernCard(ThemeData theme, List<Widget> children) {
-    return Material(
-      clipBehavior: Clip.antiAlias,
-      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
-      ),
-      child: Column(children: children),
-    );
-  }
 
   // 统一封装的单元行，包含图标、主标题、描述和右侧箭头
   Widget _buildTile(
@@ -165,21 +153,6 @@ class SettingsPage extends GetView<SettingsService> {
       trailing: Icon(Icons.chevron_right_rounded, color: theme.hintColor.withValues(alpha: 0.4), size: 20),
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-    );
-  }
-
-  // 分组的小标题
-  Widget _buildGroupTitle(ThemeData theme, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 8),
-      child: Text(
-        text,
-        style: AppTextStyles.t12.copyWith(
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary.withValues(alpha: 0.65),
-          letterSpacing: 0.5,
-        ),
-      ),
     );
   }
 }

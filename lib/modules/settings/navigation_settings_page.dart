@@ -21,7 +21,7 @@ class NavigationSettingsPage extends StatelessWidget {
         children: [
           _buildTipBanner(theme),
           const SizedBox(height: 16),
-          _buildGroupTitle(theme, i18n("navigation_display_settings")),
+          context.buildGroupTitle(i18n("navigation_display_settings")),
           Obx(() {
             // 2. 关键：按 savedMenuIds 的顺序给 allMenus 排序
             final savedOrder = settings.savedMenuIds;
@@ -144,20 +144,6 @@ class NavigationSettingsPage extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildGroupTitle(ThemeData theme, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 8),
-      child: Text(
-        text,
-        style: AppTextStyles.t12.copyWith(
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary.withValues(alpha: 0.65),
-          letterSpacing: 0.5,
-        ),
       ),
     );
   }

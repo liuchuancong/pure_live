@@ -1,15 +1,19 @@
 import 'dart:io';
 import 'dart:convert';
 import 'dart:developer';
+import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'package:flutter_exit_app/flutter_exit_app.dart';
+import 'package:pure_live/common/models/font_model.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/global/win_auto_start.dart';
+import 'package:pure_live/plugins/font_download_manager.dart';
 import 'package:pure_live/modules/web_dav/webdav_config.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
 import 'package:pure_live/core/iptv/services/auto_sync_scheduler.dart';
@@ -152,6 +156,11 @@ class SettingsService extends GetxController {
   final fontSizeBodyLarge = (HivePrefUtil.getDouble('fontSizeBodyLarge') ?? 14.0).obs;
   final fontSizeTitleMedium = (HivePrefUtil.getDouble('fontSizeTitleMedium') ?? 15.0).obs;
   final fontSizeTitleLarge = (HivePrefUtil.getDouble('fontSizeTitleLarge') ?? 20.0).obs;
+  final fontFamilyName = (HivePrefUtil.getString('fontFamilyName') ?? 'Default').obs;
+  final Rx<FontModel?> curFontModel = Rx<FontModel?>(null);
+  final RxList<FontModel> fontList = <FontModel>[].obs;
+  final Rx<DownloadState> fontState = DownloadState.notDownloaded.obs;
+  final RxMap<String, String> fontFolderSizes = <String, String>{}.obs;
   // ==============================
   // 🧩 Lifecycle: onInit
   // ==============================
@@ -439,16 +448,112 @@ class SettingsService extends GetxController {
     fontSizeTitleLarge.listen((value) {
       HivePrefUtil.setDouble('fontSizeTitleLarge', value);
     });
+    fontFamilyName.listen((value) {
+      HivePrefUtil.setString('fontFamilyName', value);
+    });
     ever(fontSizeBodySmall, (_) => refreshSystemTheme());
     ever(fontSizeBodyMedium, (_) => refreshSystemTheme());
     ever(fontSizeBodyLarge, (_) => refreshSystemTheme());
     ever(fontSizeTitleMedium, (_) => refreshSystemTheme());
     ever(fontSizeTitleLarge, (_) => refreshSystemTheme());
+    ever(fontFamilyName, (_) => refreshSystemTheme());
+    initUserFontLifecycle();
+    _loadInitialFontManifest();
   }
 
-  // ==============================
-  // 🛠️ 方法区（按功能分组）
-  // ==============================
+  Future<void> refreshFontDiskSizes() async {
+    try {
+      final directory = await AppPathManager().getDir(AppPathManager.dirDownload);
+      final fontRoot = Directory("${directory.path}/fonts");
+      if (!await fontRoot.exists()) return;
+
+      final Map<String, String> calculatedSizes = {};
+      await for (final entity in fontRoot.list()) {
+        if (entity is Directory) {
+          final fontId = entity.path.split(Platform.pathSeparator).last;
+          int totalBytes = 0;
+          await for (final file in entity.list(recursive: true)) {
+            if (file is File) totalBytes += await file.length();
+          }
+          if (totalBytes > 0) {
+            calculatedSizes[fontId] = "${(totalBytes / 1024 / 1024).toStringAsFixed(1)} MB";
+          }
+        }
+      }
+      fontFolderSizes.assignAll(calculatedSizes);
+    } catch (e) {
+      log("Failed to parse disk metric footprints: $e");
+    }
+  }
+
+  Future<void> activateFontFamily(FontModel fontModel) async {
+    fontFamilyName.value = fontModel.id;
+    curFontModel.value = fontModel;
+    fontState.value = DownloadState.downloaded;
+
+    await FontDownloadManager.instance.loadFont(fontModel.id);
+    Get.updateLocale(Get.locale ?? const Locale('zh', 'CN'));
+    SmartDialog.showToast("已应用全局字体: ${fontModel.name}");
+  }
+
+  Future<void> uninstallFontFamily(FontModel fontModel) async {
+    SmartDialog.showLoading(msg: "正在卸载并还原环境...");
+    try {
+      await FontDownloadManager.instance.deleteFontFamily(fontModel, (state) {
+        if (fontModel == curFontModel.value) {
+          fontState.value = state;
+        }
+      });
+
+      if (fontFamilyName.value == fontModel.id) {
+        fontFamilyName.value = 'Default';
+        if (PlatformUtils.isWindows) {
+          fontFamilyName.value = "Microsoft YaHei";
+        }
+        Get.updateLocale(Get.locale ?? const Locale('zh', 'CN'));
+      }
+
+      await refreshFontDiskSizes();
+      SmartDialog.dismiss();
+      SmartDialog.showToast("已成功卸载字体包: ${fontModel.name}");
+    } catch (e) {
+      SmartDialog.dismiss();
+      log("Uninstallation failure loop aborted: $e");
+    }
+  }
+
+  Future<void> _loadInitialFontManifest() async {
+    try {
+      final jsonStr = await rootBundle.loadString('assets/fonts/fonts-manifest.json');
+      final List<dynamic> list = json.decode(jsonStr);
+
+      final List<FontModel> parsedModels = list.map((e) => FontModel.fromJson(e)).toList();
+      fontList.assignAll(parsedModels);
+
+      await initUserFontLifecycle();
+    } catch (e) {
+      log("Failed to load fonts manifest from assets: $e");
+    }
+  }
+
+  Future<void> initUserFontLifecycle() async {
+    final savedFontId = HivePrefUtil.getString('fontFamilyName') ?? 'Default';
+
+    if (savedFontId != 'Default') {
+      final isDownloaded = await FontDownloadManager.instance.checkFontDownloaded(savedFontId);
+      if (isDownloaded) {
+        await FontDownloadManager.instance.loadFont(savedFontId);
+      }
+    }
+
+    if (fontList.isNotEmpty) {
+      curFontModel.value = fontList.firstWhere((element) => element.id == savedFontId, orElse: () => fontList.first);
+
+      final isDownloaded = await FontDownloadManager.instance.checkFontDownloaded(curFontModel.value!.id);
+      fontState.value = isDownloaded ? DownloadState.downloaded : DownloadState.notDownloaded;
+    }
+  }
+
   void refreshSystemTheme() {
     final themeColor = HexColor(themeColorSwitch.value);
     final updatedThemeEngine = MyTheme(primaryColor: themeColor);
@@ -909,6 +1014,7 @@ class SettingsService extends GetxController {
     fontSizeTitleLarge.value = json['fontSizeTitleLarge'] != null
         ? double.parse(json['fontSizeTitleLarge'].toString())
         : 20.0;
+    fontFamilyName.value = json['fontFamilyName'] ?? 'Default';
     videoOutputDriver.value = PlayerConsts.videoOutputDrivers.keys.contains(json['videoOutputDriver'])
         ? json['videoOutputDriver']
         : 'gpu';
@@ -1003,6 +1109,7 @@ class SettingsService extends GetxController {
     json['fontSizeBodyLarge'] = fontSizeBodyLarge.value;
     json['fontSizeTitleMedium'] = fontSizeTitleMedium.value;
     json['fontSizeTitleLarge'] = fontSizeTitleLarge.value;
+    json['fontFamilyName'] = fontFamilyName.value;
     return json;
   }
 }

@@ -48,7 +48,7 @@ class BiliBiliQRLoginPage extends GetView<BiliBiliQRLoginController> {
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildModernCard(theme, [
+                  context.buildModernCard([
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: ClipRRect(
@@ -123,18 +123,6 @@ class BiliBiliQRLoginPage extends GetView<BiliBiliQRLoginController> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildModernCard(ThemeData theme, List<Widget> children) {
-    return Material(
-      clipBehavior: Clip.antiAlias,
-      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
-        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
-      ),
-      child: Column(children: children),
     );
   }
 

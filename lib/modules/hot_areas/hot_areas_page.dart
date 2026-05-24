@@ -17,7 +17,7 @@ class HotAreasPage extends GetView<HotAreasController> {
         children: [
           _buildTipBanner(theme),
           const SizedBox(height: 16),
-          _buildGroupTitle(theme, i18n('platform_display')),
+          context.buildGroupTitle(i18n('platform_display')),
           Obx(() {
             if (controller.sites.isEmpty) return const SizedBox.shrink();
 
@@ -97,20 +97,6 @@ class HotAreasPage extends GetView<HotAreasController> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildGroupTitle(ThemeData theme, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 8),
-      child: Text(
-        text,
-        style: AppTextStyles.t12.copyWith(
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary.withValues(alpha: 0.65),
-          letterSpacing: 0.5,
-        ),
       ),
     );
   }

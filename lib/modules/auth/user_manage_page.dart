@@ -91,8 +91,8 @@ class _UserManagerState extends State<UserManager> {
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           children: [
-            _buildGroupTitle(theme, i18n('manage_users')),
-            _buildModernCard(theme, [
+            context.buildGroupTitle(i18n('manage_users')),
+            context.buildModernCard([
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -143,11 +143,10 @@ class _UserManagerState extends State<UserManager> {
               ),
             ]),
             const SizedBox(height: 24),
-            Obx(() => _buildGroupTitle(theme, i18n('user_count', args: {'count': users.length.toString()}))),
+            Obx(() => context.buildGroupTitle(i18n('user_count', args: {'count': users.length.toString()}))),
             Obx(() {
               if (users.isEmpty) return const SizedBox.shrink();
-              return _buildModernCard(
-                theme,
+              return context.buildModernCard(
                 users.asMap().entries.map((entry) {
                   int index = entry.key;
                   String email = entry.value;
@@ -190,32 +189,6 @@ class _UserManagerState extends State<UserManager> {
             }),
             const SizedBox(height: 32),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildModernCard(ThemeData theme, List<Widget> children) {
-    return Material(
-      clipBehavior: Clip.antiAlias,
-      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
-      ),
-      child: Column(children: children),
-    );
-  }
-
-  Widget _buildGroupTitle(ThemeData theme, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 8),
-      child: Text(
-        text,
-        style: AppTextStyles.t12.copyWith(
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary.withValues(alpha: 0.65),
-          letterSpacing: 0.5,
         ),
       ),
     );

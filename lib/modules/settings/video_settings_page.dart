@@ -19,8 +19,8 @@ class VideoSettingsPage extends GetView<SettingsService> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
           // 📦 分组一：音频控制 (Audio Settings)
-          _buildGroupTitle(theme, i18n("global_mute")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("global_mute")),
+          context.buildModernCard([
             Obx(
               () => _buildSwitchTile(
                 context,
@@ -55,8 +55,8 @@ class VideoSettingsPage extends GetView<SettingsService> {
           const SizedBox(height: 20),
 
           // 📦 分组二：清晰度与画质 (Resolution & Quality)
-          _buildGroupTitle(theme, i18n("prefer_resolution")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("prefer_resolution")),
+          context.buildModernCard([
             Obx(
               () => _buildTile(
                 context,
@@ -88,8 +88,8 @@ class VideoSettingsPage extends GetView<SettingsService> {
           const SizedBox(height: 20),
 
           // 📦 分组三：播放行为 (Playback Behaviors)
-          _buildGroupTitle(theme, i18n("exit_float_window")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("exit_float_window")),
+          context.buildModernCard([
             if (Platform.isAndroid) _buildBackgroundPlayTile(context),
             _buildSwitchTile(
               context,
@@ -118,8 +118,8 @@ class VideoSettingsPage extends GetView<SettingsService> {
           const SizedBox(height: 20),
 
           // 📦 分组四：弹幕设置 (Danmaku Settings)
-          _buildGroupTitle(theme, i18n("show_danmaku")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("show_danmaku")),
+          context.buildModernCard([
             _buildSwitchTile(
               context,
               title: i18n('show_danmaku'),
@@ -138,18 +138,6 @@ class VideoSettingsPage extends GetView<SettingsService> {
           const SizedBox(height: 32),
         ],
       ),
-    );
-  }
-
-  Widget _buildModernCard(ThemeData theme, List<Widget> children) {
-    return Material(
-      clipBehavior: Clip.antiAlias,
-      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
-      ),
-      child: Column(children: children),
     );
   }
 
@@ -253,20 +241,6 @@ class VideoSettingsPage extends GetView<SettingsService> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildGroupTitle(ThemeData theme, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 8),
-      child: Text(
-        text,
-        style: AppTextStyles.t12.copyWith(
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary.withValues(alpha: 0.65),
-          letterSpacing: 0.5,
-        ),
       ),
     );
   }

@@ -7,16 +7,14 @@ class GeneralSettingsPage extends GetView<SettingsService> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(title: Text(i18n("general"))),
       body: ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          _buildGroupTitle(theme, i18n("general")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("general")),
+          context.buildModernCard([
             _buildSwitchTile(
               context,
               title: i18n('splash_animation'),
@@ -54,18 +52,6 @@ class GeneralSettingsPage extends GetView<SettingsService> {
     );
   }
 
-  Widget _buildModernCard(ThemeData theme, List<Widget> children) {
-    return Material(
-      clipBehavior: Clip.antiAlias,
-      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
-      ),
-      child: Column(children: children),
-    );
-  }
-
   Widget _buildSwitchTile(
     BuildContext context, {
     required String title,
@@ -93,20 +79,6 @@ class GeneralSettingsPage extends GetView<SettingsService> {
         activeThumbColor: theme.colorScheme.primary,
         onChanged: (val) => value.value = val,
         contentPadding: const EdgeInsets.only(left: 16, top: 2, bottom: 2, right: 8),
-      ),
-    );
-  }
-
-  Widget _buildGroupTitle(ThemeData theme, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 8),
-      child: Text(
-        text,
-        style: AppTextStyles.t12.copyWith(
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary.withValues(alpha: 0.65),
-          letterSpacing: 0.5,
-        ),
       ),
     );
   }

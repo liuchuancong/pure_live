@@ -757,7 +757,19 @@
     "font_title_medium_desc": "Used for live room grid titles and popup input headers",
     "font_title_large_title": "Scaffold App Headers (Title Large)",
     "font_title_large_desc": "Used for top AppBar navigation titles and critical alert headings",
-
+    "downloading_font": "Downloading and registering font bundle...",
+    "font_load_failed": "Font bundle sync sequence aborted.",
     "font_settings_desc": "Granularly fine-tune baseline typography tokens",
-    "reset": "Reset"
+    "reset": "Reset",
+    "font_family_settings": "Font Family Settings",
+    "change_font_family": "Change System Font",
+    "current_font_prefix": "Current",
+    "factory_default_group": "System Preset Environment",
+  "factory_default_desc": "Restore system native default typography rendering",
+  "cloud_font_group": "Extended Typographic Vault",
+  "font_units_suffix": "weight variant asset files",
+  "font_currently_active": "Currently Active",
+  "delete": "Delete",
+  "apply": "Apply",
+  "download": "Download"
 }

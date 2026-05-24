@@ -36,7 +36,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
           padding: const EdgeInsets.all(20),
           children: [
             _buildSectionHeader(i18n("basic_config")),
-            _buildModernCard(theme, [
+            context.buildModernCard([
               _buildTile(
                 theme,
                 Icons.high_quality_rounded,
@@ -78,7 +78,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
               ],
             ),
 
-            _buildModernCard(theme, [
+            context.buildModernCard([
               _buildTile(
                 theme,
                 Icons.folder_rounded,
@@ -149,7 +149,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
             ]),
 
             _buildSectionHeader(i18n("record_performance_quality")),
-            _buildModernCard(theme, [
+            context.buildModernCard([
               _buildSwitchTile(
                 Icons.hd_rounded,
                 i18n("prefer_best_stream"),
@@ -195,7 +195,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
             ]),
 
             _buildSectionHeader(i18n("auto_reconnect")),
-            _buildModernCard(theme, [
+            context.buildModernCard([
               _buildSwitchTile(
                 Icons.refresh_rounded,
                 i18n("auto_reconnect_switch"),
@@ -229,7 +229,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
             ]),
 
             _buildSectionHeader(i18n("polling_detection")),
-            _buildModernCard(theme, [
+            context.buildModernCard([
               _buildSwitchTile(
                 Icons.radar_rounded,
                 i18n("enable_polling"),
@@ -298,18 +298,6 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
           letterSpacing: 1.2,
         ),
       ),
-    );
-  }
-
-  Widget _buildModernCard(ThemeData theme, List<Widget> children) {
-    return Material(
-      clipBehavior: Clip.antiAlias,
-      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
-        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1), width: 1),
-      ),
-      child: Column(children: children),
     );
   }
 

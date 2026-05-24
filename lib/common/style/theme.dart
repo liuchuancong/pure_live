@@ -8,7 +8,15 @@ class MyTheme {
 
   MyTheme({this.primaryColor, this.colorScheme}) : assert(colorScheme == null || primaryColor == null);
 
-  String? get _platformFontFamily {
+  String? _getEffectiveFontFamily(String selectedName, List<String> availableCustomFonts) {
+    if (availableCustomFonts.contains(selectedName)) {
+      return selectedName;
+    }
+
+    if (selectedName == 'Roboto') return GoogleFonts.roboto().fontFamily;
+    if (selectedName == 'NotoSans') return GoogleFonts.notoSansSc().fontFamily;
+    if (selectedName == 'Monospace') return 'monospace';
+
     if (PlatformUtils.isWindows) return 'PingFang';
     if (PlatformUtils.isAndroid) return GoogleFonts.roboto().fontFamily;
     return null;
@@ -16,8 +24,10 @@ class MyTheme {
 
   ThemeData _buildTheme(Brightness brightness) {
     final bool isDark = brightness == Brightness.dark;
-    final String? fontFamily = _platformFontFamily;
     final settings = Get.find<SettingsService>();
+
+    final List<String> customFontIds = settings.fontList.map((e) => e.id).toList();
+    final String? fontFamily = _getEffectiveFontFamily(settings.fontFamilyName.value, customFontIds);
 
     ColorScheme? effectiveColorScheme = colorScheme;
     if (isDark && effectiveColorScheme != null) {

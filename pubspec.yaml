@@ -266,6 +266,7 @@ flutter:
     - assets/animations/loading.json
     - assets/animations/empty.json
     - assets/animations/error.json
+    - assets/fonts/fonts-manifest.json
   # 字体配置
   fonts:
     - family: CustomIcons

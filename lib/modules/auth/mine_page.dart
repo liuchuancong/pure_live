@@ -38,8 +38,8 @@ class _MinePageState extends State<MinePage> {
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          _buildGroupTitle(theme, i18n('supabase_mine')),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n('supabase_mine')),
+          context.buildModernCard([
             if (isManager())
               _buildTile(
                 context,
@@ -77,18 +77,6 @@ class _MinePageState extends State<MinePage> {
     );
   }
 
-  Widget _buildModernCard(ThemeData theme, List<Widget> children) {
-    return Material(
-      clipBehavior: Clip.antiAlias,
-      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
-      ),
-      child: Column(children: children),
-    );
-  }
-
   Widget _buildTile(
     BuildContext context, {
     required IconData icon,
@@ -115,20 +103,6 @@ class _MinePageState extends State<MinePage> {
       trailing: Icon(Icons.chevron_right_rounded, color: theme.hintColor.withValues(alpha: 0.4), size: 20),
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-    );
-  }
-
-  Widget _buildGroupTitle(ThemeData theme, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 8),
-      child: Text(
-        text,
-        style: AppTextStyles.t12.copyWith(
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary.withValues(alpha: 0.65),
-          letterSpacing: 0.5,
-        ),
-      ),
     );
   }
 }

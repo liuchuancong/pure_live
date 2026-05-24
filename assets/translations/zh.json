@@ -757,5 +757,18 @@
     "font_title_large_title": "大号顶栏标题 (Title Large)",
     "font_title_large_desc": "用于页面顶栏(AppBar)大标题、警告对话框主体抬头",
     "font_settings_desc": "微调系统各项组件的专属预设字号基础值",
-    "reset": "重置"
+    "reset": "重置",
+    "font_family_settings": "字体样式设置",
+    "downloading_font": "正在下载并载入全套字库...",
+    "font_load_failed": "字库载入失败，请重试",
+    "change_font_family": "更换系统默认字体",
+    "current_font_prefix": "当前字体",
+      "factory_default_group": "系统预设环境",
+  "factory_default_desc": "恢复至系统原生默认字体家族渲染",
+  "cloud_font_group": "扩展个性化字库",
+  "font_units_suffix": "个字重组件文件",
+  "font_currently_active": "当前正使用",
+  "delete": "删除",
+  "apply": "应用",
+  "download": "下载"
 }

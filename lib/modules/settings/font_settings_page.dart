@@ -6,8 +6,6 @@ class FontSettingsPage extends GetView<SettingsService> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
         title: Text(i18n("font_settings_title")),
@@ -26,8 +24,8 @@ class FontSettingsPage extends GetView<SettingsService> {
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          _buildGroupTitle(theme, i18n("body_typography_group")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("body_typography_group")),
+          context.buildModernCard([
             _buildSliderTile(
               context,
               title: i18n("font_body_small_title"),
@@ -57,8 +55,8 @@ class FontSettingsPage extends GetView<SettingsService> {
           ]),
           const SizedBox(height: 20),
 
-          _buildGroupTitle(theme, i18n("header_typography_group")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("header_typography_group")),
+          context.buildModernCard([
             _buildSliderTile(
               context,
               title: i18n("font_title_medium_title"),
@@ -135,31 +133,5 @@ class FontSettingsPage extends GetView<SettingsService> {
     controller.fontSizeTitleMedium.value = 15.0;
     controller.fontSizeTitleLarge.value = 20.0;
     ToastUtil.show(i18n("settings_saved"));
-  }
-
-  Widget _buildGroupTitle(ThemeData theme, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 8),
-      child: Text(
-        text,
-        style: AppTextStyles.t12.copyWith(
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary.withValues(alpha: 0.65),
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildModernCard(ThemeData theme, List<Widget> children) {
-    return Material(
-      clipBehavior: Clip.antiAlias,
-      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
-      ),
-      child: Column(children: children),
-    );
   }
 }
