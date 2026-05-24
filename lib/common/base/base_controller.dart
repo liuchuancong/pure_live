@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:pure_live/common/index.dart';
 
-
 class BaseController extends GetxController {
   /// 加载中，更新页面
   var pageLoadding = false.obs;
@@ -95,7 +94,7 @@ class BasePageController<T> extends BaseController {
         }
       }
       // 赋值数据
-      if (currentPage == 1) {
+      if (currentPage == 2) {
         list.value = result;
       } else {
         list.addAll(result);

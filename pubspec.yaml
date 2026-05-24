@@ -29,6 +29,7 @@ dependencies:
   drift: ^2.22.1
   sqlite3_flutter_libs: ^0.5.28
   charset_converter: ^2.3.0
+  synchronized: ^3.1.0
   # -------------------------- 网络请求/网络状态 --------------------------
   http: ^1.1.0 # 基础HTTP请求
   dio: ^5.9.0 # 强大的Dart HTTP客户端
@@ -119,7 +120,6 @@ dependencies:
   file_picker: ^11.0.2 # 文件选择器
   uri_to_file: ^1.0.0 # URI转文件
   open_filex: ^4.7.0 # 打开本地文件
-  apk_sideload: ^0.0.2 # 安装APKwall
   mime: ^2.0.0 # MIME类型处理
 
   # -------------------------- 工具/通用库 --------------------------
