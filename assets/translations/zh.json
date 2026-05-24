@@ -721,5 +721,15 @@
     "network_error_subtitle": "无法连接到该直播平台，请稍后重试",
     "login_required_title": "需要登录账号",
     "login_required_subtitle": "该平台数据已被风控隐藏，请登录账号后重试",
-    "go_to_login": "前往登录"
+    "go_to_login": "前往登录",
+    "auto_sync_title": "启动时全自动同步",
+    "auto_sync_desc": "应用冷启动时自动在后台静默检查并更新网络资源",
+    "sync_interval_title": "自动同步检查间隔",
+    "select_sync_interval": "选择自动同步时间间隔",
+    "settings_saved": "同步配置已保存",
+    "sync_interval_hours": "当前每隔 {hour} 小时进行一次同步",
+    "network_m3u_txt": "网络直播源 (M3U/TXT)",
+    "network_epg": "网络 EPG 节目单",
+    "local_m3u_txt": "本地直播源 (M3U/TXT)",
+    "local_epg": "本地 EPG 节目单"
 }

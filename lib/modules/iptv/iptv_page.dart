@@ -196,6 +196,32 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
             ),
           ]),
           const SizedBox(height: 20),
+          _buildGroupTitle(theme, i18n("auto_sync_settings")),
+          _buildModernCard(theme, [
+            _buildSwitchTile(
+              context,
+              icon: Remix.refresh_line,
+              title: i18n("auto_sync_title"),
+              subtitle: i18n("auto_sync_desc"),
+              value: settings.isAutoSyncEnabled,
+            ),
+            Obx(() {
+              if (!settings.isAutoSyncEnabled.value) return const SizedBox.shrink();
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildTile(
+                    context,
+                    icon: Remix.time_line,
+                    title: i18n("sync_interval_title"),
+                    subtitle: i18n("sync_interval_hours", args: {"hour": "${settings.autoSyncHoursInterval.value}"}),
+                    onTap: () => _showIntervalSelectionMenu(context, settings),
+                  ),
+                ],
+              );
+            }),
+          ]),
+          const SizedBox(height: 20),
           _buildGroupTitle(theme, i18n("iptv_settings")),
           _buildModernCard(theme, [
             _buildTile(
@@ -231,6 +257,37 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
           ]),
           const SizedBox(height: 32),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSwitchTile(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required RxBool value,
+    required IconData icon,
+  }) {
+    final theme = Theme.of(context);
+    return Obx(
+      () => SwitchListTile(
+        secondary: Icon(icon, size: 22, color: theme.colorScheme.primary),
+        title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+        subtitle: subtitle.isEmpty
+            ? null
+            : Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  subtitle,
+                  style: TextStyle(fontSize: 12, color: theme.hintColor.withValues(alpha: 0.75)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+        value: value.value,
+        activeThumbColor: theme.colorScheme.primary,
+        onChanged: (val) => value.value = val,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
       ),
     );
   }
@@ -286,6 +343,69 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
           letterSpacing: 0.5,
         ),
       ),
+    );
+  }
+
+  void _showIntervalSelectionMenu(BuildContext context, SettingsService settings) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        final theme = Theme.of(context);
+        final List<int> hoursOptions = [2, 6, 12, 24, 48, 72];
+
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          titlePadding: const EdgeInsets.only(top: 24, left: 24, right: 24, bottom: 8),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          title: Row(
+            children: [
+              Icon(Remix.time_line, color: theme.colorScheme.primary, size: 24),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  i18n("select_sync_interval"),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: hoursOptions.map((hours) {
+              return Material(
+                color: Colors.transparent,
+                child: Obx(() {
+                  // 💡 判定当前小时数是否处于被激活状态
+                  final bool isSelected = settings.autoSyncHoursInterval.value == hours;
+
+                  return ListTile(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    tileColor: isSelected ? theme.colorScheme.primary.withValues(alpha: 0.08) : null,
+                    leading: Icon(
+                      isSelected ? Remix.checkbox_circle_fill : Remix.checkbox_blank_circle_line,
+                      color: isSelected ? theme.colorScheme.primary : theme.hintColor.withValues(alpha: 0.5),
+                      size: 22,
+                    ),
+                    title: Text(
+                      "$hours ${i18n("hours")}",
+                      style: TextStyle(
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                        color: isSelected ? theme.colorScheme.primary : null,
+                      ),
+                    ),
+                    onTap: () {
+                      settings.autoSyncHoursInterval.value = hours;
+
+                      Navigator.of(context).pop();
+                      ToastUtil.show(i18n("settings_saved"));
+                    },
+                  );
+                }),
+              );
+            }).toList(),
+          ),
+        );
+      },
     );
   }
 

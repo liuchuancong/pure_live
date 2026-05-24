@@ -722,5 +722,15 @@
     "network_error_subtitle": "Unable to connect to the platform. Please try again later",
     "login_required_title": "Login Required",
     "login_required_subtitle": "This platform data is hidden, please log in to your account and try again",
-    "go_to_login": "Go to Login"
+    "go_to_login": "Go to Login",
+    "auto_sync_title": "Auto-Sync on Launch",
+    "auto_sync_desc": "Automatically check and update network resources silently when app starts.",
+    "sync_interval_title": "Auto-Sync Interval",
+    "select_sync_interval": "Select Sync Interval",
+    "settings_saved": "Sync configuration saved.",
+    "sync_interval_hours": "Sync once every {hour} hours",
+    "network_m3u_txt": "Network Playlists (M3U/TXT)",
+    "network_epg": "Network EPG Sources",
+    "local_m3u_txt": "Local Playlists (M3U/TXT)",
+    "local_epg": "Local EPG Sources"
 }

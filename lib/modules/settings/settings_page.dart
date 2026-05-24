@@ -95,18 +95,28 @@ class SettingsPage extends GetView<SettingsService> {
             ),
             _buildTile(
               context,
-              icon: Remix.database_2_line,
-              title: i18n("cache_and_data"),
-              subtitle: i18n("cache_and_data_desc"),
-              onTap: () => Get.to(() => const CacheDataSettingsPage()),
-            ),
-            _buildTile(
-              context,
               icon: Remix.apps_2_line,
               title: i18n("platform_settings"),
               subtitle: i18n("platform_settings_desc"),
               onTap: () => Get.to(() => const PlatformSettingsPage()),
             ),
+          ]),
+
+          const SizedBox(height: 20),
+          _buildGroupTitle(theme, i18n("cache_and_data")),
+          _buildModernCard(theme, [
+            _buildTile(
+              context,
+              icon: Remix.database_2_line,
+              title: i18n("cache_and_data"),
+              subtitle: i18n("cache_and_data_desc"),
+              onTap: () => Get.to(() => const CacheDataSettingsPage()),
+            ),
+          ]),
+
+          const SizedBox(height: 20),
+          _buildGroupTitle(theme, i18n("create_backup")),
+          _buildModernCard(theme, [
             _buildTile(
               context,
               icon: Remix.refresh_line,

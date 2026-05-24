@@ -1,6 +1,4 @@
-import 'dart:io' as io;
 import 'dart:developer';
-import 'package:dio/io.dart';
 import 'package:dio/dio.dart';
 import 'custom_interceptor.dart';
 import 'package:pure_live/common/index.dart';
@@ -23,15 +21,15 @@ class HttpClient {
         sendTimeout: const Duration(seconds: 20),
       ),
     );
-    dio.httpClientAdapter = IOHttpClientAdapter(
-      createHttpClient: () {
-        final client = io.HttpClient();
-        client.badCertificateCallback = (io.X509Certificate cert, String host, int port) {
-          return true;
-        };
-        return client;
-      },
-    );
+    // dio.httpClientAdapter = IOHttpClientAdapter(
+    //   createHttpClient: () {
+    //     final client = io.HttpClient();
+    //     client.badCertificateCallback = (io.X509Certificate cert, String host, int port) {
+    //       return true;
+    //     };
+    //     return client;
+    //   },
+    // );
     dio.interceptors.add(CustomInterceptor());
   }
 
