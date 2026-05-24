@@ -156,7 +156,7 @@ class EnhancedListTile extends StatelessWidget {
             ),
             child: Text(
               room.platform?.toUpperCase() ?? '',
-              style: AppTextStyles.t11.copyWith(fontSize: 9, fontWeight: FontWeight.w400, color: Colors.white),
+              style: AppTextStyles.t11.copyWith(fontWeight: FontWeight.w400, color: Colors.white),
             ),
           ),
           if (room.watching != null)

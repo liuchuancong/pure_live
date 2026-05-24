@@ -143,7 +143,7 @@ class ErrorWidget extends StatelessWidget {
             padding: const EdgeInsets.all(8.0),
             child: Text(
               i18n("play_video_failed"),
-              style: AppTextStyles.t14.copyWith(color: Colors.white, fontSize: 16),
+              style: AppTextStyles.t14.copyWith(color: Colors.white),
             ),
           ),
           ElevatedButton(
@@ -199,11 +199,9 @@ class TopActionBar extends StatelessWidget {
                       Text(
                         controller.room.title!,
                         overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.t16.copyWith(
-                          color: Colors.white,
+                        style: AppTextStyles.t16.copyWith(color: Colors.white,
                           fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.none,
-                        ),
+                          decoration: TextDecoration.none),
                       ),
                       if (controller.room.currentProgramme != null && controller.room.currentProgramme!.isNotEmpty) ...[
                         const SizedBox(height: 2),
@@ -281,11 +279,8 @@ class TopActionBar extends StatelessWidget {
                 Expanded(
                   child: Text(
                     i18n('channel_schedule'),
-                    style: AppTextStyles.t15.copyWith(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      color: theme.textTheme.titleLarge?.color,
-                    ),
+                    style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w700,
+                      color: theme.textTheme.titleLarge?.color),
                   ),
                 ),
                 IconButton(
@@ -384,20 +379,16 @@ class TopActionBar extends StatelessWidget {
                             ),
                             child: Text(
                               "${prog.start.hour.toString().padLeft(2, '0')}:${prog.start.minute.toString().padLeft(2, '0')}",
-                              style: AppTextStyles.t13.copyWith(
-                                fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
-                                color: isCurrent ? activePrimary : secondaryTextColor,
-                              ),
+                              style: AppTextStyles.t13.copyWith(fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
+                                color: isCurrent ? activePrimary : secondaryTextColor),
                             ),
                           ),
                           title: Text(
                             prog.title,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.t14.copyWith(
-                              fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                              color: isCurrent ? activePrimary : unselectedTextColor,
-                            ),
+                            style: AppTextStyles.t14.copyWith(fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                              color: isCurrent ? activePrimary : unselectedTextColor),
                           ),
                           trailing: isCurrent
                               ? Container(

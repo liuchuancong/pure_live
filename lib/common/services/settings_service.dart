@@ -147,6 +147,11 @@ class SettingsService extends GetxController {
   final customIptvUserAgent = (HivePrefUtil.getString('customIptvUserAgent') ?? '').obs;
 
   final textScaleFactor = (HivePrefUtil.getDouble('textScaleFactor') ?? 1.0).obs;
+  final fontSizeBodySmall = (HivePrefUtil.getDouble('fontSizeBodySmall') ?? 12.0).obs;
+  final fontSizeBodyMedium = (HivePrefUtil.getDouble('fontSizeBodyMedium') ?? 13.0).obs;
+  final fontSizeBodyLarge = (HivePrefUtil.getDouble('fontSizeBodyLarge') ?? 14.0).obs;
+  final fontSizeTitleMedium = (HivePrefUtil.getDouble('fontSizeTitleMedium') ?? 15.0).obs;
+  final fontSizeTitleLarge = (HivePrefUtil.getDouble('fontSizeTitleLarge') ?? 20.0).obs;
   // ==============================
   // 🧩 Lifecycle: onInit
   // ==============================
@@ -416,13 +421,44 @@ class SettingsService extends GetxController {
     });
 
     textScaleFactor.listen((value) {
+      Get.forceAppUpdate();
       HivePrefUtil.setDouble('textScaleFactor', value);
     });
+    fontSizeBodySmall.listen((value) {
+      HivePrefUtil.setDouble('fontSizeBodySmall', value);
+    });
+    fontSizeBodyMedium.listen((value) {
+      HivePrefUtil.setDouble('fontSizeBodyMedium', value);
+    });
+    fontSizeBodyLarge.listen((value) {
+      HivePrefUtil.setDouble('fontSizeBodyLarge', value);
+    });
+    fontSizeTitleMedium.listen((value) {
+      HivePrefUtil.setDouble('fontSizeTitleMedium', value);
+    });
+    fontSizeTitleLarge.listen((value) {
+      HivePrefUtil.setDouble('fontSizeTitleLarge', value);
+    });
+    ever(fontSizeBodySmall, (_) => refreshSystemTheme());
+    ever(fontSizeBodyMedium, (_) => refreshSystemTheme());
+    ever(fontSizeBodyLarge, (_) => refreshSystemTheme());
+    ever(fontSizeTitleMedium, (_) => refreshSystemTheme());
+    ever(fontSizeTitleLarge, (_) => refreshSystemTheme());
   }
 
   // ==============================
   // 🛠️ 方法区（按功能分组）
   // ==============================
+  void refreshSystemTheme() {
+    final themeColor = HexColor(themeColorSwitch.value);
+    final updatedThemeEngine = MyTheme(primaryColor: themeColor);
+
+    if (Get.isDarkMode) {
+      Get.changeTheme(updatedThemeEngine.darkThemeData);
+    } else {
+      Get.changeTheme(updatedThemeEngine.lightThemeData);
+    }
+  }
 
   // --- 主题 & 语言 ---
   void changeThemeMode(String mode) {
@@ -443,7 +479,6 @@ class SettingsService extends GetxController {
     languageName.value = value;
     HivePrefUtil.setString('language', value);
     EasyLocalization.of(Get.context!)!.setLocale(AppConsts.languages[value]!);
-    Get.updateLocale(language);
   }
 
   // --- 播放器 & 分辨率 ---
@@ -859,6 +894,21 @@ class SettingsService extends GetxController {
     themeColorSwitch.value = json['themeColorSwitch'] ?? Colors.blue.hex;
     customPlayerOutput.value = json['customPlayerOutput'] ?? false;
     textScaleFactor.value = json['textScaleFactor'] != null ? double.parse(json['textScaleFactor'].toString()) : 1.0;
+    fontSizeBodySmall.value = json['fontSizeBodySmall'] != null
+        ? double.parse(json['fontSizeBodySmall'].toString())
+        : 12.0;
+    fontSizeBodyMedium.value = json['fontSizeBodyMedium'] != null
+        ? double.parse(json['fontSizeBodyMedium'].toString())
+        : 13.0;
+    fontSizeBodyLarge.value = json['fontSizeBodyLarge'] != null
+        ? double.parse(json['fontSizeBodyLarge'].toString())
+        : 14.0;
+    fontSizeTitleMedium.value = json['fontSizeTitleMedium'] != null
+        ? double.parse(json['fontSizeTitleMedium'].toString())
+        : 15.0;
+    fontSizeTitleLarge.value = json['fontSizeTitleLarge'] != null
+        ? double.parse(json['fontSizeTitleLarge'].toString())
+        : 20.0;
     videoOutputDriver.value = PlayerConsts.videoOutputDrivers.keys.contains(json['videoOutputDriver'])
         ? json['videoOutputDriver']
         : 'gpu';
@@ -948,6 +998,11 @@ class SettingsService extends GetxController {
     json['globalVolumeMute'] = globalVolumeMute.value;
     json['roomVolumes'] = jsonEncode(roomVolumes.value);
     json['textScaleFactor'] = textScaleFactor.value;
+    json['fontSizeBodySmall'] = fontSizeBodySmall.value;
+    json['fontSizeBodyMedium'] = fontSizeBodyMedium.value;
+    json['fontSizeBodyLarge'] = fontSizeBodyLarge.value;
+    json['fontSizeTitleMedium'] = fontSizeTitleMedium.value;
+    json['fontSizeTitleLarge'] = fontSizeTitleLarge.value;
     return json;
   }
 }

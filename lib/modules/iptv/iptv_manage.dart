@@ -258,7 +258,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
           child: Icon(icon, color: theme.colorScheme.primary),
         ),
         const SizedBox(height: 10),
-        Text(value, style: AppTextStyles.t12.copyWith(fontSize: 22, fontWeight: FontWeight.bold)),
+        Text(value, style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
         Text(title, style: AppTextStyles.t11.copyWith(color: theme.hintColor)),
       ],
@@ -270,7 +270,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
       children: [
         Icon(icon, size: 18, color: theme.colorScheme.primary),
         const SizedBox(width: 8),
-        Text(title, style: AppTextStyles.t12.copyWith(fontSize: 17, fontWeight: FontWeight.bold)),
+        Text(title, style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -476,12 +476,9 @@ class _IptvManagePageState extends State<IptvManagePage> {
             ),
             child: Text(
               formatText,
-              style: AppTextStyles.t12.copyWith(
-                fontSize: 8,
-                fontWeight: FontWeight.w900,
+              style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.w900,
                 color: Colors.white,
-                letterSpacing: 0.2,
-              ),
+                letterSpacing: 0.2),
             ),
           ),
         ),

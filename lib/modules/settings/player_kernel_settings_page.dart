@@ -48,10 +48,8 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                 onTap: showProxySettingsDialog,
                 trailing: Text(
                   controller.enableProxy.value ? i18n("enabled") : i18n("disabled"),
-                  style: AppTextStyles.t13.copyWith(
-                    color: controller.enableProxy.value ? theme.colorScheme.primary : theme.hintColor,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: AppTextStyles.t13.copyWith(color: controller.enableProxy.value ? theme.colorScheme.primary : theme.hintColor,
+                    fontWeight: FontWeight.w600),
                 ),
               );
             }),
@@ -149,8 +147,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
       padding: const EdgeInsets.only(left: 8, bottom: 8),
       child: Text(
         text,
-        style: AppTextStyles.t12.copyWith(
-          fontWeight: FontWeight.bold,
+        style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.bold,
           color: theme.colorScheme.primary.withValues(alpha: 0.65),
           letterSpacing: 0.5,
         ),

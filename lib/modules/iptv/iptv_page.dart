@@ -76,7 +76,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
           children: [
             Text(
               i18n("select_epg_source"),
-              style: AppTextStyles.t11.copyWith(fontWeight: FontWeight.bold, fontSize: 18),
+              style: AppTextStyles.t11.copyWith(fontWeight: FontWeight.bold),
             ),
             IconButton(icon: const Icon(Icons.close, size: 22), onPressed: () => Navigator.of(context).pop()),
           ],
@@ -478,8 +478,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
       padding: const EdgeInsets.only(left: 8, bottom: 8),
       child: Text(
         text,
-        style: AppTextStyles.t12.copyWith(
-          fontWeight: FontWeight.bold,
+        style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.bold,
           color: theme.colorScheme.primary.withValues(alpha: 0.65),
           letterSpacing: 0.5,
         ),

@@ -2,6 +2,7 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
+import 'package:pure_live/modules/settings/font_settings_page.dart';
 
 class ThemeSettingsPage extends GetView<SettingsService> {
   const ThemeSettingsPage({super.key});
@@ -65,11 +66,18 @@ class ThemeSettingsPage extends GetView<SettingsService> {
           const SizedBox(height: 20),
           _buildGroupTitle(theme, i18n("text_size_settings")),
           _buildModernCard(theme, [
+            _buildTile(
+              context,
+              icon: Remix.font_size,
+              title: i18n("font_settings_title"),
+              subtitle: i18n("font_settings_desc"),
+              onTap: () => Get.to(() => const FontSettingsPage()),
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
               child: Row(
                 children: [
-                  Icon(Remix.font_size, color: theme.colorScheme.primary, size: 22),
+                  Icon(Remix.text_spacing, color: theme.colorScheme.primary, size: 22),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(

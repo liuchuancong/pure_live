@@ -34,10 +34,7 @@ class RecorderPage extends GetView<RecorderController> {
         child: Scaffold(
           backgroundColor: theme.colorScheme.surface,
           appBar: AppBar(
-            title: Text(
-              i18n("recorder_title"),
-              style: AppTextStyles.t11.copyWith(fontWeight: FontWeight.bold, fontSize: 20),
-            ),
+            title: Text(i18n("recorder_title"), style: AppTextStyles.t11.copyWith(fontWeight: FontWeight.bold)),
             centerTitle: true,
             leading: (showAction || menuCount <= 1) ? const MenuButton() : null,
             elevation: 0,
@@ -63,7 +60,7 @@ class RecorderPage extends GetView<RecorderController> {
                   tabAlignment: TabAlignment.center,
                   labelColor: theme.colorScheme.primary,
                   unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-                  labelStyle: AppTextStyles.t12.copyWith(fontWeight: FontWeight.bold, fontSize: 14),
+                  labelStyle: AppTextStyles.t12.copyWith(fontWeight: FontWeight.bold),
                   unselectedLabelStyle: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w500),
                   tabs: tabs
                       .map(
@@ -293,11 +290,7 @@ class _TaskCard extends GetView<RecorderController> {
         const SizedBox(width: 4),
         Text(
           label,
-          style: AppTextStyles.t11.copyWith(
-            fontSize: 11.5,
-            color: theme.colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w500,
-          ),
+          style: AppTextStyles.t11.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500),
         ),
       ],
     );
@@ -624,12 +617,7 @@ class _Tag extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             text,
-            style: AppTextStyles.t11.copyWith(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: color,
-              letterSpacing: 0.2,
-            ),
+            style: AppTextStyles.t11.copyWith(fontWeight: FontWeight.bold, color: color, letterSpacing: 0.2),
           ),
         ],
       ),
@@ -657,11 +645,7 @@ class _EmptyView extends StatelessWidget {
           const SizedBox(height: 24),
           Text(
             i18n("recorder_empty_title"),
-            style: AppTextStyles.t16.copyWith(
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onSurface,
-            ),
+            style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
           ),
           const SizedBox(height: 8),
           Text(

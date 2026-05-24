@@ -144,7 +144,7 @@ class AppPages {
           logo: Image.asset('assets/icons/icon.png', width: 150),
           showTextLogo: true,
           logoText: i18n("welcome_use"),
-          textStyle: AppTextStyles.t20.copyWith(fontSize: 28, fontWeight: FontWeight.bold, color: textColor),
+          textStyle: AppTextStyles.t20.copyWith(fontWeight: FontWeight.bold, color: textColor),
           loaderType: LoaderType.progressBar,
           onNextPressed: () {
             Get.offAllNamed(RoutePath.kInitial);

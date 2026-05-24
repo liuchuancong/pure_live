@@ -106,6 +106,8 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
         return Obx(() {
           final themeColor = HexColor(settings.themeColorSwitch.value);
           final showSplashPage = settings.showSplashPage.value;
+
+          // 💡 1. Listen reactively to the font multiplier value change
           final currentFactor = settings.textScaleFactor.value;
 
           ThemeData lightTheme;
@@ -116,33 +118,30 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
             darkTheme = MyTheme(colorScheme: darkDynamic).darkThemeData;
           } else {
             lightTheme = MyTheme(primaryColor: themeColor).lightThemeData;
-            darkTheme = MyTheme(colorScheme: null, primaryColor: themeColor).darkThemeData;
+            darkTheme = MyTheme(primaryColor: themeColor).darkThemeData;
           }
-
           return GetMaterialApp(
             title: i18n('app_name'),
             scrollBehavior: MyCustomScrollBehavior(),
             debugShowCheckedModeBanner: false,
             themeMode: AppConsts.themeModes[settings.themeModeName.value]!,
             theme: lightTheme.copyWith(
-              appBarTheme: const AppBarTheme(surfaceTintColor: Colors.transparent),
+              appBarTheme: AppBarTheme(surfaceTintColor: Colors.transparent),
               pageTransitionsTheme: const PageTransitionsTheme(
                 builders: <TargetPlatform, PageTransitionsBuilder>{
-                  TargetPlatform.android: ZoomPageTransitionsBuilder(allowEnterRouteSnapshotting: false),
+                  TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
                 },
               ),
             ),
-            darkTheme: darkTheme.copyWith(appBarTheme: const AppBarTheme(surfaceTintColor: Colors.transparent)),
+            darkTheme: darkTheme.copyWith(appBarTheme: AppBarTheme(surfaceTintColor: Colors.transparent)),
             locale: context.locale,
             navigatorObservers: [FlutterSmartDialog.observer, BackButtonObserver()],
             builder: FlutterSmartDialog.init(
               builder: (context, child) {
                 Widget resultWidget = child ?? const SizedBox.shrink();
-
                 if (PlatformUtils.isDesktopNotMac) {
                   resultWidget = DesktopManager.buildWithTitleBar(resultWidget);
                 }
-
                 return MediaQuery(
                   data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(currentFactor)),
                   child: resultWidget,

@@ -743,5 +743,21 @@
     "text_size_settings": "Font Size Settings",
     "text_size_title": "Global Font Scaling",
     "current_scale": "Current Scale",
-    "text_size_preview": "This is a sample text to preview global font size changes"
+    "text_size_preview": "This is a sample text to preview global font size changes",
+    "font_settings_title": "Advanced Font Sizes",
+    "body_typography_group": "Body & Metadata Hierarchy",
+    "header_typography_group": "Headers & Components Hierarchy",
+    "font_body_small_title": "Micro Metadata (Body Small)",
+    "font_body_small_desc": "Used for live viewer counts, badges, and metadata chips",
+    "font_body_medium_title": "Standard Body Text (Body Medium)",
+    "font_body_medium_desc": "Used for primary descriptive copy and regular list labels",
+    "font_body_large_title": "Prominent Body Text (Body Large)",
+    "font_body_large_desc": "Used for main list item titles and active block descriptors",
+    "font_title_medium_title": "Component Headers (Title Medium)",
+    "font_title_medium_desc": "Used for live room grid titles and popup input headers",
+    "font_title_large_title": "Scaffold App Headers (Title Large)",
+    "font_title_large_desc": "Used for top AppBar navigation titles and critical alert headings",
+
+    "font_settings_desc": "Granularly fine-tune baseline typography tokens",
+    "reset": "Reset"
 }

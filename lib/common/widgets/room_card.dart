@@ -181,10 +181,8 @@ class RoomCard extends StatelessWidget {
                       ),
                       child: Text(
                         room.platform?.toUpperCase() ?? '',
-                        style: AppTextStyles.t11.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.grey[300] : Colors.grey[800],
-                        ),
+                        style: AppTextStyles.t11.copyWith(fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.grey[300] : Colors.grey[800]),
                       ),
                     ),
             ),

@@ -128,7 +128,7 @@ class LivePlayPage extends GetView<LivePlayController> {
                     (detail.area == null || detail.area!.isEmpty)
                         ? (detail.platform?.toUpperCase() ?? '')
                         : "${detail.platform?.toUpperCase()} / ${detail.area}",
-                    style: AppTextStyles.t11.copyWith(fontSize: 8),
+                    style: AppTextStyles.t11,
                   ),
                 ],
               );
@@ -846,11 +846,8 @@ class NotLivingVideoWidget extends StatelessWidget {
                     child: Text(
                       controller.room.title!,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.t14.copyWith(
-                        color: Colors.white,
-                        fontSize: 16,
-                        decoration: TextDecoration.none,
-                      ),
+                      style: AppTextStyles.t14.copyWith(color: Colors.white,
+                        decoration: TextDecoration.none),
                     ),
                   ),
                 ),

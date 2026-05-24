@@ -75,7 +75,7 @@ class ToolBoxPage extends GetView<ToolBoxController> {
                 minLines: 3,
                 maxLines: 5,
                 controller: controller,
-                style: AppTextStyles.t13.copyWith(fontSize: 14),
+                style: AppTextStyles.t13,
                 decoration: InputDecoration(
                   hintText: i18n("toolbox_input_hint"),
                   hintStyle: AppTextStyles.t13,
