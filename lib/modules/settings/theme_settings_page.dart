@@ -62,6 +62,60 @@ class ThemeSettingsPage extends GetView<SettingsService> {
               onTap: showLanguageSelecterDialog,
             ),
           ]),
+          const SizedBox(height: 20),
+          _buildGroupTitle(theme, i18n("text_size_settings")),
+          _buildModernCard(theme, [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+              child: Row(
+                children: [
+                  Icon(Remix.font_size, color: theme.colorScheme.primary, size: 22),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          i18n("text_size_title"),
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 2),
+                        Obx(
+                          () => Text(
+                            "${i18n("current_scale")}: ${controller.textScaleFactor.value.toStringAsFixed(2)}",
+                            style: TextStyle(fontSize: 12, color: theme.hintColor.withValues(alpha: 0.75)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            Obx(
+              () => Slider(
+                value: controller.textScaleFactor.value,
+                min: 0.85,
+                max: 1.35,
+                divisions: 10,
+                label: controller.textScaleFactor.value.toStringAsFixed(2),
+                activeColor: theme.colorScheme.primary,
+                inactiveColor: theme.colorScheme.primary.withValues(alpha: 0.15),
+                onChanged: (val) {
+                  controller.textScaleFactor.value = val;
+                },
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Align(
+                alignment: Alignment.center,
+                child: Text(i18n("text_size_preview"), style: TextStyle(color: theme.colorScheme.outline)),
+              ),
+            ),
+          ]),
           const SizedBox(height: 32),
         ],
       ),

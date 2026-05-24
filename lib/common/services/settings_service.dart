@@ -145,6 +145,8 @@ class SettingsService extends GetxController {
   final isAutoSyncEnabled = (HivePrefUtil.getBool('isAutoSyncEnabled') ?? false).obs;
   final autoSyncHoursInterval = (HivePrefUtil.getInt('autoSyncHoursInterval') ?? 24).obs;
   final customIptvUserAgent = (HivePrefUtil.getString('customIptvUserAgent') ?? '').obs;
+
+  final textScaleFactor = (HivePrefUtil.getDouble('textScaleFactor') ?? 1.0).obs;
   // ==============================
   // 🧩 Lifecycle: onInit
   // ==============================
@@ -411,6 +413,10 @@ class SettingsService extends GetxController {
     });
     customIptvUserAgent.listen((value) {
       HivePrefUtil.setString('customIptvUserAgent', value);
+    });
+
+    textScaleFactor.listen((value) {
+      HivePrefUtil.setDouble('textScaleFactor', value);
     });
   }
 
@@ -852,6 +858,7 @@ class SettingsService extends GetxController {
     enableDanmakuDisplay.value = json['enableDanmakuDisplay'] ?? true;
     themeColorSwitch.value = json['themeColorSwitch'] ?? Colors.blue.hex;
     customPlayerOutput.value = json['customPlayerOutput'] ?? false;
+    textScaleFactor.value = json['textScaleFactor'] != null ? double.parse(json['textScaleFactor'].toString()) : 1.0;
     videoOutputDriver.value = PlayerConsts.videoOutputDrivers.keys.contains(json['videoOutputDriver'])
         ? json['videoOutputDriver']
         : 'gpu';
@@ -940,6 +947,7 @@ class SettingsService extends GetxController {
     json['defaultDesktopVolume'] = defaultDesktopVolume.value;
     json['globalVolumeMute'] = globalVolumeMute.value;
     json['roomVolumes'] = jsonEncode(roomVolumes.value);
+    json['textScaleFactor'] = textScaleFactor.value;
     return json;
   }
 }

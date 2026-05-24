@@ -738,5 +738,9 @@
     "input_empty_tip": "内容不能为空",
     "shield_count_title": "已添加 {count} 个关键词（点击可移除）",
     "empty_shield_title": "暂无屏蔽关键词",
-    "empty_shield_subtitle": "添加关键词后，包含该内容的弹幕将被自动过滤"
+    "empty_shield_subtitle": "添加关键词后，包含该内容的弹幕将被自动过滤",
+    "text_size_settings": "界面字号调节",
+    "text_size_title": "全局字体缩放比例",
+    "current_scale": "当前缩放倍率",
+    "text_size_preview": "这是用来预览全局字体大小变化的示例文字"
 }

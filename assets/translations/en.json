@@ -739,5 +739,9 @@
     "input_empty_tip": "Content cannot be empty",
     "shield_count_title": "Blocked Keywords: {count} (Click to remove)",
     "empty_shield_title": "No Blocked Keywords",
-    "empty_shield_subtitle": "Danmaku containing added keywords will be automatically filtered."
+    "empty_shield_subtitle": "Danmaku containing added keywords will be automatically filtered.",
+    "text_size_settings": "Font Size Settings",
+    "text_size_title": "Global Font Scaling",
+    "current_scale": "Current Scale",
+    "text_size_preview": "This is a sample text to preview global font size changes"
 }
