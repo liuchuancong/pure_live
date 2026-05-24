@@ -41,10 +41,10 @@ class _AreasRoomPageState extends State<AreasRoomPage> {
                   gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
                     lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                     crossAxisCount: crossAxisCount,
-                    crossAxisSpacing: 3,
-                    mainAxisSpacing: 3,
+                    crossAxisSpacing: 6,
+                    mainAxisSpacing: 6,
                   ),
-                  padding: const EdgeInsets.all(0),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                   controller: controller.scrollController,
                   itemCount: controller.list.length,
                   itemBuilder: (context, index) => RoomCard(room: controller.list[index], dense: true),

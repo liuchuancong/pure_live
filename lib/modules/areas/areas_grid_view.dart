@@ -157,8 +157,7 @@ class _AreaGridViewState extends State<AreaGridView> with SingleTickerProviderSt
         final crossAxisCount = width > 1280 ? 9 : (width > 960 ? 7 : (width > 640 ? 5 : 3));
         return childrenList.isNotEmpty
             ? WaterfallFlow.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                // 使用基类已经为你初始化好的底层原生滚动控制器，实现无缝联动
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                 controller: widget.controller.scrollController,
                 gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
                   lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,

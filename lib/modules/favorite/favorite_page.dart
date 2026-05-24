@@ -112,13 +112,13 @@ class _RoomOnlineGridView extends GetView<FavoriteController> {
             },
             child: displayRooms.isNotEmpty
                 ? WaterfallFlow.builder(
-                    padding: const EdgeInsets.all(0),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                     controller: ScrollController(),
                     gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
                       lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                       crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: 3,
-                      mainAxisSpacing: 3,
+                      crossAxisSpacing: 6,
+                      mainAxisSpacing: 6,
                       closeToTrailing: false,
                     ),
                     itemCount: displayRooms.length,
@@ -183,13 +183,13 @@ class _RoomOfflineGridView extends GetView<FavoriteController> {
             },
             child: displayRooms.isNotEmpty
                 ? WaterfallFlow.builder(
-                    padding: const EdgeInsets.all(0),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                     controller: ScrollController(),
                     gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
                       lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                       crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: 3,
-                      mainAxisSpacing: 3,
+                      crossAxisSpacing: 6,
+                      mainAxisSpacing: 6,
                     ),
                     itemCount: displayRooms.length,
                     itemBuilder: (context, index) => RoomCard(room: displayRooms[index], dense: dense),

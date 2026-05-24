@@ -40,7 +40,7 @@ class RoomCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Card(
-      margin: const EdgeInsets.all(8),
+      margin: EdgeInsets.zero,
       elevation: isDark ? 2 : 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       color: isDark ? Colors.grey[900] : Colors.white,

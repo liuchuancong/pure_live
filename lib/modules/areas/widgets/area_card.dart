@@ -25,7 +25,7 @@ class _AreaCardState extends State<AreaCard> {
     final displayImageUrl = _getFinalUrl();
 
     return Card(
-      margin: const EdgeInsets.all(7.5),
+      margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
       child: InkWell(
         borderRadius: BorderRadius.circular(15.0),
