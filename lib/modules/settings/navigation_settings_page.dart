@@ -90,7 +90,7 @@ class NavigationSettingsPage extends StatelessWidget {
                             index: index,
                             child: Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              child: Icon(Remix.menu_line, color: theme.hintColor.withValues(alpha: 0.35), size: 18),
+                              child: Icon(RemixIcons.sort_asc, size: 20),
                             ),
                           ),
                         ],
