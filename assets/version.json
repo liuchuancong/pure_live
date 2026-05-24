@@ -1,6 +1,6 @@
 {
-  "version": "2.0.19",
-  "build_number": 30, 
+  "version": "2.0.18",
+  "build_number": 29, 
   "version_num": 10219,
   "version_desc": "-Add: 添加IPTV txt导入以及EPG支持.\n-Fixed: 优化IPTV播放页面添加节目单可回放(需要节目指出).\n-Add: 优化UI,允许用户自定义平台排序以及底部导航栏.\n-Fixed: 修复缓存打开.",
   "prerelease":false,
