@@ -82,7 +82,8 @@ class BiliBiliQRLoginPage extends GetView<BiliBiliQRLoginController> {
                                 const SizedBox(width: 6),
                                 Text(
                                   i18n("qr_scanned_confirm"),
-                                  style: AppTextStyles.t13.copyWith(color: theme.colorScheme.primary,
+                                  style: AppTextStyles.t13.copyWith(
+                                    color: theme.colorScheme.primary,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -116,7 +117,8 @@ class BiliBiliQRLoginPage extends GetView<BiliBiliQRLoginController> {
           Expanded(
             child: Text(
               i18n("qr_login_tip"),
-              style: AppTextStyles.t13.copyWith(color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+              style: AppTextStyles.t13.copyWith(
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                 height: 1.4,
               ),
             ),

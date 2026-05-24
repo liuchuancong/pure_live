@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:pure_live/common/style/app_text_styles.dart';
 
 class CountButton extends StatefulWidget {
   const CountButton({
@@ -16,7 +17,7 @@ class CountButton extends StatefulWidget {
     this.borderRadius = 12.0,
     required this.onChanged,
     this.valueBuilder,
-    this.textStyle = const TextStyle(fontSize: 15.0, color: Colors.white),
+    this.textStyle,
   }) : assert(maxValue > minValue),
        assert(selectedValue >= minValue && selectedValue <= maxValue),
        assert(step > 0);
@@ -53,6 +54,7 @@ class _CountButtonState extends State<CountButton> {
   Widget build(BuildContext context) {
     final backgroundColor = widget.backgroundColor ?? Theme.of(context).colorScheme.primary;
     final foregroundColor = widget.foregroundColor ?? Colors.white;
+    final effectiveTextStyle = widget.textStyle ?? AppTextStyles.t15.copyWith(color: Colors.white);
 
     return Directionality(
       textDirection: TextDirection.ltr,
@@ -95,7 +97,7 @@ class _CountButtonState extends State<CountButton> {
             ),
             child: widget.valueBuilder != null
                 ? widget.valueBuilder!(widget.selectedValue)
-                : Text(widget.selectedValue.toString(), style: widget.textStyle),
+                : Text(widget.selectedValue.toString(), style: effectiveTextStyle),
           ),
 
           SizedBox(

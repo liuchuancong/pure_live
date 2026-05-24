@@ -86,7 +86,10 @@ class _AreaCardState extends State<AreaCard> {
               subtitle: Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  Text(widget.category.typeName!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10)),
+                  Text(
+                    widget.category.typeName!,
+                    style: AppTextStyles.t11.copyWith(fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
                 ],
               ),
             ),

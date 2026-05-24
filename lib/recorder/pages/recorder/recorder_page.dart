@@ -63,8 +63,8 @@ class RecorderPage extends GetView<RecorderController> {
                   tabAlignment: TabAlignment.center,
                   labelColor: theme.colorScheme.primary,
                   unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-                  labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                  labelStyle: AppTextStyles.t12.copyWith(fontWeight: FontWeight.bold, fontSize: 14),
+                  unselectedLabelStyle: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w500),
                   tabs: tabs
                       .map(
                         (e) => Padding(
@@ -338,7 +338,7 @@ class _TaskCard extends GetView<RecorderController> {
       minimumSize: const Size(0, 34),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       side: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.2)),
-      textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+      textStyle: const TextStyle(fontWeight: FontWeight.w700),
     );
 
     final dangerStyle = FilledButton.styleFrom(
@@ -346,7 +346,7 @@ class _TaskCard extends GetView<RecorderController> {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
       minimumSize: const Size(0, 34),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+      textStyle: AppTextStyles.t12.copyWith(fontWeight: FontWeight.w700),
     );
 
     Widget deleteButton() {
@@ -624,7 +624,12 @@ class _Tag extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             text,
-            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color, letterSpacing: 0.2),
+            style: AppTextStyles.t11.copyWith(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: color,
+              letterSpacing: 0.2,
+            ),
           ),
         ],
       ),
@@ -652,7 +657,11 @@ class _EmptyView extends StatelessWidget {
           const SizedBox(height: 24),
           Text(
             i18n("recorder_empty_title"),
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+            style: AppTextStyles.t16.copyWith(
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurface,
+            ),
           ),
           const SizedBox(height: 8),
           Text(

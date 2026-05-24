@@ -75,10 +75,7 @@ class ThemeSettingsPage extends GetView<SettingsService> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          i18n("text_size_title"),
-                          style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600),
-                        ),
+                        Text(i18n("text_size_title"), style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
                         const SizedBox(height: 2),
                         Obx(
                           () => Text(
@@ -195,7 +192,8 @@ class ThemeSettingsPage extends GetView<SettingsService> {
       padding: const EdgeInsets.only(left: 8, bottom: 8),
       child: Text(
         text,
-        style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.bold,
+        style: AppTextStyles.t12.copyWith(
+          fontWeight: FontWeight.bold,
           color: theme.colorScheme.primary.withValues(alpha: 0.65),
           letterSpacing: 0.5,
         ),

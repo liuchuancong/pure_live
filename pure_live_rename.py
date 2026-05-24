@@ -1,41 +1,51 @@
 import os
 import re
 
-def refactor_text_styles(content):
-    # 💡 支持清洗的所有目标字号映射表
-    target_sizes = [11, 12, 13, 14, 15, 16, 18, 20]
+def refactor_ternary_font_sizes(content):
+    # 💡 匹配任何包含三元运算符字号的 TextStyle 结构（支持单行、多行、以及任意换行属性）
+    # 能完美拿下：style: TextStyle(fontSize: dense ? 13 : 15, fontWeight: FontWeight.w500)
+    # 以及：fontSize: dense ? 12 : 13 在中间或末尾的各种变体
+    pattern_ternary = re.compile(
+        r'(?:const\s+)?TextStyle\(\s*(.*?)\s*\)', 
+        re.DOTALL
+    )
     
-    for size in target_sizes:
-        # 正则表达式支持匹配 16 或 16.0
-        size_pattern = f"{size}(?:\.0)?"
+    def replace_ternary(match):
+        inner_content = match.group(1)
         
-        # 模式 1：fontSize 排在第一位，且后续有多行属性
-        pattern_first = re.compile(
-            r'style:\s*(?:const\s*)?TextStyle\(\s*fontSize:\s*' + size_pattern + r',\s*(.*?)\)', 
-            re.DOTALL
-        )
-        content = pattern_first.sub(f'style: AppTextStyles.t{size}.copyWith(\\1)', content)
-        
-        # 模式 2：fontSize 排在中间或最后，前后都有多行属性
-        pattern_complex = re.compile(
-            r'style:\s*(?:const\s*)?TextStyle\(\s*(.*?),\s*fontSize:\s*' + size_pattern + r',?\s*(.*?)\)', 
-            re.DOTALL
+        # 检查是否包含三元运算符的 fontSize 配置
+        # 匹配诸如: fontSize: dense ? 13 : 15 或 fontSize: dense ? 13.0 : 15.0
+        fontSize_match = re.search(
+            r'fontSize:\s*([\w\.]+)\s*\?\s*(\d+)(?:\.0)?\s*:\s*(\d+)(?:\.0)?', 
+            inner_content
         )
         
-        def replace_complex(match, s=size):
-            part1 = match.group(1).strip()
-            part2 = match.group(2).strip()
-            remaining = [p for p in [part1, part2] if p]
-            if remaining:
-                return f"style: AppTextStyles.t{s}.copyWith({', '.join(remaining)})"
-            return f"style: AppTextStyles.t{s}"
+        if fontSize_match:
+            bool_var = fontSize_match.group(1)      # 例如: dense
+            size_true = fontSize_match.group(2)     # 例如: 13
+            size_false = fontSize_match.group(3)    # 例如: 15
             
-        content = pattern_complex.sub(replace_complex, content)
+            # 从原始属性中把整个 fontSize:... 表达式剔除，只保留剩余属性
+            cleaned_inner = re.sub(
+                r'fontSize:\s*[\w\.]+\s*\?\s*\d+(?:\.0)?\s*:\s*\d+(?:\.0)?,?\s*', 
+                '', 
+                inner_content
+            ).strip()
+            
+            # 清理尾部多余的逗号
+            if cleaned_inner.endswith(','):
+                cleaned_inner = cleaned_inner[:-1].strip()
+                
+            # 拼装优雅的目标代码结构
+            if cleaned_inner:
+                return f"({bool_var} ? AppTextStyles.t{size_true} : AppTextStyles.t{size_false}).copyWith({cleaned_inner})"
+            else:
+                return f"({bool_var} ? AppTextStyles.t{size_true} : AppTextStyles.t{size_false})"
         
-        # 模式 3：最基础的单行干净组件 style: const TextStyle(fontSize: 16.0)
-        pattern_pure = r'style:\s*const\s*TextStyle\(\s*fontSize:\s*' + size_pattern + r',?\s*\)'
-        content = re.sub(pattern_pure, f'style: AppTextStyles.t{size}', content)
+        return match.group(0) # 如果没有三元字号，保持原样原封不动
 
+    # 针对代码中的 style: TextStyle(...) 这一整块执行正则替换转换
+    content = re.sub(r'style:\s*(?:const\s+)?TextStyle\(\s*(.*?)\s*\)', lambda m: f"style: {replace_ternary(m)}", content, flags=re.DOTALL)
     return content
 
 def process_file(file_path):
@@ -43,25 +53,25 @@ def process_file(file_path):
         content = f.read()
 
     original_content = content
-    content = refactor_text_styles(content)
+    content = refactor_ternary_font_sizes(content)
 
     if content != original_content:
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(content)
-        print(f" Successfully refactored: {file_path}")
+        print(f" Successfully refactored ternary text styles in: {file_path}")
 
 def run_refactor():
     lib_dir = os.path.join(os.getcwd(), 'lib')
     if not os.path.exists(lib_dir):
-        print("Error: 'lib' directory not found. Run in project root.")
+        print("Error: 'lib' directory not found. Please run this script in your Flutter project root.")
         return
 
-    print("🚀 Running ULTIMATE typography refactoring engine (All sizes, multi-line, floats)...")
+    print("🚀 Running INTELLIGENT TERNARY typography engine (Cleaning dense ? X : Y)...")
     for root, _, files in os.walk(lib_dir):
         for file in files:
             if file.endswith('.dart'):
                 process_file(os.path.join(root, file))
-    print("✨ Global clean sweep complete!")
+    print("✨ Ternary typography migration complete!")
 
 if __name__ == "__main__":
     run_refactor()

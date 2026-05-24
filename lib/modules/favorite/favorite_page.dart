@@ -24,7 +24,7 @@ class FavoritePage extends GetView<FavoriteController> {
                 controller: controller.tabController,
                 isScrollable: true,
                 tabAlignment: TabAlignment.center,
-                labelStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                labelStyle: AppTextStyles.t18.copyWith(fontWeight: FontWeight.w600),
                 labelPadding: const EdgeInsets.symmetric(horizontal: 12),
                 indicatorSize: TabBarIndicatorSize.label,
                 tabs: [

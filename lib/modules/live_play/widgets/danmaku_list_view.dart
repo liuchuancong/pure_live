@@ -314,8 +314,12 @@ class DanmakuItem extends StatelessWidget {
                             style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w700, color: textColor),
                           ),
                           TextSpan(
-                            children: parseEmojis(danmaku.message, 14, vibrantColor),
-                            style: AppTextStyles.t14.copyWith(height: 1.45, fontWeight: FontWeight.w500, color: textColor),
+                            children: parseEmojis(danmaku.message, AppTextStyles.t14.fontSize!, vibrantColor),
+                            style: AppTextStyles.t14.copyWith(
+                              height: 1.45,
+                              fontWeight: FontWeight.w500,
+                              color: textColor,
+                            ),
                           ),
                         ],
                       ),

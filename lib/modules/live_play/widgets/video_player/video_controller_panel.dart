@@ -141,7 +141,10 @@ class ErrorWidget extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Text(i18n("play_video_failed"), style: AppTextStyles.t14.copyWith(color: Colors.white, fontSize: 16)),
+            child: Text(
+              i18n("play_video_failed"),
+              style: AppTextStyles.t14.copyWith(color: Colors.white, fontSize: 16),
+            ),
           ),
           ElevatedButton(
             onPressed: () => controller.refresh(),
@@ -196,8 +199,11 @@ class TopActionBar extends StatelessWidget {
                       Text(
                         controller.room.title!,
                         overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.t16.copyWith(color: Colors.white, fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.none,),
+                        style: AppTextStyles.t16.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.none,
+                        ),
                       ),
                       if (controller.room.currentProgramme != null && controller.room.currentProgramme!.isNotEmpty) ...[
                         const SizedBox(height: 2),
@@ -205,7 +211,9 @@ class TopActionBar extends StatelessWidget {
                           "${i18n('now_playing')}: ${controller.room.currentProgramme!}",
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.85), decoration: TextDecoration.none,),
+                            color: Colors.white.withValues(alpha: 0.85),
+                            decoration: TextDecoration.none,
+                          ),
                         ),
                       ],
                     ],
@@ -273,7 +281,8 @@ class TopActionBar extends StatelessWidget {
                 Expanded(
                   child: Text(
                     i18n('channel_schedule'),
-                    style: AppTextStyles.t15.copyWith(fontSize: 17,
+                    style: AppTextStyles.t15.copyWith(
+                      fontSize: 17,
                       fontWeight: FontWeight.w700,
                       color: theme.textTheme.titleLarge?.color,
                     ),
@@ -375,7 +384,8 @@ class TopActionBar extends StatelessWidget {
                             ),
                             child: Text(
                               "${prog.start.hour.toString().padLeft(2, '0')}:${prog.start.minute.toString().padLeft(2, '0')}",
-                              style: AppTextStyles.t13.copyWith(fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
+                              style: AppTextStyles.t13.copyWith(
+                                fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
                                 color: isCurrent ? activePrimary : secondaryTextColor,
                               ),
                             ),
@@ -384,7 +394,8 @@ class TopActionBar extends StatelessWidget {
                             prog.title,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.t14.copyWith(fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                            style: AppTextStyles.t14.copyWith(
+                              fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
                               color: isCurrent ? activePrimary : unselectedTextColor,
                             ),
                           ),

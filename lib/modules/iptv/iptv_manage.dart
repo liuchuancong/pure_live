@@ -476,7 +476,12 @@ class _IptvManagePageState extends State<IptvManagePage> {
             ),
             child: Text(
               formatText,
-              style: AppTextStyles.t12.copyWith(fontSize: 8, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 0.2),
+              style: AppTextStyles.t12.copyWith(
+                fontSize: 8,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                letterSpacing: 0.2,
+              ),
             ),
           ),
         ),
@@ -510,8 +515,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
       ),
       child: Text(
         item.isNetwork ? i18n("network_tag") : i18n("local_tag"),
-        style: TextStyle(
-          color: item.isNetwork ? Colors.green : Colors.orange, fontWeight: FontWeight.bold,),
+        style: TextStyle(color: item.isNetwork ? Colors.green : Colors.orange, fontWeight: FontWeight.bold),
       ),
     );
   }

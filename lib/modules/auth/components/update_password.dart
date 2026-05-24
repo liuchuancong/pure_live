@@ -55,7 +55,8 @@ class UpdatePassword extends StatelessWidget {
           Expanded(
             child: Text(
               i18n('supabase_update_password_tip'),
-              style: AppTextStyles.t13.copyWith(color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+              style: AppTextStyles.t13.copyWith(
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                 height: 1.4,
               ),
             ),

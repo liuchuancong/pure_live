@@ -78,7 +78,7 @@ class ToolBoxPage extends GetView<ToolBoxController> {
                 style: AppTextStyles.t13.copyWith(fontSize: 14),
                 decoration: InputDecoration(
                   hintText: i18n("toolbox_input_hint"),
-                  hintStyle: const TextStyle(fontSize: 13),
+                  hintStyle: AppTextStyles.t13,
                   filled: true,
                   fillColor: Theme.of(context).dividerColor.withValues(alpha: .05),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
@@ -127,10 +127,7 @@ class ToolBoxPage extends GetView<ToolBoxController> {
           ],
         ),
         const SizedBox(height: 12),
-        SelectableText(
-          i18n("toolbox_support_content"),
-          style: TextStyle(color: Colors.grey, height: 1.6),
-        ),
+        SelectableText(i18n("toolbox_support_content"), style: TextStyle(color: Colors.grey, height: 1.6)),
       ],
     );
   }

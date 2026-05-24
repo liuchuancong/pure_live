@@ -157,8 +157,7 @@ class RoomCard extends StatelessWidget {
                 room.title ?? '',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: dense ? 13 : 15,
+                style: (dense ? AppTextStyles.t13 : AppTextStyles.t15).copyWith(
                   fontWeight: FontWeight.w600,
                   color: isDark ? Colors.white : Colors.black87,
                 ),
@@ -167,8 +166,7 @@ class RoomCard extends StatelessWidget {
                 room.nick ?? '',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: dense ? 12 : 13,
+                style: (dense ? AppTextStyles.t12 : AppTextStyles.t13).copyWith(
                   fontWeight: FontWeight.w500,
                   color: isDark ? Colors.grey[400] : Colors.grey[700],
                 ),
@@ -183,7 +181,8 @@ class RoomCard extends StatelessWidget {
                       ),
                       child: Text(
                         room.platform?.toUpperCase() ?? '',
-                        style: AppTextStyles.t11.copyWith(fontWeight: FontWeight.w600,
+                        style: AppTextStyles.t11.copyWith(
+                          fontWeight: FontWeight.w600,
                           color: isDark ? Colors.grey[300] : Colors.grey[800],
                         ),
                       ),
@@ -250,7 +249,10 @@ class CountChip extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               count,
-              style: TextStyle(color: Colors.white, fontSize: dense ? 12 : 13, fontWeight: FontWeight.w600),
+              style: (dense ? AppTextStyles.t12 : AppTextStyles.t13).copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),

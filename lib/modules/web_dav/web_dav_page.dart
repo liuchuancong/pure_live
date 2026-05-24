@@ -173,7 +173,10 @@ class WebDavPage extends GetView<WebDavController> {
           ),
           TextButton(
             onPressed: () => controller.deleteConfig(config),
-            child: Text(i18n("webdav_delete"), style: AppTextStyles.t14.copyWith(color: Theme.of(Get.context!).colorScheme.error)),
+            child: Text(
+              i18n("webdav_delete"),
+              style: AppTextStyles.t14.copyWith(color: Theme.of(Get.context!).colorScheme.error),
+            ),
           ),
         ],
       ),
@@ -275,7 +278,9 @@ class WebDavPage extends GetView<WebDavController> {
       child: Text(
         label,
         style: TextStyle(
-          color: isCurrent ? Theme.of(Get.context!).colorScheme.primary : Theme.of(Get.context!).colorScheme.onSurface, fontWeight: FontWeight.w500,),
+          color: isCurrent ? Theme.of(Get.context!).colorScheme.primary : Theme.of(Get.context!).colorScheme.onSurface,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }

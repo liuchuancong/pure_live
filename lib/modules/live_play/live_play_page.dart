@@ -128,7 +128,7 @@ class LivePlayPage extends GetView<LivePlayController> {
                     (detail.area == null || detail.area!.isEmpty)
                         ? (detail.platform?.toUpperCase() ?? '')
                         : "${detail.platform?.toUpperCase()} / ${detail.area}",
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 8),
+                    style: AppTextStyles.t11.copyWith(fontSize: 8),
                   ),
                 ],
               );
@@ -757,7 +757,7 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
                   : WidgetStateProperty.all(EdgeInsets.all(5.0)),
               backgroundColor: WidgetStateProperty.all(Get.theme.colorScheme.primary.withAlpha(125)),
               shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(6.0))),
-              textStyle: WidgetStateProperty.all(const TextStyle(fontSize: 12.0)),
+              textStyle: WidgetStateProperty.all(AppTextStyles.t12),
               minimumSize: WidgetStateProperty.all(Size.zero),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
@@ -788,7 +788,7 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
                   : WidgetStateProperty.all(EdgeInsets.all(5.0)),
               backgroundColor: WidgetStateProperty.all(Get.theme.colorScheme.primary),
               shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(6.0))),
-              textStyle: WidgetStateProperty.all(const TextStyle(fontSize: 12.0)),
+              textStyle: WidgetStateProperty.all(AppTextStyles.t12),
               minimumSize: WidgetStateProperty.all(Size.zero),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
@@ -846,7 +846,11 @@ class NotLivingVideoWidget extends StatelessWidget {
                     child: Text(
                       controller.room.title!,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.t14.copyWith(color: Colors.white, fontSize: 16, decoration: TextDecoration.none),
+                      style: AppTextStyles.t14.copyWith(
+                        color: Colors.white,
+                        fontSize: 16,
+                        decoration: TextDecoration.none,
+                      ),
                     ),
                   ),
                 ),

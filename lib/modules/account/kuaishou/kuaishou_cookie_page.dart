@@ -94,7 +94,8 @@ class KuaishouCookiePage extends GetView<KuaishouCookieController> {
           Expanded(
             child: Text(
               i18n("kuaishou_cookie_tip"),
-              style: AppTextStyles.t13.copyWith(color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+              style: AppTextStyles.t13.copyWith(
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                 height: 1.4,
               ),
             ),
@@ -121,7 +122,8 @@ class KuaishouCookiePage extends GetView<KuaishouCookieController> {
       padding: const EdgeInsets.only(left: 8, bottom: 8),
       child: Text(
         text,
-        style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.bold,
+        style: AppTextStyles.t12.copyWith(
+          fontWeight: FontWeight.bold,
           color: theme.colorScheme.primary.withValues(alpha: 0.65),
           letterSpacing: 0.5,
         ),
