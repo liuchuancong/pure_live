@@ -97,7 +97,7 @@ class NavigationSettingsPage extends StatelessWidget {
                     color: Colors.transparent,
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                      title: Text(titleText, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                      title: Text(titleText, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
                       leading: Icon(menuIcon, size: 22, color: theme.colorScheme.primary),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -144,9 +144,7 @@ class NavigationSettingsPage extends StatelessWidget {
           Expanded(
             child: Text(
               i18n('drag_menu_to_sort_tip'),
-              style: TextStyle(
-                fontSize: 13,
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+              style: AppTextStyles.t13.copyWith(color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                 height: 1.4,
               ),
             ),
@@ -161,9 +159,7 @@ class NavigationSettingsPage extends StatelessWidget {
       padding: const EdgeInsets.only(left: 8, bottom: 8),
       child: Text(
         text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
+        style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.bold,
           color: theme.colorScheme.primary.withValues(alpha: 0.65),
           letterSpacing: 0.5,
         ),

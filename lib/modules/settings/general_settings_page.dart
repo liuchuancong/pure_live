@@ -79,14 +79,14 @@ class GeneralSettingsPage extends GetView<SettingsService> {
     return Obx(
       () => SwitchListTile(
         secondary: Icon(icon, size: 22, color: theme.colorScheme.primary),
-        title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+        title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
         subtitle: subtitle.isEmpty
             ? null
             : Padding(
                 padding: const EdgeInsets.only(top: 2),
                 child: Text(
                   subtitle,
-                  style: TextStyle(fontSize: 12, color: theme.hintColor.withValues(alpha: 0.75)),
+                  style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -104,9 +104,7 @@ class GeneralSettingsPage extends GetView<SettingsService> {
       padding: const EdgeInsets.only(left: 8, bottom: 8),
       child: Text(
         text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
+        style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.bold,
           color: theme.colorScheme.primary.withValues(alpha: 0.65),
           letterSpacing: 0.5,
         ),

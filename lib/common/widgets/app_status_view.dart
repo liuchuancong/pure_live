@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pure_live/common/style/app_text_styles.dart';
 
 enum AppStatusType { loading, empty, error }
 
@@ -110,10 +111,10 @@ class _AppStatusViewState extends State<AppStatusView> with SingleTickerProvider
           const SizedBox(height: 20),
           Text(
             widget.title,
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: theme.textTheme.titleMedium?.color),
+            style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600, color: theme.textTheme.titleMedium?.color),
           ),
           const SizedBox(height: 6),
-          Text(widget.subtitle, style: TextStyle(fontSize: 13, color: theme.hintColor)),
+          Text(widget.subtitle, style: AppTextStyles.t13.copyWith(color: theme.hintColor)),
           if (widget.buttonText != null && widget.onButtonPressed != null) ...[
             const SizedBox(height: 16),
             TextButton.icon(

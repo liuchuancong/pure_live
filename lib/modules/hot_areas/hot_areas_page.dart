@@ -45,7 +45,7 @@ class HotAreasPage extends GetView<HotAreasController> {
                     color: Colors.transparent,
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                      title: Text(item.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                      title: Text(item.name, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
                       leading: Image.asset(item.logo, width: 24, height: 24),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -92,9 +92,7 @@ class HotAreasPage extends GetView<HotAreasController> {
           Expanded(
             child: Text(
               i18n('drag_to_sort_tip'),
-              style: TextStyle(
-                fontSize: 13,
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+              style: AppTextStyles.t13.copyWith(color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                 height: 1.4,
               ),
             ),
@@ -109,9 +107,7 @@ class HotAreasPage extends GetView<HotAreasController> {
       padding: const EdgeInsets.only(left: 8, bottom: 8),
       child: Text(
         text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
+        style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.bold,
           color: theme.colorScheme.primary.withValues(alpha: 0.65),
           letterSpacing: 0.5,
         ),

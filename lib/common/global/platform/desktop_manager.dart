@@ -289,9 +289,7 @@ class CustomTitleBar extends StatelessWidget {
                                 const SizedBox(width: 6),
                                 Text(
                                   i18n('app_name'),
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
+                                  style: AppTextStyles.t13.copyWith(fontWeight: FontWeight.w600,
                                     color: iconColor,
                                     decoration: TextDecoration.none,
                                   ),

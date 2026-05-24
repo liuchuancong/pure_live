@@ -10,7 +10,7 @@ class CacheDataSettingsPage extends GetView<SettingsService> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(i18n("cache_and_data"), style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(i18n("cache_and_data"), style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w600)),
       ),
       body: ListView(
         physics: const BouncingScrollPhysics(),
@@ -32,7 +32,7 @@ class CacheDataSettingsPage extends GetView<SettingsService> {
                   children: [
                     Text(
                       "${size.toStringAsFixed(2)} MB",
-                      style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600, fontSize: 14),
+                      style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(width: 8),
                     AnimatedRotation(
@@ -100,14 +100,14 @@ class CacheDataSettingsPage extends GetView<SettingsService> {
     final theme = Theme.of(context);
     return ListTile(
       leading: Icon(icon, color: theme.colorScheme.primary, size: 22),
-      title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+      title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
       subtitle: subtitle.isEmpty
           ? null
           : Padding(
               padding: const EdgeInsets.only(top: 2),
               child: Text(
                 subtitle,
-                style: TextStyle(fontSize: 12, color: theme.hintColor.withValues(alpha: 0.75)),
+                style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -123,9 +123,7 @@ class CacheDataSettingsPage extends GetView<SettingsService> {
       padding: const EdgeInsets.only(left: 8, bottom: 8),
       child: Text(
         text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
+        style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.bold,
           color: theme.colorScheme.primary.withValues(alpha: 0.65),
           letterSpacing: 0.5,
         ),

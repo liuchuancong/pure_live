@@ -103,7 +103,7 @@ class _UserManagerState extends State<UserManager> {
                     TextField(
                       keyboardType: TextInputType.emailAddress,
                       controller: textEditingController,
-                      style: const TextStyle(fontSize: 14),
+                      style: AppTextStyles.t14,
                       decoration: InputDecoration(
                         hintText: i18n('hint_text'),
                         hintStyle: TextStyle(color: theme.hintColor.withValues(alpha: 0.5)),
@@ -137,7 +137,7 @@ class _UserManagerState extends State<UserManager> {
                           elevation: 0,
                         ),
                         icon: const Icon(Remix.user_add_line, size: 18),
-                        label: Text(i18n('add_btn'), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                        label: Text(i18n('add_btn'), style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w600)),
                       ),
                     ),
                   ],
@@ -156,7 +156,7 @@ class _UserManagerState extends State<UserManager> {
                   return ListTile(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                     leading: Icon(Remix.user_line, size: 20, color: theme.colorScheme.primary),
-                    title: Text(email, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                    title: Text(email, style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w500)),
                     trailing: IconButton(
                       icon: Icon(
                         Remix.delete_bin_6_line,
@@ -214,9 +214,7 @@ class _UserManagerState extends State<UserManager> {
       padding: const EdgeInsets.only(left: 8, bottom: 8),
       child: Text(
         text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
+        style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.bold,
           color: theme.colorScheme.primary.withValues(alpha: 0.65),
           letterSpacing: 0.5,
         ),

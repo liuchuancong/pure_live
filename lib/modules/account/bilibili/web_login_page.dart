@@ -12,7 +12,7 @@ class BiliBiliWebLoginPage extends GetView<BiliBiliWebLoginController> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(i18n("bilibili_login"), style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(i18n("bilibili_login"), style: AppTextStyles.t13.copyWith(fontWeight: FontWeight.w600)),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
@@ -20,7 +20,7 @@ class BiliBiliWebLoginPage extends GetView<BiliBiliWebLoginController> {
               onPressed: controller.toQRLogin,
               style: TextButton.styleFrom(
                 foregroundColor: theme.colorScheme.primary,
-                textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                textStyle: const TextStyle(fontWeight: FontWeight.w600),
               ),
               icon: const Icon(Remix.qr_code_line, size: 16),
               label: Text(i18n("qr_login")),

@@ -30,7 +30,7 @@ class DouyinCookiePage extends GetView<DouyinCookieController> {
                     minLines: 3,
                     maxLines: 5,
                     controller: controller.cookieController,
-                    style: const TextStyle(fontSize: 14),
+                    style: AppTextStyles.t14,
                     decoration: InputDecoration(
                       hintText: i18n("douyin_cookie_hint"),
                       hintStyle: TextStyle(color: theme.hintColor.withValues(alpha: 0.5)),
@@ -65,7 +65,7 @@ class DouyinCookiePage extends GetView<DouyinCookieController> {
                       icon: const Icon(Remix.settings_line, size: 18),
                       label: Text(
                         i18n("set"),
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 1),
+                        style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w600, letterSpacing: 1),
                       ),
                     ),
                   ),
@@ -94,9 +94,7 @@ class DouyinCookiePage extends GetView<DouyinCookieController> {
           Expanded(
             child: Text(
               i18n("douyin_cookie_tip"),
-              style: TextStyle(
-                fontSize: 13,
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+              style: AppTextStyles.t13.copyWith(color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                 height: 1.4,
               ),
             ),
@@ -123,9 +121,7 @@ class DouyinCookiePage extends GetView<DouyinCookieController> {
       padding: const EdgeInsets.only(left: 8, bottom: 8),
       child: Text(
         text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
+        style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.bold,
           color: theme.colorScheme.primary.withValues(alpha: 0.65),
           letterSpacing: 0.5,
         ),

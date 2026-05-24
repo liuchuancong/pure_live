@@ -13,7 +13,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(i18n("player_kernel"), style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(i18n("player_kernel"), style: AppTextStyles.t13.copyWith(fontWeight: FontWeight.w600)),
       ),
       body: ListView(
         physics: const BouncingScrollPhysics(),
@@ -31,7 +31,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                   onTap: showVideoSetDialog,
                   trailing: Text(
                     PlayerConsts.players[controller.videoPlayerIndex.value],
-                    style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600, fontSize: 13),
+                    style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -48,11 +48,8 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                 onTap: showProxySettingsDialog,
                 trailing: Text(
                   controller.enableProxy.value ? i18n("enabled") : i18n("disabled"),
-                  style: TextStyle(
-                    color: controller.enableProxy.value ? theme.colorScheme.primary : theme.hintColor,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
+                  style: AppTextStyles.t13.copyWith(color: controller.enableProxy.value ? theme.colorScheme.primary : theme.hintColor,
+                    fontWeight: FontWeight.w600),
                 ),
               );
             }),
@@ -100,12 +97,12 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     final theme = Theme.of(context);
     return ListTile(
       leading: Icon(icon, color: theme.colorScheme.primary, size: 22),
-      title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+      title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
       subtitle: Padding(
         padding: const EdgeInsets.only(top: 2),
         child: Text(
           subtitle,
-          style: TextStyle(fontSize: 12, color: theme.hintColor.withValues(alpha: 0.75)),
+          style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -127,12 +124,12 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     return Obx(
       () => SwitchListTile(
         secondary: Icon(icon, size: 22, color: theme.colorScheme.primary),
-        title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+        title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 2),
           child: Text(
             subtitle,
-            style: TextStyle(fontSize: 12, color: theme.hintColor.withValues(alpha: 0.75)),
+            style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -150,9 +147,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
       padding: const EdgeInsets.only(left: 8, bottom: 8),
       child: Text(
         text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
+        style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.bold,
           color: theme.colorScheme.primary.withValues(alpha: 0.65),
           letterSpacing: 0.5,
         ),
@@ -186,7 +181,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                   children: playerList.map<Widget>((name) {
                     return ListTile(
                       leading: Radio<String>(value: name, activeColor: Theme.of(context).colorScheme.primary),
-                      title: Text(name, style: const TextStyle(fontSize: 15)),
+                      title: Text(name, style: AppTextStyles.t15),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                       onTap: () {
                         controller.changePlayer(playerList.indexOf(name));

@@ -311,11 +311,11 @@ class DanmakuItem extends StatelessWidget {
                         children: [
                           TextSpan(
                             text: "${danmaku.userName}: ",
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: textColor),
+                            style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w700, color: textColor),
                           ),
                           TextSpan(
                             children: parseEmojis(danmaku.message, 14, vibrantColor),
-                            style: TextStyle(fontSize: 14, height: 1.45, fontWeight: FontWeight.w500, color: textColor),
+                            style: AppTextStyles.t14.copyWith(height: 1.45, fontWeight: FontWeight.w500, color: textColor),
                           ),
                         ],
                       ),

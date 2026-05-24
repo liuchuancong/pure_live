@@ -14,7 +14,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(i18n("video"), style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(i18n("video"), style: AppTextStyles.t13.copyWith(fontWeight: FontWeight.w600)),
       ),
       body: ListView(
         physics: const BouncingScrollPhysics(),
@@ -68,7 +68,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
                 onTap: showPreferResolutionSelectorDialog,
                 trailing: Text(
                   controller.preferResolution.value,
-                  style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600, fontSize: 13),
+                  style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
@@ -81,7 +81,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
                 onTap: showpreferResolutionCellularSelectorDialog,
                 trailing: Text(
                   controller.preferResolutionCellular.value,
-                  style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600, fontSize: 13),
+                  style: AppTextStyles.t13.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
@@ -166,14 +166,14 @@ class VideoSettingsPage extends GetView<SettingsService> {
     final theme = Theme.of(context);
     return ListTile(
       leading: Icon(icon, color: theme.colorScheme.primary, size: 22),
-      title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+      title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
       subtitle: subtitle.isEmpty
           ? null
           : Padding(
               padding: const EdgeInsets.only(top: 2),
               child: Text(
                 subtitle,
-                style: TextStyle(fontSize: 12, color: theme.hintColor.withValues(alpha: 0.75)),
+                style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -195,12 +195,12 @@ class VideoSettingsPage extends GetView<SettingsService> {
     return Obx(
       () => SwitchListTile(
         secondary: Icon(icon, size: 22, color: theme.colorScheme.primary),
-        title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+        title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 2),
           child: Text(
             subtitle,
-            style: TextStyle(fontSize: 12, color: theme.hintColor.withValues(alpha: 0.75)),
+            style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -231,7 +231,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
                 Row(
                   children: [
                     Expanded(
@@ -245,7 +245,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
                       width: 36,
                       child: Text(
                         "${(value * 100).toInt()}%",
-                        style: TextStyle(fontSize: 12, color: theme.hintColor, fontWeight: FontWeight.w500),
+                        style: AppTextStyles.t12.copyWith(color: theme.hintColor, fontWeight: FontWeight.w500),
                         textAlign: TextAlign.end,
                       ),
                     ),
@@ -264,9 +264,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
       padding: const EdgeInsets.only(left: 8, bottom: 8),
       child: Text(
         text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
+        style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.bold,
           color: theme.colorScheme.primary.withValues(alpha: 0.65),
           letterSpacing: 0.5,
         ),

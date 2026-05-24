@@ -102,15 +102,13 @@ class AccountPage extends GetView<AccountController> {
       leading: Image.asset(logo, width: 24, height: 24),
       title: Text(
         title,
-        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: isEnabled ? null : theme.disabledColor),
+        style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600, color: isEnabled ? null : theme.disabledColor),
       ),
       subtitle: Padding(
         padding: const EdgeInsets.only(top: 2),
         child: Text(
           subtitle,
-          style: TextStyle(
-            fontSize: 12,
-            color: isLogined ? theme.colorScheme.primary : theme.hintColor.withValues(alpha: 0.75),
+          style: AppTextStyles.t12.copyWith(color: isLogined ? theme.colorScheme.primary : theme.hintColor.withValues(alpha: 0.75),
             fontWeight: isLogined ? FontWeight.w500 : FontWeight.normal,
           ),
           maxLines: 1,
@@ -130,9 +128,7 @@ class AccountPage extends GetView<AccountController> {
       padding: const EdgeInsets.only(left: 8, bottom: 8),
       child: Text(
         text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
+        style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.bold,
           color: theme.colorScheme.primary.withValues(alpha: 0.65),
           letterSpacing: 0.5,
         ),

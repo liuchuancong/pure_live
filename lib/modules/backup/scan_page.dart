@@ -75,7 +75,7 @@ class _ScanCodePageState extends State<ScanCodePage> {
                       children: [
                         CircularProgressIndicator(),
                         SizedBox(height: 20),
-                        Text(i18n("syncing"), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text(i18n("syncing"), style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.bold)),
                       ],
                     )
                   : Column(
@@ -83,7 +83,7 @@ class _ScanCodePageState extends State<ScanCodePage> {
                       children: [
                         Text(
                           isSuccess ? i18n("sync_success") : i18n("sync_failed"),
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 20),
                         ElevatedButton(

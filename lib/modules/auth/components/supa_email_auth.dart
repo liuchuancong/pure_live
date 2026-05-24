@@ -80,7 +80,7 @@ class _SupaEmailAuthState extends State<SupaEmailAuth> {
             TextFormField(
               keyboardType: TextInputType.emailAddress,
               autofillHints: const [AutofillHints.email],
-              style: const TextStyle(fontSize: 14),
+              style: AppTextStyles.t14,
               validator: (value) {
                 if (value == null || value.isEmpty || !EmailValidator.validate(_emailController.text)) {
                   return i18n('supabase_enter_valid_email');
@@ -103,7 +103,7 @@ class _SupaEmailAuthState extends State<SupaEmailAuth> {
                   }
                   return null;
                 },
-                style: const TextStyle(fontSize: 14),
+                style: AppTextStyles.t14,
                 decoration: _buildInputDecoration(
                   theme,
                   hintText: i18n('supabase_enter_password'),
@@ -127,7 +127,7 @@ class _SupaEmailAuthState extends State<SupaEmailAuth> {
                     padding: const EdgeInsets.only(bottom: 16),
                     child: TextFormField(
                       controller: _metadataControllers[metadataField],
-                      style: const TextStyle(fontSize: 14),
+                      style: AppTextStyles.t14,
                       decoration: InputDecoration(
                         hintText: metadataField.label,
                         prefixIcon: metadataField.prefixIcon,
@@ -164,7 +164,7 @@ class _SupaEmailAuthState extends State<SupaEmailAuth> {
                       )
                     : Text(
                         _isSigningIn ? i18n('supabase_sign_in') : i18n('supabase_sign_up'),
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, letterSpacing: 1),
+                        style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600, letterSpacing: 1),
                       ),
               ),
             ),
@@ -202,7 +202,7 @@ class _SupaEmailAuthState extends State<SupaEmailAuth> {
                       )
                     : Text(
                         i18n('supabase_reset_password'),
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                        style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600),
                       ),
               ),
             ),

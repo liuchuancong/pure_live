@@ -34,7 +34,10 @@ class RecorderPage extends GetView<RecorderController> {
         child: Scaffold(
           backgroundColor: theme.colorScheme.surface,
           appBar: AppBar(
-            title: Text(i18n("recorder_title"), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+            title: Text(
+              i18n("recorder_title"),
+              style: AppTextStyles.t11.copyWith(fontWeight: FontWeight.bold, fontSize: 20),
+            ),
             centerTitle: true,
             leading: (showAction || menuCount <= 1) ? const MenuButton() : null,
             elevation: 0,
@@ -271,7 +274,7 @@ class _TaskCard extends GetView<RecorderController> {
                   ),
                   child: Text(
                     _statusText(),
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
+                    style: AppTextStyles.t12.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -290,7 +293,11 @@ class _TaskCard extends GetView<RecorderController> {
         const SizedBox(width: 4),
         Text(
           label,
-          style: TextStyle(fontSize: 11.5, color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500),
+          style: AppTextStyles.t11.copyWith(
+            fontSize: 11.5,
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );
@@ -309,7 +316,7 @@ class _TaskCard extends GetView<RecorderController> {
           const SizedBox(width: 5),
           Text(
             label,
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: c),
+            style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.w600, color: c),
           ),
         ],
       ),
@@ -323,7 +330,7 @@ class _TaskCard extends GetView<RecorderController> {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
       minimumSize: const Size(0, 34),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+      textStyle: const TextStyle(fontWeight: FontWeight.w700),
     );
 
     final outlineStyle = OutlinedButton.styleFrom(
@@ -367,7 +374,7 @@ class _TaskCard extends GetView<RecorderController> {
             await controller.unRecorder(task);
           }
         },
-        child: Text(i18n("remove"), style: const TextStyle(color: Colors.red)),
+        child: Text(i18n("remove"), style: AppTextStyles.t15.copyWith(color: Colors.red)),
       );
     }
 
@@ -498,9 +505,8 @@ class _TaskCard extends GetView<RecorderController> {
                           task.title,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: AppTextStyles.t16.copyWith(
                             fontWeight: FontWeight.w700,
-                            fontSize: 15.5,
                             height: 1.2,
                             letterSpacing: 0.1,
                           ),
@@ -518,8 +524,7 @@ class _TaskCard extends GetView<RecorderController> {
                                 task.nick,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 14,
+                                style: AppTextStyles.t14.copyWith(
                                   fontWeight: FontWeight.w600,
                                   color: theme.colorScheme.onSurfaceVariant,
                                 ),
@@ -583,9 +588,8 @@ class _TaskCard extends GetView<RecorderController> {
                   const SizedBox(width: 5),
                   Text(
                     task.createTime.toString().substring(5, 16),
-                    style: TextStyle(
+                    style: AppTextStyles.t12.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
-                      fontSize: 11.5,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -653,7 +657,7 @@ class _EmptyView extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             i18n("recorder_empty_subtitle"),
-            style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant),
+            style: AppTextStyles.t13.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
         ],
       ),

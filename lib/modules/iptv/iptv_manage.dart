@@ -258,9 +258,9 @@ class _IptvManagePageState extends State<IptvManagePage> {
           child: Icon(icon, color: theme.colorScheme.primary),
         ),
         const SizedBox(height: 10),
-        Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        Text(value, style: AppTextStyles.t12.copyWith(fontSize: 22, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
-        Text(title, style: TextStyle(color: theme.hintColor, fontSize: 12)),
+        Text(title, style: AppTextStyles.t11.copyWith(color: theme.hintColor)),
       ],
     );
   }
@@ -270,7 +270,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
       children: [
         Icon(icon, size: 18, color: theme.colorScheme.primary),
         const SizedBox(width: 8),
-        Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+        Text(title, style: AppTextStyles.t12.copyWith(fontSize: 17, fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -326,7 +326,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
                             item.name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                            style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w700),
                           ),
 
                           const SizedBox(height: 6),
@@ -335,7 +335,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
                             item.url,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: theme.hintColor, fontSize: 12),
+                            style: TextStyle(color: theme.hintColor),
                           ),
                         ],
                       ),
@@ -476,7 +476,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
             ),
             child: Text(
               formatText,
-              style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 0.2),
+              style: AppTextStyles.t12.copyWith(fontSize: 8, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 0.2),
             ),
           ),
         ),
@@ -511,10 +511,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
       child: Text(
         item.isNetwork ? i18n("network_tag") : i18n("local_tag"),
         style: TextStyle(
-          color: item.isNetwork ? Colors.green : Colors.orange,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-        ),
+          color: item.isNetwork ? Colors.green : Colors.orange, fontWeight: FontWeight.bold,),
       ),
     );
   }
@@ -548,7 +545,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
                 child: Text(
                   label,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 12),
+                  style: TextStyle(color: color, fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -577,7 +574,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
 
               Text(
                 i18n("auto_sync"),
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: theme.colorScheme.primary),
+                style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.w600, color: theme.colorScheme.primary),
               ),
             ],
           ),

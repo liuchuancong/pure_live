@@ -30,7 +30,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: Text(i18n("record_settings"), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+        title: Text(i18n("record_settings"), style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.bold, fontSize: 20)),
         centerTitle: true,
         elevation: 0,
       ),
@@ -75,7 +75,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                     icon: const Icon(Remix.folder_open_line, size: 18),
                     label: Text(
                       i18n("recorder_open_folder"),
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                      style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -296,9 +296,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
       padding: const EdgeInsets.only(left: 12, bottom: 12, top: 24),
       child: Text(
         title,
-        style: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.bold,
+        style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.bold,
           color: Get.theme.colorScheme.primary,
           letterSpacing: 1.2,
         ),
@@ -330,7 +328,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
     bool compat = Get.width >= 680;
     return ListTile(
       leading: Icon(icon, size: 24, color: theme.colorScheme.primary),
-      title: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+      title: Text(title, style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w600)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -340,10 +338,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
               val,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: theme.colorScheme.primary.withValues(alpha: 0.7),
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
+                color: theme.colorScheme.primary.withValues(alpha: 0.7), fontWeight: FontWeight.w500,),
             ),
           ),
           const SizedBox(width: 4),
@@ -378,7 +373,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    Text(title, style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w600)),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
@@ -387,7 +382,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                       ),
                       child: Text(
                         displayValue,
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                        style: AppTextStyles.t13.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
                       ),
                     ),
                   ],
@@ -418,8 +413,8 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
     return SwitchListTile.adaptive(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       secondary: Icon(icon, size: 24, color: Get.theme.colorScheme.primary),
-      title: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-      subtitle: Text(sub, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+      title: Text(title, style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w600)),
+      subtitle: Text(sub, style: AppTextStyles.t13.copyWith(color: Colors.grey)),
       activeThumbColor: Get.theme.colorScheme.primary,
       value: val,
       onChanged: onChanged,
@@ -452,8 +447,8 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
             mainAxisSize: MainAxisSize.min,
             children: timeoutOptions.entries.map((entry) {
               return RadioListTile<int>(
-                title: Text("${entry.key}s", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                subtitle: Text(entry.value, style: const TextStyle(fontSize: 12)),
+                title: Text("${entry.key}s", style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w600)),
+                subtitle: Text(entry.value, style: AppTextStyles.t12),
                 value: entry.key,
                 activeColor: theme.colorScheme.primary,
                 selected: controller.rwTimeout.value == entry.key,
@@ -501,8 +496,8 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
               }
 
               return RadioListTile<int>(
-                title: Text("$value", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                subtitle: Text(subTitle, style: const TextStyle(fontSize: 12)),
+                title: Text("$value", style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w600)),
+                subtitle: Text(subTitle, style: AppTextStyles.t12),
                 value: value,
                 activeColor: theme.colorScheme.primary,
                 selected: controller.threadQueueSize.value == value,
@@ -618,7 +613,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
             mainAxisSize: MainAxisSize.min,
             children: PlayerConsts.resolutions.map((e) {
               return RadioListTile<String>(
-                title: Text(e, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                title: Text(e, style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w500)),
                 value: e,
                 activeColor: theme.colorScheme.primary,
                 selected: controller.defaultQuality.value == e,
@@ -641,7 +636,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
         content: TextField(
           controller: textController,
           keyboardType: TextInputType.number,
-          style: const TextStyle(fontSize: 18),
+          style: AppTextStyles.t18,
           decoration: InputDecoration(
             hintText: i18n("please_input_number"),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -654,7 +649,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(Get.context!),
-            child: Text(i18n("cancel"), style: const TextStyle(fontSize: 16)),
+            child: Text(i18n("cancel"), style: AppTextStyles.t16),
           ),
           ElevatedButton(
             onPressed: () {
@@ -666,7 +661,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
 
               Navigator.pop(Get.context!);
             },
-            child: Text(i18n("confirm"), style: const TextStyle(fontSize: 16)),
+            child: Text(i18n("confirm"), style: AppTextStyles.t16),
           ),
         ],
       ),

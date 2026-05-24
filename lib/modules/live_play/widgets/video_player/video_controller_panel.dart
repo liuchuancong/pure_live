@@ -141,12 +141,12 @@ class ErrorWidget extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Text(i18n("play_video_failed"), style: const TextStyle(color: Colors.white, fontSize: 16)),
+            child: Text(i18n("play_video_failed"), style: AppTextStyles.t14.copyWith(color: Colors.white, fontSize: 16)),
           ),
           ElevatedButton(
             onPressed: () => controller.refresh(),
             style: ElevatedButton.styleFrom(elevation: 0, backgroundColor: Colors.white.withValues(alpha: 0.2)),
-            child: Text(i18n("retry"), style: const TextStyle(color: Colors.white)),
+            child: Text(i18n("retry"), style: AppTextStyles.t15.copyWith(color: Colors.white)),
           ),
         ],
       ),
@@ -196,12 +196,8 @@ class TopActionBar extends StatelessWidget {
                       Text(
                         controller.room.title!,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.none,
-                        ),
+                        style: AppTextStyles.t16.copyWith(color: Colors.white, fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.none,),
                       ),
                       if (controller.room.currentProgramme != null && controller.room.currentProgramme!.isNotEmpty) ...[
                         const SizedBox(height: 2),
@@ -209,10 +205,7 @@ class TopActionBar extends StatelessWidget {
                           "${i18n('now_playing')}: ${controller.room.currentProgramme!}",
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.85),
-                            fontSize: 15,
-                            decoration: TextDecoration.none,
-                          ),
+                            color: Colors.white.withValues(alpha: 0.85), decoration: TextDecoration.none,),
                         ),
                       ],
                     ],
@@ -280,8 +273,7 @@ class TopActionBar extends StatelessWidget {
                 Expanded(
                   child: Text(
                     i18n('channel_schedule'),
-                    style: TextStyle(
-                      fontSize: 17,
+                    style: AppTextStyles.t15.copyWith(fontSize: 17,
                       fontWeight: FontWeight.w700,
                       color: theme.textTheme.titleLarge?.color,
                     ),
@@ -306,7 +298,7 @@ class TopActionBar extends StatelessWidget {
                     children: [
                       Icon(Remix.inbox_line, size: 40, color: theme.hintColor.withValues(alpha: 0.4)),
                       const SizedBox(height: 12),
-                      Text(i18n('no_upcoming_programs'), style: TextStyle(color: theme.hintColor, fontSize: 13)),
+                      Text(i18n('no_upcoming_programs'), style: AppTextStyles.t13.copyWith(color: theme.hintColor)),
                     ],
                   ),
                 );
@@ -383,9 +375,7 @@ class TopActionBar extends StatelessWidget {
                             ),
                             child: Text(
                               "${prog.start.hour.toString().padLeft(2, '0')}:${prog.start.minute.toString().padLeft(2, '0')}",
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
+                              style: AppTextStyles.t13.copyWith(fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
                                 color: isCurrent ? activePrimary : secondaryTextColor,
                               ),
                             ),
@@ -394,9 +384,7 @@ class TopActionBar extends StatelessWidget {
                             prog.title,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                            style: AppTextStyles.t14.copyWith(fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
                               color: isCurrent ? activePrimary : unselectedTextColor,
                             ),
                           ),
@@ -491,7 +479,7 @@ class _DatetimeInfoState extends State<DatetimeInfo> {
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
       child: Text(
         '$hour:$minute',
-        style: const TextStyle(color: Colors.white, fontSize: 14, decoration: TextDecoration.none),
+        style: const TextStyle(color: Colors.white, decoration: TextDecoration.none),
       ),
     );
   }
@@ -859,7 +847,7 @@ class LineSelectorButton extends StatelessWidget {
                                 ),
                                 child: Text(
                                   i18n("toolbox_line", args: {"index": (index + 1).toString()}),
-                                  style: TextStyle(fontSize: 15, color: isSelected ? Colors.white : null),
+                                  style: AppTextStyles.t15.copyWith(color: isSelected ? Colors.white : null),
                                 ),
                               ),
                             ),
@@ -935,7 +923,7 @@ class LineSelectorButton extends StatelessWidget {
             child: Center(
               child: Text(
                 i18n("toolbox_line", args: {"index": (index + 1).toString()}),
-                style: TextStyle(fontSize: 13, color: isSelected ? Get.theme.colorScheme.primary : Colors.white),
+                style: AppTextStyles.t13.copyWith(color: isSelected ? Get.theme.colorScheme.primary : Colors.white),
               ),
             ),
           );
@@ -952,7 +940,7 @@ class LineSelectorButton extends StatelessWidget {
       decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
       child: Text(
         i18n("toolbox_line", args: {"index": (controller.livePlayController.currentLineIndex.value + 1).toString()}),
-        style: const TextStyle(color: Colors.white, fontSize: 13),
+        style: AppTextStyles.t13.copyWith(color: Colors.white),
       ),
     );
   }
@@ -1024,7 +1012,7 @@ class ResolutionSelectorButton extends StatelessWidget {
                                 ),
                                 child: Text(
                                   qualityName,
-                                  style: TextStyle(fontSize: 15, color: isSelected ? Colors.white : null),
+                                  style: AppTextStyles.t15.copyWith(color: isSelected ? Colors.white : null),
                                 ),
                               ),
                             ),
@@ -1106,7 +1094,7 @@ class ResolutionSelectorButton extends StatelessWidget {
             child: Center(
               child: Text(
                 controller.livePlayController.qualites[index].quality,
-                style: TextStyle(fontSize: 13, color: isSelected ? Get.theme.colorScheme.primary : Colors.white),
+                style: AppTextStyles.t13.copyWith(color: isSelected ? Get.theme.colorScheme.primary : Colors.white),
               ),
             ),
           );
@@ -1123,7 +1111,7 @@ class ResolutionSelectorButton extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8),
       alignment: Alignment.center,
       decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-      child: Text(qualityName, style: const TextStyle(color: Colors.white, fontSize: 13)),
+      child: Text(qualityName, style: AppTextStyles.t13.copyWith(color: Colors.white)),
     );
   }
 }
@@ -1423,7 +1411,7 @@ class _FavoriteButtonState extends State<FavoriteButton> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Icon(isFavorite ? Icons.check_rounded : Icons.close, color: Colors.white, size: 15),
-            Text(isFavorite ? i18n('followed') : i18n('follow'), style: TextStyle(color: Colors.white, fontSize: 15)),
+            Text(isFavorite ? i18n('followed') : i18n('follow'), style: TextStyle(color: Colors.white)),
           ],
         ),
       ),
@@ -1494,7 +1482,7 @@ class _VideoFitSettingState extends State<VideoFitSetting> {
         height: 25,
         child: Text(
           descs[controller.settings.videoFitIndex.value],
-          style: TextStyle(color: Colors.white, fontSize: 15),
+          style: AppTextStyles.t15.copyWith(color: Colors.white),
         ),
       ),
     );
