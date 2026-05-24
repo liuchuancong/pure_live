@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/widgets/download_apk_dialog.dart';
 
@@ -26,6 +27,18 @@ List<String> getMirrorUrls(String apkUrl) {
 }
 
 Future<void> downloadAndInstallApk(String apkUrl) async {
+  if (Platform.isAndroid) {
+    try {
+      final hasInstallPermission = await requestStorageInstallPermission();
+      if (!hasInstallPermission) {
+        ToastUtil.show(i18n("grant_install_permission"));
+        openAppSettings();
+        return;
+      }
+    } catch (e) {
+      ToastUtil.show('${i18n("request_install_permission_failed")}${e.toString()}');
+    }
+  }
   ToastUtil.show(i18n("downloading_apk", args: {"version": VersionUtil.latestVersion}));
   Get.dialog(DownloadApkDialog(apkUrl: apkUrl, version: VersionUtil.latestVersion), barrierDismissible: false);
 }

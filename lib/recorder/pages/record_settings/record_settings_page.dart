@@ -72,10 +72,10 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       foregroundColor: theme.colorScheme.primary, // 保持主题色
                     ),
-                    icon: const Icon(Remix.folder_open_line, size: 16), // 加上精细的小图标，视觉上更清晰
+                    icon: const Icon(Remix.folder_open_line, size: 18),
                     label: Text(
                       i18n("recorder_open_folder"),
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),

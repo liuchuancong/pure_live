@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:math';
 import 'package:path/path.dart' as p;
+import 'package:open_filex/open_filex.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -73,42 +75,51 @@ class FileUtils {
   }
 
   static Future<bool> openFileOrUrl(String pathOrUrl) async {
-    if (pathOrUrl.trim().isEmpty) return false;
+    final trimmedPath = pathOrUrl.trim();
+    if (trimmedPath.isEmpty) return false;
 
-    // Handle standard Web/Network URLs across all systems natively
-    if (isValidUrl(pathOrUrl)) {
-      final Uri uri = Uri.parse(pathOrUrl);
-      if (await canLaunchUrl(uri)) {
-        return await launchUrl(uri, mode: LaunchMode.externalApplication);
+    // 1. 处理标准 Web/Network 网络链接
+    if (isValidUrl(trimmedPath)) {
+      try {
+        final Uri uri = Uri.parse(trimmedPath);
+        if (await canLaunchUrl(uri)) {
+          return await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      } catch (_) {
+        return false;
       }
       return false;
     }
 
-    final file = File(pathOrUrl);
-    final directory = Directory(pathOrUrl);
-
+    final file = File(trimmedPath);
+    final directory = Directory(trimmedPath);
     final bool targetExists = await file.exists() || await directory.exists();
     if (!targetExists) return false;
 
     if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
       try {
         if (Platform.isWindows) {
-          await Process.run('explorer.exe', [p.context.canonicalize(pathOrUrl)]);
+          await Process.run('explorer.exe', [p.context.canonicalize(trimmedPath)]);
         } else if (Platform.isMacOS) {
-          await Process.run('open', [pathOrUrl]);
+          await Process.run('open', [trimmedPath]);
         } else if (Platform.isLinux) {
-          await Process.run('xdg-open', [pathOrUrl]);
+          await Process.run('xdg-open', [trimmedPath]);
         }
         return true;
-      } catch (e) {
-        return false;
-      }
+      } catch (_) {}
     }
-    final String cleanPath = pathOrUrl.startsWith('file://') ? pathOrUrl : 'file://$pathOrUrl';
-    final Uri fileUri = Uri.parse(cleanPath);
 
-    if (await canLaunchUrl(fileUri)) {
-      return await launchUrl(fileUri);
+    try {
+      final result = await OpenFilex.open(trimmedPath);
+      return result.type == ResultType.done;
+    } catch (_) {
+      try {
+        final String cleanPath = trimmedPath.startsWith('file://') ? trimmedPath : 'file://$trimmedPath';
+        final Uri fileUri = Uri.parse(cleanPath);
+        if (await canLaunchUrl(fileUri)) {
+          return await launchUrl(fileUri);
+        }
+      } catch (_) {}
     }
 
     return false;

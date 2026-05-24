@@ -29,7 +29,6 @@ class SettingsPage extends GetView<SettingsService> {
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          // 📦 分组一：界面与视听体验 (Appearance & Audio-Visual)
           _buildGroupTitle(theme, i18n("theme_customization")),
           _buildModernCard(theme, [
             _buildTile(
@@ -39,6 +38,11 @@ class SettingsPage extends GetView<SettingsService> {
               subtitle: i18n("theme_customization_desc"),
               onTap: () => Get.to(() => const ThemeSettingsPage()),
             ),
+          ]),
+
+          const SizedBox(height: 20),
+          _buildGroupTitle(theme, i18n("iptv_settings")),
+          _buildModernCard(theme, [
             _buildTile(
               context,
               icon: Remix.tv_line,
@@ -46,6 +50,11 @@ class SettingsPage extends GetView<SettingsService> {
               subtitle: i18n("manage_iptv_sources"),
               onTap: () => Get.to(() => const IptvPage()),
             ),
+          ]),
+
+          const SizedBox(height: 20),
+          _buildGroupTitle(theme, i18n("video")),
+          _buildModernCard(theme, [
             _buildTile(
               context,
               icon: Remix.film_line,
@@ -53,6 +62,11 @@ class SettingsPage extends GetView<SettingsService> {
               subtitle: i18n("video_desc"),
               onTap: () => Get.to(() => const VideoSettingsPage()),
             ),
+          ]),
+
+          const SizedBox(height: 20),
+          _buildGroupTitle(theme, i18n("player_kernel")),
+          _buildModernCard(theme, [
             _buildTile(
               context,
               icon: Remix.cpu_line,
