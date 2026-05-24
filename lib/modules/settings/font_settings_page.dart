@@ -12,10 +12,13 @@ class FontSettingsPage extends GetView<SettingsService> {
       appBar: AppBar(
         title: Text(i18n("font_settings_title")),
         actions: [
-          IconButton(
-            icon: const Icon(Remix.restart_line),
-            tooltip: i18n("reset"),
-            onPressed: () => _resetToDefaults(context),
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: IconButton(
+              icon: const Icon(Remix.rest_time_line),
+              tooltip: i18n("reset"),
+              onPressed: () => _resetToDefaults(context),
+            ),
           ),
         ],
       ),
