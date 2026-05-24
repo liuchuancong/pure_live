@@ -10,9 +10,7 @@ class DanmuShieldPage extends GetView<DanmuShieldController> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(i18n("danmaku_keyword_block"), style: const TextStyle(fontWeight: FontWeight.w600)),
-      ),
+      appBar: AppBar(title: Text(i18n("danmaku_keyword_block"))),
       body: ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),

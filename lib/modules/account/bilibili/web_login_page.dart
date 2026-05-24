@@ -12,7 +12,7 @@ class BiliBiliWebLoginPage extends GetView<BiliBiliWebLoginController> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(i18n("bilibili_login"), style: AppTextStyles.t13.copyWith(fontWeight: FontWeight.w600)),
+        title: Text(i18n("bilibili_login")),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8.0),

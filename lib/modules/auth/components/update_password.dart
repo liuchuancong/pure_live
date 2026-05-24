@@ -11,10 +11,7 @@ class UpdatePassword extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(i18n('supabase_update_password'), style: const TextStyle(fontWeight: FontWeight.w600)),
-        automaticallyImplyLeading: false,
-      ),
+      appBar: AppBar(title: Text(i18n('supabase_update_password')), automaticallyImplyLeading: false),
       body: ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -55,7 +52,8 @@ class UpdatePassword extends StatelessWidget {
           Expanded(
             child: Text(
               i18n('supabase_update_password_tip'),
-              style: AppTextStyles.t13.copyWith(color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+              style: AppTextStyles.t13.copyWith(
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                 height: 1.4,
               ),
             ),

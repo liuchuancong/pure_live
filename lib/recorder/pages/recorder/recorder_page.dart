@@ -34,7 +34,7 @@ class RecorderPage extends GetView<RecorderController> {
         child: Scaffold(
           backgroundColor: theme.colorScheme.surface,
           appBar: AppBar(
-            title: Text(i18n("recorder_title"), style: AppTextStyles.t11.copyWith(fontWeight: FontWeight.bold)),
+            title: Text(i18n("recorder_title")),
             centerTitle: true,
             leading: (showAction || menuCount <= 1) ? const MenuButton() : null,
             elevation: 0,

@@ -21,10 +21,7 @@ class SettingsPage extends GetView<SettingsService> {
     double screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      appBar: AppBar(
-        scrolledUnderElevation: screenWidth > 640 ? 0 : null,
-        title: Text(i18n("settings_title"), style: const TextStyle(fontWeight: FontWeight.w600)),
-      ),
+      appBar: AppBar(scrolledUnderElevation: screenWidth > 640 ? 0 : null, title: Text(i18n("settings_title"))),
       body: ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

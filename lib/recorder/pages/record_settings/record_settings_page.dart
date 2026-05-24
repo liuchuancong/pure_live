@@ -29,14 +29,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
-      appBar: AppBar(
-        title: Text(
-          i18n("record_settings"),
-          style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-        elevation: 0,
-      ),
+      appBar: AppBar(title: Text(i18n("record_settings")), centerTitle: true, elevation: 0),
       body: Obx(
         () => ListView(
           physics: const BouncingScrollPhysics(),
@@ -299,9 +292,11 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
       padding: const EdgeInsets.only(left: 12, bottom: 12, top: 24),
       child: Text(
         title,
-        style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.bold,
+        style: AppTextStyles.t15.copyWith(
+          fontWeight: FontWeight.bold,
           color: Get.theme.colorScheme.primary,
-          letterSpacing: 1.2),
+          letterSpacing: 1.2,
+        ),
       ),
     );
   }
@@ -383,8 +378,10 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                       ),
                       child: Text(
                         displayValue,
-                        style: AppTextStyles.t13.copyWith(fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary),
+                        style: AppTextStyles.t13.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary,
+                        ),
                       ),
                     ),
                   ],

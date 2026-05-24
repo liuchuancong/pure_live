@@ -10,7 +10,7 @@ class FontSettingsPage extends GetView<SettingsService> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(i18n("font_settings_title"), style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(i18n("font_settings_title")),
         actions: [
           IconButton(
             icon: const Icon(Remix.restart_line),
