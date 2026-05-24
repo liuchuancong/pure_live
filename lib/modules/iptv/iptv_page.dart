@@ -429,7 +429,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
         value: value.value,
         activeThumbColor: theme.colorScheme.primary,
         onChanged: (val) => value.value = val,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+        contentPadding: const EdgeInsets.only(left: 16, top: 2, bottom: 2, right: 8),
       ),
     );
   }

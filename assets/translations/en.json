@@ -736,5 +736,8 @@
     "custom_ua_title": "Custom IPTV User-Agent",
     "custom_ua_desc": "Set custom UA to fix 444 or 403 access denied errors.",
     "edit_ua_title": "Edit User-Agent",
-    "input_empty_tip": "Content cannot be empty"
+    "input_empty_tip": "Content cannot be empty",
+    "shield_count_title": "Blocked Keywords: {count} (Click to remove)",
+    "empty_shield_title": "No Blocked Keywords",
+    "empty_shield_subtitle": "Danmaku containing added keywords will be automatically filtered."
 }

@@ -735,5 +735,8 @@
     "custom_ua_title": "自定义直播源请求头",
     "custom_ua_desc": "设置自定义UA以解决部分直播源返回444或403拒绝访问的问题",
     "edit_ua_title": "修改请求头 (User-Agent)",
-    "input_empty_tip": "内容不能为空"
+    "input_empty_tip": "内容不能为空",
+    "shield_count_title": "已添加 {count} 个关键词（点击可移除）",
+    "empty_shield_title": "暂无屏蔽关键词",
+    "empty_shield_subtitle": "添加关键词后，包含该内容的弹幕将被自动过滤"
 }
