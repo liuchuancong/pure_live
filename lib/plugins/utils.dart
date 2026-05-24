@@ -166,7 +166,7 @@ class Utils {
               contentPadding: const EdgeInsets.all(12),
               hintText: hintText ?? title,
             ),
-            // style: TextStyle(
+            // style:  TextStyle(
             //     height: 1.0,
             //     color: Get.isDarkMode ? Colors.white : Colors.black),
             autofocus: true,

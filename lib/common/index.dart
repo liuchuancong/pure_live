@@ -31,3 +31,5 @@ export 'package:pure_live/plugins/locale_helper.dart';
 export 'package:pure_live/plugins/supabase.dart';
 export 'package:pure_live/get/get.dart' hide VoidCallback;
 export './widgets/app_status_view.dart';
+export './style/app_text_styles.dart';
+export './widgets/widget_extensions.dart';

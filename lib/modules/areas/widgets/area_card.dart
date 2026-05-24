@@ -25,7 +25,7 @@ class _AreaCardState extends State<AreaCard> {
     final displayImageUrl = _getFinalUrl();
 
     return Card(
-      margin: const EdgeInsets.all(7.5),
+      margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
       child: InkWell(
         borderRadius: BorderRadius.circular(15.0),
@@ -86,7 +86,7 @@ class _AreaCardState extends State<AreaCard> {
               subtitle: Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  Text(widget.category.typeName!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10)),
+                  Text(widget.category.typeName!, style: AppTextStyles.t11.copyWith(fontWeight: FontWeight.bold)),
                 ],
               ),
             ),

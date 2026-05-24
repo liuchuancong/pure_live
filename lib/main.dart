@@ -104,13 +104,21 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
     return DynamicColorBuilder(
       builder: (lightDynamic, darkDynamic) {
         return Obx(() {
-          var themeColor = HexColor(settings.themeColorSwitch.value);
-          var showSplashPage = settings.showSplashPage.value;
-          ThemeData lightTheme = MyTheme(primaryColor: themeColor).lightThemeData;
-          ThemeData darkTheme = MyTheme(primaryColor: themeColor).darkThemeData;
+          final themeColor = HexColor(settings.themeColorSwitch.value);
+          final showSplashPage = settings.showSplashPage.value;
+
+          // 💡 1. Listen reactively to the font multiplier value change
+          final currentFactor = settings.textScaleFactor.value;
+
+          ThemeData lightTheme;
+          ThemeData darkTheme;
+
           if (settings.enableDynamicTheme.value) {
             lightTheme = MyTheme(colorScheme: lightDynamic).lightThemeData;
             darkTheme = MyTheme(colorScheme: darkDynamic).darkThemeData;
+          } else {
+            lightTheme = MyTheme(primaryColor: themeColor).lightThemeData;
+            darkTheme = MyTheme(primaryColor: themeColor).darkThemeData;
           }
           return GetMaterialApp(
             title: i18n('app_name'),
@@ -130,10 +138,14 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
             navigatorObservers: [FlutterSmartDialog.observer, BackButtonObserver()],
             builder: FlutterSmartDialog.init(
               builder: (context, child) {
+                Widget resultWidget = child ?? const SizedBox.shrink();
                 if (PlatformUtils.isDesktopNotMac) {
-                  return DesktopManager.buildWithTitleBar(child);
+                  resultWidget = DesktopManager.buildWithTitleBar(resultWidget);
                 }
-                return child ?? const SizedBox.shrink();
+                return MediaQuery(
+                  data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(currentFactor)),
+                  child: resultWidget,
+                );
               },
             ),
             supportedLocales: context.supportedLocales,

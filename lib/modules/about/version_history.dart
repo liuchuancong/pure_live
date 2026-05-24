@@ -27,7 +27,7 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(e.version, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                Text(e.version, style: AppTextStyles.t20.copyWith(fontWeight: FontWeight.bold)),
                 MarkdownBlock(data: e.updateBody, config: config),
               ],
             ),

@@ -27,6 +27,15 @@ class ManageItem {
   });
 }
 
+class ResourceGroup {
+  final String title;
+  final IconData icon;
+  final List<ManageItem> items;
+
+  ResourceGroup({required this.title, required this.icon, required this.items});
+  bool get isNotEmpty => items.isNotEmpty;
+}
+
 class IptvManagePage extends StatefulWidget {
   const IptvManagePage({super.key});
 
@@ -158,9 +167,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
       ),
       body: Obx(() {
         final networkItems = allItems.where((e) => e.isNetwork).toList();
-
         final localItems = allItems.where((e) => !e.isNetwork).toList();
-
         return CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
@@ -251,9 +258,9 @@ class _IptvManagePageState extends State<IptvManagePage> {
           child: Icon(icon, color: theme.colorScheme.primary),
         ),
         const SizedBox(height: 10),
-        Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        Text(value, style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
-        Text(title, style: TextStyle(color: theme.hintColor, fontSize: 12)),
+        Text(title, style: AppTextStyles.t11.copyWith(color: theme.hintColor)),
       ],
     );
   }
@@ -263,12 +270,25 @@ class _IptvManagePageState extends State<IptvManagePage> {
       children: [
         Icon(icon, size: 18, color: theme.colorScheme.primary),
         const SizedBox(width: 8),
-        Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+        Text(title, style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.bold)),
       ],
     );
   }
 
   Widget _buildItemCard(ThemeData theme, ManageItem item) {
+    String formatText = 'M3U';
+    final String lowercaseUrl = item.url.toLowerCase();
+
+    if (item.type == ManageItemType.epg) {
+      formatText = lowercaseUrl.endsWith('.gz') ? 'XML.GZ' : 'EPG';
+    } else if (lowercaseUrl.contains('.txt') || (item.raw.type?.toLowerCase() == 'txt')) {
+      formatText = 'TXT';
+    } else if (lowercaseUrl.contains('.json') || (item.raw.type?.toLowerCase() == 'json')) {
+      formatText = 'JSON';
+    } else if (lowercaseUrl.endsWith('.gz') || (item.raw.type?.toLowerCase() == 'gz')) {
+      formatText = 'GZ';
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
@@ -293,7 +313,8 @@ class _IptvManagePageState extends State<IptvManagePage> {
               children: [
                 Row(
                   children: [
-                    _buildLeadingIcon(theme, item),
+                    // 💡 核心注入点：将处理好的格式标识以及主题传入原本的图标构建方法中
+                    _buildLeadingIconWithBadge(theme, item, formatText),
 
                     const SizedBox(width: 14),
 
@@ -305,7 +326,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
                             item.name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                            style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w700),
                           ),
 
                           const SizedBox(height: 6),
@@ -314,7 +335,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
                             item.url,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: theme.hintColor, fontSize: 12),
+                            style: TextStyle(color: theme.hintColor),
                           ),
                         ],
                       ),
@@ -427,6 +448,44 @@ class _IptvManagePageState extends State<IptvManagePage> {
     );
   }
 
+  Widget _buildLeadingIconWithBadge(ThemeData theme, ManageItem item, String formatText) {
+    Color badgeColor = theme.colorScheme.primary; // M3U 使用主色
+    if (formatText == 'TXT') badgeColor = Colors.orange; // TXT 亮橙
+    if (formatText == 'EPG') badgeColor = Colors.teal; // Epg/Xml 薄荷绿
+    if (formatText == 'JSON') badgeColor = Colors.purple; // JSON 高级紫
+    if (formatText == 'GZ' || formatText == 'XML.GZ') {
+      badgeColor = theme.brightness == Brightness.dark ? Colors.blueGrey[400]! : Colors.blueGrey[600]!;
+    }
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        _buildLeadingIcon(theme, item),
+        Positioned(
+          right: -4,
+          bottom: -4,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+            decoration: BoxDecoration(
+              color: badgeColor,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: theme.cardColor, width: 2), // 白色/暗色描边切断视觉背景
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4, offset: const Offset(0, 2)),
+              ],
+            ),
+            child: Text(
+              formatText,
+              style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.w900,
+                color: Colors.white,
+                letterSpacing: 0.2),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildLeadingIcon(ThemeData theme, ManageItem item) {
     final isPlaylist = item.type == ManageItemType.iptv;
 
@@ -453,11 +512,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
       ),
       child: Text(
         item.isNetwork ? i18n("network_tag") : i18n("local_tag"),
-        style: TextStyle(
-          color: item.isNetwork ? Colors.green : Colors.orange,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-        ),
+        style: TextStyle(color: item.isNetwork ? Colors.green : Colors.orange, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -491,7 +546,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
                 child: Text(
                   label,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 12),
+                  style: TextStyle(color: color, fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -520,7 +575,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
 
               Text(
                 i18n("auto_sync"),
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: theme.colorScheme.primary),
+                style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.w600, color: theme.colorScheme.primary),
               ),
             ],
           ),

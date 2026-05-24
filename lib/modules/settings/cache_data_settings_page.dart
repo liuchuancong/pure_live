@@ -9,15 +9,13 @@ class CacheDataSettingsPage extends GetView<SettingsService> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(i18n("cache_and_data"), style: const TextStyle(fontWeight: FontWeight.w600)),
-      ),
+      appBar: AppBar(title: Text(i18n("cache_and_data"))),
       body: ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          _buildGroupTitle(theme, i18n("cache_and_data")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("cache_and_data")),
+          context.buildModernCard([
             Obx(() {
               final size = controller.cacheSizeMB.value;
               final turns = controller.refreshTurns.value;
@@ -32,7 +30,7 @@ class CacheDataSettingsPage extends GetView<SettingsService> {
                   children: [
                     Text(
                       "${size.toStringAsFixed(2)} MB",
-                      style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600, fontSize: 14),
+                      style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(width: 8),
                     AnimatedRotation(
@@ -77,18 +75,6 @@ class CacheDataSettingsPage extends GetView<SettingsService> {
     );
   }
 
-  Widget _buildModernCard(ThemeData theme, List<Widget> children) {
-    return Material(
-      clipBehavior: Clip.antiAlias,
-      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
-      ),
-      child: Column(children: children),
-    );
-  }
-
   Widget _buildTile(
     BuildContext context, {
     required IconData icon,
@@ -100,14 +86,14 @@ class CacheDataSettingsPage extends GetView<SettingsService> {
     final theme = Theme.of(context);
     return ListTile(
       leading: Icon(icon, color: theme.colorScheme.primary, size: 22),
-      title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+      title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
       subtitle: subtitle.isEmpty
           ? null
           : Padding(
               padding: const EdgeInsets.only(top: 2),
               child: Text(
                 subtitle,
-                style: TextStyle(fontSize: 12, color: theme.hintColor.withValues(alpha: 0.75)),
+                style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -115,21 +101,6 @@ class CacheDataSettingsPage extends GetView<SettingsService> {
       trailing: trailing ?? Icon(Icons.chevron_right_rounded, color: theme.hintColor.withValues(alpha: 0.4), size: 20),
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-    );
-  }
-
-  Widget _buildGroupTitle(ThemeData theme, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 8),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary.withValues(alpha: 0.65),
-          letterSpacing: 0.5,
-        ),
-      ),
     );
   }
 }

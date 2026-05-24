@@ -138,7 +138,7 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
       padding: const EdgeInsets.only(left: 4, bottom: 8, top: 0),
       child: Text(
         title,
-        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+        style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
       ),
     );
   }
@@ -176,7 +176,7 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
             children: [
               Text(
                 title,
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: labelColor),
+                style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600, color: labelColor),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -186,7 +186,7 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
                 ),
                 child: Text(
                   display,
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: digitColor),
+                  style: AppTextStyles.t13.copyWith(fontWeight: FontWeight.bold, color: digitColor),
                 ),
               ),
             ],
@@ -226,7 +226,7 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
         children: [
           Text(
             title,
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: labelColor),
+            style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600, color: labelColor),
           ),
           CountButton(
             maxValue: max,

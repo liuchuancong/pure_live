@@ -7,18 +7,14 @@ class GeneralSettingsPage extends GetView<SettingsService> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
-      appBar: AppBar(
-        title: Text(i18n("general"), style: const TextStyle(fontWeight: FontWeight.w600)),
-      ),
+      appBar: AppBar(title: Text(i18n("general"))),
       body: ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          _buildGroupTitle(theme, i18n("general")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("general")),
+          context.buildModernCard([
             _buildSwitchTile(
               context,
               title: i18n('splash_animation'),
@@ -56,18 +52,6 @@ class GeneralSettingsPage extends GetView<SettingsService> {
     );
   }
 
-  Widget _buildModernCard(ThemeData theme, List<Widget> children) {
-    return Material(
-      clipBehavior: Clip.antiAlias,
-      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
-      ),
-      child: Column(children: children),
-    );
-  }
-
   Widget _buildSwitchTile(
     BuildContext context, {
     required String title,
@@ -79,14 +63,14 @@ class GeneralSettingsPage extends GetView<SettingsService> {
     return Obx(
       () => SwitchListTile(
         secondary: Icon(icon, size: 22, color: theme.colorScheme.primary),
-        title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+        title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
         subtitle: subtitle.isEmpty
             ? null
             : Padding(
                 padding: const EdgeInsets.only(top: 2),
                 child: Text(
                   subtitle,
-                  style: TextStyle(fontSize: 12, color: theme.hintColor.withValues(alpha: 0.75)),
+                  style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -94,22 +78,7 @@ class GeneralSettingsPage extends GetView<SettingsService> {
         value: value.value,
         activeThumbColor: theme.colorScheme.primary,
         onChanged: (val) => value.value = val,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-      ),
-    );
-  }
-
-  Widget _buildGroupTitle(ThemeData theme, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 8),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary.withValues(alpha: 0.65),
-          letterSpacing: 0.5,
-        ),
+        contentPadding: const EdgeInsets.only(left: 16, top: 2, bottom: 2, right: 8),
       ),
     );
   }

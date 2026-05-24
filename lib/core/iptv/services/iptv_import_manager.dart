@@ -5,6 +5,7 @@ import 'package:path/path.dart' as p;
 import 'package:drift/drift.dart' as drift;
 import 'package:pure_live/common/index.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:synchronized/synchronized.dart';
 import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/core/common/http_client.dart';
@@ -15,6 +16,8 @@ import 'package:pure_live/common/global/app_path_manager.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
 
 class IptvImportManager {
+  static final _mappingLock = Lock();
+
   /// 1. 本地文件浏览器选择导入
   Future<bool> importFromLocalPicker() async {
     FilePickerResult? result = await FilePicker.pickFiles(
@@ -340,7 +343,7 @@ class IptvImportManager {
           );
         }).toList(),
       );
-      runAutoEpgMapping(providerId: providerId);
+      await runAutoEpgMapping(providerId: providerId);
       return true;
     } catch (e) {
       debugPrint("Database Write Error: $e");
@@ -349,62 +352,69 @@ class IptvImportManager {
   }
 
   Future<void> runAutoEpgMapping({required String providerId}) async {
-    try {
-      final db = Get.find<DbService>().db;
-      final String currentEpgSourceId = Get.find<SettingsService>().selectedSourceId.value;
-      if (currentEpgSourceId.isEmpty) return;
-      final channels = await db.getChannelsForProvider(providerId);
-      final epgChannels = await db.getEpgChannelsForSource(currentEpgSourceId);
-      if (channels.isEmpty || epgChannels.isEmpty) return;
-
-      final cleanRegex = RegExp(r'[^a-zA-Z0-9\u4e00-\u9fa5]');
-      List<database.EpgMappingsCompanion> mappingBatch = [];
-      for (var ch in channels) {
-        String? matchedEpgChannelId;
-        final cleanTvgId = ch.tvgId?.trim().toLowerCase();
-        final cleanChId = ch.id.trim().toLowerCase();
-        final idMatch = epgChannels.firstWhereOrNull((dbCh) {
-          final targetEpgId = dbCh.channelId.trim().toLowerCase();
-          return (cleanTvgId != null && targetEpgId == cleanTvgId) || (targetEpgId == cleanChId);
-        });
-
-        if (idMatch != null) {
-          matchedEpgChannelId = idMatch.id;
-        } else {
-          final targetClean = ch.name.toLowerCase().replaceAll(cleanRegex, '');
-          final nameMatch = epgChannels.firstWhereOrNull((dbCh) {
-            final dbChClean = dbCh.displayName.toLowerCase().replaceAll(cleanRegex, '');
-            return targetClean.contains(dbChClean) || dbChClean.contains(targetClean);
-          });
-
-          if (nameMatch != null) {
-            matchedEpgChannelId = nameMatch.id;
-          }
-        }
-        if (matchedEpgChannelId != null) {
-          mappingBatch.add(
-            database.EpgMappingsCompanion.insert(
-              channelId: ch.id,
-              providerId: providerId,
-              epgChannelId: matchedEpgChannelId,
-              epgSourceId: currentEpgSourceId,
-              source: const drift.Value('auto'),
-            ),
-          );
-        }
-      }
-
-      if (mappingBatch.isNotEmpty) {
+    await _mappingLock.synchronized(() async {
+      try {
+        final db = Get.find<DbService>().db;
+        final String currentEpgSourceId = Get.find<SettingsService>().selectedSourceId.value;
+        if (currentEpgSourceId.isEmpty) return;
+        final channels = await db.getChannelsForProvider(providerId);
+        final epgChannels = await db.getEpgChannelsForSource(currentEpgSourceId);
         await db.transaction(() async {
           final clearQuery = db.delete(db.epgMappings);
           clearQuery.where((t) => t.providerId.equals(providerId));
           await clearQuery.go();
-          await db.upsertMappings(mappingBatch);
         });
-        debugPrint("📊 [Auto Mapping] 成功在后台为该直播源全自动生成了 ${mappingBatch.length} 条 EPG 映射配对记录！");
+
+        if (channels.isEmpty || epgChannels.isEmpty) return;
+
+        final cleanRegex = RegExp(r'[^a-zA-Z0-9\u4e00-\u9fa5]');
+        List<database.EpgMappingsCompanion> mappingBatch = [];
+
+        for (var ch in channels) {
+          String? matchedEpgChannelId;
+          final cleanTvgId = ch.tvgId?.trim().toLowerCase();
+          final cleanChId = ch.id.trim().toLowerCase();
+
+          final idMatch = epgChannels.firstWhereOrNull((dbCh) {
+            final targetEpgId = dbCh.channelId.trim().toLowerCase();
+            return (cleanTvgId != null && targetEpgId == cleanTvgId) || (targetEpgId == cleanChId);
+          });
+
+          if (idMatch != null) {
+            matchedEpgChannelId = idMatch.id;
+          } else {
+            final targetClean = ch.name.toLowerCase().replaceAll(cleanRegex, '');
+            final nameMatch = epgChannels.firstWhereOrNull((dbCh) {
+              final dbChClean = dbCh.displayName.toLowerCase().replaceAll(cleanRegex, '');
+              return targetClean.contains(dbChClean) || dbChClean.contains(targetClean);
+            });
+
+            if (nameMatch != null) {
+              matchedEpgChannelId = nameMatch.id;
+            }
+          }
+
+          if (matchedEpgChannelId != null) {
+            mappingBatch.add(
+              database.EpgMappingsCompanion.insert(
+                channelId: ch.id,
+                providerId: providerId,
+                epgChannelId: matchedEpgChannelId,
+                epgSourceId: currentEpgSourceId,
+                source: const drift.Value('auto'),
+              ),
+            );
+          }
+        }
+        if (mappingBatch.isNotEmpty) {
+          await db.transaction(() async {
+            await db.upsertMappings(mappingBatch);
+          });
+          debugPrint("📊 [Auto Mapping] 成功在后台为该直播源生成了 ${mappingBatch.length} 条 EPG 映射记录！");
+        }
+      } catch (e) {
+        debugPrint("Auto Mapping runner process crashed: $e");
       }
-    } catch (e) {
-      debugPrint("Auto Mapping runner process crashed: $e");
-    }
+    });
   }
 }

@@ -11,9 +11,7 @@ class BiliBiliQRLoginPage extends GetView<BiliBiliQRLoginController> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(i18n("bilibili_login"), style: const TextStyle(fontWeight: FontWeight.w600)),
-      ),
+      appBar: AppBar(title: Text(i18n("bilibili_login"))),
       body: ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -50,7 +48,7 @@ class BiliBiliQRLoginPage extends GetView<BiliBiliQRLoginController> {
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildModernCard(theme, [
+                  context.buildModernCard([
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: ClipRRect(
@@ -82,8 +80,7 @@ class BiliBiliQRLoginPage extends GetView<BiliBiliQRLoginController> {
                                 const SizedBox(width: 6),
                                 Text(
                                   i18n("qr_scanned_confirm"),
-                                  style: TextStyle(
-                                    fontSize: 13,
+                                  style: AppTextStyles.t13.copyWith(
                                     color: theme.colorScheme.primary,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -91,7 +88,7 @@ class BiliBiliQRLoginPage extends GetView<BiliBiliQRLoginController> {
                               ],
                             ),
                           )
-                        : Text(i18n("qr_waiting_scan"), style: TextStyle(fontSize: 13, color: theme.hintColor)),
+                        : Text(i18n("qr_waiting_scan"), style: AppTextStyles.t13.copyWith(color: theme.hintColor)),
                   ),
                 ],
               );
@@ -118,8 +115,7 @@ class BiliBiliQRLoginPage extends GetView<BiliBiliQRLoginController> {
           Expanded(
             child: Text(
               i18n("qr_login_tip"),
-              style: TextStyle(
-                fontSize: 13,
+              style: AppTextStyles.t13.copyWith(
                 color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                 height: 1.4,
               ),
@@ -127,18 +123,6 @@ class BiliBiliQRLoginPage extends GetView<BiliBiliQRLoginController> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildModernCard(ThemeData theme, List<Widget> children) {
-    return Material(
-      clipBehavior: Clip.antiAlias,
-      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
-        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
-      ),
-      child: Column(children: children),
     );
   }
 
@@ -155,7 +139,7 @@ class BiliBiliQRLoginPage extends GetView<BiliBiliQRLoginController> {
         children: [
           Icon(Remix.error_warning_line, size: 40, color: theme.hintColor.withValues(alpha: 0.4)),
           const SizedBox(height: 12),
-          Text(message, style: TextStyle(fontSize: 14, color: theme.hintColor)),
+          Text(message, style: AppTextStyles.t14.copyWith(color: theme.hintColor)),
           const SizedBox(height: 16),
           TextButton.icon(
             onPressed: onPressed,

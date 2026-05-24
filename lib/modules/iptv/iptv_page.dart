@@ -74,7 +74,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(i18n("select_epg_source"), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            Text(i18n("select_epg_source"), style: AppTextStyles.t11.copyWith(fontWeight: FontWeight.bold)),
             IconButton(icon: const Icon(Icons.close, size: 22), onPressed: () => Navigator.of(context).pop()),
           ],
         ),
@@ -87,7 +87,10 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
             }
             if (sources.isEmpty) {
               return Center(
-                child: Text(i18n("no_epg_sources_found"), style: TextStyle(color: Theme.of(context).hintColor)),
+                child: Text(
+                  i18n("no_epg_sources_found"),
+                  style: AppTextStyles.t14.copyWith(color: Theme.of(context).hintColor),
+                ),
               );
             }
 
@@ -140,10 +143,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
                                 children: [
                                   Text(
                                     source.name,
-                                    style: TextStyle(
-                                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                                      fontSize: 14,
-                                    ),
+                                    style: TextStyle(fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500),
                                   ),
                                   Padding(
                                     padding: const EdgeInsets.only(top: 4),
@@ -151,7 +151,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
                                       source.url,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(color: Theme.of(context).hintColor, fontSize: 11),
+                                      style: TextStyle(color: Theme.of(context).hintColor),
                                     ),
                                   ),
                                 ],
@@ -175,18 +175,14 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
-      appBar: AppBar(
-        title: Text(i18n("iptv_settings"), style: const TextStyle(fontWeight: FontWeight.w600)),
-      ),
+      appBar: AppBar(title: Text(i18n("iptv_settings"))),
       body: ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          _buildGroupTitle(theme, i18n("manage_page_title")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("manage_page_title")),
+          context.buildModernCard([
             _buildTile(
               context,
               icon: Remix.cloud_line,
@@ -196,8 +192,43 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
             ),
           ]),
           const SizedBox(height: 20),
-          _buildGroupTitle(theme, i18n("iptv_settings")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("auto_sync_settings")),
+          context.buildModernCard([
+            _buildSwitchTile(
+              context,
+              icon: Remix.refresh_line,
+              title: i18n("auto_sync_title"),
+              subtitle: i18n("auto_sync_desc"),
+              value: settings.isAutoSyncEnabled,
+            ),
+            Obx(() {
+              if (!settings.isAutoSyncEnabled.value) return const SizedBox.shrink();
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildTile(
+                    context,
+                    icon: Remix.time_line,
+                    title: i18n("sync_interval_title"),
+                    subtitle: i18n("sync_interval_hours", args: {"hour": "${settings.autoSyncHoursInterval.value}"}),
+                    onTap: () => _showIntervalSelectionMenu(context, settings),
+                  ),
+                ],
+              );
+            }),
+            _buildTile(
+              context,
+              icon: Remix.tv_line,
+              title: i18n("custom_ua_title"),
+              subtitle: settings.customIptvUserAgent.value.length > 30
+                  ? "${settings.customIptvUserAgent.value.substring(0, 30)}..."
+                  : settings.customIptvUserAgent.value,
+              onTap: () => _showEditUserAgentDialog(context, settings),
+            ),
+          ]),
+          const SizedBox(height: 20),
+          context.buildGroupTitle(i18n("iptv_settings")),
+          context.buildModernCard([
             _buildTile(
               context,
               icon: Remix.download_2_line,
@@ -207,8 +238,8 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
             ),
           ]),
           const SizedBox(height: 20),
-          _buildGroupTitle(theme, i18n("epg_settings")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("epg_settings")),
+          context.buildModernCard([
             _buildTile(
               context,
               icon: Remix.file_add_line,
@@ -235,15 +266,164 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
     );
   }
 
-  Widget _buildModernCard(ThemeData theme, List<Widget> children) {
-    return Material(
-      clipBehavior: Clip.antiAlias,
-      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
+  void _showEditUserAgentDialog(BuildContext context, SettingsService settings) {
+    final controller = TextEditingController(text: settings.customIptvUserAgent.value);
+    final RxDouble customInputHeight = 100.0.obs;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        final theme = Theme.of(context);
+
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final dialogWidth = constraints.maxWidth > 640 ? 560.0 : constraints.maxWidth * 0.9;
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              titlePadding: const EdgeInsets.only(top: 24, left: 24, right: 24, bottom: 12),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              actionsPadding: const EdgeInsets.only(bottom: 16, right: 24, left: 24),
+              title: Row(
+                children: [
+                  Icon(Remix.tv_line, color: theme.colorScheme.primary, size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(i18n("edit_ua_title"), style: AppTextStyles.t18.copyWith(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+              content: SizedBox(
+                width: dialogWidth,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(i18n("custom_ua_desc"), style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
+                    const SizedBox(height: 16),
+                    Obx(
+                      () => Container(
+                        height: customInputHeight.value,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: controller,
+                                maxLines: null,
+                                expands: true,
+                                maxLength: 500,
+                                decoration: InputDecoration(
+                                  hintText: "Mozilla/5.0...",
+                                  border: InputBorder.none,
+                                  counterText: "",
+                                  contentPadding: const EdgeInsets.fromLTRB(14, 14, 14, 4),
+                                  suffixIcon: IconButton(
+                                    icon: const Icon(Remix.close_circle_line, size: 18),
+                                    onPressed: () => controller.clear(),
+                                  ),
+                                ),
+                                style: AppTextStyles.t13.copyWith(fontFamily: 'monospace'),
+                              ),
+                            ),
+                            GestureDetector(
+                              behavior: HitTestBehavior.translucent,
+                              onVerticalDragUpdate: (details) {
+                                final newHeight = customInputHeight.value + details.delta.dy;
+                                if (newHeight >= 80 && newHeight <= 350) {
+                                  customInputHeight.value = newHeight;
+                                }
+                              },
+                              child: Container(
+                                width: double.infinity,
+                                height: 16,
+                                decoration: BoxDecoration(
+                                  color: theme.dividerColor.withValues(alpha: 0.03),
+                                  borderRadius: const BorderRadius.only(
+                                    bottomLeft: Radius.circular(14),
+                                    bottomRight: Radius.circular(14),
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Container(
+                                    width: 36,
+                                    height: 4,
+                                    decoration: BoxDecoration(
+                                      color: theme.hintColor.withValues(alpha: 0.3),
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n("cancel"))),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  ),
+                  onPressed: () {
+                    final trimmedValue = controller.text.trim();
+                    if (trimmedValue.isNotEmpty) {
+                      settings.customIptvUserAgent.value = trimmedValue;
+                      Navigator.of(context).pop();
+                      ToastUtil.show(i18n("settings_saved"));
+                    } else {
+                      ToastUtil.show(i18n("input_empty_tip"));
+                    }
+                  },
+                  child: Text(i18n("confirm")),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildSwitchTile(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required RxBool value,
+    required IconData icon,
+  }) {
+    final theme = Theme.of(context);
+    return Obx(
+      () => SwitchListTile(
+        secondary: Icon(icon, size: 22, color: theme.colorScheme.primary),
+        title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
+        subtitle: subtitle.isEmpty
+            ? null
+            : Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  subtitle,
+                  style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+        value: value.value,
+        activeThumbColor: theme.colorScheme.primary,
+        onChanged: (val) => value.value = val,
+        contentPadding: const EdgeInsets.only(left: 16, top: 2, bottom: 2, right: 8),
       ),
-      child: Column(children: children),
     );
   }
 
@@ -258,12 +438,12 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
     final theme = Theme.of(context);
     return ListTile(
       leading: Icon(icon, color: theme.colorScheme.primary, size: 22),
-      title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+      title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
       subtitle: Padding(
         padding: const EdgeInsets.only(top: 2),
         child: Text(
           subtitle,
-          style: TextStyle(fontSize: 12, color: subtitleColor ?? theme.hintColor.withValues(alpha: 0.75)),
+          style: AppTextStyles.t12.copyWith(color: subtitleColor ?? theme.hintColor.withValues(alpha: 0.75)),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -274,18 +454,66 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
     );
   }
 
-  Widget _buildGroupTitle(ThemeData theme, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 8),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary.withValues(alpha: 0.65),
-          letterSpacing: 0.5,
-        ),
-      ),
+  void _showIntervalSelectionMenu(BuildContext context, SettingsService settings) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        final theme = Theme.of(context);
+        final List<int> hoursOptions = [2, 6, 12, 24, 48, 72];
+
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          titlePadding: const EdgeInsets.only(top: 24, left: 24, right: 24, bottom: 8),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          title: Row(
+            children: [
+              Icon(Remix.time_line, color: theme.colorScheme.primary, size: 24),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  i18n("select_sync_interval"),
+                  style: AppTextStyles.t18.copyWith(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: hoursOptions.map((hours) {
+              return Material(
+                color: Colors.transparent,
+                child: Obx(() {
+                  // 💡 判定当前小时数是否处于被激活状态
+                  final bool isSelected = settings.autoSyncHoursInterval.value == hours;
+
+                  return ListTile(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    tileColor: isSelected ? theme.colorScheme.primary.withValues(alpha: 0.08) : null,
+                    leading: Icon(
+                      isSelected ? Remix.checkbox_circle_fill : Remix.checkbox_blank_circle_line,
+                      color: isSelected ? theme.colorScheme.primary : theme.hintColor.withValues(alpha: 0.5),
+                      size: 22,
+                    ),
+                    title: Text(
+                      "$hours ${i18n("hours")}",
+                      style: TextStyle(
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                        color: isSelected ? theme.colorScheme.primary : null,
+                      ),
+                    ),
+                    onTap: () {
+                      settings.autoSyncHoursInterval.value = hours;
+
+                      Navigator.of(context).pop();
+                      ToastUtil.show(i18n("settings_saved"));
+                    },
+                  );
+                }),
+              );
+            }).toList(),
+          ),
+        );
+      },
     );
   }
 
@@ -305,7 +533,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
               Expanded(
                 child: Text(
                   i18n("dialog_import_playlist_title"),
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: AppTextStyles.t18.copyWith(fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -359,7 +587,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
               Expanded(
                 child: Text(
                   i18n("dialog_import_epg_title"),
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: AppTextStyles.t18.copyWith(fontWeight: FontWeight.bold),
                 ),
               ),
             ],

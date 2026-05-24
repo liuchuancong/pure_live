@@ -3,6 +3,7 @@ import '../../get.dart';
 import 'root/get_root.dart';
 import 'dialog/dialog_route.dart';
 import 'package:flutter/material.dart';
+import 'package:pure_live/common/style/app_text_styles.dart';
 import 'package:pure_live/get/get_navigation/src/routes/test_kit.dart';
 
 /// It replaces the Flutter Navigator, but needs no context.
@@ -198,7 +199,7 @@ extension ExtensionDialog on GetInterface {
             },
             child: Text(
               textCancel ?? "Cancel",
-              style: TextStyle(color: cancelTextColor ?? theme.colorScheme.secondary),
+              style: AppTextStyles.t14.copyWith(color: cancelTextColor ?? theme.colorScheme.secondary),
             ),
           ),
         );
@@ -215,7 +216,10 @@ extension ExtensionDialog on GetInterface {
               backgroundColor: buttonColor ?? theme.colorScheme.secondary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius)),
             ),
-            child: Text(textConfirm ?? "Ok", style: TextStyle(color: confirmTextColor ?? theme.colorScheme.surface)),
+            child: Text(
+              textConfirm ?? "Ok",
+              style: AppTextStyles.t16.copyWith(color: confirmTextColor ?? theme.colorScheme.surface),
+            ),
             onPressed: () {
               onConfirm?.call();
             },
@@ -410,13 +414,13 @@ extension ExtensionSnackbar on GetInterface {
           titleText ??
           Text(
             title,
-            style: TextStyle(color: colorText ?? iconColor ?? Colors.black, fontWeight: FontWeight.w800, fontSize: 16),
+            style: TextStyle(color: colorText ?? iconColor ?? Colors.black, fontWeight: FontWeight.w800),
           ),
       messageText:
           messageText ??
           Text(
             message,
-            style: TextStyle(color: colorText ?? iconColor ?? Colors.black, fontWeight: FontWeight.w300, fontSize: 14),
+            style: TextStyle(color: colorText ?? iconColor ?? Colors.black, fontWeight: FontWeight.w300),
           ),
       snackPosition: snackPosition ?? SnackPosition.top,
       borderRadius: borderRadius ?? 15,

@@ -134,13 +134,13 @@ class EnhancedListTile extends StatelessWidget {
         room.title!,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(fontSize: dense ? 13 : 15, fontWeight: FontWeight.w500),
+        style: (dense ? AppTextStyles.t13 : AppTextStyles.t15).copyWith(fontWeight: FontWeight.w500),
       ),
       subtitle: Row(
         children: [
           Text(
             room.nick!,
-            style: TextStyle(fontSize: dense ? 11 : 13, fontWeight: FontWeight.w500),
+            style: (dense ? AppTextStyles.t11 : AppTextStyles.t13).copyWith(fontWeight: FontWeight.w500),
           ),
         ],
       ),
@@ -156,13 +156,13 @@ class EnhancedListTile extends StatelessWidget {
             ),
             child: Text(
               room.platform?.toUpperCase() ?? '',
-              style: TextStyle(fontSize: 9, fontWeight: FontWeight.w400, color: Colors.white),
+              style: AppTextStyles.t11.copyWith(fontWeight: FontWeight.w400, color: Colors.white),
             ),
           ),
           if (room.watching != null)
             Text(
               readableCount(room.watching!),
-              style: TextStyle(fontSize: dense ? 12 : 14, color: Colors.orange.shade700),
+              style: (dense ? AppTextStyles.t12 : AppTextStyles.t14).copyWith(color: Colors.orange.shade700),
             ),
         ],
       ),

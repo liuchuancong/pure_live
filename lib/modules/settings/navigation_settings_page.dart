@@ -11,24 +11,17 @@ class NavigationSettingsPage extends StatelessWidget {
     final settings = Get.find<SettingsService>();
 
     // 1. 定义所有菜单（固定不变）
-    final allMenus = [
-      HomeMenu.favorites,
-      HomeMenu.popular,
-      HomeMenu.areas,
-      HomeMenu.record,
-    ];
+    final allMenus = [HomeMenu.favorites, HomeMenu.popular, HomeMenu.areas, HomeMenu.record];
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(i18n("navigation_display_settings"), style: const TextStyle(fontWeight: FontWeight.w600)),
-      ),
+      appBar: AppBar(title: Text(i18n("navigation_display_settings"))),
       body: ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
           _buildTipBanner(theme),
           const SizedBox(height: 16),
-          _buildGroupTitle(theme, i18n("navigation_display_settings")),
+          context.buildGroupTitle(i18n("navigation_display_settings")),
           Obx(() {
             // 2. 关键：按 savedMenuIds 的顺序给 allMenus 排序
             final savedOrder = settings.savedMenuIds;
@@ -97,7 +90,7 @@ class NavigationSettingsPage extends StatelessWidget {
                     color: Colors.transparent,
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                      title: Text(titleText, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                      title: Text(titleText, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
                       leading: Icon(menuIcon, size: 22, color: theme.colorScheme.primary),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -112,7 +105,7 @@ class NavigationSettingsPage extends StatelessWidget {
                             index: index,
                             child: Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              child: Icon(Remix.menu_line, color: theme.hintColor.withValues(alpha: 0.35), size: 18),
+                              child: Icon(RemixIcons.sort_asc, size: 20),
                             ),
                           ),
                         ],
@@ -144,29 +137,13 @@ class NavigationSettingsPage extends StatelessWidget {
           Expanded(
             child: Text(
               i18n('drag_menu_to_sort_tip'),
-              style: TextStyle(
-                fontSize: 13,
+              style: AppTextStyles.t13.copyWith(
                 color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                 height: 1.4,
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildGroupTitle(ThemeData theme, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 8),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary.withValues(alpha: 0.65),
-          letterSpacing: 0.5,
-        ),
       ),
     );
   }

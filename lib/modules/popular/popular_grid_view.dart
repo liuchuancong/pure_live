@@ -70,13 +70,13 @@ class _PopularGridViewState extends State<PopularGridView> {
             onLoad: controller.loadData,
             child: controller.list.isNotEmpty
                 ? WaterfallFlow.builder(
-                    padding: const EdgeInsets.all(0),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                     controller: controller.scrollController,
                     gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
                       lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                       crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: 3,
-                      mainAxisSpacing: 3,
+                      crossAxisSpacing: 6,
+                      mainAxisSpacing: 6,
                     ),
                     itemCount: controller.list.length,
                     itemBuilder: (context, index) => RoomCard(room: controller.list[index], dense: true),

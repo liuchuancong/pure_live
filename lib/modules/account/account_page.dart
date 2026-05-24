@@ -8,18 +8,14 @@ class AccountPage extends GetView<AccountController> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
-      appBar: AppBar(
-        title: Text(i18n('third_party_auth'), style: const TextStyle(fontWeight: FontWeight.w600)),
-      ),
+      appBar: AppBar(title: Text(i18n('third_party_auth'))),
       body: ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          _buildGroupTitle(theme, i18n('third_party_auth')),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n('third_party_auth')),
+          context.buildModernCard([
             Obx(() {
               final isLogined = BiliBiliAccountService.instance.logined.value;
               final accountName = BiliBiliAccountService.instance.name.value;
@@ -75,18 +71,6 @@ class AccountPage extends GetView<AccountController> {
     );
   }
 
-  Widget _buildModernCard(ThemeData theme, List<Widget> children) {
-    return Material(
-      clipBehavior: Clip.antiAlias,
-      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
-      ),
-      child: Column(children: children),
-    );
-  }
-
   Widget _buildAccountTile(
     BuildContext context, {
     required String logo,
@@ -102,14 +86,13 @@ class AccountPage extends GetView<AccountController> {
       leading: Image.asset(logo, width: 24, height: 24),
       title: Text(
         title,
-        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: isEnabled ? null : theme.disabledColor),
+        style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600, color: isEnabled ? null : theme.disabledColor),
       ),
       subtitle: Padding(
         padding: const EdgeInsets.only(top: 2),
         child: Text(
           subtitle,
-          style: TextStyle(
-            fontSize: 12,
+          style: AppTextStyles.t12.copyWith(
             color: isLogined ? theme.colorScheme.primary : theme.hintColor.withValues(alpha: 0.75),
             fontWeight: isLogined ? FontWeight.w500 : FontWeight.normal,
           ),
@@ -122,21 +105,6 @@ class AccountPage extends GetView<AccountController> {
           : Icon(Icons.chevron_right_rounded, color: theme.hintColor.withValues(alpha: 0.4), size: 20),
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-    );
-  }
-
-  Widget _buildGroupTitle(ThemeData theme, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 8),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary.withValues(alpha: 0.65),
-          letterSpacing: 0.5,
-        ),
-      ),
     );
   }
 }

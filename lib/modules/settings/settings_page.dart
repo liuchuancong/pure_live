@@ -17,21 +17,16 @@ class SettingsPage extends GetView<SettingsService> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     double screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      appBar: AppBar(
-        scrolledUnderElevation: screenWidth > 640 ? 0 : null,
-        title: Text(i18n("settings_title"), style: const TextStyle(fontWeight: FontWeight.w600)),
-      ),
+      appBar: AppBar(scrolledUnderElevation: screenWidth > 640 ? 0 : null, title: Text(i18n("settings_title"))),
       body: ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          // 📦 分组一：界面与视听体验 (Appearance & Audio-Visual)
-          _buildGroupTitle(theme, i18n("theme_customization")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("theme_customization")),
+          context.buildModernCard([
             _buildTile(
               context,
               icon: Remix.palette_line,
@@ -39,6 +34,11 @@ class SettingsPage extends GetView<SettingsService> {
               subtitle: i18n("theme_customization_desc"),
               onTap: () => Get.to(() => const ThemeSettingsPage()),
             ),
+          ]),
+
+          const SizedBox(height: 20),
+          context.buildGroupTitle(i18n("iptv_settings")),
+          context.buildModernCard([
             _buildTile(
               context,
               icon: Remix.tv_line,
@@ -46,6 +46,11 @@ class SettingsPage extends GetView<SettingsService> {
               subtitle: i18n("manage_iptv_sources"),
               onTap: () => Get.to(() => const IptvPage()),
             ),
+          ]),
+
+          const SizedBox(height: 20),
+          context.buildGroupTitle(i18n("video")),
+          context.buildModernCard([
             _buildTile(
               context,
               icon: Remix.film_line,
@@ -53,6 +58,11 @@ class SettingsPage extends GetView<SettingsService> {
               subtitle: i18n("video_desc"),
               onTap: () => Get.to(() => const VideoSettingsPage()),
             ),
+          ]),
+
+          const SizedBox(height: 20),
+          context.buildGroupTitle(i18n("player_kernel")),
+          context.buildModernCard([
             _buildTile(
               context,
               icon: Remix.cpu_line,
@@ -63,8 +73,8 @@ class SettingsPage extends GetView<SettingsService> {
           ]),
 
           const SizedBox(height: 20),
-          _buildGroupTitle(theme, i18n("general")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("general")),
+          context.buildModernCard([
             _buildTile(
               context,
               icon: Remix.settings_4_line,
@@ -81,18 +91,28 @@ class SettingsPage extends GetView<SettingsService> {
             ),
             _buildTile(
               context,
-              icon: Remix.database_2_line,
-              title: i18n("cache_and_data"),
-              subtitle: i18n("cache_and_data_desc"),
-              onTap: () => Get.to(() => const CacheDataSettingsPage()),
-            ),
-            _buildTile(
-              context,
               icon: Remix.apps_2_line,
               title: i18n("platform_settings"),
               subtitle: i18n("platform_settings_desc"),
               onTap: () => Get.to(() => const PlatformSettingsPage()),
             ),
+          ]),
+
+          const SizedBox(height: 20),
+          context.buildGroupTitle(i18n("cache_and_data")),
+          context.buildModernCard([
+            _buildTile(
+              context,
+              icon: Remix.database_2_line,
+              title: i18n("cache_and_data"),
+              subtitle: i18n("cache_and_data_desc"),
+              onTap: () => Get.to(() => const CacheDataSettingsPage()),
+            ),
+          ]),
+
+          const SizedBox(height: 20),
+          context.buildGroupTitle(i18n("create_backup")),
+          context.buildModernCard([
             _buildTile(
               context,
               icon: Remix.refresh_line,
@@ -108,17 +128,6 @@ class SettingsPage extends GetView<SettingsService> {
   }
 
   // 统一封装的圆角卡片
-  Widget _buildModernCard(ThemeData theme, List<Widget> children) {
-    return Material(
-      clipBehavior: Clip.antiAlias,
-      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
-      ),
-      child: Column(children: children),
-    );
-  }
 
   // 统一封装的单元行，包含图标、主标题、描述和右侧箭头
   Widget _buildTile(
@@ -131,12 +140,12 @@ class SettingsPage extends GetView<SettingsService> {
     final theme = Theme.of(context);
     return ListTile(
       leading: Icon(icon, color: theme.colorScheme.primary, size: 22),
-      title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+      title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
       subtitle: Padding(
         padding: const EdgeInsets.only(top: 2),
         child: Text(
           subtitle,
-          style: TextStyle(fontSize: 12, color: theme.hintColor.withValues(alpha: 0.75)),
+          style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -144,22 +153,6 @@ class SettingsPage extends GetView<SettingsService> {
       trailing: Icon(Icons.chevron_right_rounded, color: theme.hintColor.withValues(alpha: 0.4), size: 20),
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-    );
-  }
-
-  // 分组的小标题
-  Widget _buildGroupTitle(ThemeData theme, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 8),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary.withValues(alpha: 0.65),
-          letterSpacing: 0.5,
-        ),
-      ),
     );
   }
 }

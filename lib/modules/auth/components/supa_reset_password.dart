@@ -49,7 +49,7 @@ class _SupaResetPasswordState extends State<SupaResetPassword> {
                 }
                 return null;
               },
-              style: const TextStyle(fontSize: 14),
+              style: AppTextStyles.t14,
               decoration: InputDecoration(
                 hintText: i18n('supabase_enter_password'),
                 hintStyle: TextStyle(color: theme.hintColor.withValues(alpha: 0.5)),
@@ -99,7 +99,7 @@ class _SupaResetPasswordState extends State<SupaResetPassword> {
                     )
                   : Text(
                       i18n('supabase_update_password'),
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, letterSpacing: 0.5),
+                      style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),
                     ),
             ),
           ),

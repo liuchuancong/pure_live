@@ -12,15 +12,13 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(i18n("player_kernel"), style: const TextStyle(fontWeight: FontWeight.w600)),
-      ),
+      appBar: AppBar(title: Text(i18n("player_kernel"))),
       body: ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          _buildGroupTitle(theme, i18n("kernel_switch")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("kernel_switch")),
+          context.buildModernCard([
             if (Platform.isAndroid)
               Obx(
                 () => _buildTile(
@@ -31,7 +29,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                   onTap: showVideoSetDialog,
                   trailing: Text(
                     PlayerConsts.players[controller.videoPlayerIndex.value],
-                    style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600, fontSize: 13),
+                    style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -48,10 +46,9 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                 onTap: showProxySettingsDialog,
                 trailing: Text(
                   controller.enableProxy.value ? i18n("enabled") : i18n("disabled"),
-                  style: TextStyle(
+                  style: AppTextStyles.t13.copyWith(
                     color: controller.enableProxy.value ? theme.colorScheme.primary : theme.hintColor,
                     fontWeight: FontWeight.w600,
-                    fontSize: 13,
                   ),
                 ),
               );
@@ -77,18 +74,6 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     );
   }
 
-  Widget _buildModernCard(ThemeData theme, List<Widget> children) {
-    return Material(
-      clipBehavior: Clip.antiAlias,
-      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
-      ),
-      child: Column(children: children),
-    );
-  }
-
   Widget _buildTile(
     BuildContext context, {
     required IconData icon,
@@ -100,12 +85,12 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     final theme = Theme.of(context);
     return ListTile(
       leading: Icon(icon, color: theme.colorScheme.primary, size: 22),
-      title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+      title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
       subtitle: Padding(
         padding: const EdgeInsets.only(top: 2),
         child: Text(
           subtitle,
-          style: TextStyle(fontSize: 12, color: theme.hintColor.withValues(alpha: 0.75)),
+          style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -127,12 +112,12 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     return Obx(
       () => SwitchListTile(
         secondary: Icon(icon, size: 22, color: theme.colorScheme.primary),
-        title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+        title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 2),
           child: Text(
             subtitle,
-            style: TextStyle(fontSize: 12, color: theme.hintColor.withValues(alpha: 0.75)),
+            style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -140,22 +125,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
         value: value.value,
         activeThumbColor: theme.colorScheme.primary,
         onChanged: (val) => value.value = val,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-      ),
-    );
-  }
-
-  Widget _buildGroupTitle(ThemeData theme, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 8),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary.withValues(alpha: 0.65),
-          letterSpacing: 0.5,
-        ),
+        contentPadding: const EdgeInsets.only(left: 16, top: 2, bottom: 2, right: 8),
       ),
     );
   }
@@ -186,7 +156,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                   children: playerList.map<Widget>((name) {
                     return ListTile(
                       leading: Radio<String>(value: name, activeColor: Theme.of(context).colorScheme.primary),
-                      title: Text(name, style: const TextStyle(fontSize: 15)),
+                      title: Text(name, style: AppTextStyles.t15),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                       onTap: () {
                         controller.changePlayer(playerList.indexOf(name));

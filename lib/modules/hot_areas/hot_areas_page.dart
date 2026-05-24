@@ -10,16 +10,14 @@ class HotAreasPage extends GetView<HotAreasController> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(i18n('platform_display'), style: const TextStyle(fontWeight: FontWeight.w600)),
-      ),
+      appBar: AppBar(title: Text(i18n('platform_display'))),
       body: ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
           _buildTipBanner(theme),
           const SizedBox(height: 16),
-          _buildGroupTitle(theme, i18n('platform_display')),
+          context.buildGroupTitle(i18n('platform_display')),
           Obx(() {
             if (controller.sites.isEmpty) return const SizedBox.shrink();
 
@@ -45,7 +43,7 @@ class HotAreasPage extends GetView<HotAreasController> {
                     color: Colors.transparent,
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                      title: Text(item.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                      title: Text(item.name, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
                       leading: Image.asset(item.logo, width: 24, height: 24),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -92,29 +90,13 @@ class HotAreasPage extends GetView<HotAreasController> {
           Expanded(
             child: Text(
               i18n('drag_to_sort_tip'),
-              style: TextStyle(
-                fontSize: 13,
+              style: AppTextStyles.t13.copyWith(
                 color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                 height: 1.4,
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildGroupTitle(ThemeData theme, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 8),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary.withValues(alpha: 0.65),
-          letterSpacing: 0.5,
-        ),
       ),
     );
   }

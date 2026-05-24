@@ -13,16 +13,14 @@ class VideoSettingsPage extends GetView<SettingsService> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(i18n("video"), style: const TextStyle(fontWeight: FontWeight.w600)),
-      ),
+      appBar: AppBar(title: Text(i18n("video"))),
       body: ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
           // 📦 分组一：音频控制 (Audio Settings)
-          _buildGroupTitle(theme, i18n("global_mute")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("global_mute")),
+          context.buildModernCard([
             Obx(
               () => _buildSwitchTile(
                 context,
@@ -57,8 +55,8 @@ class VideoSettingsPage extends GetView<SettingsService> {
           const SizedBox(height: 20),
 
           // 📦 分组二：清晰度与画质 (Resolution & Quality)
-          _buildGroupTitle(theme, i18n("prefer_resolution")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("prefer_resolution")),
+          context.buildModernCard([
             Obx(
               () => _buildTile(
                 context,
@@ -68,7 +66,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
                 onTap: showPreferResolutionSelectorDialog,
                 trailing: Text(
                   controller.preferResolution.value,
-                  style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600, fontSize: 13),
+                  style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
@@ -81,7 +79,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
                 onTap: showpreferResolutionCellularSelectorDialog,
                 trailing: Text(
                   controller.preferResolutionCellular.value,
-                  style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600, fontSize: 13),
+                  style: AppTextStyles.t13.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
@@ -90,8 +88,8 @@ class VideoSettingsPage extends GetView<SettingsService> {
           const SizedBox(height: 20),
 
           // 📦 分组三：播放行为 (Playback Behaviors)
-          _buildGroupTitle(theme, i18n("exit_float_window")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("exit_float_window")),
+          context.buildModernCard([
             if (Platform.isAndroid) _buildBackgroundPlayTile(context),
             _buildSwitchTile(
               context,
@@ -120,8 +118,8 @@ class VideoSettingsPage extends GetView<SettingsService> {
           const SizedBox(height: 20),
 
           // 📦 分组四：弹幕设置 (Danmaku Settings)
-          _buildGroupTitle(theme, i18n("show_danmaku")),
-          _buildModernCard(theme, [
+          context.buildGroupTitle(i18n("show_danmaku")),
+          context.buildModernCard([
             _buildSwitchTile(
               context,
               title: i18n('show_danmaku'),
@@ -143,18 +141,6 @@ class VideoSettingsPage extends GetView<SettingsService> {
     );
   }
 
-  Widget _buildModernCard(ThemeData theme, List<Widget> children) {
-    return Material(
-      clipBehavior: Clip.antiAlias,
-      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
-      ),
-      child: Column(children: children),
-    );
-  }
-
   Widget _buildTile(
     BuildContext context, {
     required IconData icon,
@@ -166,14 +152,14 @@ class VideoSettingsPage extends GetView<SettingsService> {
     final theme = Theme.of(context);
     return ListTile(
       leading: Icon(icon, color: theme.colorScheme.primary, size: 22),
-      title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+      title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
       subtitle: subtitle.isEmpty
           ? null
           : Padding(
               padding: const EdgeInsets.only(top: 2),
               child: Text(
                 subtitle,
-                style: TextStyle(fontSize: 12, color: theme.hintColor.withValues(alpha: 0.75)),
+                style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -195,12 +181,12 @@ class VideoSettingsPage extends GetView<SettingsService> {
     return Obx(
       () => SwitchListTile(
         secondary: Icon(icon, size: 22, color: theme.colorScheme.primary),
-        title: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+        title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 2),
           child: Text(
             subtitle,
-            style: TextStyle(fontSize: 12, color: theme.hintColor.withValues(alpha: 0.75)),
+            style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -208,7 +194,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
         value: value.value,
         activeThumbColor: theme.colorScheme.primary,
         onChanged: (val) => value.value = val,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+        contentPadding: const EdgeInsets.only(left: 16, top: 2, bottom: 2, right: 8),
       ),
     );
   }
@@ -231,7 +217,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
                 Row(
                   children: [
                     Expanded(
@@ -245,7 +231,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
                       width: 36,
                       child: Text(
                         "${(value * 100).toInt()}%",
-                        style: TextStyle(fontSize: 12, color: theme.hintColor, fontWeight: FontWeight.w500),
+                        style: AppTextStyles.t12.copyWith(color: theme.hintColor, fontWeight: FontWeight.w500),
                         textAlign: TextAlign.end,
                       ),
                     ),
@@ -255,21 +241,6 @@ class VideoSettingsPage extends GetView<SettingsService> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildGroupTitle(ThemeData theme, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 8),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary.withValues(alpha: 0.65),
-          letterSpacing: 0.5,
-        ),
       ),
     );
   }

@@ -1,0 +1,854 @@
+[
+  {
+    "id": "judousansui",
+    "name": "句读黑体 UI Hans",
+    "files": [
+      "judousansui/JudouSansUiHans-ExtraLight.ttf",
+      "judousansui/JudouSansUiHans-Light.ttf",
+      "judousansui/JudouSansUiHans-Regular.ttf",
+      "judousansui/JudouSansUiHans-Medium.ttf",
+      "judousansui/JudouSansUiHans-Bold.ttf",
+      "judousansui/JudouSansUiHans-Heavy.ttf"
+    ],
+    "desc": "句读黑体，基于思源黑体和 FiraGO 等字体，商用免费的多文种混排字体。",
+    "official": "https://github.com/JudouEco/JudouSans",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "judousansuihant",
+    "name": "句读黑体 UI Hant",
+    "files": [
+      "judousansuihant/JudouSansUiHant-ExtraLight.ttf",
+      "judousansuihant/JudouSansUiHant-Light.ttf",
+      "judousansuihant/JudouSansUiHant-Regular.ttf",
+      "judousansuihant/JudouSansUiHant-Medium.ttf",
+      "judousansuihant/JudouSansUiHant-Bold.ttf",
+      "judousansuihant/JudouSansUiHant-Heavy.ttf"
+    ],
+    "desc": "句读黑体 传承字形版本",
+    "official": "https://github.com/JudouEco/JudouSans",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+{
+    "id": "frex-sans",
+    "name": "械黑",
+    "files": [
+      "frex-sans/FrexSansGB-Thin.ttf",
+      "frex-sans/FrexSansGB-ExtraLight.ttf",
+      "frex-sans/FrexSansGB-Light.ttf",
+      "frex-sans/FrexSansGB-Text.ttf",
+      "frex-sans/FrexSansGB-Medium.ttf",
+      "frex-sans/FrexSansGB-SemiBold.ttf",
+      "frex-sans/FrexSansGB-Bold.ttf"
+    ],
+    "desc": "将 IBM Plex Sans SC 中成部件的大量不必要修改还原成字体的原有风格，并修复了其中的一部分错形，部分零碎的字形也已恢复到繁体版和日文版原本的设计。",
+    "official": "https://www.maoken.com/freefonts/26125.html",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+{
+    "id": "chilldin",
+    "name": "寒蝉德黑体",
+    "files": [
+      "chilldin/ChillDINGothic_Regular.otf",
+      "chilldin/ChillDINGothic_Medium.otf",
+      "chilldin/ChillDINGothic_Bold.otf"
+    ],
+    "desc": "源于德国工业标准字体“DIN”，基于D-DIN的修缮。",
+    "official": "github.com/Warren2060/ChillDIN-ChillDINGothic",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+{
+    "id": "zhiyimaru",
+    "name": "致一圆体",
+    "files": [
+      "zhiyimaru/ZhiyiMaru-Regular.ttf",
+      "zhiyimaru/ZhiyiMaru-Bold.ttf"
+    ],
+    "desc": "基于旧印刷字形的「霞鹜晰黑」修改而来，并制作了圆体、粗圆，以适应现代阅读环境对多样式、多字重字型的需要。",
+    "official": "https://github.com/RiyipuSipino/ZhiyiSans",
+    "license": {
+      "name": "IPA Font License 1.0",
+      "url": "https://moji.or.jp/ipafont/license/"
+    }
+  },
+  {
+    "id": "chiron-go-round",
+    "name": "昭源环方",
+    "files": [
+      "chiron-go-round/ChironGoRoundTC-300L.ttf",
+      "chiron-go-round/ChironGoRoundTC-400R.ttf",
+      "chiron-go-round/ChironGoRoundTC-500M.ttf",
+      "chiron-go-round/ChironGoRoundTC-700B.ttf"
+    ],
+    "desc": "现代笔形风格，平衡标准字形和印刷体惯用笔形的免费开源仿圆体字体。",
+    "official": "https://github.com/chiron-fonts/chiron-go-round-tc",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "copperzhengkai",
+    "name": "汇迹正楷",
+    "files": [
+      "copperzhengkai/CooperZhengKai.ttf"
+    ],
+    "desc": "Cooper 搭配汇文正楷，更楷体。",
+    "official": "https://www.maoken.com/freefonts/24749.html",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "fusion-pixel",
+    "name": "缝合像素字体",
+    "files": [
+      "fusion-pixel/fusion-pixel-12px-proportional-zh_hans.ttf"
+    ],
+    "desc": "该项目为「方舟像素字体」的临时性过渡方案。使用多个像素字体合并而成，因此以「缝合」命名。",
+    "official": "https://github.com/TakWolf/fusion-pixel-font",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "chillroundm",
+    "name": "寒蝉半圆体",
+    "files": [
+      "chillroundm/ChillRoundM.otf"
+    ],
+    "desc": "寒蝉半圆体，基于日本开源字体 Zen Maru Gothic 进行调整的圆体字体，更新为符合 GB2312 标准的字符集，使其应用范围更广；修正部分字形和补充部分字形，调整到更均衡的排版。",
+    "official": "https://github.com/Warren2060/ChillRound",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "huiwen-hkhei",
+    "name": "汇文港黑",
+    "files": [
+      "huiwen-hkhei/HuiwenHKHei-Regular.ttf"
+    ],
+    "desc": "特里王系列精品免费商用字体，字形主要参考自照排时期香港广泛使用的港版岩田黑体。",
+    "official": "https://zhuanlan.zhihu.com/p/12669052378",
+    "license": {
+      "name": "其他协议",
+      "url": "https://zhuanlan.zhihu.com/p/12669052378"
+    }
+  },
+  {
+    "id": "huiwen-mincho",
+    "name": "汇文明朝体 GBK",
+    "files": [
+      "huiwen-mincho/HuiwenMinchoGBK-Regular.ttf"
+    ],
+    "desc": "特里王系列精品免费商用字体，字形主要来自五六十年代官方各种汉字改革文件。",
+    "official": "https://zhuanlan.zhihu.com/p/12669052378",
+    "license": {
+      "name": "其他协议",
+      "url": "https://zhuanlan.zhihu.com/p/12669052378"
+    }
+  },
+  {
+    "id": "huiwen-zhengkai",
+    "name": "汇文正楷",
+    "files": [
+      "huiwen-zhengkai/HuiwenZhengKai-Regular.ttf"
+    ],
+    "desc": "特里王系列精品免费商用字体，字形来自大名鼎鼎的「汉文正楷」。",
+    "official": "https://zhuanlan.zhihu.com/p/12669052378",
+    "license": {
+      "name": "其他协议",
+      "url": "https://zhuanlan.zhihu.com/p/12669052378"
+    }
+  },
+  {
+    "id": "huiwen-fangsong",
+    "name": "汇文仿宋",
+    "files": [
+      "huiwen-fangsong/HuiwenFangSong-Regular.ttf"
+    ],
+    "desc": "特里王系列精品免费商用字体，字形来自新华字模厂的老 59-4 仿宋体。",
+    "official": "https://zhuanlan.zhihu.com/p/12669052378",
+    "license": {
+      "name": "其他协议",
+      "url": "https://zhuanlan.zhihu.com/p/12669052378"
+    }
+  },
+  {
+    "id": "blix",
+    "name": "卜力士",
+    "files": [
+      "blix/Blix-Thin.otf",
+      "blix/Blix-ExtraLight.otf",
+      "blix/Blix-Light.otf",
+      "blix/Blix-Text.otf",
+      "blix/Blix-Medium.otf",
+      "blix/Blix-SemiBold.otf",
+      "blix/Blix-Bold.otf"
+    ],
+    "desc": "基于 IBM Plex Sans 汉字系列的合并字体，尽可能减少规范字形的󠄁影响。",
+    "official": "https://drive.google.com/drive/folders/14naJSasVxrPstbWkHtK696LLGAb5H-vm?usp=sharing",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "plix",
+    "name": "普力士",
+    "files": [
+      "plix/Plix-Thin.otf",
+      "plix/Plix-ExtraLight.otf",
+      "plix/Plix-Light.otf",
+      "plix/Plix-Text.otf",
+      "plix/Plix-Medium.otf",
+      "plix/Plix-SemiBold.otf",
+      "plix/Plix-Bold.otf"
+    ],
+    "desc": "基于 IBM Plex Sans 汉字系列的合并字体，尽可能减少规范字形的󠄁影响。",
+    "official": "https://drive.google.com/drive/folders/14naJSasVxrPstbWkHtK696LLGAb5H-vm?usp=sharing",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "ibm-plex-sans-sc",
+    "name": "IBM Plex Sans SC",
+    "files": [
+      "ibm-plex-sans-sc/IBMPlexSansSC-Thin.otf",
+      "ibm-plex-sans-sc/IBMPlexSansSC-ExtraLight.otf",
+      "ibm-plex-sans-sc/IBMPlexSansSC-Light.otf",
+      "ibm-plex-sans-sc/IBMPlexSansSC-Text.otf",
+      "ibm-plex-sans-sc/IBMPlexSansSC-Medium.otf",
+      "ibm-plex-sans-sc/IBMPlexSansSC-SemiBold.otf",
+      "ibm-plex-sans-sc/IBMPlexSansSC-Bold.otf"
+    ],
+    "desc": "IBM 的开源字体。全球性，多功能，且像 IBM 一样独特。",
+    "official": "https://github.com/IBM/plex/tree/feat-plex-sans-sc/packages/plex-sans-sc",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "yozai",
+    "name": "悠哉字体",
+    "files": [
+      "yozai/Yozai-Light.ttf",
+      "yozai/Yozai-Regular.ttf",
+      "yozai/Yozai-Medium.ttf"
+    ],
+    "desc": "一款基于 Y.OzFont 的手写风格的字体。",
+    "official": "https://github.com/lxgw/yozai-font",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "childfunsans",
+    "name": "游趣体",
+    "files": [
+      "childfunsans/ChildFunSans.ttf"
+    ],
+    "desc": "一款开源简体中文字体，基于 Fontworks 的 Stick 衍生。",
+    "official": "https://github.com/Des-Magmeta/ChildFunSans",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "tsuipita",
+    "name": "晓声通秋茄体",
+    "files": [
+      "tsuipita/ToneOZ-Tsuipita-TC.ttf"
+    ],
+    "desc": "基于随峰体扩展，开源免费可商用的的手写字型。",
+    "official": "https://toneoz.com/blog/tsuipita/",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "kaisei",
+    "name": "江城解星体",
+    "files": [
+      "kaisei/kaisei.ttf"
+    ],
+    "desc": "不同于传统的印刷，通过在右侧添加加圆型衬线，使字体左右更加平衡，同时也为字体添加了不一样的特色。",
+    "official": "https://toneoz.com/blog/tsuipita/",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "xuandongkaishu",
+    "name": "玄冬楷书",
+    "files": [
+      "xuandongkaishu/XuandongKaishu.ttf"
+    ],
+    "desc": "基于开源字体《马善政毛笔楷书》的拓展字体。在原版的基础之上修复了错误的字形并添加竖排排版的特性。",
+    "official": "https://github.com/Skr-ZERO/Xuandong-Kaishu",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "misans",
+    "name": "MiSans",
+    "files": [
+      "misans/MiSans-Bold.ttf",
+      "misans/MiSans-Heavy.ttf",
+      "misans/MiSans-Light.ttf",
+      "misans/MiSans-Medium.ttf",
+      "misans/MiSans-Regular.ttf",
+      "misans/MiSans-Thin.ttf"
+    ],
+    "desc": "MiSans Global 是由小米主导，联合蒙纳字库、汉仪字库共同打造的全球语言字体定制项目。这是一个庞大的字体家族，涵盖 20 多种书写系统，支持 600 多种语言，字符数量超过 10 万个。作为 Xiaomi HyperOS 系统默认字体，我们以简约/清晰，人文/易读，统一的视觉风格为基本原则出发，构建多语言信息体验一致性，旨在帮助为 Xiaomi HyperOS 提供互联的通用体验。",
+    "official": "https://hyperos.mi.com/font",
+    "license": {
+      "name": "其他协议",
+      "url": "https://hyperos.mi.com/font/faq"
+    }
+  },
+  {
+    "id": "alibabapuhuiti3",
+    "name": "阿里巴巴普惠体 3.0",
+    "files": [
+      "alibabapuhuiti3/AlibabaPuHuiTi-3-45-Light.ttf",
+      "alibabapuhuiti3/AlibabaPuHuiTi-3-55-Regular.ttf",
+      "alibabapuhuiti3/AlibabaPuHuiTi-3-75-SemiBold.ttf",
+      "alibabapuhuiti3/AlibabaPuHuiTi-3-95-ExtraBold.ttf"
+    ],
+    "desc": "阿里巴巴普惠体是一套全球永久免费正版商用的字体家族。阿里巴巴普惠体 3.0 为一套符合新国家标准 GB18030-2022 的简体中文字符集，包含 GB18030-2022 强制规范三个实现级别：实现级别 1 + 实现级别 2 标准规格的 7 字重、实现级别 3 标准规格的 Regular 单一字重。7 字重共 194460 个全形汉字。包含拉丁字母、希腊字母、西里尔字母、标点符号。",
+    "official": "https://www.alibabafonts.com/",
+    "license": {
+      "name": "其他协议",
+      "url": "https://www.yuque.com/yiguang-wkqc2/puhuiti/nus9wiinq4aeiegy"
+    }
+  },
+  {
+    "id": "lxgwneoxihei",
+    "name": "霞鹜新晰黑 屏幕阅读版",
+    "files": [
+      "lxgwneoxihei/LXGWNeoXiHeiScreen.ttf"
+    ],
+    "desc": "一款基于 IPAex 黑体的中文开源字体，是将日本写法的字体改造成中国大陆规范写法的尝试。",
+    "official": "https://github.com/lxgw/LxgwNeoXiZhi-Screen",
+    "license": {
+      "name": "IPA Font License 1.0",
+      "url": "https://moji.or.jp/ipafont/license/"
+    }
+  },
+  {
+    "id": "lxgwneozhisong",
+    "name": "霞鹜新致宋 屏幕阅读版",
+    "files": [
+      "lxgwneozhisong/LXGWNeoZhiSongScreen.ttf"
+    ],
+    "desc": "基于「IPAex 明朝」「IPAmj 明朝」的中文开源字体，是将日本写法的字体改造成中国大陆规范写法的尝试。",
+    "official": "https://github.com/lxgw/LxgwNeoXiZhi-Screen",
+    "license": {
+      "name": "IPA Font License 1.0",
+      "url": "https://moji.or.jp/ipafont/license/"
+    }
+  },
+  {
+    "id": "chillroundf",
+    "name": "寒蝉全圆体",
+    "files": [
+      "chillroundf/ChillRoundF.ttf"
+    ],
+    "desc": "寒蝉全圆体，基于《小杉圆体》《justfont 粉圆》《猫啃糖圆体》进行调整的圆体字型，更新为超大字符数量的字符集，使其应用范围更广。综合考量各版本字形的使用并挑选合理的字形。修正部分字形和补充部分字形。调整到更均衡的排版。",
+    "official": "https://github.com/Warren2060/ChillRound",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "hmsans",
+    "name": "HarmonyOS Sans",
+    "files": [
+      "hmsans/HarmonyOS_Sans_SC_Black.ttf",
+      "hmsans/HarmonyOS_Sans_SC_Bold.ttf",
+      "hmsans/HarmonyOS_Sans_SC_Light.ttf",
+      "hmsans/HarmonyOS_Sans_SC_Medium.ttf",
+      "hmsans/HarmonyOS_Sans_SC_Regular.ttf",
+      "hmsans/HarmonyOS_Sans_SC_Thin.ttf"
+    ],
+    "desc": "华为全新品牌定制字体，HarmonyOS Sans 字体版权归华为所有",
+    "official": "https://developer.huawei.com/consumer/cn/design/resource",
+    "license": {
+      "name": "其他协议",
+      "url": "hmsans/LICENSE.txt"
+    }
+  },
+  {
+    "id": "xwwk",
+    "name": "霞鹜文楷 Lite",
+    "files": [
+      "xwwk/LXGWWenKaiLite-Light.ttf",
+      "xwwk/LXGWWenKaiLite-Regular.ttf",
+      "xwwk/LXGWWenKaiLite-Medium.ttf"
+    ],
+    "desc": "An open-source Chinese font derived from Fontworks' Klee One. 一款基于 FONTWORKS 的 Klee One 的开源中文字体，保留「亠」「宀」等起笔的直点和「㇙」「㇜」等笔画折角处断笔设计等。",
+    "official": "https://github.com/lxgw/LxgwWenKai-Lite",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "xwwkgb",
+    "name": "霞鹜文楷 GB Lite",
+    "files": [
+      "xwwkgb/LXGWWenKaiGBLite-Light.ttf",
+      "xwwkgb/LXGWWenKaiGBLite-Regular.ttf",
+      "xwwkgb/LXGWWenKaiGBLite-Medium.ttf"
+    ],
+    "desc": "在霞鹜文楷的基础上，尽可能严格按照中国大陆的字形标准（G 源字形）对字形、笔形作进一步修改。",
+    "official": "https://github.com/lxgw/LxgwWenkaiGB-Lite",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "lhzt",
+    "name": "小赖字体",
+    "files": [
+      "lhzt/XiaolaiSC-Regular.ttf"
+    ],
+    "desc": "一款衍生于「濑户字体」的中文手写字型。",
+    "official": "https://github.com/lxgw/kose-font",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "knmaiyuan",
+    "name": "荆南麦圆体",
+    "files": [
+      "knmaiyuan/KNMaiyuan-Regular.ttf"
+    ],
+    "desc": "麦圆体萌系可爱的手写风格，字体每个笔画的粗细相同，两端圆润饱满，凸显可爱风格。虽是手写字体，笔画分明没有细小的连接，使字体更加清新俏皮。无论是做食品类还是母婴类，抑或是儿童类的设计都特别适合。",
+    "official": "https://github.com/maoken-fonts/KNMaiyuan",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "mizukigothic",
+    "name": "水木黑体",
+    "files": [
+      "mizukigothic/MizukiGothic-Regular.ttf"
+    ],
+    "desc": "一个还原未被楷化的大陆字形项目。",
+    "official": "https://github.com/enderseven1/Mizuki-Gothic",
+    "license": {
+      "name": "IPA Font License 1.0",
+      "url": "https://moji.or.jp/ipafont/license/"
+    }
+  },
+  {
+    "id": "mizukiming",
+    "name": "水木明体",
+    "files": [
+      "mizukiming/MizukiMing-Regular.ttf"
+    ],
+    "desc": "致力于打造印刷体风格字形的项目。",
+    "official": "https://github.com/enderseven1/Mizuki-Ming/",
+    "license": {
+      "name": "IPA Font License 1.0",
+      "url": "https://moji.or.jp/ipafont/license/"
+    }
+  },
+  {
+    "id": "yrdzst",
+    "name": "杨任东竹石体",
+    "files": [
+      "yrdzst/yrdzst-Bold.ttf",
+      "yrdzst/yrdzst-Extralight.ttf",
+      "yrdzst/yrdzst-Heavy.ttf",
+      "yrdzst/yrdzst-Light.ttf",
+      "yrdzst/yrdzst-Medium.ttf",
+      "yrdzst/yrdzst-Regular.ttf",
+      "yrdzst/yrdzst-Semibold.ttf"
+    ],
+    "desc": "杨任东竹石体于 2017 年 4 月 26 日世界知识产权日正式发布，本字体版本为 1.23。字体按照 GB2312-80 书写，并增补了少量常见汉字；整套字体有 7 个字重，共计 50000 余个字符。本套字体授权全社会免费商用，意味着您可以将其无限制地捆入您的商业产品中，如海报、包装、logo、网页、APP 等。",
+    "official": "ttps://mp.weixin.qq.com/s/7kv3i_YEs7x9_9IrCDYvBA",
+    "license": {
+      "name": "其他协议",
+      "url": "https://mp.weixin.qq.com/s/7kv3i_YEs7x9_9IrCDYvBA"
+    }
+  },
+  {
+    "id": "opposans",
+    "name": "OPlusSans",
+    "files": [
+      "opposans/OPlusSans3-ExtraLight.ttf",
+      "opposans/OPlusSans3-Light.ttf",
+      "opposans/OPlusSans3-Regular.ttf",
+      "opposans/OPlusSans3-Medium.ttf",
+      "opposans/OPlusSans3-Bold.ttf"
+    ],
+    "desc": "OPlusSans（原名 OPPOSans）允许个人或企业免费使用，含商业用途，版权归 OPPO 广东移动通信有限公司所有。",
+    "official": "https://www.coloros.com/index/newsDetail?id=72",
+    "license": {
+      "name": "其他协议",
+      "url": "https://www.coloros.com/index/newsDetail?id=72"
+    }
+  },
+  {
+    "id": "sarasa-gothic",
+    "name": "更纱黑体",
+    "files": [
+      "sarasa-gothic/SarasaGothicSC-Light.ttf",
+      "sarasa-gothic/SarasaGothicSC-Regular.ttf",
+      "sarasa-gothic/SarasaGothicSC-SemiBold.ttf",
+      "sarasa-gothic/SarasaGothicSC-Bold.ttf"
+    ],
+    "desc": "更纱黑体使用全宽引号和比例数字。",
+    "official": "https://github.com/be5invis/Sarasa-Gothic",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "sarasa-ui",
+    "name": "更纱黑体 UI",
+    "files": [
+      "sarasa-ui/SarasaUiSC-Light.ttf",
+      "sarasa-ui/SarasaUiSC-Regular.ttf",
+      "sarasa-ui/SarasaUiSC-SemiBold.ttf",
+      "sarasa-ui/SarasaUiSC-Bold.ttf"
+    ],
+    "desc": "更纱黑体 UI 使用缩进引号和等宽数字。",
+    "official": "https://github.com/be5invis/Sarasa-Gothic",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "sarasa-mono",
+    "name": "等距更纱黑体",
+    "files": [
+      "sarasa-mono/SarasaMonoSC-Light.ttf",
+      "sarasa-mono/SarasaMonoSC-Regular.ttf",
+      "sarasa-mono/SarasaMonoSC-SemiBold.ttf",
+      "sarasa-mono/SarasaMonoSC-Bold.ttf"
+    ],
+    "desc": "等距更纱黑体使用等宽西文《Iosevka》。",
+    "official": "https://github.com/be5invis/Sarasa-Gothic",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "sarasa-slab",
+    "name": "等距更纱黑体 Slab",
+    "files": [
+      "sarasa-slab/SarasaMonoSlabSC-Light.ttf",
+      "sarasa-slab/SarasaMonoSlabSC-Regular.ttf",
+      "sarasa-slab/SarasaMonoSlabSC-SemiBold.ttf",
+      "sarasa-slab/SarasaMonoSlabSC-Bold.ttf"
+    ],
+    "desc": "等距更纱黑体 Slab 使用等宽西文《Iosevka Slab》。",
+    "official": "https://github.com/be5invis/Sarasa-Gothic",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "sarasa-gothic-cl",
+    "name": "更纱黑体 CL 旧字形",
+    "files": [
+      "sarasa-gothic-cl/SarasaGothicCL-Light.ttf",
+      "sarasa-gothic-cl/SarasaGothicCL-Regular.ttf",
+      "sarasa-gothic-cl/SarasaGothicCL-SemiBold.ttf",
+      "sarasa-gothic-cl/SarasaGothicCL-Bold.ttf"
+    ],
+    "desc": "更纱黑体使用全宽引号和比例数字。",
+    "official": "https://github.com/be5invis/Sarasa-Gothic",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "sarasa-ui-cl",
+    "name": "更纱黑体 UI CL 旧字形",
+    "files": [
+      "sarasa-ui-cl/SarasaUiCL-Light.ttf",
+      "sarasa-ui-cl/SarasaUiCL-Regular.ttf",
+      "sarasa-ui-cl/SarasaUiCL-SemiBold.ttf",
+      "sarasa-ui-cl/SarasaUiCL-Bold.ttf"
+    ],
+    "desc": "更纱黑体 UI 使用缩进引号和等宽数字。",
+    "official": "https://github.com/be5invis/Sarasa-Gothic",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "sarasa-mono-cl",
+    "name": "等距更纱黑体 CL 旧字形",
+    "files": [
+      "sarasa-mono-cl/SarasaMonoCL-Light.ttf",
+      "sarasa-mono-cl/SarasaMonoCL-Regular.ttf",
+      "sarasa-mono-cl/SarasaMonoCL-SemiBold.ttf",
+      "sarasa-mono-cl/SarasaMonoCL-Bold.ttf"
+    ],
+    "desc": "等距更纱黑体使用等宽西文《Iosevka》。",
+    "official": "https://github.com/be5invis/Sarasa-Gothic",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "sarasa-slab-cl",
+    "name": "等距更纱黑体 Slab CL 旧字形",
+    "files": [
+      "sarasa-slab-cl/SarasaMonoSlabCL-Light.ttf",
+      "sarasa-slab-cl/SarasaMonoSlabCL-Regular.ttf",
+      "sarasa-slab-cl/SarasaMonoSlabCL-SemiBold.ttf",
+      "sarasa-slab-cl/SarasaMonoSlabCL-Bold.ttf"
+    ],
+    "desc": "等距更纱黑体 Slab 使用等宽西文《Iosevka Slab》。",
+    "official": "https://github.com/be5invis/Sarasa-Gothic",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "ysxxk",
+    "name": "演示夏行楷",
+    "files": [
+      "ysxxk/ysxxk.ttf"
+    ],
+    "desc": "「演示夏行楷」是 Keynote 研究所的人生哥制作发布的一款毛笔字体。字稿作者是刘锡栋：中国漓江书画艺术家协会理事丨北京中国书画研究院研究员丨中国民族硬笔书法家协会会员丨中国楹联学会会员丨黑龙江楹联家协会会员丨高级政工师，已退休 该字体简体中文行楷，包含标准的 6763 个字符。",
+    "official": "https://mp.weixin.qq.com/s/CRnRsYu8ymlG9_oK6wmBag",
+    "license": {
+      "name": "其他协议",
+      "url": "https://mp.weixin.qq.com/s/CRnRsYu8ymlG9_oK6wmBag"
+    }
+  },
+  {
+    "id": "ysfxt",
+    "name": "演示佛系体",
+    "files": [
+      "ysfxt/ysfxt.ttf"
+    ],
+    "desc": "「演示佛系体」是由一生酷爱书法的纪国才老先生，在 80 岁这年亲手写了一套独具风格的字体，并授权 Keynote 研究所 和 秋叶 PPT 面向全社会联合发布，全渠道免费商用！",
+    "official": "https://mp.weixin.qq.com/s/iWn8SWH5ymBKmsGiHe8Yfw",
+    "license": {
+      "name": "其他协议",
+      "url": "https://mp.weixin.qq.com/s/iWn8SWH5ymBKmsGiHe8Yfw"
+    }
+  },
+  {
+    "id": "ysqhk",
+    "name": "演示秋鸿楷",
+    "files": [
+      "ysqhk/ysqhk.ttf"
+    ],
+    "desc": "「演示秋鸿楷」是 Keynote 研究所的人生哥制作发布的一款毛笔字体。字稿的作者是叶运鹏：高中教师丨辽宁人丨 98 年加入农民书画家协会。该字体简体中文楷书，包含标准的 6763 个字符。",
+    "official": "https://mp.weixin.qq.com/s/CRnRsYu8ymlG9_oK6wmBag",
+    "license": {
+      "name": "其他协议",
+      "url": "https://mp.weixin.qq.com/s/CRnRsYu8ymlG9_oK6wmBag"
+    }
+  },
+  {
+    "id": "yscfk",
+    "name": "演示春风楷",
+    "files": [
+      "yscfk/yscfk.ttf"
+    ],
+    "desc": "「演示春风楷」是 Keynote 研究所的人生哥制作发布的一款毛笔字体。字稿的作者是徐占海，军人出身，1983 年入伍。每日笔耕不辍练习写字。该字体简体中文楷书，包含标准的 6763 个字符。",
+    "official": "https://mp.weixin.qq.com/s/CRnRsYu8ymlG9_oK6wmBag",
+    "license": {
+      "name": "其他协议",
+      "url": "https://mp.weixin.qq.com/s/CRnRsYu8ymlG9_oK6wmBag"
+    }
+  },
+  {
+    "id": "ysyrxk",
+    "name": "演示悠然小楷",
+    "files": [
+      "ysyrxk/ysyrxk.ttf"
+    ],
+    "desc": "「演示悠然小楷」是秋叶 PPT 联合 keynote 研究所推出的一款书法字体，字稿的作者是孟祥媛，一位还在大学读书的书法专业学生。初看「演示悠然小楷」，可能并不觉得惊艳，再品，却会发现透着质朴、率真的气息。正如尚在象牙塔中的作者本人，那是未经雕琢的拙朴书生气。接下来，一起体会悠然小楷的这股「拙气」。悠然小楷笔画分明，结构清晰，没有过度的连笔和飞白，对阅读识别更为友好；小楷字形较小，天然拥有更大的字间距，即便作为长段文字使用，阅读上也不会有太大视觉压力；悠然小楷的笔画力度分布均衡，起收有序，没有太过强烈的对比，自然沉劲而不漂浮；在小楷的基础上有些行楷的影子，为字体增添了灵动，但又有克制，形成停而不断、笔断意连之态；部分笔画细节可能并不完美，不够顺滑，但这份未经雕琢，又何尝不是一种难得的拙朴；所以见过很多大开大合的书法字体后，再见悠然小楷，可能没有很惊艳之感。但艳丽与喧嚣并不一定代表力量，沉劲入骨更难能可贵",
+    "official": "https://mp.weixin.qq.com/s/Q1lAIre4yJ-Zlf2CD82EPA",
+    "license": {
+      "name": "其他协议",
+      "url": "https://mp.weixin.qq.com/s/Q1lAIre4yJ-Zlf2CD82EPA"
+    }
+  },
+  {
+    "id": "cyroithb",
+    "name": "Cyroit HB",
+    "files": [
+      "cyroithb/CyroitHB-Regular.ttf",
+      "cyroithb/CyroitHB-Bold.ttf"
+    ],
+    "desc": "全角英数や半角カナが判別しやすい、文字間隔調整機能付き等幅フォント。",
+    "official": "https://github.com/omonomo/Cyroit",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "advocateancientrounded",
+    "name": "尙古圆体",
+    "files": [
+      "advocateancientrounded/ShangguRoundST-Light.ttf",
+      "advocateancientrounded/ShangguRoundST-Regular.ttf",
+      "advocateancientrounded/ShangguRoundST-Medium.ttf",
+      "advocateancientrounded/ShangguRoundST-Bold.ttf"
+    ],
+    "desc": "基于思源的传承字形（旧字形）字体。",
+    "official": "https://github.com/GuiWonder/Shanggu",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "fanthinkgrotesk",
+    "name": "繁 Think 黑",
+    "files": [
+      "fanthinkgrotesk/FanThinkGrotesk-Thin.otf",
+      "fanthinkgrotesk/FanThinkGrotesk-ExtraLight.otf",
+      "fanthinkgrotesk/FanThinkGrotesk-Light.otf",
+      "fanthinkgrotesk/FanThinkGrotesk-Text.otf",
+      "fanthinkgrotesk/FanThinkGrotesk-Medium.otf",
+      "fanthinkgrotesk/FanThinkGrotesk-SemiBold.otf",
+      "fanthinkgrotesk/FanThinkGrotesk-Bold.otf"
+    ],
+    "desc": "繁 Think 黑是一套基於 IBM Plex Sans TC 的自動簡轉繁字體。簡轉繁代碼來自 GuiWonder。",
+    "official": "https://github.com/pkj-l/FanThinkGrotesk",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "ipagothic",
+    "name": "IPAGothic",
+    "files": [
+      "ipagothic/ipag.ttf"
+    ],
+    "desc": "应 IPA 许可证要求，增加 IPA 原版字体以允许用户“替换回原始字体”。",
+    "official": "https://moji.or.jp/ipafont/ipa00303/",
+    "license": {
+      "name": "IPA Font License 1.0",
+      "url": "https://moji.or.jp/ipafont/license/"
+    }
+  },
+  {
+    "id": "ipamincho",
+    "name": "IPAMincho",
+    "files": [
+      "ipamincho/ipam.ttf"
+    ],
+    "desc": "应 IPA 许可证要求，增加 IPA 原版字体以允许用户“替换回原始字体”。",
+    "official": "https://moji.or.jp/ipafont/ipa00303/",
+    "license": {
+      "name": "IPA Font License 1.0",
+      "url": "https://moji.or.jp/ipafont/license/"
+    }
+  },
+  {
+    "id": "atkinson",
+    "name": "Atkinson Hyperlegible Next",
+    "files": [
+      "atkinson/AtkinsonHyperlegibleNext-ExtraLight.ttf",
+      "atkinson/AtkinsonHyperlegibleNext-Light.ttf",
+      "atkinson/AtkinsonHyperlegibleNext-Regular.ttf",
+      "atkinson/AtkinsonHyperlegibleNext-Medium.ttf",
+      "atkinson/AtkinsonHyperlegibleNext-SemiBold.ttf",
+      "atkinson/AtkinsonHyperlegibleNext-Bold.ttf",
+      "atkinson/AtkinsonHyperlegibleNext-ExtraBold.ttf"
+    ],
+    "desc": "Atkinson Hyperlegible, named after the founder of the Braille Institute, has been developed specifically to increase legibility for readers with low vision, and to improve comprehension.",
+    "official": "https://www.brailleinstitute.org/freefont/",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "lexend",
+    "name": "Lexend Deca",
+    "files": [
+      "lexend/LexendDeca-Thin.ttf",
+      "lexend/LexendDeca-ExtraLight.ttf",
+      "lexend/LexendDeca-Light.ttf",
+      "lexend/LexendDeca-Regular.ttf",
+      "lexend/LexendDeca-Medium.ttf",
+      "lexend/LexendDeca-SemiBold.ttf",
+      "lexend/LexendDeca-Bold.ttf",
+      "lexend/LexendDeca-ExtraBold.ttf",
+      "lexend/LexendDeca-Black.ttf"
+    ],
+    "desc": "Lexend is a variable typeface designed by Bonnie Shaver-Troup and Thomas Jockin in 2018. Applying the Shaver-Troup Individually Optimal Text Formation Factors, studies have found readers instantaneously improve their reading fluency.",
+    "official": "https://www.lexend.com/",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  },
+  {
+    "id": "playpen",
+    "name": "Playpen Sans",
+    "files": [
+      "playpen/PlaypenSans-Thin.ttf",
+      "playpen/PlaypenSans-ExtraLight.ttf",
+      "playpen/PlaypenSans-Light.ttf",
+      "playpen/PlaypenSans-Regular.ttf",
+      "playpen/PlaypenSans-Medium.ttf",
+      "playpen/PlaypenSans-SemiBold.ttf",
+      "playpen/PlaypenSans-Bold.ttf",
+      "playpen/PlaypenSans-ExtraBold.ttf"
+    ],
+    "desc": "Playpen Sans is one of the font families produced by TypeTogether after more than two years of primary research into handwriting education for Latin-based languages. It has seven automatic alternates for each character and a built-in shuffler that both ensures variation and avoids repetitive shapes in close proximity. This feature adds to the overall organic, spontaneous, and authentic feel of the handwritten style.",
+    "official": "https://github.com/TypeTogether/Playpen-Sans",
+    "license": {
+      "name": "SIL OFL 1.1",
+      "url": "https://openfontlicense.org/open-font-license-official-text/"
+    }
+  }
+]

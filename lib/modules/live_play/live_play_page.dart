@@ -128,7 +128,7 @@ class LivePlayPage extends GetView<LivePlayController> {
                     (detail.area == null || detail.area!.isEmpty)
                         ? (detail.platform?.toUpperCase() ?? '')
                         : "${detail.platform?.toUpperCase()} / ${detail.area}",
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 8),
+                    style: AppTextStyles.t11,
                   ),
                 ],
               );
@@ -184,7 +184,7 @@ class LivePlayPage extends GetView<LivePlayController> {
                       : exists
                       ? i18n("monitored")
                       : i18n("record"),
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  style: AppTextStyles.t13.copyWith(fontWeight: FontWeight.w600),
                 ),
                 onPressed: () async {
                   if (!exists) {
@@ -757,7 +757,7 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
                   : WidgetStateProperty.all(EdgeInsets.all(5.0)),
               backgroundColor: WidgetStateProperty.all(Get.theme.colorScheme.primary.withAlpha(125)),
               shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(6.0))),
-              textStyle: WidgetStateProperty.all(const TextStyle(fontSize: 12.0)),
+              textStyle: WidgetStateProperty.all(AppTextStyles.t12),
               minimumSize: WidgetStateProperty.all(Size.zero),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
@@ -788,7 +788,7 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
                   : WidgetStateProperty.all(EdgeInsets.all(5.0)),
               backgroundColor: WidgetStateProperty.all(Get.theme.colorScheme.primary),
               shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(6.0))),
-              textStyle: WidgetStateProperty.all(const TextStyle(fontSize: 12.0)),
+              textStyle: WidgetStateProperty.all(AppTextStyles.t12),
               minimumSize: WidgetStateProperty.all(Size.zero),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
@@ -846,7 +846,8 @@ class NotLivingVideoWidget extends StatelessWidget {
                     child: Text(
                       controller.room.title!,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.white, fontSize: 16, decoration: TextDecoration.none),
+                      style: AppTextStyles.t14.copyWith(color: Colors.white,
+                        decoration: TextDecoration.none),
                     ),
                   ),
                 ),
@@ -869,10 +870,10 @@ class NotLivingVideoWidget extends StatelessWidget {
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: Text(i18n("play_video_failed"), style: const TextStyle(color: Colors.white, fontSize: 16)),
+                    child: Text(i18n("play_video_failed"), style: AppTextStyles.t16.copyWith(color: Colors.white)),
                   ),
-                  Text(i18n("room_offline"), style: const TextStyle(color: Colors.white, fontSize: 14)),
-                  Text(i18n("switch_other_room_hint"), style: const TextStyle(color: Colors.white, fontSize: 14)),
+                  Text(i18n("room_offline"), style: const TextStyle(color: Colors.white)),
+                  Text(i18n("switch_other_room_hint"), style: AppTextStyles.t14.copyWith(color: Colors.white)),
                 ],
               ),
             ),
@@ -912,7 +913,7 @@ class _ActionTile extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: color),
+                  style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600, color: color),
                 ),
               ),
               Icon(Icons.chevron_right_rounded, color: color.withValues(alpha: 0.7)),
