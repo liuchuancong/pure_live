@@ -30,7 +30,7 @@ class MenuButton extends GetView<AuthController> {
         ),
 
         PopupMenuItem(
-          value: 3,
+          value: 2,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: MenuListTile(leading: const Icon(Icons.history), text: i18n("history")),
         ),
