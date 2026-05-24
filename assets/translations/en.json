@@ -732,5 +732,9 @@
     "network_m3u_txt": "Network Playlists (M3U/TXT)",
     "network_epg": "Network EPG Sources",
     "local_m3u_txt": "Local Playlists (M3U/TXT)",
-    "local_epg": "Local EPG Sources"
+    "local_epg": "Local EPG Sources",
+    "custom_ua_title": "Custom IPTV User-Agent",
+    "custom_ua_desc": "Set custom UA to fix 444 or 403 access denied errors.",
+    "edit_ua_title": "Edit User-Agent",
+    "input_empty_tip": "Content cannot be empty"
 }

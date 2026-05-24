@@ -220,6 +220,15 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
                 ],
               );
             }),
+            _buildTile(
+              context,
+              icon: Remix.tv_line,
+              title: i18n("custom_ua_title"),
+              subtitle: settings.customIptvUserAgent.value.length > 30
+                  ? "${settings.customIptvUserAgent.value.substring(0, 30)}..."
+                  : settings.customIptvUserAgent.value,
+              onTap: () => _showEditUserAgentDialog(context, settings),
+            ),
           ]),
           const SizedBox(height: 20),
           _buildGroupTitle(theme, i18n("iptv_settings")),
@@ -258,6 +267,139 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
           const SizedBox(height: 32),
         ],
       ),
+    );
+  }
+
+  void _showEditUserAgentDialog(BuildContext context, SettingsService settings) {
+    final controller = TextEditingController(text: settings.customIptvUserAgent.value);
+    final RxDouble customInputHeight = 100.0.obs;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        final theme = Theme.of(context);
+
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final dialogWidth = constraints.maxWidth > 640 ? 560.0 : constraints.maxWidth * 0.9;
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              titlePadding: const EdgeInsets.only(top: 24, left: 24, right: 24, bottom: 12),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              actionsPadding: const EdgeInsets.only(bottom: 16, right: 24, left: 24),
+              title: Row(
+                children: [
+                  Icon(Remix.tv_line, color: theme.colorScheme.primary, size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      i18n("edit_ua_title"),
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              content: SizedBox(
+                width: dialogWidth,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(i18n("custom_ua_desc"), style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
+                    const SizedBox(height: 16),
+                    Obx(
+                      () => Container(
+                        height: customInputHeight.value,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: controller,
+                                maxLines: null,
+                                expands: true,
+                                maxLength: 500,
+                                decoration: InputDecoration(
+                                  hintText: "Mozilla/5.0...",
+                                  border: InputBorder.none,
+                                  counterText: "",
+                                  contentPadding: const EdgeInsets.fromLTRB(14, 14, 14, 4),
+                                  suffixIcon: IconButton(
+                                    icon: const Icon(Remix.close_circle_line, size: 18),
+                                    onPressed: () => controller.clear(),
+                                  ),
+                                ),
+                                style: const TextStyle(fontSize: 13, fontFamily: 'monospace'),
+                              ),
+                            ),
+                            GestureDetector(
+                              behavior: HitTestBehavior.translucent,
+                              onVerticalDragUpdate: (details) {
+                                final newHeight = customInputHeight.value + details.delta.dy;
+                                if (newHeight >= 80 && newHeight <= 350) {
+                                  customInputHeight.value = newHeight;
+                                }
+                              },
+                              child: Container(
+                                width: double.infinity,
+                                height: 16,
+                                decoration: BoxDecoration(
+                                  color: theme.dividerColor.withValues(alpha: 0.03),
+                                  borderRadius: const BorderRadius.only(
+                                    bottomLeft: Radius.circular(14),
+                                    bottomRight: Radius.circular(14),
+                                  ),
+                                ),
+                                child: Center(
+                                  child: Container(
+                                    width: 36,
+                                    height: 4,
+                                    decoration: BoxDecoration(
+                                      color: theme.hintColor.withValues(alpha: 0.3),
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n("cancel"))),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: theme.colorScheme.onPrimary,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  ),
+                  onPressed: () {
+                    final trimmedValue = controller.text.trim();
+                    if (trimmedValue.isNotEmpty) {
+                      settings.customIptvUserAgent.value = trimmedValue;
+                      Navigator.of(context).pop();
+                      ToastUtil.show(i18n("settings_saved"));
+                    } else {
+                      ToastUtil.show(i18n("input_empty_tip"));
+                    }
+                  },
+                  child: Text(i18n("confirm")),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 

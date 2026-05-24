@@ -144,7 +144,7 @@ class SettingsService extends GetxController {
   final selectedSourceId = (HivePrefUtil.getString('selectedSourceId') ?? '').obs;
   final isAutoSyncEnabled = (HivePrefUtil.getBool('isAutoSyncEnabled') ?? false).obs;
   final autoSyncHoursInterval = (HivePrefUtil.getInt('autoSyncHoursInterval') ?? 24).obs;
-
+  final customIptvUserAgent = (HivePrefUtil.getString('customIptvUserAgent') ?? '').obs;
   // ==============================
   // 🧩 Lifecycle: onInit
   // ==============================
@@ -408,6 +408,9 @@ class SettingsService extends GetxController {
     });
     autoSyncHoursInterval.listen((value) {
       HivePrefUtil.setInt('autoSyncHoursInterval', value);
+    });
+    customIptvUserAgent.listen((value) {
+      HivePrefUtil.setString('customIptvUserAgent', value);
     });
   }
 
