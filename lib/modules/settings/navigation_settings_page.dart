@@ -10,6 +10,14 @@ class NavigationSettingsPage extends StatelessWidget {
     final theme = Theme.of(context);
     final settings = Get.find<SettingsService>();
 
+    // 1. 定义所有菜单（固定不变）
+    final allMenus = [
+      HomeMenu.favorites,
+      HomeMenu.popular,
+      HomeMenu.areas,
+      HomeMenu.record,
+    ];
+
     return Scaffold(
       appBar: AppBar(
         title: Text(i18n("navigation_display_settings"), style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -22,8 +30,21 @@ class NavigationSettingsPage extends StatelessWidget {
           const SizedBox(height: 16),
           _buildGroupTitle(theme, i18n("navigation_display_settings")),
           Obx(() {
-            final activeIds = settings.savedMenuIds;
-            if (activeIds.isEmpty) return const SizedBox.shrink();
+            // 2. 关键：按 savedMenuIds 的顺序给 allMenus 排序
+            final savedOrder = settings.savedMenuIds;
+            // 给每个菜单一个排序权重：在 savedMenuIds 里的位置，不在里面的排到最后
+            final sortedMenus = List<HomeMenu>.from(allMenus);
+            sortedMenus.sort((a, b) {
+              final indexA = savedOrder.indexOf(a.id);
+              final indexB = savedOrder.indexOf(b.id);
+              // 都在列表里：按 savedOrder 顺序排
+              if (indexA != -1 && indexB != -1) return indexA.compareTo(indexB);
+              // 只有一个在列表里：在列表里的排前面
+              if (indexA != -1) return -1;
+              if (indexB != -1) return 1;
+              // 都不在：保持原始顺序
+              return 0;
+            });
 
             return Container(
               clipBehavior: Clip.antiAlias,
@@ -36,19 +57,20 @@ class NavigationSettingsPage extends StatelessWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 buildDefaultDragHandles: false,
-                itemCount: activeIds.length,
+                itemCount: sortedMenus.length,
                 onReorderItem: (oldIndex, newIndex) {
                   if (newIndex > oldIndex) newIndex -= 1;
-                  List<String> currentOrder = List.from(settings.savedMenuIds);
-                  final String movedId = currentOrder.removeAt(oldIndex);
+                  // 拖拽时直接更新 savedMenuIds
+                  final currentOrder = List<String>.from(settings.savedMenuIds);
+                  final movedId = currentOrder.removeAt(oldIndex);
                   currentOrder.insert(newIndex, movedId);
-
                   settings.savedMenuIds.value = currentOrder;
                 },
                 itemBuilder: (context, index) {
-                  final String menuId = activeIds[index];
-                  final menu = HomeMenu.fromId(menuId);
-                  if (menu == null) return const SizedBox.shrink();
+                  final menu = sortedMenus[index];
+                  // 开关状态直接从 savedMenuIds 判断
+                  final isVisible = settings.savedMenuIds.contains(menu.id);
+
                   String titleText = "";
                   IconData menuIcon = Remix.question_line;
                   switch (menu) {
@@ -81,9 +103,9 @@ class NavigationSettingsPage extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Switch(
-                            value: true,
+                            value: isVisible,
                             activeThumbColor: theme.colorScheme.primary,
-                            onChanged: (bool value) => settings.toggleMenuVisibility(menu, value),
+                            onChanged: (value) => settings.toggleMenuVisibility(menu, value),
                           ),
                           const SizedBox(width: 8),
                           ReorderableDragStartListener(
