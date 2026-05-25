@@ -353,7 +353,7 @@ class VersionPage extends GetView<VersionController> {
                 child: Text(
                   targetUrl,
                   style: AppTextStyles.t11.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                  maxLines: 2,
+                  maxLines: 4,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
