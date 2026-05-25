@@ -161,6 +161,8 @@ class SettingsService extends GetxController {
   final RxList<FontModel> fontList = <FontModel>[].obs;
   final Rx<DownloadState> fontState = DownloadState.notDownloaded.obs;
   final RxMap<String, String> fontFolderSizes = <String, String>{}.obs;
+
+  final loadingStyle = (HivePrefUtil.getString('loadingStyle') ?? AppConsts.defaultLoadingStyleKey).obs;
   // ==============================
   // 🧩 Lifecycle: onInit
   // ==============================
@@ -451,12 +453,19 @@ class SettingsService extends GetxController {
     fontFamilyName.listen((value) {
       HivePrefUtil.setString('fontFamilyName', value);
     });
+
+    loadingStyle.listen((value) {
+      HivePrefUtil.setString('loadingStyle', value);
+    });
     ever(fontSizeBodySmall, (_) => refreshSystemTheme());
     ever(fontSizeBodyMedium, (_) => refreshSystemTheme());
     ever(fontSizeBodyLarge, (_) => refreshSystemTheme());
     ever(fontSizeTitleMedium, (_) => refreshSystemTheme());
     ever(fontSizeTitleLarge, (_) => refreshSystemTheme());
     ever(fontFamilyName, (_) => refreshSystemTheme());
+    ever(enableDynamicTheme, (_) {
+      update();
+    });
     initUserFontLifecycle();
     _loadInitialFontManifest();
   }
@@ -1021,6 +1030,7 @@ class SettingsService extends GetxController {
         ? double.parse(json['fontSizeTitleLarge'].toString())
         : 20.0;
     fontFamilyName.value = json['fontFamilyName'] ?? 'Default';
+    loadingStyle.value = json['loadingStyle'] ?? 'default';
     videoOutputDriver.value = PlayerConsts.videoOutputDrivers.keys.contains(json['videoOutputDriver'])
         ? json['videoOutputDriver']
         : 'gpu';
@@ -1115,6 +1125,7 @@ class SettingsService extends GetxController {
     json['fontSizeTitleMedium'] = fontSizeTitleMedium.value;
     json['fontSizeTitleLarge'] = fontSizeTitleLarge.value;
     json['fontFamilyName'] = fontFamilyName.value;
+    json['loadingStyle'] = loadingStyle.value;
     return json;
   }
 }

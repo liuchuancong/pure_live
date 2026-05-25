@@ -794,5 +794,16 @@
     "http_error_500": "Internal server error (500)",
     "http_error_502": "Bad gateway error (502)",
     "http_error_503": "Service unavailable (503)",
-    "http_error_default": "Failed to connect to the server, please try again later ({statusCode})"
+    "http_error_default": "Failed to connect to the server, please try again later ({statusCode})",
+    "status_empty_title": "No Data Available",
+    "status_empty_subtitle": "It looks quite empty here, nothing was found",
+    "status_error_title": "Network Request Error",
+    "status_error_subtitle": "Please check your network connection or try again later",
+    "status_retry_button": "Retry",
+    "change_loading_style": "Loading Animation",
+    "loading_group_spinkit": "Classic Styles (SpinKit)",
+    "loading_group_loading_animation": "Modern Styles (Animation)",
+    "loading_style_default": "Default Ring",
+    "change_loading_style_subtitle": "Customize loading and refresh styles globally",
+    "restore_default": "Restore Default"
 }
