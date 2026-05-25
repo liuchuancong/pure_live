@@ -102,38 +102,37 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
   @override
   Widget build(BuildContext context) {
     return DynamicColorBuilder(
-      builder: (lightDynamic, darkDynamic) {
+      builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
         return Obx(() {
           final themeColor = HexColor(settings.themeColorSwitch.value);
           final showSplashPage = settings.showSplashPage.value;
-
-          // 💡 1. Listen reactively to the font multiplier value change
           final currentFactor = settings.textScaleFactor.value;
 
           ThemeData lightTheme;
           ThemeData darkTheme;
 
-          if (settings.enableDynamicTheme.value) {
-            lightTheme = MyTheme(colorScheme: lightDynamic).lightThemeData;
-            darkTheme = MyTheme(colorScheme: darkDynamic).darkThemeData;
+          if (settings.enableDynamicTheme.value && lightDynamic != null && darkDynamic != null) {
+            lightTheme = MyTheme(colorScheme: lightDynamic.harmonized()).lightThemeData;
+            darkTheme = MyTheme(colorScheme: darkDynamic.harmonized()).darkThemeData;
           } else {
             lightTheme = MyTheme(primaryColor: themeColor).lightThemeData;
             darkTheme = MyTheme(primaryColor: themeColor).darkThemeData;
           }
+
           return GetMaterialApp(
             title: i18n('app_name'),
             scrollBehavior: MyCustomScrollBehavior(),
             debugShowCheckedModeBanner: false,
             themeMode: AppConsts.themeModes[settings.themeModeName.value]!,
             theme: lightTheme.copyWith(
-              appBarTheme: AppBarTheme(surfaceTintColor: Colors.transparent),
+              appBarTheme: const AppBarTheme(surfaceTintColor: Colors.transparent),
               pageTransitionsTheme: const PageTransitionsTheme(
                 builders: <TargetPlatform, PageTransitionsBuilder>{
                   TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
                 },
               ),
             ),
-            darkTheme: darkTheme.copyWith(appBarTheme: AppBarTheme(surfaceTintColor: Colors.transparent)),
+            darkTheme: darkTheme.copyWith(appBarTheme: const AppBarTheme(surfaceTintColor: Colors.transparent)),
             locale: context.locale,
             navigatorObservers: [FlutterSmartDialog.observer, BackButtonObserver()],
             builder: FlutterSmartDialog.init(

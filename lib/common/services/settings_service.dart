@@ -161,6 +161,8 @@ class SettingsService extends GetxController {
   final RxList<FontModel> fontList = <FontModel>[].obs;
   final Rx<DownloadState> fontState = DownloadState.notDownloaded.obs;
   final RxMap<String, String> fontFolderSizes = <String, String>{}.obs;
+
+  final loadingStyle = (HivePrefUtil.getString('loadingStyle') ?? AppConsts.defaultLoadingStyleKey).obs;
   // ==============================
   // 🧩 Lifecycle: onInit
   // ==============================
@@ -451,12 +453,19 @@ class SettingsService extends GetxController {
     fontFamilyName.listen((value) {
       HivePrefUtil.setString('fontFamilyName', value);
     });
+
+    loadingStyle.listen((value) {
+      HivePrefUtil.setString('loadingStyle', value);
+    });
     ever(fontSizeBodySmall, (_) => refreshSystemTheme());
     ever(fontSizeBodyMedium, (_) => refreshSystemTheme());
     ever(fontSizeBodyLarge, (_) => refreshSystemTheme());
     ever(fontSizeTitleMedium, (_) => refreshSystemTheme());
     ever(fontSizeTitleLarge, (_) => refreshSystemTheme());
     ever(fontFamilyName, (_) => refreshSystemTheme());
+    ever(enableDynamicTheme, (_) {
+      update();
+    });
     initUserFontLifecycle();
     _loadInitialFontManifest();
   }
@@ -486,14 +495,19 @@ class SettingsService extends GetxController {
     }
   }
 
-  Future<void> activateFontFamily(FontModel fontModel) async {
+  Future<void> activateFontFamily(FontModel fontModel, {String? targetFileName}) async {
     fontFamilyName.value = fontModel.id;
     curFontModel.value = fontModel;
     fontState.value = DownloadState.downloaded;
 
-    await FontDownloadManager.instance.loadFont(fontModel.id);
+    await FontDownloadManager.instance.loadFont(fontModel.id, fileName: targetFileName ?? '');
     Get.updateLocale(Get.locale ?? const Locale('zh', 'CN'));
-    SmartDialog.showToast("已应用全局字体: ${fontModel.name}");
+    if (targetFileName != null) {
+      final subName = targetFileName.split('-').last;
+      ToastUtil.show(i18n('font_toast_exclusive', args: {"name": fontModel.name, "subName": subName}));
+    } else {
+      ToastUtil.show(i18n('font_toast_global', args: {"name": fontModel.name}));
+    }
   }
 
   Future<void> uninstallFontFamily(FontModel fontModel) async {
@@ -515,7 +529,7 @@ class SettingsService extends GetxController {
 
       await refreshFontDiskSizes();
       SmartDialog.dismiss();
-      SmartDialog.showToast("已成功卸载字体包: ${fontModel.name}");
+      ToastUtil.show(i18n('font_toast_uninstall_success', args: {"name": fontModel.name}));
     } catch (e) {
       SmartDialog.dismiss();
       log("Uninstallation failure loop aborted: $e");
@@ -562,6 +576,7 @@ class SettingsService extends GetxController {
     } else {
       Get.changeTheme(updatedThemeEngine.lightThemeData);
     }
+    Get.updateLocale(language);
   }
 
   // --- 主题 & 语言 ---
@@ -583,6 +598,7 @@ class SettingsService extends GetxController {
     languageName.value = value;
     HivePrefUtil.setString('language', value);
     EasyLocalization.of(Get.context!)!.setLocale(AppConsts.languages[value]!);
+    Get.updateLocale(language);
   }
 
   // --- 播放器 & 分辨率 ---
@@ -1014,6 +1030,7 @@ class SettingsService extends GetxController {
         ? double.parse(json['fontSizeTitleLarge'].toString())
         : 20.0;
     fontFamilyName.value = json['fontFamilyName'] ?? 'Default';
+    loadingStyle.value = json['loadingStyle'] ?? 'default';
     videoOutputDriver.value = PlayerConsts.videoOutputDrivers.keys.contains(json['videoOutputDriver'])
         ? json['videoOutputDriver']
         : 'gpu';
@@ -1108,6 +1125,7 @@ class SettingsService extends GetxController {
     json['fontSizeTitleMedium'] = fontSizeTitleMedium.value;
     json['fontSizeTitleLarge'] = fontSizeTitleLarge.value;
     json['fontFamilyName'] = fontFamilyName.value;
+    json['loadingStyle'] = loadingStyle.value;
     return json;
   }
 }

@@ -2,8 +2,9 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
-import 'package:pure_live/modules/settings/font_settings_page.dart';
-import 'package:pure_live/modules/settings/font_family_manager_page.dart';
+import 'package:pure_live/modules/settings/pages/font_settings_page.dart';
+import 'package:pure_live/modules/settings/pages/font_family_manager_page.dart';
+import 'package:pure_live/modules/settings/pages/loading_style_settings_page.dart';
 
 class ThemeSettingsPage extends GetView<SettingsService> {
   const ThemeSettingsPage({super.key});
@@ -46,6 +47,23 @@ class ThemeSettingsPage extends GetView<SettingsService> {
               subtitle: i18n("enable_dynamic_color_subtitle"),
               value: controller.enableDynamicTheme,
               icon: Remix.magic_line,
+            ),
+            context.buildTile(
+              icon: Remix.loader_4_line,
+              title: i18n("change_loading_style"),
+              subtitle: i18n("change_loading_style_subtitle"),
+              onTap: () => Get.to(() => const LoadingStyleSettingsPage()),
+              trailing: Obx(() {
+                final String currentKey = Get.find<SettingsService>().loadingStyle.value;
+                final bool isZh = Get.locale?.languageCode == 'zh';
+                final Map<String, String> currentItem = AppConsts.allStyles.firstWhere(
+                  (item) => item['key'] == currentKey,
+                  orElse: () => {'key': 'default', 'nameEn': 'Default Ring', 'nameZh': '默认圆环'},
+                );
+                final String displayName = isZh ? currentItem['nameZh']! : currentItem['nameEn']!;
+
+                return Text(displayName, style: TextStyle(color: Theme.of(context).colorScheme.outline, fontSize: 13));
+              }),
             ),
           ]),
           const SizedBox(height: 20),

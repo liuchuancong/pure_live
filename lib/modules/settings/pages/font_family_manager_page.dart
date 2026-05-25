@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/file_utils.dart';
@@ -250,6 +251,24 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
             ),
             const SizedBox(width: 6),
             Icon(Icons.check_circle, color: theme.colorScheme.primary, size: 16),
+            const SizedBox(width: 6),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                elevation: 0,
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+              ),
+              onPressed: () {
+                if (fontModel.files.length <= 1) {
+                  controller.activateFontFamily(fontModel);
+                } else {
+                  _showFontWeightSelector(context, fontModel);
+                }
+              },
+              child: Text(i18n("apply"), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+            ),
           ],
         ),
       );
@@ -281,7 +300,13 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
             ),
-            onPressed: () => controller.activateFontFamily(fontModel),
+            onPressed: () {
+              if (fontModel.files.length <= 1) {
+                controller.activateFontFamily(fontModel);
+              } else {
+                _showFontWeightSelector(context, fontModel);
+              }
+            },
             child: Text(i18n("apply"), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
           ),
         ] else
@@ -305,11 +330,111 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
                 await controller.refreshFontDiskSizes();
                 await controller.activateFontFamily(fontModel);
               } else {
-                SmartDialog.showToast(i18n("font_load_failed"));
+                ToastUtil.show(i18n("font_load_failed"));
               }
             },
           ),
       ],
+    );
+  }
+
+  void _showFontWeightSelector(BuildContext context, FontModel fontModel) async {
+    final path = await AppPathManager().getFontFamilyFolderPath(fontModel.id);
+    final fontDir = Directory(path);
+
+    final List<File> downloadedFiles = [];
+    if (await fontDir.exists()) {
+      await for (final entity in fontDir.list()) {
+        if (entity is File && (entity.path.endsWith('.ttf') || entity.path.endsWith('.otf'))) {
+          final length = await entity.length();
+          if (length > 0) {
+            downloadedFiles.add(entity);
+          }
+        }
+      }
+    }
+
+    if (downloadedFiles.isEmpty) {
+      ToastUtil.show(i18n('font_not_downloaded_or_corrupted'));
+      return;
+    }
+
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Theme.of(Get.context!).colorScheme.surfaceContainerHigh,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                i18n('font_selector_title', args: {"name": fontModel.name}),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                i18n('font_selector_subtitle'),
+                style: TextStyle(fontSize: 13, color: Theme.of(Get.context!).colorScheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 16),
+              ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: MediaQuery.of(Get.context!).size.height * 0.45),
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                      leading: const Icon(Icons.auto_awesome),
+                      title: Text(i18n('font_auto_weight')),
+                      subtitle: Text(i18n('font_auto_weight_desc')),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        controller.activateFontFamily(fontModel);
+                      },
+                    ),
+                    const Divider(height: 16),
+                    ...downloadedFiles.map((file) {
+                      final fileName = file.path.split(Platform.pathSeparator).last.split('.').first;
+                      final fileNameWithExt = file.path.split(Platform.pathSeparator).last;
+                      final label = fileName.split('-').last;
+
+                      return ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                        leading: const Icon(Icons.font_download_outlined),
+                        title: Text(i18n('font_lock_weight', args: {"label": label})),
+                        subtitle: Text(i18n('font_lock_weight_desc')),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        onTap: () async {
+                          Navigator.of(context).pop();
+                          final modifiedModel = FontModel(
+                            id: fontModel.id,
+                            name: "${fontModel.name} ($label)",
+                            files: ["${fontModel.id}/$fileNameWithExt"],
+                            desc: fontModel.desc,
+                            official: fontModel.official,
+                            license: fontModel.license,
+                          );
+
+                          controller.activateFontFamily(modifiedModel, targetFileName: fileNameWithExt);
+                        },
+                      );
+                    }),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n('cancel')))],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

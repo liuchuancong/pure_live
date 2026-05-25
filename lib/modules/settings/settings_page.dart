@@ -2,13 +2,13 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/iptv/iptv_page.dart';
 import 'package:pure_live/modules/backup/backup_page.dart';
-import 'package:pure_live/modules/settings/theme_settings_page.dart';
-import 'package:pure_live/modules/settings/video_settings_page.dart';
-import 'package:pure_live/modules/settings/general_settings_page.dart';
-import 'package:pure_live/modules/settings/platform_settings_page.dart';
-import 'package:pure_live/modules/settings/navigation_settings_page.dart';
-import 'package:pure_live/modules/settings/cache_data_settings_page.dart';
-import 'package:pure_live/modules/settings/player_kernel_settings_page.dart';
+import 'package:pure_live/modules/settings/pages/theme_settings_page.dart';
+import 'package:pure_live/modules/settings/pages/video_settings_page.dart';
+import 'package:pure_live/modules/settings/pages/general_settings_page.dart';
+import 'package:pure_live/modules/settings/pages/platform_settings_page.dart';
+import 'package:pure_live/modules/settings/pages/navigation_settings_page.dart';
+import 'package:pure_live/modules/settings/pages/cache_data_settings_page.dart';
+import 'package:pure_live/modules/settings/pages/player_kernel_settings_page.dart';
 
 class SettingsPage extends GetView<SettingsService> {
   const SettingsPage({super.key});
