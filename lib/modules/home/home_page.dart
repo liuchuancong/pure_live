@@ -113,7 +113,6 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
       ),
     );
     await VersionUtil().checkUpdate();
-    VersionUtil().loadReleaseHistory();
     bool isHasNerVersion = settings.enableAutoCheckUpdate.value && VersionUtil.hasNewVersion();
     if (mounted) {
       if (overlay != null && isHasNerVersion) {

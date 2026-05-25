@@ -804,5 +804,9 @@
     "loading_group_loading_animation": "现代现代 (LoadingAnimation)",
     "loading_style_default": "默认圆环",
     "change_loading_style_subtitle": "自定义全局界面的加载和刷新样式",
-    "restore_default": "恢复默认"
+    "restore_default": "恢复默认",
+    "version_published_at": "发布于 {date}",
+    "version_file_size": "文件大小: {size}",
+    "version_downloads_count": "{size} · 已被下载 {count} 次",
+    "version_downloads_count_mobile": "{size} · {count} 次下载"
 }

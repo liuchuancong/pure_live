@@ -121,9 +121,18 @@ class MyTheme {
       // =====================================================
       appBarTheme: AppBarTheme(
         centerTitle: true,
+
         elevation: 0,
         scrolledUnderElevation: 0,
+
+        shadowColor: Colors.transparent,
+
+        backgroundColor: Colors.transparent,
+
         surfaceTintColor: Colors.transparent,
+
+        foregroundColor: baseTheme.colorScheme.onSurface,
+
         titleTextStyle: textTheme.titleLarge?.copyWith(fontWeight: semiBold),
       ),
 
