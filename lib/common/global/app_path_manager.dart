@@ -176,4 +176,10 @@ class AppPathManager {
 
   String get basePath => _basePath ?? (throw StateError("AppPathManager 尚未初始化"));
 
+  Future<String> getFontFamilyFolderPath(String id) async {
+    final downloadDir = await getDir(dirDownload);
+    final fontsDir = 'fonts';
+    final basePath = p.join(downloadDir.path, fontsDir);
+    return p.join(basePath, id);
+  }
 }

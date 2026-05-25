@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:charset_converter/charset_converter.dart';
@@ -10,7 +9,7 @@ class RaceHttp {
 
   static Future<Map<String, dynamic>?> fetchJson(
     List<String> urls, {
-    Duration timeout = const Duration(seconds: 5),
+    Duration timeout = const Duration(seconds: 30),
     Map<String, String>? headers,
   }) async {
     return _race<Map<String, dynamic>?>(
@@ -18,12 +17,9 @@ class RaceHttp {
       timeout: timeout,
       task: (url) async {
         final res = await _client.get(Uri.parse(url), headers: headers).timeout(timeout);
-
         if (res.statusCode != 200) return null;
-
         final data = jsonDecode(res.body);
         if (data is Map<String, dynamic>) return data;
-
         return null;
       },
     );
@@ -32,7 +28,7 @@ class RaceHttp {
   /// Finds the fastest responsive URL from a list of mirrors without modifying RaceHttp.
   static Future<String?> findFastestUrl(
     List<String> urls, {
-    Duration timeout = const Duration(seconds: 5),
+    Duration timeout = const Duration(seconds: 60),
     Map<String, String>? headers,
   }) async {
     final completer = Completer<String?>();
@@ -42,21 +38,14 @@ class RaceHttp {
         Future(() async {
           try {
             final client = http.Client();
-            final res = await client.get(Uri.parse(url), headers: headers).timeout(timeout);
-
+            final res = await client.head(Uri.parse(url), headers: headers).timeout(timeout);
             if (res.statusCode == 200 && !completer.isCompleted) {
-              log(url, name: 'findFastestUrl');
               completer.complete(url);
             }
           } catch (_) {}
         }),
       );
     }
-    Future.delayed(timeout, () {
-      if (!completer.isCompleted) {
-        completer.complete(null);
-      }
-    });
     return completer.future;
   }
 

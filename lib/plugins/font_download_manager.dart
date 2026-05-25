@@ -94,7 +94,7 @@ class FontDownloadManager {
 
         final urls = mirror.mirrors(filePath);
         final fastestUrl = await RaceHttp.findFastestUrl(urls);
-
+        log(fastestUrl.toString(), name: "Fastest URL for $fileName");
         int retryCount = 0;
         const maxRetries = 3;
 

@@ -1,8 +1,10 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/common/models/font_model.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/plugins/font_download_manager.dart';
+import 'package:pure_live/common/global/app_path_manager.dart';
 
 class FontFamilyManagerPage extends GetView<SettingsService> {
   const FontFamilyManagerPage({super.key});
@@ -83,76 +85,84 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
                           width: isCurrentActive ? 1.8 : 1.2,
                         ),
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    theme.colorScheme.primary.withValues(alpha: 0.06),
-                                    theme.colorScheme.primary.withValues(alpha: 0.0),
+                      child: GestureDetector(
+                        onTap: () async {
+                          if (localExists) {
+                            final path = await AppPathManager().getFontFamilyFolderPath(fontModel.id);
+                            FileUtils.openFileOrUrl(path);
+                          }
+                        },
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(24),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      theme.colorScheme.primary.withValues(alpha: 0.06),
+                                      theme.colorScheme.primary.withValues(alpha: 0.0),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                ),
+                                padding: const EdgeInsets.fromLTRB(20, 16, 20, 2),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          fontModel.name,
+                                          style: TextStyle(
+                                            fontSize: AppTextStyles.t16.fontSize,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: 0.1,
+                                          ),
+                                        ),
+                                        _buildLicenseBadge(theme, fontModel, diskSize),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      fontModel.desc,
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        color: theme.hintColor.withValues(alpha: 0.8),
+                                        height: 1.4,
+                                        letterSpacing: 0.2,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          "${fontModel.files.length} ${i18n("font_units_suffix")}",
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: theme.hintColor.withValues(alpha: 0.6),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        _buildActionButtonRow(
+                                          context,
+                                          fontModel,
+                                          isCurrentActive,
+                                          isSelectedModel,
+                                          localExists,
+                                        ),
+                                      ],
+                                    ),
+
+                                    const SizedBox(height: 8),
                                   ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
                                 ),
                               ),
-                              padding: const EdgeInsets.fromLTRB(20, 16, 20, 2),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        fontModel.name,
-                                        style: TextStyle(
-                                          fontSize: AppTextStyles.t16.fontSize,
-                                          fontWeight: FontWeight.w800,
-                                          letterSpacing: 0.1,
-                                        ),
-                                      ),
-                                      _buildLicenseBadge(theme, fontModel, diskSize),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    fontModel.desc,
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: theme.hintColor.withValues(alpha: 0.8),
-                                      height: 1.4,
-                                      letterSpacing: 0.2,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        "${fontModel.files.length} ${i18n("font_units_suffix")}",
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: theme.hintColor.withValues(alpha: 0.6),
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      _buildActionButtonRow(
-                                        context,
-                                        fontModel,
-                                        isCurrentActive,
-                                        isSelectedModel,
-                                        localExists,
-                                      ),
-                                    ],
-                                  ),
-
-                                  const SizedBox(height: 8),
-                                ],
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     );
@@ -171,48 +181,51 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       decoration: BoxDecoration(
-        color: isDefaultActive
-            ? theme.colorScheme.primary.withValues(alpha: 0.03)
-            : theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDefaultActive ? theme.colorScheme.primary : theme.dividerColor.withValues(alpha: 0.05),
           width: isDefaultActive ? 1.5 : 1.0,
         ),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: isDefaultActive
-                ? theme.colorScheme.primary.withValues(alpha: 0.1)
-                : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-            shape: BoxShape.circle,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: ListTile(
+          tileColor: isDefaultActive
+              ? theme.colorScheme.primary.withValues(alpha: 0.03)
+              : theme.colorScheme.surfaceContainerLow,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: isDefaultActive
+                  ? theme.colorScheme.primary.withValues(alpha: 0.1)
+                  : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.settings_suggest_outlined,
+              color: isDefaultActive ? theme.colorScheme.primary : theme.hintColor,
+              size: 18,
+            ),
           ),
-          child: Icon(
-            Icons.settings_suggest_outlined,
-            color: isDefaultActive ? theme.colorScheme.primary : theme.hintColor,
-            size: 18,
+          title: Text(
+            PlatformUtils.isWindows ? "PingFang" : "System Default",
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: isDefaultActive ? FontWeight.w700 : FontWeight.w600,
+              color: isDefaultActive ? theme.colorScheme.primary : null,
+            ),
           ),
-        ),
-        title: Text(
-          PlatformUtils.isWindows ? "PingFang" : "System Default",
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: isDefaultActive ? FontWeight.w700 : FontWeight.w600,
-            color: isDefaultActive ? theme.colorScheme.primary : null,
+          subtitle: Text(
+            i18n("factory_default_desc"),
+            style: TextStyle(fontSize: 11, color: theme.hintColor.withValues(alpha: 0.7)),
           ),
+          trailing: isDefaultActive ? Icon(Icons.check_circle, color: theme.colorScheme.primary, size: 18) : null,
+          onTap: () {
+            controller.fontFamilyName.value = 'Default';
+          },
         ),
-        subtitle: Text(
-          i18n("factory_default_desc"),
-          style: TextStyle(fontSize: 11, color: theme.hintColor.withValues(alpha: 0.7)),
-        ),
-        trailing: isDefaultActive ? Icon(Icons.check_circle, color: theme.colorScheme.primary, size: 18) : null,
-        onTap: () {
-          controller.fontFamilyName.value = 'Default';
-        },
       ),
     );
   }
