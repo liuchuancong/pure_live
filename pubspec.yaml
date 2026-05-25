@@ -152,6 +152,7 @@ dependencies:
   easy_localization: ^3.0.8 #多语言
 # 依赖覆盖（强制指定版本）
 dependency_overrides:
+  hooks: ^2.0.0
   wakelock_plus: ^1.4.0
   screen_retriever:
     git:
