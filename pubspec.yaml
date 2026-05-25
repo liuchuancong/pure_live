@@ -167,6 +167,7 @@ dependencies:
 # 依赖覆盖（强制指定版本）
 dependency_overrides:
   wakelock_plus: ^1.4.0
+  hooks: ^2.0.0
   media_kit:
     git:
       url: https://github.com/Predidit/media-kit.git
