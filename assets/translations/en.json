@@ -805,5 +805,9 @@
     "loading_group_loading_animation": "Modern Styles (Animation)",
     "loading_style_default": "Default Ring",
     "change_loading_style_subtitle": "Customize loading and refresh styles globally",
-    "restore_default": "Restore Default"
+    "restore_default": "Restore Default",
+    "version_published_at": "Published at {date}",
+    "version_file_size": "File Size: {size}",
+    "version_downloads_count": "{size} · {count} downloads",
+    "version_downloads_count_mobile": "{size} · {count} downloads"
 }

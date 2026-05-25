@@ -16,7 +16,6 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
     controller.refreshFontDiskSizes();
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         title: Text(
           i18n("font_family_settings"),
