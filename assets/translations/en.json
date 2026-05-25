@@ -766,15 +766,15 @@
     "change_font_family": "Change System Font",
     "current_font_prefix": "Current",
     "factory_default_group": "System Preset Environment",
-  "factory_default_desc": "Restore system native default typography rendering",
-  "cloud_font_group": "Extended Typographic Vault",
-  "font_units_suffix": "weight variant asset files",
-  "font_currently_active": "Currently Active",
-  "delete": "Delete",
-  "apply": "Apply",
-  "empty_history_title": "No Release History",
-  "empty_history_subtitle": "No published version records found",
-  "history_load_failed": "Failed to load version history",
-
-  "download": "Download"
+    "factory_default_desc": "Restore system native default typography rendering",
+    "cloud_font_group": "Extended Typographic Vault",
+    "font_units_suffix": "weight variant asset files",
+    "font_currently_active": "Currently Active",
+    "delete": "Delete",
+    "apply": "Apply",
+    "empty_history_title": "No Release History",
+    "empty_history_subtitle": "No published version records found",
+    "history_load_failed": "Failed to load version history",
+    "click_to_remove": "Click to remove",
+    "download": "Download"
 }

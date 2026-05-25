@@ -1032,15 +1032,14 @@ class SettingsService extends GetxController {
     defaultMobileVolume.value = json['defaultMobileVolume'] ?? 0.5;
     defaultDesktopVolume.value = json['defaultDesktopVolume'] ?? 1.0;
     globalVolumeMute.value = json['globalVolumeMute'] ?? false;
-    changeThemeMode(themeModeName.value);
-    changeThemeColorSwitch(themeColorSwitch.value);
+
     setBilibiliCookit(bilibiliCookie.value);
-    changeLanguage(languageName.value);
     changePreferResolution(preferResolution.value);
     changePreferResolutionCellular(preferResolutionCellular.value);
     changePreferPlatform(preferPlatform.value);
     changeShutDownConfig(autoShutDownTime.value, enableAutoShutDownTime.value);
     changeAutoRefreshConfig(autoRefreshTime.value);
+    refreshSystemTheme();
   }
 
   Map<String, dynamic> toJson() {

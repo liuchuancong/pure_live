@@ -256,6 +256,7 @@ flutter:
     - assets/icons/
     - assets/keystore/
     - assets/version.json
+    - assets/releases.json
     - assets/emo/huya/
     - assets/emo/douyu/
     - assets/emo/douyin/

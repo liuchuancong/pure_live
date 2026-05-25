@@ -1,7 +1,5 @@
 import 'dart:io';
 import 'dart:async';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/race_http.dart';
 import 'package:pure_live/common/utils/githup_mirror.dart';
@@ -95,30 +93,39 @@ class VersionUtil {
     try {
       historyLoading.value = true;
       historyError.value = false;
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final List<String> historyUrls = mirror
+          .mirrors('assets/releases.json')
+          .map((url) => '$url?ts=$timestamp')
+          .toList();
 
-      final response = await http
-          .get(
-            Uri.parse(releaseUrl),
-            headers: {
-              'User-Agent':
-                  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-              'Accept': 'application/json',
-            },
-          )
-          .timeout(const Duration(seconds: 15));
-
-      if (response.statusCode != 200) {
-        throw HttpException('Server returned code ${response.statusCode}');
+      final dynamic rawData = await RaceHttp.fetchJson(
+        historyUrls,
+        headers: {
+          'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 12));
+      if (rawData == null) {
+        throw const HttpException('Fetch dynamic payload arrived empty');
       }
 
-      final data = jsonDecode(response.body);
-      if (data is List) {
-        allReleased = data;
+      if (rawData is List) {
+        allReleased = rawData;
+      } else if (rawData is Map) {
+        if (rawData.containsKey('releases') && rawData['releases'] is List) {
+          allReleased = rawData['releases'] as List;
+        } else {
+          allReleased = [rawData];
+        }
       } else {
-        throw const FormatException('Invalid release list payload');
+        throw const FormatException('Invalid release history tokens');
       }
+
+      debugPrint("🏁 历史版本数据通过 RaceHttp 竞速同步成功");
     } catch (e) {
-      debugPrint("⚠️ 获取历史版本失败: $e");
+      debugPrint("⚠️ 通过竞速线路获取历史版本失败: $e");
       historyError.value = true;
     } finally {
       historyLoading.value = false;

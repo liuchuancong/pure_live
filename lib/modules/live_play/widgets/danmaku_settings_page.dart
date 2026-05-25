@@ -23,20 +23,20 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
     return Scaffold(
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Obx(
           () => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _section(theme, i18n("danmaku_area")),
-              _card(theme, [
+              context.buildGroupTitle(i18n("danmaku_area")),
+              const SizedBox(height: 8),
+              context.buildModernCard([
                 _slider(
                   theme,
                   title: i18n("danmaku_area"),
                   value: controller.danmakuArea.value,
                   min: 0,
                   max: 1,
-                  divisions: 10,
                   display: "${(controller.danmakuArea.value * 100).toInt()}%",
                   onChanged: (v) => controller.danmakuArea.value = v,
                   labelColor: labelColor,
@@ -44,10 +44,11 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
                 ),
               ]),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 20),
 
-              _section(theme, i18n("position")),
-              _card(theme, [
+              context.buildGroupTitle(i18n("position")),
+              const SizedBox(height: 8),
+              context.buildModernCard([
                 _counter(
                   theme,
                   title: i18n("margin_top"),
@@ -68,89 +69,61 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
                 ),
               ]),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 20),
 
-              _section(theme, i18n("style")),
-              _card(theme, [
+              context.buildGroupTitle(i18n("style")),
+              const SizedBox(height: 8),
+              context.buildModernCard([
                 _slider(
                   theme,
                   title: i18n("opacity"),
                   value: controller.danmakuOpacity.value,
                   min: 0,
                   max: 1,
-                  divisions: 10,
                   display: "${(controller.danmakuOpacity.value * 100).toInt()}%",
                   onChanged: (v) => controller.danmakuOpacity.value = v,
                   labelColor: labelColor,
                   digitColor: digitColor,
                 ),
-
                 _slider(
                   theme,
                   title: i18n("speed"),
                   value: controller.danmakuSpeed.value.toDouble(),
                   min: 5,
                   max: 20,
-                  divisions: 15,
                   display: controller.danmakuSpeed.value.toStringAsFixed(2),
                   onChanged: (v) => controller.danmakuSpeed.value = v,
                   labelColor: labelColor,
                   digitColor: digitColor,
                 ),
-
                 _slider(
                   theme,
                   title: i18n("font_size"),
                   value: controller.danmakuFontSize.value.toDouble(),
                   min: 10,
                   max: 30,
-                  divisions: 20,
                   display: controller.danmakuFontSize.value.toStringAsFixed(2),
                   onChanged: (v) => controller.danmakuFontSize.value = v,
                   labelColor: labelColor,
                   digitColor: digitColor,
                 ),
-
                 _slider(
                   theme,
                   title: i18n("stroke"),
                   value: controller.danmakuFontBorder.value.toDouble(),
                   min: 0,
                   max: 8,
-                  divisions: 8,
                   display: controller.danmakuFontBorder.value.toStringAsFixed(1),
                   onChanged: (v) => controller.danmakuFontBorder.value = v,
                   labelColor: labelColor,
                   digitColor: digitColor,
                 ),
               ]),
-
-              const SizedBox(height: 30),
+              const SizedBox(height: 24),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _section(ThemeData theme, String title) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8, top: 0),
-      child: Text(
-        title,
-        style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
-      ),
-    );
-  }
-
-  Widget _card(ThemeData theme, List<Widget> children) {
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.canvasColor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.primaryColor.withValues(alpha: 0.08)),
-      ),
-      child: Column(children: children),
     );
   }
 
@@ -160,14 +133,13 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
     required double value,
     required double min,
     required double max,
-    required int divisions,
     required String display,
     required ValueChanged<double> onChanged,
     required Color labelColor,
     required Color digitColor,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -182,15 +154,16 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   display,
-                  style: AppTextStyles.t13.copyWith(fontWeight: FontWeight.bold, color: digitColor),
+                  style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.bold, color: digitColor),
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 4),
           Transform.translate(
             offset: const Offset(-8, 0),
             child: SizedBox(
@@ -220,7 +193,7 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
     required Color digitColor,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -233,7 +206,7 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
             minValue: 0,
             selectedValue: value,
             onChanged: onChanged,
-            textStyle: TextStyle(color: digitColor, fontSize: 16),
+            textStyle: TextStyle(color: digitColor, fontSize: 14, fontWeight: FontWeight.bold),
           ),
         ],
       ),

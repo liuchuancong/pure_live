@@ -13,6 +13,7 @@ import 'package:pure_live/modules/live_play/play_other.dart';
 import 'package:pure_live/recorder/models/record_status.dart';
 import 'package:pure_live/modules/live_play/danmaku_tab.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_keyboard.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller_panel.dart';
@@ -97,13 +98,15 @@ class LivePlayPage extends GetView<LivePlayController> {
   Widget buildNormalPlayerView(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        titleSpacing: 0,
         title: Row(
           children: [
+            const SizedBox(width: 4),
             Obx(
               () => CircleAvatar(
                 foregroundImage: controller.detail.value!.avatar == null || controller.detail.value!.avatar!.isEmpty
                     ? null
-                    : NetworkImage(controller.detail.value!.avatar!),
+                    : CachedNetworkImageProvider(controller.detail.value!.avatar!),
                 radius: 13,
                 backgroundColor: Theme.of(context).disabledColor,
               ),
@@ -128,7 +131,7 @@ class LivePlayPage extends GetView<LivePlayController> {
                     (detail.area == null || detail.area!.isEmpty)
                         ? (detail.platform?.toUpperCase() ?? '')
                         : "${detail.platform?.toUpperCase()} / ${detail.area}",
-                    style: AppTextStyles.t11,
+                    style: Theme.of(context).textTheme.labelSmall,
                   ),
                 ],
               );
@@ -154,7 +157,7 @@ class LivePlayPage extends GetView<LivePlayController> {
               duration: const Duration(milliseconds: 220),
               curve: Curves.easeOut,
               height: 38,
-              child: FilledButton.tonalIcon(
+              child: FilledButton(
                 style: FilledButton.styleFrom(
                   backgroundColor: isRunning
                       ? Colors.redAccent.withValues(alpha: 0.12)
@@ -166,25 +169,35 @@ class LivePlayPage extends GetView<LivePlayController> {
                       : exists
                       ? theme.colorScheme.primary
                       : theme.colorScheme.onSurfaceVariant,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
-                icon: Icon(
-                  isRunning
-                      ? Remix.record_circle_fill
-                      : exists
-                      ? Remix.checkbox_circle_fill
-                      : Remix.add_circle_line,
-                  size: 18,
-                ),
-                label: Text(
-                  isRunning
-                      ? i18n("recording")
-                      : exists
-                      ? i18n("monitored")
-                      : i18n("record"),
-                  style: AppTextStyles.t13.copyWith(fontWeight: FontWeight.w600),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isRunning
+                          ? Remix.record_circle_fill
+                          : exists
+                          ? Remix.checkbox_circle_fill
+                          : Remix.add_circle_line,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 4), // 🌟 Tightened inner gap from 8px down to 4px
+                    Text(
+                      isRunning
+                          ? i18n("recording")
+                          : exists
+                          ? i18n("monitored")
+                          : i18n("record"),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.1,
+                      ),
+                    ),
+                  ],
                 ),
                 onPressed: () async {
                   if (!exists) {
