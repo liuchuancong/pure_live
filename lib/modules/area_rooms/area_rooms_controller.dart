@@ -11,10 +11,6 @@ class AreaRoomsController extends BasePageController<LiveRoom> {
 
   @override
   Future<List<LiveRoom>> getData(int page, int pageSize) async {
-    if (site.id == Sites.ccSite && list.isNotEmpty) {
-      canLoadMore.value = false;
-      return [];
-    }
     var result = await site.liveSite.getCategoryRooms(subCategory, page: page);
     for (var element in result.items) {
       element.area = subCategory.areaName;

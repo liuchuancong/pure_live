@@ -167,7 +167,7 @@ class SettingsService extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 1), () {
       AutoSyncScheduler.instance.checkAndExecuteAutoSync();
       AutoSyncScheduler.instance.loadHotResources();
       AutoSyncScheduler.instance.loadDefaultEpgResources();
@@ -555,8 +555,7 @@ class SettingsService extends GetxController {
   }
 
   void refreshSystemTheme() {
-    final themeColor = HexColor(themeColorSwitch.value);
-    final updatedThemeEngine = MyTheme(primaryColor: themeColor);
+    final updatedThemeEngine = MyTheme(primaryColor: Get.theme.primaryColor);
 
     if (Get.isDarkMode) {
       Get.changeTheme(updatedThemeEngine.darkThemeData);

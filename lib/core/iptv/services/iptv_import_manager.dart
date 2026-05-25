@@ -40,59 +40,83 @@ class IptvImportManager {
     bool showTips = true,
     bool isHot = false,
   }) async {
+    File? tempFile;
     try {
-      final String rawStringContent = await HttpClient.instance.getText(url);
-      final trimmedContent = rawStringContent.trim();
-
-      if (trimmedContent.isEmpty) {
-        if (showTips) {
-          ToastUtil.show("不支持的文件格式，仅限 M3U 或 TXT");
-        }
-        return false;
-      }
-
-      String extension = '.m3u';
-      final lowercaseUrl = url.toLowerCase().trim();
-
-      if (trimmedContent.startsWith('#EXTM3U')) {
-        extension = '.m3u';
-      } else if (trimmedContent.contains(',#genre#')) {
-        extension = '.txt';
-      } else if (lowercaseUrl.endsWith('.txt')) {
-        extension = '.txt';
-      } else if (lowercaseUrl.endsWith('.m3u') || lowercaseUrl.endsWith('.m3u8')) {
-        extension = '.m3u';
-      } else {
-        if (showTips) {
-          ToastUtil.show("不支持的文件格式，仅限 M3U 或 TXT");
-        }
-        return false;
-      }
-
       final dir = await AppPathManager().getDir(AppPathManager.dirIptvCache);
-      final file = File(p.join(dir.path, 'download_iptv_${FileUtils.generateUuid()}$extension'));
-      await file.writeAsString(rawStringContent);
+      final lowercaseUrl = url.toLowerCase().trim();
+      String detectedExtension = '.m3u';
+      if (lowercaseUrl.endsWith('.txt')) {
+        detectedExtension = '.txt';
+      }
 
+      final initialFilePath = p.join(dir.path, 'download_iptv_${FileUtils.generateUuid()}$detectedExtension');
+      tempFile = File(initialFilePath);
+      await HttpClient.instance.download(url, tempFile.path);
+
+      if (!await tempFile.exists() || await tempFile.length() == 0) {
+        if (showTips) ToastUtil.show(i18n("unsupported_file_format"));
+        if (await tempFile.exists()) await tempFile.delete();
+        return false;
+      }
+      final lines = await tempFile
+          .openRead()
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())
+          .take(50) // Read up to 50 lines to inspect structure
+          .toList();
+
+      final headerSample = lines.join('\n').trim();
+      if (headerSample.isEmpty) {
+        if (showTips) ToastUtil.show(i18n("unsupported_file_format"));
+        if (await tempFile.exists()) await tempFile.delete();
+        return false;
+      }
+
+      // 4. Strict format detection check based on downloaded file content
+      String finalExtension = '.m3u';
+      if (headerSample.startsWith('#EXTM3U')) {
+        finalExtension = '.m3u';
+      } else if (headerSample.contains(',#genre#')) {
+        finalExtension = '.txt';
+      } else if (lowercaseUrl.endsWith('.txt')) {
+        finalExtension = '.txt';
+      } else if (lowercaseUrl.endsWith('.m3u') || lowercaseUrl.endsWith('.m3u8')) {
+        finalExtension = '.m3u';
+      } else {
+        if (showTips) ToastUtil.show(i18n("unsupported_file_format"));
+        if (await tempFile.exists()) await tempFile.delete();
+        return false;
+      }
+      if (detectedExtension != finalExtension) {
+        final correctedPath = p.setExtension(tempFile.path, finalExtension);
+        tempFile = await tempFile.rename(correctedPath);
+      }
+
+      // 6. Clean up the filename
       String cleanName = p.basename(fileName);
       while (p.extension(cleanName).isNotEmpty) {
         cleanName = p.basenameWithoutExtension(cleanName);
       }
       fileName = cleanName;
-
       final success = await importIptvFile(
-        file: file,
+        file: tempFile,
         providerName: fileName,
         url: url,
         forceUpdate: forceUpdate,
         showTips: showTips,
         isHot: isHot,
       );
-      if (await file.exists()) await file.delete();
+      if (await tempFile.exists()) await tempFile.delete();
       return success;
     } catch (e) {
       debugPrint("Network IPTV Download Failure: $e");
+      if (tempFile != null && await tempFile.exists()) {
+        try {
+          await tempFile.delete();
+        } catch (_) {}
+      }
       if (showTips) {
-        ToastUtil.show("网络订阅源下载或解析失败");
+        ToastUtil.show(i18n('download_failed'));
       }
       return false;
     }

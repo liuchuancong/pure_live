@@ -1,8 +1,7 @@
-import 'dart:developer';
+import 'dart:io';
 import 'package:dio/dio.dart';
-import 'custom_interceptor.dart';
-import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/common/core_error.dart';
+import 'package:pure_live/core/common/custom_interceptor.dart';
 
 class HttpClient {
   static HttpClient? _httpUtil;
@@ -21,16 +20,7 @@ class HttpClient {
         sendTimeout: const Duration(seconds: 20),
       ),
     );
-    // dio.httpClientAdapter = IOHttpClientAdapter(
-    //   createHttpClient: () {
-    //     final client = io.HttpClient();
-    //     client.badCertificateCallback = (io.X509Certificate cert, String host, int port) {
-    //       return true;
-    //     };
-    //     return client;
-    //   },
-    // );
-    dio.interceptors.add(CustomInterceptor());
+    dio.interceptors.add(CustomLogInterceptor());
   }
 
   /// Get请求，返回String
@@ -54,44 +44,10 @@ class HttpClient {
       );
       return result.data;
     } catch (e) {
-      log(e.toString());
       if (e is DioException && e.type == DioExceptionType.badResponse) {
-        throw CoreError(e.message ?? "", statusCode: e.response?.statusCode ?? 0);
+        throw HttpError(e.message ?? "", statusCode: e.response?.statusCode ?? 0);
       } else {
-        throw CoreError("发送GET请求失败");
-      }
-    }
-  }
-
-  /// 下载文件请求（与 getText 保持一致的异常处理结构）
-  /// * [url] 请求链接
-  /// * [savePath] 本地保存路径
-  /// * [queryParameters] 请求参数
-  /// * [cancel] 任务取消Token
-  Future<Response<dynamic>> download(
-    String url,
-    String savePath, {
-    Map<String, dynamic>? queryParameters,
-    Map<String, dynamic>? header,
-    CancelToken? cancel,
-  }) async {
-    try {
-      queryParameters ??= {};
-      header ??= {};
-      var result = await dio.download(
-        url,
-        savePath,
-        queryParameters: queryParameters,
-        options: Options(headers: header),
-        cancelToken: cancel,
-      );
-      return result;
-    } catch (e) {
-      log(e.toString()); // 保持一致的日志记录
-      if (e is DioException && e.type == DioExceptionType.badResponse) {
-        throw CoreError(e.message ?? "", statusCode: e.response?.statusCode ?? 0);
-      } else {
-        throw CoreError("下载网络文件失败"); // 保持一致的默认失败提示
+        throw HttpError("发送GET请求失败");
       }
     }
   }
@@ -118,10 +74,38 @@ class HttpClient {
       return result.data;
     } catch (e) {
       if (e is DioException && e.type == DioExceptionType.badResponse) {
-        ToastUtil.show(e.message);
-        throw CoreError(e.message ?? "", statusCode: e.response?.statusCode ?? 0);
+        throw HttpError(e.message ?? "", statusCode: e.response?.statusCode ?? 0);
       } else {
-        throw CoreError("发送GET请求失败");
+        throw HttpError("发送GET请求失败");
+      }
+    }
+  }
+
+  /// Get请求，返回Response
+  /// * [url] 请求链接
+  /// * [queryParameters] 请求参数
+  /// * [cancel] 任务取消Token
+  Future<Response<dynamic>> get(
+    String url, {
+    Map<String, dynamic>? queryParameters,
+    Map<String, dynamic>? header,
+    CancelToken? cancel,
+  }) async {
+    try {
+      queryParameters ??= {};
+      header ??= {};
+      var result = await dio.get(
+        url,
+        queryParameters: queryParameters,
+        options: Options(responseType: ResponseType.json, headers: header),
+        cancelToken: cancel,
+      );
+      return result;
+    } catch (e) {
+      if (e is DioException && e.type == DioExceptionType.badResponse) {
+        throw HttpError(e.message ?? "", statusCode: e.response?.statusCode ?? 0);
+      } else {
+        throw HttpError("发送GET请求失败");
       }
     }
   }
@@ -157,9 +141,9 @@ class HttpClient {
       return result.data;
     } catch (e) {
       if (e is DioException && e.type == DioExceptionType.badResponse) {
-        throw CoreError(e.message ?? "", statusCode: e.response?.statusCode ?? 0);
+        throw HttpError(e.message ?? "", statusCode: e.response?.statusCode ?? 0);
       } else {
-        throw CoreError("发送POST请求失败");
+        throw HttpError("发送POST请求失败");
       }
     }
   }
@@ -186,39 +170,55 @@ class HttpClient {
       return result;
     } catch (e) {
       if (e is DioException && e.type == DioExceptionType.badResponse) {
-        //throw CoreError(e.message, statusCode: e.response?.statusCode ?? 0);
         return e.response!;
       } else {
-        throw CoreError("发送HEAD请求失败");
+        throw HttpError("发送HEAD请求失败");
       }
     }
   }
 
-  /// Get请求，返回Response
-  /// * [url] 请求链接
-  /// * [queryParameters] 请求参数
+  /// DOWNLOAD 文件
+  /// * [url] 下载链接
+  /// * [savePath] 保存路径
+  /// * [header] 可选请求头
   /// * [cancel] 任务取消Token
-  Future<Response<dynamic>> get(
-    String url, {
-    Map<String, dynamic>? queryParameters,
+  /// * [onProgress] 下载进度 0~1
+  Future<File> download(
+    String url,
+    String savePath, {
     Map<String, dynamic>? header,
     CancelToken? cancel,
+    Function(int value, int progress)? onReceiveProgress,
   }) async {
+    header ??= {};
+    final tempPath = "$savePath.part";
+    final tempFile = File(tempPath);
+
     try {
-      queryParameters ??= {};
-      header ??= {};
-      var result = await dio.get(
+      if (!await tempFile.exists()) {
+        await tempFile.create(recursive: true);
+      }
+      final response = await dio.download(
         url,
-        queryParameters: queryParameters,
-        options: Options(responseType: ResponseType.json, headers: header),
+        tempPath,
         cancelToken: cancel,
+        onReceiveProgress: onReceiveProgress,
+        options: Options(headers: header),
       );
-      return result;
-    } catch (e) {
-      if (e is DioException && e.type == DioExceptionType.badResponse) {
-        return e.response!;
+
+      if (response.statusCode == 200 || response.statusCode == 206) {
+        // 下载完成重命名临时文件
+        return await tempFile.rename(savePath);
       } else {
-        throw CoreError("发送GET请求失败");
+        throw HttpError("下载失败", statusCode: response.statusCode ?? 0);
+      }
+    } on DioException catch (e) {
+      if (CancelToken.isCancel(e)) {
+        throw HttpError("下载已取消");
+      } else if (e.type == DioExceptionType.badResponse) {
+        throw HttpError(e.message ?? "", statusCode: e.response?.statusCode ?? 0);
+      } else {
+        throw HttpError("下载请求失败");
       }
     }
   }

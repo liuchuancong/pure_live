@@ -1,6 +1,5 @@
 import 'dart:developer';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/plugins/race_http.dart';
 import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/model/live_category.dart';
@@ -9,13 +8,11 @@ import 'package:pure_live/core/iptv/local/database.dart';
 import 'package:pure_live/model/live_search_result.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/iptv/iptv_repository.dart';
-import 'package:pure_live/common/utils/githup_mirror.dart';
 import 'package:pure_live/core/iptv/core/fuzzy_match.dart';
 import 'package:pure_live/model/live_category_result.dart';
 import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
-import 'package:pure_live/common/global/app_path_manager.dart';
-import 'package:pure_live/core/iptv/services/iptv_import_manager.dart';
+import 'package:pure_live/core/iptv/services/auto_sync_scheduler.dart';
 
 class IptvSite implements LiveSite {
   final db = Get.find<DbService>().db;
@@ -36,23 +33,27 @@ class IptvSite implements LiveSite {
     final categoryTypes = <LiveCategory>[];
 
     for (final provider in providers) {
-      final channels = await db.getChannelsForProvider(provider.id);
+      if (provider.id == FileUtils.systemHotProviderId || provider.name == 'hot') {
+        continue;
+      } else {
+        final channels = await db.getChannelsForProvider(provider.id);
 
-      final subs = <LiveArea>[];
-      for (final ch in channels) {
-        subs.add(
-          LiveArea(
-            areaId: ch.id,
-            areaName: ch.name,
-            areaPic: ch.tvgLogo ?? '',
-            typeName: provider.name,
-            areaType: provider.id,
-            platform: Sites.iptvSite,
-          ),
-        );
+        final subs = <LiveArea>[];
+        for (final ch in channels) {
+          subs.add(
+            LiveArea(
+              areaId: ch.id,
+              areaName: ch.name,
+              areaPic: ch.tvgLogo ?? '',
+              typeName: provider.name,
+              areaType: provider.id,
+              platform: Sites.iptvSite,
+            ),
+          );
+        }
+
+        categoryTypes.add(LiveCategory(id: provider.id, name: provider.name, children: subs));
       }
-
-      categoryTypes.add(LiveCategory(id: provider.id, name: provider.name, children: subs));
     }
     return categoryTypes;
   }
@@ -224,16 +225,7 @@ class IptvSite implements LiveSite {
   Future<LiveCategoryResult> getRecommendRooms({int page = 1, required String nick}) async {
     var channels = await IptvRepository().getChannels(FileUtils.systemHotProviderId);
     if (channels.isEmpty) {
-      final mirror = GitHubMirror(owner: 'YueChan', repo: 'Live', branch: 'main');
-      final urls = mirror.mirrors('GNTV.m3u');
-      final fastUrl = await RaceHttp.findFastestUrl(urls);
-      await IptvImportManager().importFromNetworkUrl(
-        fastUrl!,
-        AppPathManager.iptvHotFile,
-        forceUpdate: true,
-        showTips: false,
-        isHot: true,
-      );
+      await AutoSyncScheduler.instance.loadHotResources();
     }
     channels = await IptvRepository().getChannels(FileUtils.systemHotProviderId);
     final items = <LiveRoom>[];

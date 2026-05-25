@@ -36,7 +36,13 @@ class AutoSyncScheduler {
 
   Future<void> loadHotResources() async {
     final m3uUrl = 'https://iptv-org.github.io/iptv/countries/cn.m3u';
-    IptvImportManager().importFromNetworkUrl(m3uUrl, AppPathManager.iptvHotFile, forceUpdate: true, showTips: false);
+    IptvImportManager().importFromNetworkUrl(
+      m3uUrl,
+      AppPathManager.iptvHotFile,
+      forceUpdate: true,
+      showTips: false,
+      isHot: true,
+    );
   }
 
   Future<void> loadDefaultEpgResources() async {

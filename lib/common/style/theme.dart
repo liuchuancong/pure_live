@@ -95,8 +95,73 @@ class MyTheme {
       tabBarTheme: TabBarThemeData(
         dividerColor: Colors.transparent,
         indicatorSize: TabBarIndicatorSize.label,
-        labelStyle: customGlobalTextTheme.titleMedium,
-        unselectedLabelStyle: customGlobalTextTheme.bodyMedium,
+        labelStyle: customGlobalTextTheme.titleSmall?.copyWith(
+          fontWeight: FontWeight.bold, // Bolder weight to highlight the active mirror
+        ),
+
+        unselectedLabelStyle: customGlobalTextTheme.titleSmall?.copyWith(
+          fontWeight: FontWeight.normal, // Kept at the exact same base size, but unbolded
+        ),
+
+        // Color configuration linked dynamically to your active theme layout palette
+        labelColor: baseTheme.colorScheme.primary,
+        unselectedLabelColor: baseTheme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+      ),
+      cardTheme: CardThemeData(
+        clipBehavior: Clip.antiAlias,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          elevation: 0,
+          textStyle: customGlobalTextTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          textStyle: customGlobalTextTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      ),
+      listTileTheme: ListTileThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        titleTextStyle: customGlobalTextTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+        subtitleTextStyle: customGlobalTextTheme.bodyMedium?.copyWith(color: baseTheme.colorScheme.onSurfaceVariant),
+        leadingAndTrailingTextStyle: customGlobalTextTheme.labelMedium,
+        selectedColor: baseTheme.colorScheme.primary,
+        selectedTileColor: baseTheme.colorScheme.primary.withValues(alpha: 0.05),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: baseTheme.colorScheme.surfaceContainerLow, // 智能跟随系统动态肤色
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        labelStyle: customGlobalTextTheme.bodyMedium,
+        hintStyle: customGlobalTextTheme.bodyMedium?.copyWith(
+          color: baseTheme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: baseTheme.colorScheme.primary, width: 1.5), // 聚焦时展现高亮边框
+        ),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: baseTheme.colorScheme.surfaceContainer,
+        elevation: 0,
+        showDragHandle: true,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      ),
+
+      dialogTheme: DialogThemeData(
+        backgroundColor: baseTheme.colorScheme.surfaceContainerHigh,
+        elevation: 0,
+        titleTextStyle: customGlobalTextTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+        contentTextStyle: customGlobalTextTheme.bodyMedium,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       ),
     );
   }

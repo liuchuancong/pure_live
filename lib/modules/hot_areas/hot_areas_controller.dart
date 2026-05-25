@@ -56,7 +56,6 @@ class HotAreasController extends BaseController {
 
     sites.assignAll(sortedSites);
     settingsController.hotAreasList.value = currentList;
-    ToastUtil.show(i18n('effective_after_restart'));
   }
 
   void onReorder(int oldIndex, int newIndex) {

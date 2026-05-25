@@ -14,7 +14,7 @@ class AreaGridView extends StatefulWidget {
   State<AreaGridView> createState() => _AreaGridViewState();
 }
 
-class _AreaGridViewState extends State<AreaGridView> with SingleTickerProviderStateMixin {
+class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMixin {
   TabController? _tabController;
   Worker? _listWorker;
 
@@ -32,6 +32,10 @@ class _AreaGridViewState extends State<AreaGridView> with SingleTickerProviderSt
     if (widget.isFlatten) return;
     final list = widget.controller.list;
     if (list.isEmpty) return;
+
+    if (_tabController != null && _tabController!.length == list.length) {
+      return;
+    }
 
     if (_tabController != null) {
       _tabController!.removeListener(_handleInternalTabChange);

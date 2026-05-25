@@ -1,14 +1,11 @@
-class CoreError extends Error {
+class HttpError extends Error {
   /// 错误码
   final int statusCode;
 
   /// 错误信息
   final String message;
 
-  CoreError(
-    this.message, {
-    this.statusCode = 0,
-  });
+  HttpError(this.message, {this.statusCode = 0});
   @override
   String toString() {
     if (statusCode != 0) {
