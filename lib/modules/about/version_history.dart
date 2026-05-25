@@ -2,6 +2,7 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:markdown_widget/widget/all.dart';
 import 'package:markdown_widget/config/configs.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 class VersionHistoryPage extends StatefulWidget {
   const VersionHistoryPage({super.key});
@@ -17,22 +18,13 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
     VersionUtil().loadReleaseHistory();
   }
 
-  List<VersionHistoryModel> _loadHistoryList() {
-    return VersionUtil.allReleased
-        .map(
-          (e) =>
-              VersionHistoryModel(version: e['tag_name'].toString().replaceAll('v', ''), updateBody: e['body'] ?? ''),
-        )
-        .toList();
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final isDark = theme.brightness == Brightness.dark;
     final baseConfig = isDark ? MarkdownConfig.darkConfig : MarkdownConfig.defaultConfig;
-
+    final versions = VersionUtil.allReleased;
     return Scaffold(
       appBar: AppBar(title: Text(i18n("version_history_desc"))),
       body: Obx(() {
@@ -59,8 +51,6 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
           );
         }
 
-        final List<VersionHistoryModel> versions = _loadHistoryList();
-
         if (versions.isEmpty) {
           return EmptyView(
             icon: Remix.history_line,
@@ -76,94 +66,115 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
           itemBuilder: (context, index) {
             final item = versions[index];
 
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(
-                  children: [
-                    Container(
-                      width: 12,
-                      height: 12,
-                      margin: const EdgeInsets.only(top: 6),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: theme.colorScheme.primaryContainer, width: 3),
-                      ),
-                    ),
-                    if (index != versions.length - 1)
-                      Container(width: 2, height: 140, color: theme.dividerColor.withValues(alpha: 0.1)),
-                  ],
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 24),
+            return Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: context.buildModernCard([
+                  Padding(
+                    padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'v${item.version}',
-                          style: AppTextStyles.t18.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.onSurface,
+                        /// 顶部信息
+                        Row(
+                          children: [
+                            CircleAvatar(radius: 18, backgroundImage: NetworkImage(item.author.avatar)),
+
+                            const SizedBox(width: 12),
+
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'v${item.version}',
+                                    style: AppTextStyles.t18.copyWith(fontWeight: FontWeight.bold),
+                                  ),
+
+                                  const SizedBox(height: 2),
+
+                                  Text(item.date, style: AppTextStyles.t12.copyWith(color: theme.hintColor)),
+                                ],
+                              ),
+                            ),
+
+                            IconButton(
+                              onPressed: () {
+                                launchUrlString(item.github);
+                              },
+                              icon: const Icon(Remix.github_fill),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 18),
+
+                        /// 更新日志
+                        MarkdownBlock(
+                          data: item.changelog,
+                          config: baseConfig.copy(
+                            configs: [PConfig(textStyle: textTheme.bodyMedium ?? const TextStyle())],
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        context.buildModernCard([
-                          Padding(
-                            padding: const EdgeInsets.all(14),
-                            child: SizedBox(
-                              width: double.infinity,
-                              child: Align(
-                                alignment: Alignment.topLeft,
-                                child: MarkdownBlock(
-                                  data: item.updateBody,
-                                  config: baseConfig.copy(
-                                    configs: [
-                                      PConfig(textStyle: textTheme.bodyMedium ?? const TextStyle()),
-                                      H1Config(
-                                        style: (textTheme.titleLarge ?? const TextStyle()).copyWith(
-                                          fontWeight: FontWeight.bold,
+
+                        /// 安装包列表
+                        if (item.files.isNotEmpty) ...[
+                          const SizedBox(height: 20),
+
+                          Text(i18n("download_files"), style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
+
+                          const SizedBox(height: 12),
+
+                          ...item.files.map(
+                            (file) => Container(
+                              margin: const EdgeInsets.only(bottom: 10),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(14),
+                                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Remix.android_fill, color: theme.colorScheme.primary),
+
+                                  const SizedBox(width: 12),
+
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(file.name, style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w600)),
+
+                                        const SizedBox(height: 2),
+
+                                        Text(
+                                          '${file.size} · ${file.downloads} downloads',
+                                          style: AppTextStyles.t12.copyWith(color: theme.hintColor),
                                         ),
-                                      ),
-                                      H2Config(
-                                        style: (textTheme.titleMedium ?? const TextStyle()).copyWith(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      H3Config(
-                                        style: (textTheme.titleSmall ?? const TextStyle()).copyWith(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      PreConfig(
-                                        textStyle:
-                                            textTheme.bodySmall?.copyWith(fontFamily: 'monospace') ??
-                                            const TextStyle(fontFamily: 'monospace'),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
+
+                                  IconButton(
+                                    onPressed: () {
+                                      launchUrlString(file.url);
+                                    },
+                                    icon: const Icon(Remix.download_2_line),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                        ]),
+                        ],
                       ],
                     ),
                   ),
-                ),
-              ],
+                ]),
+              ),
             );
           },
         );
       }),
     );
   }
-}
-
-class VersionHistoryModel {
-  final String version;
-  final String updateBody;
-  VersionHistoryModel({required this.version, required this.updateBody});
 }

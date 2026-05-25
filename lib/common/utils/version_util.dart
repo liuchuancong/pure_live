@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/race_http.dart';
 import 'package:pure_live/common/utils/githup_mirror.dart';
+import 'package:pure_live/common/models/release_model.dart';
 
 class VersionUtil {
   static const String version = '2.0.19';
@@ -34,7 +35,7 @@ class VersionUtil {
   static String latestUpdateLog = '';
   static bool prerelease = false;
   static String downloadUrl = '';
-  static List<dynamic> allReleased = [];
+  static List<ReleaseModel> allReleased = [];
 
   static Map<String, dynamic>? _cachedVersionJson;
 
@@ -93,39 +94,44 @@ class VersionUtil {
     try {
       historyLoading.value = true;
       historyError.value = false;
+
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final List<String> historyUrls = mirror
-          .mirrors('assets/releases.json')
-          .map((url) => '$url?ts=$timestamp')
-          .toList();
+
+      final urls = mirror.mirrors('assets/releases.json').map((e) => '$e?ts=$timestamp').toList();
 
       final dynamic rawData = await RaceHttp.fetchJson(
-        historyUrls,
+        urls,
         headers: {
           'User-Agent':
               'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Accept': 'application/json',
         },
       ).timeout(const Duration(seconds: 12));
+
       if (rawData == null) {
-        throw const HttpException('Fetch dynamic payload arrived empty');
+        throw const HttpException('Release payload empty');
       }
+
+      List<dynamic> listData = [];
 
       if (rawData is List) {
-        allReleased = rawData;
-      } else if (rawData is Map) {
-        if (rawData.containsKey('releases') && rawData['releases'] is List) {
-          allReleased = rawData['releases'] as List;
-        } else {
-          allReleased = [rawData];
-        }
+        listData = rawData;
+      } else if (rawData is Map && rawData['releases'] is List) {
+        listData = rawData['releases'];
       } else {
-        throw const FormatException('Invalid release history tokens');
+        throw const FormatException('Invalid releases format');
       }
 
-      debugPrint("🏁 历史版本数据通过 RaceHttp 竞速同步成功");
-    } catch (e) {
-      debugPrint("⚠️ 通过竞速线路获取历史版本失败: $e");
+      allReleased = listData.map((e) => ReleaseModel.fromJson(e)).toList();
+
+      // 按版本倒序
+      allReleased.sort((a, b) => b.date.compareTo(a.date));
+
+      debugPrint("🏁 历史版本同步成功: ${allReleased.length}");
+    } catch (e, s) {
+      debugPrint("⚠️ 获取历史版本失败: $e");
+      debugPrintStack(stackTrace: s);
+
       historyError.value = true;
     } finally {
       historyLoading.value = false;
