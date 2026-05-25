@@ -52,9 +52,12 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
 
           if (total > 0) {
             final progress = (received / total * 100).toInt();
+            final double receivedMb = received / (1024 * 1024);
+            final double totalMb = total / (1024 * 1024);
+
             setState(() {
               _progress = progress;
-              _statusText = i18n("downloading_progress", args: {"version": widget.version, "progress": "$progress"});
+              _statusText = "${receivedMb.toStringAsFixed(1)} MB / ${totalMb.toStringAsFixed(1)} MB";
             });
           } else {
             final mb = received ~/ (1024 * 1024);
@@ -116,7 +119,6 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
     Directory downloadDir;
     if (Platform.isAndroid) {
       final dir = await getExternalStorageDirectory();
-      // 使用 path.join 替代字符串拼接，自动处理跨平台斜杠
       downloadDir = Directory(path.join(dir!.path, 'pure_live'));
     } else {
       downloadDir = await AppPathManager().getDir(AppPathManager.dirDownload);
@@ -145,41 +147,106 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
     final theme = Theme.of(context);
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      backgroundColor: theme.colorScheme.surfaceContainerHigh,
       child: ConstrainedBox(
-        // 使用约束代替固定高度，避免因字体放大导致 UI 溢出 (Overflow)
-        constraints: const BoxConstraints(maxWidth: 420),
+        constraints: const BoxConstraints(maxWidth: 380),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+          padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                i18n("downloading_version", args: {"version": widget.version}),
-                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: _isDownloading
+                          ? const AppStatusView(type: AppStatusType.loading, isMini: true)
+                          : Icon(Icons.check_circle_rounded, color: theme.colorScheme.primary, size: 24),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          i18n("downloading_version", args: {"version": widget.version}),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _statusText,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
-              Text(_statusText, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: LinearProgressIndicator(
+                        value: _progress / 100,
+                        backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                        valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                        borderRadius: BorderRadius.circular(8),
+                        minHeight: 8,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    SizedBox(
+                      width: 40,
+                      child: Text(
+                        '$_progress%',
+                        textAlign: TextAlign.end,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 20),
-              LinearProgressIndicator(
-                value: _progress / 100,
-                backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
-                borderRadius: BorderRadius.circular(4),
-                minHeight: 6,
-              ),
-              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: theme.colorScheme.error,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
                     onPressed: _isDownloading
                         ? () {
                             _cancelToken.cancel(i18n("cancel"));
                             if (Navigator.canPop(context)) Navigator.pop(context, false);
                           }
-                        : null, // 下载完成后禁用取消按钮
+                        : null,
                     child: Text(i18n("cancel")),
                   ),
                 ],
