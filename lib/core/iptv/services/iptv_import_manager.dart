@@ -169,7 +169,7 @@ class IptvImportManager {
       return success;
     } catch (e) {
       if (showTips) {
-        ToastUtil.show("网络订阅源下载或解析失败");
+        ToastUtil.show(i18n('subscription_download_or_parse_failed'));
       }
       return false;
     }

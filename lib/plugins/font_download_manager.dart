@@ -36,7 +36,7 @@ class FontDownloadManager {
     return validFileCount >= 1;
   }
 
-  Future<void> loadFont(String fontId) async {
+  Future<void> loadFont(String fontId, {String fileName = ''}) async {
     try {
       final root = await _fontRootPath;
       final fontDir = Directory("$root/$fontId");
@@ -47,8 +47,17 @@ class FontDownloadManager {
 
       await for (final entity in fontDir.list()) {
         if (entity is File && (entity.path.endsWith('.ttf') || entity.path.endsWith('.otf'))) {
-          loader.addFont(entity.readAsBytes().then(ByteData.sublistView));
-          containsValidFonts = true;
+          if (fileName.isNotEmpty) {
+            final currentName = entity.path.split(Platform.pathSeparator).last;
+            if (currentName == fileName) {
+              loader.addFont(entity.readAsBytes().then(ByteData.sublistView));
+              containsValidFonts = true;
+              break;
+            }
+          } else {
+            loader.addFont(entity.readAsBytes().then(ByteData.sublistView));
+            containsValidFonts = true;
+          }
         }
       }
 
