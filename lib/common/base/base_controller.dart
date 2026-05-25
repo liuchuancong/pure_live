@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:pure_live/common/index.dart';
 
-
 class BaseController extends GetxController {
   /// 加载中，更新页面
   var pageLoadding = false.obs;
@@ -54,6 +53,8 @@ class BasePageController<T> extends BaseController {
   var canLoadMore = false.obs;
   var list = <T>[].obs;
 
+  String _firstPageSignature = "";
+
   @override
   void onInit() {
     scrollController.addListener(() {
@@ -69,7 +70,7 @@ class BasePageController<T> extends BaseController {
 
   Future refreshData() async {
     currentPage = 1;
-    list.value = [];
+    _firstPageSignature = "";
     await loadData();
   }
 
@@ -80,10 +81,33 @@ class BasePageController<T> extends BaseController {
       pageError.value = false;
       pageEmpty.value = false;
       notLogin.value = false;
-      pageLoadding.value = currentPage == 1;
+      pageLoadding.value = currentPage == 1 && list.isEmpty;
 
       var result = await getData(currentPage, pageSize);
-      //是否可以加载更多
+
+      if (currentPage == 1) {
+        _firstPageSignature = result.map((e) {
+          try {
+            return (e as dynamic).toJson().toString();
+          } catch (_) {
+            return e.toString();
+          }
+        }).join();
+      } else if (result.isNotEmpty) {
+        final currentSignature = result.map((e) {
+          try {
+            return (e as dynamic).toJson().toString();
+          } catch (_) {
+            return e.toString();
+          }
+        }).join();
+
+        if (_firstPageSignature == currentSignature) {
+          canLoadMore.value = false;
+          return;
+        }
+      }
+
       if (result.isNotEmpty) {
         currentPage++;
         canLoadMore.value = true;
@@ -94,14 +118,14 @@ class BasePageController<T> extends BaseController {
           pageEmpty.value = true;
         }
       }
-      // 赋值数据
-      if (currentPage == 1) {
-        list.value = result;
+
+      if (currentPage == 2) {
+        list.assignAll(result);
       } else {
         list.addAll(result);
       }
     } catch (e) {
-      handleError(e, showPageError: currentPage == 1);
+      handleError(e, showPageError: currentPage == 1 && list.isEmpty);
     } finally {
       loadding = false;
       pageLoadding.value = false;

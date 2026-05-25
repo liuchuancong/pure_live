@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:async';
 import 'package:flutter_svg/svg.dart';
 import 'package:flutter/gestures.dart';
+import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
@@ -9,8 +10,10 @@ import 'package:pure_live/modules/live_play/load_type.dart';
 import 'package:pure_live/common/widgets/count_button.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/live_play/play_other.dart';
+import 'package:scrollview_observer/scrollview_observer.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/pkg/canvas_danmaku/danmaku_screen.dart';
+import 'package:pure_live/core/iptv/local/database.dart' as database;
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
 import 'package:pure_live/pkg/canvas_danmaku/models/danmaku_option.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/volume_control.dart';
@@ -138,12 +141,15 @@ class ErrorWidget extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Text(i18n("play_video_failed"), style: const TextStyle(color: Colors.white, fontSize: 16)),
+            child: Text(
+              i18n("play_video_failed"),
+              style: AppTextStyles.t14.copyWith(color: Colors.white),
+            ),
           ),
           ElevatedButton(
             onPressed: () => controller.refresh(),
             style: ElevatedButton.styleFrom(elevation: 0, backgroundColor: Colors.white.withValues(alpha: 0.2)),
-            child: Text(i18n("retry"), style: const TextStyle(color: Colors.white)),
+            child: Text(i18n("retry"), style: AppTextStyles.t15.copyWith(color: Colors.white)),
           ),
         ],
       ),
@@ -185,14 +191,48 @@ class TopActionBar extends StatelessWidget {
               if (GlobalPlayerState.to.fullscreenUI) BackButton(controller: controller),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    controller.room.title!,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white, fontSize: 16, decoration: TextDecoration.none),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        controller.room.title!,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.t16.copyWith(color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.none),
+                      ),
+                      if (controller.room.currentProgramme != null && controller.room.currentProgramme!.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          "${i18n('now_playing')}: ${controller.room.currentProgramme!}",
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ),
+              if (controller.room.platform == Sites.iptvSite)
+                IconButton(
+                  icon: const Icon(Icons.assignment_outlined), // 节目单账本图标
+                  tooltip: i18n('view_schedule'),
+                  color: Colors.white,
+                  onPressed: () async {
+                    Get.dialog(
+                      AlertDialog(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        contentPadding: EdgeInsets.zero,
+                        content: _buildFullSchedulePanel(),
+                      ),
+                    );
+                  },
+                ),
               if (GlobalPlayerState.to.fullscreenUI) ...[
                 IconButton(
                   icon: const Icon(Icons.swap_horiz_outlined),
@@ -212,6 +252,194 @@ class TopActionBar extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildFullSchedulePanel() {
+    final now = controller.room.catchUpStart != null
+        ? DateTime.fromMillisecondsSinceEpoch(controller.room.catchUpStart!)
+        : DateTime.now();
+    final theme = Theme.of(Get.context!);
+    final screenSize = MediaQuery.of(Get.context!).size;
+
+    final double dialogWidth = screenSize.width > 600 ? 460.0 : screenSize.width * 0.88;
+    final double dialogHeight = screenSize.height > 800 ? 550.0 : screenSize.height * 0.65;
+    controller.hasScrolledToLive = false;
+    return Container(
+      width: dialogWidth,
+      height: dialogHeight,
+      decoration: BoxDecoration(color: DialogTheme().backgroundColor, borderRadius: BorderRadius.circular(20)),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 20, bottom: 12, left: 24, right: 16),
+            child: Row(
+              children: [
+                Icon(Remix.calendar_todo_line, size: 22, color: theme.colorScheme.primary),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    i18n('channel_schedule'),
+                    style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w700,
+                      color: theme.textTheme.titleLarge?.color),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(Get.context!).pop(),
+                  icon: const Icon(Remix.close_line, size: 20),
+                  splashRadius: 20,
+                  color: theme.hintColor,
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, thickness: 0.5),
+          Expanded(
+            child: Obx(() {
+              if (controller.currentChannelSchedule.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Remix.inbox_line, size: 40, color: theme.hintColor.withValues(alpha: 0.4)),
+                      const SizedBox(height: 12),
+                      Text(i18n('no_upcoming_programs'), style: AppTextStyles.t13.copyWith(color: theme.hintColor)),
+                    ],
+                  ),
+                );
+              }
+              final int liveIndex = controller.currentChannelSchedule.indexWhere((p) {
+                final pStart = p.start.toLocal();
+                final pStop = p.stop.toLocal();
+                return !now.isBefore(pStart) && !now.isAfter(pStop);
+              });
+              if (liveIndex != -1) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  Future.delayed(const Duration(milliseconds: 20), () {
+                    if (controller.scheduleScrollController.hasClients) {
+                      final int totalItems = controller.currentChannelSchedule.length;
+
+                      int targetIndex = liveIndex;
+                      if (totalItems < 8) {
+                        targetIndex = 0;
+                      } else if (liveIndex >= totalItems - 4) {
+                        targetIndex = totalItems - 1;
+                      } else if (liveIndex >= 3) {
+                        targetIndex = liveIndex - 3;
+                      }
+                      controller.scheduleObserverController.animateTo(
+                        index: targetIndex,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                  });
+                });
+              }
+
+              return ListViewObserver(
+                controller: controller.scheduleObserverController,
+                child: ListView.builder(
+                  controller: controller.scheduleScrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: controller.currentChannelSchedule.length,
+                  itemBuilder: (context, index) {
+                    final prog = controller.currentChannelSchedule[index];
+                    final isCurrent = index == liveIndex; // Optimized matching via index comparison
+
+                    final activePrimary = theme.colorScheme.primary;
+                    final unselectedTextColor = theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.85);
+                    final secondaryTextColor = theme.textTheme.bodySmall?.color?.withValues(alpha: 0.5);
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Material(
+                        type: MaterialType.card,
+                        elevation: 0,
+                        color: isCurrent ? activePrimary.withValues(alpha: 0.06) : Colors.transparent,
+                        clipBehavior: Clip.antiAlias,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: isCurrent ? activePrimary.withValues(alpha: 0.15) : Colors.transparent,
+                            width: 1,
+                          ),
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                          dense: true,
+                          onTap: () => controller.onProgrammeTapped(prog),
+                          leading: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: isCurrent
+                                  ? activePrimary.withValues(alpha: 0.1)
+                                  : theme.cardColor.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              "${prog.start.hour.toString().padLeft(2, '0')}:${prog.start.minute.toString().padLeft(2, '0')}",
+                              style: AppTextStyles.t13.copyWith(fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
+                                color: isCurrent ? activePrimary : secondaryTextColor),
+                            ),
+                          ),
+                          title: Text(
+                            prog.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.t14.copyWith(fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                              color: isCurrent ? activePrimary : unselectedTextColor),
+                          ),
+                          trailing: isCurrent
+                              ? Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: activePrimary,
+                                    borderRadius: BorderRadius.circular(6),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: activePrimary.withValues(alpha: 0.3),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Remix.live_line, size: 11, color: Colors.white),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        i18n('live_tag'),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : _buildHistoryTag(prog, theme),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoryTag(database.EpgProgramme prog, ThemeData theme) {
+    final now = DateTime.now();
+    if (prog.stop.isBefore(now)) {
+      return Icon(Remix.history_line, size: 16, color: theme.hintColor.withValues(alpha: 0.6));
+    }
+    return const SizedBox.shrink();
   }
 }
 
@@ -253,7 +481,7 @@ class _DatetimeInfoState extends State<DatetimeInfo> {
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
       child: Text(
         '$hour:$minute',
-        style: const TextStyle(color: Colors.white, fontSize: 14, decoration: TextDecoration.none),
+        style: const TextStyle(color: Colors.white, decoration: TextDecoration.none),
       ),
     );
   }
@@ -621,7 +849,7 @@ class LineSelectorButton extends StatelessWidget {
                                 ),
                                 child: Text(
                                   i18n("toolbox_line", args: {"index": (index + 1).toString()}),
-                                  style: TextStyle(fontSize: 15, color: isSelected ? Colors.white : null),
+                                  style: AppTextStyles.t15.copyWith(color: isSelected ? Colors.white : null),
                                 ),
                               ),
                             ),
@@ -697,7 +925,7 @@ class LineSelectorButton extends StatelessWidget {
             child: Center(
               child: Text(
                 i18n("toolbox_line", args: {"index": (index + 1).toString()}),
-                style: TextStyle(fontSize: 13, color: isSelected ? Get.theme.colorScheme.primary : Colors.white),
+                style: AppTextStyles.t13.copyWith(color: isSelected ? Get.theme.colorScheme.primary : Colors.white),
               ),
             ),
           );
@@ -714,7 +942,7 @@ class LineSelectorButton extends StatelessWidget {
       decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
       child: Text(
         i18n("toolbox_line", args: {"index": (controller.livePlayController.currentLineIndex.value + 1).toString()}),
-        style: const TextStyle(color: Colors.white, fontSize: 13),
+        style: AppTextStyles.t13.copyWith(color: Colors.white),
       ),
     );
   }
@@ -786,7 +1014,7 @@ class ResolutionSelectorButton extends StatelessWidget {
                                 ),
                                 child: Text(
                                   qualityName,
-                                  style: TextStyle(fontSize: 15, color: isSelected ? Colors.white : null),
+                                  style: AppTextStyles.t15.copyWith(color: isSelected ? Colors.white : null),
                                 ),
                               ),
                             ),
@@ -868,7 +1096,7 @@ class ResolutionSelectorButton extends StatelessWidget {
             child: Center(
               child: Text(
                 controller.livePlayController.qualites[index].quality,
-                style: TextStyle(fontSize: 13, color: isSelected ? Get.theme.colorScheme.primary : Colors.white),
+                style: AppTextStyles.t13.copyWith(color: isSelected ? Get.theme.colorScheme.primary : Colors.white),
               ),
             ),
           );
@@ -885,7 +1113,7 @@ class ResolutionSelectorButton extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8),
       alignment: Alignment.center,
       decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-      child: Text(qualityName, style: const TextStyle(color: Colors.white, fontSize: 13)),
+      child: Text(qualityName, style: AppTextStyles.t13.copyWith(color: Colors.white)),
     );
   }
 }
@@ -1185,7 +1413,7 @@ class _FavoriteButtonState extends State<FavoriteButton> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Icon(isFavorite ? Icons.check_rounded : Icons.close, color: Colors.white, size: 15),
-            Text(isFavorite ? i18n('followed') : i18n('follow'), style: TextStyle(color: Colors.white, fontSize: 15)),
+            Text(isFavorite ? i18n('followed') : i18n('follow'), style: TextStyle(color: Colors.white)),
           ],
         ),
       ),
@@ -1256,7 +1484,7 @@ class _VideoFitSettingState extends State<VideoFitSetting> {
         height: 25,
         child: Text(
           descs[controller.settings.videoFitIndex.value],
-          style: TextStyle(color: Colors.white, fontSize: 15),
+          style: AppTextStyles.t15.copyWith(color: Colors.white),
         ),
       ),
     );

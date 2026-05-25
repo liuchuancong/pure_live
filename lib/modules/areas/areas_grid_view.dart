@@ -14,7 +14,7 @@ class AreaGridView extends StatefulWidget {
   State<AreaGridView> createState() => _AreaGridViewState();
 }
 
-class _AreaGridViewState extends State<AreaGridView> with SingleTickerProviderStateMixin {
+class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMixin {
   TabController? _tabController;
   Worker? _listWorker;
 
@@ -32,6 +32,10 @@ class _AreaGridViewState extends State<AreaGridView> with SingleTickerProviderSt
     if (widget.isFlatten) return;
     final list = widget.controller.list;
     if (list.isEmpty) return;
+
+    if (_tabController != null && _tabController!.length == list.length) {
+      return;
+    }
 
     if (_tabController != null) {
       _tabController!.removeListener(_handleInternalTabChange);
@@ -77,17 +81,56 @@ class _AreaGridViewState extends State<AreaGridView> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Obx(() {
-      final list = widget.controller.list;
-      if (list.isEmpty) {
-        return const Center(child: CircularProgressIndicator());
+      if (widget.controller.pageLoadding.value) {
+        return const AppStatusView(type: AppStatusType.loading, title: "", subtitle: "");
       }
+
+      if (widget.controller.pageError.value) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Text(
+                  widget.controller.errorMsg.value,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.outline),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () => widget.controller.refreshData(),
+                icon: const Icon(Icons.refresh),
+                label: Text(i18n("retry")),
+              ),
+            ],
+          ),
+        );
+      }
+
+      if (widget.controller.pageEmpty.value || widget.controller.list.isEmpty) {
+        return EmptyView(
+          icon: Icons.area_chart_outlined,
+          title: i18n("empty_areas_title"),
+          subtitle: i18n("empty_areas_subtitle"),
+        );
+      }
+
+      final list = widget.controller.list;
+
       if (widget.isFlatten) {
         final allChildren = list.expand((e) => e.children).toList();
         return buildFlattenAreasView(allChildren);
       }
+
       if (_tabController == null || _tabController!.length != list.length) {
-        return const Center(child: CircularProgressIndicator());
+        return const AppStatusView(type: AppStatusType.loading, title: "", subtitle: "");
       }
 
       return Column(
@@ -95,8 +138,6 @@ class _AreaGridViewState extends State<AreaGridView> with SingleTickerProviderSt
           TabBar(
             controller: _tabController,
             isScrollable: true,
-            tabAlignment: TabAlignment.center,
-            indicatorSize: TabBarIndicatorSize.label,
             tabs: list.map((e) => Tab(text: e.name)).toList(),
           ),
           Expanded(
@@ -118,13 +159,13 @@ class _AreaGridViewState extends State<AreaGridView> with SingleTickerProviderSt
         final crossAxisCount = width > 1280 ? 9 : (width > 960 ? 7 : (width > 640 ? 5 : 3));
         return childrenList.isNotEmpty
             ? WaterfallFlow.builder(
-                padding: const EdgeInsets.all(0),
-                controller: ScrollController(),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                controller: widget.controller.scrollController,
                 gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
                   lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                   crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: 3,
-                  mainAxisSpacing: 3,
+                  crossAxisSpacing: 6,
+                  mainAxisSpacing: 6,
                 ),
                 itemCount: childrenList.length,
                 itemBuilder: (context, index) => AreaCard(category: childrenList[index]),

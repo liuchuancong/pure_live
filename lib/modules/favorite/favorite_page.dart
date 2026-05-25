@@ -9,58 +9,57 @@ class FavoritePage extends GetView<FavoriteController> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraint) {
-        bool showAction = Get.width <= 680;
-        return Scaffold(
-          appBar: AppBar(
-            centerTitle: true,
-            scrolledUnderElevation: 0,
-            leading: showAction ? const MenuButton() : null,
-            actions: showAction ? [CommonAppBarActions()] : null,
-            title: TabBar(
-              controller: controller.tabController,
-              isScrollable: true,
-              tabAlignment: TabAlignment.center,
-              labelStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              labelPadding: const EdgeInsets.symmetric(horizontal: 12),
-              indicatorSize: TabBarIndicatorSize.label,
-              tabs: [
-                Tab(text: i18n("online_room_title")),
-                Tab(text: i18n("offline_room_title")),
-              ],
-            ),
-          ),
-          body: Column(
-            children: [
-              TabBar(
-                controller: controller.tabSiteController,
+        return Obx(() {
+          bool showAction = Get.width <= 680;
+          final int menuCount = Get.find<SettingsService>().savedMenuIds.length;
+          final availableSitesList = Sites().availableSites(containsAll: true);
+
+          return Scaffold(
+            appBar: AppBar(
+              centerTitle: true,
+              scrolledUnderElevation: 0,
+              leading: (showAction || menuCount <= 1) ? const MenuButton() : null,
+              actions: showAction ? [CommonAppBarActions()] : null,
+              title: TabBar(
+                controller: controller.tabController,
                 isScrollable: true,
-                tabAlignment: TabAlignment.center,
-                indicatorSize: TabBarIndicatorSize.label,
-                tabs: Sites().availableSites(containsAll: true).map<Widget>((e) => Tab(text: e.name)).toList(),
+                tabs: [
+                  Tab(text: i18n("online_room_title")),
+                  Tab(text: i18n("offline_room_title")),
+                ],
               ),
-              Expanded(
-                child: Obx(() {
-                  return TabBarView(
-                    controller: controller.tabSiteController,
-                    children: controller.tabOnlineIndex.value == 0
-                        ? Sites()
-                              .availableSites(containsAll: true)
-                              .map((e) => e.id)
-                              .toList()
-                              .map((e) => _RoomOnlineGridView(e))
-                              .toList()
-                        : Sites()
-                              .availableSites(containsAll: true)
-                              .map((e) => e.id)
-                              .toList()
-                              .map((e) => _RoomOfflineGridView(e))
-                              .toList(),
-                  );
-                }),
-              ),
-            ],
-          ),
-        );
+            ),
+            body: availableSitesList.isEmpty
+                ? const SizedBox.shrink()
+                : DefaultTabController(
+                    length: availableSitesList.length,
+                    child: Builder(
+                      builder: (context) {
+                        return Column(
+                          children: [
+                            TabBar(
+                              isScrollable: true,
+                              tabs: availableSitesList.map<Widget>((e) => Tab(text: e.name)).toList(),
+                            ),
+                            Expanded(
+                              child: Obx(
+                                () => TabBarView(
+                                  children: controller.tabOnlineIndex.value == 0
+                                      ? availableSitesList.map((e) => e.id).map((e) => _RoomOnlineGridView(e)).toList()
+                                      : availableSitesList
+                                            .map((e) => e.id)
+                                            .map((e) => _RoomOfflineGridView(e))
+                                            .toList(),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+          );
+        });
       },
     );
   }
@@ -90,40 +89,51 @@ class _RoomOnlineGridView extends GetView<FavoriteController> {
         if (dense) {
           crossAxisCount = width > 1280 ? 5 : (width > 960 ? 4 : (width > 640 ? 3 : 2));
         }
-        return Obx(
-          () => EasyRefresh(
+        return Obx(() {
+          final displayRooms = site == Sites.allSite
+              ? controller.onlineRooms
+              : controller.onlineRooms.where((el) => el.platform == site).toList();
+
+          if (controller.onlineRooms.isEmpty && controller.refreshController.controlFinishRefresh) {
+            return AppStatusView(type: AppStatusType.loading, title: i18n('refresh_loading'), subtitle: '');
+          }
+
+          return EasyRefresh(
             controller: controller.refreshController,
             onRefresh: onRefresh,
             onLoad: () {
               controller.refreshController.finishLoad(IndicatorResult.success);
             },
-            child: controller.onlineRooms.isNotEmpty
+            child: displayRooms.isNotEmpty
                 ? WaterfallFlow.builder(
-                    padding: const EdgeInsets.all(0),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                     controller: ScrollController(),
                     gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
                       lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                       crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: 3,
-                      mainAxisSpacing: 3,
+                      crossAxisSpacing: 6,
+                      mainAxisSpacing: 6,
+                      closeToTrailing: false,
                     ),
-                    itemCount: site == Sites.allSite
-                        ? controller.onlineRooms.length
-                        : controller.onlineRooms.where((el) => el.platform == site).toList().length,
-                    itemBuilder: (context, index) => RoomCard(
-                      room: site == Sites.allSite
-                          ? controller.onlineRooms[index]
-                          : controller.onlineRooms.where((el) => el.platform == site).toList()[index],
-                      dense: dense,
-                    ),
+                    itemCount: displayRooms.length,
+                    itemBuilder: (context, index) => RoomCard(room: displayRooms[index], dense: dense),
                   )
-                : EmptyView(
-                    icon: Icons.favorite_rounded,
-                    title: i18n("empty_favorite_online_title"),
-                    subtitle: i18n("empty_favorite_online_subtitle"),
+                : ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      SizedBox(
+                        height: constraint.maxHeight * 0.8,
+                        child: AppStatusView(
+                          type: AppStatusType.empty,
+                          icon: Icons.favorite_rounded,
+                          title: i18n("empty_favorite_online_title"),
+                          subtitle: i18n("empty_favorite_online_subtitle"),
+                        ),
+                      ),
+                    ],
                   ),
-          ),
-        );
+          );
+        });
       },
     );
   }
@@ -150,40 +160,50 @@ class _RoomOfflineGridView extends GetView<FavoriteController> {
           crossAxisCount = width > 1280 ? 5 : (width > 960 ? 4 : (width > 640 ? 3 : 2));
         }
 
-        return Obx(
-          () => EasyRefresh(
+        return Obx(() {
+          final displayRooms = site == Sites.allSite
+              ? controller.offlineRooms
+              : controller.offlineRooms.where((el) => el.platform == site).toList();
+
+          if (controller.offlineRooms.isEmpty && refreshController.controlFinishRefresh) {
+            return AppStatusView(type: AppStatusType.loading, title: i18n('refresh_loading'), subtitle: '');
+          }
+
+          return EasyRefresh(
             controller: refreshController,
             onRefresh: onRefresh,
             onLoad: () {
               refreshController.finishLoad(IndicatorResult.noMore);
             },
-            child: controller.offlineRooms.isNotEmpty
+            child: displayRooms.isNotEmpty
                 ? WaterfallFlow.builder(
-                    padding: const EdgeInsets.all(0),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                     controller: ScrollController(),
                     gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
                       lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                       crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: 3,
-                      mainAxisSpacing: 3,
+                      crossAxisSpacing: 6,
+                      mainAxisSpacing: 6,
                     ),
-                    itemCount: site == Sites.allSite
-                        ? controller.offlineRooms.length
-                        : controller.offlineRooms.where((el) => el.platform == site).toList().length,
-                    itemBuilder: (context, index) => RoomCard(
-                      room: site == Sites.allSite
-                          ? controller.offlineRooms[index]
-                          : controller.offlineRooms.where((el) => el.platform == site).toList()[index],
-                      dense: dense,
-                    ),
+                    itemCount: displayRooms.length,
+                    itemBuilder: (context, index) => RoomCard(room: displayRooms[index], dense: dense),
                   )
-                : EmptyView(
-                    icon: Icons.favorite_rounded,
-                    title: i18n("empty_favorite_offline_title"),
-                    subtitle: i18n("empty_favorite_offline_subtitle"),
+                : ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      SizedBox(
+                        height: constraint.maxHeight * 0.8,
+                        child: AppStatusView(
+                          type: AppStatusType.empty,
+                          icon: Icons.favorite_rounded,
+                          title: i18n("empty_favorite_offline_title"),
+                          subtitle: i18n("empty_favorite_offline_subtitle"),
+                        ),
+                      ),
+                    ],
                   ),
-          ),
-        );
+          );
+        });
       },
     );
   }

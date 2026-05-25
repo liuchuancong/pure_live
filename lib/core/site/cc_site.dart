@@ -147,29 +147,33 @@ class CCSite implements LiveSite {
 
   @override
   Future<LiveCategoryResult> getRecommendRooms({int page = 1, required String nick}) async {
-    var result = await HttpClient.instance.getJson(
-      "https://cc.163.com/api/category/live/",
-      queryParameters: {"format": "json", "start": (page - 1) * 20, "size": 20},
-    );
-
-    var items = <LiveRoom>[];
-    for (var item in result["lives"]) {
-      var roomItem = LiveRoom(
-        roomId: item["cuteid"].toString(),
-        title: item["title"].toString(),
-        cover: item["cover"].toString(),
-        nick: item["nickname"].toString(),
-        watching: item["vision_visitor"].toString(),
-        avatar: item["purl"],
-        area: item["game_name"] ?? '',
-        liveStatus: LiveStatus.live,
-        status: true,
-        platform: Sites.ccSite,
+    try {
+      var result = await HttpClient.instance.getJson(
+        "https://cc.163.com/api/category/live/",
+        queryParameters: {"format": "json", "start": (page - 1) * 20, "size": 20},
       );
-      items.add(roomItem);
+
+      var items = <LiveRoom>[];
+      for (var item in result["lives"]) {
+        var roomItem = LiveRoom(
+          roomId: item["cuteid"].toString(),
+          title: item["title"].toString(),
+          cover: item["cover"].toString(),
+          nick: item["nickname"].toString(),
+          watching: item["vision_visitor"].toString(),
+          avatar: item["purl"],
+          area: item["game_name"] ?? '',
+          liveStatus: LiveStatus.live,
+          status: true,
+          platform: Sites.ccSite,
+        );
+        items.add(roomItem);
+      }
+      var hasMore = result["lives"].length >= 20;
+      return LiveCategoryResult(hasMore: hasMore, items: items);
+    } catch (e) {
+      throw Exception(e.toString());
     }
-    var hasMore = result["lives"].length >= 20;
-    return LiveCategoryResult(hasMore: hasMore, items: items);
   }
 
   @override

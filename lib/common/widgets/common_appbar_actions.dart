@@ -34,7 +34,7 @@ class CommonAppBarActions extends StatelessWidget {
                 children: [
                   Icon(Remix.search_line, size: 20, color: Theme.of(context).colorScheme.primary),
                   const SizedBox(width: 12),
-                  Text(i18n("search_live"), style: TextStyle(fontSize: 14)),
+                  Text(i18n("search_live"), style: AppTextStyles.t14),
                 ],
               ),
             ),
@@ -46,7 +46,7 @@ class CommonAppBarActions extends StatelessWidget {
                 children: [
                   Icon(Remix.link, size: 20, color: Theme.of(context).colorScheme.primary),
                   const SizedBox(width: 12),
-                  Text(i18n("open_link"), style: TextStyle(fontSize: 14)),
+                  Text(i18n("open_link"), style: AppTextStyles.t14),
                 ],
               ),
             ),

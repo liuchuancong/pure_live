@@ -173,7 +173,10 @@ class WebDavPage extends GetView<WebDavController> {
           ),
           TextButton(
             onPressed: () => controller.deleteConfig(config),
-            child: Text(i18n("webdav_delete"), style: TextStyle(color: Theme.of(Get.context!).colorScheme.error)),
+            child: Text(
+              i18n("webdav_delete"),
+              style: AppTextStyles.t14.copyWith(color: Theme.of(Get.context!).colorScheme.error),
+            ),
           ),
         ],
       ),
@@ -276,7 +279,6 @@ class WebDavPage extends GetView<WebDavController> {
         label,
         style: TextStyle(
           color: isCurrent ? Theme.of(Get.context!).colorScheme.primary : Theme.of(Get.context!).colorScheme.onSurface,
-          fontSize: 14,
           fontWeight: FontWeight.w500,
         ),
       ),
@@ -325,7 +327,9 @@ class WebDavPage extends GetView<WebDavController> {
       }
 
       if (controller.isLoading.value) {
-        return const SliverFillRemaining(child: Center(child: CircularProgressIndicator.adaptive()));
+        return const SliverFillRemaining(
+          child: AppStatusView(type: AppStatusType.loading, title: "", subtitle: ""),
+        );
       }
 
       return SliverList(
@@ -357,7 +361,7 @@ class WebDavPage extends GetView<WebDavController> {
       ),
       title: Text(
         file.name ?? i18n("webdav_unnamed_file"),
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w500),
       ),
       subtitle: Text(
         file.mTime?.toString() ?? i18n("webdav_unknown_time"),
@@ -389,7 +393,7 @@ class WebDavPage extends GetView<WebDavController> {
           children: [
             Icon(Icons.error, size: 64, color: Theme.of(Get.context!).colorScheme.onPrimaryContainer),
             const SizedBox(height: 16),
-            Text(message, style: const TextStyle(fontSize: 12)),
+            Text(message, style: AppTextStyles.t12),
           ],
         ),
       ),

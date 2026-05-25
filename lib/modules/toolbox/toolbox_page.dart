@@ -65,7 +65,7 @@ class ToolBoxPage extends GetView<ToolBoxController> {
         children: [
           ExpansionTile(
             leading: Icon(icon, color: Theme.of(context).primaryColor),
-            title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(title, style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.bold)),
             initiallyExpanded: true,
             shape: const RoundedRectangleBorder(side: BorderSide(color: Colors.transparent)),
             childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -75,10 +75,10 @@ class ToolBoxPage extends GetView<ToolBoxController> {
                 minLines: 3,
                 maxLines: 5,
                 controller: controller,
-                style: const TextStyle(fontSize: 14),
+                style: AppTextStyles.t13,
                 decoration: InputDecoration(
                   hintText: i18n("toolbox_input_hint"),
-                  hintStyle: const TextStyle(fontSize: 13),
+                  hintStyle: AppTextStyles.t13,
                   filled: true,
                   fillColor: Theme.of(context).dividerColor.withValues(alpha: .05),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
@@ -122,15 +122,12 @@ class ToolBoxPage extends GetView<ToolBoxController> {
             const SizedBox(width: 6),
             Text(
               i18n("toolbox_support_list"),
-              style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 13),
+              style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        SelectableText(
-          i18n("toolbox_support_content"),
-          style: TextStyle(color: Colors.grey, fontSize: 12, height: 1.6),
-        ),
+        SelectableText(i18n("toolbox_support_content"), style: TextStyle(color: Colors.grey, height: 1.6)),
       ],
     );
   }

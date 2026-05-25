@@ -1,8 +1,9 @@
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/plugins/cache_manager.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/common/widgets/common_avatar.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
-// ignore: must_be_immutable
 class RoomCard extends StatelessWidget {
   const RoomCard({super.key, required this.room, this.dense = false});
   final LiveRoom room;
@@ -15,6 +16,7 @@ class RoomCard extends StatelessWidget {
   void onLongPress(BuildContext context) {
     Get.dialog(
       AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(room.title!),
         content: Text(
           i18n(
@@ -35,11 +37,15 @@ class RoomCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Card(
-      margin: const EdgeInsets.all(7.5),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
+      margin: EdgeInsets.zero,
+      elevation: isDark ? 2 : 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      color: isDark ? Colors.grey[900] : Colors.white,
       child: InkWell(
-        borderRadius: BorderRadius.circular(15.0),
+        borderRadius: BorderRadius.circular(20),
         onTap: () => onTap(context),
         onLongPress: () => onLongPress(context),
         child: Column(
@@ -50,31 +56,34 @@ class RoomCard extends StatelessWidget {
                 AspectRatio(
                   aspectRatio: 16 / 9,
                   child: Card(
-                    margin: const EdgeInsets.all(0),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
+                    margin: EdgeInsets.zero,
                     clipBehavior: Clip.antiAlias,
-                    color: Theme.of(context).focusColor,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    color: isDark ? Colors.grey[850] : Colors.grey[100],
                     elevation: 0,
-                    child: room.liveStatus == LiveStatus.offline && room.cover!.isNotEmpty
-                        ? Center(child: Icon(Icons.tv_off_rounded, size: dense ? 36 : 60))
-                        : Image.network(
-                            room.cover!,
+                    child: room.platform == Sites.iptvSite
+                        ? CachedNetworkImage(
+                            imageUrl: room.cover!,
+                            cacheManager: CustomImageCacheManager.instance,
                             fit: BoxFit.cover,
-                            gaplessPlayback: false,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Container(
-                                color: Theme.of(context).focusColor,
-                                child: const Center(
-                                  child: SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                            fadeInDuration: const Duration(milliseconds: 250),
+                            fadeOutDuration: const Duration(milliseconds: 250),
+                            placeholder: (context, url) => Container(
+                              color: Theme.of(context).focusColor,
+                              child: const Center(
+                                child: SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: AppStatusView(
+                                    type: AppStatusType.loading,
+                                    title: "",
+                                    subtitle: "",
+                                    isMini: true,
                                   ),
                                 ),
-                              );
-                            },
-                            errorBuilder: (context, error, stackTrace) {
+                              ),
+                            ),
+                            errorWidget: (context, url, error) {
                               return Container(
                                 color: Theme.of(context).focusColor,
                                 child: Center(
@@ -86,55 +95,101 @@ class RoomCard extends StatelessWidget {
                                 ),
                               );
                             },
+                          )
+                        : Image.network(
+                            room.cover!,
+                            fit: BoxFit.cover,
+                            gaplessPlayback: false,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                color: isDark ? Colors.grey[850] : Colors.grey[100],
+                                child: const Center(
+                                  child: SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: AppStatusView(
+                                      type: AppStatusType.loading,
+                                      title: "",
+                                      subtitle: "",
+                                      isMini: true,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: isDark ? Colors.grey[850] : Colors.grey[100],
+                                child: AppStatusView(type: AppStatusType.error, title: "", subtitle: "", isMini: true),
+                              );
+                            },
                           ),
                   ),
                 ),
                 if (room.isRecord == true)
                   Positioned(
-                    right: dense ? 0 : 2,
-                    top: dense ? 0 : 2,
+                    right: 8,
+                    top: 8,
                     child: CountChip(
                       icon: Icons.videocam_rounded,
                       count: i18n("replay"),
                       dense: dense,
-                      color: Theme.of(context).colorScheme.error,
+                      color: Get.theme.primaryColor,
                     ),
                   ),
                 if (room.isRecord == false && room.liveStatus == LiveStatus.live)
                   Positioned(
-                    right: dense ? 0 : 2,
-                    bottom: dense ? 0 : 2,
+                    right: 8,
+                    bottom: 8,
                     child: CountChip(
                       icon: Icons.whatshot_rounded,
                       count: readableCount(room.watching ?? "0"),
                       dense: dense,
+                      color: Get.theme.primaryColor,
                     ),
                   ),
               ],
             ),
             ListTile(
               dense: dense,
-              minLeadingWidth: dense ? 34 : null,
-              contentPadding: dense ? const EdgeInsets.only(left: 8, right: 10) : null,
-              horizontalTitleGap: dense ? 8 : null,
+              minLeadingWidth: dense ? 34 : 40,
+              contentPadding: EdgeInsets.symmetric(horizontal: dense ? 10 : 12, vertical: dense ? 4 : 6),
+              horizontalTitleGap: dense ? 8 : 12,
               leading: CommonAvatar(avatarUrl: room.avatar, fallbackName: room.nick, dense: dense),
               title: Text(
                 room.title ?? '',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: dense ? 12.5 : 15, fontWeight: FontWeight.w500),
+                style: (dense ? AppTextStyles.t13 : AppTextStyles.t15).copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
               ),
               subtitle: Text(
                 room.nick ?? '',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: dense ? 12 : 14),
+                style: (dense ? AppTextStyles.t12 : AppTextStyles.t13).copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.grey[400] : Colors.grey[700],
+                ),
               ),
               trailing: dense
                   ? null
-                  : Text(
-                      room.platform != null ? room.platform!.toUpperCase() : '',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  : Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.grey[800] : Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        room.platform?.toUpperCase() ?? '',
+                        style: AppTextStyles.t11.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.grey[300] : Colors.grey[800],
+                        ),
+                      ),
                     ),
             ),
           ],
@@ -155,7 +210,6 @@ class FollowButton extends StatefulWidget {
 
 class _FollowButtonState extends State<FollowButton> {
   final settings = Get.find<SettingsService>();
-
   late bool isFavorite = settings.isFavorite(widget.room);
 
   @override
@@ -163,21 +217,20 @@ class _FollowButtonState extends State<FollowButton> {
     return FilledButton.tonal(
       onPressed: () {
         setState(() => isFavorite = !isFavorite);
-        if (isFavorite) {
-          settings.addRoom(widget.room);
-        } else {
-          settings.removeRoom(widget.room);
-        }
+        isFavorite ? settings.addRoom(widget.room) : settings.removeRoom(widget.room);
         Navigator.of(Get.context!).pop();
       },
-      style: ElevatedButton.styleFrom(),
-      child: Text(isFavorite ? i18n("unfollow") : i18n("follow")),
+      style: FilledButton.styleFrom(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      ),
+      child: Text(isFavorite ? i18n("unfollow") : i18n("follow"), style: const TextStyle(fontWeight: FontWeight.w600)),
     );
   }
 }
 
 class CountChip extends StatelessWidget {
-  const CountChip({super.key, required this.icon, required this.count, this.dense = false, this.color = Colors.black});
+  const CountChip({super.key, required this.icon, required this.count, this.dense = false, required this.color});
 
   final IconData icon;
   final String count;
@@ -188,21 +241,22 @@ class CountChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       shape: const StadiumBorder(),
-      color: color.withValues(alpha: 0.8),
+      color: color,
       shadowColor: Colors.transparent,
       elevation: 0,
+      margin: EdgeInsets.zero,
       child: Padding(
-        padding: EdgeInsets.all(dense ? 4 : 6),
+        padding: EdgeInsets.symmetric(horizontal: dense ? 10 : 12, vertical: dense ? 4 : 6),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white.withValues(alpha: 0.8), size: dense ? 18 : 20),
+            Icon(icon, color: Colors.white, size: dense ? 16 : 18),
+            const SizedBox(width: 4),
             Text(
               count,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: Colors.white.withValues(alpha: 0.8), fontSize: dense ? 15 : 18),
+              style: (dense ? AppTextStyles.t12 : AppTextStyles.t13).copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),

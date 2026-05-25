@@ -25,66 +25,67 @@ class RecorderPage extends GetView<RecorderController> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return DefaultTabController(
-      length: tabs.length,
-      child: Scaffold(
-        backgroundColor: theme.colorScheme.surface,
-        appBar: AppBar(
-          title: Text(i18n("recorder_title"), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-          centerTitle: true,
-          elevation: 0,
-          actions: [
-            IconButton(
-              tooltip: i18n("recorder_open_folder"),
-              icon: const Icon(Icons.folder_rounded, size: 22),
-              onPressed: controller.openFileDir,
-            ),
-            IconButton(
-              tooltip: i18n("settings_title"),
-              icon: const Icon(Icons.settings_suggest_rounded, size: 22),
-              onPressed: () => Get.toNamed(RoutePath.kRecordSettings),
-            ),
-            const SizedBox(width: 8),
-          ],
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(54),
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: TabBar(
-                isScrollable: true,
-                tabAlignment: TabAlignment.center,
-                labelColor: theme.colorScheme.primary,
-                unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
-                tabs: tabs
-                    .map(
-                      (e) => Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: Tab(text: i18n(e)),
-                      ),
-                    )
-                    .toList(),
+    return Obx(() {
+      bool showAction = Get.width <= 680;
+      final int menuCount = Get.find<SettingsService>().savedMenuIds.length;
+
+      return DefaultTabController(
+        length: tabs.length,
+        child: Scaffold(
+          backgroundColor: theme.colorScheme.surface,
+          appBar: AppBar(
+            title: Text(i18n("recorder_title")),
+            centerTitle: true,
+            leading: (showAction || menuCount <= 1) ? const MenuButton() : null,
+            elevation: 0,
+            actions: [
+              IconButton(
+                tooltip: i18n("recorder_open_folder"),
+                icon: const Icon(Icons.folder_rounded, size: 22),
+                onPressed: controller.openFileDir,
+              ),
+              IconButton(
+                tooltip: i18n("settings_title"),
+                icon: const Icon(Icons.settings_suggest_rounded, size: 22),
+                onPressed: () => Get.toNamed(RoutePath.kRecordSettings),
+              ),
+              const SizedBox(width: 8),
+            ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(54),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: TabBar(
+                  isScrollable: true,
+                  tabs: tabs
+                      .map(
+                        (e) => Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Tab(text: i18n(e)),
+                        ),
+                      )
+                      .toList(),
+                ),
               ),
             ),
           ),
+          body: TabBarView(
+            physics: const BouncingScrollPhysics(),
+            children: [
+              _TaskList(filter: null),
+              _TaskList(filter: (e) => e.status == RecordStatus.running),
+              _TaskList(filter: (e) => e.status == RecordStatus.waitingLive),
+              _TaskList(filter: (e) => e.status == RecordStatus.queued),
+              _TaskList(filter: (e) => e.status == RecordStatus.reconnecting),
+              _TaskList(filter: (e) => e.status == RecordStatus.processing),
+              _TaskList(filter: (e) => e.status == RecordStatus.completed),
+              _TaskList(filter: (e) => e.status == RecordStatus.failed),
+              _TaskList(filter: (e) => e.status == RecordStatus.stopped),
+            ],
+          ),
         ),
-        body: TabBarView(
-          physics: const BouncingScrollPhysics(),
-          children: [
-            _TaskList(filter: null),
-            _TaskList(filter: (e) => e.status == RecordStatus.running),
-            _TaskList(filter: (e) => e.status == RecordStatus.waitingLive),
-            _TaskList(filter: (e) => e.status == RecordStatus.queued),
-            _TaskList(filter: (e) => e.status == RecordStatus.reconnecting),
-            _TaskList(filter: (e) => e.status == RecordStatus.processing),
-            _TaskList(filter: (e) => e.status == RecordStatus.completed),
-            _TaskList(filter: (e) => e.status == RecordStatus.failed),
-            _TaskList(filter: (e) => e.status == RecordStatus.stopped),
-          ],
-        ),
-      ),
-    );
+      );
+    });
   }
 }
 
@@ -265,7 +266,7 @@ class _TaskCard extends GetView<RecorderController> {
                   ),
                   child: Text(
                     _statusText(),
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
+                    style: AppTextStyles.t12.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -284,7 +285,7 @@ class _TaskCard extends GetView<RecorderController> {
         const SizedBox(width: 4),
         Text(
           label,
-          style: TextStyle(fontSize: 11.5, color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500),
+          style: AppTextStyles.t11.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500),
         ),
       ],
     );
@@ -303,7 +304,7 @@ class _TaskCard extends GetView<RecorderController> {
           const SizedBox(width: 5),
           Text(
             label,
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: c),
+            style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.w600, color: c),
           ),
         ],
       ),
@@ -317,7 +318,7 @@ class _TaskCard extends GetView<RecorderController> {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
       minimumSize: const Size(0, 34),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+      textStyle: const TextStyle(fontWeight: FontWeight.w700),
     );
 
     final outlineStyle = OutlinedButton.styleFrom(
@@ -325,7 +326,7 @@ class _TaskCard extends GetView<RecorderController> {
       minimumSize: const Size(0, 34),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       side: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.2)),
-      textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+      textStyle: const TextStyle(fontWeight: FontWeight.w700),
     );
 
     final dangerStyle = FilledButton.styleFrom(
@@ -333,7 +334,7 @@ class _TaskCard extends GetView<RecorderController> {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
       minimumSize: const Size(0, 34),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+      textStyle: AppTextStyles.t12.copyWith(fontWeight: FontWeight.w700),
     );
 
     Widget deleteButton() {
@@ -361,7 +362,7 @@ class _TaskCard extends GetView<RecorderController> {
             await controller.unRecorder(task);
           }
         },
-        child: Text(i18n("remove"), style: const TextStyle(color: Colors.red)),
+        child: Text(i18n("remove"), style: AppTextStyles.t15.copyWith(color: Colors.red)),
       );
     }
 
@@ -492,9 +493,8 @@ class _TaskCard extends GetView<RecorderController> {
                           task.title,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: AppTextStyles.t16.copyWith(
                             fontWeight: FontWeight.w700,
-                            fontSize: 15.5,
                             height: 1.2,
                             letterSpacing: 0.1,
                           ),
@@ -512,8 +512,7 @@ class _TaskCard extends GetView<RecorderController> {
                                 task.nick,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 14,
+                                style: AppTextStyles.t14.copyWith(
                                   fontWeight: FontWeight.w600,
                                   color: theme.colorScheme.onSurfaceVariant,
                                 ),
@@ -577,9 +576,8 @@ class _TaskCard extends GetView<RecorderController> {
                   const SizedBox(width: 5),
                   Text(
                     task.createTime.toString().substring(5, 16),
-                    style: TextStyle(
+                    style: AppTextStyles.t12.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
-                      fontSize: 11.5,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -614,7 +612,7 @@ class _Tag extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             text,
-            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color, letterSpacing: 0.2),
+            style: AppTextStyles.t11.copyWith(fontWeight: FontWeight.bold, color: color, letterSpacing: 0.2),
           ),
         ],
       ),
@@ -642,12 +640,12 @@ class _EmptyView extends StatelessWidget {
           const SizedBox(height: 24),
           Text(
             i18n("recorder_empty_title"),
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+            style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
           ),
           const SizedBox(height: 8),
           Text(
             i18n("recorder_empty_subtitle"),
-            style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant),
+            style: AppTextStyles.t13.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
         ],
       ),

@@ -190,13 +190,11 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   }) async {
     final roomId = detail.value?.roomId;
     if (roomId == null) return LiveRoom();
-    log('Enter Room => roomId: $roomId');
     var liveRoom = await currentSite.liveSite.getRoomDetail(roomId: roomId, platform: detail.value!.platform!);
-
     // ================= IPTV =================
     if (isIptv) {
-      liveRoom = liveRoom.copyWith(title: detail.value!.title!, nick: detail.value!.nick!);
-
+      detail.value = null;
+      detail.value = liveRoom;
       _initIptvPlayer();
       return detail.value!;
     }
@@ -274,7 +272,8 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
   // ================= IPTV =================
   void _initIptvPlayer() {
-    final link = detail.value?.roomId;
+    final link = detail.value?.link;
+    log(' IPTV link: ${detail.value?.link}');
     if (link == null || link.isEmpty) {
       ToastUtil.show(i18n('invalid_play_url'));
       return;
@@ -387,6 +386,10 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     } else if (currentSite.id == Sites.huyaSite) {
       final ua = await HuyaSite().getHuYaUA();
       headers = {"user-agent": ua, "origin": "https://www.huya.com"};
+    } else if (currentSite.id == Sites.iptvSite) {
+      if (settings.customIptvUserAgent.value.isNotEmpty) {
+        headers = {"user-agent": settings.customIptvUserAgent.value};
+      }
     }
 
     GlobalPlayerState().setCurrentRoom(room.roomId!);
@@ -533,5 +536,19 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
       ToastUtil.show(i18n('open_app_failed_fallback_browser'));
       await launchUrlString(webUrl, mode: LaunchMode.externalApplication);
     }
+  }
+
+  Future<void> startCatchUp({required String catchUpUrl, int? startTime, int? endTime}) async {
+    var room = detail.value!;
+    detail.value = null;
+    detail.value = room.copyWith(catchUpUrl: catchUpUrl, isCatchUp: true, catchUpStart: startTime, catchUpEnd: endTime);
+    await _switchToUrl(catchUpUrl);
+  }
+
+  Future<void> _switchToUrl(String url) async {
+    success.value = false;
+    playUrls.value = [url];
+    currentLineIndex.value = 0;
+    setPlayer();
   }
 }

@@ -19,8 +19,6 @@ class FavoriteAreasPage extends GetView<FavoriteAreasController> {
               TabBar(
                 controller: controller.tabSiteController,
                 isScrollable: true,
-                tabAlignment: TabAlignment.center,
-                indicatorSize: TabBarIndicatorSize.label,
                 tabs: Sites().availableSites(containsAll: true).map<Widget>((e) => Tab(text: e.name)).toList(),
               ),
               Expanded(
@@ -47,13 +45,13 @@ class FavoriteAreasPage extends GetView<FavoriteAreasController> {
     return Obx(
       () => controller.favoriteAreas.isNotEmpty
           ? WaterfallFlow.builder(
-              padding: const EdgeInsets.all(0),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
               controller: ScrollController(),
               gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
                 lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                 crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 3,
-                mainAxisSpacing: 3,
+                crossAxisSpacing: 6,
+                mainAxisSpacing: 6,
               ),
               itemCount: siteId == Sites.allSite
                   ? controller.favoriteAreas.length

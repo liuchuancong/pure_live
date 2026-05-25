@@ -20,31 +20,83 @@ class _PopularGridViewState extends State<PopularGridView> {
       builder: (context, constraint) {
         final width = constraint.maxWidth;
         final crossAxisCount = width > 1280 ? 5 : (width > 960 ? 4 : (width > 640 ? 3 : 2));
-        return Obx(
-          () => EasyRefresh(
+
+        return Obx(() {
+          if (controller.list.isEmpty) {
+            if (controller.isLoginRequiredError.value) {
+              return ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  SizedBox(
+                    height: constraint.maxHeight * 0.8,
+                    child: AppStatusView(
+                      type: AppStatusType.error,
+                      icon: Icons.account_circle_outlined,
+                      title: i18n("login_required_title"),
+                      subtitle: i18n("login_required_subtitle"),
+                      buttonText: i18n("go_to_login"),
+                      onButtonPressed: () => Get.toNamed(RoutePath.kSettingsAccount),
+                    ),
+                  ),
+                ],
+              );
+            }
+
+            if (controller.isNetworkError.value) {
+              return ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  SizedBox(
+                    height: constraint.maxHeight * 0.8,
+                    child: AppStatusView(
+                      type: AppStatusType.error,
+                      icon: Icons.wifi_off_rounded,
+                      title: i18n("network_error_title"),
+                      subtitle: i18n("network_error_subtitle"),
+                      buttonText: i18n("retry"),
+                      onButtonPressed: () => controller.easyRefreshController.callRefresh(),
+                    ),
+                  ),
+                ],
+              );
+            }
+
+            return AppStatusView(type: AppStatusType.loading, title: i18n('refresh_loading'), subtitle: '');
+          }
+
+          return EasyRefresh(
             controller: controller.easyRefreshController,
             onRefresh: controller.refreshData,
             onLoad: controller.loadData,
             child: controller.list.isNotEmpty
                 ? WaterfallFlow.builder(
-                    padding: const EdgeInsets.all(0),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                     controller: controller.scrollController,
                     gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
                       lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                       crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: 3,
-                      mainAxisSpacing: 3,
+                      crossAxisSpacing: 6,
+                      mainAxisSpacing: 6,
                     ),
                     itemCount: controller.list.length,
                     itemBuilder: (context, index) => RoomCard(room: controller.list[index], dense: true),
                   )
-                : EmptyView(
-                    icon: Icons.live_tv_rounded,
-                    title: i18n("empty_live_title"),
-                    subtitle: i18n("empty_live_subtitle"),
+                : ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      SizedBox(
+                        height: constraint.maxHeight * 0.8,
+                        child: AppStatusView(
+                          type: AppStatusType.empty,
+                          icon: Icons.live_tv_rounded,
+                          title: i18n("empty_live_title"),
+                          subtitle: i18n("empty_live_subtitle"),
+                        ),
+                      ),
+                    ],
                   ),
-          ),
-        );
+          );
+        });
       },
     );
   }

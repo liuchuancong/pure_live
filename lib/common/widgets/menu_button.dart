@@ -4,13 +4,7 @@ import 'package:pure_live/modules/auth/auth_controller.dart';
 class MenuButton extends GetView<AuthController> {
   const MenuButton({super.key});
 
-  final menuRoutes = const [
-    RoutePath.kSignIn,
-    RoutePath.kSettingsAccount,
-    RoutePath.kSettings,
-    RoutePath.kAbout,
-    RoutePath.kHistory,
-  ];
+  final menuRoutes = const [RoutePath.kSettings, RoutePath.kAbout, RoutePath.kHistory];
 
   @override
   Widget build(BuildContext context) {
@@ -21,43 +15,22 @@ class MenuButton extends GetView<AuthController> {
       position: PopupMenuPosition.under,
       icon: const Icon(Icons.menu_rounded),
       onSelected: (int index) {
-        if (index == 0) {
-          if (controller.isLogin) {
-            Get.toNamed(RoutePath.kMine);
-          } else {
-            Get.toNamed(RoutePath.kSignIn);
-          }
-        } else {
-          Get.toNamed(menuRoutes[index]);
-        }
+        Get.toNamed(menuRoutes[index]);
       },
       itemBuilder: (context) => [
         PopupMenuItem(
           value: 0,
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: MenuListTile(
-            leading: const Icon(Icons.account_circle),
-            text: controller.isLogin ? i18n('supabase_mine') : i18n('supabase_sign_in'),
-          ),
-        ),
-        PopupMenuItem(
-          value: 1,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: MenuListTile(leading: const Icon(Icons.assignment_ind_sharp), text: i18n('third_party_auth')),
-        ),
-        PopupMenuItem(
-          value: 2,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
           child: MenuListTile(leading: const Icon(Icons.settings_rounded), text: i18n("settings_title")),
         ),
         PopupMenuItem(
-          value: 3,
+          value: 1,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: MenuListTile(leading: const Icon(Icons.info_rounded), text: i18n("about")),
         ),
 
         PopupMenuItem(
-          value: 4,
+          value: 2,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: MenuListTile(leading: const Icon(Icons.history), text: i18n("history")),
         ),

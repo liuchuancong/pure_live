@@ -55,7 +55,7 @@ class NewVersionDialog extends StatelessWidget {
                     mode: LaunchMode.externalApplication,
                   );
                 },
-                child: Text(i18n('open_source_free'), style: TextStyle(fontSize: 20)),
+                child: Text(i18n('open_source_free'), style: AppTextStyles.t20),
               ),
               MarkdownBlock(data: VersionUtil.latestUpdateLog, config: config),
               const SizedBox(height: 10),

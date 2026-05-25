@@ -1,5 +1,8 @@
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/plugins/cache_manager.dart';
 import 'package:pure_live/routes/app_navigation.dart';
+import 'package:pure_live/plugins/area_pic_mapper.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class AreaCard extends StatefulWidget {
   const AreaCard({super.key, required this.category});
@@ -9,12 +12,20 @@ class AreaCard extends StatefulWidget {
   State<AreaCard> createState() => _AreaCardState();
 }
 
-// id: widget.category.areaId!, siteTitle: widget.category.areaName!, siteUrl: widget.category.areaType!, siteIsHot: 0)
 class _AreaCardState extends State<AreaCard> {
+  String _getFinalUrl() {
+    if (widget.category.areaPic != null && widget.category.areaPic!.isNotEmpty) {
+      return widget.category.areaPic!;
+    }
+    return AreaPicMapper.getPic(widget.category.areaName);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final displayImageUrl = _getFinalUrl();
+
     return Card(
-      margin: const EdgeInsets.all(7.5),
+      margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
       child: InkWell(
         borderRadius: BorderRadius.circular(15.0),
@@ -49,8 +60,16 @@ class _AreaCardState extends State<AreaCard> {
                 clipBehavior: Clip.antiAlias,
                 color: Colors.white,
                 elevation: 0,
-                child: widget.category.areaPic!.isNotEmpty
-                    ? Image.network(widget.category.areaPic!, fit: BoxFit.cover)
+                child: displayImageUrl.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: displayImageUrl,
+                        cacheManager: CustomImageCacheManager.instance,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) =>
+                            AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", isMini: true),
+                        errorWidget: (context, url, error) =>
+                            AppStatusView(type: AppStatusType.error, title: "", subtitle: "", isMini: true),
+                      )
                     : const Icon(Icons.live_tv_rounded, color: Colors.black, size: 38),
               ),
             ),
@@ -66,7 +85,7 @@ class _AreaCardState extends State<AreaCard> {
               subtitle: Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  Text(widget.category.typeName!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10)),
+                  Text(widget.category.typeName!, style: AppTextStyles.t11.copyWith(fontWeight: FontWeight.bold)),
                 ],
               ),
             ),

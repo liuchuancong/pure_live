@@ -1,3 +1,4 @@
+import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 
 class KeywordBlockPage extends StatefulWidget {
@@ -8,9 +9,7 @@ class KeywordBlockPage extends StatefulWidget {
 }
 
 class _KeywordBlockPageState extends State<KeywordBlockPage> {
-  // 确保 SettingsService 在应用启动时已经被 Get.put() 注册
   SettingsService get controller => Get.find<SettingsService>();
-
   final TextEditingController textEditingController = TextEditingController();
 
   @override
@@ -25,9 +24,8 @@ class _KeywordBlockPageState extends State<KeywordBlockPage> {
       ToastUtil.show(i18n("please_enter_keyword"));
       return;
     }
-
     controller.addShieldList(keyword);
-    textEditingController.text = ""; // 清空输入框
+    textEditingController.clear();
   }
 
   void remove(int itemIndex) {
@@ -36,58 +34,77 @@ class _KeywordBlockPageState extends State<KeywordBlockPage> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(12.0),
-      children: [
-        TextField(
-          keyboardType: TextInputType.text,
-          controller: textEditingController,
-          decoration: InputDecoration(
-            contentPadding: const EdgeInsets.all(12.0),
-            border: OutlineInputBorder(borderSide: BorderSide(color: Theme.of(context).primaryColor)),
-            hintText: i18n("please_enter_keyword"),
-            suffixIcon: TextButton.icon(onPressed: add, icon: const Icon(Icons.add), label: Text(i18n('add'))),
-          ),
-          onSubmitted: (e) {
-            add();
-          },
-        ),
-        // 使用 SizedBox 代替假设的 spacer 函数
-        const SizedBox(height: 12.0),
-        Obx(
-          () => Text(
-            i18n("keyword_added_count", args: {"count": controller.shieldList.length.toString()}) +
-                i18n("click_to_remove_suffix"),
-            style: Get.textTheme.titleMedium,
-          ),
-        ),
-        const SizedBox(height: 12.0),
-        Obx(
-          () => Wrap(
-            runSpacing: 12,
-            spacing: 12,
-            children: controller.shieldList.asMap().entries.map((entry) {
-              final index = entry.key;
-              final item = entry.value;
-              return InkWell(
-                borderRadius: const BorderRadius.all(Radius.circular(5.0)),
-                onTap: () {
-                  // 直接使用当前循环的索引来移除
-                  remove(index);
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Theme.of(context).primaryColor),
-                    borderRadius: const BorderRadius.all(Radius.circular(5.0)),
-                  ),
-                  padding: const EdgeInsets.only(top: 10, bottom: 10, left: 8, right: 8),
-                  child: Text(item, style: Get.textTheme.bodyMedium),
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Wrap(
+        runSpacing: 16,
+        children: [
+          TextField(
+            keyboardType: TextInputType.text,
+            controller: textEditingController,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => add(),
+            style: theme.textTheme.bodyMedium,
+            decoration: InputDecoration(
+              hintText: i18n("please_enter_keyword"),
+              suffixIcon: Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: IconButton(
+                  onPressed: add,
+                  icon: Icon(Remix.add_circle_line, color: theme.colorScheme.primary),
+                  tooltip: i18n('add'),
                 ),
-              );
-            }).toList(),
+              ),
+            ),
           ),
-        ),
-      ],
+          Obx(() {
+            if (controller.shieldList.isEmpty) {
+              return const SizedBox.shrink();
+            }
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "${i18n("keyword_added_count", args: {"count": controller.shieldList.length.toString()})} · ${i18n("click_to_remove_suffix")}",
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  runSpacing: 8,
+                  spacing: 8,
+                  children: controller.shieldList.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final item = entry.value;
+
+                    return Tooltip(
+                      message: i18n("click_to_remove"),
+                      child: InputChip(
+                        label: Text(item),
+                        deleteIcon: const Icon(Remix.close_circle_fill, size: 14),
+                        onDeleted: () => remove(index),
+                        onPressed: () => remove(index),
+                        labelStyle: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface),
+                        backgroundColor: theme.colorScheme.surfaceContainerLow,
+                        deleteIconColor: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.08), width: 1),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            );
+          }),
+        ],
+      ),
     );
   }
 }

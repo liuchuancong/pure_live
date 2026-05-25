@@ -1,3 +1,4 @@
+import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/auth/auth_controller.dart';
 
@@ -29,43 +30,44 @@ class _MinePageState extends State<MinePage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(title: Text(i18n('supabase_mine'))),
       body: ListView(
-        scrollDirection: Axis.vertical,
         physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              children: [
-                if (isManager())
-                  ListTile(
-                    leading: const Icon(Icons.verified_user_outlined, size: 32),
-                    subtitle: Text(i18n('allow_user_uploads')),
-                    title: Text(i18n('manage_users')),
-                    onTap: () => Get.toNamed(RoutePath.kUserManage),
-                  ),
-                ListTile(
-                  leading: const Icon(Icons.sim_card_download_outlined, size: 32),
-                  subtitle: Text(i18n('supabase_mine_streams')),
-                  title: Text(i18n('download_user_configs')),
-                  onTap: downloadUserConifg,
-                ),
-                ListTile(
-                  leading: const Icon(Icons.upload_file_outlined, size: 32),
-                  subtitle: Text(i18n('supabase_mine_streams')),
-                  title: Text(i18n('supabase_mine_profiles')),
-                  onTap: uploadUserConifg,
-                ),
-                ListTile(
-                  leading: const Icon(Icons.login_outlined, size: 32),
-                  title: Text(i18n('supabase_log_out')),
-                  onTap: singOut,
-                ),
-              ],
+          context.buildGroupTitle(i18n('supabase_mine')),
+          context.buildModernCard([
+            if (isManager())
+              context.buildTile(
+                icon: Remix.shield_user_line,
+                title: i18n('manage_users'),
+                subtitle: i18n('allow_user_uploads'),
+                onTap: () => Get.toNamed(RoutePath.kUserManage),
+              ),
+            context.buildTile(
+              icon: Remix.download_cloud_line, // 🎯 修正：从云端下载配置
+              title: i18n('download_user_configs'),
+              subtitle: i18n('supabase_mine_streams'),
+              onTap: downloadUserConifg,
             ),
-          ),
+            context.buildTile(
+              icon: Remix.upload_cloud_line, // 🎯 修正：上传配置到云端
+              title: i18n('supabase_mine_profiles'),
+              subtitle: i18n('supabase_mine_streams'),
+              onTap: uploadUserConifg,
+            ),
+            context.buildTile(
+              icon: Remix.logout_box_r_line,
+              title: i18n('supabase_log_out'),
+              subtitle: "",
+              iconColor: theme.colorScheme.error.withValues(alpha: 0.8),
+              onTap: singOut,
+            ),
+          ]),
+          const SizedBox(height: 32),
         ],
       ),
     );

@@ -1,7 +1,30 @@
 import 'dart:io';
 import 'package:pure_live/common/index.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class Utils {
+  static DateFormat dateFormat = DateFormat("MM-dd HH:mm");
+  static DateFormat dateFormatWithYear = DateFormat("yyyy-MM-dd HH:mm");
+  static DateFormat timeFormat = DateFormat("HH:mm:ss");
+
+  /// 处理时间
+  static String parseTime(DateTime? dt) {
+    if (dt == null) {
+      return "";
+    }
+
+    var dtNow = DateTime.now();
+    if (dt.year == dtNow.year && dt.month == dtNow.month && dt.day == dtNow.day) {
+      return "${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+    }
+
+    if (dt.year == dtNow.year) {
+      return dateFormat.format(dt);
+    }
+
+    return dateFormatWithYear.format(dt);
+  }
+
   static Future<void> _minimizeOrHideDesktopWindow() async {
     // macOS 上更符合习惯的是最小化到 Dock；直接 hide 在没有托盘/菜单栏入口时
     // 容易让用户误以为 App 退出。
@@ -166,7 +189,7 @@ class Utils {
               contentPadding: const EdgeInsets.all(12),
               hintText: hintText ?? title,
             ),
-            // style: TextStyle(
+            // style:  TextStyle(
             //     height: 1.0,
             //     color: Get.isDarkMode ? Colors.white : Colors.black),
             autofocus: true,

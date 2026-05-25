@@ -1,19 +1,12 @@
+import 'dart:io';
 import 'dart:async';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/race_http.dart';
 import 'package:pure_live/common/utils/githup_mirror.dart';
 
 class VersionUtil {
-  // =========================================================
-  // 当前版本
-  // =========================================================
-  static const String version = '2.0.18';
+  static const String version = '2.0.19';
 
-  // =========================================================
-  // 项目地址
-  // =========================================================
   static const String projectUrl = 'https://github.com/liuchuancong/pure_live';
   static const String issuesUrl = 'https://github.com/liuchuancong/pure_live/issues';
   static const String githubUrl = 'https://github.com/liuchuancong';
@@ -27,21 +20,12 @@ class VersionUtil {
   static const String kanbanUrl =
       'https://jackiu-notes.notion.site/50bc0d3d377445eea029c6e3d4195671?v=663125e639b047cea5e69d8264926b8b';
 
-  // =========================================================
-  // Release API
-  // =========================================================
   static const String releaseUrl = 'https://api.github.com/repos/liuchuancong/pure_live/releases?per_page=30';
 
-  // =========================================================
-  // GitHub 镜像源（核心优化点）
-  // =========================================================
   static final GitHubMirror mirror = GitHubMirror(owner: 'liuchuancong', repo: 'pure_live', branch: 'master');
 
   static List<String> get _versionUrls => mirror.mirrors('assets/version.json');
 
-  // =========================================================
-  // 状态
-  // =========================================================
   final isHasNewVersion = false.obs;
 
   static String latestVersion = version;
@@ -50,33 +34,41 @@ class VersionUtil {
   static String latestUpdateLog = '';
   static bool prerelease = false;
   static String downloadUrl = '';
-  static List allReleased = [];
+  static List<dynamic> allReleased = [];
 
-  // =========================================================
-  // 缓存
-  // =========================================================
   static Map<String, dynamic>? _cachedVersionJson;
 
-  // =========================================================
-  // 检查更新（竞速版）
-  // =========================================================
+  static final RxBool historyLoading = false.obs;
+  static final RxBool historyError = false.obs;
+
   Future<void> checkUpdate() async {
     if (_cachedVersionJson != null) {
       _applyVersionData(_cachedVersionJson!);
+      isHasNewVersion.value = hasNewVersion();
       return;
     }
 
     try {
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final urls = _versionUrls.map((e) => '$e?ts=$timestamp').toList();
+
       final data = await RaceHttp.fetchJson(
-        _versionUrls.map((e) => '$e?ts=${DateTime.now().millisecondsSinceEpoch}').toList(),
-        headers: {'User-Agent': 'PureLive', 'Accept': 'application/json'},
-      );
+        urls,
+        headers: {
+          'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 10));
+
       if (data == null) {
         latestUpdateLog = '更新检查失败';
         return;
       }
+
       _cachedVersionJson = data;
       _applyVersionData(data);
+      isHasNewVersion.value = hasNewVersion();
       debugPrint("🏁 更新线路成功");
     } catch (e) {
       debugPrint("⚠️ 更新检查失败: $e");
@@ -94,39 +86,74 @@ class VersionUtil {
     downloadUrl = data['download_url']?.toString() ?? '';
   }
 
-  Future<void> loadReleaseHistory() async {
-    try {
-      final response = await http.get(Uri.parse(releaseUrl));
-      if (response.statusCode != 200) {
-        return;
-      }
-      final data = jsonDecode(response.body);
+  Future<void> loadReleaseHistory({bool forceRefresh = false}) async {
+    if (allReleased.isNotEmpty && !forceRefresh) return;
+    if (historyLoading.value) return;
 
-      if (data is List) {
-        allReleased = data;
+    try {
+      historyLoading.value = true;
+      historyError.value = false;
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final List<String> historyUrls = mirror
+          .mirrors('assets/releases.json')
+          .map((url) => '$url?ts=$timestamp')
+          .toList();
+
+      final dynamic rawData = await RaceHttp.fetchJson(
+        historyUrls,
+        headers: {
+          'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 12));
+      if (rawData == null) {
+        throw const HttpException('Fetch dynamic payload arrived empty');
       }
+
+      if (rawData is List) {
+        allReleased = rawData;
+      } else if (rawData is Map) {
+        if (rawData.containsKey('releases') && rawData['releases'] is List) {
+          allReleased = rawData['releases'] as List;
+        } else {
+          allReleased = [rawData];
+        }
+      } else {
+        throw const FormatException('Invalid release history tokens');
+      }
+
+      debugPrint("🏁 历史版本数据通过 RaceHttp 竞速同步成功");
     } catch (e) {
-      debugPrint("⚠️ 获取历史版本失败: $e");
+      debugPrint("⚠️ 通过竞速线路获取历史版本失败: $e");
+      historyError.value = true;
+    } finally {
+      historyLoading.value = false;
     }
   }
 
-  // =========================================================
-  // 是否有新版本
-  // =========================================================
   static bool hasNewVersion() {
     try {
-      final latestVersions = latestVersion.split('-')[0].split('.');
-      final versions = version.split('-')[0].split('.');
+      final latestClean = latestVersion.split('-')[0].replaceAll('v', '').trim();
+      final currentClean = version.split('-')[0].replaceAll('v', '').trim();
 
-      for (int i = 0; i < latestVersions.length; i++) {
-        final latest = int.parse(latestVersions[i]);
-        final current = int.parse(versions[i]);
+      final latestParts = latestClean.split('.').map(int.parse).toList();
+      final currentParts = currentClean.split('.').map(int.parse).toList();
 
-        if (latest > current) return true;
-        if (latest < current) return false;
+      final maxLength = latestParts.length > currentParts.length ? latestParts.length : currentParts.length;
+
+      while (latestParts.length < maxLength) {
+        latestParts.add(0);
+      }
+      while (currentParts.length < maxLength) {
+        currentParts.add(0);
+      }
+
+      for (int i = 0; i < maxLength; i++) {
+        if (latestParts[i] > currentParts[i]) return true;
+        if (latestParts[i] < currentParts[i]) return false;
       }
     } catch (_) {}
-
     return false;
   }
 }

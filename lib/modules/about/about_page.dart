@@ -3,6 +3,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:markdown_widget/config/configs.dart';
 import 'package:markdown_widget/widget/markdown_block.dart';
+import 'package:remixicon/remixicon.dart'; // 🌟 Imported Remix Icons pack
 
 class AboutPage extends StatefulWidget {
   const AboutPage({super.key});
@@ -16,37 +17,103 @@ class _AboutPageState extends State<AboutPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(),
       body: ListView(
         physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: <Widget>[
-          SectionTitle(title: i18n("about")),
-          ListTile(
-            title: Text(i18n("online_update")),
-            trailing: Text('${i18n("current_version")} v${VersionUtil.version}', style: Get.textTheme.bodyMedium),
-            onTap: () {
-              Get.toNamed(RoutePath.kVersionPage);
-            },
+          Center(
+            child: Column(
+              children: [
+                Container(
+                  width: 96,
+                  height: 96,
+                  padding: const EdgeInsets.all(4),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Container(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.25),
+                      padding: const EdgeInsets.all(12),
+                      child: Image.asset('assets/icons/icon.png', fit: BoxFit.contain),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  i18n("app_name"),
+                  style: AppTextStyles.t18.copyWith(fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
+                  ),
+                  child: Text(
+                    'v${VersionUtil.version}',
+                    style: AppTextStyles.t11.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 28),
+              ],
+            ),
           ),
-          ListTile(
-            title: Text(i18n("history")),
-            subtitle: Text(i18n("history_desc")),
-            onTap: () => Get.toNamed(RoutePath.kVersionHistory),
-          ),
-          ListTile(title: Text(i18n("license")), onTap: showLicenseDialog),
-          SectionTitle(title: i18n("project")),
-          ListTile(
-            title: Text(i18n("project_page")),
-            subtitle: const Text(VersionUtil.projectUrl),
-            onTap: () {
-              launchUrl(Uri.parse(VersionUtil.projectUrl), mode: LaunchMode.externalApplication);
-            },
-          ),
-          ListTile(
-            title: Text(i18n("project_alert")),
-            subtitle: Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text(i18n("app_legalese"))),
-          ),
+          context.buildGroupTitle(i18n("about")),
+          const SizedBox(height: 8),
+          context.buildModernCard([
+            context.buildTile(
+              icon: Remix.download_cloud_2_line,
+              title: i18n("online_update"),
+              trailing: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  'v${VersionUtil.version}',
+                  style: AppTextStyles.t11.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
+                ),
+              ),
+              onTap: () => Get.toNamed(RoutePath.kVersionPage),
+            ),
+            context.buildTile(
+              icon: Remix.history_line,
+              title: i18n("history"),
+              subtitle: i18n("history_desc"),
+              onTap: () => Get.toNamed(RoutePath.kVersionHistory),
+            ),
+            context.buildTile(icon: Remix.shield_user_line, title: i18n("license"), onTap: openLicensePage),
+          ]),
+          const SizedBox(height: 24),
+          context.buildGroupTitle(i18n("project")),
+          const SizedBox(height: 8),
+          context.buildModernCard([
+            context.buildTile(
+              icon: Remix.code_s_slash_line,
+              title: i18n("project_page"),
+              subtitle: VersionUtil.projectUrl,
+              isLong: true,
+              onTap: () {
+                launchUrl(Uri.parse(VersionUtil.projectUrl), mode: LaunchMode.externalApplication);
+              },
+            ),
+            context.buildTile(
+              icon: Remix.error_warning_line,
+              title: i18n("project_alert"),
+              subtitle: i18n("app_legalese"),
+              isLong: true,
+              iconColor: theme.colorScheme.error,
+            ),
+          ]),
         ],
       ),
     );
@@ -59,12 +126,15 @@ class _AboutPageState extends State<AboutPage> {
     );
   }
 
-  void showLicenseDialog() {
+  void openLicensePage() {
     showLicensePage(
-      context: context,
+      context: Get.context!,
       applicationName: i18n("app_name"),
       applicationVersion: VersionUtil.version,
-      applicationIcon: SizedBox(width: 60, child: Center(child: Image.asset('assets/icons/icon.png'))),
+      applicationIcon: Padding(
+        padding: const EdgeInsets.all(12),
+        child: SizedBox(width: 60, child: Center(child: Image.asset('assets/icons/icon.png'))),
+      ),
     );
   }
 
@@ -88,12 +158,9 @@ class _AboutPageState extends State<AboutPage> {
                   TextButton(
                     onPressed: () {
                       Navigator.pop(context);
-                      launchUrl(
-                        Uri.parse('https://github.com/liuchuancong/pure_live'),
-                        mode: LaunchMode.externalApplication,
-                      );
+                      launchUrl(Uri.parse('https://github.com'), mode: LaunchMode.externalApplication);
                     },
-                    child: Text(i18n("open_source_free"), style: const TextStyle(fontSize: 20)),
+                    child: Text(i18n("open_source_free"), style: AppTextStyles.t20),
                   ),
                   MarkdownBlock(data: VersionUtil.latestUpdateLog, config: config),
                   const SizedBox(height: 10),

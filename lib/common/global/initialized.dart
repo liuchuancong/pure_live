@@ -5,6 +5,7 @@ import 'package:fvp/fvp.dart' as fvp;
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/global.dart';
+import 'package:pure_live/plugins/db_service.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:pure_live/plugins/cache_manager.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -20,6 +21,7 @@ import 'package:pure_live/common/global/platform/desktop_manager.dart';
 import 'package:pure_live/common/services/bilibili_account_service.dart';
 import 'package:pure_live/recorder/services/stream_resolver_service.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
+import 'package:pure_live/core/iptv/services/channel_detail_controller.dart';
 import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
 
@@ -46,6 +48,7 @@ class AppInitializer {
     await CustomImageCacheManager.initialize();
     final Directory hiveDir = await AppPathManager().getDir(AppPathManager.dirHiveDB);
     await SupaBaseManager.getInstance().initial();
+
     try {
       await Hive.initFlutter(hiveDir.path);
       await HivePrefUtil.init();
@@ -97,7 +100,7 @@ class AppInitializer {
     return '';
   }
 
-  void initService() {
+  void initService() async {
     Get.put(SettingsService(), permanent: true);
     Get.put(CacheService());
     Get.put(AuthController(), permanent: true);
@@ -106,7 +109,8 @@ class AppInitializer {
     Get.put(BiliBiliAccountService());
     Get.put(RouteObserverController(), permanent: true);
     Get.lazyPut(() => FavoriteController(), fenix: true);
-
+    Get.lazyPut<DbService>(() => DbService()..init(), fenix: true);
+    Get.lazyPut(() => ChannelDetailController(), fenix: true);
     Get.lazyPut(() => PopularController(), fenix: true);
     Get.lazyPut(() => AreasController(), fenix: true);
 

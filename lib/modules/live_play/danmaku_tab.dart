@@ -11,7 +11,7 @@ class DanmakuTabView extends GetView<LivePlayController> {
   Widget build(BuildContext context) {
     return Obx(() {
       if (controller.detail.value == null || controller.videoController.value == null) {
-        return const Center(child: CircularProgressIndicator());
+        return AppStatusView(type: AppStatusType.loading, title: "", subtitle: "");
       }
       if (!controller.settings.enableDanmakuDisplay.value) {
         return Padding(padding: EdgeInsetsGeometry.all(12), child: const KeywordBlockPage());
@@ -23,13 +23,8 @@ class DanmakuTabView extends GetView<LivePlayController> {
             color: Get.theme.colorScheme.surface,
             child: TabBar(
               isScrollable: true,
-              tabAlignment: TabAlignment.center,
               controller: controller.tabController,
               tabs: controller.tabs.map((name) => Tab(text: name)).toList(),
-              labelColor: Get.theme.colorScheme.primary,
-              unselectedLabelColor: Get.theme.colorScheme.onSurfaceVariant,
-              indicatorColor: Get.theme.colorScheme.primary,
-              indicatorSize: TabBarIndicatorSize.label,
             ),
           ),
           Expanded(

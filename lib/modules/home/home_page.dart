@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:move_to_desktop/move_to_desktop.dart';
+import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:pure_live/modules/areas/areas_page.dart';
 import 'package:pure_live/modules/home/mobile_view.dart';
 import 'package:pure_live/modules/home/tablet_view.dart';
@@ -21,10 +22,21 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin {
   Timer? _debounceTimer;
   final FavoriteController favoriteController = Get.find<FavoriteController>();
+  final SettingsService settings = Get.find<SettingsService>();
+  int _selectedIndex = 0;
+
+  final Map<HomeMenu, Widget> _pageMap = const {
+    HomeMenu.favorites: FavoritePage(),
+    HomeMenu.popular: PopularPage(),
+    HomeMenu.areas: AreasPage(),
+    HomeMenu.record: RecorderPage(),
+  };
 
   @override
   void initState() {
     super.initState();
+    _syncInitialIndex();
+
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       if (Platform.isAndroid) {
         SystemChrome.setSystemUIOverlayStyle(
@@ -36,21 +48,45 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
         SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       }
     });
+
     addToOverlay();
+
     favoriteController.tabBottomIndex.addListener(() {
-      setState(() => _selectedIndex = favoriteController.tabBottomIndex.value);
+      if (mounted) {
+        setState(() => _selectedIndex = favoriteController.tabBottomIndex.value);
+      }
+    });
+
+    ever(settings.savedMenuIds, (List<String> value) {
+      if (mounted && value.isNotEmpty) {
+        final currentMenuId = HomeMenu.values[_selectedIndex].id;
+        if (!value.contains(currentMenuId)) {
+          final firstMenu = HomeMenu.fromId(value.first);
+          if (firstMenu != null) {
+            onDestinationSelected(firstMenu.index);
+          }
+        }
+      }
     });
   }
 
-  int _selectedIndex = 0;
-  final List<Widget> bodys = const [FavoritePage(), PopularPage(), AreasPage(), RecorderPage()];
+  void _syncInitialIndex() {
+    final activeIds = settings.savedMenuIds;
+    if (activeIds.isNotEmpty) {
+      final firstMenu = HomeMenu.fromId(activeIds.first);
+      if (firstMenu != null) {
+        _selectedIndex = firstMenu.index;
+        favoriteController.tabBottomIndex.value = firstMenu.index;
+      }
+    }
+  }
+
   void debounceListen(Function? func, [int delay = 1000]) {
     if (_debounceTimer != null) {
       _debounceTimer?.cancel();
     }
     _debounceTimer = Timer(Duration(milliseconds: delay), () {
       func?.call();
-
       _debounceTimer = null;
     });
   }
@@ -60,7 +96,9 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
   }
 
   void onDestinationSelected(int index) {
-    setState(() => _selectedIndex = index);
+    if (mounted) {
+      setState(() => _selectedIndex = index);
+    }
     favoriteController.tabBottomIndex.value = index;
   }
 
@@ -76,7 +114,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
     );
     await VersionUtil().checkUpdate();
     VersionUtil().loadReleaseHistory();
-    bool isHasNerVersion = Get.find<SettingsService>().enableAutoCheckUpdate.value && VersionUtil.hasNewVersion();
+    bool isHasNerVersion = settings.enableAutoCheckUpdate.value && VersionUtil.hasNewVersion();
     if (mounted) {
       if (overlay != null && isHasNerVersion) {
         WidgetsBinding.instance.addPostFrameCallback((_) => overlay.insert(entry));
@@ -101,18 +139,28 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
       canPop: false,
       onPopInvokedWithResult: onBackButtonPressed,
       child: LayoutBuilder(
-        builder: (context, constraint) => constraint.maxWidth <= 680
-            ? HomeMobileView(
-                body: bodys[_selectedIndex],
-                index: _selectedIndex,
-                onDestinationSelected: onDestinationSelected,
-                onFavoriteDoubleTap: handMoveRefresh,
-              )
-            : HomeTabletView(
-                body: bodys[_selectedIndex],
-                index: _selectedIndex,
-                onDestinationSelected: onDestinationSelected,
-              ),
+        builder: (context, constraint) {
+          return Obx(() {
+            final activeMenuIds = settings.savedMenuIds;
+            if (activeMenuIds.isEmpty) return const Scaffold();
+
+            final currentMenu = HomeMenu.values[_selectedIndex];
+            final currentWidget = _pageMap[currentMenu] ?? const SizedBox.shrink();
+
+            return constraint.maxWidth <= 680
+                ? HomeMobileView(
+                    body: currentWidget,
+                    index: _selectedIndex,
+                    onDestinationSelected: onDestinationSelected,
+                    onFavoriteDoubleTap: handMoveRefresh,
+                  )
+                : HomeTabletView(
+                    body: currentWidget,
+                    index: _selectedIndex,
+                    onDestinationSelected: onDestinationSelected,
+                  );
+          });
+        },
       ),
     );
   }

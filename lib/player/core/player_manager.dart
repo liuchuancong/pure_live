@@ -722,7 +722,7 @@ class PlayerManager {
   Widget _buildPlaceholder() {
     return Container(
       color: Colors.black,
-      child: const Center(child: CircularProgressIndicator(strokeWidth: 4, color: Colors.white70)),
+      child: AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", iconColor: Colors.white),
     );
   }
 
@@ -930,7 +930,7 @@ class PlayerManager {
 
   Future<void> _clearSubscriptions() async {
     if (_subscriptions.isEmpty) return;
-    for (final item in _subscriptions) {
+    for (final item in _subscriptions.toList()) {
       await item.cancel();
     }
     _subscriptions.clear();

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:open_filex/open_filex.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
@@ -149,22 +148,11 @@ class RecordSettingsController extends GetxController {
   /// 选择录制目录
   /// =====================================
   Future<void> pickRecordDir() async {
-    final path = recordSavePath.value;
-    if (path.isNotEmpty) {
-      // 调用系统默认应用打开该文件夹
-      final result = await OpenFilex.open(path);
-
-      if (result.type != ResultType.done) {
-        ToastUtil.show(result.message);
-      }
-    } else {
-      final result = await FilePicker.getDirectoryPath();
-
-      if (result != null) {
-        recordSavePath.value = result;
-        await RecorderConfig.setRecordSavePath(result);
-        await refreshCacheSize();
-      }
+    final result = await FilePicker.getDirectoryPath();
+    if (result != null) {
+      recordSavePath.value = result;
+      await RecorderConfig.setRecordSavePath(result);
+      await refreshCacheSize();
     }
   }
 

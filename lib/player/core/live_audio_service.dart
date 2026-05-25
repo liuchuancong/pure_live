@@ -97,9 +97,9 @@ class LiveAudioService {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(title, style: AppTextStyles.t18.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
-            Text(content, textAlign: TextAlign.center, style: const TextStyle(fontSize: 14)),
+            Text(content, textAlign: TextAlign.center, style: AppTextStyles.t14),
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,

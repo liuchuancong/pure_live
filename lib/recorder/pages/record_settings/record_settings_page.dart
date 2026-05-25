@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/plugins/file_utils.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
@@ -27,81 +29,92 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
-      appBar: AppBar(
-        title: Text(i18n("record_settings"), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-        centerTitle: true,
-        elevation: 0,
-      ),
+      appBar: AppBar(title: Text(i18n("record_settings")), centerTitle: true, elevation: 0),
       body: Obx(
         () => ListView(
           physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.only(left: 16, right: 16, bottom: 16),
           children: [
             _buildSectionHeader(i18n("basic_config")),
-            _buildModernCard(theme, [
-              _buildTile(
-                theme,
-                Icons.high_quality_rounded,
-                i18n("default_record_quality"),
-                controller.defaultQuality.value,
-                _showQualityDialog,
+            context.buildModernCard([
+              context.buildTile(
+                icon: Icons.high_quality_rounded,
+                title: i18n("default_record_quality"),
+                subtitle: controller.defaultQuality.value,
+                onTap: _showQualityDialog,
               ),
-              _buildSwitchTile(
-                Icons.translate_rounded,
-                i18n("use_pinyin_folder"),
-                i18n("use_pinyin_folder_desc"),
-                controller.usePinyinForFolder.value,
-                (val) => controller.updateUsePinyinForFolder(val),
+
+              context.buildSwitchTile(
+                icon: Icons.translate_rounded,
+                title: i18n("use_pinyin_folder"),
+                subtitle: i18n("use_pinyin_folder_desc"),
+                value: controller.usePinyinForFolder,
               ),
             ]),
 
-            _buildSectionHeader(i18n("cache_management")),
-            _buildModernCard(theme, [
-              _buildTile(
-                theme,
-                Icons.folder_rounded,
-                i18n("storage_directory"),
-                controller.recordSavePath.value,
-                controller.pickRecordDir,
-                isLong: true,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildSectionHeader(i18n("cache_management")),
+                Padding(
+                  padding: EdgeInsetsGeometry.only(right: 8),
+                  child: TextButton.icon(
+                    onPressed: () => FileUtils.openFileOrUrl(controller.recordSavePath.value),
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      foregroundColor: theme.colorScheme.primary, // 保持主题色
+                    ),
+                    icon: const Icon(Remix.folder_open_line, size: 18),
+                    label: Text(
+                      i18n("recorder_open_folder"),
+                      style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            context.buildModernCard([
+              context.buildTile(
+                icon: Icons.folder_rounded,
+                title: i18n("storage_directory"),
+                subtitle: controller.recordSavePath.value,
+                onTap: controller.pickRecordDir,
               ),
 
-              _buildSwitchTile(
-                Icons.all_inbox_rounded,
-                i18n("enable_cache_limit"),
-                i18n("enable_cache_limit_desc"),
-                controller.enableCacheLimit.value,
-                controller.updateEnableCacheLimit,
+              context.buildSwitchTile(
+                icon: Icons.all_inbox_rounded,
+                title: i18n("enable_cache_limit"),
+                subtitle: i18n("enable_cache_limit_desc"),
+                value: controller.enableCacheLimit,
               ),
 
               if (controller.enableCacheLimit.value)
-                _buildTile(
-                  theme,
-                  Icons.storage_rounded,
-                  i18n("cache_limit"),
-                  "${controller.maxCacheMB.value} MB",
-                  _showCacheDialog,
+                context.buildTile(
+                  icon: Icons.storage_rounded,
+                  title: i18n("cache_limit"),
+                  subtitle: "${controller.maxCacheMB.value} MB",
+                  onTap: _showCacheDialog,
                 ),
 
               Obx(() {
                 final size = controller.cacheSizeMB.value;
 
-                return _buildTile(
-                  theme,
-                  Icons.sd_storage_rounded,
-                  i18n("current_cache_size"),
-                  "${size.toStringAsFixed(2)} MB",
-                  () {},
-                  showRightRounded: false,
+                return context.buildTile(
+                  icon: Icons.sd_storage_rounded,
+                  title: i18n("current_cache_size"),
+                  subtitle: "${size.toStringAsFixed(2)} MB",
                 );
               }),
 
-              _buildTile(
-                theme,
-                Icons.cleaning_services_rounded,
-                i18n("clear_all_cache"),
-                i18n("clear_all_cache_desc"),
-                () async {
+              context.buildTile(
+                icon: Icons.cleaning_services_rounded,
+                title: i18n("clear_all_cache"),
+                subtitle: i18n("clear_all_cache_desc"),
+                onTap: () async {
                   final ok = await Get.dialog<bool>(
                     AlertDialog(
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -119,7 +132,6 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
 
                   if (ok == true) {
                     await controller.clearCache();
-
                     Get.snackbar(i18n("done"), i18n("cache_cleared"), snackPosition: SnackPosition.bottom);
                   }
                 },
@@ -127,29 +139,26 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
             ]),
 
             _buildSectionHeader(i18n("record_performance_quality")),
-            _buildModernCard(theme, [
-              _buildSwitchTile(
-                Icons.hd_rounded,
-                i18n("prefer_best_stream"),
-                i18n("prefer_best_stream_desc"),
-                controller.preferBestStream.value,
-                controller.updatePreferBestStream,
+            context.buildModernCard([
+              context.buildSwitchTile(
+                icon: Icons.hd_rounded,
+                title: i18n("prefer_best_stream"),
+                subtitle: i18n("prefer_best_stream_desc"),
+                value: controller.preferBestStream,
               ),
 
-              _buildTile(
-                theme,
-                Icons.timer_outlined,
-                i18n("rw_timeout"),
-                "${controller.rwTimeout.value}s",
-                _showRwTimeoutDialog,
+              context.buildTile(
+                icon: Icons.timer_outlined,
+                title: i18n("rw_timeout"),
+                subtitle: "${controller.rwTimeout.value}s",
+                onTap: _showRwTimeoutDialog,
               ),
 
-              _buildTile(
-                theme,
-                Icons.speed_rounded,
-                i18n("queue_size"),
-                "${controller.threadQueueSize.value}",
-                _showQueueSizeDialog,
+              context.buildTile(
+                icon: Icons.speed_rounded,
+                title: i18n("queue_size"),
+                subtitle: "${controller.threadQueueSize.value}",
+                onTap: _showQueueSizeDialog,
               ),
 
               _buildSliderTile(
@@ -163,23 +172,21 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                 onChanged: (v) => controller.updateSegmentTime(v.toInt()),
               ),
 
-              _buildTile(
-                theme,
-                Icons.task_alt_rounded,
-                i18n("max_record_tasks"),
-                "${controller.maxTaskCount.value}",
-                _showMaxTaskDialog,
+              context.buildTile(
+                icon: Icons.task_alt_rounded,
+                title: i18n("max_record_tasks"),
+                subtitle: "${controller.maxTaskCount.value}",
+                onTap: _showMaxTaskDialog,
               ),
             ]),
 
             _buildSectionHeader(i18n("auto_reconnect")),
-            _buildModernCard(theme, [
-              _buildSwitchTile(
-                Icons.refresh_rounded,
-                i18n("auto_reconnect_switch"),
-                i18n("auto_reconnect_desc"),
-                controller.autoReconnect.value,
-                controller.updateAutoReconnect,
+            context.buildModernCard([
+              context.buildSwitchTile(
+                icon: Icons.refresh_rounded,
+                title: i18n("auto_reconnect_switch"),
+                subtitle: i18n("auto_reconnect_desc"),
+                value: controller.autoReconnect,
               ),
 
               if (controller.autoReconnect.value)
@@ -207,13 +214,12 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
             ]),
 
             _buildSectionHeader(i18n("polling_detection")),
-            _buildModernCard(theme, [
-              _buildSwitchTile(
-                Icons.radar_rounded,
-                i18n("enable_polling"),
-                i18n("enable_polling_desc"),
-                controller.enablePolling.value,
-                controller.updateEnablePolling,
+            context.buildModernCard([
+              context.buildSwitchTile(
+                icon: Icons.radar_rounded,
+                title: i18n("enable_polling"),
+                subtitle: i18n("enable_polling_desc"),
+                value: controller.enablePolling,
               ),
 
               if (controller.enablePolling.value) ...[
@@ -228,12 +234,11 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                   onChanged: (v) => controller.updateLiveCheckInterval(v.toInt()),
                 ),
 
-                _buildSwitchTile(
-                  Icons.trending_up_rounded,
-                  i18n("enable_backoff"),
-                  i18n("enable_backoff_desc"),
-                  controller.enableBackoff.value,
-                  controller.updateEnableBackoff,
+                context.buildSwitchTile(
+                  icon: Icons.trending_up_rounded,
+                  title: i18n("enable_backoff"),
+                  subtitle: i18n("enable_backoff_desc"),
+                  value: controller.enableBackoff,
                 ),
 
                 if (controller.enableBackoff.value)
@@ -248,12 +253,11 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                     onChanged: (v) => controller.updateMaxCheckInterval(v.toInt()),
                   ),
 
-                _buildSwitchTile(
-                  Icons.power_settings_new_rounded,
-                  i18n("auto_start_boot"),
-                  i18n("auto_start_boot_desc"),
-                  controller.autoStartOnBoot.value,
-                  controller.updateAutoStartOnBoot,
+                context.buildSwitchTile(
+                  icon: Icons.power_settings_new_rounded,
+                  title: i18n("auto_start_boot"),
+                  subtitle: i18n("auto_start_boot_desc"),
+                  value: controller.autoStartOnBoot,
                 ),
               ],
             ]),
@@ -270,60 +274,12 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
       padding: const EdgeInsets.only(left: 12, bottom: 12, top: 24),
       child: Text(
         title,
-        style: TextStyle(
-          fontSize: 15,
+        style: AppTextStyles.t15.copyWith(
           fontWeight: FontWeight.bold,
           color: Get.theme.colorScheme.primary,
           letterSpacing: 1.2,
         ),
       ),
-    );
-  }
-
-  Widget _buildModernCard(ThemeData theme, List<Widget> children) {
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
-      ),
-      child: Column(children: children),
-    );
-  }
-
-  Widget _buildTile(
-    ThemeData theme,
-    IconData icon,
-    String title,
-    String val,
-    VoidCallback onTap, {
-    bool isLong = false,
-    bool showRightRounded = true,
-  }) {
-    return ListTile(
-      leading: Icon(icon, size: 24, color: theme.colorScheme.primary),
-      title: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            constraints: BoxConstraints(maxWidth: isDesktop ? 400 : 150),
-            child: Text(
-              val,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: theme.colorScheme.primary.withValues(alpha: 0.7),
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          const SizedBox(width: 4),
-          showRightRounded ? const Icon(Icons.chevron_right_rounded, size: 22, color: Colors.grey) : const SizedBox(),
-        ],
-      ),
-      onTap: onTap,
     );
   }
 
@@ -351,7 +307,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    Text(title, style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w600)),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
@@ -360,7 +316,10 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                       ),
                       child: Text(
                         displayValue,
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                        style: AppTextStyles.t13.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary,
+                        ),
                       ),
                     ),
                   ],
@@ -384,18 +343,6 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSwitchTile(IconData icon, String title, String sub, bool val, ValueChanged<bool> onChanged) {
-    return SwitchListTile.adaptive(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      secondary: Icon(icon, size: 24, color: Get.theme.colorScheme.primary),
-      title: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-      subtitle: Text(sub, style: const TextStyle(fontSize: 13, color: Colors.grey)),
-      activeThumbColor: Get.theme.colorScheme.primary,
-      value: val,
-      onChanged: onChanged,
     );
   }
 
@@ -425,8 +372,8 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
             mainAxisSize: MainAxisSize.min,
             children: timeoutOptions.entries.map((entry) {
               return RadioListTile<int>(
-                title: Text("${entry.key}s", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                subtitle: Text(entry.value, style: const TextStyle(fontSize: 12)),
+                title: Text("${entry.key}s", style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w600)),
+                subtitle: Text(entry.value, style: AppTextStyles.t12),
                 value: entry.key,
                 activeColor: theme.colorScheme.primary,
                 selected: controller.rwTimeout.value == entry.key,
@@ -474,8 +421,8 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
               }
 
               return RadioListTile<int>(
-                title: Text("$value", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                subtitle: Text(subTitle, style: const TextStyle(fontSize: 12)),
+                title: Text("$value", style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w600)),
+                subtitle: Text(subTitle, style: AppTextStyles.t12),
                 value: value,
                 activeColor: theme.colorScheme.primary,
                 selected: controller.threadQueueSize.value == value,
@@ -591,7 +538,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
             mainAxisSize: MainAxisSize.min,
             children: PlayerConsts.resolutions.map((e) {
               return RadioListTile<String>(
-                title: Text(e, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                title: Text(e, style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w500)),
                 value: e,
                 activeColor: theme.colorScheme.primary,
                 selected: controller.defaultQuality.value == e,
@@ -614,7 +561,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
         content: TextField(
           controller: textController,
           keyboardType: TextInputType.number,
-          style: const TextStyle(fontSize: 18),
+          style: AppTextStyles.t18,
           decoration: InputDecoration(
             hintText: i18n("please_input_number"),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -627,7 +574,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(Get.context!),
-            child: Text(i18n("cancel"), style: const TextStyle(fontSize: 16)),
+            child: Text(i18n("cancel"), style: AppTextStyles.t16),
           ),
           ElevatedButton(
             onPressed: () {
@@ -639,7 +586,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
 
               Navigator.pop(Get.context!);
             },
-            child: Text(i18n("confirm"), style: const TextStyle(fontSize: 16)),
+            child: Text(i18n("confirm"), style: AppTextStyles.t16),
           ),
         ],
       ),

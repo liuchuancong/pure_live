@@ -1,6 +1,7 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/home/home_page.dart';
 import 'package:pure_live/modules/auth/mine_page.dart';
+import 'package:pure_live/modules/iptv/iptv_page.dart';
 import 'package:pure_live/modules/about/about_page.dart';
 import 'package:pure_live/modules/areas/areas_page.dart';
 import 'package:pure_live/modules/auth/sign_in_page.dart';
@@ -68,6 +69,7 @@ class AppPages {
     GetPage(name: RoutePath.kHistory, page: HistoryPage.new),
     GetPage(name: RoutePath.kSearch, page: SearchPage.new, bindings: [SearchBinding()]),
     GetPage(name: RoutePath.kBackup, page: BackupPage.new),
+    GetPage(name: RoutePath.kIptv, page: IptvPage.new),
     GetPage(name: RoutePath.kAbout, page: AboutPage.new),
     GetPage(name: RoutePath.kAreaRooms, page: AreasRoomPage.new, bindings: [AreaRoomsBinding()]),
     GetPage(
@@ -142,11 +144,7 @@ class AppPages {
           logo: Image.asset('assets/icons/icon.png', width: 150),
           showTextLogo: true,
           logoText: i18n("welcome_use"),
-          textStyle: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: textColor, // 动态颜色
-          ),
+          textStyle: AppTextStyles.t20.copyWith(fontWeight: FontWeight.bold, color: textColor),
           loaderType: LoaderType.progressBar,
           onNextPressed: () {
             Get.offAllNamed(RoutePath.kInitial);
