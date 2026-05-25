@@ -73,7 +73,7 @@ class _ScanCodePageState extends State<ScanCodePage> {
                   ? Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        CircularProgressIndicator(),
+                        AppStatusView(type: AppStatusType.loading, title: "", subtitle: ""),
                         SizedBox(height: 20),
                         Text(i18n("syncing"), style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.bold)),
                       ],

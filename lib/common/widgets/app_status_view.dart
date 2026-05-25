@@ -10,6 +10,10 @@ class AppStatusView extends StatefulWidget {
   final IconData? icon;
   final String? buttonText;
   final VoidCallback? onButtonPressed;
+  final bool isMini;
+  final Color? iconColor;
+  final Color? titleColor;
+  final Color? subtitleColor;
 
   const AppStatusView({
     super.key,
@@ -19,6 +23,10 @@ class AppStatusView extends StatefulWidget {
     this.icon,
     this.buttonText,
     this.onButtonPressed,
+    this.isMini = false,
+    this.iconColor,
+    this.titleColor,
+    this.subtitleColor,
   });
 
   @override
@@ -56,6 +64,7 @@ class _AppStatusViewState extends State<AppStatusView> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final effectiveIconColor = widget.iconColor ?? theme.colorScheme.primary;
 
     if (widget.type == AppStatusType.loading) {
       return Center(
@@ -66,16 +75,16 @@ class _AppStatusViewState extends State<AppStatusView> with SingleTickerProvider
               return SweepGradient(
                 startAngle: 0.0,
                 endAngle: 3.14 * 2,
-                colors: [theme.colorScheme.primary, theme.colorScheme.primary.withValues(alpha: 0.1)],
+                colors: [effectiveIconColor, effectiveIconColor.withValues(alpha: 0.1)],
                 stops: const [0.0, 0.85],
               ).createShader(rect);
             },
             child: Container(
-              width: 44,
-              height: 44,
+              width: widget.isMini ? 20 : 44,
+              height: widget.isMini ? 20 : 44,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(width: 3.5, color: Colors.white),
+                border: Border.all(width: widget.isMini ? 2.0 : 3.5, color: Colors.white),
               ),
             ),
           ),
@@ -95,27 +104,34 @@ class _AppStatusViewState extends State<AppStatusView> with SingleTickerProvider
               return Transform.scale(scale: value, child: child);
             },
             child: Container(
-              padding: const EdgeInsets.all(22),
+              padding: EdgeInsets.all(widget.isMini ? 8 : 22),
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
-                border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.05), width: 1),
+                border: Border.all(color: effectiveIconColor.withValues(alpha: 0.05), width: 1),
               ),
               child: Icon(
                 widget.icon ?? (widget.type == AppStatusType.error ? Icons.wifi_off_rounded : Icons.live_tv_rounded),
-                size: 42,
-                color: theme.colorScheme.primary.withValues(alpha: 0.6),
+                size: widget.isMini ? 16 : 42,
+                color: widget.iconColor ?? theme.colorScheme.primary.withValues(alpha: 0.6),
               ),
             ),
           ),
-          const SizedBox(height: 20),
-          Text(
-            widget.title,
-            style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600, color: theme.textTheme.titleMedium?.color),
-          ),
-          const SizedBox(height: 6),
-          Text(widget.subtitle, style: AppTextStyles.t13.copyWith(color: theme.hintColor)),
-          if (widget.buttonText != null && widget.onButtonPressed != null) ...[
+          if (!widget.isMini || widget.title.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Text(
+              widget.title,
+              style: AppTextStyles.t15.copyWith(
+                fontWeight: FontWeight.w600,
+                color: widget.titleColor ?? theme.textTheme.titleMedium?.color,
+              ),
+            ),
+          ],
+          if (!widget.isMini || widget.subtitle.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(widget.subtitle, style: AppTextStyles.t13.copyWith(color: widget.subtitleColor ?? theme.hintColor)),
+          ],
+          if (!widget.isMini && widget.buttonText != null && widget.onButtonPressed != null) ...[
             const SizedBox(height: 16),
             TextButton.icon(
               onPressed: widget.onButtonPressed,

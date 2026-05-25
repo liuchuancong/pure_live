@@ -19,8 +19,7 @@ class CacheDataSettingsPage extends GetView<SettingsService> {
             Obx(() {
               final size = controller.cacheSizeMB.value;
               final turns = controller.refreshTurns.value;
-              return _buildTile(
-                context,
+              return context.buildTile(
                 icon: Remix.database_2_line,
                 title: i18n("current_cache_size"),
                 subtitle: "",
@@ -43,8 +42,7 @@ class CacheDataSettingsPage extends GetView<SettingsService> {
                 ),
               );
             }),
-            _buildTile(
-              context,
+            context.buildTile(
               icon: Remix.delete_bin_6_line,
               title: i18n("clear_all_cache"),
               subtitle: i18n("clear_all_cache_meida_desc"),
@@ -72,35 +70,6 @@ class CacheDataSettingsPage extends GetView<SettingsService> {
           const SizedBox(height: 32),
         ],
       ),
-    );
-  }
-
-  Widget _buildTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-    Widget? trailing,
-  }) {
-    final theme = Theme.of(context);
-    return ListTile(
-      leading: Icon(icon, color: theme.colorScheme.primary, size: 22),
-      title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
-      subtitle: subtitle.isEmpty
-          ? null
-          : Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Text(
-                subtitle,
-                style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-      trailing: trailing ?? Icon(Icons.chevron_right_rounded, color: theme.hintColor.withValues(alpha: 0.4), size: 20),
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
     );
   }
 }

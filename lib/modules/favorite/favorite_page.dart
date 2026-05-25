@@ -23,10 +23,6 @@ class FavoritePage extends GetView<FavoriteController> {
               title: TabBar(
                 controller: controller.tabController,
                 isScrollable: true,
-                tabAlignment: TabAlignment.center,
-                labelStyle: AppTextStyles.t18.copyWith(fontWeight: FontWeight.w600),
-                labelPadding: const EdgeInsets.symmetric(horizontal: 12),
-                indicatorSize: TabBarIndicatorSize.label,
                 tabs: [
                   Tab(text: i18n("online_room_title")),
                   Tab(text: i18n("offline_room_title")),
@@ -43,8 +39,6 @@ class FavoritePage extends GetView<FavoriteController> {
                           children: [
                             TabBar(
                               isScrollable: true,
-                              tabAlignment: TabAlignment.center,
-                              indicatorSize: TabBarIndicatorSize.label,
                               tabs: availableSitesList.map<Widget>((e) => Tab(text: e.name)).toList(),
                             ),
                             Expanded(

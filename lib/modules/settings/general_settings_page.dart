@@ -15,30 +15,26 @@ class GeneralSettingsPage extends GetView<SettingsService> {
         children: [
           context.buildGroupTitle(i18n("general")),
           context.buildModernCard([
-            _buildSwitchTile(
-              context,
+            context.buildSwitchTile(
               title: i18n('splash_animation'),
               subtitle: i18n("splash_animation_subtitle"),
               value: controller.showSplashPage,
               icon: Remix.rocket_2_line,
             ),
-            _buildSwitchTile(
-              context,
+            context.buildSwitchTile(
               title: i18n('enable_auto_check_update'),
               subtitle: "",
               value: controller.enableAutoCheckUpdate,
               icon: Remix.refresh_line,
             ),
             if (Platform.isWindows) ...[
-              _buildSwitchTile(
-                context,
+              context.buildSwitchTile(
                 title: i18n("startup"),
                 subtitle: "",
                 value: controller.enableStartUp,
                 icon: Remix.windows_line,
               ),
-              _buildSwitchTile(
-                context,
+              context.buildSwitchTile(
                 title: i18n("no_exit_confirm"),
                 subtitle: "",
                 value: controller.dontAskExit,
@@ -48,37 +44,6 @@ class GeneralSettingsPage extends GetView<SettingsService> {
           ]),
           const SizedBox(height: 32),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSwitchTile(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required RxBool value,
-    required IconData icon,
-  }) {
-    final theme = Theme.of(context);
-    return Obx(
-      () => SwitchListTile(
-        secondary: Icon(icon, size: 22, color: theme.colorScheme.primary),
-        title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
-        subtitle: subtitle.isEmpty
-            ? null
-            : Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Text(
-                  subtitle,
-                  style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-        value: value.value,
-        activeThumbColor: theme.colorScheme.primary,
-        onChanged: (val) => value.value = val,
-        contentPadding: const EdgeInsets.only(left: 16, top: 2, bottom: 2, right: 8),
       ),
     );
   }

@@ -19,8 +19,6 @@ class FavoriteAreasPage extends GetView<FavoriteAreasController> {
               TabBar(
                 controller: controller.tabSiteController,
                 isScrollable: true,
-                tabAlignment: TabAlignment.center,
-                indicatorSize: TabBarIndicatorSize.label,
                 tabs: Sites().availableSites(containsAll: true).map<Widget>((e) => Tab(text: e.name)).toList(),
               ),
               Expanded(

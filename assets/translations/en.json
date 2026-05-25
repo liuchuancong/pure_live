@@ -470,6 +470,7 @@
     "tip": "Tip",
     "toolbox_auto_fill": "Live link from clipboard has been auto-filled",
     "toolbox_copy_success": "Direct link copied",
+    "copy_link": "Copy Link",
     "toolbox_detect_link": "Link Detected",
     "toolbox_empty_link": "Link cannot be empty",
     "toolbox_get_direct_link": "Get Direct Link",
@@ -771,5 +772,9 @@
   "font_currently_active": "Currently Active",
   "delete": "Delete",
   "apply": "Apply",
+  "empty_history_title": "No Release History",
+  "empty_history_subtitle": "No published version records found",
+  "history_load_failed": "Failed to load version history",
+
   "download": "Download"
 }

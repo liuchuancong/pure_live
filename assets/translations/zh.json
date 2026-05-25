@@ -73,6 +73,7 @@
     "contact": "联系",
     "cookie": "cookie",
     "copied_to_clipboard": "已复制到剪贴板",
+    "copy_link": "复制链接",
     "count_wan": "万",
     "create_backup": "创建备份",
     "create_backup_failed": "创建备份失败",
@@ -770,5 +771,8 @@
   "font_currently_active": "当前正使用",
   "delete": "删除",
   "apply": "应用",
-  "download": "下载"
+  "empty_history_title": "暂无历史版本",
+  "empty_history_subtitle": "未找到已发布的版本记录",
+  "history_load_failed": "获取历史版本失败",
+  "download": "点击下载"
 }

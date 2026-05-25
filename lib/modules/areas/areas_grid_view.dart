@@ -85,7 +85,7 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
 
     return Obx(() {
       if (widget.controller.pageLoadding.value) {
-        return const Center(child: CircularProgressIndicator());
+        return const AppStatusView(type: AppStatusType.loading, title: "", subtitle: "");
       }
 
       if (widget.controller.pageError.value) {
@@ -130,7 +130,7 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
       }
 
       if (_tabController == null || _tabController!.length != list.length) {
-        return const Center(child: CircularProgressIndicator());
+        return const AppStatusView(type: AppStatusType.loading, title: "", subtitle: "");
       }
 
       return Column(
@@ -138,8 +138,6 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
           TabBar(
             controller: _tabController,
             isScrollable: true,
-            tabAlignment: TabAlignment.center,
-            indicatorSize: TabBarIndicatorSize.label,
             tabs: list.map((e) => Tab(text: e.name)).toList(),
           ),
           Expanded(

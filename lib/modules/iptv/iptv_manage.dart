@@ -159,7 +159,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
             () => IconButton(
               onPressed: isSyncingAll.value ? null : _syncAll,
               icon: isSyncingAll.value
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  ? AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", isMini: true)
                   : const Icon(Remix.refresh_line),
             ),
           ),
@@ -476,9 +476,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
             ),
             child: Text(
               formatText,
-              style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.w900,
-                color: Colors.white,
-                letterSpacing: 0.2),
+              style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 0.2),
             ),
           ),
         ),

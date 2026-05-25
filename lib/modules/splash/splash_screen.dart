@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
 import 'package:pure_live/common/index.dart';
 
 enum LoaderType { spinner, dots, progressBar }
@@ -15,8 +14,8 @@ class SplashScreen extends StatefulWidget {
   final LoaderType loaderType;
   final VoidCallback? onNextPressed;
   final Widget? nextButton;
-  final Duration duration; // زمان نمایش خودکار
-  final TextStyle? textStyle; // رنگ و استایل متن
+  final Duration duration;
+  final TextStyle? textStyle;
 
   const SplashScreen({
     super.key,
@@ -116,7 +115,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   Widget _buildLoader() {
     switch (widget.loaderType) {
       case LoaderType.spinner:
-        return const CircularProgressIndicator(color: Colors.white);
+        return const AppStatusView(type: AppStatusType.loading, title: "", subtitle: "");
       case LoaderType.dots:
         return const AnimatedDots();
       case LoaderType.progressBar:

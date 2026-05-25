@@ -43,7 +43,7 @@ class WebSearchPage extends GetView<WebSearchController> {
               shouldOverrideUrlLoading: controller.shouldOverrideUrlLoading,
             ),
 
-            if (controller.loading.value) const Center(child: CircularProgressIndicator()),
+            if (controller.loading.value) AppStatusView(type: AppStatusType.loading, title: "", subtitle: ""),
           ],
         );
       }),

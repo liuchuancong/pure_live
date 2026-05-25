@@ -722,7 +722,7 @@ class PlayerManager {
   Widget _buildPlaceholder() {
     return Container(
       color: Colors.black,
-      child: const Center(child: CircularProgressIndicator(strokeWidth: 4, color: Colors.white70)),
+      child: AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", iconColor: Colors.white),
     );
   }
 

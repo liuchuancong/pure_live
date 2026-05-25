@@ -74,7 +74,12 @@ class RoomCard extends StatelessWidget {
                                 child: SizedBox(
                                   width: 24,
                                   height: 24,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: AppStatusView(
+                                    type: AppStatusType.loading,
+                                    title: "",
+                                    subtitle: "",
+                                    isMini: true,
+                                  ),
                                 ),
                               ),
                             ),
@@ -103,7 +108,12 @@ class RoomCard extends StatelessWidget {
                                   child: SizedBox(
                                     width: 24,
                                     height: 24,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: AppStatusView(
+                                      type: AppStatusType.loading,
+                                      title: "",
+                                      subtitle: "",
+                                      isMini: true,
+                                    ),
                                   ),
                                 ),
                               );
@@ -111,13 +121,7 @@ class RoomCard extends StatelessWidget {
                             errorBuilder: (context, error, stackTrace) {
                               return Container(
                                 color: isDark ? Colors.grey[850] : Colors.grey[100],
-                                child: Center(
-                                  child: Icon(
-                                    Icons.tv_off_rounded,
-                                    size: dense ? 36 : 60,
-                                    color: isDark ? Colors.grey[600] : Colors.grey[400],
-                                  ),
-                                ),
+                                child: AppStatusView(type: AppStatusType.error, title: "", subtitle: "", isMini: true),
                               );
                             },
                           ),
@@ -181,8 +185,10 @@ class RoomCard extends StatelessWidget {
                       ),
                       child: Text(
                         room.platform?.toUpperCase() ?? '',
-                        style: AppTextStyles.t11.copyWith(fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.grey[300] : Colors.grey[800]),
+                        style: AppTextStyles.t11.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.grey[300] : Colors.grey[800],
+                        ),
                       ),
                     ),
             ),

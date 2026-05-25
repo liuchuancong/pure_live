@@ -65,11 +65,10 @@ class _AreaCardState extends State<AreaCard> {
                         imageUrl: displayImageUrl,
                         cacheManager: CustomImageCacheManager.instance,
                         fit: BoxFit.cover,
-                        placeholder: (context, url) => const Center(
-                          child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-                        ),
+                        placeholder: (context, url) =>
+                            AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", isMini: true),
                         errorWidget: (context, url, error) =>
-                            const Icon(Icons.live_tv_rounded, color: Colors.black, size: 38),
+                            AppStatusView(type: AppStatusType.error, title: "", subtitle: "", isMini: true),
                       )
                     : const Icon(Icons.live_tv_rounded, color: Colors.black, size: 38),
               ),

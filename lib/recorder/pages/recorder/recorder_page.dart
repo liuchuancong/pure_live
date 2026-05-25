@@ -57,11 +57,6 @@ class RecorderPage extends GetView<RecorderController> {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: TabBar(
                   isScrollable: true,
-                  tabAlignment: TabAlignment.center,
-                  labelColor: theme.colorScheme.primary,
-                  unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-                  labelStyle: AppTextStyles.t12.copyWith(fontWeight: FontWeight.bold),
-                  unselectedLabelStyle: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w500),
                   tabs: tabs
                       .map(
                         (e) => Padding(

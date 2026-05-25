@@ -23,7 +23,7 @@ class BiliBiliQRLoginPage extends GetView<BiliBiliQRLoginController> {
               if (controller.qrStatus.value == QRStatus.loading) {
                 return SizedBox(
                   height: 200,
-                  child: Center(child: CircularProgressIndicator(color: theme.colorScheme.primary, strokeWidth: 3)),
+                  child: AppStatusView(type: AppStatusType.loading, title: "", subtitle: ""),
                 );
               }
 

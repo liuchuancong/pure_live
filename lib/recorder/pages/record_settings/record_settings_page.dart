@@ -33,23 +33,22 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
       body: Obx(
         () => ListView(
           physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.only(left: 16, right: 16, bottom: 16),
           children: [
             _buildSectionHeader(i18n("basic_config")),
             context.buildModernCard([
-              _buildTile(
-                theme,
-                Icons.high_quality_rounded,
-                i18n("default_record_quality"),
-                controller.defaultQuality.value,
-                _showQualityDialog,
+              context.buildTile(
+                icon: Icons.high_quality_rounded,
+                title: i18n("default_record_quality"),
+                subtitle: controller.defaultQuality.value,
+                onTap: _showQualityDialog,
               ),
-              _buildSwitchTile(
-                Icons.translate_rounded,
-                i18n("use_pinyin_folder"),
-                i18n("use_pinyin_folder_desc"),
-                controller.usePinyinForFolder.value,
-                (val) => controller.updateUsePinyinForFolder(val),
+
+              context.buildSwitchTile(
+                icon: Icons.translate_rounded,
+                title: i18n("use_pinyin_folder"),
+                subtitle: i18n("use_pinyin_folder_desc"),
+                value: controller.usePinyinForFolder,
               ),
             ]),
 
@@ -79,51 +78,43 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
             ),
 
             context.buildModernCard([
-              _buildTile(
-                theme,
-                Icons.folder_rounded,
-                i18n("storage_directory"),
-                controller.recordSavePath.value,
-                controller.pickRecordDir,
-                isLong: true,
+              context.buildTile(
+                icon: Icons.folder_rounded,
+                title: i18n("storage_directory"),
+                subtitle: controller.recordSavePath.value,
+                onTap: controller.pickRecordDir,
               ),
 
-              _buildSwitchTile(
-                Icons.all_inbox_rounded,
-                i18n("enable_cache_limit"),
-                i18n("enable_cache_limit_desc"),
-                controller.enableCacheLimit.value,
-                controller.updateEnableCacheLimit,
+              context.buildSwitchTile(
+                icon: Icons.all_inbox_rounded,
+                title: i18n("enable_cache_limit"),
+                subtitle: i18n("enable_cache_limit_desc"),
+                value: controller.enableCacheLimit,
               ),
 
               if (controller.enableCacheLimit.value)
-                _buildTile(
-                  theme,
-                  Icons.storage_rounded,
-                  i18n("cache_limit"),
-                  "${controller.maxCacheMB.value} MB",
-                  _showCacheDialog,
+                context.buildTile(
+                  icon: Icons.storage_rounded,
+                  title: i18n("cache_limit"),
+                  subtitle: "${controller.maxCacheMB.value} MB",
+                  onTap: _showCacheDialog,
                 ),
 
               Obx(() {
                 final size = controller.cacheSizeMB.value;
 
-                return _buildTile(
-                  theme,
-                  Icons.sd_storage_rounded,
-                  i18n("current_cache_size"),
-                  "${size.toStringAsFixed(2)} MB",
-                  () {},
-                  showRightRounded: false,
+                return context.buildTile(
+                  icon: Icons.sd_storage_rounded,
+                  title: i18n("current_cache_size"),
+                  subtitle: "${size.toStringAsFixed(2)} MB",
                 );
               }),
 
-              _buildTile(
-                theme,
-                Icons.cleaning_services_rounded,
-                i18n("clear_all_cache"),
-                i18n("clear_all_cache_desc"),
-                () async {
+              context.buildTile(
+                icon: Icons.cleaning_services_rounded,
+                title: i18n("clear_all_cache"),
+                subtitle: i18n("clear_all_cache_desc"),
+                onTap: () async {
                   final ok = await Get.dialog<bool>(
                     AlertDialog(
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -141,7 +132,6 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
 
                   if (ok == true) {
                     await controller.clearCache();
-
                     Get.snackbar(i18n("done"), i18n("cache_cleared"), snackPosition: SnackPosition.bottom);
                   }
                 },
@@ -150,28 +140,25 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
 
             _buildSectionHeader(i18n("record_performance_quality")),
             context.buildModernCard([
-              _buildSwitchTile(
-                Icons.hd_rounded,
-                i18n("prefer_best_stream"),
-                i18n("prefer_best_stream_desc"),
-                controller.preferBestStream.value,
-                controller.updatePreferBestStream,
+              context.buildSwitchTile(
+                icon: Icons.hd_rounded,
+                title: i18n("prefer_best_stream"),
+                subtitle: i18n("prefer_best_stream_desc"),
+                value: controller.preferBestStream,
               ),
 
-              _buildTile(
-                theme,
-                Icons.timer_outlined,
-                i18n("rw_timeout"),
-                "${controller.rwTimeout.value}s",
-                _showRwTimeoutDialog,
+              context.buildTile(
+                icon: Icons.timer_outlined,
+                title: i18n("rw_timeout"),
+                subtitle: "${controller.rwTimeout.value}s",
+                onTap: _showRwTimeoutDialog,
               ),
 
-              _buildTile(
-                theme,
-                Icons.speed_rounded,
-                i18n("queue_size"),
-                "${controller.threadQueueSize.value}",
-                _showQueueSizeDialog,
+              context.buildTile(
+                icon: Icons.speed_rounded,
+                title: i18n("queue_size"),
+                subtitle: "${controller.threadQueueSize.value}",
+                onTap: _showQueueSizeDialog,
               ),
 
               _buildSliderTile(
@@ -185,23 +172,21 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                 onChanged: (v) => controller.updateSegmentTime(v.toInt()),
               ),
 
-              _buildTile(
-                theme,
-                Icons.task_alt_rounded,
-                i18n("max_record_tasks"),
-                "${controller.maxTaskCount.value}",
-                _showMaxTaskDialog,
+              context.buildTile(
+                icon: Icons.task_alt_rounded,
+                title: i18n("max_record_tasks"),
+                subtitle: "${controller.maxTaskCount.value}",
+                onTap: _showMaxTaskDialog,
               ),
             ]),
 
             _buildSectionHeader(i18n("auto_reconnect")),
             context.buildModernCard([
-              _buildSwitchTile(
-                Icons.refresh_rounded,
-                i18n("auto_reconnect_switch"),
-                i18n("auto_reconnect_desc"),
-                controller.autoReconnect.value,
-                controller.updateAutoReconnect,
+              context.buildSwitchTile(
+                icon: Icons.refresh_rounded,
+                title: i18n("auto_reconnect_switch"),
+                subtitle: i18n("auto_reconnect_desc"),
+                value: controller.autoReconnect,
               ),
 
               if (controller.autoReconnect.value)
@@ -230,12 +215,11 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
 
             _buildSectionHeader(i18n("polling_detection")),
             context.buildModernCard([
-              _buildSwitchTile(
-                Icons.radar_rounded,
-                i18n("enable_polling"),
-                i18n("enable_polling_desc"),
-                controller.enablePolling.value,
-                controller.updateEnablePolling,
+              context.buildSwitchTile(
+                icon: Icons.radar_rounded,
+                title: i18n("enable_polling"),
+                subtitle: i18n("enable_polling_desc"),
+                value: controller.enablePolling,
               ),
 
               if (controller.enablePolling.value) ...[
@@ -250,12 +234,11 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                   onChanged: (v) => controller.updateLiveCheckInterval(v.toInt()),
                 ),
 
-                _buildSwitchTile(
-                  Icons.trending_up_rounded,
-                  i18n("enable_backoff"),
-                  i18n("enable_backoff_desc"),
-                  controller.enableBackoff.value,
-                  controller.updateEnableBackoff,
+                context.buildSwitchTile(
+                  icon: Icons.trending_up_rounded,
+                  title: i18n("enable_backoff"),
+                  subtitle: i18n("enable_backoff_desc"),
+                  value: controller.enableBackoff,
                 ),
 
                 if (controller.enableBackoff.value)
@@ -270,12 +253,11 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                     onChanged: (v) => controller.updateMaxCheckInterval(v.toInt()),
                   ),
 
-                _buildSwitchTile(
-                  Icons.power_settings_new_rounded,
-                  i18n("auto_start_boot"),
-                  i18n("auto_start_boot_desc"),
-                  controller.autoStartOnBoot.value,
-                  controller.updateAutoStartOnBoot,
+                context.buildSwitchTile(
+                  icon: Icons.power_settings_new_rounded,
+                  title: i18n("auto_start_boot"),
+                  subtitle: i18n("auto_start_boot_desc"),
+                  value: controller.autoStartOnBoot,
                 ),
               ],
             ]),
@@ -298,38 +280,6 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
           letterSpacing: 1.2,
         ),
       ),
-    );
-  }
-
-  Widget _buildTile(
-    ThemeData theme,
-    IconData icon,
-    String title,
-    String val,
-    VoidCallback onTap, {
-    bool isLong = false,
-    bool showRightRounded = true,
-  }) {
-    bool compat = Get.width >= 680;
-    return ListTile(
-      leading: Icon(icon, size: 24, color: theme.colorScheme.primary),
-      title: Text(title, style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w600)),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            constraints: BoxConstraints(maxWidth: compat ? 400 : 100),
-            child: Text(
-              val,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: theme.colorScheme.primary.withValues(alpha: 0.7), fontWeight: FontWeight.w500),
-            ),
-          ),
-          const SizedBox(width: 4),
-          showRightRounded ? const Icon(Icons.chevron_right_rounded, size: 22, color: Colors.grey) : const SizedBox(),
-        ],
-      ),
-      onTap: onTap,
     );
   }
 
@@ -393,18 +343,6 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSwitchTile(IconData icon, String title, String sub, bool val, ValueChanged<bool> onChanged) {
-    return SwitchListTile.adaptive(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      secondary: Icon(icon, size: 24, color: Get.theme.colorScheme.primary),
-      title: Text(title, style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w600)),
-      subtitle: Text(sub, style: AppTextStyles.t13.copyWith(color: Colors.grey)),
-      activeThumbColor: Get.theme.colorScheme.primary,
-      value: val,
-      onChanged: onChanged,
     );
   }
 

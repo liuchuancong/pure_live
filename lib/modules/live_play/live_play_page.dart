@@ -417,13 +417,7 @@ class LivePlayPage extends GetView<LivePlayController> {
         fit: StackFit.passthrough,
         children: [
           ColoredBox(color: Colors.black),
-          Center(
-            child: SizedBox(
-              width: 32,
-              height: 32,
-              child: CircularProgressIndicator(strokeWidth: 4, color: Colors.white),
-            ),
-          ),
+          AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", iconColor: Colors.white),
         ],
       ),
     );
@@ -846,8 +840,7 @@ class NotLivingVideoWidget extends StatelessWidget {
                     child: Text(
                       controller.room.title!,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.t14.copyWith(color: Colors.white,
-                        decoration: TextDecoration.none),
+                      style: AppTextStyles.t14.copyWith(color: Colors.white, decoration: TextDecoration.none),
                     ),
                   ),
                 ),

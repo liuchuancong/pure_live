@@ -95,15 +95,9 @@ class MyTheme {
       tabBarTheme: TabBarThemeData(
         dividerColor: Colors.transparent,
         indicatorSize: TabBarIndicatorSize.label,
-        labelStyle: customGlobalTextTheme.titleSmall?.copyWith(
-          fontWeight: FontWeight.bold, // Bolder weight to highlight the active mirror
-        ),
-
-        unselectedLabelStyle: customGlobalTextTheme.titleSmall?.copyWith(
-          fontWeight: FontWeight.normal, // Kept at the exact same base size, but unbolded
-        ),
-
-        // Color configuration linked dynamically to your active theme layout palette
+        tabAlignment: TabAlignment.center,
+        labelStyle: customGlobalTextTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+        unselectedLabelStyle: customGlobalTextTheme.titleSmall?.copyWith(fontWeight: FontWeight.normal),
         labelColor: baseTheme.colorScheme.primary,
         unselectedLabelColor: baseTheme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
       ),

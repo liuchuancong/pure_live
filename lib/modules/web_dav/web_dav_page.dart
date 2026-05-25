@@ -327,7 +327,9 @@ class WebDavPage extends GetView<WebDavController> {
       }
 
       if (controller.isLoading.value) {
-        return const SliverFillRemaining(child: Center(child: CircularProgressIndicator.adaptive()));
+        return const SliverFillRemaining(
+          child: AppStatusView(type: AppStatusType.loading, title: "", subtitle: ""),
+        );
       }
 
       return SliverList(

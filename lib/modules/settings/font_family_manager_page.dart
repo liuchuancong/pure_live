@@ -38,12 +38,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
             if (fontModels.isEmpty)
               SizedBox(
                 height: 200,
-                child: Center(
-                  child: CircularProgressIndicator(
-                    strokeWidth: 3,
-                    valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary.withValues(alpha: 0.6)),
-                  ),
-                ),
+                child: AppStatusView(type: AppStatusType.loading, title: "", subtitle: ""),
               )
             else
               ListView.builder(
@@ -261,12 +256,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
     }
 
     if (isSelectedModel && controller.fontState.value == DownloadState.downloading) {
-      return Container(
-        width: 32,
-        height: 32,
-        padding: const EdgeInsets.all(6),
-        child: CircularProgressIndicator(strokeWidth: 2.5, color: theme.colorScheme.primary),
-      );
+      return AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", isMini: true);
     }
 
     return Row(

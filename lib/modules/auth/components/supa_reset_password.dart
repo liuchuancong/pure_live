@@ -92,11 +92,7 @@ class _SupaResetPasswordState extends State<SupaResetPassword> {
               ),
               onPressed: _isLoading ? null : _handleUpdatePassword,
               child: _isLoading
-                  ? SizedBox(
-                      height: 18,
-                      width: 18,
-                      child: CircularProgressIndicator(color: theme.colorScheme.onPrimary, strokeWidth: 2),
-                    )
+                  ? AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", isMini: true)
                   : Text(
                       i18n('supabase_update_password'),
                       style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600, letterSpacing: 0.5),

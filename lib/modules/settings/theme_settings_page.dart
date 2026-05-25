@@ -20,15 +20,13 @@ class ThemeSettingsPage extends GetView<SettingsService> {
         children: [
           context.buildGroupTitle(i18n("theme_customization")),
           context.buildModernCard([
-            _buildTile(
-              context,
+            context.buildTile(
               icon: Remix.moon_clear_line,
               title: i18n("change_theme_mode"),
               subtitle: i18n("change_theme_mode_subtitle"),
               onTap: showThemeModeSelectorDialog,
             ),
-            _buildTile(
-              context,
+            context.buildTile(
               icon: Remix.palette_line,
               title: i18n("change_theme_color"),
               subtitle: i18n("change_theme_color_subtitle"),
@@ -43,8 +41,7 @@ class ThemeSettingsPage extends GetView<SettingsService> {
                 ),
               ),
             ),
-            _buildSwitchTile(
-              context,
+            context.buildSwitchTile(
               title: i18n("enable_dynamic_color"),
               subtitle: i18n("enable_dynamic_color_subtitle"),
               value: controller.enableDynamicTheme,
@@ -54,8 +51,7 @@ class ThemeSettingsPage extends GetView<SettingsService> {
           const SizedBox(height: 20),
           context.buildGroupTitle(i18n("localization_settings")),
           context.buildModernCard([
-            _buildTile(
-              context,
+            context.buildTile(
               icon: Remix.global_line,
               title: i18n("change_language"),
               subtitle: i18n("change_language_subtitle"),
@@ -66,8 +62,7 @@ class ThemeSettingsPage extends GetView<SettingsService> {
           context.buildGroupTitle(i18n("font_family_settings")),
           context.buildModernCard([
             Obx(
-              () => _buildTile(
-                context,
+              () => context.buildTile(
                 icon: Remix.font_color,
                 title: i18n("change_font_family"),
                 subtitle: "${i18n("current_font_prefix")}: ${controller.fontFamilyName.value}",
@@ -78,8 +73,7 @@ class ThemeSettingsPage extends GetView<SettingsService> {
           const SizedBox(height: 20),
           context.buildGroupTitle(i18n("text_size_settings")),
           context.buildModernCard([
-            _buildTile(
-              context,
+            context.buildTile(
               icon: Remix.font_size,
               title: i18n("font_settings_title"),
               subtitle: i18n("font_settings_desc"),
@@ -137,62 +131,6 @@ class ThemeSettingsPage extends GetView<SettingsService> {
           ]),
           const SizedBox(height: 32),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-    Widget? trailing,
-  }) {
-    final theme = Theme.of(context);
-    return ListTile(
-      leading: Icon(icon, color: theme.colorScheme.primary, size: 22),
-      title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: 2),
-        child: Text(
-          subtitle,
-          style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-      trailing: trailing ?? Icon(Icons.chevron_right_rounded, color: theme.hintColor.withValues(alpha: 0.4), size: 20),
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-    );
-  }
-
-  Widget _buildSwitchTile(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required RxBool value,
-    required IconData icon,
-  }) {
-    final theme = Theme.of(context);
-    return Obx(
-      () => SwitchListTile(
-        secondary: Icon(icon, size: 22, color: theme.colorScheme.primary),
-        title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: Text(
-            subtitle,
-            style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        value: value.value,
-        activeThumbColor: theme.colorScheme.primary,
-        onChanged: (val) => value.value = val,
-        contentPadding: const EdgeInsets.only(left: 16, top: 2, bottom: 2, right: 8),
       ),
     );
   }

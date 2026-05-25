@@ -23,10 +23,6 @@ class AreasPage extends GetView<AreasController> {
               title: TabBar(
                 controller: controller.tabController,
                 isScrollable: true,
-                tabAlignment: TabAlignment.center,
-                labelStyle: AppTextStyles.t18.copyWith(fontWeight: FontWeight.w600),
-                labelPadding: const EdgeInsets.symmetric(horizontal: 12),
-                indicatorSize: TabBarIndicatorSize.label,
                 tabs: availableSitesList.map((e) => Tab(text: e.name)).toList(),
               ),
             ),

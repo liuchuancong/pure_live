@@ -157,11 +157,7 @@ class _SupaEmailAuthState extends State<SupaEmailAuth> {
                 ),
                 onPressed: _isLoading ? null : _handleSubmit,
                 child: _isLoading
-                    ? SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(color: theme.colorScheme.onPrimary, strokeWidth: 2),
-                      )
+                    ? AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", isMini: true)
                     : Text(
                         _isSigningIn ? i18n('supabase_sign_in') : i18n('supabase_sign_up'),
                         style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600, letterSpacing: 1),
@@ -195,11 +191,7 @@ class _SupaEmailAuthState extends State<SupaEmailAuth> {
                 ),
                 onPressed: _isLoading ? null : _handleResetPassword,
                 child: _isLoading
-                    ? SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(color: theme.colorScheme.onSecondary, strokeWidth: 2),
-                      )
+                    ? AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", isMini: true)
                     : Text(
                         i18n('supabase_reset_password'),
                         style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600),

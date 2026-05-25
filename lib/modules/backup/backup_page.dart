@@ -28,8 +28,7 @@ class _BackupPageState extends State<BackupPage> {
         children: [
           context.buildGroupTitle("Supabase"),
           context.buildModernCard([
-            _buildTile(
-              context,
+            context.buildTile(
               icon: Remix.account_circle_line,
               title: auth.isLogin ? i18n('supabase_mine') : i18n('supabase_sign_in'),
               subtitle: auth.isLogin ? i18n('supabase_logged_in_desc') : i18n('supabase_login_desc'),
@@ -44,16 +43,14 @@ class _BackupPageState extends State<BackupPage> {
           ]),
           context.buildGroupTitle(i18n("webdav")),
           context.buildModernCard([
-            _buildTile(
-              context,
+            context.buildTile(
               icon: Remix.cloud_line,
               title: i18n("webdav"),
               subtitle: i18n("backup_to_webdav"),
               onTap: () => Get.toNamed(RoutePath.kWebDavPage),
             ),
             if (Platform.isAndroid || Platform.isIOS)
-              _buildTile(
-                context,
+              context.buildTile(
                 icon: Remix.qr_code_line,
                 title: i18n("sync_tv_data"),
                 subtitle: i18n("sync_tv_data_subtitle"),
@@ -66,8 +63,7 @@ class _BackupPageState extends State<BackupPage> {
           // 📦 分组二：本地数据快照
           context.buildGroupTitle(i18n("create_backup")),
           context.buildModernCard([
-            _buildTile(
-              context,
+            context.buildTile(
               icon: Remix.file_download_line,
               title: i18n("create_backup"),
               subtitle: i18n("create_backup_subtitle"),
@@ -84,8 +80,7 @@ class _BackupPageState extends State<BackupPage> {
                 }
               },
             ),
-            _buildTile(
-              context,
+            context.buildTile(
               icon: Remix.file_upload_line,
               title: i18n("recover_backup"),
               subtitle: i18n("recover_backup_subtitle"),
@@ -98,8 +93,7 @@ class _BackupPageState extends State<BackupPage> {
           // 📦 分组三：自动化存储
           context.buildGroupTitle(i18n("auto_backup")),
           context.buildModernCard([
-            _buildTile(
-              context,
+            context.buildTile(
               icon: Remix.folder_open_line,
               title: i18n("backup_directory"),
               subtitle: backupDirectory.isEmpty ? i18n('please_set_backup_directory') : backupDirectory,
@@ -116,32 +110,6 @@ class _BackupPageState extends State<BackupPage> {
           const SizedBox(height: 32),
         ],
       ),
-    );
-  }
-
-  Widget _buildTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    final theme = Theme.of(context);
-    return ListTile(
-      leading: Icon(icon, color: theme.colorScheme.primary, size: 22),
-      title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: 2),
-        child: Text(
-          subtitle,
-          style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-      trailing: Icon(Icons.chevron_right_rounded, color: theme.hintColor.withValues(alpha: 0.4), size: 20),
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
     );
   }
 }

@@ -87,7 +87,7 @@ class _PlayOtherState extends State<PlayOther> {
                           );
                         },
                       )
-                    : const Center(child: CircularProgressIndicator()),
+                    : AppStatusView(type: AppStatusType.loading, title: "", subtitle: ""),
               ),
             ),
             Padding(

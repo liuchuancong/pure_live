@@ -67,7 +67,7 @@ class _LiveDlnaPageState extends State<LiveDlnaPage> {
   Widget build(BuildContext context) {
     Widget cur;
     if (isSearching && _deviceList.isEmpty) {
-      cur = const Center(child: CircularProgressIndicator());
+      cur = AppStatusView(type: AppStatusType.loading, title: "", subtitle: "");
     } else if (_deviceList.isEmpty) {
       cur = Center(child: Text(i18n("dlan_device_not_found"), style: Theme.of(context).textTheme.bodyLarge));
     } else {

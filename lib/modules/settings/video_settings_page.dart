@@ -22,8 +22,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
           context.buildGroupTitle(i18n("global_mute")),
           context.buildModernCard([
             Obx(
-              () => _buildSwitchTile(
-                context,
+              () => context.buildSwitchTile(
                 title: i18n("global_mute"),
                 subtitle: i18n("global_mute_subtitle"),
                 value: controller.globalVolumeMute,
@@ -58,8 +57,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
           context.buildGroupTitle(i18n("prefer_resolution")),
           context.buildModernCard([
             Obx(
-              () => _buildTile(
-                context,
+              () => context.buildTile(
                 icon: Remix.hd_line,
                 title: i18n("prefer_resolution"),
                 subtitle: i18n("prefer_resolution_subtitle"),
@@ -71,8 +69,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
               ),
             ),
             Obx(
-              () => _buildTile(
-                context,
+              () => context.buildTile(
                 icon: Remix.signal_tower_line,
                 title: i18n("mobile_quality"),
                 subtitle: i18n("mobile_quality_subtitle"),
@@ -91,23 +88,20 @@ class VideoSettingsPage extends GetView<SettingsService> {
           context.buildGroupTitle(i18n("exit_float_window")),
           context.buildModernCard([
             if (Platform.isAndroid) _buildBackgroundPlayTile(context),
-            _buildSwitchTile(
-              context,
+            context.buildSwitchTile(
               title: i18n("exit_float_window"),
               subtitle: i18n("exit_float_window_subtitle"),
               value: controller.floatPlay,
               icon: Remix.picture_in_picture_2_line,
             ),
-            _buildSwitchTile(
-              context,
+            context.buildSwitchTile(
               title: i18n('enable_fullscreen_default'),
               subtitle: i18n('enable_fullscreen_default_subtitle'),
               value: controller.enableFullScreenDefault,
               icon: Remix.fullscreen_line,
             ),
             if (Platform.isAndroid)
-              _buildSwitchTile(
-                context,
+              context.buildSwitchTile(
                 title: i18n('enable_screen_keep_on'),
                 subtitle: i18n('enable_screen_keep_on_subtitle'),
                 value: controller.enableScreenKeepOn,
@@ -120,15 +114,13 @@ class VideoSettingsPage extends GetView<SettingsService> {
           // 📦 分组四：弹幕设置 (Danmaku Settings)
           context.buildGroupTitle(i18n("show_danmaku")),
           context.buildModernCard([
-            _buildSwitchTile(
-              context,
+            context.buildSwitchTile(
               title: i18n('show_danmaku'),
               subtitle: i18n('show_danmaku_subtitle'),
               value: controller.enableDanmakuDisplay,
               icon: Remix.chat_smile_2_line,
             ),
-            _buildTile(
-              context,
+            context.buildTile(
               icon: Remix.filter_2_line,
               title: i18n("danmaku_filter"),
               subtitle: "",
@@ -137,64 +129,6 @@ class VideoSettingsPage extends GetView<SettingsService> {
           ]),
           const SizedBox(height: 32),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-    Widget? trailing,
-  }) {
-    final theme = Theme.of(context);
-    return ListTile(
-      leading: Icon(icon, color: theme.colorScheme.primary, size: 22),
-      title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
-      subtitle: subtitle.isEmpty
-          ? null
-          : Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Text(
-                subtitle,
-                style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-      trailing: trailing ?? Icon(Icons.chevron_right_rounded, color: theme.hintColor.withValues(alpha: 0.4), size: 20),
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-    );
-  }
-
-  Widget _buildSwitchTile(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required RxBool value,
-    required IconData icon,
-  }) {
-    final theme = Theme.of(context);
-    return Obx(
-      () => SwitchListTile(
-        secondary: Icon(icon, size: 22, color: theme.colorScheme.primary),
-        title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: Text(
-            subtitle,
-            style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        value: value.value,
-        activeThumbColor: theme.colorScheme.primary,
-        onChanged: (val) => value.value = val,
-        contentPadding: const EdgeInsets.only(left: 16, top: 2, bottom: 2, right: 8),
       ),
     );
   }

@@ -83,7 +83,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
           height: 400,
           child: Obx(() {
             if (isDialogLoading.value) {
-              return const Center(child: CircularProgressIndicator());
+              return AppStatusView(type: AppStatusType.loading, title: "", subtitle: "");
             }
             if (sources.isEmpty) {
               return Center(
@@ -183,8 +183,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
         children: [
           context.buildGroupTitle(i18n("manage_page_title")),
           context.buildModernCard([
-            _buildTile(
-              context,
+            context.buildTile(
               icon: Remix.cloud_line,
               title: i18n("manage_page_title"),
               subtitle: i18n("download_guide_sub"),
@@ -194,8 +193,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
           const SizedBox(height: 20),
           context.buildGroupTitle(i18n("auto_sync_settings")),
           context.buildModernCard([
-            _buildSwitchTile(
-              context,
+            context.buildSwitchTile(
               icon: Remix.refresh_line,
               title: i18n("auto_sync_title"),
               subtitle: i18n("auto_sync_desc"),
@@ -206,8 +204,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildTile(
-                    context,
+                  context.buildTile(
                     icon: Remix.time_line,
                     title: i18n("sync_interval_title"),
                     subtitle: i18n("sync_interval_hours", args: {"hour": "${settings.autoSyncHoursInterval.value}"}),
@@ -216,8 +213,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
                 ],
               );
             }),
-            _buildTile(
-              context,
+            context.buildTile(
               icon: Remix.tv_line,
               title: i18n("custom_ua_title"),
               subtitle: settings.customIptvUserAgent.value.length > 30
@@ -229,8 +225,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
           const SizedBox(height: 20),
           context.buildGroupTitle(i18n("iptv_settings")),
           context.buildModernCard([
-            _buildTile(
-              context,
+            context.buildTile(
               icon: Remix.download_2_line,
               title: i18n("import_action"),
               subtitle: "M3U / TXT",
@@ -240,16 +235,14 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
           const SizedBox(height: 20),
           context.buildGroupTitle(i18n("epg_settings")),
           context.buildModernCard([
-            _buildTile(
-              context,
+            context.buildTile(
               icon: Remix.file_add_line,
               title: i18n("import_action"),
               subtitle: "XML / GZ / JSON",
               onTap: () => showEpgImportDialog(),
             ),
             Obx(
-              () => _buildTile(
-                context,
+              () => context.buildTile(
                 icon: Remix.tv_2_line,
                 title: i18n("active_epg_source"),
                 subtitle: settings.selectedSourceId.value.isEmpty
@@ -393,64 +386,6 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
           },
         );
       },
-    );
-  }
-
-  Widget _buildSwitchTile(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required RxBool value,
-    required IconData icon,
-  }) {
-    final theme = Theme.of(context);
-    return Obx(
-      () => SwitchListTile(
-        secondary: Icon(icon, size: 22, color: theme.colorScheme.primary),
-        title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
-        subtitle: subtitle.isEmpty
-            ? null
-            : Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Text(
-                  subtitle,
-                  style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-        value: value.value,
-        activeThumbColor: theme.colorScheme.primary,
-        onChanged: (val) => value.value = val,
-        contentPadding: const EdgeInsets.only(left: 16, top: 2, bottom: 2, right: 8),
-      ),
-    );
-  }
-
-  Widget _buildTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-    Color? subtitleColor,
-  }) {
-    final theme = Theme.of(context);
-    return ListTile(
-      leading: Icon(icon, color: theme.colorScheme.primary, size: 22),
-      title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: 2),
-        child: Text(
-          subtitle,
-          style: AppTextStyles.t12.copyWith(color: subtitleColor ?? theme.hintColor.withValues(alpha: 0.75)),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-      trailing: Icon(Icons.chevron_right_rounded, color: theme.hintColor.withValues(alpha: 0.4), size: 20),
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
     );
   }
 

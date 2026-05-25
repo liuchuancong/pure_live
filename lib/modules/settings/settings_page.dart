@@ -27,8 +27,7 @@ class SettingsPage extends GetView<SettingsService> {
         children: [
           context.buildGroupTitle(i18n("theme_customization")),
           context.buildModernCard([
-            _buildTile(
-              context,
+            context.buildTile(
               icon: Remix.palette_line,
               title: i18n("theme_customization"),
               subtitle: i18n("theme_customization_desc"),
@@ -39,8 +38,7 @@ class SettingsPage extends GetView<SettingsService> {
           const SizedBox(height: 20),
           context.buildGroupTitle(i18n("iptv_settings")),
           context.buildModernCard([
-            _buildTile(
-              context,
+            context.buildTile(
               icon: Remix.tv_line,
               title: i18n("iptv_settings"),
               subtitle: i18n("manage_iptv_sources"),
@@ -51,8 +49,7 @@ class SettingsPage extends GetView<SettingsService> {
           const SizedBox(height: 20),
           context.buildGroupTitle(i18n("video")),
           context.buildModernCard([
-            _buildTile(
-              context,
+            context.buildTile(
               icon: Remix.film_line,
               title: i18n("video"),
               subtitle: i18n("video_desc"),
@@ -63,8 +60,7 @@ class SettingsPage extends GetView<SettingsService> {
           const SizedBox(height: 20),
           context.buildGroupTitle(i18n("player_kernel")),
           context.buildModernCard([
-            _buildTile(
-              context,
+            context.buildTile(
               icon: Remix.cpu_line,
               title: i18n("player_kernel"),
               subtitle: i18n("player_kernel_desc"),
@@ -75,22 +71,19 @@ class SettingsPage extends GetView<SettingsService> {
           const SizedBox(height: 20),
           context.buildGroupTitle(i18n("general")),
           context.buildModernCard([
-            _buildTile(
-              context,
+            context.buildTile(
               icon: Remix.settings_4_line,
               title: i18n("general"),
               subtitle: i18n("general_desc"),
               onTap: () => Get.to(() => const GeneralSettingsPage()),
             ),
-            _buildTile(
-              context,
+            context.buildTile(
               icon: Remix.menu_line,
               title: i18n("navigation_display_settings"),
               subtitle: i18n("navigation_display_settings_desc"),
               onTap: () => Get.to(() => NavigationSettingsPage()),
             ),
-            _buildTile(
-              context,
+            context.buildTile(
               icon: Remix.apps_2_line,
               title: i18n("platform_settings"),
               subtitle: i18n("platform_settings_desc"),
@@ -101,8 +94,7 @@ class SettingsPage extends GetView<SettingsService> {
           const SizedBox(height: 20),
           context.buildGroupTitle(i18n("cache_and_data")),
           context.buildModernCard([
-            _buildTile(
-              context,
+            context.buildTile(
               icon: Remix.database_2_line,
               title: i18n("cache_and_data"),
               subtitle: i18n("cache_and_data_desc"),
@@ -113,8 +105,7 @@ class SettingsPage extends GetView<SettingsService> {
           const SizedBox(height: 20),
           context.buildGroupTitle(i18n("create_backup")),
           context.buildModernCard([
-            _buildTile(
-              context,
+            context.buildTile(
               icon: Remix.refresh_line,
               title: i18n("backup_recover"),
               subtitle: i18n("backup_recover_desc"),
@@ -130,29 +121,4 @@ class SettingsPage extends GetView<SettingsService> {
   // 统一封装的圆角卡片
 
   // 统一封装的单元行，包含图标、主标题、描述和右侧箭头
-  Widget _buildTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    final theme = Theme.of(context);
-    return ListTile(
-      leading: Icon(icon, color: theme.colorScheme.primary, size: 22),
-      title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: 2),
-        child: Text(
-          subtitle,
-          style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-      trailing: Icon(Icons.chevron_right_rounded, color: theme.hintColor.withValues(alpha: 0.4), size: 20),
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-    );
-  }
 }
