@@ -63,7 +63,7 @@ class VersionController extends BaseController {
     if (hasNewVersion.value) {
       buildNumber = VersionUtil.latestBuildNumber ?? (localBuild + 1);
     } else {
-      buildNumber = localBuild;
+      buildNumber = VersionUtil.latestBuildNumber ?? localBuild;
     }
 
     // =====================================================
