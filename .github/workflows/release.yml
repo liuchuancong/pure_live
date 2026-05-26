@@ -239,17 +239,26 @@ jobs:
   # =========================================================
 
   build-macos:
-    runs-on: macos-latest
+    runs-on: macos-14
     timeout-minutes: 30
+
     strategy:
       matrix:
         branch: [master, fvp]
 
     steps:
-      - name: 签出代码
+
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: ${{ matrix.branch }}
+
+      - name: Select Xcode 15
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+
+      - name: Clean Xcode cache
+        run: |
+          rm -rf ~/Library/Developer/Xcode/DerivedData
 
       - name: Set suffix
         id: suffix
@@ -261,17 +270,27 @@ jobs:
             echo "suffix=" >> $GITHUB_OUTPUT
           fi
 
-      - name: 设置Flutter环境
+      - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
 
-      - name: 更新Flutter packages
+      - name: Flutter pub get
         run: flutter pub get
 
+      - name: Install CocoaPods
+        run: |
+          sudo gem install cocoapods
+          pod repo update
+
+      - name: Install Pods
+        run: |
+          cd macos
+          pod install
+
       - name: Build macOS
-        run: flutter build macos --release -v
+        run: flutter build macos --release --no-codesign -v
 
       - name: Get version
         id: get_version
@@ -294,7 +313,7 @@ jobs:
             "PureLive-${{ steps.get_version.outputs.version }}${{ steps.suffix.outputs.suffix }}-macOS.dmg" \
             "build/macos/Build/Products/Release/纯粹直播.app"
 
-      - name: 上传 DMG
+      - name: Upload DMG
         uses: actions/upload-artifact@v4
         with:
           name: macos-dmg-${{ matrix.branch }}
