@@ -811,5 +811,10 @@
     "version_downloads_count_mobile": "{size} · {count} 次下载",
     "download_files": "下载文件",
     "change_loading_color": "修改加载颜色",
-"change_loading_color_subtitle": "自定义网络加载动画的颜色"
+    "change_loading_color_subtitle": "自定义网络加载动画的颜色",
+    "grid_spacing_settings": "网格间距设置",
+    "cross_axis_spacing": "列间距 (横向)",
+    "cross_axis_spacing_subtitle": "调整同一行中左右卡片之间的水平缝隙",
+    "main_axis_spacing": "行间距 (纵向)",
+    "main_axis_spacing_subtitle": "调整同一列中上下卡片之间的垂直缝隙"
 }

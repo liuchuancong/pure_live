@@ -50,8 +50,8 @@ class FavoriteAreasPage extends GetView<FavoriteAreasController> {
               gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
                 lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                 crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 6,
-                mainAxisSpacing: 6,
+                crossAxisSpacing: controller.settings.crossAxisSpacing.value,
+                mainAxisSpacing: controller.settings.mainAxisSpacing.value,
               ),
               itemCount: siteId == Sites.allSite
                   ? controller.favoriteAreas.length

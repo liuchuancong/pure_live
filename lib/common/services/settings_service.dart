@@ -164,6 +164,10 @@ class SettingsService extends GetxController {
 
   final loadingStyle = (HivePrefUtil.getString('loadingStyle') ?? AppConsts.defaultLoadingStyleKey).obs;
   final loadingStyleColorSwitch = (HivePrefUtil.getString('loadingStyleColorSwitch') ?? '').obs;
+
+  // UI
+  final crossAxisSpacing = (HivePrefUtil.getDouble('crossAxisSpacing') ?? 6.0).obs;
+  final mainAxisSpacing = (HivePrefUtil.getDouble('mainAxisSpacing') ?? 6.0).obs;
   // ==============================
   // 🧩 Lifecycle: onInit
   // ==============================
@@ -462,12 +466,21 @@ class SettingsService extends GetxController {
     loadingStyleColorSwitch.listen((value) {
       HivePrefUtil.setString('loadingStyleColorSwitch', value);
     });
+
+    crossAxisSpacing.listen((value) {
+      HivePrefUtil.setDouble('crossAxisSpacing', value);
+    });
+    mainAxisSpacing.listen((value) {
+      HivePrefUtil.setDouble('mainAxisSpacing', value);
+    });
     ever(fontSizeBodySmall, (_) => refreshSystemTheme());
     ever(fontSizeBodyMedium, (_) => refreshSystemTheme());
     ever(fontSizeBodyLarge, (_) => refreshSystemTheme());
     ever(fontSizeTitleMedium, (_) => refreshSystemTheme());
     ever(fontSizeTitleLarge, (_) => refreshSystemTheme());
     ever(fontFamilyName, (_) => refreshSystemTheme());
+    ever(crossAxisSpacing, (_) => refreshSystemTheme());
+    ever(mainAxisSpacing, (_) => refreshSystemTheme());
     ever(enableDynamicTheme, (_) {
       update();
     });
@@ -1056,7 +1069,8 @@ class SettingsService extends GetxController {
     defaultMobileVolume.value = json['defaultMobileVolume'] ?? 0.5;
     defaultDesktopVolume.value = json['defaultDesktopVolume'] ?? 1.0;
     globalVolumeMute.value = json['globalVolumeMute'] ?? false;
-
+    crossAxisSpacing.value = json['crossAxisSpacing'] ?? 6.0;
+    mainAxisSpacing.value = json['mainAxisSpacing'] ?? 6.0;
     setBilibiliCookit(bilibiliCookie.value);
     changePreferResolution(preferResolution.value);
     changePreferResolutionCellular(preferResolutionCellular.value);
@@ -1134,6 +1148,8 @@ class SettingsService extends GetxController {
     json['fontFamilyName'] = fontFamilyName.value;
     json['loadingStyle'] = loadingStyle.value;
     json['loadingStyleColorSwitch'] = loadingStyleColorSwitch.value;
+    json['crossAxisSpacing'] = crossAxisSpacing.value;
+    json['mainAxisSpacing'] = mainAxisSpacing.value;
     return json;
   }
 }

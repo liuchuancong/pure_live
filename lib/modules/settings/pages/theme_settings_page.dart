@@ -67,6 +67,23 @@ class ThemeSettingsPage extends GetView<SettingsService> {
             ),
           ]),
           const SizedBox(height: 20),
+          context.buildGroupTitle(i18n("grid_spacing_settings")),
+          context.buildModernCard([
+            context.buildTile(
+              icon: Remix.arrow_left_right_line,
+              title: i18n("cross_axis_spacing"),
+              subtitle: i18n("cross_axis_spacing_subtitle"),
+              onTap: showCrossAxisSpacingDialog,
+            ),
+            context.buildTile(
+              icon: Remix.arrow_up_down_line,
+              title: i18n("main_axis_spacing"),
+              subtitle: i18n("main_axis_spacing_subtitle"),
+              onTap: showMainAxisSpacingDialog,
+            ),
+          ]),
+
+          const SizedBox(height: 20),
           context.buildGroupTitle(i18n("localization_settings")),
           context.buildModernCard([
             context.buildTile(
@@ -280,6 +297,151 @@ class ThemeSettingsPage extends GetView<SettingsService> {
           ],
         );
       },
+    );
+  }
+
+  void showCrossAxisSpacingDialog() {
+    showCustomSpacingDialog(
+      title: i18n("cross_axis_spacing"),
+      hintText: i18n("cross_axis_spacing_subtitle"),
+      currentValue: controller.crossAxisSpacing.value,
+      onSelected: (value) => controller.crossAxisSpacing.value = value,
+    );
+  }
+
+  void showMainAxisSpacingDialog() {
+    showCustomSpacingDialog(
+      title: i18n("main_axis_spacing"),
+      hintText: i18n("main_axis_spacing_subtitle"),
+      currentValue: controller.mainAxisSpacing.value,
+      onSelected: (value) => controller.mainAxisSpacing.value = value,
+    );
+  }
+
+  void showCustomSpacingDialog({
+    required String title,
+    required String hintText,
+    required double currentValue,
+    required ValueChanged<double> onSelected,
+  }) {
+    final List<double> quickOptions = [0.0, 4.0, 6.0, 8.0, 12.0, 16.0];
+    final textController = TextEditingController(text: currentValue.toStringAsFixed(0));
+    double selectedValue = currentValue;
+
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 400),
+          padding: const EdgeInsets.all(20),
+          child: StatefulBuilder(
+            builder: (context, setDialogState) {
+              final theme = Theme.of(context);
+
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: quickOptions.map((value) {
+                      final isSelected = value == selectedValue;
+                      return ChoiceChip(
+                        label: Text("${value.toInt()} px"),
+                        selected: isSelected,
+                        showCheckmark: false,
+                        side: BorderSide.none,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        onSelected: (selected) {
+                          if (selected) {
+                            setDialogState(() {
+                              selectedValue = value;
+                              textController.text = value.toStringAsFixed(0);
+                            });
+                          }
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(hintText, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: textController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      suffixIcon: SizedBox(
+                        width: 32,
+                        height: 48,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              height: 22,
+                              width: 32,
+                              child: InkWell(
+                                borderRadius: const BorderRadius.only(topRight: Radius.circular(8)),
+                                onTap: () {
+                                  setDialogState(() {
+                                    selectedValue = (double.tryParse(textController.text) ?? 0.0) + 1.0;
+                                    textController.text = selectedValue.toStringAsFixed(0);
+                                  });
+                                },
+                                child: const Icon(Icons.arrow_drop_up, size: 20),
+                              ),
+                            ),
+                            SizedBox(
+                              height: 22,
+                              width: 32,
+                              child: InkWell(
+                                borderRadius: const BorderRadius.only(bottomRight: Radius.circular(8)),
+                                onTap: () {
+                                  setDialogState(() {
+                                    double current = double.tryParse(textController.text) ?? 0.0;
+                                    selectedValue = current > 0.0 ? current - 1.0 : 0.0;
+                                    textController.text = selectedValue.toStringAsFixed(0);
+                                  });
+                                },
+                                child: const Icon(Icons.arrow_drop_down, size: 20),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    onChanged: (val) {
+                      final parsed = double.tryParse(val) ?? 0.0;
+                      setDialogState(() {
+                        selectedValue = parsed;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n("cancel"))),
+                      const SizedBox(width: 12),
+                      ElevatedButton(
+                        onPressed: () {
+                          onSelected(selectedValue);
+                          Navigator.of(context).pop();
+                        },
+                        child: Text(i18n("confirm")),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
     );
   }
 }

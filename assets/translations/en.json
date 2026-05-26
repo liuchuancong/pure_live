@@ -812,5 +812,10 @@
     "version_downloads_count_mobile": "{size} · {count} downloads",
     "download_files": "Download Files",
     "change_loading_color": "Change Loading Color",
-"change_loading_color_subtitle": "Customize the color of the loading animation"
+    "change_loading_color_subtitle": "Customize the color of the loading animation",
+    "grid_spacing_settings": "Grid Spacing Settings",
+    "cross_axis_spacing": "Horizontal Spacing",
+    "cross_axis_spacing_subtitle": "Adjust the gap between items in the same row",
+    "main_axis_spacing": "Vertical Spacing",
+    "main_axis_spacing_subtitle": "Adjust the gap between items in the same column"
 }
