@@ -1,0 +1,43 @@
+name: 手动更新历史发布数据
+
+on:
+  # 仅允许在 GitHub 网页上手动点击按钮触发
+  workflow_dispatch:
+
+jobs:
+  update-json:
+    runs-on: ubuntu-latest
+    
+    # 赋予工作流向仓库写入和提交代码的权限
+    permissions:
+      contents: write
+
+    steps:
+    # 1. 检出仓库代码
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # 2. 设置 Python 环境
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    # 3. 运行更新脚本
+    - name: Run update script
+      run: python update_releases.py
+
+    # 4. 检查是否有文件更新，并自动提交回仓库
+    - name: Commit and Push changes
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@://github.com"
+        
+        # 检查是否有文件变动
+        if [ -n "$(git status --porcelain)" ]; then
+          git add assets/releases.json
+          git commit -m "chore: 手动更新 releases.json 数据 [skip ci]"
+          git push
+        else
+          echo "数据未发生变化，无需更新。"
+        fi
