@@ -306,7 +306,7 @@ jobs:
       - name: Build macOS
         run: |
           flutter clean
-          flutter build macos --release --no-codesign
+          flutter build macos --release
 
       - name: Get version
         id: get_version
