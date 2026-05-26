@@ -82,35 +82,29 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
 
     List<dynamic> roomsBase = List.from(settings.favoriteRooms);
 
+    onlineRooms.addAll(roomsBase.where((room) => room.liveStatus == LiveStatus.live));
+    offlineRooms.addAll(roomsBase.where((room) => room.liveStatus != LiveStatus.live));
+
     final currentAvailableSites = Sites().availableSites(containsAll: true);
     if (tabSiteIndex.value >= 0 && tabSiteIndex.value < currentAvailableSites.length) {
       final activeSite = currentAvailableSites[tabSiteIndex.value];
-      if (activeSite.id != 'all') {
-        roomsBase = roomsBase.where((room) => room.platform?.toUpperCase() == activeSite.id.toUpperCase()).toList();
-      }
-    }
+      final targetList = tabOnlineIndex.value == 0 ? onlineRooms : offlineRooms;
+      final Set<String> activeTagIdSet = {};
 
-    final Set<String> activeTagIdSet = {};
-    for (var room in roomsBase) {
-      if (room.tagIds != null) {
-        for (var id in room.tagIds) {
-          activeTagIdSet.add(id.toString());
+      for (var room in targetList) {
+        if (activeSite.id == 'all' || room.platform?.toUpperCase() == activeSite.id.toUpperCase()) {
+          if (room.tagIds != null) {
+            for (var id in room.tagIds) {
+              activeTagIdSet.add(id.toString());
+            }
+          }
         }
       }
+
+      final matchedTags = tagController.tags.where((t) => activeTagIdSet.contains(t.id)).toList();
+      matchedTags.sort((a, b) => a.order.compareTo(b.order));
+      visibleTags.assignAll(matchedTags);
     }
-
-    final matchedTags = tagController.tags.where((t) => activeTagIdSet.contains(t.id)).toList();
-    matchedTags.sort((a, b) => a.order.compareTo(b.order));
-    visibleTags.assignAll(matchedTags);
-
-    if (selectedTagId.value != 'ALL') {
-      roomsBase = roomsBase.where((room) {
-        return room.tagIds != null && room.tagIds.contains(selectedTagId.value);
-      }).toList();
-    }
-
-    onlineRooms.addAll(roomsBase.where((room) => room.liveStatus == LiveStatus.live));
-    offlineRooms.addAll(roomsBase.where((room) => room.liveStatus != LiveStatus.live));
 
     for (var room in onlineRooms) {
       if (int.tryParse(room.watching!) == null) {
