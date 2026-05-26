@@ -256,11 +256,17 @@ jobs:
       - name: Select Xcode 15.4
         run: sudo xcode-select -s /Applications/Xcode_15.4.app
 
-      # 清理 Xcode 缓存（非常关键）
-      - name: Clean Xcode cache
-        run: |
-          rm -rf ~/Library/Developer/Xcode/DerivedData
-          rm -rf ~/Library/Caches/CocoaPods
+      # 【优化 1】移除主动清理缓存的步骤，改为使用 GitHub Actions 官方缓存，加速 Module 扫描
+      - name: Xcode and Build Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Developer/Xcode/DerivedData
+            ~/.cocoapods/repos
+            build/macos
+          key: ${{ runner.os }}-xcode-${{ matrix.branch }}-${{ hashFiles('**/Podfile.lock', 'pubspec.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-xcode-${{ matrix.branch }}-
 
       - name: Set suffix
         id: suffix
@@ -289,13 +295,8 @@ jobs:
       - name: Install Pods
         run: |
           cd macos
-
-          pod deintegrate || true
-          rm -rf Pods
-          rm -rf Podfile.lock
-
-          pod repo update
-          pod install
+          # 【优化 2】只有当 Podfile.lock 发生变化时才建议清理，这里改为更温和的更新，避免重复下载卡死
+          pod install || (pod repo update && pod install)
 
       # 禁止 Xcode Script Sandbox（关键）
       - name: Disable Script Sandbox
@@ -305,8 +306,10 @@ jobs:
       # Build
       - name: Build macOS
         run: |
-          flutter clean
-          flutter build macos --release --no-codesign
+          # 【优化 3】去掉 flutter clean（避免冲掉上面的 build/macos 缓存）
+          # 【优化 4】通过 --xcode-build-args 禁用造成卡死的 Explicit Modules 特性
+          flutter build macos --release --no-codesign \
+            --xcode-build-args="CLANG_ENABLE_EXPLICIT_MODULES=NO"
 
       - name: Get version
         id: get_version
