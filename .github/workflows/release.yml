@@ -116,17 +116,19 @@ jobs:
           [IO.File]::WriteAllBytes($certPath, $certBytes)
 
           echo "FINAL_CERT_PATH=$certPath" >> $env:GITHUB_ENV
-
+          
       - name: Update make_config.yaml
         shell: pwsh
         run: |
           $configPath = "windows/packaging/msix/make_config.yaml"
 
-          $absolutePath = "${{ env.FINAL_CERT_PATH }}".Replace('\', '/')
+          # 1. 直接读取 GitHub Actions 的环境变量，并把 \ 替换为 /
+          $absolutePath = $env:FINAL_CERT_PATH -replace '\\', '/'
 
           if (Test-Path $configPath) {
               $content = Get-Content $configPath -Raw
 
+              # 2. 正则替换配置文件中的路径
               $content = $content -replace 'certificate_path:\s*.*', "certificate_path: $absolutePath"
 
               Set-Content $configPath $content
@@ -396,3 +398,44 @@ jobs:
       - name: 输出状态
         if: always()
         run: 'echo "✅ Release published with status: ${{ job.status }}"'
+
+  # =========================================================
+  # Build Release JSON
+  # ======================
+  update-json:
+    runs-on: ubuntu-latest
+    
+    # 赋予工作流向仓库写入和提交代码的权限
+    permissions:
+      contents: write
+
+    steps:
+    # 1. 检出仓库代码
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # 2. 设置 Python 环境
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    # 3. 运行更新脚本
+    - name: Run update script
+      run: python update_releases.py
+
+    # 4. 检查是否有文件更新，并自动提交回仓库
+    - name: Commit and Push changes
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@://github.com"
+        
+        # 检查是否有文件变动
+        if [ -n "$(git status --porcelain)" ]; then
+          git add assets/releases.json
+          git commit -m "chore: 手动更新 releases.json 数据 [skip ci]"
+          git push
+        else
+          echo "数据未发生变化，无需更新。"
+        fi
+
