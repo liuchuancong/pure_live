@@ -163,6 +163,7 @@ class SettingsService extends GetxController {
   final RxMap<String, String> fontFolderSizes = <String, String>{}.obs;
 
   final loadingStyle = (HivePrefUtil.getString('loadingStyle') ?? AppConsts.defaultLoadingStyleKey).obs;
+  final loadingStyleColorSwitch = (HivePrefUtil.getString('loadingStyleColorSwitch') ?? '').obs;
   // ==============================
   // 🧩 Lifecycle: onInit
   // ==============================
@@ -456,6 +457,10 @@ class SettingsService extends GetxController {
 
     loadingStyle.listen((value) {
       HivePrefUtil.setString('loadingStyle', value);
+    });
+
+    loadingStyleColorSwitch.listen((value) {
+      HivePrefUtil.setString('loadingStyleColorSwitch', value);
     });
     ever(fontSizeBodySmall, (_) => refreshSystemTheme());
     ever(fontSizeBodyMedium, (_) => refreshSystemTheme());
@@ -1031,6 +1036,8 @@ class SettingsService extends GetxController {
         : 20.0;
     fontFamilyName.value = json['fontFamilyName'] ?? 'Default';
     loadingStyle.value = json['loadingStyle'] ?? 'default';
+
+    loadingStyleColorSwitch.value = json['loadingStyleColorSwitch'] ?? Colors.blue.hex;
     videoOutputDriver.value = PlayerConsts.videoOutputDrivers.keys.contains(json['videoOutputDriver'])
         ? json['videoOutputDriver']
         : 'gpu';
@@ -1126,6 +1133,7 @@ class SettingsService extends GetxController {
     json['fontSizeTitleLarge'] = fontSizeTitleLarge.value;
     json['fontFamilyName'] = fontFamilyName.value;
     json['loadingStyle'] = loadingStyle.value;
+    json['loadingStyleColorSwitch'] = loadingStyleColorSwitch.value;
     return json;
   }
 }

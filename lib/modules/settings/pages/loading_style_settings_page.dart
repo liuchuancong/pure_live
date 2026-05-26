@@ -1,7 +1,10 @@
 import 'package:remixicon/remixicon.dart';
-import 'package:pure_live/common/index.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
+import 'package:flex_color_picker/flex_color_picker.dart';
+import 'package:loading_indicator/loading_indicator.dart';
+import 'package:pure_live/common/index.dart' hide Indicator;
+import 'package:pure_live/modules/settings/pages/aurora_loading.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class LoadingStyleSettingsPage extends StatefulWidget {
@@ -20,6 +23,51 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
     _rotateController = AnimationController(duration: const Duration(milliseconds: 1000), vsync: this)..repeat();
   }
 
+  Future<bool> colorPickerDialog() async {
+    final controller = Get.find<SettingsService>();
+    return ColorPicker(
+      color: HexColor(
+        controller.loadingStyleColorSwitch.value.isEmpty
+            ? Theme.of(context).colorScheme.primary.hex
+            : controller.loadingStyleColorSwitch.value,
+      ),
+      onColorChanged: (Color color) {
+        controller.loadingStyleColorSwitch.value = color.hex;
+      },
+      width: 40,
+      height: 40,
+      borderRadius: 4,
+      spacing: 5,
+      runSpacing: 5,
+      wheelDiameter: 155,
+      heading: Text(i18n("theme_color"), style: Theme.of(Get.context!).textTheme.titleMedium),
+      subheading: Text(i18n("select_opacity"), style: Theme.of(Get.context!).textTheme.titleMedium),
+      wheelSubheading: Text(i18n("theme_color_opacity"), style: Theme.of(Get.context!).textTheme.titleMedium),
+      showMaterialName: false,
+      showColorName: false,
+      showColorCode: true,
+      copyPasteBehavior: const ColorPickerCopyPasteBehavior(longPressMenu: true),
+      materialNameTextStyle: Theme.of(Get.context!).textTheme.bodySmall,
+      colorNameTextStyle: Theme.of(Get.context!).textTheme.bodySmall,
+      colorCodeTextStyle: Theme.of(Get.context!).textTheme.bodyMedium,
+      colorCodePrefixStyle: Theme.of(Get.context!).textTheme.bodySmall,
+      selectedPickerTypeColor: Theme.of(Get.context!).colorScheme.primary,
+      customColorSwatchesAndNames: controller.colorsNameMap,
+      pickersEnabled: const <ColorPickerType, bool>{
+        ColorPickerType.both: false,
+        ColorPickerType.primary: true,
+        ColorPickerType.accent: true,
+        ColorPickerType.bw: false,
+        ColorPickerType.custom: true,
+        ColorPickerType.wheel: true,
+      },
+    ).showPickerDialog(
+      Get.context!,
+      actionsPadding: const EdgeInsets.all(16),
+      constraints: const BoxConstraints(minHeight: 480, minWidth: 375, maxWidth: 420),
+    );
+  }
+
   @override
   void dispose() {
     _rotateController.dispose();
@@ -31,6 +79,8 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
 
     if (key == 'rotatingPlain') {
       animWidget = SpinKitRotatingPlain(color: color, size: size);
+    } else if (key == 'auroraRing') {
+      animWidget = AuroraLoading(size: size);
     } else if (key == 'doubleBounce') {
       animWidget = SpinKitDoubleBounce(color: color, size: size);
     } else if (key == 'wave') {
@@ -137,6 +187,216 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
       animWidget = LoadingAnimationWidget.halfTriangleDot(color: color, size: size);
     } else if (key == 'dotsTriangle') {
       animWidget = LoadingAnimationWidget.dotsTriangle(color: color, size: size);
+    } else if (key == 'ballPulse') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.ballPulse, colors: [color]),
+      );
+    } else if (key == 'ballGridPulse') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.ballGridPulse, colors: [color]),
+      );
+    } else if (key == 'ballClipRotate') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.ballClipRotate, colors: [color]),
+      );
+    } else if (key == 'ballClipRotatePulse') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.ballClipRotatePulse, colors: [color]),
+      );
+    } else if (key == 'squareSpin') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.squareSpin, colors: [color]),
+      );
+    } else if (key == 'ballClipRotateMultiple') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.ballClipRotateMultiple, colors: [color]),
+      );
+    } else if (key == 'ballPulseRise') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.ballPulseRise, colors: [color]),
+      );
+    } else if (key == 'ballRotate') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.ballRotate, colors: [color]),
+      );
+    } else if (key == 'cubeTransition') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.cubeTransition, colors: [color]),
+      );
+    } else if (key == 'ballZigZag') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.ballZigZag, colors: [color]),
+      );
+    } else if (key == 'ballZigZagDeflect') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.ballZigZagDeflect, colors: [color]),
+      );
+    } else if (key == 'ballTrianglePath') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.ballTrianglePath, colors: [color]),
+      );
+    } else if (key == 'ballTrianglePathColored') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(
+          indicatorType: Indicator.ballTrianglePathColored,
+          colors: [color, theme.colorScheme.secondary, theme.colorScheme.primary],
+        ),
+      );
+    } else if (key == 'ballTrianglePathColoredFilled') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(
+          indicatorType: Indicator.ballTrianglePathColoredFilled,
+          colors: [color, theme.colorScheme.secondary, theme.colorScheme.primary],
+        ),
+      );
+    } else if (key == 'ballScale') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.ballScale, colors: [color]),
+      );
+    } else if (key == 'lineScale') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.lineScale, colors: [color]),
+      );
+    } else if (key == 'lineScaleParty') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.lineScaleParty, colors: [color]),
+      );
+    } else if (key == 'ballScaleMultiple') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.ballScaleMultiple, colors: [color]),
+      );
+    } else if (key == 'ballPulseSync') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.ballPulseSync, colors: [color]),
+      );
+    } else if (key == 'ballBeat') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.ballBeat, colors: [color]),
+      );
+    } else if (key == 'lineScalePulseOut') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.lineScalePulseOut, colors: [color]),
+      );
+    } else if (key == 'lineScalePulseOutRapid') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.lineScalePulseOutRapid, colors: [color]),
+      );
+    } else if (key == 'ballScaleRipple') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.ballScaleRipple, colors: [color]),
+      );
+    } else if (key == 'ballScaleRippleMultiple') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.ballScaleRippleMultiple, colors: [color]),
+      );
+    } else if (key == 'ballSpinFadeLoader') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.ballSpinFadeLoader, colors: [color]),
+      );
+    } else if (key == 'lineSpinFadeLoader') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.lineSpinFadeLoader, colors: [color]),
+      );
+    } else if (key == 'triangleSkewSpin') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.triangleSkewSpin, colors: [color]),
+      );
+    } else if (key == 'pacman') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.pacman, colors: [color]),
+      );
+    } else if (key == 'ballGridBeat') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.ballGridBeat, colors: [color]),
+      );
+    } else if (key == 'semiCircleSpin') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.semiCircleSpin, colors: [color]),
+      );
+    } else if (key == 'ballRotateChase') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.ballRotateChase, colors: [color]),
+      );
+    } else if (key == 'orbit') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.orbit, colors: [color]),
+      );
+    } else if (key == 'audioEqualizer') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.audioEqualizer, colors: [color]),
+      );
+    } else if (key == 'circleStrokeSpin') {
+      animWidget = SizedBox(
+        width: size,
+        height: size,
+        child: LoadingIndicator(indicatorType: Indicator.circleStrokeSpin, colors: [color]),
+      );
     } else {
       animWidget = RotationTransition(
         turns: _rotateController,
@@ -162,7 +422,6 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
   Widget build(BuildContext context) {
     final settings = Get.find<SettingsService>();
     final theme = Theme.of(context);
-    final color = theme.colorScheme.primary;
     final isZh = Get.locale?.languageCode == 'zh';
     final double screenWidth = MediaQuery.of(context).size.width;
     int crossAxisCount = 3;
@@ -188,78 +447,122 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
             child: IconButton(
               icon: const Icon(Remix.arrow_go_back_line),
               tooltip: i18n("restore_default"),
-              onPressed: () => settings.loadingStyle.value = AppConsts.defaultLoadingStyleKey,
+              onPressed: () {
+                settings.loadingStyle.value = AppConsts.defaultLoadingStyleKey;
+                settings.loadingStyleColorSwitch.value = '';
+              },
             ),
           ),
         ],
       ),
-      body: GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: crossAxisCount,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: childAspectRatio,
-        ),
-        itemCount: AppConsts.allStyles.length,
-        itemBuilder: (context, index) {
-          final item = AppConsts.allStyles[index];
-          final String key = item['key']!;
-          final String displayName = isZh ? item['nameZh']! : item['nameEn']!;
-
-          return Obx(() {
-            final bool isSelected = settings.loadingStyle.value == key;
-
-            return InkWell(
-              onTap: () => settings.loadingStyle.value = key,
-              borderRadius: BorderRadius.circular(16),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? theme.colorScheme.primaryContainer.withValues(alpha: 0.25)
-                      : theme.colorScheme.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: isSelected ? theme.colorScheme.primary : Colors.transparent, width: 2),
-                ),
-                child: Stack(
-                  children: [
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Center(
-                            child: SizedBox(width: 36, height: 36, child: _buildAnim(key, color, 36, theme)),
-                          ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                context.buildGroupTitle(i18n("change_loading_color")),
+                context.buildModernCard([
+                  context.buildTile(
+                    icon: Remix.palette_line,
+                    title: i18n("change_loading_color"),
+                    subtitle: i18n("change_loading_color_subtitle"),
+                    onTap: colorPickerDialog,
+                    trailing: Obx(
+                      () => ColorIndicator(
+                        width: 28,
+                        height: 28,
+                        borderRadius: 6,
+                        color: HexColor(
+                          settings.loadingStyleColorSwitch.value.isEmpty
+                              ? theme.colorScheme.primary.hex
+                              : settings.loadingStyleColorSwitch.value,
                         ),
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12, left: 4, right: 4),
-                          child: Text(
-                            displayName,
-                            textAlign: TextAlign.center,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                              color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (isSelected)
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: Icon(Icons.check_circle, size: 16, color: theme.colorScheme.primary),
+                        onSelectFocus: false,
                       ),
-                  ],
-                ),
+                    ),
+                  ),
+                ]),
+              ],
+            ),
+          ),
+          Expanded(
+            child: GridView.builder(
+              padding: const EdgeInsets.all(16),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: childAspectRatio,
               ),
-            );
-          });
-        },
+              itemCount: AppConsts.allStyles.length,
+              itemBuilder: (context, index) {
+                final item = AppConsts.allStyles[index];
+                final String key = item['key']!;
+                final String displayName = isZh ? item['nameZh']! : item['nameEn']!;
+
+                return Obx(() {
+                  final bool isSelected = settings.loadingStyle.value == key;
+                  final String currentHex = settings.loadingStyleColorSwitch.value;
+                  final Color liveColor = currentHex.isEmpty ? theme.colorScheme.primary : HexColor(currentHex);
+
+                  return InkWell(
+                    onTap: () => settings.loadingStyle.value = key,
+                    borderRadius: BorderRadius.circular(16),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? theme.colorScheme.primaryContainer.withValues(alpha: 0.25)
+                            : theme.colorScheme.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isSelected ? theme.colorScheme.primary : Colors.transparent,
+                          width: 2,
+                        ),
+                      ),
+                      child: Stack(
+                        children: [
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: Center(
+                                  child: SizedBox(width: 36, height: 36, child: _buildAnim(key, liveColor, 36, theme)),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 12, left: 4, right: 4),
+                                child: Text(
+                                  displayName,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (isSelected)
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: Icon(Icons.check_circle, size: 16, color: theme.colorScheme.primary),
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                });
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

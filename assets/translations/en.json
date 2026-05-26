@@ -810,5 +810,7 @@
     "version_file_size": "File Size: {size}",
     "version_downloads_count": "{size} · {count} downloads",
     "version_downloads_count_mobile": "{size} · {count} downloads",
-    "download_files": "Download Files"
+    "download_files": "Download Files",
+    "change_loading_color": "Change Loading Color",
+"change_loading_color_subtitle": "Customize the color of the loading animation"
 }

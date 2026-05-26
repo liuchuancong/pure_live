@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
+import 'package:flutter_color/flutter_color.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:pure_live/plugins/locale_helper.dart';
+import 'package:loading_indicator/loading_indicator.dart';
 import 'package:pure_live/common/style/app_text_styles.dart';
 import 'package:pure_live/common/services/settings_service.dart';
+import 'package:pure_live/modules/settings/pages/aurora_loading.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 enum AppStatusType { loading, empty, error }
@@ -75,6 +78,8 @@ class _AppStatusViewState extends State<AppStatusView> with SingleTickerProvider
     switch (style) {
       case 'rotatingPlain':
         return SpinKitRotatingPlain(color: color, size: size);
+      case 'aurora_loading':
+        return const AuroraLoading(size: 50.0);
       case 'doubleBounce':
         return SpinKitDoubleBounce(color: color, size: size);
       case 'wave':
@@ -134,7 +139,7 @@ class _AppStatusViewState extends State<AppStatusView> with SingleTickerProvider
       case 'pulsingGrid':
         return SpinKitPulsingGrid(color: color, size: size);
       default:
-        return const SizedBox.shrink(); // 如果不是 SpinKit，交给下一个方法去认领
+        return const SizedBox.shrink();
     }
   }
 
@@ -210,15 +215,243 @@ class _AppStatusViewState extends State<AppStatusView> with SingleTickerProvider
     }
   }
 
+  Widget _getLoadingIndicator(String style, Color color, double size, ThemeData theme) {
+    switch (style) {
+      case 'ballPulse':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.ballPulse, colors: [color]),
+        );
+      case 'ballGridPulse':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.ballGridPulse, colors: [color]),
+        );
+      case 'ballClipRotate':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.ballClipRotate, colors: [color]),
+        );
+      case 'ballClipRotatePulse':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.ballClipRotatePulse, colors: [color]),
+        );
+      case 'squareSpin':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.squareSpin, colors: [color]),
+        );
+      case 'ballClipRotateMultiple':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.ballClipRotateMultiple, colors: [color]),
+        );
+      case 'ballPulseRise':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.ballPulseRise, colors: [color]),
+        );
+      case 'ballRotate':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.ballRotate, colors: [color]),
+        );
+      case 'cubeTransition':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.cubeTransition, colors: [color]),
+        );
+      case 'ballZigZag':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.ballZigZag, colors: [color]),
+        );
+      case 'ballZigZagDeflect':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.ballZigZagDeflect, colors: [color]),
+        );
+      case 'ballTrianglePath':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.ballTrianglePath, colors: [color]),
+        );
+      case 'ballTrianglePathColored':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(
+            indicatorType: Indicator.ballTrianglePathColored,
+            colors: [color, theme.colorScheme.secondary, theme.colorScheme.primary],
+          ),
+        );
+      case 'ballTrianglePathColoredFilled':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(
+            indicatorType: Indicator.ballTrianglePathColoredFilled,
+            colors: [color, theme.colorScheme.secondary, theme.colorScheme.primary],
+          ),
+        );
+      case 'ballScale':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.ballScale, colors: [color]),
+        );
+      case 'lineScale':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.lineScale, colors: [color]),
+        );
+      case 'lineScaleParty':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.lineScaleParty, colors: [color]),
+        );
+      case 'ballScaleMultiple':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.ballScaleMultiple, colors: [color]),
+        );
+      case 'ballPulseSync':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.ballPulseSync, colors: [color]),
+        );
+      case 'ballBeat':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.ballBeat, colors: [color]),
+        );
+      case 'lineScalePulseOut':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.lineScalePulseOut, colors: [color]),
+        );
+      case 'lineScalePulseOutRapid':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.lineScalePulseOutRapid, colors: [color]),
+        );
+      case 'ballScaleRipple':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.ballScaleRipple, colors: [color]),
+        );
+      case 'ballScaleRippleMultiple':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.ballScaleRippleMultiple, colors: [color]),
+        );
+      case 'ballSpinFadeLoader':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.ballSpinFadeLoader, colors: [color]),
+        );
+      case 'lineSpinFadeLoader':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.lineSpinFadeLoader, colors: [color]),
+        );
+      case 'triangleSkewSpin':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.triangleSkewSpin, colors: [color]),
+        );
+      case 'pacman':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.pacman, colors: [color]),
+        );
+      case 'ballGridBeat':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.ballGridBeat, colors: [color]),
+        );
+      case 'semiCircleSpin':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.semiCircleSpin, colors: [color]),
+        );
+      case 'ballRotateChase':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.ballRotateChase, colors: [color]),
+        );
+      case 'orbit':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.orbit, colors: [color]),
+        );
+      case 'audioEqualizer':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.audioEqualizer, colors: [color]),
+        );
+      case 'circleStrokeSpin':
+        return SizedBox(
+          width: size,
+          height: size,
+          child: LoadingIndicator(indicatorType: Indicator.circleStrokeSpin, colors: [color]),
+        );
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
   Widget _buildLoadingWidget(String style) {
     final theme = Theme.of(context);
-    final color = widget.iconColor ?? theme.colorScheme.primary;
+    final settings = Get.find<SettingsService>();
+    Color parsedColor;
+    final hexColor = settings.loadingStyleColorSwitch.value;
+    if (hexColor.isNotEmpty) {
+      parsedColor = HexColor(hexColor);
+    } else {
+      parsedColor = widget.iconColor ?? theme.colorScheme.primary;
+    }
+
     final double size = widget.isMini ? 24 : 50;
 
-    final spinkit = _getSpinKit(style, color, size);
+    final spinkit = _getSpinKit(style, parsedColor, size);
     if (spinkit is! SizedBox) return spinkit;
 
-    final loadingAnimation = _getLoadingAnimation(style, color, size, theme);
+    final loadingIndicator = _getLoadingIndicator(style, parsedColor, size, theme);
+    if (loadingIndicator is! SizedBox || loadingIndicator.child != null) return loadingIndicator;
+
+    final loadingAnimation = _getLoadingAnimation(style, parsedColor, size, theme);
     if (loadingAnimation is! SizedBox) return loadingAnimation;
 
     return RotationTransition(
@@ -228,7 +461,7 @@ class _AppStatusViewState extends State<AppStatusView> with SingleTickerProvider
           return SweepGradient(
             startAngle: 0.0,
             endAngle: 3.14 * 2,
-            colors: [color, color.withValues(alpha: 0.1)],
+            colors: [parsedColor, parsedColor.withValues(alpha: 0.1)],
             stops: const [0.0, 0.85],
           ).createShader(rect);
         },

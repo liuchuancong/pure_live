@@ -809,5 +809,7 @@
     "version_file_size": "文件大小: {size}",
     "version_downloads_count": "{size} · 已被下载 {count} 次",
     "version_downloads_count_mobile": "{size} · {count} 次下载",
-    "download_files": "下载文件"
+    "download_files": "下载文件",
+    "change_loading_color": "修改加载颜色",
+"change_loading_color_subtitle": "自定义网络加载动画的颜色"
 }

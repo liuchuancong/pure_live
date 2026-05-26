@@ -82,6 +82,7 @@ class AppConsts {
 
   static const List<Map<String, String>> allStyles = [
     {'key': 'default', 'nameEn': 'Default Ring', 'nameZh': '默认圆环'},
+    {"key": "auroraRing", "nameEn": "Aurora Ring", "nameZh": "极光圆环"},
     {'key': 'rotatingPlain', 'nameEn': 'Rotating Plain', 'nameZh': '旋转方块'},
     {'key': 'doubleBounce', 'nameEn': 'Double Bounce', 'nameZh': '双重大圆'},
     {'key': 'wave', 'nameEn': 'Wave', 'nameZh': '波浪跳跃'},
@@ -132,5 +133,39 @@ class AppConsts {
     {'key': 'stretchedDots', 'nameEn': 'Stretched Dots', 'nameZh': '拉伸光点'},
     {'key': 'halfTriangleDot', 'nameEn': 'Half Triangle', 'nameZh': '三角错落'},
     {'key': 'dotsTriangle', 'nameEn': 'Dots Triangle', 'nameZh': '动态三角'},
+    {'key': 'ballPulse', 'nameEn': 'Ball Pulse', 'nameZh': '三点渐变'},
+    {'key': 'ballGridPulse', 'nameEn': 'Ball Grid Pulse', 'nameZh': '九宫格闪烁'},
+    {'key': 'ballClipRotate', 'nameEn': 'Ball Clip Rotate', 'nameZh': '裁剪圆环旋转'},
+    {'key': 'ballClipRotatePulse', 'nameEn': 'Ball Clip Rotate Pulse', 'nameZh': '双层环球旋转'},
+    {'key': 'squareSpin', 'nameEn': 'Square Spin', 'nameZh': '方块翻转'},
+    {'key': 'ballClipRotateMultiple', 'nameEn': 'Ball Clip Rotate Multiple', 'nameZh': '多重碎片圆环'},
+    {'key': 'ballPulseRise', 'nameEn': 'Ball Pulse Rise', 'nameZh': '交错交替上升'},
+    {'key': 'ballRotate', 'nameEn': 'Ball Rotate', 'nameZh': '三球围绕旋转'},
+    {'key': 'cubeTransition', 'nameEn': 'Cube Transition', 'nameZh': '双对角方块位移'},
+    {'key': 'ballZigZag', 'nameEn': 'Ball ZigZag', 'nameZh': '双球Z字错位'},
+    {'key': 'ballZigZagDeflect', 'nameEn': 'Ball ZigZag Deflect', 'nameZh': '双球曲线反弹'},
+    {'key': 'ballTrianglePath', 'nameEn': 'Ball Triangle Path', 'nameZh': '三角轨迹循环'},
+    {'key': 'ballTrianglePathColored', 'nameEn': 'Ball Triangle Path Colored', 'nameZh': '三角彩轨循环'}, // 补齐
+    {'key': 'ballTrianglePathColoredFilled', 'nameEn': 'Ball Triangle Filled', 'nameZh': '三角实心循环'}, // 补齐
+    {'key': 'ballScale', 'nameEn': 'Ball Scale', 'nameZh': '单圆水波脉冲'},
+    {'key': 'lineScale', 'nameEn': 'Line Scale', 'nameZh': '五线谱律动'},
+    {'key': 'lineScaleParty', 'nameEn': 'Line Scale Party', 'nameZh': '律动线条'},
+    {'key': 'ballScaleMultiple', 'nameEn': 'Ball Scale Multiple', 'nameZh': '多重水波涟漪'},
+    {'key': 'ballPulseSync', 'nameEn': 'Ball Pulse Sync', 'nameZh': '三点波浪同步'},
+    {'key': 'ballBeat', 'nameEn': 'Ball Beat', 'nameZh': '三点心跳缩放'},
+    {'key': 'lineScalePulseOut', 'nameEn': 'Line Scale Pulse Out', 'nameZh': '线条由内向外扩散'},
+    {'key': 'lineScalePulseOutRapid', 'nameEn': 'Line Scale Pulse Out Rapid', 'nameZh': '线条高频向外扩散'},
+    {'key': 'ballScaleRipple', 'nameEn': 'Ball Scale Ripple', 'nameZh': '空心圆环震荡'},
+    {'key': 'ballScaleRippleMultiple', 'nameEn': 'Ball Scale Ripple Multiple', 'nameZh': '多重空心涟漪'},
+    {'key': 'ballSpinFadeLoader', 'nameEn': 'Ball Spin Fade Loader', 'nameZh': '经典菊花圆点'},
+    {'key': 'lineSpinFadeLoader', 'nameEn': 'Line Spin Fade Loader', 'nameZh': '经典时钟线条'},
+    {'key': 'triangleSkewSpin', 'nameEn': 'Triangle Skew Spin', 'nameZh': '三角倾斜翻转'},
+    {'key': 'pacman', 'nameEn': 'Pacman', 'nameZh': '吃豆人游戏'},
+    {'key': 'ballGridBeat', 'nameEn': 'Ball Grid Beat', 'nameZh': '九宫格心跳闪烁'},
+    {'key': 'semiCircleSpin', 'nameEn': 'Semi Circle Spin', 'nameZh': '半圆飞速旋转'},
+    {'key': 'ballRotateChase', 'nameEn': 'Ball Rotate Chase', 'nameZh': '圆点接力追逐'},
+    {'key': 'orbit', 'nameEn': 'Orbit', 'nameZh': '行星轨道公转'},
+    {'key': 'audioEqualizer', 'nameEn': 'Audio Equalizer', 'nameZh': '音频均衡器'}, // 替代旧版 audioWave
+    {'key': 'circleStrokeSpin', 'nameEn': 'Circle Stroke Spin', 'nameZh': '纯净描边圆环'},
   ];
 }

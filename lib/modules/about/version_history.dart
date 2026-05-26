@@ -60,7 +60,9 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> with SingleTick
           'Accept': 'application/json',
         },
       );
-      allReleased.value = (List.from(json.decode(result) ?? []).map((e) => ReleaseModel.fromJson(e)).toList());
+      final List rawList = result is String ? json.decode(result) : (result ?? []);
+
+      allReleased.value = rawList.map((e) => ReleaseModel.fromJson(e)).toList();
       allReleased.value.sort((a, b) => b.date.compareTo(a.date));
     } catch (e, s) {
       debugPrintStack(stackTrace: s);
