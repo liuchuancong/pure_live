@@ -25,6 +25,7 @@ dependencies:
   string_similarity: ^2.0.0
   fuzzywuzzy: ^1.1.6
   scrollview_observer: ^1.26.3
+  flutter_reorderable_grid_view: ^5.6.0
   # Local database (SQLite)
   drift: ^2.22.1
   sqlite3_flutter_libs: ^0.5.28

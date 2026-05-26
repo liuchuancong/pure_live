@@ -23,7 +23,7 @@ class TagManagementController extends GetxController {
     }
   }
 
-  Future<void> _saveTags() async {
+  Future<void> saveTags() async {
     await HivePrefUtil.setAnyPref(_storageKey, tags.map((e) => e.toJson()).toList());
   }
 
@@ -43,8 +43,17 @@ class TagManagementController extends GetxController {
     );
 
     tags.add(newTag);
-    _saveTags();
+    saveTags();
     return true;
+  }
+
+  void updateAllTags(List<LiveTag> newList) {
+    tags.assignAll(newList);
+    for (int i = 0; i < tags.length; i++) {
+      tags[i].order = i;
+    }
+    tags.refresh();
+    saveTags();
   }
 
   bool updateTag(int index, String newName, String newDescription) {
@@ -59,25 +68,22 @@ class TagManagementController extends GetxController {
     tags[index].name = cleanName;
     tags[index].description = newDescription.trim();
     tags.refresh();
-    _saveTags();
+    saveTags();
     return true;
   }
 
-  void togglePin(int index) {
+  void pinToTop(int index) {
+    if (index <= 0 || index >= tags.length) return;
+
     final targetTag = tags.removeAt(index);
-    targetTag.isPinned = !targetTag.isPinned;
+    targetTag.isPinned = true;
+    tags.insert(0, targetTag);
 
-    if (targetTag.isPinned) {
-      tags.insert(0, targetTag);
-    } else {
-      int lastPinnedIndex = tags.indexWhere((t) => t.isPinned);
-      if (lastPinnedIndex == -1) {
-        tags.insert(0, targetTag);
-      } else {
-        tags.insert(lastPinnedIndex + 1, targetTag);
-      }
-    }
+    _refreshSequentialOrders();
+  }
 
+  void togglePinStatus(int index) {
+    tags[index].isPinned = !tags[index].isPinned;
     _refreshSequentialOrders();
   }
 
@@ -86,22 +92,11 @@ class TagManagementController extends GetxController {
     _refreshSequentialOrders();
   }
 
-  void onReorder(int oldIndex, int newIndex) {
-    if (oldIndex < newIndex) {
-      newIndex -= 1;
-    }
-
-    final LiveTag item = tags.removeAt(oldIndex);
-    tags.insert(newIndex, item);
-
-    _refreshSequentialOrders();
-  }
-
   void _refreshSequentialOrders() {
     for (int i = 0; i < tags.length; i++) {
       tags[i].order = i;
     }
     tags.refresh();
-    _saveTags();
+    saveTags();
   }
 }

@@ -43,12 +43,12 @@ class FavoritePage extends GetView<FavoriteController> {
                             Expanded(
                               child: Obx(
                                 () => TabBarView(
-                                  children: controller.tabOnlineIndex.value == 0
-                                      ? availableSitesList.map((e) => e.id).map((e) => _RoomOnlineGridView(e)).toList()
-                                      : availableSitesList
-                                            .map((e) => e.id)
-                                            .map((e) => _RoomOfflineGridView(e))
-                                            .toList(),
+                                  children: availableSitesList
+                                      .map((e) => e.id)
+                                      .map(
+                                        (e) => _RoomGridView(site: e, isOnline: controller.tabOnlineIndex.value == 0),
+                                      )
+                                      .toList(),
                                 ),
                               ),
                             ),
@@ -64,18 +64,26 @@ class FavoritePage extends GetView<FavoriteController> {
   }
 }
 
-class _RoomOnlineGridView extends GetView<FavoriteController> {
-  _RoomOnlineGridView(this.site);
+class _RoomGridView extends GetView<FavoriteController> {
+  _RoomGridView({required this.site, required this.isOnline});
+
   final String site;
+  final bool isOnline;
   final dense = Get.find<SettingsService>().enableDenseFavorites.value;
+  final offlineRefreshController = EasyRefreshController(controlFinishRefresh: true, controlFinishLoad: true);
 
   Future onRefresh() async {
-    bool result = await controller.onRefresh();
-    if (!result) {
-      controller.refreshController.finishRefresh(IndicatorResult.success);
-      controller.refreshController.resetFooter();
+    if (isOnline) {
+      bool result = await controller.onRefresh();
+      if (!result) {
+        controller.refreshController.finishRefresh(IndicatorResult.success);
+        controller.refreshController.resetFooter();
+      } else {
+        controller.refreshController.finishRefresh(IndicatorResult.fail);
+      }
     } else {
-      controller.refreshController.finishRefresh(IndicatorResult.fail);
+      await controller.onRefresh();
+      offlineRefreshController.finishRefresh(IndicatorResult.success);
     }
   }
 
@@ -88,20 +96,26 @@ class _RoomOnlineGridView extends GetView<FavoriteController> {
         if (dense) {
           crossAxisCount = width > 1280 ? 5 : (width > 960 ? 4 : (width > 640 ? 3 : 2));
         }
-        return Obx(() {
-          final displayRooms = site == Sites.allSite
-              ? controller.onlineRooms
-              : controller.onlineRooms.where((el) => el.platform == site).toList();
 
-          if (controller.onlineRooms.isEmpty && controller.refreshController.controlFinishRefresh) {
+        return Obx(() {
+          final baseRooms = isOnline ? controller.onlineRooms : controller.offlineRooms;
+          final currentRefreshController = isOnline ? controller.refreshController : offlineRefreshController;
+
+          final displayRooms = site == Sites.allSite
+              ? baseRooms
+              : baseRooms.where((el) => el.platform == site).toList();
+
+          if (baseRooms.isEmpty &&
+              currentRefreshController.controlFinishRefresh &&
+              controller.selectedTagId.value == 'ALL') {
             return AppStatusView(type: AppStatusType.loading, title: i18n('refresh_loading'), subtitle: '');
           }
 
           return EasyRefresh(
-            controller: controller.refreshController,
+            controller: currentRefreshController,
             onRefresh: onRefresh,
             onLoad: () {
-              controller.refreshController.finishLoad(IndicatorResult.success);
+              currentRefreshController.finishLoad(isOnline ? IndicatorResult.success : IndicatorResult.noMore);
             },
             child: displayRooms.isNotEmpty
                 ? WaterfallFlow.builder(
@@ -125,78 +139,10 @@ class _RoomOnlineGridView extends GetView<FavoriteController> {
                         child: AppStatusView(
                           type: AppStatusType.empty,
                           icon: Icons.favorite_rounded,
-                          title: i18n("empty_favorite_online_title"),
-                          subtitle: i18n("empty_favorite_online_subtitle"),
-                        ),
-                      ),
-                    ],
-                  ),
-          );
-        });
-      },
-    );
-  }
-}
-
-class _RoomOfflineGridView extends GetView<FavoriteController> {
-  _RoomOfflineGridView(this.site);
-  final String site;
-  final refreshController = EasyRefreshController(controlFinishRefresh: true, controlFinishLoad: true);
-  final dense = Get.find<SettingsService>().enableDenseFavorites.value;
-
-  Future onRefresh() async {
-    await controller.onRefresh();
-    refreshController.finishRefresh(IndicatorResult.success);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraint) {
-        final width = constraint.maxWidth;
-        int crossAxisCount = width > 1280 ? 4 : (width > 960 ? 3 : (width > 640 ? 2 : 1));
-        if (dense) {
-          crossAxisCount = width > 1280 ? 5 : (width > 960 ? 4 : (width > 640 ? 3 : 2));
-        }
-
-        return Obx(() {
-          final displayRooms = site == Sites.allSite
-              ? controller.offlineRooms
-              : controller.offlineRooms.where((el) => el.platform == site).toList();
-
-          if (controller.offlineRooms.isEmpty && refreshController.controlFinishRefresh) {
-            return AppStatusView(type: AppStatusType.loading, title: i18n('refresh_loading'), subtitle: '');
-          }
-
-          return EasyRefresh(
-            controller: refreshController,
-            onRefresh: onRefresh,
-            onLoad: () {
-              refreshController.finishLoad(IndicatorResult.noMore);
-            },
-            child: displayRooms.isNotEmpty
-                ? WaterfallFlow.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-                    controller: ScrollController(),
-                    gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
-                      lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
-                      crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: controller.settings.crossAxisSpacing.value,
-                      mainAxisSpacing: controller.settings.mainAxisSpacing.value,
-                    ),
-                    itemCount: displayRooms.length,
-                    itemBuilder: (context, index) => RoomCard(room: displayRooms[index], dense: dense),
-                  )
-                : ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    children: [
-                      SizedBox(
-                        height: constraint.maxHeight * 0.8,
-                        child: AppStatusView(
-                          type: AppStatusType.empty,
-                          icon: Icons.favorite_rounded,
-                          title: i18n("empty_favorite_offline_title"),
-                          subtitle: i18n("empty_favorite_offline_subtitle"),
+                          title: i18n(isOnline ? "empty_favorite_online_title" : "empty_favorite_offline_title"),
+                          subtitle: i18n(
+                            isOnline ? "empty_favorite_online_subtitle" : "empty_favorite_offline_subtitle",
+                          ),
                         ),
                       ),
                     ],
