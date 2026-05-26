@@ -1,5 +1,8 @@
 import json
 import urllib.request
+import urllib.error
+import sys
+import os
 
 # 直接配置在线 API 地址
 API_URL = "https://cors.isteed.cc/https://api.github.com/repos/liuchuancong/pure_live/releases?per_page=3000"
@@ -15,11 +18,51 @@ def clean_name(name):
         .replace("-release", "")
     )
 
+def fetch_data(url):
+    """获取网络数据并进行严格的前置检查"""
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    try:
+        print(f"正在尝试连接服务器: {url}")
+        with urllib.request.urlopen(req, timeout=30) as response:
+            # 1. 检查 HTTP 状态码
+            if response.status != 200:
+                print(f"❌ 错误：服务器响应状态码为 {response.status}", file=sys.stderr)
+                sys.exit(1)
+                
+            raw_data = response.read()
+            
+            # 2. 检查返回内容是否为空
+            if not raw_data:
+                print("❌ 错误：网络请求成功，但返回的内容为空（0字节）", file=sys.stderr)
+                sys.exit(1)
+                
+            print("解析 JSON 数据中...")
+            data = json.loads(raw_data.decode('utf-8'))
+            
+            # 3. 验证数据结构是否符合预期
+            if not data:
+                print("❌ 错误：获取到的 JSON 数据内容为空列表或空字典", file=sys.stderr)
+                sys.exit(1)
+                
+            print("网络数据校验通过，成功获取到发布历史。")
+            return data
+
+    except urllib.error.HTTPError as e:
+        print(f"❌ HTTP 错误：[{e.code}] {e.reason}", file=sys.stderr)
+        sys.exit(1)
+    except urllib.error.URLError as e:
+        print(f"❌ 网络连接失败（可能超时或域名无法解析）: {e.reason}", file=sys.stderr)
+        sys.exit(1)
+    except json.JSONDecodeError:
+        print("❌ 错误：成功获取到内容，但内容不是合法的 JSON 格式", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ 未知错误: {str(e)}", file=sys.stderr)
+        sys.exit(1)
+
 def main():
-    # 使用 urllib 直接请求网络数据，无需第三方库
-    req = urllib.request.Request(API_URL, headers={'User-Agent': 'Mozilla/5.0'})
-    with urllib.request.urlopen(req) as response:
-        data = json.loads(response.read().decode('utf-8'))
+    # 核心修改：网络获取与严格校验
+    data = fetch_data(API_URL)
         
     if isinstance(data, dict):
         data = [data]
@@ -50,8 +93,7 @@ def main():
             })
         result.append(item)
         
-    import os
-    # 自动创建 assets 文件夹以防报错
+    # 自动创建 assets 文件夹
     os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
     
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
