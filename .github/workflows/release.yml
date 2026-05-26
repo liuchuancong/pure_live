@@ -256,17 +256,11 @@ jobs:
       - name: Select Xcode 15.4
         run: sudo xcode-select -s /Applications/Xcode_15.4.app
 
-      # 【优化 1】移除主动清理缓存的步骤，改为使用 GitHub Actions 官方缓存，加速 Module 扫描
-      - name: Xcode and Build Cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/Library/Developer/Xcode/DerivedData
-            ~/.cocoapods/repos
-            build/macos
-          key: ${{ runner.os }}-xcode-${{ matrix.branch }}-${{ hashFiles('**/Podfile.lock', 'pubspec.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-xcode-${{ matrix.branch }}-
+      # 清理 Xcode 缓存（非常关键）
+      - name: Clean Xcode cache
+        run: |
+          rm -rf ~/Library/Developer/Xcode/DerivedData
+          rm -rf ~/Library/Caches/CocoaPods
 
       - name: Set suffix
         id: suffix
@@ -295,27 +289,24 @@ jobs:
       - name: Install Pods
         run: |
           cd macos
-          # 【优化 2】只有当 Podfile.lock 发生变化时才建议清理，这里改为更温和的更新，避免重复下载卡死
-          pod install || (pod repo update && pod install)
+
+          pod deintegrate || true
+          rm -rf Pods
+          rm -rf Podfile.lock
+
+          pod repo update
+          pod install
 
       # 禁止 Xcode Script Sandbox（关键）
       - name: Disable Script Sandbox
         run: |
           sed -i '' 's/ENABLE_USER_SCRIPT_SANDBOXING = YES;/ENABLE_USER_SCRIPT_SANDBOXING = NO;/g' macos/Runner.xcodeproj/project.pbxproj
-      - name: Disable Explicit Modules to Fix Xcode Hang
-        run: |
-          echo "CLANG_ENABLE_EXPLICIT_MODULES = NO" >> macos/Runner/Configs/AppInfo.xcconfig
-          echo "CLANG_ENABLE_MODULE_DEBUGGING = NO" >> macos/Runner/Configs/AppInfo.xcconfig
 
-      - name: Build macOS
-        run: flutter build macos --release
       # Build
       - name: Build macOS
         run: |
-          # 【优化 3】去掉 flutter clean（避免冲掉上面的 build/macos 缓存）
-          # 【优化 4】通过 --xcode-build-args 禁用造成卡死的 Explicit Modules 特性
-          flutter build macos --release --no-codesign \
-            --xcode-build-args="CLANG_ENABLE_EXPLICIT_MODULES=NO"
+          flutter clean
+          flutter build macos --release --no-codesign
 
       - name: Get version
         id: get_version
