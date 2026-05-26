@@ -1,38 +1,37 @@
-class HttpError extends Error {
-  /// 错误码
-  final int statusCode;
+import 'package:pure_live/plugins/locale_helper.dart';
 
-  /// 错误信息
+class HttpError extends Error {
+  final int statusCode;
   final String message;
 
   HttpError(this.message, {this.statusCode = 0});
+
   @override
   String toString() {
     if (statusCode != 0) {
       return statusCodeToString(statusCode);
     }
-
     return message;
   }
 
   String statusCodeToString(int statusCode) {
     switch (statusCode) {
       case 400:
-        return "错误的请求(400)";
+        return i18n("http_error_400");
       case 401:
-        return "无权限访问资源(401)";
+        return i18n("http_error_401");
       case 403:
-        return "无权限访问资源(403)";
+        return i18n("http_error_403");
       case 404:
-        return "服务器找不到请求的资源(404)";
+        return i18n("http_error_404");
       case 500:
-        return "服务器出现错误(500)";
+        return i18n("http_error_500");
       case 502:
-        return "服务器出现错误(502)";
+        return i18n("http_error_502");
       case 503:
-        return "服务器出现错误(503)";
+        return i18n("http_error_503");
       default:
-        return "连接服务器失败，请稍后再试($statusCode)";
+        return i18n("http_error_default", args: {"statusCode": statusCode.toString()});
     }
   }
 }

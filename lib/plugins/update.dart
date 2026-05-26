@@ -12,12 +12,15 @@ Future<bool> requestStorageInstallPermission() async {
 
 final List<String> mirrors = [
   'https://gh.llkk.cc/',
-  'https://cdn.crashmc.com/',
+  'https://mirror.ghproxy.com/',
+  'https://ghproxy.net/',
+  'https://ghproxy.cc/',
+  'https://ghfast.top/',
   'https://wget.la/',
-  'https://gh.xxooo.cf/',
   'https://gh-proxy.com/',
   'https://down.npee.cn/?',
-  'https://ghproxy.com/',
+  'https://slink.ltd/',
+  'https://gitproxy.click/',
 ];
 
 List<String> getMirrorUrls(String apkUrl) {

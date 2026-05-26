@@ -58,7 +58,6 @@ class KuaishouCookiePage extends GetView<KuaishouCookieController> {
                       onPressed: () => controller.setCookie(controller.cookieController.text),
                       style: FilledButton.styleFrom(
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        elevation: 0,
                       ),
                       icon: const Icon(Remix.settings_line, size: 18),
                       label: Text(

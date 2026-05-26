@@ -28,19 +28,32 @@ class _AboutPageState extends State<AboutPage> {
           Center(
             child: Column(
               children: [
-                Container(
-                  width: 96,
-                  height: 96,
-                  padding: const EdgeInsets.all(4),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: Container(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.25),
-                      padding: const EdgeInsets.all(12),
-                      child: Image.asset('assets/icons/icon.png', fit: BoxFit.contain),
+                TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 1000),
+                  curve: Curves.elasticOut,
+                  builder: (context, value, child) {
+                    return Transform.scale(scale: value, child: child);
+                  },
+                  child: Container(
+                    width: 96,
+                    height: 96,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.08), width: 1),
+                      boxShadow: [
+                        BoxShadow(
+                          color: theme.colorScheme.primary.withValues(alpha: 0.06),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
                     ),
+                    padding: const EdgeInsets.all(16),
+                    child: Image.asset('assets/icons/icon.png', fit: BoxFit.contain),
                   ),
                 ),
+
                 const SizedBox(height: 18),
                 Text(
                   i18n("app_name"),
@@ -106,7 +119,7 @@ class _AboutPageState extends State<AboutPage> {
                 launchUrl(Uri.parse(VersionUtil.projectUrl), mode: LaunchMode.externalApplication);
               },
             ),
-            context.buildTile(
+            buildTile(
               icon: Remix.error_warning_line,
               title: i18n("project_alert"),
               subtitle: i18n("app_legalese"),
@@ -116,6 +129,74 @@ class _AboutPageState extends State<AboutPage> {
           ]),
         ],
       ),
+    );
+  }
+
+  Widget buildTile({
+    required String title,
+    IconData? icon,
+    String? subtitle,
+    VoidCallback? onTap,
+    Color? iconColor,
+    Color? subtitleColor,
+    Widget? trailing,
+    bool isLong = false,
+  }) {
+    final theme = Get.theme;
+    final bool hasSubtitle = subtitle != null && subtitle.isNotEmpty;
+
+    return ListTile(
+      leading: null,
+      title: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (icon != null) ...[
+            Padding(
+              padding: const EdgeInsets.only(top: 3, right: 12),
+              child: Icon(icon, color: iconColor ?? theme.colorScheme.primary, size: 22),
+            ),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600, height: 1.2)),
+                if (hasSubtitle) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      subtitle,
+                      style: AppTextStyles.t12.copyWith(
+                        color: subtitleColor ?? theme.hintColor.withValues(alpha: 0.75),
+                        height: 1.3,
+                      ),
+                      maxLines: isLong ? null : 1,
+                      overflow: isLong ? TextOverflow.visible : TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+      trailing:
+          trailing ??
+          (onTap != null
+              ? Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Icon(Icons.chevron_right_rounded, color: theme.hintColor.withValues(alpha: 0.4), size: 20),
+                    ),
+                  ],
+                )
+              : null),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     );
   }
 
@@ -130,7 +211,9 @@ class _AboutPageState extends State<AboutPage> {
     showLicensePage(
       context: Get.context!,
       applicationName: i18n("app_name"),
+      applicationLegalese: i18n("app_legalese"),
       applicationVersion: VersionUtil.version,
+      useRootNavigator: true,
       applicationIcon: Padding(
         padding: const EdgeInsets.all(12),
         child: SizedBox(width: 60, child: Center(child: Image.asset('assets/icons/icon.png'))),

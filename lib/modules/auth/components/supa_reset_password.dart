@@ -86,10 +86,7 @@ class _SupaResetPasswordState extends State<SupaResetPassword> {
           SizedBox(
             height: 46,
             child: FilledButton(
-              style: FilledButton.styleFrom(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                elevation: 0,
-              ),
+              style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
               onPressed: _isLoading ? null : _handleUpdatePassword,
               child: _isLoading
                   ? AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", isMini: true)

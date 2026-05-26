@@ -2,8 +2,9 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
-import 'package:pure_live/modules/settings/font_settings_page.dart';
-import 'package:pure_live/modules/settings/font_family_manager_page.dart';
+import 'package:pure_live/modules/settings/pages/font_settings_page.dart';
+import 'package:pure_live/modules/settings/pages/font_family_manager_page.dart';
+import 'package:pure_live/modules/settings/pages/loading_style_settings_page.dart';
 
 class ThemeSettingsPage extends GetView<SettingsService> {
   const ThemeSettingsPage({super.key});
@@ -47,7 +48,41 @@ class ThemeSettingsPage extends GetView<SettingsService> {
               value: controller.enableDynamicTheme,
               icon: Remix.magic_line,
             ),
+            context.buildTile(
+              icon: Remix.loader_4_line,
+              title: i18n("change_loading_style"),
+              subtitle: i18n("change_loading_style_subtitle"),
+              onTap: () => Get.to(() => const LoadingStyleSettingsPage()),
+              trailing: Obx(() {
+                final String currentKey = Get.find<SettingsService>().loadingStyle.value;
+                final bool isZh = Get.locale?.languageCode == 'zh';
+                final Map<String, String> currentItem = AppConsts.allStyles.firstWhere(
+                  (item) => item['key'] == currentKey,
+                  orElse: () => {'key': 'default', 'nameEn': 'Default Ring', 'nameZh': '默认圆环'},
+                );
+                final String displayName = isZh ? currentItem['nameZh']! : currentItem['nameEn']!;
+
+                return Text(displayName, style: TextStyle(color: Theme.of(context).colorScheme.outline, fontSize: 13));
+              }),
+            ),
           ]),
+          const SizedBox(height: 20),
+          context.buildGroupTitle(i18n("grid_spacing_settings")),
+          context.buildModernCard([
+            context.buildTile(
+              icon: Remix.arrow_left_right_line,
+              title: i18n("cross_axis_spacing"),
+              subtitle: i18n("cross_axis_spacing_subtitle"),
+              onTap: showCrossAxisSpacingDialog,
+            ),
+            context.buildTile(
+              icon: Remix.arrow_up_down_line,
+              title: i18n("main_axis_spacing"),
+              subtitle: i18n("main_axis_spacing_subtitle"),
+              onTap: showMainAxisSpacingDialog,
+            ),
+          ]),
+
           const SizedBox(height: 20),
           context.buildGroupTitle(i18n("localization_settings")),
           context.buildModernCard([
@@ -170,6 +205,7 @@ class ThemeSettingsPage extends GetView<SettingsService> {
   }
 
   Future<bool> colorPickerDialog() async {
+    final bool isZh = Get.locale?.languageCode == 'zh';
     return ColorPicker(
       color: HexColor(controller.themeColorSwitch.value),
       onColorChanged: (Color color) {
@@ -199,6 +235,12 @@ class ThemeSettingsPage extends GetView<SettingsService> {
       colorCodePrefixStyle: Theme.of(Get.context!).textTheme.bodySmall,
       selectedPickerTypeColor: Theme.of(Get.context!).colorScheme.primary,
       customColorSwatchesAndNames: controller.colorsNameMap,
+      pickerTypeLabels: <ColorPickerType, String>{
+        ColorPickerType.primary: isZh ? "常用色" : "Primary",
+        ColorPickerType.accent: isZh ? "鲜艳色" : "Accent",
+        ColorPickerType.custom: isZh ? "自定义" : "Custom",
+        ColorPickerType.wheel: isZh ? "调色盘" : "Wheel",
+      },
       pickersEnabled: const <ColorPickerType, bool>{
         ColorPickerType.both: false,
         ColorPickerType.primary: true,
@@ -255,6 +297,151 @@ class ThemeSettingsPage extends GetView<SettingsService> {
           ],
         );
       },
+    );
+  }
+
+  void showCrossAxisSpacingDialog() {
+    showCustomSpacingDialog(
+      title: i18n("cross_axis_spacing"),
+      hintText: i18n("cross_axis_spacing_subtitle"),
+      currentValue: controller.crossAxisSpacing.value,
+      onSelected: (value) => controller.crossAxisSpacing.value = value,
+    );
+  }
+
+  void showMainAxisSpacingDialog() {
+    showCustomSpacingDialog(
+      title: i18n("main_axis_spacing"),
+      hintText: i18n("main_axis_spacing_subtitle"),
+      currentValue: controller.mainAxisSpacing.value,
+      onSelected: (value) => controller.mainAxisSpacing.value = value,
+    );
+  }
+
+  void showCustomSpacingDialog({
+    required String title,
+    required String hintText,
+    required double currentValue,
+    required ValueChanged<double> onSelected,
+  }) {
+    final List<double> quickOptions = [0.0, 4.0, 6.0, 8.0, 12.0, 16.0];
+    final textController = TextEditingController(text: currentValue.toStringAsFixed(0));
+    double selectedValue = currentValue;
+
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 400),
+          padding: const EdgeInsets.all(20),
+          child: StatefulBuilder(
+            builder: (context, setDialogState) {
+              final theme = Theme.of(context);
+
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: quickOptions.map((value) {
+                      final isSelected = value == selectedValue;
+                      return ChoiceChip(
+                        label: Text("${value.toInt()} px"),
+                        selected: isSelected,
+                        showCheckmark: false,
+                        side: BorderSide.none,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        onSelected: (selected) {
+                          if (selected) {
+                            setDialogState(() {
+                              selectedValue = value;
+                              textController.text = value.toStringAsFixed(0);
+                            });
+                          }
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(hintText, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: textController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      suffixIcon: SizedBox(
+                        width: 32,
+                        height: 48,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              height: 22,
+                              width: 32,
+                              child: InkWell(
+                                borderRadius: const BorderRadius.only(topRight: Radius.circular(8)),
+                                onTap: () {
+                                  setDialogState(() {
+                                    selectedValue = (double.tryParse(textController.text) ?? 0.0) + 1.0;
+                                    textController.text = selectedValue.toStringAsFixed(0);
+                                  });
+                                },
+                                child: const Icon(Icons.arrow_drop_up, size: 20),
+                              ),
+                            ),
+                            SizedBox(
+                              height: 22,
+                              width: 32,
+                              child: InkWell(
+                                borderRadius: const BorderRadius.only(bottomRight: Radius.circular(8)),
+                                onTap: () {
+                                  setDialogState(() {
+                                    double current = double.tryParse(textController.text) ?? 0.0;
+                                    selectedValue = current > 0.0 ? current - 1.0 : 0.0;
+                                    textController.text = selectedValue.toStringAsFixed(0);
+                                  });
+                                },
+                                child: const Icon(Icons.arrow_drop_down, size: 20),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    onChanged: (val) {
+                      final parsed = double.tryParse(val) ?? 0.0;
+                      setDialogState(() {
+                        selectedValue = parsed;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n("cancel"))),
+                      const SizedBox(width: 12),
+                      ElevatedButton(
+                        onPressed: () {
+                          onSelected(selectedValue);
+                          Navigator.of(context).pop();
+                        },
+                        child: Text(i18n("confirm")),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
     );
   }
 }

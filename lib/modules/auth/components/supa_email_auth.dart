@@ -151,10 +151,7 @@ class _SupaEmailAuthState extends State<SupaEmailAuth> {
             SizedBox(
               height: 46,
               child: FilledButton(
-                style: FilledButton.styleFrom(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  elevation: 0,
-                ),
+                style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
                 onPressed: _isLoading ? null : _handleSubmit,
                 child: _isLoading
                     ? AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", isMini: true)

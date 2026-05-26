@@ -1,64 +1,105 @@
+import json
+import urllib.request
+import urllib.error
+import sys
 import os
-import re
 
-def strip_font_size_from_app_styles(content):
-    # 💡 匹配所有 AppTextStyles.tXX.copyWith(...) 结构，支持跨多行
-    pattern_copyWith = re.compile(
-        r'(AppTextStyles\.t\d+\.copyWith\()(.*?)(\))', 
-        re.DOTALL
+# 直接配置在线 API 地址
+API_URL = "https://cors.isteed.cc/https://api.github.com/repos/liuchuancong/pure_live/releases?per_page=3000"
+OUTPUT_FILE = "assets/releases.json"
+
+def format_size(size):
+    return f"{round(size / 1024 / 1024, 2)}mb"
+
+def clean_name(name):
+    return (
+        name.replace("app-", "")
+        .replace(".apk", "")
+        .replace("-release", "")
     )
+
+def fetch_data(url):
+    """获取网络数据并进行严格的前置检查"""
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    try:
+        print(f"正在尝试连接服务器: {url}")
+        with urllib.request.urlopen(req, timeout=30) as response:
+            # 1. 检查 HTTP 状态码
+            if response.status != 200:
+                print(f"❌ 错误：服务器响应状态码为 {response.status}", file=sys.stderr)
+                sys.exit(1)
+                
+            raw_data = response.read()
+            
+            # 2. 检查返回内容是否为空
+            if not raw_data:
+                print("❌ 错误：网络请求成功，但返回的内容为空（0字节）", file=sys.stderr)
+                sys.exit(1)
+                
+            print("解析 JSON 数据中...")
+            data = json.loads(raw_data.decode('utf-8'))
+            
+            # 3. 验证数据结构是否符合预期
+            if not data:
+                print("❌ 错误：获取到的 JSON 数据内容为空列表或空字典", file=sys.stderr)
+                sys.exit(1)
+                
+            print("网络数据校验通过，成功获取到发布历史。")
+            return data
+
+    except urllib.error.HTTPError as e:
+        print(f"❌ HTTP 错误：[{e.code}] {e.reason}", file=sys.stderr)
+        sys.exit(1)
+    except urllib.error.URLError as e:
+        print(f"❌ 网络连接失败（可能超时或域名无法解析）: {e.reason}", file=sys.stderr)
+        sys.exit(1)
+    except json.JSONDecodeError:
+        print("❌ 错误：成功获取到内容，但内容不是合法的 JSON 格式", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ 未知错误: {str(e)}", file=sys.stderr)
+        sys.exit(1)
+
+def main():
+    # 核心修改：网络获取与严格校验
+    data = fetch_data(API_URL)
+        
+    if isinstance(data, dict):
+        data = [data]
+        
+    result = []
+    for release in data:
+        author = release.get("author", {})
+        item = {
+            "version": release.get("tag_name", "").replace("v", ""),
+            "title": release.get("name"),
+            "date": release.get("published_at", "")[:10],
+            "github": release.get("html_url"),
+            "author": {
+                "name": author.get("login"),
+                "avatar": author.get("avatar_url"),
+                "profile": author.get("html_url")
+            },
+            "changelog": release.get("body", "").strip(),
+            "files": []
+        }
+        
+        for asset in release.get("assets", []):
+            item["files"].append({
+                "name": clean_name(asset.get("name", "")),
+                "size": format_size(asset.get("size", 0)),
+                "downloads": asset.get("download_count", 0),
+                "url": asset.get("browser_download_url")
+            })
+        result.append(item)
+        
+    # 自动创建 assets 文件夹
+    os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
     
-    def remove_font_size(match):
-        prefix = match.group(1)   # AppTextStyles.tXX.copyWith(
-        inner_body = match.group(2) # 括号内部的所有属性文本
-        suffix = match.group(3)   # )
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+        json.dump(result, f, ensure_ascii=False, indent=2)
         
-        # 💡 正则移除各种换行、带浮点数或逗号的 fontSize: 17, 属性
-        cleaned_body = re.sub(
-            r'fontSize:\s*\d+(?:\.0)?,?\s*', 
-            '', 
-            inner_body
-        )
-        
-        # 修正因移除导致的尾部或开头多余逗号与空白
-        cleaned_body = cleaned_body.strip()
-        if cleaned_body.endswith(','):
-            # 如果剔除后末尾有多余的逗号，安全抹除它
-            cleaned_body = re.sub(r',\s*$', '', cleaned_body)
-            
-        # 如果内部属性全被删空了，直接退化为纯基础样式
-        if not cleaned_body:
-            return prefix.replace('.copyWith(', '')
-            
-        return f"{prefix}{cleaned_body}{suffix}"
-
-    content = pattern_copyWith.sub(remove_font_size, content)
-    return content
-
-def process_file(file_path):
-    with open(file_path, 'r', encoding='utf-8') as f:
-        content = f.read()
-
-    original_content = content
-    content = strip_font_size_from_app_styles(content)
-
-    if content != original_content:
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.write(content)
-        print(f" Successfully cleaned fontSize from: {file_path}")
-
-def run_refactor():
-    lib_dir = os.path.join(os.getcwd(), 'lib')
-    if not os.path.exists(lib_dir):
-        print("Error: 'lib' directory not found. Run in project root.")
-        return
-
-    print("🚀 Cleaning redundant fontSizes inside AppTextStyles across all files...")
-    for root, _, files in os.walk(lib_dir):
-        for file in files:
-            if file.endswith('.dart'):
-                process_file(os.path.join(root, file))
-    print("✨ Clean sweep complete!")
+    print("生成完成:", OUTPUT_FILE)
 
 if __name__ == "__main__":
-    run_refactor()
+    main()

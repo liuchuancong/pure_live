@@ -17,7 +17,6 @@ class FavoritePage extends GetView<FavoriteController> {
           return Scaffold(
             appBar: AppBar(
               centerTitle: true,
-              scrolledUnderElevation: 0,
               leading: (showAction || menuCount <= 1) ? const MenuButton() : null,
               actions: showAction ? [CommonAppBarActions()] : null,
               title: TabBar(
@@ -111,8 +110,8 @@ class _RoomOnlineGridView extends GetView<FavoriteController> {
                     gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
                       lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                       crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: 6,
-                      mainAxisSpacing: 6,
+                      crossAxisSpacing: controller.settings.crossAxisSpacing.value,
+                      mainAxisSpacing: controller.settings.mainAxisSpacing.value,
                       closeToTrailing: false,
                     ),
                     itemCount: displayRooms.length,
@@ -182,8 +181,8 @@ class _RoomOfflineGridView extends GetView<FavoriteController> {
                     gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
                       lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                       crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: 6,
-                      mainAxisSpacing: 6,
+                      crossAxisSpacing: controller.settings.crossAxisSpacing.value,
+                      mainAxisSpacing: controller.settings.mainAxisSpacing.value,
                     ),
                     itemCount: displayRooms.length,
                     itemBuilder: (context, index) => RoomCard(room: displayRooms[index], dense: dense),

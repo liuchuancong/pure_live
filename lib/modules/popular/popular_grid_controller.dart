@@ -6,7 +6,7 @@ class PopularGridController extends BasePageController<LiveRoom> {
   final Site site;
   final isNetworkError = false.obs;
   final isLoginRequiredError = false.obs;
-
+  final settings = Get.find<SettingsService>();
   PopularGridController(this.site);
 
   @override

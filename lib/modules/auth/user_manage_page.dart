@@ -132,7 +132,6 @@ class _UserManagerState extends State<UserManager> {
                         onPressed: addUser,
                         style: FilledButton.styleFrom(
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          elevation: 0,
                         ),
                         icon: const Icon(Remix.user_add_line, size: 18),
                         label: Text(i18n('add_btn'), style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w600)),

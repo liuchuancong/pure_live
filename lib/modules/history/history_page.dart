@@ -34,7 +34,6 @@ class HistoryPage extends GetView {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        scrolledUnderElevation: 0,
         title: Text('${i18n("history")}(${settings.historyRooms.length}/20)'),
         actions: [
           IconButton(
@@ -70,8 +69,8 @@ class HistoryPage extends GetView {
                       gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
                         lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                         crossAxisCount: crossAxisCount,
-                        crossAxisSpacing: 6,
-                        mainAxisSpacing: 6,
+                        crossAxisSpacing: controller.settings.crossAxisSpacing.value,
+                        mainAxisSpacing: controller.settings.mainAxisSpacing.value,
                       ),
                       itemCount: rooms.length,
                       itemBuilder: (context, index) => RoomCard(room: rooms[index], dense: dense),

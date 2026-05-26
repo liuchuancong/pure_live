@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:async';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/race_http.dart';
@@ -34,7 +33,7 @@ class VersionUtil {
   static String latestUpdateLog = '';
   static bool prerelease = false;
   static String downloadUrl = '';
-  static List<dynamic> allReleased = [];
+  var allReleased = [].obs;
 
   static Map<String, dynamic>? _cachedVersionJson;
 
@@ -84,52 +83,6 @@ class VersionUtil {
     latestUpdateLog = data['version_desc']?.toString() ?? '';
     prerelease = data['prerelease'] == true;
     downloadUrl = data['download_url']?.toString() ?? '';
-  }
-
-  Future<void> loadReleaseHistory({bool forceRefresh = false}) async {
-    if (allReleased.isNotEmpty && !forceRefresh) return;
-    if (historyLoading.value) return;
-
-    try {
-      historyLoading.value = true;
-      historyError.value = false;
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final List<String> historyUrls = mirror
-          .mirrors('assets/releases.json')
-          .map((url) => '$url?ts=$timestamp')
-          .toList();
-
-      final dynamic rawData = await RaceHttp.fetchJson(
-        historyUrls,
-        headers: {
-          'User-Agent':
-              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 12));
-      if (rawData == null) {
-        throw const HttpException('Fetch dynamic payload arrived empty');
-      }
-
-      if (rawData is List) {
-        allReleased = rawData;
-      } else if (rawData is Map) {
-        if (rawData.containsKey('releases') && rawData['releases'] is List) {
-          allReleased = rawData['releases'] as List;
-        } else {
-          allReleased = [rawData];
-        }
-      } else {
-        throw const FormatException('Invalid release history tokens');
-      }
-
-      debugPrint("🏁 历史版本数据通过 RaceHttp 竞速同步成功");
-    } catch (e) {
-      debugPrint("⚠️ 通过竞速线路获取历史版本失败: $e");
-      historyError.value = true;
-    } finally {
-      historyLoading.value = false;
-    }
   }
 
   static bool hasNewVersion() {

@@ -11,7 +11,7 @@ class CommonAppBarActions extends StatelessWidget {
       children: [
         PopupMenuButton<int>(
           tooltip: i18n("more"),
-          icon: const Icon(Remix.more_2_fill, size: 24),
+          icon: const Icon(Remix.apps_2_line, size: 24),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           offset: const Offset(0, 10),
           position: PopupMenuPosition.under,

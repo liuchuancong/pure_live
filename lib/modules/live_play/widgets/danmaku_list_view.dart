@@ -215,7 +215,6 @@ class DanmakuListViewState extends State<DanmakuListView> {
                 bottom: 12,
                 child: FilledButton.icon(
                   style: FilledButton.styleFrom(
-                    elevation: 0,
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     backgroundColor: Get.theme.colorScheme.primary.withValues(alpha: 0.92),
                     foregroundColor: Colors.white,
@@ -315,9 +314,11 @@ class DanmakuItem extends StatelessWidget {
                           ),
                           TextSpan(
                             children: parseEmojis(danmaku.message, AppTextStyles.t14.fontSize!, vibrantColor),
-                            style: AppTextStyles.t14.copyWith(height: 1.45,
+                            style: AppTextStyles.t14.copyWith(
+                              height: 1.45,
                               fontWeight: FontWeight.w500,
-                              color: textColor),
+                              color: textColor,
+                            ),
                           ),
                         ],
                       ),

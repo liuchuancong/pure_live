@@ -60,7 +60,7 @@ class RoomCard extends StatelessWidget {
                     clipBehavior: Clip.antiAlias,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     color: isDark ? Colors.grey[850] : Colors.grey[100],
-                    elevation: 0,
+
                     child: room.platform == Sites.iptvSite
                         ? CachedNetworkImage(
                             imageUrl: room.cover!,
@@ -243,7 +243,7 @@ class CountChip extends StatelessWidget {
       shape: const StadiumBorder(),
       color: color,
       shadowColor: Colors.transparent,
-      elevation: 0,
+
       margin: EdgeInsets.zero,
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: dense ? 10 : 12, vertical: dense ? 4 : 6),

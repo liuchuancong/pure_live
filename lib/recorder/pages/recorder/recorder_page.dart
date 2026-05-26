@@ -23,8 +23,6 @@ class RecorderPage extends GetView<RecorderController> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Obx(() {
       bool showAction = Get.width <= 680;
       final int menuCount = Get.find<SettingsService>().savedMenuIds.length;
@@ -32,12 +30,11 @@ class RecorderPage extends GetView<RecorderController> {
       return DefaultTabController(
         length: tabs.length,
         child: Scaffold(
-          backgroundColor: theme.colorScheme.surface,
           appBar: AppBar(
             title: Text(i18n("recorder_title")),
             centerTitle: true,
             leading: (showAction || menuCount <= 1) ? const MenuButton() : null,
-            elevation: 0,
+
             actions: [
               IconButton(
                 tooltip: i18n("recorder_open_folder"),

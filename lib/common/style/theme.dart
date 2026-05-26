@@ -8,153 +8,233 @@ class MyTheme {
 
   MyTheme({this.primaryColor, this.colorScheme}) : assert(colorScheme == null || primaryColor == null);
 
-  String? _getEffectiveFontFamily(String selectedName, List<String> availableCustomFonts) {
-    if (availableCustomFonts.contains(selectedName)) {
+  // =========================================================
+  // Font Weights
+  // =========================================================
+
+  static const FontWeight regular = FontWeight.w400;
+  static const FontWeight medium = FontWeight.w500;
+  static const FontWeight semiBold = FontWeight.w600;
+  static const FontWeight bold = FontWeight.w700;
+
+  // =========================================================
+  // Font Family
+  // =========================================================
+
+  String? _resolveFontFamily(String selectedName, List<String> customFonts) {
+    if (customFonts.contains(selectedName)) {
       return selectedName;
     }
 
-    if (selectedName == 'Roboto') return GoogleFonts.roboto().fontFamily;
-    if (selectedName == 'NotoSans') return GoogleFonts.notoSansSc().fontFamily;
-    if (selectedName == 'Monospace') return 'monospace';
+    if (PlatformUtils.isWindows) {
+      return 'PingFang';
+    }
 
-    if (PlatformUtils.isWindows) return 'PingFang';
-    if (PlatformUtils.isAndroid) return GoogleFonts.roboto().fontFamily;
+    if (PlatformUtils.isAndroid) {
+      return GoogleFonts.roboto().fontFamily;
+    }
+
     return null;
   }
 
-  ThemeData _buildTheme(Brightness brightness) {
-    final bool isDark = brightness == Brightness.dark;
-    final settings = Get.find<SettingsService>();
+  // =========================================================
+  // Text Theme
+  // =========================================================
 
-    final List<String> customFontIds = settings.fontList.map((e) => e.id).toList();
-    final String? fontFamily = _getEffectiveFontFamily(settings.fontFamilyName.value, customFontIds);
+  TextTheme _buildTextTheme({required TextTheme base, required SettingsService settings, required String? fontFamily}) {
+    final localized = fontFamily != null ? base.apply(fontFamily: fontFamily) : base;
 
-    ColorScheme? effectiveColorScheme = colorScheme;
-    if (isDark && effectiveColorScheme != null) {
-      effectiveColorScheme = effectiveColorScheme.copyWith(error: const Color(0xFFFF6347));
+    TextStyle scale(TextStyle? style, double target) {
+      return (style ?? const TextStyle()).copyWith(fontSize: target);
     }
 
-    final TextTheme baseTextTheme = isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme;
+    return localized.copyWith(
+      // Display
+      displayLarge: scale(localized.displayLarge, settings.fontSizeBodySmall.value * 4.75),
+      displayMedium: scale(localized.displayMedium, settings.fontSizeBodySmall.value * 3.75),
+      displaySmall: scale(localized.displaySmall, settings.fontSizeBodySmall.value * 3.0),
 
-    final TextTheme localizedTextTheme = fontFamily != null
-        ? baseTextTheme.apply(fontFamily: fontFamily)
-        : baseTextTheme;
+      // Headline
+      headlineLarge: scale(localized.headlineLarge, settings.fontSizeTitleLarge.value * 1.6),
+      headlineMedium: scale(localized.headlineMedium, settings.fontSizeTitleLarge.value * 1.4),
+      headlineSmall: scale(localized.headlineSmall, settings.fontSizeTitleLarge.value * 1.2),
 
-    final TextTheme customGlobalTextTheme = localizedTextTheme.copyWith(
-      displayLarge: localizedTextTheme.displayLarge?.copyWith(
-        fontSize: (localizedTextTheme.displayLarge?.fontSize ?? 57) / 12.0 * settings.fontSizeBodySmall.value,
-      ),
-      displayMedium: localizedTextTheme.displayMedium?.copyWith(
-        fontSize: (localizedTextTheme.displayMedium?.fontSize ?? 45) / 12.0 * settings.fontSizeBodySmall.value,
-      ),
-      displaySmall: localizedTextTheme.displaySmall?.copyWith(
-        fontSize: (localizedTextTheme.displaySmall?.fontSize ?? 36) / 12.0 * settings.fontSizeBodySmall.value,
-      ),
+      // Title
+      titleLarge: scale(localized.titleLarge, settings.fontSizeTitleLarge.value).copyWith(fontWeight: semiBold),
 
-      headlineLarge: localizedTextTheme.headlineLarge?.copyWith(
-        fontSize: (localizedTextTheme.headlineLarge?.fontSize ?? 32) / 20.0 * settings.fontSizeTitleLarge.value,
-      ),
-      headlineMedium: localizedTextTheme.headlineMedium?.copyWith(
-        fontSize: (localizedTextTheme.headlineMedium?.fontSize ?? 28) / 20.0 * settings.fontSizeTitleLarge.value,
-      ),
-      headlineSmall: localizedTextTheme.headlineSmall?.copyWith(
-        fontSize: (localizedTextTheme.headlineSmall?.fontSize ?? 24) / 20.0 * settings.fontSizeTitleLarge.value,
-      ),
+      titleMedium: scale(localized.titleMedium, settings.fontSizeTitleMedium.value).copyWith(fontWeight: medium),
 
-      titleLarge: localizedTextTheme.titleLarge?.copyWith(fontSize: settings.fontSizeTitleLarge.value),
-      titleMedium: localizedTextTheme.titleMedium?.copyWith(fontSize: settings.fontSizeTitleMedium.value),
-      titleSmall: localizedTextTheme.titleSmall?.copyWith(fontSize: settings.fontSizeBodyLarge.value),
+      titleSmall: scale(localized.titleSmall, settings.fontSizeBodyLarge.value).copyWith(fontWeight: medium),
 
-      bodyLarge: localizedTextTheme.bodyLarge?.copyWith(fontSize: settings.fontSizeBodyLarge.value),
-      bodyMedium: localizedTextTheme.bodyMedium?.copyWith(fontSize: settings.fontSizeBodyMedium.value),
-      bodySmall: localizedTextTheme.bodySmall?.copyWith(fontSize: settings.fontSizeBodySmall.value),
+      // Body
+      bodyLarge: scale(localized.bodyLarge, settings.fontSizeBodyLarge.value),
+      bodyMedium: scale(localized.bodyMedium, settings.fontSizeBodyMedium.value),
+      bodySmall: scale(localized.bodySmall, settings.fontSizeBodySmall.value),
 
-      labelLarge: localizedTextTheme.labelLarge?.copyWith(fontSize: settings.fontSizeBodyMedium.value),
-      labelMedium: localizedTextTheme.labelMedium?.copyWith(fontSize: settings.fontSizeBodySmall.value),
-      labelSmall: localizedTextTheme.labelSmall?.copyWith(fontSize: settings.fontSizeBodySmall.value - 1.0),
+      // Label
+      labelLarge: scale(localized.labelLarge, settings.fontSizeBodyMedium.value).copyWith(fontWeight: medium),
+
+      labelMedium: scale(localized.labelMedium, settings.fontSizeBodySmall.value),
+
+      labelSmall: scale(localized.labelSmall, settings.fontSizeBodySmall.value - 1),
     );
+  }
+
+  // =========================================================
+  // Main Theme
+  // =========================================================
+
+  ThemeData _buildTheme(Brightness brightness) {
+    final bool isDark = brightness == Brightness.dark;
+
+    final settings = Get.find<SettingsService>();
+
+    final customFonts = settings.fontList.map((e) => e.id).toList();
+
+    final fontFamily = _resolveFontFamily(settings.fontFamilyName.value, customFonts);
+
+    ColorScheme? scheme = colorScheme;
+
+    if (isDark && scheme != null) {
+      scheme = scheme.copyWith(error: const Color(0xFFFF6347));
+    }
+
+    final baseTextTheme = isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme;
+
+    final textTheme = _buildTextTheme(base: baseTextTheme, settings: settings, fontFamily: fontFamily);
 
     final baseTheme = ThemeData(
       useMaterial3: true,
       brightness: brightness,
       fontFamily: fontFamily,
       colorSchemeSeed: primaryColor,
-      colorScheme: effectiveColorScheme,
-      textTheme: customGlobalTextTheme,
-      primaryTextTheme: customGlobalTextTheme,
+      colorScheme: scheme,
+      textTheme: textTheme,
+      primaryTextTheme: textTheme,
     );
 
     return baseTheme.copyWith(
       splashFactory: NoSplash.splashFactory,
+
+      // =====================================================
+      // AppBar
+      // =====================================================
       appBarTheme: AppBarTheme(
+        elevation: 0.0,
         scrolledUnderElevation: 0.0,
         surfaceTintColor: Colors.transparent,
         centerTitle: true,
-        titleTextStyle: customGlobalTextTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+        titleTextStyle: textTheme.titleLarge?.copyWith(fontWeight: semiBold),
       ),
+
+      // =====================================================
+      // TabBar
+      // =====================================================
       tabBarTheme: TabBarThemeData(
         dividerColor: Colors.transparent,
         indicatorSize: TabBarIndicatorSize.label,
         tabAlignment: TabAlignment.center,
-        labelStyle: customGlobalTextTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-        unselectedLabelStyle: customGlobalTextTheme.titleSmall?.copyWith(fontWeight: FontWeight.normal),
+
+        labelStyle: textTheme.titleMedium?.copyWith(fontWeight: semiBold),
+
+        unselectedLabelStyle: textTheme.titleMedium?.copyWith(fontWeight: regular),
+
         labelColor: baseTheme.colorScheme.primary,
-        unselectedLabelColor: baseTheme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+
+        unselectedLabelColor: baseTheme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
       ),
+
+      // =====================================================
+      // Card
+      // =====================================================
       cardTheme: CardThemeData(
-        clipBehavior: Clip.antiAlias,
         elevation: 0,
         margin: EdgeInsets.zero,
+        clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
+
+      // =====================================================
+      // Elevated Button
+      // =====================================================
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           elevation: 0,
-          textStyle: customGlobalTextTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          textStyle: textTheme.labelLarge?.copyWith(fontWeight: semiBold),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
+
+      // =====================================================
+      // Text Button
+      // =====================================================
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          textStyle: customGlobalTextTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+          textStyle: textTheme.labelLarge?.copyWith(fontWeight: medium),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
+
+      // =====================================================
+      // ListTile
+      // =====================================================
       listTileTheme: ListTileThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        titleTextStyle: customGlobalTextTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
-        subtitleTextStyle: customGlobalTextTheme.bodyMedium?.copyWith(color: baseTheme.colorScheme.onSurfaceVariant),
-        leadingAndTrailingTextStyle: customGlobalTextTheme.labelMedium,
+
+        titleTextStyle: textTheme.bodyLarge?.copyWith(fontWeight: medium),
+
+        subtitleTextStyle: textTheme.bodyMedium?.copyWith(color: baseTheme.colorScheme.onSurfaceVariant),
+
+        leadingAndTrailingTextStyle: textTheme.labelMedium,
+
         selectedColor: baseTheme.colorScheme.primary,
-        selectedTileColor: baseTheme.colorScheme.primary.withValues(alpha: 0.05),
+
+        selectedTileColor: baseTheme.colorScheme.primary.withValues(alpha: 0.06),
       ),
+
+      // =====================================================
+      // Input
+      // =====================================================
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: baseTheme.colorScheme.surfaceContainerLow, // 智能跟随系统动态肤色
+        fillColor: baseTheme.colorScheme.surfaceContainerLow,
+
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        labelStyle: customGlobalTextTheme.bodyMedium,
-        hintStyle: customGlobalTextTheme.bodyMedium?.copyWith(
-          color: baseTheme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-        ),
+
+        labelStyle: textTheme.bodyMedium,
+
+        hintStyle: textTheme.bodyMedium?.copyWith(color: baseTheme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6)),
+
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: baseTheme.colorScheme.primary, width: 1.5), // 聚焦时展现高亮边框
+          borderSide: BorderSide(color: baseTheme.colorScheme.primary, width: 1.5),
         ),
       ),
+
+      // =====================================================
+      // BottomSheet
+      // =====================================================
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: baseTheme.colorScheme.surfaceContainer,
         elevation: 0,
         showDragHandle: true,
+        backgroundColor: baseTheme.colorScheme.surfaceContainer,
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       ),
 
+      // =====================================================
+      // Dialog
+      // =====================================================
       dialogTheme: DialogThemeData(
-        backgroundColor: baseTheme.colorScheme.surfaceContainerHigh,
         elevation: 0,
-        titleTextStyle: customGlobalTextTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-        contentTextStyle: customGlobalTextTheme.bodyMedium,
+        backgroundColor: baseTheme.colorScheme.surfaceContainerHigh,
+
+        titleTextStyle: textTheme.titleLarge?.copyWith(fontWeight: semiBold),
+
+        contentTextStyle: textTheme.bodyMedium,
+
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       ),
     );
