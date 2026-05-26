@@ -69,8 +69,8 @@ class HistoryPage extends GetView {
                       gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
                         lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                         crossAxisCount: crossAxisCount,
-                        crossAxisSpacing: controller.settings.crossAxisSpacing.value,
-                        mainAxisSpacing: controller.settings.mainAxisSpacing.value,
+                        crossAxisSpacing: settings.crossAxisSpacing.value,
+                        mainAxisSpacing: settings.mainAxisSpacing.value,
                       ),
                       itemCount: rooms.length,
                       itemBuilder: (context, index) => RoomCard(room: rooms[index], dense: dense),
