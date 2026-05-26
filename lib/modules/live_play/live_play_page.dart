@@ -276,7 +276,7 @@ class LivePlayPage extends GetView<LivePlayController> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             offset: const Offset(12, 0),
             position: PopupMenuPosition.under,
-            icon: const Icon(Icons.more_vert_rounded),
+            icon: const Icon(Remix.apps_2_line),
             onSelected: (int index) {
               if (index == 0) {
                 controller.openNaviteAPP();
@@ -301,33 +301,42 @@ class LivePlayPage extends GetView<LivePlayController> {
               return [
                 PopupMenuItem(
                   value: 0,
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: MenuListTile(leading: Icon(Icons.open_in_new_rounded), text: i18n("open_live_room")),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: MenuListTile(
+                    leading: const Icon(Icons.open_in_new_rounded, size: 16),
+                    text: i18n("open_live_room"),
+                  ),
                 ),
                 PopupMenuItem(
                   value: 1,
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: MenuListTile(leading: Icon(Icons.swap_horiz_outlined), text: i18n("switch_live_room")),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: MenuListTile(
+                    leading: Icon(Icons.swap_horiz_outlined, size: 20),
+                    text: i18n("switch_live_room"),
+                  ),
                 ),
                 PopupMenuItem(
                   value: 2,
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: MenuListTile(leading: const Icon(Icons.live_tv_rounded), text: i18n("cast_screen")),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: MenuListTile(leading: const Icon(Remix.tv_2_line, size: 20), text: i18n("cast_screen")),
                 ),
                 PopupMenuItem(
                   value: 3,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: MenuListTile(leading: const Icon(Icons.watch_later_outlined), text: i18n("sleep_timer")),
+                  child: MenuListTile(leading: const Icon(Remix.time_line, size: 20), text: i18n("sleep_timer")),
                 ),
                 PopupMenuItem(
                   value: 4,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: MenuListTile(leading: const Icon(Icons.volume_up_rounded), text: i18n("room_volume")),
+                  child: MenuListTile(leading: const Icon(Remix.volume_up_line, size: 20), text: i18n("room_volume")),
                 ),
                 PopupMenuItem(
                   value: 5,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: MenuListTile(leading: const Icon(Icons.link_rounded), text: i18n("toolbox_get_direct_link")),
+                  child: MenuListTile(
+                    leading: const Icon(Remix.link_m, size: 20),
+                    text: i18n("toolbox_get_direct_link"),
+                  ),
                 ),
               ];
             },
