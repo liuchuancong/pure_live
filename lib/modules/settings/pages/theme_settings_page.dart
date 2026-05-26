@@ -188,6 +188,7 @@ class ThemeSettingsPage extends GetView<SettingsService> {
   }
 
   Future<bool> colorPickerDialog() async {
+    final bool isZh = Get.locale?.languageCode == 'zh';
     return ColorPicker(
       color: HexColor(controller.themeColorSwitch.value),
       onColorChanged: (Color color) {
@@ -217,6 +218,12 @@ class ThemeSettingsPage extends GetView<SettingsService> {
       colorCodePrefixStyle: Theme.of(Get.context!).textTheme.bodySmall,
       selectedPickerTypeColor: Theme.of(Get.context!).colorScheme.primary,
       customColorSwatchesAndNames: controller.colorsNameMap,
+      pickerTypeLabels: <ColorPickerType, String>{
+        ColorPickerType.primary: isZh ? "常用色" : "Primary",
+        ColorPickerType.accent: isZh ? "鲜艳色" : "Accent",
+        ColorPickerType.custom: isZh ? "自定义" : "Custom",
+        ColorPickerType.wheel: isZh ? "调色盘" : "Wheel",
+      },
       pickersEnabled: const <ColorPickerType, bool>{
         ColorPickerType.both: false,
         ColorPickerType.primary: true,

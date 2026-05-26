@@ -25,6 +25,7 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
 
   Future<bool> colorPickerDialog() async {
     final controller = Get.find<SettingsService>();
+    final bool isZh = Get.locale?.languageCode == 'zh';
     return ColorPicker(
       color: HexColor(
         controller.loadingStyleColorSwitch.value.isEmpty
@@ -53,6 +54,12 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
       colorCodePrefixStyle: Theme.of(Get.context!).textTheme.bodySmall,
       selectedPickerTypeColor: Theme.of(Get.context!).colorScheme.primary,
       customColorSwatchesAndNames: controller.colorsNameMap,
+      pickerTypeLabels: <ColorPickerType, String>{
+        ColorPickerType.primary: isZh ? "常用色" : "Primary",
+        ColorPickerType.accent: isZh ? "鲜艳色" : "Accent",
+        ColorPickerType.custom: isZh ? "自定义" : "Custom",
+        ColorPickerType.wheel: isZh ? "调色盘" : "Wheel",
+      },
       pickersEnabled: const <ColorPickerType, bool>{
         ColorPickerType.both: false,
         ColorPickerType.primary: true,
