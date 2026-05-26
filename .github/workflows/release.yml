@@ -302,7 +302,13 @@ jobs:
       - name: Disable Script Sandbox
         run: |
           sed -i '' 's/ENABLE_USER_SCRIPT_SANDBOXING = YES;/ENABLE_USER_SCRIPT_SANDBOXING = NO;/g' macos/Runner.xcodeproj/project.pbxproj
+      - name: Disable Explicit Modules to Fix Xcode Hang
+        run: |
+          echo "CLANG_ENABLE_EXPLICIT_MODULES = NO" >> macos/Runner/Configs/AppInfo.xcconfig
+          echo "CLANG_ENABLE_MODULE_DEBUGGING = NO" >> macos/Runner/Configs/AppInfo.xcconfig
 
+      - name: Build macOS
+        run: flutter build macos --release
       # Build
       - name: Build macOS
         run: |
