@@ -339,9 +339,6 @@ jobs:
           cat << 'EOF' > release_body.txt
 
           # 纯粹直播 ${{ github.ref_name }}
-
-                    ### 📥 快速下载
-
           |版本|下载地址|
           |---|---|
           |TV版|[pure_live_TV](https://github.com/liuchuancong/pure_live_TV/releases/latest)|
@@ -404,7 +401,7 @@ jobs:
   # ======================
   update-json:
     runs-on: ubuntu-latest
-    
+    needs: publish-release
     # 赋予工作流向仓库写入和提交代码的权限
     permissions:
       contents: write
