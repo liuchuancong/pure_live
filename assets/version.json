@@ -1,8 +1,8 @@
 {
   "version": "2.0.19",
-  "build_number": 30, 
-  "version_num": 10219,
-  "version_desc": "-Add: 添加IPTV txt导入以及EPG支持.\n-Fixed: 优化IPTV播放页面添加节目单可回放(需要节目支持).\n-Add: 重构UI,允许用户自定义字体大小以及字体和平台排序以及底部导航栏.\n-Fixed: 修复缓存打开.",
-  "prerelease":false,
+  "build_number": 30,
+  "version_num": 2001930,
+  "version_desc": "- 新增 IPTV TXT 播放列表导入与 EPG 节目单支持。\n- 优化 IPTV 播放页面，支持兼容频道的节目回看与时移播放功能。\n- 添加更换字体以及字体大小设置。\n- 添加网格间距自定义，可在主题设置。\n- 优化loading显示，可在主题设置更换设置颜色。\n- 优化历史版本。\n- 重构应用界面，新增字体大小自定义、字体切换、平台排序及底部导航栏布局配置功能。\n- 添加标签功能，可在平台管理添加，或者长按或者右键关注主播时设置。\n- 修复特定情况下缓存初始化/读取异常的问题。\n- 修复软件下载链接报错等问题，添加ach_86x64下载链接支持。\n- window添加SMTC 支持。\n- 优化android如果静音进入直播间则不再使用默认房间音量播放。\n",
+  "prerelease": false,
   "download_url": "https://github.com/liuchuancong/pure_live/releases"
 }

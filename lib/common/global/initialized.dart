@@ -11,7 +11,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/common/global/windows_utils.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
-import 'package:pure_live/common/global/initial_binding.dart';
+import 'package:pure_live/common/global/initial_services.dart';
 import 'package:pure_live/common/global/platform/mobile_manager.dart';
 import 'package:pure_live/common/global/platform/desktop_manager.dart';
 import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart';
@@ -43,7 +43,7 @@ class AppInitializer {
     try {
       await Hive.initFlutter(hiveDir.path);
       await HivePrefUtil.init();
-      InitialBinding().dependencies();
+      InitialServices.initServices();
     } catch (e) {
       log("Hive Init Error: $e");
       exit(0);
@@ -83,26 +83,6 @@ class AppInitializer {
     }
     return '';
   }
-
-  // void initService() async {
-  //   Get.put(SettingsService(), permanent: true);
-  //   Get.put(CacheService());
-  //   Get.put(AuthController(), permanent: true);
-  //   Get.put(RecordSettingsController());
-  //   Get.put(RecorderController());
-  //   Get.put(BiliBiliAccountService());
-  //   Get.put(RouteObserverController(), permanent: true);
-  //   Get.put(TagManagementController(), permanent: true);
-
-  //   Get.put(FavoriteController(), permanent: true);
-  //   Get.lazyPut<DbService>(() => DbService()..init(), fenix: true);
-  //   Get.lazyPut(() => ChannelDetailController(), fenix: true);
-  //   Get.lazyPut(() => PopularController(), fenix: true);
-  //   Get.lazyPut(() => AreasController(), fenix: true);
-
-  //   Get.lazyPut(() => StreamResolverService(), fenix: true);
-  //   Get.lazyPut(() => GlobalPlayerState(), fenix: true);
-  // }
 
   bool get isInitialized => _isInitialized;
 }

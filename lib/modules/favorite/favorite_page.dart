@@ -132,7 +132,7 @@ class _RoomGridView extends GetView<FavoriteController> {
                         ? controller.selectedTagId.value == 'ALL'
                         : controller.selectedTagId.value == controller.visibleTags[index - 1].id;
 
-                    final String label = isAll ? (i18n('all')) : controller.visibleTags[index - 1].name;
+                    final String label = isAll ? (i18n('recorder_tab_all')) : controller.visibleTags[index - 1].name;
                     final bool isPinned = !isAll && controller.visibleTags[index - 1].isPinned;
 
                     return Padding(

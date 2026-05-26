@@ -837,5 +837,7 @@
     "no_description_placeholder": "No description provided",
     "room_id_label": "Room ID: {id}",
     "set_room_tags": "Set Room Tags / Category",
-    "selected_tags_count": "Selected Tags"
+    "selected_tags_count": "Selected Tags",
+    "tags_need_follow_tip": "Must follow first",
+    "dialog_follow_anchor_ask": "Follow {name}?"
 }

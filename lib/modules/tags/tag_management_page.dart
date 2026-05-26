@@ -14,7 +14,12 @@ class TagManagementPage extends GetView<TagManagementController> {
     return Scaffold(
       appBar: AppBar(
         title: Text(i18n('tag_management')),
-        actions: [IconButton(icon: const Icon(Remix.add_line), onPressed: () => _showTagDialog(context))],
+        actions: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: IconButton(icon: const Icon(Remix.add_line), onPressed: () => _showTagDialog(context)),
+          ),
+        ],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

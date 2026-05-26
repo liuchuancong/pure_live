@@ -15,6 +15,56 @@ class RoomCard extends StatelessWidget {
     AppNavigator.toLiveRoomDetail(liveRoom: room);
   }
 
+  void showFollowDialog(
+    BuildContext context,
+    ThemeData theme, {
+    required String anchorName,
+    required VoidCallback onConfirm,
+  }) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: theme.colorScheme.surface,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            i18n('follow'),
+            style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+          ),
+          content: Text(
+            i18n('dialog_follow_anchor_ask').replaceAll('{name}', anchorName),
+            style: AppTextStyles.t14.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(i18n('cancel'), style: AppTextStyles.t14.copyWith(color: theme.colorScheme.secondary)),
+            ),
+            Theme(
+              data: ThemeData(useMaterial3: true),
+              child: FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  onConfirm();
+                },
+                child: Text(
+                  i18n('follow'),
+                  style: AppTextStyles.t14.copyWith(color: theme.colorScheme.onPrimary, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void onLongPress(BuildContext context) {
     final FavoriteController favoriteController = Get.isRegistered<FavoriteController>()
         ? Get.find<FavoriteController>()
@@ -66,6 +116,15 @@ class RoomCard extends StatelessWidget {
                   _showTagSelectionGridModal(context, theme, favoriteController, tagController);
                 } else {
                   SmartDialog.showToast(i18n('tags_need_follow_tip'));
+                  showFollowDialog(
+                    context,
+                    theme,
+                    anchorName: room.nick ?? '',
+                    onConfirm: () {
+                      settings.addRoom(room);
+                      _showTagSelectionGridModal(context, theme, favoriteController, tagController);
+                    },
+                  );
                 }
               },
             ),
@@ -151,7 +210,7 @@ class RoomCard extends StatelessWidget {
     final bool isSmallScreen = screenWidth < 600;
 
     bool showAddSection = false;
-
+    final tagScrollController = ScrollController();
     Get.dialog(
       StatefulBuilder(
         builder: (context, setModalState) => AlertDialog(
@@ -342,10 +401,12 @@ class RoomCard extends StatelessWidget {
                           ),
                         )
                       : Scrollbar(
+                          controller: tagScrollController,
                           thumbVisibility: true,
                           thickness: 4.0,
                           radius: const Radius.circular(4),
                           child: GridView.builder(
+                            controller: tagScrollController,
                             shrinkWrap: true,
                             physics: const BouncingScrollPhysics(),
                             itemCount: tagController.tags.length,
@@ -482,8 +543,27 @@ class RoomCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
               ),
               onPressed: () {
-                favoriteController.updateRoomTags(room, tempSelectedIds);
-                Navigator.pop(context);
+                if (showAddSection) {
+                  final name = nameController.text.trim();
+                  if (name.isEmpty) {
+                    SmartDialog.showToast(i18n('tag_name_empty_error'));
+                    return;
+                  }
+
+                  final success = tagController.addTag(name, descController.text);
+                  if (success) {
+                    nameController.clear();
+                    descController.clear();
+                    setModalState(() {
+                      showAddSection = false; // Collapse panel and revert header to default view layout
+                    });
+                  } else {
+                    SmartDialog.showToast(i18n('tag_invalid_or_duplicate'));
+                  }
+                } else {
+                  favoriteController.updateRoomTags(room, tempSelectedIds);
+                  Navigator.pop(context);
+                }
               },
               child: Text(i18n('confirm'), style: const TextStyle(fontWeight: FontWeight.bold)),
             ),
@@ -506,6 +586,7 @@ class RoomCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         onTap: () => onTap(context),
         onLongPress: () => onLongPress(context),
+        onSecondaryTap: () => onLongPress(context),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
