@@ -251,7 +251,6 @@ class VersionPage extends GetView<VersionController> {
                       child: OutlinedButton.icon(
                         style:
                             OutlinedButton.styleFrom(
-                              elevation: 0,
                               backgroundColor: theme.colorScheme.surfaceContainerLow,
                               foregroundColor: theme.colorScheme.onSurfaceVariant,
                               padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -306,7 +305,6 @@ class VersionPage extends GetView<VersionController> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          elevation: 0,
           backgroundColor: theme.colorScheme.surfaceContainerHigh,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           titlePadding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 12),

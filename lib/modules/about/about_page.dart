@@ -31,16 +31,14 @@ class _AboutPageState extends State<AboutPage> {
                 Container(
                   width: 96,
                   height: 96,
-                  padding: const EdgeInsets.all(4),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: Container(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.25),
-                      padding: const EdgeInsets.all(12),
-                      child: Image.asset('assets/icons/icon.png', fit: BoxFit.contain),
-                    ),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(26), // Smooth squircle curves
                   ),
+                  padding: const EdgeInsets.all(20), // Generous spacing for a native feel
+                  child: Image.asset('assets/icons/icon.png', fit: BoxFit.contain),
                 ),
+
                 const SizedBox(height: 18),
                 Text(
                   i18n("app_name"),

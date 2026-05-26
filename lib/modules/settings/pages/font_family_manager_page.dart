@@ -21,8 +21,6 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
           i18n("font_family_settings"),
           style: const TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0.3),
         ),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
       ),
       body: Obx(() {
         final fontModels = controller.fontList;
@@ -253,7 +251,6 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
             const SizedBox(width: 6),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                elevation: 0,
                 backgroundColor: theme.colorScheme.primary,
                 foregroundColor: theme.colorScheme.onPrimary,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -293,7 +290,6 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
           const SizedBox(width: 10),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              elevation: 0,
               backgroundColor: theme.colorScheme.primary,
               foregroundColor: theme.colorScheme.onPrimary,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -313,7 +309,6 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
             icon: const Icon(Remix.download_cloud_2_line, size: 15),
             label: Text(i18n("download"), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
             style: ElevatedButton.styleFrom(
-              elevation: 0,
               backgroundColor: theme.colorScheme.primaryContainer,
               foregroundColor: theme.colorScheme.onPrimaryContainer,
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),

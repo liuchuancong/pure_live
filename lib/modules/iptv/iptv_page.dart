@@ -106,7 +106,6 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
                   final isSelected = settings.selectedSourceId.value == source.id;
 
                   return Card(
-                    elevation: 0,
                     color: isSelected
                         ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.25)
                         : Colors.transparent,
@@ -365,19 +364,15 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
                   style: ElevatedButton.styleFrom(
                     backgroundColor: theme.colorScheme.primary,
                     foregroundColor: theme.colorScheme.onPrimary,
-                    elevation: 0,
+
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   ),
                   onPressed: () {
                     final trimmedValue = controller.text.trim();
-                    if (trimmedValue.isNotEmpty) {
-                      settings.customIptvUserAgent.value = trimmedValue;
-                      Navigator.of(context).pop();
-                      ToastUtil.show(i18n("settings_saved"));
-                    } else {
-                      ToastUtil.show(i18n("input_empty_tip"));
-                    }
+                    settings.customIptvUserAgent.value = trimmedValue;
+                    Navigator.of(context).pop();
+                    ToastUtil.show(i18n("settings_saved"));
                   },
                   child: Text(i18n("confirm")),
                 ),

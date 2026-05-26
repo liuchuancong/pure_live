@@ -101,13 +101,12 @@ class LivePlayPage extends GetView<LivePlayController> {
         titleSpacing: 0,
         title: Row(
           children: [
-            const SizedBox(width: 4),
             Obx(
               () => CircleAvatar(
                 foregroundImage: controller.detail.value!.avatar == null || controller.detail.value!.avatar!.isEmpty
                     ? null
                     : CachedNetworkImageProvider(controller.detail.value!.avatar!),
-                radius: 13,
+                radius: 16,
                 backgroundColor: Theme.of(context).disabledColor,
               ),
             ),
@@ -171,7 +170,6 @@ class LivePlayPage extends GetView<LivePlayController> {
                       : theme.colorScheme.onSurfaceVariant,
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

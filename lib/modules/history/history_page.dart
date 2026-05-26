@@ -34,7 +34,6 @@ class HistoryPage extends GetView {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        scrolledUnderElevation: 0,
         title: Text('${i18n("history")}(${settings.historyRooms.length}/20)'),
         actions: [
           IconButton(

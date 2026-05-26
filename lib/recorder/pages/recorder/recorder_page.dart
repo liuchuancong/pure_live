@@ -34,7 +34,7 @@ class RecorderPage extends GetView<RecorderController> {
             title: Text(i18n("recorder_title")),
             centerTitle: true,
             leading: (showAction || menuCount <= 1) ? const MenuButton() : null,
-            elevation: 0,
+
             actions: [
               IconButton(
                 tooltip: i18n("recorder_open_folder"),

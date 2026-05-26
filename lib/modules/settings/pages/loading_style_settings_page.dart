@@ -182,7 +182,6 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
     return Scaffold(
       appBar: AppBar(
         title: Text(i18n("change_loading_style")),
-        scrolledUnderElevation: 0,
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8.0),

@@ -59,7 +59,7 @@ class _AreaCardState extends State<AreaCard> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
                 clipBehavior: Clip.antiAlias,
                 color: Colors.white,
-                elevation: 0,
+
                 child: displayImageUrl.isNotEmpty
                     ? CachedNetworkImage(
                         imageUrl: displayImageUrl,

@@ -19,7 +19,6 @@ class PopularPage extends GetView<PopularController> {
           return Scaffold(
             appBar: AppBar(
               centerTitle: true,
-              scrolledUnderElevation: 0,
               leading: (showAction || menuCount <= 1) ? const MenuButton() : null,
               actions: showAction ? [CommonAppBarActions()] : null,
               title: TabBar(
