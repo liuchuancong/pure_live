@@ -28,15 +28,30 @@ class _AboutPageState extends State<AboutPage> {
           Center(
             child: Column(
               children: [
-                Container(
-                  width: 96,
-                  height: 96,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer.withValues(alpha: 0.25),
-                    borderRadius: BorderRadius.circular(26), // Smooth squircle curves
+                TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 1000),
+                  curve: Curves.elasticOut,
+                  builder: (context, value, child) {
+                    return Transform.scale(scale: value, child: child);
+                  },
+                  child: Container(
+                    width: 96,
+                    height: 96,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.08), width: 1),
+                      boxShadow: [
+                        BoxShadow(
+                          color: theme.colorScheme.primary.withValues(alpha: 0.06),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    child: Image.asset('assets/icons/icon.png', fit: BoxFit.contain),
                   ),
-                  padding: const EdgeInsets.all(20), // Generous spacing for a native feel
-                  child: Image.asset('assets/icons/icon.png', fit: BoxFit.contain),
                 ),
 
                 const SizedBox(height: 18),
