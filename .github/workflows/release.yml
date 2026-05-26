@@ -240,7 +240,7 @@ jobs:
 
   build-macos:
     runs-on: macos-latest
-    timeout-minutes: 30
+    timeout-minutes: 50
     strategy:
       matrix:
         branch: [master, fvp]
