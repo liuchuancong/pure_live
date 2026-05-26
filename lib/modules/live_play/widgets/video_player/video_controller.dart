@@ -246,7 +246,11 @@ class VideoController with ChangeNotifier {
       _volumeController = VolumeController.instance;
       _volumeController.showSystemUI = false;
       registerVolumeListener();
-      _volumeController.setVolume(room.getSavedVolume());
+      final currentVolume = await _volumeController.getVolume();
+      if (currentVolume > 0.001) {
+        final targetVolume = room.getSavedVolume();
+        _volumeController.setVolume(targetVolume);
+      }
     }
     playerManager.play(datasource, playUrs, headers, room: room);
     initPlayerListener();
