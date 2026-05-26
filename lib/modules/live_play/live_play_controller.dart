@@ -59,8 +59,6 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
   bool get _hasRoom => detail.value != null;
 
-  bool get isIptv => currentSite.id == Sites.iptvSite;
-
   LivePlayQuality get _qualitySafe {
     if (qualites.isEmpty) {
       return LivePlayQuality(quality: '原画');
@@ -154,7 +152,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
       videoController.value?.showSettting.toggle();
       return true;
     }
-
+    videoController.value?.clearListener();
     success.value = false;
     return false;
   }
@@ -192,6 +190,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     if (roomId == null) return LiveRoom();
     var liveRoom = await currentSite.liveSite.getRoomDetail(roomId: roomId, platform: detail.value!.platform!);
     // ================= IPTV =================
+    bool isIptv = currentSite.id == Sites.iptvSite;
     if (isIptv) {
       detail.value = null;
       detail.value = liveRoom;
