@@ -17,6 +17,7 @@ import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/recorder/services/cache_service.dart';
 import 'package:pure_live/routes/route_observer_controller.dart';
 import 'package:pure_live/common/global/platform/mobile_manager.dart';
+import 'package:pure_live/modules/tags/tag_management_controller.dart';
 import 'package:pure_live/common/global/platform/desktop_manager.dart';
 import 'package:pure_live/common/services/bilibili_account_service.dart';
 import 'package:pure_live/recorder/services/stream_resolver_service.dart';
@@ -101,6 +102,8 @@ class AppInitializer {
     Get.put(RecorderController());
     Get.put(BiliBiliAccountService());
     Get.put(RouteObserverController(), permanent: true);
+    Get.put(TagManagementController(), permanent: true);
+
     Get.lazyPut(() => FavoriteController(), fenix: true);
     Get.lazyPut<DbService>(() => DbService()..init(), fenix: true);
     Get.lazyPut(() => ChannelDetailController(), fenix: true);

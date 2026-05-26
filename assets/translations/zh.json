@@ -816,5 +816,14 @@
     "cross_axis_spacing": "列间距 (横向)",
     "cross_axis_spacing_subtitle": "调整同一行中左右卡片之间的水平缝隙",
     "main_axis_spacing": "行间距 (纵向)",
-    "main_axis_spacing_subtitle": "调整同一列中上下卡片之间的垂直缝隙"
+    "main_axis_spacing_subtitle": "调整同一列中上下卡片之间的垂直缝隙",
+    "tag_management": "标签管理",
+    "tag_management_subtitle": "自定义和删除首页直播间的过滤标签",
+    "add_tag": "添加标签",
+    "rename_tag": "重命名标签",
+    "delete_tag": "删除标签",
+    "tag_input_hint": "请输入标签名称...",
+    "tag_invalid_or_duplicate": "名称无效或标签已存在",
+    "delete_tag_confirm_msg": "确定要删除标签",
+    "no_tags_tip": "暂无自定义标签，点击右上角添加"
 }
