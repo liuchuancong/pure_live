@@ -20,6 +20,57 @@ extension AppLayoutFactory on BuildContext {
 
   Widget buildModernCard(List<Widget> children) {
     final theme = Theme.of(this);
+    final List<Widget> autoShapedChildren = [];
+
+    final validChildren = children.where((w) => w is! SizedBox).toList();
+
+    for (int i = 0; i < validChildren.length; i++) {
+      final child = validChildren[i];
+
+      final String typeString = child.runtimeType.toString();
+      final bool isTileElement =
+          child is ListTile || typeString.contains('ListTile') || typeString.contains('SwitchListTile');
+
+      if (isTileElement) {
+        ShapeBorder effectiveShape;
+
+        if (validChildren.length == 1) {
+          effectiveShape = const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20)));
+        } else if (i == 0) {
+          effectiveShape = const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20)));
+        } else if (i == validChildren.length - 1) {
+          effectiveShape = const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+          );
+        } else {
+          effectiveShape = const LinearBorder();
+        }
+
+        autoShapedChildren.add(ListTileTheme.merge(shape: effectiveShape, child: child));
+      } else {
+        autoShapedChildren.add(child);
+      }
+
+      if (i < validChildren.length - 1 && isTileElement) {
+        final nextChild = validChildren[i + 1];
+        final String nextTypeString = nextChild.runtimeType.toString();
+        final bool isNextTile =
+            nextChild is ListTile || nextTypeString.contains('ListTile') || nextTypeString.contains('SwitchListTile');
+
+        if (isNextTile) {
+          autoShapedChildren.add(
+            Divider(
+              height: 0.5,
+              thickness: 0.5,
+              indent: 16,
+              endIndent: 16,
+              color: theme.dividerColor.withValues(alpha: 0.05),
+            ),
+          );
+        }
+      }
+    }
+
     return Material(
       clipBehavior: Clip.antiAlias,
       color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
@@ -27,7 +78,7 @@ extension AppLayoutFactory on BuildContext {
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
       ),
-      child: Column(children: children),
+      child: Column(children: autoShapedChildren),
     );
   }
 
@@ -75,7 +126,18 @@ extension AppLayoutFactory on BuildContext {
   }) {
     final theme = Theme.of(this);
     return ListTile(
-      leading: icon != null ? Icon(icon, color: iconColor ?? theme.colorScheme.primary, size: 22) : null,
+      leading: icon != null
+          ? Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 4), // 精准像素级微调，使图标轴心与第一行标题水平对齐
+                  child: Icon(icon, color: iconColor ?? theme.colorScheme.primary, size: 22),
+                ),
+              ],
+            )
+          : null,
       title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
       subtitle: subtitle != null && subtitle.isNotEmpty
           ? Padding(

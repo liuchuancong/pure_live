@@ -78,7 +78,19 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> with SingleTick
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
-      appBar: AppBar(title: Text(i18n("version_history_desc"))),
+      appBar: AppBar(
+        title: Text(i18n("version_history_desc")),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: IconButton(
+              onPressed: () => loadReleaseHistory(forceRefresh: true),
+              icon: const Icon(Remix.refresh_line, size: 20),
+              tooltip: i18n("refresh"),
+            ),
+          ),
+        ],
+      ),
       body: Obx(() {
         if (historyLoading.value) {
           return const AppStatusView(type: AppStatusType.loading);

@@ -119,7 +119,7 @@ class _AboutPageState extends State<AboutPage> {
                 launchUrl(Uri.parse(VersionUtil.projectUrl), mode: LaunchMode.externalApplication);
               },
             ),
-            context.buildTile(
+            buildTile(
               icon: Remix.error_warning_line,
               title: i18n("project_alert"),
               subtitle: i18n("app_legalese"),
@@ -129,6 +129,74 @@ class _AboutPageState extends State<AboutPage> {
           ]),
         ],
       ),
+    );
+  }
+
+  Widget buildTile({
+    required String title,
+    IconData? icon,
+    String? subtitle,
+    VoidCallback? onTap,
+    Color? iconColor,
+    Color? subtitleColor,
+    Widget? trailing,
+    bool isLong = false,
+  }) {
+    final theme = Get.theme;
+    final bool hasSubtitle = subtitle != null && subtitle.isNotEmpty;
+
+    return ListTile(
+      leading: null,
+      title: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (icon != null) ...[
+            Padding(
+              padding: const EdgeInsets.only(top: 3, right: 12),
+              child: Icon(icon, color: iconColor ?? theme.colorScheme.primary, size: 22),
+            ),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600, height: 1.2)),
+                if (hasSubtitle) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      subtitle,
+                      style: AppTextStyles.t12.copyWith(
+                        color: subtitleColor ?? theme.hintColor.withValues(alpha: 0.75),
+                        height: 1.3,
+                      ),
+                      maxLines: isLong ? null : 1,
+                      overflow: isLong ? TextOverflow.visible : TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+      trailing:
+          trailing ??
+          (onTap != null
+              ? Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Icon(Icons.chevron_right_rounded, color: theme.hintColor.withValues(alpha: 0.4), size: 20),
+                    ),
+                  ],
+                )
+              : null),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     );
   }
 
@@ -143,7 +211,9 @@ class _AboutPageState extends State<AboutPage> {
     showLicensePage(
       context: Get.context!,
       applicationName: i18n("app_name"),
+      applicationLegalese: i18n("app_legalese"),
       applicationVersion: VersionUtil.version,
+      useRootNavigator: true,
       applicationIcon: Padding(
         padding: const EdgeInsets.all(12),
         child: SizedBox(width: 60, child: Center(child: Image.asset('assets/icons/icon.png'))),
