@@ -61,6 +61,7 @@ dependencies:
       path: ./libs/universal/media_kit_libs_video
   better_player_plus: ^1.2.1 # 高级视频播放器
   audio_service: ^0.18.18 # 后台音频服务
+  audio_service_win: ^0.0.3
   audio_session: ^0.2.3 # 音频会话管理
   ffmpeg_kit_extended_flutter: ^0.5.5 # FFmpeg集成
   flv_lzc:
