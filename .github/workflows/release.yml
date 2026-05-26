@@ -431,14 +431,16 @@ jobs:
   update-json:
     runs-on: ubuntu-latest
     needs: publish-release
-    # 赋予工作流向仓库写入和提交代码的权限
     permissions:
       contents: write
 
     steps:
-    # 1. 检出仓库代码
+    # 1. 检出仓库代码（显式指定 master 分支，并拉取所有历史以便合并）
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        ref: master
+        fetch-depth: 0
 
     # 2. 设置 Python 环境
     - name: Set up Python
@@ -450,8 +452,7 @@ jobs:
     - name: Run update script
       run: python update_releases.py
 
-    # 4. 检查是否有文件更新，并自动提交回仓库
-    # 4. 检查是否有文件更新，并自动提交回仓库
+    # 4. 检查是否有文件更新，采用拉取重构（Pull Rebase）后安全推送
     - name: Commit and Push changes
       run: |
         git config --global user.name "github-actions[bot]"
@@ -462,12 +463,11 @@ jobs:
           git add assets/releases.json
           git commit -m "chore: 手动更新 releases.json 数据 [skip ci]"
           
-          # 【核心修改】先拉取远程最新代码，防止冲突
+          # 【核心防御】推送前先拉取远程最新修改，用 rebase 保持提交线干净
           git pull --rebase origin master
           
+          # 推送到远程 master 分支
           git push origin master
         else
           echo "数据未发生变化，无需更新。"
         fi
-
-
