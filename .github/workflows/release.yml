@@ -240,27 +240,16 @@ jobs:
 
   build-macos:
     runs-on: macos-14
-    timeout-minutes: 45
-
+    timeout-minutes: 30
     strategy:
       matrix:
         branch: [master, fvp]
 
     steps:
-      - name: Checkout
+      - name: 签出代码
         uses: actions/checkout@v4
         with:
           ref: ${{ matrix.branch }}
-
-      # 使用 Xcode 15
-      - name: Select Xcode 15.4
-        run: sudo xcode-select -s /Applications/Xcode_15.4.app
-
-      # 清理 Xcode 缓存（非常关键）
-      - name: Clean Xcode cache
-        run: |
-          rm -rf ~/Library/Developer/Xcode/DerivedData
-          rm -rf ~/Library/Caches/CocoaPods
 
       - name: Set suffix
         id: suffix
@@ -272,46 +261,23 @@ jobs:
             echo "suffix=" >> $GITHUB_OUTPUT
           fi
 
-      - name: Setup Flutter
+      - name: 设置Flutter环境
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
 
-      # Flutter cache
-      - name: Flutter precache
-        run: flutter precache --macos
-
-      - name: Flutter pub get
+      - name: 更新Flutter packages
         run: flutter pub get
 
-      # 修复 Pod / QuartzCore 卡死
-      - name: Install Pods
-        run: |
-          cd macos
-
-          pod deintegrate || true
-          rm -rf Pods
-          rm -rf Podfile.lock
-
-          pod repo update
-          pod install
-
-      # 禁止 Xcode Script Sandbox（关键）
-      - name: Disable Script Sandbox
-        run: |
-          sed -i '' 's/ENABLE_USER_SCRIPT_SANDBOXING = YES;/ENABLE_USER_SCRIPT_SANDBOXING = NO;/g' macos/Runner.xcodeproj/project.pbxproj
-
-      # Build
       - name: Build macOS
-        run: |
-          flutter clean
-          flutter build macos --release
+        run: flutter build macos --release -v
 
       - name: Get version
         id: get_version
         run: |
           VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //; s/[`"'"'"']//g')
+
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Install create-dmg
@@ -328,13 +294,12 @@ jobs:
             "PureLive-${{ steps.get_version.outputs.version }}${{ steps.suffix.outputs.suffix }}-macOS.dmg" \
             "build/macos/Build/Products/Release/纯粹直播.app"
 
-      - name: Upload DMG
+      - name: 上传 DMG
         uses: actions/upload-artifact@v4
         with:
           name: macos-dmg-${{ matrix.branch }}
           path: PureLive-*.dmg
           retention-days: 1
-  
 
   # =========================================================
   # RELEASE
