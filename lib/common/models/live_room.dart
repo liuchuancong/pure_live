@@ -14,6 +14,7 @@ class LiveRoom {
   String? watching = '';
   String? followers = '';
   String? platform = 'UNKNOWN';
+  List<String> tagIds = [];
 
   /// 介绍
   String? introduction;
@@ -74,7 +75,8 @@ class LiveRoom {
     this.isCatchUp = false,
     this.catchUpStart,
     this.catchUpEnd,
-  });
+    List<String>? tagIds,
+  }) : tagIds = tagIds ?? [];
 
   LiveRoom.fromJson(Map<String, dynamic> json)
     : roomId = json['roomId'] ?? '',
@@ -85,9 +87,10 @@ class LiveRoom {
       avatar = json['avatar'] ?? '',
       cover = json['cover'] ?? '',
       area = json['area'] ?? '',
-      watching = json['watching'] ?? '',
-      followers = json['followers'] ?? '',
-      platform = json['platform'] ?? '',
+      watching = json['watching']?.toString() ?? '0',
+      followers = json['followers']?.toString() ?? '0',
+      platform = json['platform'] ?? 'UNKNOWN',
+      tagIds = List<String>.from(json['tagIds'] ?? []),
       liveStatus = LiveStatus.values.firstWhere((e) => e.index == json['liveStatus'], orElse: () => LiveStatus.unknown),
       status = json['status'] ?? false,
       notice = json['notice'] ?? '',
@@ -100,31 +103,6 @@ class LiveRoom {
       isCatchUp = json['isCatchUp'] ?? false,
       catchUpStart = json['catchUpStart'],
       catchUpEnd = json['catchUpEnd'];
-
-  Map<String, dynamic> toJson() => <String, dynamic>{
-    'roomId': roomId,
-    'userId': userId,
-    'title': title,
-    'nick': nick,
-    'avatar': avatar,
-    'cover': cover,
-    'area': area,
-    'watching': watching,
-    'followers': followers,
-    'platform': platform,
-    'liveStatus': liveStatus?.index ?? LiveStatus.offline.index,
-    'isRecord': isRecord,
-    'status': status,
-    'notice': notice,
-    'introduction': introduction,
-    'epgId': epgId,
-    'currentProgramme': currentProgramme,
-    'currentProgrammeDescription': currentProgrammeDescription,
-    'catchUpUrl': catchUpUrl,
-    'isCatchUp': isCatchUp,
-    'catchUpStart': catchUpStart,
-    'catchUpEnd': catchUpEnd,
-  };
 
   /// 创建一个新的LiveRoom实例，并用提供的值更新指定字段
   LiveRoom copyWith({
@@ -153,6 +131,7 @@ class LiveRoom {
     bool? isCatchUp,
     int? catchUpStart,
     int? catchUpEnd,
+    List<String>? tagIds,
   }) {
     return LiveRoom(
       roomId: roomId ?? this.roomId,
@@ -178,6 +157,7 @@ class LiveRoom {
       isCatchUp: isCatchUp ?? this.isCatchUp,
       catchUpStart: catchUpStart ?? this.catchUpStart,
       catchUpEnd: catchUpEnd ?? this.catchUpEnd,
+      tagIds: tagIds ?? this.tagIds,
     );
   }
 
@@ -189,7 +169,7 @@ class LiveRoom {
 
   @override
   String toString() {
-    return 'LiveRoom{roomId: $roomId, userId: $userId, link: $link, title: $title, nick: $nick, avatar: $avatar, cover: $cover, area: $area, watching: $watching, followers: $followers, platform: $platform, introduction: $introduction, notice: $notice, status: $status, data: $data, danmakuData: $danmakuData, isRecord: $isRecord, liveStatus: $liveStatus, catchUpUrl: $catchUpUrl, isCatchUp: $isCatchUp}';
+    return 'LiveRoom{roomId: $roomId, userId: $userId, link: $link, title: $title, nick: $nick, avatar: $avatar, cover: $cover, area: $area, watching: $watching, followers: $followers, platform: $platform, tagIds: $tagIds, introduction: $introduction, notice: $notice, status: $status, data: $data, danmakuData: $danmakuData, isRecord: $isRecord, liveStatus: $liveStatus, catchUpUrl: $catchUpUrl, isCatchUp: $isCatchUp}';
   }
 
   double getSavedVolume() {
@@ -198,5 +178,33 @@ class LiveRoom {
 
   Future<void> saveCurrentVolume(double volume) async {
     await LiveRoomVolumeManager.saveRoomVolume(platform ?? 'UNKNOWN', roomId ?? '', volume);
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'roomId': roomId,
+      'userId': userId,
+      'title': title,
+      'nick': nick,
+      'avatar': avatar,
+      'cover': cover,
+      'area': area,
+      'watching': watching,
+      'followers': followers,
+      'platform': platform,
+      'tagIds': tagIds,
+      'liveStatus': liveStatus?.index ?? LiveStatus.offline.index,
+      'isRecord': isRecord,
+      'status': status,
+      'notice': notice,
+      'introduction': introduction,
+      'epgId': epgId,
+      'currentProgramme': currentProgramme,
+      'currentProgrammeDescription': currentProgrammeDescription,
+      'catchUpUrl': catchUpUrl,
+      'isCatchUp': isCatchUp,
+      'catchUpStart': catchUpStart,
+      'catchUpEnd': catchUpEnd,
+    };
   }
 }

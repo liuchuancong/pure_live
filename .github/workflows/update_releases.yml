@@ -1,21 +1,26 @@
-name: 手动更新历史发布数据
+name: 每日自动更新历史发布数据
 
 on:
-  # 仅允许在 GitHub 网页上手动点击按钮触发
+  # 1. 每天定时触发（此处设置为国际标准时间 UTC 00:00，即北京时间早上 08:00）
+  schedule:
+    - cron: '0 0 * * *'
+  
+  # 2. 保留手动触发按钮，方便你随时可以手动测试更新
   workflow_dispatch:
 
 jobs:
   update-json:
     runs-on: ubuntu-latest
     
-    # 赋予工作流向仓库写入和提交代码的权限
     permissions:
       contents: write
 
     steps:
-    # 1. 检出仓库代码
+    # 1. 检出仓库代码（获取完整 Git 历史，为后续 rebase 做准备）
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     # 2. 设置 Python 环境
     - name: Set up Python
@@ -27,17 +32,21 @@ jobs:
     - name: Run update script
       run: python update_releases.py
 
-    # 4. 检查是否有文件更新，并自动提交回仓库
+    # 4. 检查是否有文件更新，并采用拉取重构（Pull Rebase）后安全推送
     - name: Commit and Push changes
       run: |
         git config --global user.name "github-actions[bot]"
-        git config --global user.email "github-actions[bot]@://github.com"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
         
         # 检查是否有文件变动
         if [ -n "$(git status --porcelain)" ]; then
           git add assets/releases.json
-          git commit -m "chore: 手动更新 releases.json 数据 [skip ci]"
-          git push
+          git commit -m "chore: 定时更新 releases.json 数据 [skip ci]"
+          
+          # 推送前先拉取远程最新修改，防止与其他任务（如发布 Release）冲突
+          git pull --rebase origin master
+          
+          git push origin master
         else
           echo "数据未发生变化，无需更新。"
         fi

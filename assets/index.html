@@ -1,11 +1,270 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PureLive Version Editor</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #666;
+      border-radius: 999px;
+    }
+  </style>
 </head>
-<body>
-  adssa
+
+<body class="bg-zinc-950 text-white min-h-screen p-8">
+
+  <div class="max-w-4xl mx-auto">
+
+    <div class="mb-8">
+      <h1 class="text-4xl font-bold">PureLive Version Editor</h1>
+      <p class="text-zinc-400 mt-2">
+        编辑 version.json 并一键覆盖保存
+      </p>
+    </div>
+
+    <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 shadow-2xl space-y-6">
+
+      <div>
+        <label class="block mb-2 text-sm text-zinc-400">选择 version.json</label>
+
+        <input
+          id="fileInput"
+          type="file"
+          accept=".json"
+          class="block w-full text-sm text-zinc-300
+          file:mr-4 file:py-2 file:px-4
+          file:rounded-xl file:border-0
+          file:text-sm file:font-semibold
+          file:bg-blue-600 file:text-white
+          hover:file:bg-blue-500"
+        />
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <div>
+          <label class="block mb-2 text-sm text-zinc-400">Version</label>
+          <input
+            id="version"
+            class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label class="block mb-2 text-sm text-zinc-400">Build Number</label>
+          <input
+            id="build_number"
+            type="number"
+            class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+      </div>
+
+      <div>
+        <label class="block mb-2 text-sm text-zinc-400">Version Num（自动生成）</label>
+        <input
+          id="version_num"
+          readonly
+          class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 text-zinc-400"
+        />
+      </div>
+
+      <div>
+        <label class="block mb-2 text-sm text-zinc-400">Download URL</label>
+        <input
+          id="download_url"
+          class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div>
+        <label class="block mb-2 text-sm text-zinc-400">Version Desc</label>
+
+        <textarea
+          id="version_desc"
+          class="w-full h-64 bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+        ></textarea>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <input
+          id="prerelease"
+          type="checkbox"
+          class="w-5 h-5 rounded bg-zinc-800 border-zinc-700"
+        />
+
+        <label class="text-zinc-300">Prerelease</label>
+      </div>
+
+      <div class="flex gap-4 pt-4">
+
+        <button
+          onclick="saveJson()"
+          class="px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 transition font-semibold shadow-lg"
+        >
+          保存 JSON
+        </button>
+
+        <button
+          onclick="downloadJson()"
+          class="px-6 py-3 rounded-2xl bg-zinc-700 hover:bg-zinc-600 transition font-semibold"
+        >
+          下载 JSON
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+<script>
+async function loadJson() {
+
+  try {
+
+    const response = await fetch('./version.json');
+
+    const data = await response.json();
+
+    fillForm(data);
+
+  } catch (e) {
+
+    alert('读取 version.json 失败');
+    console.error(e);
+  }
+}
+let currentFileName = 'version.json';
+
+function generateVersionNum(version, build) {
+  const parts = version.split('.');
+
+  const major = (parts[0] || '0').padStart(1, '0');
+  const minor = (parts[1] || '0').padStart(2, '0');
+  const patch = (parts[2] || '0').padStart(2, '0');
+
+  return `${major}${minor}${patch}${build}`;
+}
+
+function updateVersionNum() {
+  const version = document.getElementById('version').value;
+  const build = document.getElementById('build_number').value;
+
+  document.getElementById('version_num').value =
+    generateVersionNum(version, build);
+}
+
+function fillForm(data) {
+  document.getElementById('version').value = data.version || '';
+  document.getElementById('build_number').value = data.build_number || 0;
+  document.getElementById('download_url').value = data.download_url || '';
+  document.getElementById('version_desc').value = data.version_desc || '';
+  document.getElementById('prerelease').checked = data.prerelease || false;
+
+  updateVersionNum();
+}
+
+function getJsonData() {
+  return {
+    version: document.getElementById('version').value,
+    build_number: Number(document.getElementById('build_number').value),
+    version_num: Number(document.getElementById('version_num').value),
+    version_desc: document.getElementById('version_desc').value,
+    prerelease: document.getElementById('prerelease').checked,
+    download_url: document.getElementById('download_url').value,
+  };
+}
+
+async function saveJson() {
+
+  const data = getJsonData();
+
+  const response = await fetch('/save', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+  });
+
+  if (response.ok) {
+    alert('保存成功');
+  } else {
+    alert('保存失败');
+  }
+}
+
+function downloadJson() {
+  const data = getJsonData();
+
+  const blob = new Blob([
+    JSON.stringify(data, null, 2)
+  ], {
+    type: 'application/json'
+  });
+
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = currentFileName;
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+const fileInput = document.getElementById('fileInput');
+
+fileInput.addEventListener('change', async (e) => {
+
+  const file = e.target.files[0];
+
+  if (!file) return;
+
+  currentFileName = file.name;
+
+  const text = await file.text();
+
+  try {
+    const data = JSON.parse(text);
+    fillForm(data);
+  } catch (err) {
+    alert('JSON 格式错误');
+  }
+});
+
+
+document.getElementById('version')
+  .addEventListener('input', updateVersionNum);
+
+
+document.getElementById('build_number')
+  .addEventListener('input', updateVersionNum);
+window.onload = () => {
+
+  loadJson();
+
+  document
+    .getElementById('version')
+    .addEventListener('input', updateVersionNum);
+
+  document
+    .getElementById('build_number')
+    .addEventListener('input', updateVersionNum);
+};
+</script>
+
 </body>
 </html>
+

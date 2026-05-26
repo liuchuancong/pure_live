@@ -7,6 +7,7 @@ import 'package:pure_live/player/interface/unified_player_interface.dart';
 class LiveAudioHandler extends BaseAudioHandler {
   UnifiedPlayer? _currentPlayer; // 动态绑定
   late AudioSession _session;
+
   StreamSubscription? _playStateSubscription;
   LiveAudioHandler() {
     _initSession();
@@ -59,8 +60,13 @@ class LiveAudioHandler extends BaseAudioHandler {
     _playStateSubscription = _currentPlayer!.onPlaying.listen((playing) {
       playbackState.add(
         playbackState.value.copyWith(
-          controls: [playing ? MediaControl.pause : MediaControl.play, MediaControl.stop],
-          androidCompactActionIndices: const [0, 1],
+          controls: [
+            MediaControl.skipToPrevious,
+            playing ? MediaControl.pause : MediaControl.play,
+            MediaControl.skipToNext, // 占位
+            MediaControl.stop,
+          ],
+          androidCompactActionIndices: const [1, 3],
           playing: playing,
           processingState: AudioProcessingState.ready,
         ),

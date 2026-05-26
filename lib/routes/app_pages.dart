@@ -24,6 +24,7 @@ import 'package:pure_live/modules/settings/settings_page.dart';
 import 'package:pure_live/modules/version/version_binding.dart';
 import 'package:pure_live/modules/web_dav/web_dav_binding.dart';
 import 'package:pure_live/modules/toolbox/boolbox_binding.dart';
+import 'package:pure_live/modules/tags/tag_management_page.dart';
 import 'package:pure_live/modules/hot_areas/hot_areas_page.dart';
 import 'package:pure_live/modules/live_play/live_play_page.dart';
 import 'package:pure_live/modules/shield/danmu_shield_page.dart';
@@ -31,6 +32,7 @@ import 'package:pure_live/modules/search/web_search_binding.dart';
 import 'package:pure_live/modules/settings/settings_binding.dart';
 import 'package:pure_live/modules/areas/favorite_areas_page.dart';
 import 'package:pure_live/modules/area_rooms/area_rooms_page.dart';
+import 'package:pure_live/modules/tags/tag_management_binding.dart';
 import 'package:pure_live/modules/hot_areas/hot_areas_binding.dart';
 import 'package:pure_live/modules/live_play/live_play_binding.dart';
 import 'package:pure_live/modules/shield/danmu_shield_binding.dart';
@@ -162,5 +164,7 @@ class AppPages {
       bindings: [RecordSettingsBinding()],
     ),
     GetPage(name: RoutePath.kWebSearch, page: () => const WebSearchPage(), bindings: [WebSearchBinding()]),
+
+    GetPage(name: RoutePath.kSettingsTags, page: () => const TagManagementPage(), bindings: [TagManagementBinding()]),
   ];
 }
