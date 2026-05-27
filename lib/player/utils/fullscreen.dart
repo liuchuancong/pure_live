@@ -2,9 +2,11 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:screen_retriever/screen_retriever.dart';
-import 'package:pure_live/player/utils/win32_window.dart';
+import 'package:fullscreen_window/fullscreen_window.dart';
+import 'package:pure_live/player/utils/window_helper.dart';
 import 'package:auto_orientation_v2/auto_orientation_v2.dart';
+import 'package:pure_live/modules/live_play/player_state.dart';
+import 'package:pure_live/modules/live_play/live_play_controller.dart';
 
 class WindowService {
   static final WindowService _instance = WindowService._internal();
@@ -12,30 +14,18 @@ class WindowService {
   WindowService._internal();
   Future<void> enterWinPiP(double videoRatio) async {
     if (!Platform.isWindows) return;
-    Display primaryDisplay = await screenRetriever.getPrimaryDisplay();
-    Size safeSize = primaryDisplay.visibleSize ?? primaryDisplay.size;
-    Offset safeOffset = primaryDisplay.visiblePosition ?? Offset.zero;
-    double maxSide = 350.0;
-    double w, h;
-    if (videoRatio >= 1) {
-      w = maxSide;
-      h = maxSide / videoRatio;
-    } else {
-      h = maxSide * 1.2;
-      w = h * videoRatio;
-      if (w < 120) {
-        w = 120;
-        h = w / videoRatio;
-      }
+    if (GlobalPlayerState.to.isFullscreen.value) {
+      final livePlayController = Get.find<LivePlayController>();
+      livePlayController.videoController.value!.toggleFullScreen();
     }
-    double x = (safeOffset.dx + safeSize.width) - w - 20;
-    double y = (safeOffset.dy + safeSize.height) - h - 20;
-    WinFullscreen.enterPip(width: w, height: h, x: x, y: y);
+    Future.microtask(() {
+      WindowHelper.instance.enterPiP(videoRatio);
+    });
   }
 
   Future<void> exitWinPiP() async {
     if (!Platform.isWindows) return;
-    WinFullscreen.exitSpecialMode();
+    WindowHelper.instance.exitPiP();
   }
 
   //横屏
@@ -92,7 +82,7 @@ class WindowService {
 
   Future<void> doExitWindowFullScreen() async {
     if (Platform.isWindows) {
-      WinFullscreen.exitSpecialMode();
+      FullScreenWindow.setFullScreen(false);
       return;
     }
     if (Platform.isMacOS || Platform.isLinux) {
@@ -102,7 +92,7 @@ class WindowService {
 
   Future<void> doEnterWindowFullScreen({bool enableEscListener = true, VoidCallback? onEsc}) async {
     if (Platform.isWindows) {
-      WinFullscreen.enterFullscreen();
+      FullScreenWindow.setFullScreen(true);
     }
     if (Platform.isMacOS || Platform.isLinux) {
       await windowManager.setFullScreen(true);

@@ -159,4 +159,120 @@ extension AppLayoutFactory on BuildContext {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
     );
   }
+
+  Widget buildMenuTile<T>({
+    required String title,
+    required T value,
+    required Map<T, String> valueMap,
+    required Function(T) onChanged,
+    IconData? icon,
+    String? subtitle,
+    Color? iconColor,
+    Color? subtitleColor,
+    bool isLong = false,
+  }) {
+    final theme = Theme.of(this);
+    final rawValueString = valueMap[value] ?? "$value";
+    final displayValue = rawValueString.tr;
+
+    return buildTile(
+      title: title,
+      icon: icon,
+      subtitle: subtitle,
+      iconColor: iconColor,
+      subtitleColor: subtitleColor,
+      isLong: isLong,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            displayValue,
+            style: AppTextStyles.t14.copyWith(
+              color: theme.hintColor.withValues(alpha: 0.75),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Icon(Icons.chevron_right_rounded, color: theme.hintColor.withValues(alpha: 0.4), size: 20),
+        ],
+      ),
+      onTap: () => _openMenuDialog<T>(title: title, value: value, valueMap: valueMap, onChanged: onChanged),
+    );
+  }
+
+  void _openMenuDialog<T>({
+    required String title,
+    required T value,
+    required Map<T, String> valueMap,
+    required Function(T) onChanged,
+  }) {
+    showDialog(
+      context: this,
+      builder: (BuildContext dialogContext) {
+        final innerTheme = Theme.of(dialogContext);
+
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          titlePadding: const EdgeInsets.only(top: 24, left: 24, right: 24, bottom: 8),
+          contentPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          title: Text(title, style: AppTextStyles.t18.copyWith(fontWeight: FontWeight.bold)),
+          content: Container(
+            width: double.maxFinite,
+            constraints: const BoxConstraints(maxWidth: 340, maxHeight: 400),
+            child: SingleChildScrollView(
+              child: RadioGroup<T>(
+                groupValue: value,
+                onChanged: (T? newValue) {
+                  if (newValue != null) {
+                    Navigator.of(dialogContext).pop();
+                    onChanged.call(newValue);
+                  }
+                },
+                child: buildModernCard(
+                  valueMap.keys.map<Widget>((e) {
+                    final itemRawText = valueMap[e] ?? "$e";
+                    final itemDisplayText = itemRawText.tr;
+                    final bool isSelected = (e == value);
+
+                    return Material(
+                      color: Colors.transparent,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(width: 8),
+                          Radio<T>(value: e, activeColor: innerTheme.colorScheme.primary),
+                          Expanded(
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                Navigator.of(dialogContext).pop();
+                                onChanged.call(e);
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+                                child: Text(
+                                  itemDisplayText,
+                                  style: AppTextStyles.t15.copyWith(
+                                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                    color: isSelected
+                                        ? innerTheme.colorScheme.primary
+                                        : innerTheme.textTheme.bodyLarge?.color,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }

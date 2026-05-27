@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 
@@ -64,9 +65,133 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
               icon: Remix.p2p_line,
             ),
           ]),
+          Obx(() {
+            if (controller.videoPlayerIndex.value != 0) return const SizedBox.shrink();
+            return _buildMpvSettings(context);
+          }),
           const SizedBox(height: 32),
         ],
       ),
+    );
+  }
+
+  Widget _buildMpvSettings(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(padding: EdgeInsets.only(left: 16, right: 16, bottom: 0, top: 12), child: Divider()),
+        if (Platform.isAndroid)
+          context.buildSwitchTile(
+            title: i18n('compat_mode'),
+            subtitle: i18n('compat_mode_subtitle'),
+            value: controller.playerCompatMode,
+            icon: Remix.shield_flash_line,
+          ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 5, 12, 4),
+          child: Row(
+            children: [
+              Icon(Remix.settings_5_line, size: 18, color: theme.colorScheme.primary),
+              const SizedBox(width: 8),
+              Text(
+                i18n("mpv_advanced_settings"),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            children: [
+              Expanded(
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 4,
+                  children: [
+                    Text(
+                      i18n("mpv_warning_text"),
+                      style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.65)),
+                    ),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(4),
+                      onTap: () => launchUrlString("https://mpv.io"),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        child: Text(
+                          i18n("mpv_official_docs"),
+                          style: AppTextStyles.t12.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () {
+                  controller.resetMpvPlayerSettings();
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(RemixIcons.refresh_line, size: 14, color: theme.colorScheme.error),
+                      const SizedBox(width: 4),
+                      Text(
+                        i18n("reset"), // Ensure "reset" key exists in your i18n file
+                        style: AppTextStyles.t12.copyWith(color: theme.colorScheme.error, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        context.buildModernCard([
+          context.buildSwitchTile(
+            title: i18n("custom_output_hwdec"),
+            value: controller.customPlayerOutput,
+            icon: Remix.apps_2_add_fill,
+          ),
+          Obx(
+            () => context.buildMenuTile<String>(
+              title: i18n("video_output_driver"),
+              icon: Remix.tv_2_line,
+              value: controller.videoOutputDriver.value,
+              valueMap: PlayerConsts.videoOutputDrivers,
+              onChanged: (e) => controller.videoOutputDriver.value = e,
+            ),
+          ),
+          Obx(
+            () => context.buildMenuTile<String>(
+              title: i18n("audio_output_driver"),
+              icon: Remix.volume_up_line,
+              value: controller.audioOutputDriver.value,
+              valueMap: PlayerConsts.audioOutputDrivers,
+              onChanged: (e) => controller.audioOutputDriver.value = e,
+            ),
+          ),
+          Obx(
+            () => context.buildMenuTile<String>(
+              title: i18n("hardware_decoder"),
+              icon: Remix.cpu_line,
+              value: controller.videoHardwareDecoder.value,
+              valueMap: PlayerConsts.hardwareDecoder,
+              onChanged: (e) => controller.videoHardwareDecoder.value = e,
+            ),
+          ),
+        ]),
+      ],
     );
   }
 

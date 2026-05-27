@@ -26,6 +26,8 @@ dependencies:
   fuzzywuzzy: ^1.1.6
   scrollview_observer: ^1.26.3
   flutter_reorderable_grid_view: ^5.6.0
+  pro_mpack: ^2.1.0
+  share_plus: ^12.0.2
   # Local database (SQLite)
   drift: ^2.22.1
   sqlite3_flutter_libs: ^0.5.28
@@ -84,6 +86,8 @@ dependencies:
       path: ./packages/screen_retriever
       ref: main
   win32: ^5.15.0 # Windows系统API
+  android_intent_plus: ^6.0.0
+  fullscreen_window: ^1.2.0
 
   # -------------------------- 设备/系统权限/硬件 --------------------------
   screen_brightness: ^2.1.2 # 屏幕亮度控制
@@ -110,7 +114,8 @@ dependencies:
   mime: ^2.0.0 # MIME类型处理
 
   # -------------------------- 工具/通用库 --------------------------
-  timezone: ^0.10.1 # 时区处理
+
+  timezone: ^0.11.0 # 时区处理
   date_format: ^2.0.9 # 日期格式化
   logger: ^2.6.2 # 日志打印
   quiver: ^3.2.1 # 实用工具集
@@ -154,6 +159,7 @@ dependencies:
 dependency_overrides:
   wakelock_plus: ^1.4.0
   app_links: 7.0.0
+  meta: 1.18.0
   hooks: ^2.0.0
   screen_retriever:
     git:
@@ -226,6 +232,6 @@ flutter:
 
 # FFmpeg配置
 ffmpeg_kit_extended_config:
-  type: "base" # pre-bundled builds: debug, base, full, audio, video, video_hw
-  gpl: true # enable to include GPL libraries
-  small: true # enable to use smaller builds
+  windows: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-windows/bundle-base-windows-x86_64-shared-lgpl.zip
+  android: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-android/bundle-base-shared-lgpl-release.aar
+  macos: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-macos/bundle-base-macos-universal-lgpl.xcframework.zip
