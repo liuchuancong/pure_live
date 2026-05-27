@@ -22,7 +22,7 @@ void main(List<String> args) async {
       supportedLocales: const [Locale('en'), Locale('zh')],
       path: 'assets/translations',
       fallbackLocale: const Locale('zh'),
-      child: const MyApp(),
+      child: MyApp(),
     ),
   );
 }
@@ -47,7 +47,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
     initGlopalPlayer();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (Platform.isAndroid && settings.enableBackgroundPlay.value) {
+      if (settings.enableBackgroundPlay.value) {
         bool hasPermission = await LiveAudioService.requestPlatformPermissions();
         if (!hasPermission) {
           ToastUtil.show(i18n("background_play_permission_tip"));

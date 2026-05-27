@@ -1,13 +1,14 @@
 name: app-build-action
 
 on:
+  # 1. 支持手动触发：可以在 GitHub 网页端手动点击运行，并输入 Tag
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Tag name for the release'
-        required: false
-        default: 'v1.0.0'
+        description: '发布 Release 的 Tag (例如 v1.0.0)'
+        required: true
 
+  # 2. 支持推送 Tag 触发：当你 git push tag 时自动运行
   push:
     tags:
       - "v*"
@@ -239,7 +240,7 @@ jobs:
 
   build-macos:
     runs-on: macos-latest
-    timeout-minutes: 30
+    timeout-minutes: 50
     strategy:
       matrix:
         branch: [master, fvp]
@@ -321,7 +322,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: master
-
+      - name: 计算 Tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
       - name: 下载所有构建产物
         uses: actions/download-artifact@v4
         with:
@@ -368,16 +376,37 @@ jobs:
 
           echo "body_path=$(pwd)/release_body.txt" >> $GITHUB_OUTPUT
 
+      - name: 删除已有 Release（如果存在）
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.TOKEN }}
+        run: |
+          gh release delete "${{ steps.tag.outputs.tag }}" -y
+      - name: 删除已有 Tag（仅手动触发）
+        if: github.event_name == 'workflow_dispatch'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.TOKEN }}
+        run: |
+          git push origin :refs/tags/${{ steps.tag.outputs.tag }}    
       - name: 上传至 Release
-        uses: softprops/action-gh-release@v2.2.1
+        uses: softprops/action-gh-release@v2
         with:
-          name: ${{ github.event.inputs.tag_name || github.ref_name }}
+          tag_name: ${{ steps.tag.outputs.tag }}
+
+          name: ${{ steps.tag.outputs.tag }}
 
           body_path: ${{ steps.release_body.outputs.body_path }}
 
           prerelease: false
 
-          token: ${{ secrets.TOKEN }}
+          generate_release_notes: false
+
+          append_body: false
+
+          make_latest: true
+
+          fail_on_unmatched_files: false
 
           files: |
             artifacts/android-apks-master/*.apk
@@ -402,14 +431,16 @@ jobs:
   update-json:
     runs-on: ubuntu-latest
     needs: publish-release
-    # 赋予工作流向仓库写入和提交代码的权限
     permissions:
       contents: write
 
     steps:
-    # 1. 检出仓库代码
+    # 1. 检出仓库代码（显式指定 master 分支，并拉取所有历史以便合并）
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        ref: master
+        fetch-depth: 0
 
     # 2. 设置 Python 环境
     - name: Set up Python
@@ -421,18 +452,22 @@ jobs:
     - name: Run update script
       run: python update_releases.py
 
-    # 4. 检查是否有文件更新，并自动提交回仓库
+    # 4. 检查是否有文件更新，采用拉取重构（Pull Rebase）后安全推送
     - name: Commit and Push changes
       run: |
         git config --global user.name "github-actions[bot]"
-        git config --global user.email "github-actions[bot]@://github.com"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
         
         # 检查是否有文件变动
         if [ -n "$(git status --porcelain)" ]; then
           git add assets/releases.json
           git commit -m "chore: 手动更新 releases.json 数据 [skip ci]"
-          git push
+          
+          # 【核心防御】推送前先拉取远程最新修改，用 rebase 保持提交线干净
+          git pull --rebase origin master
+          
+          # 推送到远程 master 分支
+          git push origin master
         else
           echo "数据未发生变化，无需更新。"
         fi
-

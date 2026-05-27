@@ -9,9 +9,7 @@ class LiveAudioService {
   static bool _isInitializing = false;
 
   static Future<LiveAudioHandler?> _ensureInitialized() async {
-    if (!Platform.isAndroid) return null;
     if (_handler != null) return _handler;
-
     if (_isInitializing) {
       while (_handler == null) {
         await Future.delayed(const Duration(milliseconds: 100));
@@ -44,8 +42,6 @@ class LiveAudioService {
   }
 
   static Future<void> start(String roomId, String title, String author, String? cover) async {
-    if (!Platform.isAndroid) return;
-
     final handler = await _ensureInitialized();
     if (handler == null) return;
 
@@ -61,7 +57,7 @@ class LiveAudioService {
   }
 
   static Future<void> stop() async {
-    if (!Platform.isAndroid || _handler == null) return;
+    if (_handler == null) return;
     await _handler!.stop();
   }
 

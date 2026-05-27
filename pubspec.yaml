@@ -25,6 +25,7 @@ dependencies:
   string_similarity: ^2.0.0
   fuzzywuzzy: ^1.1.6
   scrollview_observer: ^1.26.3
+  flutter_reorderable_grid_view: ^5.6.0
   # Local database (SQLite)
   drift: ^2.22.1
   sqlite3_flutter_libs: ^0.5.28
@@ -48,6 +49,7 @@ dependencies:
   video_player: ^2.11.1
   better_player_plus: ^1.2.1 # 高级视频播放器
   audio_service: ^0.18.18 # 后台音频服务
+  audio_service_win: ^0.0.3
   audio_session: ^0.2.3 # 音频会话管理
   ffmpeg_kit_extended_flutter: ^0.5.5 # FFmpeg集成
   flv_lzc:
@@ -150,8 +152,9 @@ dependencies:
   easy_localization: ^3.0.8 #多语言
 # 依赖覆盖（强制指定版本）
 dependency_overrides:
-  hooks: ^2.0.0
   wakelock_plus: ^1.4.0
+  app_links: 7.0.0
+  hooks: ^2.0.0
   screen_retriever:
     git:
       url: https://github.com/MSOB7YY/screen_retriever.git
