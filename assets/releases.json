@@ -14,73 +14,73 @@
       {
         "name": "arm64-v8a-fvp",
         "size": "99.19mb",
-        "downloads": 0,
+        "downloads": 30,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.19/app-arm64-v8a-fvp.apk"
       },
       {
         "name": "arm64-v8a",
         "size": "109.44mb",
-        "downloads": 0,
+        "downloads": 125,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.19/app-arm64-v8a-release.apk"
       },
       {
         "name": "armeabi-v7a-fvp",
         "size": "88.34mb",
-        "downloads": 0,
+        "downloads": 3,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.19/app-armeabi-v7a-fvp.apk"
       },
       {
         "name": "armeabi-v7a",
         "size": "97.86mb",
-        "downloads": 0,
+        "downloads": 6,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.19/app-armeabi-v7a-release.apk"
       },
       {
         "name": "x86_64-fvp",
         "size": "109.4mb",
-        "downloads": 0,
+        "downloads": 5,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.19/app-x86_64-fvp.apk"
       },
       {
         "name": "x86_64",
         "size": "122.17mb",
-        "downloads": 0,
+        "downloads": 5,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.19/app-x86_64-release.apk"
       },
       {
         "name": "PureLive-2.0.19+30-fvp-macOS.dmg",
         "size": "77.41mb",
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.19/PureLive-2.0.19%2B30-fvp-macOS.dmg"
       },
       {
         "name": "PureLive-2.0.19+30-fvp-windows-x64-setup.exe",
         "size": "44.5mb",
-        "downloads": 0,
+        "downloads": 5,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.19/PureLive-2.0.19%2B30-fvp-windows-x64-setup.exe"
       },
       {
         "name": "PureLive-2.0.19+30-fvp-windows-x64.msix",
         "size": "61.96mb",
-        "downloads": 0,
+        "downloads": 6,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.19/PureLive-2.0.19%2B30-fvp-windows-x64.msix"
       },
       {
         "name": "PureLive-2.0.19+30-macOS.dmg",
         "size": "81.66mb",
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.19/PureLive-2.0.19%2B30-macOS.dmg"
       },
       {
         "name": "PureLive-2.0.19+30-windows-x64-setup.exe",
         "size": "50.8mb",
-        "downloads": 0,
+        "downloads": 24,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.19/PureLive-2.0.19%2B30-windows-x64-setup.exe"
       },
       {
         "name": "PureLive-2.0.19+30-windows-x64.msix",
         "size": "70.9mb",
-        "downloads": 0,
+        "downloads": 9,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.19/PureLive-2.0.19%2B30-windows-x64.msix"
       }
     ]
@@ -106,19 +106,19 @@
       {
         "name": "arm64-v8a",
         "size": "111.75mb",
-        "downloads": 3345,
+        "downloads": 3349,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.18/app-arm64-v8a-release.apk"
       },
       {
         "name": "armeabi-v7a-fvp",
         "size": "88.79mb",
-        "downloads": 161,
+        "downloads": 165,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.18/app-armeabi-v7a-fvp.apk"
       },
       {
         "name": "armeabi-v7a",
         "size": "98.45mb",
-        "downloads": 300,
+        "downloads": 304,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.18/app-armeabi-v7a-release.apk"
       },
       {
@@ -186,7 +186,7 @@
       {
         "name": "arm64-v8a-fvp",
         "size": "70.02mb",
-        "downloads": 979,
+        "downloads": 983,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.16/app-arm64-v8a-fvp.apk"
       },
       {
@@ -216,7 +216,7 @@
       {
         "name": "x86_64",
         "size": "88.74mb",
-        "downloads": 110,
+        "downloads": 114,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.16/app-x86_64-release.apk"
       },
       {
@@ -272,7 +272,7 @@
       {
         "name": "arm64-v8a",
         "size": "77.86mb",
-        "downloads": 5537,
+        "downloads": 5541,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.15/app-arm64-v8a-release.apk"
       },
       {
@@ -322,7 +322,7 @@
       {
         "name": "arm64-v8a",
         "size": "77.53mb",
-        "downloads": 4656,
+        "downloads": 4660,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.14/app-arm64-v8a-release.apk"
       },
       {
@@ -334,7 +334,7 @@
       {
         "name": "x86_64",
         "size": "86.98mb",
-        "downloads": 393,
+        "downloads": 397,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.14/app-x86_64-release.apk"
       },
       {
@@ -378,7 +378,7 @@
       {
         "name": "armeabi-v7a",
         "size": "62.74mb",
-        "downloads": 137,
+        "downloads": 142,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.13/app-armeabi-v7a-release.apk"
       },
       {
@@ -390,7 +390,7 @@
       {
         "name": "PureLive-2.0.13+24-macOS.dmg",
         "size": "57.63mb",
-        "downloads": 29,
+        "downloads": 32,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.13/PureLive-2.0.13%2B24-macOS.dmg"
       },
       {
@@ -422,7 +422,7 @@
       {
         "name": "arm64-v8a",
         "size": "67.68mb",
-        "downloads": 8903,
+        "downloads": 8907,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.12/app-arm64-v8a-release.apk"
       },
       {
@@ -434,13 +434,13 @@
       {
         "name": "x86_64",
         "size": "76.81mb",
-        "downloads": 606,
+        "downloads": 610,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.12/app-x86_64-release.apk"
       },
       {
         "name": "PureLive-2.0.12+23-macOS.dmg",
         "size": "57.31mb",
-        "downloads": 267,
+        "downloads": 270,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.12/PureLive-2.0.12%2B23-macOS.dmg"
       },
       {
@@ -472,7 +472,7 @@
       {
         "name": "arm64-v8a",
         "size": "67.65mb",
-        "downloads": 2454,
+        "downloads": 2458,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.11/app-arm64-v8a-release.apk"
       },
       {
@@ -484,7 +484,7 @@
       {
         "name": "PureLive-2.0.11+22-macOS.dmg",
         "size": "56.92mb",
-        "downloads": 113,
+        "downloads": 116,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.11/PureLive-2.0.11%2B22-macOS.dmg"
       },
       {
@@ -528,7 +528,7 @@
       {
         "name": "PureLive-2.0.10+21-macOS.dmg",
         "size": "56.9mb",
-        "downloads": 15,
+        "downloads": 18,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.10/PureLive-2.0.10%2B21-macOS.dmg"
       },
       {
@@ -598,7 +598,7 @@
       {
         "name": "arm64-v8a",
         "size": "67.27mb",
-        "downloads": 4849,
+        "downloads": 4853,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.8/app-arm64-v8a-release.apk"
       },
       {
@@ -636,13 +636,13 @@
       {
         "name": "arm64-v8a",
         "size": "67.27mb",
-        "downloads": 2452,
+        "downloads": 2456,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.7/app-arm64-v8a-release.apk"
       },
       {
         "name": "armeabi-v7a",
         "size": "61.96mb",
-        "downloads": 1102,
+        "downloads": 1106,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.7/app-armeabi-v7a-release.apk"
       },
       {
@@ -712,19 +712,19 @@
       {
         "name": "arm64-v8a",
         "size": "67.37mb",
-        "downloads": 459,
+        "downloads": 463,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.5/app-arm64-v8a-release.apk"
       },
       {
         "name": "armeabi-v7a",
         "size": "62.13mb",
-        "downloads": 231,
+        "downloads": 235,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.5/app-armeabi-v7a-release.apk"
       },
       {
         "name": "PureLive-2.0.5+16-macOS.dmg",
         "size": "57.08mb",
-        "downloads": 17,
+        "downloads": 20,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.5/PureLive-2.0.5%2B16-macOS.dmg"
       },
       {
@@ -750,7 +750,7 @@
       {
         "name": "arm64-v8a",
         "size": "65.43mb",
-        "downloads": 1151,
+        "downloads": 1155,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.4/app-arm64-v8a-release.apk"
       },
       {
@@ -926,7 +926,7 @@
       {
         "name": "armeabi-v7a",
         "size": "55.05mb",
-        "downloads": 707,
+        "downloads": 711,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.0/app-armeabi-v7a-release.apk"
       },
       {
@@ -996,7 +996,7 @@
       {
         "name": "armeabi-v7a",
         "size": "50.12mb",
-        "downloads": 430,
+        "downloads": 434,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v1.9.8/app-armeabi-v7a-release.apk"
       },
       {
@@ -1060,7 +1060,7 @@
       {
         "name": "armeabi-v7a",
         "size": "30.92mb",
-        "downloads": 587,
+        "downloads": 591,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v1.9.5/app-armeabi-v7a-release.apk"
       },
       {
@@ -1072,7 +1072,7 @@
       {
         "name": "pure_live-1.9.5+5-windows.msix",
         "size": "48.68mb",
-        "downloads": 785,
+        "downloads": 788,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v1.9.5/pure_live-1.9.5%2B5-windows.msix"
       }
     ]
@@ -1092,7 +1092,7 @@
       {
         "name": "arm64-v8a",
         "size": "31.68mb",
-        "downloads": 4765,
+        "downloads": 4769,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v1.9.4/app-arm64-v8a-release.apk"
       },
       {
@@ -1104,7 +1104,7 @@
       {
         "name": "x86_64",
         "size": "32.97mb",
-        "downloads": 817,
+        "downloads": 821,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v1.9.4/app-x86_64-release.apk"
       },
       {
@@ -1130,13 +1130,13 @@
       {
         "name": "arm64-v8a",
         "size": "31.65mb",
-        "downloads": 2034,
+        "downloads": 2038,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v1.9.3/app-arm64-v8a-release.apk"
       },
       {
         "name": "armeabi-v7a",
         "size": "30.9mb",
-        "downloads": 349,
+        "downloads": 353,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v1.9.3/app-armeabi-v7a-release.apk"
       },
       {
@@ -1174,7 +1174,7 @@
       {
         "name": "armeabi-v7a",
         "size": "30.91mb",
-        "downloads": 120,
+        "downloads": 124,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v1.9.2/app-armeabi-v7a-release.apk"
       },
       {
@@ -1224,7 +1224,7 @@
       {
         "name": "pure_live-1.9.1-windows.msix",
         "size": "48.62mb",
-        "downloads": 341,
+        "downloads": 343,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v1.9.1/pure_live-1.9.1-windows.msix"
       }
     ]
@@ -1257,7 +1257,7 @@
       {
         "name": "arm64-v8a",
         "size": "29.76mb",
-        "downloads": 5210,
+        "downloads": 5214,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v1.8.9/app-arm64-v8a-release.apk"
       },
       {
@@ -1275,7 +1275,7 @@
       {
         "name": "pure_live-1.8.9-windows.msix",
         "size": "48.28mb",
-        "downloads": 1272,
+        "downloads": 1275,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v1.8.9/pure_live-1.8.9-windows.msix"
       }
     ]
@@ -1377,7 +1377,7 @@
       {
         "name": "armeabi-v7a",
         "size": "28.95mb",
-        "downloads": 257,
+        "downloads": 261,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v1.8.6/app-armeabi-v7a-release.apk"
       },
       {
@@ -1421,7 +1421,7 @@
       {
         "name": "x86_64",
         "size": "31.04mb",
-        "downloads": 323,
+        "downloads": 327,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v1.8.5/app-x86_64-release.apk"
       },
       {
@@ -1447,13 +1447,13 @@
       {
         "name": "arm64-v8a",
         "size": "29.74mb",
-        "downloads": 3645,
+        "downloads": 3649,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v1.8.4/app-arm64-v8a-release.apk"
       },
       {
         "name": "armeabi-v7a",
         "size": "28.93mb",
-        "downloads": 631,
+        "downloads": 635,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v1.8.4/app-armeabi-v7a-release.apk"
       },
       {
@@ -1465,7 +1465,7 @@
       {
         "name": "pure_live-1.8.4-windows.msix",
         "size": "50.68mb",
-        "downloads": 1076,
+        "downloads": 1079,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v1.8.4/pure_live-1.8.4-windows.msix"
       }
     ]
@@ -2017,7 +2017,7 @@
       {
         "name": "arm64-v8a",
         "size": "30.05mb",
-        "downloads": 462,
+        "downloads": 466,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/1.4.3/app-arm64-v8a-release.apk"
       },
       {
@@ -2035,7 +2035,7 @@
       {
         "name": "x86_64",
         "size": "31.85mb",
-        "downloads": 50,
+        "downloads": 54,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/1.4.3/app-x86_64-release.apk"
       }
     ]
@@ -2099,7 +2099,7 @@
       {
         "name": "armeabi-v7a",
         "size": "29.35mb",
-        "downloads": 208,
+        "downloads": 212,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/1.4.0/app-armeabi-v7a-release.apk"
       },
       {
