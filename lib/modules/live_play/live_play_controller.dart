@@ -147,7 +147,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     if (isMenuOpen) {
       Navigator.of(Get.context!).pop();
       isMenuOpen = false;
-      return false;
+      return true;
     }
     if (GlobalPlayerState.to.isFullscreen.value) {
       setNormalScreen();
