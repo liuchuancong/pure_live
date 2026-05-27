@@ -97,6 +97,7 @@ dependencies:
       path: ./packages/screen_retriever
       ref: main
   win32: ^5.15.0 # Windows系统API
+  android_intent_plus: ^6.0.0
 
   # -------------------------- 设备/系统权限/硬件 --------------------------
   screen_brightness: ^2.1.2 # 屏幕亮度控制

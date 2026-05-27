@@ -4,6 +4,7 @@ import 'package:path/path.dart' as p;
 import 'package:open_filex/open_filex.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:android_intent_plus/android_intent.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class FileUtils {
@@ -78,7 +79,6 @@ class FileUtils {
     final trimmedPath = pathOrUrl.trim();
     if (trimmedPath.isEmpty) return false;
 
-    // 1. 处理标准 Web/Network 网络链接
     if (isValidUrl(trimmedPath)) {
       try {
         final Uri uri = Uri.parse(trimmedPath);
@@ -93,8 +93,10 @@ class FileUtils {
 
     final file = File(trimmedPath);
     final directory = Directory(trimmedPath);
-    final bool targetExists = await file.exists() || await directory.exists();
-    if (!targetExists) return false;
+    final isDir = await directory.exists();
+    final isFile = await file.exists();
+
+    if (!isDir && !isFile) return false;
 
     if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
       try {
@@ -109,17 +111,34 @@ class FileUtils {
       } catch (_) {}
     }
 
+    if (Platform.isAndroid && isDir) {
+      try {
+        final String folderPath = trimmedPath.replaceFirst('/storage/emulated/0/', '');
+        final String docId = 'primary:${Uri.encodeComponent(folderPath)}';
+        final String contentUri = 'content://com.android.externalstorage.documents/document/$docId';
+        final AndroidIntent intent = AndroidIntent(
+          action: 'android.intent.action.VIEW',
+          data: contentUri,
+          type: 'vnd.android.document/directory',
+        );
+        await intent.launch();
+        return true;
+      } catch (_) {}
+    }
+
     try {
       final result = await OpenFilex.open(trimmedPath);
       return result.type == ResultType.done;
     } catch (_) {
-      try {
-        final String cleanPath = trimmedPath.startsWith('file://') ? trimmedPath : 'file://$trimmedPath';
-        final Uri fileUri = Uri.parse(cleanPath);
-        if (await canLaunchUrl(fileUri)) {
-          return await launchUrl(fileUri);
-        }
-      } catch (_) {}
+      if (!Platform.isAndroid) {
+        try {
+          final String cleanPath = trimmedPath.startsWith('file://') ? trimmedPath : 'file://$trimmedPath';
+          final Uri fileUri = Uri.parse(cleanPath);
+          if (await canLaunchUrl(fileUri)) {
+            return await launchUrl(fileUri);
+          }
+        } catch (_) {}
+      }
     }
 
     return false;
