@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:screen_retriever/screen_retriever.dart';
+import 'package:fullscreen_window/fullscreen_window.dart';
 import 'package:pure_live/player/utils/win32_window.dart';
 import 'package:auto_orientation_v2/auto_orientation_v2.dart';
 
@@ -92,7 +93,7 @@ class WindowService {
 
   Future<void> doExitWindowFullScreen() async {
     if (Platform.isWindows) {
-      WinFullscreen.exitSpecialMode();
+      FullScreenWindow.setFullScreen(false);
       return;
     }
     if (Platform.isMacOS || Platform.isLinux) {
@@ -102,7 +103,7 @@ class WindowService {
 
   Future<void> doEnterWindowFullScreen({bool enableEscListener = true, VoidCallback? onEsc}) async {
     if (Platform.isWindows) {
-      WinFullscreen.enterFullscreen();
+      FullScreenWindow.setFullScreen(true);
     }
     if (Platform.isMacOS || Platform.isLinux) {
       await windowManager.setFullScreen(true);

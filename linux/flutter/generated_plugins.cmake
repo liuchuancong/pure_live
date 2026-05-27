@@ -9,6 +9,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_acrylic
   flutter_inappwebview_linux
   flutter_js
+  fullscreen_window
   gtk
   media_kit_libs_linux
   media_kit_video
