@@ -4,6 +4,7 @@ import 'package:pure_live/plugins/cache_manager.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/common/widgets/common_avatar.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:pure_live/common/utils/share_command_handler.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
 
 class RoomCard extends StatelessWidget {
@@ -102,6 +103,17 @@ class RoomCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
+
+            IconButton(
+              constraints: const BoxConstraints(),
+              padding: const EdgeInsets.all(6),
+              icon: Icon(Remix.share_circle_fill, size: 20, color: theme.colorScheme.primary),
+              onPressed: () {
+                Navigator.pop(context);
+                ShareCommandHandler.instance.onShareRoomPressed(room);
+              },
+            ),
+            SizedBox(width: 6),
             IconButton(
               constraints: const BoxConstraints(),
               padding: const EdgeInsets.all(6),

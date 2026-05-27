@@ -839,5 +839,8 @@
     "set_room_tags": "Set Room Tags / Category",
     "selected_tags_count": "Selected Tags",
     "tags_need_follow_tip": "Must follow first",
-    "dialog_follow_anchor_ask": "Follow {name}?"
+    "dialog_follow_anchor_ask": "Follow {name}?",
+    "platform": "Platform",
+    "room_id": "Room ID",
+    "enter_room": "Enter"
 }

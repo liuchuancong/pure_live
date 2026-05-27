@@ -26,6 +26,8 @@ dependencies:
   fuzzywuzzy: ^1.1.6
   scrollview_observer: ^1.26.3
   flutter_reorderable_grid_view: ^5.6.0
+  pro_mpack: ^2.1.0
+  share_plus: ^12.0.2
   # Local database (SQLite)
   drift: ^2.22.1
   sqlite3_flutter_libs: ^0.5.28
@@ -170,6 +172,7 @@ dependencies:
 dependency_overrides:
   wakelock_plus: ^1.4.0
   app_links: 7.0.0
+  meta: 1.18.0
   hooks: ^2.0.0
   media_kit:
     git:
@@ -282,6 +285,6 @@ flutter:
 
 # FFmpeg配置
 ffmpeg_kit_extended_config:
-  type: "base" # pre-bundled builds: debug, base, full, audio, video, video_hw
-  gpl: true # enable to include GPL libraries
-  small: true # enable to use smaller builds
+  windows: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-windows/bundle-base-windows-x86_64-shared-lgpl.zip
+  android: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-android/bundle-base-shared-lgpl-release.aar
+  macos: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-macos/bundle-base-macos-universal-lgpl.xcframework.zip

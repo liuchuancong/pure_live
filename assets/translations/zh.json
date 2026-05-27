@@ -838,5 +838,8 @@
     "set_room_tags": "设置房间标签 / 分类",
     "selected_tags_count": "已选标签数",
     "tags_need_follow_tip": "需要先关注",
-    "dialog_follow_anchor_ask": "是否关注 {name}？"
+    "dialog_follow_anchor_ask": "是否关注 {name}？",
+    "platform": "平台",
+    "room_id": "房间号",
+    "enter_room": "进入房间"
 }

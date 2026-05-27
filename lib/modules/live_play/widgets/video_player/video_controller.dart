@@ -466,7 +466,6 @@ class VideoController with ChangeNotifier {
   void toggleFullScreen() async {
     showLocked.value = false;
     showControllerTimer?.cancel();
-
     GlobalPlayerState.to.isWindowFullscreen.value = false;
     Timer(const Duration(seconds: 2), () {
       enableController();
@@ -493,6 +492,7 @@ class VideoController with ChangeNotifier {
     }
   }
 
+  // 半屏显示
   void toggleWindowFullScreen() {
     showLocked.value = false;
     showControllerTimer?.cancel();

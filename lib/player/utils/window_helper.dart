@@ -19,13 +19,13 @@ class WindowHelper {
     if (!Platform.isWindows) return;
 
     if (currentMode == WindowLayoutMode.normal) {
-      await _enterPiP(videoRatio);
+      await enterPiP(videoRatio);
     } else {
-      await _exitPiP();
+      await exitPiP();
     }
   }
 
-  Future<void> _enterPiP(double videoRatio) async {
+  Future<void> enterPiP(double videoRatio) async {
     currentMode = WindowLayoutMode.pip;
 
     _savedSize = await windowManager.getSize();
@@ -73,7 +73,7 @@ class WindowHelper {
     await windowManager.setPosition(Offset(x, y));
   }
 
-  Future<void> _exitPiP() async {
+  Future<void> exitPiP() async {
     currentMode = WindowLayoutMode.normal;
     await windowManager.setAlwaysOnTop(false);
     await windowManager.setMinimumSize(const Size(800, 600));
