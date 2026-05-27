@@ -49,6 +49,13 @@ class ShareCommandHandler {
     if (PlatformUtils.isDesktop) {
       Clipboard.setData(ClipboardData(text: secret));
       ToastUtil.show(i18n('copied_to_clipboard'));
+      Get.showSnackbar(
+        GetSnackBar(
+          message: i18n("copied_to_clipboard"),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Get.theme.colorScheme.primary,
+        ),
+      );
     } else {
       await SharePlus.instance.share(ShareParams(text: secret));
     }

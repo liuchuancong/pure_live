@@ -107,7 +107,7 @@ class RoomCard extends StatelessWidget {
             IconButton(
               constraints: const BoxConstraints(),
               padding: const EdgeInsets.all(6),
-              icon: Icon(Remix.share_circle_fill, size: 20, color: theme.colorScheme.primary),
+              icon: Icon(RemixIcons.share_forward_line, size: 20, color: theme.colorScheme.primary),
               onPressed: () {
                 Navigator.pop(context);
                 ShareCommandHandler.instance.onShareRoomPressed(room);

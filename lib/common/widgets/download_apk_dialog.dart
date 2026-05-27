@@ -81,7 +81,14 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
       }
 
       if (Platform.isAndroid) {
-        ToastUtil.show(i18n("install_tip"));
+        Get.showSnackbar(
+          GetSnackBar(
+            message: i18n("install_tip"),
+            snackPosition: SnackPosition.top,
+            duration: const Duration(seconds: 2),
+            backgroundColor: Get.theme.colorScheme.primary,
+          ),
+        );
         final result = await OpenFilex.open(file.path, type: "application/vnd.android.package-archive");
         if (result.type != ResultType.done) {
           Get.snackbar(

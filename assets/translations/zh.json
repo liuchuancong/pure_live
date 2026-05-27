@@ -841,5 +841,16 @@
     "dialog_follow_anchor_ask": "是否关注 {name}？",
     "platform": "平台",
     "room_id": "房间号",
-    "enter_room": "进入房间"
+    "enter_room": "进入房间",
+    "mpv_reboot_notice": "注意：修改 MPV 播放器核心参数后，需开启此项以确保配置在下次播放时生效。",
+    "compat_mode": "兼容模式",
+    "compat_mode_subtitle": "旧设备播放卡顿时请尝试开启",
+    "mpv_advanced_settings": "MPV 高级设置",
+    "mpv_warning_text": "调整内核参数可能导致播放异常，详情请参考 ",
+    "mpv_official_docs": "MPV 官方文档",
+    "custom_output_hwdec": "自定义驱动与硬件加速",
+    "video_output_driver": "视频输出驱动(--vo)",
+    "audio_output_driver": "音频输出驱动(--ao)",
+    "hardware_decoder": "硬件解码器(--hwdec)",
+    "share": "分享"
 }

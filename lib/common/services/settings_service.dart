@@ -1153,4 +1153,11 @@ class SettingsService extends GetxController {
     json['mainAxisSpacing'] = mainAxisSpacing.value;
     return json;
   }
+
+  void resetMpvPlayerSettings() {
+    customPlayerOutput.value = false;
+    videoOutputDriver.value = 'gpu';
+    audioOutputDriver.value = 'auto';
+    videoHardwareDecoder.value = 'auto';
+  }
 }

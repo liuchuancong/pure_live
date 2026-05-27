@@ -14,6 +14,7 @@ import 'package:pure_live/recorder/models/record_status.dart';
 import 'package:pure_live/modules/live_play/danmaku_tab.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:pure_live/common/utils/share_command_handler.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_keyboard.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller_panel.dart';
@@ -301,6 +302,8 @@ class LivePlayPage extends GetView<LivePlayController> {
                     platform: controller.detail.value?.platform ?? '',
                   );
                 }
+              } else if (index == 6) {
+                ShareCommandHandler.instance.onShareRoomPressed(controller.detail.value!);
               }
               controller.isMenuOpen = false;
             },
@@ -343,6 +346,14 @@ class LivePlayPage extends GetView<LivePlayController> {
                   child: MenuListTile(
                     leading: const Icon(Remix.link_m, size: 20),
                     text: i18n("toolbox_get_direct_link"),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 6, // Make sure to increment the value to avoid duplicate key conflicts
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: MenuListTile(
+                    leading: const Icon(RemixIcons.share_forward_line, size: 20),
+                    text: i18n("share"), // Make sure to add "share" to your i18n file
                   ),
                 ),
               ];

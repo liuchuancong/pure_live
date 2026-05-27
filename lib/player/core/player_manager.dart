@@ -516,25 +516,29 @@ class PlayerManager {
                 ),
 
                 Center(
-                  child: Obx(
-                    () => AnimatedOpacity(
-                      opacity: isHovered.value ? 1 : 0,
-                      duration: const Duration(milliseconds: 200),
-                      child: IgnorePointer(
-                        ignoring: !isHovered.value,
-                        child: IconButton(
-                          iconSize: 42,
-                          style: IconButton.styleFrom(backgroundColor: Colors.black45),
-                          icon: Icon(
-                            isPlayingNow ? Icons.pause_circle_filled : Icons.play_circle_filled,
-                            color: Colors.white,
-                          ),
-                          onPressed: () {
-                            togglePlayPause();
-
-                            resetHideTimer();
-                          },
-                        ),
+                  child: AnimatedOpacity(
+                    opacity: isHovered.value ? 1 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: IgnorePointer(
+                      ignoring: !isHovered.value,
+                      child: StreamBuilder<bool>(
+                        stream: onPlaying,
+                        initialData: isPlayingNow,
+                        builder: (context, snapshot) {
+                          var isPlay = snapshot.data ?? true;
+                          return IconButton(
+                            iconSize: 42,
+                            style: IconButton.styleFrom(backgroundColor: Colors.black45),
+                            icon: Icon(
+                              isPlay ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                              color: Colors.white,
+                            ),
+                            onPressed: () {
+                              togglePlayPause();
+                              resetHideTimer();
+                            },
+                          );
+                        },
                       ),
                     ),
                   ),
@@ -621,15 +625,22 @@ class PlayerManager {
                   () => AnimatedOpacity(
                     opacity: isHovered.value ? 1 : 0,
                     duration: const Duration(milliseconds: 200),
-                    child: IconButton(
-                      iconSize: 32,
-                      style: IconButton.styleFrom(backgroundColor: Colors.black26),
-                      icon: Icon(
-                        isPlayingNow ? Icons.pause_circle_filled : Icons.play_circle_filled,
-                        color: Colors.white,
-                      ),
-                      onPressed: () {
-                        togglePlayPause();
+                    child: StreamBuilder<bool>(
+                      stream: onPlaying,
+                      initialData: isPlayingNow,
+                      builder: (context, snapshot) {
+                        var isPlay = snapshot.data ?? true;
+                        return IconButton(
+                          iconSize: 42,
+                          style: IconButton.styleFrom(backgroundColor: Colors.black45),
+                          icon: Icon(
+                            isPlay ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                            color: Colors.white,
+                          ),
+                          onPressed: () {
+                            togglePlayPause();
+                          },
+                        );
                       },
                     ),
                   ),

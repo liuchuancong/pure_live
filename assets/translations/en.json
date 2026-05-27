@@ -842,5 +842,16 @@
     "dialog_follow_anchor_ask": "Follow {name}?",
     "platform": "Platform",
     "room_id": "Room ID",
-    "enter_room": "Enter"
+    "enter_room": "Enter",
+    "mpv_reboot_notice": "Note: After modifying MPV core settings, enable this to apply changes to the next playback.",
+    "compat_mode": "Compatibility Mode",
+    "compat_mode_subtitle": "Try enabling this if playback lags on older devices",
+    "mpv_advanced_settings": "MPV Advanced Settings",
+    "mpv_warning_text": "Adjusting core parameters may cause playback issues. See ",
+    "mpv_official_docs": "MPV Official Docs",
+    "custom_output_hwdec": "Custom Driver & Hardware Acceleration",
+    "video_output_driver": "Video Output Driver (--vo)",
+    "audio_output_driver": "Audio Output Driver (--ao)",
+    "hardware_decoder": "Hardware Decoder (--hwdec)",
+    "share": "Share"
 }
