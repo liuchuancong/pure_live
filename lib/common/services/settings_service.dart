@@ -714,6 +714,7 @@ class SettingsService extends GetxController {
     updateRoomInHistory(room);
     if (idx == -1) return false;
     favoriteRooms[idx] = room;
+    favoriteRooms.refresh();
     return true;
   }
 
