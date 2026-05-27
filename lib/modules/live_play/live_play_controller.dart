@@ -59,6 +59,8 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
   bool get _hasRoom => detail.value != null;
 
+  bool isMenuOpen = false;
+
   LivePlayQuality get _qualitySafe {
     if (qualites.isEmpty) {
       return LivePlayQuality(quality: '原画');
@@ -142,6 +144,11 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   }
 
   bool myInterceptor(bool stopDefaultButtonEvent, RouteInfo info) {
+    if (isMenuOpen) {
+      Navigator.of(Get.context!).pop();
+      isMenuOpen = false;
+      return false;
+    }
     if (GlobalPlayerState.to.isFullscreen.value) {
       setNormalScreen();
       videoController.value?.exitFullScreen();

@@ -277,6 +277,12 @@ class LivePlayPage extends GetView<LivePlayController> {
             offset: const Offset(12, 0),
             position: PopupMenuPosition.under,
             icon: const Icon(Remix.apps_2_line),
+            onOpened: () {
+              controller.isMenuOpen = true;
+            },
+            onCanceled: () {
+              controller.isMenuOpen = false;
+            },
             onSelected: (int index) {
               if (index == 0) {
                 controller.openNaviteAPP();
@@ -296,6 +302,7 @@ class LivePlayPage extends GetView<LivePlayController> {
                   );
                 }
               }
+              controller.isMenuOpen = false;
             },
             itemBuilder: (BuildContext context) {
               return [
