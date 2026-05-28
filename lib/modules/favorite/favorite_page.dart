@@ -1,4 +1,3 @@
-import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 import 'package:pure_live/common/widgets/common_appbar_actions.dart';
@@ -133,19 +132,12 @@ class _RoomGridView extends GetView<FavoriteController> {
                         : controller.selectedTagId.value == controller.visibleTags[index - 1].id;
 
                     final String label = isAll ? (i18n('recorder_tab_all')) : controller.visibleTags[index - 1].name;
-                    final bool isPinned = !isAll && controller.visibleTags[index - 1].isPinned;
 
                     return Padding(
                       padding: const EdgeInsets.only(right: 6),
                       child: ChoiceChip(
                         showCheckmark: false,
-                        avatar: isPinned
-                            ? Icon(
-                                Remix.pushpin_2_fill,
-                                size: 11,
-                                color: isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.secondary,
-                              )
-                            : null,
+                        avatar: null,
                         label: Text(
                           label,
                           style: AppTextStyles.t12.copyWith(
@@ -165,7 +157,8 @@ class _RoomGridView extends GetView<FavoriteController> {
                         ),
                         onSelected: (bool selected) {
                           if (selected) {
-                            controller.selectedTagId.value = isAll ? 'ALL' : controller.visibleTags[index - 1].id;
+                            final targetTagId = isAll ? 'ALL' : controller.visibleTags[index - 1].id;
+                            controller.changeSelectedTag(targetTagId);
                           }
                         },
                       ),
@@ -187,7 +180,10 @@ class _RoomGridView extends GetView<FavoriteController> {
                 final List<dynamic> displayRooms = controller.selectedTagId.value == 'ALL'
                     ? platformFilteredRooms
                     : platformFilteredRooms
-                          .where((room) => room.tagIds != null && room.tagIds.contains(controller.selectedTagId.value))
+                          .where(
+                            (room) =>
+                                controller.tagController.getTagsForRoom(room).contains(controller.selectedTagId.value),
+                          )
                           .toList();
 
                 if (baseRooms.isEmpty &&

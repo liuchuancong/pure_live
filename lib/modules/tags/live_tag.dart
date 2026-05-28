@@ -3,17 +3,15 @@ class LiveTag {
   String name;
   String description;
   int order;
-  bool isPinned;
 
-  LiveTag({required this.id, required this.name, this.description = '', this.order = 0, this.isPinned = false});
+  LiveTag({required this.id, required this.name, this.description = '', this.order = 0});
 
   factory LiveTag.fromJson(Map<String, dynamic> json) {
     return LiveTag(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
       description: json['description'] ?? '',
-      order: json['order'] ?? 0,
-      isPinned: json['isPinned'] ?? false,
+      order: json['order'] ?? 0
     );
   }
 
@@ -21,7 +19,6 @@ class LiveTag {
     'id': id,
     'name': name,
     'description': description,
-    'order': order,
-    'isPinned': isPinned,
+    'order': order
   };
 }
