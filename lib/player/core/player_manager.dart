@@ -9,6 +9,7 @@ import '../models/player_engine.dart';
 import 'engine_fallback_manager.dart';
 import 'package:floating/floating.dart';
 import '../models/player_exception.dart';
+import 'package:remixicon/remixicon.dart';
 import '../models/player_error_type.dart';
 import 'package:rxdart/rxdart.dart' hide Rx;
 import 'package:pure_live/common/index.dart';
@@ -17,10 +18,13 @@ import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:flutter_floating/flutter_floating.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
+import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/utils/pip_window_widget.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
+import 'package:pure_live/player/core/audio_stream_loader.dart';
+import 'package:pure_live/modules/live_play/live_play_controller.dart';
 
 class PlayerManager {
   final PlayerPool playerPool;
@@ -28,7 +32,7 @@ class PlayerManager {
   final EngineFallbackManager fallbackManager;
 
   final PreloadPlayerManager preloadManager;
-
+  final AudioStreamLoader audioLoader = AudioStreamLoader();
   final LineFallbackManager lineManager;
   PlayerManager({
     required this.playerPool,
@@ -211,7 +215,13 @@ class PlayerManager {
   // play
   // =========================
 
-  Future<void> play(String url, List<String> playUrls, Map<String, String> headers, {LiveRoom? room}) async {
+  Future<void> play(
+    String url,
+    List<String> playUrls,
+    Map<String, String> headers, {
+    LiveRoom? room,
+    bool audioOnly = false,
+  }) async {
     if (_disposed) return;
     if (room?.roomId != currentFloatRoom?.roomId) {
       lineManager.reset();
@@ -234,29 +244,55 @@ class PlayerManager {
       throw PlayerException(message: 'Current player is null', type: PlayerErrorType.lifecycle);
     }
 
-    _currentUrl = url;
+    String targetUrl = url;
+    List<String> targetPlayUrls = List.from(playUrls);
 
-    _currentPlayUrls = playUrls;
+    if (audioOnly && room?.roomId != null) {
+      audioLoader.stop();
 
+      final completer = Completer<String>();
+
+      audioLoader.startAudioStream(
+        remoteStreamUrl: url,
+        uniqueId: room!.roomId!,
+        onAudioReady: (audioPipePath) {
+          if (!completer.isCompleted) completer.complete(audioPipePath);
+        },
+        onFFmpegEvent: (event) {
+          if (event.type == FFmpegEventType.error) {
+            final msg = event.data['message'] ?? 'FFmpeg stream extract failed';
+            log(msg);
+          }
+        },
+      );
+
+      try {
+        final pipePath = await completer.future.timeout(const Duration(seconds: 5));
+        await Future.delayed(const Duration(milliseconds: 300));
+
+        targetUrl = pipePath;
+        targetPlayUrls = [pipePath];
+      } catch (e) {
+        audioLoader.stop();
+        throw PlayerException(message: 'Audio pipe init timeout', type: PlayerErrorType.unknown);
+      }
+    } else if (!audioOnly) {
+      audioLoader.stop();
+    }
+
+    _currentUrl = targetUrl;
+    _currentPlayUrls = targetPlayUrls;
     _currentHeaders = headers;
-
     currentFloatRoom = room;
-
     hasError.value = false;
 
     try {
       _stateSubject.add(PlayerState.preparing);
-      await player.setDataSource(url, playUrls, headers, room: room);
+      await player.setDataSource(targetUrl, targetPlayUrls, headers, room: room);
       LiveAudioService.setPlayer(player);
-      LiveAudioService.start(
-        room!.roomId!, // 直播流地址
-        room.nick ?? "", // 主播名 (显示在通知栏第一行)
-        room.title ?? "", // 直播间标题 (显示在通知栏第二行)
-        room.avatar, // 封面图 (会自动显示在通知栏左侧)
-      );
+      LiveAudioService.start(room!.roomId!, room.nick ?? "", room.title ?? "", room.avatar);
 
       videoKey.value = ValueKey("video_${DateTime.now().millisecondsSinceEpoch}");
-
       _stateSubject.add(PlayerState.ready);
     } on PlayerException catch (e) {
       if (!_isHandlingError) {
@@ -676,8 +712,143 @@ class PlayerManager {
   // =========================
   // widget
   // =========================
+  Widget buildAudioOnlyUI(BuildContext context, LivePlayController livePlayController) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxWidth = constraints.maxWidth;
+        final maxHeight = constraints.maxHeight;
+        final compact = maxHeight < 500;
+
+        final avatarSize = compact ? (maxHeight * 0.22).clamp(50.0, 76.0) : 100.0;
+
+        final titleSize = compact ? 14.0 : 22.0;
+        final nickSize = compact ? 11.0 : 13.0;
+        final badgeTextSize = compact ? 11.0 : 13.0;
+
+        final gapLarge = compact ? 10.0 : 24.0;
+        final gapMedium = compact ? 8.0 : 16.0;
+        final gapSmall = compact ? 4.0 : 8.0;
+
+        return Container(
+          width: maxWidth,
+          height: maxHeight,
+          alignment: Alignment.center,
+          color: Colors.transparent,
+          child: SingleChildScrollView(
+            physics: compact ? const ClampingScrollPhysics() : const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.symmetric(horizontal: compact ? 16 : 24, vertical: compact ? 4 : 24),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: compact ? maxWidth : 460),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.95, end: 1.05),
+                    duration: const Duration(milliseconds: 1500),
+                    curve: Curves.easeInOut,
+                    builder: (context, scale, child) {
+                      return Transform.scale(scale: scale, child: child);
+                    },
+                    child: Container(
+                      width: avatarSize,
+                      height: avatarSize,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.white.withValues(alpha: 0.04),
+                            blurRadius: compact ? 10 : 20,
+                            spreadRadius: compact ? 4 : 8,
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: Image.network(
+                          livePlayController.detail.value?.avatar ?? '',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(Remix.user_3_line, color: Colors.white24),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: gapLarge),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 24),
+                    child: Text(
+                      livePlayController.detail.value?.title ?? '',
+                      textAlign: TextAlign.center,
+                      maxLines: compact ? 1 : 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: titleSize,
+                        fontWeight: FontWeight.w700,
+                        height: 1.25,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: gapSmall),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 14, vertical: compact ? 2 : 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                    ),
+                    child: Text(
+                      livePlayController.detail.value?.nick ?? '',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.75),
+                        fontSize: nickSize,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: gapMedium),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 16, vertical: compact ? 5 : 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(30),
+                      color: Colors.white.withValues(alpha: 0.08),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Remix.headphone_line,
+                          color: Colors.white.withValues(alpha: 0.85),
+                          size: compact ? 12 : 16,
+                        ),
+                        SizedBox(width: compact ? 4 : 8),
+                        Text(
+                          i18n("audio_only_mode"),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: badgeTextSize,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   Widget getVideoWidget(int fitIndex, {Widget? controls, required List<BoxFit> fitList}) {
+    final LivePlayController livePlayController = Get.find<LivePlayController>();
     return PureLivePipWidget(
       child: Container(
         color: Colors.black,
@@ -698,25 +869,28 @@ class PlayerManager {
                 height: double.infinity,
                 child: Stack(
                   children: [
-                    // 修改后的逻辑
-                    Positioned.fill(
-                      child: Container(
-                        color: Colors.black,
-                        child: FittedBox(
-                          fit: boxFit,
-                          clipBehavior: Clip.hardEdge,
-                          child: StreamBuilder<List<int?>>(
-                            stream: CombineLatestStream.list([width, height]),
-                            builder: (context, snapshot) {
-                              // 动态使用视频的真实宽高
-                              final vW = snapshot.data?[0]?.toDouble() ?? 1920.0;
-                              final vH = snapshot.data?[1]?.toDouble() ?? 1080.0;
-                              return SizedBox(width: vW, height: vH, child: _currentPlayer!.getVideoWidget());
-                            },
+                    if (livePlayController.isCurrentRoomAudioOnly.value)
+                      buildAudioOnlyUI(context, livePlayController)
+                    else
+                      // 修改后的逻辑
+                      Positioned.fill(
+                        child: Container(
+                          color: Colors.black,
+                          child: FittedBox(
+                            fit: boxFit,
+                            clipBehavior: Clip.hardEdge,
+                            child: StreamBuilder<List<int?>>(
+                              stream: CombineLatestStream.list([width, height]),
+                              builder: (context, snapshot) {
+                                // 动态使用视频的真实宽高
+                                final vW = snapshot.data?[0]?.toDouble() ?? 1920.0;
+                                final vH = snapshot.data?[1]?.toDouble() ?? 1080.0;
+                                return SizedBox(width: vW, height: vH, child: _currentPlayer!.getVideoWidget());
+                              },
+                            ),
                           ),
                         ),
                       ),
-                    ),
 
                     if (controls != null) Positioned.fill(child: controls),
                   ],
@@ -747,6 +921,7 @@ class PlayerManager {
   Future<void> close() async {
     final settings = Get.find<SettingsService>();
     await LiveAudioService.stop();
+    audioLoader.stop();
     settings.useHardStopOnExit.value ? await hardDispose() : await softStop();
   }
 

@@ -23,6 +23,8 @@ import 'package:pure_live/modules/live_play/live_play_controller.dart';
 import 'package:pure_live/pkg/canvas_danmaku/models/danmaku_option.dart';
 import 'package:pure_live/pkg/canvas_danmaku/models/danmaku_content_item.dart';
 
+typedef AudioOnlyCallback = void Function(bool value);
+
 class VideoController with ChangeNotifier {
   final LiveRoom room;
   String datasource;
@@ -41,6 +43,10 @@ class VideoController with ChangeNotifier {
   final int currentLineIndex;
 
   final int currentQuality;
+
+  final bool isAudioOnly;
+
+  final AudioOnlyCallback? onAudioOnlyChanged;
 
   bool get supportWindowFull => Platform.isWindows || Platform.isLinux;
 
@@ -107,6 +113,8 @@ class VideoController with ChangeNotifier {
     required this.qualiteName,
     required this.currentLineIndex,
     required this.currentQuality,
+    required this.isAudioOnly,
+    this.onAudioOnlyChanged,
   }) {
     danmakuController = DanmakuController(
       onAddDanmaku: (item) {},
@@ -132,6 +140,16 @@ class VideoController with ChangeNotifier {
     initVideoController();
     initDanmaku();
     initBattery();
+  }
+
+  void toggleAudioOnly() async {
+    _errorSub?.cancel();
+    _errorSub = null;
+    _pipSub?.cancel();
+    _pipSub = null;
+    GlobalPlayerService.instance.playerManager.close();
+    await destory();
+    onAudioOnlyChanged?.call(!isAudioOnly);
   }
 
   // Battery level control
@@ -252,7 +270,7 @@ class VideoController with ChangeNotifier {
         _volumeController.setVolume(targetVolume);
       }
     }
-    playerManager.play(datasource, playUrs, headers, room: room);
+    playerManager.play(datasource, playUrs, headers, room: room, audioOnly: isAudioOnly);
     initPlayerListener();
     // 处理默认全屏
 

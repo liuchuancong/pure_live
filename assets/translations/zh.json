@@ -856,5 +856,7 @@
     "player_mpv": "Mpv播放器",
     "player_ijk": "IJK播放器",
     "player_exo": "Exo播放器",
-    "player_fvp": "Fvp播放器"
+    "player_fvp": "Fvp播放器",
+    "audio_only_mode": "纯音频模式",
+    "audio_only_mode_subtitle": "进入直播间时关闭画面，仅播放声音"
 }

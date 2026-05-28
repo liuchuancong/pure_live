@@ -58,11 +58,18 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
               );
             }),
             context.buildSwitchTile(
+              title: i18n('audio_only_mode'),
+              subtitle: i18n("audio_only_mode_subtitle"),
+              value: controller.audioOnly,
+              icon: Remix.volume_up_line,
+            ),
+            context.buildSwitchTile(
               title: i18n('enable_codec'),
               subtitle: i18n("gpu_decode"),
               value: controller.enableCodec,
               icon: Remix.flashlight_line,
             ),
+
             context.buildSwitchTile(
               title: i18n('force_destroy_player'),
               subtitle: i18n('force_destroy_player_subtitle'),

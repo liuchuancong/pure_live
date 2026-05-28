@@ -217,6 +217,8 @@ class TopActionBar extends StatelessWidget {
                   ),
                 ),
               ),
+
+              AudioOnlyButton(controller: controller),
               if (controller.room.platform == Sites.iptvSite)
                 IconButton(
                   icon: const Icon(Icons.assignment_outlined), // 节目单账本图标
@@ -1363,6 +1365,28 @@ class ExpandButton extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class AudioOnlyButton extends StatelessWidget {
+  const AudioOnlyButton({super.key, required this.controller});
+
+  final VideoController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        controller.enableController();
+        controller.toggleAudioOnly();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        alignment: Alignment.center,
+        height: 25,
+        child: Icon(controller.isAudioOnly ? Remix.headphone_line : Remix.tv_2_line, color: Colors.white, size: 20),
       ),
     );
   }

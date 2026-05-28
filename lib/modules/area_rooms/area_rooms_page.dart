@@ -30,6 +30,44 @@ class _AreasRoomPageState extends State<AreasRoomPage> {
             final crossAxisCount = width > 1280 ? 5 : (width > 960 ? 4 : (width > 640 ? 3 : 2));
             return Obx(() {
               if (controller.list.isEmpty) {
+                if (controller.isLoginRequiredError.value) {
+                  return ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      SizedBox(
+                        height: constraint.maxHeight * 0.8,
+                        child: AppStatusView(
+                          type: AppStatusType.error,
+                          icon: Icons.account_circle_outlined,
+                          title: i18n("login_required_title"),
+                          subtitle: i18n("login_required_subtitle"),
+                          buttonText: i18n("go_to_login"),
+                          onButtonPressed: () => Get.toNamed(RoutePath.kSettingsAccount),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
+                if (controller.isNetworkError.value) {
+                  return ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      SizedBox(
+                        height: constraint.maxHeight * 0.8,
+                        child: AppStatusView(
+                          type: AppStatusType.error,
+                          icon: Icons.wifi_off_rounded,
+                          title: i18n("network_error_title"),
+                          subtitle: i18n("network_error_subtitle"),
+                          buttonText: i18n("retry"),
+                          onButtonPressed: () => controller.easyRefreshController.callRefresh(),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
                 return AppStatusView(type: AppStatusType.loading, title: i18n('refresh_loading'), subtitle: '');
               }
 

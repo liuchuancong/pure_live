@@ -49,58 +49,68 @@ class BiliBiliSite implements LiveSite {
 
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async {
-    List<LiveCategory> categories = [];
-    var result = await HttpClient.instance.getJson(
-      "https://api.live.bilibili.com/room/v1/Area/getList",
-      queryParameters: {"need_entrance": 1, "parent_id": 0},
-      header: await getHeader(),
-    );
-    for (var item in result["data"]) {
-      List<LiveArea> subs = [];
-      for (var subItem in item["list"]) {
-        var subCategory = LiveArea(
-          areaId: subItem["id"].toString(),
-          areaName: asT<String?>(subItem["name"]) ?? "",
-          areaType: asT<String?>(subItem["parent_id"]) ?? "",
-          typeName: asT<String?>(subItem["parent_name"]) ?? "",
-          areaPic: "${asT<String?>(subItem["pic"]) ?? ""}@100w.png",
-          platform: Sites.bilibiliSite,
-        );
-        subs.add(subCategory);
+    try {
+      List<LiveCategory> categories = [];
+      var result = await HttpClient.instance.getJson(
+        "https://api.live.bilibili.com/room/v1/Area/getList",
+        queryParameters: {"need_entrance": 1, "parent_id": 0},
+        header: await getHeader(),
+      );
+      for (var item in result["data"]) {
+        List<LiveArea> subs = [];
+        for (var subItem in item["list"]) {
+          var subCategory = LiveArea(
+            areaId: subItem["id"].toString(),
+            areaName: asT<String?>(subItem["name"]) ?? "",
+            areaType: asT<String?>(subItem["parent_id"]) ?? "",
+            typeName: asT<String?>(subItem["parent_name"]) ?? "",
+            areaPic: "${asT<String?>(subItem["pic"]) ?? ""}@100w.png",
+            platform: Sites.bilibiliSite,
+          );
+          subs.add(subCategory);
+        }
+        var category = LiveCategory(children: subs, id: item["id"].toString(), name: asT<String?>(item["name"]) ?? "");
+        categories.add(category);
       }
-      var category = LiveCategory(children: subs, id: item["id"].toString(), name: asT<String?>(item["name"]) ?? "");
-      categories.add(category);
+      return categories;
+    } catch (e) {
+      throw Exception(e.toString());
     }
-    return categories;
   }
 
   @override
   Future<LiveCategoryResult> getCategoryRooms(LiveArea category, {int page = 1}) async {
-    const baseUrl = "https://api.live.bilibili.com/xlive/web-interface/v1/second/getList";
-    var url =
-        "$baseUrl?platform=web&parent_area_id=${category.areaType}&area_id=${category.areaId}&sort_type=&page=$page&w_webid=${await getAccessId()}";
+    try {
+      const baseUrl = "https://api.live.bilibili.com/xlive/web-interface/v1/second/getList";
+      var url =
+          "$baseUrl?platform=web&parent_area_id=${category.areaType}&area_id=${category.areaId}&sort_type=&page=$page&w_webid=${await getAccessId()}";
 
-    var queryParams = await getWbiSign(url);
-    var result = await HttpClient.instance.getJson(baseUrl, queryParameters: queryParams, header: await getHeader());
-    developer.log(result.toString(), name: "result");
-    var hasMore = result["data"]["has_more"] == 1;
-    var items = <LiveRoom>[];
-    for (var item in result["data"]["list"]) {
-      var roomItem = LiveRoom(
-        roomId: item["roomid"].toString(),
-        title: item["title"].toString(),
-        cover: "${item["cover"]}@400w.jpg",
-        nick: item["uname"].toString(),
-        avatar: item["face"].toString(),
-        watching: item["online"].toString(),
-        liveStatus: LiveStatus.live,
-        area: item["area_name"].toString(),
-        status: true,
-        platform: Sites.bilibiliSite,
-      );
-      items.add(roomItem);
+      var queryParams = await getWbiSign(url);
+      var result = await HttpClient.instance.getJson(baseUrl, queryParameters: queryParams, header: await getHeader());
+      if (result["code"] == -352) {
+        throw Exception(result);
+      }
+      var hasMore = result["data"]["has_more"] == 1;
+      var items = <LiveRoom>[];
+      for (var item in result["data"]["list"]) {
+        var roomItem = LiveRoom(
+          roomId: item["roomid"].toString(),
+          title: item["title"].toString(),
+          cover: "${item["cover"]}@400w.jpg",
+          nick: item["uname"].toString(),
+          avatar: item["face"].toString(),
+          watching: item["online"].toString(),
+          liveStatus: LiveStatus.live,
+          area: item["area_name"].toString(),
+          status: true,
+          platform: Sites.bilibiliSite,
+        );
+        items.add(roomItem);
+      }
+      return LiveCategoryResult(hasMore: hasMore, items: items);
+    } catch (e) {
+      throw Exception(e.toString());
     }
-    return LiveCategoryResult(hasMore: hasMore, items: items);
   }
 
   @override
@@ -131,44 +141,48 @@ class BiliBiliSite implements LiveSite {
 
   @override
   Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
-    List<String> urls = [];
-    var result = await HttpClient.instance.getJson(
-      "https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo",
-      queryParameters: {
-        "room_id": detail.roomId,
-        "protocol": "0,1",
-        "format": "0,1,2",
-        "codec": "0",
-        "platform": "html5",
-        "dolby": "5",
-        "qn": quality.data,
-      },
-      header: await getHeader(),
-    );
+    try {
+      List<String> urls = [];
+      var result = await HttpClient.instance.getJson(
+        "https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo",
+        queryParameters: {
+          "room_id": detail.roomId,
+          "protocol": "0,1",
+          "format": "0,1,2",
+          "codec": "0",
+          "platform": "html5",
+          "dolby": "5",
+          "qn": quality.data,
+        },
+        header: await getHeader(),
+      );
 
-    var streamList = result["data"]["playurl_info"]["playurl"]["stream"];
-    for (var streamItem in streamList) {
-      var formatList = streamItem["format"];
-      for (var formatItem in formatList) {
-        var codecList = formatItem["codec"];
-        for (var codecItem in codecList) {
-          var urlList = codecItem["url_info"];
-          var baseUrl = codecItem["base_url"].toString();
-          for (var urlItem in urlList) {
-            urls.add("${urlItem["host"]}$baseUrl${urlItem["extra"]}");
+      var streamList = result["data"]["playurl_info"]["playurl"]["stream"];
+      for (var streamItem in streamList) {
+        var formatList = streamItem["format"];
+        for (var formatItem in formatList) {
+          var codecList = formatItem["codec"];
+          for (var codecItem in codecList) {
+            var urlList = codecItem["url_info"];
+            var baseUrl = codecItem["base_url"].toString();
+            for (var urlItem in urlList) {
+              urls.add("${urlItem["host"]}$baseUrl${urlItem["extra"]}");
+            }
           }
         }
       }
+      // 对链接进行排序，包含mcdn的在后
+      urls.sort((a, b) {
+        if (a.contains("mcdn")) {
+          return 1;
+        } else {
+          return -1;
+        }
+      });
+      return urls;
+    } catch (e) {
+      throw Exception(e.toString());
     }
-    // 对链接进行排序，包含mcdn的在后
-    urls.sort((a, b) {
-      if (a.contains("mcdn")) {
-        return 1;
-      } else {
-        return -1;
-      }
-    });
-    return urls;
   }
 
   @override

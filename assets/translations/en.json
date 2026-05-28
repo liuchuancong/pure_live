@@ -857,5 +857,7 @@
     "player_mpv": "MPV Player",
     "player_ijk": "IJK Player",
     "player_exo": "Exo Player",
-    "player_fvp": "Fvp Player"
+    "player_fvp": "Fvp Player",
+    "audio_only_mode": "Audio Only Mode",
+    "audio_only_mode_subtitle": "Play audio stream only and disable video loading"
 }

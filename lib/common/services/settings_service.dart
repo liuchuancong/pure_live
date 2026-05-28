@@ -85,6 +85,7 @@ class SettingsService extends GetxController {
   final enableProxy = (HivePrefUtil.getBool('enableProxy') ?? false).obs;
   final proxyHost = (HivePrefUtil.getString('proxyHost') ?? '').obs;
   final proxyPort = (HivePrefUtil.getInt('proxyPort') ?? 1080).obs;
+  final audioOnly = (HivePrefUtil.getBool('audioOnly') ?? false).obs;
   // ==============================
   // 🍪 平台 Cookie
   // ==============================
@@ -472,6 +473,9 @@ class SettingsService extends GetxController {
     });
     mainAxisSpacing.listen((value) {
       HivePrefUtil.setDouble('mainAxisSpacing', value);
+    });
+    audioOnly.listen((value) {
+      HivePrefUtil.setBool('audioOnly', value);
     });
     ever(fontSizeBodySmall, (_) => refreshSystemTheme());
     ever(fontSizeBodyMedium, (_) => refreshSystemTheme());
@@ -1065,6 +1069,7 @@ class SettingsService extends GetxController {
     videoHardwareDecoder.value = PlayerConsts.hardwareDecoder.keys.contains(json['videoHardwareDecoder'])
         ? json['audioOutputDriver']
         : 'auto';
+    audioOnly.value = json['audioOnly'] ?? false;
     // 房间音量
     if (json['roomVolumes'] != null) {
       try {
@@ -1160,8 +1165,8 @@ class SettingsService extends GetxController {
     json['loadingStyleColorSwitch'] = loadingStyleColorSwitch.value;
     json['crossAxisSpacing'] = crossAxisSpacing.value;
     json['mainAxisSpacing'] = mainAxisSpacing.value;
-    //  'custom_tags_data': tagController.exportToJson(),
     json['custom_tags_data'] = tagController.exportToJson();
+    json['audioOnly'] = audioOnly.value;
     return json;
   }
 

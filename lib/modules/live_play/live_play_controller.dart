@@ -60,7 +60,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   bool get _hasRoom => detail.value != null;
 
   bool isMenuOpen = false;
-
+  final isCurrentRoomAudioOnly = false.obs;
   LivePlayQuality get _qualitySafe {
     if (qualites.isEmpty) {
       return LivePlayQuality(quality: '原画');
@@ -96,6 +96,8 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   void _initState() {
     detail.value = room;
     currentSite = Sites.of(site);
+    isCurrentRoomAudioOnly.value = settings.audioOnly.value;
+
     if (settings.enableDanmakuDisplay.value) {
       liveDanmaku = currentSite.liveSite.getDanmaku();
     }
@@ -265,6 +267,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     await videoController.value?.destory();
     videoController.value = null;
     hasUseDefaultResolution = false;
+    isCurrentRoomAudioOnly.value = settings.audioOnly.value;
     detail.value = newRoom;
     currentSite = Sites.of(newRoom.platform!);
     if (settings.enableDanmakuDisplay.value) {
@@ -409,6 +412,8 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
       qualiteName: _qualitySafe.quality,
       currentLineIndex: currentLineIndex.value,
       currentQuality: currentQuality.value,
+      isAudioOnly: isCurrentRoomAudioOnly.value,
+      onAudioOnlyChanged: changeCurrentRoomAudioOnly,
     );
 
     success.value = true;
@@ -499,6 +504,14 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
     playUrls.value = playUrl;
     setPlayer();
+  }
+
+  Future<void> changeCurrentRoomAudioOnly(bool value) async {
+    if (isCurrentRoomAudioOnly.value == value) {
+      return;
+    }
+    isCurrentRoomAudioOnly.value = value;
+    await onInitPlayerState(reloadDataType: ReloadDataType.refreash);
   }
 
   // =========================================================
