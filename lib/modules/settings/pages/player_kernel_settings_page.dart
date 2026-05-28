@@ -65,17 +65,13 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
               icon: Remix.p2p_line,
             ),
           ]),
-          Obx(() {
-            if (controller.videoPlayerIndex.value != 0) return const SizedBox.shrink();
-            return _buildMpvSettings(context);
-          }),
           const SizedBox(height: 32),
         ],
       ),
     );
   }
 
-  Widget _buildMpvSettings(BuildContext context) {
+  Widget buildMpvSettings(BuildContext context) {
     final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
