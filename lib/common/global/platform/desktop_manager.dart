@@ -7,6 +7,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/utils.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:pure_live/routes/app_navigation.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/plugins/share_command_handler.dart';
@@ -16,7 +17,6 @@ import 'package:pure_live/common/utils/share_command_handler.dart';
 
 class DesktopManager {
   static State? _currentState;
-
   static Future<void> initialize() async {
     if (!PlatformUtils.isDesktop) return;
 
@@ -433,6 +433,7 @@ class _WindowControlButtonState extends State<WindowControlButton> {
 
 mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
     implements WindowListener, TrayListener, WidgetsBindingObserver {
+  bool _isDialogOpen = false;
   @override
   void initState() {
     super.initState();
@@ -458,12 +459,16 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
   }
 
   void _checkShareCommand() {
+    if (_isDialogOpen) return;
+
     ShareCommandHandler.instance.checkClipboard((fullText) {
       try {
         final isMine = ShareCommandCodec.isMyCommand(fullText);
         if (isMine) {
           final roomMap = ShareCommandCodec.decodeShort(fullText);
           final LiveRoom room = LiveRoom.fromJson(roomMap!);
+          if (_isDialogOpen) return;
+          _isDialogOpen = true;
           _showProductSelectionDialog(room);
         }
       } catch (e) {
@@ -555,6 +560,7 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
                     ElevatedButton(
                       onPressed: () {
                         Navigator.pop(context);
+                        AppNavigator.toLiveRoomDetail(liveRoom: room);
                       },
                       child: Text(i18n('enter_room')),
                     ),
@@ -565,7 +571,9 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
           ),
         );
       },
-    );
+    ).then((_) {
+      _isDialogOpen = false;
+    });
   }
 
   @override
