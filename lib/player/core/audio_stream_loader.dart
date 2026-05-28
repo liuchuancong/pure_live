@@ -12,7 +12,7 @@ class AudioStreamLoader {
 
   Future<int> _getAvailablePort() async {
     try {
-      final socket = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+      final socket = await ServerSocket.bind(InternetAddress.anyIPv4, 0);
       final port = socket.port;
       await socket.close();
       return port;

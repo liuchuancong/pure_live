@@ -19,30 +19,36 @@ class FFmpegCommandBuilder {
     final rwTimeoutMicro = (rwTimeout * 1000000).clamp(0, 2147483647);
 
     final args = <String>[
+      // 基础
       '-hide_banner',
-      '-loglevel',
-      'info',
-      '-reconnect',
-      '1',
-      '-reconnect_streamed',
-      '1',
-      '-reconnect_delay_max',
-      '10',
-      '-reconnect_at_eof',
-      '1',
-      '-rw_timeout',
-      rwTimeoutMicro.toString(),
-      '-timeout',
-      rwTimeoutMicro.toString(),
+      '-loglevel', 'info',
+
+      // 重连
+      '-reconnect', '1',
+      '-reconnect_streamed', '1',
+      '-reconnect_delay_max', '10',
+      '-reconnect_at_eof', '1',
+
+      // 网络
+      '-rw_timeout', rwTimeoutMicro.toString(),
+      '-timeout', rwTimeoutMicro.toString(),
+      '-tcp_nodelay', '1',
+
+      // UA
       if (ua != null && ua.isNotEmpty) ...['-user_agent', _quote(ua)],
+
+      // Headers
       if (headerStr.isNotEmpty) ...['-headers', _quote(headerStr)],
-      '-i',
-      remoteStreamUrl,
+
+      // 输入流
+      '-i', remoteStreamUrl,
+
+      // 仅音频
       '-vn',
-      '-acodec',
-      'copy',
-      '-f',
-      'mpegts',
+      '-acodec', 'copy',
+
+      // 输出 MPEGTS HTTP Server
+      '-f', 'mpegts',
       'http://0.0.0.0:$port/live.ts?listen',
     ];
 
