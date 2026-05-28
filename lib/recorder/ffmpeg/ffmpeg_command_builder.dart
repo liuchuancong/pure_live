@@ -46,10 +46,10 @@ class FFmpegCommandBuilder {
       // 仅音频
       '-vn',
       '-acodec', 'copy',
-
+      '-listen', '1',
       // 输出 MPEGTS HTTP Server
       '-f', 'mpegts',
-      'http://0.0.0.0:$port/live.ts?listen',
+      'http://0.0.0.0:$port/live.ts',
     ];
 
     return args.join(' ');
