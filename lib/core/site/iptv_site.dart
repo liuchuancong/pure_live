@@ -106,8 +106,26 @@ class IptvSite implements LiveSite {
   @override
   Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
     final channel = await db.getChannelById(roomId);
-    if (channel == null) throw Exception('Channel not found');
-
+    if (channel == null) {
+      if (channel == null) {
+        return LiveRoom(
+          cover: '',
+          watching: '',
+          roomId: roomId,
+          area: '',
+          title: '',
+          nick: '',
+          avatar: defaultAvatar,
+          introduction: '',
+          notice: '',
+          status: true,
+          liveStatus: LiveStatus.live,
+          platform: Sites.iptvSite,
+          link: roomId,
+          data: roomId,
+        );
+      }
+    }
     String? finalEpgChannelId;
     final String currentEpgSourceId = Get.find<SettingsService>().selectedSourceId.value;
 
