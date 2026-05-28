@@ -4,12 +4,14 @@ import 'package:pure_live/common/utils/hive_pref_util.dart';
 
 class TagManagementController extends GetxController {
   static const String _storageKey = 'user_custom_tags_v5';
+  static const String _roomTagsMappingKey = 'room_to_tags_mapping_v1';
+  final RxMap<String, List<String>> roomTagsMap = <String, List<String>>{}.obs;
   final RxList<LiveTag> tags = <LiveTag>[].obs;
-
   @override
   void onInit() {
     super.onInit();
     _loadTags();
+    _loadRoomTagsMapping();
   }
 
   void _loadTags() {
@@ -27,6 +29,37 @@ class TagManagementController extends GetxController {
     await HivePrefUtil.setAnyPref(_storageKey, tags.map((e) => e.toJson()).toList());
   }
 
+  Future<void> saveRoomTagsMapping() async {
+    await HivePrefUtil.setAnyPref(_roomTagsMappingKey, roomTagsMap);
+  }
+
+  void setRoomTags(String roomId, List<String> newTagIds) {
+    if (newTagIds.isEmpty) {
+      roomTagsMap.remove(roomId);
+    } else {
+      roomTagsMap[roomId] = newTagIds;
+    }
+
+    roomTagsMap.refresh();
+    saveRoomTagsMapping();
+  }
+
+  void _loadRoomTagsMapping() {
+    final Map<dynamic, dynamic>? storedMap = HivePrefUtil.getAnyPref(_roomTagsMappingKey);
+
+    if (storedMap != null) {
+      final convertedMap = storedMap.map((key, value) {
+        return MapEntry(key.toString(), List<String>.from(value as List));
+      });
+      roomTagsMap.assignAll(convertedMap);
+    }
+  }
+
+  List<String> getTagsForRoom(LiveRoom room) {
+    final String roomId = room.roomId.toString();
+    return roomTagsMap[roomId] ?? [];
+  }
+
   bool addTag(String name, String description) {
     final cleanName = name.trim();
     if (cleanName.isEmpty) return false;
@@ -39,7 +72,6 @@ class TagManagementController extends GetxController {
       name: cleanName,
       description: description.trim(),
       order: tags.length,
-      isPinned: false,
     );
 
     tags.add(newTag);
@@ -76,14 +108,12 @@ class TagManagementController extends GetxController {
     if (index <= 0 || index >= tags.length) return;
 
     final targetTag = tags.removeAt(index);
-    targetTag.isPinned = true;
     tags.insert(0, targetTag);
 
     _refreshSequentialOrders();
   }
 
   void togglePinStatus(int index) {
-    tags[index].isPinned = !tags[index].isPinned;
     _refreshSequentialOrders();
   }
 

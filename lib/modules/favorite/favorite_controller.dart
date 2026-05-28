@@ -37,7 +37,12 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
     ever(selectedTagId, (_) => syncRooms());
     ever(tagController.tags, (_) => syncRooms());
     ever(tabSiteIndex, (_) => syncRooms());
-
+    ever(tagController.roomTagsMap, (_) {
+      syncRooms();
+    });
+    ever(tagController.tags, (_) {
+      syncRooms();
+    });
     onRefresh();
 
     tabController.addListener(() {
@@ -64,39 +69,52 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
     });
   }
 
+  List<dynamic> getFilteredRooms({required bool isOnline}) {
+    final sourceList = isOnline ? onlineRooms : offlineRooms;
+
+    if (selectedTagId.value == 'ALL') {
+      return sourceList;
+    }
+
+    return sourceList.where((room) {
+      final List<String> roomTagIds = tagController.getTagsForRoom(room);
+      return roomTagIds.contains(selectedTagId.value);
+    }).toList();
+  }
+
+  void changeSelectedTag(String tagId) {
+    selectedTagId.value = tagId;
+    syncRooms();
+  }
+
   void reloadPage() async {
     refreshController.callRefresh();
     await onRefresh();
     refreshController.finishRefresh(IndicatorResult.success);
   }
 
-  void updateRoomTags(dynamic room, List<String> newTagIds) {
-    room.tagIds = newTagIds;
-    settings.updateRoom(room);
+  void updateRoomTags(LiveRoom room, List<String> newTagIds) {
+    final tagController = Get.find<TagManagementController>();
+    tagController.setRoomTags(room.roomId.toString(), newTagIds);
     syncRooms();
   }
 
   void syncRooms() {
     onlineRooms.clear();
     offlineRooms.clear();
-
     List<dynamic> roomsBase = List.from(settings.favoriteRooms);
-
     onlineRooms.addAll(roomsBase.where((room) => room.liveStatus == LiveStatus.live));
     offlineRooms.addAll(roomsBase.where((room) => room.liveStatus != LiveStatus.live));
-
     final currentAvailableSites = Sites().availableSites(containsAll: true);
     if (tabSiteIndex.value >= 0 && tabSiteIndex.value < currentAvailableSites.length) {
       final activeSite = currentAvailableSites[tabSiteIndex.value];
       final targetList = tabOnlineIndex.value == 0 ? onlineRooms : offlineRooms;
       final Set<String> activeTagIdSet = {};
-
       for (var room in targetList) {
         if (activeSite.id == 'all' || room.platform?.toUpperCase() == activeSite.id.toUpperCase()) {
-          if (room.tagIds != null) {
-            for (var id in room.tagIds) {
-              activeTagIdSet.add(id.toString());
-            }
+          final List<String> currentRoomTagIds = tagController.getTagsForRoom(room);
+          for (var id in currentRoomTagIds) {
+            activeTagIdSet.add(id);
           }
         }
       }
@@ -129,17 +147,18 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
   }
 
   int _getRoomTagScore(dynamic room) {
-    if (room.tagIds == null || room.tagIds.isEmpty) return 0;
+    final List<String> currentRoomTagIds = tagController.getTagsForRoom(room);
+
+    if (currentRoomTagIds.isEmpty) return 0;
 
     int highestScore = 0;
-    int maxScore = 100000;
+    int maxScore = 1000000;
 
-    for (var id in room.tagIds) {
+    for (var id in currentRoomTagIds) {
       final tagIndex = tagController.tags.indexWhere((t) => t.id == id);
       if (tagIndex != -1) {
         final tag = tagController.tags[tagIndex];
-        int pinBonus = tag.isPinned ? 50000 : 0;
-        int currentScore = maxScore - (tag.order * 100) + pinBonus;
+        int currentScore = maxScore - (tag.order * 100);
         if (currentScore > highestScore) {
           highestScore = currentScore;
         }
