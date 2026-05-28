@@ -521,21 +521,6 @@ class SettingsService extends GetxController {
     }
   }
 
-  Future<void> activateFontFamily(FontModel fontModel, {String? targetFileName}) async {
-    fontFamilyName.value = fontModel.id;
-    curFontModel.value = fontModel;
-    fontState.value = DownloadState.downloaded;
-
-    await FontDownloadManager.instance.loadFont(fontModel.id, fileName: targetFileName ?? '');
-    Get.updateLocale(Get.locale ?? const Locale('zh', 'CN'));
-    if (targetFileName != null) {
-      final subName = targetFileName.split('-').last;
-      ToastUtil.show(i18n('font_toast_exclusive', args: {"name": fontModel.name, "subName": subName}));
-    } else {
-      ToastUtil.show(i18n('font_toast_global', args: {"name": fontModel.name}));
-    }
-  }
-
   Future<void> uninstallFontFamily(FontModel fontModel) async {
     SmartDialog.showLoading(msg: "正在卸载并还原环境...");
     try {
@@ -591,6 +576,36 @@ class SettingsService extends GetxController {
 
       final isDownloaded = await FontDownloadManager.instance.checkFontDownloaded(curFontModel.value!.id);
       fontState.value = isDownloaded ? DownloadState.downloaded : DownloadState.notDownloaded;
+    }
+  }
+
+  Future<void> activateFontFamily(FontModel fontModel, {String? targetFileName}) async {
+    fontFamilyName.value = fontModel.id;
+    curFontModel.value = fontModel;
+    fontState.value = DownloadState.downloaded;
+
+    await FontDownloadManager.instance.loadFont(fontModel.id, fileName: targetFileName ?? '');
+    Get.updateLocale(Get.locale ?? const Locale('zh', 'CN'));
+    if (targetFileName != null) {
+      final subName = targetFileName.split('-').last;
+      ToastUtil.show(i18n('font_toast_exclusive', args: {"name": fontModel.name, "subName": subName}));
+    } else {
+      ToastUtil.show(i18n('font_toast_global', args: {"name": fontModel.name}));
+    }
+  }
+
+  //  弹幕字体设置
+  Future<void> activateDanmakuFontFamily(FontModel fontModel, {String? targetFileName}) async {
+    danmakuFontFamilyName.value = fontModel.id;
+    curFontModel.value = fontModel;
+    fontState.value = DownloadState.downloaded;
+
+    await FontDownloadManager.instance.loadFont(fontModel.id, fileName: targetFileName ?? '');
+    if (targetFileName != null) {
+      final subName = targetFileName.split('-').last;
+      ToastUtil.show(i18n('font_toast_exclusive', args: {"name": fontModel.name, "subName": subName}));
+    } else {
+      ToastUtil.show(i18n('font_toast_global', args: {"name": fontModel.name}));
     }
   }
 

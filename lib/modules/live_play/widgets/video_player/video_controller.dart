@@ -392,7 +392,7 @@ class VideoController with ChangeNotifier {
         DanmakuContentItem(
           msg.message,
           color: Color.fromARGB(255, msg.color.r, msg.color.g, msg.color.b),
-          fontFamily: settings.fontFamilyName.value,
+          fontFamily: settings.danmakuFontFamilyName.value,
         ),
       );
     }

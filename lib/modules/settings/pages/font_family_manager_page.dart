@@ -3,23 +3,51 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/common/models/font_model.dart';
+import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/plugins/font_download_manager.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
 
 class FontFamilyManagerPage extends GetView<SettingsService> {
   final bool isDanmakuSettings;
+
   const FontFamilyManagerPage({super.key, this.isDanmakuSettings = false});
+
+  RxString get currentFontRx {
+    return isDanmakuSettings ? controller.danmakuFontFamilyName : controller.fontFamilyName;
+  }
+
+  void _activateFont(FontModel model, {String? targetFileName}) {
+    if (isDanmakuSettings) {
+      controller.activateDanmakuFontFamily(model, targetFileName: targetFileName);
+    } else {
+      controller.activateFontFamily(model, targetFileName: targetFileName);
+    }
+  }
+
+  Future<void> _setDefaultFont() async {
+    if (isDanmakuSettings) {
+      controller.danmakuFontFamilyName.value = 'Default';
+      await HivePrefUtil.setString('danmakuFontFamilyName', 'Default');
+      ToastUtil.show(i18n('font_reset_default'));
+      return;
+    }
+    controller.fontFamilyName.value = 'Default';
+    await HivePrefUtil.setString('fontFamilyName', 'Default');
+    Get.updateLocale(Get.locale ?? const Locale('zh', 'CN'));
+    ToastUtil.show(i18n('font_reset_default'));
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     controller.refreshFontDiskSizes();
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          isDanmakuSettings ? i18n("danmaku_font_family_settings") : i18n("font_family_settings"),
+          isDanmakuSettings ? i18n("change_danmaku_font_family") : i18n("font_family_settings"),
           style: const TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0.3),
         ),
       ),
@@ -31,9 +59,13 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
           children: [
             context.buildGroupTitle(i18n("factory_default_group")),
+
             _buildPresetEnvironmentCard(theme),
+
             const SizedBox(height: 28),
+
             context.buildGroupTitle(i18n("cloud_font_group")),
+
             if (fontModels.isEmpty)
               SizedBox(
                 height: 200,
@@ -46,10 +78,16 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
                 itemCount: fontModels.length,
                 itemBuilder: (context, index) {
                   final fontModel = fontModels[index];
+
                   return Obx(() {
-                    final bool isCurrentActive = controller.fontFamilyName.value == fontModel.id;
+                    final currentValue = currentFontRx.value;
+
+                    final bool isCurrentActive = currentValue == fontModel.id;
+
                     final bool isSelectedModel = controller.curFontModel.value == fontModel;
+
                     final String? diskSize = controller.fontFolderSizes[fontModel.id];
+
                     final bool localExists = diskSize != null;
 
                     return AnimatedContainer(
@@ -117,10 +155,13 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
                                             letterSpacing: 0.1,
                                           ),
                                         ),
+
                                         _buildLicenseBadge(theme, fontModel, diskSize),
                                       ],
                                     ),
+
                                     const SizedBox(height: 8),
+
                                     Text(
                                       fontModel.desc,
                                       style: theme.textTheme.bodyMedium?.copyWith(
@@ -129,7 +170,9 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
                                         letterSpacing: 0.2,
                                       ),
                                     ),
+
                                     const SizedBox(height: 8),
+
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
@@ -141,6 +184,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
+
                                         _buildActionButtonRow(
                                           context,
                                           fontModel,
@@ -170,7 +214,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
   }
 
   Widget _buildPresetEnvironmentCard(ThemeData theme) {
-    final bool isDefaultActive = controller.fontFamilyName.value == 'Default';
+    final bool isDefaultActive = currentFontRx.value == 'Default';
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -216,9 +260,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
             style: TextStyle(fontSize: 11, color: theme.hintColor.withValues(alpha: 0.7)),
           ),
           trailing: isDefaultActive ? Icon(Icons.check_circle, color: theme.colorScheme.primary, size: 18) : null,
-          onTap: () {
-            controller.fontFamilyName.value = 'Default';
-          },
+          onTap: _setDefaultFont,
         ),
       ),
     );
@@ -247,9 +289,13 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
               i18n("font_currently_active"),
               style: TextStyle(fontSize: 12, color: theme.colorScheme.primary, fontWeight: FontWeight.w700),
             ),
+
             const SizedBox(width: 6),
+
             Icon(Icons.check_circle, color: theme.colorScheme.primary, size: 16),
+
             const SizedBox(width: 6),
+
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.colorScheme.primary,
@@ -259,7 +305,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
               ),
               onPressed: () {
                 if (fontModel.files.length <= 1) {
-                  controller.activateFontFamily(fontModel);
+                  _activateFont(fontModel);
                 } else {
                   _showFontWeightSelector(context, fontModel);
                 }
@@ -288,7 +334,9 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
             ),
             onPressed: () => controller.uninstallFontFamily(fontModel),
           ),
+
           const SizedBox(width: 10),
+
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primary,
@@ -298,7 +346,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
             ),
             onPressed: () {
               if (fontModel.files.length <= 1) {
-                controller.activateFontFamily(fontModel);
+                _activateFont(fontModel);
               } else {
                 _showFontWeightSelector(context, fontModel);
               }
@@ -317,13 +365,16 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
             ),
             onPressed: () async {
               controller.curFontModel.value = fontModel;
+
               final success = await FontDownloadManager.instance.downloadFontFamily(
                 fontModel: fontModel,
                 onStateChanged: (state) => controller.fontState.value = state,
               );
+
               if (success) {
                 await controller.refreshFontDiskSizes();
-                await controller.activateFontFamily(fontModel);
+
+                _activateFont(fontModel);
               } else {
                 ToastUtil.show(i18n("font_load_failed"));
               }
@@ -335,13 +386,16 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
 
   void _showFontWeightSelector(BuildContext context, FontModel fontModel) async {
     final path = await AppPathManager().getFontFamilyFolderPath(fontModel.id);
+
     final fontDir = Directory(path);
 
     final List<File> downloadedFiles = [];
+
     if (await fontDir.exists()) {
       await for (final entity in fontDir.list()) {
         if (entity is File && (entity.path.endsWith('.ttf') || entity.path.endsWith('.otf'))) {
           final length = await entity.length();
+
           if (length > 0) {
             downloadedFiles.add(entity);
           }
@@ -369,12 +423,16 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
                 i18n('font_selector_title', args: {"name": fontModel.name}),
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
+
               const SizedBox(height: 8),
+
               Text(
                 i18n('font_selector_subtitle'),
                 style: TextStyle(fontSize: 13, color: Theme.of(Get.context!).colorScheme.onSurfaceVariant),
               ),
+
               const SizedBox(height: 16),
+
               ConstrainedBox(
                 constraints: BoxConstraints(maxHeight: MediaQuery.of(Get.context!).size.height * 0.45),
                 child: ListView(
@@ -388,13 +446,18 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       onTap: () {
                         Navigator.of(context).pop();
-                        controller.activateFontFamily(fontModel);
+
+                        _activateFont(fontModel);
                       },
                     ),
+
                     const Divider(height: 16),
+
                     ...downloadedFiles.map((file) {
                       final fileName = file.path.split(Platform.pathSeparator).last.split('.').first;
+
                       final fileNameWithExt = file.path.split(Platform.pathSeparator).last;
+
                       final label = fileName.split('-').last;
 
                       return ListTile(
@@ -405,6 +468,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         onTap: () async {
                           Navigator.of(context).pop();
+
                           final modifiedModel = FontModel(
                             id: fontModel.id,
                             name: "${fontModel.name} ($label)",
@@ -414,14 +478,16 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
                             license: fontModel.license,
                           );
 
-                          controller.activateFontFamily(modifiedModel, targetFileName: fileNameWithExt);
+                          _activateFont(modifiedModel, targetFileName: fileNameWithExt);
                         },
                       );
                     }),
                   ],
                 ),
               ),
+
               const SizedBox(height: 16),
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n('cancel')))],
@@ -455,6 +521,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
               ),
             ),
           ),
+
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           decoration: BoxDecoration(

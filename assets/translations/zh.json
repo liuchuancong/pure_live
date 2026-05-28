@@ -783,7 +783,7 @@
     "font_lock_weight": "锁定使用 - {label} 体",
     "font_lock_weight_desc": "全应用文字将强制锁定为此效果",
     "font_toast_exclusive": "已应用专属字重: {name} ({subName})",
-    "font_toast_global": "已应用全局字体: {name}",
+    "font_toast_global": "已应用字体: {name}",
     "font_toast_uninstall_success": "已成功卸载字体包: {name}",
     "subscription_download_or_parse_failed": "网络订阅源下载或解析失败",
     "http_error_400": "错误的请求(400)",

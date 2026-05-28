@@ -784,7 +784,7 @@
     "font_lock_weight": "Lock Style - {label}",
     "font_lock_weight_desc": "All application text will be forced to lock to this effect",
     "font_toast_exclusive": "Applied exclusive style: {name} ({subName})",
-    "font_toast_global": "Applied global font: {name}",
+    "font_toast_global": "Applied font: {name}",
     "font_toast_uninstall_success": "Font bundle successfully uninstalled: {name}",
     "subscription_download_or_parse_failed": "Failed to download or parse network subscription source",
     "http_error_400": "Bad Request (400)",
