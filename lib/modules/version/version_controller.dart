@@ -12,20 +12,11 @@ class VersionController extends BaseController {
   final apkUrl = ''.obs;
   final apkUrl2 = ''.obs;
   final apkUrl3 = ''.obs;
-
-  final apkFvpUrl = ''.obs;
-  final apkFvpUrl2 = ''.obs;
-  final apkFvpUrl3 = ''.obs;
-
   // =========================
   // Windows
   // =========================
-
   final windowsUrl = ''.obs;
   final windowsUrl2 = ''.obs;
-  final windowsFvpUrl = ''.obs;
-  final windowsFvpUrl2 = ''.obs;
-
   // =========================
   // macOS
   // =========================
@@ -74,24 +65,12 @@ class VersionController extends BaseController {
     apkUrl2.value = '$releaseUrl/app-arm64-v8a-release.apk';
     apkUrl3.value = '$releaseUrl/app-x86_64-release.apk';
 
-    // FVP
-
-    apkFvpUrl.value = '$releaseUrl/app-armeabi-v7a-fvp.apk';
-    apkFvpUrl2.value = '$releaseUrl/app-arm64-v8a-fvp.apk';
-    apkFvpUrl3.value = '$releaseUrl/app-x86_64-fvp.apk';
-
     // =====================================================
     // Windows
     // =====================================================
 
     windowsUrl.value = '$releaseUrl/PureLive-$latestVersion+$buildNumber-windows-x64-setup.exe';
     windowsUrl2.value = '$releaseUrl/PureLive-$latestVersion+$buildNumber-windows-x64.msix';
-
-    // FVP
-
-    windowsFvpUrl.value = '$releaseUrl/PureLive-$latestVersion+$buildNumber-fvp-windows-x64-setup.exe';
-    windowsFvpUrl2.value = '$releaseUrl/PureLive-$latestVersion+$buildNumber-fvp-windows-x64.msix';
-
     // =====================================================
     // macOS
     // ========================= ===========================

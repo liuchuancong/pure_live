@@ -37,20 +37,6 @@ class VersionPage extends GetView<VersionController> {
                   _buildDownloadSection(context, title: i18n("arch_x86_64"), urls: controller.apkUrl3.value),
                 ],
               ),
-              const SizedBox(height: 20),
-              _buildPlatformCard(
-                context,
-                title: i18n("android_fvp"),
-                subtitle: i18n("using_fvp_player"),
-                icon: Remix.tv_2_line,
-                children: [
-                  _buildDownloadSection(context, title: i18n("arm64_fvp"), urls: controller.apkFvpUrl2.value),
-                  const SizedBox(height: 16),
-                  _buildDownloadSection(context, title: i18n("arm32_fvp"), urls: controller.apkFvpUrl.value),
-                  const SizedBox(height: 16),
-                  _buildDownloadSection(context, title: i18n("arch_x86_64_fvp"), urls: controller.apkFvpUrl3.value),
-                ],
-              ),
               const SizedBox(height: 24),
             ],
             if (PlatformUtils.isWindows) ...[
@@ -65,18 +51,6 @@ class VersionPage extends GetView<VersionController> {
                   _buildDownloadSection(context, title: i18n("msix_installer"), urls: controller.windowsUrl2.value),
                 ],
               ),
-              const SizedBox(height: 20),
-              _buildPlatformCard(
-                context,
-                title: i18n("windows_fvp"),
-                subtitle: i18n("using_fvp_player"),
-                icon: Remix.tv_2_line,
-                children: [
-                  _buildDownloadSection(context, title: i18n("fvp_exe"), urls: controller.windowsFvpUrl.value),
-                  const SizedBox(height: 16),
-                  _buildDownloadSection(context, title: i18n("fvp_msix"), urls: controller.windowsFvpUrl2.value),
-                ],
-              ),
               const SizedBox(height: 24),
             ],
             if (PlatformUtils.isMacOS) ...[
@@ -88,16 +62,6 @@ class VersionPage extends GetView<VersionController> {
                 children: [_buildDownloadSection(context, title: i18n("macos_dmg"), urls: controller.macosUrl.value)],
               ),
               const SizedBox(height: 20),
-              _buildPlatformCard(
-                context,
-                title: i18n("macos_fvp"),
-                subtitle: i18n("using_fvp_player"),
-                icon: Remix.tv_2_line,
-                children: [
-                  _buildDownloadSection(context, title: i18n("macos_fvp_dmg"), urls: controller.macosFvpUrl.value),
-                ],
-              ),
-              const SizedBox(height: 24),
             ],
             context.buildGroupTitle(i18n("update_log")),
             const SizedBox(height: 8),
