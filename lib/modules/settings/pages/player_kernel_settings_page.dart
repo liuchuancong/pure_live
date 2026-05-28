@@ -4,6 +4,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/player/models/player_engine.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
 
 class PlayerKernelSettingsPage extends GetView<SettingsService> {
   const PlayerKernelSettingsPage({super.key});
@@ -20,21 +21,25 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
         children: [
           context.buildGroupTitle(i18n("kernel_switch")),
           context.buildModernCard([
-            if (Platform.isAndroid)
-              Obx(
-                () => context.buildTile(
-                  icon: Remix.cpu_line,
-                  title: i18n("kernel_switch"),
-                  subtitle: i18n("kernel_switch_subtitle"),
-                  onTap: showVideoSetDialog,
-                  trailing: Text(
-                    PlayerConsts.players[controller.videoPlayerIndex.value],
-                    style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
             Obx(() {
-              if (PlayerEngine.values[controller.videoPlayerIndex.value] == PlayerEngine.exo) {
+              String activeKey = controller.videoPlayerKey.value;
+              String activeI18nKey = PlayerConsts.names[activeKey] ?? PlayerConsts.names[PlayerConsts.defaultKey]!;
+
+              return context.buildTile(
+                icon: Remix.cpu_line,
+                title: i18n("kernel_switch"),
+                subtitle: i18n("kernel_switch_subtitle"),
+                onTap: showVideoSetDialog,
+                trailing: Text(
+                  i18n(activeI18nKey),
+                  style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
+                ),
+              );
+            }),
+
+            Obx(() {
+              String activeKey = controller.videoPlayerKey.value;
+              if (PlayerConsts.engines[activeKey] == PlayerEngine.exo) {
                 return const SizedBox.shrink();
               }
 
@@ -66,7 +71,11 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
             ),
           ]),
           Obx(() {
-            if (controller.videoPlayerIndex.value != 0) return const SizedBox.shrink();
+            String activeKey = controller.videoPlayerKey.value;
+            if (PlayerConsts.engines[activeKey] != PlayerEngine.mediaKit) {
+              return const SizedBox.shrink();
+            }
+
             return _buildMpvSettings(context);
           }),
           const SizedBox(height: 32),
@@ -196,46 +205,59 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
   }
 
   void showVideoSetDialog() {
-    List<String> playerList = controller.playerlist;
+    final settings = Get.find<SettingsService>();
+
+    List<String> playerList = PlatformUtils.isMobile
+        ? PlayerConsts.names.values.toList()
+        : [PlayerConsts.names['mpv']!, PlayerConsts.names['fvp']!];
+
     showDialog(
       context: Get.context!,
       builder: (BuildContext context) {
         return SimpleDialog(
           title: Text(i18n("change_player")),
           children: [
-            Obx(
-              () => RadioGroup<String>(
-                groupValue: playerList[controller.videoPlayerIndex.value],
-                onChanged: (String? value) {
-                  if (value != null) {
-                    controller.changePlayer(playerList.indexOf(value));
-                    GlobalPlayerService.instance.playerManager.switchEngine(
-                      PlayerEngine.values[controller.videoPlayerIndex.value],
-                      isManual: true,
-                    );
+            Obx(() {
+              String activeKey = settings.videoPlayerKey.value;
+              String activeI18nKey = PlayerConsts.names[activeKey] ?? playerList.first;
+
+              if (!playerList.contains(activeI18nKey)) {
+                activeKey = PlayerConsts.getKeyByI18nKey(playerList.first);
+              }
+
+              return RadioGroup<String>(
+                groupValue: activeKey,
+                onChanged: (String? key) {
+                  if (key != null && PlayerConsts.engines.containsKey(key)) {
+                    settings.videoPlayerKey.value = key;
+                    GlobalPlayerService.instance.playerManager.switchEngine(PlayerConsts.engines[key]!, isManual: true);
                     Navigator.of(context).pop();
                   }
                 },
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  children: playerList.map<Widget>((name) {
+                  children: playerList.map<Widget>((i18nKey) {
+                    final String itemKey = PlayerConsts.getKeyByI18nKey(i18nKey);
+
                     return ListTile(
-                      leading: Radio<String>(value: name, activeColor: Theme.of(context).colorScheme.primary),
-                      title: Text(name, style: AppTextStyles.t15),
+                      leading: Radio<String>(value: itemKey, activeColor: Theme.of(context).colorScheme.primary),
+                      title: Text(i18n(i18nKey), style: AppTextStyles.t15),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                       onTap: () {
-                        controller.changePlayer(playerList.indexOf(name));
-                        GlobalPlayerService.instance.playerManager.switchEngine(
-                          PlayerEngine.values[controller.videoPlayerIndex.value],
-                          isManual: true,
-                        );
-                        Navigator.of(context).pop();
+                        if (PlayerConsts.engines.containsKey(itemKey)) {
+                          settings.videoPlayerKey.value = itemKey;
+                          GlobalPlayerService.instance.playerManager.switchEngine(
+                            PlayerConsts.engines[itemKey]!,
+                            isManual: true,
+                          );
+                          Navigator.of(context).pop();
+                        }
                       },
                     );
                   }).toList(),
                 ),
-              ),
-            ),
+              );
+            }),
           ],
         );
       },

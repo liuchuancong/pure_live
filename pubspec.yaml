@@ -62,6 +62,8 @@ dependencies:
       url: https://github.com/Predidit/media-kit.git
       ref: main
       path: ./libs/universal/media_kit_libs_video
+  fvp: ^0.36.2
+  video_player: ^2.11.1
   better_player_plus: ^1.2.1 # 高级视频播放器
   audio_service: ^0.18.18 # 后台音频服务
   audio_service_win: ^0.0.3

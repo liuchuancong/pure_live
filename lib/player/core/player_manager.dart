@@ -218,7 +218,10 @@ class PlayerManager {
     }
     if (_currentPlayer == null || _runtimeEngine == null) {
       final settings = Get.find<SettingsService>();
-      _defaultEngine = PlayerEngine.values[settings.videoPlayerIndex.value];
+      final String savedKey = settings.videoPlayerKey.value;
+      final String validKey = PlayerConsts.engines.containsKey(savedKey) ? savedKey : PlayerConsts.defaultKey;
+      _defaultEngine = PlayerConsts.engines[validKey]!;
+
       _runtimeEngine = _defaultEngine;
       await initialize(engine: _defaultEngine!);
     } else if (_runtimeEngine != _defaultEngine && !_isSwitchingDueToFallback) {
@@ -307,7 +310,7 @@ class PlayerManager {
       if (isManual) {
         _defaultEngine = engine;
       }
-
+      log('Switch engine to $engine', name: 'PlayerManager');
       await _bindPlayerStreams(newPlayer);
       LiveAudioService.setPlayer(_currentPlayer!);
       if (oldPlayer != null && oldEngine != null) {

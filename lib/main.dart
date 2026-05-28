@@ -5,6 +5,7 @@ import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/common/global/initialized.dart';
+import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
@@ -58,17 +59,23 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
 
   Future<void> initGlopalPlayer() async {
     final settings = Get.find<SettingsService>();
-    PlayerEngine defaultEngine;
 
-    try {
-      if (PlatformUtils.isDesktop) {
-        defaultEngine = PlayerEngine.mediaKit;
+    final String savedKey = settings.videoPlayerKey.value;
+    final String validKey = PlayerConsts.engines.containsKey(savedKey) ? savedKey : PlayerConsts.defaultKey;
+
+    final PlayerEngine targetEngine = PlayerConsts.engines[validKey]!;
+    final PlayerEngine defaultEngine;
+
+    if (PlatformUtils.isDesktop) {
+      if (targetEngine == PlayerEngine.fvp) {
+        defaultEngine = PlayerEngine.fvp;
       } else {
-        defaultEngine = PlayerEngine.values[settings.videoPlayerIndex.value];
+        defaultEngine = PlayerEngine.mediaKit;
       }
-    } catch (e) {
-      defaultEngine = PlayerEngine.mediaKit;
+    } else {
+      defaultEngine = targetEngine;
     }
+
     await GlobalPlayerService.instance.initialize(defaultEngine: defaultEngine);
   }
 

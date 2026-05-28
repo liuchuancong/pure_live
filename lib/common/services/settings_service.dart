@@ -16,6 +16,7 @@ import 'package:pure_live/common/global/win_auto_start.dart';
 import 'package:pure_live/plugins/font_download_manager.dart';
 import 'package:pure_live/modules/web_dav/webdav_config.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
+import 'package:pure_live/modules/tags/tag_management_controller.dart';
 import 'package:pure_live/core/iptv/services/auto_sync_scheduler.dart';
 import 'package:pure_live/common/services/bilibili_account_service.dart';
 
@@ -27,7 +28,6 @@ class SettingsService extends GetxController {
   Locale get language => AppConsts.languages[languageName.value]!;
   List<String> get resolutionsList => PlayerConsts.resolutions;
   List<BoxFit> get videofitArrary => PlayerConsts.videofitList;
-  List<String> get playerlist => PlayerConsts.players;
 
   // ==============================
   // 🎨 主题 & 语言
@@ -73,7 +73,7 @@ class SettingsService extends GetxController {
   final danmakuFontBorder = (HivePrefUtil.getDouble('danmakuFontBorder') ?? 4.0).obs;
   final danmakuOpacity = (HivePrefUtil.getDouble('danmakuOpacity') ?? 1.0).obs;
 
-  final videoPlayerIndex = (HivePrefUtil.getInt('videoPlayerIndex') ?? 0).obs;
+  var videoPlayerKey = (HivePrefUtil.getString('videoPlayerKey') ?? "mpv").obs;
   final useHardStopOnExit = (HivePrefUtil.getBool('useHardStopOnExit') ?? true).obs;
   final enableCodec = (HivePrefUtil.getBool('enableCodec') ?? true).obs;
   final playerCompatMode = (HivePrefUtil.getBool('playerCompatMode') ?? false).obs;
@@ -347,8 +347,8 @@ class SettingsService extends GetxController {
       HivePrefUtil.setBool('playerCompatMode', value);
     });
 
-    videoPlayerIndex.listen((value) {
-      HivePrefUtil.setInt('videoPlayerIndex', value);
+    videoPlayerKey.listen((value) {
+      HivePrefUtil.setString('videoPlayerKey', value);
     });
 
     useHardStopOnExit.listen((value) {
@@ -620,9 +620,9 @@ class SettingsService extends GetxController {
   }
 
   // --- 播放器 & 分辨率 ---
-  void changePlayer(int value) {
-    videoPlayerIndex.value = value;
-    HivePrefUtil.setInt('videoPlayerIndex', value);
+  void changePlayer(String value) {
+    videoPlayerKey.value = value;
+    HivePrefUtil.setString('videoPlayerKey', value);
   }
 
   void changePreferResolution(String name) {
@@ -960,6 +960,10 @@ class SettingsService extends GetxController {
       }).toList();
     }
 
+    if (!Get.isRegistered<TagManagementController>()) {
+      Get.put(TagManagementController());
+    }
+    final tagController = Get.find<TagManagementController>();
     favoriteRooms.value = safeParseList<LiveRoom>(json['favoriteRooms'], (m) => LiveRoom.fromJson(m));
     favoriteAreas.value = safeParseList<LiveArea>(json['favoriteAreas'], (m) => LiveArea.fromJson(m));
     shieldList.value = json['shieldList'] != null ? (json['shieldList'] as List).map((e) => e.toString()).toList() : [];
@@ -1072,6 +1076,7 @@ class SettingsService extends GetxController {
     globalVolumeMute.value = json['globalVolumeMute'] ?? false;
     crossAxisSpacing.value = json['crossAxisSpacing'] ?? 6.0;
     mainAxisSpacing.value = json['mainAxisSpacing'] ?? 6.0;
+    tagController.importFromJson(Map<String, dynamic>.from(json['custom_tags_data']));
     setBilibiliCookit(bilibiliCookie.value);
     changePreferResolution(preferResolution.value);
     changePreferResolutionCellular(preferResolutionCellular.value);
@@ -1082,6 +1087,10 @@ class SettingsService extends GetxController {
   }
 
   Map<String, dynamic> toJson() {
+    if (!Get.isRegistered<TagManagementController>()) {
+      Get.put(TagManagementController());
+    }
+    final tagController = Get.find<TagManagementController>();
     Map<String, dynamic> json = {};
     json['favoriteRooms'] = favoriteRooms.map<String>((e) => jsonEncode(e.toJson())).toList();
     json['webDavConfigs'] = webDavConfigs.map<String>((e) => jsonEncode(e.toJson())).toList();
@@ -1116,7 +1125,7 @@ class SettingsService extends GetxController {
     json['enableProxy'] = enableProxy.value;
     json['proxyHost'] = proxyHost.value;
     json['proxyPort'] = proxyPort.value;
-    json['videoPlayerIndex'] = videoPlayerIndex.value;
+    json['videoPlayerKey'] = videoPlayerKey.value;
     json['useHardStopOnExit'] = useHardStopOnExit.value;
     json['enableCodec'] = enableCodec.value;
     json['playerCompatMode'] = playerCompatMode.value;
@@ -1151,6 +1160,8 @@ class SettingsService extends GetxController {
     json['loadingStyleColorSwitch'] = loadingStyleColorSwitch.value;
     json['crossAxisSpacing'] = crossAxisSpacing.value;
     json['mainAxisSpacing'] = mainAxisSpacing.value;
+    //  'custom_tags_data': tagController.exportToJson(),
+    json['custom_tags_data'] = tagController.exportToJson();
     return json;
   }
 

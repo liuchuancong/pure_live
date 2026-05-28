@@ -129,4 +129,27 @@ class TagManagementController extends GetxController {
     tags.refresh();
     saveTags();
   }
+
+  Map<String, dynamic> exportToJson() {
+    return {'tags': tags.map((e) => e.toJson()).toList(), 'roomTagsMap': roomTagsMap};
+  }
+
+  void importFromJson(Map<String, dynamic> json) {
+    if (json.containsKey('tags') && json['tags'] != null) {
+      final storedTags = json['tags'] as List;
+      final list = storedTags.map((e) => LiveTag.fromJson(Map<String, dynamic>.from(e))).toList();
+      list.sort((a, b) => a.order.compareTo(b.order));
+      tags.assignAll(list);
+      saveTags();
+    }
+
+    if (json.containsKey('roomTagsMap') && json['roomTagsMap'] != null) {
+      final storedMap = json['roomTagsMap'] as Map;
+      final convertedMap = storedMap.map((key, value) {
+        return MapEntry(key.toString(), List<String>.from(value as List));
+      });
+      roomTagsMap.assignAll(convertedMap);
+      saveRoomTagsMapping();
+    }
+  }
 }

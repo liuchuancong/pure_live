@@ -853,5 +853,9 @@
     "video_output_driver": "Video Output Driver (--vo)",
     "audio_output_driver": "Audio Output Driver (--ao)",
     "hardware_decoder": "Hardware Decoder (--hwdec)",
-    "share": "Share"
+    "share": "Share",
+    "player_mpv": "MPV Player",
+    "player_ijk": "IJK Player",
+    "player_exo": "Exo Player",
+    "player_fvp": "Fvp Player"
 }

@@ -1,8 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:pure_live/player/models/player_engine.dart';
 
 class PlayerConsts {
-  static const List<String> players = ['Mpv播放器', 'IJK播放器', 'Exo播放器'];
-  // 分辨率选项
+  static const String defaultKey = 'mpv';
+
+  static const Map<String, PlayerEngine> engines = {
+    'mpv': PlayerEngine.mediaKit,
+    'ijk': PlayerEngine.fijk,
+    'exo': PlayerEngine.exo,
+    'fvp': PlayerEngine.fvp,
+  };
+
+  static const Map<String, String> names = {
+    'mpv': 'player_mpv',
+    'ijk': 'player_ijk',
+    'exo': 'player_exo',
+    'fvp': 'player_fvp',
+  };
+
+  static String getKeyByI18nKey(String i18nKey) {
+    return names.entries.firstWhere((e) => e.value == i18nKey, orElse: () => names.entries.first).key;
+  }
+
   static const List<String> resolutions = ['原画', '蓝光8M', '蓝光4M', '超清', '流畅'];
   static const List<BoxFit> videofitList = [
     BoxFit.contain,

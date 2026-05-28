@@ -8,6 +8,7 @@ import 'core/line_fallback_manager.dart';
 import 'core/preload_player_manager.dart';
 import 'core/engine_fallback_manager.dart';
 import 'adapters/video_player_adapter.dart';
+import 'package:pure_live/player/adapters/fvp_adapter.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 
 class GlobalPlayerService {
@@ -34,6 +35,8 @@ class GlobalPlayerService {
             return FijkAdapter();
           case PlayerEngine.exo:
             return BetterPlayerAdapter();
+          case PlayerEngine.fvp:
+            return FvpAdapter();
         }
       },
     );
@@ -43,7 +46,7 @@ class GlobalPlayerService {
       playerPool: playerPool,
       fallbackManager: EngineFallbackManager(
         defaultEngine: PlayerEngine.mediaKit,
-        supportedEngines: PlatformUtils.isMobile ? PlayerEngine.values : [PlayerEngine.mediaKit],
+        supportedEngines: PlatformUtils.isMobile ? PlayerEngine.values : [PlayerEngine.mediaKit, PlayerEngine.fvp],
       ),
       preloadManager: PreloadPlayerManager(),
       lineManager: LineFallbackManager(),
