@@ -158,6 +158,7 @@ class SettingsService extends GetxController {
   final fontSizeTitleMedium = (HivePrefUtil.getDouble('fontSizeTitleMedium') ?? 15.0).obs;
   final fontSizeTitleLarge = (HivePrefUtil.getDouble('fontSizeTitleLarge') ?? 20.0).obs;
   final fontFamilyName = (HivePrefUtil.getString('fontFamilyName') ?? 'Default').obs;
+  final danmakuFontFamilyName = (HivePrefUtil.getString('danmakuFontFamilyName') ?? 'Default').obs;
   final Rx<FontModel?> curFontModel = Rx<FontModel?>(null);
   final RxList<FontModel> fontList = <FontModel>[].obs;
   final Rx<DownloadState> fontState = DownloadState.notDownloaded.obs;
@@ -458,6 +459,9 @@ class SettingsService extends GetxController {
     });
     fontFamilyName.listen((value) {
       HivePrefUtil.setString('fontFamilyName', value);
+    });
+    danmakuFontFamilyName.listen((value) {
+      HivePrefUtil.setString('danmakuFontFamilyName', value);
     });
 
     loadingStyle.listen((value) {
@@ -1057,6 +1061,7 @@ class SettingsService extends GetxController {
         ? double.parse(json['fontSizeTitleLarge'].toString())
         : 20.0;
     fontFamilyName.value = json['fontFamilyName'] ?? 'Default';
+    danmakuFontFamilyName.value = json['danmakuFontFamilyName'] ?? 'Default';
     loadingStyle.value = json['loadingStyle'] ?? 'default';
 
     loadingStyleColorSwitch.value = json['loadingStyleColorSwitch'] ?? Colors.blue.hex;
@@ -1161,6 +1166,7 @@ class SettingsService extends GetxController {
     json['fontSizeTitleMedium'] = fontSizeTitleMedium.value;
     json['fontSizeTitleLarge'] = fontSizeTitleLarge.value;
     json['fontFamilyName'] = fontFamilyName.value;
+    json['danmakuFontFamilyName'] = danmakuFontFamilyName.value;
     json['loadingStyle'] = loadingStyle.value;
     json['loadingStyleColorSwitch'] = loadingStyleColorSwitch.value;
     json['crossAxisSpacing'] = crossAxisSpacing.value;

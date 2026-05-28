@@ -8,7 +8,8 @@ import 'package:pure_live/plugins/font_download_manager.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
 
 class FontFamilyManagerPage extends GetView<SettingsService> {
-  const FontFamilyManagerPage({super.key});
+  final bool isDanmakuSettings;
+  const FontFamilyManagerPage({super.key, this.isDanmakuSettings = false});
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +19,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          i18n("font_family_settings"),
+          isDanmakuSettings ? i18n("danmaku_font_family_settings") : i18n("font_family_settings"),
           style: const TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0.3),
         ),
       ),

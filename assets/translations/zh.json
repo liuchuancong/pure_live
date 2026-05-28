@@ -858,5 +858,6 @@
     "player_exo": "Exo播放器",
     "player_fvp": "Fvp播放器",
     "audio_only_mode": "纯音频模式",
-    "audio_only_mode_subtitle": "进入直播间时关闭画面，仅播放声音"
+    "audio_only_mode_subtitle": "进入直播间时关闭画面，仅播放声音",
+    "change_danmaku_font_family": "更换弹幕字体"
 }

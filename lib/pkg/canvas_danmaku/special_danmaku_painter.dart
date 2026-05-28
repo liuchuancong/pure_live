@@ -57,6 +57,7 @@ class SpecialDanmakuPainter extends CustomPainter {
           color: color,
           fontSize: item.fontSize,
           fontWeight: FontWeight.values[fontWeight],
+          fontFamily: item.fontFamily,
           shadows: item.hasStroke ? [Shadow(color: Colors.black.withValues(alpha: alpha), blurRadius: 2)] : null,
         ),
       );

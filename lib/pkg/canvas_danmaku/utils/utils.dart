@@ -50,7 +50,12 @@ class Utils {
         final textPainter = TextPainter(
           text: TextSpan(
             text: item.value,
-            style: TextStyle(color: content.color, fontSize: fontSize, fontWeight: FontWeight.values[fontWeight]),
+            style: TextStyle(
+              color: content.color,
+              fontSize: fontSize,
+              fontWeight: FontWeight.values[fontWeight],
+              fontFamily: content.fontFamily,
+            ),
           ),
           textDirection: TextDirection.ltr,
         )..layout();
@@ -84,7 +89,7 @@ class Utils {
           final textPainter = TextPainter(
             text: TextSpan(
               text: item.value,
-              style: TextStyle(color: content.color, fontSize: fontSize),
+              style: TextStyle(color: content.color, fontSize: fontSize, fontFamily: content.fontFamily),
             ),
             textDirection: TextDirection.ltr,
           )..layout();
@@ -132,6 +137,7 @@ class Utils {
             ui.ParagraphStyle(
               textAlign: TextAlign.left,
               fontSize: fontSize,
+              fontFamily: content.fontFamily,
               fontWeight: FontWeight.values[fontWeight],
               textDirection: TextDirection.ltr,
             ),

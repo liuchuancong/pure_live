@@ -389,7 +389,11 @@ class VideoController with ChangeNotifier {
     if (hideDanmaku.value) return;
     if (GlobalPlayerService.instance.playerManager.isPlayingNow) {
       danmakuController.addDanmaku(
-        DanmakuContentItem(msg.message, color: Color.fromARGB(255, msg.color.r, msg.color.g, msg.color.b)),
+        DanmakuContentItem(
+          msg.message,
+          color: Color.fromARGB(255, msg.color.r, msg.color.g, msg.color.b),
+          fontFamily: settings.fontFamilyName.value,
+        ),
       );
     }
   }

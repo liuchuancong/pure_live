@@ -859,5 +859,6 @@
     "player_exo": "Exo Player",
     "player_fvp": "Fvp Player",
     "audio_only_mode": "Audio Only Mode",
-    "audio_only_mode_subtitle": "Play audio stream only and disable video loading"
+    "audio_only_mode_subtitle": "Play audio stream only and disable video loading",
+    "change_danmaku_font_family": "Change Danmaku Font"
 }

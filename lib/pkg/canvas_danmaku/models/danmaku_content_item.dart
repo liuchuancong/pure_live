@@ -18,6 +18,8 @@ class DanmakuContentItem {
   /// 弹幕文本
   final String text;
 
+  final String? fontFamily;
+
   /// 弹幕颜色
   final Color color;
 
@@ -29,8 +31,13 @@ class DanmakuContentItem {
 
   final List<MixedContent> mixedContent;
 
-  DanmakuContentItem(this.text, {this.color = Colors.white, this.type = DanmakuItemType.scroll, this.selfSend = false})
-    : mixedContent = _parseMixedContent(text);
+  DanmakuContentItem(
+    this.text, {
+    this.color = Colors.white,
+    this.type = DanmakuItemType.scroll,
+    this.selfSend = false,
+    this.fontFamily,
+  }) : mixedContent = _parseMixedContent(text);
   // 解析文本为混合内容
   static List<MixedContent> _parseMixedContent(String text) {
     final List<MixedContent> result = [];
