@@ -50,8 +50,7 @@ class BiliBiliAccountService extends GetxController {
   }
 
   void setSite() {
-    var site = (Sites.of(Sites.bilibiliSite).liveSite as BiliBiliSite);
-    site.userId = uid;
+    BiliBiliSite.userId = uid;
     BiliBiliSite.cookie = cookie.value;
   }
 
