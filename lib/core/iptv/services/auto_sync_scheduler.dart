@@ -1,7 +1,9 @@
 import 'dart:developer';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/plugins/race_http.dart';
 import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/core/iptv/local/database.dart';
+import 'package:pure_live/common/utils/githup_mirror.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
 import 'package:pure_live/core/iptv/services/epg_sync_engine.dart';
 import 'package:pure_live/core/iptv/services/iptv_sync_engine.dart';
@@ -35,9 +37,11 @@ class AutoSyncScheduler {
   }
 
   Future<void> loadHotResources() async {
-    final m3uUrl = 'https://iptv-org.github.io/iptv/countries/cn.m3u';
+    final mirror = GitHubMirror(owner: 'best-fan', repo: 'iptv-sources', branch: 'main');
+    final urls = mirror.mirrors('cn_all.m3u8');
+    final fastUrl = await RaceHttp.findFastestUrl(urls);
     IptvImportManager().importFromNetworkUrl(
-      m3uUrl,
+      fastUrl!,
       AppPathManager.iptvHotFile,
       forceUpdate: true,
       showTips: false,
