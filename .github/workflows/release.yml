@@ -24,7 +24,7 @@ jobs:
 
     strategy:
       matrix:
-        branch: [master, fvp]
+        branch: [master]
 
     steps:
       - name: 签出代码
@@ -92,7 +92,7 @@ jobs:
 
     strategy:
       matrix:
-        branch: [master, fvp]
+        branch: [master]
 
     steps:
       - name: 签出代码
@@ -243,7 +243,7 @@ jobs:
     timeout-minutes: 50
     strategy:
       matrix:
-        branch: [master, fvp]
+        branch: [master]
 
     steps:
       - name: 签出代码
