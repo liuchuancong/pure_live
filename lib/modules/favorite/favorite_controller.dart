@@ -13,7 +13,6 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
   final tabBottomIndex = 0.obs;
   final tabSiteIndex = 0.obs;
   final tabOnlineIndex = 0.obs;
-  bool isFirstLoad = true;
   StreamSubscription<dynamic>? subscription;
   Timer? _autoRefreshTimer;
 
@@ -23,7 +22,7 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
 
   final selectedTagId = 'ALL'.obs;
   final visibleTags = <LiveTag>[].obs;
-
+  final isLoading = true.obs;
   @override
   void onInit() {
     super.onInit();
@@ -43,7 +42,9 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
     ever(tagController.tags, (_) {
       syncRooms();
     });
-    onRefresh();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      onRefresh();
+    });
 
     tabController.addListener(() {
       tabOnlineIndex.value = tabController.index;
@@ -168,7 +169,11 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
   }
 
   Future<bool> onRefresh() async {
-    if (isFirstLoad) await Future.delayed(const Duration(seconds: 1));
+    if (settings.favoriteRooms.value.isEmpty) {
+      isLoading.value = false;
+      refreshController.finishRefresh(IndicatorResult.none);
+      return false;
+    }
 
     if (settings.favoriteRooms.value.isEmpty) return false;
 
@@ -176,6 +181,7 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
         .where((room) => room.platform!.isNotEmpty)
         .map((room) => Sites.of(room.platform!).liveSite.getRoomDetail(roomId: room.roomId!, platform: room.platform!))
         .toList();
+    IndicatorResult refreshResult = IndicatorResult.success;
     try {
       for (int i = 0; i < futures.length; i += 5) {
         try {
@@ -193,10 +199,13 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
       }
       syncRooms();
     } catch (e) {
+      refreshResult = IndicatorResult.fail;
       debugPrint('Error during refresh: $e');
+    } finally {
+      isLoading.value = false;
+      EventBus.instance.emit('refresh_favorite_finish', true);
+      refreshController.finishRefresh(refreshResult);
     }
-    isFirstLoad = false;
-    EventBus.instance.emit('refresh_favorite_finish', true);
     return false;
   }
 }

@@ -18,7 +18,7 @@ class BiliBiliSite implements LiveSite {
 
   @override
   String name = "哔哩哔哩直播";
-  String cookie = "";
+  static String cookie = "";
   int userId = 0;
   @override
   LiveDanmaku getDanmaku() => BiliBiliDanmaku();

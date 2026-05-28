@@ -249,7 +249,6 @@ class PlayerManager {
 
     if (audioOnly && room?.roomId != null) {
       audioLoader.stop();
-
       final completer = Completer<String>();
 
       audioLoader.startAudioStream(
@@ -268,8 +267,8 @@ class PlayerManager {
       );
 
       try {
-        final pipePath = await completer.future.timeout(const Duration(seconds: 5));
-        await Future.delayed(const Duration(milliseconds: 300));
+        final pipePath = await completer.future.timeout(const Duration(seconds: 30));
+        await Future.delayed(const Duration(seconds: 2));
 
         targetUrl = pipePath;
         targetPlayUrls = [pipePath];

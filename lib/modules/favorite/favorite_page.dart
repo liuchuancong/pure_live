@@ -186,9 +186,8 @@ class _RoomGridView extends GetView<FavoriteController> {
                           )
                           .toList();
 
-                if (baseRooms.isEmpty &&
-                    currentRefreshController.controlFinishRefresh &&
-                    controller.selectedTagId.value == 'ALL') {
+                //  修改后：
+                if (controller.isLoading.value && baseRooms.isEmpty && controller.selectedTagId.value == 'ALL') {
                   return AppStatusView(type: AppStatusType.loading, title: i18n('refresh_loading'), subtitle: '');
                 }
 
