@@ -6,6 +6,49 @@ class FFmpegCommandBuilder {
     return '"$escaped"';
   }
 
+  /// 本地音频流 HTTP Server
+  static String buildAudioStreamCommand({
+    required String remoteStreamUrl,
+    required int port,
+    int rwTimeout = 15,
+    Map<String, String>? headers,
+  }) {
+    final ua = headers?['user-agent'];
+    final headerStr = _buildHeader(headers);
+
+    final rwTimeoutMicro = (rwTimeout * 1000000).clamp(0, 2147483647);
+
+    final args = <String>[
+      '-hide_banner',
+      '-loglevel',
+      'info',
+      '-reconnect',
+      '1',
+      '-reconnect_streamed',
+      '1',
+      '-reconnect_delay_max',
+      '10',
+      '-reconnect_at_eof',
+      '1',
+      '-rw_timeout',
+      rwTimeoutMicro.toString(),
+      '-timeout',
+      rwTimeoutMicro.toString(),
+      if (ua != null && ua.isNotEmpty) ...['-user_agent', _quote(ua)],
+      if (headerStr.isNotEmpty) ...['-headers', _quote(headerStr)],
+      '-i',
+      remoteStreamUrl,
+      '-vn',
+      '-acodec',
+      'copy',
+      '-f',
+      'mpegts',
+      'http://0.0.0.0:$port/live.ts?listen',
+    ];
+
+    return args.join(' ');
+  }
+
   static String buildRecordCommand({
     required String url,
     required String outputDir,

@@ -255,6 +255,7 @@ class PlayerManager {
       audioLoader.startAudioStream(
         remoteStreamUrl: url,
         uniqueId: room!.roomId!,
+        platform: room.platform ?? "",
         onAudioReady: (audioPipePath) {
           if (!completer.isCompleted) completer.complete(audioPipePath);
         },
