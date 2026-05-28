@@ -370,7 +370,7 @@
     "recover_backup": "Recover",
     "recover_backup_failed": "Recover backup failed",
     "recover_backup_subtitle": "Recover form selected file",
-    "recover_backup_success": "Recover backup success, please restart",
+    "recover_backup_success": "Recover backup success",
     "refresh": "Refresh",
     "refresh_last_updated_at": "Last updated %T",
     "refresh_load_failed": "Load failed",

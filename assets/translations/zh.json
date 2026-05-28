@@ -371,7 +371,7 @@
     "recover_backup": "恢复备份",
     "recover_backup_failed": "恢复备份失败",
     "recover_backup_subtitle": "从备份文件中恢复",
-    "recover_backup_success": "恢复备份成功，请重启",
+    "recover_backup_success": "恢复备份成功",
     "refresh": "刷新",
     "refresh_last_updated_at": "上次加载时间 %T",
     "refresh_load_failed": "加载失败",
