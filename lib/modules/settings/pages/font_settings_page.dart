@@ -30,7 +30,7 @@ class FontSettingsPage extends GetView<SettingsService> {
               context,
               title: i18n("font_body_small_title"),
               subtitle: i18n("font_body_small_desc"),
-              value: controller.fontSizeBodySmall,
+              value: SettingsService.to.font.fontSizeBodySmall.v,
               min: 9.0,
               max: 15.0,
             ),
@@ -39,7 +39,7 @@ class FontSettingsPage extends GetView<SettingsService> {
               context,
               title: i18n("font_body_medium_title"),
               subtitle: i18n("font_body_medium_desc"),
-              value: controller.fontSizeBodyMedium,
+              value: SettingsService.to.font.fontSizeBodyMedium.v,
               min: 11.0,
               max: 17.0,
             ),
@@ -48,7 +48,7 @@ class FontSettingsPage extends GetView<SettingsService> {
               context,
               title: i18n("font_body_large_title"),
               subtitle: i18n("font_body_large_desc"),
-              value: controller.fontSizeBodyLarge,
+              value: SettingsService.to.font.fontSizeBodyLarge.v,
               min: 12.0,
               max: 18.0,
             ),
@@ -61,7 +61,7 @@ class FontSettingsPage extends GetView<SettingsService> {
               context,
               title: i18n("font_title_medium_title"),
               subtitle: i18n("font_title_medium_desc"),
-              value: controller.fontSizeTitleMedium,
+              value: SettingsService.to.font.fontSizeTitleMedium.v,
               min: 13.0,
               max: 20.0,
             ),
@@ -70,7 +70,7 @@ class FontSettingsPage extends GetView<SettingsService> {
               context,
               title: i18n("font_title_large_title"),
               subtitle: i18n("font_title_large_desc"),
-              value: controller.fontSizeTitleLarge,
+              value: SettingsService.to.font.fontSizeTitleLarge.v,
               min: 16.0,
               max: 26.0,
             ),
@@ -127,11 +127,11 @@ class FontSettingsPage extends GetView<SettingsService> {
   }
 
   void _resetToDefaults(BuildContext context) {
-    controller.fontSizeBodySmall.value = 12.0;
-    controller.fontSizeBodyMedium.value = 13.0;
-    controller.fontSizeBodyLarge.value = 14.0;
-    controller.fontSizeTitleMedium.value = 15.0;
-    controller.fontSizeTitleLarge.value = 20.0;
+    SettingsService.to.font.fontSizeBodySmall.v = 12.0;
+    SettingsService.to.font.fontSizeBodyMedium.v = 13.0;
+    SettingsService.to.font.fontSizeBodyLarge.v = 14.0;
+    SettingsService.to.font.fontSizeTitleMedium.v = 15.0;
+    SettingsService.to.font.fontSizeTitleLarge.v = 20.0;
     ToastUtil.show(i18n("settings_saved"));
   }
 }

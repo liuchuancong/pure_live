@@ -13,8 +13,6 @@ class AboutPage extends StatefulWidget {
 }
 
 class _AboutPageState extends State<AboutPage> {
-  final SettingsService settings = Get.find<SettingsService>();
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/core/sites.dart';
+import 'package:flex_color_picker/flex_color_picker.dart';
 
 enum HomeMenu {
   favorites('favorites'),
@@ -79,6 +80,9 @@ class AppConsts {
     "Variant": const Color(0xFF3700B3),
     "Secondary": const Color(0xFF03DAC6),
   };
+  static Map<ColorSwatch<Object>, String> colorsNameMap = AppConsts.themeColors.map(
+    (key, value) => MapEntry(ColorTools.createPrimarySwatch(value), key),
+  );
 
   static const List<Map<String, String>> allStyles = [
     {'key': 'default', 'nameEn': 'Default Ring', 'nameZh': '默认圆环'},

@@ -56,7 +56,6 @@ class HuyaSite implements LiveSite {
   final String kUserAgent =
       "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36";
 
-  final SettingsService settings = Get.find<SettingsService>();
   Future<List<LiveArea>> getSubCategores(LiveCategory liveCategory) async {
     var result = await HttpClient.instance.getJson(
       "https://live.cdn.huya.com/liveconfig/game/bussLive",
@@ -91,7 +90,7 @@ class HuyaSite implements LiveSite {
         "gameId": category.areaId,
         "page": page,
       },
-      header: {"user-agent": kUserAgent, "Cookie": settings.huyaCookie.value},
+      header: {"user-agent": kUserAgent, "Cookie": SettingsService.to.cookieManager.huyaCookie.v},
     );
     var result = json.decode(resultText);
     var items = <LiveRoom>[];
@@ -222,7 +221,7 @@ class HuyaSite implements LiveSite {
         queryParameters: {"m": "LiveList", "do": "getLiveListByPage", "tagAll": 0, "page": page},
         header: {
           "user-agent": kUserAgent,
-          "Cookie": settings.huyaCookie.value,
+          "Cookie": SettingsService.to.cookieManager.huyaCookie.v,
           "Origin": "https://www.huya.com",
           "Referer": "https://www.huya.com/",
         },
@@ -271,7 +270,7 @@ class HuyaSite implements LiveSite {
         'Sec-Fetch-Mode': 'cors',
         'Sec-Fetch-Site': 'same-site',
         "user-agent": kUserAgent,
-        "Cookie": settings.huyaCookie.value,
+        "Cookie": SettingsService.to.cookieManager.huyaCookie.v,
       },
     );
     var result = json.decode(resultText);
@@ -375,7 +374,12 @@ class HuyaSite implements LiveSite {
         link: "https://www.huya.com/$roomId",
       );
     } else {
-      LiveRoom liveRoom = settings.getLiveRoomByRoomId(roomId, platform);
+      LiveRoom liveRoom =
+          SettingsService.to.fav.favoriteRooms.v.firstWhereOrNull(
+            (r) => r.roomId == roomId && r.platform == platform,
+          ) ??
+          LiveRoom(roomId: roomId, platform: platform);
+
       liveRoom.liveStatus = LiveStatus.offline;
       liveRoom.status = false;
       return liveRoom;
@@ -545,7 +549,7 @@ class HuyaSite implements LiveSite {
 
   String processAnticode(String anticode, String streamName) {
     var query = Uri.splitQueryString(anticode);
-    final uid = int.parse(getUUid(settings.huyaCookie.value, streamName));
+    final uid = int.parse(getUUid(SettingsService.to.cookieManager.huyaCookie.v, streamName));
     query["ctype"] = "huya_live";
     query["t"] = "100";
 

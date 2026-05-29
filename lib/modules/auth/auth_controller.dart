@@ -18,9 +18,9 @@ class AuthController extends GetxController {
         isLogin = true;
         userId = data.session!.user.id;
         user = session!.user;
-        final SettingsService service = Get.find<SettingsService>();
         await SupaBaseManager().loadUploadConfig();
-        bool wantLoad = service.favoriteRooms.isEmpty;
+        bool wantLoad = SettingsService.to.fav.favoriteRooms.v.isEmpty;
+
         if (wantLoad) {
           SupaBaseManager().readConfig();
         }

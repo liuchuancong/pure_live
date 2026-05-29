@@ -79,8 +79,6 @@ class KuaishowSite implements LiveSite {
     'Sec-Fetch-User': '?1',
   };
 
-  final SettingsService settings = Get.find<SettingsService>();
-
   Future<List<LiveArea>> getAllSubCategores(
     LiveCategory liveCategory,
     int page,
@@ -333,9 +331,10 @@ class KuaishowSite implements LiveSite {
     mHeaders['sec-fetch-mode'] = 'navigate';
     mHeaders['sec-fetch-site'] = 'same-origin';
     mHeaders['sec-fetch-user'] = '?1';
-    if (settings.kuaishouCookie.value.isNotEmpty) {
-      mHeaders['cookie'] = settings.kuaishouCookie.value;
+    if (SettingsService.to.cookieManager.kuaishouCookie.v.isNotEmpty) {
+      mHeaders['cookie'] = SettingsService.to.cookieManager.kuaishouCookie.v;
     }
+
     mHeaders['accept'] =
         'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9';
     await getCookie(url);
@@ -371,7 +370,12 @@ class KuaishowSite implements LiveSite {
         data: liveStream["playUrls"],
       );
     } catch (e) {
-      LiveRoom liveRoom = settings.getLiveRoomByRoomId(roomId, platform);
+      LiveRoom liveRoom =
+          SettingsService.to.fav.favoriteRooms.v.firstWhereOrNull(
+            (r) => r.roomId == roomId && r.platform == platform,
+          ) ??
+          LiveRoom(roomId: roomId, platform: platform);
+
       liveRoom.liveStatus = LiveStatus.offline;
       liveRoom.status = false;
       return liveRoom;

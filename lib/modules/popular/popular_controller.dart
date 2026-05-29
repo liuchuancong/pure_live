@@ -2,8 +2,6 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/popular/popular_grid_controller.dart';
 
 class PopularController extends GetxController with GetTickerProviderStateMixin {
-  final SettingsService settings = Get.find<SettingsService>();
-
   late TabController tabController;
   int index = 0;
   late List<dynamic> sites;
@@ -15,7 +13,7 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
 
     _initTabController(isFirstLoad: true);
 
-    ever(settings.hotAreasList, (_) {
+    ever(SettingsService.to.fav.hotAreasList.rx, (_) {
       _initTabController(isFirstLoad: false);
     });
   }
@@ -48,7 +46,7 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
     }
 
     if (isFirstLoad) {
-      final preferPlatform = settings.preferPlatform.value;
+      final preferPlatform = SettingsService.to.fav.preferPlatform.v;
       final pIndex = sites.indexWhere((e) => e.id == preferPlatform);
       index = pIndex == -1 ? 0 : pIndex;
     } else {

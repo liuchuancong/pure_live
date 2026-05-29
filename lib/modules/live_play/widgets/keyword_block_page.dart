@@ -24,12 +24,12 @@ class _KeywordBlockPageState extends State<KeywordBlockPage> {
       ToastUtil.show(i18n("please_enter_keyword"));
       return;
     }
-    controller.addShieldList(keyword);
+    SettingsService.to.fav.addShieldList(keyword);
     textEditingController.clear();
   }
 
   void remove(int itemIndex) {
-    controller.removeShieldList(itemIndex);
+    SettingsService.to.fav.removeShieldList(itemIndex);
   }
 
   @override
@@ -60,7 +60,7 @@ class _KeywordBlockPageState extends State<KeywordBlockPage> {
             ),
           ),
           Obx(() {
-            if (controller.shieldList.isEmpty) {
+            if (SettingsService.to.fav.shieldList.v.isEmpty) {
               return const SizedBox.shrink();
             }
 
@@ -68,7 +68,7 @@ class _KeywordBlockPageState extends State<KeywordBlockPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "${i18n("keyword_added_count", args: {"count": controller.shieldList.length.toString()})} · ${i18n("click_to_remove_suffix")}",
+                  "${i18n("keyword_added_count", args: {"count": SettingsService.to.fav.shieldList.v.length.toString()})} · ${i18n("click_to_remove_suffix")}",
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w500,
@@ -78,7 +78,7 @@ class _KeywordBlockPageState extends State<KeywordBlockPage> {
                 Wrap(
                   runSpacing: 8,
                   spacing: 8,
-                  children: controller.shieldList.asMap().entries.map((entry) {
+                  children: SettingsService.to.fav.shieldList.v.asMap().entries.map((entry) {
                     final index = entry.key;
                     final item = entry.value;
 

@@ -7,7 +7,7 @@ import 'package:pure_live/common/base/base_controller.dart';
 class AreasListController extends BasePageController<AppLiveCategory> {
   final Site site;
   final tabIndex = 0.obs;
-  final settings = Get.find<SettingsService>();
+
   AreasListController(this.site);
 
   @override

@@ -2,12 +2,11 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/base/base_controller.dart';
 
 class HotAreasController extends BaseController {
-  final SettingsService settingsController = Get.find<SettingsService>();
   final sites = <Site>[].obs;
 
   @override
   void onInit() {
-    final savedIds = settingsController.hotAreasList.value;
+    final savedIds = SettingsService.to.fav.hotAreasList.v;
     final supported = Sites.supportSites;
 
     List<String> orderIds = List.from(savedIds);
@@ -26,14 +25,14 @@ class HotAreasController extends BaseController {
     super.onInit();
   }
 
-  Color get themeColor => HexColor(settingsController.themeColorSwitch.value);
+  Color get themeColor => HexColor(SettingsService.to.theme.themeColorSwitch.v);
 
   bool isSiteVisible(String id) {
-    return settingsController.hotAreasList.value.contains(id);
+    return SettingsService.to.fav.hotAreasList.v.contains(id);
   }
 
   void onChanged(String id, bool value) {
-    List<String> currentList = List.from(settingsController.hotAreasList.value);
+    List<String> currentList = List.from(SettingsService.to.fav.hotAreasList.v);
     if (value) {
       if (!currentList.contains(id)) {
         currentList.add(id);
@@ -55,7 +54,7 @@ class HotAreasController extends BaseController {
     }
 
     sites.assignAll(sortedSites);
-    settingsController.hotAreasList.value = currentList;
+    SettingsService.to.fav.hotAreasList.v = currentList;
   }
 
   void onReorder(int oldIndex, int newIndex) {
@@ -65,13 +64,13 @@ class HotAreasController extends BaseController {
     final item = sites.removeAt(oldIndex);
     sites.insert(newIndex, item);
 
-    final currentSavedIds = settingsController.hotAreasList.value;
+    final currentSavedIds = SettingsService.to.fav.hotAreasList.v;
     List<String> newOrderSavedIds = [];
     for (var site in sites) {
       if (currentSavedIds.contains(site.id)) {
         newOrderSavedIds.add(site.id);
       }
     }
-    settingsController.hotAreasList.value = newOrderSavedIds;
+    SettingsService.to.fav.hotAreasList.v = newOrderSavedIds;
   }
 }

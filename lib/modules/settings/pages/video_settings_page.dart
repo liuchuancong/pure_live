@@ -26,8 +26,8 @@ class VideoSettingsPage extends GetView<SettingsService> {
               () => context.buildSwitchTile(
                 title: i18n("global_mute"),
                 subtitle: i18n("global_mute_subtitle"),
-                value: controller.globalVolumeMute,
-                icon: controller.globalVolumeMute.value ? Remix.volume_mute_line : Remix.volume_up_line,
+                value: SettingsService.to.vol.globalVolumeMute.v,
+                icon: SettingsService.to.vol.globalVolumeMute.v ? Remix.volume_mute_line : Remix.volume_up_line,
               ),
             ),
             if (PlatformUtils.isMobile)
@@ -36,8 +36,8 @@ class VideoSettingsPage extends GetView<SettingsService> {
                   context,
                   icon: Remix.phone_line,
                   title: i18n("mobile_default_volume"),
-                  value: controller.defaultMobileVolume.value,
-                  onChanged: (val) => controller.defaultMobileVolume.value = val,
+                  value: SettingsService.to.vol.defaultMobileVolume.v,
+                  onChanged: (val) => SettingsService.to.vol.defaultMobileVolume.v = val,
                 ),
               ),
             if (PlatformUtils.isDesktop)
@@ -46,8 +46,8 @@ class VideoSettingsPage extends GetView<SettingsService> {
                   context,
                   icon: Remix.computer_line,
                   title: i18n("desktop_default_volume"),
-                  value: controller.defaultDesktopVolume.value,
-                  onChanged: (val) => controller.defaultDesktopVolume.value = val,
+                  value: SettingsService.to.vol.defaultDesktopVolume.v,
+                  onChanged: (val) => SettingsService.to.vol.defaultDesktopVolume.v = val,
                 ),
               ),
           ]),
@@ -64,7 +64,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
                 subtitle: i18n("prefer_resolution_subtitle"),
                 onTap: showPreferResolutionSelectorDialog,
                 trailing: Text(
-                  controller.preferResolution.value,
+                  SettingsService.to.player.preferResolution.v,
                   style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
                 ),
               ),
@@ -76,7 +76,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
                 subtitle: i18n("mobile_quality_subtitle"),
                 onTap: showpreferResolutionCellularSelectorDialog,
                 trailing: Text(
-                  controller.preferResolutionCellular.value,
+                  SettingsService.to.player.preferResolutionCellular.v,
                   style: AppTextStyles.t13.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
                 ),
               ),
@@ -92,20 +92,20 @@ class VideoSettingsPage extends GetView<SettingsService> {
             context.buildSwitchTile(
               title: i18n("exit_float_window"),
               subtitle: i18n("exit_float_window_subtitle"),
-              value: controller.floatPlay,
+              value: SettingsService.to.player.floatPlay.v,
               icon: Remix.picture_in_picture_2_line,
             ),
             context.buildSwitchTile(
               title: i18n('enable_fullscreen_default'),
               subtitle: i18n('enable_fullscreen_default_subtitle'),
-              value: controller.enableFullScreenDefault,
+              value: SettingsService.to.app.enableFullScreenDefault.v,
               icon: Remix.fullscreen_line,
             ),
             if (Platform.isAndroid)
               context.buildSwitchTile(
                 title: i18n('enable_screen_keep_on'),
                 subtitle: i18n('enable_screen_keep_on_subtitle'),
-                value: controller.enableScreenKeepOn,
+                value: SettingsService.to.app.enableScreenKeepOn.v,
                 icon: Remix.lightbulb_line,
               ),
           ]),
@@ -118,14 +118,14 @@ class VideoSettingsPage extends GetView<SettingsService> {
             context.buildSwitchTile(
               title: i18n('show_danmaku'),
               subtitle: i18n('show_danmaku_subtitle'),
-              value: controller.enableDanmakuDisplay,
+              value: SettingsService.to.danmaku.enableDanmakuDisplay.v,
               icon: Remix.chat_smile_2_line,
             ),
             Obx(
               () => context.buildTile(
                 icon: Remix.font_size,
                 title: i18n("change_danmaku_font_family"),
-                subtitle: "${i18n("current_font_prefix")}: ${controller.danmakuFontFamilyName.value}",
+                subtitle: "${i18n("current_font_prefix")}: ${SettingsService.to.danmaku.danmakuFontFamilyName.v}",
                 onTap: () => Get.to(() => const FontFamilyManagerPage(isDanmakuSettings: true)),
               ),
             ),
@@ -195,12 +195,12 @@ class VideoSettingsPage extends GetView<SettingsService> {
         secondary: const Icon(Remix.music_2_line, size: 24),
         title: Text(i18n("enable_background_play")),
         subtitle: Text(i18n("enable_background_play_subtitle")),
-        value: controller.enableBackgroundPlay.value,
+        value: SettingsService.to.app.enableBackgroundPlay.v,
         onChanged: (value) async {
-          controller.enableBackgroundPlay.value = value;
+          SettingsService.to.app.enableBackgroundPlay.v = value;
           if (value && Platform.isAndroid) {
             bool hasPermission = await LiveAudioService.requestPlatformPermissions();
-            controller.enableBackgroundPlay.value = hasPermission;
+            SettingsService.to.app.enableBackgroundPlay.v = hasPermission;
           }
         },
       ),
@@ -215,10 +215,10 @@ class VideoSettingsPage extends GetView<SettingsService> {
           title: Text(i18n("prefer_resolution")),
           children: [
             RadioGroup<String>(
-              groupValue: controller.preferResolution.value,
+              groupValue: SettingsService.to.player.preferResolution.v,
               onChanged: (String? value) {
                 if (value != null) {
-                  controller.changePreferResolution(value);
+                  SettingsService.to.player.changePreferResolution(value);
                   Navigator.of(context).pop();
                 }
               },
@@ -234,7 +234,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
                         Radio<String>(value: name, activeColor: Theme.of(context).colorScheme.primary),
                         GestureDetector(
                           onTap: () {
-                            controller.changePreferResolution(name);
+                            SettingsService.to.player.changePreferResolution(name);
                             Navigator.of(context).pop();
                           },
                           child: Text(name),
@@ -259,10 +259,10 @@ class VideoSettingsPage extends GetView<SettingsService> {
           title: Text(i18n("prefer_resolution_cellular")),
           children: [
             RadioGroup<String>(
-              groupValue: controller.preferResolutionCellular.value,
+              groupValue: SettingsService.to.player.preferResolutionCellular.v,
               onChanged: (String? value) {
                 if (value != null) {
-                  controller.changePreferResolutionCellular(value);
+                  SettingsService.to.player.changePreferResolutionCellular(value);
                   Navigator.of(context).pop();
                 }
               },
@@ -278,7 +278,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
                         Radio<String>(value: name, activeColor: Theme.of(context).colorScheme.primary),
                         GestureDetector(
                           onTap: () {
-                            controller.changePreferResolutionCellular(name);
+                            SettingsService.to.player.changePreferResolutionCellular(name);
                             Navigator.of(context).pop();
                           },
                           child: Text(name),

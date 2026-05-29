@@ -6,8 +6,7 @@ import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/common/models/font_model.dart';
 import 'package:pure_live/common/utils/githup_mirror.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
-
-enum DownloadState { notDownloaded, downloading, downloaded }
+import 'package:pure_live/common/services/medels/download_status.dart';
 
 class FontDownloadManager {
   FontDownloadManager._();

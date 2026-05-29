@@ -257,9 +257,9 @@ class Utils {
   }
 
   static Future<bool> showExitDialog() async {
-    final settings = Get.find<SettingsService>();
-    final dontAsk = settings.dontAskExit.value;
-    final exitChoose = settings.exitChoose.value;
+    final dontAsk = SettingsService.to.exit.dontAskExit.v;
+    final exitChoose = SettingsService.to.exit.exitChoose.v;
+
     if (dontAsk) {
       if (exitChoose == 'exit') {
         if (await windowManager.isPreventClose()) {
@@ -309,8 +309,8 @@ class Utils {
             actions: [
               TextButton(
                 onPressed: () async {
-                  settings.dontAskExit.value = shouldNotAskAgain;
-                  settings.exitChoose.value = 'minimize';
+                  SettingsService.to.exit.dontAskExit.v = shouldNotAskAgain;
+                  SettingsService.to.exit.exitChoose.v = 'minimize';
                   Navigator.of(context).pop();
                   Future.delayed(const Duration(milliseconds: 200), () async {
                     await _minimizeOrHideDesktopWindow();
@@ -321,8 +321,8 @@ class Utils {
               ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
                 onPressed: () async {
-                  settings.dontAskExit.value = shouldNotAskAgain;
-                  settings.exitChoose.value = 'exit';
+                  SettingsService.to.exit.dontAskExit.v = shouldNotAskAgain;
+                  SettingsService.to.exit.exitChoose.v = 'exit';
                   Navigator.of(context).pop();
                   if (await windowManager.isPreventClose()) {
                     await windowManager.setPreventClose(false);

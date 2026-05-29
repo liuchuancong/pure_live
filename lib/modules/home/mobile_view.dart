@@ -15,14 +15,14 @@ class HomeMobileView extends StatelessWidget {
     required this.onDestinationSelected,
     required this.onFavoriteDoubleTap,
   });
+
   @override
   Widget build(BuildContext context) {
-    final settings = Get.find<SettingsService>();
     return Scaffold(
       bottomNavigationBar: Obx(() {
         final List<NavigationDestination> destinations = [];
         final List<int> virtualToRealMap = [];
-        final activeMenuIds = settings.savedMenuIds;
+        final activeMenuIds = SettingsService.to.app.savedMenuIds.v;
         for (String id in activeMenuIds) {
           final menu = HomeMenu.fromId(id);
           if (menu != null) {

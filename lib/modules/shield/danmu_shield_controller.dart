@@ -3,19 +3,21 @@ import 'package:pure_live/common/base/base_controller.dart';
 
 class DanmuShieldController extends BaseController {
   final TextEditingController textEditingController = TextEditingController();
-  final SettingsService settingsController = Get.find<SettingsService>();
+
   void add() {
-    if (textEditingController.text.isEmpty) {
+    final text = textEditingController.text.trim();
+    if (text.isEmpty) {
       ToastUtil.show(i18n('please_input_keyword'));
       return;
     }
 
-    settingsController.addShieldList(textEditingController.text.trim());
-    textEditingController.text = "";
+    SettingsService.to.fav.addShieldList(text);
+    textEditingController.clear();
   }
 
-  Color get themeColor => HexColor(settingsController.themeColorSwitch.value);
+  Color get themeColor => HexColor(SettingsService.to.theme.themeColorSwitch.v);
+
   void remove(int itemIndex) {
-    settingsController.removeShieldList(itemIndex);
+    SettingsService.to.fav.removeShieldList(itemIndex);
   }
 }

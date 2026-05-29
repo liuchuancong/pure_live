@@ -20,9 +20,7 @@ import 'package:pure_live/modules/live_play/widgets/video_keyboard.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller_panel.dart';
 
 class LivePlayPage extends GetView<LivePlayController> {
-  LivePlayPage({super.key});
-
-  final SettingsService settings = Get.find<SettingsService>();
+  const LivePlayPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +86,7 @@ class LivePlayPage extends GetView<LivePlayController> {
   }
 
   void _updateWakelock() {
-    final shouldKeepOn = settings.enableScreenKeepOn.value;
+    final shouldKeepOn = SettingsService.to.app.enableScreenKeepOn.v;
     WakelockPlus.enabled.then((isEnabled) {
       if (isEnabled != shouldKeepOn) {
         WakelockPlus.toggle(enable: shouldKeepOn);
@@ -462,9 +460,9 @@ class LivePlayPage extends GetView<LivePlayController> {
   }
 
   void showVolumeSettingsDialog(BuildContext context) {
-    final RxBool tempMute = controller.settings.globalVolumeMute.value.obs;
-    final RxDouble tempMobileVol = controller.settings.defaultMobileVolume.value.obs;
-    final RxDouble tempDesktopVol = controller.settings.defaultDesktopVolume.value.obs;
+    final RxBool tempMute = SettingsService.to.vol.globalVolumeMute.v.obs;
+    final RxDouble tempMobileVol = SettingsService.to.vol.defaultMobileVolume.v.obs;
+    final RxDouble tempDesktopVol = SettingsService.to.vol.defaultDesktopVolume.v.obs;
 
     showDialog(
       context: context,
@@ -565,9 +563,9 @@ class LivePlayPage extends GetView<LivePlayController> {
             TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n("cancel"))),
             FilledButton(
               onPressed: () {
-                controller.settings.globalVolumeMute.value = tempMute.value;
-                controller.settings.defaultMobileVolume.value = tempMobileVol.value.clamp(0.0, 1.0);
-                controller.settings.defaultDesktopVolume.value = tempDesktopVol.value.clamp(0.0, 1.0);
+                SettingsService.to.vol.globalVolumeMute.v = tempMute.value;
+                SettingsService.to.vol.defaultMobileVolume.v = tempMobileVol.value.clamp(0.0, 1.0);
+                SettingsService.to.vol.defaultDesktopVolume.v = tempDesktopVol.value.clamp(0.0, 1.0);
                 if (tempMute.value) {
                   controller.videoController.value?.setVolume(0.0);
                 } else {
@@ -779,8 +777,7 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
 
   @override
   Widget build(BuildContext context) {
-    final settings = Get.find<SettingsService>();
-    bool isFavorite = settings.isFavorite(widget.room);
+    bool isFavorite = SettingsService.to.fav.isFavorite(widget.room);
     return isFavorite
         ? FilledButton(
             style: ButtonStyle(
@@ -806,7 +803,7 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
               ).then((value) {
                 if (value ?? false) {
                   setState(() => isFavorite = !isFavorite);
-                  settings.removeRoom(widget.room);
+                  SettingsService.to.fav.removeRoom(widget.room);
                   EventBus.instance.emit('changeFavorite', true);
                 }
               });
@@ -826,7 +823,7 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
             ),
             onPressed: () {
               setState(() => isFavorite = !isFavorite);
-              settings.addRoom(widget.room);
+              SettingsService.to.fav.addRoom(widget.room);
               EventBus.instance.emit('changeFavorite', true);
             },
             child: Text(i18n("follow")),

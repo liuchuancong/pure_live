@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:pure_live/common/index.dart';
 import 'package:html_unescape/html_unescape.dart';
 import 'package:pure_live/model/live_category.dart';
-import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/model/live_anchor_item.dart';
 import 'package:pure_live/core/scripts/douyu_sign.dart';
 import 'package:pure_live/core/common/http_client.dart';
@@ -23,7 +22,7 @@ class DouyuSite implements LiveSite {
 
   @override
   LiveDanmaku getDanmaku() => DouyuDanmaku();
-  final SettingsService settings = Get.find<SettingsService>();
+
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async {
     List<LiveCategory> categories = [];
@@ -250,8 +249,12 @@ class DouyuSite implements LiveSite {
         isRecord: roomInfo["videoLoop"] == 1,
       );
     } catch (e) {
-      CoreLog.error(e);
-      LiveRoom liveRoom = settings.getLiveRoomByRoomId(roomId, platform);
+      LiveRoom liveRoom =
+          SettingsService.to.fav.favoriteRooms.v.firstWhereOrNull(
+            (r) => r.roomId == roomId && r.platform == platform,
+          ) ??
+          LiveRoom(roomId: roomId, platform: platform);
+
       liveRoom.liveStatus = LiveStatus.offline;
       liveRoom.status = false;
       return liveRoom;

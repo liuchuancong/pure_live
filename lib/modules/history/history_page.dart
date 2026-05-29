@@ -8,18 +8,22 @@ class HistoryPage extends GetView {
 
   Future onRefresh() async {
     bool result = true;
-    final SettingsService settings = Get.find<SettingsService>();
+    final list = List<LiveRoom>.from(SettingsService.to.history.historyRooms.v);
 
-    for (final room in settings.historyRooms) {
+    for (int i = 0; i < list.length; i++) {
+      final room = list[i];
       try {
         var newRoom = await Sites.of(
           room.platform!,
         ).liveSite.getRoomDetail(roomId: room.roomId!, platform: room.platform!);
-        settings.updateRoomInHistory(newRoom);
+        list[i] = newRoom;
       } catch (e) {
         result = false;
       }
     }
+
+    SettingsService.to.history.historyRooms.v = list;
+
     if (result) {
       refreshController.finishRefresh(IndicatorResult.success);
       refreshController.resetFooter();
@@ -30,24 +34,22 @@ class HistoryPage extends GetView {
 
   @override
   Widget build(BuildContext context) {
-    final SettingsService settings = Get.find<SettingsService>();
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: Text('${i18n("history")}(${settings.historyRooms.length}/20)'),
+        title: Obx(() => Text('${i18n("history")}(${SettingsService.to.history.historyRooms.v.length}/50)')),
         actions: [
           IconButton(
-            icon: Icon(Icons.delete_forever),
+            icon: const Icon(Icons.delete_forever),
             onPressed: () {
-              settings.historyRooms.clear();
-              onRefresh();
+              SettingsService.to.history.historyRooms.v = [];
             },
           ),
         ],
       ),
       body: Obx(() {
         const dense = true;
-        final rooms = settings.historyRooms.toList();
+        final rooms = SettingsService.to.history.historyRooms.v;
         return LayoutBuilder(
           builder: (context, constraint) {
             final width = constraint.maxWidth;
@@ -69,8 +71,8 @@ class HistoryPage extends GetView {
                       gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
                         lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                         crossAxisCount: crossAxisCount,
-                        crossAxisSpacing: settings.crossAxisSpacing.value,
-                        mainAxisSpacing: settings.mainAxisSpacing.value,
+                        crossAxisSpacing: SettingsService.to.theme.crossAxisSpacing.v,
+                        mainAxisSpacing: SettingsService.to.theme.mainAxisSpacing.v,
                       ),
                       itemCount: rooms.length,
                       itemBuilder: (context, index) => RoomCard(room: rooms[index], dense: dense),

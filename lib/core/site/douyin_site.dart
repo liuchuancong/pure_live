@@ -23,7 +23,6 @@ class DouyinSite implements LiveSite {
 
   @override
   LiveDanmaku getDanmaku() => DouyinDanmaku();
-  final SettingsService settings = Get.find<SettingsService>();
 
   /// 使用 QQBrowser User-Agent（参考 DouyinLiveRecorder）
   static const String kDefaultUserAgent =
@@ -47,17 +46,15 @@ class DouyinSite implements LiveSite {
 
   Future<Map<String, dynamic>> getRequestHeaders() async {
     try {
-      // 如果用户已设置 cookie，直接使用用户的 cookie
       if (cookie.isNotEmpty) {
         headers["cookie"] = cookie;
         return headers;
-      } else if (settings.douyinCookie.value.isNotEmpty) {
-        cookie = settings.douyinCookie.value;
+      } else if (SettingsService.to.cookieManager.douyinCookie.v.isNotEmpty) {
+        cookie = SettingsService.to.cookieManager.douyinCookie.v;
         headers["cookie"] = cookie;
         return headers;
       }
 
-      // 使用默认的 ttwid cookie（只需要 ttwid 即可获取所有画质）
       headers["cookie"] = kDefaultCookie;
       return headers;
     } catch (e) {

@@ -11,8 +11,6 @@ import 'package:pure_live/common/global/platform_utils.dart';
 class FvpAdapter implements UnifiedPlayer {
   VideoPlayerController? _controller;
 
-  final SettingsService settings = Get.find<SettingsService>();
-
   bool _initialized = false;
   bool _disposed = false;
   String? _currentUrl;

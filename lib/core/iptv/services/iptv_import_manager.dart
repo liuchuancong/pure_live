@@ -341,14 +341,12 @@ class IptvImportManager {
       if (isHot && await savedFile.exists()) await savedFile.delete();
       await file.copy(savedFile.path);
       await db.deleteProviderAndChannels(providerId);
-
-      final settings = Get.find<SettingsService>();
       await db.upsertProvider(
         database.ProvidersCompanion.insert(
           id: providerId,
           name: providerName.trim(),
           type: ext.replaceAll('.', ''),
-          isAutoUpdate: drift.Value(url.isNotEmpty ? settings.isAutoSyncEnabled.value : false),
+          isAutoUpdate: drift.Value(url.isNotEmpty ? SettingsService.to.iptv.isAutoSyncEnabled.v : false),
           url: drift.Value<String?>(url.isNotEmpty ? url : savedFile.path),
         ),
       );
@@ -379,7 +377,7 @@ class IptvImportManager {
     await _mappingLock.synchronized(() async {
       try {
         final db = Get.find<DbService>().db;
-        final String currentEpgSourceId = Get.find<SettingsService>().selectedSourceId.value;
+        final String currentEpgSourceId = SettingsService.to.iptv.selectedSourceId.v;
         if (currentEpgSourceId.isEmpty) return;
         final channels = await db.getChannelsForProvider(providerId);
         final epgChannels = await db.getEpgChannelsForSource(currentEpgSourceId);

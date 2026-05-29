@@ -17,7 +17,6 @@ class IptvPage extends StatefulWidget {
 
 class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final settings = Get.find<SettingsService>();
 
   final RxList<database.Provider> playlists = <database.Provider>[].obs;
   final RxList<database.EpgSource> epgSources = <database.EpgSource>[].obs;
@@ -43,10 +42,10 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
     epgSources.value = await db.getAllEpgSources();
     playlists.value = await db.getAllProviders();
 
-    if (epgSources.isNotEmpty && settings.selectedSourceId.value.isEmpty) {
+    if (epgSources.isNotEmpty && SettingsService.to.iptv.selectedSourceId.v.isEmpty) {
       final activeSource = epgSources.first;
-      settings.selectedSourceId.value = activeSource.id;
-      settings.selectedSourceName.value = activeSource.name;
+      SettingsService.to.iptv.selectedSourceId.v = activeSource.id;
+      SettingsService.to.iptv.selectedSourceName.v = activeSource.name;
     }
   }
 
@@ -103,7 +102,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
                 final source = sources[index];
 
                 return Obx(() {
-                  final isSelected = settings.selectedSourceId.value == source.id;
+                  final isSelected = SettingsService.to.iptv.selectedSourceId.v == source.id;
 
                   return Card(
                     color: isSelected
@@ -113,10 +112,10 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
                     clipBehavior: Clip.antiAlias,
                     child: InkWell(
                       onTap: () {
-                        settings.selectedSourceId.value = source.id;
+                        SettingsService.to.iptv.selectedSourceId.v = source.id;
                         final selectedSource = sources.firstWhereOrNull((s) => s.id == source.id);
                         if (selectedSource != null) {
-                          settings.selectedSourceName.value = selectedSource.name;
+                          SettingsService.to.iptv.selectedSourceName.v = selectedSource.name;
                         }
                         Navigator.of(context).pop();
                         ToastUtil.show(i18n("epg_source_switched"));
@@ -196,18 +195,21 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
               icon: Remix.refresh_line,
               title: i18n("auto_sync_title"),
               subtitle: i18n("auto_sync_desc"),
-              value: settings.isAutoSyncEnabled,
+              value: SettingsService.to.iptv.isAutoSyncEnabled.v,
             ),
             Obx(() {
-              if (!settings.isAutoSyncEnabled.value) return const SizedBox.shrink();
+              if (!SettingsService.to.iptv.isAutoSyncEnabled.v) return const SizedBox.shrink();
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   context.buildTile(
                     icon: Remix.time_line,
                     title: i18n("sync_interval_title"),
-                    subtitle: i18n("sync_interval_hours", args: {"hour": "${settings.autoSyncHoursInterval.value}"}),
-                    onTap: () => _showIntervalSelectionMenu(context, settings),
+                    subtitle: i18n(
+                      "sync_interval_hours",
+                      args: {"hour": "${SettingsService.to.iptv.autoSyncHoursInterval.v}"},
+                    ),
+                    onTap: () => _showIntervalSelectionMenu(context),
                   ),
                 ],
               );
@@ -215,10 +217,10 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
             context.buildTile(
               icon: Remix.tv_line,
               title: i18n("custom_ua_title"),
-              subtitle: settings.customIptvUserAgent.value.length > 30
-                  ? "${settings.customIptvUserAgent.value.substring(0, 30)}..."
-                  : settings.customIptvUserAgent.value,
-              onTap: () => _showEditUserAgentDialog(context, settings),
+              subtitle: SettingsService.to.iptv.customIptvUserAgent.v.length > 30
+                  ? "${SettingsService.to.iptv.customIptvUserAgent.v.substring(0, 30)}..."
+                  : SettingsService.to.iptv.customIptvUserAgent.v,
+              onTap: () => _showEditUserAgentDialog(context),
             ),
           ]),
           const SizedBox(height: 20),
@@ -244,10 +246,10 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
               () => context.buildTile(
                 icon: Remix.tv_2_line,
                 title: i18n("active_epg_source"),
-                subtitle: settings.selectedSourceId.value.isEmpty
+                subtitle: SettingsService.to.iptv.selectedSourceId.v.isEmpty
                     ? i18n("please_select_epg_source")
-                    : settings.selectedSourceName.value,
-                subtitleColor: settings.selectedSourceId.value.isEmpty ? Colors.orange : null,
+                    : SettingsService.to.iptv.selectedSourceName.v,
+                subtitleColor: SettingsService.to.iptv.selectedSourceId.v.isEmpty ? Colors.orange : null,
                 onTap: () => _showSourceSelectionDialog(),
               ),
             ),
@@ -258,8 +260,8 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
     );
   }
 
-  void _showEditUserAgentDialog(BuildContext context, SettingsService settings) {
-    final controller = TextEditingController(text: settings.customIptvUserAgent.value);
+  void _showEditUserAgentDialog(BuildContext context) {
+    final controller = TextEditingController(text: SettingsService.to.iptv.customIptvUserAgent.v);
     final RxDouble customInputHeight = 100.0.obs;
 
     showDialog(
@@ -370,7 +372,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
                   ),
                   onPressed: () {
                     final trimmedValue = controller.text.trim();
-                    settings.customIptvUserAgent.value = trimmedValue;
+                    SettingsService.to.iptv.customIptvUserAgent.v = trimmedValue;
                     Navigator.of(context).pop();
                     ToastUtil.show(i18n("settings_saved"));
                   },
@@ -384,7 +386,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
     );
   }
 
-  void _showIntervalSelectionMenu(BuildContext context, SettingsService settings) {
+  void _showIntervalSelectionMenu(BuildContext context) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -414,7 +416,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
                 color: Colors.transparent,
                 child: Obx(() {
                   // 💡 判定当前小时数是否处于被激活状态
-                  final bool isSelected = settings.autoSyncHoursInterval.value == hours;
+                  final bool isSelected = SettingsService.to.iptv.autoSyncHoursInterval.v == hours;
 
                   return ListTile(
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -432,7 +434,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
                       ),
                     ),
                     onTap: () {
-                      settings.autoSyncHoursInterval.value = hours;
+                      SettingsService.to.iptv.autoSyncHoursInterval.v = hours;
 
                       Navigator.of(context).pop();
                       ToastUtil.show(i18n("settings_saved"));

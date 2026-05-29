@@ -75,8 +75,8 @@ class _PopularGridViewState extends State<PopularGridView> {
                     gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
                       lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                       crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: controller.settings.crossAxisSpacing.value,
-                      mainAxisSpacing: controller.settings.mainAxisSpacing.value,
+                      crossAxisSpacing: SettingsService.to.theme.crossAxisSpacing.v,
+                      mainAxisSpacing: SettingsService.to.theme.mainAxisSpacing.v,
                     ),
                     itemCount: controller.list.length,
                     itemBuilder: (context, index) => RoomCard(room: controller.list[index], dense: true),

@@ -11,7 +11,7 @@ class FavoritePage extends GetView<FavoriteController> {
       builder: (context, constraint) {
         return Obx(() {
           bool showAction = Get.width <= 680;
-          final int menuCount = Get.find<SettingsService>().savedMenuIds.length;
+          final int menuCount = SettingsService.to.app.savedMenuIds.v.length;
           final availableSitesList = Sites().availableSites(containsAll: true);
 
           return Scaffold(
@@ -79,7 +79,7 @@ class _RoomGridView extends GetView<FavoriteController> {
 
   final String site;
   final bool isOnline;
-  final dense = Get.find<SettingsService>().enableDenseFavorites.value;
+  final dense = SettingsService.to.app.enableDenseFavorites.v;
   final offlineRefreshController = EasyRefreshController(controlFinishRefresh: true, controlFinishLoad: true);
 
   Future onRefresh() async {
@@ -167,7 +167,6 @@ class _RoomGridView extends GetView<FavoriteController> {
                 ),
               );
             }),
-
             Expanded(
               child: Obx(() {
                 final baseRooms = isOnline ? controller.onlineRooms : controller.offlineRooms;
@@ -186,47 +185,33 @@ class _RoomGridView extends GetView<FavoriteController> {
                           )
                           .toList();
 
-                //  修改后：
                 if (controller.isLoading.value && baseRooms.isEmpty && controller.selectedTagId.value == 'ALL') {
                   return AppStatusView(type: AppStatusType.loading, title: i18n('refresh_loading'), subtitle: '');
+                }
+
+                if (displayRooms.isEmpty) {
+                  return EmptyView(
+                    icon: Icons.live_tv_outlined,
+                    title: i18n("empty_favorite_title"),
+                    subtitle: i18n("empty_favorite_subtitle"),
+                  );
                 }
 
                 return EasyRefresh(
                   controller: currentRefreshController,
                   onRefresh: onRefresh,
-                  onLoad: () {
-                    currentRefreshController.finishLoad(isOnline ? IndicatorResult.success : IndicatorResult.noMore);
-                  },
-                  child: displayRooms.isNotEmpty
-                      ? WaterfallFlow.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-                          controller: ScrollController(),
-                          gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
-                            lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
-                            crossAxisCount: crossAxisCount,
-                            crossAxisSpacing: controller.settings.crossAxisSpacing.value,
-                            mainAxisSpacing: controller.settings.mainAxisSpacing.value,
-                            closeToTrailing: false,
-                          ),
-                          itemCount: displayRooms.length,
-                          itemBuilder: (context, index) => RoomCard(room: displayRooms[index], dense: dense),
-                        )
-                      : ListView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          children: [
-                            SizedBox(
-                              height: constraint.maxHeight * 0.8,
-                              child: AppStatusView(
-                                type: AppStatusType.empty,
-                                icon: Icons.favorite_rounded,
-                                title: i18n(isOnline ? "empty_favorite_online_title" : "empty_favorite_offline_title"),
-                                subtitle: i18n(
-                                  isOnline ? "empty_favorite_online_subtitle" : "empty_favorite_offline_subtitle",
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                  child: WaterfallFlow.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      crossAxisSpacing: SettingsService.to.theme.crossAxisSpacing.v,
+                      mainAxisSpacing: SettingsService.to.theme.mainAxisSpacing.v,
+                    ),
+                    itemCount: displayRooms.length,
+                    itemBuilder: (context, index) {
+                      return RoomCard(room: displayRooms[index], dense: dense);
+                    },
+                  ),
                 );
               }),
             ),

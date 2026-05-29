@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:pure_live/get/get.dart';
 import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/services/settings_service.dart';
@@ -23,10 +22,10 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
   bool _isMouseInBar = false;
   Timer? _hideTimer;
   StreamSubscription? _volumeListener; // 监听全局音量变化
-
+  StreamSubscription? _mobileVolWorker;
+  StreamSubscription? _desktopVolWorker;
   static const double _barHeight = 150.0;
   static const double _barWidth = 44.0;
-  final SettingsService settings = Get.find<SettingsService>();
 
   VideoController get controller => widget.controller;
 
@@ -41,29 +40,25 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
   void dispose() {
     _hideTimer?.cancel();
     _volumeListener?.cancel();
+    _mobileVolWorker?.cancel();
+    _desktopVolWorker?.cancel();
     _removeOverlay();
     super.dispose();
   }
 
   void _listenGlobalVolume() {
-    _volumeListener = settings.globalVolumeMute.listen((_) {
-      _updateVolumeFromGlobal();
-    });
-    _volumeListener = settings.defaultMobileVolume.listen((_) {
-      _updateVolumeFromGlobal();
-    });
-    _volumeListener = settings.defaultDesktopVolume.listen((_) {
-      _updateVolumeFromGlobal();
-    });
+    final v = SettingsService.to.vol;
+    _volumeListener = v.globalVolumeMute.rx.stream.listen((_) => _updateVolumeFromGlobal());
+    _mobileVolWorker = v.defaultMobileVolume.rx.stream.listen((_) => _updateVolumeFromGlobal());
+    _desktopVolWorker = v.defaultDesktopVolume.rx.stream.listen((_) => _updateVolumeFromGlobal());
   }
 
   void _updateVolumeFromGlobal() {
+    final v = SettingsService.to.vol;
     setState(() {
-      double platformVolume = PlatformUtils.isMobile
-          ? settings.defaultMobileVolume.value
-          : settings.defaultDesktopVolume.value;
+      double platformVolume = PlatformUtils.isMobile ? v.defaultMobileVolume.v : v.defaultDesktopVolume.v;
 
-      if (settings.globalVolumeMute.value) {
+      if (v.globalVolumeMute.v) {
         _lastVolume = _volume;
         _volume = 0.0;
       } else {
@@ -72,7 +67,6 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
       }
     });
 
-    // 应用到播放器
     controller.setVolume(_volume);
     _overlayEntry?.markNeedsBuild();
   }

@@ -44,7 +44,7 @@ class AppInitializer {
     try {
       await Hive.initFlutter(hiveDir.path);
       await HivePrefUtil.init();
-      InitialServices.initServices();
+      await InitialServices.init();
     } catch (e) {
       log("Hive Init Error: $e");
       exit(0);
@@ -77,7 +77,7 @@ class AppInitializer {
 
     if (PlatformUtils.isDesktopNotMac) {
       if (instanceId.isEmpty) {
-        await Get.find<SettingsService>().setupLaunchAtStartup();
+        await SettingsService.to.startup.setupLaunchAtStartup();
       }
     }
     _isInitialized = true;

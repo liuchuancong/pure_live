@@ -22,7 +22,6 @@ class BiliBiliSite implements LiveSite {
   static int userId = 0;
   @override
   LiveDanmaku getDanmaku() => BiliBiliDanmaku();
-  final SettingsService settings = Get.find<SettingsService>();
 
   static const String kDefaultUserAgent =
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36";
@@ -385,7 +384,12 @@ class BiliBiliSite implements LiveSite {
         ),
       );
     } catch (e) {
-      LiveRoom liveRoom = settings.getLiveRoomByRoomId(roomId, platform);
+      LiveRoom liveRoom =
+          SettingsService.to.fav.favoriteRooms.v.firstWhereOrNull(
+            (r) => r.roomId == roomId && r.platform == platform,
+          ) ??
+          LiveRoom(roomId: roomId, platform: platform);
+
       liveRoom.liveStatus = LiveStatus.offline;
       liveRoom.status = false;
       return liveRoom;

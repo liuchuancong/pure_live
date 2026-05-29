@@ -27,8 +27,8 @@ class _VideoPlayerState extends State<VideoPlayer> with WidgetsBindingObserver {
   Widget _buildVideo() {
     return Obx(
       () => GlobalPlayerService.instance.playerManager.getVideoWidget(
-        controller.settings.videoFitIndex.value,
-        fitList: controller.settings.videofitArrary,
+        SettingsService.to.player.videoFitIndex.v,
+        fitList: SettingsService.to.player.videoFitArray,
         controls: VideoControllerPanel(controller: controller),
       ),
     );
@@ -38,11 +38,10 @@ class _VideoPlayerState extends State<VideoPlayer> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    final settingsService = Get.find<SettingsService>();
     final player = GlobalPlayerService.instance.playerManager;
 
     if (state == AppLifecycleState.paused) {
-      if (!settingsService.enableBackgroundPlay.value) {
+      if (!SettingsService.to.app.enableBackgroundPlay.v) {
         if (player.isPlayingNow) {
           _isPausedByLifecycle = true;
           player.pause();
@@ -53,7 +52,7 @@ class _VideoPlayerState extends State<VideoPlayer> with WidgetsBindingObserver {
     } else if (state == AppLifecycleState.resumed) {
       if (_isPausedByLifecycle) {
         player.resume();
-        _isPausedByLifecycle = false; // 重置标记
+        _isPausedByLifecycle = false;
       }
     }
   }

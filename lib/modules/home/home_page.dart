@@ -22,7 +22,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin {
   Timer? _debounceTimer;
   final FavoriteController favoriteController = Get.find<FavoriteController>();
-  final SettingsService settings = Get.find<SettingsService>();
+
   int _selectedIndex = 0;
 
   final Map<HomeMenu, Widget> _pageMap = const {
@@ -57,13 +57,16 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
       }
     });
 
-    ever(settings.savedMenuIds, (List<String> value) {
-      if (mounted && value.isNotEmpty) {
-        final currentMenuId = HomeMenu.values[_selectedIndex].id;
-        if (!value.contains(currentMenuId)) {
-          final firstMenu = HomeMenu.fromId(value.first);
-          if (firstMenu != null) {
-            onDestinationSelected(firstMenu.index);
+    ever(SettingsService.to.app.savedMenuIds.rx, (v) {
+      if (mounted) {
+        final List<String> value = List<String>.from(v as List);
+        if (value.isNotEmpty) {
+          final currentMenuId = HomeMenu.values[_selectedIndex].id;
+          if (!value.contains(currentMenuId)) {
+            final firstMenu = HomeMenu.fromId(value.first);
+            if (firstMenu != null) {
+              onDestinationSelected(firstMenu.index);
+            }
           }
         }
       }
@@ -71,7 +74,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
   }
 
   void _syncInitialIndex() {
-    final activeIds = settings.savedMenuIds;
+    final activeIds = SettingsService.to.app.savedMenuIds.v;
     if (activeIds.isNotEmpty) {
       final firstMenu = HomeMenu.fromId(activeIds.first);
       if (firstMenu != null) {
@@ -113,7 +116,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
       ),
     );
     await VersionUtil().checkUpdate();
-    bool isHasNerVersion = settings.enableAutoCheckUpdate.value && VersionUtil.hasNewVersion();
+    bool isHasNerVersion = SettingsService.to.app.enableAutoCheckUpdate.v && VersionUtil.hasNewVersion();
     if (mounted) {
       if (overlay != null && isHasNerVersion) {
         WidgetsBinding.instance.addPostFrameCallback((_) => overlay.insert(entry));
@@ -140,7 +143,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
       child: LayoutBuilder(
         builder: (context, constraint) {
           return Obx(() {
-            final activeMenuIds = settings.savedMenuIds;
+            final activeMenuIds = SettingsService.to.app.savedMenuIds.v;
             if (activeMenuIds.isEmpty) return const Scaffold();
 
             final currentMenu = HomeMenu.values[_selectedIndex];

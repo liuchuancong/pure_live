@@ -71,9 +71,10 @@ class RoomCard extends StatelessWidget {
         ? Get.find<FavoriteController>()
         : Get.put(FavoriteController());
     final TagManagementController tagController = Get.find<TagManagementController>();
-    final SettingsService settings = Get.find<SettingsService>();
     final theme = Theme.of(context);
-    final bool isFollowed = settings.favoriteRooms.any((r) => r.platform == room.platform && r.roomId == room.roomId);
+    final bool isFollowed = SettingsService.to.fav.favoriteRooms.v.any(
+      (r) => r.platform == room.platform && r.roomId == room.roomId,
+    );
 
     Get.dialog(
       AlertDialog(
@@ -133,7 +134,7 @@ class RoomCard extends StatelessWidget {
                     theme,
                     anchorName: room.nick ?? '',
                     onConfirm: () {
-                      settings.addRoom(room);
+                      SettingsService.to.fav.addRoom(room);
                       _showTagSelectionGridModal(context, theme, favoriteController, tagController);
                     },
                   );
@@ -760,15 +761,14 @@ class FollowButton extends StatefulWidget {
 }
 
 class _FollowButtonState extends State<FollowButton> {
-  final settings = Get.find<SettingsService>();
-  late bool isFavorite = settings.isFavorite(widget.room);
+  late bool isFavorite = SettingsService.to.fav.isFavorite(widget.room);
 
   @override
   Widget build(BuildContext context) {
     return FilledButton.tonal(
       onPressed: () {
         setState(() => isFavorite = !isFavorite);
-        isFavorite ? settings.addRoom(widget.room) : settings.removeRoom(widget.room);
+        isFavorite ? SettingsService.to.fav.addRoom(widget.room) : SettingsService.to.fav.removeRoom(widget.room);
         Navigator.of(Get.context!).pop();
       },
       style: FilledButton.styleFrom(

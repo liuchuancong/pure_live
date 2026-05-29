@@ -10,6 +10,7 @@ import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:pure_live/core/danmaku/huya_danmaku.dart';
+import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/modules/live_play/load_type.dart';
 import 'package:pure_live/core/danmaku/douyin_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
@@ -31,8 +32,6 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   late Site currentSite;
   late LiveDanmaku liveDanmaku;
   late TabController tabController;
-
-  final settings = Get.find<SettingsService>();
 
   final List<String> tabs = [i18n('danmaku_list'), i18n('danmaku_settings'), i18n('block_list')];
 
@@ -96,9 +95,8 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   void _initState() {
     detail.value = room;
     currentSite = Sites.of(site);
-    isCurrentRoomAudioOnly.value = settings.audioOnly.value;
-
-    if (settings.enableDanmakuDisplay.value) {
+    isCurrentRoomAudioOnly.value = SettingsService.to.player.audioOnly.v;
+    if (SettingsService.to.danmaku.enableDanmakuDisplay.v) {
       liveDanmaku = currentSite.liveSite.getDanmaku();
     }
   }
@@ -178,7 +176,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     if (Platform.isAndroid) {
       BackButtonInterceptor.removeByName("live_play_page");
     }
-    if (settings.enableDanmakuDisplay.value) {
+    if (SettingsService.to.danmaku.enableDanmakuDisplay.v) {
       liveDanmaku.stop();
     }
   }
@@ -228,11 +226,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     if (liveStatus) {
       isLiving.value = true;
       await getPlayQualites();
-
-      settings.addRoomToHistory(liveRoom);
-
+      SettingsService.to.history.addRoomToHistory(liveRoom);
       const except = ['kuaishou', 'iptv', 'cc'];
-      if (!except.contains(liveRoom.platform) && settings.enableDanmakuDisplay.value) {
+      if (!except.contains(liveRoom.platform) && SettingsService.to.danmaku.enableDanmakuDisplay.v) {
         liveDanmaku.stop();
         initDanmau();
         liveDanmaku.start(liveRoom.danmakuData);
@@ -261,16 +257,16 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     success.value = false;
     isLiving.value = true;
     messages.clear();
-    if (settings.enableDanmakuDisplay.value) {
+    if (SettingsService.to.danmaku.enableDanmakuDisplay.v) {
       liveDanmaku.stop();
     }
     await videoController.value?.destory();
     videoController.value = null;
     hasUseDefaultResolution = false;
-    isCurrentRoomAudioOnly.value = settings.audioOnly.value;
+    isCurrentRoomAudioOnly.value = SettingsService.to.player.audioOnly.v;
     detail.value = newRoom;
     currentSite = Sites.of(newRoom.platform!);
-    if (settings.enableDanmakuDisplay.value) {
+    if (SettingsService.to.danmaku.enableDanmakuDisplay.v) {
       liveDanmaku = currentSite.liveSite.getDanmaku();
     }
     EmojiManager().preload(newRoom.platform!);
@@ -294,7 +290,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     playUrls.value = [link];
 
     setPlayer();
-    if (settings.enableDanmakuDisplay.value) {
+    if (SettingsService.to.danmaku.enableDanmakuDisplay.v) {
       liveDanmaku.stop();
     }
   }
@@ -321,7 +317,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   // =========================================================
   void initDanmau() {
     if (!_hasRoom) return;
-    if (!settings.enableDanmakuDisplay.value) {
+    if (!SettingsService.to.danmaku.enableDanmakuDisplay.v) {
       return;
     }
     if (detail.value!.isRecord == true) {
@@ -334,7 +330,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
     liveDanmaku.onMessage = (msg) {
       if (msg.type == LiveMessageType.chat) {
-        if (settings.shieldList.every((e) => !msg.message.contains(e))) {
+        if (SettingsService.to.fav.shieldList.v.every((e) => !msg.message.contains(e))) {
           _addMessage(msg);
           if (rxVideoCtrl.value != null) {
             rxVideoCtrl.value!.sendDanmaku(msg);
@@ -372,7 +368,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
     if (currentSite.id == Sites.bilibiliSite) {
       headers = {
-        "cookie": settings.bilibiliCookie.value,
+        "cookie": SettingsService.to.cookieManager.bilibiliCookie.v,
         "authority": "api.bilibili.com",
         "accept":
             "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -396,8 +392,8 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
       final ua = await HuyaSite().getHuYaUA();
       headers = {"user-agent": ua, "origin": "https://www.huya.com"};
     } else if (currentSite.id == Sites.iptvSite) {
-      if (settings.customIptvUserAgent.value.isNotEmpty) {
-        headers = {"user-agent": settings.customIptvUserAgent.value};
+      if (SettingsService.to.iptv.customIptvUserAgent.v.isNotEmpty) {
+        headers = {"user-agent": SettingsService.to.iptv.customIptvUserAgent.v};
       }
     }
 
@@ -407,7 +403,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
       room: detail.value!,
       playUrs: playUrls.value,
       datasource: _playUrlSafe,
-      allowScreenKeepOn: settings.enableScreenKeepOn.value,
+      allowScreenKeepOn: SettingsService.to.app.enableScreenKeepOn.v,
       headers: headers,
       qualiteName: _qualitySafe.quality,
       currentLineIndex: currentLineIndex.value,
@@ -452,11 +448,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
         final List<ConnectivityResult> connectivityResult = await (Connectivity().checkConnectivity());
 
         if (connectivityResult.contains(ConnectivityResult.mobile)) {
-          // 包含移动网络逻辑
-          userPrefer = settings.preferResolutionCellular.value;
+          userPrefer = SettingsService.to.player.preferResolutionCellular.v;
         } else {
-          // 其他（WiFi、以太网等）
-          userPrefer = settings.preferResolution.value;
+          userPrefer = SettingsService.to.player.preferResolution.v;
         }
 
         List<String> availableQualities = playQualites.map((e) => e.quality).toList();
@@ -469,8 +463,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
           getPlayUrl();
           return;
         }
-
-        List<String> systemResolutions = settings.resolutionsList;
+        List<String> systemResolutions = PlayerConsts.resolutions;
         int preferLevel = systemResolutions.indexOf(userPrefer);
 
         if (preferLevel == -1) preferLevel = 0;

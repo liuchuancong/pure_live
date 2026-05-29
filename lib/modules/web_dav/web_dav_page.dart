@@ -4,7 +4,7 @@ import 'package:webdav_client/webdav_client.dart' as webdav;
 import 'package:pure_live/modules/web_dav/webdav_config.dart';
 import 'package:pure_live/modules/web_dav/web_dav_controller.dart';
 
-class WebDavPage extends GetView<WebDavController> {
+class WebDavPage extends GetView<WebDavPageController> {
   WebDavPage({super.key});
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();

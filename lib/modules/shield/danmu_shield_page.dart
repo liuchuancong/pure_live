@@ -45,7 +45,7 @@ class DanmuShieldPage extends GetView<DanmuShieldController> {
           ),
           const SizedBox(height: 24),
           Obx(() {
-            final count = controller.settingsController.shieldList.length;
+            final count = SettingsService.to.fav.shieldList.v.length;
             return Padding(
               padding: const EdgeInsets.only(left: 4, bottom: 12),
               child: Text(
@@ -58,7 +58,7 @@ class DanmuShieldPage extends GetView<DanmuShieldController> {
             );
           }),
           Obx(() {
-            final list = controller.settingsController.shieldList;
+            final list = SettingsService.to.fav.shieldList.v;
 
             if (list.isEmpty) {
               return Padding(

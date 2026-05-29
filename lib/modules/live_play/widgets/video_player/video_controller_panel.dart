@@ -1174,7 +1174,7 @@ class BottomActionBar extends StatelessWidget {
                             PlayPauseButton(controller: controller),
                             RefreshButton(controller: controller),
                             FavoriteButton(controller: controller),
-                            if (controller.settings.enableDanmakuDisplay.value) ...[
+                            if (SettingsService.to.danmaku.enableDanmakuDisplay.v) ...[
                               DanmakuButton(controller: controller),
                               SettingsButton(controller: controller),
                             ],
@@ -1402,9 +1402,8 @@ class FavoriteButton extends StatefulWidget {
 }
 
 class _FavoriteButtonState extends State<FavoriteButton> {
-  final settings = Get.find<SettingsService>();
   StreamSubscription<dynamic>? subscription;
-  late bool isFavorite = settings.isFavorite(widget.controller.room);
+  late bool isFavorite = SettingsService.to.fav.isFavorite(widget.controller.room);
 
   @override
   void initState() {
@@ -1426,9 +1425,9 @@ class _FavoriteButtonState extends State<FavoriteButton> {
       onTap: () {
         widget.controller.enableController();
         if (isFavorite) {
-          settings.removeRoom(widget.controller.room);
+          SettingsService.to.fav.removeRoom(widget.controller.room);
         } else {
-          settings.addRoom(widget.controller.room);
+          SettingsService.to.fav.addRoom(widget.controller.room);
         }
         setState(() => isFavorite = !isFavorite);
         EventBus.instance.emit('changeFavorite', true);
@@ -1493,28 +1492,25 @@ class _VideoFitSettingState extends State<VideoFitSetting> {
   VideoController get controller => widget.controller;
   @override
   Widget build(BuildContext context) {
-    List<String> descs = AppConsts().videoFitType.map((e) => i18n(e['desc'])).toList();
-    List<BoxFit> attrs = AppConsts().videoFitList;
+    final descs = AppConsts().videoFitType.map((e) => i18n(e['desc'])).toList();
+    final attrs = AppConsts().videoFitList;
+    final player = SettingsService.to.player;
+
     return GestureDetector(
       onTap: () {
         controller.enableController();
-        var currentIndex = controller.settings.videoFitIndex.value;
-        currentIndex++;
-        if (currentIndex == attrs.length) {
+        int currentIndex = player.videoFitIndex.v + 1;
+        if (currentIndex >= attrs.length) {
           currentIndex = 0;
         }
-        controller.settings.videoFitIndex.value = currentIndex;
+        player.videoFitIndex.v = currentIndex;
         controller.setVideoFit(currentIndex);
-        setState(() {});
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 2),
         alignment: Alignment.center,
         height: 25,
-        child: Text(
-          descs[controller.settings.videoFitIndex.value],
-          style: AppTextStyles.t15.copyWith(color: Colors.white),
-        ),
+        child: Obx(() => Text(descs[player.videoFitIndex.v], style: AppTextStyles.t15.copyWith(color: Colors.white))),
       ),
     );
   }

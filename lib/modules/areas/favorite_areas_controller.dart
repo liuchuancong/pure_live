@@ -2,7 +2,7 @@ import 'package:pure_live/common/index.dart';
 
 class FavoriteAreasController extends GetxController with GetTickerProviderStateMixin {
   late TabController tabSiteController;
-  final settings = Get.find<SettingsService>();
+
   var tabSiteIndex = 0.obs;
   var favoriteAreas = [].obs;
   @override
@@ -11,7 +11,7 @@ class FavoriteAreasController extends GetxController with GetTickerProviderState
     tabSiteController.addListener(() {
       tabSiteIndex.value = tabSiteController.index;
     });
-    favoriteAreas.value = settings.favoriteAreas.value;
+    favoriteAreas.value = SettingsService.to.fav.favoriteAreas.v;
     super.onInit();
   }
 }

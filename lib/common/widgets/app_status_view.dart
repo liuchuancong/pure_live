@@ -48,8 +48,7 @@ class _AppStatusViewState extends State<AppStatusView> with SingleTickerProvider
   void initState() {
     super.initState();
     _rotateController = AnimationController(duration: const Duration(milliseconds: 1000), vsync: this);
-    final settings = Get.find<SettingsService>();
-    if (widget.type == AppStatusType.loading && settings.loadingStyle.value == 'default') {
+    if (widget.type == AppStatusType.loading && SettingsService.to.theme.loadingStyle.v == 'default') {
       _rotateController.repeat();
     }
   }
@@ -57,12 +56,11 @@ class _AppStatusViewState extends State<AppStatusView> with SingleTickerProvider
   @override
   void didUpdateWidget(AppStatusView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final settings = Get.find<SettingsService>();
     if (widget.type == AppStatusType.loading &&
-        settings.loadingStyle.value == 'default' &&
+        SettingsService.to.theme.loadingStyle.v == 'default' &&
         !_rotateController.isAnimating) {
       _rotateController.repeat();
-    } else if ((widget.type != AppStatusType.loading || settings.loadingStyle.value != 'default') &&
+    } else if ((widget.type != AppStatusType.loading || SettingsService.to.theme.loadingStyle.v != 'default') &&
         _rotateController.isAnimating) {
       _rotateController.stop();
     }
@@ -434,9 +432,8 @@ class _AppStatusViewState extends State<AppStatusView> with SingleTickerProvider
 
   Widget _buildLoadingWidget(String style) {
     final theme = Theme.of(context);
-    final settings = Get.find<SettingsService>();
     Color parsedColor;
-    final hexColor = settings.loadingStyleColorSwitch.value;
+    final hexColor = SettingsService.to.theme.loadingStyleColorSwitch.v;
     if (hexColor.isNotEmpty) {
       parsedColor = HexColor(hexColor);
     } else {
@@ -485,8 +482,7 @@ class _AppStatusViewState extends State<AppStatusView> with SingleTickerProvider
     if (widget.type == AppStatusType.loading) {
       return Center(
         child: Obx(() {
-          final settings = Get.find<SettingsService>();
-          return _buildLoadingWidget(settings.loadingStyle.value);
+          return _buildLoadingWidget(SettingsService.to.theme.loadingStyle.v);
         }),
       );
     }

@@ -5,7 +5,6 @@ import 'package:pure_live/modules/tags/live_tag.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
 
 class FavoriteController extends GetxController with GetTickerProviderStateMixin {
-  final SettingsService settings = Get.find<SettingsService>();
   final TagManagementController tagController = Get.find<TagManagementController>();
 
   late TabController tabController;
@@ -23,6 +22,7 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
   final selectedTagId = 'ALL'.obs;
   final visibleTags = <LiveTag>[].obs;
   final isLoading = true.obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -31,7 +31,7 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
 
     syncRooms();
 
-    debounce(settings.favoriteRooms, (rooms) => syncRooms(), time: const Duration(milliseconds: 1000));
+    debounce(SettingsService.to.fav.favoriteRooms.rx, (rooms) => syncRooms(), time: const Duration(milliseconds: 1000));
 
     ever(selectedTagId, (_) => syncRooms());
     ever(tagController.tags, (_) => syncRooms());
@@ -50,8 +50,11 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
       tabOnlineIndex.value = tabController.index;
     });
 
-    if (settings.autoRefreshTime.value != 0) {
-      _autoRefreshTimer = Timer.periodic(Duration(minutes: settings.autoRefreshTime.value), (timer) => onRefresh());
+    if (SettingsService.to.app.autoRefreshTime.v != 0) {
+      _autoRefreshTimer = Timer.periodic(
+        Duration(minutes: SettingsService.to.app.autoRefreshTime.v),
+        (timer) => onRefresh(),
+      );
     }
     listenFavorite();
   }
@@ -103,7 +106,7 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
   void syncRooms() {
     onlineRooms.clear();
     offlineRooms.clear();
-    List<dynamic> roomsBase = List.from(settings.favoriteRooms);
+    List<dynamic> roomsBase = List.from(SettingsService.to.fav.favoriteRooms.v);
     onlineRooms.addAll(roomsBase.where((room) => room.liveStatus == LiveStatus.live));
     offlineRooms.addAll(roomsBase.where((room) => room.liveStatus != LiveStatus.live));
     final currentAvailableSites = Sites().availableSites(containsAll: true);
@@ -169,15 +172,13 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
   }
 
   Future<bool> onRefresh() async {
-    if (settings.favoriteRooms.value.isEmpty) {
+    if (SettingsService.to.fav.favoriteRooms.v.isEmpty) {
       isLoading.value = false;
       refreshController.finishRefresh(IndicatorResult.none);
       return false;
     }
 
-    if (settings.favoriteRooms.value.isEmpty) return false;
-
-    var futures = settings.favoriteRooms.value
+    var futures = SettingsService.to.fav.favoriteRooms.v
         .where((room) => room.platform!.isNotEmpty)
         .map((room) => Sites.of(room.platform!).liveSite.getRoomDetail(roomId: room.roomId!, platform: room.platform!))
         .toList();
@@ -188,7 +189,12 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
           List<LiveRoom> rooms = await Future.wait(futures.sublist(i, i + 5 > futures.length ? futures.length : i + 5));
           for (var room in rooms) {
             try {
-              settings.updateRoom(room);
+              final list = List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
+              final index = list.indexWhere((e) => e.roomId == room.roomId && e.platform == room.platform);
+              if (index != -1) {
+                list[index] = room;
+                SettingsService.to.fav.favoriteRooms.v = list;
+              }
             } catch (e) {
               debugPrint('Error during refresh for a single request: $e');
             }

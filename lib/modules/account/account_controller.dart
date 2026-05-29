@@ -1,7 +1,7 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/utils.dart';
 import 'package:pure_live/routes/app_navigation.dart';
-import 'package:pure_live/common/services/bilibili_account_service.dart';
+import 'package:pure_live/common/services/settings/bilibili_account_service.dart';
 
 class AccountController extends GetxController {
   void bilibiliTap() async {

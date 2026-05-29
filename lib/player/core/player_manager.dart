@@ -227,8 +227,7 @@ class PlayerManager {
       lineManager.reset();
     }
     if (_currentPlayer == null || _runtimeEngine == null) {
-      final settings = Get.find<SettingsService>();
-      final String savedKey = settings.videoPlayerKey.value;
+      final String savedKey = SettingsService.to.player.videoPlayerKey.v;
       final String validKey = PlayerConsts.engines.containsKey(savedKey) ? savedKey : PlayerConsts.defaultKey;
       _defaultEngine = PlayerConsts.engines[validKey]!;
 
@@ -919,10 +918,9 @@ class PlayerManager {
   // =========================
 
   Future<void> close() async {
-    final settings = Get.find<SettingsService>();
     await LiveAudioService.stop();
     audioLoader.stop();
-    settings.useHardStopOnExit.value ? await hardDispose() : await softStop();
+    SettingsService.to.player.useHardStopOnExit.v ? await hardDispose() : await softStop();
   }
 
   Future<void> softStop() async {

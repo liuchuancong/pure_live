@@ -36,8 +36,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> with DesktopWindowMixin {
-  final settings = Get.find<SettingsService>();
-
   @override
   void initState() {
     super.initState();
@@ -48,7 +46,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
     initGlopalPlayer();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (settings.enableBackgroundPlay.value) {
+      if (SettingsService.to.app.enableBackgroundPlay.v) {
         bool hasPermission = await LiveAudioService.requestPlatformPermissions();
         if (!hasPermission) {
           ToastUtil.show(i18n("background_play_permission_tip"));
@@ -58,11 +56,8 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
   }
 
   Future<void> initGlopalPlayer() async {
-    final settings = Get.find<SettingsService>();
-
-    final String savedKey = settings.videoPlayerKey.value;
+    final String savedKey = SettingsService.to.player.videoPlayerKey.v;
     final String validKey = PlayerConsts.engines.containsKey(savedKey) ? savedKey : PlayerConsts.defaultKey;
-
     final PlayerEngine targetEngine = PlayerConsts.engines[validKey]!;
     final PlayerEngine defaultEngine;
 
@@ -111,14 +106,14 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
     return DynamicColorBuilder(
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
         return Obx(() {
-          final themeColor = HexColor(settings.themeColorSwitch.value);
-          final showSplashPage = settings.showSplashPage.value;
-          final currentFactor = settings.textScaleFactor.value;
+          final themeColor = HexColor(SettingsService.to.theme.themeColorSwitch.v);
+          final showSplashPage = SettingsService.to.app.showSplashPage.v;
+          final currentFactor = SettingsService.to.font.textScaleFactor.v;
 
           ThemeData lightTheme;
           ThemeData darkTheme;
 
-          if (settings.enableDynamicTheme.value && lightDynamic != null && darkDynamic != null) {
+          if (SettingsService.to.theme.enableDynamicTheme.v && lightDynamic != null && darkDynamic != null) {
             lightTheme = MyTheme(colorScheme: lightDynamic.harmonized()).lightThemeData;
             darkTheme = MyTheme(colorScheme: darkDynamic.harmonized()).darkThemeData;
           } else {
@@ -130,7 +125,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
             title: i18n('app_name'),
             scrollBehavior: MyCustomScrollBehavior(),
             debugShowCheckedModeBanner: false,
-            themeMode: AppConsts.themeModes[settings.themeModeName.value]!,
+            themeMode: AppConsts.themeModes[SettingsService.to.theme.themeModeName.v]!,
             theme: lightTheme.copyWith(
               appBarTheme: const AppBarTheme(surfaceTintColor: Colors.transparent),
               pageTransitionsTheme: const PageTransitionsTheme(

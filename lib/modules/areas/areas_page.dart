@@ -12,7 +12,7 @@ class AreasPage extends GetView<AreasController> {
         return Obx(() {
           final availableSitesList = Sites().availableSites();
           if (availableSitesList.isEmpty) return const Scaffold();
-          final int menuCount = Get.find<SettingsService>().savedMenuIds.length;
+          final int menuCount = SettingsService.to.app.savedMenuIds.v.length;
           bool showAction = Get.width <= 680;
           return Scaffold(
             appBar: AppBar(

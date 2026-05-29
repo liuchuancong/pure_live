@@ -8,7 +8,6 @@ class NavigationSettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final settings = Get.find<SettingsService>();
 
     // 1. 定义所有菜单（固定不变）
     final allMenus = [HomeMenu.favorites, HomeMenu.popular, HomeMenu.areas, HomeMenu.record];
@@ -24,7 +23,7 @@ class NavigationSettingsPage extends StatelessWidget {
           context.buildGroupTitle(i18n("navigation_display_settings")),
           Obx(() {
             // 2. 关键：按 savedMenuIds 的顺序给 allMenus 排序
-            final savedOrder = settings.savedMenuIds;
+            final savedOrder = SettingsService.to.app.savedMenuIds.v;
             // 给每个菜单一个排序权重：在 savedMenuIds 里的位置，不在里面的排到最后
             final sortedMenus = List<HomeMenu>.from(allMenus);
             sortedMenus.sort((a, b) {
@@ -54,15 +53,15 @@ class NavigationSettingsPage extends StatelessWidget {
                 onReorderItem: (oldIndex, newIndex) {
                   if (newIndex > oldIndex) newIndex -= 1;
                   // 拖拽时直接更新 savedMenuIds
-                  final currentOrder = List<String>.from(settings.savedMenuIds);
+                  final currentOrder = List<String>.from(SettingsService.to.app.savedMenuIds.v);
                   final movedId = currentOrder.removeAt(oldIndex);
                   currentOrder.insert(newIndex, movedId);
-                  settings.savedMenuIds.value = currentOrder;
+                  SettingsService.to.app.savedMenuIds.v = currentOrder;
                 },
                 itemBuilder: (context, index) {
                   final menu = sortedMenus[index];
                   // 开关状态直接从 savedMenuIds 判断
-                  final isVisible = settings.savedMenuIds.contains(menu.id);
+                  final isVisible = SettingsService.to.app.savedMenuIds.v.contains(menu.id);
 
                   String titleText = "";
                   IconData menuIcon = Remix.question_line;
@@ -98,7 +97,7 @@ class NavigationSettingsPage extends StatelessWidget {
                           Switch(
                             value: isVisible,
                             activeThumbColor: theme.colorScheme.primary,
-                            onChanged: (value) => settings.toggleMenuVisibility(menu, value),
+                            onChanged: (value) => SettingsService.to.app.toggleMenuVisibility(menu, value),
                           ),
                           const SizedBox(width: 8),
                           ReorderableDragStartListener(

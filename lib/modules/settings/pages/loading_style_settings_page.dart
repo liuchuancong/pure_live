@@ -24,17 +24,17 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
   }
 
   Future<bool> colorPickerDialog() async {
-    final controller = Get.find<SettingsService>();
     final bool isZh = Get.locale?.languageCode == 'zh';
     return ColorPicker(
       color: HexColor(
-        controller.loadingStyleColorSwitch.value.isEmpty
+        SettingsService.to.theme.loadingStyleColorSwitch.v.isEmpty
             ? Theme.of(context).colorScheme.primary.hex
-            : controller.loadingStyleColorSwitch.value,
+            : SettingsService.to.theme.loadingStyleColorSwitch.v,
       ),
       onColorChanged: (Color color) {
-        controller.loadingStyleColorSwitch.value = color.hex;
+        SettingsService.to.theme.loadingStyleColorSwitch.v = color.hex;
       },
+
       width: 40,
       height: 40,
       borderRadius: 4,
@@ -53,7 +53,8 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
       colorCodeTextStyle: Theme.of(Get.context!).textTheme.bodyMedium,
       colorCodePrefixStyle: Theme.of(Get.context!).textTheme.bodySmall,
       selectedPickerTypeColor: Theme.of(Get.context!).colorScheme.primary,
-      customColorSwatchesAndNames: controller.colorsNameMap,
+      customColorSwatchesAndNames: AppConsts.colorsNameMap,
+
       pickerTypeLabels: <ColorPickerType, String>{
         ColorPickerType.primary: isZh ? "常用色" : "Primary",
         ColorPickerType.accent: isZh ? "鲜艳色" : "Accent",
@@ -427,7 +428,6 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
 
   @override
   Widget build(BuildContext context) {
-    final settings = Get.find<SettingsService>();
     final theme = Theme.of(context);
     final isZh = Get.locale?.languageCode == 'zh';
     final double screenWidth = MediaQuery.of(context).size.width;
@@ -455,8 +455,8 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
               icon: const Icon(Remix.arrow_go_back_line),
               tooltip: i18n("restore_default"),
               onPressed: () {
-                settings.loadingStyle.value = AppConsts.defaultLoadingStyleKey;
-                settings.loadingStyleColorSwitch.value = '';
+                SettingsService.to.theme.loadingStyle.v = AppConsts.defaultLoadingStyleKey;
+                SettingsService.to.theme.loadingStyleColorSwitch.v = '';
               },
             ),
           ),
@@ -482,9 +482,9 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
                         height: 28,
                         borderRadius: 6,
                         color: HexColor(
-                          settings.loadingStyleColorSwitch.value.isEmpty
+                          SettingsService.to.theme.loadingStyleColorSwitch.v.isEmpty
                               ? theme.colorScheme.primary.hex
-                              : settings.loadingStyleColorSwitch.value,
+                              : SettingsService.to.theme.loadingStyleColorSwitch.v,
                         ),
                         onSelectFocus: false,
                       ),
@@ -510,12 +510,12 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
                 final String displayName = isZh ? item['nameZh']! : item['nameEn']!;
 
                 return Obx(() {
-                  final bool isSelected = settings.loadingStyle.value == key;
-                  final String currentHex = settings.loadingStyleColorSwitch.value;
+                  final bool isSelected = SettingsService.to.theme.loadingStyle.v == key;
+                  final String currentHex = SettingsService.to.theme.loadingStyleColorSwitch.v;
                   final Color liveColor = currentHex.isEmpty ? theme.colorScheme.primary : HexColor(currentHex);
 
                   return InkWell(
-                    onTap: () => settings.loadingStyle.value = key,
+                    onTap: () => SettingsService.to.theme.loadingStyle.v = key,
                     borderRadius: BorderRadius.circular(16),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),

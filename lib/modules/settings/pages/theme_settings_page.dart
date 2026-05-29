@@ -37,7 +37,7 @@ class ThemeSettingsPage extends GetView<SettingsService> {
                   width: 28,
                   height: 28,
                   borderRadius: 6,
-                  color: HexColor(controller.themeColorSwitch.value),
+                  color: HexColor(SettingsService.to.theme.themeColorSwitch.v),
                   onSelectFocus: false,
                 ),
               ),
@@ -45,7 +45,7 @@ class ThemeSettingsPage extends GetView<SettingsService> {
             context.buildSwitchTile(
               title: i18n("enable_dynamic_color"),
               subtitle: i18n("enable_dynamic_color_subtitle"),
-              value: controller.enableDynamicTheme,
+              value: SettingsService.to.theme.enableDynamicTheme.v,
               icon: Remix.magic_line,
             ),
             context.buildTile(
@@ -54,7 +54,7 @@ class ThemeSettingsPage extends GetView<SettingsService> {
               subtitle: i18n("change_loading_style_subtitle"),
               onTap: () => Get.to(() => const LoadingStyleSettingsPage()),
               trailing: Obx(() {
-                final String currentKey = Get.find<SettingsService>().loadingStyle.value;
+                final String currentKey = SettingsService.to.theme.loadingStyle.v;
                 final bool isZh = Get.locale?.languageCode == 'zh';
                 final Map<String, String> currentItem = AppConsts.allStyles.firstWhere(
                   (item) => item['key'] == currentKey,
@@ -100,7 +100,7 @@ class ThemeSettingsPage extends GetView<SettingsService> {
               () => context.buildTile(
                 icon: Remix.font_color,
                 title: i18n("change_font_family"),
-                subtitle: "${i18n("current_font_prefix")}: ${controller.fontFamilyName.value}",
+                subtitle: "${i18n("current_font_prefix")}: ${SettingsService.to.font.fontFamilyName.v}",
                 onTap: () => Get.to(() => const FontFamilyManagerPage()),
               ),
             ),
@@ -130,7 +130,7 @@ class ThemeSettingsPage extends GetView<SettingsService> {
                         const SizedBox(height: 2),
                         Obx(
                           () => Text(
-                            "${i18n("current_scale")}: ${controller.textScaleFactor.value.toStringAsFixed(2)}",
+                            "${i18n("current_scale")}: ${SettingsService.to.font.textScaleFactor.v.toStringAsFixed(2)}",
                             style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
                           ),
                         ),
@@ -143,15 +143,15 @@ class ThemeSettingsPage extends GetView<SettingsService> {
 
             Obx(
               () => Slider(
-                value: controller.textScaleFactor.value,
+                value: SettingsService.to.font.textScaleFactor.v,
                 min: 0.85,
                 max: 1.35,
                 divisions: 10,
-                label: controller.textScaleFactor.value.toStringAsFixed(2),
+                label: SettingsService.to.font.textScaleFactor.v.toStringAsFixed(2),
                 activeColor: theme.colorScheme.primary,
                 inactiveColor: theme.colorScheme.primary.withValues(alpha: 0.15),
                 onChanged: (val) {
-                  controller.textScaleFactor.value = val;
+                  SettingsService.to.font.textScaleFactor.v = val;
                 },
               ),
             ),
@@ -179,10 +179,11 @@ class ThemeSettingsPage extends GetView<SettingsService> {
           children: [
             Obx(
               () => RadioGroup<String>(
-                groupValue: controller.themeModeName.value,
+                groupValue: SettingsService.to.theme.themeModeName.v,
                 onChanged: (String? value) {
                   if (value != null) {
-                    controller.changeThemeMode(value);
+                    SettingsService.to.theme.changeThemeMode(value);
+
                     Navigator.of(context).pop();
                   }
                 },
@@ -207,9 +208,9 @@ class ThemeSettingsPage extends GetView<SettingsService> {
   Future<bool> colorPickerDialog() async {
     final bool isZh = Get.locale?.languageCode == 'zh';
     return ColorPicker(
-      color: HexColor(controller.themeColorSwitch.value),
+      color: HexColor(SettingsService.to.theme.themeColorSwitch.v),
       onColorChanged: (Color color) {
-        controller.themeColorSwitch.value = color.hex;
+        SettingsService.to.theme.themeColorSwitch.v = color.hex;
         var themeColor = color;
         var lightTheme = MyTheme(primaryColor: themeColor).lightThemeData;
         var darkTheme = MyTheme(primaryColor: themeColor).darkThemeData;
@@ -234,7 +235,7 @@ class ThemeSettingsPage extends GetView<SettingsService> {
       colorCodeTextStyle: Theme.of(Get.context!).textTheme.bodyMedium,
       colorCodePrefixStyle: Theme.of(Get.context!).textTheme.bodySmall,
       selectedPickerTypeColor: Theme.of(Get.context!).colorScheme.primary,
-      customColorSwatchesAndNames: controller.colorsNameMap,
+      customColorSwatchesAndNames: AppConsts.colorsNameMap,
       pickerTypeLabels: <ColorPickerType, String>{
         ColorPickerType.primary: isZh ? "常用色" : "Primary",
         ColorPickerType.accent: isZh ? "鲜艳色" : "Accent",
@@ -264,10 +265,10 @@ class ThemeSettingsPage extends GetView<SettingsService> {
           title: Text(i18n("change_language")),
           children: [
             RadioGroup<String>(
-              groupValue: controller.languageName.value,
+              groupValue: SettingsService.to.theme.languageName.v,
               onChanged: (String? value) {
                 if (value != null) {
-                  controller.changeLanguage(value);
+                  SettingsService.to.theme.changeLanguage(value);
                   Navigator.of(context).pop();
                 }
               },
@@ -283,7 +284,7 @@ class ThemeSettingsPage extends GetView<SettingsService> {
                         Radio<String>(value: name, activeColor: Theme.of(context).colorScheme.primary),
                         GestureDetector(
                           onTap: () {
-                            controller.changeLanguage(name);
+                            SettingsService.to.theme.changeLanguage(name);
                             Navigator.of(context).pop();
                           },
                           child: Text(name, style: Theme.of(context).textTheme.bodyLarge),
@@ -304,8 +305,8 @@ class ThemeSettingsPage extends GetView<SettingsService> {
     showCustomSpacingDialog(
       title: i18n("cross_axis_spacing"),
       hintText: i18n("cross_axis_spacing_subtitle"),
-      currentValue: controller.crossAxisSpacing.value,
-      onSelected: (value) => controller.crossAxisSpacing.value = value,
+      currentValue: SettingsService.to.theme.crossAxisSpacing.v,
+      onSelected: (value) => SettingsService.to.theme.crossAxisSpacing.v = value,
     );
   }
 
@@ -313,8 +314,8 @@ class ThemeSettingsPage extends GetView<SettingsService> {
     showCustomSpacingDialog(
       title: i18n("main_axis_spacing"),
       hintText: i18n("main_axis_spacing_subtitle"),
-      currentValue: controller.mainAxisSpacing.value,
-      onSelected: (value) => controller.mainAxisSpacing.value = value,
+      currentValue: SettingsService.to.theme.mainAxisSpacing.v,
+      onSelected: (value) => SettingsService.to.theme.mainAxisSpacing.v = value,
     );
   }
 

@@ -11,7 +11,7 @@ class PopularPage extends GetView<PopularController> {
       builder: (context, constraint) {
         return Obx(() {
           bool showAction = Get.width <= 680;
-          final int menuCount = Get.find<SettingsService>().savedMenuIds.length;
+          final int menuCount = SettingsService.to.app.savedMenuIds.v.length;
           final availableSitesList = Sites().availableSites();
 
           if (availableSitesList.isEmpty) return const Scaffold();

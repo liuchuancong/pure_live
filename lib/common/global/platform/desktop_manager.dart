@@ -261,6 +261,8 @@ class CustomTitleBar extends StatelessWidget {
       final iconColor = isFullscreen || isDark ? Colors.white.withValues(alpha: 0.75) : Colors.black;
       final currentRoute = RouteObserverController.to.currentRoute.value;
       final currentRouteIskSplash = currentRoute == RoutePath.kSplash;
+      final currentSize = SettingsService.to.window.windowSize.value;
+      final showSizeText = SettingsService.to.window.isTracking.value;
 
       return Container(
         height: 32,
@@ -299,6 +301,14 @@ class CustomTitleBar extends StatelessWidget {
                                     decoration: TextDecoration.none,
                                   ),
                                 ),
+                                const SizedBox(width: 6),
+                                if (showSizeText && !isFullscreen)
+                                  IgnorePointer(
+                                    child: Text(
+                                      '[${currentSize.width.toInt()} × ${currentSize.height.toInt()}]',
+                                      style: TextStyle(color: iconColor.withValues(alpha: 0.6), fontSize: 12),
+                                    ),
+                                  ),
                               ],
                             ),
                           ),
@@ -434,6 +444,7 @@ class _WindowControlButtonState extends State<WindowControlButton> {
 mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
     implements WindowListener, TrayListener, WidgetsBindingObserver {
   bool _isDialogOpen = false;
+  final _sizeController = SettingsService.to.window;
   @override
   void initState() {
     super.initState();
@@ -626,19 +637,29 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
   void onWindowRestore() {}
 
   @override
-  void onWindowResize() {}
+  void onWindowResize() {
+    _sizeController.setTracking(true);
+    _updateWindowSizeToController();
+  }
 
   @override
-  void onWindowResized() {}
+  void onWindowResized() {
+    _sizeController.setTracking(false);
+  }
 
   @override
-  void onWindowMove() {}
+  void onWindowMove() {
+    _sizeController.setTracking(true);
+    _updateWindowSizeToController();
+  }
 
   @override
   void onWindowMoved() {}
 
   @override
-  void onWindowEnterFullScreen() {}
+  void onWindowEnterFullScreen() {
+    _sizeController.setTracking(false);
+  }
 
   @override
   void onWindowLeaveFullScreen() {}
@@ -702,6 +723,12 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
 
   @override
   void handleStatusBarTap() {}
+
+  void _updateWindowSizeToController() {
+    windowManager.getSize().then((size) {
+      _sizeController.updateSize(size);
+    });
+  }
 }
 
 class MyCustomScrollBehavior extends MaterialScrollBehavior {

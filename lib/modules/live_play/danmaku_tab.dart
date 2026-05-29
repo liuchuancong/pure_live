@@ -13,7 +13,7 @@ class DanmakuTabView extends GetView<LivePlayController> {
       if (controller.detail.value == null || controller.videoController.value == null) {
         return AppStatusView(type: AppStatusType.loading, title: "", subtitle: "");
       }
-      if (!controller.settings.enableDanmakuDisplay.value) {
+      if (!SettingsService.to.danmaku.enableDanmakuDisplay.v) {
         return Padding(padding: EdgeInsetsGeometry.all(12), child: const KeywordBlockPage());
       }
 

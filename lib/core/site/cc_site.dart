@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:developer';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/model/live_category.dart';
 import 'package:pure_live/core/common/core_log.dart';
@@ -24,7 +23,6 @@ class CCSite implements LiveSite {
   final String kUserAgent =
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36";
 
-  final SettingsService settings = Get.find<SettingsService>();
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async {
     List<LiveCategory> categories = [
@@ -207,8 +205,12 @@ class CCSite implements LiveSite {
         data: roomInfo["quickplay"] ?? roomInfo["stream_list"],
       );
     } catch (e) {
-      log(e.toString(), name: 'CC.getRoomDetail');
-      LiveRoom liveRoom = settings.getLiveRoomByRoomId(roomId, platform);
+      LiveRoom liveRoom =
+          SettingsService.to.fav.favoriteRooms.v.firstWhereOrNull(
+            (r) => r.roomId == roomId && r.platform == platform,
+          ) ??
+          LiveRoom(roomId: roomId, platform: platform);
+
       liveRoom.liveStatus = LiveStatus.offline;
       liveRoom.status = false;
       return liveRoom;

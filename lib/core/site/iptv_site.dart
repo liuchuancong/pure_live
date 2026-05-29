@@ -127,7 +127,7 @@ class IptvSite implements LiveSite {
       }
     }
     String? finalEpgChannelId;
-    final String currentEpgSourceId = Get.find<SettingsService>().selectedSourceId.value;
+    final String currentEpgSourceId = SettingsService.to.iptv.selectedSourceId.v;
 
     if (currentEpgSourceId.isEmpty) {
       return _buildLiveRoom(channel, null);

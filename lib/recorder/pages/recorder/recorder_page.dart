@@ -25,7 +25,7 @@ class RecorderPage extends GetView<RecorderController> {
   Widget build(BuildContext context) {
     return Obx(() {
       bool showAction = Get.width <= 680;
-      final int menuCount = Get.find<SettingsService>().savedMenuIds.length;
+      final int menuCount = SettingsService.to.app.savedMenuIds.v.length;
 
       return DefaultTabController(
         length: tabs.length,

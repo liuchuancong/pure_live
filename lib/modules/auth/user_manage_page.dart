@@ -11,7 +11,7 @@ class UserManager extends StatefulWidget {
 
 class _UserManagerState extends State<UserManager> {
   final TextEditingController textEditingController = TextEditingController();
-  final SettingsService settingsController = Get.find<SettingsService>();
+
   final refreshController = EasyRefreshController(controlFinishRefresh: true, controlFinishLoad: true);
 
   final users = <String>[].obs;

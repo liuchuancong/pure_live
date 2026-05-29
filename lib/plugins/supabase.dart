@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/modules/auth/auth_controller.dart';
 import 'package:pure_live/common/utils/supabase_policy.dart';
+import 'package:pure_live/common/services/settings/backup_controller.dart';
 
 class SupaBaseManager {
   String supabaseUrl = '';
@@ -60,9 +61,9 @@ class SupaBaseManager {
       return;
     }
     final userId = Get.find<AuthController>().userId;
-    final SettingsService service = Get.find<SettingsService>();
+    final BackupController backup = Get.find<BackupController>();
     List<dynamic> data = await client.from(supabasePolicy.tableName).select().eq(supabasePolicy.userId, userId);
-    final encryptData = ArchethicUtils().encrypt(jsonEncode(service.toJson()));
+    final encryptData = ArchethicUtils().encrypt(jsonEncode(backup.exportAllSettings()));
     DateTime currentTime = DateTime.now();
     String formattedTime = DateFormat('yyyy-MM-dd HH:mm:ss').format(currentTime);
     if (data.isNotEmpty) {
@@ -103,13 +104,14 @@ class SupaBaseManager {
   Future<void> readConfig() async {
     final AuthController authController = Get.find<AuthController>();
     final FavoriteController favoriteController = Get.find<FavoriteController>();
+    final BackupController backup = Get.find<BackupController>();
+
     if (authController.isLogin) {
       if (!canUploadConfig) {
         ToastUtil.show(i18n('supabase_account_unauthorized'));
         return;
       }
 
-      final SettingsService service = Get.find<SettingsService>();
       List<dynamic> data = await client
           .from(supabasePolicy.tableName)
           .select()
@@ -125,7 +127,7 @@ class SupaBaseManager {
         String jsonString = data[0][supabasePolicy.config];
         final jsonData = ArchethicUtils().decrypti(jsonString);
         Map<String, dynamic> back = jsonDecode(jsonData);
-        service.fromJson(back);
+        backup.importAllSettings(back);
         favoriteController.onRefresh();
       } else {
         ToastUtil.show(i18n('no_data'));

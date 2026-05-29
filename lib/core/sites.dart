@@ -32,8 +32,8 @@ class Sites {
   }
 
   List<Site> availableSites({bool containsAll = false}) {
-    final SettingsService settingsService = Get.find<SettingsService>();
-    final List<String> savedIds = settingsService.hotAreasList.value;
+    final List<String> savedIds = SettingsService.to.fav.hotAreasList.v;
+
     List<Site> result = [];
     for (String id in savedIds) {
       final match = supportSites.firstWhereOrNull((element) => element.id == id);

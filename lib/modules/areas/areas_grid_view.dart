@@ -164,8 +164,8 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
                 gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
                   lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                   crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: widget.controller.settings.crossAxisSpacing.value,
-                  mainAxisSpacing: widget.controller.settings.mainAxisSpacing.value,
+                  crossAxisSpacing: SettingsService.to.theme.crossAxisSpacing.v,
+                  mainAxisSpacing: SettingsService.to.theme.mainAxisSpacing.v,
                 ),
                 itemCount: childrenList.length,
                 itemBuilder: (context, index) => AreaCard(category: childrenList[index]),

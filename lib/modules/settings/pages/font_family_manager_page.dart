@@ -7,32 +7,36 @@ import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/plugins/font_download_manager.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
+import 'package:pure_live/common/services/medels/download_status.dart';
 
 class FontFamilyManagerPage extends GetView<SettingsService> {
   final bool isDanmakuSettings;
 
   const FontFamilyManagerPage({super.key, this.isDanmakuSettings = false});
 
-  RxString get currentFontRx {
-    return isDanmakuSettings ? controller.danmakuFontFamilyName : controller.fontFamilyName;
+  Rx<String> get currentFontRx {
+    return isDanmakuSettings
+        ? SettingsService.to.danmaku.danmakuFontFamilyName.rx as Rx<String>
+        : SettingsService.to.font.fontFamilyName.rx as Rx<String>;
   }
 
   void _activateFont(FontModel model, {String? targetFileName}) {
     if (isDanmakuSettings) {
-      controller.activateDanmakuFontFamily(model, targetFileName: targetFileName);
+      SettingsService.to.danmaku.danmakuFontFamilyName.v = model.id;
+      Get.updateLocale(Get.locale ?? const Locale('zh', 'CN'));
     } else {
-      controller.activateFontFamily(model, targetFileName: targetFileName);
+      SettingsService.to.font.activateFontFamily(model, targetFileName: targetFileName);
     }
   }
 
   Future<void> _setDefaultFont() async {
     if (isDanmakuSettings) {
-      controller.danmakuFontFamilyName.value = 'Default';
+      SettingsService.to.danmaku.danmakuFontFamilyName.v = 'Default';
       await HivePrefUtil.setString('danmakuFontFamilyName', 'Default');
       ToastUtil.show(i18n('font_reset_default'));
       return;
     }
-    controller.fontFamilyName.value = 'Default';
+    SettingsService.to.font.fontFamilyName.v = 'Default';
     await HivePrefUtil.setString('fontFamilyName', 'Default');
     Get.updateLocale(Get.locale ?? const Locale('zh', 'CN'));
     ToastUtil.show(i18n('font_reset_default'));
@@ -42,7 +46,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    controller.refreshFontDiskSizes();
+    SettingsService.to.font.refreshFontDiskSizes();
 
     return Scaffold(
       appBar: AppBar(
@@ -52,7 +56,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
         ),
       ),
       body: Obx(() {
-        final fontModels = controller.fontList;
+        final fontModels = SettingsService.to.font.fontList;
 
         return ListView(
           physics: const BouncingScrollPhysics(),
@@ -84,9 +88,9 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
 
                     final bool isCurrentActive = currentValue == fontModel.id;
 
-                    final bool isSelectedModel = controller.curFontModel.value == fontModel;
+                    final bool isSelectedModel = SettingsService.to.font.curFontModel.value == fontModel;
 
-                    final String? diskSize = controller.fontFolderSizes[fontModel.id];
+                    final String? diskSize = SettingsService.to.font.fontFolderSizes[fontModel.id];
 
                     final bool localExists = diskSize != null;
 
@@ -317,7 +321,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
       );
     }
 
-    if (isSelectedModel && controller.fontState.value == DownloadState.downloading) {
+    if (isSelectedModel && SettingsService.to.font.fontState.value == DownloadState.downloading) {
       return AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", isMini: true);
     }
 
@@ -332,7 +336,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
               padding: const EdgeInsets.all(10),
               backgroundColor: theme.colorScheme.error.withValues(alpha: 0.05),
             ),
-            onPressed: () => controller.uninstallFontFamily(fontModel),
+            onPressed: () => SettingsService.to.font.uninstallFontFamily(fontModel),
           ),
 
           const SizedBox(width: 10),
@@ -364,15 +368,15 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
             ),
             onPressed: () async {
-              controller.curFontModel.value = fontModel;
+              SettingsService.to.font.curFontModel.value = fontModel;
 
               final success = await FontDownloadManager.instance.downloadFontFamily(
                 fontModel: fontModel,
-                onStateChanged: (state) => controller.fontState.value = state,
+                onStateChanged: (state) => SettingsService.to.font.fontState.value = state,
               );
 
               if (success) {
-                await controller.refreshFontDiskSizes();
+                await SettingsService.to.font.refreshFontDiskSizes();
 
                 _activateFont(fontModel);
               } else {

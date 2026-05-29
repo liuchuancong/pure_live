@@ -10,7 +10,6 @@ import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:volume_controller/volume_controller.dart';
-import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/modules/live_play/load_type.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:scrollview_observer/scrollview_observer.dart';
@@ -58,7 +57,6 @@ class VideoController with ChangeNotifier {
 
   LivePlayController livePlayController = Get.find<LivePlayController>();
 
-  final SettingsService settings = Get.find<SettingsService>();
   final RxList<database.EpgProgramme> currentChannelSchedule = <database.EpgProgramme>[].obs;
   StreamSubscription<PlayerException>? _errorSub;
   StreamSubscription<bool>? _pipSub;
@@ -124,13 +122,14 @@ class VideoController with ChangeNotifier {
       onClear: () {},
     );
 
-    hideDanmaku.value = settings.hideDanmaku.value;
-    danmakuTopArea.value = settings.danmakuTopArea.value;
-    danmakuBottomArea.value = settings.danmakuBottomArea.value;
-    danmakuSpeed.value = settings.danmakuSpeed.value;
-    danmakuFontSize.value = settings.danmakuFontSize.value;
-    danmakuFontBorder.value = settings.danmakuFontBorder.value;
-    danmakuOpacity.value = settings.danmakuOpacity.value;
+    hideDanmaku.value = SettingsService.to.danmaku.hideDanmaku.v;
+    danmakuTopArea.value = SettingsService.to.danmaku.danmakuTopArea.v;
+    danmakuBottomArea.value = SettingsService.to.danmaku.danmakuBottomArea.v;
+    danmakuSpeed.value = SettingsService.to.danmaku.danmakuSpeed.v;
+    danmakuFontSize.value = SettingsService.to.danmaku.danmakuFontSize.v;
+    danmakuFontBorder.value = SettingsService.to.danmaku.danmakuFontBorder.v;
+    danmakuOpacity.value = SettingsService.to.danmaku.danmakuOpacity.v;
+
     initPagesConfig();
   }
 
@@ -275,7 +274,7 @@ class VideoController with ChangeNotifier {
     // 处理默认全屏
 
     Future.delayed(Duration(milliseconds: 1000), () {
-      if (settings.enableFullScreenDefault.value) {
+      if (SettingsService.to.app.enableFullScreenDefault.v) {
         livePlayController.setFullScreen();
         enterFullScreen();
         GlobalPlayerState.to.isFullscreen.value = true;
@@ -311,63 +310,56 @@ class VideoController with ChangeNotifier {
   }
 
   void initDanmaku() {
-    hideDanmaku.value = HivePrefUtil.getBool('hideDanmaku') ?? false;
-    hideDanmaku.listen((data) {
+    final dm = SettingsService.to.danmaku;
+
+    hideDanmaku.value = dm.hideDanmaku.v;
+    ever<bool>(hideDanmaku, (data) {
       if (data) {
         danmakuController.clear();
       }
-      HivePrefUtil.setBool('hideDanmaku', data);
-      settings.hideDanmaku.value = data;
+      dm.hideDanmaku.v = data;
     });
-    danmakuArea.value = HivePrefUtil.getDouble('danmakuArea') ?? 0.0;
-    danmakuArea.listen((data) {
-      HivePrefUtil.setDouble('danmakuArea', data);
-      settings.danmakuArea.value = data;
-      updateDanmaku();
-    });
-    danmakuTopArea.value = HivePrefUtil.getDouble('danmakuTopArea') ?? 0.0;
-    danmakuTopArea.listen((data) {
-      HivePrefUtil.setDouble('danmakuTopArea', data);
-      settings.danmakuTopArea.value = data;
-      updateDanmaku();
-    });
-    danmakuBottomArea.value = HivePrefUtil.getDouble('danmakuBottomArea') ?? 0.0;
-    danmakuBottomArea.listen((data) {
-      HivePrefUtil.setDouble('danmakuBottomArea', data);
-      settings.danmakuBottomArea.value = data;
-      updateDanmaku();
-    });
-    danmakuSpeed.value = HivePrefUtil.getDouble('danmakuSpeed') ?? 8;
-    danmakuSpeed.listen((data) {
-      HivePrefUtil.setDouble('danmakuSpeed', data);
-      settings.danmakuSpeed.value = data;
-      updateDanmaku();
-    });
-    danmakuFontSize.value = HivePrefUtil.getDouble('danmakuFontSize') ?? 16;
-    danmakuFontSize.listen((data) {
-      HivePrefUtil.setDouble('danmakuFontSize', data);
-      settings.danmakuFontSize.value = data;
-      updateDanmaku();
-    });
-    danmakuFontBorder.value = HivePrefUtil.getDouble('danmakuFontBorder') ?? 4.0;
-    danmakuFontBorder.listen((data) {
-      HivePrefUtil.setDouble('danmakuFontBorder', data);
-      settings.danmakuFontBorder.value = data;
-      updateDanmaku();
-    });
-    danmakuOpacity.value = HivePrefUtil.getDouble('danmakuOpacity') ?? 1.0;
-    danmakuOpacity.listen((data) {
-      HivePrefUtil.setDouble('danmakuOpacity', data);
-      settings.danmakuOpacity.value = data;
+
+    danmakuArea.value = dm.danmakuArea.v;
+    ever<double>(danmakuArea, (data) {
+      dm.danmakuArea.v = data;
       updateDanmaku();
     });
 
-    _pipSub = GlobalPlayerService.instance.playerManager.isInPip.listen((isInPip) {
-      if (isInPip) {
-        livePlayController.setFullScreen();
-      } else {
-        livePlayController.setNormalScreen();
-      }
+    danmakuTopArea.value = dm.danmakuTopArea.v;
+    ever<double>(danmakuTopArea, (data) {
+      dm.danmakuTopArea.v = data;
+      updateDanmaku();
+    });
+
+    danmakuBottomArea.value = dm.danmakuBottomArea.v;
+    ever<double>(danmakuBottomArea, (data) {
+      dm.danmakuBottomArea.v = data;
+      updateDanmaku();
+    });
+
+    danmakuSpeed.value = dm.danmakuSpeed.v;
+    ever<double>(danmakuSpeed, (data) {
+      dm.danmakuSpeed.v = data;
+      updateDanmaku();
+    });
+
+    danmakuFontSize.value = dm.danmakuFontSize.v;
+    ever<double>(danmakuFontSize, (data) {
+      dm.danmakuFontSize.v = data;
+      updateDanmaku();
+    });
+
+    danmakuFontBorder.value = dm.danmakuFontBorder.v;
+    ever<double>(danmakuFontBorder, (data) {
+      dm.danmakuFontBorder.v = data;
+      updateDanmaku();
+    });
+
+    danmakuOpacity.value = dm.danmakuOpacity.v;
+    ever<double>(danmakuOpacity, (data) {
+      dm.danmakuOpacity.v = data;
+      updateDanmaku();
     });
   }
 
@@ -392,7 +384,7 @@ class VideoController with ChangeNotifier {
         DanmakuContentItem(
           msg.message,
           color: Color.fromARGB(255, msg.color.r, msg.color.g, msg.color.b),
-          fontFamily: settings.danmakuFontFamilyName.value,
+          fontFamily: SettingsService.to.danmaku.danmakuFontFamilyName.v,
         ),
       );
     }

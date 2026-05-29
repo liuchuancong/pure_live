@@ -19,9 +19,8 @@ class FFmpegHeaderFactory {
   }
 
   static Map<String, String> _buildBilibiliHeaders() {
-    final SettingsService settings = Get.find<SettingsService>();
     return {
-      "cookie": settings.bilibiliCookie.value,
+      "cookie": SettingsService.to.cookieManager.bilibiliCookie.v,
       "authority": "api.bilibili.com",
       "accept": "*",
       "accept-language": "zh-CN,zh;q=0.9",

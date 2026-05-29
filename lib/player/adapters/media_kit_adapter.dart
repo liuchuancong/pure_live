@@ -14,8 +14,6 @@ class MediaKitAdapter implements UnifiedPlayer {
 
   late final VideoController _controller;
 
-  final SettingsService settings = Get.find<SettingsService>();
-
   bool _initialized = false;
 
   bool _disposed = false;
@@ -92,12 +90,12 @@ class MediaKitAdapter implements UnifiedPlayer {
 
         await native.setProperty('network-timeout', '30');
 
-        if (settings.customPlayerOutput.value) {
-          await native.setProperty('ao', settings.audioOutputDriver.value);
+        if (SettingsService.to.player.customPlayerOutput.v) {
+          await native.setProperty('ao', SettingsService.to.player.audioOutputDriver.v);
         }
 
-        if (settings.enableProxy.value && settings.proxyHost.value.isNotEmpty) {
-          final proxyUrl = "http://${settings.proxyHost.value}:${settings.proxyPort.value}";
+        if (SettingsService.to.proxy.enableProxy.v && SettingsService.to.proxy.proxyHost.v.isNotEmpty) {
+          final proxyUrl = "http://${SettingsService.to.proxy.proxyHost.v}:${SettingsService.to.proxy.proxyPort.v}";
 
           await native.setProperty('http-proxy', proxyUrl);
         }
@@ -107,23 +105,23 @@ class MediaKitAdapter implements UnifiedPlayer {
       // controller
       // =========================
 
-      _controller = settings.playerCompatMode.value
+      _controller = SettingsService.to.player.playerCompatMode.v
           ? VideoController(
               _player,
               configuration: const VideoControllerConfiguration(vo: 'mediacodec_embed', hwdec: 'mediacodec'),
             )
-          : settings.customPlayerOutput.value
+          : SettingsService.to.player.customPlayerOutput.v
           ? VideoController(
               _player,
               configuration: VideoControllerConfiguration(
-                vo: settings.videoOutputDriver.value,
-                hwdec: settings.videoHardwareDecoder.value,
+                vo: SettingsService.to.player.videoOutputDriver.v,
+                hwdec: SettingsService.to.player.videoHardwareDecoder.v,
               ),
             )
           : VideoController(
               _player,
               configuration: VideoControllerConfiguration(
-                enableHardwareAcceleration: settings.enableCodec.value,
+                enableHardwareAcceleration: SettingsService.to.player.enableCodec.v,
                 androidAttachSurfaceAfterVideoParameters: false,
               ),
             );
@@ -389,8 +387,8 @@ class MediaKitAdapter implements UnifiedPlayer {
       child: Video(
         controller: _controller,
         controls: NoVideoControls,
-        pauseUponEnteringBackgroundMode: !settings.enableBackgroundPlay.value,
-        resumeUponEnteringForegroundMode: !settings.enableBackgroundPlay.value,
+        pauseUponEnteringBackgroundMode: !SettingsService.to.app.enableBackgroundPlay.v,
+        resumeUponEnteringForegroundMode: !SettingsService.to.app.enableBackgroundPlay.v,
       ),
     );
   }

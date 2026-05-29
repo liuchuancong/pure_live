@@ -122,9 +122,8 @@ class FijkAdapter implements UnifiedPlayer {
   }
 
   Future<void> _setupProxy() async {
-    final SettingsService settings = Get.find<SettingsService>();
-    if (settings.enableProxy.value) {
-      final String proxyUrl = "http://${settings.proxyHost.value}:${settings.proxyPort.value}";
+    if (SettingsService.to.proxy.enableProxy.v) {
+      final String proxyUrl = "http://${SettingsService.to.proxy.proxyHost.v}:${SettingsService.to.proxy.proxyPort.v}";
       await _player.setOption(FijkOption.formatCategory, "http_proxy", proxyUrl);
     } else {
       await _player.setOption(FijkOption.formatCategory, "http_proxy", "");
@@ -139,8 +138,8 @@ class FijkAdapter implements UnifiedPlayer {
         await _player.reset();
       }
       _setupProxy();
-      final SettingsService settings = Get.find<SettingsService>();
-      await FijkHelper.setFijkOption(_player, enableCodec: settings.enableCodec.value, headers: headers);
+
+      await FijkHelper.setFijkOption(_player, enableCodec: SettingsService.to.player.enableCodec.v, headers: headers);
       await _player.setDataSource(url, autoPlay: true);
       _stateSubject.add(PlayerState.ready);
       await setVolume(1.0);

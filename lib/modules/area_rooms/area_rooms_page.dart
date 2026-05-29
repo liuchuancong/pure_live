@@ -79,8 +79,8 @@ class _AreasRoomPageState extends State<AreasRoomPage> {
                   gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
                     lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                     crossAxisCount: crossAxisCount,
-                    crossAxisSpacing: controller.settings.crossAxisSpacing.value,
-                    mainAxisSpacing: controller.settings.mainAxisSpacing.value,
+                    crossAxisSpacing: SettingsService.to.theme.crossAxisSpacing.v,
+                    mainAxisSpacing: SettingsService.to.theme.mainAxisSpacing.v,
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                   controller: controller.scrollController,
@@ -97,69 +97,67 @@ class _AreasRoomPageState extends State<AreasRoomPage> {
   }
 }
 
-class FavoriteAreaFloatingButton extends StatefulWidget {
+class FavoriteAreaFloatingButton extends StatelessWidget {
   const FavoriteAreaFloatingButton({super.key, required this.area});
 
   final LiveArea area;
 
   @override
-  State<FavoriteAreaFloatingButton> createState() => _FavoriteAreaFloatingButtonState();
-}
-
-class _FavoriteAreaFloatingButtonState extends State<FavoriteAreaFloatingButton> {
-  final settings = Get.find<SettingsService>();
-
-  late bool isFavorite = settings.isFavoriteArea(widget.area);
-
-  @override
   Widget build(BuildContext context) {
-    return isFavorite
-        ? FloatingActionButton(
-            elevation: 2,
-            backgroundColor: Theme.of(context).cardColor,
-            tooltip: i18n("unfollow"),
-            onPressed: () {
-              Get.dialog(
-                AlertDialog(
-                  title: Text(i18n("unfollow")),
-                  content: Text(i18n("unfollow_message", args: {"name": widget.area.areaName!})),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.of(Get.context!).pop(false), child: Text(i18n("cancel"))),
-                    ElevatedButton(onPressed: () => Navigator.of(Get.context!).pop(true), child: Text(i18n("confirm"))),
-                  ],
-                ),
-              ).then((value) {
-                if (value) {
-                  setState(() => isFavorite = !isFavorite);
-                  settings.removeArea(widget.area);
-                }
-              });
-            },
-            child: CircleAvatar(
-              foregroundImage: (widget.area.areaPic == '') ? null : NetworkImage(widget.area.areaPic!),
-              radius: 18,
-              backgroundColor: Theme.of(context).disabledColor,
-            ),
-          )
-        : FloatingActionButton.extended(
-            elevation: 2,
-            backgroundColor: Theme.of(context).cardColor,
-            onPressed: () {
-              setState(() => isFavorite = !isFavorite);
-              settings.addArea(widget.area);
-            },
-            icon: CircleAvatar(
-              foregroundImage: (widget.area.areaPic == '') ? null : NetworkImage(widget.area.areaPic!),
-              radius: 18,
-              backgroundColor: Theme.of(context).disabledColor,
-            ),
-            label: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(i18n("follow"), style: Theme.of(context).textTheme.bodySmall),
-                Text(widget.area.areaName!, maxLines: 1, overflow: TextOverflow.ellipsis),
-              ],
-            ),
-          );
+    return Obx(() {
+      final isFavorite = SettingsService.to.fav.favoriteAreas.v.any((e) => e.areaId == area.areaId);
+
+      if (isFavorite) {
+        return FloatingActionButton(
+          elevation: 2,
+          backgroundColor: Theme.of(context).cardColor,
+          tooltip: i18n("unfollow"),
+          onPressed: () {
+            Get.dialog(
+              AlertDialog(
+                title: Text(i18n("unfollow")),
+                content: Text(i18n("unfollow_message", args: {"name": area.areaName!})),
+                actions: [
+                  TextButton(onPressed: () => Navigator.of(Get.context!).pop(false), child: Text(i18n("cancel"))),
+                  ElevatedButton(onPressed: () => Navigator.of(Get.context!).pop(true), child: Text(i18n("confirm"))),
+                ],
+              ),
+            ).then((value) {
+              if (value == true) {
+                final list = List<LiveArea>.from(SettingsService.to.fav.favoriteAreas.v);
+                list.removeWhere((e) => e.areaId == area.areaId);
+                SettingsService.to.fav.favoriteAreas.v = list;
+              }
+            });
+          },
+          child: CircleAvatar(
+            foregroundImage: (area.areaPic == '') ? null : NetworkImage(area.areaPic!),
+            radius: 18,
+            backgroundColor: Theme.of(context).disabledColor,
+          ),
+        );
+      }
+
+      return FloatingActionButton.extended(
+        elevation: 2,
+        backgroundColor: Theme.of(context).cardColor,
+        onPressed: () {
+          final list = List<LiveArea>.from(SettingsService.to.fav.favoriteAreas.v)..add(area);
+          SettingsService.to.fav.favoriteAreas.v = list;
+        },
+        icon: CircleAvatar(
+          foregroundImage: (area.areaPic == '') ? null : NetworkImage(area.areaPic!),
+          radius: 18,
+          backgroundColor: Theme.of(context).disabledColor,
+        ),
+        label: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(i18n("follow"), style: Theme.of(context).textTheme.bodySmall),
+            Text(area.areaName!, maxLines: 1, overflow: TextOverflow.ellipsis),
+          ],
+        ),
+      );
+    });
   }
 }

@@ -11,14 +11,12 @@ class HomeTabletView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final settings = Get.find<SettingsService>();
-
     return Scaffold(
       body: SafeArea(
         child: Obx(() {
           final List<NavigationRailDestination> destinations = [];
           final List<int> virtualToRealMap = [];
-          final activeMenuIds = settings.savedMenuIds;
+          final activeMenuIds = SettingsService.to.app.savedMenuIds.v;
 
           for (String id in activeMenuIds) {
             final menu = HomeMenu.fromId(id);

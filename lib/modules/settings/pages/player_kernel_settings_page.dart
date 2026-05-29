@@ -22,7 +22,8 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
           context.buildGroupTitle(i18n("kernel_switch")),
           context.buildModernCard([
             Obx(() {
-              String activeKey = controller.videoPlayerKey.value;
+              String activeKey = SettingsService.to.player.videoPlayerKey.v;
+
               String activeI18nKey = PlayerConsts.names[activeKey] ?? PlayerConsts.names[PlayerConsts.defaultKey]!;
 
               return context.buildTile(
@@ -38,7 +39,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
             }),
 
             Obx(() {
-              String activeKey = controller.videoPlayerKey.value;
+              String activeKey = SettingsService.to.player.videoPlayerKey.v;
               if (PlayerConsts.engines[activeKey] == PlayerEngine.exo) {
                 return const SizedBox.shrink();
               }
@@ -49,9 +50,9 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                 subtitle: i18n("network_proxy_subtitle"),
                 onTap: showProxySettingsDialog,
                 trailing: Text(
-                  controller.enableProxy.value ? i18n("enabled") : i18n("disabled"),
+                  SettingsService.to.proxy.enableProxy.v ? i18n("enabled") : i18n("disabled"),
                   style: AppTextStyles.t13.copyWith(
-                    color: controller.enableProxy.value ? theme.colorScheme.primary : theme.hintColor,
+                    color: SettingsService.to.proxy.enableProxy.v ? theme.colorScheme.primary : theme.hintColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -60,25 +61,25 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
             context.buildSwitchTile(
               title: i18n('audio_only_mode'),
               subtitle: i18n("audio_only_mode_subtitle"),
-              value: controller.audioOnly,
+              value: SettingsService.to.player.audioOnly.v,
               icon: Remix.volume_up_line,
             ),
             context.buildSwitchTile(
               title: i18n('enable_codec'),
               subtitle: i18n("gpu_decode"),
-              value: controller.enableCodec,
+              value: SettingsService.to.player.enableCodec.v,
               icon: Remix.flashlight_line,
             ),
 
             context.buildSwitchTile(
               title: i18n('force_destroy_player'),
               subtitle: i18n('force_destroy_player_subtitle'),
-              value: controller.useHardStopOnExit,
+              value: SettingsService.to.player.useHardStopOnExit.v,
               icon: Remix.p2p_line,
             ),
           ]),
           Obx(() {
-            String activeKey = controller.videoPlayerKey.value;
+            String activeKey = SettingsService.to.player.videoPlayerKey.v;
             if (PlayerConsts.engines[activeKey] != PlayerEngine.mediaKit) {
               return const SizedBox.shrink();
             }
@@ -101,7 +102,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
           context.buildSwitchTile(
             title: i18n('compat_mode'),
             subtitle: i18n('compat_mode_subtitle'),
-            value: controller.playerCompatMode,
+            value: SettingsService.to.player.playerCompatMode.v,
             icon: Remix.shield_flash_line,
           ),
         Padding(
@@ -152,7 +153,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
               InkWell(
                 borderRadius: BorderRadius.circular(8),
                 onTap: () {
-                  controller.resetMpvPlayerSettings();
+                  SettingsService.to.player.resetMpvPlayerSettings();
                 },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -176,34 +177,34 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
         context.buildModernCard([
           context.buildSwitchTile(
             title: i18n("custom_output_hwdec"),
-            value: controller.customPlayerOutput,
+            value: SettingsService.to.player.customPlayerOutput.v,
             icon: Remix.apps_2_add_fill,
           ),
           Obx(
             () => context.buildMenuTile<String>(
               title: i18n("video_output_driver"),
               icon: Remix.tv_2_line,
-              value: controller.videoOutputDriver.value,
+              value: SettingsService.to.player.videoOutputDriver.v,
               valueMap: PlayerConsts.videoOutputDrivers,
-              onChanged: (e) => controller.videoOutputDriver.value = e,
+              onChanged: (e) => SettingsService.to.player.videoOutputDriver.v = e,
             ),
           ),
           Obx(
             () => context.buildMenuTile<String>(
               title: i18n("audio_output_driver"),
               icon: Remix.volume_up_line,
-              value: controller.audioOutputDriver.value,
+              value: SettingsService.to.player.audioOutputDriver.v,
               valueMap: PlayerConsts.audioOutputDrivers,
-              onChanged: (e) => controller.audioOutputDriver.value = e,
+              onChanged: (e) => SettingsService.to.player.audioOutputDriver.v = e,
             ),
           ),
           Obx(
             () => context.buildMenuTile<String>(
               title: i18n("hardware_decoder"),
               icon: Remix.cpu_line,
-              value: controller.videoHardwareDecoder.value,
+              value: SettingsService.to.player.videoHardwareDecoder.v,
               valueMap: PlayerConsts.hardwareDecoder,
-              onChanged: (e) => controller.videoHardwareDecoder.value = e,
+              onChanged: (e) => SettingsService.to.player.videoHardwareDecoder.v = e,
             ),
           ),
         ]),
@@ -212,8 +213,6 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
   }
 
   void showVideoSetDialog() {
-    final settings = Get.find<SettingsService>();
-
     List<String> playerList = PlatformUtils.isMobile
         ? PlayerConsts.names.values.toList()
         : [PlayerConsts.names['mpv']!, PlayerConsts.names['fvp']!];
@@ -225,7 +224,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
           title: Text(i18n("change_player")),
           children: [
             Obx(() {
-              String activeKey = settings.videoPlayerKey.value;
+              String activeKey = SettingsService.to.player.videoPlayerKey.v;
               String activeI18nKey = PlayerConsts.names[activeKey] ?? playerList.first;
 
               if (!playerList.contains(activeI18nKey)) {
@@ -236,7 +235,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                 groupValue: activeKey,
                 onChanged: (String? key) {
                   if (key != null && PlayerConsts.engines.containsKey(key)) {
-                    settings.videoPlayerKey.value = key;
+                    SettingsService.to.player.videoPlayerKey.v = key;
                     GlobalPlayerService.instance.playerManager.switchEngine(PlayerConsts.engines[key]!, isManual: true);
                     Navigator.of(context).pop();
                   }
@@ -252,7 +251,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                       onTap: () {
                         if (PlayerConsts.engines.containsKey(itemKey)) {
-                          settings.videoPlayerKey.value = itemKey;
+                          SettingsService.to.player.videoPlayerKey.v = itemKey;
                           GlobalPlayerService.instance.playerManager.switchEngine(
                             PlayerConsts.engines[itemKey]!,
                             isManual: true,
@@ -272,8 +271,8 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
   }
 
   void showProxySettingsDialog() {
-    final hostController = TextEditingController(text: controller.proxyHost.value);
-    final portController = TextEditingController(text: controller.proxyPort.value.toString());
+    final hostController = TextEditingController(text: SettingsService.to.proxy.proxyHost.v);
+    final portController = TextEditingController(text: SettingsService.to.proxy.proxyPort.v.toString());
 
     showDialog(
       context: Get.context!,
@@ -286,29 +285,29 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
               children: [
                 SwitchListTile(
                   title: Text(i18n("enable_player_proxy")),
-                  value: controller.enableProxy.value,
+                  value: SettingsService.to.proxy.enableProxy.v,
                   activeThumbColor: Theme.of(context).colorScheme.primary,
                   onChanged: (bool value) {
-                    controller.enableProxy.value = value;
+                    SettingsService.to.proxy.enableProxy.v = value;
                   },
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: hostController,
-                  enabled: controller.enableProxy.value,
+                  enabled: SettingsService.to.proxy.enableProxy.v,
                   decoration: InputDecoration(
                     labelText: i18n("proxy_host"),
                     prefixIcon: const Icon(Remix.global_line, size: 20),
                     border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                   ),
                   onChanged: (value) {
-                    controller.proxyHost.value = value;
+                    SettingsService.to.proxy.proxyHost.v = value;
                   },
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: portController,
-                  enabled: controller.enableProxy.value,
+                  enabled: SettingsService.to.proxy.enableProxy.v,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     labelText: i18n("proxy_port"),
@@ -318,7 +317,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                   onChanged: (value) {
                     int? port = int.tryParse(value);
                     if (port != null) {
-                      controller.proxyPort.value = port;
+                      SettingsService.to.proxy.proxyPort.v = port;
                     }
                   },
                 ),

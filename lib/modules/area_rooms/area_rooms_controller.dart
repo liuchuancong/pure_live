@@ -6,7 +6,6 @@ class AreaRoomsController extends BasePageController<LiveRoom> {
   final LiveArea subCategory;
   final isNetworkError = false.obs;
   final isLoginRequiredError = false.obs;
-  final settings = Get.find<SettingsService>();
 
   AreaRoomsController({required this.site, required this.subCategory});
 
