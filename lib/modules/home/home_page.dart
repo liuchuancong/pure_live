@@ -57,7 +57,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
       }
     });
 
-    ever(SettingsService.to.app.savedMenuIds.rx, (v) {
+    ever(SettingsService.to.app.savedMenuIds, (v) {
       if (mounted) {
         final List<String> value = List<String>.from(v as List);
         if (value.isNotEmpty) {

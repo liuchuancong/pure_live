@@ -3,28 +3,26 @@ import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
 
 class PlayerSettingsController extends GetxController {
-  // 基础设置
-  final videoFitIndex = HiveRx.int('videoFitIndex', 0);
-  final videoPlayerKey = HiveRx.string('videoPlayerKey', 'mpv');
+  final HiveRxInt videoFitIndex = HiveRxInt('videoFitIndex', 0);
+  final HiveRxString videoPlayerKey = HiveRxString('videoPlayerKey', 'mpv');
 
-  // 画质
-  final preferResolution = HiveRx.string('preferResolution', PlayerConsts.resolutions.first);
-  final preferResolutionCellular = HiveRx.string('preferResolutionCellular', PlayerConsts.resolutions.first);
+  final HiveRxString preferResolution = HiveRxString('preferResolution', PlayerConsts.resolutions.first);
+  final HiveRxString preferResolutionCellular = HiveRxString(
+    'preferResolutionCellular',
+    PlayerConsts.resolutions.first,
+  );
 
-  // MPV/解码相关
-  final enableCodec = HiveRx.bool('enableCodec', true);
-  final playerCompatMode = HiveRx.bool('playerCompatMode', false);
-  final customPlayerOutput = HiveRx.bool('customPlayerOutput', false);
-  final videoOutputDriver = HiveRx.string('videoOutputDriver', 'gpu');
-  final audioOutputDriver = HiveRx.string('audioOutputDriver', 'auto');
-  final videoHardwareDecoder = HiveRx.string('videoHardwareDecoder', 'auto');
+  final HiveRxBool enableCodec = HiveRxBool('enableCodec', true);
+  final HiveRxBool playerCompatMode = HiveRxBool('playerCompatMode', false);
+  final HiveRxBool customPlayerOutput = HiveRxBool('customPlayerOutput', false);
+  final HiveRxString videoOutputDriver = HiveRxString('videoOutputDriver', 'gpu');
+  final HiveRxString audioOutputDriver = HiveRxString('audioOutputDriver', 'auto');
+  final HiveRxString videoHardwareDecoder = HiveRxString('videoHardwareDecoder', 'auto');
 
-  // 播放行为
-  final floatPlay = HiveRx.bool('floatPlay', false);
-  final audioOnly = HiveRx.bool('audioOnly', false);
-  final useHardStopOnExit = HiveRx.bool('useHardStopOnExit', false);
+  final HiveRxBool floatPlay = HiveRxBool('floatPlay', false);
+  final HiveRxBool audioOnly = HiveRxBool('audioOnly', false);
+  final HiveRxBool useHardStopOnExit = HiveRxBool('useHardStopOnExit', false);
 
-  // 画面适配列表
   List<BoxFit> get videoFitArray => const [
     BoxFit.contain,
     BoxFit.cover,
@@ -33,21 +31,18 @@ class PlayerSettingsController extends GetxController {
     BoxFit.fitHeight,
   ];
 
-  // WiFi画质
   void changePreferResolution(String resolution) {
     if (PlayerConsts.resolutions.contains(resolution)) {
       preferResolution.v = resolution;
     }
   }
 
-  // 移动数据画质
   void changePreferResolutionCellular(String resolution) {
     if (PlayerConsts.resolutions.contains(resolution)) {
       preferResolutionCellular.v = resolution;
     }
   }
 
-  // ✅ 重置MPV相关设置（你要的这个）
   void resetMpvPlayerSettings() {
     enableCodec.v = true;
     playerCompatMode.v = false;

@@ -195,7 +195,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
               icon: Remix.refresh_line,
               title: i18n("auto_sync_title"),
               subtitle: i18n("auto_sync_desc"),
-              value: SettingsService.to.iptv.isAutoSyncEnabled.v,
+              value: SettingsService.to.iptv.isAutoSyncEnabled,
             ),
             Obx(() {
               if (!SettingsService.to.iptv.isAutoSyncEnabled.v) return const SizedBox.shrink();

@@ -1,11 +1,12 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
+import 'package:pure_live/common/services/utils/backup_migration_util.dart';
 
 class FavoriteRoomController extends GetxController {
-  final shieldList = HiveRx.stringList('shieldList', []);
-  final hotAreasList = HiveRx.stringList('hotAreasList', AppConsts.supportSites);
-  final preferPlatform = HiveRx.string('preferPlatform', Sites.bilibiliSite);
+  final HiveRx<List<String>> shieldList = HiveRx.stringList('shieldList', []);
+  final HiveRx<List<String>> hotAreasList = HiveRx.stringList('hotAreasList', AppConsts.supportSites);
+  final HiveRx<String> preferPlatform = HiveRx.string('preferPlatform', Sites.bilibiliSite);
 
   final favoriteRooms = HiveRx.object(
     'favoriteRooms',
@@ -35,13 +36,13 @@ class FavoriteRoomController extends GetxController {
   bool addRoom(LiveRoom room) {
     if (isFavorite(room)) return false;
     favoriteRooms.v.add(room);
-    favoriteRooms.rx.refresh();
+    favoriteRooms.refresh();
     return true;
   }
 
   bool removeRoom(LiveRoom room) {
     final res = favoriteRooms.v.remove(room);
-    favoriteRooms.rx.refresh();
+    favoriteRooms.refresh();
     return res;
   }
 
@@ -49,20 +50,20 @@ class FavoriteRoomController extends GetxController {
     final idx = favoriteRooms.v.indexWhere((e) => e.roomId == room.roomId);
     if (idx == -1) return false;
     favoriteRooms.v[idx] = room;
-    favoriteRooms.rx.refresh();
+    favoriteRooms.refresh();
     return true;
   }
 
   bool addArea(LiveArea area) {
     if (isFavoriteArea(area)) return false;
     favoriteAreas.v.add(area);
-    favoriteAreas.rx.refresh();
+    favoriteAreas.refresh();
     return true;
   }
 
   bool removeArea(LiveArea area) {
     final res = favoriteAreas.v.remove(area);
-    favoriteAreas.rx.refresh();
+    favoriteAreas.refresh();
     return res;
   }
 
@@ -97,14 +98,13 @@ class FavoriteRoomController extends GetxController {
 
   void fromJson(Map<String, dynamic> json) {
     shieldList.v = List<String>.from(json['shieldList'] ?? []);
+
     hotAreasList.v = List<String>.from(json['hotAreasList'] ?? AppConsts.supportSites);
+
     preferPlatform.v = json['preferPlatform'] ?? Sites.bilibiliSite;
 
-    if (json['favoriteRooms'] != null) {
-      favoriteRooms.v = (json['favoriteRooms'] as List).map((e) => LiveRoom.fromJson(Map.from(e))).toList();
-    }
-    if (json['favoriteAreas'] != null) {
-      favoriteAreas.v = (json['favoriteAreas'] as List).map((e) => LiveArea.fromJson(Map.from(e))).toList();
-    }
+    favoriteRooms.v = BackupMigrationUtil.parseObjectList(json['favoriteRooms'], (m) => LiveRoom.fromJson(m));
+
+    favoriteAreas.v = BackupMigrationUtil.parseObjectList(json['favoriteAreas'], (m) => LiveArea.fromJson(m));
   }
 }

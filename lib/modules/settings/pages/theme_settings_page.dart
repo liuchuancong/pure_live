@@ -45,7 +45,7 @@ class ThemeSettingsPage extends GetView<SettingsService> {
             context.buildSwitchTile(
               title: i18n("enable_dynamic_color"),
               subtitle: i18n("enable_dynamic_color_subtitle"),
-              value: SettingsService.to.theme.enableDynamicTheme.v,
+              value: SettingsService.to.theme.enableDynamicTheme,
               icon: Remix.magic_line,
             ),
             context.buildTile(

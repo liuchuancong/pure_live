@@ -4,43 +4,20 @@ import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
 
 class ExitSettingsController extends GetxController {
-  // =========================
-  // Exit Settings
-  // =========================
-
-  final dontAskExit = HiveRx.bool('dontAskExit', false);
-
-  final exitChoose = HiveRx.string('exitChoose', '');
-
-  // =========================
-  // Auto Shutdown
-  // =========================
-
-  final autoShutDownTime = HiveRx.int('autoShutDownTime', 120);
-
-  final enableAutoShutDownTime = HiveRx.bool('enableAutoShutDownTime', false);
-
-  // =========================
-  // Timer
-  // =========================
+  final HiveRxBool dontAskExit = HiveRxBool('dontAskExit', false);
+  final HiveRxString exitChoose = HiveRxString('exitChoose', '');
+  final HiveRxInt autoShutDownTime = HiveRxInt('autoShutDownTime', 120);
+  final HiveRxBool enableAutoShutDownTime = HiveRxBool('enableAutoShutDownTime', false);
 
   final StopWatchTimer _stopWatchTimer = StopWatchTimer(mode: StopWatchMode.countDown);
-
   StopWatchTimer get stopWatchTimer => _stopWatchTimer;
-
-  // =========================
-  // Lifecycle
-  // =========================
 
   @override
   void onInit() {
     super.onInit();
-
-    // 初始化自动关机
     onInitShutDown();
 
-    // 自动关机开关
-    debounce(enableAutoShutDownTime.rx, (_) {
+    debounce(enableAutoShutDownTime, (_) {
       if (enableAutoShutDownTime.v) {
         restartShutdownTimer();
       } else {
@@ -48,24 +25,17 @@ class ExitSettingsController extends GetxController {
       }
     }, time: const Duration(seconds: 1));
 
-    // 自动关机时间
-    debounce(autoShutDownTime.rx, (_) {
+    debounce(autoShutDownTime, (_) {
       if (enableAutoShutDownTime.v) {
         restartShutdownTimer();
       }
     }, time: const Duration(seconds: 1));
 
-    // 倒计时结束
     _stopWatchTimer.fetchEnded.listen((value) {
       _stopWatchTimer.onStopTimer();
-
       FlutterExitApp.exitApp();
     });
   }
-
-  // =========================
-  // Init
-  // =========================
 
   void onInitShutDown() {
     if (enableAutoShutDownTime.v) {
@@ -73,15 +43,9 @@ class ExitSettingsController extends GetxController {
     }
   }
 
-  // =========================
-  // Timer Control
-  // =========================
-
   void restartShutdownTimer() {
     _stopWatchTimer.onStopTimer();
-
     _stopWatchTimer.setPresetMinuteTime(autoShutDownTime.v, add: false);
-
     _stopWatchTimer.onStartTimer();
   }
 
@@ -89,15 +53,9 @@ class ExitSettingsController extends GetxController {
     _stopWatchTimer.onStopTimer();
   }
 
-  // =========================
-  // Public Methods
-  // =========================
-
   void changeShutDownConfig(int minutes, bool enabled) {
     autoShutDownTime.v = minutes;
-
     enableAutoShutDownTime.v = enabled;
-
     if (enabled) {
       restartShutdownTimer();
     } else {
@@ -107,13 +65,11 @@ class ExitSettingsController extends GetxController {
 
   void enableAutoShutdown() {
     enableAutoShutDownTime.v = true;
-
     restartShutdownTimer();
   }
 
   void disableAutoShutdown() {
     enableAutoShutDownTime.v = false;
-
     stopShutdownTimer();
   }
 
@@ -123,5 +79,21 @@ class ExitSettingsController extends GetxController {
 
   void setDontAskExit(bool value) {
     dontAskExit.v = value;
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'dontAskExit': dontAskExit.v,
+      'exitChoose': exitChoose.v,
+      'autoShutDownTime': autoShutDownTime.v,
+      'enableAutoShutDownTime': enableAutoShutDownTime.v,
+    };
+  }
+
+  void fromJson(Map<String, dynamic> json) {
+    dontAskExit.v = json['dontAskExit'] ?? false;
+    exitChoose.v = json['exitChoose'] ?? '';
+    autoShutDownTime.v = json['autoShutDownTime'] ?? 120;
+    enableAutoShutDownTime.v = json['enableAutoShutDownTime'] ?? false;
   }
 }

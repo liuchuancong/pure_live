@@ -48,9 +48,9 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
 
   void _listenGlobalVolume() {
     final v = SettingsService.to.vol;
-    _volumeListener = v.globalVolumeMute.rx.stream.listen((_) => _updateVolumeFromGlobal());
-    _mobileVolWorker = v.defaultMobileVolume.rx.stream.listen((_) => _updateVolumeFromGlobal());
-    _desktopVolWorker = v.defaultDesktopVolume.rx.stream.listen((_) => _updateVolumeFromGlobal());
+    _volumeListener = v.globalVolumeMute.stream.listen((_) => _updateVolumeFromGlobal());
+    _mobileVolWorker = v.defaultMobileVolume.stream.listen((_) => _updateVolumeFromGlobal());
+    _desktopVolWorker = v.defaultDesktopVolume.stream.listen((_) => _updateVolumeFromGlobal());
   }
 
   void _updateVolumeFromGlobal() {

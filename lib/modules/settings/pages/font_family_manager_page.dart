@@ -16,8 +16,8 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
 
   Rx<String> get currentFontRx {
     return isDanmakuSettings
-        ? SettingsService.to.danmaku.danmakuFontFamilyName.rx as Rx<String>
-        : SettingsService.to.font.fontFamilyName.rx as Rx<String>;
+        ? SettingsService.to.danmaku.danmakuFontFamilyName as Rx<String>
+        : SettingsService.to.font.fontFamilyName as Rx<String>;
   }
 
   void _activateFont(FontModel model, {String? targetFileName}) {

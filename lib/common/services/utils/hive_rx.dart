@@ -2,91 +2,40 @@ import 'dart:convert';
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 
-class HiveRx<T> {
+class HiveRx<T> extends Rx<T> {
   final String key;
-  final Rx<T> rx;
   final T defaultValue;
 
-  HiveRx._({required this.key, required this.defaultValue, required this.rx});
+  HiveRx._({required this.key, required this.defaultValue, required T initialValue}) : super(initialValue);
 
-  factory HiveRx._createPrimitive({
-    required String key,
-    required T defaultValue,
-    required T? Function(String key) getter,
-    required void Function(String key, T value) setter,
-  }) {
-    final initialValue = getter(key) ?? defaultValue;
-    final rx = Rx<T>(initialValue);
-    ever<T>(rx, (v) => setter(key, v));
-    return HiveRx._(key: key, defaultValue: defaultValue, rx: rx);
-  }
-
-  T get v => rx.value;
-
-  set v(T value) => rx.value = value;
-
-  T call([T? value]) {
-    if (value != null) {
-      rx.value = value;
-    }
-    return rx.value;
-  }
+  T get v => value;
+  set v(T newValue) => value = newValue;
 
   factory HiveRx.bool(String key, bool defaultValue) {
-    return HiveRx<bool>._createPrimitive(
-          key: key,
-          defaultValue: defaultValue,
-          getter: HivePrefUtil.getBool,
-          setter: HivePrefUtil.setBool,
-        )
-        as HiveRx<T>;
+    return HiveRxBool(key, defaultValue) as HiveRx<T>;
   }
 
   factory HiveRx.int(String key, int defaultValue) {
-    return HiveRx<int>._createPrimitive(
-          key: key,
-          defaultValue: defaultValue,
-          getter: HivePrefUtil.getInt,
-          setter: HivePrefUtil.setInt,
-        )
-        as HiveRx<T>;
+    return HiveRxInt(key, defaultValue) as HiveRx<T>;
   }
 
   factory HiveRx.double(String key, double defaultValue) {
-    return HiveRx<double>._createPrimitive(
-          key: key,
-          defaultValue: defaultValue,
-          getter: HivePrefUtil.getDouble,
-          setter: HivePrefUtil.setDouble,
-        )
-        as HiveRx<T>;
+    return HiveRxDouble(key, defaultValue) as HiveRx<T>;
   }
 
   factory HiveRx.string(String key, String defaultValue) {
-    return HiveRx<String>._createPrimitive(
-          key: key,
-          defaultValue: defaultValue,
-          getter: HivePrefUtil.getString,
-          setter: HivePrefUtil.setString,
-        )
-        as HiveRx<T>;
+    return HiveRxString(key, defaultValue) as HiveRx<T>;
   }
 
   factory HiveRx.stringList(String key, List<String> defaultValue) {
-    return HiveRx<List<String>>._createPrimitive(
-          key: key,
-          defaultValue: defaultValue,
-          getter: HivePrefUtil.getStringList,
-          setter: HivePrefUtil.setStringList,
-        )
-        as HiveRx<T>;
+    return HiveRxStringList(key, defaultValue) as HiveRx<T>;
   }
 
   factory HiveRx.dynamic(String key, T defaultValue) {
     final initialValue = HivePrefUtil.getAnyPref(key) ?? defaultValue;
-    final rx = Rx<T>(initialValue);
-    ever(rx, (v) => HivePrefUtil.setAnyPref(key, v));
-    return HiveRx._(key: key, defaultValue: defaultValue, rx: rx);
+    final instance = HiveRx<T>._(key: key, defaultValue: defaultValue, initialValue: initialValue);
+    ever<T>(instance, (v) => HivePrefUtil.setAnyPref(key, v));
+    return instance;
   }
 
   factory HiveRx.object(
@@ -106,26 +55,115 @@ class HiveRx<T> {
       }
     }
 
-    final rx = Rx<T>(initialValue);
-    ever<T>(rx, (v) {
+    final instance = HiveRx<T>._(key: key, defaultValue: defaultValue, initialValue: initialValue);
+    ever<T>(instance, (v) {
       try {
         HivePrefUtil.setString(key, jsonEncode(toJson(v)));
       } catch (_) {}
     });
-
-    return HiveRx._(key: key, defaultValue: defaultValue, rx: rx);
+    return instance;
   }
 
   void reset() {
-    rx.value = defaultValue;
+    value = defaultValue;
   }
 
   Future<void> remove() async {
     await HivePrefUtil.remove(key);
-    rx.value = defaultValue;
+    value = defaultValue;
+  }
+}
+
+// =============================================================================
+// Concrete Implementation Subclasses (Keep them below)
+// =============================================================================
+
+class HiveRxBool extends RxBool {
+  final String key;
+  final bool defaultValue;
+
+  HiveRxBool(this.key, this.defaultValue) : super(HivePrefUtil.getBool(key) ?? defaultValue) {
+    ever<bool>(this, (v) => HivePrefUtil.setBool(key, v));
   }
 
-  void listen(void Function(T) onData) {
-    rx.listen(onData);
+  bool get v => value;
+  set v(bool newValue) => value = newValue;
+
+  void reset() => value = defaultValue;
+  Future<void> removePref() async {
+    await HivePrefUtil.remove(key);
+    value = defaultValue;
+  }
+}
+
+class HiveRxString extends RxString {
+  final String key;
+  final String defaultValue;
+
+  HiveRxString(this.key, this.defaultValue) : super(HivePrefUtil.getString(key) ?? defaultValue) {
+    ever<String>(this, (v) => HivePrefUtil.setString(key, v));
+  }
+
+  String get v => value;
+  set v(String newValue) => value = newValue;
+
+  void reset() => value = defaultValue;
+  Future<void> removePref() async {
+    await HivePrefUtil.remove(key);
+    value = defaultValue;
+  }
+}
+
+class HiveRxInt extends RxInt {
+  final String key;
+  final int defaultValue;
+
+  HiveRxInt(this.key, this.defaultValue) : super(HivePrefUtil.getInt(key) ?? defaultValue) {
+    ever<int>(this, (v) => HivePrefUtil.setInt(key, v));
+  }
+
+  int get v => value;
+  set v(int newValue) => value = newValue;
+
+  void reset() => value = defaultValue;
+  Future<void> removePref() async {
+    await HivePrefUtil.remove(key);
+    value = defaultValue;
+  }
+}
+
+class HiveRxDouble extends RxDouble {
+  final String key;
+  final double defaultValue;
+
+  HiveRxDouble(this.key, this.defaultValue) : super(HivePrefUtil.getDouble(key) ?? defaultValue) {
+    ever<double>(this, (v) => HivePrefUtil.setDouble(key, v));
+  }
+
+  double get v => value;
+  set v(double newValue) => value = newValue;
+
+  void reset() => value = defaultValue;
+  Future<void> removePref() async {
+    await HivePrefUtil.remove(key);
+    value = defaultValue;
+  }
+}
+
+class HiveRxStringList extends RxList<String> {
+  final String key;
+  final List<String> defaultValue;
+
+  HiveRxStringList(this.key, this.defaultValue) : super(HivePrefUtil.getStringList(key) ?? defaultValue) {
+    ever<List<String>>(this, (v) => HivePrefUtil.setStringList(key, v));
+  }
+
+  List<String> get v => this;
+  set v(List<String> newValue) => assignAll(newValue);
+
+  void reset() => assignAll(defaultValue);
+  Future<void> removePref() async {
+    await HivePrefUtil.remove(key);
+    assignAll(defaultValue);
   }
 }

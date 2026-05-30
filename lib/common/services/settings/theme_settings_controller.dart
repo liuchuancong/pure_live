@@ -6,14 +6,15 @@ import 'package:pure_live/common/services/utils/hive_rx.dart';
 import 'package:pure_live/common/services/settings/font_settings_controller.dart';
 
 class ThemeSettingsController extends GetxController {
-  final themeModeName = HiveRx.string('themeMode', "System");
-  final enableDynamicTheme = HiveRx.bool('enableDynamicTheme', false);
-  final themeColorSwitch = HiveRx.string('themeColorSwitch', Colors.blue.hex);
-  final languageName = HiveRx.string('language', "简体中文");
-  final crossAxisSpacing = HiveRx.double('crossAxisSpacing', 6.0);
-  final mainAxisSpacing = HiveRx.double('mainAxisSpacing', 6.0);
-  final loadingStyle = HiveRx.string('loadingStyle', AppConsts.defaultLoadingStyleKey);
-  final loadingStyleColorSwitch = HiveRx.string('loadingStyleColorSwitch', '');
+  final HiveRxString themeModeName = HiveRxString('themeMode', "System");
+  final HiveRxBool enableDynamicTheme = HiveRxBool('enableDynamicTheme', false);
+  final HiveRxString themeColorSwitch = HiveRxString('themeColorSwitch', Colors.blue.hex);
+  final HiveRxString languageName = HiveRxString('language', "简体中文");
+  final HiveRxDouble crossAxisSpacing = HiveRxDouble('crossAxisSpacing', 6.0);
+  final HiveRxDouble mainAxisSpacing = HiveRxDouble('mainAxisSpacing', 6.0);
+  final HiveRxString loadingStyle = HiveRxString('loadingStyle', AppConsts.defaultLoadingStyleKey);
+  final HiveRxString loadingStyleColorSwitch = HiveRxString('loadingStyleColorSwitch', '');
+
   ThemeMode get themeMode => AppConsts.themeModes[themeModeName.v]!;
   Locale get language => AppConsts.languages[languageName.v]!;
 
@@ -24,7 +25,7 @@ class ThemeSettingsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    everAll([crossAxisSpacing.rx, mainAxisSpacing.rx], (_) {
+    everAll([crossAxisSpacing, mainAxisSpacing], (_) {
       Get.find<FontSettingsController>().refreshSystemTheme();
     });
   }
@@ -55,7 +56,6 @@ class ThemeSettingsController extends GetxController {
       'language': languageName.v,
       'crossAxisSpacing': crossAxisSpacing.v,
       'mainAxisSpacing': mainAxisSpacing.v,
-
       'loadingStyle': loadingStyle.v,
       'loadingStyleColorSwitch': loadingStyleColorSwitch.v,
     };

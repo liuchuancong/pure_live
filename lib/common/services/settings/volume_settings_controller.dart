@@ -4,11 +4,11 @@ import 'package:pure_live/get/get.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
 
 class VolumeSettingsController extends GetxController {
-  final defaultMobileVolume = HiveRx.double('defaultMobileVolume', 0.5);
-  final defaultDesktopVolume = HiveRx.double('defaultDesktopVolume', 1.0);
-  final globalVolumeMute = HiveRx.bool('globalVolumeMute', false);
-  final _roomVolumesRaw = HiveRx.string('roomVolumes', '{}');
-  final rxRoomVolumes = <String, double>{}.obs;
+  final HiveRxDouble defaultMobileVolume = HiveRxDouble('defaultMobileVolume', 0.5);
+  final HiveRxDouble defaultDesktopVolume = HiveRxDouble('defaultDesktopVolume', 1.0);
+  final HiveRxBool globalVolumeMute = HiveRxBool('globalVolumeMute', false);
+  final HiveRxString _roomVolumesRaw = HiveRxString('roomVolumes', '{}');
+  final RxMap<String, double> rxRoomVolumes = <String, double>{}.obs;
   Map<String, double> get roomVolumes => rxRoomVolumes;
 
   set roomVolumes(Map<String, double> value) {
@@ -63,14 +63,29 @@ class VolumeSettingsController extends GetxController {
   }
 
   void fromJson(Map<String, dynamic> json) {
-    defaultMobileVolume.v = json['defaultMobileVolume'] ?? 0.5;
-    defaultDesktopVolume.v = json['defaultDesktopVolume'] ?? 1.0;
+    defaultMobileVolume.v = (json['defaultMobileVolume'] as num?)?.toDouble() ?? 0.5;
+    defaultDesktopVolume.v = (json['defaultDesktopVolume'] as num?)?.toDouble() ?? 1.0;
     globalVolumeMute.v = json['globalVolumeMute'] ?? false;
-
-    if (json['roomVolumes'] != null) {
-      final map = Map<String, dynamic>.from(json['roomVolumes']);
+    final roomVolumesData = json['roomVolumes'];
+    if (roomVolumesData == null) {
+      rxRoomVolumes.clear();
+      _roomVolumesRaw.v = '{}';
+      return;
+    }
+    try {
+      Map<String, dynamic> map;
+      if (roomVolumesData is String) {
+        map = Map<String, dynamic>.from(jsonDecode(roomVolumesData));
+      } else if (roomVolumesData is Map) {
+        map = Map<String, dynamic>.from(roomVolumesData);
+      } else {
+        map = {};
+      }
       rxRoomVolumes.assignAll(map.map((k, v) => MapEntry(k, (v as num).toDouble())));
       _roomVolumesRaw.v = jsonEncode(rxRoomVolumes);
+    } catch (_) {
+      rxRoomVolumes.clear();
+      _roomVolumesRaw.v = '{}';
     }
   }
 }

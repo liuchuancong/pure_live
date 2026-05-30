@@ -26,7 +26,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
               () => context.buildSwitchTile(
                 title: i18n("global_mute"),
                 subtitle: i18n("global_mute_subtitle"),
-                value: SettingsService.to.vol.globalVolumeMute.v,
+                value: SettingsService.to.vol.globalVolumeMute,
                 icon: SettingsService.to.vol.globalVolumeMute.v ? Remix.volume_mute_line : Remix.volume_up_line,
               ),
             ),
@@ -92,20 +92,20 @@ class VideoSettingsPage extends GetView<SettingsService> {
             context.buildSwitchTile(
               title: i18n("exit_float_window"),
               subtitle: i18n("exit_float_window_subtitle"),
-              value: SettingsService.to.player.floatPlay.v,
+              value: SettingsService.to.player.floatPlay,
               icon: Remix.picture_in_picture_2_line,
             ),
             context.buildSwitchTile(
               title: i18n('enable_fullscreen_default'),
               subtitle: i18n('enable_fullscreen_default_subtitle'),
-              value: SettingsService.to.app.enableFullScreenDefault.v,
+              value: SettingsService.to.app.enableFullScreenDefault,
               icon: Remix.fullscreen_line,
             ),
             if (Platform.isAndroid)
               context.buildSwitchTile(
                 title: i18n('enable_screen_keep_on'),
                 subtitle: i18n('enable_screen_keep_on_subtitle'),
-                value: SettingsService.to.app.enableScreenKeepOn.v,
+                value: SettingsService.to.app.enableScreenKeepOn,
                 icon: Remix.lightbulb_line,
               ),
           ]),
@@ -118,7 +118,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
             context.buildSwitchTile(
               title: i18n('show_danmaku'),
               subtitle: i18n('show_danmaku_subtitle'),
-              value: SettingsService.to.danmaku.enableDanmakuDisplay.v,
+              value: SettingsService.to.danmaku.enableDanmakuDisplay,
               icon: Remix.chat_smile_2_line,
             ),
             Obx(

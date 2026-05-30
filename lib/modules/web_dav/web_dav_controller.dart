@@ -36,7 +36,7 @@ class WebDavPageController extends GetxController {
     // 监听同步到全局
     configs.listen((_) {
       _webDavController.webDavConfigs.v = List.from(configs);
-      _webDavController.webDavConfigs.rx.refresh();
+      _webDavController.webDavConfigs.refresh();
     });
 
     currentConfig.listen((config) {

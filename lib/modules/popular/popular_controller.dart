@@ -13,7 +13,7 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
 
     _initTabController(isFirstLoad: true);
 
-    ever(SettingsService.to.fav.hotAreasList.rx, (_) {
+    ever(SettingsService.to.fav.hotAreasList, (_) {
       _initTabController(isFirstLoad: false);
     });
   }

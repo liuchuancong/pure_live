@@ -61,20 +61,20 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
             context.buildSwitchTile(
               title: i18n('audio_only_mode'),
               subtitle: i18n("audio_only_mode_subtitle"),
-              value: SettingsService.to.player.audioOnly.v,
+              value: SettingsService.to.player.audioOnly,
               icon: Remix.volume_up_line,
             ),
             context.buildSwitchTile(
               title: i18n('enable_codec'),
               subtitle: i18n("gpu_decode"),
-              value: SettingsService.to.player.enableCodec.v,
+              value: SettingsService.to.player.enableCodec,
               icon: Remix.flashlight_line,
             ),
 
             context.buildSwitchTile(
               title: i18n('force_destroy_player'),
               subtitle: i18n('force_destroy_player_subtitle'),
-              value: SettingsService.to.player.useHardStopOnExit.v,
+              value: SettingsService.to.player.useHardStopOnExit,
               icon: Remix.p2p_line,
             ),
           ]),
@@ -102,7 +102,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
           context.buildSwitchTile(
             title: i18n('compat_mode'),
             subtitle: i18n('compat_mode_subtitle'),
-            value: SettingsService.to.player.playerCompatMode.v,
+            value: SettingsService.to.player.playerCompatMode,
             icon: Remix.shield_flash_line,
           ),
         Padding(
@@ -177,7 +177,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
         context.buildModernCard([
           context.buildSwitchTile(
             title: i18n("custom_output_hwdec"),
-            value: SettingsService.to.player.customPlayerOutput.v,
+            value: SettingsService.to.player.customPlayerOutput,
             icon: Remix.apps_2_add_fill,
           ),
           Obx(

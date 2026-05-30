@@ -4,26 +4,13 @@ import 'package:pure_live/common/global/win_auto_start.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
 
 class StartupController extends GetxController {
-  // =========================
-  // Startup
-  // =========================
-
-  final enableStartUp = HiveRx.bool('enableStartUp', true);
-
-  // =========================
-  // Lifecycle
-  // =========================
+  final HiveRxBool enableStartUp = HiveRxBool('enableStartUp', true);
 
   @override
   void onInit() {
     super.onInit();
-
-    ever(enableStartUp.rx, (_) => setupLaunchAtStartup());
+    ever<bool>(enableStartUp, (_) => setupLaunchAtStartup());
   }
-
-  // =========================
-  // Startup Logic
-  // =========================
 
   Future<void> setupLaunchAtStartup() async {
     try {
@@ -41,10 +28,6 @@ class StartupController extends GetxController {
     }
   }
 
-  // =========================
-  // Public Methods
-  // =========================
-
   void enableStartup() {
     enableStartUp.v = true;
   }
@@ -55,5 +38,13 @@ class StartupController extends GetxController {
 
   void toggleStartup() {
     enableStartUp.v = !enableStartUp.v;
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'enableStartUp': enableStartUp.v};
+  }
+
+  void fromJson(Map<String, dynamic> json) {
+    enableStartUp.v = json['enableStartUp'] ?? true;
   }
 }

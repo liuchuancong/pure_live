@@ -18,7 +18,7 @@ class BiliBiliAccountService extends GetxController {
   void onInit() {
     super.onInit();
     logined.value = currentCookie.isNotEmpty;
-    ever(SettingsService.to.cookieManager.bilibiliCookie.rx, (v) {
+    ever(SettingsService.to.cookieManager.bilibiliCookie, (v) {
       final val = v.toString();
       logined.value = val.isNotEmpty;
       if (val.isEmpty) {

@@ -132,7 +132,7 @@ extension AppLayoutFactory on BuildContext {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(top: 4), // 精准像素级微调，使图标轴心与第一行标题水平对齐
+                  padding: const EdgeInsets.only(top: 4),
                   child: Icon(icon, color: iconColor ?? theme.colorScheme.primary, size: 22),
                 ),
               ],

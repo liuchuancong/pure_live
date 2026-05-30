@@ -31,7 +31,7 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
 
     syncRooms();
 
-    debounce(SettingsService.to.fav.favoriteRooms.rx, (rooms) => syncRooms(), time: const Duration(milliseconds: 1000));
+    debounce(SettingsService.to.fav.favoriteRooms, (rooms) => syncRooms(), time: const Duration(milliseconds: 1000));
 
     ever(selectedTagId, (_) => syncRooms());
     ever(tagController.tags, (_) => syncRooms());

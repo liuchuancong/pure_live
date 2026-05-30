@@ -18,26 +18,26 @@ class GeneralSettingsPage extends GetView<SettingsService> {
             context.buildSwitchTile(
               title: i18n('splash_animation'),
               subtitle: i18n("splash_animation_subtitle"),
-              value: SettingsService.to.app.showSplashPage.v,
+              value: SettingsService.to.app.showSplashPage,
               icon: Remix.rocket_2_line,
             ),
             context.buildSwitchTile(
               title: i18n('enable_auto_check_update'),
               subtitle: "",
-              value: SettingsService.to.app.enableAutoCheckUpdate.v,
+              value: SettingsService.to.app.enableAutoCheckUpdate,
               icon: Remix.refresh_line,
             ),
             if (Platform.isWindows) ...[
               context.buildSwitchTile(
                 title: i18n("startup"),
                 subtitle: "",
-                value: SettingsService.to.startup.enableStartUp.v,
+                value: SettingsService.to.startup.enableStartUp,
                 icon: Remix.windows_line,
               ),
               context.buildSwitchTile(
                 title: i18n("no_exit_confirm"),
                 subtitle: "",
-                value: SettingsService.to.exit.dontAskExit.v,
+                value: SettingsService.to.exit.dontAskExit,
                 icon: Remix.error_warning_line,
               ),
             ],

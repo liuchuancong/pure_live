@@ -10,13 +10,13 @@ import 'package:pure_live/common/services/medels/download_status.dart';
 import 'package:pure_live/common/services/settings/danmaku_settings_controller.dart';
 
 class FontSettingsController extends GetxController {
-  final textScaleFactor = HiveRx.double('textScaleFactor', 1.0);
-  final fontSizeBodySmall = HiveRx.double('fontSizeBodySmall', 12.0);
-  final fontSizeBodyMedium = HiveRx.double('fontSizeBodyMedium', 13.0);
-  final fontSizeBodyLarge = HiveRx.double('fontSizeBodyLarge', 14.0);
-  final fontSizeTitleMedium = HiveRx.double('fontSizeTitleMedium', 15.0);
-  final fontSizeTitleLarge = HiveRx.double('fontSizeTitleLarge', 20.0);
-  final fontFamilyName = HiveRx.string('fontFamilyName', 'Default');
+  final HiveRxDouble textScaleFactor = HiveRxDouble('textScaleFactor', 1.0);
+  final HiveRxDouble fontSizeBodySmall = HiveRxDouble('fontSizeBodySmall', 12.0);
+  final HiveRxDouble fontSizeBodyMedium = HiveRxDouble('fontSizeBodyMedium', 13.0);
+  final HiveRxDouble fontSizeBodyLarge = HiveRxDouble('fontSizeBodyLarge', 14.0);
+  final HiveRxDouble fontSizeTitleMedium = HiveRxDouble('fontSizeTitleMedium', 15.0);
+  final HiveRxDouble fontSizeTitleLarge = HiveRxDouble('fontSizeTitleLarge', 20.0);
+  final HiveRxString fontFamilyName = HiveRxString('fontFamilyName', 'Default');
 
   final Rx<FontModel?> curFontModel = Rx<FontModel?>(null);
   final RxList<FontModel> fontList = <FontModel>[].obs;
@@ -30,12 +30,12 @@ class FontSettingsController extends GetxController {
     initUserFontLifecycle();
 
     everAll([
-      fontSizeBodySmall.rx,
-      fontSizeBodyMedium.rx,
-      fontSizeBodyLarge.rx,
-      fontSizeTitleMedium.rx,
-      fontSizeTitleLarge.rx,
-      fontFamilyName.rx,
+      fontSizeBodySmall,
+      fontSizeBodyMedium,
+      fontSizeBodyLarge,
+      fontSizeTitleMedium,
+      fontSizeTitleLarge,
+      fontFamilyName,
     ], (_) => refreshSystemTheme());
   }
 

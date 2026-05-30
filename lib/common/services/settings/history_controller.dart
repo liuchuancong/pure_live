@@ -1,11 +1,11 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
+import 'package:pure_live/common/services/utils/backup_migration_util.dart';
 
 class HistoryController extends GetxController {
   static HistoryController get to => Get.find();
 
-  // 历史记录独立存储
-  final historyRooms = HiveRx.object(
+  final HiveRx<List<LiveRoom>> historyRooms = HiveRx.object(
     'historyRooms',
     <LiveRoom>[],
     fromJson: (json) {
@@ -18,17 +18,16 @@ class HistoryController extends GetxController {
 
   void addRoomToHistory(LiveRoom room) {
     historyRooms.v.removeWhere((e) => e.roomId == room.roomId);
-    // 限制最多50条
     if (historyRooms.v.length >= 50) {
       historyRooms.v.removeRange(0, historyRooms.v.length - 49);
     }
     historyRooms.v.insert(0, room);
-    historyRooms.rx.refresh();
+    historyRooms.refresh();
   }
 
   void clearHistory() {
     historyRooms.v.clear();
-    historyRooms.rx.refresh();
+    historyRooms.refresh();
   }
 
   Map<String, dynamic> toJson() {
@@ -36,8 +35,6 @@ class HistoryController extends GetxController {
   }
 
   void fromJson(Map<String, dynamic> json) {
-    if (json['historyRooms'] != null) {
-      historyRooms.v = (json['historyRooms'] as List).map((e) => LiveRoom.fromJson(Map.from(e))).toList();
-    }
+    historyRooms.v = BackupMigrationUtil.parseObjectList(json['historyRooms'], (m) => LiveRoom.fromJson(m));
   }
 }
