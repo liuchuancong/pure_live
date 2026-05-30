@@ -24,7 +24,7 @@ class BackupController extends GetxController {
 
   static const int backupVersion = 2;
 
-  final HiveRxString backupDirectory = HiveRxString('backupDirectory', '');
+  final RxString backupDirectory = hiveString('backupDirectory', '');
 
   Map<String, dynamic> exportAllSettings() {
     if (!Get.isRegistered<TagManagementController>()) {

@@ -5,8 +5,8 @@ import 'package:pure_live/common/services/utils/hive_rx.dart';
 class WindowSizeController extends GetxController {
   static WindowSizeController get to => Get.find<WindowSizeController>();
 
-  final HiveRx<double> storedWidth = HiveRx.double('window_width', 1280.0);
-  final HiveRx<double> storedHeight = HiveRx.double('window_height', 720.0);
+  final RxDouble storedWidth = hiveDouble('window_width', 1280.0);
+  final RxDouble storedHeight = hiveDouble('window_height', 720.0);
 
   final windowSize = const Size(1280, 720).obs;
   final isTracking = false.obs;

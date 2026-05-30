@@ -5,6 +5,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:loading_indicator/loading_indicator.dart';
 import 'package:pure_live/common/style/app_text_styles.dart';
+import 'package:pure_live/common/services/utils/hive_rx.dart';
 import 'package:pure_live/common/services/settings_service.dart';
 import 'package:pure_live/modules/settings/pages/aurora_loading.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';

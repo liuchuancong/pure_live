@@ -1,21 +1,15 @@
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/services/utils/hive_rx.dart';
 import 'package:pure_live/modules/web_dav/webdav_config.dart';
 import 'package:pure_live/common/services/utils/backup_migration_util.dart';
 
 class WebDavController extends GetxController {
-  final HiveRx<String> currentWebDavConfig = HiveRx.string('currentWebDavConfig', '');
+  final RxString currentWebDavConfig = hiveString('currentWebDavConfig', '');
 
-  final HiveRx<List<WebDAVConfig>> webDavConfigs = HiveRx.object(
-    'webDavConfigs',
-    <WebDAVConfig>[],
-    fromJson: (Map<String, dynamic> json) {
+  final Rx<List<WebDAVConfig>> webDavConfigs = hiveObject('webDavConfigs', <WebDAVConfig>[], fromJson: (Map<String, dynamic> json) {
       return List<WebDAVConfig>.from((json['list'] ?? []).map((e) => WebDAVConfig.fromJson(e)));
-    },
-    toJson: (List<WebDAVConfig> list) {
+    }, toJson: (List<WebDAVConfig> list) {
       return {'list': list.map((e) => e.toJson()).toList()};
-    },
-  );
+    },);
 
   bool isWebDavConfigExist(String name) => webDavConfigs.v.any((e) => e.name == name);
 

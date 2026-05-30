@@ -2,10 +2,10 @@ import 'package:pure_live/get/get.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
 
 class CookieSettingsController extends GetxController {
-  final HiveRx<String> bilibiliCookie = HiveRx.string('bilibiliCookie', '');
-  final HiveRx<String> huyaCookie = HiveRx.string('huyaCookie', '');
-  final HiveRx<String> douyinCookie = HiveRx.string('douyinCookie', '');
-  final HiveRx<String> kuaishouCookie = HiveRx.string('kuaishouCookie', '');
+  final RxString bilibiliCookie = hiveString('bilibiliCookie', '');
+  final RxString huyaCookie = hiveString('huyaCookie', '');
+  final RxString douyinCookie = hiveString('douyinCookie', '');
+  final RxString kuaishouCookie = hiveString('kuaishouCookie', '');
 
   void clearAllCookies() {
     bilibiliCookie.v = '';

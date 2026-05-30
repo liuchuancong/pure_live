@@ -1,29 +1,27 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
-import 'package:pure_live/common/services/utils/hive_rx.dart';
 import 'package:pure_live/common/services/utils/backup_migration_util.dart';
 
 class FavoriteRoomController extends GetxController {
-  final HiveRx<List<String>> shieldList = HiveRx.stringList('shieldList', []);
-  final HiveRx<List<String>> hotAreasList = HiveRx.stringList('hotAreasList', AppConsts.supportSites);
-  final HiveRx<String> preferPlatform = HiveRx.string('preferPlatform', Sites.bilibiliSite);
-
-  final favoriteRooms = HiveRx.object(
+  final RxList<String> shieldList = hiveStringList('shieldList', []);
+  final RxList<String> hotAreasList = hiveStringList('hotAreasList', AppConsts.supportSites);
+  final RxString preferPlatform = hiveString('preferPlatform', Sites.bilibiliSite);
+  final Rx<List<LiveRoom>> favoriteRooms = hiveObject(
     'favoriteRooms',
     <LiveRoom>[],
     fromJson: (json) {
-      return (json['list'] as List).map((e) => LiveRoom.fromJson(e)).toList();
+      return List<LiveRoom>.from((json['list'] ?? []).map((e) => LiveRoom.fromJson(e)));
     },
     toJson: (list) {
       return {'list': list.map((e) => e.toJson()).toList()};
     },
   );
 
-  final favoriteAreas = HiveRx.object(
+  final Rx<List<LiveArea>> favoriteAreas = hiveObject(
     'favoriteAreas',
     <LiveArea>[],
     fromJson: (json) {
-      return (json['list'] as List).map((e) => LiveArea.fromJson(e)).toList();
+      return List<LiveArea>.from((json['list'] ?? []).map((e) => LiveArea.fromJson(e)));
     },
     toJson: (list) {
       return {'list': list.map((e) => e.toJson()).toList()};

@@ -2,16 +2,16 @@ import 'package:pure_live/get/get.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
 
 class DanmakuSettingsController extends GetxController {
-  final HiveRxBool hideDanmaku = HiveRxBool('hideDanmaku', false);
-  final HiveRxDouble danmakuTopArea = HiveRxDouble('danmakuTopArea', 0.0);
-  final HiveRxDouble danmakuArea = HiveRxDouble('danmakuArea', 1.0);
-  final HiveRxDouble danmakuBottomArea = HiveRxDouble('danmakuBottomArea', 0.5);
-  final HiveRxDouble danmakuSpeed = HiveRxDouble('danmakuSpeed', 8.0);
-  final HiveRxDouble danmakuFontSize = HiveRxDouble('danmakuFontSize', 16.0);
-  final HiveRxDouble danmakuFontBorder = HiveRxDouble('danmakuFontBorder', 4.0);
-  final HiveRxDouble danmakuOpacity = HiveRxDouble('danmakuOpacity', 1.0);
-  final HiveRxBool enableDanmakuDisplay = HiveRxBool('enableDanmakuDisplay', true);
-  final HiveRxString danmakuFontFamilyName = HiveRxString('danmakuFontFamilyName', 'Default');
+  final RxBool hideDanmaku = hiveBool('hideDanmaku', false);
+  final RxDouble danmakuTopArea = hiveDouble('danmakuTopArea', 0.0);
+  final RxDouble danmakuArea = hiveDouble('danmakuArea', 1.0);
+  final RxDouble danmakuBottomArea = hiveDouble('danmakuBottomArea', 0.5);
+  final RxDouble danmakuSpeed = hiveDouble('danmakuSpeed', 8.0);
+  final RxDouble danmakuFontSize = hiveDouble('danmakuFontSize', 16.0);
+  final RxDouble danmakuFontBorder = hiveDouble('danmakuFontBorder', 4.0);
+  final RxDouble danmakuOpacity = hiveDouble('danmakuOpacity', 1.0);
+  final RxBool enableDanmakuDisplay = hiveBool('enableDanmakuDisplay', true);
+  final RxString danmakuFontFamilyName = hiveString('danmakuFontFamilyName', 'Default');
 
   Map<String, dynamic> toJson() {
     return {

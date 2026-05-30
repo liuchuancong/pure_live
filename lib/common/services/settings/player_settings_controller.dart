@@ -1,27 +1,26 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
-import 'package:pure_live/common/services/utils/hive_rx.dart';
 
 class PlayerSettingsController extends GetxController {
-  final HiveRxInt videoFitIndex = HiveRxInt('videoFitIndex', 0);
-  final HiveRxString videoPlayerKey = HiveRxString('videoPlayerKey', 'mpv');
+  final RxInt videoFitIndex = hiveInt('videoFitIndex', 0);
+  final RxString videoPlayerKey = hiveString('videoPlayerKey', 'mpv');
 
-  final HiveRxString preferResolution = HiveRxString('preferResolution', PlayerConsts.resolutions.first);
-  final HiveRxString preferResolutionCellular = HiveRxString(
+  final RxString preferResolution = hiveString('preferResolution', PlayerConsts.resolutions.first);
+  final RxString preferResolutionCellular = hiveString(
     'preferResolutionCellular',
     PlayerConsts.resolutions.first,
   );
 
-  final HiveRxBool enableCodec = HiveRxBool('enableCodec', true);
-  final HiveRxBool playerCompatMode = HiveRxBool('playerCompatMode', false);
-  final HiveRxBool customPlayerOutput = HiveRxBool('customPlayerOutput', false);
-  final HiveRxString videoOutputDriver = HiveRxString('videoOutputDriver', 'gpu');
-  final HiveRxString audioOutputDriver = HiveRxString('audioOutputDriver', 'auto');
-  final HiveRxString videoHardwareDecoder = HiveRxString('videoHardwareDecoder', 'auto');
+  final RxBool enableCodec = hiveBool('enableCodec', true);
+  final RxBool playerCompatMode = hiveBool('playerCompatMode', false);
+  final RxBool customPlayerOutput = hiveBool('customPlayerOutput', false);
+  final RxString videoOutputDriver = hiveString('videoOutputDriver', 'gpu');
+  final RxString audioOutputDriver = hiveString('audioOutputDriver', 'auto');
+  final RxString videoHardwareDecoder = hiveString('videoHardwareDecoder', 'auto');
 
-  final HiveRxBool floatPlay = HiveRxBool('floatPlay', false);
-  final HiveRxBool audioOnly = HiveRxBool('audioOnly', false);
-  final HiveRxBool useHardStopOnExit = HiveRxBool('useHardStopOnExit', false);
+  final RxBool floatPlay = hiveBool('floatPlay', false);
+  final RxBool audioOnly = hiveBool('audioOnly', false);
+  final RxBool useHardStopOnExit = hiveBool('useHardStopOnExit', false);
 
   List<BoxFit> get videoFitArray => const [
     BoxFit.contain,

@@ -4,10 +4,10 @@ import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
 
 class ExitSettingsController extends GetxController {
-  final HiveRxBool dontAskExit = HiveRxBool('dontAskExit', false);
-  final HiveRxString exitChoose = HiveRxString('exitChoose', '');
-  final HiveRxInt autoShutDownTime = HiveRxInt('autoShutDownTime', 120);
-  final HiveRxBool enableAutoShutDownTime = HiveRxBool('enableAutoShutDownTime', false);
+  final RxBool dontAskExit = hiveBool('dontAskExit', false);
+  final RxString exitChoose = hiveString('exitChoose', '');
+  final RxInt autoShutDownTime = hiveInt('autoShutDownTime', 120);
+  final RxBool enableAutoShutDownTime = hiveBool('enableAutoShutDownTime', false);
 
   final StopWatchTimer _stopWatchTimer = StopWatchTimer(mode: StopWatchMode.countDown);
   StopWatchTimer get stopWatchTimer => _stopWatchTimer;

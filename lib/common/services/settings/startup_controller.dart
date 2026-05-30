@@ -4,7 +4,7 @@ import 'package:pure_live/common/global/win_auto_start.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
 
 class StartupController extends GetxController {
-  final HiveRxBool enableStartUp = HiveRxBool('enableStartUp', true);
+  final RxBool enableStartUp = hiveBool('enableStartUp', true);
 
   @override
   void onInit() {

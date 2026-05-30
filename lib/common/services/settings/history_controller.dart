@@ -1,11 +1,10 @@
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/services/utils/hive_rx.dart';
 import 'package:pure_live/common/services/utils/backup_migration_util.dart';
 
 class HistoryController extends GetxController {
   static HistoryController get to => Get.find();
 
-  final HiveRx<List<LiveRoom>> historyRooms = HiveRx.object(
+  final Rx<List<LiveRoom>> historyRooms = hiveObject(
     'historyRooms',
     <LiveRoom>[],
     fromJson: (json) {

@@ -3,20 +3,19 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/models/font_model.dart';
-import 'package:pure_live/common/services/utils/hive_rx.dart';
 import 'package:pure_live/plugins/font_download_manager.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
 import 'package:pure_live/common/services/medels/download_status.dart';
 import 'package:pure_live/common/services/settings/danmaku_settings_controller.dart';
 
 class FontSettingsController extends GetxController {
-  final HiveRxDouble textScaleFactor = HiveRxDouble('textScaleFactor', 1.0);
-  final HiveRxDouble fontSizeBodySmall = HiveRxDouble('fontSizeBodySmall', 12.0);
-  final HiveRxDouble fontSizeBodyMedium = HiveRxDouble('fontSizeBodyMedium', 13.0);
-  final HiveRxDouble fontSizeBodyLarge = HiveRxDouble('fontSizeBodyLarge', 14.0);
-  final HiveRxDouble fontSizeTitleMedium = HiveRxDouble('fontSizeTitleMedium', 15.0);
-  final HiveRxDouble fontSizeTitleLarge = HiveRxDouble('fontSizeTitleLarge', 20.0);
-  final HiveRxString fontFamilyName = HiveRxString('fontFamilyName', 'Default');
+  final RxDouble textScaleFactor = hiveDouble('textScaleFactor', 1.0);
+  final RxDouble fontSizeBodySmall = hiveDouble('fontSizeBodySmall', 12.0);
+  final RxDouble fontSizeBodyMedium = hiveDouble('fontSizeBodyMedium', 13.0);
+  final RxDouble fontSizeBodyLarge = hiveDouble('fontSizeBodyLarge', 14.0);
+  final RxDouble fontSizeTitleMedium = hiveDouble('fontSizeTitleMedium', 15.0);
+  final RxDouble fontSizeTitleLarge = hiveDouble('fontSizeTitleLarge', 20.0);
+  final RxString fontFamilyName = hiveString('fontFamilyName', 'Default');
 
   final Rx<FontModel?> curFontModel = Rx<FontModel?>(null);
   final RxList<FontModel> fontList = <FontModel>[].obs;

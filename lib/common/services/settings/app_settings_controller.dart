@@ -1,23 +1,19 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
-import 'package:pure_live/common/services/utils/hive_rx.dart';
 
 class AppSettingsController extends GetxController {
-  final HiveRxInt autoRefreshTime = HiveRxInt('autoRefreshTime', 3);
-  final HiveRxBool enableDenseFavorites = HiveRxBool('enableDenseFavorites', true);
-  final HiveRxBool enableBackgroundPlay = HiveRxBool('enableBackgroundPlay', false);
-  final HiveRxBool enableRotateScreen = HiveRxBool('enableRotateScreen', false);
+  final RxInt autoRefreshTime = hiveInt('autoRefreshTime', 3);
+  final RxBool enableDenseFavorites = hiveBool('enableDenseFavorites', true);
+  final RxBool enableBackgroundPlay = hiveBool('enableBackgroundPlay', false);
+  final RxBool enableRotateScreen = hiveBool('enableRotateScreen', false);
 
-  final HiveRxBool enableScreenKeepOn = HiveRxBool('enableScreenKeepOn', true);
+  final RxBool enableScreenKeepOn = hiveBool('enableScreenKeepOn', true);
 
-  final HiveRxBool enableAutoCheckUpdate = HiveRxBool('enableAutoCheckUpdate', true);
-  final HiveRxBool enableFullScreenDefault = HiveRxBool('enableFullScreenDefault', false);
-  final HiveRxBool showSplashPage = HiveRxBool('showSplashPage', true);
+  final RxBool enableAutoCheckUpdate = hiveBool('enableAutoCheckUpdate', true);
+  final RxBool enableFullScreenDefault = hiveBool('enableFullScreenDefault', false);
+  final RxBool showSplashPage = hiveBool('showSplashPage', true);
 
-  late final HiveRx<List<String>> savedMenuIds = HiveRx.stringList(
-    'savedMenuIds',
-    HomeMenu.values.map((e) => e.id).toList(),
-  );
+  late final RxList<String> savedMenuIds = hiveStringList('savedMenuIds', HomeMenu.values.map((e) => e.id).toList());
 
   void toggleMenuVisibility(HomeMenu menu, bool visible) {
     final ids = List<String>.from(savedMenuIds.v);

@@ -1,14 +1,13 @@
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/services/utils/hive_rx.dart';
 import 'package:pure_live/core/iptv/services/auto_sync_scheduler.dart';
 
 class IptvSettingsController extends GetxController {
-  final HiveRxString selectedSourceName = HiveRxString('selectedSourceName', '');
-  final HiveRxString selectedSourceId = HiveRxString('selectedSourceId', '');
-  final HiveRxBool isAutoSyncEnabled = HiveRxBool('isAutoSyncEnabled', false);
-  final HiveRxInt autoSyncHoursInterval = HiveRxInt('autoShutDownTime', 24);
-  final HiveRxString customIptvUserAgent = HiveRxString('customIptvUserAgent', '');
-  final HiveRxString m3uDirectory = HiveRxString('m3uDirectory', 'm3uDirectory');
+  final RxString selectedSourceName = hiveString('selectedSourceName', '');
+  final RxString selectedSourceId = hiveString('selectedSourceId', '');
+  final RxBool isAutoSyncEnabled = hiveBool('isAutoSyncEnabled', false);
+  final RxInt autoSyncHoursInterval = hiveInt('autoShutDownTime', 24);
+  final RxString customIptvUserAgent = hiveString('customIptvUserAgent', '');
+  final RxString m3uDirectory = hiveString('m3uDirectory', 'm3uDirectory');
 
   @override
   void onInit() {

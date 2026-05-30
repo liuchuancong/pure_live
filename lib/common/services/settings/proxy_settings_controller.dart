@@ -1,10 +1,9 @@
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/services/utils/hive_rx.dart';
 
 class ProxySettingsController extends GetxController {
-  final HiveRx<bool> enableProxy = HiveRx.bool('enableProxy', false);
-  final HiveRx<String> proxyHost = HiveRx.string('proxyHost', '');
-  final HiveRx<int> proxyPort = HiveRx.int('proxyPort', 1080);
+  final RxBool enableProxy = hiveBool('enableProxy', false);
+  final RxString proxyHost = hiveString('proxyHost', '');
+  final RxInt proxyPort = hiveInt('proxyPort', 1080);
 
   Map<String, dynamic> toJson() {
     return {'enableProxy': enableProxy.v, 'proxyHost': proxyHost.v, 'proxyPort': proxyPort.v};

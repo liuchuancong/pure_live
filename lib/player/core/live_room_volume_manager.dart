@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:pure_live/common/services/utils/hive_rx.dart';
 import 'package:pure_live/common/services/settings_service.dart';
 
 class LiveRoomVolumeManager {

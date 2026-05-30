@@ -30,7 +30,7 @@ dependencies:
   share_plus: ^12.0.2
   # Local database (SQLite)
   drift: ^2.22.1
-  sqlite3_flutter_libs: ^0.5.28
+  sqlite3_flutter_libs: ^0.6.0+eol
   charset_converter: ^2.3.0
   synchronized: ^3.1.0
   # -------------------------- 网络请求/网络状态 --------------------------
