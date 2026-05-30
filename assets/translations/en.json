@@ -860,5 +860,12 @@
     "player_fvp": "Fvp Player",
     "audio_only_mode": "Audio Only Mode",
     "audio_only_mode_subtitle": "Play audio stream only and disable video loading",
-    "change_danmaku_font_family": "Change Danmaku Font"
+    "change_danmaku_font_family": "Change Danmaku Font",
+    "window_size": "Startup Window Size",
+    "preset_options": "Quick Presets",
+    "custom_input": "Custom Dimensions",
+    "width": "Width",
+    "height": "Height",
+    "save_success": "Settings applied",
+    "invalid_input": "Please enter valid dimensions"
 }

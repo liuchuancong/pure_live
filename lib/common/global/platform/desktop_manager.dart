@@ -24,9 +24,12 @@ class DesktopManager {
       await windowManager.ensureInitialized();
       await Window.initialize();
 
-      const WindowOptions windowOptions = WindowOptions(
-        size: Size(1080, 720),
-        minimumSize: Size(400, 300),
+      final double width = SettingsService.to.window.storedWidth.v;
+      final double height = SettingsService.to.window.storedHeight.v;
+
+      final WindowOptions windowOptions = WindowOptions(
+        size: Size(width, height),
+        minimumSize: const Size(400, 300),
         center: true,
         backgroundColor: Colors.transparent,
         skipTaskbar: false,
@@ -643,9 +646,7 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
   }
 
   @override
-  void onWindowResized() {
-    _sizeController.setTracking(false);
-  }
+  void onWindowResized() {}
 
   @override
   void onWindowMove() {
@@ -657,9 +658,7 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
   void onWindowMoved() {}
 
   @override
-  void onWindowEnterFullScreen() {
-    _sizeController.setTracking(false);
-  }
+  void onWindowEnterFullScreen() {}
 
   @override
   void onWindowLeaveFullScreen() {}

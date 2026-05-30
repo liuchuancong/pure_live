@@ -20,6 +20,12 @@ class WindowSizeController extends GetxController {
       storedWidth.v = size.width;
       storedHeight.v = size.height;
     }, time: const Duration(milliseconds: 500));
+
+    debounce(isTracking, (bool tracking) {
+      if (tracking) {
+        isTracking.value = false;
+      }
+    }, time: const Duration(seconds: 2));
   }
 
   void updateSize(Size size) {

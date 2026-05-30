@@ -859,5 +859,12 @@
     "player_fvp": "Fvp播放器",
     "audio_only_mode": "纯音频模式",
     "audio_only_mode_subtitle": "进入直播间时关闭画面，仅播放声音",
-    "change_danmaku_font_family": "更换弹幕字体"
+    "change_danmaku_font_family": "更换弹幕字体",
+    "window_size": "开机窗口尺寸",
+    "preset_options": "快捷预设选择",
+    "custom_input": "自定义输入尺寸",
+    "width": "宽度",
+    "height": "高度",
+    "save_success": "设置已应用",
+    "invalid_input": "请输入正确的数值"
 }
