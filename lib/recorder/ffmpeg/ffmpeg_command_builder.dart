@@ -31,8 +31,6 @@ class FFmpegCommandBuilder {
 
       // 网络
       '-rw_timeout', rwTimeoutMicro.toString(),
-      '-timeout', rwTimeoutMicro.toString(),
-      '-tcp_nodelay', '1',
 
       // UA
       if (ua != null && ua.isNotEmpty) ...['-user_agent', _quote(ua)],
@@ -84,7 +82,6 @@ class FFmpegCommandBuilder {
       '-reconnect_delay_max', '10',
       '-reconnect_at_eof', '1',
       '-rw_timeout', rwTimeoutMicro.toString(),
-      '-timeout', rwTimeoutMicro.toString(),
       '-max_delay', '5000000',
       '-thread_queue_size', threadQueueSize.toString(),
       if (ua != null && ua.isNotEmpty) ...['-user_agent', _quote(ua)], //ua
