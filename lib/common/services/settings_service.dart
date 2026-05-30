@@ -4,9 +4,9 @@ import 'package:pure_live/common/services/settings/backup_controller.dart';
 import 'package:pure_live/common/services/settings/history_controller.dart';
 import 'package:pure_live/common/services/settings/web_dav_controller.dart';
 import 'package:pure_live/common/services/settings/startup_controller.dart';
-import 'package:pure_live/common/services/settings/favorite_controller.dart';
 import 'package:pure_live/common/services/settings/window_size_controller.dart';
 import 'package:pure_live/common/services/settings/app_settings_controller.dart';
+import 'package:pure_live/common/services/settings/favorite_room_controller.dart';
 import 'package:pure_live/common/services/settings/exit_settings_controller.dart';
 import 'package:pure_live/common/services/settings/font_settings_controller.dart';
 import 'package:pure_live/common/services/settings/iptv_settings_controller.dart';
@@ -27,7 +27,7 @@ class SettingsService extends GetxService {
   DanmakuSettingsController get danmaku => Get.find<DanmakuSettingsController>();
   FontSettingsController get font => Get.find<FontSettingsController>();
   WindowSizeController get window => Get.find<WindowSizeController>();
-  FavoriteController get fav => Get.find<FavoriteController>();
+  FavoriteRoomController get fav => Get.find<FavoriteRoomController>();
   HistoryController get history => Get.find<HistoryController>();
   CacheController get cache => Get.find<CacheController>();
   CookieSettingsController get cookieManager => Get.find<CookieSettingsController>();
@@ -48,7 +48,7 @@ class SettingsService extends GetxService {
     Get.put(DanmakuSettingsController(), permanent: true);
     Get.put(FontSettingsController(), permanent: true);
     Get.put(WindowSizeController(), permanent: true);
-    Get.put(FavoriteController(), permanent: true);
+    Get.put(FavoriteRoomController(), permanent: true);
     Get.put(HistoryController(), permanent: true);
     Get.put(CacheController(), permanent: true);
     Get.put(CookieSettingsController(), permanent: true);

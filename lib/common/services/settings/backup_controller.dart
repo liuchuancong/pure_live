@@ -4,8 +4,8 @@ import 'package:pure_live/get/get.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
 import 'package:pure_live/common/services/settings/web_dav_controller.dart';
 import 'package:pure_live/common/services/settings/history_controller.dart';
-import 'package:pure_live/common/services/settings/favorite_controller.dart';
 import 'package:pure_live/common/services/settings/app_settings_controller.dart';
+import 'package:pure_live/common/services/settings/favorite_room_controller.dart';
 import 'package:pure_live/common/services/settings/font_settings_controller.dart';
 import 'package:pure_live/common/services/settings/iptv_settings_controller.dart';
 import 'package:pure_live/common/services/settings/theme_settings_controller.dart';
@@ -25,7 +25,7 @@ class BackupController extends GetxController {
       "player": Get.find<PlayerSettingsController>().toJson(),
       "danmaku": Get.find<DanmakuSettingsController>().toJson(),
       "volume": Get.find<VolumeSettingsController>().toJson(),
-      "favorite": Get.find<FavoriteController>().toJson(),
+      "favorite": Get.find<FavoriteRoomController>().toJson(),
       "history": Get.find<HistoryController>().toJson(),
       "webdav": Get.find<WebDavController>().toJson(),
       "iptv": Get.find<IptvSettingsController>().toJson(),
@@ -42,7 +42,7 @@ class BackupController extends GetxController {
     Get.find<PlayerSettingsController>().fromJson(data["player"] ?? {});
     Get.find<DanmakuSettingsController>().fromJson(data["danmaku"] ?? {});
     Get.find<VolumeSettingsController>().fromJson(data["volume"] ?? {});
-    Get.find<FavoriteController>().fromJson(data["favorite"] ?? {});
+    Get.find<FavoriteRoomController>().fromJson(data["favorite"] ?? {});
     Get.find<HistoryController>().fromJson(data["history"] ?? {});
     Get.find<WebDavController>().fromJson(data["webdav"] ?? {});
     Get.find<IptvSettingsController>().fromJson(data["iptv"] ?? {});
