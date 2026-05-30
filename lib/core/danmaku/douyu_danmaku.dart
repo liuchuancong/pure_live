@@ -45,15 +45,18 @@ class DouyuDanmaku implements LiveDanmaku {
       },
       onReady: () {
         onReady?.call();
+        markConnected();
         joinRoom(args);
       },
       onHeartBeat: () {
         heartbeat();
       },
       onReconnect: () {
+        markDisconnected();
         onClose?.call("与服务器断开连接，正在尝试重连");
       },
       onClose: (e) {
+        markDisconnected();
         onClose?.call("服务器连接失败$e");
       },
     );

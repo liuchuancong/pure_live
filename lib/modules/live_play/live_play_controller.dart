@@ -155,7 +155,11 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   }
 
   bool _needReconnectDanmaku(LiveRoom room) {
-    if (_currentDanmakuRoomId != room.roomId) {
+    log(_currentDanmakuRoomId.toString());
+
+    log((_currentDanmakuRoomId != room.roomId).toString());
+    log(room.roomId.toString());
+    if (_currentDanmakuRoomId.toString() != room.roomId.toString()) {
       return true;
     }
 
@@ -247,14 +251,14 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
       isLiving.value = true;
 
       await getPlayQualites();
+      if (liveRoom.platform != Sites.iptvSite) {
+        SettingsService.to.history.addRoomToHistory(liveRoom);
+      }
 
-      SettingsService.to.history.addRoomToHistory(liveRoom);
-
-      const except = ['kuaishou', 'iptv', 'cc'];
+      const except = [Sites.kuaishouSite, Sites.iptvSite, Sites.ccSite];
 
       if (!except.contains(liveRoom.platform) && SettingsService.to.danmaku.enableDanmakuDisplay.v) {
         final needReconnect = _needReconnectDanmaku(liveRoom);
-
         if (needReconnect) {
           liveDanmaku.stop();
 
