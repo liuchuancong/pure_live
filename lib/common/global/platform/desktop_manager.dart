@@ -646,7 +646,9 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
   }
 
   @override
-  void onWindowResized() {}
+  void onWindowResized() {
+    _sizeController.setTracking(false);
+  }
 
   @override
   void onWindowMove() {
@@ -658,7 +660,9 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
   void onWindowMoved() {}
 
   @override
-  void onWindowEnterFullScreen() {}
+  void onWindowEnterFullScreen() {
+    _sizeController.setTracking(false);
+  }
 
   @override
   void onWindowLeaveFullScreen() {}
