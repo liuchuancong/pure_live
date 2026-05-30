@@ -196,6 +196,8 @@ class DanmakuListViewState extends State<DanmakuListView> {
                 final list = controller.messages;
 
                 return ListView.builder(
+                  addAutomaticKeepAlives: false,
+                  addRepaintBoundaries: true,
                   controller: _scrollController,
                   padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
                   scrollCacheExtent: const ScrollCacheExtent.pixels(800),
@@ -313,7 +315,7 @@ class DanmakuItem extends StatelessWidget {
                             style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w700, color: textColor),
                           ),
                           TextSpan(
-                            children: parseEmojis(danmaku.message, AppTextStyles.t14.fontSize!, vibrantColor),
+                            children: parseEmojis(danmaku.message, AppTextStyles.t14.fontSize!, textColor),
                             style: AppTextStyles.t14.copyWith(
                               height: 1.45,
                               fontWeight: FontWeight.w500,
@@ -334,70 +336,79 @@ class DanmakuItem extends StatelessWidget {
   }
 }
 
-final Map<String, List<InlineSpan>> emojiCache = {};
+final Map<String, List<EmojiToken>> emojiCache = {};
 
-List<InlineSpan> parseEmojis(String text, double size, Color color) {
-  final cacheKey = "$text-$size-${color.toARGB32()}";
+class EmojiToken {
+  final bool isEmoji;
+  final String value;
 
-  final cached = emojiCache[cacheKey];
+  const EmojiToken({required this.isEmoji, required this.value});
+}
 
+List<EmojiToken> _parseEmojiTokens(String text) {
+  final cached = emojiCache[text];
   if (cached != null) {
     return cached;
   }
 
-  final spans = <InlineSpan>[];
+  final regex = EmojiManager.instance.emojiRegex;
 
-  final regex = RegExp(r'\[(.*?)\]');
+  if (regex == null) {
+    return [EmojiToken(isEmoji: false, value: text)];
+  }
+
+  final tokens = <EmojiToken>[];
 
   int last = 0;
 
   for (final match in regex.allMatches(text)) {
     if (match.start > last) {
-      spans.add(
-        TextSpan(
-          text: text.substring(last, match.start),
-          style: TextStyle(fontSize: size),
-        ),
-      );
+      tokens.add(EmojiToken(isEmoji: false, value: text.substring(last, match.start)));
     }
 
-    final key = match.group(0)!;
-
-    final image = EmojiManager.getEmoji(key);
-
-    if (image != null) {
-      spans.add(
-        WidgetSpan(
-          alignment: PlaceholderAlignment.middle,
-          child: SizedBox(
-            width: size * 1.25,
-            height: size * 1.25,
-            child: RepaintBoundary(child: CustomPaint(painter: EmojiPainter(image))),
-          ),
-        ),
-      );
-    } else {
-      spans.add(
-        TextSpan(
-          text: key,
-          style: TextStyle(fontSize: size),
-        ),
-      );
-    }
+    tokens.add(EmojiToken(isEmoji: true, value: match.group(0)!));
 
     last = match.end;
   }
 
   if (last < text.length) {
+    tokens.add(EmojiToken(isEmoji: false, value: text.substring(last)));
+  }
+
+  emojiCache[text] = tokens;
+
+  return tokens;
+}
+
+List<InlineSpan> parseEmojis(String text, double size, Color color) {
+  final tokens = _parseEmojiTokens(text);
+
+  final spans = <InlineSpan>[];
+
+  final style = TextStyle(fontSize: size, color: color);
+
+  final emojiSize = size * 1.25;
+
+  for (final token in tokens) {
+    if (!token.isEmoji) {
+      spans.add(TextSpan(text: token.value, style: style));
+      continue;
+    }
+
+    final image = EmojiManager.getEmoji(token.value);
+
+    if (image == null) {
+      spans.add(TextSpan(text: token.value, style: style));
+      continue;
+    }
+
     spans.add(
-      TextSpan(
-        text: text.substring(last),
-        style: TextStyle(fontSize: size),
+      WidgetSpan(
+        alignment: PlaceholderAlignment.middle,
+        child: RawImage(image: image, width: emojiSize, height: emojiSize),
       ),
     );
   }
-
-  emojiCache[cacheKey] = spans;
 
   return spans;
 }

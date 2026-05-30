@@ -67,20 +67,20 @@ def parse_deep_node_overwrite(node, final_emoji_map, download_tasks, output_img_
             if not simple_name or not img_url:
                 return
                 
-            # 【核心规则】普通表情大 Key 统一格式化为 "[指责]" 形式
+            # 普通表情大 Key 统一格式化为 "[指责]" 形式
             save_key = f"[{simple_name}]"
+            
+            ext = ".gif" if ".gif" in img_url.lower() else ".png"
+            local_name = f"{simple_name}{ext}"
 
-            # 1:1 像素级复刻原接口单体数据模型（同名时直接覆盖前面的数据）
+            # 🛠️ 核心增加机制：1:1 像素级复刻模型字段，并追加 local_file 标识
             final_emoji_map[save_key] = {
                 "simple_name": simple_name,
                 "img_url": img_url,
                 "is_deleted": node.get("is_deleted", 0),
-                "sort": int(node.get("sort", 0))
+                "sort": int(node.get("sort", 0)),
+                "local_file": local_name  # 🚀 为 Flutter 全地化离线缓存提供支持
             }
-            
-            # 本地物理文件名：直接使用纯净的表情名，不带数字尾缀（如：惊恐.png）
-            ext = ".gif" if ".gif" in img_url.lower() else ".png"
-            local_name = f"{simple_name}{ext}"
             
             download_tasks.append((img_url, os.path.join(output_img_dir, local_name), save_key))
             return
@@ -121,15 +121,18 @@ def main():
             if not name or not img_url:
                 continue
 
+            ext = ".gif" if ".gif" in img_url.lower() else ".png"
+            local_name = f"{name}{ext}"
+
+            # 🛠️ 核心增加机制：热梗单体模型也无损追加 local_file 标识
             final_emoji_map[name] = {
                 "simple_name": name,
                 "img_url": img_url,
                 "is_deleted": 0,
-                "sort": int(item.get("msgId", 0))
+                "sort": int(item.get("msgId", 0)),
+                "local_file": local_name  # 🚀 为 Flutter 全地化离线缓存提供支持
             }
 
-            ext = ".gif" if ".gif" in img_url.lower() else ".png"
-            local_name = f"{name}{ext}"
             download_tasks.append((img_url, os.path.join(output_img_dir, local_name), name))
         print(f"✅ 成功重构热梗表情 {len(popular_list)} 个")
     except Exception as e:
@@ -157,18 +160,17 @@ def main():
         print("❌ 两个接口均未解析出任何有效资产，请检查配置。")
         return
 
-    # 由于 download_tasks 中可能存在因重名导致的重复下载任务（下载到同一个路径）
-    # 我们在多线程下载前，对下载任务按“本地保存路径”进行去重，避免对同一个物理文件并发写
+    # 过滤物理写冲突下载队列
     unique_download_tasks = {}
     for task in download_tasks:
         url, file_path, name = task
         unique_download_tasks[file_path] = (url, file_path, name)
     final_download_tasks = list(unique_download_tasks.values())
 
-    # 完美保存为纯净无暇的大 Map 字典结构
+    # 覆写保存为大字典结构 JSON
     with open(output_json_path, "w", encoding="utf-8") as f:
         json.dump(final_emoji_map, f, ensure_ascii=False, indent=2)
-    print(f"✨ 斗鱼双端资产清洗完成！直接覆盖重名项，配置已覆写至:\n   {output_json_path}")
+    print(f"✨ 斗鱼双端资产清洗完成！包含 'local_file' 且直接覆盖重名项，配置已覆写至:\n   {output_json_path}")
 
     # 16 线程火力全开满载倾泻下载
     total_tasks = len(final_download_tasks)
@@ -177,7 +179,7 @@ def main():
         results = list(executor.map(_download_worker, final_download_tasks))
         success_count = sum(1 for r in results if r)
         
-    print(f"\n🏁 彻底通关！所有纯净的 [转义符] 表情与热梗图已成功落地： {success_count}/{total_tasks} 张图片。")
+    print(f"\n🏁 彻底通关！所有包含 local_file 的表情与热梗图已成功落地： {success_count}/{total_tasks} 张图片。")
 
 if __name__ == "__main__":
     main()

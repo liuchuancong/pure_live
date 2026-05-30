@@ -16,6 +16,7 @@ import 'package:pure_live/core/danmaku/douyin_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:back_button_interceptor/back_button_interceptor.dart';
+import 'package:pure_live/modules/live_play/widgets/danmaku_list_view.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 
 enum VideoMode { normal, widescreen, fullscreen }
@@ -60,6 +61,8 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
   bool isMenuOpen = false;
   final isCurrentRoomAudioOnly = false.obs;
+
+  String? _currentDanmakuRoomId;
   LivePlayQuality get _qualitySafe {
     if (qualites.isEmpty) {
       return LivePlayQuality(quality: '原画');
@@ -79,16 +82,16 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   @override
   void onInit() {
     super.onInit();
-    _initCore();
+    Future.microtask(_initCore);
   }
 
-  void _initCore() {
+  Future<void> _initCore() async {
     _initState();
     _initTab();
     _initBackInterceptor();
     _initDebounce();
     _initTimer();
-    _preloadEmoji();
+    await _preloadEmoji();
     _initPlayer();
   }
 
@@ -120,7 +123,15 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     );
   }
 
-  void _preloadEmoji() => EmojiManager().preload(site);
+  Future<void> _preloadEmoji() async {
+    emojiCache.clear();
+    EmojiManager().clearCache();
+    await EmojiManager().preload(site);
+  }
+
+  void _clearCacheEmoji() {
+    EmojiManager().clearCache();
+  }
 
   void _initDebounce() {
     everAll([closeTimeFlag, closeTimes], (_) => _toggleTimer());
@@ -141,6 +152,18 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     } else {
       _stopWatchTimer.onStopTimer();
     }
+  }
+
+  bool _needReconnectDanmaku(LiveRoom room) {
+    if (_currentDanmakuRoomId != room.roomId) {
+      return true;
+    }
+
+    if (!liveDanmaku.isConnected) {
+      return true;
+    }
+
+    return false;
   }
 
   bool myInterceptor(bool stopDefaultButtonEvent, RouteInfo info) {
@@ -179,6 +202,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     if (SettingsService.to.danmaku.enableDanmakuDisplay.v) {
       liveDanmaku.stop();
     }
+    _clearCacheEmoji();
   }
 
   void setNormalScreen() => screenMode.value = VideoMode.normal;
@@ -225,13 +249,25 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
     if (liveStatus) {
       isLiving.value = true;
+
       await getPlayQualites();
+
       SettingsService.to.history.addRoomToHistory(liveRoom);
+
       const except = ['kuaishou', 'iptv', 'cc'];
+
       if (!except.contains(liveRoom.platform) && SettingsService.to.danmaku.enableDanmakuDisplay.v) {
-        liveDanmaku.stop();
-        initDanmau();
-        liveDanmaku.start(liveRoom.danmakuData);
+        final needReconnect = _needReconnectDanmaku(liveRoom);
+
+        if (needReconnect) {
+          liveDanmaku.stop();
+
+          initDanmau();
+
+          liveDanmaku.start(liveRoom.danmakuData);
+
+          _currentDanmakuRoomId = liveRoom.roomId;
+        }
       }
     } else {
       success.value = false;
@@ -252,24 +288,39 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   }
 
   void switchRoom(LiveRoom newRoom) async {
+    bool sameRoom = detail.value?.roomId == newRoom.roomId && detail.value?.platform == newRoom.platform;
+
+    if (!sameRoom) {
+      messages.clear();
+
+      if (SettingsService.to.danmaku.enableDanmakuDisplay.v) {
+        liveDanmaku.stop();
+      }
+      _currentDanmakuRoomId = null;
+    }
+
     final manager = GlobalPlayerService.instance.playerManager;
     manager.close();
+
     success.value = false;
     isLiving.value = true;
-    messages.clear();
-    if (SettingsService.to.danmaku.enableDanmakuDisplay.v) {
-      liveDanmaku.stop();
-    }
+
     await videoController.value?.destory();
     videoController.value = null;
+
     hasUseDefaultResolution = false;
+
     isCurrentRoomAudioOnly.value = SettingsService.to.player.audioOnly.v;
+
     detail.value = newRoom;
     currentSite = Sites.of(newRoom.platform!);
-    if (SettingsService.to.danmaku.enableDanmakuDisplay.v) {
+
+    if (!sameRoom && SettingsService.to.danmaku.enableDanmakuDisplay.v) {
       liveDanmaku = currentSite.liveSite.getDanmaku();
     }
-    EmojiManager().preload(newRoom.platform!);
+
+    await EmojiManager.instance.preload(newRoom.platform!);
+
     onInitPlayerState(
       reloadDataType: newRoom.platform == Sites.bilibiliSite ? ReloadDataType.changeLine : ReloadDataType.refreash,
     );

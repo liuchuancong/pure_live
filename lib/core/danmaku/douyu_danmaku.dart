@@ -10,6 +10,20 @@ import 'package:pure_live/core/interface/live_danmaku.dart';
 class DouyuDanmaku implements LiveDanmaku {
   @override
   int heartbeatTime = 45 * 1000;
+  bool _connected = false;
+
+  @override
+  bool get isConnected => _connected;
+
+  @override
+  void markConnected() {
+    _connected = true;
+  }
+
+  @override
+  void markDisconnected() {
+    _connected = false;
+  }
 
   @override
   Function(LiveMessage msg)? onMessage;

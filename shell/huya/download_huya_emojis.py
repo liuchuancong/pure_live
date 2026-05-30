@@ -117,16 +117,20 @@ def main():
 
     final_emoji_list = list(emoji_dict.values())
     
-    # 🚀【核心修改】在保存 JSON 前，直接把数据源字典里所有包含 steam.png 的链接替换为 steam_3.png
+    # 🚀 在保存 JSON 前，直接把数据源里所有包含 steam.png 的链接替换为 steam_3.png
     for item in final_emoji_list:
         if "steam.png" in item["sFlexiUrl"]:
             item["sFlexiUrl"] = item["sFlexiUrl"].replace("steam.png", "steam_3.png")
         if "steam.png" in item["sUrl"]:
             item["sUrl"] = item["sUrl"].replace("steam.png", "steam_3.png")
+            
+        # 🎯【核心增加机制】为每一个解构完的对象，无损追加对应的本地物理文件名标识
+        # 根据物理落地路径，文件名正是它的 sid 加 .png 后缀
+        item["local_file"] = f"{item['sId']}.png"
 
     with open(output_json_path, "w", encoding="utf-8") as f:
         json.dump(final_emoji_list, f, ensure_ascii=False, indent=2)
-    print(f"✨ 原始数据全量解构成功！包含 '_3' 的纯净配置已无损覆写保存至:\n   {output_json_path}")
+    print(f"✨ 原始数据全量解构成功！包含 'local_file' 和 '_3' 的纯净配置已无损覆写保存至:\n   {output_json_path}")
 
     # 3. 提取具有真实物理下载长链的任务队列
     download_tasks = []
@@ -135,7 +139,7 @@ def main():
         name = item["sName"]
         url = item["sFlexiUrl"].strip() if item["sFlexiUrl"].strip() else item["sUrl"].strip()
         if url and url.startswith("http"):
-            download_tasks.append((url, os.path.join(output_img_dir, f"{sid}.png"), sid, name))
+            download_tasks.append((url, os.path.join(output_img_dir, item["local_file"]), sid, name))
 
     total_tasks = len(download_tasks)
     print(f"📥 🚀【火力全开】16 线程满载高并发，全面向下倾泻下载（总计 {total_tasks} 个有效包通道）...")
@@ -144,7 +148,7 @@ def main():
         results = list(executor.map(_download_worker, download_tasks))
         success_count = sum(1 for r in results if r)
         
-    print(f"🏁 彻底清洗合流通关！所有大表情和高清梗图已完美下载存盘： {success_count}/{total_tasks} 张 PNG 图片。")
+    print(f"🏁 彻底清洗合流通关！所有包含 local_file 的大表情和高清梗图已完美下载存盘： {success_count}/{total_tasks} 张 PNG 图片。")
 
 if __name__ == "__main__":
     main()

@@ -33,30 +33,29 @@ class DanmakuContentItem {
   static List<MixedContent> _parseMixedContent(String text) {
     if (text.isEmpty) return const [];
 
-    final List<MixedContent> result = [];
-    final regex = RegExp(r'\[(.*?)\]');
+    final regex = EmojiManager.instance.emojiRegex;
+
+    if (regex == null) {
+      return [MixedContent(ContentType.text, text)];
+    }
+
+    final result = <MixedContent>[];
     int lastIndex = 0;
-    final emojiCache = EmojiManager.instance.cache;
 
     for (final match in regex.allMatches(text)) {
-      final matchedStr = match.group(0);
-      if (matchedStr == null) continue;
-
       if (match.start > lastIndex) {
         result.add(MixedContent(ContentType.text, text.substring(lastIndex, match.start)));
       }
 
-      if (emojiCache.containsKey(matchedStr)) {
-        result.add(MixedContent(ContentType.emoji, matchedStr));
-      } else {
-        result.add(MixedContent(ContentType.text, matchedStr));
-      }
+      result.add(MixedContent(ContentType.emoji, match.group(0)!));
+
       lastIndex = match.end;
     }
 
     if (lastIndex < text.length) {
       result.add(MixedContent(ContentType.text, text.substring(lastIndex)));
     }
+
     return result;
   }
 }

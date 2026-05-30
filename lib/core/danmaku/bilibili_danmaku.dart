@@ -1,16 +1,14 @@
+import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:brotli/brotli.dart';
+import '../common/binary_writer.dart';
+import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/common/models/live_message.dart';
 import 'package:pure_live/core/common/convert_helper.dart';
-import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/core/common/web_socket_util.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
-
-import '../common/binary_writer.dart';
 
 class BiliBiliDanmakuArgs {
   final int roomId;
@@ -43,6 +41,20 @@ class BiliBiliDanmakuArgs {
 class BiliBiliDanmaku implements LiveDanmaku {
   @override
   int heartbeatTime = 60 * 1000;
+  bool _connected = false;
+
+  @override
+  bool get isConnected => _connected;
+
+  @override
+  void markConnected() {
+    _connected = true;
+  }
+
+  @override
+  void markDisconnected() {
+    _connected = false;
+  }
 
   @override
   Function(LiveMessage msg)? onMessage;
@@ -60,11 +72,7 @@ class BiliBiliDanmaku implements LiveDanmaku {
     danmakuArgs = args as BiliBiliDanmakuArgs;
     webScoketUtils = WebScoketUtils(
       url: "wss://${args.serverHost}/sub",
-      headers: args.cookie.isEmpty
-          ? null
-          : {
-              "cookie": args.cookie,
-            },
+      headers: args.cookie.isEmpty ? null : {"cookie": args.cookie},
       heartBeatTime: heartbeatTime,
       onMessage: (e) {
         decodeMessage(e);
@@ -104,10 +112,7 @@ class BiliBiliDanmaku implements LiveDanmaku {
 
   @override
   void heartbeat() {
-    webScoketUtils?.sendMessage(encodeData(
-      "",
-      2,
-    ));
+    webScoketUtils?.sendMessage(encodeData("", 2));
   }
 
   @override
@@ -174,10 +179,8 @@ class BiliBiliDanmaku implements LiveDanmaku {
 
         var text = utf8.decode(body, allowMalformed: true);
 
-        var group =
-            text.split(RegExp(r"[\x00-\x1f]+", unicode: true, multiLine: true));
-        for (var item
-            in group.where((x) => x.length > 2 && x.startsWith('{'))) {
+        var group = text.split(RegExp(r"[\x00-\x1f]+", unicode: true, multiLine: true));
+        for (var item in group.where((x) => x.length > 2 && x.startsWith('{'))) {
           parseMessage(item);
         }
       }
@@ -200,9 +203,7 @@ class BiliBiliDanmaku implements LiveDanmaku {
               type: LiveMessageType.chat,
               userName: username,
               message: message,
-              color: color == 0
-                  ? LiveMessageColor.white
-                  : LiveMessageColor.numberToColor(color),
+              color: color == 0 ? LiveMessageColor.white : LiveMessageColor.numberToColor(color),
             );
             onMessage?.call(liveMsg);
           }
@@ -212,18 +213,13 @@ class BiliBiliDanmaku implements LiveDanmaku {
           return;
         }
         LiveSuperChatMessage sc = LiveSuperChatMessage(
-          backgroundBottomColor:
-              obj["data"]["background_bottom_color"].toString(),
+          backgroundBottomColor: obj["data"]["background_bottom_color"].toString(),
           backgroundColor: obj["data"]["background_color"].toString(),
-          endTime: DateTime.fromMillisecondsSinceEpoch(
-            obj["data"]["end_time"] * 1000,
-          ),
+          endTime: DateTime.fromMillisecondsSinceEpoch(obj["data"]["end_time"] * 1000),
           face: "${obj["data"]["user_info"]["face"]}@200w.jpg",
           message: obj["data"]["message"].toString(),
           price: obj["data"]["price"],
-          startTime: DateTime.fromMillisecondsSinceEpoch(
-            obj["data"]["start_time"] * 1000,
-          ),
+          startTime: DateTime.fromMillisecondsSinceEpoch(obj["data"]["start_time"] * 1000),
           userName: obj["data"]["user_info"]["uname"].toString(),
         );
         var liveMsg = LiveMessage(
@@ -241,8 +237,7 @@ class BiliBiliDanmaku implements LiveDanmaku {
   }
 
   int readInt(List<int> buffer, int start, int len) {
-    var bytes =
-        Uint8List.fromList(buffer.getRange(start, start + len).toList());
+    var bytes = Uint8List.fromList(buffer.getRange(start, start + len).toList());
     var byteBuffer = bytes.buffer;
     var data = ByteData.view(byteBuffer);
     var result = 0;

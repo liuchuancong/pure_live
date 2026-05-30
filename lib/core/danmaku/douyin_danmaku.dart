@@ -8,7 +8,6 @@ import 'package:pure_live/common/models/live_message.dart';
 import 'package:pure_live/core/common/web_socket_util.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 
-
 class DouyinDanmakuArgs {
   final String webRid;
   final String roomId;
@@ -24,6 +23,20 @@ class DouyinDanmakuArgs {
 class DouyinDanmaku implements LiveDanmaku {
   @override
   int heartbeatTime = 10 * 1000;
+  bool _connected = false;
+
+  @override
+  bool get isConnected => _connected;
+
+  @override
+  void markConnected() {
+    _connected = true;
+  }
+
+  @override
+  void markDisconnected() {
+    _connected = false;
+  }
 
   @override
   Function(LiveMessage msg)? onMessage;

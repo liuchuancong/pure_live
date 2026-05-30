@@ -1,25 +1,35 @@
-import 'dart:async';
-
+import 'package:meta/meta.dart';
 import 'package:pure_live/common/models/live_message.dart';
 
-class LiveDanmaku {
+abstract class LiveDanmaku {
   Function(LiveMessage msg)? onMessage;
   Function(String msg)? onClose;
   Function()? onReady;
 
-  /// 心跳时间
   int heartbeatTime = 0;
 
-  /// 发生心跳
+  bool _connected = false;
+
+  bool get isConnected => _connected;
+
+  @protected
+  void markConnected() {
+    _connected = true;
+  }
+
+  @protected
+  void markDisconnected() {
+    _connected = false;
+  }
+
   void heartbeat() {}
 
-  /// 开始接收信息
   Future start(dynamic args) {
     return Future.value();
   }
 
-  /// 停止接收信息
   Future stop() {
+    markDisconnected();
     return Future.value();
   }
 }

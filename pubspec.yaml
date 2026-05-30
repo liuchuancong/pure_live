@@ -33,6 +33,7 @@ dependencies:
   sqlite3_flutter_libs: ^0.6.0+eol
   charset_converter: ^2.3.0
   synchronized: ^3.1.0
+  meta: ^1.18.2
   # -------------------------- 网络请求/网络状态 --------------------------
   http: ^1.1.0 # 基础HTTP请求
   dio: ^5.9.0 # 强大的Dart HTTP客户端
@@ -266,11 +267,11 @@ flutter:
     - assets/keystore/
     - assets/version.json
     - assets/releases.json
-    - assets/emo/huya/
-    - assets/emo/douyu/
-    - assets/emo/douyin/
-    - assets/emo/bilibili/
-    - assets/emo/kuaishou/
+    - assets/emo/images/huya/
+    - assets/emo/images/douyu/
+    - assets/emo/images/douyin/
+    - assets/emo/images/bilibili/
+    - assets/emo/json/
     - assets/translations/
     - assets/animations/loading.json
     - assets/animations/empty.json

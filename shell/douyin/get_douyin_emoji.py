@@ -119,7 +119,7 @@ def main():
         if not url_list:
             continue
 
-        # 完全按要求的单体 1:1 格式装填
+        # 完全按要求的单体 1:1 格式装填，并无损追加 local_file 属性
         final_emoji_list.append({
             "origin_uri": origin_uri,
             "display_name": display_name,
@@ -127,7 +127,8 @@ def main():
             "emoji_url": {
                 "uri": emoji_url_obj.get("uri", ""),
                 "url_list": url_list
-              }
+            },
+            "local_file": origin_uri  # 🚀 为 Flutter 全地化离线缓存提供标准路径字段支持
         })
 
         # 提取资源用于物理下载
@@ -135,7 +136,7 @@ def main():
         file_path = os.path.join(output_img_dir, origin_uri)
         download_tasks.append((primary_url, file_path, display_name))
 
-    print(f"♻️  去重处理完成！成功发现并自动剔除了 {duplicate_count} 个重复的表情。")
+    print(f"♻️  去重处理完成！成功发现并自动剔成了 {duplicate_count} 个重复的表情。")
 
     if not final_emoji_list:
         print("❌ 两个接口均未获取到有效数据，请检查配置区域的 Cookie 是否已失效。")
@@ -144,7 +145,7 @@ def main():
     # 3. 写入最终合并无损的本地 json
     with open(output_json_path, "w", encoding="utf-8") as f:
         json.dump(final_emoji_list, f, ensure_ascii=False, indent=2)
-    print(f"✨ 双接口全量合流且去重成功！纯净列表配置已保存至:\n   {output_json_path}")
+    print(f"✨ 双接口全量合流且去重成功！包含 'local_file' 的纯净配置已保存至:\n   {output_json_path}")
 
     # 4. 开启多线程满载高并发下载
     total_tasks = len(download_tasks)
@@ -153,7 +154,7 @@ def main():
         results = list(executor.map(_download_worker, download_tasks))
         success_count = sum(1 for r in results if r)
         
-    print(f"\n🏁 通关！所有去重后的表情图片已完美下载存盘： {success_count}/{total_tasks} 张。")
+    print(f"\n🏁 通关！所有去重并集成 local_file 的表情图片已完美下载存盘： {success_count}/{total_tasks} 张。")
 
 if __name__ == "__main__":
     main()

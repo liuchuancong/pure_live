@@ -100,15 +100,15 @@ class LivePlayPage extends GetView<LivePlayController> {
         titleSpacing: 0,
         title: Row(
           children: [
-            Obx(
-              () => CircleAvatar(
-                foregroundImage: controller.detail.value!.avatar == null || controller.detail.value!.avatar!.isEmpty
-                    ? null
-                    : CachedNetworkImageProvider(controller.detail.value!.avatar!),
+            Obx(() {
+              final avatar = controller.detail.value?.avatar;
+
+              return CircleAvatar(
+                foregroundImage: avatar != null && avatar.isNotEmpty ? CachedNetworkImageProvider(avatar) : null,
                 radius: 16,
                 backgroundColor: Theme.of(context).disabledColor,
-              ),
-            ),
+              );
+            }),
             const SizedBox(width: 8),
             Obx(() {
               final detail = controller.detail.value;
@@ -135,7 +135,11 @@ class LivePlayPage extends GetView<LivePlayController> {
               );
             }),
             const SizedBox(width: 8),
-            Obx(() => FavoriteFloatingButton(room: controller.detail.value!)),
+            Obx(() {
+              final detail = controller.detail.value;
+              if (detail == null) return const SizedBox.shrink();
+              return FavoriteFloatingButton(room: detail);
+            }),
           ],
         ),
         actions: [

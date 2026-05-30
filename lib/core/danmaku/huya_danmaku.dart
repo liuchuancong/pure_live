@@ -24,6 +24,20 @@ class HuyaDanmakuArgs {
 class HuyaDanmaku implements LiveDanmaku {
   @override
   int heartbeatTime = 60 * 1000;
+  bool _connected = false;
+
+  @override
+  bool get isConnected => _connected;
+
+  @override
+  void markConnected() {
+    _connected = true;
+  }
+
+  @override
+  void markDisconnected() {
+    _connected = false;
+  }
 
   @override
   Function(LiveMessage msg)? onMessage;

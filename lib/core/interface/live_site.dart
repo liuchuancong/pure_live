@@ -16,7 +16,9 @@ class LiveSite {
   String name = "";
 
   /// 站点名称
-  LiveDanmaku getDanmaku() => LiveDanmaku();
+  LiveDanmaku getDanmaku() {
+    throw UnimplementedError();
+  }
 
   /// 读取网站的分类
   Future<List<LiveCategory>> getCategores(int page, int pageSize) {
