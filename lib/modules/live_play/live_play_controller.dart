@@ -178,10 +178,6 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
       return true;
     }
 
-    if (videoController.value?.showSettting.value == true) {
-      videoController.value?.showSettting.toggle();
-      return true;
-    }
     videoController.value?.clearListener();
     success.value = false;
     return false;

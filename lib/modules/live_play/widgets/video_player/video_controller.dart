@@ -62,7 +62,6 @@ class VideoController with ChangeNotifier {
   StreamSubscription<bool>? _pipSub;
   Timer? showControllerTimer;
   final showController = true.obs;
-  final showSettting = false.obs;
   final showLocked = false.obs;
   final danmuKey = GlobalKey();
   final isMenuOpen = false.obs;
@@ -466,7 +465,6 @@ class VideoController with ChangeNotifier {
   }
 
   void exitFullScreen() async {
-    showSettting.value = false;
     WindowService().doExitFullScreen();
     GlobalPlayerState.to.isFullscreen.value = false;
   }

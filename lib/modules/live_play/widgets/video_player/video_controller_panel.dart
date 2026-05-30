@@ -1,11 +1,13 @@
 import 'dart:io';
 import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:flutter_svg/svg.dart';
 import 'package:flutter/gestures.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
+import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:pure_live/modules/live_play/load_type.dart';
 import 'package:pure_live/common/widgets/count_button.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
@@ -98,13 +100,9 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                 DanmakuViewer(controller: controller),
                 GestureDetector(
                   onTap: () {
-                    if (controller.showSettting.value) {
-                      controller.showSettting.toggle();
-                    } else {
-                      GlobalPlayerService.instance.playerManager.isPlayingNow
-                          ? controller.enableController()
-                          : GlobalPlayerService.instance.playerManager.togglePlayPause();
-                    }
+                    GlobalPlayerService.instance.playerManager.isPlayingNow
+                        ? controller.enableController()
+                        : GlobalPlayerService.instance.playerManager.togglePlayPause();
                   },
                   onDoubleTap: () {
                     if (!controller.showLocked.value) {
@@ -115,7 +113,6 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                   },
                   child: BrightnessVolumnDargArea(controller: controller),
                 ),
-                SettingsPanel(controller: controller),
                 LockButton(controller: controller),
                 TopActionBar(controller: controller, barHeight: barHeight),
                 BottomActionBar(controller: controller, barHeight: barHeight),
@@ -165,9 +162,7 @@ class TopActionBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(
       () => AnimatedPositioned(
-        top: (!controller.showSettting.value && controller.showController.value && !controller.showLocked.value)
-            ? 0
-            : -barHeight,
+        top: (controller.showController.value && !controller.showLocked.value) ? 0 : -barHeight,
         left: 0,
         right: 0,
         height: barHeight,
@@ -762,10 +757,7 @@ class LockButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(
       () => AnimatedOpacity(
-        opacity:
-            (!controller.showSettting.value && GlobalPlayerState.to.fullscreenUI && controller.showController.value)
-            ? 0.9
-            : 0.0,
+        opacity: (GlobalPlayerState.to.fullscreenUI && controller.showController.value) ? 0.9 : 0.0,
         duration: const Duration(milliseconds: 300),
         child: Align(
           alignment: Alignment.centerRight,
@@ -1304,7 +1296,9 @@ class SettingsButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => controller.showSettting.toggle(),
+      onTap: () {
+        Get.dialog(SettingsPanel(controller: controller));
+      },
       child: Container(
         alignment: Alignment.center,
         padding: const EdgeInsets.only(right: 6, left: 6),
@@ -1450,36 +1444,6 @@ class _FavoriteButtonState extends State<FavoriteButton> {
 }
 
 // Settings panel widgets
-class SettingsPanel extends StatelessWidget {
-  const SettingsPanel({super.key, required this.controller});
-
-  final VideoController controller;
-
-  static const double width = 300;
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(
-      () => AnimatedPositioned(
-        top: 0,
-        bottom: 0,
-        right: controller.showSettting.value ? 0 : -width,
-        width: width,
-        duration: const Duration(milliseconds: 200),
-        child: Card(
-          color: Colors.black.withValues(alpha: 0.8),
-          child: SizedBox(
-            width: width,
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [DanmakuSetting(controller: controller)],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class VideoFitSetting extends StatefulWidget {
   const VideoFitSetting({super.key, required this.controller});
@@ -1516,146 +1480,227 @@ class _VideoFitSettingState extends State<VideoFitSetting> {
   }
 }
 
-class DanmakuSetting extends StatelessWidget {
-  const DanmakuSetting({super.key, required this.controller});
+class SettingsPanel extends StatelessWidget {
+  const SettingsPanel({super.key, required this.controller});
 
   final VideoController controller;
 
   @override
   Widget build(BuildContext context) {
-    const TextStyle label = TextStyle(color: Colors.white);
-    const TextStyle digit = TextStyle(color: Colors.white);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double maxWidth = constraints.maxWidth;
+        final double targetWidth = maxWidth > 600.0 ? 520.0 : maxWidth * 0.88;
+
+        return AlertDialog(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.black54,
+          elevation: 24.0,
+          insetPadding: EdgeInsets.symmetric(horizontal: maxWidth > 600.0 ? 40.0 : 16.0, vertical: 24.0),
+          contentPadding: EdgeInsets.zero,
+          content: Container(
+            width: targetWidth,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E1E1E).withValues(alpha: 0.98),
+              borderRadius: BorderRadius.circular(16.0),
+              border: Border.all(color: Colors.white10, width: 0.8),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20.0, 18.0, 20.0, 14.0),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 3.5,
+                        height: 16.0,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
+                          borderRadius: BorderRadius.circular(2.0),
+                        ),
+                      ),
+                      const SizedBox(width: 10.0),
+                      Text(
+                        i18n("settings_danmaku_title"),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(color: Colors.white10, height: 1.0, thickness: 0.8),
+                Flexible(
+                  child: ListView(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+                    children: [DanmakuSetting(controller: controller, isWide: maxWidth > 600.0)],
+                  ),
+                ),
+                const Divider(color: Colors.white10, height: 1.0, thickness: 0.8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          foregroundColor: Colors.black,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                        ),
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text(i18n("close"), style: TextStyle(color: Colors.white)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class DanmakuSetting extends StatelessWidget {
+  const DanmakuSetting({super.key, required this.controller, required this.isWide});
+
+  final VideoController controller;
+  final bool isWide;
+
+  Widget _buildRowContainer({required String labelText, required Widget valueWidget, Widget? trailingWidget}) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: isWide ? 10.0 : 6.0),
+      child: Row(
+        children: [
+          SizedBox(
+            width: isWide ? 110.0 : 85.0,
+            child: Text(
+              labelText,
+              style: TextStyle(color: Colors.white70, fontSize: isWide ? 14.0 : 13.0, fontWeight: FontWeight.w500),
+            ),
+          ),
+          Expanded(
+            child: SizedBox(
+              height: isWide ? 44.0 : 38.0,
+              child: Align(alignment: Alignment.center, child: valueWidget),
+            ),
+          ),
+          if (trailingWidget != null) ...[
+            const SizedBox(width: 10.0),
+            SizedBox(
+              width: 50.0,
+              child: Align(alignment: Alignment.centerRight, child: trailingWidget),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
+
+    final TextStyle digitStyle = TextStyle(
+      color: Colors.white,
+      fontSize: isWide ? 15.0 : 13.0,
+      fontWeight: FontWeight.w600,
+      fontFeatures: const [ui.FontFeature.tabularFigures()],
+    );
 
     return Obx(
       () => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 0),
-            child: Text(
-              i18n("settings_danmaku_title"),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white),
+          _buildRowContainer(
+            labelText: i18n('display_area'),
+            valueWidget: SfSlider(
+              min: 0.0,
+              max: 1.0,
+              value: controller.danmakuArea.value,
+              activeColor: primaryColor,
+              inactiveColor: Colors.white12,
+              onChanged: (dynamic val) => controller.danmakuArea.value = val as double,
+            ),
+            trailingWidget: Text('${(controller.danmakuArea.value * 100).toInt()}%', style: digitStyle),
+          ),
+          _buildRowContainer(
+            labelText: i18n('margin_top'),
+            valueWidget: CountButton(
+              maxValue: 300,
+              minValue: 0,
+              selectedValue: controller.danmakuTopArea.value.toInt(),
+              onChanged: (val) => controller.danmakuTopArea.value = val.toDouble(),
             ),
           ),
-          SizedBox(
-            height: Platform.isWindows ? 50 : 35,
-            child: ListTile(
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact,
-              leading: Text(i18n('display_area'), style: label),
-              title: Slider(
-                divisions: 10,
-                min: 0.0,
-                max: 1.0,
-                value: controller.danmakuArea.value,
-                onChanged: (val) => controller.danmakuArea.value = val,
-              ),
-              trailing: Text('${(controller.danmakuArea.value * 100).toInt()}%', style: digit),
+          _buildRowContainer(
+            labelText: i18n('margin_bottom'),
+            valueWidget: CountButton(
+              maxValue: 300,
+              minValue: 0,
+              selectedValue: controller.danmakuBottomArea.value.toInt(),
+              onChanged: (val) => controller.danmakuBottomArea.value = val.toDouble(),
             ),
           ),
-          SizedBox(
-            height: Platform.isWindows ? 50 : 35,
-            child: ListTile(
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact,
-              leading: Text(i18n('margin_top'), style: label),
-              title: Obx(
-                () => CountButton(
-                  maxValue: 300,
-                  minValue: 0,
-                  selectedValue: controller.danmakuTopArea.value.toInt(),
-                  onChanged: (val) => controller.danmakuTopArea.value = val.toDouble(),
-                ),
-              ),
+          _buildRowContainer(
+            labelText: i18n("settings_danmaku_opacity"),
+            valueWidget: SfSlider(
+              min: 0.0,
+              max: 1.0,
+              value: controller.danmakuOpacity.value,
+              activeColor: primaryColor,
+              inactiveColor: Colors.white12,
+              onChanged: (dynamic val) => controller.danmakuOpacity.value = val as double,
             ),
+            trailingWidget: Text('${(controller.danmakuOpacity.value * 100).toInt()}%', style: digitStyle),
           ),
-          SizedBox(
-            height: Platform.isWindows ? 50 : 35,
-            child: ListTile(
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact,
-              leading: Text(i18n('margin_bottom'), style: label),
-              title: Obx(
-                () => CountButton(
-                  maxValue: 300,
-                  minValue: 0,
-                  selectedValue: controller.danmakuBottomArea.value.toInt(),
-                  onChanged: (val) => controller.danmakuBottomArea.value = val.toDouble(),
-                ),
-              ),
+          _buildRowContainer(
+            labelText: i18n("settings_danmaku_speed"),
+            valueWidget: SfSlider(
+              min: 5.0,
+              max: 20.0,
+              value: controller.danmakuSpeed.value,
+              activeColor: primaryColor,
+              inactiveColor: Colors.white12,
+              onChanged: (dynamic val) => controller.danmakuSpeed.value = val as double,
             ),
+            trailingWidget: Text(controller.danmakuSpeed.value.toInt().toString(), style: digitStyle),
           ),
-          SizedBox(
-            height: Platform.isWindows ? 50 : 35,
-            child: ListTile(
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact,
-              leading: Text(i18n("settings_danmaku_opacity"), style: label),
-              title: Slider(
-                divisions: 10,
-                min: 0.0,
-                max: 1.0,
-                value: controller.danmakuOpacity.value,
-                onChanged: (val) => controller.danmakuOpacity.value = val,
-              ),
-              trailing: Text('${(controller.danmakuOpacity.value * 100).toInt()}%', style: digit),
+          _buildRowContainer(
+            labelText: i18n("settings_danmaku_fontsize"),
+            valueWidget: SfSlider(
+              min: 10.0,
+              max: 30.0,
+              value: controller.danmakuFontSize.value,
+              activeColor: primaryColor,
+              inactiveColor: Colors.white12,
+              onChanged: (dynamic val) => controller.danmakuFontSize.value = val as double,
             ),
+            trailingWidget: Text(controller.danmakuFontSize.value.toInt().toString(), style: digitStyle),
           ),
-          SizedBox(
-            height: Platform.isWindows ? 50 : 35,
-            child: ListTile(
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact,
-              leading: Text(i18n("settings_danmaku_speed"), style: label),
-              title: Slider(
-                divisions: 15,
-                min: 5.0,
-                max: 20.0,
-                value: controller.danmakuSpeed.value,
-                onChanged: (val) => controller.danmakuSpeed.value = val,
-              ),
-              trailing: Text(controller.danmakuSpeed.value.toInt().toString(), style: digit),
+          _buildRowContainer(
+            labelText: i18n("settings_danmaku_fontBorder"),
+            valueWidget: SfSlider(
+              min: 0.0,
+              max: 8.0,
+              value: controller.danmakuFontBorder.value,
+              activeColor: primaryColor,
+              inactiveColor: Colors.white12,
+              onChanged: (dynamic val) => controller.danmakuFontBorder.value = val as double,
             ),
-          ),
-          SizedBox(
-            height: Platform.isWindows ? 50 : 35,
-            child: ListTile(
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact,
-              leading: Text(i18n("settings_danmaku_fontsize"), style: label),
-              title: Slider(
-                divisions: 20,
-                min: 10.0,
-                max: 30.0,
-                value: controller.danmakuFontSize.value,
-                onChanged: (val) => controller.danmakuFontSize.value = val,
-              ),
-              trailing: Text(controller.danmakuFontSize.value.toInt().toString(), style: digit),
-            ),
-          ),
-          SizedBox(
-            height: Platform.isWindows ? 50 : 35,
-            child: ListTile(
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact,
-              leading: Text(i18n("settings_danmaku_fontBorder"), style: label),
-              title: Slider(
-                divisions: 8,
-                min: 0.0,
-                max: 8.0,
-                value: controller.danmakuFontBorder.value,
-                onChanged: (val) => controller.danmakuFontBorder.value = val,
-              ),
-              trailing: Text(controller.danmakuFontBorder.value.toStringAsFixed(2), style: digit),
-            ),
+            trailingWidget: Text(controller.danmakuFontBorder.value.toStringAsFixed(2), style: digitStyle),
           ),
         ],
       ),
