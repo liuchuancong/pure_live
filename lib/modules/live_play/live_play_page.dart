@@ -659,6 +659,12 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
         color: Get.theme.colorScheme.surfaceContainerHighest,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         offset: const Offset(0.0, 5.0),
+        onOpened: () {
+          controller.isMenuOpen = true;
+        },
+        onCanceled: () {
+          controller.isMenuOpen = false;
+        },
         position: PopupMenuPosition.under,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -668,6 +674,7 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
           ),
         ),
         onSelected: (newQualityIndex) {
+          controller.isMenuOpen = false;
           controller.setResolution(ReloadDataType.changeQuality, newQualityIndex, controller.currentLineIndex.value);
         },
         itemBuilder: (context) {
@@ -702,6 +709,12 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
         color: Get.theme.colorScheme.surfaceContainerHighest,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         offset: const Offset(0.0, 5.0),
+        onOpened: () {
+          controller.isMenuOpen = true;
+        },
+        onCanceled: () {
+          controller.isMenuOpen = false;
+        },
         position: PopupMenuPosition.under,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -711,6 +724,7 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
           ),
         ),
         onSelected: (newLineIndex) {
+          controller.isMenuOpen = false;
           controller.setResolution(ReloadDataType.changeLine, controller.currentQuality.value, newLineIndex);
         },
         itemBuilder: (context) {
