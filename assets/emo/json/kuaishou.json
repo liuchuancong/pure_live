@@ -1,0 +1,830 @@
+{
+  "[666]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704763447505third_party_s1296657489.png",
+    "local_file": "666.png"
+  },
+  "[奸笑]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704776059816third_party_s1296748052.png",
+    "local_file": "奸笑.png"
+  },
+  "[捂脸]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704776021202third_party_s1296747457.png",
+    "local_file": "捂脸.png"
+  },
+  "[龇牙]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704775978144third_party_s1296746882.png",
+    "local_file": "龇牙.png"
+  },
+  "[哼]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704775935917third_party_s1296746407.png",
+    "local_file": "哼.png"
+  },
+  "[哦]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704775888472third_party_s1296745888.png",
+    "local_file": "哦.png"
+  },
+  "[微笑]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704775840073third_party_s1296745254.png",
+    "local_file": "微笑.png"
+  },
+  "[老铁]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704766004548third_party_s1296668542.png",
+    "local_file": "老铁.png"
+  },
+  "[双鸡]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704765943430third_party_s1296668337.png",
+    "local_file": "双鸡.png"
+  },
+  "[调皮]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704775798640third_party_s1296744691.png",
+    "local_file": "调皮.png"
+  },
+  "[呆住]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704775755675third_party_s1296744198.png",
+    "local_file": "呆住.png"
+  },
+  "[星星眼]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704775705283third_party_s1296743591.png",
+    "local_file": "星星眼.png"
+  },
+  "[爱心]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704765876094third_party_s1296667852.png",
+    "local_file": "爱心.png"
+  },
+  "[疑问]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704775660342third_party_s1296742992.png",
+    "local_file": "疑问.png"
+  },
+  "[生气]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704775610489third_party_s1296742417.png",
+    "local_file": "生气.png"
+  },
+  "[难过]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704775560543third_party_s1296741805.png",
+    "local_file": "难过.png"
+  },
+  "[撇嘴]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704775517486third_party_s1296741380.png",
+    "local_file": "撇嘴.png"
+  },
+  "[惊讶]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704775445666third_party_s1296740420.png",
+    "local_file": "惊讶.png"
+  },
+  "[羞涩]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704772289790third_party_s1296705324.png",
+    "local_file": "羞涩.png"
+  },
+  "[色]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704772231770third_party_s1296704846.png",
+    "local_file": "色.png"
+  },
+  "[汗]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704772177310third_party_s1296704283.png",
+    "local_file": "汗.png"
+  },
+  "[呕吐]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704772118979third_party_s1296703810.png",
+    "local_file": "呕吐.png"
+  },
+  "[老司机]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704772048844third_party_s1296703216.png",
+    "local_file": "老司机.png"
+  },
+  "[头盔]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704771654524third_party_s1296700611.png",
+    "local_file": "头盔.png"
+  },
+  "[酷]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704771603139third_party_s1296700263.png",
+    "local_file": "酷.png"
+  },
+  "[笑哭]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704771554781third_party_s1296699971.png",
+    "local_file": "笑哭.png"
+  },
+  "[愉快]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704771498312third_party_s1296699382.png",
+    "local_file": "愉快.png"
+  },
+  "[委屈]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704771450694third_party_s1296699070.png",
+    "local_file": "委屈.png"
+  },
+  "[鄙视]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704771395457third_party_s1296698891.png",
+    "local_file": "鄙视.png"
+  },
+  "[白眼]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704771346135third_party_s1296698660.png",
+    "local_file": "白眼.png"
+  },
+  "[安排]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704771294552third_party_s1296698182.png",
+    "local_file": "安排.png"
+  },
+  "[点点关注]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704771236940third_party_s1296697797.png",
+    "local_file": "点点关注.png"
+  },
+  "[鼓掌]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704771184363third_party_s1296697359.png",
+    "local_file": "鼓掌.png"
+  },
+  "[抱抱]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704766474596third_party_s1296670536.png",
+    "local_file": "抱抱.png"
+  },
+  "[哈欠]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704771131055third_party_s1296696977.png",
+    "local_file": "哈欠.png"
+  },
+  "[骂你]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704771079728third_party_s1296696446.png",
+    "local_file": "骂你.png"
+  },
+  "[大哭]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704771028940third_party_s1296696033.png",
+    "local_file": "大哭.png"
+  },
+  "[闭嘴]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704770709451third_party_s1296694128.png",
+    "local_file": "闭嘴.png"
+  },
+  "[惊恐]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704770650664third_party_s1296693781.png",
+    "local_file": "惊恐.png"
+  },
+  "[红脸蛋]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704770591150third_party_s1296693499.png",
+    "local_file": "红脸蛋.png"
+  },
+  "[亲亲]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704770453439third_party_s1296692624.png",
+    "local_file": "亲亲.png"
+  },
+  "[冷汗]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704770395028third_party_s1296692231.png",
+    "local_file": "冷汗.png"
+  },
+  "[晕]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704770038072third_party_s1296690336.png",
+    "local_file": "晕.png"
+  },
+  "[皇冠]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704765811100third_party_s1296667470.png",
+    "local_file": "皇冠.png"
+  },
+  "[火]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704763504359third_party_s1296657659.png",
+    "local_file": "火.png"
+  },
+  "[坏笑]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704769906157third_party_s1296689515.png",
+    "local_file": "坏笑.png"
+  },
+  "[爆炸]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704763342710third_party_s1296657261.png",
+    "local_file": "爆炸.png"
+  },
+  "[大便]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704763289677third_party_s1296657112.png",
+    "local_file": "大便.png"
+  },
+  "[可怜]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704769849712third_party_s1296689281.png",
+    "local_file": "可怜.png"
+  },
+  "[抠鼻]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704769802638third_party_s1296689012.png",
+    "local_file": "抠鼻.png"
+  },
+  "[再见]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704769742626third_party_s1296688705.png",
+    "local_file": "再见.png"
+  },
+  "[摄像机]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704763241589third_party_s1296656998.png",
+    "local_file": "摄像机.png"
+  },
+  "[赞]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704762153449third_party_s1296652881.png",
+    "local_file": "赞.png"
+  },
+  "[平底锅]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704769687542third_party_s1296688270.png",
+    "local_file": "平底锅.png"
+  },
+  "[囧]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704769626325third_party_s1296687863.png",
+    "local_file": "囧.png"
+  },
+  "[大哥]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704769568039third_party_s1296687559.png",
+    "local_file": "大哥.png"
+  },
+  "[玫瑰]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704763142635third_party_s1296656612.png",
+    "local_file": "玫瑰.png"
+  },
+  "[抓狂]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704769507289third_party_s1296687303.png",
+    "local_file": "抓狂.png"
+  },
+  "[嘘]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704769442407third_party_s1296686829.png",
+    "local_file": "嘘.png"
+  },
+  "[快哭了]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704769347108third_party_s1296686284.png",
+    "local_file": "快哭了.png"
+  },
+  "[骷髅]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704768884061third_party_s1296683458.png",
+    "local_file": "骷髅.png"
+  },
+  "[偷笑]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704768706672third_party_s1296682428.png",
+    "local_file": "偷笑.png"
+  },
+  "[落泪]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704768657909third_party_s1296681906.png",
+    "local_file": "落泪.png"
+  },
+  "[挑逗]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704768600457third_party_s1296681529.png",
+    "local_file": "挑逗.png"
+  },
+  "[困]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704768550467third_party_s1296681259.png",
+    "local_file": "困.png"
+  },
+  "[睡觉]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704768494268third_party_s1296681034.png",
+    "local_file": "睡觉.png"
+  },
+  "[右哼哼]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704768448493third_party_s1296680688.png",
+    "local_file": "右哼哼.png"
+  },
+  "[左哼哼]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704768392482third_party_s1296680332.png",
+    "local_file": "左哼哼.png"
+  },
+  "[打招呼]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704762100195third_party_s1296652661.png",
+    "local_file": "打招呼.png"
+  },
+  "[流鼻血]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704768330183third_party_s1296680037.png",
+    "local_file": "流鼻血.png"
+  },
+  "[偷瞄]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704768270249third_party_s1296679827.png",
+    "local_file": "偷瞄.png"
+  },
+  "[吃瓜]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704768220721third_party_s1296679581.png",
+    "local_file": "吃瓜.png"
+  },
+  "[黑脸问]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704768168791third_party_s1296679234.png",
+    "local_file": "黑脸问.png"
+  },
+  "[旋转]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704768117560third_party_s1296678783.png",
+    "local_file": "旋转.png"
+  },
+  "[憨笑]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704768054223third_party_s1296678500.png",
+    "local_file": "憨笑.png"
+  },
+  "[吐彩虹]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704767994674third_party_s1296678327.png",
+    "local_file": "吐彩虹.png"
+  },
+  "[擦鼻涕]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704767940928third_party_s1296677841.png",
+    "local_file": "擦鼻涕.png"
+  },
+  "[怒言]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704767890021third_party_s1296677678.png",
+    "local_file": "怒言.png"
+  },
+  "[拜托]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704767838535third_party_s1296677360.png",
+    "local_file": "拜托.png"
+  },
+  "[加油]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704767780611third_party_s1296677057.png",
+    "local_file": "加油.png"
+  },
+  "[暴汗]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704767728861third_party_s1296676729.png",
+    "local_file": "暴汗.png"
+  },
+  "[想吃]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704767667849third_party_s1296676449.png",
+    "local_file": "想吃.png"
+  },
+  "[打脸]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704767617056third_party_s1296676208.png",
+    "local_file": "打脸.png"
+  },
+  "[吐血]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704767567911third_party_s1296675878.png",
+    "local_file": "吐血.png"
+  },
+  "[尴尬]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704767506569third_party_s1296675528.png",
+    "local_file": "尴尬.png"
+  },
+  "[出魂儿]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704767441130third_party_s1296675286.png",
+    "local_file": "出魂儿.png"
+  },
+  "[大鼻孔]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704767388991third_party_s1296674947.png",
+    "local_file": "大鼻孔.png"
+  },
+  "[嘣]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704767331411third_party_s1296674616.png",
+    "local_file": "嘣.png"
+  },
+  "[天啊]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704767271335third_party_s1296674239.png",
+    "local_file": "天啊.png"
+  },
+  "[石化]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704767221776third_party_s1296674013.png",
+    "local_file": "石化.png"
+  },
+  "[皱眉]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704767005855third_party_s1296672942.png",
+    "local_file": "皱眉.png"
+  },
+  "[装傻]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704766945094third_party_s1296672714.png",
+    "local_file": "装傻.png"
+  },
+  "[酸了]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704761625171third_party_s1296650672.png",
+    "local_file": "酸了.png"
+  },
+  "[柴犬]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704761562366third_party_s1296650505.png",
+    "local_file": "柴犬.png"
+  },
+  "[狗粮]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704762211958third_party_s1296653006.png",
+    "local_file": "狗粮.png"
+  },
+  "[期待]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704766537316third_party_s1296670779.png",
+    "local_file": "期待.png"
+  },
+  "[红包]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704762630876third_party_s1296654958.png",
+    "local_file": "红包.png"
+  },
+  "[干杯]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704762976549third_party_s1296656073.png",
+    "local_file": "干杯.png"
+  },
+  "[祈祷]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704762918273third_party_s1296655765.png",
+    "local_file": "祈祷.png"
+  },
+  "[花谢了]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704763094568third_party_s1296656398.png",
+    "local_file": "花谢了.png"
+  },
+  "[跪下]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704762867899third_party_s1296655667.png",
+    "local_file": "跪下.png"
+  },
+  "[南]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704762761234third_party_s1296655362.png",
+    "local_file": "南.png"
+  },
+  "[发]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704762689267third_party_s1296655142.png",
+    "local_file": "发.png"
+  },
+  "[板砖]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704763039720third_party_s1296656165.png",
+    "local_file": "板砖.png"
+  },
+  "[灯笼]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704762583000third_party_s1296654733.png",
+    "local_file": "灯笼.png"
+  },
+  "[福字]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704762521906third_party_s1296654390.png",
+    "local_file": "福字.png"
+  },
+  "[鞭炮]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704762474616third_party_s1296654064.png",
+    "local_file": "鞭炮.png"
+  },
+  "[烟花]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704762425707third_party_s1296653845.png",
+    "local_file": "烟花.png"
+  },
+  "[元宝]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704762370541third_party_s1296653559.png",
+    "local_file": "元宝.png"
+  },
+  "[钱]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704762316380third_party_s1296653319.png",
+    "local_file": "钱.png"
+  },
+  "[气球]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704762265510third_party_s1296653172.png",
+    "local_file": "气球.png"
+  },
+  "[庆祝]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704770972968third_party_s1296695686.png",
+    "local_file": "庆祝.png"
+  },
+  "[礼花]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704766060554third_party_s1296668711.png",
+    "local_file": "礼花.png"
+  },
+  "[爱你]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704766815314third_party_s1296671857.png",
+    "local_file": "爱你.png"
+  },
+  "[摸头]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704766657395third_party_s1296671198.png",
+    "local_file": "摸头.png"
+  },
+  "[雾霾]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704766594591third_party_s1296670988.png",
+    "local_file": "雾霾.png"
+  },
+  "[化妆]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704766889905third_party_s1296672534.png",
+    "local_file": "化妆.png"
+  },
+  "[涂指甲]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704761682759third_party_s1296650876.png",
+    "local_file": "涂指甲.png"
+  },
+  "[欢迎]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704762048343third_party_s1296652504.png",
+    "local_file": "欢迎.png"
+  },
+  "[左拳]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704761978093third_party_s1296652142.png",
+    "local_file": "左拳.png"
+  },
+  "[右拳]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704761920283third_party_s1296651882.png",
+    "local_file": "右拳.png"
+  },
+  "[我爱你]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704761864978third_party_s1296651546.png",
+    "local_file": "我爱你.png"
+  },
+  "[比心]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704761810228third_party_s1296651375.png",
+    "local_file": "比心.png"
+  },
+  "[肌肉]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704761751472third_party_s1296651098.png",
+    "local_file": "肌肉.png"
+  },
+  "[狮子]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704761502720third_party_s1296650143.png",
+    "local_file": "狮子.png"
+  },
+  "[龙]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704761427407third_party_s1296649954.png",
+    "local_file": "龙.png"
+  },
+  "[狗]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704761371094third_party_s1296649726.png",
+    "local_file": "狗.png"
+  },
+  "[网红猫]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704761307262third_party_s1296649487.png",
+    "local_file": "网红猫.png"
+  },
+  "[猫]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704761245827third_party_s1296649373.png",
+    "local_file": "猫.png"
+  },
+  "[老鼠]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704761189331third_party_s1296649156.png",
+    "local_file": "老鼠.png"
+  },
+  "[不看]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704761136865third_party_s1296649061.png",
+    "local_file": "不看.png"
+  },
+  "[不听]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704761074831third_party_s1296648807.png",
+    "local_file": "不听.png"
+  },
+  "[不说]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704761014678third_party_s1296648623.png",
+    "local_file": "不说.png"
+  },
+  "[猪头]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704760952536third_party_s1296648309.png",
+    "local_file": "猪头.png"
+  },
+  "[猪鼻子]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704760884297third_party_s1296648188.png",
+    "local_file": "猪鼻子.png"
+  },
+  "[猪蹄]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704760771304third_party_s1296648058.png",
+    "local_file": "猪蹄.png"
+  },
+  "[羊驼]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704760711037third_party_s1296647965.png",
+    "local_file": "羊驼.png"
+  },
+  "[麦克风]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704760647218third_party_s1296647852.png",
+    "local_file": "麦克风.png"
+  },
+  "[跳舞]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704760582888third_party_s1296647756.png",
+    "local_file": "跳舞.png"
+  },
+  "[蛋糕]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704760405763third_party_s1296647250.png",
+    "local_file": "蛋糕.png"
+  },
+  "[口红]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704760472494third_party_s1296647403.png",
+    "local_file": "口红.png"
+  },
+  "[水枪]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704760254873third_party_s1296646780.png",
+    "local_file": "水枪.png"
+  },
+  "[空投]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704760193986third_party_s1296646575.png",
+    "local_file": "空投.png"
+  },
+  "[手柄]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704760091452third_party_s1296646374.png",
+    "local_file": "手柄.png"
+  },
+  "[坑]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704759985787third_party_s1296646211.png",
+    "local_file": "坑.png"
+  },
+  "[八倍镜]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704759889785third_party_s1296646065.png",
+    "local_file": "八倍镜.png"
+  },
+  "[网红]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704759766583third_party_s1296645553.png",
+    "local_file": "网红.png"
+  },
+  "[优秀]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704759660137third_party_s1296645301.png",
+    "local_file": "优秀.png"
+  },
+  "[减1]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704720665766third_party_s1296409266.png",
+    "local_file": "减1.png"
+  },
+  "[必胜]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704759542034third_party_s1296644941.png",
+    "local_file": "必胜.png"
+  },
+  "[戴口罩]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704704107430third_party_s1295984389.png",
+    "local_file": "戴口罩.png"
+  },
+  "[勤洗手]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704703259238third_party_s1295977084.png",
+    "local_file": "勤洗手.png"
+  },
+  "[心心]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704772346276third_party_s1296705763.png",
+    "local_file": "心心.png"
+  },
+  "[哭笑]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704702678707third_party_s1295972366.png",
+    "local_file": "哭笑.png"
+  },
+  "[点赞]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704701773745third_party_s1295965382.png",
+    "local_file": "点赞.png"
+  },
+  "[菜刀]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704762819173third_party_s1296655522.png",
+    "local_file": "菜刀.png"
+  },
+  "[扎心]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704763391921third_party_s1296657345.png",
+    "local_file": "扎心.png"
+  },
+  "[拍一拍]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704699252327third_party_s1295948859.png",
+    "local_file": "拍一拍.png"
+  },
+  "[稳]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704780742645third_party_s1296794020.png",
+    "local_file": "稳.png"
+  },
+  "[收到]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704782800053third_party_s1296805478.png",
+    "local_file": "收到.png"
+  },
+  "[加1]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704782930366third_party_s1296806744.png",
+    "local_file": "加1.png"
+  },
+  "[叉号]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704782991766third_party_s1296807145.png",
+    "local_file": "叉号.png"
+  },
+  "[对号]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704783055649third_party_s1296807447.png",
+    "local_file": "对号.png"
+  },
+  "[no]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704783096203third_party_s1296807744.png",
+    "local_file": "no.png"
+  },
+  "[yes]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704783149616third_party_s1296808385.png",
+    "local_file": "yes.png"
+  },
+  "[湿巾]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704783721396third_party_s1296812504.png",
+    "local_file": "湿巾.png"
+  },
+  "[吃饭]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704783768169third_party_s1296812801.png",
+    "local_file": "吃饭.png"
+  },
+  "[莫吉托]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704783816852third_party_s1296812989.png",
+    "local_file": "莫吉托.png"
+  },
+  "[香草蛋糕]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704783879438third_party_s1296813277.png",
+    "local_file": "香草蛋糕.png"
+  },
+  "[健身]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704783968269third_party_s1296813760.png",
+    "local_file": "健身.png"
+  },
+  "[思考]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704784017068third_party_s1296813974.png",
+    "local_file": "思考.png"
+  },
+  "[疯狂工作]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704784063813third_party_s1296814234.png",
+    "local_file": "疯狂工作.png"
+  },
+  "[充满干劲]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704785056742third_party_s1296820406.png",
+    "local_file": "充满干劲.png"
+  },
+  "[放轻松]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704785103740third_party_s1296820865.png",
+    "local_file": "放轻松.png"
+  },
+  "[卷]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704786813813third_party_s1296831667.png",
+    "local_file": "卷.png"
+  },
+  "[熬夜]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704786853592third_party_s1296831948.png",
+    "local_file": "熬夜.png"
+  },
+  "[先睡了]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704786910336third_party_s1296832209.png",
+    "local_file": "先睡了.png"
+  },
+  "[emo]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704786943774third_party_s1296832458.png",
+    "local_file": "emo.png"
+  },
+  "[听音乐]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704786984951third_party_s1296832685.png",
+    "local_file": "听音乐.png"
+  },
+  "[好运来]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704787279186third_party_s1296834761.png",
+    "local_file": "好运来.png"
+  },
+  "[元气满满]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704787606436third_party_s1296836908.png",
+    "local_file": "元气满满.png"
+  },
+  "[学习]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704787673918third_party_s1296837372.png",
+    "local_file": "学习.png"
+  },
+  "[打电话]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704787717756third_party_s1296837621.png",
+    "local_file": "打电话.png"
+  },
+  "[熬夜工作]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704787761789third_party_s1296837795.png",
+    "local_file": "熬夜工作.png"
+  },
+  "[一起嗨皮]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704787815614third_party_s1296838146.png",
+    "local_file": "一起嗨皮.png"
+  },
+  "[难受]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704787901952third_party_s1296838607.png",
+    "local_file": "难受.png"
+  },
+  "[上吊]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704787935223third_party_s1296838745.png",
+    "local_file": "上吊.png"
+  },
+  "[吓]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704787981957third_party_s1296839028.png",
+    "local_file": "吓.png"
+  },
+  "[发呆]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704788025440third_party_s1296839215.png",
+    "local_file": "发呆.png"
+  },
+  "[疲惫]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704788904736third_party_s1296845175.png",
+    "local_file": "疲惫.png"
+  },
+  "[裂开]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704788951325third_party_s1296845410.png",
+    "local_file": "裂开.png"
+  },
+  "[强颜欢笑]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704788997306third_party_s1296845817.png",
+    "local_file": "强颜欢笑.png"
+  },
+  "[翻白眼]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704789037112third_party_s1296846026.png",
+    "local_file": "翻白眼.png"
+  },
+  "[难过至极]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704789078980third_party_s1296846236.png",
+    "local_file": "难过至极.png"
+  },
+  "[美滋滋]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704789133176third_party_s1296846710.png",
+    "local_file": "美滋滋.png"
+  },
+  "[马上安排]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704789177867third_party_s1296847087.png",
+    "local_file": "马上安排.png"
+  },
+  "[摸鱼]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704789217352third_party_s1296847412.png",
+    "local_file": "摸鱼.png"
+  },
+  "[敬礼]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704789256009third_party_s1296847689.png",
+    "local_file": "敬礼.png"
+  },
+  "[求求了]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704789289580third_party_s1296847957.png",
+    "local_file": "求求了.png"
+  },
+  "[赢麻了]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704789337176third_party_s1296848206.png",
+    "local_file": "赢麻了.png"
+  },
+  "[遥遥领先]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704789382578third_party_s1296848447.png",
+    "local_file": "遥遥领先.png"
+  },
+  "[辣眼睛]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704789443283third_party_s1296848822.png",
+    "local_file": "辣眼睛.png"
+  },
+  "[ok]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704789999083third_party_s1296852648.png",
+    "local_file": "ok.png"
+  },
+  "[握手]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704790046552third_party_s1296852850.png",
+    "local_file": "握手.png"
+  },
+  "[抱拳]": {
+    "url": "https://bd.a.yximgs.com/bs2/emotion/1704790113221third_party_s1296853443.png",
+    "local_file": "抱拳.png"
+  },
+  "[早上好]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704790167344third_party_s1296853922.png",
+    "local_file": "早上好.png"
+  },
+  "[胡思乱想]": {
+    "url": "https://ali2.a.yximgs.com/bs2/emotion/1704790657229third_party_s1296858542.png",
+    "local_file": "胡思乱想.png"
+  }
+}
