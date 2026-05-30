@@ -169,4 +169,14 @@ class BackupController extends GetxController {
       return false;
     }
   }
+
+  Map<String, dynamic> exportToTVSettings() {
+    final danmaku = Get.find<DanmakuSettingsController>().toJson();
+    final cookie = Get.find<CookieSettingsController>().toJson();
+    final iptv = Get.find<IptvSettingsController>().toJson();
+    final favorite = Get.find<FavoriteRoomController>().toJson();
+    final history = Get.find<HistoryController>().toJson();
+
+    return {...danmaku, ...cookie, ...favorite, ...history, 'customIptvUserAgent': iptv['customIptvUserAgent']};
+  }
 }

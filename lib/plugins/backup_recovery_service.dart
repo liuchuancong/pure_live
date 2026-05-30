@@ -68,7 +68,7 @@ class BackupRecoveryService {
     try {
       final response = await HttpClient.instance.postJson(
         '$httpAddress/api/setSettings',
-        queryParameters: {"settings": jsonEncode(backup.exportAllSettings())},
+        queryParameters: {"settings": jsonEncode(backup.exportToTVSettings())},
       );
       return jsonDecode(response)['data'] ?? false;
     } catch (e) {

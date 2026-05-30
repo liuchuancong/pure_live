@@ -1,8 +1,8 @@
 {
-  "version": "2.0.20",
-  "build_number": 31,
-  "version_num": 2002031,
-  "version_desc": "- 新增直播间只播放声音。\n- 添加自定义标签功能。\n- 将FVP和Mediakit播放器合并，优化播放器选项（需要重新设置选择播放器）。\n- 优化全屏以及画中画显示。\n- 添加共享，你可长按复制直播间分享给好友。\n- 添加弹幕自定义。\n- 优化历史版本。\n- window添加SMTC支持。\n",
+  "version": "2.0.21",
+  "build_number": 32,
+  "version_num": 2002132,
+  "version_desc": "- 优化弹幕卡顿，并添加了更多的表情显示。\n- 优化切换线路以及清晰度不重新连接弹幕。\n- 优化了备份以及导出。\n- 添加windows自定义启动窗口大小。\n",
   "prerelease": false,
   "download_url": "https://github.com/liuchuancong/pure_live/releases"
 }
