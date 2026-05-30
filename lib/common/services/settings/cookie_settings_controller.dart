@@ -1,5 +1,6 @@
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
+import 'package:pure_live/common/services/settings/bilibili_account_service.dart';
 
 class CookieSettingsController extends GetxController {
   final RxString bilibiliCookie = hiveString('bilibiliCookie', '');
@@ -28,5 +29,7 @@ class CookieSettingsController extends GetxController {
     huyaCookie.v = json['huyaCookie'] ?? '';
     douyinCookie.v = json['douyinCookie'] ?? '';
     kuaishouCookie.v = json['kuaishouCookie'] ?? '';
+    BiliBiliAccountService.instance.setCookie(bilibiliCookie.v);
+    BiliBiliAccountService.instance.loadUserInfo();
   }
 }

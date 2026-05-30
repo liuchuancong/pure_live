@@ -8,8 +8,8 @@ import 'package:pure_live/common/models/bilibili_user_info_page.dart';
 class BiliBiliAccountService extends GetxController {
   static BiliBiliAccountService get instance => Get.find<BiliBiliAccountService>();
 
-  final logined = false.obs;
-  final name = i18n("not_logged_in").obs;
+  final RxBool logined = false.obs;
+  final RxString name = ''.obs;
   int uid = 0;
 
   String get currentCookie => SettingsService.to.cookieManager.bilibiliCookie.v;
@@ -18,8 +18,8 @@ class BiliBiliAccountService extends GetxController {
   void onInit() {
     super.onInit();
     logined.value = currentCookie.isNotEmpty;
-    ever(SettingsService.to.cookieManager.bilibiliCookie, (v) {
-      final val = v.toString();
+
+    ever<String>(SettingsService.to.cookieManager.bilibiliCookie, (val) {
       logined.value = val.isNotEmpty;
       if (val.isEmpty) {
         _clearLocalAccountState();
@@ -27,7 +27,10 @@ class BiliBiliAccountService extends GetxController {
         loadUserInfo();
       }
     });
-    loadUserInfo();
+
+    if (currentCookie.isNotEmpty) {
+      loadUserInfo();
+    }
   }
 
   Future<void> loadUserInfo() async {
@@ -37,8 +40,12 @@ class BiliBiliAccountService extends GetxController {
     if (currentCookie.isEmpty) return;
 
     try {
-      final result = await HttpClient.instance.getJson("https://bilibili.com", header: {"Cookie": currentCookie});
-      if (result["code"] == 0) {
+      final result = await HttpClient.instance.getJson(
+        "https://api.bilibili.com/x/member/web/account",
+        header: {"Cookie": currentCookie},
+      );
+
+      if (result != null && result["code"] == 0) {
         final info = BiliBiliUserInfoModel.fromJson(result["data"]);
         name.value = info.uname ?? i18n("not_logged_in");
         uid = info.mid ?? 0;

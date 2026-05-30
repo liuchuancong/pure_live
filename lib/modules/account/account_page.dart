@@ -8,6 +8,8 @@ class AccountPage extends GetView<AccountController> {
 
   @override
   Widget build(BuildContext context) {
+    final cookie = SettingsService.to.cookieManager;
+
     return Scaffold(
       appBar: AppBar(title: Text(i18n('third_party_auth'))),
       body: ListView(
@@ -17,44 +19,60 @@ class AccountPage extends GetView<AccountController> {
           context.buildGroupTitle(i18n('third_party_auth')),
           context.buildModernCard([
             Obx(() {
-              final isLogined = BiliBiliAccountService.instance.logined.value;
-              final accountName = BiliBiliAccountService.instance.name.value;
+              final isLogined = BiliBiliAccountService.instance.logined.v;
+              final accountName = BiliBiliAccountService.instance.name.v;
               return _buildAccountTile(
                 context,
                 logo: 'assets/images/bilibili_2.png',
                 title: i18n("site_bilibili"),
-                subtitle: isLogined ? accountName : i18n("set_cookie"),
+                subtitle: isLogined ? accountName : i18n("not_logged_in"),
                 isLogined: isLogined,
-                onTap: controller.bilibiliTap,
+                onTap: () => isLogined ? _showLogoutDialog(context) : controller.bilibiliTap(),
               );
             }),
 
-            _buildAccountTile(
-              context,
-              logo: 'assets/images/huya.png',
-              title: i18n("site_huya"),
-              subtitle: i18n("set_cookie"),
-              isLogined: false,
-              onTap: () => Get.toNamed(RoutePath.kHuyaCookie),
-            ),
+            Obx(() {
+              final isLogined = cookie.huyaCookie.v.isNotEmpty;
+              return _buildAccountTile(
+                context,
+                logo: 'assets/images/huya.png',
+                title: i18n("site_huya"),
+                subtitle: isLogined ? i18n("logined") : i18n("set_cookie"),
+                isLogined: isLogined,
+                onTap: () => isLogined
+                    ? _showPlatformLogoutDialog(context, () => cookie.huyaCookie.v = "")
+                    : Get.toNamed(RoutePath.kHuyaCookie),
+              );
+            }),
 
-            _buildAccountTile(
-              context,
-              logo: 'assets/images/douyin.png',
-              title: i18n("site_douyin"),
-              subtitle: i18n("set_cookie"),
-              isLogined: false,
-              onTap: () => Get.toNamed(RoutePath.kDouyuCookie),
-            ),
+            Obx(() {
+              final isLogined = cookie.douyinCookie.v.isNotEmpty;
+              return _buildAccountTile(
+                context,
+                logo: 'assets/images/douyin.png',
+                title: i18n("site_douyin"),
+                subtitle: isLogined ? i18n("logined") : i18n("set_cookie"),
+                isLogined: isLogined,
+                onTap: () => isLogined
+                    ? _showPlatformLogoutDialog(context, () => cookie.douyinCookie.v = "")
+                    : Get.toNamed(RoutePath.kDouyuCookie),
+              );
+            }),
 
-            _buildAccountTile(
-              context,
-              logo: 'assets/images/kuaishou.png',
-              title: i18n("site_kuaishou"),
-              subtitle: i18n("set_cookie"),
-              isLogined: false,
-              onTap: () => Get.toNamed(RoutePath.kKuaishouCookie),
-            ),
+            Obx(() {
+              final isLogined = cookie.kuaishouCookie.v.isNotEmpty;
+              return _buildAccountTile(
+                context,
+                logo: 'assets/images/kuaishou.png',
+                title: i18n("site_kuaishou"),
+                subtitle: isLogined ? i18n("logined") : i18n("set_cookie"),
+                isLogined: isLogined,
+                onTap: () => isLogined
+                    ? _showPlatformLogoutDialog(context, () => cookie.kuaishouCookie.v = "")
+                    : Get.toNamed(RoutePath.kKuaishouCookie),
+              );
+            }),
+
             _buildAccountTile(
               context,
               logo: 'assets/images/douyu.png',
@@ -101,10 +119,57 @@ class AccountPage extends GetView<AccountController> {
         ),
       ),
       trailing: isLogined
-          ? Icon(Remix.logout_box_r_line, color: theme.colorScheme.error.withValues(alpha: 0.8), size: 18)
+          ? GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Icon(Remix.logout_box_r_line, color: theme.colorScheme.error.withValues(alpha: 0.8), size: 18),
+              ),
+            )
           : Icon(Icons.chevron_right_rounded, color: theme.hintColor.withValues(alpha: 0.4), size: 20),
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(i18n("logout")),
+        content: Text(i18n("confirm_logout")),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n("cancel"))),
+          TextButton(
+            onPressed: () {
+              BiliBiliAccountService.instance.logout();
+              Navigator.pop(context);
+            },
+            child: Text(i18n("confirm"), style: const TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPlatformLogoutDialog(BuildContext context, VoidCallback onConfirm) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(i18n("logout")),
+        content: Text(i18n("confirm_logout")),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n("cancel"))),
+          TextButton(
+            onPressed: () {
+              onConfirm();
+              Navigator.pop(context);
+            },
+            child: Text(i18n("confirm"), style: const TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
     );
   }
 }
