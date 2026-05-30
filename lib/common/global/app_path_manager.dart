@@ -18,7 +18,8 @@ class AppPathManager {
   static const String dirHiveDB = 'HIVE_DB';
   static const String dirImageCache = 'IMAGE_CACHE';
   static const String dirRecords = 'RECORDS';
-
+  static const String dirEmojiCache = 'EMOJI_CACHE';
+  static const String fontCacheDir = 'fontsDir';
   static const String iptvCategoryFile = 'categories.json';
   static const String iptvHotFile = 'hot.m3u';
   static const String iptvHotRemoteFile = 'https://raw.githubusercontent.com/YueChan/Live/main/GNTV.m3u';
@@ -87,17 +88,13 @@ class AppPathManager {
       rootPath = p.join(rootPath, sanitizedInstanceId);
     }
 
-    // 3. 规范化 Windows 的物理路径字符串
     final String canonicalOldRoot = p.canonicalize(oldRootPath);
     final String canonicalNewRoot = p.canonicalize(rootPath);
 
-    // 4. 迁移保险锁文件
     final lockFile = File(p.join(rootPath, 'migrated.lock'));
     final bool isAlreadyMigrated = !kIsWeb && await lockFile.exists();
 
-    // 核心修改：非 Web 平台 + 新旧路径不同 + 未迁移过 +【非 C 盘运行】时才触发迁移
     if (!kIsWeb && canonicalOldRoot != canonicalNewRoot && !isAlreadyMigrated && !isRunningOnCDrive) {
-      // 验证目标目录是否有写入权限
       final bool hasWritePermission = await _checkDirectoryWritable(rootPath);
       if (hasWritePermission) {
         await _migrateHiveFiles(oldRootPath, rootPath, lockFile);
@@ -109,17 +106,15 @@ class AppPathManager {
     _basePath = rootPath;
   }
 
-  /// 新增：测试目标目录是否真正具备物理写入权限
   Future<bool> _checkDirectoryWritable(String path) async {
     try {
       final testDir = Directory(path);
       if (!await testDir.exists()) {
         await testDir.create(recursive: true);
       }
-      // 创建一个临时测试文件
       final testFile = File(p.join(path, '.permission_test_${DateTime.now().millisecondsSinceEpoch}'));
       await testFile.writeAsString('test');
-      await testFile.delete(); // 成功写入后立即删除
+      await testFile.delete();
       return true;
     } catch (e) {
       log('目录写入权限检测失败 ($path): $e');
@@ -173,13 +168,13 @@ class AppPathManager {
   Future<Directory> get hiveDbDir => getDir(dirHiveDB);
   Future<Directory> get imageCacheDir => getDir(dirImageCache);
   Future<Directory> get recordsDir => getDir(dirRecords);
+  Future<Directory> get emojiCacheDir => getDir(dirEmojiCache);
 
   String get basePath => _basePath ?? (throw StateError("AppPathManager 尚未初始化"));
 
   Future<String> getFontFamilyFolderPath(String id) async {
     final downloadDir = await getDir(dirDownload);
-    final fontsDir = 'fonts';
-    final basePath = p.join(downloadDir.path, fontsDir);
+    final basePath = p.join(downloadDir.path, fontCacheDir);
     return p.join(basePath, id);
   }
 }

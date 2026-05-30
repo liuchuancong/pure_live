@@ -1,6 +1,10 @@
+import 'dart:io';
+import 'dart:convert';
 import 'dart:ui' as ui;
-import 'package:flutter/services.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:flutter/foundation.dart';
+import 'package:pure_live/core/sites.dart';
+import 'package:pure_live/plugins/race_http.dart';
+import 'package:pure_live/common/global/app_path_manager.dart';
 
 class EmojiManager {
   static final EmojiManager instance = EmojiManager._internal();
@@ -8,68 +12,147 @@ class EmojiManager {
   EmojiManager._internal();
 
   static final Map<String, ui.Image> _cache = {};
-  static final Map<String, String?> _validEmojiPaths = {};
-  static final Map<String, String> _platformCache = {};
-
-  static const List<String> _emojiExtensions = ['png', 'gif'];
-  static const int _maxCacheSize = 200;
-  static const int _batchSize = 8;
+  String? _currentLoadedSite;
 
   Map<String, ui.Image> get cache => _cache;
 
-  String _getPlatform(String site) {
-    return _platformCache.putIfAbsent(site, () {
-      if (site == Sites.huyaSite) return 'huya';
-      if (site == Sites.douyuSite) return 'douyu';
-      if (site == Sites.bilibiliSite) return 'bilibili';
-      if (site == Sites.douyinSite) return 'douyin';
-      if (site == Sites.kuaishouSite) return 'kuaishou';
-      if (site == Sites.ccSite) return 'cc';
-      return '';
-    });
-  }
-
   Future<void> preload(String site) async {
+    if (_currentLoadedSite == site) return;
+
     clearCache();
+    final cacheDir = await AppPathManager().emojiCacheDir;
+    final localJsonFile = File('${cacheDir.path}/${site}_list.json');
+    if (!await localJsonFile.exists()) return;
 
-    final list = getEmojiList(site);
-    if (list.isEmpty) return;
+    List<dynamic> localList = [];
+    try {
+      final jsonStr = await localJsonFile.readAsString();
+      final decoded = jsonDecode(jsonStr);
+      if (decoded is List) {
+        localList = decoded;
+      }
+    } catch (_) {
+      return;
+    }
 
-    for (int i = 0; i < list.length; i += _batchSize) {
-      final batch = list.skip(i).take(_batchSize);
+    if (localList.isEmpty) return;
 
-      await Future.wait(
-        batch.map((emoji) async {
-          final code = emoji['code']!;
-          final key = "[${emoji['text']}]";
+    await Future.wait(
+      localList.map((emoji) async {
+        final code = emoji['code']?.toString() ?? '';
+        final text = emoji['text']?.toString() ?? '';
+        if (code.isEmpty || text.isEmpty) return;
 
-          final path = _validEmojiPaths[code] ??= await getEmojiAssetPath(site, code);
-          if (path == null || _cache.containsKey(key)) return;
+        final key = "[$text]";
+        if (_cache.containsKey(key)) return;
 
-          try {
-            final bytes = await rootBundle.load(path);
-            final codec = await ui.instantiateImageCodec(bytes.buffer.asUint8List(), targetWidth: 80, targetHeight: 80);
+        try {
+          final localFile = File('${cacheDir.path}/${site}_$code.png');
+          if (await localFile.exists() && await localFile.length() > 100) {
+            final bytes = await localFile.readAsBytes();
+            final codec = await ui.instantiateImageCodec(bytes, targetWidth: 80, targetHeight: 80);
             final frame = await codec.getNextFrame();
             _addToCache(key, frame.image);
-          } catch (e) {
-            debugPrint("Failed to load emoji $key: $e");
           }
-        }),
-      );
+        } catch (_) {}
+      }),
+    );
 
-      await Future.delayed(const Duration(milliseconds: 20));
+    _currentLoadedSite = site;
+  }
+
+  Future<void> autoSilentCacheAllPlatforms(List<String> serverMirrors) async {
+    if (serverMirrors.isEmpty) return;
+
+    final List<String> platforms = Sites.supportSites
+        .map((site) => site.id)
+        .where((id) => id != Sites.iptvSite)
+        .toList();
+
+    final cacheDir = await AppPathManager().emojiCacheDir;
+    final client = HttpClient();
+    client.connectionTimeout = const Duration(seconds: 5);
+
+    for (final site in platforms) {
+      try {
+        final list = await _fetchRemoteEmojiList(site, serverMirrors);
+        if (list.isEmpty) continue;
+
+        await Future.wait(
+          list.map((emoji) async {
+            final code = emoji['code']?.toString() ?? '';
+            if (code.isEmpty) return;
+
+            final localFile = File('${cacheDir.path}/${site}_$code.png');
+            if (await localFile.exists() && await localFile.length() > 100) return;
+
+            try {
+              final targetPaths = serverMirrors.map((mirror) {
+                final base = mirror.endsWith('/') ? mirror.substring(0, mirror.length - 1) : mirror;
+                return "$base/images/$site/$code.png";
+              }).toList();
+
+              final fastestImgUrl = await RaceHttp.findFastestUrl(targetPaths, timeout: const Duration(seconds: 5));
+              if (fastestImgUrl == null) return;
+
+              final request = await client.getUrl(Uri.parse(fastestImgUrl));
+              final response = await request.close();
+              if (response.statusCode == 200) {
+                final bytes = await consolidateHttpClientResponseBytes(response);
+                if (bytes.isNotEmpty && bytes.length > 100) {
+                  await localFile.writeAsBytes(bytes);
+                }
+              }
+            } catch (_) {}
+          }),
+        );
+      } catch (_) {}
     }
+    client.close();
+  }
+
+  Future<List<dynamic>> _fetchRemoteEmojiList(String site, List<String> serverMirrors) async {
+    final cacheDir = await AppPathManager().emojiCacheDir;
+    final localJsonFile = File('${cacheDir.path}/${site}_list.json');
+
+    final jsonTargetUrls = serverMirrors.map((mirror) {
+      final base = mirror.endsWith('/') ? mirror.substring(0, mirror.length - 1) : mirror;
+      return "$base/json/$site.json";
+    }).toList();
+
+    try {
+      final dynamic data = await RaceHttp.fetchJson(jsonTargetUrls, timeout: const Duration(seconds: 5));
+
+      if (data != null) {
+        if (data is List) {
+          await localJsonFile.writeAsString(jsonEncode(data));
+          return data;
+        } else if (data is Map) {
+          final nestedList = data['emotions'] ?? data['list'] ?? data['data'];
+          if (nestedList is List) {
+            await localJsonFile.writeAsString(jsonEncode(nestedList));
+            return nestedList;
+          }
+        }
+      }
+    } catch (_) {}
+
+    if (await localJsonFile.exists()) {
+      try {
+        final jsonStr = await localJsonFile.readAsString();
+        final decoded = jsonDecode(jsonStr);
+        if (decoded is List) {
+          return decoded;
+        }
+      } catch (_) {}
+    }
+
+    return const [];
   }
 
   void _addToCache(String key, ui.Image image) {
     if (_cache.containsKey(key)) {
       _cache[key]?.dispose();
-    }
-
-    if (_cache.length >= _maxCacheSize) {
-      final firstKey = _cache.keys.first;
-      _cache[firstKey]?.dispose();
-      _cache.remove(firstKey);
     }
     _cache[key] = image;
   }
@@ -79,981 +162,8 @@ class EmojiManager {
       img.dispose();
     }
     _cache.clear();
-    _validEmojiPaths.clear();
-  }
-
-  Future<String?> getEmojiAssetPath(String site, String code) async {
-    final platform = _getPlatform(site);
-    if (platform.isEmpty) return null;
-
-    for (final ext in _emojiExtensions) {
-      final path = 'assets/emo/$platform/$code.$ext';
-      try {
-        await rootBundle.load(path);
-        return path;
-      } catch (_) {
-        continue;
-      }
-    }
-    return null;
+    _currentLoadedSite = null;
   }
 
   static ui.Image? getEmoji(String emojiText) => _cache[emojiText];
-
-  static List<dynamic> getEmojiList(String siteType) {
-    var emotions = [];
-    if (siteType == Sites.huyaSite) {
-      emotions = [
-        {"code": "dx", "text": "大笑"},
-        {"code": "sh", "text": "送花"},
-        {"code": "tx", "text": "偷笑"},
-        {"code": "dk", "text": "大哭"},
-        {"code": "hh", "text": "嘿哈"},
-        {"code": "66", "text": "666"},
-        {"code": "gd", "text": "感动"},
-        {"code": "yw", "text": "疑问"},
-        {"code": "xh", "text": "喜欢"},
-        {"code": "jx", "text": "奸笑"},
-        {"code": "zan", "text": "赞"},
-        {"code": "ka", "text": "可爱"},
-        {"code": "am", "text": "傲慢"},
-        {"code": "kx", "text": "开心"},
-        {"code": "88", "text": "拜拜"},
-        {"code": "hx", "text": "害羞"},
-        {"code": "zs", "text": "衰"},
-        {"code": "pu", "text": "吐血"},
-        {"code": "zc", "text": "嘴馋"},
-        {"code": "sq", "text": "生气"},
-        {"code": "fe", "text": "扶额"},
-        {"code": "bz", "text": "闭嘴"},
-        {"code": "kw", "text": "枯萎"},
-        {"code": "xu", "text": "嘘"},
-        {"code": "xk", "text": "笑哭"},
-        {"code": "lh", "text": "流汗"},
-        {"code": "bk", "text": "不看"},
-        {"code": "hq", "text": "哈欠"},
-        {"code": "tp", "text": "调皮"},
-        {"code": "gl", "text": "鬼脸"},
-        {"code": "cl", "text": "戳脸"},
-        {"code": "dg", "text": "大哥"},
-        {"code": "kun", "text": "困"},
-        {"code": "yb", "text": "拥抱"},
-        {"code": "zt", "text": "猪头"},
-        {"code": "kl", "text": "骷髅"},
-        {"code": "cc", "text": "臭臭"},
-        {"code": "xd", "text": "心动"},
-        {"code": "dao", "text": "刀"},
-      ];
-    } else if (siteType == Sites.douyuSite) {
-      emotions = [
-        {"code": "520", "text": "520"},
-        {"code": "666", "text": "666"},
-        {"code": "ciya", "text": "呲牙"},
-        {"code": "jingya", "text": "惊讶"},
-        {"code": "se", "text": "色"},
-        {"code": "deyi", "text": "得意"},
-        {"code": "liulei", "text": "流泪"},
-        {"code": "kelian", "text": "可怜"},
-        {"code": "liuhan", "text": "流汗"},
-        {"code": "fendou", "text": "奋斗"},
-        {"code": "fadai", "text": "发呆"},
-        {"code": "qinqin", "text": "亲亲"},
-        {"code": "fanu", "text": "发怒"},
-        {"code": "tu", "text": "吐"},
-        {"code": "huaixiao", "text": "坏笑"},
-        {"code": "shuai", "text": "衰"},
-        {"code": "qiaoda", "text": "敲打"},
-        {"code": "qiang", "text": "强"},
-        {"code": "koubi", "text": "抠鼻"},
-        {"code": "shihua", "text": "石化"},
-        {"code": "daxiao", "text": "大笑"},
-        {"code": "yiwen", "text": "疑问"},
-        {"code": "weiqu", "text": "委屈"},
-        {"code": "bishi", "text": "鄙视"},
-        {"code": "diaopi", "text": "调皮"},
-        {"code": "kulou", "text": "骷髅"},
-        {"code": "qiangzhuang", "text": "强壮"},
-        {"code": "fadou", "text": "发抖"},
-        {"code": "yali", "text": "压力"},
-        {"code": "yun", "text": "晕"},
-        {"code": "tuxue", "text": "吐血"},
-        {"code": "jiong", "text": "囧"},
-        {"code": "shengqi", "text": "生气"},
-        {"code": "timo", "text": "提莫"},
-        {"code": "chou", "text": "丑"},
-        {"code": "kaiche", "text": "开车"},
-        {"code": "lahong", "text": "拉轰"},
-        {"code": "aleng", "text": "阿冷"},
-        {"code": "chigua", "text": "吃瓜"},
-        {"code": "qianingmeng", "text": "恰柠檬"},
-        {"code": "jinghongyimian", "text": "惊鸿一面"},
-        {"code": "ku", "text": "哭"},
-        {"code": "wutouqishi", "text": "无头骑士"},
-        {"code": "yundao", "text": "晕倒"},
-        {"code": "naisi", "text": "奈斯"},
-        {"code": "tongkumianju", "text": "痛苦面具"},
-        {"code": "wuhuqifei", "text": "芜湖起飞"},
-        {"code": "guigui", "text": "龟龟"},
-        {"code": "biabiabia", "text": "biabiabia"},
-        {"code": "daqi", "text": "大气"},
-        {"code": "jiuzhe", "text": "就这"},
-        {"code": "quantiqili", "text": "全体起立"},
-        {"code": "xiaciyiding", "text": "下次一定"},
-        {"code": "zhenbuchuo", "text": "针不戳"},
-        {"code": "daraole", "text": "打扰了"},
-        {"code": "GKD", "text": "GKD"},
-        {"code": "nizenmegande", "text": "你怎么敢的"},
-        {"code": "wojieshoubule", "text": "我接受不了"},
-        {"code": "RUA", "text": "RUA"},
-        {"code": "woliekaile", "text": "我裂开了"},
-        {"code": "baigei", "text": "白给"},
-        {"code": "gude", "text": "古德"},
-        {"code": "WDNMD", "text": "WDNMD"},
-        {"code": "giegie", "text": "giegie"},
-        {"code": "duosunna", "text": "夺笋呐"},
-        {"code": "laodetangkoushui", "text": "捞的淌口水"},
-        {"code": "nazabanma", "text": "那咋办嘛"},
-        {"code": "qiuzhunnandu", "text": "球准难度"},
-        {"code": "roudancongji", "text": "肉蛋葱鸡"},
-        {"code": "shangliu", "text": "上流"},
-        {"code": "waibibabo", "text": "歪比巴卜"},
-        {"code": "youshoujiuxing", "text": "有手就行"},
-        {"code": "zhaogebanshangba", "text": "找个班上吧"},
-        {"code": "heli", "text": "合理"},
-        {"code": "laobandaqi", "text": "老板大气"},
-        {"code": "biaomianxiongdi", "text": "表面兄弟"},
-        {"code": "sideng", "text": "死等"},
-        {"code": "dagong", "text": "打工"},
-        {"code": "beiwei", "text": "卑微"},
-        {"code": "fuma", "text": "服吗"},
-        {"code": "fanshuishui", "text": "翻水水"},
-        {"code": "huo", "text": "嚯"},
-        {"code": "nixingnishang", "text": "你行你上"},
-        {"code": "xiafan", "text": "下饭"},
-        {"code": "shufule", "text": "舒服了"},
-        {"code": "rangerzhuisan", "text": "让二追三"},
-        {"code": "666", "text": "666"},
-        {"code": "nawozou", "text": "那我走"},
-        {"code": "jicaowuliu", "text": "基操勿六"},
-        {"code": "qiyejilijie", "text": "企业级李姐"},
-        {"code": "zaixianchang", "text": "在现场"},
-        {"code": "wudi", "text": "吴迪"},
-        {"code": "baimei", "text": "白妹"},
-        {"code": "banzhemian", "text": "半遮面"},
-        {"code": "hanhan", "text": "憨憨"},
-        {"code": "kaiche", "text": "开车"},
-        {"code": "mogu", "text": "蘑菇"},
-        {"code": "naisi", "text": "奈斯"},
-        {"code": "xixi", "text": "嘻嘻"},
-        {"code": "baozao", "text": "暴躁"},
-        {"code": "chijing", "text": "吃惊"},
-        {"code": "chouchou", "text": "瞅瞅"},
-        {"code": "fakuang", "text": "发狂"},
-        {"code": "genwolai", "text": "跟我来"},
-        {"code": "gugu", "text": "呱呱"},
-        {"code": "guzhang", "text": "鼓掌"},
-        {"code": "halou", "text": "哈喽"},
-        {"code": "haokun", "text": "好困"},
-        {"code": "heng", "text": "哼"},
-        {"code": "houzi", "text": "猴子"},
-        {"code": "juewang", "text": "绝望"},
-        {"code": "lehe", "text": "乐呵"},
-        {"code": "miaomiao", "text": "喵喵"},
-        {"code": "neishang", "text": "内伤"},
-        {"code": "ningshi", "text": "凝视"},
-        {"code": "qidai", "text": "期待"},
-        {"code": "shanggan", "text": "伤感"},
-        {"code": "shangxin", "text": "伤心"},
-        {"code": "shengqi", "text": "生气"},
-        {"code": "sikao", "text": "思考"},
-        {"code": "six", "text": "six"},
-        {"code": "tianna", "text": "天呐"},
-        {"code": "diaoxi", "text": "调戏"},
-        {"code": "wa", "text": "哇"},
-        {"code": "woqu", "text": "我去"},
-        {"code": "yao", "text": "咬"},
-        {"code": "youdu", "text": "有毒"},
-        {"code": "zanyige", "text": "赞一个"},
-        {"code": "zhenwang", "text": "阵亡"},
-        {"code": "dajiao", "text": "大叫"},
-        {"code": "jiuzhe", "text": "就这"},
-        {"code": "kouzhao", "text": "口罩"},
-        {"code": "penzi", "text": "喷子"},
-        {"code": "zhaocaimao", "text": "招财猫"},
-        {"code": "kongju", "text": "恐惧"},
-        {"code": "xiaoemo", "text": "小恶魔"},
-        {"code": "beizou", "text": "被揍"},
-        {"code": "bizui", "text": "闭嘴"},
-        {"code": "buhuiba", "text": "不会吧"},
-        {"code": "daxiao", "text": "大笑"},
-        {"code": "gaxiao", "text": "尬笑"},
-        {"code": "heiheihei", "text": "嘿嘿嘿"},
-        {"code": "huangkong", "text": "惶恐"},
-        {"code": "jingya", "text": "惊讶"},
-        {"code": "kukude", "text": "酷酷的"},
-        {"code": "lanqiu", "text": "篮球"},
-        {"code": "maojinguang", "text": "冒金光"},
-        {"code": "menghuale", "text": "萌化了"},
-        {"code": "nu", "text": "怒"},
-        {"code": "outu", "text": "呕吐"},
-        {"code": "pinle", "text": "拼了"},
-        {"code": "qinqin", "text": "亲亲"},
-        {"code": "shale", "text": "傻了"},
-        {"code": "shengtian", "text": "升天"},
-        {"code": "shihua", "text": "石化"},
-        {"code": "shoushang", "text": "受伤"},
-        {"code": "shuijue", "text": "睡觉"},
-        {"code": "tianping", "text": "舔屏"},
-        {"code": "tongku", "text": "痛哭"},
-        {"code": "toutouxiao", "text": "偷偷笑"},
-        {"code": "wofangle", "text": "我方了"},
-        {"code": "wunai", "text": "无奈"},
-        {"code": "xiongmaoyan", "text": "熊猫眼"},
-        {"code": "yalida", "text": "压力大"},
-        {"code": "yunle", "text": "晕了"},
-        {"code": "zuqiu", "text": "足球"},
-        {"code": "wanpi", "text": "顽皮"},
-        {"code": "caomao", "text": "草帽"},
-        {"code": "daanchun", "text": "大鹌鹑"},
-        {"code": "humujing", "text": "护目镜"},
-        {"code": "jiaokeshu", "text": "教科书"},
-        {"code": "layanjing", "text": "辣眼睛"},
-        {"code": "shengdanmao", "text": "圣诞帽"},
-        {"code": "taigang", "text": "抬杠"},
-        {"code": "skr", "text": "skr"},
-        {"code": "baituo", "text": "拜托"},
-        {"code": "bangbangda", "text": "棒棒哒"},
-        {"code": "banzhuan", "text": "板砖"},
-        {"code": "bingdong", "text": "冰冻"},
-        {"code": "chiguagua", "text": "吃瓜瓜"},
-        {"code": "chongya", "text": "冲鸭"},
-        {"code": "ciya", "text": "呲牙"},
-        {"code": "dianji", "text": "电击"},
-        {"code": "DIE", "text": "DIE"},
-        {"code": "feizhai", "text": "肥宅"},
-        {"code": "ganga", "text": "尴尬"},
-        {"code": "haipa", "text": "害怕"},
-        {"code": "jiangshi", "text": "僵尸"},
-        {"code": "jinzhang", "text": "紧张"},
-        {"code": "jiujie", "text": "纠结"},
-        {"code": "koubikong", "text": "抠鼻孔"},
-        {"code": "lvelvelve", "text": "略略略"},
-        {"code": "lvle", "text": "绿了"},
-        {"code": "meiwenti", "text": "没问题"},
-        {"code": "naicha", "text": "奶茶"},
-        {"code": "ningmengjing", "text": "柠檬精"},
-        {"code": "penhuo", "text": "喷火"},
-        {"code": "qianbian", "text": "欠扁"},
-        {"code": "taoyan", "text": "讨厌"},
-        {"code": "wao", "text": "哇哦"},
-        {"code": "wawaku", "text": "哇哇哭"},
-        {"code": "woke", "text": "我可"},
-        {"code": "wuliao", "text": "无聊"},
-        {"code": "yaobaobao", "text": "要抱抱"},
-        {"code": "zhushini", "text": "注视你"},
-        {"code": "GDX", "text": "GDX"},
-        {"code": "bieshuole", "text": "憋说了"},
-        {"code": "chenjiang", "text": "沉江"},
-        {"code": "chuizi", "text": "锤子"},
-        {"code": "daqi", "text": "大气"},
-        {"code": "daibu", "text": "逮捕"},
-        {"code": "daodaodao", "text": "刀刀刀"},
-        {"code": "gele", "text": "鸽了"},
-        {"code": "geli", "text": "隔离"},
-        {"code": "koubi", "text": "抠鼻"},
-        {"code": "geiyepa", "text": "给爷爬"},
-        {"code": "shufule", "text": "舒服了"},
-        {"code": "baomihua", "text": "爆米花"},
-        {"code": "baotou", "text": "爆头"},
-        {"code": "bugaoxing", "text": "不高兴"},
-        {"code": "call", "text": "call"},
-        {"code": "dajie", "text": "打劫"},
-        {"code": "fahuo", "text": "发火"},
-        {"code": "fanu", "text": "发怒"},
-        {"code": "fuqiang", "text": "扶墙"},
-        {"code": "ganbei", "text": "干杯"},
-        {"code": "GG", "text": "GG"},
-        {"code": "haixiu", "text": "害羞"},
-        {"code": "hejiu", "text": "喝酒"},
-        {"code": "huaping", "text": "花屏"},
-        {"code": "leng", "text": "冷"},
-        {"code": "mianmo", "text": "面膜"},
-        {"code": "qianyong", "text": "潜泳"},
-        {"code": "qingbiaoyan", "text": "请表演"},
-        {"code": "shaqingkuang", "text": "啥情况"},
-        {"code": "shiai", "text": "示爱"},
-        {"code": "wanan", "text": "晚安"},
-        {"code": "weixiao", "text": "微笑"},
-        {"code": "wozuibang", "text": "我最棒"},
-        {"code": "wuyu", "text": "无语"},
-        {"code": "xiayitiao", "text": "吓一跳"},
-        {"code": "xu", "text": "嘘"},
-        {"code": "ye", "text": "耶"},
-        {"code": "youling", "text": "幽灵"},
-        {"code": "youxiu", "text": "优秀"},
-        {"code": "zhangzui", "text": "张嘴"},
-        {"code": "zhenjing", "text": "震惊"},
-        {"code": "jiong", "text": "囧"},
-        {"code": "meidianle", "text": "没电了"},
-        {"code": "moyu", "text": "摸鱼"},
-        {"code": "siji", "text": "死机"},
-        {"code": "boyige", "text": "啵一个"},
-        {"code": "chenmo", "text": "沉默"},
-        {"code": "Cwei", "text": "C位"},
-        {"code": "dahan", "text": "大喊"},
-        {"code": "dahou", "text": "大吼"},
-        {"code": "deyi", "text": "得意"},
-        {"code": "dinggugu", "text": "顶呱呱"},
-        {"code": "fankun", "text": "犯困"},
-        {"code": "jiangying", "text": "僵硬"},
-        {"code": "jingkong", "text": "惊恐"},
-        {"code": "kelian", "text": "可怜"},
-        {"code": "leiji", "text": "雷击"},
-        {"code": "maimeng", "text": "卖萌"},
-        {"code": "meihuashuo", "text": "没话说"},
-        {"code": "miaoshi", "text": "藐视"},
-        {"code": "nichousha", "text": "你瞅啥"},
-        {"code": "niunie", "text": "扭捏"},
-        {"code": "ou", "text": "呕"},
-        {"code": "penxue", "text": "喷血"},
-        {"code": "qifen", "text": "气愤"},
-        {"code": "qiku", "text": "气哭"},
-        {"code": "shanliang", "text": "闪亮"},
-        {"code": "shiwang", "text": "失望"},
-        {"code": "tailanle", "text": "太蓝了"},
-        {"code": "weiqu", "text": "委屈"},
-        {"code": "wolaile", "text": "我来了"},
-        {"code": "yinghua", "text": "硬化"},
-        {"code": "yiwen", "text": "疑问"},
-        {"code": "yundao", "text": "晕倒"},
-        {"code": "yunxuan", "text": "晕眩"},
-        {"code": "aoligei", "text": "奥利给"},
-        {"code": "caihongpi", "text": "彩虹屁"},
-        {"code": "liekai", "text": "裂开"},
-        {"code": "pengzhang", "text": "膨胀"},
-        {"code": "tianjiangzhengyi", "text": "天降正义"},
-        {"code": "daraole", "text": "打扰了"},
-        {"code": "dunai", "text": "毒奶"},
-        {"code": "fanxiangyan", "text": "反向烟"},
-        {"code": "fuguibing", "text": "富贵饼"},
-        {"code": "gaoqi", "text": "搞起"},
-        {"code": "haoyangde", "text": "好样的"},
-        {"code": "jinpai", "text": "金牌"},
-        {"code": "kouxiangtang", "text": "口香糖"},
-        {"code": "shangke", "text": "上课"},
-        {"code": "xubaobao", "text": "旭宝宝"},
-        {"code": "zhenxiang", "text": "真香"},
-        {"code": "666", "text": "666"},
-        {"code": "aini", "text": "爱你"},
-        {"code": "aizou", "text": "挨揍"},
-        {"code": "banzhuan", "text": "搬砖"},
-        {"code": "baobao", "text": "宝宝"},
-        {"code": "beizoule", "text": "被揍了"},
-        {"code": "caimi", "text": "财迷"},
-        {"code": "chigua", "text": "吃瓜"},
-        {"code": "dacall", "text": "打call"},
-        {"code": "daku", "text": "大哭"},
-        {"code": "damahou", "text": "大马猴"},
-        {"code": "danu", "text": "大怒"},
-        {"code": "dianzan", "text": "点赞"},
-        {"code": "fennu", "text": "愤怒"},
-        {"code": "guilian", "text": "鬼脸"},
-        {"code": "haose", "text": "好色"},
-        {"code": "jiayou", "text": "加油"},
-        {"code": "jingxia", "text": "惊吓"},
-        {"code": "kaixin", "text": "开心"},
-        {"code": "ku", "text": "哭"},
-        {"code": "kun", "text": "困"},
-        {"code": "OK", "text": "OK"},
-        {"code": "qianshui", "text": "潜水"},
-        {"code": "qianzou", "text": "欠揍"},
-        {"code": "saozhu", "text": "骚猪"},
-        {"code": "shehuiren", "text": "社会人"},
-        {"code": "talaile", "text": "他来了"},
-        {"code": "touxiao", "text": "偷笑"},
-        {"code": "xinsui", "text": "心碎"},
-        {"code": "xiuse", "text": "羞涩"},
-        {"code": "yihuo", "text": "疑惑"},
-        {"code": "youyisi", "text": "有意思"},
-        {"code": "yuanliang", "text": "原谅"},
-        {"code": "zaijian", "text": "再见"},
-        {"code": "zhayu", "text": "炸鱼"},
-        {"code": "zhendeme", "text": "真的么"},
-        {"code": "zhukou", "text": "住口"},
-        {"code": "RUA", "text": "RUA"},
-        {"code": "VIP", "text": "VIP"},
-        {"code": "caishen", "text": "财神"},
-        {"code": "gougutou", "text": "狗骨头"},
-        {"code": "niupi", "text": "牛啤"},
-        {"code": "qingzhu", "text": "庆祝"},
-        {"code": "tanke", "text": "坦克"},
-        {"code": "toubi", "text": "投币"},
-        {"code": "tukuai", "text": "土块"},
-        {"code": "zhize", "text": "指责"},
-      ];
-    } else if (siteType == Sites.bilibiliSite) {
-      emotions = [
-        {"code": "dog", "text": "dog"},
-        {"code": "hua", "text": "花"},
-        {"code": "miao", "text": "妙"},
-        {"code": "wa", "text": "哇"},
-        {"code": "ai", "text": "爱"},
-        {"code": "shouji", "text": "手机"},
-        {"code": "piezui", "text": "撇嘴"},
-        {"code": "weiqu", "text": "委屈"},
-        {"code": "zhuakuang", "text": "抓狂"},
-        {"code": "bixin", "text": "比心"},
-        {"code": "zan", "text": "赞"},
-        {"code": "huaji", "text": "滑稽"},
-        {"code": "chigua", "text": "吃瓜"},
-        {"code": "xiaoku", "text": "笑哭"},
-        {"code": "wulian", "text": "捂脸"},
-        {"code": "hecai", "text": "喝彩"},
-        {"code": "touxiao", "text": "偷笑"},
-        {"code": "daxiao", "text": "大笑"},
-        {"code": "jingxi", "text": "惊喜"},
-        {"code": "aojiao", "text": "傲娇"},
-        {"code": "teng", "text": "疼"},
-        {"code": "xia", "text": "吓"},
-        {"code": "yinxian", "text": "阴险"},
-        {"code": "jingya", "text": "惊讶"},
-        {"code": "shengbing", "text": "生病"},
-        {"code": "xu", "text": "嘘"},
-        {"code": "jianxiao", "text": "奸笑"},
-        {"code": "jiong", "text": "囧"},
-        {"code": "wulian2", "text": "捂脸2"},
-        {"code": "chuqiao", "text": "出窍"},
-        {"code": "tulea", "text": "吐了啊"},
-        {"code": "bizi", "text": "鼻子"},
-        {"code": "diaopi", "text": "调皮"},
-        {"code": "suan", "text": "酸"},
-        {"code": "leng", "text": "冷"},
-        {"code": "OK", "text": "OK"},
-        {"code": "weixiao", "text": "微笑"},
-        {"code": "canghu", "text": "藏狐"},
-        {"code": "ziya", "text": "龇牙"},
-        {"code": "fanghu", "text": "防护"},
-        {"code": "xiao", "text": "笑"},
-        {"code": "yiban", "text": "一般"},
-        {"code": "xianqi", "text": "嫌弃"},
-        {"code": "wuyu", "text": "无语"},
-        {"code": "haqian", "text": "哈欠"},
-        {"code": "kelian", "text": "可怜"},
-        {"code": "waizuixiao", "text": "歪嘴笑"},
-        {"code": "qinqin", "text": "亲亲"},
-        {"code": "wenhao", "text": "问号"},
-        {"code": "boji", "text": "波吉"},
-        {"code": "OH", "text": "OH"},
-        {"code": "zaijian", "text": "再见"},
-        {"code": "baiyan", "text": "白眼"},
-        {"code": "guzhang", "text": "鼓掌"},
-        {"code": "daku", "text": "大哭"},
-        {"code": "dai", "text": "呆"},
-        {"code": "liuhan", "text": "流汗"},
-        {"code": "shengqi", "text": "生气"},
-        {"code": "jiayou", "text": "加油"},
-        {"code": "haixiu", "text": "害羞"},
-        {"code": "hunian", "text": "虎年"},
-        {"code": "doge2", "text": "doge2"},
-        {"code": "jinqianbao", "text": "金钱豹"},
-        {"code": "guazi", "text": "瓜子"},
-        {"code": "mojing", "text": "墨镜"},
-        {"code": "nanguo", "text": "难过"},
-        {"code": "baobao", "text": "抱抱"},
-        {"code": "guile", "text": "跪了"},
-        {"code": "tanshou", "text": "摊手"},
-        {"code": "re", "text": "热"},
-        {"code": "sanxingdui", "text": "三星堆"},
-        {"code": "shu", "text": "鼠"},
-        {"code": "tangyuan", "text": "汤圆"},
-        {"code": "poshui", "text": "泼水"},
-        {"code": "guihun", "text": "鬼魂"},
-        {"code": "buxing", "text": "不行"},
-        {"code": "xiangzhi", "text": "响指"},
-        {"code": "niu", "text": "牛"},
-        {"code": "baoyou", "text": "保佑"},
-        {"code": "baoquan", "text": "抱拳"},
-        {"code": "geili", "text": "给力"},
-        {"code": "ye", "text": "耶"},
-        {"code": "a", "text": "啊"},
-        {"code": "chongya", "text": "冲鸭"},
-        {"code": "upup", "text": "upup"},
-        {"code": "xingxingxianglong", "text": "星星向龙"},
-        {"code": "ouhuangjiadao", "text": "欧皇驾到"},
-        {"code": "zhegehaoye", "text": "这个好耶"},
-        {"code": "taikula", "text": "泰裤辣"},
-        {"code": "shanbijineng", "text": "闪避技能"},
-        {"code": "wenzhunengying", "text": "稳住能赢"},
-        {"code": "zhongjiangpenwu", "text": "中奖喷雾"},
-        {"code": "zan", "text": "赞"},
-        {"code": "miaoa", "text": "妙啊"},
-        {"code": "youdiandongxi", "text": "有点东西"},
-        {"code": "henyoujingshen", "text": "很有精神"},
-        {"code": "leimu", "text": "泪目"},
-        {"code": "yingmale", "text": "赢麻了"},
-        {"code": "dunjiao", "text": "钝角"},
-        {"code": "ganbei", "text": "干杯"},
-        {"code": "2333", "text": "2333"},
-        {"code": "dacall", "text": "打call"},
-        {"code": "duoxiekuandai", "text": "多谢款待"},
-        {"code": "awsl", "text": "awsl"},
-        {"code": "jitanglaige", "text": "鸡汤来咯"},
-        {"code": "queshi", "text": "雀食"},
-        {"code": "jinzhitaowa", "text": "禁止套娃"},
-        {"code": "anzhongguancha", "text": "暗中观察"},
-        {"code": "baoshuma", "text": "保熟吗"},
-        {"code": "bixin", "text": "比心"},
-        {"code": "xianyufanshen", "text": "咸鱼翻身"},
-        {"code": "mua", "text": "mua"},
-        {"code": "lailelaile", "text": "来了来了"},
-        {"code": "tietie", "text": "贴贴"},
-        {"code": "niuniuniu", "text": "牛牛牛"},
-        {"code": "diangeshao", "text": "颠个勺"},
-        {"code": "haojiahuo", "text": "好家伙"},
-        {"code": "xiaciyiding", "text": "下次一定"},
-        {"code": "bushangBan", "text": "不上Ban"},
-        {"code": "shangrebang", "text": "上热榜"},
-      ];
-    } else if (siteType == Sites.kuaishouSite) {
-      emotions = [
-        {"code": "666", "text": "666"},
-        {"code": "jianxiao", "text": "奸笑"},
-        {"code": "wulian", "text": "捂脸"},
-        {"code": "ziya", "text": "龇牙"},
-        {"code": "heng", "text": "哼"},
-        {"code": "o", "text": "哦"},
-        {"code": "weixiao", "text": "微笑"},
-        {"code": "laotie", "text": "老铁"},
-        {"code": "shuangji", "text": "双鸡"},
-        {"code": "diaopi", "text": "调皮"},
-        {"code": "daizhu", "text": "呆住"},
-        {"code": "xingxingyan", "text": "星星眼"},
-        {"code": "aixin", "text": "爱心"},
-        {"code": "yiwen", "text": "疑问"},
-        {"code": "shengqi", "text": "生气"},
-        {"code": "nanguo", "text": "难过"},
-        {"code": "piezui", "text": "撇嘴"},
-        {"code": "jingya", "text": "惊讶"},
-        {"code": "xiuse", "text": "羞涩"},
-        {"code": "se", "text": "色"},
-        {"code": "han", "text": "汗"},
-        {"code": "outu", "text": "呕吐"},
-        {"code": "laosiji", "text": "老司机"},
-        {"code": "toukui", "text": "头盔"},
-        {"code": "ku", "text": "酷"},
-        {"code": "xiaoku", "text": "笑哭"},
-        {"code": "yukuai", "text": "愉快"},
-        {"code": "weiqu", "text": "委屈"},
-        {"code": "bishi", "text": "鄙视"},
-        {"code": "baiyan", "text": "白眼"},
-        {"code": "anpai", "text": "安排"},
-        {"code": "diandianguanzhu", "text": "点点关注"},
-        {"code": "guzhang", "text": "鼓掌"},
-        {"code": "baobao", "text": "抱抱"},
-        {"code": "haqian", "text": "哈欠"},
-        {"code": "mani", "text": "骂你"},
-        {"code": "daku", "text": "大哭"},
-        {"code": "bizui", "text": "闭嘴"},
-        {"code": "jingkong", "text": "惊恐"},
-        {"code": "hongliandan", "text": "红脸蛋"},
-        {"code": "qinqin", "text": "亲亲"},
-        {"code": "lenghan", "text": "冷汗"},
-        {"code": "yun", "text": "晕"},
-        {"code": "huangguan", "text": "皇冠"},
-        {"code": "huo", "text": "火"},
-        {"code": "huaixiao", "text": "坏笑"},
-        {"code": "baozha", "text": "爆炸"},
-        {"code": "dabian", "text": "大便"},
-        {"code": "kelian", "text": "可怜"},
-        {"code": "koubi", "text": "抠鼻"},
-        {"code": "zaijian", "text": "再见"},
-        {"code": "shexiangji", "text": "摄像机"},
-        {"code": "zan", "text": "赞"},
-        {"code": "pingdiguo", "text": "平底锅"},
-        {"code": "jiong", "text": "囧"},
-        {"code": "dage", "text": "大哥"},
-        {"code": "meigui", "text": "玫瑰"},
-        {"code": "zhuakuang", "text": "抓狂"},
-        {"code": "xu", "text": "嘘"},
-        {"code": "kuaikule", "text": "快哭了"},
-        {"code": "kulou", "text": "骷髅"},
-        {"code": "touxiao", "text": "偷笑"},
-        {"code": "luolei", "text": "落泪"},
-        {"code": "tiaodou", "text": "挑逗"},
-        {"code": "kun", "text": "困"},
-        {"code": "shuijue", "text": "睡觉"},
-        {"code": "youhengheng", "text": "右哼哼"},
-        {"code": "zuohengheng", "text": "左哼哼"},
-        {"code": "dazhaohu", "text": "打招呼"},
-        {"code": "liubixue", "text": "流鼻血"},
-        {"code": "toumiao", "text": "偷瞄"},
-        {"code": "chigua", "text": "吃瓜"},
-        {"code": "heilianwen", "text": "黑脸问"},
-        {"code": "xuanzhuan", "text": "旋转"},
-        {"code": "hanxiao", "text": "憨笑"},
-        {"code": "tucaihong", "text": "吐彩虹"},
-        {"code": "cabiti", "text": "擦鼻涕"},
-        {"code": "nuyan", "text": "怒言"},
-        {"code": "baituo", "text": "拜托"},
-        {"code": "jiayou", "text": "加油"},
-        {"code": "baohan", "text": "暴汗"},
-        {"code": "xiangchi", "text": "想吃"},
-        {"code": "dalian", "text": "打脸"},
-        {"code": "tuxue", "text": "吐血"},
-        {"code": "ganga", "text": "尴尬"},
-        {"code": "chuhuner", "text": "出魂儿"},
-        {"code": "dabikong", "text": "大鼻孔"},
-        {"code": "beng", "text": "嘣"},
-        {"code": "tiana", "text": "天啊"},
-        {"code": "shihua", "text": "石化"},
-        {"code": "zhoumei", "text": "皱眉"},
-        {"code": "zhuangsha", "text": "装傻"},
-        {"code": "suanle", "text": "酸了"},
-        {"code": "chaiquan", "text": "柴犬"},
-        {"code": "gouliang", "text": "狗粮"},
-        {"code": "qidai", "text": "期待"},
-        {"code": "hongbao", "text": "红包"},
-        {"code": "ganbei", "text": "干杯"},
-        {"code": "qidao", "text": "祈祷"},
-        {"code": "huaxiele", "text": "花谢了"},
-        {"code": "guixia", "text": "跪下"},
-        {"code": "nan", "text": "南"},
-        {"code": "fa", "text": "发"},
-        {"code": "banzhuan", "text": "板砖"},
-        {"code": "denglong", "text": "灯笼"},
-        {"code": "fuzi", "text": "福字"},
-        {"code": "bianpao", "text": "鞭炮"},
-        {"code": "yanhua", "text": "烟花"},
-        {"code": "yuanbao", "text": "元宝"},
-        {"code": "qian", "text": "钱"},
-        {"code": "qiqiu", "text": "气球"},
-        {"code": "qingzhu", "text": "庆祝"},
-        {"code": "lihua", "text": "礼花"},
-        {"code": "aini", "text": "爱你"},
-        {"code": "motou", "text": "摸头"},
-        {"code": "wumai", "text": "雾霾"},
-        {"code": "huazhuang", "text": "化妆"},
-        {"code": "tuzhijia", "text": "涂指甲"},
-        {"code": "huanying", "text": "欢迎"},
-        {"code": "zuoquan", "text": "左拳"},
-        {"code": "youquan", "text": "右拳"},
-        {"code": "woaini", "text": "我爱你"},
-        {"code": "bixin", "text": "比心"},
-        {"code": "jirou", "text": "肌肉"},
-        {"code": "shizi", "text": "狮子"},
-        {"code": "long", "text": "龙"},
-        {"code": "gou", "text": "狗"},
-        {"code": "wanghongmao", "text": "网红猫"},
-        {"code": "mao", "text": "猫"},
-        {"code": "laoshu", "text": "老鼠"},
-        {"code": "bukan", "text": "不看"},
-        {"code": "buting", "text": "不听"},
-        {"code": "bushuo", "text": "不说"},
-        {"code": "zhutou", "text": "猪头"},
-        {"code": "zhubizi", "text": "猪鼻子"},
-        {"code": "zhuti", "text": "猪蹄"},
-        {"code": "yangtuo", "text": "羊驼"},
-        {"code": "maikefeng", "text": "麦克风"},
-        {"code": "tiaowu", "text": "跳舞"},
-        {"code": "dangao", "text": "蛋糕"},
-        {"code": "kouhong", "text": "口红"},
-        {"code": "shuiqiang", "text": "水枪"},
-        {"code": "kongtou", "text": "空投"},
-        {"code": "shoubing", "text": "手柄"},
-        {"code": "keng", "text": "坑"},
-        {"code": "babeijing", "text": "八倍镜"},
-        {"code": "wanghong", "text": "网红"},
-        {"code": "youxiu", "text": "优秀"},
-        {"code": "jian1", "text": "减1"},
-        {"code": "bisheng", "text": "必胜"},
-        {"code": "daikouzhao", "text": "戴口罩"},
-        {"code": "qinxishou", "text": "勤洗手"},
-        {"code": "xinxin", "text": "心心"},
-        {"code": "kuxiao", "text": "哭笑"},
-        {"code": "dianzan", "text": "点赞"},
-        {"code": "caidao", "text": "菜刀"},
-        {"code": "zhaxin", "text": "扎心"},
-        {"code": "paiyipai", "text": "拍一拍"},
-        {"code": "wen", "text": "稳"},
-        {"code": "shoudao", "text": "收到"},
-        {"code": "jia1", "text": "加1"},
-        {"code": "chahao", "text": "叉号"},
-        {"code": "duihao", "text": "对号"},
-        {"code": "no", "text": "no"},
-        {"code": "yes", "text": "yes"},
-        {"code": "shijin", "text": "湿巾"},
-        {"code": "chifan", "text": "吃饭"},
-        {"code": "mojituo", "text": "莫吉托"},
-        {"code": "xiangcaodangao", "text": "香草蛋糕"},
-        {"code": "jianshen", "text": "健身"},
-        {"code": "sikao", "text": "思考"},
-        {"code": "fengkuanggongzuo", "text": "疯狂工作"},
-        {"code": "chongmanganjin", "text": "充满干劲"},
-        {"code": "fangqingsong", "text": "放轻松"},
-        {"code": "juan", "text": "卷"},
-        {"code": "aoye", "text": "熬夜"},
-        {"code": "xianshuile", "text": "先睡了"},
-        {"code": "emo", "text": "emo"},
-        {"code": "tingyinle", "text": "听音乐"},
-        {"code": "haoyunlai", "text": "好运来"},
-        {"code": "yuanqimanman", "text": "元气满满"},
-        {"code": "xuexi", "text": "学习"},
-        {"code": "dadianhua", "text": "打电话"},
-        {"code": "aoyegongzuo", "text": "熬夜工作"},
-        {"code": "yiqihaipi", "text": "一起嗨皮"},
-        {"code": "nanshou", "text": "难受"},
-        {"code": "shangdiao", "text": "上吊"},
-        {"code": "xia", "text": "吓"},
-        {"code": "fadai", "text": "发呆"},
-        {"code": "pibei", "text": "疲惫"},
-        {"code": "liekai", "text": "裂开"},
-        {"code": "qiangyanhuanxiao", "text": "强颜欢笑"},
-        {"code": "fanbaiyan", "text": "翻白眼"},
-        {"code": "nanguozhiji", "text": "难过至极"},
-        {"code": "meizizi", "text": "美滋滋"},
-        {"code": "mashanganpai", "text": "马上安排"},
-        {"code": "moyu", "text": "摸鱼"},
-        {"code": "jingli", "text": "敬礼"},
-        {"code": "qiuqiule", "text": "求求了"},
-        {"code": "yingmale", "text": "赢麻了"},
-        {"code": "yaoyaolingxian", "text": "遥遥领先"},
-        {"code": "layanjing", "text": "辣眼睛"},
-        {"code": "ok", "text": "ok"},
-        {"code": "woshou", "text": "握手"},
-        {"code": "baoquan", "text": "抱拳"},
-        {"code": "zaoshanghao", "text": "早上好"},
-        {"code": "husiluanxiang", "text": "胡思乱想"},
-      ];
-    } else if (siteType == Sites.douyinSite) {
-      emotions = [
-        {"code": "weixiao", "text": "微笑"},
-        {"code": "aimu", "text": "色"},
-        {"code": "liangdai", "text": "发呆"},
-        {"code": "kuye", "text": "酷拽"},
-        {"code": "koubi", "text": "抠鼻"},
-        {"code": "liulei", "text": "流泪"},
-        {"code": "wulian", "text": "捂脸"},
-        {"code": "fanu", "text": "发怒"},
-        {"code": "ziya", "text": "呲牙"},
-        {"code": "gaxiao", "text": "尬笑"},
-        {"code": "haixiu", "text": "害羞"},
-        {"code": "keai", "text": "调皮"},
-        {"code": "tianping", "text": "舔屏"},
-        {"code": "kan", "text": "看"},
-        {"code": "xin", "text": "爱心"},
-        {"code": "bixin", "text": "比心"},
-        {"code": "zan", "text": "赞"},
-        {"code": "guzhang", "text": "鼓掌"},
-        {"code": "qidao", "text": "感谢"},
-        {"code": "baobaoni", "text": "抱抱你"},
-        {"code": "meigui", "text": "玫瑰"},
-        {"code": "gangaliuhan", "text": "尴尬流汗"},
-        {"code": "chuoshoushou", "text": "戳手手"},
-        {"code": "xingxingyan", "text": "星星眼"},
-        {"code": "shamate", "text": "杀马特"},
-        {"code": "huanglianganbei", "text": "黄脸干杯"},
-        {"code": "baojinziji", "text": "抱紧自己"},
-        {"code": "baibai", "text": "拜拜"},
-        {"code": "rehuale", "text": "热化了"},
-        {"code": "huanglianqidao", "text": "黄脸祈祷"},
-        {"code": "meng", "text": "懵"},
-        {"code": "jushou", "text": "举手"},
-        {"code": "jiagongde", "text": "加功德"},
-        {"code": "tanshou", "text": "摊手"},
-        {"code": "wuyuliuhan", "text": "无语流汗"},
-        {"code": "xuhuohuaba", "text": "续火花吧"},
-        {"code": "dianhuo", "text": "点火"},
-        {"code": "kuku", "text": "哭哭"},
-        {"code": "tushexiaogou", "text": "吐舌小狗"},
-        {"code": "songhua", "text": "送花"},
-        {"code": "aixinshou", "text": "爱心手"},
-        {"code": "tietie", "text": "贴贴"},
-        {"code": "lingguangyishan", "text": "灵机一动"},
-        {"code": "ye", "text": "耶"},
-        {"code": "dalian", "text": "打脸"},
-        {"code": "daxiao", "text": "大笑"},
-        {"code": "jizhi", "text": "机智"},
-        {"code": "songxin", "text": "送心"},
-        {"code": "666", "text": "666"},
-        {"code": "bizui", "text": "闭嘴"},
-        {"code": "laikanwo", "text": "来看我"},
-        {"code": "yiqijiayou", "text": "一起加油"},
-        {"code": "haqian", "text": "哈欠"},
-        {"code": "zhenliang", "text": "震惊"},
-        {"code": "yun", "text": "晕"},
-        {"code": "shuai", "text": "衰"},
-        {"code": "kun", "text": "困"},
-        {"code": "what", "text": "疑问"},
-        {"code": "qibuchengsheng", "text": "泣不成声"},
-        {"code": "xiaoguzhang", "text": "小鼓掌"},
-        {"code": "dajinya", "text": "大金牙"},
-        {"code": "touxiao", "text": "偷笑"},
-        {"code": "shihua", "text": "石化"},
-        {"code": "sikao", "text": "思考"},
-        {"code": "tuxie", "text": "吐血"},
-        {"code": "kelian", "text": "可怜"},
-        {"code": "xu", "text": "嘘"},
-        {"code": "piezui", "text": "撇嘴"},
-        {"code": "xiaoku", "text": "笑哭"},
-        {"code": "jianxiao", "text": "奸笑"},
-        {"code": "deyi", "text": "得意"},
-        {"code": "hanxiao", "text": "憨笑"},
-        {"code": "huaixiao", "text": "坏笑"},
-        {"code": "zhuakuang", "text": "抓狂"},
-        {"code": "leiben", "text": "泪奔"},
-        {"code": "qian", "text": "钱"},
-        {"code": "kongju", "text": "恐惧"},
-        {"code": "xiao", "text": "愉快"},
-        {"code": "kuaikule", "text": "快哭了"},
-        {"code": "fanbaiyan", "text": "翻白眼"},
-        {"code": "hufen", "text": "互粉"},
-        {"code": "woxiangjingjing", "text": "我想静静"},
-        {"code": "weiqu", "text": "委屈"},
-        {"code": "bishi", "text": "鄙视"},
-        {"code": "feiwen", "text": "飞吻"},
-        {"code": "zaijian", "text": "再见"},
-        {"code": "ziweibiezou", "text": "紫薇别走"},
-        {"code": "tingge", "text": "听歌"},
-        {"code": "qiubaobao", "text": "求抱抱"},
-        {"code": "zhoudongyudeningshi", "text": "绝望的凝视"},
-        {"code": "masichundeweixiao", "text": "不失礼貌的微笑"},
-        {"code": "bukan", "text": "不看"},
-        {"code": "liekai", "text": "裂开"},
-        {"code": "ganfanren", "text": "干饭人"},
-        {"code": "qingzhu", "text": "庆祝"},
-        {"code": "tushe", "text": "吐舌"},
-        {"code": "daiwugu", "text": "呆无辜"},
-        {"code": "baiyan", "text": "白眼"},
-        {"code": "zhutou", "text": "猪头"},
-        {"code": "lengmo", "text": "冷漠"},
-        {"code": "anzhongguancha", "text": "暗中观察"},
-        {"code": "erha", "text": "二哈"},
-        {"code": "caigou", "text": "菜狗"},
-        {"code": "heilian", "text": "黑脸"},
-        {"code": "zhankaishuoshuo", "text": "展开说说"},
-        {"code": "mifenggou", "text": "蜜蜂狗"},
-        {"code": "huangchaiquan", "text": "柴犬"},
-        {"code": "motou", "text": "摸头"},
-        {"code": "zhoumei", "text": "皱眉"},
-        {"code": "cahan", "text": "擦汗"},
-        {"code": "honglian", "text": "红脸"},
-        {"code": "zuoguilian", "text": "做鬼脸"},
-        {"code": "qiang", "text": "强"},
-        {"code": "ruhua", "text": "如花"},
-        {"code": "tu", "text": "吐"},
-        {"code": "liangxi", "text": "惊喜"},
-        {"code": "qiaoda", "text": "敲打"},
-        {"code": "fendou", "text": "奋斗"},
-        {"code": "tucaihong", "text": "吐彩虹"},
-        {"code": "daku", "text": "大哭"},
-        {"code": "heiha", "text": "嘿哈"},
-        {"code": "jingkong", "text": "惊恐"},
-        {"code": "jiong", "text": "囧"},
-        {"code": "nanguo", "text": "难过"},
-        {"code": "xieyan", "text": "斜眼"},
-        {"code": "yinxian", "text": "阴险"},
-        {"code": "youxian", "text": "悠闲"},
-        {"code": "zhouma", "text": "咒骂"},
-        {"code": "chiguaqunzhong", "text": "吃瓜群众"},
-        {"code": "lvmaozi", "text": "绿帽子"},
-        {"code": "gannubuganyan", "text": "敢怒不敢言"},
-        {"code": "qiuqiule", "text": "求求了"},
-        {"code": "yanhanrelei", "text": "眼含热泪"},
-        {"code": "tanqi", "text": "叹气"},
-        {"code": "haokaixin", "text": "好开心"},
-        {"code": "bushiba", "text": "不是吧"},
-        {"code": "jugong", "text": "鞠躬"},
-        {"code": "tangping", "text": "躺平"},
-        {"code": "jiuzhuandachang", "text": "九转大肠"},
-        {"code": "bunibuxiang", "text": "不你不想"},
-        {"code": "yitouluanma", "text": "一头乱麻"},
-        {"code": "kisskiss", "text": "kisskiss"},
-        {"code": "nibudaxing", "text": "你不大行"},
-        {"code": "omg", "text": "噢买尬"},
-        {"code": "dangji", "text": "宕机"},
-        {"code": "kuse", "text": "苦涩"},
-        {"code": "chengqiangluolei", "text": "逞强落泪"},
-        {"code": "huanglianqiujiwei", "text": "求机位-黄脸"},
-        {"code": "qiujiwei3", "text": "求机位3"},
-        {"code": "jingxuan", "text": "点赞"},
-        {"code": "jingxuanzan", "text": "精选"},
-        {"code": "jiayou", "text": "强壮"},
-        {"code": "pengquan", "text": "碰拳"},
-        {"code": "ok", "text": "OK"},
-        {"code": "jizhang", "text": "击掌"},
-        {"code": "zuoshang", "text": "左上"},
-        {"code": "woshou", "text": "握手"},
-        {"code": "baoquan", "text": "抱拳"},
-        {"code": "gouyin", "text": "勾引"},
-        {"code": "quantou", "text": "拳头"},
-        {"code": "ruo", "text": "弱"},
-        {"code": "shengli", "text": "胜利"},
-        {"code": "youbian", "text": "右边"},
-        {"code": "zuobian", "text": "左边"},
-        {"code": "kiss", "text": "嘴唇"},
-        {"code": "shangxin", "text": "心碎"},
-        {"code": "diaoxie", "text": "凋谢"},
-        {"code": "fennu", "text": "愤怒"},
-        {"code": "laji", "text": "垃圾"},
-        {"code": "pijiu", "text": "啤酒"},
-        {"code": "kafei", "text": "咖啡"},
-        {"code": "dangao", "text": "蛋糕"},
-        {"code": "liwu", "text": "礼物"},
-        {"code": "sahua", "text": "撒花"},
-        {"code": "jiayi", "text": "加一"},
-        {"code": "jianyi", "text": "减一"},
-        {"code": "okk", "text": "okk"},
-        {"code": "V5", "text": "V5"},
-        {"code": "jue", "text": "绝"},
-        {"code": "geili", "text": "给力"},
-        {"code": "hongbao", "text": "红包"},
-        {"code": "shi", "text": "屎"},
-        {"code": "fa", "text": "发"},
-        {"code": "18jin", "text": "18禁"},
-        {"code": "zhadan", "text": "炸弹"},
-        {"code": "xigua", "text": "西瓜"},
-        {"code": "jiajitui", "text": "加鸡腿"},
-        {"code": "wozhua", "text": "握爪"},
-        {"code": "taiyang", "text": "太阳"},
-        {"code": "yueliang", "text": "月亮"},
-        {"code": "geiguile", "text": "给跪了"},
-        {"code": "jiaolv", "text": "蕉绿"},
-        {"code": "zhaxin", "text": "扎心"},
-        {"code": "hugua", "text": "胡瓜"},
-        {"code": "dacall", "text": "打call"},
-        {"code": "shuanq", "text": "栓Q"},
-        {"code": "xuehua", "text": "雪花"},
-        {"code": "shengdanshu", "text": "圣诞树"},
-        {"code": "pinganguo", "text": "平安果"},
-        {"code": "shengdanmao", "text": "圣诞帽"},
-        {"code": "qiqiu", "text": "气球"},
-        {"code": "yanhua", "text": "烟花"},
-        {"code": "fu", "text": "福"},
-        {"code": "candy", "text": "candy"},
-        {"code": "tanghulu", "text": "糖葫芦"},
-        {"code": "bianpao", "text": "鞭炮"},
-        {"code": "yuanbao", "text": "元宝"},
-        {"code": "denglong", "text": "灯笼"},
-        {"code": "jinli", "text": "锦鲤"},
-        {"code": "qiaokeli", "text": "巧克力"},
-        {"code": "jiezhi", "text": "戒指"},
-        {"code": "bangbangtang", "text": "棒棒糖"},
-        {"code": "zhifeiji", "text": "纸飞机"},
-        {"code": "zongzi", "text": "粽子"},
-      ];
-    }
-    return emotions;
-  }
-
-  /// Manual load utility
-  static Future<void> loadEmoji(String emojiText, String assetPath) async {
-    try {
-      final data = await rootBundle.load(assetPath);
-      final codec = await ui.instantiateImageCodec(data.buffer.asUint8List(), targetWidth: 80, targetHeight: 80);
-      final frame = await codec.getNextFrame();
-      instance._addToCache(emojiText, frame.image);
-    } catch (e) {
-      debugPrint("Error loading manual emoji: $e");
-    }
-  }
 }
