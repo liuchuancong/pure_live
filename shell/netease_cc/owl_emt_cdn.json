@@ -1,0 +1,1049 @@
+{
+    "owl": [
+        null,
+        {
+            "text": "上海龙之队",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f684cd4143cfa580f3e1264cCoQ0f9302",
+            "id": 1,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f685051143cfa24fa2b5fd7fFPosPgb02"
+        },
+        {
+            "text": "首尔王朝队",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f684f446f049406ec2654b5Z9pazpjr02",
+            "id": 2,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f684fee2786fd9722210712LyX9RttU02"
+        },
+        {
+            "text": "费城融合队",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f684f55143cfa0bf2843609TFDbjhHt02",
+            "id": 3,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f684ff95e6027482784862aD47QgW5a02"
+        },
+        {
+            "text": "旧金山震动队",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f684f626f04940c96c68fcfvVNqomZP02",
+            "id": 4,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f685046143cfa18f17bbcf2DGz4FPqK02"
+        },
+        {
+            "text": "守望先锋联赛",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f684f6f6f049446ec4115e7kZ45GgwB02",
+            "id": 5,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f6850355e602758f059d02dQRrMRFHj02"
+        },
+        {
+            "text": "2020赛季季后赛",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f684f7a5e602748278484cbPzDd3She02",
+            "id": 6,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f684fe2143cfa18f17bbbe9RT7UTHUh02"
+        }
+    ],
+    "hero": [
+        null,
+        {
+            "text": "Ana",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Ana.png",
+            "id": 1,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Ana.png"
+        },
+        {
+            "text": "Mei",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Mei.png",
+            "id": 2,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Mei.png"
+        },
+        {
+            "text": "Sombra",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Sombra.png",
+            "id": 3,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Sombra.png"
+        },
+        {
+            "text": "Bastion",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Bastion.png",
+            "id": 4,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Bastion.png"
+        },
+        {
+            "text": "Mercy",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Mercy.png",
+            "id": 5,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Mercy.png"
+        },
+        {
+            "text": "Symmetra",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Symmetra.png",
+            "id": 6,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Symmetra.png"
+        },
+        {
+            "text": "Doomfist",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Doomfist.png",
+            "id": 7,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Doomfist.png"
+        },
+        {
+            "text": "Moira",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Moira.png",
+            "id": 8,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Moira.png"
+        },
+        {
+            "text": "Torbjorn",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Torbjorn.png",
+            "id": 9,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Torbjorn.png"
+        },
+        {
+            "text": "Dva",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Dva.png",
+            "id": 10,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Dva.png"
+        },
+        {
+            "text": "Orisa",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Orisa.png",
+            "id": 11,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Orisa.png"
+        },
+        {
+            "text": "Tracer",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Tracer.png",
+            "id": 12,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Tracer.png"
+        },
+        {
+            "text": "Genji",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Genji.png",
+            "id": 13,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Genji.png"
+        },
+        {
+            "text": "Pharah",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Pharah.png",
+            "id": 14,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Pharah.png"
+        },
+        {
+            "text": "Widowmaker",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Widowmaker.png",
+            "id": 15,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Widowmaker.png"
+        },
+        {
+            "text": "Hanzo",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Hanzo.png",
+            "id": 16,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Hanzo.png"
+        },
+        {
+            "text": "Reaper",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Reaper.png",
+            "id": 17,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Reaper.png"
+        },
+        {
+            "text": "Winston",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Winston.png",
+            "id": 18,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Winston.png"
+        },
+        {
+            "text": "Junkrat",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Junkrat.png",
+            "id": 19,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Junkrat.png"
+        },
+        {
+            "text": "Reinhardt",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Reinhardt.png",
+            "id": 20,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Reinhardt.png"
+        },
+        {
+            "text": "Zarya",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Zarya.png",
+            "id": 21,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Zarya.png"
+        },
+        {
+            "text": "Lucio",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Lucio.png",
+            "id": 22,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Lucio.png"
+        },
+        {
+            "text": "Roadhog",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Roadhog.png",
+            "id": 23,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Roadhog.png"
+        },
+        {
+            "text": "Zenyatta",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Zenyatta.png",
+            "id": 24,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Zenyatta.png"
+        },
+        {
+            "text": "McCree",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/McCree.png",
+            "id": 25,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/McCree.png"
+        },
+        {
+            "text": "Soldier76",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/hero/56/Soldier76.png",
+            "id": 26,
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Soldier76.png"
+        }
+    ],
+    "hscheer": [
+        null,
+        {
+            "text": "GG",
+            "png_small": "https://cc.fp.ps.netease.com/file/5c063f967f9d2aceabc3418bp0XPchQM",
+            "id": 1,
+            "png_big": "https://cc.fp.ps.netease.com/file/5c063ecea7f252282c2205b6x27WgIkg"
+        },
+        {
+            "text": "Hmm",
+            "png_small": "https://cc.fp.ps.netease.com/file/5c063f976f04943f12decd8dgXKljsAB",
+            "id": 2,
+            "png_big": "https://cc.fp.ps.netease.com/file/5c063ecf6f04943e8f0add046ZIku8oM"
+        },
+        {
+            "text": "oops",
+            "png_small": "https://cc.fp.ps.netease.com/file/5c10d9847f9d2a0d001bf179Zmvo8wV6",
+            "id": 3,
+            "png_big": "https://cc.fp.ps.netease.com/file/5c10d984a7f25285ab86be29uTTOk2b0"
+        },
+        {
+            "text": "Sorry",
+            "png_small": "https://cc.fp.ps.netease.com/file/5c10d9845e602747a8a5e174SKMeTWti",
+            "id": 4,
+            "png_big": "https://cc.fp.ps.netease.com/file/5c10d9847f9d2a116fe31fa6iZ3p0lRL"
+        },
+        {
+            "text": "WOW",
+            "png_small": "https://cc.fp.ps.netease.com/file/5c10d9845e602747a8a5e175WN3v51Pi",
+            "id": 5,
+            "png_big": "https://cc.fp.ps.netease.com/file/5c10d9845e60274c02e4b4bfCiViETDN"
+        },
+        {
+            "text": "Burn",
+            "png_small": "https://cc.fp.ps.netease.com/file/5c063f978b742787108f6439TkeKcE3U",
+            "id": 6,
+            "png_big": "https://cc.fp.ps.netease.com/file/5c063ecea7f25229e2f701c67ue9OH0o"
+        },
+        {
+            "text": "Huffer",
+            "png_small": "https://cc.fp.ps.netease.com/file/5c063f977f9d2ace00976d25ufYibGau",
+            "id": 7,
+            "png_big": "https://cc.fp.ps.netease.com/file/5c063ecea7f2523115358ef511rTmY1R"
+        },
+        {
+            "text": "Leeroy",
+            "png_small": "https://cc.fp.ps.netease.com/file/5c063f967f9d2aceabc3418dkdcCkdcY",
+            "id": 8,
+            "png_big": "https://cc.fp.ps.netease.com/file/5c063ecea7f2523115358ef6FjDai2kX"
+        },
+        {
+            "text": "CompassRose",
+            "png_small": "https://cc.fp.ps.netease.com/file/5c063f9696dee44f8c67a866iwQsiYuE",
+            "id": 9,
+            "png_big": "https://cc.fp.ps.netease.com/file/5c063ece8b74278376bc5f609CRrxA16"
+        },
+        {
+            "text": "Dust",
+            "png_small": "https://cc.fp.ps.netease.com/file/5c063f96a7f2522060558a9aoAXi7qRy",
+            "id": 10,
+            "png_big": "https://cc.fp.ps.netease.com/file/5c063ece96dee4b3eb8e4c06Ybglls6V"
+        },
+        {
+            "text": "LegendRank_1",
+            "png_small": "https://cc.fp.ps.netease.com/file/5c063f968b7427868795eb5cwmmJZdoR",
+            "id": 11,
+            "png_big": "https://cc.fp.ps.netease.com/file/5c063ecf8b742787115c1e01YVoxa0ti"
+        },
+        {
+            "text": "ManaGem",
+            "png_small": "https://cc.fp.ps.netease.com/file/5c063f967f9d2ad5f1e5b1943kbYBVD3",
+            "id": 12,
+            "png_big": "https://cc.fp.ps.netease.com/file/5c063ecf96dee44f8c67a802XJvgSWVp"
+        },
+        {
+            "text": "MoneyBag",
+            "png_small": "https://cc.fp.ps.netease.com/file/5c063f968b74277f05eac7caa34eckMB",
+            "id": 13,
+            "png_big": "https://cc.fp.ps.netease.com/file/5c063ecf7f9d2aca827edd6cGeymUHb9"
+        },
+        {
+            "text": "Rank25",
+            "png_small": "https://cc.fp.ps.netease.com/file/5c063f96a7f2523115358ffeiEtmsEKJ",
+            "id": 14,
+            "png_big": "https://cc.fp.ps.netease.com/file/5c063ecf6f04941ec2d25f61gqgxzApL"
+        },
+        {
+            "text": "Skull",
+            "png_small": "https://cc.fp.ps.netease.com/file/5c063f96143cfad47ed123e3cXicrhiw",
+            "id": 15,
+            "png_big": "https://cc.fp.ps.netease.com/file/5c063ecf7f9d2acf2e64806dXFZrJWrC"
+        },
+        {
+            "text": "Talkstone",
+            "png_small": "https://cc.fp.ps.netease.com/file/5c063f97a7f252282c220668vah0KdOk",
+            "id": 16,
+            "png_big": "https://cc.fp.ps.netease.com/file/5c063ecf96dee4555b06e30f4Ql0XkOC"
+        },
+        {
+            "text": "Targeting",
+            "png_small": "https://cc.fp.ps.netease.com/file/5c063f9796dee43ad93bb8dcm8ra5jEc",
+            "id": 17,
+            "png_big": "https://cc.fp.ps.netease.com/file/5c063ecfa7f25226827a1038QiUTvcrZ"
+        },
+        {
+            "text": "zzZZ",
+            "png_small": "https://cc.fp.ps.netease.com/file/5c063f975e6027b9525e72f76FMBisrU",
+            "id": 18,
+            "png_big": "https://cc.fp.ps.netease.com/file/5c063ecf8b742787115c1e02xCr75BAA"
+        },
+        {
+            "text": "黑哥1",
+            "png_small": "https://cc.fp.ps.netease.com/file/5c21d8ea143cfa539a27ec8dYcpGaJw0",
+            "id": 19,
+            "png_big": "https://cc.fp.ps.netease.com/file/5c21d8ea96dee4701adf0ce05ZsVfK9d"
+        },
+        {
+            "text": "黑哥2",
+            "png_small": "https://cc.fp.ps.netease.com/file/5c21d8ea7f9d2ac5d0782e614ri3zrlb",
+            "id": 20,
+            "png_big": "https://cc.fp.ps.netease.com/file/5c21d8ea7f9d2abcf9ddb032mAUyruoo"
+        },
+        {
+            "text": "林可1",
+            "png_small": "https://cc.fp.ps.netease.com/file/5c21d9918b742763cfe4002cfOkkiZaK",
+            "id": 21,
+            "png_big": "https://cc.fp.ps.netease.com/file/5c21d991143cfabbe1cc8ef8wUwXPCx8"
+        },
+        {
+            "text": "林可2",
+            "png_small": "https://cc.fp.ps.netease.com/file/5c21d991a7f25243f1096a15yKiGiNVC",
+            "id": 22,
+            "png_big": "https://cc.fp.ps.netease.com/file/5c21d99196dee407ced5a0d7pzYgQBNG"
+        },
+        {
+            "text": "墨泽1",
+            "png_small": "https://cc.fp.ps.netease.com/file/5c21d9fa6f04945591b9630dSFfMiNpH",
+            "id": 23,
+            "png_big": "https://cc.fp.ps.netease.com/file/5c21d9fa8b742775a70a36fbrZwdHh4M"
+        },
+        {
+            "text": "墨泽2",
+            "png_small": "https://cc.fp.ps.netease.com/file/5c21d9fa8b742764391ded08y6il46rx",
+            "id": 24,
+            "png_big": "https://cc.fp.ps.netease.com/file/5c21d9fa5e602774065881berdMkafLt"
+        }
+    ],
+    "yongjie": [
+        null,
+        {
+            "text": "rua",
+            "png_small": "http://cc.fp.ps.netease.com/file/613708d05e60277639de1027QihpeE6h03",
+            "id": 1,
+            "png_big": "http://cc.fp.ps.netease.com/file/613708d196dee48c98ba8f795BiKWEwh03"
+        },
+        {
+            "text": "摸头",
+            "png_small": "http://cc.fp.ps.netease.com/file/613708d14ae8635bca745cdagt2UfQfN03",
+            "id": 2,
+            "png_big": "http://cc.fp.ps.netease.com/file/613708d109463c0ed4ccdc2eYebXO3X003"
+        },
+        {
+            "text": "疑问",
+            "png_small": "http://cc.fp.ps.netease.com/file/613708d209463c2b40fdc32ayrXs7rs403",
+            "id": 3,
+            "png_big": "http://cc.fp.ps.netease.com/file/613708d196dee48afcb82ce0WNF3V7hQ03"
+        },
+        {
+            "text": "抱歉",
+            "png_small": "http://cc.fp.ps.netease.com/file/613708d0143cfa097a8b48f4SMPZuQIl03",
+            "id": 4,
+            "png_big": "http://cc.fp.ps.netease.com/file/613708d05e60273b8cf3db6at72uJlGa03"
+        },
+        {
+            "text": "打屁股",
+            "png_small": "http://cc.fp.ps.netease.com/file/613708d0a7f2520a098091b9qoTJmugy03",
+            "id": 5,
+            "png_big": "http://cc.fp.ps.netease.com/file/613708d096dee4846649a496ST10S5iV03"
+        },
+        {
+            "text": "想办法振一下",
+            "png_small": "http://cc.fp.ps.netease.com/file/613708cba7f252717264d444BIgWgW8b03",
+            "id": 6,
+            "png_big": "http://cc.fp.ps.netease.com/file/613708cc4ae8634a58f2e92bVhfGsodd03"
+        },
+        {
+            "text": "上号",
+            "png_small": "http://cc.fp.ps.netease.com/file/613708cc96dee48afcb82ca1q7G0d0Y503",
+            "id": 7,
+            "png_big": "http://cc.fp.ps.netease.com/file/613708cbc68de219abac5869NMxavlye03"
+        },
+        {
+            "text": "我不行了",
+            "png_small": "http://cc.fp.ps.netease.com/file/613708cc09463c2b40fdc2ebZ424h2iG03",
+            "id": 8,
+            "png_big": "http://cc.fp.ps.netease.com/file/613708cdc68de28564f79ba6KA0zlcCM03"
+        },
+        {
+            "text": "胡桃率先出击",
+            "png_small": "http://cc.fp.ps.netease.com/file/6139c85da7f25245c07793beu7eV8yYd03",
+            "id": 9,
+            "png_big": "http://cc.fp.ps.netease.com/file/6139c85da7f2523fc3b0e82b8Yd5Oqro03"
+        },
+        {
+            "text": "金刚伏魔",
+            "png_small": "http://cc.fp.ps.netease.com/file/61386b1796dee49d1ee748b7JQCO6WVh03",
+            "id": 10,
+            "png_big": "http://cc.fp.ps.netease.com/file/613708cc5e6027525c543f36MsvfSJDT03"
+        },
+        {
+            "text": "在劫难逃",
+            "png_small": "http://cc.fp.ps.netease.com/file/613708cfcdb1567b5cfb6e36wOBTkdoG03",
+            "id": 11,
+            "png_big": "http://cc.fp.ps.netease.com/file/613708cf5e602746b69ba950pk7TYaAL03"
+        },
+        {
+            "text": "拿来吧你",
+            "png_small": "http://cc.fp.ps.netease.com/file/613708d0143cfa82078103d9Wb3aONPm03",
+            "id": 12,
+            "png_big": "http://cc.fp.ps.netease.com/file/613708d096dee46523a2c18fDNqFDST303"
+        },
+        {
+            "text": "别振了",
+            "png_small": "http://cc.fp.ps.netease.com/file/613708cc09463c2748d298eee9IIA4vg03",
+            "id": 13,
+            "png_big": "http://cc.fp.ps.netease.com/file/613708cc143cfa14cb7e87beeqJOWiDX03"
+        },
+        {
+            "text": "好想回家振刀",
+            "png_small": "http://cc.fp.ps.netease.com/file/6139c28809463c35f0c7df71tcJSxNDO03",
+            "id": 14,
+            "png_big": "http://cc.fp.ps.netease.com/file/6139cc3f143cfa720e54b0342ifmPu5m03"
+        },
+        {
+            "text": "得到大佬",
+            "png_small": "http://cc.fp.ps.netease.com/file/613708d14ae863250cc297e1tStFGGvh03",
+            "id": 15,
+            "png_big": "http://cc.fp.ps.netease.com/file/613a05dfcdb156131cfaee2ft57dEOdu03"
+        },
+        {
+            "text": "帮帮胡桃",
+            "png_small": "http://cc.fp.ps.netease.com/file/6139c2884ae8632dd47957c3fzdSl2wE03",
+            "id": 16,
+            "png_big": "http://cc.fp.ps.netease.com/file/6139c2888614f5873eb3b643Vlk7VWB303"
+        },
+        {
+            "text": "要振刀",
+            "png_small": "http://cc.fp.ps.netease.com/file/613708cea7f252453af6b453dlCvblPk03",
+            "id": 17,
+            "png_big": "http://cc.fp.ps.netease.com/file/613708ce143cfa0462353eacDjsx4k1Q03"
+        },
+        {
+            "text": "嘎嘎乱杀",
+            "png_small": "http://cc.fp.ps.netease.com/file/613708d05e60273b8cf3db68mXxVHVFc03",
+            "id": 18,
+            "png_big": "http://cc.fp.ps.netease.com/file/613708cdc68de21875e72909cJ7kRRee03"
+        },
+        {
+            "text": "好玩",
+            "png_small": "http://cc.fp.ps.netease.com/file/613708d0143cfa7437d8636eFSt8rZmS03",
+            "id": 19,
+            "png_big": "http://cc.fp.ps.netease.com/file/613708d04ae863258b93c725tt3FNHwS03"
+        },
+        {
+            "text": "现在打开永劫",
+            "png_small": "http://cc.fp.ps.netease.com/file/61371776cdb15636c7e05e83hfmtJpri03",
+            "id": 20,
+            "png_big": "http://cc.fp.ps.netease.com/file/613708d0143cfa073cbbb963SiwI49GQ03"
+        },
+        {
+            "text": "带上小红夜",
+            "png_small": "http://cc.fp.ps.netease.com/file/613a05f0c50b20b00f447d40wDggkLrP03",
+            "id": 21,
+            "png_big": "http://cc.fp.ps.netease.com/file/613708cea7f252171ddf3e3eb8HZcRsi03"
+        },
+        {
+            "text": "1=2求带飞",
+            "png_small": "http://cc.fp.ps.netease.com/file/613708cf5e60273a1cf8539ca1chGv7T03",
+            "id": 22,
+            "png_big": "http://cc.fp.ps.netease.com/file/613708cd96dee43ed69880c8Iu81oh8S03"
+        },
+        {
+            "text": "又混一把",
+            "png_small": "http://cc.fp.ps.netease.com/file/613708cec68de25b591bf52edPUacDsm03",
+            "id": 23,
+            "png_big": "http://cc.fp.ps.netease.com/file/613708cecdb1564b9ff2aa1aY2oGbMiT03"
+        }
+    ],
+    "doutu": [
+        null,
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/60744473a7f25262f4986db0C31bNeUj03",
+            "gif_small": "http://cc.fp.ps.netease.com/file/6074423e8b74277208dcd0ffMbaGFiv503",
+            "text": "mama",
+            "png_small": "http://cc.fp.ps.netease.com/file/607441de143cfa3f3a6a3f371467WvaN03",
+            "png_big": "http://cc.fp.ps.netease.com/file/6074418ca7f2524e8b7268b7vopM09hl03",
+            "id": 1
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/6074446d7f9d2a2573a32f36ZfE40Sbw03",
+            "gif_small": "http://cc.fp.ps.netease.com/file/6074423e96dee45c3a7244de1rhbi2YR03",
+            "text": "别慌小场面",
+            "png_small": "http://cc.fp.ps.netease.com/file/607441dfa7f25234dd5dfdb1CfCAg9ka03",
+            "png_big": "http://cc.fp.ps.netease.com/file/6074418b96dee44c05f0017aElAf4JiS03",
+            "id": 2
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/6074446e96dee462a0e117depQ2b9QBy03",
+            "gif_small": "http://cc.fp.ps.netease.com/file/6074423e2786fd60296e8acbUhUmHqcX03",
+            "text": "撑腰",
+            "png_small": "http://cc.fp.ps.netease.com/file/607441de143cfa4e9343916azdoMOpm103",
+            "png_big": "http://cc.fp.ps.netease.com/file/6074418b2786fd3dcc45c860i2k8IzzX03",
+            "id": 3
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/6074446f5e60279368c205c4SPoB502Y03",
+            "gif_small": "http://cc.fp.ps.netease.com/file/6074423e143cfa4e934393a2eoiW9L2E03",
+            "text": "击掌",
+            "png_small": "http://cc.fp.ps.netease.com/file/607441de96dee404878d4869XGxq7Q2N03",
+            "png_big": "http://cc.fp.ps.netease.com/file/6074418d8b742755d8ccbf3cYH7iTqsH03",
+            "id": 4
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/6074446d143cfa9235858255hprXu16X03",
+            "gif_small": "http://cc.fp.ps.netease.com/file/6074423d8b74273a3264daa92GvEGcN403",
+            "text": "基操",
+            "png_small": "http://cc.fp.ps.netease.com/file/607441de143cfa261d26fc8cp4p3eTJM03",
+            "png_big": "http://cc.fp.ps.netease.com/file/6074418b5e60271e2bec986724kDzNou03",
+            "id": 5
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/6074446f96dee462a0e117e4BcXxWs6r03",
+            "gif_small": "http://cc.fp.ps.netease.com/file/6074453f96dee456f081481dzO5JuZhU03",
+            "text": "猛男比心",
+            "png_small": "http://cc.fp.ps.netease.com/file/607441de96dee47844f45d18Xf6DvWqQ03",
+            "png_big": "http://cc.fp.ps.netease.com/file/6074418c6f0494592ed2c0dciMMLvix303",
+            "id": 6
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/6074446f8b74273655894fc51lauyML803",
+            "gif_small": "http://cc.fp.ps.netease.com/file/6074423ea7f252444fb402c3cKMKj3ii03",
+            "text": "请开始你的表演",
+            "png_small": "http://cc.fp.ps.netease.com/file/607442097f9d2a4187a9c125Czma5hvf03",
+            "png_big": "http://cc.fp.ps.netease.com/file/6074418d8b7427216a0107b5zYF508G403",
+            "id": 7
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/6074446e143cfa4a49171c97fx6uTp1T03",
+            "gif_small": "http://cc.fp.ps.netease.com/file/6074423e6f04940a14238639vs5wlPCM03",
+            "text": "舔屏",
+            "png_small": "http://cc.fp.ps.netease.com/file/607441de143cfa261d26fc90eGM4hzNL03",
+            "png_big": "http://cc.fp.ps.netease.com/file/6074418c2786fd57caa9b8451FsVj6x203",
+            "id": 8
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/607447f86f04941783a70ac4lcifhOX503",
+            "gif_small": "http://cc.fp.ps.netease.com/file/6074446e2786fd4709b51273ry7OZpA603",
+            "text": "休想套路我",
+            "png_small": "http://cc.fp.ps.netease.com/file/607445566f04947d48b48519rleppmcP03",
+            "png_big": "http://cc.fp.ps.netease.com/file/6074418c2786fd785d13a8ffkTaQ1Ohf03",
+            "id": 9
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/61d5192d14a64d76ebb7105alKqTiXY203",
+            "gif_small": "http://cc.fp.ps.netease.com/file/61d536cec86d8a6a3a1fb0ebqqRO5sjX03",
+            "text": "鸭子",
+            "png_small": "http://cc.fp.ps.netease.com/file/607441dfa7f2523b88b25739XP4p1f8G03",
+            "png_big": "http://cc.fp.ps.netease.com/file/6074418d2786fd6630c095a1dZJGScuR03",
+            "id": 10
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/604980345e602709fc8ca4f5kX78KjwO03",
+            "gif_small": "http://cc.fp.ps.netease.com/file/6047620b7f9d2a34b8af7ae2MDaCCAVa03",
+            "text": "白给",
+            "png_small": "http://cc.fp.ps.netease.com/file/6047620b143cfa4e59cd872fkR8wOBuL03",
+            "png_big": "http://cc.fp.ps.netease.com/file/6047620b2786fd9460cd4cec0siHKmwv03",
+            "id": 11
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/60476244a7f2521008d8fe71hNH529hc03",
+            "gif_small": "http://cc.fp.ps.netease.com/file/604762447f9d2a29102a46d86qZ2iPkM03",
+            "text": "单身狗的凝视",
+            "png_small": "http://cc.fp.ps.netease.com/file/6047624496dee465c7abef7ao6V6GSi703",
+            "png_big": "http://cc.fp.ps.netease.com/file/60482281a7f2520facf44390gfZQjIWK03",
+            "id": 12
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/604762cc143cfa4e59cd8ac6Sj4m3X2b03",
+            "gif_small": "http://cc.fp.ps.netease.com/file/604762cc96dee410cd1205968DsmiwrC03",
+            "text": "夺笋呐",
+            "png_small": "http://cc.fp.ps.netease.com/file/604762cc96dee410cd120594ICK3QRfO03",
+            "png_big": "http://cc.fp.ps.netease.com/file/604762cc6f049457c76511bb2x7hQEEN03",
+            "id": 13
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/6047641d96dee40378c021cdcLt0Ruwa03",
+            "gif_small": "http://cc.fp.ps.netease.com/file/6047641d2786fd9460cd52d2Q0HDDtBv03",
+            "text": "恭喜这个B",
+            "png_small": "http://cc.fp.ps.netease.com/file/6047641d96dee403268fb8b0YtqxPWW303",
+            "png_big": "http://cc.fp.ps.netease.com/file/6047641d143cfa4e59cd9067NZAyOJal03",
+            "id": 14
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/6047646c6f04940393fa7ec2Q0FZwrf803",
+            "gif_small": "http://cc.fp.ps.netease.com/file/6047646c96dee40378c0235dHoS5mxrF03",
+            "text": "老阴阳人",
+            "png_small": "http://cc.fp.ps.netease.com/file/6047646b96dee40378c0235bi6vxhLKh03",
+            "png_big": "http://cc.fp.ps.netease.com/file/6047646c6f049444d133e4fbUIiA2ici03",
+            "id": 15
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/601a6d685e602748b2ef08db51hShNlu03",
+            "gif_small": "http://cc.fp.ps.netease.com/file/601a6d682786fd06e1b25e32RgaqWxNS03",
+            "text": "啊这",
+            "png_small": "http://cc.fp.ps.netease.com/file/601a6d678b74272ef0d069e43wX1G1KP03",
+            "png_big": "http://cc.fp.ps.netease.com/file/601a6d6796dee41a6fe52f7fI4YGyz8o03",
+            "id": 16
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/601a6ddf5e60275062b2ff74DcDGge0703",
+            "gif_small": "http://cc.fp.ps.netease.com/file/601a6dde6f04941269e63e53HmHpvC6I03",
+            "text": "好家伙",
+            "png_small": "http://cc.fp.ps.netease.com/file/601a6ddea7f25279fb6fe0admLtZhEqN03",
+            "png_big": "http://cc.fp.ps.netease.com/file/601a6dde6f04947fe48b98b3LMzqPOji03",
+            "id": 17
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/601a7a015e602795c11d29c2hf7f9s4F03",
+            "gif_small": "http://cc.fp.ps.netease.com/file/601a7a018b74277e57800f0chyOaySQ203",
+            "text": "裂开了",
+            "png_small": "http://cc.fp.ps.netease.com/file/601a7a01a7f2520a3624ef14W6AiygiX03",
+            "png_big": "http://cc.fp.ps.netease.com/file/601a7a017f9d2a188562495aAAxFJIxo03",
+            "id": 18
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/601a7173a7f2524081bda1804t4cMARa03",
+            "gif_small": "http://cc.fp.ps.netease.com/file/601a71736f049406427ad167lBKEkltd03",
+            "text": "小丑竟是我自己",
+            "png_small": "http://cc.fp.ps.netease.com/file/601a70f0143cfa6531756d22H7KLJLKt03",
+            "png_big": "http://cc.fp.ps.netease.com/file/601a70f06f049406b30c9601dxWXAkpq03",
+            "id": 19
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/601a71bc8b74271af50ee7eaqwSYaDUQ03",
+            "gif_small": "http://cc.fp.ps.netease.com/file/601a71bc8b74272e0487053eJCrlE7Lx03",
+            "text": "小丑竟在我身边",
+            "png_small": "http://cc.fp.ps.netease.com/file/601a71bc7f9d2a7e6ec12440zupvc2tY03",
+            "png_big": "http://cc.fp.ps.netease.com/file/601a71bca7f25251dac492c62RivLoki03",
+            "id": 20
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/601a7a2a8b74277cba4e0f12HF0fTFXF03",
+            "gif_small": "http://cc.fp.ps.netease.com/file/601a7a2a143cfa47e8a346374cDHo8S803",
+            "text": "有内味儿了",
+            "png_small": "http://cc.fp.ps.netease.com/file/601a7a2a5e602738423d92f3xIgLPlDl03",
+            "png_big": "http://cc.fp.ps.netease.com/file/601a7a2a2786fd6396849860EBEpxfmX03",
+            "id": 21
+        },
+        {
+            "text": "针不戳",
+            "png_small": "http://cc.fp.ps.netease.com/file/601bb0c8a7f252742a325e45YGaMb7Rk03",
+            "id": 22,
+            "png_big": "http://cc.fp.ps.netease.com/file/601bb0c82786fd80b6707634eHZwCeyT03"
+        },
+        {
+            "text": "有手都行",
+            "png_small": "http://cc.fp.ps.netease.com/file/601bb13c96dee41a3e0a533c95Va9V9803",
+            "id": 23,
+            "png_big": "http://cc.fp.ps.netease.com/file/601bb13b5e60279af9524d6eijukTGOS03"
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/601ce3ba5e602752ac251139uWfXwMr903",
+            "gif_small": "http://cc.fp.ps.netease.com/file/601ce3be143cfa053c4790103rEqpebm03",
+            "text": "带带我",
+            "png_small": "http://cc.fp.ps.netease.com/file/601ce3b996dee49a3aa38c83dSuixcR203",
+            "png_big": "http://cc.fp.ps.netease.com/file/601ce3b92786fd275feefc3e6WmvYh2f03",
+            "id": 24
+        },
+        {
+            "text": "就这",
+            "png_small": "http://cc.fp.ps.netease.com/file/601ce3ef5e60279ce01d4ccfIDUsprUJ03",
+            "id": 25,
+            "png_big": "http://cc.fp.ps.netease.com/file/601ce3ef143cfa106988aa1aXyVqUhl403"
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/601ce4122786fd15774da945Kl2iuZOB03",
+            "gif_small": "http://cc.fp.ps.netease.com/file/601ce4125e602752ac2512c8iVpfYW9803",
+            "text": "老板大气",
+            "png_small": "http://cc.fp.ps.netease.com/file/601ce41e2786fd1c27b72dd8ehk2DF3z03",
+            "png_big": "http://cc.fp.ps.netease.com/file/601ce41096dee401d2dd5f47VZxGBLH903",
+            "id": 26
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/601ce45f143cfa5b1920d7a8kk1ZEgcG03",
+            "gif_small": "http://cc.fp.ps.netease.com/file/601ce45fa7f25221b51d79dckXxE7U8G03",
+            "text": "中中中",
+            "png_small": "http://cc.fp.ps.netease.com/file/601ce4608b74275def617f7dkWvWHh7H03",
+            "png_big": "http://cc.fp.ps.netease.com/file/601ce45fa7f2521cccfc1c32UQaCXaSW03",
+            "id": 27
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/601ce4a06f04946b0f38646djAcOSrZg03",
+            "gif_small": "http://cc.fp.ps.netease.com/file/601ce4a05e602774e898bdc1sGZLAq5J03",
+            "text": "舔舔舔",
+            "png_small": "http://cc.fp.ps.netease.com/file/601ce49f2786fd3414eec2744CkZI0Vo03",
+            "png_big": "http://cc.fp.ps.netease.com/file/601ce4a05e60274eee7fb3afE2RyebfR03",
+            "id": 28
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/601ce5145e6027915c1432c8ISasMP7003",
+            "gif_small": "http://cc.fp.ps.netease.com/file/601ce514143cfa5343fb7c8ddJ8oitRq03",
+            "text": "老板有牌面",
+            "png_small": "http://cc.fp.ps.netease.com/file/601ce5425e60275c61c41f81TeEukupF03",
+            "png_big": "http://cc.fp.ps.netease.com/file/601ce5456f049444a5f64b61XmvdiNOr03",
+            "id": 29
+        },
+        {
+            "gif_big": "http://cc.fp.ps.netease.com/file/601ce55b6f049472ba95fcd2Gs8UfvyU03",
+            "gif_small": "http://cc.fp.ps.netease.com/file/601ce55b143cfa7e034d9cb85OzYmGyM03",
+            "text": "桃子",
+            "png_small": "http://cc.fp.ps.netease.com/file/601ce55b6f049404f04dabbeVdsFXUKy03",
+            "png_big": "http://cc.fp.ps.netease.com/file/601ce55b2786fd1c27b731f5iXhS0VeP03",
+            "id": 30
+        }
+    ],
+    "newyear": [
+        null,
+        {
+            "text": "202一抱",
+            "png_small": "http://cc.fp.ps.netease.com/file/5feda32f143cfa3431d39716TRJP3D5O02",
+            "id": 1,
+            "png_big": "http://cc.fp.ps.netease.com/file/5fed896e7f9d2a67ca583ec5gCGpusJE02"
+        },
+        {
+            "text": "爱你",
+            "png_small": "http://cc.fp.ps.netease.com/file/5feda32f7f9d2a3429a8ca94xU4vrXSX02",
+            "id": 2,
+            "png_big": "http://cc.fp.ps.netease.com/file/5fed896e7f9d2a0dda8baf9a7lW3iryK02"
+        },
+        {
+            "text": "第一个抱抱",
+            "png_small": "http://cc.fp.ps.netease.com/file/5feda32f69b21a68a24b2ef1rstVZed902",
+            "id": 3,
+            "png_big": "http://cc.fp.ps.netease.com/file/5fed896f7f9d2a406a96cfedEuf26iQu02"
+        },
+        {
+            "text": "舔舔舔",
+            "png_small": "http://cc.fp.ps.netease.com/file/5ffd8c8596dee469c24bdab5SUp25P0W03",
+            "id": 4,
+            "png_big": "http://cc.fp.ps.netease.com/file/5ffd8c85a7f25268be10fc79MKmQi8dQ03"
+        },
+        {
+            "text": "带带我",
+            "png_small": "http://cc.fp.ps.netease.com/file/5ffd8c868b74274810d1f79a0W2CR9M103",
+            "id": 5,
+            "png_big": "http://cc.fp.ps.netease.com/file/5ffd8c85a7f252054c2f5bedxKsRm1y303"
+        },
+        {
+            "text": "老板大气",
+            "png_small": "http://cc.fp.ps.netease.com/file/5ffd8c85143cfa9a5dd36a97ifbVQHZ103",
+            "id": 6,
+            "png_big": "http://cc.fp.ps.netease.com/file/5ffd8c86a7f25268be10fc7aFEH8y9pb03"
+        },
+        {
+            "text": "查房",
+            "png_small": "http://cc.fp.ps.netease.com/file/5ffeba615e602728e0934121iQcrAqSc03",
+            "id": 7,
+            "png_big": "http://cc.fp.ps.netease.com/file/5ffeba4ca7f25278015b4f2bGNuGiFIT03"
+        },
+        {
+            "text": "中中中",
+            "png_small": "http://cc.fp.ps.netease.com/file/5ffeb7e16f04945bbcfa1845ENc25Y1K03",
+            "id": 8,
+            "png_big": "http://cc.fp.ps.netease.com/file/5ffeb7e25e60275fb32436b6hsP59Sub03"
+        },
+        {
+            "text": "查房plus",
+            "png_small": "http://cc.fp.ps.netease.com/file/5ffeba6196dee480c9f7d9b3Oli187HK03",
+            "id": 9,
+            "png_big": "http://cc.fp.ps.netease.com/file/5ffeba4c96dee42ffeedc059SfypMNib03"
+        },
+        {
+            "text": "就这",
+            "png_small": "http://cc.fp.ps.netease.com/file/5fffa5c56f04945e26d5e7a46f0zQYmy03",
+            "id": 10,
+            "png_big": "http://cc.fp.ps.netease.com/file/5fffa5d97f9d2a6eaf9307d8ihTjixHa03"
+        }
+    ],
+    "team": [
+        null,
+        {
+            "gif_big": "https://cc.res.netease.com/act/common/emotions/owl/team/112/Boston_Uprising.gif",
+            "gif_small": "https://cc.res.netease.com/act/common/emotions/owl/team/56/Boston_Uprising.gif",
+            "text": "波士顿崛起队",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/team/56/Boston_Uprising.png",
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/team/112/Boston_Uprising.png",
+            "id": 1
+        },
+        {
+            "gif_big": "https://cc.res.netease.com/act/common/emotions/owl/team/112/Dallas_Fuel.gif",
+            "gif_small": "https://cc.res.netease.com/act/common/emotions/owl/team/56/Dallas_Fuel.gif",
+            "text": "达拉斯燃料队",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/team/56/Dallas_Fuel.png",
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/team/112/Dallas_Fuel.png",
+            "id": 2
+        },
+        {
+            "gif_big": "https://cc.res.netease.com/act/common/emotions/owl/team/112/Florida_Mayhem.gif",
+            "gif_small": "https://cc.res.netease.com/act/common/emotions/owl/team/56/Florida_Mayhem.gif",
+            "text": "佛罗里达狂欢队",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/team/56/Florida_Mayhem.png",
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/team/112/Florida_Mayhem.png",
+            "id": 3
+        },
+        {
+            "gif_big": "https://cc.res.netease.com/act/common/emotions/owl/team/112/Houston_Outlaws.gif",
+            "gif_small": "https://cc.res.netease.com/act/common/emotions/owl/team/56/Houston_Outlaws.gif",
+            "text": "休斯顿神枪手队",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/team/56/Houston_Outlaws.png",
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/team/112/Houston_Outlaws.png",
+            "id": 4
+        },
+        {
+            "gif_big": "https://cc.res.netease.com/act/common/emotions/owl/team/112/London_Spitfire.gif",
+            "gif_small": "https://cc.res.netease.com/act/common/emotions/owl/team/56/London_Spitfire.gif",
+            "text": "伦敦喷火战斗机队",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/team/56/London_Spitfire.png",
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/team/112/London_Spitfire.png",
+            "id": 5
+        },
+        {
+            "gif_big": "https://cc.res.netease.com/act/common/emotions/owl/team/112/LosAngeles_Gladiators.gif",
+            "gif_small": "https://cc.res.netease.com/act/common/emotions/owl/team/56/LosAngeles_Gladiators.gif",
+            "text": "洛杉矶角斗士队",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/team/56/LosAngeles_Gladiators.png",
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/team/112/LosAngeles_Gladiators.png",
+            "id": 6
+        },
+        {
+            "gif_big": "https://cc.res.netease.com/act/common/emotions/owl/team/112/LosAngeles_Valiant.gif",
+            "gif_small": "https://cc.res.netease.com/act/common/emotions/owl/team/56/LosAngeles_Valiant.gif",
+            "text": "洛杉矶英勇队",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/team/56/LosAngeles_Valiant.png",
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/team/112/LosAngeles_Valiant.png",
+            "id": 7
+        },
+        {
+            "gif_big": "https://cc.res.netease.com/act/common/emotions/owl/team/112/NewYork_Excelsior.gif",
+            "gif_small": "https://cc.res.netease.com/act/common/emotions/owl/team/56/NewYork_Excelsior.gif",
+            "text": "纽约九霄天擎队",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/team/56/NewYork_Excelsior.png",
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/team/112/NewYork_Excelsior.png",
+            "id": 8
+        },
+        {
+            "gif_big": "https://cc.res.netease.com/act/common/emotions/owl/team/112/Philadelphia_Fusion.gif",
+            "gif_small": "https://cc.res.netease.com/act/common/emotions/owl/team/56/Philadelphia_Fusion.gif",
+            "text": "费城融合队",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/team/56/Philadelphia_Fusion.png",
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/team/112/Philadelphia_Fusion.png",
+            "id": 9
+        },
+        {
+            "gif_big": "https://cc.res.netease.com/act/common/emotions/owl/team/112/SanFrancisco_Shock.gif",
+            "gif_small": "https://cc.res.netease.com/act/common/emotions/owl/team/56/SanFrancisco_Shock.gif",
+            "text": "旧金山震动队",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/team/56/SanFrancisco_Shock.png",
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/team/112/SanFrancisco_Shock.png",
+            "id": 10
+        },
+        {
+            "gif_big": "https://cc.res.netease.com/act/common/emotions/owl/team/112/Seoul_Dynasty.gif",
+            "gif_small": "https://cc.res.netease.com/act/common/emotions/owl/team/56/Seoul_Dynasty.gif",
+            "text": "首尔王朝队",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/team/56/Seoul_Dynasty.png",
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/team/112/Seoul_Dynasty.png",
+            "id": 11
+        },
+        {
+            "gif_big": "https://cc.res.netease.com/act/common/emotions/owl/team/112/Shanghai_Dragons.gif",
+            "gif_small": "https://cc.res.netease.com/act/common/emotions/owl/team/56/Shanghai_Dragons.gif",
+            "text": "上海龙之队",
+            "png_small": "https://cc.res.netease.com/act/common/emotions/owl/team/56/Shanghai_Dragons.png",
+            "png_big": "https://cc.res.netease.com/act/common/emotions/owl/team/112/Shanghai_Dragons.png",
+            "id": 12
+        }
+    ],
+    "mhbq": [
+        null,
+        {
+            "text": "让我好好看下",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f2d158fa7f252a41dabecf9bYigOWud02",
+            "id": 1,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f2d158f6f0494dbd2aeed41rZetFiuk02"
+        },
+        {
+            "text": "难受想哭",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f2d15ed8b7427d5c8795c1d0aiWw2wL02",
+            "id": 2,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f2d15ed5e602741edb06eb5arJJs2qp02"
+        },
+        {
+            "text": "霸道总裁",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f2d164296dee49e44a8c199W5S52FQL02",
+            "id": 3,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f2d1641a7f252a3188bfeb4BBDQW53802"
+        },
+        {
+            "text": "起飞",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f2d16635e60276c42ee81e1pkxLazQb02",
+            "id": 4,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f2d16638b7427db0fc61dd7aXBGkLd802"
+        },
+        {
+            "text": "比心",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f2d16dd8b7427cecdf0cce90gWk9i0e02",
+            "id": 5,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f2d16dd96dee49e44a8c2cfVOiu1ee802"
+        },
+        {
+            "text": "貌美如花",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f2d16fb8b7427e3726d0ef9FqptpwHY02",
+            "id": 6,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f2d16fb8b7427db0fc61ea6LiltQLME02"
+        },
+        {
+            "text": "看我",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f2d17478b7427db0fc61f1fROhwXfOR02",
+            "id": 7,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f2d17472786fd4c6a27dd76X9o0edy602"
+        },
+        {
+            "text": "真香",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f2d17685e60277268593f41YKAR5ICI02",
+            "id": 8,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f2d17686f0494575e24cffdkS0C3GJX02"
+        },
+        {
+            "text": "曦帅真帅",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f2d17ac8b7427d5c8795e57WeiVrhll02",
+            "id": 9,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f2d17ac2786fde7c714fc88ZoCX9I0U02"
+        },
+        {
+            "text": "曦帅上书稳",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f2d17c35e60276fb292e1d4eYXWTqJk02",
+            "id": 10,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f2d17c4143cfac2d76faf811ghppjXL02"
+        },
+        {
+            "text": "对不起老板瞎了",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f2d180796dee4b513e5a2040J1arYyF02",
+            "id": 11,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f2d180796dee4d27c2141a6xiITV7HQ02"
+        },
+        {
+            "text": "谛听永远的神",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f2d18255e60277268594043BqDAR9oM02",
+            "id": 12,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f2d18255e602794c95b5a87lygAFdVh02"
+        },
+        {
+            "text": "比心",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f2d18a3a7f252aca6ba9382fXhbwp8W02",
+            "id": 13,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f2d18a3143cfab85d7e4252YFWTtA7s02"
+        },
+        {
+            "text": "出货啦",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f2d18ba6f0494cf8bc2a5d0pWdeug8v02",
+            "id": 14,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f2d18ba6f04944649758f4eLu0EIXOx02"
+        },
+        {
+            "text": "最靓的仔",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f2d19455e6027a64c7cd46e9ArbMNAP02",
+            "id": 15,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f2d1946143cfac2d76fb24486eQ34hQ02"
+        },
+        {
+            "text": "有-爱你们",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f2d1968a7f252972822a021pR6Nzmku02",
+            "id": 16,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f2d1968a7f252972822a022dpSH6kiE02"
+        },
+        {
+            "text": "抬走",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f2d1a7596dee4974004ff99iFMkqqOO02",
+            "id": 17,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f2d1a756f0494d639a21001ypws9bhJ02"
+        },
+        {
+            "text": "稳如铁蛋",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f2d1a955e602794c95b5fe3NSkXEBuP02",
+            "id": 18,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f2d1a952786fdc53fc94b12Dio9x32c02"
+        },
+        {
+            "text": "大血瓶",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f8ee6f08b74278e2f348d60quDrVz5B02",
+            "id": 19,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f8ee6f02786fd5024cfae63yiMQx9Ec02"
+        },
+        {
+            "text": "老板大气",
+            "png_small": "http://cc.fp.ps.netease.com/file/5f8ee6f0143cfa8031fb23741eQOkbf402",
+            "id": 20,
+            "png_big": "http://cc.fp.ps.netease.com/file/5f8ee6f096dee47ae5757820D9Im09cr02"
+        }
+    ],
+    "nishuihanshouyou": [
+        null,
+        {
+            "text": "会呼吸的江湖",
+            "png_small": "http://cc.fp.ps.netease.com/file/648abd3613cd68f2c0dccf822OBDYDix04",
+            "id": 1,
+            "png_big": "http://cc.fp.ps.netease.com/file/648abd36b0efc6cfcc1c14b821CF3e0704"
+        },
+        {
+            "text": "雷火",
+            "png_small": "http://cc.fp.ps.netease.com/file/648abd36993f826306ba84809HWTXHIe04",
+            "id": 2,
+            "png_big": "http://cc.fp.ps.netease.com/file/648abd36b596975ddee9ccc7NR2ibqwX04"
+        },
+        {
+            "text": "推荐你玩",
+            "png_small": "http://cc.fp.ps.netease.com/file/648abd3671a8db29e55584eeVs0HUr9604",
+            "id": 3,
+            "png_big": "http://cc.fp.ps.netease.com/file/648abd37dffcd0c2dcb288fcmis9fNmw04"
+        },
+        {
+            "text": "行行好吧",
+            "png_small": "http://cc.fp.ps.netease.com/file/648abd369854ed49961df67aNUVm6JfS04",
+            "id": 4,
+            "png_big": "http://cc.fp.ps.netease.com/file/648abd37879c8185ee417b59Lv4KLsoZ04"
+        },
+        {
+            "text": "等待",
+            "png_small": "http://cc.fp.ps.netease.com/file/648abd363a012884a30b5319wb5wbo0K04",
+            "id": 5,
+            "png_big": "http://cc.fp.ps.netease.com/file/648abd375a705a2bf05b9851pAdOhWLV04"
+        },
+        {
+            "text": "好想玩",
+            "png_small": "http://cc.fp.ps.netease.com/file/648abd362b5df76131e7a681LlTbTs7f04",
+            "id": 6,
+            "png_big": "http://cc.fp.ps.netease.com/file/648abd378d145f56093e419fC8BLDqg304"
+        }
+    ]
+}

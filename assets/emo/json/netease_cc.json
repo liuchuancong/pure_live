@@ -1,0 +1,2962 @@
+{
+  "[2639]": {
+    "id": "2639",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9b1c664ed490b2d32b1DFoatDhC03",
+    "text": "2639"
+  },
+  "[微笑]": {
+    "id": "_xiyou_0001_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78438b74277fbe81886euRiJyGwC03",
+    "text": "微笑"
+  },
+  "[开怀笑]": {
+    "id": "_sys_0002_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785f2786fd32489f7815iJWMvZ6403",
+    "text": "开怀笑"
+  },
+  "[眨眼]": {
+    "id": "_xiyou_0003_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782c2786fd46250dcc9cq5pGkFDA03",
+    "text": "眨眼"
+  },
+  "[惊讶]": {
+    "id": "_xiyou_0025_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78312786fd4530170e1cw3wCH24g03",
+    "text": "惊讶"
+  },
+  "[吐舌笑脸]": {
+    "id": "_sys_0005_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785da7f2525e36d41264IbozOUJs03",
+    "text": "吐舌笑脸"
+  },
+  "[得意的笑]": {
+    "id": "_xiyou_0019_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7843a7f2522d13d903cdtQNK4q5i03",
+    "text": "得意的笑"
+  },
+  "[生气]": {
+    "id": "_xiyou_0055_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78448b74277d24e30814V8CSHCjh03",
+    "text": "生气"
+  },
+  "[怕怕]": {
+    "id": "_sys_0008_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78547f9d2a4f1e34bab5HUu7WKxi03",
+    "text": "怕怕"
+  },
+  "[尴尬]": {
+    "id": "_sys_0009_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7854a7f252764f1a6bf4EfWAQ5OA03",
+    "text": "尴尬"
+  },
+  "[难过]": {
+    "id": "_sys_0010_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78532786fd66f7c2676a8c24mU9x03",
+    "text": "难过"
+  },
+  "[哭泣]": {
+    "id": "_cc_0027_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784b2786fd66f7c26738aLiz8ii303",
+    "text": "哭泣"
+  },
+  "[失望]": {
+    "id": "_sys_0012_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78607f9d2a661317afd6tHmXxUoU03",
+    "text": "失望"
+  },
+  "[困了]": {
+    "id": "_sys_0013_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78576f04944f40802cb62Wh9q69m03",
+    "text": "困了"
+  },
+  "[好好笑]": {
+    "id": "_sys_0014_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785da7f25247451b446evMYapygl03",
+    "text": "好好笑"
+  },
+  "[啵]": {
+    "id": "_sys_0015_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78586f04940145661058WM5eouBV03",
+    "text": "啵"
+  },
+  "[电到了]": {
+    "id": "_sys_0016_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785ba7f252764f1a6c38QeGvd2vx03",
+    "text": "电到了"
+  },
+  "[汗]": {
+    "id": "_xiyou_0075_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78432786fd15bbe7f94dlHHHlxv303",
+    "text": "汗"
+  },
+  "[流口水了]": {
+    "id": "_sys_0018_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785d7f9d2a661317afc14QR0Mi5303",
+    "text": "流口水了"
+  },
+  "[真困啊]": {
+    "id": "_sys_0019_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785e2786fd18e75e3473yxX57ir203",
+    "text": "真困啊"
+  },
+  "[我吐]": {
+    "id": "_sys_0020_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78582786fd18e75e344fA3vHdCKu03",
+    "text": "我吐"
+  },
+  "[???]": {
+    "id": "_sys_0021_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785f7f9d2a1aa97ece73b1XhwiEz03",
+    "text": "???"
+  },
+  "[嘘...]": {
+    "id": "_sys_0022_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78536f04946c0e4e2b20CBgC873l03",
+    "text": "嘘..."
+  },
+  "[砸死你]": {
+    "id": "_sys_0023_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78542786fd32489f77f0zldGXHLS03",
+    "text": "砸死你"
+  },
+  "[不说]": {
+    "id": "_sys_0024_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78607f9d2a7ab1d343cb42B8WvvD03",
+    "text": "不说"
+  },
+  "[坏]": {
+    "id": "_sys_0025_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78582786fd32489f7803LdyIIqQZ03",
+    "text": "坏"
+  },
+  "[色迷迷]": {
+    "id": "_sys_0026_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785b7f9d2a4f1e34bad4pPW3bj6f03",
+    "text": "色迷迷"
+  },
+  "[教训]": {
+    "id": "_sys_0027_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78607f9d2a1aa97ece77zkSRgMFa03",
+    "text": "教训"
+  },
+  "[可爱]": {
+    "id": "_sys_0028_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78538b7427610a425430Cxiiuyr903",
+    "text": "可爱"
+  },
+  "[YEAH]": {
+    "id": "_sys_0029_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785ea7f2524d882fef41QSHellrS03",
+    "text": "YEAH"
+  },
+  "[崩溃]": {
+    "id": "_sys_0030_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785a7f9d2a1f77a5040dF8mPeTyI03",
+    "text": "崩溃"
+  },
+  "[鄙视你]": {
+    "id": "_xiyou_0072_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78416f04944f40802c6bsGjZimvH03",
+    "text": "鄙视你"
+  },
+  "[开心]": {
+    "id": "_cc_0020_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7851a7f2526e5e2b28aeRqrxfh7y03",
+    "text": "开心"
+  },
+  "[仰慕你]": {
+    "id": "_sys_0033_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78572786fd32489f77fcsfH3CTjf03",
+    "text": "仰慕你"
+  },
+  "[晕]": {
+    "id": "_cc_0047_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78456f04947b76f45735o4tcOLdy03",
+    "text": "晕"
+  },
+  "[挖鼻孔]": {
+    "id": "_xiyou_0164_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78322786fd32489f7760Zz1i7KAm03",
+    "text": "挖鼻孔"
+  },
+  "[撒娇]": {
+    "id": "_xiyou_0048_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78318b7427058ec6cb78HDeA2kPu03",
+    "text": "撒娇"
+  },
+  "[鼓掌]": {
+    "id": "_xiyou_0051_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78427f9d2a7ab1d3431dy33W58oo03",
+    "text": "鼓掌"
+  },
+  "[害羞]": {
+    "id": "_xiyou_0018_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7840a7f25221eaefa2bdsMbd4WmV03",
+    "text": "害羞"
+  },
+  "[老大]": {
+    "id": "_xiyou_0137_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78306f04943330a5cec1VFP64Nq803",
+    "text": "老大"
+  },
+  "[欠揍]": {
+    "id": "_sys_0040_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78548b74277fbe8188cco6fp6ov203",
+    "text": "欠揍"
+  },
+  "[飞吻]": {
+    "id": "_xiyou_0156_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782d6f0494034aa2cf8eLllGDwxD03",
+    "text": "飞吻"
+  },
+  "[工作忙]": {
+    "id": "_sys_0042_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78587f9d2a2cece8c1efRM6LeMx003",
+    "text": "工作忙"
+  },
+  "[大哭]": {
+    "id": "_cc_0013_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784f6f04944f40802c98bXQUJgIA03",
+    "text": "大哭"
+  },
+  "[偷偷笑]": {
+    "id": "_sys_0044_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7860a7f25221eaefa3deZcypy1bh03",
+    "text": "偷偷笑"
+  },
+  "[送花给你]": {
+    "id": "_xiyou_0024_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782c7f9d2a1aa97ecd91rxY1PfpJ03",
+    "text": "送花给你"
+  },
+  "[来，亲一个]": {
+    "id": "_sys_0046_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785c8b74277d24e30877m9zPiVda03",
+    "text": "来，亲一个"
+  },
+  "[拍桌子]": {
+    "id": "_sys_0047_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785aa7f2523f1e6b9ba49DXg7RuH03",
+    "text": "拍桌子"
+  },
+  "[拜拜]": {
+    "id": "_sys_0048_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78562786fd18e75e34416UPgZSvm03",
+    "text": "拜拜"
+  },
+  "[飘阿飘]": {
+    "id": "_sys_0049_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78577f9d2a4f1e34bac0RDiCpTDl03",
+    "text": "飘阿飘"
+  },
+  "[秀一下]": {
+    "id": "_sys_0050_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785b2786fd18e75e3465vXRlaqCz03",
+    "text": "秀一下"
+  },
+  "[阿弥陀佛]": {
+    "id": "_sys_0051_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785b7f9d2a5420a243d2ciLTs8dA03",
+    "text": "阿弥陀佛"
+  },
+  "[无辜]": {
+    "id": "_sys_0052_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785f2786fd89c1d660dbObFXpjNb03",
+    "text": "无辜"
+  },
+  "[抓狂]": {
+    "id": "_sys_0053_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785b6f04943330a5cfadi5wmmCFG03",
+    "text": "抓狂"
+  },
+  "[扭捏]": {
+    "id": "_sys_0054_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78607f9d2a1aa97ece75dm4mRjIm03",
+    "text": "扭捏"
+  },
+  "[嗷嗷嗷]": {
+    "id": "_sys_0055_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785d6f04944f40802cd1dxwCeK3W03",
+    "text": "嗷嗷嗷"
+  },
+  "[气呼呼]": {
+    "id": "_sys_0056_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7857a7f252764f1a6c1cbcPNLzEU03",
+    "text": "气呼呼"
+  },
+  "[很得意]": {
+    "id": "_sys_0057_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785f8b74277cde334240IM1y1i8003",
+    "text": "很得意"
+  },
+  "[我是男生]": {
+    "id": "_sys_0058_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785a2786fd66f7c2678ffg8a6bmW03",
+    "text": "我是男生"
+  },
+  "[我是女生]": {
+    "id": "_sys_0059_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78562786fd4530170ee48Rg5Vwiu03",
+    "text": "我是女生"
+  },
+  "[玫瑰]": {
+    "id": "_sys_0060_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785c6f0494014566106cYNvsjBp003",
+    "text": "玫瑰"
+  },
+  "[好爱你]": {
+    "id": "_sys_0061_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785c2786fd18e75e3467hBqIz5eK03",
+    "text": "好爱你"
+  },
+  "[心碎了]": {
+    "id": "_xiyou_0009_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78366f049454fca30f48FO7PkspK03",
+    "text": "心碎了"
+  },
+  "[亲亲]": {
+    "id": "_cc_0042_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7844a7f25221eaefa2dcDu62pPCx03",
+    "text": "亲亲"
+  },
+  "[NO]": {
+    "id": "_sys_0064_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785f7f9d2a7ab1d343c7OxU58NUz03",
+    "text": "NO"
+  },
+  "[YES]": {
+    "id": "_sys_0065_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785f2786fd18e75e347cRXuwxKQ203",
+    "text": "YES"
+  },
+  "[握个手]": {
+    "id": "_sys_0066_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785e6f049454fca31005mClC3WaF03",
+    "text": "握个手"
+  },
+  "[到点了]": {
+    "id": "_xiyou_0013_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783b7f9d2a256234bb15uDtPjgKW03",
+    "text": "到点了"
+  },
+  "[音乐]": {
+    "id": "_sys_0068_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785d6f04944f40802ccfQasJyNh303",
+    "text": "音乐"
+  },
+  "[CALL我]": {
+    "id": "_sys_0069_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785c7f9d2a5420a243daE9KCfKJr03",
+    "text": "CALL我"
+  },
+  "[带血的刀]": {
+    "id": "_sys_0070_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78587f9d2a2cece8c1eb9Z833Dkd03",
+    "text": "带血的刀"
+  },
+  "[炸弹]": {
+    "id": "_sys_0071_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78528b742719848dc41bbXbqZK9l03",
+    "text": "炸弹"
+  },
+  "[有了]": {
+    "id": "_sys_0072_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785aa7f2525e36d4124dxOwgy6DJ03",
+    "text": "有了"
+  },
+  "[好晚了]": {
+    "id": "_sys_0073_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785a8b742754611771e7ENKdkO7q03",
+    "text": "好晚了"
+  },
+  "[吸血蝙蝠]": {
+    "id": "_sys_0074_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78578b74275e8ca9a417Czvv3BSO03",
+    "text": "吸血蝙蝠"
+  },
+  "[便便]": {
+    "id": "_sys_0075_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78596f04943330a5cfa8PDdezj8K03",
+    "text": "便便"
+  },
+  "[干一杯]": {
+    "id": "_sys_0076_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78596f04944f40802cbdStWiT8NV03",
+    "text": "干一杯"
+  },
+  "[抽烟]": {
+    "id": "_cc_0008_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78457f9d2a1f77a5038amq1tDJ7V03",
+    "text": "抽烟"
+  },
+  "[打电话]": {
+    "id": "_sys_0078_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78547f9d2a7ab1d3438fT1F6fsfN03",
+    "text": "打电话"
+  },
+  "[家]": {
+    "id": "_sys_0079_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785a7f9d2a256234bb879c8lgJsX03",
+    "text": "家"
+  },
+  "[车子]": {
+    "id": "_sys_0080_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78588b742754611771ddPmz2xO2M03",
+    "text": "车子"
+  },
+  "[礼物]": {
+    "id": "_xiyou_0151_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78332786fd8582582df9f1WyzEBS03",
+    "text": "礼物"
+  },
+  "[金钱]": {
+    "id": "_sys_0082_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7854a7f2525e36d4121bccwSFZ3a03",
+    "text": "金钱"
+  },
+  "[太阳]": {
+    "id": "_sys_0083_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78596f04942304dac0f2K9dCNROA03",
+    "text": "太阳"
+  },
+  "[下雨]": {
+    "id": "_sys_0084_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785f6f0494034aa2cfe6cvGqpP1L03",
+    "text": "下雨"
+  },
+  "[猪猪]": {
+    "id": "_sys_0085_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78566f04942304dac0e2HABk3xRl03",
+    "text": "猪猪"
+  },
+  "[小猫]": {
+    "id": "_sys_0086_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78598b742720c3c28729UQuixPds03",
+    "text": "小猫"
+  },
+  "[小狗]": {
+    "id": "_sys_0087_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78598b7427058ec6cc43Y0x5NULu03",
+    "text": "小狗"
+  },
+  "[骨头]": {
+    "id": "_sys_0088_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78602786fd4530170f07FFJyz55z03",
+    "text": "骨头"
+  },
+  "[喝水]": {
+    "id": "_xiyou_0060_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782c6f049454fca30f20kDJoQp8C03",
+    "text": "喝水"
+  },
+  "[汉堡]": {
+    "id": "_sys_0090_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785e7f9d2a1aa97ece6bw7OsTACQ03",
+    "text": "汉堡"
+  },
+  "[包子]": {
+    "id": "_sys_0091_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785b7f9d2a1aa97ece616rDgOAV803",
+    "text": "包子"
+  },
+  "[西瓜]": {
+    "id": "_sys_0092_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c785aa7f2522d13d904c07TCag8Fz03",
+    "text": "西瓜"
+  },
+  "[约会]": {
+    "id": "_sys_0093_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78576f04942304dac0e6YskuokFj03",
+    "text": "约会"
+  },
+  "[叹气]": {
+    "id": "_xiyou_0127_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783d2786fd8582582e0ctwoXBdfb03",
+    "text": "叹气"
+  },
+  "[啾啾]": {
+    "id": "_sys_0095_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78562786fd18e75e343bPaiis4Kc03",
+    "text": "啾啾"
+  },
+  "[耍酷]": {
+    "id": "_sys_0096_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78562786fd18e75e343f2v6oxXu803",
+    "text": "耍酷"
+  },
+  "[摸摸]": {
+    "id": "_xiyou_0105_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783d7f9d2a661317af55q8HjigIO03",
+    "text": "摸摸"
+  },
+  "[睫毛弯弯]": {
+    "id": "_sys_0098_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78597f9d2a187ac7bd08vQSZZWek03",
+    "text": "睫毛弯弯"
+  },
+  "[笑]": {
+    "id": "_xiyou_0002_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78412786fd0bc073435dQlqv5isV03",
+    "text": "笑"
+  },
+  "[找死]": {
+    "id": "_xiyou_0005_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783f8b74273682fe46aeVOY7BN2603",
+    "text": "找死"
+  },
+  "[飞喽]": {
+    "id": "_xiyou_0006_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783da7f252546de6e15egpBbk6qi03",
+    "text": "飞喽"
+  },
+  "[来杯饮料]": {
+    "id": "_xiyou_0032_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78338b74277fbe818809W12Kxk8Q03",
+    "text": "来杯饮料"
+  },
+  "[咬你]": {
+    "id": "_xiyou_0008_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78337f9d2a4f1e34ba21PXuaSgA103",
+    "text": "咬你"
+  },
+  "[心]": {
+    "id": "_xiyou_0010_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78317f9d2a7ab1d342ceOov6lEVq03",
+    "text": "心"
+  },
+  "[生日快乐]": {
+    "id": "_xiyou_0011_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783ea7f2527a5ed539ba4VOHtq7t03",
+    "text": "生日快乐"
+  },
+  "[谢谢]": {
+    "id": "_xiyou_0012_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783e7f9d2a7ab1d3430ebPw8LFvO03",
+    "text": "谢谢"
+  },
+  "[休息一下]": {
+    "id": "_xiyou_0014_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782e8b74274895384dbfXA2ikMIc03",
+    "text": "休息一下"
+  },
+  "[发愁]": {
+    "id": "_xiyou_0015_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783ea7f2527a5ed539b6DwWIF24i03",
+    "text": "发愁"
+  },
+  "[我是小恶魔]": {
+    "id": "_xiyou_0017_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783e8b74277d24e307f3Sw4eiK1C03",
+    "text": "我是小恶魔"
+  },
+  "[我是MM]": {
+    "id": "_xiyou_0020_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78348b742724a72f3d9d2GFIC90B03",
+    "text": "我是MM"
+  },
+  "[我是GG]": {
+    "id": "_xiyou_0021_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7837a7f2522d13d903593SgiJkDK03",
+    "text": "我是GG"
+  },
+  "[嘴一个]": {
+    "id": "_xiyou_0022_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78408b7427610a4253bdHttTF2Qc03",
+    "text": "嘴一个"
+  },
+  "[电话联系]": {
+    "id": "_xiyou_0023_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783fa7f2526e5e2b2810wZ8y6VER03",
+    "text": "电话联系"
+  },
+  "[吐舌头]": {
+    "id": "_xiyou_0128_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78348b74277d24e307c7UrJqGUTi03",
+    "text": "吐舌头"
+  },
+  "[强人]": {
+    "id": "_xiyou_0027_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783a6f04947b76f456e7Iu1CFgj303",
+    "text": "强人"
+  },
+  "[菜鸟]": {
+    "id": "_xiyou_0028_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78422786fd66f7c26707hwCl6ueH03",
+    "text": "菜鸟"
+  },
+  "[戴墨镜]": {
+    "id": "_xiyou_0029_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7832a7f2525e36d4112cDrdKg3N703",
+    "text": "戴墨镜"
+  },
+  "[猪]": {
+    "id": "_xiyou_0030_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78382786fd15bbe7f914NLp6RRi103",
+    "text": "猪"
+  },
+  "[注意]": {
+    "id": "_xiyou_0031_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783b6f04947b76f456f3B81FiWf803",
+    "text": "注意"
+  },
+  "[喊话]": {
+    "id": "_xiyou_0047_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78402786fd89c1d6607fLCpyjgch03",
+    "text": "喊话"
+  },
+  "[礼盒]": {
+    "id": "_xiyou_0034_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78376f04942304dac071GMzXIcX503",
+    "text": "礼盒"
+  },
+  "[已经很晚了]": {
+    "id": "_xiyou_0035_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783c8b7427610a4253a6aAZAv44X03",
+    "text": "已经很晚了"
+  },
+  "[做什么]": {
+    "id": "_xiyou_0036_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78437f9d2a661317af71rWaFk9AN03",
+    "text": "做什么"
+  },
+  "[有想法了]": {
+    "id": "_xiyou_0037_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782d7f9d2a661317af1aWlPPKCCe03",
+    "text": "有想法了"
+  },
+  "[我是小天使]": {
+    "id": "_xiyou_0038_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783ba7f2526e5e2b27f2bpgNzVhy03",
+    "text": "我是小天使"
+  },
+  "[问候]": {
+    "id": "_xiyou_0039_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783c7f9d2a7ab1d343052KSVv3q603",
+    "text": "问候"
+  },
+  "[扇扇子]": {
+    "id": "_xiyou_0040_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78408b742724a72f3db8GUobCJKT03",
+    "text": "扇扇子"
+  },
+  "[擦汗]": {
+    "id": "_xiyou_0041_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78346f04944f40802c30v22GHY1p03",
+    "text": "擦汗"
+  },
+  "[高兴]": {
+    "id": "_xiyou_0042_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78418b74277d24e30802kgwCWJdV03",
+    "text": "高兴"
+  },
+  "[唱]": {
+    "id": "_xiyou_0043_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7838a7f25221eaefa26dwbWO6fFW03",
+    "text": "唱"
+  },
+  "[快点]": {
+    "id": "_xiyou_0044_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78408b74277d24e307fei28kCaSB03",
+    "text": "快点"
+  },
+  "[摇尾巴]": {
+    "id": "_xiyou_0045_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782d2786fd0bc07343446MJSW4kd03",
+    "text": "摇尾巴"
+  },
+  "[怎么了？]": {
+    "id": "_xiyou_0046_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782e7f9d2a1f77a50312xfEV5a2T03",
+    "text": "怎么了？"
+  },
+  "[敲你头]": {
+    "id": "_xiyou_0049_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78427f9d2a187ac7bcdbYJcv4I4y03",
+    "text": "敲你头"
+  },
+  "[胜利了]": {
+    "id": "_xiyou_0050_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7834a7f25221eaefa238N9S6D8vV03",
+    "text": "胜利了"
+  },
+  "[叫喊]": {
+    "id": "_xiyou_0052_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783e6f04942304dac08dgcsSwCx903",
+    "text": "叫喊"
+  },
+  "[哭]": {
+    "id": "_xiyou_0053_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783d8b7427610a4253b04M8tSRa903",
+    "text": "哭"
+  },
+  "[翻筋斗]": {
+    "id": "_xiyou_0054_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783b7f9d2a7ab1d342feKu4m6IGJ03",
+    "text": "翻筋斗"
+  },
+  "[干什么]": {
+    "id": "_xiyou_0056_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7832a7f2524d882fee3774tR7I2P03",
+    "text": "干什么"
+  },
+  "[偷笑]": {
+    "id": "_xiyou_0057_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7832a7f2525e36d411366qsmwKFV03",
+    "text": "偷笑"
+  },
+  "[有事M我]": {
+    "id": "_xiyou_0058_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783b8b7427058ec6cbb0egZSJkyu03",
+    "text": "有事M我"
+  },
+  "[嗯]": {
+    "id": "_xiyou_0059_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78326f04943330a5ceca5XsSIFhh03",
+    "text": "嗯"
+  },
+  "[吐]": {
+    "id": "_xiyou_0066_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7832a7f2525e36d411386jhEMbTT03",
+    "text": "吐"
+  },
+  "[太高兴啦]": {
+    "id": "_xiyou_0062_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782b2786fd89c1d66042BUTP3IMP03",
+    "text": "太高兴啦"
+  },
+  "[看我表演]": {
+    "id": "_xiyou_0063_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783c8b7427610a4253aa5Xu2uvyW03",
+    "text": "看我表演"
+  },
+  "[被你吓到了]": {
+    "id": "_xiyou_0064_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782f6f04944f40802c1curaozVyY03",
+    "text": "被你吓到了"
+  },
+  "[兴高采烈]": {
+    "id": "_xiyou_0065_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7835a7f25221eaefa23ePMhRjUre03",
+    "text": "兴高采烈"
+  },
+  "[给你一锤子]": {
+    "id": "_xiyou_0067_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783d7f9d2a1f77a5035eEFiGXD8T03",
+    "text": "给你一锤子"
+  },
+  "[闭嘴]": {
+    "id": "_xiyou_0068_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78422786fd66f7c2670b9kbbZTU703",
+    "text": "闭嘴"
+  },
+  "[睡觉觉]": {
+    "id": "_xiyou_0069_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78422786fd9441f18784GZhBCvM203",
+    "text": "睡觉觉"
+  },
+  "[无可奈何]": {
+    "id": "_xiyou_0070_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782d8b7427610a42536drPTlUMqM03",
+    "text": "无可奈何"
+  },
+  "[我是医生]": {
+    "id": "_xiyou_0071_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783b7f9d2a661317af506i07GBEp03",
+    "text": "我是医生"
+  },
+  "[吃饭咯]": {
+    "id": "_xiyou_0073_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7843a7f252764f1a6b81b6Z2BkNI03",
+    "text": "吃饭咯"
+  },
+  "[我回来了]": {
+    "id": "_xiyou_0074_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78362786fd8582582dfdATm3cOM203",
+    "text": "我回来了"
+  },
+  "[好厉害哦]": {
+    "id": "_xiyou_0076_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783d6f04943330a5cf1aBpQHNbjX03",
+    "text": "好厉害哦"
+  },
+  "[看我怎么收拾你]": {
+    "id": "_xiyou_0077_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78317f9d2a1aa97ecd9dMdfOUJQj03",
+    "text": "看我怎么收拾你"
+  },
+  "[开大餐咯]": {
+    "id": "_xiyou_0078_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78378b7427610a42539dF39b2BHZ03",
+    "text": "开大餐咯"
+  },
+  "[不要啊]": {
+    "id": "_xiyou_0079_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782ba7f2525e36d41102CGRSI2xY03",
+    "text": "不要啊"
+  },
+  "[顶]": {
+    "id": "_xiyou_0080_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78366f04944f40802c38pP81pLiY03",
+    "text": "顶"
+  },
+  "[流口水]": {
+    "id": "_xiyou_0081_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783f2786fd89c1d66079iHJyIy8L03",
+    "text": "流口水"
+  },
+  "[超人来啦]": {
+    "id": "_xiyou_0082_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7839a7f2524d882fee69Us7KpIMD03",
+    "text": "超人来啦"
+  },
+  "[不理你]": {
+    "id": "_xiyou_0083_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7831a7f2522d13d90311OLUH8NWv03",
+    "text": "不理你"
+  },
+  "[Yeah！]": {
+    "id": "_xiyou_0084_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7838a7f25224ef957c2dXYx03LEY03",
+    "text": "Yeah！"
+  },
+  "[加油]": {
+    "id": "_cc_0026_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784e6f04943330a5cf7aiCH3yHfM03",
+    "text": "加油"
+  },
+  "[有信件]": {
+    "id": "_xiyou_0086_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783c8b7427610a4253a8fl3JhFcS03",
+    "text": "有信件"
+  },
+  "[亲一个]": {
+    "id": "_xiyou_0088_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78432786fd18e75e33d7tNEJuvtP03",
+    "text": "亲一个"
+  },
+  "[美女啊]": {
+    "id": "_xiyou_0089_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7831a7f2527a5ed53914ADAETJPv03",
+    "text": "美女啊"
+  },
+  "[恩爱]": {
+    "id": "_xiyou_0090_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783aa7f2527a5ed53986rco1Mz8E03",
+    "text": "恩爱"
+  },
+  "[流鼻血]": {
+    "id": "_xiyou_0091_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7834a7f2527a5ed539408BhZ3qKE03",
+    "text": "流鼻血"
+  },
+  "[强]": {
+    "id": "_xiyou_0092_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78376f04941031d70ef2B3QMlXEg03",
+    "text": "强"
+  },
+  "[我醉啦]": {
+    "id": "_xiyou_0093_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78406f04947b76f45717GWhwy7Wr03",
+    "text": "我醉啦"
+  },
+  "[送花给你！]": {
+    "id": "_xiyou_0094_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78418b7427610a4253cdGHEUcKDi03",
+    "text": "送花给你！"
+  },
+  "[写信中…]": {
+    "id": "_xiyou_0095_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78352786fd18e75e339atbbfqFcE03",
+    "text": "写信中…"
+  },
+  "[是他干的]": {
+    "id": "_xiyou_0096_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7836a7f252764f1a6b266cckuxPQ03",
+    "text": "是他干的"
+  },
+  "[快来人啊]": {
+    "id": "_xiyou_0097_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78318b74275461177140afhkUmQj03",
+    "text": "快来人啊"
+  },
+  "[好好高兴]": {
+    "id": "_xiyou_0098_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78377f9d2a1aa97ecdc4Bsw0bFp103",
+    "text": "好好高兴"
+  },
+  "[不见不散]": {
+    "id": "_xiyou_0099_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78397f9d2a1f77a5034eltFbQfO203",
+    "text": "不见不散"
+  },
+  "[阿弥佗佛]": {
+    "id": "_xiyou_0100_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782f6f04947b76f456a83pGAxNQX03",
+    "text": "阿弥佗佛"
+  },
+  "[好温馨啊]": {
+    "id": "_xiyou_0101_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78412786fd4530170e78lsY0yhjB03",
+    "text": "好温馨啊"
+  },
+  "[闪先]": {
+    "id": "_xiyou_0102_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782c2786fd15bbe7f8bfpwESwOZL03",
+    "text": "闪先"
+  },
+  "[只有我最摇摆]": {
+    "id": "_xiyou_0103_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78342786fd46250dccb6jpXmYTup03",
+    "text": "只有我最摇摆"
+  },
+  "[见鬼啦]": {
+    "id": "_xiyou_0104_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78352786fd18e75e339edHjkEcPb03",
+    "text": "见鬼啦"
+  },
+  "[捏脸蛋]": {
+    "id": "_xiyou_0106_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7841a7f252546de6e172QwRIg5YS03",
+    "text": "捏脸蛋"
+  },
+  "[悲剧]": {
+    "id": "_xiyou_0107_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78396f04947b76f456e58TclpC7t03",
+    "text": "悲剧"
+  },
+  "[拍马屁]": {
+    "id": "_xiyou_0108_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782d7f9d2a661317af1cX6QXgQcw03",
+    "text": "拍马屁"
+  },
+  "[大汗]": {
+    "id": "_xiyou_0109_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78437f9d2a1aa97ecdf5luL32uYX03",
+    "text": "大汗"
+  },
+  "[掀桌子]": {
+    "id": "_xiyou_0110_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783a8b74277d24e307e3iaNT49sW03",
+    "text": "掀桌子"
+  },
+  "[撞墙]": {
+    "id": "_cc_0004_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78488b7427610a4253e596WjU5Wf03",
+    "text": "撞墙"
+  },
+  "[囧]": {
+    "id": "_xiyou_0112_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78382786fd89c1d66067kEgLjdbF03",
+    "text": "囧"
+  },
+  "[捏脸脸]": {
+    "id": "_xiyou_0113_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782c8b7427610a4253697QRjFdRf03",
+    "text": "捏脸脸"
+  },
+  "[抱抱]": {
+    "id": "_cc_0033_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784a6f04941031d70f221EaIN5Ax03",
+    "text": "抱抱"
+  },
+  "[你在干嘛？！]": {
+    "id": "_xiyou_0115_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783e6f04943330a5cf1c4F1ZSi6L03",
+    "text": "你在干嘛？！"
+  },
+  "[演讲]": {
+    "id": "_xiyou_0116_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78317f9d2a7ab1d342d0q1YEJd8303",
+    "text": "演讲"
+  },
+  "[变猪猪]": {
+    "id": "_xiyou_0117_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78388b74277d24e307d8V0midIj603",
+    "text": "变猪猪"
+  },
+  "[乐极生悲]": {
+    "id": "_xiyou_0118_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782f8b7427610a425373TF9PWGGo03",
+    "text": "乐极生悲"
+  },
+  "[捶地]": {
+    "id": "_xiyou_0119_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78338b7427610a425387vb86aOjD03",
+    "text": "捶地"
+  },
+  "[飘过]": {
+    "id": "_xiyou_0120_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78406f04943330a5cf2aW0RvI75P03",
+    "text": "飘过"
+  },
+  "[恭喜发财]": {
+    "id": "_xiyou_0121_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78356f04943330a5ced4rJ3YhZ7r03",
+    "text": "恭喜发财"
+  },
+  "[虎虎生威]": {
+    "id": "_xiyou_0122_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78327f9d2a256234bae6WAla9Iyw03",
+    "text": "虎虎生威"
+  },
+  "[不屑]": {
+    "id": "_xiyou_0123_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782c6f04944f40802c07ridvFTxA03",
+    "text": "不屑"
+  },
+  "[中箭]": {
+    "id": "_xiyou_0124_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78386f04946f74a7fd7cALNWi6B803",
+    "text": "中箭"
+  },
+  "[亲近]": {
+    "id": "_xiyou_0125_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78368b7427058ec6cb96SfC6UhqL03",
+    "text": "亲近"
+  },
+  "[再见]": {
+    "id": "_cc_0012_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78527f9d2a661317af99OEu0ZmDi03",
+    "text": "再见"
+  },
+  "[吓一条]": {
+    "id": "_xiyou_0129_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7833a7f2522d13d90327eHH9s3UE03",
+    "text": "吓一条"
+  },
+  "[爱老虎油]": {
+    "id": "_xiyou_0130_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783ba7f2527a5ed5398amCvxUlEx03",
+    "text": "爱老虎油"
+  },
+  "[无聊]": {
+    "id": "_xiyou_0131_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7836a7f2522d13d90347D7RKVqXZ03",
+    "text": "无聊"
+  },
+  "[有压力]": {
+    "id": "_xiyou_0133_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78422786fd4530170e82MeMGf3qd03",
+    "text": "有压力"
+  },
+  "[浮云]": {
+    "id": "_xiyou_0134_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782ca7f2525e36d41108B3G9mXBN03",
+    "text": "浮云"
+  },
+  "[神马]": {
+    "id": "_xiyou_0135_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783da7f2522d13d90391Ux5kBRgh03",
+    "text": "神马"
+  },
+  "[给力]": {
+    "id": "_xiyou_0136_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783fa7f2525e36d41196Aup4k2Rq03",
+    "text": "给力"
+  },
+  "[麻匪]": {
+    "id": "_xiyou_0138_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78397f9d2a256234bb060UmFTJQM03",
+    "text": "麻匪"
+  },
+  "[可爱兔]": {
+    "id": "_xiyou_0139_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783a6f04947b76f456edFyjwu8oO03",
+    "text": "可爱兔"
+  },
+  "[感动兔]": {
+    "id": "_xiyou_0140_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78362786fd4530170e39KZzb8fva03",
+    "text": "感动兔"
+  },
+  "[拍死]": {
+    "id": "_xiyou_0141_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783f7f9d2a4f1e34ba5dFVCiCsBe03",
+    "text": "拍死"
+  },
+  "[鬼脸]": {
+    "id": "_xiyou_0152_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78416f04944f40802c69aaq78LKF03",
+    "text": "鬼脸"
+  },
+  "[不信]": {
+    "id": "_xiyou_0153_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783c8b74277cde3341c4wODHthsN03",
+    "text": "不信"
+  },
+  "[吃货]": {
+    "id": "_xiyou_0154_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7835a7f25238ac60a957QTf7Pwux03",
+    "text": "吃货"
+  },
+  "[开饭啦]": {
+    "id": "_xiyou_0155_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7838a7f2523c04112258uNSA4LPm03",
+    "text": "开饭啦"
+  },
+  "[放空]": {
+    "id": "_xiyou_0157_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78337f9d2a661317af36w63Wv8FY03",
+    "text": "放空"
+  },
+  "[骂]": {
+    "id": "_xiyou_0158_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783ba7f2526e5e2b27f8Ndo88gMi03",
+    "text": "骂"
+  },
+  "[卖萌]": {
+    "id": "_xiyou_0159_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783a2786fd89c1d6606d0TywgO1G03",
+    "text": "卖萌"
+  },
+  "[喷血]": {
+    "id": "_xiyou_0160_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783e6f04947b76f4570b5H4DDRWW03",
+    "text": "喷血"
+  },
+  "[装傻]": {
+    "id": "_xiyou_0161_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782ba7f252764f1a6abcXsMAXqb503",
+    "text": "装傻"
+  },
+  "[哼]": {
+    "id": "_xiyou_0162_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7832a7f2522d13d90313lLUKLW6h03",
+    "text": "哼"
+  },
+  "[推倒]": {
+    "id": "_xiyou_0163_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78427f9d2a4f1e34ba73QxXiv7Ac03",
+    "text": "推倒"
+  },
+  "[挥手绢]": {
+    "id": "_xiyou_0165_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782e8b742724a72f3d8aScMIZVWM03",
+    "text": "挥手绢"
+  },
+  "[我信了]": {
+    "id": "_xiyou_0166_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782e8b74274895384dc1Bfkr5Srr03",
+    "text": "我信了"
+  },
+  "[啃萝卜]": {
+    "id": "_xiyou_0167_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783d2786fd46250dccd2o22NrEBK03",
+    "text": "啃萝卜"
+  },
+  "[吃惊]": {
+    "id": "_xiyou_0168_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782e2786fd46250dcca4mPpgihpb03",
+    "text": "吃惊"
+  },
+  "[1秒变格格]": {
+    "id": "_xiyou_0169_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782d8b7427058ec6cb5dQvY1tEFx03",
+    "text": "1秒变格格"
+  },
+  "[耳光]": {
+    "id": "_xiyou_0170_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782e8b7427058ec6cb68ZlumIMoO03",
+    "text": "耳光"
+  },
+  "[171]": {
+    "id": "_xiyou_0171_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c783a6f04943330a5cefdGLkwefPi03",
+    "text": "171"
+  },
+  "[172]": {
+    "id": "_xiyou_0172_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782e7f9d2a1f77a50308SFHKWdXI03",
+    "text": "172"
+  },
+  "[173]": {
+    "id": "_xiyou_0173_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782d8b74277cde33419befXkqAOm03",
+    "text": "173"
+  },
+  "[174]": {
+    "id": "_xiyou_0174_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782f8b7427058ec6cb6cb4iMqu5y03",
+    "text": "174"
+  },
+  "[175]": {
+    "id": "_xiyou_0175_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78382786fd9441f1877athPSrIJE03",
+    "text": "175"
+  },
+  "[176]": {
+    "id": "_xiyou_0176_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78376f04942304dac0751INlNS3Z03",
+    "text": "176"
+  },
+  "[177]": {
+    "id": "_xiyou_0177_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c782e2786fd32489f7752lXEo0afB03",
+    "text": "177"
+  },
+  "[178]": {
+    "id": "_xiyou_0178_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7844a7f25224ef957c42Vcl8wLWX03",
+    "text": "178"
+  },
+  "[脱裤子]": {
+    "id": "_cc_0001_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7849a7f2526e5e2b285diBwvGv1l03",
+    "text": "脱裤子"
+  },
+  "[甩手绢]": {
+    "id": "_cc_0002_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784c2786fd89c1d660a19icIIJw303",
+    "text": "甩手绢"
+  },
+  "[吐血]": {
+    "id": "_cc_0003_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78516f0494034aa2cfd4oqTxf3NF03",
+    "text": "吐血"
+  },
+  "[奔跑]": {
+    "id": "_cc_0005_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78507f9d2a4f1e34baacsxb3QyhR03",
+    "text": "奔跑"
+  },
+  "[膜拜]": {
+    "id": "_cc_0006_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784d2786fd32489f77caDz4MMLbS03",
+    "text": "膜拜"
+  },
+  "[抱大腿]": {
+    "id": "_cc_0007_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7852a7f2522d13d9046as0XV9D7G03",
+    "text": "抱大腿"
+  },
+  "[摇滚1]": {
+    "id": "_cc_0009_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784d7f9d2a256234bb58UH1siEtM03",
+    "text": "摇滚1"
+  },
+  "[泪奔]": {
+    "id": "_cc_0010_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78478b74275e8ca9a3fb0eHTzzRS03",
+    "text": "泪奔"
+  },
+  "[读书]": {
+    "id": "_cc_0011_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784a7f9d2a1f77a503afYibz6W5o03",
+    "text": "读书"
+  },
+  "[绅士]": {
+    "id": "_cc_0014_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78487f9d2a7ab1d343506OQFoxAl03",
+    "text": "绅士"
+  },
+  "[撞玻璃]": {
+    "id": "_cc_0015_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784f6f04946f74a7fdefO81ipzCX03",
+    "text": "撞玻璃"
+  },
+  "[亲吻]": {
+    "id": "_cc_0016_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784b6f04942304dac0beiBVh4Ifc03",
+    "text": "亲吻"
+  },
+  "[小苹果]": {
+    "id": "_cc_0017_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784da7f2526e5e2b2896iwdPHuoj03",
+    "text": "小苹果"
+  },
+  "[惊吓]": {
+    "id": "_cc_0018_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78486f04943330a5cf56SgMTGu7S03",
+    "text": "惊吓"
+  },
+  "[吹泡泡]": {
+    "id": "_cc_0019_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784e8b7427610a42540eKQBzgMUx03",
+    "text": "吹泡泡"
+  },
+  "[沐浴]": {
+    "id": "_cc_0021_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784f6f04941031d70f2ailBALyOt03",
+    "text": "沐浴"
+  },
+  "[找抽]": {
+    "id": "_cc_0022_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784ba7f25247552fc39dIPtHLD5103",
+    "text": "找抽"
+  },
+  "[打雷]": {
+    "id": "_cc_0023_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7849a7f2525e36d411ceHvJKwTzo03",
+    "text": "打雷"
+  },
+  "[冰冻]": {
+    "id": "_cc_0024_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784aa7f252546de6e19aGLstf9cV03",
+    "text": "冰冻"
+  },
+  "[放屁]": {
+    "id": "_cc_0025_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784e2786fd32489f77d0M04gQdZr03",
+    "text": "放屁"
+  },
+  "[美女]": {
+    "id": "_cc_0028_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784a2786fd4530170ea8iz3AoJFo03",
+    "text": "美女"
+  },
+  "[趴墙]": {
+    "id": "_cc_0029_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78457f9d2a1aa97ece09BXFbBEbd03",
+    "text": "趴墙"
+  },
+  "[洗澡]": {
+    "id": "_cc_0030_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784ca7f2522d13d90429dUdU729z03",
+    "text": "洗澡"
+  },
+  "[2333]": {
+    "id": "_cc_0031_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78457f9d2a60acd186b4rg3HZF1b03",
+    "text": "2333"
+  },
+  "[6666]": {
+    "id": "_cc_0032_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7846a7f252764f1a6b98X34YCcvB03",
+    "text": "6666"
+  },
+  "[鄙视]": {
+    "id": "_cc_0034_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784f6f04947b76f45766YH0iHTRR03",
+    "text": "鄙视"
+  },
+  "[财富]": {
+    "id": "_cc_0035_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78476f049454fca30fadVWQNqvjJ03",
+    "text": "财富"
+  },
+  "[耻笑]": {
+    "id": "_cc_0036_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78526f04943330a5cf84AeTKQMiJ03",
+    "text": "耻笑"
+  },
+  "[打]": {
+    "id": "_cc_0037_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78498b7427610a4253e9buZXDm7i03",
+    "text": "打"
+  },
+  "[等开餐]": {
+    "id": "_cc_0038_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78468b74277fbe818882qOyKTHax03",
+    "text": "等开餐"
+  },
+  "[跪求]": {
+    "id": "_cc_0039_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7845a7f2525e36d411abkVCUvu8j03",
+    "text": "跪求"
+  },
+  "[绝望]": {
+    "id": "_cc_0040_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7848a7f2522d13d90407AZeQvN0C03",
+    "text": "绝望"
+  },
+  "[开枪]": {
+    "id": "_cc_0041_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7845a7f2525e36d411adtmDPY9Fr03",
+    "text": "开枪"
+  },
+  "[求包养]": {
+    "id": "_cc_0043_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78468b7427058ec6cbe5Iq5mdlu003",
+    "text": "求包养"
+  },
+  "[数钱]": {
+    "id": "_cc_0044_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78477f9d2a256234bb397LueVTDD03",
+    "text": "数钱"
+  },
+  "[送糖]": {
+    "id": "_cc_0045_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78518b742754611771c31owsswVv03",
+    "text": "送糖"
+  },
+  "[摇滚2]": {
+    "id": "_cc_0046_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78467f9d2a7ab1d3433b25wHr5NV03",
+    "text": "摇滚2"
+  },
+  "[赞]": {
+    "id": "_cc_0048_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78448b74277d24e30818jp7770sF03",
+    "text": "赞"
+  },
+  "[么么哒]": {
+    "id": "_cc_0049_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784d6f04947b76f4575d7DTfrriL03",
+    "text": "么么哒"
+  },
+  "[哈哈哈哈]": {
+    "id": "_cc_0050_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78472786fd15bbe7f95ffjBs3KaY03",
+    "text": "哈哈哈哈"
+  },
+  "[？？？]": {
+    "id": "_cc_0051_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784fa7f25224ef957c57vlViwfvX03",
+    "text": "？？？"
+  },
+  "[大猪蹄子]": {
+    "id": "_cc_0052_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784ca7f252546de6e1a1r5uXggpU03",
+    "text": "大猪蹄子"
+  },
+  "[OK]": {
+    "id": "_cc_0053_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78492786fd8582582e44mF86XwGi03",
+    "text": "OK"
+  },
+  "[晚安]": {
+    "id": "_cc_0054_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78448b7427058ec6cbd7GKuuF90E03",
+    "text": "晚安"
+  },
+  "[抱大腿儿]": {
+    "id": "_cc_0055_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784d8b74277fbe8188aaewoVqTCh03",
+    "text": "抱大腿儿"
+  },
+  "[道路千万条]": {
+    "id": "_cc_0056_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7850a7f2527a5ed53a57fMGEW4Il03",
+    "text": "道路千万条"
+  },
+  "[noooo]": {
+    "id": "_cc_0057_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78477f9d2a1f77a5039afDuPoKMV03",
+    "text": "noooo"
+  },
+  "[爱滴魔力转圈圈]": {
+    "id": "_cc_0058_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784a2786fd4530170ea2kjmXJqMN03",
+    "text": "爱滴魔力转圈圈"
+  },
+  "[盘他]": {
+    "id": "_cc_0059_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784b8b74277fbe81889eU71beTtg03",
+    "text": "盘他"
+  },
+  "[杠精]": {
+    "id": "_cc_0060_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78486f04943330a5cf58K0JuU5Rg03",
+    "text": "杠精"
+  },
+  "[我超凶的]": {
+    "id": "_cc_0061_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78478b74277cde3341e8AA5vx4sX03",
+    "text": "我超凶的"
+  },
+  "[因吹斯汀]": {
+    "id": "_cc_0062_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784e7f9d2a60acd186beTsx4BSgA03",
+    "text": "因吹斯汀"
+  },
+  "[吓死宝宝了]": {
+    "id": "_cc_0063_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784e7f9d2a60acd186bcUUNiH7zL03",
+    "text": "吓死宝宝了"
+  },
+  "[哇]": {
+    "id": "_cc_0064_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784b7f9d2a661317af87gH8JACvF03",
+    "text": "哇"
+  },
+  "[嗯嗯]": {
+    "id": "_cc_0065_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78508b742754611771bbdFtYBzU903",
+    "text": "嗯嗯"
+  },
+  "[啥都没复习]": {
+    "id": "_cc_0066_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784e7f9d2a256234bb60sibmDqPN03",
+    "text": "啥都没复习"
+  },
+  "[凉凉]": {
+    "id": "_cc_0067_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78506f04941031d70f2cZzS9lcWu03",
+    "text": "凉凉"
+  },
+  "[暗中观察]": {
+    "id": "_cc_0068_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784f6f04942304dac0d2Qd8e4Uds03",
+    "text": "暗中观察"
+  },
+  "[强颜欢笑]": {
+    "id": "_cc_0069_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78487f9d2a2cece8c1e1oURcti0B03",
+    "text": "强颜欢笑"
+  },
+  "[瑟瑟发抖]": {
+    "id": "_cc_0070_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784a2786fd46250dcce38tSdfdic03",
+    "text": "瑟瑟发抖"
+  },
+  "[是谁的心啊]": {
+    "id": "_cc_0071_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78507f9d2a661317af92xyfMLhx603",
+    "text": "是谁的心啊"
+  },
+  "[减肥]": {
+    "id": "_cc_0072_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784c7f9d2a1aa97ece1ejdkXlh2X03",
+    "text": "减肥"
+  },
+  "[谢谢老板]": {
+    "id": "_cc_0073_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78517f9d2a7ab1d34384bPESQv5T03",
+    "text": "谢谢老板"
+  },
+  "[共抗疫情]": {
+    "id": "_cc_0074_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78468b74277fbe818887eLYw6jhx03",
+    "text": "共抗疫情"
+  },
+  "[武汉加油]": {
+    "id": "_cc_0075_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c784d8b7427610a425408vFcgziB503",
+    "text": "武汉加油"
+  },
+  "[保持距离]": {
+    "id": "_cc_0076_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78512786fd15bbe7f9900hCGIp9K03",
+    "text": "保持距离"
+  },
+  "[拒绝野味]": {
+    "id": "_cc_0077_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c78492786fd32489f77beFExmkaGm03",
+    "text": "拒绝野味"
+  },
+  "[想出去玩]": {
+    "id": "_cc_0078_",
+    "pic": "http://cc.fp.ps.netease.com/file/611c7850a7f2522d13d90451SoRibx6K03",
+    "text": "想出去玩"
+  },
+  "[1f44c]": {
+    "id": "1f44c",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9b0c664ed508aa97f01c6UZx27m03",
+    "text": "1f44c"
+  },
+  "[1f44d]": {
+    "id": "1f44d",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9b0c664ed97dada8a6bTirjiEx903",
+    "text": "1f44d"
+  },
+  "[1f44f]": {
+    "id": "1f44f",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9b0bb290f47be486925cjeUmKFI03",
+    "text": "1f44f"
+  },
+  "[1f450]": {
+    "id": "1f450",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9b0c664ed97dada8a6d4cCuwllw03",
+    "text": "1f450"
+  },
+  "[1f479]": {
+    "id": "1f479",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9ad9d15dc45dd00b94eJTmiiPb203",
+    "text": "1f479"
+  },
+  "[1f47a]": {
+    "id": "1f47a",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9adeace070621b7b56fis7dVbxh03",
+    "text": "1f47a"
+  },
+  "[1f47b]": {
+    "id": "1f47b",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9ad9d15dc7ed6321e517G2PziQe03",
+    "text": "1f47b"
+  },
+  "[1f47d]": {
+    "id": "1f47d",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9ad2d3a5436f317bdf5AdjaBPGE03",
+    "text": "1f47d"
+  },
+  "[1f47f]": {
+    "id": "1f47f",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9accbe51b64697dbae4JTY5usCV03",
+    "text": "1f47f"
+  },
+  "[1f480]": {
+    "id": "1f480",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9acc664ed454b6fbfb6lLZ0WNPU03",
+    "text": "1f480"
+  },
+  "[1f48b]": {
+    "id": "1f48b",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9adcbe51b64697dbae6iVrS7TPh03",
+    "text": "1f48b"
+  },
+  "[1f48c]": {
+    "id": "1f48c",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9ae9d15dc407f8f26b8q89uGPu703",
+    "text": "1f48c"
+  },
+  "[1f493]": {
+    "id": "1f493",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9ae338c8e343367d610w3uQy4XB03",
+    "text": "1f493"
+  },
+  "[1f494]": {
+    "id": "1f494",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9afcbe51b5f397da9b304hYF1OQ03",
+    "text": "1f494"
+  },
+  "[1f495]": {
+    "id": "1f495",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9aebb290f4051bfc90cy2AQbi1u03",
+    "text": "1f495"
+  },
+  "[1f496]": {
+    "id": "1f496",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9aebb290f792369f150ZFzDQ4fh03",
+    "text": "1f496"
+  },
+  "[1f497]": {
+    "id": "1f497",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9ae9d15dc62e99aefa2Ww7do8Bg03",
+    "text": "1f497"
+  },
+  "[1f498]": {
+    "id": "1f498",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9ae9d15dc45dd00b9504NcsE7ud03",
+    "text": "1f498"
+  },
+  "[1f499]": {
+    "id": "1f499",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9b0a1a6f468ec7a8003vSmmEioO03",
+    "text": "1f499"
+  },
+  "[1f49a]": {
+    "id": "1f49a",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9afbb290f3b46b9351bodgZmsP903",
+    "text": "1f49a"
+  },
+  "[1f49b]": {
+    "id": "1f49b",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9afa1a6f40dd337d28fI1qURlRB03",
+    "text": "1f49b"
+  },
+  "[1f49c]": {
+    "id": "1f49c",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9b02d3a544834da80afjoqzPJSv03",
+    "text": "1f49c"
+  },
+  "[1f49d]": {
+    "id": "1f49d",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9ae2d3a549144116a039Vg9swDb03",
+    "text": "1f49d"
+  },
+  "[1f49e]": {
+    "id": "1f49e",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9ae2d3a549144116a05PC9dDHhs03",
+    "text": "1f49e"
+  },
+  "[1f49f]": {
+    "id": "1f49f",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9afbb290f4381ad2bc5HdaamBpZ03",
+    "text": "1f49f"
+  },
+  "[1f4a9]": {
+    "id": "1f4a9",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9acbb290f792369f14efs0iaFJZ03",
+    "text": "1f4a9"
+  },
+  "[1f600]": {
+    "id": "1f600",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a1c664ed508aa97ef9rQAXls9i03",
+    "text": "1f600"
+  },
+  "[1f601]": {
+    "id": "1f601",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a1338c8e29b27c91c4iDu5xjag03",
+    "text": "1f601"
+  },
+  "[1f602]": {
+    "id": "1f602",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a2eace07835855f275OgebkyZq03",
+    "text": "1f602"
+  },
+  "[1f603]": {
+    "id": "1f603",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a19d15dc6d0f3a0a31pp3cOR7103",
+    "text": "1f603"
+  },
+  "[1f604]": {
+    "id": "1f604",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a1bb290f5b836f423bHoKLk7Dv03",
+    "text": "1f604"
+  },
+  "[1f605]": {
+    "id": "1f605",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a1338c8e0925fd5817d1U9Glhx03",
+    "text": "1f605"
+  },
+  "[1f606]": {
+    "id": "1f606",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a1338c8e8bf585c3287zZDdkb203",
+    "text": "1f606"
+  },
+  "[1f607]": {
+    "id": "1f607",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a22d3a544834da80aaFQj3Qg8U03",
+    "text": "1f607"
+  },
+  "[1f608]": {
+    "id": "1f608",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9aceace07592c2a0123pb4oDduR03",
+    "text": "1f608"
+  },
+  "[1f609]": {
+    "id": "1f609",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a2338c8e2444f5381eDiW1OwZO03",
+    "text": "1f609"
+  },
+  "[1f60a]": {
+    "id": "1f60a",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a22d3a5454e30e6efeefSONTzF03",
+    "text": "1f60a"
+  },
+  "[1f60b]": {
+    "id": "1f60b",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a39d15dc12bbf26784pyMdJb6d03",
+    "text": "1f60b"
+  },
+  "[1f60c]": {
+    "id": "1f60c",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a6338c8e4c26d5efe4jB0xpXr903",
+    "text": "1f60c"
+  },
+  "[1f60d]": {
+    "id": "1f60d",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a2a1a6f40dd337d27eI5MO2cm803",
+    "text": "1f60d"
+  },
+  "[1f60e]": {
+    "id": "1f60e",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a8338c8e0925fd582070NuE3qB03",
+    "text": "1f60e"
+  },
+  "[1f60f]": {
+    "id": "1f60f",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a5a1a6f42aa820bf4eimKquxvu03",
+    "text": "1f60f"
+  },
+  "[1f610]": {
+    "id": "1f610",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a5a1a6f434f1f9056bec1TK5Go03",
+    "text": "1f610"
+  },
+  "[1f611]": {
+    "id": "1f611",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a5338c8e2444f5382401gDRC8303",
+    "text": "1f611"
+  },
+  "[1f612]": {
+    "id": "1f612",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a5c664ed7481eae66epUuSquCa03",
+    "text": "1f612"
+  },
+  "[1f613]": {
+    "id": "1f613",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9abbb290f4051bfc9071iYbX6Yi03",
+    "text": "1f613"
+  },
+  "[1f614]": {
+    "id": "1f614",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a69d15dc45dd00b94cx6t0b65h03",
+    "text": "1f614"
+  },
+  "[1f615]": {
+    "id": "1f615",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a9bb290f4b10a85ff2tu0bzSpt03",
+    "text": "1f615"
+  },
+  "[1f616]": {
+    "id": "1f616",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9abcbe51b5f397da9afqIHmm3GN03",
+    "text": "1f616"
+  },
+  "[1f617]": {
+    "id": "1f617",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a3eace07758189310bTiyCf7A303",
+    "text": "1f617"
+  },
+  "[1f618]": {
+    "id": "1f618",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a3bb290f47be48691fzHjLpevO03",
+    "text": "1f618"
+  },
+  "[1f619]": {
+    "id": "1f619",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a32d3a5454e30e6f00aAujHVW403",
+    "text": "1f619"
+  },
+  "[1f61a]": {
+    "id": "1f61a",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a3eace07795ccfdcf9i18H1o6903",
+    "text": "1f61a"
+  },
+  "[1f61b]": {
+    "id": "1f61b",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a4a1a6f468ec7a7ff94wzR6QFw03",
+    "text": "1f61b"
+  },
+  "[1f61c]": {
+    "id": "1f61c",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a4c664ed9578230e49Gz9hPh3f03",
+    "text": "1f61c"
+  },
+  "[1f61d]": {
+    "id": "1f61d",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a4338c8e2444f53820yufHbN8h03",
+    "text": "1f61d"
+  },
+  "[1f61e]": {
+    "id": "1f61e",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9ab2d3a549144116a01s2g53teF03",
+    "text": "1f61e"
+  },
+  "[1f61f]": {
+    "id": "1f61f",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a9bb290f792369f147lEi66t5603",
+    "text": "1f61f"
+  },
+  "[1f620]": {
+    "id": "1f620",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9acc664ed550cd95f12PvSKAkth03",
+    "text": "1f620"
+  },
+  "[1f621]": {
+    "id": "1f621",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9abcbe51b6b7b9bbbd2pGax1mhN03",
+    "text": "1f621"
+  },
+  "[1f622]": {
+    "id": "1f622",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9aaeace07324949c957zEAcCmRY03",
+    "text": "1f622"
+  },
+  "[1f623]": {
+    "id": "1f623",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9ab2d3a5446f2f853dfyNU466h003",
+    "text": "1f623"
+  },
+  "[1f624]": {
+    "id": "1f624",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9ab9d15dc1ea3d51637A0qpdhhg03",
+    "text": "1f624"
+  },
+  "[1f625]": {
+    "id": "1f625",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9aac664ed9f2e8835396qpJjtU803",
+    "text": "1f625"
+  },
+  "[1f626]": {
+    "id": "1f626",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9aac664ed9578230e4boQwlwa4Y03",
+    "text": "1f626"
+  },
+  "[1f627]": {
+    "id": "1f627",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9aaeace07592c2a011dG5TTljVo03",
+    "text": "1f627"
+  },
+  "[1f628]": {
+    "id": "1f628",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9aacbe51b66c071c69b0EbeCdEC03",
+    "text": "1f628"
+  },
+  "[1f629]": {
+    "id": "1f629",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9abeace07324949c959V81eFsxU03",
+    "text": "1f629"
+  },
+  "[1f62a]": {
+    "id": "1f62a",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a6a1a6f40dd337d2857OqpgSY803",
+    "text": "1f62a"
+  },
+  "[1f62b]": {
+    "id": "1f62b",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9ab338c8e8bf585c32a9wrPmJ4B03",
+    "text": "1f62b"
+  },
+  "[1f62c]": {
+    "id": "1f62c",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a6eace07592c2a0119whU6H92F03",
+    "text": "1f62c"
+  },
+  "[1f62d]": {
+    "id": "1f62d",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9aa9d15dc05d738ad4fWm5aSzQi03",
+    "text": "1f62d"
+  },
+  "[1f62e]": {
+    "id": "1f62e",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a99d15dc12bbf26786shKTEoam03",
+    "text": "1f62e"
+  },
+  "[1f62e-200d-1f4a8]": {
+    "id": "1f62e-200d-1f4a8",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a6bb290f68d2712ca86Y7etuO103",
+    "text": "1f62e-200d-1f4a8"
+  },
+  "[1f62f]": {
+    "id": "1f62f",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a9c664ed5c7daf0f85QmtOTcpR03",
+    "text": "1f62f"
+  },
+  "[1f630]": {
+    "id": "1f630",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9aabb290f68d2712caaLg9DjUi103",
+    "text": "1f630"
+  },
+  "[1f631]": {
+    "id": "1f631",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9aaeace07592c2a011frHlCeT4403",
+    "text": "1f631"
+  },
+  "[1f632]": {
+    "id": "1f632",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a9338c8e3554abbd0dzYYUUsom03",
+    "text": "1f632"
+  },
+  "[1f633]": {
+    "id": "1f633",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a9eace07835855f277IiFigmIl03",
+    "text": "1f633"
+  },
+  "[1f634]": {
+    "id": "1f634",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a6c664ed490b2d32aeSL5VmuWU03",
+    "text": "1f634"
+  },
+  "[1f635]": {
+    "id": "1f635",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a89d15dc087a06428fYEvNcc4Q03",
+    "text": "1f635"
+  },
+  "[1f635-200d-1f4ab]": {
+    "id": "1f635-200d-1f4ab",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a8a1a6f45c28f1a780TBvp6NxQ03",
+    "text": "1f635-200d-1f4ab"
+  },
+  "[1f636]": {
+    "id": "1f636",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a5bb290f5b836f423dFfDdPYDg03",
+    "text": "1f636"
+  },
+  "[1f636-200d-1f32b-fe0f]": {
+    "id": "1f636-200d-1f32b-fe0f",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a5cbe51b1a3dafdabbH4hNtbvf03",
+    "text": "1f636-200d-1f32b-fe0f"
+  },
+  "[1f637]": {
+    "id": "1f637",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a7bb290f418a2022c22O7yAmms03",
+    "text": "1f637"
+  },
+  "[1f641]": {
+    "id": "1f641",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a92d3a54552aa61ac38UiPUi1U03",
+    "text": "1f641"
+  },
+  "[1f642]": {
+    "id": "1f642",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a29d15dc04ddc785fb95t4PAyq03",
+    "text": "1f642"
+  },
+  "[1f643]": {
+    "id": "1f643",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a2338c8e30f27efe69OLJxcmBM03",
+    "text": "1f643"
+  },
+  "[1f644]": {
+    "id": "1f644",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a6338c8e343367d60eO5vmgSPb03",
+    "text": "1f644"
+  },
+  "[1f648]": {
+    "id": "1f648",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9ada1a6f469d3f1caeb2UIUolbV03",
+    "text": "1f648"
+  },
+  "[1f649]": {
+    "id": "1f649",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9ada1a6f468ec7a80013FWuBejc03",
+    "text": "1f649"
+  },
+  "[1f64a]": {
+    "id": "1f64a",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9ada1a6f436317a01c7iT1C4D6M03",
+    "text": "1f64a"
+  },
+  "[1f64c]": {
+    "id": "1f64c",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9b0bb290f792369f153CFGpuEFV03",
+    "text": "1f64c"
+  },
+  "[1f64f]": {
+    "id": "1f64f",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9b1bb290f4b10a85ff4M3Dky1AS03",
+    "text": "1f64f"
+  },
+  "[1f90e]": {
+    "id": "1f90e",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9b0a1a6f42aa820bf54gNLgqPa503",
+    "text": "1f90e"
+  },
+  "[1f910]": {
+    "id": "1f910",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a5eace076281c15167N0WlH4Yj03",
+    "text": "1f910"
+  },
+  "[1f911]": {
+    "id": "1f911",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a4bb290f4051bfc901Mbmrifz903",
+    "text": "1f911"
+  },
+  "[1f912]": {
+    "id": "1f912",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a79d15dc3e2464b554iXCQkSMD03",
+    "text": "1f912"
+  },
+  "[1f913]": {
+    "id": "1f913",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a82d3a544834da80acpElXbsNI03",
+    "text": "1f913"
+  },
+  "[1f914]": {
+    "id": "1f914",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a4338c8e4c26d5efe1edxMUXCi03",
+    "text": "1f914"
+  },
+  "[1f915]": {
+    "id": "1f915",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a7a1a6f4204a694228loTaCv0u03",
+    "text": "1f915"
+  },
+  "[1f917]": {
+    "id": "1f917",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a4bb290f4051bfc903M4zvRkae03",
+    "text": "1f917"
+  },
+  "[1f91d]": {
+    "id": "1f91d",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9b19d15dc087a064291keT9coGg03",
+    "text": "1f91d"
+  },
+  "[1f920]": {
+    "id": "1f920",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a8338c8e0925fd581e5kBtzL8B03",
+    "text": "1f920"
+  },
+  "[1f921]": {
+    "id": "1f921",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9aceace074fd6e2ed8aZ5joeLIw03",
+    "text": "1f921"
+  },
+  "[1f922]": {
+    "id": "1f922",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a7338c8e1bb134eb82Nx2tBzrg03",
+    "text": "1f922"
+  },
+  "[1f923]": {
+    "id": "1f923",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a2eace075ab17c1c46a4jJ03Gf03",
+    "text": "1f923"
+  },
+  "[1f924]": {
+    "id": "1f924",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a69d15dc05d738ad4dBlwduOQa03",
+    "text": "1f924"
+  },
+  "[1f925]": {
+    "id": "1f925",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a6eace07211be5e01aiyIOOWph03",
+    "text": "1f925"
+  },
+  "[1f927]": {
+    "id": "1f927",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a72d3a546df56544a7lfSJrhOB03",
+    "text": "1f927"
+  },
+  "[1f928]": {
+    "id": "1f928",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a59d15dc62e99aef9biIofcMK903",
+    "text": "1f928"
+  },
+  "[1f929]": {
+    "id": "1f929",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a3eace070621b7b567lEbwk8vf03",
+    "text": "1f929"
+  },
+  "[1f92a]": {
+    "id": "1f92a",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a4cbe51b0ef3d6b2dfgAbr2zQY03",
+    "text": "1f92a"
+  },
+  "[1f92b]": {
+    "id": "1f92b",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a4bb290f6ff8ae530bdrkI3FdR03",
+    "text": "1f92b"
+  },
+  "[1f92c]": {
+    "id": "1f92c",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9aceace07496bfe8359fJarjzj503",
+    "text": "1f92c"
+  },
+  "[1f92d]": {
+    "id": "1f92d",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a4bb290f4051bfc905YPmUz3ui03",
+    "text": "1f92d"
+  },
+  "[1f92e]": {
+    "id": "1f92e",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a72d3a541701c334b7oyw8iyvS03",
+    "text": "1f92e"
+  },
+  "[1f92f]": {
+    "id": "1f92f",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a8338c8e0925fd581cNvv3LHKg03",
+    "text": "1f92f"
+  },
+  "[1f932]": {
+    "id": "1f932",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9b0338c8e343367d612oQUtVXQR03",
+    "text": "1f932"
+  },
+  "[1f970]": {
+    "id": "1f970",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a29d15dc6873f4f068FUeR2mVQ03",
+    "text": "1f970"
+  },
+  "[1f971]": {
+    "id": "1f971",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9aba1a6f40dd337d28df7h6NexB03",
+    "text": "1f971"
+  },
+  "[1f972]": {
+    "id": "1f972",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a39d15dc6d0f3a0a33VqraasZ403",
+    "text": "1f972"
+  },
+  "[1f973]": {
+    "id": "1f973",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a8cbe51b1fddbdb803RtppzDl203",
+    "text": "1f973"
+  },
+  "[1f974]": {
+    "id": "1f974",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a7c664ed5c7daf0f81N2tJaAyt03",
+    "text": "1f974"
+  },
+  "[1f975]": {
+    "id": "1f975",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a7eace070621b7b569LizlGCvL03",
+    "text": "1f975"
+  },
+  "[1f976]": {
+    "id": "1f976",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a7cbe51b1a3dafdabdjtChZ18H03",
+    "text": "1f976"
+  },
+  "[1f978]": {
+    "id": "1f978",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a89d15dc7ed6321e4d7uwzvMAQ03",
+    "text": "1f978"
+  },
+  "[1f97a]": {
+    "id": "1f97a",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9aacbe51b6b7b9bbbcegbToN4W903",
+    "text": "1f97a"
+  },
+  "[1f9d0]": {
+    "id": "1f9d0",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a8c664ed5c7daf0f83QFroj9K603",
+    "text": "1f9d0"
+  },
+  "[1f9e1]": {
+    "id": "1f9e1",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9af338c8e2444f538288JZ6WoWy03",
+    "text": "1f9e1"
+  },
+  "[2620-fe0f]": {
+    "id": "2620-fe0f",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9aceace070621b7b56d77LOioK603",
+    "text": "2620-fe0f"
+  },
+  "[2639-fe0f]": {
+    "id": "2639-fe0f",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a9bb290f6ff8ae530dMJxUNOq403",
+    "text": "2639-fe0f"
+  },
+  "[263a]": {
+    "id": "263a",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9b1c664ed97dada8a6fbhiVUiDH03",
+    "text": "263a"
+  },
+  "[263a-fe0f]": {
+    "id": "263a-fe0f",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9a39d15dc62e99aef99GiOEPeBS03",
+    "text": "263a-fe0f"
+  },
+  "[2763-fe0f]": {
+    "id": "2763-fe0f",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9af9d15dc6d0f3a0a3a6w33Meds03",
+    "text": "2763-fe0f"
+  },
+  "[2764-fe0f]": {
+    "id": "2764-fe0f",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9afbb290f6ff8ae530fw3giaavC03",
+    "text": "2764-fe0f"
+  },
+  "[2764-fe0f-200d-1f525]": {
+    "id": "2764-fe0f-200d-1f525",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9afa1a6f436317a01c9wKHrg5P203",
+    "text": "2764-fe0f-200d-1f525"
+  },
+  "[2764-fe0f-200d-1fa79]": {
+    "id": "2764-fe0f-200d-1fa79",
+    "pic": "http://cc.fp.ps.netease.com/file/61c2c9afcbe51b0ef3d6b2e2VcIkJeZL03",
+    "text": "2764-fe0f-200d-1fa79"
+  },
+  "[上海龙之队]": {
+    "id": 12,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/team/112/Shanghai_Dragons.png",
+    "text": "上海龙之队"
+  },
+  "[首尔王朝队]": {
+    "id": 11,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/team/112/Seoul_Dynasty.png",
+    "text": "首尔王朝队"
+  },
+  "[费城融合队]": {
+    "id": 9,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/team/112/Philadelphia_Fusion.png",
+    "text": "费城融合队"
+  },
+  "[旧金山震动队]": {
+    "id": 10,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/team/112/SanFrancisco_Shock.png",
+    "text": "旧金山震动队"
+  },
+  "[守望先锋联赛]": {
+    "id": 5,
+    "pic": "http://cc.fp.ps.netease.com/file/5f6850355e602758f059d02dQRrMRFHj02",
+    "text": "守望先锋联赛"
+  },
+  "[2020赛季季后赛]": {
+    "id": 6,
+    "pic": "http://cc.fp.ps.netease.com/file/5f684fe2143cfa18f17bbbe9RT7UTHUh02",
+    "text": "2020赛季季后赛"
+  },
+  "[Ana]": {
+    "id": 1,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Ana.png",
+    "text": "Ana"
+  },
+  "[Mei]": {
+    "id": 2,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Mei.png",
+    "text": "Mei"
+  },
+  "[Sombra]": {
+    "id": 3,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Sombra.png",
+    "text": "Sombra"
+  },
+  "[Bastion]": {
+    "id": 4,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Bastion.png",
+    "text": "Bastion"
+  },
+  "[Mercy]": {
+    "id": 5,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Mercy.png",
+    "text": "Mercy"
+  },
+  "[Symmetra]": {
+    "id": 6,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Symmetra.png",
+    "text": "Symmetra"
+  },
+  "[Doomfist]": {
+    "id": 7,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Doomfist.png",
+    "text": "Doomfist"
+  },
+  "[Moira]": {
+    "id": 8,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Moira.png",
+    "text": "Moira"
+  },
+  "[Torbjorn]": {
+    "id": 9,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Torbjorn.png",
+    "text": "Torbjorn"
+  },
+  "[Dva]": {
+    "id": 10,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Dva.png",
+    "text": "Dva"
+  },
+  "[Orisa]": {
+    "id": 11,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Orisa.png",
+    "text": "Orisa"
+  },
+  "[Tracer]": {
+    "id": 12,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Tracer.png",
+    "text": "Tracer"
+  },
+  "[Genji]": {
+    "id": 13,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Genji.png",
+    "text": "Genji"
+  },
+  "[Pharah]": {
+    "id": 14,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Pharah.png",
+    "text": "Pharah"
+  },
+  "[Widowmaker]": {
+    "id": 15,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Widowmaker.png",
+    "text": "Widowmaker"
+  },
+  "[Hanzo]": {
+    "id": 16,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Hanzo.png",
+    "text": "Hanzo"
+  },
+  "[Reaper]": {
+    "id": 17,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Reaper.png",
+    "text": "Reaper"
+  },
+  "[Winston]": {
+    "id": 18,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Winston.png",
+    "text": "Winston"
+  },
+  "[Junkrat]": {
+    "id": 19,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Junkrat.png",
+    "text": "Junkrat"
+  },
+  "[Reinhardt]": {
+    "id": 20,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Reinhardt.png",
+    "text": "Reinhardt"
+  },
+  "[Zarya]": {
+    "id": 21,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Zarya.png",
+    "text": "Zarya"
+  },
+  "[Lucio]": {
+    "id": 22,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Lucio.png",
+    "text": "Lucio"
+  },
+  "[Roadhog]": {
+    "id": 23,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Roadhog.png",
+    "text": "Roadhog"
+  },
+  "[Zenyatta]": {
+    "id": 24,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Zenyatta.png",
+    "text": "Zenyatta"
+  },
+  "[McCree]": {
+    "id": 25,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/McCree.png",
+    "text": "McCree"
+  },
+  "[Soldier76]": {
+    "id": 26,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/hero/112/Soldier76.png",
+    "text": "Soldier76"
+  },
+  "[GG]": {
+    "id": 1,
+    "pic": "https://cc.fp.ps.netease.com/file/5c063ecea7f252282c2205b6x27WgIkg",
+    "text": "GG"
+  },
+  "[Hmm]": {
+    "id": 2,
+    "pic": "https://cc.fp.ps.netease.com/file/5c063ecf6f04943e8f0add046ZIku8oM",
+    "text": "Hmm"
+  },
+  "[oops]": {
+    "id": 3,
+    "pic": "https://cc.fp.ps.netease.com/file/5c10d984a7f25285ab86be29uTTOk2b0",
+    "text": "oops"
+  },
+  "[Sorry]": {
+    "id": 4,
+    "pic": "https://cc.fp.ps.netease.com/file/5c10d9847f9d2a116fe31fa6iZ3p0lRL",
+    "text": "Sorry"
+  },
+  "[WOW]": {
+    "id": 5,
+    "pic": "https://cc.fp.ps.netease.com/file/5c10d9845e60274c02e4b4bfCiViETDN",
+    "text": "WOW"
+  },
+  "[Burn]": {
+    "id": 6,
+    "pic": "https://cc.fp.ps.netease.com/file/5c063ecea7f25229e2f701c67ue9OH0o",
+    "text": "Burn"
+  },
+  "[Huffer]": {
+    "id": 7,
+    "pic": "https://cc.fp.ps.netease.com/file/5c063ecea7f2523115358ef511rTmY1R",
+    "text": "Huffer"
+  },
+  "[Leeroy]": {
+    "id": 8,
+    "pic": "https://cc.fp.ps.netease.com/file/5c063ecea7f2523115358ef6FjDai2kX",
+    "text": "Leeroy"
+  },
+  "[CompassRose]": {
+    "id": 9,
+    "pic": "https://cc.fp.ps.netease.com/file/5c063ece8b74278376bc5f609CRrxA16",
+    "text": "CompassRose"
+  },
+  "[Dust]": {
+    "id": 10,
+    "pic": "https://cc.fp.ps.netease.com/file/5c063ece96dee4b3eb8e4c06Ybglls6V",
+    "text": "Dust"
+  },
+  "[LegendRank_1]": {
+    "id": 11,
+    "pic": "https://cc.fp.ps.netease.com/file/5c063ecf8b742787115c1e01YVoxa0ti",
+    "text": "LegendRank_1"
+  },
+  "[ManaGem]": {
+    "id": 12,
+    "pic": "https://cc.fp.ps.netease.com/file/5c063ecf96dee44f8c67a802XJvgSWVp",
+    "text": "ManaGem"
+  },
+  "[MoneyBag]": {
+    "id": 13,
+    "pic": "https://cc.fp.ps.netease.com/file/5c063ecf7f9d2aca827edd6cGeymUHb9",
+    "text": "MoneyBag"
+  },
+  "[Rank25]": {
+    "id": 14,
+    "pic": "https://cc.fp.ps.netease.com/file/5c063ecf6f04941ec2d25f61gqgxzApL",
+    "text": "Rank25"
+  },
+  "[Skull]": {
+    "id": 15,
+    "pic": "https://cc.fp.ps.netease.com/file/5c063ecf7f9d2acf2e64806dXFZrJWrC",
+    "text": "Skull"
+  },
+  "[Talkstone]": {
+    "id": 16,
+    "pic": "https://cc.fp.ps.netease.com/file/5c063ecf96dee4555b06e30f4Ql0XkOC",
+    "text": "Talkstone"
+  },
+  "[Targeting]": {
+    "id": 17,
+    "pic": "https://cc.fp.ps.netease.com/file/5c063ecfa7f25226827a1038QiUTvcrZ",
+    "text": "Targeting"
+  },
+  "[zzZZ]": {
+    "id": 18,
+    "pic": "https://cc.fp.ps.netease.com/file/5c063ecf8b742787115c1e02xCr75BAA",
+    "text": "zzZZ"
+  },
+  "[黑哥1]": {
+    "id": 19,
+    "pic": "https://cc.fp.ps.netease.com/file/5c21d8ea96dee4701adf0ce05ZsVfK9d",
+    "text": "黑哥1"
+  },
+  "[黑哥2]": {
+    "id": 20,
+    "pic": "https://cc.fp.ps.netease.com/file/5c21d8ea7f9d2abcf9ddb032mAUyruoo",
+    "text": "黑哥2"
+  },
+  "[林可1]": {
+    "id": 21,
+    "pic": "https://cc.fp.ps.netease.com/file/5c21d991143cfabbe1cc8ef8wUwXPCx8",
+    "text": "林可1"
+  },
+  "[林可2]": {
+    "id": 22,
+    "pic": "https://cc.fp.ps.netease.com/file/5c21d99196dee407ced5a0d7pzYgQBNG",
+    "text": "林可2"
+  },
+  "[墨泽1]": {
+    "id": 23,
+    "pic": "https://cc.fp.ps.netease.com/file/5c21d9fa8b742775a70a36fbrZwdHh4M",
+    "text": "墨泽1"
+  },
+  "[墨泽2]": {
+    "id": 24,
+    "pic": "https://cc.fp.ps.netease.com/file/5c21d9fa5e602774065881berdMkafLt",
+    "text": "墨泽2"
+  },
+  "[rua]": {
+    "id": 1,
+    "pic": "http://cc.fp.ps.netease.com/file/613708d196dee48c98ba8f795BiKWEwh03",
+    "text": "rua"
+  },
+  "[摸头]": {
+    "id": 2,
+    "pic": "http://cc.fp.ps.netease.com/file/613708d109463c0ed4ccdc2eYebXO3X003",
+    "text": "摸头"
+  },
+  "[疑问]": {
+    "id": 3,
+    "pic": "http://cc.fp.ps.netease.com/file/613708d196dee48afcb82ce0WNF3V7hQ03",
+    "text": "疑问"
+  },
+  "[抱歉]": {
+    "id": 4,
+    "pic": "http://cc.fp.ps.netease.com/file/613708d05e60273b8cf3db6at72uJlGa03",
+    "text": "抱歉"
+  },
+  "[打屁股]": {
+    "id": 5,
+    "pic": "http://cc.fp.ps.netease.com/file/613708d096dee4846649a496ST10S5iV03",
+    "text": "打屁股"
+  },
+  "[想办法振一下]": {
+    "id": 6,
+    "pic": "http://cc.fp.ps.netease.com/file/613708cc4ae8634a58f2e92bVhfGsodd03",
+    "text": "想办法振一下"
+  },
+  "[上号]": {
+    "id": 7,
+    "pic": "http://cc.fp.ps.netease.com/file/613708cbc68de219abac5869NMxavlye03",
+    "text": "上号"
+  },
+  "[我不行了]": {
+    "id": 8,
+    "pic": "http://cc.fp.ps.netease.com/file/613708cdc68de28564f79ba6KA0zlcCM03",
+    "text": "我不行了"
+  },
+  "[胡桃率先出击]": {
+    "id": 9,
+    "pic": "http://cc.fp.ps.netease.com/file/6139c85da7f2523fc3b0e82b8Yd5Oqro03",
+    "text": "胡桃率先出击"
+  },
+  "[金刚伏魔]": {
+    "id": 10,
+    "pic": "http://cc.fp.ps.netease.com/file/613708cc5e6027525c543f36MsvfSJDT03",
+    "text": "金刚伏魔"
+  },
+  "[在劫难逃]": {
+    "id": 11,
+    "pic": "http://cc.fp.ps.netease.com/file/613708cf5e602746b69ba950pk7TYaAL03",
+    "text": "在劫难逃"
+  },
+  "[拿来吧你]": {
+    "id": 12,
+    "pic": "http://cc.fp.ps.netease.com/file/613708d096dee46523a2c18fDNqFDST303",
+    "text": "拿来吧你"
+  },
+  "[别振了]": {
+    "id": 13,
+    "pic": "http://cc.fp.ps.netease.com/file/613708cc143cfa14cb7e87beeqJOWiDX03",
+    "text": "别振了"
+  },
+  "[好想回家振刀]": {
+    "id": 14,
+    "pic": "http://cc.fp.ps.netease.com/file/6139cc3f143cfa720e54b0342ifmPu5m03",
+    "text": "好想回家振刀"
+  },
+  "[得到大佬]": {
+    "id": 15,
+    "pic": "http://cc.fp.ps.netease.com/file/613a05dfcdb156131cfaee2ft57dEOdu03",
+    "text": "得到大佬"
+  },
+  "[帮帮胡桃]": {
+    "id": 16,
+    "pic": "http://cc.fp.ps.netease.com/file/6139c2888614f5873eb3b643Vlk7VWB303",
+    "text": "帮帮胡桃"
+  },
+  "[要振刀]": {
+    "id": 17,
+    "pic": "http://cc.fp.ps.netease.com/file/613708ce143cfa0462353eacDjsx4k1Q03",
+    "text": "要振刀"
+  },
+  "[嘎嘎乱杀]": {
+    "id": 18,
+    "pic": "http://cc.fp.ps.netease.com/file/613708cdc68de21875e72909cJ7kRRee03",
+    "text": "嘎嘎乱杀"
+  },
+  "[好玩]": {
+    "id": 19,
+    "pic": "http://cc.fp.ps.netease.com/file/613708d04ae863258b93c725tt3FNHwS03",
+    "text": "好玩"
+  },
+  "[现在打开永劫]": {
+    "id": 20,
+    "pic": "http://cc.fp.ps.netease.com/file/613708d0143cfa073cbbb963SiwI49GQ03",
+    "text": "现在打开永劫"
+  },
+  "[带上小红夜]": {
+    "id": 21,
+    "pic": "http://cc.fp.ps.netease.com/file/613708cea7f252171ddf3e3eb8HZcRsi03",
+    "text": "带上小红夜"
+  },
+  "[1=2求带飞]": {
+    "id": 22,
+    "pic": "http://cc.fp.ps.netease.com/file/613708cd96dee43ed69880c8Iu81oh8S03",
+    "text": "1=2求带飞"
+  },
+  "[又混一把]": {
+    "id": 23,
+    "pic": "http://cc.fp.ps.netease.com/file/613708cecdb1564b9ff2aa1aY2oGbMiT03",
+    "text": "又混一把"
+  },
+  "[mama]": {
+    "id": 1,
+    "pic": "http://cc.fp.ps.netease.com/file/6074418ca7f2524e8b7268b7vopM09hl03",
+    "text": "mama"
+  },
+  "[别慌小场面]": {
+    "id": 2,
+    "pic": "http://cc.fp.ps.netease.com/file/6074418b96dee44c05f0017aElAf4JiS03",
+    "text": "别慌小场面"
+  },
+  "[撑腰]": {
+    "id": 3,
+    "pic": "http://cc.fp.ps.netease.com/file/6074418b2786fd3dcc45c860i2k8IzzX03",
+    "text": "撑腰"
+  },
+  "[击掌]": {
+    "id": 4,
+    "pic": "http://cc.fp.ps.netease.com/file/6074418d8b742755d8ccbf3cYH7iTqsH03",
+    "text": "击掌"
+  },
+  "[基操]": {
+    "id": 5,
+    "pic": "http://cc.fp.ps.netease.com/file/6074418b5e60271e2bec986724kDzNou03",
+    "text": "基操"
+  },
+  "[猛男比心]": {
+    "id": 6,
+    "pic": "http://cc.fp.ps.netease.com/file/6074418c6f0494592ed2c0dciMMLvix303",
+    "text": "猛男比心"
+  },
+  "[请开始你的表演]": {
+    "id": 7,
+    "pic": "http://cc.fp.ps.netease.com/file/6074418d8b7427216a0107b5zYF508G403",
+    "text": "请开始你的表演"
+  },
+  "[舔屏]": {
+    "id": 8,
+    "pic": "http://cc.fp.ps.netease.com/file/6074418c2786fd57caa9b8451FsVj6x203",
+    "text": "舔屏"
+  },
+  "[休想套路我]": {
+    "id": 9,
+    "pic": "http://cc.fp.ps.netease.com/file/6074418c2786fd785d13a8ffkTaQ1Ohf03",
+    "text": "休想套路我"
+  },
+  "[鸭子]": {
+    "id": 10,
+    "pic": "http://cc.fp.ps.netease.com/file/6074418d2786fd6630c095a1dZJGScuR03",
+    "text": "鸭子"
+  },
+  "[白给]": {
+    "id": 11,
+    "pic": "http://cc.fp.ps.netease.com/file/6047620b2786fd9460cd4cec0siHKmwv03",
+    "text": "白给"
+  },
+  "[单身狗的凝视]": {
+    "id": 12,
+    "pic": "http://cc.fp.ps.netease.com/file/60482281a7f2520facf44390gfZQjIWK03",
+    "text": "单身狗的凝视"
+  },
+  "[夺笋呐]": {
+    "id": 13,
+    "pic": "http://cc.fp.ps.netease.com/file/604762cc6f049457c76511bb2x7hQEEN03",
+    "text": "夺笋呐"
+  },
+  "[恭喜这个B]": {
+    "id": 14,
+    "pic": "http://cc.fp.ps.netease.com/file/6047641d143cfa4e59cd9067NZAyOJal03",
+    "text": "恭喜这个B"
+  },
+  "[老阴阳人]": {
+    "id": 15,
+    "pic": "http://cc.fp.ps.netease.com/file/6047646c6f049444d133e4fbUIiA2ici03",
+    "text": "老阴阳人"
+  },
+  "[啊这]": {
+    "id": 16,
+    "pic": "http://cc.fp.ps.netease.com/file/601a6d6796dee41a6fe52f7fI4YGyz8o03",
+    "text": "啊这"
+  },
+  "[好家伙]": {
+    "id": 17,
+    "pic": "http://cc.fp.ps.netease.com/file/601a6dde6f04947fe48b98b3LMzqPOji03",
+    "text": "好家伙"
+  },
+  "[裂开了]": {
+    "id": 18,
+    "pic": "http://cc.fp.ps.netease.com/file/601a7a017f9d2a188562495aAAxFJIxo03",
+    "text": "裂开了"
+  },
+  "[小丑竟是我自己]": {
+    "id": 19,
+    "pic": "http://cc.fp.ps.netease.com/file/601a70f06f049406b30c9601dxWXAkpq03",
+    "text": "小丑竟是我自己"
+  },
+  "[小丑竟在我身边]": {
+    "id": 20,
+    "pic": "http://cc.fp.ps.netease.com/file/601a71bca7f25251dac492c62RivLoki03",
+    "text": "小丑竟在我身边"
+  },
+  "[有内味儿了]": {
+    "id": 21,
+    "pic": "http://cc.fp.ps.netease.com/file/601a7a2a2786fd6396849860EBEpxfmX03",
+    "text": "有内味儿了"
+  },
+  "[针不戳]": {
+    "id": 22,
+    "pic": "http://cc.fp.ps.netease.com/file/601bb0c82786fd80b6707634eHZwCeyT03",
+    "text": "针不戳"
+  },
+  "[有手都行]": {
+    "id": 23,
+    "pic": "http://cc.fp.ps.netease.com/file/601bb13b5e60279af9524d6eijukTGOS03",
+    "text": "有手都行"
+  },
+  "[带带我]": {
+    "id": 5,
+    "pic": "http://cc.fp.ps.netease.com/file/5ffd8c85a7f252054c2f5bedxKsRm1y303",
+    "text": "带带我"
+  },
+  "[就这]": {
+    "id": 10,
+    "pic": "http://cc.fp.ps.netease.com/file/5fffa5d97f9d2a6eaf9307d8ihTjixHa03",
+    "text": "就这"
+  },
+  "[老板大气]": {
+    "id": 20,
+    "pic": "http://cc.fp.ps.netease.com/file/5f8ee6f096dee47ae5757820D9Im09cr02",
+    "text": "老板大气"
+  },
+  "[中中中]": {
+    "id": 8,
+    "pic": "http://cc.fp.ps.netease.com/file/5ffeb7e25e60275fb32436b6hsP59Sub03",
+    "text": "中中中"
+  },
+  "[舔舔舔]": {
+    "id": 4,
+    "pic": "http://cc.fp.ps.netease.com/file/5ffd8c85a7f25268be10fc79MKmQi8dQ03",
+    "text": "舔舔舔"
+  },
+  "[老板有牌面]": {
+    "id": 29,
+    "pic": "http://cc.fp.ps.netease.com/file/601ce5456f049444a5f64b61XmvdiNOr03",
+    "text": "老板有牌面"
+  },
+  "[桃子]": {
+    "id": 30,
+    "pic": "http://cc.fp.ps.netease.com/file/601ce55b2786fd1c27b731f5iXhS0VeP03",
+    "text": "桃子"
+  },
+  "[202一抱]": {
+    "id": 1,
+    "pic": "http://cc.fp.ps.netease.com/file/5fed896e7f9d2a67ca583ec5gCGpusJE02",
+    "text": "202一抱"
+  },
+  "[爱你]": {
+    "id": 2,
+    "pic": "http://cc.fp.ps.netease.com/file/5fed896e7f9d2a0dda8baf9a7lW3iryK02",
+    "text": "爱你"
+  },
+  "[第一个抱抱]": {
+    "id": 3,
+    "pic": "http://cc.fp.ps.netease.com/file/5fed896f7f9d2a406a96cfedEuf26iQu02",
+    "text": "第一个抱抱"
+  },
+  "[查房]": {
+    "id": 7,
+    "pic": "http://cc.fp.ps.netease.com/file/5ffeba4ca7f25278015b4f2bGNuGiFIT03",
+    "text": "查房"
+  },
+  "[查房plus]": {
+    "id": 9,
+    "pic": "http://cc.fp.ps.netease.com/file/5ffeba4c96dee42ffeedc059SfypMNib03",
+    "text": "查房plus"
+  },
+  "[波士顿崛起队]": {
+    "id": 1,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/team/112/Boston_Uprising.png",
+    "text": "波士顿崛起队"
+  },
+  "[达拉斯燃料队]": {
+    "id": 2,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/team/112/Dallas_Fuel.png",
+    "text": "达拉斯燃料队"
+  },
+  "[佛罗里达狂欢队]": {
+    "id": 3,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/team/112/Florida_Mayhem.png",
+    "text": "佛罗里达狂欢队"
+  },
+  "[休斯顿神枪手队]": {
+    "id": 4,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/team/112/Houston_Outlaws.png",
+    "text": "休斯顿神枪手队"
+  },
+  "[伦敦喷火战斗机队]": {
+    "id": 5,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/team/112/London_Spitfire.png",
+    "text": "伦敦喷火战斗机队"
+  },
+  "[洛杉矶角斗士队]": {
+    "id": 6,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/team/112/LosAngeles_Gladiators.png",
+    "text": "洛杉矶角斗士队"
+  },
+  "[洛杉矶英勇队]": {
+    "id": 7,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/team/112/LosAngeles_Valiant.png",
+    "text": "洛杉矶英勇队"
+  },
+  "[纽约九霄天擎队]": {
+    "id": 8,
+    "pic": "https://cc.res.netease.com/act/common/emotions/owl/team/112/NewYork_Excelsior.png",
+    "text": "纽约九霄天擎队"
+  },
+  "[让我好好看下]": {
+    "id": 1,
+    "pic": "http://cc.fp.ps.netease.com/file/5f2d158f6f0494dbd2aeed41rZetFiuk02",
+    "text": "让我好好看下"
+  },
+  "[难受想哭]": {
+    "id": 2,
+    "pic": "http://cc.fp.ps.netease.com/file/5f2d15ed5e602741edb06eb5arJJs2qp02",
+    "text": "难受想哭"
+  },
+  "[霸道总裁]": {
+    "id": 3,
+    "pic": "http://cc.fp.ps.netease.com/file/5f2d1641a7f252a3188bfeb4BBDQW53802",
+    "text": "霸道总裁"
+  },
+  "[起飞]": {
+    "id": 4,
+    "pic": "http://cc.fp.ps.netease.com/file/5f2d16638b7427db0fc61dd7aXBGkLd802",
+    "text": "起飞"
+  },
+  "[比心]": {
+    "id": 13,
+    "pic": "http://cc.fp.ps.netease.com/file/5f2d18a3143cfab85d7e4252YFWTtA7s02",
+    "text": "比心"
+  },
+  "[貌美如花]": {
+    "id": 6,
+    "pic": "http://cc.fp.ps.netease.com/file/5f2d16fb8b7427db0fc61ea6LiltQLME02",
+    "text": "貌美如花"
+  },
+  "[看我]": {
+    "id": 7,
+    "pic": "http://cc.fp.ps.netease.com/file/5f2d17472786fd4c6a27dd76X9o0edy602",
+    "text": "看我"
+  },
+  "[真香]": {
+    "id": 8,
+    "pic": "http://cc.fp.ps.netease.com/file/5f2d17686f0494575e24cffdkS0C3GJX02",
+    "text": "真香"
+  },
+  "[曦帅真帅]": {
+    "id": 9,
+    "pic": "http://cc.fp.ps.netease.com/file/5f2d17ac2786fde7c714fc88ZoCX9I0U02",
+    "text": "曦帅真帅"
+  },
+  "[曦帅上书稳]": {
+    "id": 10,
+    "pic": "http://cc.fp.ps.netease.com/file/5f2d17c4143cfac2d76faf811ghppjXL02",
+    "text": "曦帅上书稳"
+  },
+  "[对不起老板瞎了]": {
+    "id": 11,
+    "pic": "http://cc.fp.ps.netease.com/file/5f2d180796dee4d27c2141a6xiITV7HQ02",
+    "text": "对不起老板瞎了"
+  },
+  "[谛听永远的神]": {
+    "id": 12,
+    "pic": "http://cc.fp.ps.netease.com/file/5f2d18255e602794c95b5a87lygAFdVh02",
+    "text": "谛听永远的神"
+  },
+  "[出货啦]": {
+    "id": 14,
+    "pic": "http://cc.fp.ps.netease.com/file/5f2d18ba6f04944649758f4eLu0EIXOx02",
+    "text": "出货啦"
+  },
+  "[最靓的仔]": {
+    "id": 15,
+    "pic": "http://cc.fp.ps.netease.com/file/5f2d1946143cfac2d76fb24486eQ34hQ02",
+    "text": "最靓的仔"
+  },
+  "[有-爱你们]": {
+    "id": 16,
+    "pic": "http://cc.fp.ps.netease.com/file/5f2d1968a7f252972822a022dpSH6kiE02",
+    "text": "有-爱你们"
+  },
+  "[抬走]": {
+    "id": 17,
+    "pic": "http://cc.fp.ps.netease.com/file/5f2d1a756f0494d639a21001ypws9bhJ02",
+    "text": "抬走"
+  },
+  "[稳如铁蛋]": {
+    "id": 18,
+    "pic": "http://cc.fp.ps.netease.com/file/5f2d1a952786fdc53fc94b12Dio9x32c02",
+    "text": "稳如铁蛋"
+  },
+  "[大血瓶]": {
+    "id": 19,
+    "pic": "http://cc.fp.ps.netease.com/file/5f8ee6f02786fd5024cfae63yiMQx9Ec02",
+    "text": "大血瓶"
+  },
+  "[会呼吸的江湖]": {
+    "id": 1,
+    "pic": "http://cc.fp.ps.netease.com/file/648abd36b0efc6cfcc1c14b821CF3e0704",
+    "text": "会呼吸的江湖"
+  },
+  "[雷火]": {
+    "id": 2,
+    "pic": "http://cc.fp.ps.netease.com/file/648abd36b596975ddee9ccc7NR2ibqwX04",
+    "text": "雷火"
+  },
+  "[推荐你玩]": {
+    "id": 3,
+    "pic": "http://cc.fp.ps.netease.com/file/648abd37dffcd0c2dcb288fcmis9fNmw04",
+    "text": "推荐你玩"
+  },
+  "[行行好吧]": {
+    "id": 4,
+    "pic": "http://cc.fp.ps.netease.com/file/648abd37879c8185ee417b59Lv4KLsoZ04",
+    "text": "行行好吧"
+  },
+  "[等待]": {
+    "id": 5,
+    "pic": "http://cc.fp.ps.netease.com/file/648abd375a705a2bf05b9851pAdOhWLV04",
+    "text": "等待"
+  },
+  "[好想玩]": {
+    "id": 6,
+    "pic": "http://cc.fp.ps.netease.com/file/648abd378d145f56093e419fC8BLDqg304",
+    "text": "好想玩"
+  }
+}
