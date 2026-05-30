@@ -114,13 +114,7 @@ class VideoController with ChangeNotifier {
     required this.isAudioOnly,
     this.onAudioOnlyChanged,
   }) {
-    danmakuController = DanmakuController(
-      onAddDanmaku: (item) {},
-      onUpdateOption: (option) {},
-      onPause: () {},
-      onResume: () {},
-      onClear: () {},
-    );
+    danmakuController = DanmakuController();
 
     hideDanmaku.value = SettingsService.to.danmaku.hideDanmaku.v;
     danmakuTopArea.value = SettingsService.to.danmaku.danmakuTopArea.v;

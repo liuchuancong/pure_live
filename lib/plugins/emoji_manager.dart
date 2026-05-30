@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
 
 class EmojiManager {
-  static final EmojiManager _instance = EmojiManager._internal();
-  factory EmojiManager() => _instance;
+  static final EmojiManager instance = EmojiManager._internal();
+  factory EmojiManager() => instance;
   EmojiManager._internal();
 
   static final Map<String, ui.Image> _cache = {};
@@ -13,8 +13,6 @@ class EmojiManager {
 
   static const List<String> _emojiExtensions = ['png', 'gif'];
   static const int _maxCacheSize = 200;
-
-  /// Control peak memory by limiting concurrent decoding
   static const int _batchSize = 8;
 
   Map<String, ui.Image> get cache => _cache;
@@ -31,15 +29,12 @@ class EmojiManager {
     });
   }
 
-  /// Optimized Preload with Concurrency Control
   Future<void> preload(String site) async {
-    // Clear old data to free memory before starting new preload
     clearCache();
 
     final list = getEmojiList(site);
     if (list.isEmpty) return;
 
-    // Process in batches to avoid OOM (Out Of Memory)
     for (int i = 0; i < list.length; i += _batchSize) {
       final batch = list.skip(i).take(_batchSize);
 
@@ -48,13 +43,11 @@ class EmojiManager {
           final code = emoji['code']!;
           final key = "[${emoji['text']}]";
 
-          // Find path (cached to avoid repeated IO)
           final path = _validEmojiPaths[code] ??= await getEmojiAssetPath(site, code);
           if (path == null || _cache.containsKey(key)) return;
 
           try {
             final bytes = await rootBundle.load(path);
-            // TARGET SIZE: Prevents high-res images from eating RAM
             final codec = await ui.instantiateImageCodec(bytes.buffer.asUint8List(), targetWidth: 80, targetHeight: 80);
             final frame = await codec.getNextFrame();
             _addToCache(key, frame.image);
@@ -64,7 +57,6 @@ class EmojiManager {
         }),
       );
 
-      // Short delay to allow GC to collect temporary byte arrays
       await Future.delayed(const Duration(milliseconds: 20));
     }
   }
@@ -76,7 +68,7 @@ class EmojiManager {
 
     if (_cache.length >= _maxCacheSize) {
       final firstKey = _cache.keys.first;
-      _cache[firstKey]?.dispose(); // Crucial: Explicitly release native memory
+      _cache[firstKey]?.dispose();
       _cache.remove(firstKey);
     }
     _cache[key] = image;
@@ -97,7 +89,6 @@ class EmojiManager {
     for (final ext in _emojiExtensions) {
       final path = 'assets/emo/$platform/$code.$ext';
       try {
-        // Checking existence via load (Lite check)
         await rootBundle.load(path);
         return path;
       } catch (_) {
@@ -1060,7 +1051,7 @@ class EmojiManager {
       final data = await rootBundle.load(assetPath);
       final codec = await ui.instantiateImageCodec(data.buffer.asUint8List(), targetWidth: 80, targetHeight: 80);
       final frame = await codec.getNextFrame();
-      _instance._addToCache(emojiText, frame.image);
+      instance._addToCache(emojiText, frame.image);
     } catch (e) {
       debugPrint("Error loading manual emoji: $e");
     }

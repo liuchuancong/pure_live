@@ -4,23 +4,53 @@ import 'package:pure_live/plugins/emoji_manager.dart';
 import 'package:pure_live/pkg/canvas_danmaku/models/danmaku_content_item.dart';
 
 class Utils {
-  // 计算混合内容的总宽度
+  static final Paint _emojiPaint = Paint()..filterQuality = FilterQuality.medium;
+
+  static final Map<String, double> _widthCache = {};
+
+  static final Map<String, TextPainter> _textPainterCache = {};
+
+  static final Map<String, TextPainter> _strokePainterCache = {};
+
+  static String _textKey(String text, double fontSize, int fontWeight, String? fontFamily, Color color) {
+    return '$text|$fontSize|$fontWeight|${fontFamily ?? ""}|${color.toARGB32()}';
+  }
+
+  static String _strokeKey(String text, double fontSize, int fontWeight, String? fontFamily) {
+    return '$text|$fontSize|$fontWeight|${fontFamily ?? ""}';
+  }
+
   static double calculateMixedContentWidth(DanmakuContentItem content, double fontSize) {
     double totalWidth = 0;
+
     final emojiSize = fontSize * 1.2;
+
     for (final item in content.mixedContent) {
       if (item.type == ContentType.text) {
-        // 计算文本宽度
-        final textSpan = TextSpan(
-          text: item.value,
-          style: TextStyle(fontSize: fontSize),
-        );
-        final textPainter = TextPainter(text: textSpan, textDirection: TextDirection.ltr)..layout();
-        totalWidth += textPainter.width;
+        final cacheKey = '${item.value}|$fontSize|${content.fontFamily ?? ""}';
+
+        var width = _widthCache[cacheKey];
+
+        if (width == null) {
+          final textPainter = TextPainter(
+            text: TextSpan(
+              text: item.value,
+              style: TextStyle(fontSize: fontSize, fontFamily: content.fontFamily),
+            ),
+            textDirection: TextDirection.ltr,
+          )..layout();
+
+          width = textPainter.width;
+
+          _widthCache[cacheKey] = width;
+        }
+
+        totalWidth += width;
       } else {
         totalWidth += emojiSize;
       }
     }
+
     return totalWidth;
   }
 
@@ -36,66 +66,106 @@ class Utils {
   ) {
     double currentX = offset.dx;
     final currentY = offset.dy;
+
     final emojiSize = fontSize * 1.2;
 
-    // 绘制自发送弹幕的边框（如果需要）
+    final targetFontWeight = FontWeight.values[fontWeight];
+
     if (selfSend && selfSendPaint != null) {
       final totalWidth = calculateMixedContentWidth(content, fontSize);
-      canvas.drawRect(Rect.fromLTWH(currentX, currentY, totalWidth, fontSize), selfSendPaint);
+
+      canvas.drawRect(Rect.fromLTWH(currentX, currentY, totalWidth, fontSize * 1.2), selfSendPaint);
     }
 
-    // 绘制实际内容（文本和表情）
     for (final item in content.mixedContent) {
       if (item.type == ContentType.text) {
-        final textPainter = TextPainter(
-          text: TextSpan(
-            text: item.value,
-            style: TextStyle(
-              color: content.color,
-              fontSize: fontSize,
-              fontWeight: FontWeight.values[fontWeight],
-              fontFamily: content.fontFamily,
+        final textCacheKey = _textKey(item.value, fontSize, fontWeight, content.fontFamily, content.color);
+
+        var textPainter = _textPainterCache[textCacheKey];
+
+        if (textPainter == null) {
+          textPainter = TextPainter(
+            text: TextSpan(
+              text: item.value,
+              style: TextStyle(
+                color: content.color,
+                fontSize: fontSize,
+                fontWeight: targetFontWeight,
+                fontFamily: content.fontFamily,
+              ),
             ),
-          ),
-          textDirection: TextDirection.ltr,
-        )..layout();
-        final strokePainter = TextPainter(
-          text: TextSpan(
-            text: item.value,
-            style: TextStyle(
-              fontSize: fontSize,
-              fontWeight: FontWeight.values[fontWeight],
-              foreground: Paint()
-                ..style = PaintingStyle.stroke
-                ..strokeWidth = 0.8
-                ..color = Colors.black54, // 这里已经通过foreground设置了颜色
-            ),
-          ),
-          textDirection: TextDirection.ltr,
-        )..layout();
-        strokePainter.paint(canvas, Offset(currentX, currentY));
+            textDirection: TextDirection.ltr,
+          )..layout();
+
+          _textPainterCache[textCacheKey] = textPainter;
+        }
+
+        if (showStroke) {
+          final strokeCacheKey = _strokeKey(item.value, fontSize, fontWeight, content.fontFamily);
+
+          var strokePainter = _strokePainterCache[strokeCacheKey];
+
+          if (strokePainter == null) {
+            strokePainter = TextPainter(
+              text: TextSpan(
+                text: item.value,
+                style: TextStyle(
+                  fontSize: fontSize,
+                  fontWeight: targetFontWeight,
+                  fontFamily: content.fontFamily,
+                  foreground: Paint()
+                    ..style = PaintingStyle.stroke
+                    ..strokeWidth = 1.5
+                    ..color = Colors.black54,
+                ),
+              ),
+              textDirection: TextDirection.ltr,
+            )..layout();
+
+            _strokePainterCache[strokeCacheKey] = strokePainter;
+          }
+
+          strokePainter.paint(canvas, Offset(currentX, currentY));
+        }
+
         textPainter.paint(canvas, Offset(currentX, currentY));
+
         currentX += textPainter.width;
       } else {
         final image = EmojiManager.getEmoji(item.value);
+
         if (image != null) {
           canvas.drawImageRect(
             image,
             Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
             Rect.fromLTWH(currentX, currentY, emojiSize, emojiSize),
-            Paint()..filterQuality = FilterQuality.high,
+            _emojiPaint,
           );
         } else {
-          final textPainter = TextPainter(
-            text: TextSpan(
-              text: item.value,
-              style: TextStyle(color: content.color, fontSize: fontSize, fontFamily: content.fontFamily),
-            ),
-            textDirection: TextDirection.ltr,
-          )..layout();
+          final textCacheKey = _textKey(item.value, fontSize, fontWeight, content.fontFamily, content.color);
+
+          var textPainter = _textPainterCache[textCacheKey];
+
+          if (textPainter == null) {
+            textPainter = TextPainter(
+              text: TextSpan(
+                text: item.value,
+                style: TextStyle(
+                  color: content.color,
+                  fontSize: fontSize,
+                  fontWeight: targetFontWeight,
+                  fontFamily: content.fontFamily,
+                ),
+              ),
+              textDirection: TextDirection.ltr,
+            )..layout();
+
+            _textPainterCache[textCacheKey] = textPainter;
+          }
 
           textPainter.paint(canvas, Offset(currentX, currentY));
         }
+
         currentX += emojiSize;
       }
     }
@@ -107,17 +177,19 @@ class Utils {
     double fontSize,
     int fontWeight,
   ) {
-    final ui.ParagraphBuilder builder =
+    final builder =
         ui.ParagraphBuilder(
             ui.ParagraphStyle(
               textAlign: TextAlign.left,
               fontSize: fontSize,
+              fontFamily: content.fontFamily,
               fontWeight: FontWeight.values[fontWeight],
               textDirection: TextDirection.ltr,
             ),
           )
           ..pushStyle(ui.TextStyle(color: content.color))
           ..addText(content.text);
+
     return builder.build()..layout(ui.ParagraphConstraints(width: danmakuWidth));
   }
 
@@ -127,12 +199,12 @@ class Utils {
     double fontSize,
     int fontWeight,
   ) {
-    final Paint strokePaint = Paint()
+    final strokePaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2
       ..color = Colors.black;
 
-    final ui.ParagraphBuilder strokeBuilder =
+    final builder =
         ui.ParagraphBuilder(
             ui.ParagraphStyle(
               textAlign: TextAlign.left,
@@ -145,6 +217,12 @@ class Utils {
           ..pushStyle(ui.TextStyle(foreground: strokePaint))
           ..addText(content.text);
 
-    return strokeBuilder.build()..layout(ui.ParagraphConstraints(width: danmakuWidth));
+    return builder.build()..layout(ui.ParagraphConstraints(width: danmakuWidth));
+  }
+
+  static void clearCache() {
+    _widthCache.clear();
+    _textPainterCache.clear();
+    _strokePainterCache.clear();
   }
 }

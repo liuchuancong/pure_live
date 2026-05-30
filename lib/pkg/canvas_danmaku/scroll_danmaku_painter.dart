@@ -1,4 +1,3 @@
-import 'dart:ui' as ui;
 import 'models/danmaku_item.dart';
 import 'package:flutter/material.dart';
 import 'package:pure_live/pkg/canvas_danmaku/utils/utils.dart';
@@ -6,17 +5,21 @@ import 'package:pure_live/pkg/canvas_danmaku/utils/utils.dart';
 class ScrollDanmakuPainter extends CustomPainter {
   final double progress;
   final List<DanmakuItem> scrollDanmakuItems;
+
   final int danmakuDurationInSeconds;
+
   final double fontSize;
   final int fontWeight;
   final bool showStroke;
+
   final double danmakuHeight;
+
   final bool running;
   final int tick;
-  final int batchThreshold;
 
   final double totalDuration;
-  final Paint selfSendPaint = Paint()
+
+  static final Paint _selfSendPaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1.5
     ..color = Colors.green;
@@ -30,30 +33,33 @@ class ScrollDanmakuPainter extends CustomPainter {
     this.showStroke,
     this.danmakuHeight,
     this.running,
-    this.tick, {
-    this.batchThreshold = 10, // 默认值为10，可以自行调整
-  }) : totalDuration = danmakuDurationInSeconds * 1000;
+    this.tick,
+  ) : totalDuration = danmakuDurationInSeconds * 1000;
 
   @override
   void paint(Canvas canvas, Size size) {
     final startPosition = size.width;
-    final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
-    final Canvas pictureCanvas = Canvas(pictureRecorder);
-    _drawDanmakus(pictureCanvas, size, startPosition);
-    final ui.Picture picture = pictureRecorder.endRecording();
-    canvas.drawPicture(picture);
-  }
 
-  void _drawDanmakus(Canvas canvas, Size size, double startPosition) {
-    for (var item in scrollDanmakuItems) {
+    for (final item in scrollDanmakuItems) {
       item.lastDrawTick ??= item.creationTime;
+
       final currentWidth = item.cachedWidth;
-      final endPosition = -currentWidth!;
-      final distance = startPosition - endPosition;
-      item.xPosition = item.xPosition + (((item.lastDrawTick! - tick) / totalDuration) * distance);
-      if (item.xPosition < -currentWidth || item.xPosition > size.width) {
+
+      if (currentWidth == null) {
         continue;
       }
+
+      final endPosition = -currentWidth;
+
+      final distance = startPosition - endPosition;
+
+      item.xPosition += ((item.lastDrawTick! - tick) / totalDuration) * distance;
+
+      if (item.xPosition < -currentWidth || item.xPosition > size.width) {
+        item.lastDrawTick = tick;
+        continue;
+      }
+
       Utils.drawMixedContent(
         canvas,
         item.content,
@@ -62,19 +68,20 @@ class ScrollDanmakuPainter extends CustomPainter {
         fontWeight,
         showStroke,
         item.content.selfSend,
-        selfSendPaint,
+        _selfSendPaint,
       );
+
       item.lastDrawTick = tick;
     }
   }
 
   @override
   bool shouldRepaint(covariant ScrollDanmakuPainter oldDelegate) {
-    // 仅当关键参数变化时重绘
     return progress != oldDelegate.progress ||
-        scrollDanmakuItems.length != oldDelegate.scrollDanmakuItems.length ||
         tick != oldDelegate.tick ||
+        scrollDanmakuItems.length != oldDelegate.scrollDanmakuItems.length ||
         fontSize != oldDelegate.fontSize ||
+        fontWeight != oldDelegate.fontWeight ||
         showStroke != oldDelegate.showStroke;
   }
 }

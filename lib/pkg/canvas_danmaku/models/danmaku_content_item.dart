@@ -9,27 +9,18 @@ enum ContentType { text, emoji }
 
 class MixedContent {
   final ContentType type;
-  final String value; // 文本内容或表情key
+  final String value;
 
-  MixedContent(this.type, this.value);
+  const MixedContent(this.type, this.value);
 }
 
 class DanmakuContentItem {
-  /// 弹幕文本
   final String text;
-
-  final String? fontFamily;
-
-  /// 弹幕颜色
   final Color color;
-
-  /// 弹幕类型
   final DanmakuItemType type;
-
-  /// 是否为自己发送
   final bool selfSend;
-
   final List<MixedContent> mixedContent;
+  String? fontFamily;
 
   DanmakuContentItem(
     this.text, {
@@ -38,20 +29,27 @@ class DanmakuContentItem {
     this.selfSend = false,
     this.fontFamily,
   }) : mixedContent = _parseMixedContent(text);
-  // 解析文本为混合内容
+
   static List<MixedContent> _parseMixedContent(String text) {
+    if (text.isEmpty) return const [];
+
     final List<MixedContent> result = [];
     final regex = RegExp(r'\[(.*?)\]');
     int lastIndex = 0;
+    final emojiCache = EmojiManager.instance.cache;
 
     for (final match in regex.allMatches(text)) {
+      final matchedStr = match.group(0);
+      if (matchedStr == null) continue;
+
       if (match.start > lastIndex) {
         result.add(MixedContent(ContentType.text, text.substring(lastIndex, match.start)));
       }
-      if (EmojiManager().cache.containsKey(match.group(0))) {
-        result.add(MixedContent(ContentType.emoji, match.group(0)!));
+
+      if (emojiCache.containsKey(matchedStr)) {
+        result.add(MixedContent(ContentType.emoji, matchedStr));
       } else {
-        result.add(MixedContent(ContentType.text, match.group(0)!));
+        result.add(MixedContent(ContentType.text, matchedStr));
       }
       lastIndex = match.end;
     }
@@ -65,19 +63,15 @@ class DanmakuContentItem {
 
 class SpecialDanmakuContentItem extends DanmakuContentItem {
   final int duration;
-
-  final double fontSize; // 从弹幕内容外解析
+  final double fontSize;
   final bool hasStroke;
   final Tween<double>? alphaTween;
-
-  final Tween<double> translateXTween; // 相对坐标
-  final Tween<double> translateYTween; // 相对坐标
+  final Tween<double> translateXTween;
+  final Tween<double> translateYTween;
   final int translationDuration;
   final int translationStartDelay;
-
   final Matrix4? matrix;
   final PathMetric? motionPathMetric;
-
   final Curve easingType;
 
   @override
@@ -111,39 +105,50 @@ class SpecialDanmakuContentItem extends DanmakuContentItem {
     double videoY = 1080,
     bool disableGradient = false,
   }) {
+    if (list.length < 14) {
+      return SpecialDanmakuContentItem(
+        "",
+        duration: 3000,
+        color: color,
+        fontSize: fontSize,
+        translateXTween: Tween(begin: 0.0, end: 0.0),
+        translateYTween: Tween(begin: 0.0, end: 0.0),
+      );
+    }
+
     var (startX, endX) = _toRelativePosition(list[0], list[7], videoX);
     var (startY, endY) = _toRelativePosition(list[1], list[8], videoY);
-    List<String> alphaString = list[2].split('-');
-    double startA = double.tryParse(alphaString[0]) ?? 1;
-    double endA = double.tryParse(alphaString[1]) ?? 1;
+
+    List<String> alphaString = (list[2] ?? "1-1").toString().split('-');
+    double startA = double.tryParse(alphaString[0]) ?? 1.0;
+    double endA = alphaString.length > 1 ? (double.tryParse(alphaString[1]) ?? 1.0) : startA;
+
     Tween<double>? alphaTween;
     if (disableGradient || startA == endA) {
       color = color.withValues(alpha: (startA + endA) / 2);
     } else {
       alphaTween = Tween(begin: startA, end: endA);
     }
+
     int duration = (_parseDouble(list[3]) * 1000).round();
-    String text = list[4].trim();
+    String text = (list[4] ?? "").toString().trim();
     int rotateZ = _parseInt(list[5]);
     int rotateY = _parseInt(list[6]);
+
     Matrix4? matrix;
     if (rotateZ != 0 || rotateY != 0) {
       matrix = Matrix4.identity();
       if (rotateZ != 0) matrix.rotateZ(_degreeToRadian(rotateZ));
       if (rotateY != 0) matrix.rotateY(_degreeToRadian(rotateY));
     }
+
     var translateXTween = _makeTween(startX, endX);
     var translateYTween = _makeTween(startY, endY);
     int translationDuration = _parseInt(list[9]);
     int translationStartDelay = _parseInt(list[10]);
     bool hasStroke = list[11] == 1;
-    // 字体
-    // list[12];
     var easingType = list[13] == 1 ? Curves.easeInCubic : Curves.linear;
-    // List<Path> path;
-    // if (list.length > 15) {
-    //   list[14];
-    // }
+
     return SpecialDanmakuContentItem(
       text,
       duration: duration,
@@ -156,28 +161,26 @@ class SpecialDanmakuContentItem extends DanmakuContentItem {
       translationDuration: translationDuration,
       translationStartDelay: translationStartDelay,
       matrix: matrix,
-      // motionPathMetric: null,
       easingType: easingType,
     );
   }
 
   static (double, double) _toRelativePosition(dynamic rawStart, dynamic rawEnd, double videoSize) {
-    double toRadix(double? value, dynamic rawValue) =>
-        (value! > 1 || (rawValue is String && !rawValue.contains('.'))) ? value /= videoSize : value;
+    double toRadix(double? value, dynamic rawValue) {
+      if (value == null) return 0.0;
+      return (value > 1 || (rawValue is String && !rawValue.contains('.'))) ? value / videoSize : value;
+    }
 
     double? convert(value) {
-      if (value is num) {
-        return value.toDouble();
-      } else if (value is String) {
-        return double.tryParse(value);
-      }
+      if (value is num) return value.toDouble();
+      if (value is String) return double.tryParse(value);
       return null;
     }
 
     double? start = convert(rawStart);
     double? end = convert(rawEnd);
 
-    if (start == null && end == null) return (0, 0);
+    if (start == null && end == null) return (0.0, 0.0);
     start ??= end;
     end ??= start;
 
@@ -188,14 +191,14 @@ class SpecialDanmakuContentItem extends DanmakuContentItem {
     int() => digit,
     double() => digit.toInt(),
     String() => int.tryParse(digit) ?? 0,
-    _ => throw UnimplementedError(),
+    _ => 0,
   };
 
   static double _parseDouble(dynamic digit) => switch (digit) {
     int() => digit.toDouble(),
     double() => digit,
-    String() => double.tryParse(digit) ?? 0,
-    _ => throw UnimplementedError(),
+    String() => double.tryParse(digit) ?? 0.0,
+    _ => 0.0,
   };
 
   static Tween<T> _makeTween<T>(T start, T end) {
