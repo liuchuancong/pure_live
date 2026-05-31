@@ -1,6 +1,6 @@
 {
-  "version": "2.0.21",
-  "build_number": 32,
+  "version": "2.0.20",
+  "build_number": 31,
   "version_num": 2002032,
   "version_desc": "- 优化弹幕卡顿，并添加了更多的表情显示。\n- 优化切换线路以及清晰度不重新连接弹幕。\n- 优化了备份以及导出,升级前请做好数据备份，防止数据丢失。\n- 添加windows自定义启动窗口大小。\n",
   "prerelease": false,
