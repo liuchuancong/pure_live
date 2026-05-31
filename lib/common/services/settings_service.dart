@@ -44,7 +44,6 @@ class SettingsService extends GetxService {
   void onInit() {
     super.onInit();
     Get.put(AppSettingsController(), permanent: true);
-
     Get.put(BiliBiliAccountService(), permanent: true);
     Get.put(ExitSettingsController(), permanent: true);
     Get.put(StartupController(), permanent: true);
