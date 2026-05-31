@@ -1,5 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
   xmlns:tools="http://schemas.android.com/tools" package="com.mystyle.purelive">
+  <uses-sdk tools:overrideLibrary="com.akashskypatel.ffmpeg_kit_extended_flutter" />
   <uses-permission android:name="android.permission.WAKE_LOCK" />
   <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -39,6 +40,8 @@
   <application android:label="@string/AppName" android:name="${applicationName}"
     android:banner="@drawable/banner" android:largeHeap="true" android:usesCleartextTraffic="true"
     android:networkSecurityConfig="@xml/network_security_config"
+    android:allowBackup="true"
+    tools:replace="android:allowBackup"
     android:requestLegacyExternalStorage="true" android:enableOnBackInvokedCallback="false"
     android:allowNativeHeapPointerTagging="false" android:icon="@mipmap/ic_launcher">
     <activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTask"
@@ -99,7 +102,6 @@
         <action android:name="android.media.browse.MediaBrowserService" />
       </intent-filter>
     </service>
-
     <!-- ADD THIS "RECEIVER" element -->
     <receiver android:name="com.ryanheise.audioservice.MediaButtonReceiver"
       android:exported="true" tools:ignore="Instantiatable">

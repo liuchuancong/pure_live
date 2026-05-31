@@ -17,15 +17,16 @@ class BiliBiliAccountService extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    Future.delayed(const Duration(seconds: 1), _initAfterDelay);
+  }
+
+  /// 延时后执行的初始化逻辑
+  void _initAfterDelay() {
     logined.value = currentCookie.isNotEmpty;
 
     ever<String>(SettingsService.to.cookieManager.bilibiliCookie, (val) {
       logined.value = val.isNotEmpty;
-      if (val.isEmpty) {
-        _clearLocalAccountState();
-      } else {
-        loadUserInfo();
-      }
+      val.isEmpty ? _clearLocalAccountState() : loadUserInfo();
     });
 
     if (currentCookie.isNotEmpty) {
@@ -36,24 +37,22 @@ class BiliBiliAccountService extends GetxController {
   Future<void> loadUserInfo() async {
     if (currentCookie.isEmpty) return;
 
-    await Future.delayed(const Duration(seconds: 1));
-    if (currentCookie.isEmpty) return;
-
     try {
       final result = await HttpClient.instance.getJson(
         "https://api.bilibili.com/x/member/web/account",
         header: {"Cookie": currentCookie},
       );
 
-      if (result != null && result["code"] == 0) {
-        final info = BiliBiliUserInfoModel.fromJson(result["data"]);
-        name.value = info.uname ?? i18n("not_logged_in");
-        uid = info.mid ?? 0;
-        setSite();
-      } else {
+      if (result == null || result["code"] != 0) {
         ToastUtil.show(i18n("bilibili_login_expired"));
         logout();
+        return;
       }
+
+      final info = BiliBiliUserInfoModel.fromJson(result["data"]);
+      name.value = info.uname ?? i18n("not_logged_in");
+      uid = info.mid ?? 0;
+      setSite();
     } catch (_) {
       ToastUtil.show(i18n("bilibili_user_info_failed"));
     }
@@ -76,7 +75,6 @@ class BiliBiliAccountService extends GetxController {
 
   void logout() async {
     SettingsService.to.cookieManager.bilibiliCookie.v = "";
-    final cookieManager = CookieManager.instance();
-    await cookieManager.deleteAllCookies();
+    await CookieManager.instance().deleteAllCookies();
   }
 }

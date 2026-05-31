@@ -42,13 +42,15 @@ subprojects {
 
 subprojects {
     afterEvaluate {
-        extensions.findByType(BaseExtension::class.java)?.apply {
-            if (namespace.isNullOrBlank()) {
-                namespace = project.group.toString()
+         if (project.name != "app") {
+            extensions.findByType(com.android.build.gradle.BaseExtension::class.java)?.apply {
+                defaultConfig.minSdk = 23 
+                
+                if (namespace.isNullOrBlank()) {
+                    namespace = project.group.toString()
+                }
             }
         }
-
-        // 暴力拦截 Manifest：使用从 pubspec.yaml 获取的原始 buildNumber
         tasks.matching { it.name.contains("process", ignoreCase = true) && it.name.contains("Manifest") }.configureEach {
             doLast {
                 val targetVersionCode = pubspecVersionCode

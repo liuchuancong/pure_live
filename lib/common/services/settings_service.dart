@@ -48,7 +48,7 @@ class SettingsService extends GetxService {
     Get.lazyPut(() => ThemeSettingsController(), fenix: true);
     Get.lazyPut(() => WindowSizeController(), fenix: true);
     Get.lazyPut(() => ProxySettingsController(), fenix: true);
-    Get.lazyPut(() => BiliBiliAccountService(), fenix: true);
+    Get.put(BiliBiliAccountService(), permanent: true);
 
     Get.lazyPut(() => PlayerSettingsController(), fenix: true);
     Get.lazyPut(() => DanmakuSettingsController(), fenix: true);

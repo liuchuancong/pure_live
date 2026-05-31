@@ -29,7 +29,7 @@ dependencies:
   pro_mpack: ^2.1.0
   share_plus: ^12.0.2
   # Local database (SQLite)
-  drift: ^2.22.1
+  drift: ^2.33.0
   sqlite3_flutter_libs: ^0.6.0+eol
   charset_converter: ^2.3.0
   synchronized: ^3.1.0
@@ -69,7 +69,7 @@ dependencies:
   audio_service: ^0.18.18 # 后台音频服务
   audio_service_win: ^0.0.3
   audio_session: ^0.2.3 # 音频会话管理
-  ffmpeg_kit_extended_flutter: ^0.5.7
+  ffmpeg_kit_extended_flutter: ^0.5.6
   flv_lzc:
     git: https://github.com/liuchuancong/flv_lzc.git # ijk视频解析
 
@@ -235,7 +235,7 @@ dev_dependencies:
   intl_utils: ^2.8.11 # 国际化工具
   flutter_lints: ^6.0.0 # 代码规范检查
   dmg: ^0.1.7 # macOS安装包打包
-  drift_dev: ^2.22.1
+  drift_dev: ^2.33.0
 
 # 应用图标配置
 flutter_icons:
@@ -287,11 +287,11 @@ flutter:
         - asset: assets/PingFangSC.ttf
 
 # FFmpeg配置
-ffmpeg_kit_extended_config:
-  type: "base" # pre-bundled builds: debug, base, full, audio, video, video_hw
-  gpl: true # enable to include GPL libraries
-  small: true # enable to use smaller builds
 # ffmpeg_kit_extended_config:
-#   windows: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-windows/bundle-base-windows-x86_64-shared-lgpl.zip
-#   android: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-android/bundle-base-shared-lgpl-release.aar
-#   macos: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-macos/bundle-base-macos-universal-lgpl.xcframework.zip
+#   type: "base" # pre-bundled builds: debug, base, full, audio, video, video_hw
+#   gpl: true # enable to include GPL libraries
+#   small: true # enable to use smaller builds
+ffmpeg_kit_extended_config:
+  windows: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-windows/bundle-base-windows-x86_64-shared-lgpl.zip
+  android: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-android/bundle-base-shared-lgpl-release.aar
+  macos: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-macos/bundle-base-macos-universal-lgpl.xcframework.zip

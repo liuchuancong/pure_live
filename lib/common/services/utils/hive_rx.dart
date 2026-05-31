@@ -23,8 +23,12 @@ RxDouble hiveDouble(String key, double defaultValue) {
 }
 
 RxList<String> hiveStringList(String key, List<String> defaultValue) {
-  final initialValue = HivePrefUtil.getStringList(key) ?? defaultValue;
-  return RxList<String>(initialValue)..hiveList(key);
+  final initialValue = HivePrefUtil.getStringList(key);
+  if (initialValue != null) {
+    return RxList<String>(List<String>.from(initialValue))..hiveList(key);
+  } else {
+    return RxList<String>(List<String>.from(defaultValue))..hiveList(key);
+  }
 }
 
 Rx<T> hiveObject<T>(
@@ -68,13 +72,20 @@ extension HiveRxExtension<T> on Rx<T> {
       try {
         HivePrefUtil.setString(key, jsonEncode(toJson(v)));
       } catch (_) {}
-    });
+    }, condition: () => true);
   }
 }
 
 extension HiveRxListExtension on RxList<String> {
   List<String> get v => this;
-  set v(List<String> newValue) => assignAll(newValue);
+
+  set v(List<String> newValue) {
+    try {
+      assignAll(List<String>.from(newValue));
+    } catch (_) {
+      value = List<String>.from(newValue);
+    }
+  }
 
   void hiveList(String key) {
     ever<List<String>>(this, (v) {

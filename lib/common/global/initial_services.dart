@@ -12,11 +12,11 @@ import 'package:pure_live/recorder/pages/record_settings/record_settings_control
 
 class InitialServices {
   static void initGlobalServices() {
+    Get.put(TagManagementController(), permanent: true);
     Get.put(SettingsService(), permanent: true);
     Get.put(CacheService(), permanent: true);
     Get.put(AuthController(), permanent: true);
     Get.put(RouteObserverController(), permanent: true);
-    Get.put(TagManagementController(), permanent: true);
   }
 
   static void initLazyControllers() {

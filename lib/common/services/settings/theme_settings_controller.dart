@@ -63,7 +63,7 @@ class ThemeSettingsController extends GetxController {
   void fromJson(Map<String, dynamic> json) {
     themeModeName.v = json['themeMode'] ?? "System";
     enableDynamicTheme.v = json['enableDynamicTheme'] ?? false;
-    themeColorSwitch.v = json['themeColorSwitch'] ?? Colors.blue.hex;
+    themeColorSwitch.v = json['themeColorSwitch'] ?? const Color.fromARGB(255, 218, 70, 12).hex;
     languageName.v = json['language'] ?? "简体中文";
     crossAxisSpacing.v = json['crossAxisSpacing'] ?? 6.0;
     mainAxisSpacing.v = json['mainAxisSpacing'] ?? 6.0;
