@@ -18,8 +18,8 @@ class BiliBiliSite implements LiveSite {
 
   @override
   String name = "哔哩哔哩直播";
-  static String cookie = "";
-  static int userId = 0;
+  String get cookie => SettingsService.to.cookieManager.bilibiliCookie.v;
+  int get userId => SettingsService.to.cookieManager.bilibiliUid.v;
   @override
   LiveDanmaku getDanmaku() => BiliBiliDanmaku();
 
@@ -376,7 +376,7 @@ class BiliBiliSite implements LiveSite {
         platform: Sites.bilibiliSite,
         danmakuData: BiliBiliDanmakuArgs(
           roomId: int.tryParse(realRoomId) ?? 0,
-          uid: 22836336,
+          uid: userId,
           token: roomDanmakuResult["data"]["token"].toString(),
           serverHost: serverHosts.isNotEmpty ? serverHosts.first : "broadcastlv.chat.bilibili.com",
           buvid: buvid3,

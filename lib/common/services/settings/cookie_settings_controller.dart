@@ -4,6 +4,7 @@ import 'package:pure_live/common/services/settings/bilibili_account_service.dart
 
 class CookieSettingsController extends GetxController {
   final RxString bilibiliCookie = hiveString('bilibiliCookie', '');
+  final RxInt bilibiliUid = hiveInt('bilibiliUid', 0);
   final RxString huyaCookie = hiveString('huyaCookie', '');
   final RxString douyinCookie = hiveString('douyinCookie', '');
   final RxString kuaishouCookie = hiveString('kuaishouCookie', '');
@@ -21,6 +22,7 @@ class CookieSettingsController extends GetxController {
       'huyaCookie': huyaCookie.v,
       'douyinCookie': douyinCookie.v,
       'kuaishouCookie': kuaishouCookie.v,
+      'bilibiliUid': bilibiliUid.v,
     };
   }
 
@@ -29,6 +31,7 @@ class CookieSettingsController extends GetxController {
     huyaCookie.v = json['huyaCookie'] ?? '';
     douyinCookie.v = json['douyinCookie'] ?? '';
     kuaishouCookie.v = json['kuaishouCookie'] ?? '';
+    bilibiliUid.v = json['bilibiliUid'] ?? 0;
     BiliBiliAccountService.instance.setCookie(bilibiliCookie.v);
     BiliBiliAccountService.instance.loadUserInfo();
   }
