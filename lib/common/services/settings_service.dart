@@ -43,24 +43,28 @@ class SettingsService extends GetxService {
   @override
   void onInit() {
     super.onInit();
-    Get.put(AppSettingsController(), permanent: true);
-    Get.put(BiliBiliAccountService(), permanent: true);
-    Get.put(ExitSettingsController(), permanent: true);
-    Get.put(StartupController(), permanent: true);
-    Get.put(PlayerSettingsController(), permanent: true);
-    Get.put(DanmakuSettingsController(), permanent: true);
-    Get.put(FontSettingsController(), permanent: true);
-    Get.put(WindowSizeController(), permanent: true);
-    Get.put(FavoriteRoomController(), permanent: true);
-    Get.put(HistoryController(), permanent: true);
-    Get.put(CacheController(), permanent: true);
-    Get.put(CookieSettingsController(), permanent: true);
-    Get.put(WebDavController(), permanent: true);
-    Get.put(IptvSettingsController(), permanent: true);
-    Get.put(VolumeSettingsController(), permanent: true);
-    Get.put(ThemeSettingsController(), permanent: true);
-    Get.put(ProxySettingsController(), permanent: true);
-    Get.put(BackupController(), permanent: true);
+    Get.lazyPut(() => StartupController(), fenix: true);
+    Get.lazyPut(() => AppSettingsController(), fenix: true);
+    Get.lazyPut(() => ThemeSettingsController(), fenix: true);
+    Get.lazyPut(() => WindowSizeController(), fenix: true);
+    Get.lazyPut(() => ProxySettingsController(), fenix: true);
+    Get.lazyPut(() => BiliBiliAccountService(), fenix: true);
+
+    Get.lazyPut(() => PlayerSettingsController(), fenix: true);
+    Get.lazyPut(() => DanmakuSettingsController(), fenix: true);
+    Get.lazyPut(() => FontSettingsController(), fenix: true);
+    Get.lazyPut(() => VolumeSettingsController(), fenix: true);
+
+    Get.lazyPut(() => HistoryController(), fenix: true);
+    Get.lazyPut(() => FavoriteRoomController(), fenix: true);
+    Get.lazyPut(() => IptvSettingsController(), fenix: true);
+    Get.lazyPut(() => CacheController(), fenix: true);
+
+    Get.lazyPut(() => ExitSettingsController(), fenix: true);
+    Get.lazyPut(() => CookieSettingsController(), fenix: true);
+    Get.lazyPut(() => WebDavController(), fenix: true);
+    Get.lazyPut(() => BackupController(), fenix: true);
+
     _doMigration();
   }
 

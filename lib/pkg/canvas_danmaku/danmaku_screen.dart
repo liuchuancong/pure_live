@@ -8,8 +8,6 @@ import 'package:pure_live/pkg/canvas_danmaku/danmaku_controller.dart';
 import 'package:pure_live/pkg/canvas_danmaku/models/danmaku_item.dart';
 import 'package:pure_live/pkg/canvas_danmaku/models/danmaku_option.dart';
 import 'package:pure_live/pkg/canvas_danmaku/scroll_danmaku_painter.dart';
-import 'package:pure_live/pkg/canvas_danmaku/static_danmaku_painter.dart';
-import 'package:pure_live/pkg/canvas_danmaku/special_danmaku_painter.dart';
 import 'package:pure_live/pkg/canvas_danmaku/models/danmaku_content_item.dart';
 
 class DanmakuScreen extends StatefulWidget {
@@ -35,7 +33,7 @@ class _DanmakuScreenState extends State<DanmakuScreen> with TickerProviderStateM
   final List<DanmakuItem> _bottomDanmakuItems = [];
   final List<DanmakuItem> _specialDanmakuItems = [];
   final List<DanmakuItem> _flattenedScrollDanmakus = [];
-
+  static final List<FontWeight> _fontWeights = FontWeight.values;
   late double _danmakuHeight;
   late int _trackCount;
   final List<double> _trackYPositions = [];
@@ -130,7 +128,6 @@ class _DanmakuScreenState extends State<DanmakuScreen> with TickerProviderStateM
 
   void addDanmaku(DanmakuContentItem content) {
     if (!_running || !mounted || _trackYPositions.isEmpty) return;
-
     if (content.type == DanmakuItemType.special) {
       if (!_option.hideSpecial) {
         final special = content as SpecialDanmakuContentItem;
@@ -140,7 +137,7 @@ class _DanmakuScreenState extends State<DanmakuScreen> with TickerProviderStateM
             style: TextStyle(
               color: content.color,
               fontSize: content.fontSize,
-              fontWeight: FontWeight.values[_option.fontWeight],
+              fontWeight: _fontWeights[_option.fontWeight.clamp(0, _fontWeights.length - 1)],
               shadows: content.hasStroke
                   ? [
                       Shadow(
@@ -168,17 +165,17 @@ class _DanmakuScreenState extends State<DanmakuScreen> with TickerProviderStateM
       return;
     }
 
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: content.text,
-        style: TextStyle(fontSize: _option.fontSize, fontWeight: FontWeight.values[_option.fontWeight]),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
+    // 2. 核心性能优化：直接利用新 Utils 计算宽度和高度，内部自带全量缓存！
+    // 预先传入 showStroke 保证计算结果精确包含或排除描边空间
+    final danmakuWidth = Utils.calculateMixedContentWidth(
+      content,
+      _option.fontSize,
+      _option.fontWeight,
+      _option.showStroke,
+    );
+    final danmakuHeight = _danmakuHeight; // 高度直接复用几何初始化的行高，无需重复测算
 
-    final danmakuWidth = textPainter.width;
-    final danmakuHeight = textPainter.height;
-
+    // 3. 高性能段落生成：不再使用两个 TextPainter 拆开套用
     final ui.Paragraph paragraph = Utils.generateParagraph(content, danmakuWidth, _option.fontSize, _option.fontWeight);
     final ui.Paragraph? strokeParagraph = _option.showStroke
         ? Utils.generateStrokeParagraph(content, danmakuWidth, _option.fontSize, _option.fontWeight)
@@ -343,7 +340,6 @@ class _DanmakuScreenState extends State<DanmakuScreen> with TickerProviderStateM
         item.paragraph = null;
         item.strokeParagraph = null;
       }
-      // 🚀 补全被截断的底部弹幕缓存清理逻辑
       for (var item in _bottomDanmakuItems) {
         item.paragraph = null;
         item.strokeParagraph = null;
@@ -374,12 +370,16 @@ class _DanmakuScreenState extends State<DanmakuScreen> with TickerProviderStateM
     if (trackItems == null || trackItems.isEmpty) return true;
 
     final item = trackItems.last;
-    final existingEndPosition = item.xPosition + item.width;
-    if (_viewWidth - existingEndPosition < 0) return false;
 
+    final int elapsedTime = _tick - item.creationTime;
+    final double timeProgress = elapsedTime / (_option.duration * 1000);
+    final double currentX = _viewWidth + ((-item.width) - _viewWidth) * timeProgress;
+
+    final existingEndPosition = currentX + item.width;
+
+    if (_viewWidth - existingEndPosition < 0) return false;
     if (item.width < newDanmakuWidth) {
-      if ((1 - ((_viewWidth - item.xPosition) / (item.width + _viewWidth))) >
-          (_viewWidth / (_viewWidth + newDanmakuWidth))) {
+      if ((1 - ((_viewWidth - currentX) / (item.width + _viewWidth))) > (_viewWidth / (_viewWidth + newDanmakuWidth))) {
         return false;
       }
     }
@@ -408,6 +408,7 @@ class _DanmakuScreenState extends State<DanmakuScreen> with TickerProviderStateM
       await Future.delayed(const Duration(milliseconds: 16));
 
       final List<double> tracksToRemove = [];
+
       _scrollDanmakuByTrack.forEach((trackY, items) {
         items.removeWhere((item) => item.xPosition + item.width < 0);
         if (items.isEmpty) tracksToRemove.add(trackY);
@@ -416,6 +417,14 @@ class _DanmakuScreenState extends State<DanmakuScreen> with TickerProviderStateM
       for (final trackY in tracksToRemove) {
         _scrollDanmakuByTrack.remove(trackY);
       }
+
+      final List<DanmakuItem> tempFlattened = [];
+      _scrollDanmakuByTrack.forEach((_, items) {
+        tempFlattened.addAll(items);
+      });
+
+      _flattenedScrollDanmakus.clear();
+      _flattenedScrollDanmakus.addAll(tempFlattened);
 
       _topDanmakuItems.removeWhere((item) => (_tick - item.creationTime) >= staticDuration);
       _bottomDanmakuItems.removeWhere((item) => (_tick - item.creationTime) >= staticDuration);
@@ -449,10 +458,6 @@ class _DanmakuScreenState extends State<DanmakuScreen> with TickerProviderStateM
                           child: AnimatedBuilder(
                             animation: _animationController,
                             builder: (context, child) {
-                              _flattenedScrollDanmakus.clear();
-                              _scrollDanmakuByTrack.forEach((_, items) {
-                                _flattenedScrollDanmakus.addAll(items);
-                              });
                               return CustomPaint(
                                 size: Size(_viewWidth, _viewHeight),
                                 painter: ScrollDanmakuPainter(
@@ -463,46 +468,6 @@ class _DanmakuScreenState extends State<DanmakuScreen> with TickerProviderStateM
                                   _option.fontWeight,
                                   _option.showStroke,
                                   _danmakuHeight,
-                                  _running,
-                                  _tick,
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        RepaintBoundary(
-                          child: AnimatedBuilder(
-                            animation: _staticAnimationController,
-                            builder: (context, child) {
-                              return CustomPaint(
-                                size: Size(_viewWidth, _viewHeight),
-                                painter: StaticDanmakuPainter(
-                                  _staticAnimationController.value,
-                                  _topDanmakuItems,
-                                  _bottomDanmakuItems,
-                                  _option.duration,
-                                  _option.fontSize,
-                                  _option.fontWeight,
-                                  _option.showStroke,
-                                  _danmakuHeight,
-                                  _running,
-                                  _tick,
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        RepaintBoundary(
-                          child: AnimatedBuilder(
-                            animation: _animationController,
-                            builder: (context, child) {
-                              return CustomPaint(
-                                size: Size(_viewWidth, _viewHeight),
-                                painter: SpecialDanmakuPainter(
-                                  _animationController.value,
-                                  _specialDanmakuItems,
-                                  _option.fontSize,
-                                  _option.fontWeight,
                                   _running,
                                   _tick,
                                 ),

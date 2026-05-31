@@ -5,45 +5,76 @@ import 'package:pure_live/pkg/canvas_danmaku/models/danmaku_content_item.dart';
 
 class Utils {
   static final Paint _emojiPaint = Paint()..filterQuality = FilterQuality.medium;
-  static final Map<String, double> _widthCache = {};
-  static final Map<String, TextPainter> _textPainterCache = {};
-  static final Map<String, TextPainter> _strokePainterCache = {};
+  static final List<FontWeight> _fontWeights = FontWeight.values;
 
-  static String _textKey(String text, double fontSize, int fontWeight, String? fontFamily, Color color) {
-    return '$text|$fontSize|$fontWeight|${fontFamily ?? ""}|${color.toARGB32()}';
+  // 统一缓存整条弹幕的完整排版结构
+  static final Map<String, _CachedParagraph> _paragraphCache = {};
+  static const int _maxCacheSize = 300;
+
+  static String _getParagraphKey(DanmakuContentItem content, double fontSize, int fontWeight, bool showStroke) {
+    return '${content.text}|$fontSize|$fontWeight|${content.color.toARGB32()}|$showStroke|${content.fontFamily ?? ""}';
   }
 
-  static String _strokeKey(String text, double fontSize, int fontWeight, String? fontFamily) {
-    return '$text|$fontSize|$fontWeight|${fontFamily ?? ""}';
-  }
-
-  static double calculateMixedContentWidth(DanmakuContentItem content, double fontSize) {
-    double totalWidth = 0;
-    final emojiSize = fontSize * 1.2;
-
-    for (final item in content.mixedContent) {
-      if (item.type == ContentType.text) {
-        final cacheKey = '${item.value}|$fontSize|${content.fontFamily ?? ""}';
-        var width = _widthCache[cacheKey];
-        if (width == null) {
-          final textPainter = TextPainter(
-            text: TextSpan(
-              text: item.value,
-              style: TextStyle(fontSize: fontSize, fontFamily: content.fontFamily),
-            ),
-            textDirection: TextDirection.ltr,
-          )..layout();
-          width = textPainter.width;
-          _widthCache[cacheKey] = width;
-        }
-        totalWidth += width;
-      } else {
-        totalWidth += emojiSize;
-      }
+  static void _checkAndTrimCache() {
+    if (_paragraphCache.length > _maxCacheSize) {
+      _paragraphCache.clear();
     }
-    return totalWidth;
   }
 
+  /// 1. 兼容你外部调用：生成主文本段落
+  static ui.Paragraph generateParagraph(
+    DanmakuContentItem content,
+    double danmakuWidth,
+    double fontSize,
+    int fontWeight,
+  ) {
+    _checkAndTrimCache();
+    final key = _getParagraphKey(content, fontSize, fontWeight, false);
+    var cached = _paragraphCache[key];
+
+    if (cached == null) {
+      cached = _buildParagraph(content, fontSize, fontWeight, false);
+      _paragraphCache[key] = cached;
+    }
+    return cached.mainParagraph;
+  }
+
+  /// 2. 兼容你外部调用：生成描边段落
+  static ui.Paragraph generateStrokeParagraph(
+    DanmakuContentItem content,
+    double danmakuWidth,
+    double fontSize,
+    int fontWeight,
+  ) {
+    _checkAndTrimCache();
+    final key = _getParagraphKey(content, fontSize, fontWeight, true);
+    var cached = _paragraphCache[key];
+
+    if (cached == null) {
+      cached = _buildParagraph(content, fontSize, fontWeight, true);
+      _paragraphCache[key] = cached;
+    }
+    return cached.strokeParagraph ?? cached.mainParagraph;
+  }
+
+  /// 3. 计算弹幕总宽度
+  static double calculateMixedContentWidth(
+    DanmakuContentItem content,
+    double fontSize,
+    int fontWeight,
+    bool showStroke,
+  ) {
+    final key = _getParagraphKey(content, fontSize, fontWeight, showStroke);
+    var cached = _paragraphCache[key];
+
+    if (cached == null) {
+      cached = _buildParagraph(content, fontSize, fontWeight, showStroke);
+      _paragraphCache[key] = cached;
+    }
+    return cached.width;
+  }
+
+  /// 4. 完整的直接绘制方法（包含文字、描边、自己发送框、表情）
   static void drawMixedContent(
     Canvas canvas,
     DanmakuContentItem content,
@@ -54,189 +85,146 @@ class Utils {
     bool selfSend,
     Paint? selfSendPaint,
   ) {
-    double currentX = offset.dx;
-    final double baseY = offset.dy;
-    final emojiSize = fontSize * 1.2;
-    final targetFontWeight = FontWeight.values[fontWeight];
+    _checkAndTrimCache();
 
-    final testPainter = TextPainter(
-      text: TextSpan(
-        text: 'A',
-        style: TextStyle(fontSize: fontSize, fontWeight: targetFontWeight, fontFamily: content.fontFamily),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
+    final key = _getParagraphKey(content, fontSize, fontWeight, showStroke);
+    var cached = _paragraphCache[key];
 
-    final double textHeight = testPainter.height;
-    final double emojiOffsetY = (textHeight - emojiSize) / 2.0;
-
-    if (selfSend && selfSendPaint != null) {
-      final totalWidth = calculateMixedContentWidth(content, fontSize);
-      canvas.drawRect(Rect.fromLTWH(currentX, baseY, totalWidth, textHeight), selfSendPaint);
+    if (cached == null) {
+      cached = _buildParagraph(content, fontSize, fontWeight, showStroke);
+      _paragraphCache[key] = cached;
     }
 
-    for (final item in content.mixedContent) {
-      if (item.type == ContentType.text) {
-        final textCacheKey = _textKey(item.value, fontSize, fontWeight, content.fontFamily, content.color);
-        var textPainter = _textPainterCache[textCacheKey];
+    final double currentX = offset.dx;
+    final double baseY = offset.dy;
+    final drawOffset = Offset(currentX, baseY);
 
-        if (textPainter == null) {
-          textPainter = TextPainter(
-            text: TextSpan(
-              text: item.value,
-              style: TextStyle(
-                color: content.color,
-                fontSize: fontSize,
-                fontWeight: targetFontWeight,
-                fontFamily: content.fontFamily,
-              ),
-            ),
-            textDirection: TextDirection.ltr,
-          )..layout();
-          _textPainterCache[textCacheKey] = textPainter;
-        }
+    // 绘制“自己发送”的弹幕背景框
+    if (selfSend && selfSendPaint != null) {
+      canvas.drawRect(Rect.fromLTWH(currentX, baseY, cached.width, cached.height), selfSendPaint);
+    }
 
-        if (showStroke) {
-          final strokeCacheKey = _strokeKey(item.value, fontSize, fontWeight, content.fontFamily);
-          var strokePainter = _strokePainterCache[strokeCacheKey];
+    // 先画描边（如果有）
+    if (cached.strokeParagraph != null) {
+      canvas.drawParagraph(cached.strokeParagraph!, drawOffset);
+    }
 
-          if (strokePainter == null) {
-            strokePainter = TextPainter(
-              text: TextSpan(
-                text: item.value,
-                style: TextStyle(
-                  fontSize: fontSize,
-                  fontWeight: targetFontWeight,
-                  fontFamily: content.fontFamily,
-                  foreground: Paint()
-                    ..style = PaintingStyle.stroke
-                    ..strokeWidth = 1.5
-                    ..color = Colors.black54,
-                ),
-              ),
-              textDirection: TextDirection.ltr,
-            )..layout();
-            _strokePainterCache[strokeCacheKey] = strokePainter;
-          }
-          strokePainter.paint(canvas, Offset(currentX, baseY));
-        }
+    // 再画正文
+    canvas.drawParagraph(cached.mainParagraph, drawOffset);
 
-        textPainter.paint(canvas, Offset(currentX, baseY));
-        currentX += textPainter.width;
-      } else {
-        final image = EmojiManager.getEmoji(item.value);
+    // 提取并绘制表情
+    final List<ui.TextBox> inlineBoxes = cached.mainParagraph.getBoxesForPlaceholders();
 
-        if (image != null) {
-          canvas.drawImageRect(
-            image,
-            Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
-            Rect.fromLTWH(currentX, baseY + emojiOffsetY, emojiSize, emojiSize),
-            _emojiPaint,
-          );
-        } else {
-          final textCacheKey = _textKey(item.value, fontSize, fontWeight, content.fontFamily, content.color);
-          var textPainter = _textPainterCache[textCacheKey];
+    for (int i = 0; i < inlineBoxes.length && i < cached.emojiKeys.length; i++) {
+      final emojiKey = cached.emojiKeys[i];
+      final image = EmojiManager.getEmoji(emojiKey);
 
-          if (textPainter == null) {
-            textPainter = TextPainter(
-              text: TextSpan(
-                text: item.value,
-                style: TextStyle(
-                  color: content.color,
-                  fontSize: fontSize,
-                  fontWeight: targetFontWeight,
-                  fontFamily: content.fontFamily,
-                ),
-              ),
-              textDirection: TextDirection.ltr,
-            )..layout();
-            _textPainterCache[textCacheKey] = textPainter;
-          }
+      if (image != null) {
+        final box = inlineBoxes[i];
+        final dstRect = Rect.fromLTWH(currentX + box.left, baseY + box.top, cached.emojiSize, cached.emojiSize);
 
-          if (showStroke) {
-            final strokeCacheKey = _strokeKey(item.value, fontSize, fontWeight, content.fontFamily);
-            var strokePainter = _strokePainterCache[strokeCacheKey];
-
-            if (strokePainter == null) {
-              strokePainter = TextPainter(
-                text: TextSpan(
-                  text: item.value,
-                  style: TextStyle(
-                    fontSize: fontSize,
-                    fontWeight: targetFontWeight,
-                    fontFamily: content.fontFamily,
-                    foreground: Paint()
-                      ..style = PaintingStyle.stroke
-                      ..strokeWidth = 1.5
-                      ..color = Colors.black54,
-                  ),
-                ),
-                textDirection: TextDirection.ltr,
-              )..layout();
-              _strokePainterCache[strokeCacheKey] = strokePainter;
-            }
-            strokePainter.paint(canvas, Offset(currentX, baseY));
-          }
-
-          textPainter.paint(canvas, Offset(currentX, baseY));
-        }
-        currentX += emojiSize;
+        canvas.drawImageRect(
+          image,
+          Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+          dstRect,
+          _emojiPaint,
+        );
       }
     }
   }
 
-  static ui.Paragraph generateParagraph(
+  /// 核心排版引擎
+  static _CachedParagraph _buildParagraph(
     DanmakuContentItem content,
-    double danmakuWidth,
     double fontSize,
     int fontWeight,
+    bool showStroke,
   ) {
-    final builder =
-        ui.ParagraphBuilder(
-            ui.ParagraphStyle(
-              textAlign: TextAlign.left,
+    final targetFontWeight = _fontWeights[fontWeight < _fontWeights.length ? fontWeight : 4];
+    final double emojiSize = fontSize * 1.2;
+
+    final paragraphStyle = ui.ParagraphStyle(textAlign: TextAlign.left, textDirection: TextDirection.ltr, maxLines: 1);
+
+    // 构建文字层
+    final mainBuilder = ui.ParagraphBuilder(paragraphStyle);
+    final List<String> embeddedEmojis = [];
+
+    for (final item in content.mixedContent) {
+      if (item.type == ContentType.text) {
+        mainBuilder.pushStyle(
+          ui.TextStyle(
+            color: content.color,
+            fontSize: fontSize,
+            fontWeight: targetFontWeight,
+            fontFamily: content.fontFamily,
+          ),
+        );
+        mainBuilder.addText(item.value);
+        mainBuilder.pop();
+      } else {
+        mainBuilder.addPlaceholder(emojiSize, emojiSize, ui.PlaceholderAlignment.middle);
+        embeddedEmojis.add(item.value);
+      }
+    }
+    final mainParagraph = mainBuilder.build();
+    mainParagraph.layout(const ui.ParagraphConstraints(width: double.infinity));
+
+    // 构建描边层（仅在 showStroke 为 true 时创建，表情部分留空占位）
+    ui.Paragraph? strokeParagraph;
+    if (showStroke) {
+      final strokeBuilder = ui.ParagraphBuilder(paragraphStyle);
+      for (final item in content.mixedContent) {
+        if (item.type == ContentType.text) {
+          strokeBuilder.pushStyle(
+            ui.TextStyle(
               fontSize: fontSize,
+              fontWeight: targetFontWeight,
               fontFamily: content.fontFamily,
-              fontWeight: FontWeight.values[fontWeight],
-              textDirection: TextDirection.ltr,
+              foreground: Paint()
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = 2.0
+                ..color = Colors.black54,
             ),
-          )
-          ..pushStyle(ui.TextStyle(color: content.color))
-          ..addText(content.text);
+          );
+          strokeBuilder.addText(item.value);
+          strokeBuilder.pop();
+        } else {
+          strokeBuilder.addPlaceholder(emojiSize, emojiSize, ui.PlaceholderAlignment.middle);
+        }
+      }
+      strokeParagraph = strokeBuilder.build();
+      strokeParagraph.layout(const ui.ParagraphConstraints(width: double.infinity));
+    }
 
-    return builder.build()..layout(ui.ParagraphConstraints(width: danmakuWidth));
-  }
-
-  static ui.Paragraph generateStrokeParagraph(
-    DanmakuContentItem content,
-    double danmakuWidth,
-    double fontSize,
-    int fontWeight,
-  ) {
-    final strokePaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
-      ..color = Colors.black;
-
-    final builder =
-        ui.ParagraphBuilder(
-            ui.ParagraphStyle(
-              textAlign: TextAlign.left,
-              fontSize: fontSize,
-              fontFamily: content.fontFamily,
-              fontWeight: FontWeight.values[fontWeight],
-              textDirection: TextDirection.ltr,
-            ),
-          )
-          ..pushStyle(ui.TextStyle(foreground: strokePaint))
-          ..addText(content.text);
-
-    return builder.build()..layout(ui.ParagraphConstraints(width: danmakuWidth));
+    return _CachedParagraph(
+      mainParagraph: mainParagraph,
+      strokeParagraph: strokeParagraph,
+      width: mainParagraph.longestLine,
+      height: mainParagraph.height,
+      emojiKeys: embeddedEmojis,
+      emojiSize: emojiSize,
+    );
   }
 
   static void clearCache() {
-    _widthCache.clear();
-    _textPainterCache.clear();
-    _strokePainterCache.clear();
+    _paragraphCache.clear();
   }
+}
+
+class _CachedParagraph {
+  final ui.Paragraph mainParagraph;
+  final ui.Paragraph? strokeParagraph;
+  final double width;
+  final double height;
+  final List<String> emojiKeys;
+  final double emojiSize;
+
+  _CachedParagraph({
+    required this.mainParagraph,
+    required this.strokeParagraph,
+    required this.width,
+    required this.height,
+    required this.emojiKeys,
+    required this.emojiSize,
+  });
 }

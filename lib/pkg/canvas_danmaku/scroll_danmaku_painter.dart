@@ -5,18 +5,13 @@ import 'package:pure_live/pkg/canvas_danmaku/utils/utils.dart';
 class ScrollDanmakuPainter extends CustomPainter {
   final double progress;
   final List<DanmakuItem> scrollDanmakuItems;
-
   final int danmakuDurationInSeconds;
-
   final double fontSize;
   final int fontWeight;
   final bool showStroke;
-
   final double danmakuHeight;
-
   final bool running;
   final int tick;
-
   final double totalDuration;
 
   static final Paint _selfSendPaint = Paint()
@@ -38,48 +33,44 @@ class ScrollDanmakuPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final startPosition = size.width;
+    final double startPosition = size.width;
 
     for (final item in scrollDanmakuItems) {
-      item.lastDrawTick ??= item.creationTime;
-
       final currentWidth = item.cachedWidth;
+      if (currentWidth == null) continue;
 
-      if (currentWidth == null) {
-        continue;
-      }
+      final int elapsedTime = tick - item.creationTime;
+      final double timeProgress = elapsedTime / totalDuration;
 
-      final endPosition = -currentWidth;
+      if (timeProgress >= 1.0 || timeProgress < 0) continue;
 
-      final distance = startPosition - endPosition;
+      final double endPosition = -currentWidth;
+      final double currentX = startPosition + (endPosition - startPosition) * timeProgress;
 
-      item.xPosition += ((item.lastDrawTick! - tick) / totalDuration) * distance;
+      item.xPosition = currentX;
 
-      if (item.xPosition < -currentWidth || item.xPosition > size.width) {
-        item.lastDrawTick = tick;
+      if (currentX < -currentWidth || currentX > size.width) {
         continue;
       }
 
       Utils.drawMixedContent(
         canvas,
         item.content,
-        Offset(item.xPosition, item.yPosition),
+        Offset(currentX, item.yPosition),
         fontSize,
         fontWeight,
         showStroke,
         item.content.selfSend,
         _selfSendPaint,
       );
-
-      item.lastDrawTick = tick;
     }
   }
 
   @override
   bool shouldRepaint(covariant ScrollDanmakuPainter oldDelegate) {
-    return progress != oldDelegate.progress ||
-        tick != oldDelegate.tick ||
+    return tick != oldDelegate.tick ||
         scrollDanmakuItems.length != oldDelegate.scrollDanmakuItems.length ||
+        progress != oldDelegate.progress ||
         fontSize != oldDelegate.fontSize ||
         fontWeight != oldDelegate.fontWeight ||
         showStroke != oldDelegate.showStroke;
