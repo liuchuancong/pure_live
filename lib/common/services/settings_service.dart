@@ -4,8 +4,10 @@ import 'package:pure_live/common/services/settings/backup_controller.dart';
 import 'package:pure_live/common/services/settings/history_controller.dart';
 import 'package:pure_live/common/services/settings/web_dav_controller.dart';
 import 'package:pure_live/common/services/settings/startup_controller.dart';
+import 'package:pure_live/common/services/utils/legacy_settings_migration.dart';
 import 'package:pure_live/common/services/settings/window_size_controller.dart';
 import 'package:pure_live/common/services/settings/app_settings_controller.dart';
+import 'package:pure_live/common/services/settings/bilibili_account_service.dart';
 import 'package:pure_live/common/services/settings/favorite_room_controller.dart';
 import 'package:pure_live/common/services/settings/exit_settings_controller.dart';
 import 'package:pure_live/common/services/settings/font_settings_controller.dart';
@@ -42,6 +44,8 @@ class SettingsService extends GetxService {
   void onInit() {
     super.onInit();
     Get.put(AppSettingsController(), permanent: true);
+
+    Get.put(BiliBiliAccountService(), permanent: true);
     Get.put(ExitSettingsController(), permanent: true);
     Get.put(StartupController(), permanent: true);
     Get.put(PlayerSettingsController(), permanent: true);
@@ -58,5 +62,10 @@ class SettingsService extends GetxService {
     Get.put(ThemeSettingsController(), permanent: true);
     Get.put(ProxySettingsController(), permanent: true);
     Get.put(BackupController(), permanent: true);
+    _doMigration();
+  }
+
+  Future<void> _doMigration() async {
+    await LegacySettingsMigration.migrateIfNeeded();
   }
 }

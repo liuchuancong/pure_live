@@ -53,6 +53,9 @@ class FontSettingsController extends GetxController {
         await FontDownloadManager.instance.loadFont(id);
       }
     }
+    if (fontList.isEmpty) {
+      return;
+    }
     curFontModel.value = fontList.firstWhere((e) => e.id == id, orElse: () => fontList.first);
     fontState.value = await FontDownloadManager.instance.checkFontDownloaded(curFontModel.value!.id)
         ? DownloadState.downloaded
