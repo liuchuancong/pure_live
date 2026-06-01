@@ -866,5 +866,6 @@
     "width": "宽度",
     "height": "高度",
     "save_success": "设置已应用",
-    "invalid_input": "请输入正确的数值"
+    "invalid_input": "请输入正确的数值",
+    "font_not_downloaded_or_corrupted": "所选字体未下载或已损坏，请重新选择或下载"
 }

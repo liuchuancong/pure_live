@@ -867,5 +867,6 @@
     "width": "Width",
     "height": "Height",
     "save_success": "Settings applied",
-    "invalid_input": "Please enter valid dimensions"
+    "invalid_input": "Please enter valid dimensions",
+    "font_not_downloaded_or_corrupted": "Font not downloaded or corrupted, please re-download and apply the font"
 }
