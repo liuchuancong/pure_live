@@ -14,7 +14,7 @@ class _SignInPageState extends State<SignInPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(i18n('firebase_sign_in'))), // 如果 i18n 還沒改，可先用常規字串
+      appBar: AppBar(title: Text(i18n('firebase_sign_in'))),
       body: SingleChildScrollView(
         scrollDirection: Axis.vertical,
         child: Padding(
@@ -28,12 +28,11 @@ class _SignInPageState extends State<SignInPage> {
                   ToastUtil.show(i18n('reset_password_email'));
                 },
                 onSignInComplete: (UserCredential credential) {
-                  ToastUtil.show(i18n('supabase_sign_success')); // 提示成功
-                  Get.offAllNamed(RoutePath.kInitial); // 使用 Get 跳轉回首頁
+                  ToastUtil.show(i18n('firebase_sign_success'));
+                  Get.offAllNamed(RoutePath.kInitial);
                 },
                 onSignUpComplete: (UserCredential credential) {
-                  // Firebase 預設註冊成功會自動登入
-                  ToastUtil.show(i18n('supabase_sign_success'));
+                  ToastUtil.show(i18n('firebase_sign_success'));
                   Get.offAllNamed(RoutePath.kInitial);
                 },
               ),

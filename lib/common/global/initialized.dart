@@ -6,8 +6,6 @@ import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/global.dart';
-import 'package:pure_live/firebase_options.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:pure_live/plugins/cache_manager.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -15,6 +13,7 @@ import 'package:pure_live/common/global/windows_utils.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/global/initial_services.dart';
+import 'package:pure_live/modules/auth/utils/firebase_manager.dart';
 import 'package:pure_live/common/global/platform/mobile_manager.dart';
 import 'package:pure_live/common/global/platform/desktop_manager.dart';
 import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart';
@@ -41,8 +40,7 @@ class AppInitializer {
     await AppPathManager().initialize(instanceId: instanceId);
     await CustomImageCacheManager.initialize();
     final Directory hiveDir = await AppPathManager().getDir(AppPathManager.dirHiveDB);
-    await Firebase.initializeApp();
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await FirebaseManager.getInstance().initial();
     try {
       await Hive.initFlutter(hiveDir.path);
       await HivePrefUtil.init();

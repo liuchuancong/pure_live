@@ -1,10 +1,14 @@
 import 'dart:io';
+import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
+import 'package:pure_live/modules/auth/utils/firebase_manager.dart';
 
 final _auth = FirebaseAuth.instance;
 final _db = FirebaseFirestore.instance;
@@ -85,13 +89,13 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
               style: AppTextStyles.t14,
               validator: (value) {
                 if (value == null || value.isEmpty || !EmailValidator.validate(_emailController.text)) {
-                  return i18n('supabase_enter_valid_email');
+                  return i18n('firebase_enter_valid_email');
                 }
                 return null;
               },
               decoration: _buildInputDecoration(
                 theme,
-                hintText: i18n('supabase_enter_email'),
+                hintText: i18n('firebase_enter_email'),
                 prefixIcon: Remix.mail_line,
               ),
               controller: _emailController,
@@ -101,14 +105,14 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
               TextFormField(
                 validator: (value) {
                   if (value == null || value.isEmpty || value.length < 6) {
-                    return i18n('supabase_enter_valid_password');
+                    return i18n('firebase_enter_valid_password');
                   }
                   return null;
                 },
                 style: AppTextStyles.t14,
                 decoration: _buildInputDecoration(
                   theme,
-                  hintText: i18n('supabase_enter_password'),
+                  hintText: i18n('firebase_enter_password'),
                   prefixIcon: Remix.lock_line,
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -158,8 +162,12 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
                 child: _isLoading
                     ? AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", isMini: true)
                     : Text(
-                        _isSigningIn ? i18n('supabase_sign_in') : i18n('supabase_sign_up'),
-                        style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600, letterSpacing: 1),
+                        _isSigningIn ? i18n('firebase_sign_in') : i18n('firebase_sign_up'),
+                        style: AppTextStyles.t15.copyWith(
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1,
+                          color: Colors.white,
+                        ),
                       ),
               ),
             ),
@@ -193,7 +201,7 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
             if (_isSigningIn && Platform.isAndroid)
               TextButton(
                 onPressed: () => setState(() => _forgotPassword = true),
-                child: Text(i18n('supabase_forgot_password')),
+                child: Text(i18n('firebase_forgot_password')),
               ),
             TextButton(
               key: const ValueKey('toggleSignInButton'),
@@ -203,7 +211,7 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
                   _isSigningIn = !_isSigningIn;
                 });
               },
-              child: Text(_isSigningIn ? i18n('supabase_no_account') : i18n('supabase_has_account')),
+              child: Text(_isSigningIn ? i18n('firebase_no_account') : i18n('firebase_has_account')),
             ),
           ],
           if (_isSigningIn && _forgotPassword && Platform.isAndroid) ...[
@@ -218,7 +226,7 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
                 child: _isLoading
                     ? AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", isMini: true)
                     : Text(
-                        i18n('supabase_reset_password'),
+                        i18n('firebase_reset_password'),
                         style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600),
                       ),
               ),
@@ -226,7 +234,7 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
             const SizedBox(height: 12),
             TextButton(
               onPressed: () => setState(() => _forgotPassword = false),
-              child: Text(i18n('supabase_back_sign_in'), style: const TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(i18n('firebase_back_sign_in'), style: const TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ],
@@ -235,38 +243,90 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
   }
 
   Future<void> _handleGitHubSignIn() async {
+    if (_isLoading) return;
+
     setState(() => _isLoading = true);
+
     try {
-      final githubProvider = GithubAuthProvider();
-      final credential = kIsWeb
-          ? await _auth.signInWithPopup(githubProvider)
-          : await _auth.signInWithProvider(githubProvider);
-      widget.onSignInComplete.call(credential);
-    } on FirebaseAuthException catch (error) {
-      if (widget.onError == null) {
-        Get.showSnackbar(
-          GetSnackBar(
-            message: error.message ?? 'GitHub Authentication failed',
-            backgroundColor: Get.theme.colorScheme.error,
-          ),
+      UserCredential? credential;
+
+      final githubProvider = GithubAuthProvider()..addScope('user:email');
+
+      if (kIsWeb) {
+        credential = await _auth.signInWithPopup(githubProvider);
+      } else if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final freshUrl = '${FirebaseManager.middlePageUrl}?v=$timestamp';
+        final callbackUrl = await FlutterWebAuth2.authenticate(
+          url: freshUrl,
+          callbackUrlScheme: FirebaseManager.customScheme,
+          options: const FlutterWebAuth2Options(preferEphemeral: true),
         );
+
+        final uri = Uri.parse(callbackUrl);
+
+        if (uri.scheme != FirebaseManager.customScheme) {
+          throw Exception('Invalid callback scheme: ${uri.scheme}');
+        }
+
+        final credentialJson = uri.queryParameters['credential'];
+
+        if (credentialJson == null || credentialJson.isEmpty) {
+          throw Exception('Credential data missing from callback URL');
+        }
+
+        Map<String, dynamic> credentialMap;
+
+        try {
+          credentialMap = jsonDecode(Uri.decodeComponent(credentialJson)) as Map<String, dynamic>;
+        } catch (_) {
+          throw Exception('Failed to parse credential data');
+        }
+
+        final accessToken = credentialMap['accessToken'] as String?;
+
+        if (accessToken == null || accessToken.isEmpty) {
+          throw Exception('GitHub access token not found');
+        }
+
+        final authCredential = GithubAuthProvider.credential(accessToken);
+
+        credential = await _auth.signInWithCredential(authCredential);
       } else {
-        widget.onError?.call(error);
+        credential = await _auth.signInWithProvider(githubProvider);
       }
-    } catch (error) {
-      if (widget.onError == null) {
-        Get.showSnackbar(
-          GetSnackBar(
-            message: i18n('supabase_unexpected_err', args: {'error': error.toString()}),
-            backgroundColor: Get.theme.colorScheme.primary,
-          ),
-        );
-      } else {
-        widget.onError?.call(error);
+      widget.onSignInComplete(credential);
+    } on PlatformException catch (e) {
+      // 用户主动取消登录
+      if (e.code.toUpperCase() == 'CANCELED' || e.code.toUpperCase() == 'CANCELLED') {
+        return;
       }
+
+      _showErrorSnackbar(e.message ?? 'Authentication cancelled', isError: true);
+    } on FirebaseAuthException catch (e) {
+      _showErrorSnackbar(e.message ?? 'GitHub authentication failed', isError: true);
+    } catch (e) {
+      _showErrorSnackbar(i18n('firebase_unexpected_err', args: {'error': e.toString()}), isError: true);
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
+  }
+
+  void _showErrorSnackbar(String message, {bool isError = false}) {
+    if (widget.onError != null) {
+      widget.onError!(message);
+      return;
+    }
+
+    Get.showSnackbar(
+      GetSnackBar(
+        message: message,
+        duration: const Duration(seconds: 3),
+        backgroundColor: isError ? Get.theme.colorScheme.error : Get.theme.colorScheme.primary,
+      ),
+    );
   }
 
   Future _handleSubmit() async {
@@ -308,7 +368,7 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
       if (widget.onError == null) {
         Get.showSnackbar(
           GetSnackBar(
-            message: i18n('supabase_unexpected_err', args: {'error': error.toString()}),
+            message: i18n('firebase_unexpected_err', args: {'error': error.toString()}),
             backgroundColor: Get.theme.colorScheme.primary,
           ),
         );

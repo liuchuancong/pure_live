@@ -38,12 +38,12 @@ class _MinePageState extends State<MinePage> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(i18n('supabase_mine'))),
+      appBar: AppBar(title: Text(i18n('firebase_mine'))),
       body: ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          context.buildGroupTitle(i18n('supabase_mine')),
+          context.buildGroupTitle(i18n('firebase_mine')),
           context.buildModernCard([
             if (isManager())
               context.buildTile(
@@ -55,18 +55,18 @@ class _MinePageState extends State<MinePage> {
             context.buildTile(
               icon: Remix.download_cloud_line,
               title: i18n('download_user_configs'),
-              subtitle: i18n('supabase_mine_streams'),
+              subtitle: i18n('firebase_mine_streams'),
               onTap: downloadUserConfig,
             ),
             context.buildTile(
               icon: Remix.upload_cloud_line,
-              title: i18n('supabase_mine_profiles'),
-              subtitle: i18n('supabase_mine_streams'),
+              title: i18n('firebase_mine_profiles'),
+              subtitle: i18n('firebase_mine_streams'),
               onTap: uploadUserConfig,
             ),
             context.buildTile(
               icon: Remix.logout_box_r_line,
-              title: i18n('supabase_log_out'),
+              title: i18n('firebase_log_out'),
               subtitle: "",
               iconColor: theme.colorScheme.error.withValues(alpha: 0.8),
               onTap: signOut,

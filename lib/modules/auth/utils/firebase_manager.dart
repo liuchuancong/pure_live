@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:pure_live/plugins/archethic.dart';
@@ -11,7 +12,9 @@ import 'package:pure_live/common/services/settings/backup_controller.dart';
 
 class FirebaseManager {
   static late FirebaseManager _instance;
+  static const String customScheme = 'purelive';
 
+  static const String middlePageUrl = 'https://pure-live-26c7f.web.app/auth_callback.html';
   static final PolicyModel policy = PolicyModel();
 
   static bool canUploadConfig = false;
@@ -28,7 +31,7 @@ class FirebaseManager {
   FirebaseAuth get auth => FirebaseAuth.instance;
 
   Future<void> initial() async {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     await loadPolicy();
   }
 
@@ -76,7 +79,8 @@ class FirebaseManager {
     }
 
     if (!canUploadConfig) {
-      ToastUtil.show(i18n('supabase_account_unauthorized'));
+      // 这里修改为 firebase
+      ToastUtil.show(i18n('firebase_account_unauthorized'));
       return;
     }
 
@@ -115,7 +119,8 @@ class FirebaseManager {
     }
 
     if (!canUploadConfig) {
-      ToastUtil.show(i18n('supabase_account_unauthorized'));
+      // 这里修改为 firebase
+      ToastUtil.show(i18n('firebase_account_unauthorized'));
       return;
     }
 

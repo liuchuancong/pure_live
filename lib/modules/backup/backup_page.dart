@@ -26,12 +26,12 @@ class _BackupPageState extends State<BackupPage> {
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           children: [
-            context.buildGroupTitle("Supabase"),
+            context.buildGroupTitle("Firebase"),
             context.buildModernCard([
               context.buildTile(
                 icon: Remix.account_circle_line,
-                title: auth.isLogin ? i18n('supabase_mine') : i18n('supabase_sign_in'),
-                subtitle: auth.isLogin ? i18n('supabase_logged_in_desc') : i18n('supabase_login_desc'),
+                title: auth.isLogin ? i18n('firebase_mine') : i18n('firebase_sign_in'),
+                subtitle: auth.isLogin ? i18n('firebase_logged_in_desc') : i18n('firebase_login_desc'),
                 onTap: () {
                   if (auth.isLogin) {
                     Get.toNamed(RoutePath.kMine);
