@@ -46,9 +46,9 @@
 - ✅ **数据同步与备份**：支持 WebDAV 同步、本地导出/导入配置  
 - ✅ **弹幕增强**：支持弹幕过滤、合并与显示优化  
 - ✅ **定时关闭**：可设置倒计时自动退出应用  
-- ✅ **用户系统（可选）**：基于 [Supabase](https://supabase.com/) 实现注册/登录（需邮箱白名单认证）
+- ✅ **用户系统（可选）**：基于 [Firebase](https://console.firebase.google.com/) 实现注册/登录（需科学上网）
 
-> 💡 提示：如需使用 Supabase 功能，可自行 Fork 项目并在 Supabase 控制台部署服务。
+> 💡 提示：如需使用 Firebase 功能，可自行 Fork 项目并在 Firebase 控制台部署服务。
 
 ---
 
