@@ -3,12 +3,12 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  app_links
   audio_service_win
   battery_plus
   charset_converter
   cloud_firestore
   connectivity_plus
-  desktop_webview_window
   dynamic_color
   ffmpeg_kit_extended_flutter
   firebase_auth
@@ -28,7 +28,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
   url_launcher_windows
   volume_controller
   window_manager
-  window_to_front
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

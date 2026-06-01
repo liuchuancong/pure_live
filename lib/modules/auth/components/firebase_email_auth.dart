@@ -1,14 +1,14 @@
 import 'dart:io';
+import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
-import 'package:pure_live/modules/auth/utils/firebase_manager.dart';
 
 final _auth = FirebaseAuth.instance;
 final _db = FirebaseFirestore.instance;
@@ -247,6 +247,8 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
 
     setState(() => _isLoading = true);
 
+    HttpServer? server;
+
     try {
       UserCredential? credential;
 
@@ -255,59 +257,164 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
       if (kIsWeb) {
         credential = await _auth.signInWithPopup(githubProvider);
       } else if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
-        final timestamp = DateTime.now().millisecondsSinceEpoch;
-        final freshUrl = '${FirebaseManager.middlePageUrl}?v=$timestamp';
-        final callbackUrl = await FlutterWebAuth2.authenticate(
-          url: freshUrl,
-          callbackUrlScheme: FirebaseManager.customScheme,
-          options: const FlutterWebAuth2Options(preferEphemeral: true),
+        final authCodeCompleter = Completer<String>();
+
+        const port = 45678;
+
+        server = await HttpServer.bind(InternetAddress.loopbackIPv4, port);
+
+        debugPrint(
+          'GitHub OAuth callback server started: '
+          'http://127.0.0.1:$port/callback',
         );
 
-        final uri = Uri.parse(callbackUrl);
+        server.listen((HttpRequest request) async {
+          try {
+            debugPrint('OAuth callback: ${request.uri}');
 
-        if (uri.scheme != FirebaseManager.customScheme) {
-          throw Exception('Invalid callback scheme: ${uri.scheme}');
+            final code = request.uri.queryParameters['code'];
+
+            final error = request.uri.queryParameters['error'];
+
+            request.response.headers.contentType = ContentType.html;
+
+            if (error != null) {
+              request.response.write('''
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>GitHub Login Failed</title>
+</head>
+<body>
+<h2>登录失败</h2>
+<p>$error</p>
+</body>
+</html>
+''');
+
+              await request.response.close();
+
+              if (!authCodeCompleter.isCompleted) {
+                authCodeCompleter.completeError(Exception(error));
+              }
+
+              return;
+            }
+
+            request.response.write('''
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>GitHub Login Success</title>
+</head>
+<body>
+<h2>登录成功</h2>
+<p>请返回 PureLive 应用。</p>
+
+<script>
+setTimeout(() => {
+  window.close();
+}, 1000);
+</script>
+</body>
+</html>
+''');
+
+            await request.response.close();
+
+            if (code != null && code.isNotEmpty && !authCodeCompleter.isCompleted) {
+              authCodeCompleter.complete(code);
+            }
+          } catch (e) {
+            if (!authCodeCompleter.isCompleted) {
+              authCodeCompleter.completeError(e);
+            }
+          }
+        });
+
+        const clientId = 'Ov23lifAi0dZoD6GDIzC';
+
+        const clientSecret = 'd5baed3720c409b10a48d018e59ab95c66183263';
+
+        const redirectUrl = 'http://127.0.0.1:45678/callback';
+
+        final githubAuthUrl = Uri.parse(
+          'https://github.com/login/oauth/authorize'
+          '?client_id=$clientId'
+          '&redirect_uri=${Uri.encodeComponent(redirectUrl)}'
+          '&scope=user:email',
+        );
+
+        debugPrint('Open GitHub URL: $githubAuthUrl');
+
+        if (await canLaunchUrl(githubAuthUrl)) {
+          await launchUrl(githubAuthUrl, mode: LaunchMode.externalApplication);
+        } else {
+          throw Exception('无法打开系统默认浏览器');
         }
 
-        final credentialJson = uri.queryParameters['credential'];
+        final code = await authCodeCompleter.future.timeout(
+          const Duration(minutes: 2),
+          onTimeout: () {
+            throw TimeoutException('登录超时，请重试');
+          },
+        );
 
-        if (credentialJson == null || credentialJson.isEmpty) {
-          throw Exception('Credential data missing from callback URL');
+        debugPrint('GitHub Authorization Code: $code');
+
+        final tokenResponse = await http.post(
+          Uri.parse('https://github.com/login/oauth/access_token'),
+          headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'client_id': clientId,
+            'client_secret': clientSecret,
+            'code': code,
+            'redirect_uri': redirectUrl,
+          }),
+        );
+
+        debugPrint(
+          'Token Response: '
+          '${tokenResponse.statusCode}',
+        );
+
+        debugPrint(tokenResponse.body);
+
+        if (tokenResponse.statusCode != 200) {
+          throw Exception('与 GitHub Token 服务通信失败');
         }
 
-        Map<String, dynamic> credentialMap;
+        final responseBody = jsonDecode(tokenResponse.body) as Map<String, dynamic>;
 
-        try {
-          credentialMap = jsonDecode(Uri.decodeComponent(credentialJson)) as Map<String, dynamic>;
-        } catch (_) {
-          throw Exception('Failed to parse credential data');
-        }
-
-        final accessToken = credentialMap['accessToken'] as String?;
+        final accessToken = responseBody['access_token'] as String?;
 
         if (accessToken == null || accessToken.isEmpty) {
-          throw Exception('GitHub access token not found');
+          throw Exception('GitHub 未返回 Access Token');
         }
 
         final authCredential = GithubAuthProvider.credential(accessToken);
 
-        credential = await _auth.signInWithCredential(authCredential);
+        await Future.microtask(() async {
+          credential = await _auth.signInWithCredential(authCredential);
+        });
       } else {
         credential = await _auth.signInWithProvider(githubProvider);
       }
-      widget.onSignInComplete(credential);
-    } on PlatformException catch (e) {
-      // 用户主动取消登录
-      if (e.code.toUpperCase() == 'CANCELED' || e.code.toUpperCase() == 'CANCELLED') {
-        return;
-      }
 
-      _showErrorSnackbar(e.message ?? 'Authentication cancelled', isError: true);
+      widget.onSignInComplete(credential!);
     } on FirebaseAuthException catch (e) {
       _showErrorSnackbar(e.message ?? 'GitHub authentication failed', isError: true);
+    } on TimeoutException {
+      _showErrorSnackbar('登录超时，请重试', isError: true);
     } catch (e) {
-      _showErrorSnackbar(i18n('firebase_unexpected_err', args: {'error': e.toString()}), isError: true);
+      _showErrorSnackbar(e.toString(), isError: true);
     } finally {
+      try {
+        await server?.close(force: true);
+      } catch (_) {}
+
       if (mounted) {
         setState(() => _isLoading = false);
       }

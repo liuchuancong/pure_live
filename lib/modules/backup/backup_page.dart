@@ -18,10 +18,10 @@ class _BackupPageState extends State<BackupPage> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = Get.find<AuthController>();
     return Scaffold(
       appBar: AppBar(title: Text(i18n("backup_recover"))),
       body: Obx(() {
+        final auth = Get.find<AuthController>();
         return ListView(
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

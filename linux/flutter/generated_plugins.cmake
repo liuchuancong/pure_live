@@ -4,7 +4,6 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   charset_converter
-  desktop_webview_window
   dynamic_color
   ffmpeg_kit_extended_flutter
   flutter_acrylic
@@ -12,6 +11,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_js
   fullscreen_window
   fvp
+  gtk
   media_kit_libs_linux
   media_kit_video
   screen_retriever_linux
@@ -19,7 +19,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
   url_launcher_linux
   volume_controller
   window_manager
-  window_to_front
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

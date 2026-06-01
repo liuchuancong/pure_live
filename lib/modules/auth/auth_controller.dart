@@ -8,8 +8,9 @@ class AuthController extends GetxController {
 
   bool shouldGoReset = false;
 
-  bool isLogin = false;
-
+  final isLoginObs = false.obs;
+  bool get isLogin => isLoginObs.value;
+  set isLogin(bool value) => isLoginObs.value = value;
   fb.User? user;
 
   String userId = '';
@@ -23,15 +24,11 @@ class AuthController extends GetxController {
     _authSubscription = _auth.authStateChanges().listen((fb.User? firebaseUser) async {
       if (firebaseUser != null) {
         isLogin = true;
-
         user = firebaseUser;
-
         userId = firebaseUser.uid;
-
+        update();
         await FirebaseManager.getInstance().loadUploadConfig();
-
         final wantLoad = SettingsService.to.fav.favoriteRooms.v.isEmpty;
-
         if (wantLoad) {
           await FirebaseManager.getInstance().downloadConfig();
         }
