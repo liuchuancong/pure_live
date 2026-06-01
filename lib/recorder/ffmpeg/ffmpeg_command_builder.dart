@@ -37,12 +37,10 @@ class FFmpegCommandBuilder {
 
       // Headers
       if (headerStr.isNotEmpty) ...['-headers', _quote(headerStr)],
-
-      // 输入流
-      '-i', remoteStreamUrl,
-
       // 仅音频
       '-vn',
+      // 输入流
+      '-i', remoteStreamUrl,
       '-acodec', 'copy',
       '-listen', '1',
       // 输出 MPEGTS HTTP Server

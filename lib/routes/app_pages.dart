@@ -41,7 +41,6 @@ import 'package:pure_live/modules/account/huya/huya_cookie_page.dart';
 import 'package:pure_live/modules/area_rooms/area_rooms_binding.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_page.dart';
 import 'package:pure_live/modules/account/bilibili/qr_login_page.dart';
-import 'package:pure_live/modules/auth/components/update_password.dart';
 import 'package:pure_live/modules/account/bilibili/bilibili_bings.dart';
 import 'package:pure_live/modules/account/bilibili/web_login_page.dart';
 import 'package:pure_live/modules/account/huya/huya_cookie_binding.dart';
@@ -61,7 +60,6 @@ class AppPages {
   static final routes = [
     GetPage(name: RoutePath.kInitial, page: HomePage.new, participatesInRootNavigator: true, preventDuplicates: true),
     GetPage(name: RoutePath.kSignIn, page: SignInPage.new),
-    GetPage(name: RoutePath.kUpdatePassword, page: UpdatePassword.new),
     GetPage(name: RoutePath.kMine, page: MinePage.new),
     GetPage(name: RoutePath.kUserManage, page: () => const UserManager()),
     GetPage(name: RoutePath.kFavorite, page: FavoritePage.new),

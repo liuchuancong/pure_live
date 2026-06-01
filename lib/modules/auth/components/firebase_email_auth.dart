@@ -1,11 +1,13 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:email_validator/email_validator.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:pure_live/modules/auth/utils/constants.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-final supabase = Supabase.instance.client;
+final _auth = FirebaseAuth.instance;
+final _db = FirebaseFirestore.instance;
 
 class MetaDataField {
   final String label;
@@ -16,15 +18,15 @@ class MetaDataField {
   MetaDataField({required this.label, required this.key, this.validator, this.prefixIcon});
 }
 
-class SupaEmailAuth extends StatefulWidget {
+class FirebaseEmailAuth extends StatefulWidget {
   final String? redirectTo;
-  final void Function(AuthResponse response) onSignInComplete;
-  final void Function(AuthResponse response) onSignUpComplete;
+  final void Function(UserCredential credential) onSignInComplete;
+  final void Function(UserCredential credential) onSignUpComplete;
   final void Function()? onPasswordResetEmailSent;
   final void Function(Object error)? onError;
 
   final List<MetaDataField>? metadataFields;
-  const SupaEmailAuth({
+  const FirebaseEmailAuth({
     super.key,
     this.redirectTo,
     required this.onSignInComplete,
@@ -35,10 +37,10 @@ class SupaEmailAuth extends StatefulWidget {
   });
 
   @override
-  State<SupaEmailAuth> createState() => _SupaEmailAuthState();
+  State<FirebaseEmailAuth> createState() => _FirebaseEmailAuthState();
 }
 
-class _SupaEmailAuthState extends State<SupaEmailAuth> {
+class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -161,6 +163,32 @@ class _SupaEmailAuthState extends State<SupaEmailAuth> {
                       ),
               ),
             ),
+            const SizedBox(height: 16),
+            if (_isSigningIn) ...[
+              Row(
+                children: [
+                  Expanded(child: Divider(color: theme.dividerColor.withValues(alpha: 0.1))),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(i18n('or'), style: AppTextStyles.t12.copyWith(color: theme.hintColor)),
+                  ),
+                  Expanded(child: Divider(color: theme.dividerColor.withValues(alpha: 0.1))),
+                ],
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 46,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1)),
+                  ),
+                  onPressed: _isLoading ? null : _handleGitHubSignIn,
+                  icon: const Icon(Remix.github_fill, size: 20),
+                  label: Text(i18n('github_sign_in'), style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w500)),
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             if (_isSigningIn && Platform.isAndroid)
               TextButton(
@@ -206,38 +234,33 @@ class _SupaEmailAuthState extends State<SupaEmailAuth> {
     );
   }
 
-  Future<void> _handleSubmit() async {
-    if (!_formKey.currentState!.validate()) return;
+  Future<void> _handleGitHubSignIn() async {
     setState(() => _isLoading = true);
     try {
-      if (_isSigningIn) {
-        final response = await supabase.auth.signInWithPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-        );
-        widget.onSignInComplete.call(response);
-      } else {
-        final response = await supabase.auth.signUp(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-          emailRedirectTo: widget.redirectTo,
-          data: widget.metadataFields == null
-              ? null
-              : _metadataControllers.map<String, dynamic>(
-                  (metaDataField, controller) => MapEntry(metaDataField.key, controller.text),
-                ),
-        );
-        widget.onSignUpComplete.call(response);
-      }
-    } on AuthException catch (error) {
+      final githubProvider = GithubAuthProvider();
+      final credential = kIsWeb
+          ? await _auth.signInWithPopup(githubProvider)
+          : await _auth.signInWithProvider(githubProvider);
+      widget.onSignInComplete.call(credential);
+    } on FirebaseAuthException catch (error) {
       if (widget.onError == null) {
-        Get.context!.showErrorSnackBar(error.message);
+        Get.showSnackbar(
+          GetSnackBar(
+            message: error.message ?? 'GitHub Authentication failed',
+            backgroundColor: Get.theme.colorScheme.error,
+          ),
+        );
       } else {
         widget.onError?.call(error);
       }
     } catch (error) {
       if (widget.onError == null) {
-        Get.context!.showErrorSnackBar(i18n('supabase_unexpected_err', args: {'error': error.toString()}));
+        Get.showSnackbar(
+          GetSnackBar(
+            message: i18n('supabase_unexpected_err', args: {'error': error.toString()}),
+            backgroundColor: Get.theme.colorScheme.primary,
+          ),
+        );
       } else {
         widget.onError?.call(error);
       }
@@ -246,14 +269,65 @@ class _SupaEmailAuthState extends State<SupaEmailAuth> {
     }
   }
 
-  Future<void> _handleResetPassword() async {
+  Future _handleSubmit() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+    try {
+      if (_isSigningIn) {
+        final credential = await _auth.signInWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+        widget.onSignInComplete.call(credential);
+      } else {
+        final credential = await _auth.createUserWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+        if (credential.user != null) {
+          final Map<String, dynamic> userData = {
+            'email': _emailController.text.trim(),
+            'createdAt': FieldValue.serverTimestamp(),
+          };
+          _metadataControllers.forEach((field, controller) {
+            userData[field.key] = controller.text;
+          });
+          await _db.collection('users').doc(credential.user!.uid).set(userData);
+        }
+        widget.onSignUpComplete.call(credential);
+      }
+    } on FirebaseAuthException catch (error) {
+      if (widget.onError == null) {
+        Get.showSnackbar(
+          GetSnackBar(message: error.message ?? 'Authentication failed', backgroundColor: Get.theme.colorScheme.error),
+        );
+      } else {
+        widget.onError?.call(error);
+      }
+    } catch (error) {
+      if (widget.onError == null) {
+        Get.showSnackbar(
+          GetSnackBar(
+            message: i18n('supabase_unexpected_err', args: {'error': error.toString()}),
+            backgroundColor: Get.theme.colorScheme.primary,
+          ),
+        );
+      } else {
+        widget.onError?.call(error);
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future _handleResetPassword() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     try {
       final email = _emailController.text.trim();
-      await supabase.auth.resetPasswordForEmail(email);
+      await _auth.sendPasswordResetEmail(email: email);
       widget.onPasswordResetEmailSent?.call();
-    } on AuthException catch (error) {
+    } on FirebaseAuthException catch (error) {
       widget.onError?.call(error);
     } catch (error) {
       widget.onError?.call(error);

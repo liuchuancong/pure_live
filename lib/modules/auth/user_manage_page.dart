@@ -1,6 +1,14 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:email_validator/email_validator.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+class UserItem {
+  final String uid;
+  final String email;
+  bool canUpload;
+
+  UserItem({required this.uid, required this.email, required this.canUpload});
+}
 
 class UserManager extends StatefulWidget {
   const UserManager({super.key});
@@ -10,69 +18,69 @@ class UserManager extends StatefulWidget {
 }
 
 class _UserManagerState extends State<UserManager> {
-  final TextEditingController textEditingController = TextEditingController();
-
   final refreshController = EasyRefreshController(controlFinishRefresh: true, controlFinishLoad: true);
 
-  final users = <String>[].obs;
+  final users = <UserItem>[].obs;
 
   @override
   void initState() {
-    getCurrentUsers();
     super.initState();
+    getCurrentUsers();
   }
 
-  Future onRefresh() async {
+  Future<void> onRefresh() async {
     await getCurrentUsers();
     refreshController.finishRefresh(IndicatorResult.success);
   }
 
   Future<void> getCurrentUsers() async {
-    List<dynamic> data = await SupaBaseManager().client.from(SupaBaseManager.supabasePolicy.checkTable).select();
-    if (data.isNotEmpty) {
-      users.value = data.map((e) => e[SupaBaseManager.supabasePolicy.email].toString()).toList();
+    try {
+      final usersSnapshot = await FirebaseFirestore.instance.collection('users').get();
+
+      final permissionsSnapshot = await FirebaseFirestore.instance.collection('permissions').get();
+
+      final permissionSet = permissionsSnapshot.docs.map((e) => e.id).toSet();
+
+      users.value = usersSnapshot.docs.map((doc) {
+        final data = doc.data();
+
+        return UserItem(uid: doc.id, email: data['email'] ?? '', canUpload: permissionSet.contains(doc.id));
+      }).toList();
+    } catch (e) {
+      ToastUtil.show(i18n('load_failed'));
     }
   }
 
-  void addUser() {
-    final text = textEditingController.text.trim();
-    if (text.isEmpty || !EmailValidator.validate(text)) {
-      ToastUtil.show(i18n('invalid_email'));
-      return;
+  Future<void> grantUser(UserItem user) async {
+    try {
+      await FirebaseFirestore.instance.collection('permissions').doc(user.uid).set({
+        'canUpload': true,
+        'role': 'user',
+        'email': user.email,
+      });
+
+      user.canUpload = true;
+
+      users.assignAll([...users]);
+
+      ToastUtil.show(i18n('add_success'));
+    } catch (e) {
+      ToastUtil.show(i18n('add_failed'));
     }
-    if (users.contains(text)) {
-      ToastUtil.show(i18n('email_exists'));
-      return;
-    }
-    SupaBaseManager().client
-        .from(SupaBaseManager.supabasePolicy.checkTable)
-        .insert({SupaBaseManager.supabasePolicy.email: text})
-        .then(
-          (value) {
-            ToastUtil.show(i18n('add_success'));
-            users.add(text);
-            textEditingController.clear();
-          },
-          onError: (err) {
-            ToastUtil.show(i18n('add_failed'));
-          },
-        );
   }
 
-  void removeUser(String email, int index) {
-    SupaBaseManager().client
-        .from(SupaBaseManager.supabasePolicy.checkTable)
-        .delete()
-        .eq(SupaBaseManager.supabasePolicy.email, email)
-        .then(
-          (value) {
-            ToastUtil.show(i18n('delete_success'));
-            users.removeAt(index);
-          },
-          onError: (err) {
-            ToastUtil.show(i18n('delete_failed'));
-          },
-        );
+  Future<void> revokeUser(UserItem user) async {
+    try {
+      await FirebaseFirestore.instance.collection('permissions').doc(user.uid).delete();
+
+      user.canUpload = false;
+
+      users.assignAll([...users]);
+
+      ToastUtil.show(i18n('delete_success'));
+    } catch (e) {
+      ToastUtil.show(i18n('delete_failed'));
+    }
   }
 
   @override
@@ -92,100 +100,66 @@ class _UserManagerState extends State<UserManager> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           children: [
             context.buildGroupTitle(i18n('manage_users')),
-            context.buildModernCard([
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextField(
-                      keyboardType: TextInputType.emailAddress,
-                      controller: textEditingController,
-                      style: AppTextStyles.t14,
-                      decoration: InputDecoration(
-                        hintText: i18n('hint_text'),
-                        hintStyle: TextStyle(color: theme.hintColor.withValues(alpha: 0.5)),
-                        prefixIcon: Icon(Remix.mail_line, size: 20, color: theme.hintColor.withValues(alpha: 0.7)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                        filled: true,
-                        fillColor: theme.colorScheme.surfaceContainerLowest,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1)),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
-                        ),
-                      ),
-                      onSubmitted: (e) => addUser(),
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 44,
-                      child: FilledButton.icon(
-                        onPressed: addUser,
-                        style: FilledButton.styleFrom(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        icon: const Icon(Remix.user_add_line, size: 18),
-                        label: Text(i18n('add_btn'), style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w600)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ]),
-            const SizedBox(height: 24),
+
             Obx(() => context.buildGroupTitle(i18n('user_count', args: {'count': users.length.toString()}))),
+
+            const SizedBox(height: 12),
+
             Obx(() {
-              if (users.isEmpty) return const SizedBox.shrink();
+              if (users.isEmpty) {
+                return Center(
+                  child: Padding(padding: const EdgeInsets.all(32), child: Text(i18n('no_data'))),
+                );
+              }
+
               return context.buildModernCard(
-                users.asMap().entries.map((entry) {
-                  int index = entry.key;
-                  String email = entry.value;
+                users.map((user) {
                   return ListTile(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                     leading: Icon(Remix.user_line, size: 20, color: theme.colorScheme.primary),
-                    title: Text(email, style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w500)),
-                    trailing: IconButton(
-                      icon: Icon(
-                        Remix.delete_bin_6_line,
-                        size: 18,
-                        color: theme.colorScheme.error.withValues(alpha: 0.7),
-                      ),
-                      splashRadius: 20,
-                      onPressed: () async {
-                        final confirm = await Get.dialog<bool>(
-                          AlertDialog(
-                            title: Text(i18n("confirm_delete")),
-                            content: Text("${i18n("confirm_delete_user")} $email?"),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(Get.context!, false),
-                                child: Text(i18n("cancel")),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(Get.context!, true),
-                                child: Text(i18n("delete"), style: TextStyle(color: theme.colorScheme.error)),
-                              ),
-                            ],
+                    title: Text(user.email, style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w500)),
+                    subtitle: Text(user.canUpload ? i18n('authorized') : i18n('unauthorized')),
+                    trailing: user.canUpload
+                        ? IconButton(
+                            icon: Icon(Remix.delete_bin_6_line, color: theme.colorScheme.error),
+                            onPressed: () async {
+                              final confirm = await Get.dialog<bool>(
+                                AlertDialog(
+                                  title: Text(i18n('confirm_delete')),
+                                  content: Text('${i18n("confirm_delete_user")} ${user.email} ?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(context, false);
+                                      },
+                                      child: Text(i18n('cancel')),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(context, true);
+                                      },
+                                      child: Text(i18n('delete')),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (confirm == true) {
+                                await revokeUser(user);
+                              }
+                            },
+                          )
+                        : IconButton(
+                            icon: Icon(Remix.user_add_line, color: theme.colorScheme.primary),
+                            onPressed: () async {
+                              await grantUser(user);
+                            },
                           ),
-                        );
-                        if (confirm == true) {
-                          removeUser(email, index);
-                        }
-                      },
-                    ),
                   );
                 }).toList(),
               );
             }),
+
             const SizedBox(height: 32),
           ],
         ),

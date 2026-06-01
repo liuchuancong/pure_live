@@ -1,6 +1,7 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/auth/auth_controller.dart';
+import 'package:pure_live/modules/auth/utils/firebase_manager.dart';
 
 class MinePage extends StatefulWidget {
   const MinePage({super.key});
@@ -10,22 +11,26 @@ class MinePage extends StatefulWidget {
 }
 
 class _MinePageState extends State<MinePage> {
-  void uploadUserConifg() {
-    SupaBaseManager().uploadConfig();
+  void uploadUserConfig() {
+    FirebaseManager.getInstance().uploadConfig();
   }
 
-  void downloadUserConifg() {
-    SupaBaseManager().readConfig();
+  void downloadUserConfig() {
+    FirebaseManager.getInstance().downloadConfig();
   }
 
-  void singOut() {
-    SupaBaseManager().signOut();
+  void signOut() {
+    FirebaseManager.getInstance().signOut();
   }
 
   bool isManager() {
     final AuthController authController = Get.find<AuthController>();
-    if (!authController.isLogin) return false;
-    return SupaBaseManager.supabasePolicy.owner == authController.user.id;
+
+    if (!authController.isLogin || authController.user == null) {
+      return false;
+    }
+
+    return FirebaseManager.policy.owner == authController.user!.uid;
   }
 
   @override
@@ -48,23 +53,23 @@ class _MinePageState extends State<MinePage> {
                 onTap: () => Get.toNamed(RoutePath.kUserManage),
               ),
             context.buildTile(
-              icon: Remix.download_cloud_line, // 🎯 修正：从云端下载配置
+              icon: Remix.download_cloud_line,
               title: i18n('download_user_configs'),
               subtitle: i18n('supabase_mine_streams'),
-              onTap: downloadUserConifg,
+              onTap: downloadUserConfig,
             ),
             context.buildTile(
-              icon: Remix.upload_cloud_line, // 🎯 修正：上传配置到云端
+              icon: Remix.upload_cloud_line,
               title: i18n('supabase_mine_profiles'),
               subtitle: i18n('supabase_mine_streams'),
-              onTap: uploadUserConifg,
+              onTap: uploadUserConfig,
             ),
             context.buildTile(
               icon: Remix.logout_box_r_line,
               title: i18n('supabase_log_out'),
               subtitle: "",
               iconColor: theme.colorScheme.error.withValues(alpha: 0.8),
-              onTap: singOut,
+              onTap: signOut,
             ),
           ]),
           const SizedBox(height: 32),

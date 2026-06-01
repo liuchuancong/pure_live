@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "461427160915",
+    "project_id": "pure-live-26c7f",
+    "storage_bucket": "pure-live-26c7f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:461427160915:android:85d419f5499527ef82d3a6",
+        "android_client_info": {
+          "package_name": "com.mystyle.purelive"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCH6TU5LvnIG-StIy-LZSYZtvz9uNsw8-w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

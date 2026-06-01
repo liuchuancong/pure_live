@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/global.dart';
+import 'package:pure_live/firebase_options.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:pure_live/plugins/cache_manager.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -39,8 +41,8 @@ class AppInitializer {
     await AppPathManager().initialize(instanceId: instanceId);
     await CustomImageCacheManager.initialize();
     final Directory hiveDir = await AppPathManager().getDir(AppPathManager.dirHiveDB);
-    await SupaBaseManager.getInstance().initial();
-
+    await Firebase.initializeApp();
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     try {
       await Hive.initFlutter(hiveDir.path);
       await HivePrefUtil.init();

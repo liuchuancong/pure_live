@@ -1,39 +1,55 @@
 import 'dart:async';
 import 'package:pure_live/common/index.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'package:pure_live/modules/auth/utils/firebase_manager.dart';
 
 class AuthController extends GetxController {
-  final supabaseClient = SupaBaseManager().client;
+  final fb.FirebaseAuth _auth = fb.FirebaseAuth.instance;
+
   bool shouldGoReset = false;
-  late bool isLogin = false;
-  late User user;
+
+  bool isLogin = false;
+
+  fb.User? user;
+
   String userId = '';
+
+  StreamSubscription<fb.User?>? _authSubscription;
+
   @override
   void onInit() {
     super.onInit();
-    supabaseClient.auth.onAuthStateChange.listen((data) async {
-      final AuthChangeEvent event = data.event;
-      final Session? session = data.session;
-      if (session?.user != null) {
+
+    _authSubscription = _auth.authStateChanges().listen((fb.User? firebaseUser) async {
+      if (firebaseUser != null) {
         isLogin = true;
-        userId = data.session!.user.id;
-        user = session!.user;
-        await SupaBaseManager().loadUploadConfig();
-        bool wantLoad = SettingsService.to.fav.favoriteRooms.v.isEmpty;
+
+        user = firebaseUser;
+
+        userId = firebaseUser.uid;
+
+        await FirebaseManager.getInstance().loadUploadConfig();
+
+        final wantLoad = SettingsService.to.fav.favoriteRooms.v.isEmpty;
 
         if (wantLoad) {
-          SupaBaseManager().readConfig();
+          await FirebaseManager.getInstance().downloadConfig();
         }
       } else {
         isLogin = false;
+
+        user = null;
+
         userId = '';
       }
-      if (event == AuthChangeEvent.passwordRecovery && shouldGoReset) {
-        Timer(const Duration(seconds: 2), () {
-          shouldGoReset = false;
-          Get.offAndToNamed(RoutePath.kUpdatePassword);
-        });
-      }
+
+      update();
     });
+  }
+
+  @override
+  void onClose() {
+    _authSubscription?.cancel();
+    super.onClose();
   }
 }
