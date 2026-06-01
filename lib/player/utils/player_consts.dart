@@ -23,14 +23,6 @@ class PlayerConsts {
   }
 
   static const List<String> resolutions = ['原画', '蓝光8M', '蓝光4M', '超清', '流畅'];
-  static const List<BoxFit> videofitList = [
-    BoxFit.contain,
-    BoxFit.fill,
-    BoxFit.cover,
-    BoxFit.fitWidth,
-    BoxFit.fitHeight,
-    BoxFit.scaleDown,
-  ];
   static Map<String, Color> themeColors = {
     "Crimson": const Color.fromARGB(255, 220, 20, 60),
     "Orange": Colors.orange,

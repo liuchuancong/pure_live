@@ -538,7 +538,9 @@ class PlayerManager {
             decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Colors.black),
             child: Stack(
               children: [
-                Positioned.fill(child: getVideoWidget(videoFitIndex.value, fitList: PlayerConsts.videofitList)),
+                Positioned.fill(
+                  child: getVideoWidget(videoFitIndex.value, fitList: SettingsService.to.player.videoFitArray),
+                ),
 
                 Positioned.fill(
                   child: GestureDetector(
@@ -655,7 +657,7 @@ class PlayerManager {
                 onDoubleTap: () async {
                   await exitPip();
                 },
-                child: getVideoWidget(videoFitIndex.value, fitList: PlayerConsts.videofitList),
+                child: getVideoWidget(videoFitIndex.value, fitList: SettingsService.to.player.videoFitArray),
               ),
 
               Center(

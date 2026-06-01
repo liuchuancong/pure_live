@@ -1,4 +1,5 @@
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 
 class PlayerSettingsController extends GetxController {
@@ -6,10 +7,7 @@ class PlayerSettingsController extends GetxController {
   final RxString videoPlayerKey = hiveString('videoPlayerKey', 'mpv');
 
   final RxString preferResolution = hiveString('preferResolution', PlayerConsts.resolutions.first);
-  final RxString preferResolutionCellular = hiveString(
-    'preferResolutionCellular',
-    PlayerConsts.resolutions.first,
-  );
+  final RxString preferResolutionCellular = hiveString('preferResolutionCellular', PlayerConsts.resolutions.first);
 
   final RxBool enableCodec = hiveBool('enableCodec', true);
   final RxBool playerCompatMode = hiveBool('playerCompatMode', false);
@@ -22,13 +20,7 @@ class PlayerSettingsController extends GetxController {
   final RxBool audioOnly = hiveBool('audioOnly', false);
   final RxBool useHardStopOnExit = hiveBool('useHardStopOnExit', false);
 
-  List<BoxFit> get videoFitArray => const [
-    BoxFit.contain,
-    BoxFit.cover,
-    BoxFit.fill,
-    BoxFit.fitWidth,
-    BoxFit.fitHeight,
-  ];
+  List<BoxFit> get videoFitArray => AppConsts().videoFitType.map((e) => e['attr'] as BoxFit).toList();
 
   void changePreferResolution(String resolution) {
     if (PlayerConsts.resolutions.contains(resolution)) {
