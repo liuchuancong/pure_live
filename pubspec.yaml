@@ -82,7 +82,7 @@ dependencies:
   cached_network_image: ^3.3.0 # 网络图片缓存
   dynamic_color: ^1.8.1 # 动态主题色
   waterfall_flow: ^3.1.1 # 瀑布流布局
-  easy_refresh: ^3.4.0 # 下拉刷新/上拉加载
+  easy_refresh: ^3.5.0 # 下拉刷新/上拉加载
   flutter_smart_dialog: ^5.1.0 # 自定义弹窗
   flex_color_picker: ^3.7.2 # 颜色选择器
   bordered_text: ^3.0.2 # 带边框文字

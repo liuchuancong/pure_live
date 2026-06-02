@@ -20,10 +20,6 @@ class BaseController extends GetxController {
   /// 错误信息
   var errorMsg = "".obs;
 
-  /// 显示错误
-  /// * [msg] 错误信息
-  /// * [showPageError] 显示页面错误
-  /// * 只在第一页加载错误时showPageError=true，后续页加载错误时使用Toast弹出通知
   void handleError(Object exception, {bool showPageError = false}) {
     var msg = exceptionToString(exception);
 
@@ -31,7 +27,7 @@ class BaseController extends GetxController {
       pageError.value = true;
       errorMsg.value = msg;
     } else {
-      ToastUtil.show(exceptionToString(msg));
+      ToastUtil.show(msg);
     }
   }
 
@@ -40,103 +36,117 @@ class BaseController extends GetxController {
   }
 
   void onLogin() {}
+
   void onLogout() {}
 }
 
 class BasePageController<T> extends BaseController {
   final ScrollController scrollController = ScrollController();
-  final EasyRefreshController easyRefreshController = EasyRefreshController();
+
+  final EasyRefreshController easyRefreshController = EasyRefreshController(
+    controlFinishRefresh: true,
+    controlFinishLoad: true,
+  );
+
+  /// 当前页
   int currentPage = 1;
-  int count = 0;
-  int maxPage = 0;
+
+  /// 每页数量
   int pageSize = 30;
+
+  /// 是否还能加载更多
   var canLoadMore = false.obs;
+
+  /// 数据列表
   var list = <T>[].obs;
 
-  String _firstPageSignature = "";
-
   @override
-  void onInit() {
-    scrollController.addListener(() {
-      if (scrollController.position.atEdge) {
-        bool isTop = scrollController.position.pixels == 0;
-        if (!isTop) {
-          loadData();
-        }
-      }
-    });
-    super.onInit();
+  void onClose() {
+    scrollController.dispose();
+    easyRefreshController.dispose();
+    super.onClose();
   }
 
+  /// 下拉刷新
   Future refreshData() async {
     currentPage = 1;
-    _firstPageSignature = "";
     await loadData();
   }
 
+  /// 加载数据
   Future loadData() async {
+    if (loadding) return;
+
+    final bool isRefresh = currentPage == 1;
+
     try {
-      if (loadding) return;
       loadding = true;
+
       pageError.value = false;
       pageEmpty.value = false;
       notLogin.value = false;
-      pageLoadding.value = currentPage == 1 && list.isEmpty;
 
-      var result = await getData(currentPage, pageSize);
-
-      if (currentPage == 1) {
-        _firstPageSignature = result.map((e) {
-          try {
-            return (e as dynamic).toJson().toString();
-          } catch (_) {
-            return e.toString();
-          }
-        }).join();
-      } else if (result.isNotEmpty) {
-        final currentSignature = result.map((e) {
-          try {
-            return (e as dynamic).toJson().toString();
-          } catch (_) {
-            return e.toString();
-          }
-        }).join();
-
-        if (_firstPageSignature == currentSignature) {
-          canLoadMore.value = false;
-          return;
-        }
+      if (isRefresh && list.isEmpty) {
+        pageLoadding.value = true;
       }
 
-      if (result.isNotEmpty) {
-        currentPage++;
-        canLoadMore.value = true;
-        pageEmpty.value = false;
-      } else {
-        canLoadMore.value = false;
-        if (currentPage == 1) {
-          pageEmpty.value = true;
-        }
-      }
+      final result = await getData(currentPage, pageSize);
 
-      if (currentPage == 2) {
+      /// 判断是否还有下一页
+      final bool hasMore = result.length >= pageSize;
+
+      if (isRefresh) {
+        /// 刷新
         list.assignAll(result);
+
+        if (easyRefreshController.controlFinishRefresh) {
+          easyRefreshController.finishRefresh(IndicatorResult.success);
+        }
+
+        easyRefreshController.resetFooter();
       } else {
+        /// 加载更多
         list.addAll(result);
+
+        if (easyRefreshController.controlFinishLoad) {
+          easyRefreshController.finishLoad(hasMore ? IndicatorResult.success : IndicatorResult.noMore);
+        }
       }
+
+      canLoadMore.value = hasMore;
+
+      if (hasMore) {
+        currentPage++;
+      }
+
+      pageEmpty.value = isRefresh && result.isEmpty;
     } catch (e) {
-      handleError(e, showPageError: currentPage == 1 && list.isEmpty);
+      handleError(e, showPageError: isRefresh && list.isEmpty);
+
+      if (isRefresh) {
+        if (easyRefreshController.controlFinishRefresh) {
+          easyRefreshController.finishRefresh(IndicatorResult.fail);
+        }
+      } else {
+        if (easyRefreshController.controlFinishLoad) {
+          easyRefreshController.finishLoad(IndicatorResult.fail);
+        }
+      }
     } finally {
       loadding = false;
       pageLoadding.value = false;
     }
   }
 
+  /// 子类实现
   Future<List<T>> getData(int page, int pageSize) async {
     return [];
   }
 
+  /// 滚动到底部
   void scrollToBottom() {
+    if (!scrollController.hasClients) return;
+
     scrollController.animateTo(
       scrollController.position.maxScrollExtent,
       duration: const Duration(milliseconds: 200),
@@ -144,7 +154,10 @@ class BasePageController<T> extends BaseController {
     );
   }
 
+  /// 返回顶部或刷新
   void scrollToTopOrRefresh() {
+    if (!scrollController.hasClients) return;
+
     if (scrollController.offset > 0) {
       scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.linear);
     } else {

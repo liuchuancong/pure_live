@@ -67,7 +67,7 @@ class _PopularGridViewState extends State<PopularGridView> {
           return EasyRefresh(
             controller: controller.easyRefreshController,
             onRefresh: controller.refreshData,
-            onLoad: controller.loadData,
+            onLoad: controller.canLoadMore.value ? controller.loadData : null,
             child: controller.list.isNotEmpty
                 ? WaterfallFlow.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),

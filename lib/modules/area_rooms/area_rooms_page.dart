@@ -74,7 +74,8 @@ class _AreasRoomPageState extends State<AreasRoomPage> {
               return EasyRefresh(
                 controller: controller.easyRefreshController,
                 onRefresh: controller.refreshData,
-                onLoad: controller.loadData,
+                onLoad: controller.canLoadMore.value ? controller.loadData : null,
+
                 child: WaterfallFlow.builder(
                   gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
                     lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,

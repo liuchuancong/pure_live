@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:rxdart/rxdart.dart';
+import 'dart:developer' as developer;
 import '../models/player_state.dart';
 import '../models/player_exception.dart';
 import '../models/player_error_type.dart';
@@ -96,6 +97,7 @@ class FvpAdapter implements UnifiedPlayer {
         await setVolume(targetVolume);
       }
     } catch (e, s) {
+      developer.log('FVP setDataSource failed: $e');
       final exception = PlayerException(
         message: 'FVP open failed',
         type: PlayerErrorType.source,

@@ -28,12 +28,14 @@ import 'package:pure_live/modules/live_play/live_play_controller.dart';
 
 class PlayerManager {
   final PlayerPool playerPool;
-
   final EngineFallbackManager fallbackManager;
-
   final PreloadPlayerManager preloadManager;
   final AudioStreamLoader audioLoader = AudioStreamLoader();
   final LineFallbackManager lineManager;
+
+  int _sessionId = 0;
+  bool _isClosing = false;
+
   PlayerManager({
     required this.playerPool,
     required this.fallbackManager,
@@ -45,148 +47,74 @@ class PlayerManager {
     });
   }
 
-  // =========================
-  // player
-  // =========================
+  bool _isSessionValid(int id) => !_disposed && !_isClosing && _sessionId == id;
 
   UnifiedPlayer? _currentPlayer;
-
   PlayerEngine? _runtimeEngine;
-
   PlayerEngine? _defaultEngine;
 
-  // =========================
-  // play info
-  // =========================
-
   String? _currentUrl;
-
   List<String> _currentPlayUrls = [];
-
   Map<String, String> _currentHeaders = {};
 
-  // =========================
-  // rx state
-  // =========================
-
   final RxBool isInitialized = false.obs;
-
   final RxBool hasError = false.obs;
-
   final RxBool isVerticalVideo = false.obs;
-
   final RxBool isInPip = false.obs;
-
   final RxBool isFloating = false.obs;
-
   final RxBool isHovered = false.obs;
-
   final RxInt videoFitIndex = 0.obs;
-
   Rx<ValueKey> videoKey = Rx<ValueKey>(const ValueKey("video_0"));
 
-  // =========================
-  // stream state
-  // =========================
-
   final _stateSubject = BehaviorSubject<PlayerState>.seeded(PlayerState.idle);
-
   final _playingSubject = BehaviorSubject<bool>.seeded(false);
-
   final _loadingSubject = BehaviorSubject<bool>.seeded(false);
-
   final _completeSubject = BehaviorSubject<bool>.seeded(false);
-
   final _errorSubject = PublishSubject<PlayerException>();
-
   final _widthSubject = BehaviorSubject<int?>.seeded(null);
-
   final _heightSubject = BehaviorSubject<int?>.seeded(null);
 
-  // =========================
-  // subscriptions
-  // =========================
-
   final List<StreamSubscription> _subscriptions = [];
-
   StreamSubscription<PiPStatus>? _pipSubscription;
 
-  // =========================
-  // misc
-  // =========================
-
   bool _disposed = false;
-
   bool _isSwitchingDueToFallback = false;
   bool _isHandlingError = false;
-
   static const String _floatTag = "global_video_player";
-
   Timer? _hideTimer;
-
   late Floating floating;
-
   LiveRoom? currentFloatRoom;
 
-  // =========================
-  // getter
-  // =========================
-
   UnifiedPlayer? get currentPlayer => _currentPlayer;
-
   PlayerEngine get currentEngine => _runtimeEngine ?? _defaultEngine ?? PlayerEngine.mediaKit;
-
   Stream<PlayerState> get onStateChanged => _stateSubject.stream;
-
   Stream<bool> get onPlaying => _playingSubject.stream;
-
   Stream<bool> get onLoading => _loadingSubject.stream;
-
   Stream<bool> get onComplete => _completeSubject.stream;
-
   Stream<PlayerException> get onError => _errorSubject.stream;
-
   Stream<int?> get width => _widthSubject.stream;
-
   Stream<int?> get height => _heightSubject.stream;
-
   bool get isPlayingNow => _playingSubject.value;
 
   double get currentVideoRatio {
     final w = _widthSubject.value?.toDouble() ?? 1920;
-
     final h = _heightSubject.value?.toDouble() ?? 1080;
-
-    if (w <= 0 || h <= 0) {
-      return 16 / 9;
-    }
-
+    if (w <= 0 || h <= 0) return 16 / 9;
     return w / h;
   }
 
-  // =========================
-  // initialize
-  // =========================
-
   Future<void> initialize({PlayerEngine engine = PlayerEngine.mediaKit}) async {
     if (_disposed) return;
-
     _stateSubject.add(PlayerState.initializing);
-
     try {
       _defaultEngine = engine;
-
       _runtimeEngine = engine;
-
       _currentPlayer = await playerPool.getPlayer(engine);
-
       await _bindPlayerStreams(_currentPlayer!);
       LiveAudioService.setPlayer(_currentPlayer!);
       if (Platform.isAndroid) {
         floating = Floating();
-
         _pipSubscription?.cancel();
-
         _pipSubscription = floating.pipStatusStream.listen((status) {
           isInPip.value = status == PiPStatus.enabled;
         });
@@ -195,25 +123,17 @@ class PlayerManager {
       _stateSubject.add(PlayerState.initialized);
     } catch (e, s) {
       hasError.value = true;
-
       final exception = PlayerException(
         message: 'Initialize player failed',
         type: PlayerErrorType.initialization,
         error: e,
         stackTrace: s,
       );
-
       _errorSubject.add(exception);
-
       _stateSubject.add(PlayerState.error);
-
       throw exception;
     }
   }
-
-  // =========================
-  // play
-  // =========================
 
   Future<void> play(
     String url,
@@ -222,7 +142,9 @@ class PlayerManager {
     LiveRoom? room,
     bool audioOnly = false,
   }) async {
-    if (_disposed) return;
+    if (_disposed || _isClosing) return;
+    final mySessionId = ++_sessionId;
+
     if (room?.roomId != currentFloatRoom?.roomId) {
       lineManager.reset();
     }
@@ -230,15 +152,15 @@ class PlayerManager {
       final String savedKey = SettingsService.to.player.videoPlayerKey.v;
       final String validKey = PlayerConsts.engines.containsKey(savedKey) ? savedKey : PlayerConsts.defaultKey;
       _defaultEngine = PlayerConsts.engines[validKey]!;
-
       _runtimeEngine = _defaultEngine;
       await initialize(engine: _defaultEngine!);
     } else if (_runtimeEngine != _defaultEngine && !_isSwitchingDueToFallback) {
       await switchEngine(_defaultEngine!, isManual: false);
     }
 
-    final player = _currentPlayer;
+    if (!_isSessionValid(mySessionId)) return;
 
+    final player = _currentPlayer;
     if (player == null) {
       throw PlayerException(message: 'Current player is null', type: PlayerErrorType.lifecycle);
     }
@@ -249,7 +171,6 @@ class PlayerManager {
     if (audioOnly && room?.roomId != null) {
       audioLoader.stop();
       final completer = Completer<String>();
-
       audioLoader.startAudioStream(
         remoteStreamUrl: url,
         uniqueId: room!.roomId!,
@@ -259,20 +180,22 @@ class PlayerManager {
         },
         onFFmpegEvent: (event) {
           if (event.type == FFmpegEventType.error) {
-            final msg = event.data['message'] ?? 'FFmpeg stream extract failed';
-            log(msg);
+            log(event.data['message'] ?? 'FFmpeg stream extract failed');
           }
         },
       );
-
       try {
         final pipePath = await completer.future.timeout(const Duration(seconds: 30));
         await Future.delayed(const Duration(seconds: 2));
-
+        if (!_isSessionValid(mySessionId)) {
+          audioLoader.stop();
+          return;
+        }
         targetUrl = pipePath;
         targetPlayUrls = [pipePath];
       } catch (e) {
         audioLoader.stop();
+        if (!_isSessionValid(mySessionId)) return;
         throw PlayerException(message: 'Audio pipe init timeout', type: PlayerErrorType.unknown);
       }
     } else if (!audioOnly) {
@@ -288,71 +211,55 @@ class PlayerManager {
     try {
       _stateSubject.add(PlayerState.preparing);
       await player.setDataSource(targetUrl, targetPlayUrls, headers, room: room);
+      if (!_isSessionValid(mySessionId)) return;
+
       LiveAudioService.setPlayer(player);
       LiveAudioService.start(room!.roomId!, room.nick ?? "", room.title ?? "", room.avatar);
-
-      videoKey.value = ValueKey("video_${DateTime.now().millisecondsSinceEpoch}");
+      videoKey.value = ValueKey("video_{DateTime.now().millisecondsSinceEpoch}");
       _stateSubject.add(PlayerState.ready);
     } on PlayerException catch (e) {
-      if (!_isHandlingError) {
-        await _handleError(e);
+      if (!_isHandlingError && _isSessionValid(mySessionId)) {
+        await _handleError(e, sessionId: mySessionId);
       }
     } catch (e, s) {
       log(e.toString());
-      final exception = PlayerException(message: 'Play failed', type: PlayerErrorType.unknown, error: e, stackTrace: s);
-
-      if (!_isHandlingError) {
-        await _handleError(exception);
+      if (!_isHandlingError && _isSessionValid(mySessionId)) {
+        final exception = PlayerException(
+          message: 'Play failed',
+          type: PlayerErrorType.unknown,
+          error: e,
+          stackTrace: s,
+        );
+        await _handleError(exception, sessionId: mySessionId);
       }
     } finally {
       _isSwitchingDueToFallback = false;
     }
   }
 
-  // =========================
-  // replay
-  // =========================
-
   Future<void> replay() async {
     if (_currentUrl == null) return;
     await play(_currentUrl!, _currentPlayUrls, _currentHeaders, room: currentFloatRoom);
   }
 
-  // =========================
-  // switch engine
-  // =========================
-
   Future<void> switchEngine(PlayerEngine engine, {bool isManual = false}) async {
-    if (_disposed) return;
-
-    if (_runtimeEngine == engine && _currentPlayer != null) {
-      return;
-    }
-
+    if (_disposed || _isClosing) return;
+    if (_runtimeEngine == engine && _currentPlayer != null) return;
     try {
       final oldPlayer = _currentPlayer;
-
       final oldEngine = _runtimeEngine;
-
       await _clearSubscriptions();
-
       final newPlayer = await playerPool.getPlayer(engine);
-
       _currentPlayer = newPlayer;
-
       _runtimeEngine = engine;
-
-      if (isManual) {
-        _defaultEngine = engine;
-      }
-      log('Switch engine to $engine', name: 'PlayerManager');
+      if (isManual) _defaultEngine = engine;
+      log('Switch engine to engine', name: 'PlayerManager');
       await _bindPlayerStreams(newPlayer);
       LiveAudioService.setPlayer(_currentPlayer!);
       if (oldPlayer != null && oldEngine != null) {
         await _safeDestroyPlayer(oldPlayer, oldEngine);
       }
-
-      videoKey.value = ValueKey("video_${DateTime.now().millisecondsSinceEpoch}");
+      videoKey.value = ValueKey("video_{DateTime.now().millisecondsSinceEpoch}");
     } catch (e, s) {
       final exception = PlayerException(
         message: 'Switch engine failed',
@@ -360,9 +267,7 @@ class PlayerManager {
         error: e,
         stackTrace: s,
       );
-
       _errorSubject.add(exception);
-
       rethrow;
     }
   }
@@ -370,52 +275,30 @@ class PlayerManager {
   Future<void> _safeDestroyPlayer(UnifiedPlayer player, PlayerEngine engine) async {
     try {
       await player.hardDispose();
-
       await playerPool.removeFromCache(engine);
     } catch (e, s) {
-      log("destroy player error: $e", stackTrace: s);
+      log("destroy player error: e", stackTrace: s);
     }
   }
 
-  // =========================
-  // preload
-  // =========================
-
   Future<void> preload(String url, List<String> playUrls, Map<String, String> headers) async {
-    if (_disposed) return;
-
+    if (_disposed || _isClosing) return;
     final standby = await playerPool.getPlayer(_runtimeEngine!);
-
     await preloadManager.preload(standby, url, playUrls, headers);
   }
 
-  // =========================
-  // seamless switch
-  // =========================
-
   Future<void> seamlessSwitch() async {
-    if (_disposed) return;
-
+    if (_disposed || _isClosing) return;
     await preloadManager.switchToStandby();
-
     final player = preloadManager.current;
-
     if (player == null) return;
-
     await _clearSubscriptions();
-
     _currentPlayer = player;
-
     await _bindPlayerStreams(player);
   }
 
-  // =========================
-  // play control
-  // =========================
-
   Future<void> togglePlayPause() async {
     if (_currentPlayer == null) return;
-
     if (isPlayingNow) {
       await pause();
     } else {
@@ -423,38 +306,19 @@ class PlayerManager {
     }
   }
 
-  Future<void> pause() async {
-    await _currentPlayer?.pause();
-  }
-
-  Future<void> resume() async {
-    await _currentPlayer?.play();
-  }
+  Future<void> pause() async => await _currentPlayer?.pause();
+  Future<void> resume() async => await _currentPlayer?.play();
 
   Future<void> stop() async {
     await close();
     closeAppFloating();
   }
 
-  // =========================
-  // volume
-  // =========================
-
   Future<void> setVolume(double volume) async {
     await _currentPlayer?.setVolume(volume.clamp(0.0, 1.0));
   }
 
-  // =========================
-  // fit
-  // =========================
-
-  void changeVideoFit(int index) {
-    videoFitIndex.value = index;
-  }
-
-  // =========================
-  // pip
-  // =========================
+  void changeVideoFit(int index) => videoFitIndex.value = index;
 
   Future<void> enablePip() async {
     if (PlatformUtils.isAndroid) {
@@ -477,30 +341,19 @@ class PlayerManager {
     }
   }
 
-  // =========================
-  // floating
-  // =========================
-
   void showAppFloating() {
     floatingManager.disposeFloating(_floatTag);
-
     _hideTimer?.cancel();
-
     double maxSide = Platform.isWindows ? 350 : 220;
-
     double ratio = currentVideoRatio;
-
     double floatWidth;
-
     double floatHeight;
-
     if (ratio >= 1) {
       floatWidth = maxSide;
       floatHeight = maxSide / ratio;
     } else {
       floatHeight = maxSide * 1.2;
       floatWidth = floatHeight * ratio;
-
       if (floatWidth < 120) {
         floatWidth = 120;
         floatHeight = floatWidth / ratio;
@@ -510,7 +363,6 @@ class PlayerManager {
     void resetHideTimer() {
       if (Platform.isAndroid || Platform.isIOS) {
         _hideTimer?.cancel();
-
         _hideTimer = Timer(const Duration(seconds: 3), () {
           isHovered.value = false;
         });
@@ -522,14 +374,10 @@ class PlayerManager {
       FloatingOverlay(
         MouseRegion(
           onEnter: (_) {
-            if (Platform.isWindows || Platform.isMacOS) {
-              isHovered.value = true;
-            }
+            if (Platform.isWindows || Platform.isMacOS) isHovered.value = true;
           },
           onExit: (_) {
-            if (Platform.isWindows || Platform.isMacOS) {
-              isHovered.value = false;
-            }
+            if (Platform.isWindows || Platform.isMacOS) isHovered.value = false;
           },
           child: Container(
             width: floatWidth,
@@ -541,7 +389,6 @@ class PlayerManager {
                 Positioned.fill(
                   child: getVideoWidget(videoFitIndex.value, fitList: SettingsService.to.player.videoFitArray),
                 ),
-
                 Positioned.fill(
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
@@ -554,7 +401,6 @@ class PlayerManager {
                     child: const SizedBox.expand(),
                   ),
                 ),
-
                 Center(
                   child: AnimatedOpacity(
                     opacity: isHovered.value ? 1 : 0,
@@ -583,7 +429,6 @@ class PlayerManager {
                     ),
                   ),
                 ),
-
                 Positioned(
                   right: 4,
                   top: 4,
@@ -616,29 +461,19 @@ class PlayerManager {
         params: FloatingParams(isSnapToEdge: false, snapToEdgeSpace: 10, dragOpacity: 0.8),
       ),
     );
-
     floatingManager.getFloating(_floatTag).open(Get.context!);
-
     isFloating.value = true;
-
     if (Platform.isAndroid || Platform.isIOS) {
       isHovered.value = true;
-
       resetHideTimer();
     }
   }
 
   void closeAppFloating() {
     if (!isFloating.value) return;
-
     floatingManager.disposeFloating(_floatTag);
-
     isFloating.value = false;
   }
-
-  // =========================
-  // pip overlay
-  // =========================
 
   Widget buildPiPOverlay() {
     return Scaffold(
@@ -659,7 +494,6 @@ class PlayerManager {
                 },
                 child: getVideoWidget(videoFitIndex.value, fitList: SettingsService.to.player.videoFitArray),
               ),
-
               Center(
                 child: Obx(
                   () => AnimatedOpacity(
@@ -686,7 +520,6 @@ class PlayerManager {
                   ),
                 ),
               ),
-
               Positioned(
                 right: 8,
                 top: 8,
@@ -710,22 +543,16 @@ class PlayerManager {
     );
   }
 
-  // =========================
-  // widget
-  // =========================
   Widget buildAudioOnlyUI(BuildContext context, LivePlayController livePlayController) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxWidth = constraints.maxWidth;
         final maxHeight = constraints.maxHeight;
         final compact = maxHeight < 500;
-
         final avatarSize = compact ? (maxHeight * 0.22).clamp(50.0, 76.0) : 100.0;
-
         final titleSize = compact ? 14.0 : 22.0;
         final nickSize = compact ? 11.0 : 13.0;
         final badgeTextSize = compact ? 11.0 : 13.0;
-
         final gapLarge = compact ? 10.0 : 24.0;
         final gapMedium = compact ? 8.0 : 16.0;
         final gapSmall = compact ? 4.0 : 8.0;
@@ -873,7 +700,6 @@ class PlayerManager {
                     if (livePlayController.isCurrentRoomAudioOnly.value)
                       buildAudioOnlyUI(context, livePlayController)
                     else
-                      // 修改后的逻辑
                       Positioned.fill(
                         child: Container(
                           color: Colors.black,
@@ -883,7 +709,6 @@ class PlayerManager {
                             child: StreamBuilder<List<int?>>(
                               stream: CombineLatestStream.list([width, height]),
                               builder: (context, snapshot) {
-                                // 动态使用视频的真实宽高
                                 final vW = snapshot.data?[0]?.toDouble() ?? 1920.0;
                                 final vH = snapshot.data?[1]?.toDouble() ?? 1080.0;
                                 return SizedBox(width: vW, height: vH, child: _currentPlayer!.getVideoWidget());
@@ -892,7 +717,6 @@ class PlayerManager {
                           ),
                         ),
                       ),
-
                     if (controls != null) Positioned.fill(child: controls),
                   ],
                 ),
@@ -915,14 +739,13 @@ class PlayerManager {
     );
   }
 
-  // =========================
-  // close
-  // =========================
-
   Future<void> close() async {
+    _sessionId++;
+    _isClosing = true;
     await LiveAudioService.stop();
     audioLoader.stop();
     SettingsService.to.player.useHardStopOnExit.v ? await hardDispose() : await softStop();
+    _isClosing = false;
   }
 
   Future<void> softStop() async {
@@ -930,14 +753,10 @@ class PlayerManager {
     try {
       if (_stateSubject.value == PlayerState.error) {
         await hardDispose();
-
         return;
       }
-
       await _currentPlayer?.softStop();
-
       _stateSubject.add(PlayerState.idle);
-
       _playingSubject.add(false);
     } catch (e) {
       await hardDispose();
@@ -955,83 +774,62 @@ class PlayerManager {
     isInitialized.value = false;
   }
 
-  // =========================
-  // retry
-  // =========================
-
   Future<void> retry() async {
     await replay();
   }
 
-  // =========================
-  // error
-  // =========================
-  Future<void> _handleError(PlayerException error) async {
-    if (_disposed) return;
+  Future<void> _handleError(PlayerException error, {int? sessionId}) async {
+    if (_disposed || _isClosing) return;
     if (_isHandlingError) {
-      log("skip duplicated error handling: ${error.message}");
+      log("skip duplicated error handling: {error.message}");
       return;
     }
-    _isHandlingError = true;
+    final mySessionId = sessionId ?? _sessionId;
+    if (!_isSessionValid(mySessionId)) return;
 
+    _isHandlingError = true;
     try {
       hasError.value = true;
       _errorSubject.add(error);
       _stateSubject.add(PlayerState.error);
 
       bool lineSwitched = false;
-
       if ((error.type == PlayerErrorType.network || error.type == PlayerErrorType.source) &&
           _currentPlayUrls.length > 1) {
         lineManager.markFailed(_currentUrl!);
-
         if (!lineManager.hasAvailable(_currentPlayUrls)) {
           log("no available lines, fallback engine");
         } else {
           final nextLine = lineManager.next(_currentPlayUrls);
-
           if (nextLine != _currentUrl) {
             lineSwitched = true;
-
-            log("switch line => $nextLine");
-
+            log("switch line => nextLine");
             await Future.delayed(const Duration(seconds: 2));
-
+            if (!_isSessionValid(mySessionId)) return;
             await play(nextLine, _currentPlayUrls, _currentHeaders, room: currentFloatRoom);
-
             return;
           }
         }
       }
-      log(error.type.toString());
-      // =========================
-      // 2. 再尝试切播放器
-      // =========================
 
+      log(error.type.toString());
       if (!lineSwitched && fallbackManager.shouldFallback(error)) {
         final nextEngine = await fallbackManager.fallback(_runtimeEngine!, error);
-
-        // 防止重复切换
         if (nextEngine == _runtimeEngine) {
-          log("skip fallback: nextEngine(${nextEngine.name}) == currentEngine(${_runtimeEngine?.name})");
+          log("skip fallback: nextEngine({nextEngine.name}) == currentEngine({_runtimeEngine?.name})");
           return;
         }
-
         log(
           "fallback engine: "
           "${_runtimeEngine?.name} -> ${nextEngine.name}",
         );
         _isSwitchingDueToFallback = true;
-
-        // 给底层播放器一点释放时间
         await Future.delayed(const Duration(milliseconds: 1200));
-
+        if (!_isSessionValid(mySessionId)) return;
         await switchEngine(nextEngine, isManual: false);
-
         await Future.delayed(const Duration(milliseconds: 500));
-
+        if (!_isSessionValid(mySessionId)) return;
         await replay();
-
         return;
       }
     } catch (e, s) {
@@ -1040,9 +838,6 @@ class PlayerManager {
       _isHandlingError = false;
     }
   }
-  // =========================
-  // bind
-  // =========================
 
   Future<void> _bindPlayerStreams(UnifiedPlayer player) async {
     await _clearSubscriptions();
@@ -1060,7 +855,6 @@ class PlayerManager {
         }
       }),
     );
-
     _subscriptions.add(
       player.onLoading.listen((event) {
         _loadingSubject.add(event);
@@ -1069,19 +863,16 @@ class PlayerManager {
         }
       }),
     );
-
     _subscriptions.add(
       player.onComplete.listen((event) {
         _completeSubject.add(event);
       }),
     );
-
     _subscriptions.add(
       player.onStateChanged.listen((event) {
         _stateSubject.add(event);
       }),
     );
-
     _subscriptions.add(
       player.onError.listen((error) {
         if (!_isHandlingError) {
@@ -1089,19 +880,16 @@ class PlayerManager {
         }
       }),
     );
-
     _subscriptions.add(
       player.width.listen((event) {
         _widthSubject.add(event);
       }),
     );
-
     _subscriptions.add(
       player.height.listen((event) {
         _heightSubject.add(event);
       }),
     );
-
     _subscriptions.add(
       CombineLatestStream.combine2<int?, int?, bool>(
         width.where((w) => w != null && w > 0),
@@ -1113,10 +901,6 @@ class PlayerManager {
     );
   }
 
-  // =========================
-  // clear subscriptions
-  // =========================
-
   Future<void> _clearSubscriptions() async {
     if (_subscriptions.isEmpty) return;
     for (final item in _subscriptions.toList()) {
@@ -1125,25 +909,16 @@ class PlayerManager {
     _subscriptions.clear();
   }
 
-  // =========================
-  // dispose
-  // =========================
-
   Future<void> dispose() async {
     if (_disposed) return;
-
     _disposed = true;
-
+    _sessionId++;
+    _isClosing = true;
     _hideTimer?.cancel();
-
     closeAppFloating();
-
     _pipSubscription?.cancel();
-
     await _clearSubscriptions();
-
     await playerPool.disposeAll();
-
     await Future.wait([
       _stateSubject.close(),
       _playingSubject.close(),
