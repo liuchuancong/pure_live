@@ -1,5 +1,6 @@
 import 'dart:developer' as dev;
 import 'package:pure_live/get/get.dart';
+import 'package:pure_live/core/site/huya_site.dart';
 import 'package:pure_live/common/global/win_auto_start.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
 
@@ -10,6 +11,11 @@ class StartupController extends GetxController {
   void onInit() {
     super.onInit();
     ever<bool>(enableStartUp, (_) => setupLaunchAtStartup());
+    loadHuyaUa();
+  }
+
+  Future<void> loadHuyaUa() async {
+    await HuyaSite().getHuYaUA();
   }
 
   Future<void> setupLaunchAtStartup() async {
