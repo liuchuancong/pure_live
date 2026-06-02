@@ -883,9 +883,16 @@ class PlayerManager {
                             child: StreamBuilder<List<int?>>(
                               stream: CombineLatestStream.list([width, height]),
                               builder: (context, snapshot) {
-                                // 动态使用视频的真实宽高
-                                final vW = snapshot.data?[0]?.toDouble() ?? 1920.0;
-                                final vH = snapshot.data?[1]?.toDouble() ?? 1080.0;
+                                final data = snapshot.data;
+
+                                final double vW = (data != null && data.isNotEmpty)
+                                    ? (data[0]?.toDouble() ?? 1920.0)
+                                    : 1920.0;
+
+                                final double vH = (data != null && data.length > 1)
+                                    ? (data[1]?.toDouble() ?? 1080.0)
+                                    : 1080.0;
+
                                 return SizedBox(width: vW, height: vH, child: _currentPlayer!.getVideoWidget());
                               },
                             ),

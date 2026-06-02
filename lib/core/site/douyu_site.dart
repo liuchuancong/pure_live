@@ -175,10 +175,12 @@ class DouyuSite implements LiveSite {
       );
 
       var items = <LiveRoom>[];
+      print(result['data']['rl'][0]); // 打印每个item
       for (var item in result['data']['rl']) {
         if (item["type"] != 1) {
           continue;
         }
+
         var roomItem = LiveRoom(
           cover: item['rs16'].toString(),
           watching: item['ol'].toString(),
@@ -186,7 +188,7 @@ class DouyuSite implements LiveSite {
           title: item['rn'].toString(),
           nick: item['nn'].toString(),
           area: item['c2name'].toString(),
-          avatar: item['av'].toString().isNotEmpty ? 'https://apic.douyucdn.cn/upload/${item['av']}_middle.jpg' : '',
+          avatar: item['av'] ?? '',
           platform: Sites.douyuSite,
           status: true,
           liveStatus: LiveStatus.live,
