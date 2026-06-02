@@ -175,7 +175,6 @@ class DouyuSite implements LiveSite {
       );
 
       var items = <LiveRoom>[];
-      print(result['data']['rl'][0]); // 打印每个item
       for (var item in result['data']['rl']) {
         if (item["type"] != 1) {
           continue;

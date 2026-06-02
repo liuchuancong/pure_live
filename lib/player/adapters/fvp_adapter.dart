@@ -188,7 +188,11 @@ class FvpAdapter implements UnifiedPlayer {
   // =========================
   @override
   Widget getVideoWidget() {
-    return VideoPlayer(_controller!);
+    final controller = _controller;
+    if (controller == null) {
+      return const SizedBox();
+    }
+    return VideoPlayer(controller);
   }
 
   // =========================
