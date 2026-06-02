@@ -27,7 +27,7 @@ dependencies:
   scrollview_observer: ^1.26.3
   flutter_reorderable_grid_view: ^5.6.0
   pro_mpack: ^2.1.0
-  share_plus: ^12.0.2
+  share_plus: ^13.1.0
   # Local database (SQLite)
   drift: ^2.33.0
   sqlite3_flutter_libs: ^0.6.0+eol
@@ -40,12 +40,12 @@ dependencies:
   dio_cookie_manager: ^3.3.0 # Dio的Cookie管理插件
   cookie_jar: ^4.0.8 # Cookie持久化存储
   web_socket_channel: ^3.0.1 # WebSocket通信
-  connectivity_plus: 6.1.1 # 网络连接状态监听
+  connectivity_plus: ^7.1.1 # 网络连接状态监听
   webdav_client: ^1.2.2 # WebDAV文件存储客户端
   firebase_core: ^4.9.0
   firebase_auth: ^6.5.1
   cloud_firestore: ^6.4.1
-  win32_registry: ^2.1.0
+  win32_registry: ^3.0.3
   email_validator: ^3.0.0
   flutter_spinkit: ^5.2.2
   loading_animation_widget: ^1.3.0
@@ -66,7 +66,7 @@ dependencies:
       url: https://github.com/Predidit/media-kit.git
       ref: main
       path: ./libs/universal/media_kit_libs_video
-  fvp: ^0.36.2
+  fvp: ^0.37.1
   video_player: ^2.11.1
   better_player_plus: ^1.2.1 # 高级视频播放器
   audio_service: ^0.18.18 # 后台音频服务
@@ -83,17 +83,17 @@ dependencies:
   dynamic_color: ^1.8.1 # 动态主题色
   waterfall_flow: ^3.1.1 # 瀑布流布局
   easy_refresh: ^3.4.0 # 下拉刷新/上拉加载
-  flutter_smart_dialog: ^4.9.5 # 自定义弹窗
+  flutter_smart_dialog: ^5.1.0 # 自定义弹窗
   flex_color_picker: ^3.7.2 # 颜色选择器
-  bordered_text: ^2.0.0 # 带边框文字
+  bordered_text: ^3.0.2 # 带边框文字
   flutter_color: ^2.1.0 # 颜色工具
   syncfusion_flutter_sliders: ^33.2.5 # 滑块组件
   markdown_widget: ^2.3.2+8 # Markdown渲染
 
   # -------------------------- 图标/字体 --------------------------
-  font_awesome_flutter: ^10.6.0 # Font Awesome图标
-  remixicon: ^1.2.0 # Remix图标库
-  google_fonts: ^6.3.3 # 谷歌字体
+  font_awesome_flutter: ^11.0.0 # Font Awesome图标
+  remixicon: ^4.9.3 # Remix图标库
+  google_fonts: ^8.1.0 # 谷歌字体
 
   # -------------------------- 窗口/桌面端控制 --------------------------
   window_manager: ^0.5.1 # 桌面端窗口管理
@@ -104,7 +104,7 @@ dependencies:
       url: https://github.com/MSOB7YY/screen_retriever.git
       path: ./packages/screen_retriever
       ref: main
-  win32: ^5.15.0 # Windows系统API
+  win32: ^6.3.0 # Windows系统API
   android_intent_plus: ^6.0.0
   fullscreen_window: ^1.2.0
 
@@ -114,7 +114,7 @@ dependencies:
   wakelock_plus: ^1.4.0 # 保持屏幕常亮
   battery_plus: ^7.0.0 # 电池状态获取
   permission_handler: ^12.0.1 # 权限管理
-  device_info_plus: ^12.2.0 # 设备信息
+  device_info_plus: ^13.1.0 # 设备信息
   auto_orientation_v2: ^2.3.6 # 屏幕自动旋转
   mobile_scanner: ^7.1.3 # 二维码扫描
 
@@ -127,7 +127,7 @@ dependencies:
   path_provider: ^2.1.5 # 获取文件路径
   path: ^1.9.1 # 路径处理
   file: ^7.0.1 # 文件操作
-  file_picker: ^11.0.2 # 文件选择器
+  file_picker: ^12.0.0-beta.5 # 文件选择器
   uri_to_file: ^1.0.0 # URI转文件
   open_filex: ^4.7.0 # 打开本地文件
   mime: ^2.0.0 # MIME类型处理
@@ -167,7 +167,7 @@ dependencies:
   animated_splash_plus: ^1.0.3 # 启动动画
   flutter_exit_app: ^2.0.0 # 退出应用
   move_to_desktop: ^0.0.2 # 移动到桌面
-  package_info_plus: ^9.0.1 # 应用包信息
+  package_info_plus: ^10.1.0 # 应用包信息
   stop_watch_timer: ^3.2.2 # 计时器
   floating: ^6.0.0 # 悬浮窗
   flutter_floating: ^2.0.1 # 悬浮窗

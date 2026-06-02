@@ -52,15 +52,19 @@ class FirebaseManager {
       final basePath = r'Software\Classes\' + scheme;
       final commandPath = '$basePath\\shell\\open\\command';
       final command = '"$exePath" "%1"';
-      schemeKey = Registry.currentUser.createKey(basePath);
-      commandKey = Registry.currentUser.createKey(commandPath);
-      final currentCommand = commandKey.getStringValue('');
-      if (currentCommand == command) {
+
+      schemeKey = CURRENT_USER.create(basePath);
+      commandKey = CURRENT_USER.create(commandPath);
+
+      final currentCommandValue = commandKey.getValue('');
+      if (currentCommandValue is StringValue && currentCommandValue.value == command) {
         return;
       }
-      schemeKey.createValue(RegistryValue.string('', description ?? 'URL:$scheme Protocol'));
-      schemeKey.createValue(RegistryValue.string('URL Protocol', ''));
-      commandKey.createValue(RegistryValue.string('', command));
+
+      schemeKey.setValue('', RegistryValue.string(description ?? 'URL:$scheme Protocol'));
+      schemeKey.setValue('URL Protocol', const RegistryValue.string(''));
+      commandKey.setValue('', RegistryValue.string(command));
+
       debugPrint('[Protocol Registry] Registered $scheme://');
     } catch (e, s) {
       debugPrint('[Protocol Registry] Failed: $e\n$s');
