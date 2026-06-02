@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:flutter/widgets.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/common/services/settings/cache_controller.dart';
 import 'package:pure_live/common/services/settings/backup_controller.dart';
@@ -43,6 +45,7 @@ class SettingsService extends GetxService {
   @override
   void onInit() {
     super.onInit();
+
     Get.lazyPut(() => StartupController());
     Get.lazyPut(() => AppSettingsController());
     Get.lazyPut(() => ThemeSettingsController());
@@ -53,16 +56,48 @@ class SettingsService extends GetxService {
     Get.lazyPut(() => PlayerSettingsController());
     Get.lazyPut(() => DanmakuSettingsController());
     Get.lazyPut(() => VolumeSettingsController());
-
     Get.lazyPut(() => HistoryController());
     Get.lazyPut(() => FavoriteRoomController());
     Get.lazyPut(() => IptvSettingsController());
     Get.lazyPut(() => CacheController());
-
     Get.put(ExitSettingsController(), permanent: true);
     Get.lazyPut(() => CookieSettingsController());
     Get.lazyPut(() => WebDavController());
     Get.lazyPut(() => BackupController());
+
+    bool executionTriggered = false;
+    final Timer fallbackTimer = Timer(const Duration(seconds: 3), () {
+      if (!executionTriggered) {
+        executionTriggered = true;
+        _forceEagerInitialization();
+      }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!executionTriggered) {
+        fallbackTimer.cancel();
+        executionTriggered = true;
+        _forceEagerInitialization();
+      }
+    });
+  }
+
+  void _forceEagerInitialization() {
+    Get.find<StartupController>();
+    Get.find<AppSettingsController>();
+    Get.find<ThemeSettingsController>();
+    Get.find<WindowSizeController>();
+    Get.find<ProxySettingsController>();
+    Get.find<PlayerSettingsController>();
+    Get.find<DanmakuSettingsController>();
+    Get.find<VolumeSettingsController>();
+    Get.find<HistoryController>();
+    Get.find<FavoriteRoomController>();
+    Get.find<IptvSettingsController>();
+    Get.find<CacheController>();
+    Get.find<CookieSettingsController>();
+    Get.find<WebDavController>();
+    Get.find<BackupController>();
 
     _doMigration();
   }
