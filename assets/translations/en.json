@@ -894,5 +894,6 @@
     "select_countdown_duration": "Select Countdown Duration",
     "minutes": "min",
     "remaining_time": "Remaining",
-    "custom_duration": "Custom Duration"
+    "custom_duration": "Custom Duration",
+    "webdav_help_tutorial": "Help Tutorial"
 }

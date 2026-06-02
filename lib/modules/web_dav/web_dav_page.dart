@@ -1,6 +1,8 @@
 import 'package:mime/mime.dart';
+import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:webdav_client/webdav_client.dart' as webdav;
+import 'package:pure_live/modules/web_dav/web_dav_help.dart';
 import 'package:pure_live/modules/web_dav/webdav_config.dart';
 import 'package:pure_live/modules/web_dav/web_dav_controller.dart';
 
@@ -200,6 +202,8 @@ class WebDavPage extends GetView<WebDavPageController> {
               controller.loadFiles();
             } else if (value == 2) {
               _scaffoldKey.currentState?.openEndDrawer();
+            } else if (value == 3) {
+              Get.to(() => const WebDavHelpPage());
             }
           },
           itemBuilder: (BuildContext context) => [
@@ -210,6 +214,10 @@ class WebDavPage extends GetView<WebDavPageController> {
             PopupMenuItem(
               value: 2,
               child: MenuListTile(leading: const Icon(Icons.menu), text: i18n("webdav_open_config_list")),
+            ),
+            PopupMenuItem(
+              value: 3,
+              child: MenuListTile(leading: const Icon(Remix.question_line), text: i18n("webdav_help_tutorial")),
             ),
           ],
         ),

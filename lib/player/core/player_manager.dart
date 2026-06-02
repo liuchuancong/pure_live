@@ -816,7 +816,7 @@ class PlayerManager {
       if (!lineSwitched && fallbackManager.shouldFallback(error)) {
         final nextEngine = await fallbackManager.fallback(_runtimeEngine!, error);
         if (nextEngine == _runtimeEngine) {
-          log("skip fallback: nextEngine({nextEngine.name}) == currentEngine({_runtimeEngine?.name})");
+          log("skip fallback: nextEngine(${nextEngine.name}) == currentEngine(${_runtimeEngine?.name})");
           return;
         }
         log(
