@@ -27,9 +27,22 @@ extension AppLayoutFactory on BuildContext {
     for (int i = 0; i < validChildren.length; i++) {
       final child = validChildren[i];
 
-      final String typeString = child.runtimeType.toString();
+      String typeString = child.runtimeType.toString();
+
+      // ✨ 核心修复：如果是包装组件，自动向下探测其内部子组件的实际类型
+      Widget underlyingChild = child;
+      if (child is StreamBuilder) {
+        underlyingChild = (child).builder(Get.context!, const AsyncSnapshot.nothing());
+      }
+
+      final String underlyingType = underlyingChild.runtimeType.toString();
       final bool isTileElement =
-          child is ListTile || typeString.contains('ListTile') || typeString.contains('SwitchListTile');
+          child is ListTile ||
+          typeString.contains('ListTile') ||
+          typeString.contains('SwitchListTile') ||
+          typeString.contains('Obx') ||
+          underlyingType.contains('ListTile') ||
+          underlyingType.contains('SwitchListTile');
 
       if (isTileElement) {
         ShapeBorder effectiveShape;
@@ -53,9 +66,21 @@ extension AppLayoutFactory on BuildContext {
 
       if (i < validChildren.length - 1 && isTileElement) {
         final nextChild = validChildren[i + 1];
-        final String nextTypeString = nextChild.runtimeType.toString();
+        String nextTypeString = nextChild.runtimeType.toString();
+
+        Widget nextUnderlying = nextChild;
+        if (nextChild is StreamBuilder) {
+          nextUnderlying = (nextChild).builder(Get.context!, const AsyncSnapshot.nothing());
+        }
+
+        final String nextUnderlyingType = nextUnderlying.runtimeType.toString();
         final bool isNextTile =
-            nextChild is ListTile || nextTypeString.contains('ListTile') || nextTypeString.contains('SwitchListTile');
+            nextChild is ListTile ||
+            nextTypeString.contains('ListTile') ||
+            nextTypeString.contains('SwitchListTile') ||
+            nextTypeString.contains('Obx') ||
+            nextUnderlyingType.contains('ListTile') ||
+            nextUnderlyingType.contains('SwitchListTile');
 
         if (isNextTile) {
           autoShapedChildren.add(
@@ -117,6 +142,7 @@ extension AppLayoutFactory on BuildContext {
   Widget buildTile({
     required String title,
     IconData? icon,
+    Widget? iconWidget,
     String? subtitle,
     VoidCallback? onTap,
     Color? iconColor,
@@ -125,19 +151,37 @@ extension AppLayoutFactory on BuildContext {
     bool isLong = false,
   }) {
     final theme = Theme.of(this);
+
+    Widget? leadingWidget;
+    if (iconWidget != null) {
+      leadingWidget = Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: IconTheme(
+              data: IconThemeData(color: iconColor ?? theme.colorScheme.primary, size: 22),
+              child: iconWidget,
+            ),
+          ),
+        ],
+      );
+    } else if (icon != null) {
+      leadingWidget = Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Icon(icon, color: iconColor ?? theme.colorScheme.primary, size: 22),
+          ),
+        ],
+      );
+    }
+
     return ListTile(
-      leading: icon != null
-          ? Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Icon(icon, color: iconColor ?? theme.colorScheme.primary, size: 22),
-                ),
-              ],
-            )
-          : null,
+      leading: leadingWidget,
       title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
       subtitle: subtitle != null && subtitle.isNotEmpty
           ? Padding(

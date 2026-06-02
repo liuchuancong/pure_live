@@ -20,6 +20,14 @@ class PlatformSettingsPage extends GetView<SettingsService> {
               subtitle: i18n("platform_display_subtitle"),
               onTap: () => Get.toNamed(RoutePath.kSettingsHotAreas),
             ),
+            Obx(
+              () => context.buildTile(
+                icon: Remix.heart_3_line,
+                title: i18n("prefer_platform"),
+                subtitle: Sites.of(SettingsService.to.fav.preferPlatform.value).name,
+                onTap: showPreferPlatformSelectorDialog,
+              ),
+            ),
             context.buildTile(
               icon: Remix.accessibility_fill,
               title: i18n('third_party_auth'),
@@ -39,6 +47,40 @@ class PlatformSettingsPage extends GetView<SettingsService> {
           const SizedBox(height: 32),
         ],
       ),
+    );
+  }
+
+  void showPreferPlatformSelectorDialog() {
+    showDialog(
+      context: Get.context!,
+      builder: (BuildContext context) {
+        return SimpleDialog(
+          title: Text(i18n('prefer_platform')),
+          children: [
+            Obx(
+              () => RadioGroup<String>(
+                groupValue: SettingsService.to.fav.preferPlatform.value,
+                onChanged: (String? value) {
+                  if (value != null) {
+                    SettingsService.to.fav.preferPlatform.value = value;
+                    Navigator.of(context).pop();
+                  }
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: Sites.supportSites.map<Widget>((site) {
+                    return RadioListTile<String>(
+                      title: Text(site.name),
+                      value: site.id,
+                      activeColor: Theme.of(context).colorScheme.primary,
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

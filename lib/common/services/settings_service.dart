@@ -43,26 +43,26 @@ class SettingsService extends GetxService {
   @override
   void onInit() {
     super.onInit();
-    Get.lazyPut(() => StartupController(), fenix: true);
-    Get.lazyPut(() => AppSettingsController(), fenix: true);
-    Get.lazyPut(() => ThemeSettingsController(), fenix: true);
-    Get.lazyPut(() => WindowSizeController(), fenix: true);
-    Get.lazyPut(() => ProxySettingsController(), fenix: true);
+    Get.lazyPut(() => StartupController());
+    Get.lazyPut(() => AppSettingsController());
+    Get.lazyPut(() => ThemeSettingsController());
+    Get.lazyPut(() => WindowSizeController());
+    Get.lazyPut(() => ProxySettingsController());
     Get.put(BiliBiliAccountService(), permanent: true);
     Get.put(FontSettingsController(), permanent: true);
-    Get.lazyPut(() => PlayerSettingsController(), fenix: true);
-    Get.lazyPut(() => DanmakuSettingsController(), fenix: true);
-    Get.lazyPut(() => VolumeSettingsController(), fenix: true);
+    Get.lazyPut(() => PlayerSettingsController());
+    Get.lazyPut(() => DanmakuSettingsController());
+    Get.lazyPut(() => VolumeSettingsController());
 
-    Get.lazyPut(() => HistoryController(), fenix: true);
-    Get.lazyPut(() => FavoriteRoomController(), fenix: true);
-    Get.lazyPut(() => IptvSettingsController(), fenix: true);
-    Get.lazyPut(() => CacheController(), fenix: true);
+    Get.lazyPut(() => HistoryController());
+    Get.lazyPut(() => FavoriteRoomController());
+    Get.lazyPut(() => IptvSettingsController());
+    Get.lazyPut(() => CacheController());
 
-    Get.lazyPut(() => ExitSettingsController(), fenix: true);
-    Get.lazyPut(() => CookieSettingsController(), fenix: true);
-    Get.lazyPut(() => WebDavController(), fenix: true);
-    Get.lazyPut(() => BackupController(), fenix: true);
+    Get.put(ExitSettingsController(), permanent: true);
+    Get.lazyPut(() => CookieSettingsController());
+    Get.lazyPut(() => WebDavController());
+    Get.lazyPut(() => BackupController());
 
     _doMigration();
   }

@@ -887,5 +887,12 @@
     "ban_success": "禁用成功",
     "ban_failed": "禁用失败",
     "unban_success": "解禁成功",
-    "unban_failed": "解禁失败"
+    "unban_failed": "解禁失败",
+    "enable_countdown_close": "定时关闭",
+    "enable_countdown_close_subtitle": "到达设定时间后自动关闭应用",
+    "countdown_duration": "倒计时时长",
+    "select_countdown_duration": "选择倒计时时间",
+    "minutes": "分钟",
+    "remaining_time": "剩余时间",
+    "custom_duration": "自定义时长"
 }

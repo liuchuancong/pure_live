@@ -19,15 +19,7 @@ enum HomeMenu {
 
 class AppConsts {
   static const String defaultLoadingStyleKey = 'default';
-  static const List<String> supportSites = [
-    Sites.bilibiliSite,
-    Sites.douyuSite,
-    Sites.huyaSite,
-    Sites.douyinSite,
-    Sites.kuaishouSite,
-    Sites.ccSite,
-    Sites.iptvSite,
-  ];
+  static final List<String> supportSites = Sites.supportSites.map((e) => e.id).toList();
 
   // 主题模式映射
   static const Map<String, ThemeMode> themeModes = {

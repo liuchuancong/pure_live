@@ -15,7 +15,6 @@ class ExitSettingsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    onInitShutDown();
 
     debounce(enableAutoShutDownTime, (_) {
       if (enableAutoShutDownTime.v) {
@@ -23,21 +22,33 @@ class ExitSettingsController extends GetxController {
       } else {
         stopShutdownTimer();
       }
-    }, time: const Duration(seconds: 1));
+    }, time: const Duration(milliseconds: 500));
 
     debounce(autoShutDownTime, (_) {
       if (enableAutoShutDownTime.v) {
         restartShutdownTimer();
       }
-    }, time: const Duration(seconds: 1));
+    }, time: const Duration(milliseconds: 500));
 
     _stopWatchTimer.fetchEnded.listen((value) {
       _stopWatchTimer.onStopTimer();
       FlutterExitApp.exitApp();
     });
+
+    onInitShutDown();
   }
 
   void onInitShutDown() {
+    if (enableAutoShutDownTime.v && !_stopWatchTimer.isRunning) {
+      _stopWatchTimer.onResetTimer();
+      _stopWatchTimer.setPresetMinuteTime(autoShutDownTime.v, add: false);
+      _stopWatchTimer.onStartTimer();
+    }
+  }
+
+  void updateShutDownTime(int minutes) {
+    autoShutDownTime.v = minutes;
+    autoShutDownTime.refresh();
     if (enableAutoShutDownTime.v) {
       restartShutdownTimer();
     }
@@ -45,12 +56,14 @@ class ExitSettingsController extends GetxController {
 
   void restartShutdownTimer() {
     _stopWatchTimer.onStopTimer();
+    _stopWatchTimer.onResetTimer();
     _stopWatchTimer.setPresetMinuteTime(autoShutDownTime.v, add: false);
     _stopWatchTimer.onStartTimer();
   }
 
   void stopShutdownTimer() {
     _stopWatchTimer.onStopTimer();
+    _stopWatchTimer.onResetTimer();
   }
 
   void changeShutDownConfig(int minutes, bool enabled) {
@@ -95,5 +108,11 @@ class ExitSettingsController extends GetxController {
     exitChoose.v = json['exitChoose'] ?? '';
     autoShutDownTime.v = json['autoShutDownTime'] ?? 120;
     enableAutoShutDownTime.v = json['enableAutoShutDownTime'] ?? false;
+  }
+
+  @override
+  void onClose() {
+    _stopWatchTimer.dispose();
+    super.onClose();
   }
 }
