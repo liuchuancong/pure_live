@@ -139,7 +139,7 @@ class VideoController with ChangeNotifier {
     _errorSub = null;
     _pipSub?.cancel();
     _pipSub = null;
-    GlobalPlayerService.instance.playerManager.close();
+    GlobalPlayerService.instance.playerManager.hardDispose();
     await destory();
     onAudioOnlyChanged?.call(!isAudioOnly);
   }

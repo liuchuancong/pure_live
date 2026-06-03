@@ -26,7 +26,7 @@ class BetterPlayerAdapter implements UnifiedPlayer {
   final List<StreamSubscription> _subscriptions = [];
 
   @override
-  Future<void> init() async {
+  Future<void> init({bool audioOnly = false}) async {
     if (_initialized) return;
 
     BetterPlayerConfiguration betterPlayerConfiguration = BetterPlayerConfiguration(

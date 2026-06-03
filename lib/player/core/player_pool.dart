@@ -8,14 +8,14 @@ class PlayerPool {
 
   PlayerPool({required this.factory});
 
-  Future<UnifiedPlayer> getPlayer(PlayerEngine engine) async {
+  Future<UnifiedPlayer> getPlayer(PlayerEngine engine, {bool audioOnly = false}) async {
     if (_cache.containsKey(engine)) {
       return _cache[engine]!;
     }
 
     final player = await factory(engine);
 
-    await player.init();
+    await player.init(audioOnly: audioOnly);
 
     _cache[engine] = player;
 

@@ -32,7 +32,7 @@ class FvpAdapter implements UnifiedPlayer {
   // init
   // =========================
   @override
-  Future<void> init() async {
+  Future<void> init({bool audioOnly = false}) async {
     if (_initialized) return;
 
     try {

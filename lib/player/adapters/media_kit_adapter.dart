@@ -22,6 +22,8 @@ class MediaKitAdapter implements UnifiedPlayer {
 
   String? _currentUrl;
 
+  bool _isAudioOnly = false;
+
   // =========================
   // subjects
   // =========================
@@ -63,9 +65,9 @@ class MediaKitAdapter implements UnifiedPlayer {
   // =========================
 
   @override
-  Future<void> init() async {
+  Future<void> init({bool audioOnly = false}) async {
     if (_initialized) return;
-
+    _isAudioOnly = audioOnly;
     _disposed = false;
 
     _listenerBound = false;
@@ -104,8 +106,17 @@ class MediaKitAdapter implements UnifiedPlayer {
       // =========================
       // controller
       // =========================
-
-      _controller = SettingsService.to.player.playerCompatMode.v
+      //  根据是否为纯音频，选择不同的控制器配置
+      _controller = audioOnly
+          ? VideoController(
+              _player,
+              configuration: const VideoControllerConfiguration(
+                vo: 'null',
+                hwdec: 'no',
+                enableHardwareAcceleration: false,
+              ),
+            )
+          : SettingsService.to.player.playerCompatMode.v
           ? VideoController(
               _player,
               configuration: const VideoControllerConfiguration(vo: 'mediacodec_embed', hwdec: 'mediacodec'),
@@ -125,6 +136,11 @@ class MediaKitAdapter implements UnifiedPlayer {
                 androidAttachSurfaceAfterVideoParameters: false,
               ),
             );
+
+      // 2. 下发底层 MPV 内核配置（必须紧跟在 Controller 创建之后）
+      if (audioOnly) {
+        await applyAudioOnlySettings();
+      }
 
       await _bindListeners();
 
@@ -162,7 +178,7 @@ class MediaKitAdapter implements UnifiedPlayer {
     if (_currentUrl == url && isPlayingNow) {
       return;
     }
-
+    _isAudioOnly = audioOnly;
     _currentUrl = url;
 
     try {
@@ -175,9 +191,6 @@ class MediaKitAdapter implements UnifiedPlayer {
       _widthSubject.add(null);
 
       _heightSubject.add(null);
-      if (audioOnly) {
-        await applyAudioOnlySettings();
-      }
 
       await _player.open(Media(url, httpHeaders: headers), play: true);
 
@@ -187,7 +200,6 @@ class MediaKitAdapter implements UnifiedPlayer {
         await setVolume(1.0);
       } else {
         final targetVolume = room?.getSavedVolume() ?? 1.0;
-
         await setVolume(targetVolume);
       }
     } catch (e, s) {
@@ -392,6 +404,9 @@ class MediaKitAdapter implements UnifiedPlayer {
 
   @override
   Widget getVideoWidget() {
+    if (_isAudioOnly) {
+      return const SizedBox.shrink();
+    }
     return RepaintBoundary(
       child: Video(
         controller: _controller,
@@ -445,7 +460,11 @@ class MediaKitAdapter implements UnifiedPlayer {
 
   Future<void> applyAudioOnlySettings() async {
     final native = _player.platform as dynamic;
+    await native.setProperty('vid', 'no');
+    await native.setProperty('video', 'no');
     await native.setProperty('vo', 'null');
+    await native.setProperty('hwdec', 'no');
+    await native.setProperty('audio-display', 'no');
   }
 
   // =========================

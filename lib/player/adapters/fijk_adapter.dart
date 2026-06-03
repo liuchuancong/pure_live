@@ -12,7 +12,7 @@ class FijkAdapter implements UnifiedPlayer {
 
   bool _initialized = false;
   bool _disposed = false;
-
+  bool _isAudioOnly = false;
   VoidCallback? _playerListener;
 
   final _stateSubject = BehaviorSubject<PlayerState>.seeded(PlayerState.idle);
@@ -28,12 +28,17 @@ class FijkAdapter implements UnifiedPlayer {
   final List<StreamSubscription> _subscriptions = [];
 
   @override
-  Future<void> init() async {
+  Future<void> init({bool audioOnly = false}) async {
     if (_initialized) return;
+
+    _isAudioOnly = audioOnly;
 
     try {
       _stateSubject.add(PlayerState.initializing);
       _player = FijkPlayer();
+      if (audioOnly) {
+        await applyAudioOnlySettings();
+      }
       _bindListeners();
       _initialized = true;
       _stateSubject.add(PlayerState.initialized);
@@ -139,15 +144,14 @@ class FijkAdapter implements UnifiedPlayer {
     bool audioOnly = false,
   }) async {
     try {
+      _isAudioOnly = audioOnly;
       _loadingSubject.add(true);
       if (_player.state != FijkState.idle) {
         await _player.reset();
       }
       await _setupProxy();
       await FijkHelper.setFijkOption(_player, enableCodec: SettingsService.to.player.enableCodec.v, headers: headers);
-      if (audioOnly) {
-        await applyAudioOnlySettings();
-      }
+
       await _player.setDataSource(url, autoPlay: true);
       _stateSubject.add(PlayerState.ready);
       await setVolume(1.0);
@@ -167,6 +171,9 @@ class FijkAdapter implements UnifiedPlayer {
 
   @override
   Widget getVideoWidget() {
+    if (_isAudioOnly) {
+      return const SizedBox.shrink();
+    }
     return FijkView(
       player: _player,
       fit: FijkFit.contain,

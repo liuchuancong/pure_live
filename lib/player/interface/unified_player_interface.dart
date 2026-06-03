@@ -4,7 +4,7 @@ import '../models/player_exception.dart';
 import 'package:pure_live/common/models/live_room.dart';
 
 abstract class UnifiedPlayer {
-  Future<void> init();
+  Future<void> init({bool audioOnly = false});
 
   /// 设置数据源
   /// [url] 当前播放地址

@@ -103,13 +103,13 @@ class PlayerManager {
     return w / h;
   }
 
-  Future<void> initialize({PlayerEngine engine = PlayerEngine.mediaKit}) async {
+  Future<void> initialize({PlayerEngine engine = PlayerEngine.mediaKit, bool audioOnly = false}) async {
     if (_disposed) return;
     _stateSubject.add(PlayerState.initializing);
     try {
       _defaultEngine = engine;
       _runtimeEngine = engine;
-      _currentPlayer = await playerPool.getPlayer(engine);
+      _currentPlayer = await playerPool.getPlayer(engine, audioOnly: audioOnly);
       await _bindPlayerStreams(_currentPlayer!);
       LiveAudioService.setPlayer(_currentPlayer!);
       if (Platform.isAndroid) {
@@ -153,7 +153,8 @@ class PlayerManager {
       final String validKey = PlayerConsts.engines.containsKey(savedKey) ? savedKey : PlayerConsts.defaultKey;
       _defaultEngine = PlayerConsts.engines[validKey]!;
       _runtimeEngine = _defaultEngine;
-      await initialize(engine: _defaultEngine!);
+      log('No current player, initializing with default engine: _defaultEngine', name: 'PlayerManager');
+      await initialize(engine: _defaultEngine!, audioOnly: audioOnly);
     } else if (_runtimeEngine != _defaultEngine && !_isSwitchingDueToFallback) {
       await switchEngine(_defaultEngine!, isManual: false);
     }
