@@ -97,7 +97,13 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                     ),
                   ),
                 ),
-                DanmakuViewer(controller: controller),
+                Obx(
+                  () => Offstage(
+                    offstage: controller.hideDanmaku.value,
+                    child: DanmakuViewer(controller: controller),
+                  ),
+                ),
+
                 GestureDetector(
                   onTap: () {
                     GlobalPlayerService.instance.playerManager.isPlayingNow
@@ -589,6 +595,7 @@ class DanmakuViewer extends StatelessWidget {
           duration: controller.danmakuSpeed.value.toInt(),
           opacity: controller.danmakuOpacity.value,
           fontWeight: controller.danmakuFontBorder.value.toInt(),
+          showStroke: controller.enableDanmakuStroke.value,
         ),
       ),
     );
@@ -1601,7 +1608,7 @@ class DanmakuSetting extends StatelessWidget {
           if (trailingWidget != null) ...[
             const SizedBox(width: 10.0),
             SizedBox(
-              width: 50.0,
+              width: 65.0,
               child: Align(alignment: Alignment.centerRight, child: trailingWidget),
             ),
           ],
@@ -1618,93 +1625,124 @@ class DanmakuSetting extends StatelessWidget {
       color: Colors.white,
       fontSize: isWide ? 15.0 : 13.0,
       fontWeight: FontWeight.w600,
+
       fontFeatures: const [ui.FontFeature.tabularFigures()],
     );
 
     return Obx(
-      () => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildRowContainer(
-            labelText: i18n('display_area'),
-            valueWidget: SfSlider(
-              min: 0.0,
-              max: 1.0,
-              value: controller.danmakuArea.value,
-              activeColor: primaryColor,
-              inactiveColor: Colors.white12,
-              onChanged: (dynamic val) => controller.danmakuArea.value = val as double,
-            ),
-            trailingWidget: Text('${(controller.danmakuArea.value * 100).toInt()}%', style: digitStyle),
+      () => SizedBox(
+        height: isWide ? 350.0 : 280.0,
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildRowContainer(
+                labelText: i18n('display_area'),
+                valueWidget: SfSlider(
+                  min: 0.0,
+                  max: 1.0,
+                  value: controller.danmakuArea.value,
+                  activeColor: primaryColor,
+                  inactiveColor: Colors.white12,
+                  onChanged: (dynamic val) => controller.danmakuArea.value = val as double,
+                ),
+                trailingWidget: Text('${(controller.danmakuArea.value * 100).toInt()}%', style: digitStyle),
+              ),
+              _buildRowContainer(
+                labelText: i18n('margin_top'),
+                valueWidget: CountButton(
+                  maxValue: 300,
+                  minValue: 0,
+                  selectedValue: controller.danmakuTopArea.value.toInt(),
+                  onChanged: (val) => controller.danmakuTopArea.value = val.toDouble(),
+                ),
+              ),
+              _buildRowContainer(
+                labelText: i18n('margin_bottom'),
+                valueWidget: CountButton(
+                  maxValue: 300,
+                  minValue: 0,
+                  selectedValue: controller.danmakuBottomArea.value.toInt(),
+                  onChanged: (val) => controller.danmakuBottomArea.value = val.toDouble(),
+                ),
+              ),
+              _buildRowContainer(
+                labelText: i18n("settings_danmaku_opacity"),
+                valueWidget: SfSlider(
+                  min: 0.0,
+                  max: 1.0,
+                  value: controller.danmakuOpacity.value,
+                  activeColor: primaryColor,
+                  inactiveColor: Colors.white12,
+                  onChanged: (dynamic val) => controller.danmakuOpacity.value = val as double,
+                ),
+                trailingWidget: Text('${(controller.danmakuOpacity.value * 100).toInt()}%', style: digitStyle),
+              ),
+              _buildRowContainer(
+                labelText: i18n("settings_danmaku_speed"),
+                valueWidget: SfSlider(
+                  min: 5.0,
+                  max: 20.0,
+                  value: controller.danmakuSpeed.value,
+                  activeColor: primaryColor,
+                  inactiveColor: Colors.white12,
+                  onChanged: (dynamic val) => controller.danmakuSpeed.value = val as double,
+                ),
+                trailingWidget: Text(controller.danmakuSpeed.value.toInt().toString(), style: digitStyle),
+              ),
+              _buildRowContainer(
+                labelText: i18n("settings_danmaku_fontsize"),
+                valueWidget: SfSlider(
+                  min: 10.0,
+                  max: 30.0,
+                  value: controller.danmakuFontSize.value,
+                  activeColor: primaryColor,
+                  inactiveColor: Colors.white12,
+                  onChanged: (dynamic val) => controller.danmakuFontSize.value = val as double,
+                ),
+                trailingWidget: Text(controller.danmakuFontSize.value.toInt().toString(), style: digitStyle),
+              ),
+              _buildRowContainer(
+                labelText: i18n("danmaku_stroke"),
+                valueWidget: Align(
+                  alignment: Alignment.centerRight,
+                  child: Switch(
+                    value: controller.enableDanmakuStroke.value,
+                    activeThumbColor: primaryColor,
+                    onChanged: (val) => controller.enableDanmakuStroke.value = val,
+                  ),
+                ),
+              ),
+              _buildRowContainer(
+                labelText: i18n("settings_danmaku_fontBorder"),
+                valueWidget: SfSlider(
+                  min: 0.0,
+                  max: 8.0,
+                  value: controller.danmakuFontBorder.value,
+                  activeColor: primaryColor,
+                  inactiveColor: Colors.white12,
+                  onChanged: (dynamic val) => controller.danmakuFontBorder.value = val as double,
+                ),
+                trailingWidget: Text(controller.danmakuFontBorder.value.toStringAsFixed(2), style: digitStyle),
+              ),
+              // ... 前面已有的 display_area, margin_top, margin_bottom, opacity, speed, fontsize, danmaku_stroke, fontBorder 等组件
+              _buildRowContainer(
+                labelText: i18n("danmaku_fps"),
+                valueWidget: SfSlider(
+                  min: 30.0,
+                  max: 240.0,
+                  value: controller.danmakuFps.value.toDouble(),
+                  activeColor: primaryColor,
+                  inactiveColor: Colors.white12,
+                  onChanged: (dynamic val) => controller.danmakuFps.value = (val as double).toInt(),
+                ),
+                trailingWidget: Text('${controller.danmakuFps.value.toInt()} FPS', style: digitStyle),
+              ),
+            ],
           ),
-          _buildRowContainer(
-            labelText: i18n('margin_top'),
-            valueWidget: CountButton(
-              maxValue: 300,
-              minValue: 0,
-              selectedValue: controller.danmakuTopArea.value.toInt(),
-              onChanged: (val) => controller.danmakuTopArea.value = val.toDouble(),
-            ),
-          ),
-          _buildRowContainer(
-            labelText: i18n('margin_bottom'),
-            valueWidget: CountButton(
-              maxValue: 300,
-              minValue: 0,
-              selectedValue: controller.danmakuBottomArea.value.toInt(),
-              onChanged: (val) => controller.danmakuBottomArea.value = val.toDouble(),
-            ),
-          ),
-          _buildRowContainer(
-            labelText: i18n("settings_danmaku_opacity"),
-            valueWidget: SfSlider(
-              min: 0.0,
-              max: 1.0,
-              value: controller.danmakuOpacity.value,
-              activeColor: primaryColor,
-              inactiveColor: Colors.white12,
-              onChanged: (dynamic val) => controller.danmakuOpacity.value = val as double,
-            ),
-            trailingWidget: Text('${(controller.danmakuOpacity.value * 100).toInt()}%', style: digitStyle),
-          ),
-          _buildRowContainer(
-            labelText: i18n("settings_danmaku_speed"),
-            valueWidget: SfSlider(
-              min: 5.0,
-              max: 20.0,
-              value: controller.danmakuSpeed.value,
-              activeColor: primaryColor,
-              inactiveColor: Colors.white12,
-              onChanged: (dynamic val) => controller.danmakuSpeed.value = val as double,
-            ),
-            trailingWidget: Text(controller.danmakuSpeed.value.toInt().toString(), style: digitStyle),
-          ),
-          _buildRowContainer(
-            labelText: i18n("settings_danmaku_fontsize"),
-            valueWidget: SfSlider(
-              min: 10.0,
-              max: 30.0,
-              value: controller.danmakuFontSize.value,
-              activeColor: primaryColor,
-              inactiveColor: Colors.white12,
-              onChanged: (dynamic val) => controller.danmakuFontSize.value = val as double,
-            ),
-            trailingWidget: Text(controller.danmakuFontSize.value.toInt().toString(), style: digitStyle),
-          ),
-          _buildRowContainer(
-            labelText: i18n("settings_danmaku_fontBorder"),
-            valueWidget: SfSlider(
-              min: 0.0,
-              max: 8.0,
-              value: controller.danmakuFontBorder.value,
-              activeColor: primaryColor,
-              inactiveColor: Colors.white12,
-              onChanged: (dynamic val) => controller.danmakuFontBorder.value = val as double,
-            ),
-            trailingWidget: Text(controller.danmakuFontBorder.value.toStringAsFixed(2), style: digitStyle),
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -7,7 +7,6 @@ class Utils {
   static final Paint _emojiPaint = Paint()..filterQuality = FilterQuality.medium;
   static final List<FontWeight> _fontWeights = FontWeight.values;
 
-  // 统一缓存整条弹幕的完整排版结构
   static final Map<String, _CachedParagraph> _paragraphCache = {};
   static const int _maxCacheSize = 300;
 
@@ -21,7 +20,6 @@ class Utils {
     }
   }
 
-  /// 1. 兼容你外部调用：生成主文本段落
   static ui.Paragraph generateParagraph(
     DanmakuContentItem content,
     double danmakuWidth,
@@ -39,7 +37,6 @@ class Utils {
     return cached.mainParagraph;
   }
 
-  /// 2. 兼容你外部调用：生成描边段落
   static ui.Paragraph generateStrokeParagraph(
     DanmakuContentItem content,
     double danmakuWidth,
@@ -57,7 +54,6 @@ class Utils {
     return cached.strokeParagraph ?? cached.mainParagraph;
   }
 
-  /// 3. 计算弹幕总宽度
   static double calculateMixedContentWidth(
     DanmakuContentItem content,
     double fontSize,
@@ -74,7 +70,6 @@ class Utils {
     return cached.width;
   }
 
-  /// 4. 完整的直接绘制方法（包含文字、描边、自己发送框、表情）
   static void drawMixedContent(
     Canvas canvas,
     DanmakuContentItem content,
@@ -99,20 +94,16 @@ class Utils {
     final double baseY = offset.dy;
     final drawOffset = Offset(currentX, baseY);
 
-    // 绘制“自己发送”的弹幕背景框
     if (selfSend && selfSendPaint != null) {
       canvas.drawRect(Rect.fromLTWH(currentX, baseY, cached.width, cached.height), selfSendPaint);
     }
 
-    // 先画描边（如果有）
-    if (cached.strokeParagraph != null) {
+    if (showStroke && cached.strokeParagraph != null) {
       canvas.drawParagraph(cached.strokeParagraph!, drawOffset);
     }
 
-    // 再画正文
     canvas.drawParagraph(cached.mainParagraph, drawOffset);
 
-    // 提取并绘制表情
     final List<ui.TextBox> inlineBoxes = cached.mainParagraph.getBoxesForPlaceholders();
 
     for (int i = 0; i < inlineBoxes.length && i < cached.emojiKeys.length; i++) {
@@ -133,19 +124,17 @@ class Utils {
     }
   }
 
-  /// 核心排版引擎
   static _CachedParagraph _buildParagraph(
     DanmakuContentItem content,
     double fontSize,
     int fontWeight,
     bool showStroke,
   ) {
-    final targetFontWeight = _fontWeights[fontWeight < _fontWeights.length ? fontWeight : 4];
+    final targetFontWeight = _fontWeights[fontWeight.clamp(0, _fontWeights.length - 1)];
     final double emojiSize = fontSize * 1.2;
 
     final paragraphStyle = ui.ParagraphStyle(textAlign: TextAlign.left, textDirection: TextDirection.ltr, maxLines: 1);
 
-    // 构建文字层
     final mainBuilder = ui.ParagraphBuilder(paragraphStyle);
     final List<String> embeddedEmojis = [];
 
@@ -169,7 +158,6 @@ class Utils {
     final mainParagraph = mainBuilder.build();
     mainParagraph.layout(const ui.ParagraphConstraints(width: double.infinity));
 
-    // 构建描边层（仅在 showStroke 为 true 时创建，表情部分留空占位）
     ui.Paragraph? strokeParagraph;
     if (showStroke) {
       final strokeBuilder = ui.ParagraphBuilder(paragraphStyle);
@@ -182,8 +170,8 @@ class Utils {
               fontFamily: content.fontFamily,
               foreground: Paint()
                 ..style = PaintingStyle.stroke
-                ..strokeWidth = 2.0
-                ..color = Colors.black54,
+                ..strokeWidth = (fontWeight.toDouble() * 0.5).clamp(1.0, 5.0)
+                ..color = Colors.black,
             ),
           );
           strokeBuilder.addText(item.value);

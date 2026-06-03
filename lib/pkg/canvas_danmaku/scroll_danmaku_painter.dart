@@ -68,11 +68,19 @@ class ScrollDanmakuPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant ScrollDanmakuPainter oldDelegate) {
+    if (showStroke != oldDelegate.showStroke ||
+        fontSize != oldDelegate.fontSize ||
+        fontWeight != oldDelegate.fontWeight) {
+      Utils.clearCache();
+      return true;
+    }
+
     return tick != oldDelegate.tick ||
         scrollDanmakuItems.length != oldDelegate.scrollDanmakuItems.length ||
         progress != oldDelegate.progress ||
         fontSize != oldDelegate.fontSize ||
         fontWeight != oldDelegate.fontWeight ||
-        showStroke != oldDelegate.showStroke;
+        showStroke != oldDelegate.showStroke ||
+        running != oldDelegate.running;
   }
 }

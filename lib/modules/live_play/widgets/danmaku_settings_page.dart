@@ -107,6 +107,13 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
                   labelColor: labelColor,
                   digitColor: digitColor,
                 ),
+                _switch(
+                  theme,
+                  title: i18n("danmaku_stroke"),
+                  value: controller.enableDanmakuStroke.value,
+                  onChanged: (v) => controller.enableDanmakuStroke.value = v,
+                  labelColor: labelColor,
+                ),
                 _slider(
                   theme,
                   title: i18n("stroke"),
@@ -115,6 +122,18 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
                   max: 8,
                   display: controller.danmakuFontBorder.value.toStringAsFixed(1),
                   onChanged: (v) => controller.danmakuFontBorder.value = v,
+                  labelColor: labelColor,
+                  digitColor: digitColor,
+                ),
+                // ... 前面已有的 opacity, speed, font_size, stroke 等 slider 组件
+                _slider(
+                  theme,
+                  title: i18n("danmaku_fps"),
+                  value: controller.danmakuFps.value.toDouble(),
+                  min: 30,
+                  max: 240,
+                  display: "${controller.danmakuFps.value.toInt()} FPS",
+                  onChanged: (v) => controller.danmakuFps.value = v.toInt(),
                   labelColor: labelColor,
                   digitColor: digitColor,
                 ),
@@ -208,6 +227,28 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
             onChanged: onChanged,
             textStyle: TextStyle(color: digitColor, fontSize: 14, fontWeight: FontWeight.bold),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _switch(
+    ThemeData theme, {
+    required String title,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+    required Color labelColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600, color: labelColor),
+          ),
+          Switch(value: value, activeThumbColor: theme.colorScheme.primary, onChanged: onChanged),
         ],
       ),
     );

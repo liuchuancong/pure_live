@@ -28,6 +28,7 @@ class DanmakuOption {
   final bool hideScroll;
 
   final bool hideSpecial;
+  final int fps;
 
   /// 弹幕描边
   final bool showStroke;
@@ -53,6 +54,7 @@ class DanmakuOption {
     this.showStroke = true,
     this.massiveMode = false,
     this.safeArea = true,
+    this.fps = 60,
   });
 
   DanmakuOption copyWith({
@@ -69,6 +71,7 @@ class DanmakuOption {
     bool? showStroke,
     bool? massiveMode,
     bool? safeArea,
+    int? fps,
   }) {
     return DanmakuOption(
       area: area ?? this.area,
@@ -84,6 +87,7 @@ class DanmakuOption {
       showStroke: showStroke ?? this.showStroke,
       massiveMode: massiveMode ?? this.massiveMode,
       safeArea: safeArea ?? this.safeArea,
+      fps: fps ?? this.fps,
     );
   }
 }

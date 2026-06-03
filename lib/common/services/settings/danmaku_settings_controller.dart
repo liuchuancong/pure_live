@@ -11,6 +11,8 @@ class DanmakuSettingsController extends GetxController {
   final RxDouble danmakuFontBorder = hiveDouble('danmakuFontBorder', 4.0);
   final RxDouble danmakuOpacity = hiveDouble('danmakuOpacity', 1.0);
   final RxBool enableDanmakuDisplay = hiveBool('enableDanmakuDisplay', true);
+  final RxBool enableDanmakuStroke = hiveBool('enableDanmakuStroke', true);
+  final RxInt danmakuFps = hiveInt('danmakuFps', 60);
   final RxString danmakuFontFamilyName = hiveString('danmakuFontFamilyName', 'Default');
 
   Map<String, dynamic> toJson() {
@@ -25,6 +27,8 @@ class DanmakuSettingsController extends GetxController {
       'danmakuOpacity': danmakuOpacity.v,
       'enableDanmakuDisplay': enableDanmakuDisplay.v,
       'danmakuFontFamilyName': danmakuFontFamilyName.v,
+      'enableDanmakuStroke': enableDanmakuStroke.v,
+      'danmakuFps': danmakuFps.v,
     };
   }
 
@@ -39,5 +43,7 @@ class DanmakuSettingsController extends GetxController {
     danmakuOpacity.v = json['danmakuOpacity']?.toDouble() ?? 1.0;
     enableDanmakuDisplay.v = json['enableDanmakuDisplay'] ?? true;
     danmakuFontFamilyName.v = json['danmakuFontFamilyName'] ?? 'Default';
+    enableDanmakuStroke.v = json['enableDanmakuStroke'] ?? true;
+    danmakuFps.v = json['danmakuFps']?.toInt() ?? 60;
   }
 }

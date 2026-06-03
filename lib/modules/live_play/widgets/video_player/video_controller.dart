@@ -99,6 +99,8 @@ class VideoController with ChangeNotifier {
   final danmakuFontSize = 16.0.obs;
   final danmakuFontBorder = 4.0.obs;
   final danmakuOpacity = 1.0.obs;
+  final enableDanmakuStroke = true.obs;
+  final danmakuFps = 60.obs;
   VideoController({
     required this.room,
     required this.datasource,
@@ -122,7 +124,7 @@ class VideoController with ChangeNotifier {
     danmakuFontSize.value = SettingsService.to.danmaku.danmakuFontSize.v;
     danmakuFontBorder.value = SettingsService.to.danmaku.danmakuFontBorder.v;
     danmakuOpacity.value = SettingsService.to.danmaku.danmakuOpacity.v;
-
+    enableDanmakuStroke.value = SettingsService.to.danmaku.enableDanmakuStroke.v;
     initPagesConfig();
   }
 
@@ -307,53 +309,43 @@ class VideoController with ChangeNotifier {
 
     hideDanmaku.value = dm.hideDanmaku.v;
     ever<bool>(hideDanmaku, (data) {
-      if (data) {
-        danmakuController.clear();
-      }
       dm.hideDanmaku.v = data;
     });
 
     danmakuArea.value = dm.danmakuArea.v;
-    ever<double>(danmakuArea, (data) {
-      dm.danmakuArea.v = data;
-      updateDanmaku();
-    });
-
     danmakuTopArea.value = dm.danmakuTopArea.v;
-    ever<double>(danmakuTopArea, (data) {
-      dm.danmakuTopArea.v = data;
-      updateDanmaku();
-    });
-
     danmakuBottomArea.value = dm.danmakuBottomArea.v;
-    ever<double>(danmakuBottomArea, (data) {
-      dm.danmakuBottomArea.v = data;
-      updateDanmaku();
-    });
-
     danmakuSpeed.value = dm.danmakuSpeed.v;
-    ever<double>(danmakuSpeed, (data) {
-      dm.danmakuSpeed.v = data;
-      updateDanmaku();
-    });
-
     danmakuFontSize.value = dm.danmakuFontSize.v;
-    ever<double>(danmakuFontSize, (data) {
-      dm.danmakuFontSize.v = data;
-      updateDanmaku();
-    });
-
     danmakuFontBorder.value = dm.danmakuFontBorder.v;
-    ever<double>(danmakuFontBorder, (data) {
-      dm.danmakuFontBorder.v = data;
-      updateDanmaku();
-    });
-
     danmakuOpacity.value = dm.danmakuOpacity.v;
-    ever<double>(danmakuOpacity, (data) {
-      dm.danmakuOpacity.v = data;
-      updateDanmaku();
-    });
+    enableDanmakuStroke.value = dm.enableDanmakuStroke.v;
+    danmakuFps.value = dm.danmakuFps.v;
+    final List<Rx> visualProperties = [
+      danmakuArea,
+      danmakuTopArea,
+      danmakuBottomArea,
+      danmakuSpeed,
+      danmakuFontSize,
+      danmakuFontBorder,
+      danmakuOpacity,
+      enableDanmakuStroke,
+      danmakuFps,
+    ];
+
+    for (final rxProperty in visualProperties) {
+      ever(rxProperty, (_) => updateDanmaku());
+    }
+
+    ever<double>(danmakuArea, (v) => dm.danmakuArea.v = v);
+    ever<double>(danmakuTopArea, (v) => dm.danmakuTopArea.v = v);
+    ever<double>(danmakuBottomArea, (v) => dm.danmakuBottomArea.v = v);
+    ever<double>(danmakuSpeed, (v) => dm.danmakuSpeed.v = v);
+    ever<double>(danmakuFontSize, (v) => dm.danmakuFontSize.v = v);
+    ever<double>(danmakuFontBorder, (v) => dm.danmakuFontBorder.v = v);
+    ever<double>(danmakuOpacity, (v) => dm.danmakuOpacity.v = v);
+    ever<bool>(enableDanmakuStroke, (v) => dm.enableDanmakuStroke.v = v);
+    ever<int>(danmakuFps, (v) => dm.danmakuFps.v = v);
   }
 
   void updateDanmaku() {
@@ -366,6 +358,8 @@ class VideoController with ChangeNotifier {
         duration: danmakuSpeed.value.toInt(),
         opacity: danmakuOpacity.value,
         fontWeight: danmakuFontBorder.value.toInt(),
+        showStroke: enableDanmakuStroke.value,
+        fps: danmakuFps.value,
       ),
     );
   }

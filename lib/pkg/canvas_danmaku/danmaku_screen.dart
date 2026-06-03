@@ -405,7 +405,10 @@ class _DanmakuScreenState extends State<DanmakuScreen> with TickerProviderStateM
     final staticDuration = _option.duration * 1000;
 
     while (_running && mounted) {
-      await Future.delayed(const Duration(milliseconds: 16));
+      final int fps = widget.option.fps;
+      final int delayMs = (1000 / fps).floor().clamp(1, 1000);
+
+      await Future.delayed(Duration(milliseconds: delayMs));
 
       final List<double> tracksToRemove = [];
 
@@ -458,6 +461,12 @@ class _DanmakuScreenState extends State<DanmakuScreen> with TickerProviderStateM
                           child: AnimatedBuilder(
                             animation: _animationController,
                             builder: (context, child) {
+                              if (_flattenedScrollDanmakus.isEmpty &&
+                                  _topDanmakuItems.isEmpty &&
+                                  _bottomDanmakuItems.isEmpty &&
+                                  _specialDanmakuItems.isEmpty) {
+                                return const SizedBox.shrink();
+                              }
                               return CustomPaint(
                                 size: Size(_viewWidth, _viewHeight),
                                 painter: ScrollDanmakuPainter(

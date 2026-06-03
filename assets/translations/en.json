@@ -895,5 +895,8 @@
     "minutes": "min",
     "remaining_time": "Remaining",
     "custom_duration": "Custom Duration",
-    "webdav_help_tutorial": "Help Tutorial"
+    "webdav_help_tutorial": "Help Tutorial",
+    "danmaku_stroke": "Danmaku Stroke",
+    "danmaku_fps": "Danmaku FPS"
+
 }
