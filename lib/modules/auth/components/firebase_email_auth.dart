@@ -281,37 +281,81 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
             if (error != null) {
               request.response.write('''
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>GitHub Login Failed</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub 登录失败</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  body { background: #0d1117; display: flex; align-items: center; justify-content: center; min-height: 100vh; color: #c9d1d9; overflow: hidden; }
+  .background-glow { position: absolute; width: 400px; height: 400px; background: radial-gradient(circle, rgba(248,81,73,0.12) 0%, rgba(0,0,0,0) 70%); top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1; }
+  .card { background: rgba(22, 27, 34, 0.8); border: 1px solid rgba(248, 81, 73, 0.25); border-radius: 16px; padding: 40px; width: 90%; max-width: 420px; text-align: center; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px); position: relative; z-index: 2; animation: fadeIn 0.4s ease-out; }
+  .icon-wrapper { width: 72px; height: 72px; background: rgba(248, 81, 73, 0.1); border: 2px solid #f85149; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; animation: shake 0.5s ease-in-out; }
+  .icon-wrapper svg { width: 36px; height: 36px; fill: #f85149; }
+  h2 { color: #f85149; font-size: 24px; font-weight: 600; margin-bottom: 12px; }
+  p { color: #8b949e; font-size: 14px; line-height: 1.6; word-break: break-all; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+</style>
 </head>
 <body>
-<h2>登录失败</h2>
-<p>$error</p>
+<div class="background-glow"></div>
+<div class="card">
+  <div class="icon-wrapper">
+    <svg viewBox="0 0 24 24"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+  </div>
+  <h2>认证失败</h2>
+  <p>$error</p>
+</div>
 </body>
 </html>
 ''');
-
               await request.response.close();
-
               if (!authCodeCompleter.isCompleted) {
                 authCodeCompleter.completeError(Exception(error));
               }
-
               return;
             }
 
             request.response.write('''
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>GitHub Login Success</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub 登录成功</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  body { background: #0d1117; display: flex; align-items: center; justify-content: center; min-height: 100vh; color: #c9d1d9; overflow: hidden; }
+  .background-glow { position: absolute; width: 500px; height: 500px; background: radial-gradient(circle, rgba(56,139,253,0.1) 0%, rgba(0,0,0,0) 70%); top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1; }
+  .card { background: rgba(22, 27, 34, 0.75); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 44px 40px; width: 90%; max-width: 420px; text-align: center; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6); backdrop-filter: blur(12px); position: relative; z-index: 2; animation: scaleUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+  .icon-wrapper { width: 80px; height: 80px; background: rgba(46, 160, 67, 0.1); border: 2px solid #3fb950; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 28px; position: relative; }
+  .icon-wrapper svg { width: 40px; height: 40px; fill: #3fb950; animation: popCheck 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.2s both; }
+  .pulse { position: absolute; width: 100%; height: 100%; border: 2px solid rgba(63, 185, 80, 0.4); border-radius: 50%; animation: pulseRing 1.5s infinite ease-out; }
+  h2 { color: #f0f6fc; font-size: 24px; font-weight: 600; margin-bottom: 10px; letter-spacing: 0.5px; }
+  .tip { color: #8b949e; font-size: 15px; margin-bottom: 24px; }
+  .countdown-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; position: relative; }
+  .countdown-progress { height: 100%; width: 100%; background: linear-gradient(90deg, #58a6ff, #388bfd); transform-origin: left; animation: shrinkWidth 1s linear forwards; }
+  @keyframes scaleUp { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+  @keyframes popCheck { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+  @keyframes pulseRing { 0% { transform: scale(0.95); opacity: 1; } 100% { transform: scale(1.3); opacity: 0; } }
+  @keyframes shrinkWidth { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+</style>
 </head>
 <body>
-<h2>登录成功</h2>
-<p>请返回 PureLive 应用。</p>
+<div class="background-glow"></div>
+<div class="card">
+  <div class="icon-wrapper">
+    <div class="pulse"></div>
+    <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+  </div>
+  <h2>授权登录成功</h2>
+  <p class="tip">正在安全返回 PureLive 应用...</p>
+  <div class="countdown-bar">
+    <div class="countdown-progress"></div>
+  </div>
+</div>
 
 <script>
 setTimeout(() => {
@@ -321,7 +365,6 @@ setTimeout(() => {
 </body>
 </html>
 ''');
-
             await request.response.close();
 
             if (code != null && code.isNotEmpty && !authCodeCompleter.isCompleted) {
@@ -333,7 +376,6 @@ setTimeout(() => {
             }
           }
         });
-
         const clientId = 'Ov23lifAi0dZoD6GDIzC';
 
         const clientSecret = 'd5baed3720c409b10a48d018e59ab95c66183263';
@@ -402,7 +444,14 @@ setTimeout(() => {
       } else {
         credential = await _auth.signInWithProvider(githubProvider);
       }
-
+      if (await windowManager.isMinimized()) {
+        await windowManager.restore();
+      }
+      await windowManager.show();
+      await windowManager.focus();
+      await windowManager.setAlwaysOnTop(true);
+      await Future.delayed(const Duration(milliseconds: 100));
+      await windowManager.setAlwaysOnTop(false);
       widget.onSignInComplete(credential!);
     } on FirebaseAuthException catch (e) {
       _showErrorSnackbar(e.message ?? 'GitHub authentication failed', isError: true);
