@@ -46,7 +46,7 @@ app.*.map.json
 
 pubspec.lock
 key.properties
-**/*.keystore
+
 **/*.jks
 
 # /assets/keystore/
