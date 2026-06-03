@@ -239,7 +239,7 @@ jobs:
   # =========================================================
 
   build-macos:
-    runs-on: macos-latest
+    runs-on: macos-15
     timeout-minutes: 50
     strategy:
       matrix:
@@ -270,6 +270,12 @@ jobs:
       - name: 更新Flutter packages
         run: flutter pub get
 
+      - name: 强制重新生成 macOS CocoaPods 依赖
+        run: |
+          cd macos
+          rm -rf Pods Podfile.lock
+          pod repo update
+          pod install  
       - name: Build macOS
         run: flutter build macos --release -v
 
