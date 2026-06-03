@@ -41,7 +41,7 @@ dependencies:
   dio_cookie_manager: ^3.3.0 # Dio的Cookie管理插件
   cookie_jar: ^4.0.8 # Cookie持久化存储
   web_socket_channel: ^3.0.1 # WebSocket通信
-  connectivity_plus: ^7.1.1 # 网络连接状态监听
+  connectivity_plus: 7.0.3 # 网络连接状态监听
   webdav_client: ^1.2.2 # WebDAV文件存储客户端
   firebase_core: ^4.9.0
   firebase_auth: ^6.5.1
