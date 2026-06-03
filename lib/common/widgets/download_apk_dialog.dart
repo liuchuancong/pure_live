@@ -37,14 +37,22 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
 
   Future<void> _startDownload() async {
     try {
-      final apkName = widget.apkUrl.split('/').last;
       final baseDir = await _getSafeDownloadDir();
-      final file = File(path.join(baseDir.path, apkName));
 
-      if (await file.exists()) {
-        await file.delete();
+      // ✅ 清理旧 APK（推荐）
+      try {
+        final files = baseDir.listSync();
+        for (final f in files) {
+          if (f is File && f.path.endsWith('.apk')) {
+            await f.delete();
+          }
+        }
+      } catch (e) {
+        log('Clean old apk failed: $e');
       }
 
+      final apkName = widget.apkUrl.split('/').last;
+      final file = File(path.join(baseDir.path, apkName));
       await _dio.download(
         widget.apkUrl,
         file.path,
