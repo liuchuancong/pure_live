@@ -7,6 +7,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 class WebSearchController extends GetxController {
   InAppWebViewController? webViewController;
   final CookieManager cookieManager = CookieManager.instance();
+  late final WebViewEnvironment webViewEnvironment;
 
   late String url;
   late String platform;
