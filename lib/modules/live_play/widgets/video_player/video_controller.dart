@@ -532,7 +532,10 @@ class VideoController with ChangeNotifier {
   }
 
   Future<double> brightness() async {
-    return await brightnessController.application;
+    if (Platform.isAndroid || Platform.isIOS) {
+      return await brightnessController.application;
+    }
+    throw Exception('Brightness not supported on this platform');
   }
 
   void setVolume(double value) async {

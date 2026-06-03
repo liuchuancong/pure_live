@@ -656,8 +656,10 @@ class BrightnessVolumnDargAreaState extends State<BrightnessVolumnDargArea> {
     if (_hideBVStuff || _isDargLeft != dargLeft) {
       _isDargLeft = dargLeft;
       if (_isDargLeft) {
-        double v = await controller.brightness();
-        setState(() => _updateDargVarVal = v);
+        if (PlatformUtils.isMobile) {
+          double v = await controller.brightness();
+          setState(() => _updateDargVarVal = v);
+        }
       } else {
         double? v = await controller.volume();
         setState(() => _updateDargVarVal = v ?? 1.0);
