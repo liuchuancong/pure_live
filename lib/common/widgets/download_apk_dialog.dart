@@ -96,8 +96,7 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
         if (Navigator.canPop(Get.context!)) {
           Navigator.pop(Get.context!, true);
         }
-
-        installApk(file);
+        openDownloadFolder(baseDir);
       } else if (PlatformUtils.isDesktop) {
         if (Navigator.canPop(context)) {
           Navigator.pop(context, true);
@@ -128,27 +127,28 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
     }
   }
 
-  void installApk(File file) async {
+  void openDownloadFolder(Directory folder) async {
     if (!Platform.isAndroid) return;
-
     try {
-      final intent = AndroidIntent(
-        action: 'android.intent.action.VIEW',
-        data: file.path,
-        type: 'application/vnd.android.package-archive',
-        flags: [1, 268435456],
-      );
-
-      await intent.launch();
+      final result = await OpenFilex.open(folder.path);
+      if (result.type != ResultType.done) {
+        final intent = AndroidIntent(
+          action: 'android.intent.action.VIEW',
+          data: 'content://com.android.externalstorage.documents/document/primary%3ADownload',
+          type: 'vnd.android.document/directory',
+          flags: [1, 268435456],
+        );
+        await intent.launch();
+      }
     } catch (e) {
-      Get.snackbar(i18n("install_failed"), i18n("install_unknown_app_permission_tip", args: {"message": e.toString()}));
+      Get.snackbar(i18n("install_failed"), e.toString());
     }
   }
 
   Future<Directory> _getSafeDownloadDir() async {
     Directory downloadDir;
     if (Platform.isAndroid) {
-      final dir = await getExternalStorageDirectory();
+      final dir = await getDownloadsDirectory();
       downloadDir = Directory(path.join(dir!.path, 'pure_live'));
     } else {
       downloadDir = await AppPathManager().getDir(AppPathManager.dirDownload);
