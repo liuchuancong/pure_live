@@ -897,6 +897,7 @@
     "custom_duration": "Custom Duration",
     "webdav_help_tutorial": "Help Tutorial",
     "danmaku_stroke": "Danmaku Stroke",
-    "danmaku_fps": "Danmaku FPS"
-
+    "danmaku_fps": "Danmaku FPS",
+    "github_login": "GitHub Login",
+    "paste_auth_link": "Paste the auth link"
 }

@@ -177,44 +177,64 @@ class Utils {
     String cancel = '',
   }) async {
     final TextEditingController textEditingController = TextEditingController(text: content);
-    var result = await Get.dialog(
+    final res = await Get.dialog(
       AlertDialog(
         title: Text(title),
-        content: Padding(
-          padding: const EdgeInsets.only(top: 12),
+        titleTextStyle: Get.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 18),
+        contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
+        content: SizedBox(
+          width: 420,
           child: TextField(
             controller: textEditingController,
-            decoration: InputDecoration(
-              border: const OutlineInputBorder(),
-              //prefixText: title,
-              contentPadding: const EdgeInsets.all(12),
-              hintText: hintText ?? title,
-            ),
-            // style:  TextStyle(
-            //     height: 1.0,
-            //     color: Get.isDarkMode ? Colors.white : Colors.black),
             autofocus: true,
+            maxLines: 5,
+            minLines: 4,
+            style: Get.textTheme.bodyMedium?.copyWith(fontFamily: 'monospace', fontSize: 13, height: 1.5),
+            decoration: InputDecoration(
+              hintText: hintText ?? title,
+              hintStyle: Get.textTheme.bodyMedium?.copyWith(
+                color: Get.theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+              ),
+              filled: true,
+              fillColor: Get.theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+              contentPadding: const EdgeInsets.all(16),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: Get.theme.colorScheme.primary, width: 1.5),
+              ),
+            ),
           ),
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
         actions: [
           TextButton(
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
             onPressed: () {
               Navigator.of(Get.context!).pop();
             },
-            child: Text(i18n("cancel")),
+            child: Text(cancel.isNotEmpty ? cancel : i18n("cancel")),
           ),
-          TextButton(
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Get.theme.colorScheme.primary,
+              foregroundColor: Get.theme.colorScheme.onPrimary,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
             onPressed: () {
               Navigator.of(Get.context!).pop(textEditingController.text);
             },
-            child: Text(i18n("confirm")),
+            child: Text(confirm.isNotEmpty ? confirm : i18n("confirm")),
           ),
         ],
       ),
-      // barrierColor:
-      //     Get.isDarkMode ? Colors.grey.withValues(alpha:.3) : Colors.black38,
     );
-    return result;
+    return res;
   }
 
   static Future<T?> showOptionDialog<T>(List<T> contents, T value, {String title = ''}) async {

@@ -897,5 +897,7 @@
     "custom_duration": "自定义时长",
     "webdav_help_tutorial": "使用帮助教程",
     "danmaku_stroke": "弹幕描边",
-    "danmaku_fps": "弹幕帧率"
+    "danmaku_fps": "弹幕帧率",
+    "github_login": "GitHub 登录",
+    "paste_auth_link": "请粘贴授权链接"
 }

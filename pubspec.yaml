@@ -175,6 +175,7 @@ dependencies:
   qr_flutter: ^4.1.0 # 二维码生成
   back_button_interceptor: ^8.0.4 # 返回键拦截
   easy_localization: ^3.0.8 #多语言
+  app_links: 7.0.0
 # 依赖覆盖（强制指定版本）
 dependency_overrides:
   wakelock_plus: ^1.4.0

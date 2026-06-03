@@ -10,7 +10,6 @@ import 'package:win32_registry/win32_registry.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/modules/auth/auth_controller.dart';
-import 'package:pure_live/modules/auth/models/policy_model.dart';
 import 'package:pure_live/common/services/settings/backup_controller.dart';
 
 class FirebaseManager {
@@ -19,7 +18,6 @@ class FirebaseManager {
   static String? currentUserRole;
   static Set<String> managementRoles = {};
   static const String middlePageUrl = 'https://pure-live-26c7f.web.app/auth_callback.html';
-  static final PolicyModel policy = PolicyModel();
   static Map<String, List<String>> roleVisibilityMap = {};
   static Map<String, int> roleWeights = {};
 
@@ -38,7 +36,6 @@ class FirebaseManager {
 
   Future<void> initial() async {
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-    await loadPolicy();
     registerWindowsCustomScheme(customScheme, description: 'PureLive Authentication Callback');
   }
 
@@ -90,16 +87,6 @@ class FirebaseManager {
       developer.log('❌ 退出登录时状态同步清空失败: $e');
     }
     Navigator.of(Get.context!).pop();
-  }
-
-  Future<void> loadPolicy() async {
-    try {
-      final doc = await firestore.collection('config').doc('global_policy').get();
-      if (doc.exists && doc.data() != null) {
-        final loadedPolicy = PolicyModel.fromJson(doc.data()!);
-        policy.owner = loadedPolicy.owner;
-      }
-    } catch (_) {}
   }
 
   Future<bool> loadUploadConfig() async {
@@ -242,17 +229,6 @@ class FirebaseManager {
     await firestore.collection('permissions').doc(uid).delete();
   }
 
-  Future<void> setAdmin(String uid) async {
-    try {
-      final newPolicy = PolicyModel(owner: uid);
-      await firestore.collection('config').doc('global_policy').set(newPolicy.toJson(), SetOptions(merge: true));
-      policy.owner = uid;
-      ToastUtil.show(i18n('policy_sync_success'));
-    } catch (_) {
-      ToastUtil.show(i18n('policy_sync_failed'));
-    }
-  }
-
   bool isAdmin() {
     final myRole = FirebaseManager.currentUserRole;
     if (myRole == null) return false;
@@ -270,5 +246,30 @@ class FirebaseManager {
     if (myRole == null) return false;
     final myWeight = FirebaseManager.roleWeights[myRole] ?? 2;
     return myWeight < 2;
+  }
+
+  Future<void> handleGithubCredential(Map<String, dynamic> json) async {
+    try {
+      final String? accessToken = json['accessToken'];
+      if (accessToken != null && accessToken.isNotEmpty) {
+        final githubCredential = GithubAuthProvider.credential(accessToken);
+        await auth.signInWithCredential(githubCredential);
+        developer.log('Successfully signed in with GitHub token cross-instance.');
+      }
+    } catch (e) {
+      developer.log('Error handling GitHub credential cross-instance: $e');
+    }
+  }
+
+  Future<void> handleIdToken(String idToken) async {
+    try {
+      if (idToken.isNotEmpty) {
+        final customCredential = OAuthProvider('github.com').credential(idToken: idToken);
+        await auth.signInWithCredential(customCredential);
+        developer.log('Successfully signed in with OAuth ID Token cross-instance.');
+      }
+    } catch (e) {
+      developer.log('Error handling Custom ID Token cross-instance: $e');
+    }
   }
 }
