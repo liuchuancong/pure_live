@@ -1,7 +1,7 @@
 name: pure_live
 description: 纯粹直播,一款开源的第三方多平台直播聚合播放器.
 publish_to: none
-version: 2.0.21+32
+version: 2.0.22+33
 
 environment:
   sdk: ^3.10.4
@@ -67,7 +67,7 @@ dependencies:
       url: https://github.com/Predidit/media-kit.git
       ref: main
       path: ./libs/universal/media_kit_libs_video
-  fvp: ^0.37.1
+  fvp: ^0.37.2
   video_player: ^2.11.1
   better_player_plus: ^1.2.1 # 高级视频播放器
   audio_service: ^0.18.18 # 后台音频服务

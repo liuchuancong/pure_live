@@ -40,7 +40,7 @@ class AppInitializer {
     await AppPathManager().initialize(instanceId: instanceId);
     await CustomImageCacheManager.initialize();
     final Directory hiveDir = await AppPathManager().getDir(AppPathManager.dirHiveDB);
-    await FirebaseManager.getInstance().initial();
+    FirebaseManager.getInstance().initial();
     try {
       await Hive.initFlutter(hiveDir.path);
       await HivePrefUtil.init();
@@ -63,7 +63,6 @@ class AppInitializer {
     );
     if (PlatformUtils.isDesktop) {
       await DesktopManager.initialize();
-
       Future.delayed(const Duration(milliseconds: 800), () {
         WindowUtils.markCurrentWindow(instanceId);
       });
@@ -74,7 +73,6 @@ class AppInitializer {
     await FFmpegKitExtended.initialize();
     await EasyLocalization.ensureInitialized();
     initRefresh();
-
     if (PlatformUtils.isDesktopNotMac) {
       if (instanceId.isEmpty) {
         await SettingsService.to.startup.setupLaunchAtStartup();

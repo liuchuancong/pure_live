@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:path/path.dart' as path;
 import 'package:open_filex/open_filex.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:android_intent_plus/android_intent.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
 
@@ -39,6 +40,10 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
       final apkName = widget.apkUrl.split('/').last;
       final baseDir = await _getSafeDownloadDir();
       final file = File(path.join(baseDir.path, apkName));
+
+      if (await file.exists()) {
+        await file.delete();
+      }
 
       await _dio.download(
         widget.apkUrl,
@@ -76,10 +81,6 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
         _statusText = i18n("download_complete_installing");
       });
 
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context, true);
-      }
-
       if (Platform.isAndroid) {
         Get.showSnackbar(
           GetSnackBar(
@@ -89,14 +90,19 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
             backgroundColor: Get.theme.colorScheme.primary,
           ),
         );
-        final result = await OpenFilex.open(file.path, type: "application/vnd.android.package-archive");
-        if (result.type != ResultType.done) {
-          Get.snackbar(
-            i18n("install_failed"),
-            i18n("install_unknown_app_permission_tip", args: {"message": result.message}),
-          );
+
+        await Future.delayed(const Duration(seconds: 1));
+
+        if (Navigator.canPop(Get.context!)) {
+          Navigator.pop(Get.context!, true);
         }
+
+        installApk(file);
       } else if (PlatformUtils.isDesktop) {
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context, true);
+        }
+
         final result = await OpenFilex.open(file.path);
 
         if (PlatformUtils.isDesktopNotMac) {
@@ -119,6 +125,23 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
       if (mounted && !_cancelToken.isCancelled) {
         _showErrorAndClose(i18n("download_failed", args: {"error": "$e"}));
       }
+    }
+  }
+
+  void installApk(File file) async {
+    if (!Platform.isAndroid) return;
+
+    try {
+      final intent = AndroidIntent(
+        action: 'android.intent.action.VIEW',
+        data: file.path,
+        type: 'application/vnd.android.package-archive',
+        flags: [1, 268435456],
+      );
+
+      await intent.launch();
+    } catch (e) {
+      Get.snackbar(i18n("install_failed"), i18n("install_unknown_app_permission_tip", args: {"message": e.toString()}));
     }
   }
 

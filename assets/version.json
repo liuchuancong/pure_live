@@ -1,8 +1,8 @@
 {
   "version": "2.0.21",
   "build_number": 32,
-  "version_num": 2002132,
-  "version_desc": "- 修复最小支持android6.0\n- 优化弹幕卡顿，并添加了更多的表情显示。\n- 优化切换线路以及清晰度不重新连接弹幕。\n- 优化了备份以及导出,升级前请做好数据备份，防止数据丢失。\n- 添加windows自定义启动窗口大小。\n",
+  "version_num": 2002233,
+  "version_desc": "- 添加首选平台。\n- 修复播放源失效导致切换播放器退出页面继续播放的问题。\n- 添加弹幕：显示描边以及自定义FPS，减少弹幕卡顿。\n- 由于SupaBase被封，移除SupaBase替换为FireBase，邮箱以及Githup登录，所有人均可上传以及下载（需要科学上网），想继续使用可以查看Fvp分支自行部署使用。\n- 添加坚果云免费WebDav说明文档。\n- 修复windows亮度问题。\n- 搜索登录持久化以及修复多次弹窗。\n- 仅音频播放并不是官方流，还是会加载音视频流使用ffmpeg分离声音流，仅为不渲染视频，省电。\n",
   "prerelease": false,
   "download_url": "https://github.com/liuchuancong/pure_live/releases"
 }
