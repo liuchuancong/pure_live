@@ -46,7 +46,14 @@ class WebSearchController extends GetxController {
     }
   }
 
-  void onLoadStop(InAppWebViewController controller, WebUri? uri) {
+  Future<void> onLoadStop(InAppWebViewController controller, WebUri? uri) async {
+    try {
+      final cookieManager = CookieManager.instance();
+      await cookieManager.flush(); // 🚀 强行落盘持久化
+      developer.log("🍪 网页登录状态和本地 Cookies 已成功强行保存到磁盘。");
+    } catch (e) {
+      developer.log("⚠️ 强行保存凭证时遇到小警告: $e");
+    }
     loading.value = false;
     if (uri != null) {
       _parseRoomId(uri.toString());
