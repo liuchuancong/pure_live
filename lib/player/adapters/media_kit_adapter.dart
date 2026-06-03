@@ -150,7 +150,13 @@ class MediaKitAdapter implements UnifiedPlayer {
   // =========================
 
   @override
-  Future<void> setDataSource(String url, List<String> playUrls, Map<String, String> headers, {LiveRoom? room}) async {
+  Future<void> setDataSource(
+    String url,
+    List<String> playUrls,
+    Map<String, String> headers, {
+    LiveRoom? room,
+    bool audioOnly = false,
+  }) async {
     if (_disposed) return;
 
     if (_currentUrl == url && isPlayingNow) {
@@ -169,6 +175,9 @@ class MediaKitAdapter implements UnifiedPlayer {
       _widthSubject.add(null);
 
       _heightSubject.add(null);
+      if (audioOnly) {
+        await applyAudioOnlySettings();
+      }
 
       await _player.open(Media(url, httpHeaders: headers), play: true);
 
@@ -428,6 +437,15 @@ class MediaKitAdapter implements UnifiedPlayer {
     final vol = (volume * 100).clamp(0.0, 100.0);
 
     await _player.setVolume(vol);
+  }
+
+  // =========================
+  // applyAudioOnlySettings
+  // =========================
+
+  Future<void> applyAudioOnlySettings() async {
+    final native = _player.platform as dynamic;
+    await native.setProperty('vo', 'null');
   }
 
   // =========================

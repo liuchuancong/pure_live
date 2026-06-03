@@ -55,7 +55,13 @@ class FvpAdapter implements UnifiedPlayer {
   // set data source
   // =========================
   @override
-  Future<void> setDataSource(String url, List<String> playUrls, Map<String, String> headers, {LiveRoom? room}) async {
+  Future<void> setDataSource(
+    String url,
+    List<String> playUrls,
+    Map<String, String> headers, {
+    LiveRoom? room,
+    bool audioOnly = false,
+  }) async {
     if (_disposed) return;
     if (_currentUrl == url && isPlayingNow) return;
 

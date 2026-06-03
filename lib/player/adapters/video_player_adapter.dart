@@ -119,7 +119,13 @@ class BetterPlayerAdapter implements UnifiedPlayer {
   }
 
   @override
-  Future<void> setDataSource(String url, List<String> playUrls, Map<String, String> headers, {LiveRoom? room}) async {
+  Future<void> setDataSource(
+    String url,
+    List<String> playUrls,
+    Map<String, String> headers, {
+    LiveRoom? room,
+    bool audioOnly = false,
+  }) async {
     try {
       _loadingSubject.add(true);
       _widthSubject.add(null);

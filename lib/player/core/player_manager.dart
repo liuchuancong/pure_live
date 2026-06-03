@@ -210,7 +210,7 @@ class PlayerManager {
 
     try {
       _stateSubject.add(PlayerState.preparing);
-      await player.setDataSource(targetUrl, targetPlayUrls, headers, room: room);
+      await player.setDataSource(targetUrl, targetPlayUrls, headers, room: room, audioOnly: audioOnly);
       if (!_isSessionValid(mySessionId)) return;
 
       LiveAudioService.setPlayer(player);

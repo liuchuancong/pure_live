@@ -131,15 +131,23 @@ class FijkAdapter implements UnifiedPlayer {
   }
 
   @override
-  Future<void> setDataSource(String url, List<String> playUrls, Map<String, String> headers, {LiveRoom? room}) async {
+  Future<void> setDataSource(
+    String url,
+    List<String> playUrls,
+    Map<String, String> headers, {
+    LiveRoom? room,
+    bool audioOnly = false,
+  }) async {
     try {
       _loadingSubject.add(true);
       if (_player.state != FijkState.idle) {
         await _player.reset();
       }
-      _setupProxy();
-
+      await _setupProxy();
       await FijkHelper.setFijkOption(_player, enableCodec: SettingsService.to.player.enableCodec.v, headers: headers);
+      if (audioOnly) {
+        await applyAudioOnlySettings();
+      }
       await _player.setDataSource(url, autoPlay: true);
       _stateSubject.add(PlayerState.ready);
       await setVolume(1.0);
@@ -184,6 +192,10 @@ class FijkAdapter implements UnifiedPlayer {
     _playingSubject.add(false);
     _loadingSubject.add(false);
     _stateSubject.add(PlayerState.idle);
+  }
+
+  Future<void> applyAudioOnlySettings() async {
+    await _player.setOption(FijkOption.playerCategory, "disable-vid", "1");
   }
 
   @override

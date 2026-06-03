@@ -10,7 +10,13 @@ abstract class UnifiedPlayer {
   /// [url] 当前播放地址
   /// [playUrls] 备用地址列表
   /// [headers] HTTP 请求头
-  Future<void> setDataSource(String url, List<String> playUrls, Map<String, String> headers, {LiveRoom? room});
+  Future<void> setDataSource(
+    String url,
+    List<String> playUrls,
+    Map<String, String> headers, {
+    LiveRoom? room,
+    bool audioOnly = false,
+  });
 
   Future<void> play();
 
