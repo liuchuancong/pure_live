@@ -17,8 +17,11 @@ class FirebaseManager {
   static late FirebaseManager _instance;
   static const String customScheme = 'purelive';
   static String? currentUserRole;
+  static Set<String> managementRoles = {};
   static const String middlePageUrl = 'https://pure-live-26c7f.web.app/auth_callback.html';
   static final PolicyModel policy = PolicyModel();
+  static Map<String, List<String>> roleVisibilityMap = {};
+  static Map<String, int> roleWeights = {};
 
   static bool canUploadConfig = false;
 
@@ -103,40 +106,69 @@ class FirebaseManager {
     final user = Get.find<AuthController>().user;
     if (user == null) {
       canUploadConfig = false;
+      currentUserRole = null;
       return false;
     }
 
     try {
       await Future.delayed(const Duration(milliseconds: 200));
+
       final doc = await firestore.collection('users').doc(user.uid).get();
       if (!doc.exists) {
         canUploadConfig = true;
-        return true;
+      } else {
+        final data = doc.data();
+        canUploadConfig = data?['canUpload'] != false;
       }
 
-      final data = doc.data();
-      canUploadConfig = data?['canUpload'] != false;
       final permDoc = await firestore.collection('permissions').doc(user.uid).get();
       if (permDoc.exists) {
         final permData = permDoc.data();
         currentUserRole = permData?['role'] as String?;
       } else {
-        currentUserRole = null; // Regular user
+        currentUserRole = null;
       }
+
+      final rolesSnapshot = await firestore.collection('roles').get();
+
+      roleVisibilityMap.clear();
+      roleWeights.clear();
+      managementRoles.clear();
+
+      for (var roleDoc in rolesSnapshot.docs) {
+        final roleData = roleDoc.data();
+        final String roleId = roleDoc.id;
+
+        roleVisibilityMap[roleId] = List<String>.from(roleData['canSeeRoles'] ?? []);
+        roleWeights[roleId] = roleData['weight'] ?? 2;
+        if (roleData['isManagement'] == true) {
+          managementRoles.add(roleId);
+        }
+      }
+
+      roleWeights['user'] = 2;
+
       return canUploadConfig;
     } catch (e) {
       debugPrint('[FirebaseManager] 从 users 集合读取权限异常(已默认放行): $e');
       canUploadConfig = true;
+      currentUserRole = null;
       return true;
     }
   }
 
+  bool canVisible(String targetRole) {
+    final myRole = currentUserRole ?? 'user';
+    final allowedRoles = roleVisibilityMap[myRole] ?? ['user'];
+    return allowedRoles.contains(targetRole);
+  }
+
   Future<void> uploadConfig() async {
-    final AuthController authController = Get.find<AuthController>();
-    if (!authController.isLogin) {
+    final secureUser = auth.currentUser;
+    if (secureUser == null || secureUser.uid.trim().isEmpty) {
+      ToastUtil.show(i18n('firebase_account_unauthorized'));
       return;
     }
-
     await loadUploadConfig();
 
     if (!canUploadConfig) {
@@ -144,7 +176,7 @@ class FirebaseManager {
       return;
     }
 
-    final userId = authController.user!.uid;
+    final userId = secureUser.uid;
     final BackupController backup = Get.find<BackupController>();
     final encryptData = ArchethicUtils().encrypt(jsonEncode(backup.exportAllSettings()));
     final formattedTime = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
@@ -152,7 +184,7 @@ class FirebaseManager {
     try {
       await firestore.collection('users').doc(userId).set({
         'config': encryptData,
-        'email': authController.user!.email,
+        'email': secureUser.email ?? '',
         'version': VersionUtil.version,
         'update_at': formattedTime,
         'created_at': FieldValue.serverTimestamp(),
@@ -166,19 +198,23 @@ class FirebaseManager {
   }
 
   Future<void> downloadConfig() async {
-    final AuthController authController = Get.find<AuthController>();
-    final FavoriteController favoriteController = Get.find<FavoriteController>();
-    final BackupController backup = Get.find<BackupController>();
-    if (!authController.isLogin) {
+    final secureUser = auth.currentUser;
+    if (secureUser == null || secureUser.uid.trim().isEmpty) {
+      ToastUtil.show(i18n('firebase_account_unauthorized'));
       return;
     }
+
+    final FavoriteController favoriteController = Get.find<FavoriteController>();
+    final BackupController backup = Get.find<BackupController>();
+
     await loadUploadConfig();
+
     if (!canUploadConfig) {
       ToastUtil.show(i18n('firebase_account_unauthorized'));
       return;
     }
     try {
-      final document = await firestore.collection('users').doc(authController.user!.uid).get();
+      final document = await firestore.collection('users').doc(secureUser.uid).get();
 
       if (!document.exists) {
         ToastUtil.show(i18n('no_data'));
@@ -218,18 +254,21 @@ class FirebaseManager {
   }
 
   bool isAdmin() {
-    final currentUser = Get.find<AuthController>().user;
-    if (currentUser == null) {
-      return false;
-    }
-    return currentUser.uid == policy.owner;
+    final myRole = FirebaseManager.currentUserRole;
+    if (myRole == null) return false;
+    return FirebaseManager.roleWeights[myRole] == 0;
   }
 
   bool isManager() {
-    final AuthController authController = Get.find<AuthController>();
-    if (!authController.isLogin || authController.user == null) {
-      return false;
-    }
-    return FirebaseManager.currentUserRole == 'manager';
+    final myRole = FirebaseManager.currentUserRole;
+    if (myRole == null) return false;
+    return FirebaseManager.roleWeights[myRole] == 1;
+  }
+
+  bool hasManagementPower() {
+    final myRole = FirebaseManager.currentUserRole;
+    if (myRole == null) return false;
+    final myWeight = FirebaseManager.roleWeights[myRole] ?? 2;
+    return myWeight < 2;
   }
 }

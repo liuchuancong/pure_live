@@ -44,12 +44,15 @@ class _UserManagerState extends State<UserManager> {
       ToastUtil.show(i18n('operation_denied'));
       return;
     }
-    if (user.role == 'admin') {
+
+    final targetWeight = FirebaseManager.roleWeights[user.role] ?? 2;
+    if (targetWeight == 0) {
       ToastUtil.show(i18n('operation_denied'));
       return;
     }
+
     try {
-      if (user.role == 'manager') {
+      if (targetWeight == 1) {
         await FirebaseFirestore.instance.collection('permissions').doc(user.uid).delete();
       }
       await FirebaseFirestore.instance.collection('users').doc(user.uid).delete();
@@ -64,35 +67,35 @@ class _UserManagerState extends State<UserManager> {
     try {
       final usersSnapshot = await FirebaseFirestore.instance.collection('users').get();
       final permissionsSnapshot = await FirebaseFirestore.instance.collection('permissions').get();
-      final permissionRoleMap = {for (var doc in permissionsSnapshot.docs) doc.id: doc.data()['role'] ?? 'manager'};
+
+      final permissionRoleMap = {for (var doc in permissionsSnapshot.docs) doc.id: doc.data()['role'] ?? 'user'};
 
       final List<UserItem> tempAll = [];
-      final currentUser = Get.find<AuthController>().user;
-      final currentUserUid = currentUser!.uid;
+      final currentUserUid = Get.find<AuthController>().user!.uid;
 
-      final isSuper = isSuperAdmin;
-      final isMgr = FirebaseManager.getInstance().isManager();
       for (var doc in usersSnapshot.docs) {
         final String uid = doc.id;
+
+        if (uid == currentUserUid) continue;
+
         final data = doc.data();
         final String email = data['email'] ?? '';
         final bool userCanUpload = data['canUpload'] != false;
-        if (uid == currentUserUid) continue;
-        String currentRole = 'user';
-        if (permissionRoleMap.containsKey(uid)) {
-          currentRole = permissionRoleMap[uid]!;
-        }
-        if (isSuper) {
-        } else if (isMgr) {
-          if (currentRole != 'user') continue;
-        } else {
+
+        final String currentRole = permissionRoleMap[uid] ?? 'user';
+
+        if (!FirebaseManager.getInstance().canVisible(currentRole)) {
           continue;
         }
+
         tempAll.add(UserItem(uid: uid, email: email, canUpload: userCanUpload, role: currentRole));
       }
+
       tempAll.sort((a, b) {
-        final roleWeights = {'admin': 0, 'manager': 1, 'user': 2};
-        int compare = (roleWeights[a.role] ?? 2).compareTo(roleWeights[b.role] ?? 2);
+        int weightA = FirebaseManager.roleWeights[a.role] ?? 2;
+        int weightB = FirebaseManager.roleWeights[b.role] ?? 2;
+
+        int compare = weightA.compareTo(weightB);
         if (compare == 0) return a.email.compareTo(b.email);
         return compare;
       });
@@ -152,7 +155,6 @@ class _UserManagerState extends State<UserManager> {
     try {
       await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
         'canUpload': false,
-        'email': user.email,
       }, SetOptions(merge: true));
       ToastUtil.show(i18n('ban_success'));
       await fetchAllData();
@@ -165,7 +167,6 @@ class _UserManagerState extends State<UserManager> {
     try {
       await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
         'canUpload': true,
-        'email': user.email,
       }, SetOptions(merge: true));
       ToastUtil.show(i18n('unban_success'));
       await fetchAllData();
@@ -186,9 +187,9 @@ class _UserManagerState extends State<UserManager> {
         scrolledUnderElevation: 1,
       ),
       body: Obx(() {
-        final adminCount = filteredUsers.where((e) => e.role == 'admin').length;
-        final managerCount = filteredUsers.where((e) => e.role == 'manager').length;
-        final userCount = filteredUsers.where((e) => e.role == 'user').length;
+        final adminCount = filteredUsers.where((e) => (FirebaseManager.roleWeights[e.role] ?? 2) == 0).length;
+        final managerCount = filteredUsers.where((e) => (FirebaseManager.roleWeights[e.role] ?? 2) == 1).length;
+        final userCount = filteredUsers.where((e) => (FirebaseManager.roleWeights[e.role] ?? 2) == 2).length;
 
         return CustomScrollView(
           physics: const BouncingScrollPhysics(),
@@ -309,18 +310,17 @@ class _UserManagerState extends State<UserManager> {
 
   // 用户卡片（完全复刻 IPTV 卡片样式）
   Widget _buildUserCard(int index, UserItem user, ThemeData theme) {
-    final bool isAdmin = user.role == 'admin';
-    final bool isManager = user.role == 'manager';
+    final int roleWeight = FirebaseManager.roleWeights[user.role] ?? 2;
 
     Color roleColor = theme.colorScheme.primary;
     String roleText = i18n('role_user');
     IconData roleIcon = Remix.user_line;
 
-    if (isAdmin) {
+    if (roleWeight == 0) {
       roleColor = Colors.amber.shade700;
       roleText = i18n('role_admin');
       roleIcon = Remix.shield_user_line;
-    } else if (isManager) {
+    } else if (roleWeight == 1) {
       roleColor = Colors.teal;
       roleText = i18n('role_manager');
       roleIcon = Remix.user_star_line;
@@ -434,7 +434,7 @@ class _UserManagerState extends State<UserManager> {
   // 操作按钮（和IPTV完全同款）
   List<Widget> _buildActionButtons(UserItem user, ThemeData theme) {
     final list = <Widget>[];
-    if (user.role == 'admin') return list;
+    if ((FirebaseManager.roleWeights[user.role] ?? 2) == 0) return list;
 
     if (isSuperAdmin) {
       if (user.role == 'user') {

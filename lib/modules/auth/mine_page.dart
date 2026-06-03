@@ -1,6 +1,5 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/modules/auth/auth_controller.dart';
 import 'package:pure_live/modules/auth/utils/firebase_manager.dart';
 
 class MinePage extends StatefulWidget {
@@ -23,22 +22,6 @@ class _MinePageState extends State<MinePage> {
     FirebaseManager.getInstance().signOut();
   }
 
-  bool isAdmin() {
-    final AuthController authController = Get.find<AuthController>();
-    if (!authController.isLogin || authController.user == null) {
-      return false;
-    }
-    return FirebaseManager.policy.owner == authController.user!.uid;
-  }
-
-  bool isManager() {
-    final AuthController authController = Get.find<AuthController>();
-    if (!authController.isLogin || authController.user == null) {
-      return false;
-    }
-    return FirebaseManager.currentUserRole == 'manager';
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -51,7 +34,7 @@ class _MinePageState extends State<MinePage> {
         children: [
           context.buildGroupTitle(i18n('firebase_mine')),
           context.buildModernCard([
-            if (isAdmin() || isManager())
+            if (FirebaseManager.getInstance().hasManagementPower())
               context.buildTile(
                 icon: Remix.shield_user_line,
                 title: i18n('manage_users'),
