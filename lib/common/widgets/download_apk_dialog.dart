@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:path/path.dart' as path;
 import 'package:open_filex/open_filex.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:android_intent_plus/android_intent.dart';
+import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
 
@@ -96,7 +96,7 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
         if (Navigator.canPop(Get.context!)) {
           Navigator.pop(Get.context!, true);
         }
-        openDownloadFolder(baseDir);
+        await FileUtils.openFileOrUrl(file.parent.path);
       } else if (PlatformUtils.isDesktop) {
         if (Navigator.canPop(context)) {
           Navigator.pop(context, true);
@@ -124,24 +124,6 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
       if (mounted && !_cancelToken.isCancelled) {
         _showErrorAndClose(i18n("download_failed", args: {"error": "$e"}));
       }
-    }
-  }
-
-  void openDownloadFolder(Directory folder) async {
-    if (!Platform.isAndroid) return;
-    try {
-      final result = await OpenFilex.open(folder.path);
-      if (result.type != ResultType.done) {
-        final intent = AndroidIntent(
-          action: 'android.intent.action.VIEW',
-          data: 'content://com.android.externalstorage.documents/document/primary%3ADownload',
-          type: 'vnd.android.document/directory',
-          flags: [1, 268435456],
-        );
-        await intent.launch();
-      }
-    } catch (e) {
-      Get.snackbar(i18n("install_failed"), e.toString());
     }
   }
 
