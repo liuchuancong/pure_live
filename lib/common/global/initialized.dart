@@ -40,7 +40,7 @@ class AppInitializer {
     await AppPathManager().initialize(instanceId: instanceId);
     await CustomImageCacheManager.initialize();
     final Directory hiveDir = await AppPathManager().getDir(AppPathManager.dirHiveDB);
-    FirebaseManager.getInstance().initial();
+    await FirebaseManager.getInstance().initial();
     try {
       await Hive.initFlutter(hiveDir.path);
       await HivePrefUtil.init();
