@@ -12,6 +12,8 @@ class WebSearchController extends GetxController {
   late String platform;
   var loading = true.obs;
   var roomId = ''.obs;
+  bool _isShowingDialog = false;
+
   @override
   void onInit() {
     super.onInit();
@@ -26,7 +28,6 @@ class WebSearchController extends GetxController {
 
   void onWebViewCreated(InAppWebViewController controller) {
     webViewController = controller;
-
     webViewController!.loadUrl(urlRequest: URLRequest(url: WebUri(url)));
   }
 
@@ -47,7 +48,6 @@ class WebSearchController extends GetxController {
 
   void onLoadStop(InAppWebViewController controller, WebUri? uri) {
     loading.value = false;
-
     if (uri != null) {
       _parseRoomId(uri.toString());
     }
@@ -58,15 +58,11 @@ class WebSearchController extends GetxController {
     NavigationAction action,
   ) async {
     final uri = action.request.url;
-
     if (uri != null) {
       final link = uri.toString();
-
       developer.log("点击链接: $link");
-
       _parseRoomId(link);
     }
-
     return NavigationActionPolicy.ALLOW;
   }
 
@@ -110,15 +106,20 @@ class WebSearchController extends GetxController {
         return;
       }
 
-      // 检查黑名单
       if (result != null && result.isNotEmpty) {
         final blackList = ['search', 'category', 'game', 'video', 'user', 'index', 'topic'];
         if (blackList.contains(result.toLowerCase())) {
-          result = null; // 命中黑名单，视为未检测到
+          result = null;
         }
       }
 
       if (result != null && result.isNotEmpty) {
+        if (_isShowingDialog) {
+          developer.log("⏳ 弹窗处理中，拦截重复调用");
+          return;
+        }
+        _isShowingDialog = true;
+
         roomId.value = result;
         developer.log("🎯 捕获到 roomId: $result");
 
@@ -128,19 +129,22 @@ class WebSearchController extends GetxController {
           confirm: i18n("confirm"),
           cancel: i18n("cancel"),
         );
+
         if (confirm == true) {
           webViewController?.stopLoading();
           AppNavigator.offAndToRoomDetail(
             liveRoom: LiveRoom(roomId: roomId.value, platform: platform),
           );
+        } else {
+          _isShowingDialog = false;
         }
       }
     } catch (e) {
       developer.log("🔥 解析异常: $e");
+      _isShowingDialog = false;
     }
   }
 
-  // ==============================
   void goBack() async {
     if (await webViewController?.canGoBack() ?? false) {
       webViewController?.goBack();
