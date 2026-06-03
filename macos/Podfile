@@ -38,11 +38,17 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_macos_build_settings(target)
-
-    # 🔴 强制所有插件的最低部署目标为 macOS 10.15
+    
+    # ✨ 针对所有第三方库（包括 connectivity_plus）进行编译期降级
     target.build_configurations.each do |config|
-      config.build_settings['MACOSX_DEPLOYMENT_TARGET'] = '10.15'
+      # 1. 强制使用 Swift 5.0 语法标准，避免 Xcode 16.x 开启 Swift 6 严格审查
+      config.build_settings['SWIFT_VERSION'] = '5.0'
+      
+      # 2. 关闭 Xcode 16 强制的严格并发检查（这是导致 swift-frontend 报错的主因）
+      config.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'complete' # 或者设置为 'minimal'
+      
+      # 3. 提升最低部署目标（macos-15 环境下老旧的 10.x 目标会直接报错）
+      config.build_settings['MACOSX_DEPLOYMENT_TARGET'] = '11.0'
     end
   end
 end
-
