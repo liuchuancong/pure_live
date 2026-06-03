@@ -33,7 +33,12 @@ class VideoController with ChangeNotifier {
   final Map<String, String> headers;
   final isVertical = false.obs;
 
-  ScreenBrightness brightnessController = ScreenBrightness();
+  ScreenBrightness? _brightnessController;
+  ScreenBrightness? get brightnessController {
+    if (!Platform.isAndroid && !Platform.isIOS) return null;
+    _brightnessController ??= ScreenBrightness();
+    return _brightnessController;
+  }
 
   double initBrightness = 0.0;
 
@@ -527,7 +532,7 @@ class VideoController with ChangeNotifier {
 
   Future<double> brightness() async {
     if (Platform.isAndroid || Platform.isIOS) {
-      return await brightnessController.application;
+      return await brightnessController!.application;
     }
     throw Exception('Brightness not supported on this platform');
   }
@@ -543,7 +548,7 @@ class VideoController with ChangeNotifier {
 
   void setBrightness(double value) async {
     if (Platform.isAndroid || Platform.isIOS) {
-      await brightnessController.setApplicationScreenBrightness(value);
+      await brightnessController!.setApplicationScreenBrightness(value);
     }
   }
 }
