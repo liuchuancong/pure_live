@@ -1,6 +1,7 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:pure_live/modules/auth/auth_controller.dart';
 import 'package:pure_live/modules/auth/models/user_item.dart';
 import 'package:pure_live/modules/auth/utils/firebase_manager.dart';
 
@@ -63,32 +64,32 @@ class _UserManagerState extends State<UserManager> {
     try {
       final usersSnapshot = await FirebaseFirestore.instance.collection('users').get();
       final permissionsSnapshot = await FirebaseFirestore.instance.collection('permissions').get();
-
       final permissionRoleMap = {for (var doc in permissionsSnapshot.docs) doc.id: doc.data()['role'] ?? 'manager'};
 
       final List<UserItem> tempAll = [];
+      final currentUser = Get.find<AuthController>().user;
+      final currentUserUid = currentUser!.uid;
 
+      final isSuper = isSuperAdmin;
+      final isMgr = FirebaseManager.getInstance().isManager();
       for (var doc in usersSnapshot.docs) {
-        final data = doc.data();
         final String uid = doc.id;
+        final data = doc.data();
         final String email = data['email'] ?? '';
         final bool userCanUpload = data['canUpload'] != false;
-
+        if (uid == currentUserUid) continue;
         String currentRole = 'user';
         if (permissionRoleMap.containsKey(uid)) {
           currentRole = permissionRoleMap[uid]!;
         }
-
-        tempAll.add(
-          UserItem(
-            uid: uid,
-            email: email,
-            canUpload: currentRole != 'user' ? userCanUpload : userCanUpload,
-            role: currentRole,
-          ),
-        );
+        if (isSuper) {
+        } else if (isMgr) {
+          if (currentRole != 'user') continue;
+        } else {
+          continue;
+        }
+        tempAll.add(UserItem(uid: uid, email: email, canUpload: userCanUpload, role: currentRole));
       }
-
       tempAll.sort((a, b) {
         final roleWeights = {'admin': 0, 'manager': 1, 'user': 2};
         int compare = (roleWeights[a.role] ?? 2).compareTo(roleWeights[b.role] ?? 2);
@@ -98,7 +99,6 @@ class _UserManagerState extends State<UserManager> {
 
       allUsers.value = List.from(tempAll);
       _applySearchFilter();
-      filteredUsers.value = List.from(filteredUsers);
     } catch (e) {
       ToastUtil.show(i18n('load_failed'));
     }

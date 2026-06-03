@@ -23,14 +23,20 @@ class _MinePageState extends State<MinePage> {
     FirebaseManager.getInstance().signOut();
   }
 
-  bool isManager() {
+  bool isAdmin() {
     final AuthController authController = Get.find<AuthController>();
-
     if (!authController.isLogin || authController.user == null) {
       return false;
     }
-
     return FirebaseManager.policy.owner == authController.user!.uid;
+  }
+
+  bool isManager() {
+    final AuthController authController = Get.find<AuthController>();
+    if (!authController.isLogin || authController.user == null) {
+      return false;
+    }
+    return FirebaseManager.currentUserRole == 'manager';
   }
 
   @override
@@ -45,7 +51,7 @@ class _MinePageState extends State<MinePage> {
         children: [
           context.buildGroupTitle(i18n('firebase_mine')),
           context.buildModernCard([
-            if (isManager())
+            if (isAdmin() || isManager())
               context.buildTile(
                 icon: Remix.shield_user_line,
                 title: i18n('manage_users'),

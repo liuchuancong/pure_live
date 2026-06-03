@@ -16,7 +16,7 @@ import 'package:pure_live/common/services/settings/backup_controller.dart';
 class FirebaseManager {
   static late FirebaseManager _instance;
   static const String customScheme = 'purelive';
-
+  static String? currentUserRole;
   static const String middlePageUrl = 'https://pure-live-26c7f.web.app/auth_callback.html';
   static final PolicyModel policy = PolicyModel();
 
@@ -116,6 +116,13 @@ class FirebaseManager {
 
       final data = doc.data();
       canUploadConfig = data?['canUpload'] != false;
+      final permDoc = await firestore.collection('permissions').doc(user.uid).get();
+      if (permDoc.exists) {
+        final permData = permDoc.data();
+        currentUserRole = permData?['role'] as String?;
+      } else {
+        currentUserRole = null; // Regular user
+      }
       return canUploadConfig;
     } catch (e) {
       debugPrint('[FirebaseManager] 从 users 集合读取权限异常(已默认放行): $e');
@@ -216,5 +223,13 @@ class FirebaseManager {
       return false;
     }
     return currentUser.uid == policy.owner;
+  }
+
+  bool isManager() {
+    final AuthController authController = Get.find<AuthController>();
+    if (!authController.isLogin || authController.user == null) {
+      return false;
+    }
+    return FirebaseManager.currentUserRole == 'manager';
   }
 }
