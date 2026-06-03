@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:pure_live/common/index.dart';
+import 'package:tray_manager/tray_manager.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 class Utils {
@@ -324,12 +325,11 @@ class Utils {
                   SettingsService.to.exit.dontAskExit.v = shouldNotAskAgain;
                   SettingsService.to.exit.exitChoose.v = 'exit';
                   Navigator.of(context).pop();
-                  if (await windowManager.isPreventClose()) {
-                    await windowManager.setPreventClose(false);
-                  }
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    exit(0);
-                  });
+                  await windowManager.hide();
+
+                  await windowManager.setPreventClose(false);
+                  trayManager.destroy().catchError((e) => debugPrint('托盘注销失败: $e'));
+                  windowManager.close().catchError((e) => debugPrint('窗口关闭失败: $e'));
                 },
                 child: Text(i18n("exit_app")),
               ),
