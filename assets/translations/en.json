@@ -907,5 +907,13 @@
     "max_concurrent_refresh": "Max Concurrent Threads",
     "minute": "min",
     "hour": "h",
-    "refresh_settings_subtitle": "Set parameters for automatic follow refresh"
+    "refresh_settings_subtitle": "Set parameters for automatic follow refresh",
+    "cellular_warning_msg": "You are using mobile data, please mind your traffic consumption.",
+    "never_show": "Don't show again",
+    "prev_page": "Previous",
+    "next_page": "Next",
+    "go_to": "Go to",
+    "page_indicator": "Page",
+    "page_unit": "",
+    "network_disconnected_msg": "No internet connection, please check your network settings."
 }

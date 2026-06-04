@@ -1,11 +1,11 @@
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/base/base_controller.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:pure_live/common/services/settings/bilibili_account_service.dart';
 
-class BiliBiliWebLoginController extends BaseController {
+class BiliBiliWebLoginController extends GetxController {
   InAppWebViewController? webViewController;
   final CookieManager cookieManager = CookieManager.instance();
+
   void onWebViewCreated(InAppWebViewController controller) {
     webViewController = controller;
     webViewController!.loadUrl(urlRequest: URLRequest(url: WebUri("https://passport.bilibili.com/login")));

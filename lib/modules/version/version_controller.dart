@@ -1,8 +1,7 @@
 import 'package:pure_live/common/index.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:pure_live/common/base/base_controller.dart';
 
-class VersionController extends BaseController {
+class VersionController extends GetxController {
   final hasNewVersion = false.obs;
 
   // =========================

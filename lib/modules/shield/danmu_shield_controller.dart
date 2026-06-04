@@ -1,7 +1,6 @@
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/base/base_controller.dart';
 
-class DanmuShieldController extends BaseController {
+class DanmuShieldController extends GetxController {
   final TextEditingController textEditingController = TextEditingController();
 
   void add() {

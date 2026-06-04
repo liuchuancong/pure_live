@@ -907,5 +907,13 @@
     "max_concurrent_refresh": "最大并发刷新线程",
     "minute": "分钟",
     "hour": "小时",
-    "refresh_settings_subtitle": "配置关注列表自动刷新参数"
+    "refresh_settings_subtitle": "配置关注列表自动刷新参数",
+    "cellular_warning_msg": "您当前正在使用移动蜂窝流量，请注意流量消耗。",
+    "never_show": "不再显示",
+    "prev_page": "上一页",
+    "next_page": "下一页",
+    "page_indicator": "第",
+    "page_unit": "页",
+    "network_disconnected_msg": "当前无网络连接，请检查网络设置",
+    "go_to": "跳转至"
 }

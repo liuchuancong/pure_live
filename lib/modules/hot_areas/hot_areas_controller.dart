@@ -1,7 +1,6 @@
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/base/base_controller.dart';
 
-class HotAreasController extends BaseController {
+class HotAreasController extends GetxController {
   final sites = <Site>[].obs;
 
   @override

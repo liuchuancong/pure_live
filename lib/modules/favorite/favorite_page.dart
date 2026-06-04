@@ -40,29 +40,40 @@ class FavoritePage extends GetView<FavoriteController> {
                             if (controller.tabSiteIndex.value != tabController.index) {
                               controller.selectedTagId.value = 'ALL';
                               controller.tabSiteIndex.value = tabController.index;
+                              controller.currentPage = 1;
+                              controller.syncRooms();
                             }
                           }
                         });
 
-                        return Column(
-                          children: [
-                            TabBar(
-                              isScrollable: true,
-                              tabs: availableSitesList.map<Widget>((e) => Tab(text: e.name)).toList(),
-                            ),
-                            Expanded(
-                              child: Obx(
-                                () => TabBarView(
-                                  children: availableSitesList
-                                      .map((e) => e.id)
-                                      .map(
-                                        (e) => _RoomGridView(site: e, isOnline: controller.tabOnlineIndex.value == 0),
-                                      )
-                                      .toList(),
+                        return BasePageView<FavoriteController, LiveRoom>(
+                          enableRefresh: true,
+                          enableLoadMore: true,
+                          contentBuilder: (context, list, scrollController) {
+                            return Column(
+                              children: [
+                                TabBar(
+                                  isScrollable: true,
+                                  tabs: availableSitesList.map<Widget>((e) => Tab(text: e.name)).toList(),
                                 ),
-                              ),
-                            ),
-                          ],
+                                Expanded(
+                                  child: TabBarView(
+                                    controller: tabController,
+                                    children: availableSitesList
+                                        .map(
+                                          (e) => _RoomGridView(
+                                            site: e.id,
+                                            isOnline: controller.tabOnlineIndex.value == 0,
+                                            scrollController: scrollController,
+                                            displayList: list,
+                                          ),
+                                        )
+                                        .toList(),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         );
                       },
                     ),
@@ -75,31 +86,22 @@ class FavoritePage extends GetView<FavoriteController> {
 }
 
 class _RoomGridView extends GetView<FavoriteController> {
-  _RoomGridView({required this.site, required this.isOnline});
+  const _RoomGridView({
+    required this.site,
+    required this.isOnline,
+    required this.scrollController,
+    required this.displayList,
+  });
 
   final String site;
   final bool isOnline;
-  final dense = SettingsService.to.app.enableDenseFavorites.v;
-  final offlineRefreshController = EasyRefreshController(controlFinishRefresh: true, controlFinishLoad: true);
-
-  Future onRefresh() async {
-    if (isOnline) {
-      bool result = await controller.onRefresh();
-      if (!result) {
-        controller.refreshController.finishRefresh(IndicatorResult.success);
-        controller.refreshController.resetFooter();
-      } else {
-        controller.refreshController.finishRefresh(IndicatorResult.fail);
-      }
-    } else {
-      await controller.onRefresh();
-      offlineRefreshController.finishRefresh(IndicatorResult.success);
-    }
-  }
+  final ScrollController scrollController;
+  final List<LiveRoom> displayList;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final dense = SettingsService.to.app.enableDenseFavorites.v;
 
     return LayoutBuilder(
       builder: (context, constraint) {
@@ -170,26 +172,11 @@ class _RoomGridView extends GetView<FavoriteController> {
             Expanded(
               child: Obx(() {
                 final baseRooms = isOnline ? controller.onlineRooms : controller.offlineRooms;
-                final currentRefreshController = isOnline ? controller.refreshController : offlineRefreshController;
-
-                final List<dynamic> platformFilteredRooms = site == Sites.allSite
-                    ? baseRooms
-                    : baseRooms.where((el) => el.platform == site).toList();
-
-                final List<dynamic> displayRooms = controller.selectedTagId.value == 'ALL'
-                    ? platformFilteredRooms
-                    : platformFilteredRooms
-                          .where(
-                            (room) =>
-                                controller.tagController.getTagsForRoom(room).contains(controller.selectedTagId.value),
-                          )
-                          .toList();
-
                 if (controller.isLoading.value && baseRooms.isEmpty && controller.selectedTagId.value == 'ALL') {
                   return AppStatusView(type: AppStatusType.loading, title: i18n('refresh_loading'), subtitle: '');
                 }
 
-                if (displayRooms.isEmpty) {
+                if (displayList.isEmpty) {
                   return EmptyView(
                     icon: Icons.live_tv_outlined,
                     title: i18n("empty_favorite_title"),
@@ -197,21 +184,18 @@ class _RoomGridView extends GetView<FavoriteController> {
                   );
                 }
 
-                return EasyRefresh(
-                  controller: currentRefreshController,
-                  onRefresh: onRefresh,
-                  child: WaterfallFlow.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                    gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: SettingsService.to.theme.crossAxisSpacing.v,
-                      mainAxisSpacing: SettingsService.to.theme.mainAxisSpacing.v,
-                    ),
-                    itemCount: displayRooms.length,
-                    itemBuilder: (context, index) {
-                      return RoomCard(room: displayRooms[index], dense: dense);
-                    },
+                return WaterfallFlow.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  controller: scrollController,
+                  gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: SettingsService.to.theme.crossAxisSpacing.v,
+                    mainAxisSpacing: SettingsService.to.theme.mainAxisSpacing.v,
                   ),
+                  itemCount: displayList.length,
+                  itemBuilder: (context, index) {
+                    return RoomCard(room: displayList[index], dense: dense);
+                  },
                 );
               }),
             ),
