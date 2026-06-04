@@ -14,10 +14,8 @@ import 'package:tars_dart/tars/net/base_tars_http.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/core/interface/live_site.dart';
-import 'package:pure_live/model/live_search_result.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/core/danmaku/huya_danmaku.dart';
-import 'package:pure_live/model/live_category_result.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/tars/get_cdn_token_ex_req.dart';
 import 'package:pure_live/core/tars/get_cdn_token_ex_resp.dart';
@@ -80,7 +78,7 @@ class HuyaSite implements LiveSite {
   }
 
   @override
-  Future<LiveCategoryResult> getCategoryRooms(LiveArea category, {int page = 1}) async {
+  Future<List<LiveRoom>> getCategoryRooms(LiveArea category, {int page = 1, int pageSize = 30}) async {
     var resultText = await HttpClient.instance.getJson(
       "https://www.huya.com/cache.php",
       queryParameters: {
@@ -117,8 +115,7 @@ class HuyaSite implements LiveSite {
       );
       items.add(roomItem);
     }
-    var hasMore = result["data"]["page"] < result["data"]["totalPage"];
-    return LiveCategoryResult(hasMore: hasMore, items: items);
+    return items;
   }
 
   @override
@@ -214,7 +211,7 @@ class HuyaSite implements LiveSite {
   }
 
   @override
-  Future<LiveCategoryResult> getRecommendRooms({int page = 1, required String nick}) async {
+  Future<List<LiveRoom>> getRecommendRooms({int page = 1, int pageSize = 30}) async {
     try {
       var resultText = await HttpClient.instance.getJson(
         "https://www.huya.com/cache.php",
@@ -251,8 +248,7 @@ class HuyaSite implements LiveSite {
         );
         items.add(roomItem);
       }
-      var hasMore = result["data"]["page"] < result["data"]["totalPage"];
-      return LiveCategoryResult(hasMore: hasMore, items: items);
+      return items;
     } catch (e) {
       throw Exception(e.toString());
     }
@@ -399,7 +395,7 @@ class HuyaSite implements LiveSite {
   }
 
   @override
-  Future<LiveSearchRoomResult> searchRooms(String keyword, {int page = 1}) async {
+  Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) async {
     var resultText = await HttpClient.instance.getJson(
       "https://search.cdn.huya.com/",
       queryParameters: {
@@ -444,11 +440,11 @@ class HuyaSite implements LiveSite {
       );
       items.add(roomItem);
     }
-    return LiveSearchRoomResult(hasMore: queryList.length > 0, items: items);
+    return items;
   }
 
   @override
-  Future<LiveSearchAnchorResult> searchAnchors(String keyword, {int page = 1}) async {
+  Future<List<LiveAnchorItem>> searchAnchors(String keyword, {int page = 1, int pageSize = 30}) async {
     var resultText = await HttpClient.instance.getJson(
       "https://search.cdn.huya.com/",
       queryParameters: {
@@ -459,8 +455,8 @@ class HuyaSite implements LiveSite {
         "v": 1,
         "typ": -5,
         "livestate": 0,
-        "rows": 20,
-        "start": (page - 1) * 20,
+        "rows": pageSize,
+        "start": (page - 1) * pageSize,
       },
     );
     var result = json.decode(resultText);
@@ -474,8 +470,7 @@ class HuyaSite implements LiveSite {
       );
       items.add(anchorItem);
     }
-    var hasMore = result["response"]["1"]["numFound"] > (page * 20);
-    return LiveSearchAnchorResult(hasMore: hasMore, items: items);
+    return items;
   }
 
   @override

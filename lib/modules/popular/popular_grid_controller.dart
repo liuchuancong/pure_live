@@ -9,11 +9,11 @@ class PopularGridController extends BasePageController<LiveRoom> {
   @override
   Future<List<LiveRoom>> getData(int page, int pageSize) async {
     try {
-      var result = await site.liveSite.getRecommendRooms(page: page, nick: '热门');
+      var result = await site.liveSite.getRecommendRooms(page: page, pageSize: pageSize);
       if (site.id == Sites.iptvSite && list.isNotEmpty) {
         return [];
       }
-      return result.items;
+      return result;
     } catch (e) {
       debugPrint('Exception caught in grid controller fetch loop: $e');
       final errorStr = e.toString();

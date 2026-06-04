@@ -3,13 +3,12 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/model/live_category.dart';
+import 'package:pure_live/model/live_anchor_item.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/core/iptv/local/database.dart';
-import 'package:pure_live/model/live_search_result.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/iptv/iptv_repository.dart';
 import 'package:pure_live/core/iptv/core/fuzzy_match.dart';
-import 'package:pure_live/model/live_category_result.dart';
 import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/iptv/services/auto_sync_scheduler.dart';
@@ -63,11 +62,11 @@ class IptvSite implements LiveSite {
   // =========================================================
 
   @override
-  Future<LiveCategoryResult> getCategoryRooms(LiveArea category, {int page = 1}) async {
+  Future<List<LiveRoom>> getCategoryRooms(LiveArea category, {int page = 1, int pageSize = 30}) async {
     final items = <LiveRoom>[];
 
     final ch = await db.getChannelById(category.areaId!);
-    if (ch == null) return LiveCategoryResult(hasMore: false, items: []);
+    if (ch == null) return [];
 
     final mapping = await db.getMappingByChannelId(ch.id);
     EpgProgramme? nowProg;
@@ -96,7 +95,7 @@ class IptvSite implements LiveSite {
       ),
     );
 
-    return LiveCategoryResult(hasMore: false, items: items);
+    return items;
   }
 
   // =========================================================
@@ -240,7 +239,7 @@ class IptvSite implements LiveSite {
   // =========================================================
 
   @override
-  Future<LiveCategoryResult> getRecommendRooms({int page = 1, required String nick}) async {
+  Future<List<LiveRoom>> getRecommendRooms({int page = 1, int pageSize = 30}) async {
     var channels = await IptvRepository().getChannels(FileUtils.systemHotProviderId);
     if (channels.isEmpty) {
       await AutoSyncScheduler.instance.loadHotResources();
@@ -252,7 +251,7 @@ class IptvSite implements LiveSite {
         LiveRoom(
           roomId: ch.id,
           title: ch.name,
-          nick: nick,
+          nick: '',
           cover: ch.tvgLogo ?? '',
           area: ch.groupTitle ?? '',
           watching: '',
@@ -268,7 +267,7 @@ class IptvSite implements LiveSite {
       );
     }
 
-    return LiveCategoryResult(hasMore: false, items: items);
+    return items;
   }
 
   // =========================================================
@@ -321,8 +320,8 @@ class IptvSite implements LiveSite {
   // =========================================================
 
   @override
-  Future<LiveSearchAnchorResult> searchAnchors(String keyword, {int page = 1}) async {
-    return LiveSearchAnchorResult(hasMore: false, items: []);
+  Future<List<LiveAnchorItem>> searchAnchors(String keyword, {int page = 1, int pageSize = 30}) async {
+    return [];
   }
 
   // =========================================================
@@ -330,8 +329,8 @@ class IptvSite implements LiveSite {
   // =========================================================
 
   @override
-  Future<LiveSearchRoomResult> searchRooms(String keyword, {int page = 1}) async {
-    if (keyword.trim().isEmpty) return LiveSearchRoomResult(hasMore: false, items: []);
+  Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) async {
+    if (keyword.trim().isEmpty) return [];
     final matched = await db.searchChannelsByName(keyword);
     final items = matched.map((ch) {
       return LiveRoom(
@@ -349,6 +348,6 @@ class IptvSite implements LiveSite {
         data: ch.streamUrl,
       );
     }).toList();
-    return LiveSearchRoomResult(hasMore: false, items: items);
+    return items;
   }
 }

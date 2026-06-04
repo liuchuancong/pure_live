@@ -3,13 +3,12 @@ import 'dart:math' as math;
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/model/live_category.dart';
 import 'package:pure_live/core/common/core_log.dart';
+import 'package:pure_live/model/live_anchor_item.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/core/scripts/douyin_sign.dart';
 import 'package:pure_live/core/interface/live_site.dart';
-import 'package:pure_live/model/live_search_result.dart';
 import 'package:pure_live/core/common/convert_helper.dart';
-import 'package:pure_live/model/live_category_result.dart';
 import 'package:pure_live/core/danmaku/douyin_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/utils/douyin/douyin_request_params.dart';
@@ -132,7 +131,7 @@ class DouyinSite implements LiveSite {
   }
 
   @override
-  Future<LiveCategoryResult> getCategoryRooms(LiveArea category, {int page = 1}) async {
+  Future<List<LiveRoom>> getCategoryRooms(LiveArea category, {int page = 1, int pageSize = 30}) async {
     var ids = category.areaId?.split(',');
     var partitionId = ids?[0];
     var partitionType = ids?[1];
@@ -164,10 +163,7 @@ class DouyinSite implements LiveSite {
       },
     );
     var requestUrl = DouyinSign.getAbogusUrl(uri.toString(), kDefaultUserAgent);
-
     var result = await HttpClient.instance.getJson(requestUrl, header: await getRequestHeaders());
-
-    var hasMore = (result["data"]["data"] as List).length >= 15;
     var items = <LiveRoom>[];
     for (var item in result["data"]["data"]) {
       var roomItem = LiveRoom(
@@ -184,11 +180,11 @@ class DouyinSite implements LiveSite {
       );
       items.add(roomItem);
     }
-    return LiveCategoryResult(hasMore: hasMore, items: items);
+    return items;
   }
 
   @override
-  Future<LiveCategoryResult> getRecommendRooms({int page = 1, required String nick}) async {
+  Future<List<LiveRoom>> getRecommendRooms({int page = 1, int pageSize = 30}) async {
     try {
       String serverUrl = "https://live.douyin.com/webcast/web/partition/detail/room/v2/";
       var uri = Uri.parse(serverUrl).replace(
@@ -217,10 +213,7 @@ class DouyinSite implements LiveSite {
         },
       );
       var requestUrl = DouyinSign.getAbogusUrl(uri.toString(), kDefaultUserAgent);
-
       var result = await HttpClient.instance.getJson(requestUrl, header: await getRequestHeaders());
-
-      var hasMore = (result["data"]["data"] as List).length >= 15;
       var items = <LiveRoom>[];
       for (var item in result["data"]["data"]) {
         var roomItem = LiveRoom(
@@ -236,7 +229,7 @@ class DouyinSite implements LiveSite {
         );
         items.add(roomItem);
       }
-      return LiveCategoryResult(hasMore: hasMore, items: items);
+      return items;
     } catch (e) {
       throw Exception(e.toString());
     }
@@ -558,7 +551,7 @@ class DouyinSite implements LiveSite {
   }
 
   @override
-  Future<LiveSearchRoomResult> searchRooms(String keyword, {int page = 1}) async {
+  Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) async {
     String serverUrl = "https://www.douyin.com/aweme/v1/web/live/search/";
     var uri = Uri.parse(serverUrl).replace(
       scheme: "https",
@@ -642,11 +635,11 @@ class DouyinSite implements LiveSite {
       );
       items.add(roomItem);
     }
-    return LiveSearchRoomResult(hasMore: items.length >= 10, items: items);
+    return items;
   }
 
   @override
-  Future<LiveSearchAnchorResult> searchAnchors(String keyword, {int page = 1}) async {
+  Future<List<LiveAnchorItem>> searchAnchors(String keyword, {int page = 1, int pageSize = 30}) async {
     throw Exception("抖音暂不支持搜索主播，请直接搜索直播间");
   }
 

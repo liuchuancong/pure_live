@@ -26,9 +26,7 @@ class FavoriteController extends BasePageController<LiveRoom> with GetTickerProv
   final visibleTags = <LiveTag>[].obs;
   final isLoading = true.obs;
 
-  FavoriteController() : super() {
-    pageSize = 30;
-  }
+  FavoriteController() : super();
 
   @override
   void onInit() {
@@ -169,15 +167,15 @@ class FavoriteController extends BasePageController<LiveRoom> with GetTickerProv
     final allFiltered = getFilteredRooms(isOnline: tabOnlineIndex.value == 0);
     totalCount.value = allFiltered.length;
 
-    final int maxPage = (totalCount.value! / pageSize).ceil();
+    final int maxPage = (totalCount.value! / pageSize.value).ceil();
     canLoadMore.value = currentPage < maxPage;
 
-    int startOffset = (currentPage - 1) * pageSize;
-    int endOffset = startOffset + pageSize;
+    int startOffset = (currentPage - 1) * pageSize.value;
+    int endOffset = startOffset + pageSize.value;
     if (startOffset > allFiltered.length) {
       currentPage = 1;
       startOffset = 0;
-      endOffset = pageSize;
+      endOffset = pageSize.value;
     }
     if (endOffset > allFiltered.length) {
       endOffset = allFiltered.length;

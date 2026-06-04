@@ -6,9 +6,7 @@ import 'package:pure_live/model/live_anchor_item.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/core/interface/live_site.dart';
-import 'package:pure_live/model/live_search_result.dart';
 import 'package:pure_live/core/danmaku/empty_danmaku.dart';
-import 'package:pure_live/model/live_category_result.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 
 class CCSite implements LiveSite {
@@ -74,7 +72,7 @@ class CCSite implements LiveSite {
   }
 
   @override
-  Future<LiveCategoryResult> getCategoryRooms(LiveArea category, {int page = 1}) async {
+  Future<List<LiveRoom>> getCategoryRooms(LiveArea category, {int page = 1, int pageSize = 30}) async {
     var result = await HttpClient.instance.getJson(
       "https://cc.163.com/_next/data/nextjs/category/${category.areaId}.json",
       queryParameters: {"game": category.areaId},
@@ -99,7 +97,7 @@ class CCSite implements LiveSite {
     } catch (e) {
       CoreLog.error(e);
     }
-    return LiveCategoryResult(hasMore: false, items: items);
+    return items;
   }
 
   @override
@@ -144,7 +142,7 @@ class CCSite implements LiveSite {
   }
 
   @override
-  Future<LiveCategoryResult> getRecommendRooms({int page = 1, required String nick}) async {
+  Future<List<LiveRoom>> getRecommendRooms({int page = 1, int pageSize = 30}) async {
     try {
       var result = await HttpClient.instance.getJson(
         "https://cc.163.com/api/category/live/",
@@ -167,8 +165,7 @@ class CCSite implements LiveSite {
         );
         items.add(roomItem);
       }
-      var hasMore = result["lives"].length >= 20;
-      return LiveCategoryResult(hasMore: hasMore, items: items);
+      return items;
     } catch (e) {
       throw Exception(e.toString());
     }
@@ -218,7 +215,7 @@ class CCSite implements LiveSite {
   }
 
   @override
-  Future<LiveSearchRoomResult> searchRooms(String keyword, {int page = 1}) async {
+  Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) async {
     var result = await HttpClient.instance.getJson(
       "https://cc.163.com/search/anchor",
       queryParameters: {"query": keyword, "size": 20, "page": page},
@@ -240,12 +237,11 @@ class CCSite implements LiveSite {
       );
       items.add(roomItem);
     }
-    var hasMore = queryList.length > 0;
-    return LiveSearchRoomResult(hasMore: hasMore, items: items);
+    return items;
   }
 
   @override
-  Future<LiveSearchAnchorResult> searchAnchors(String keyword, {int page = 1}) async {
+  Future<List<LiveAnchorItem>> searchAnchors(String keyword, {int page = 1, int pageSize = 30}) async {
     var resultText = await HttpClient.instance.getJson(
       "https://search.cdn.huya.com/",
       queryParameters: {
@@ -256,8 +252,8 @@ class CCSite implements LiveSite {
         "v": 1,
         "typ": -5,
         "livestate": 0,
-        "rows": 20,
-        "start": (page - 1) * 20,
+        "rows": pageSize,
+        "start": (page - 1) * pageSize,
       },
     );
     var result = json.decode(resultText);
@@ -271,8 +267,7 @@ class CCSite implements LiveSite {
       );
       items.add(anchorItem);
     }
-    var hasMore = result["response"]["1"]["numFound"] > (page * 20);
-    return LiveSearchAnchorResult(hasMore: hasMore, items: items);
+    return items;
   }
 
   @override

@@ -10,10 +10,10 @@ class AreaRoomsController extends BasePageController<LiveRoom> {
   Future<List<LiveRoom>> getData(int page, int pageSize) async {
     try {
       var result = await site.liveSite.getCategoryRooms(subCategory, page: page);
-      for (var element in result.items) {
+      for (var element in result) {
         element.area = subCategory.areaName;
       }
-      return result.items;
+      return result;
     } catch (e) {
       debugPrint('Exception caught in area rooms controller fetch loop: $e');
       final errorStr = e.toString();
