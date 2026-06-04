@@ -914,6 +914,7 @@
     "next_page": "Next",
     "go_to": "Go to",
     "page_indicator": "Page",
-    "page_unit": "",
-    "network_disconnected_msg": "No internet connection, please check your network settings."
+    "page_unit": "Page",
+    "network_disconnected_msg": "No internet connection, please check your network settings.",
+    "per_page": "Per Page"
 }

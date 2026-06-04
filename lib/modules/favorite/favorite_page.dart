@@ -49,7 +49,8 @@ class FavoritePage extends GetView<FavoriteController> {
                         return BasePageView<FavoriteController, LiveRoom>(
                           controller: controller,
                           enableRefresh: true,
-                          enableLoadMore: true,
+                          enableLoadMore: false,
+                          showScrollToTopBtn: true,
                           contentBuilder: (context, list, scrollController) {
                             return Column(
                               children: [
@@ -133,9 +134,7 @@ class _RoomGridView extends GetView<FavoriteController> {
                     final isSelected = isAll
                         ? controller.selectedTagId.value == 'ALL'
                         : controller.selectedTagId.value == controller.visibleTags[index - 1].id;
-
                     final String label = isAll ? (i18n('recorder_tab_all')) : controller.visibleTags[index - 1].name;
-
                     return Padding(
                       padding: const EdgeInsets.only(right: 6),
                       child: ChoiceChip(
@@ -172,19 +171,6 @@ class _RoomGridView extends GetView<FavoriteController> {
             }),
             Expanded(
               child: Obx(() {
-                final baseRooms = isOnline ? controller.onlineRooms : controller.offlineRooms;
-                if (controller.isLoading.value && baseRooms.isEmpty && controller.selectedTagId.value == 'ALL') {
-                  return AppStatusView(type: AppStatusType.loading, title: i18n('refresh_loading'), subtitle: '');
-                }
-
-                if (displayList.isEmpty) {
-                  return EmptyView(
-                    icon: Icons.live_tv_outlined,
-                    title: i18n("empty_favorite_title"),
-                    subtitle: i18n("empty_favorite_subtitle"),
-                  );
-                }
-
                 return WaterfallFlow.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                   controller: scrollController,

@@ -915,5 +915,6 @@
     "page_indicator": "第",
     "page_unit": "页",
     "network_disconnected_msg": "当前无网络连接，请检查网络设置",
-    "go_to": "跳转至"
+    "go_to": "跳转至",
+    "per_page": "每页"
 }

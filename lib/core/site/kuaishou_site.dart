@@ -5,13 +5,12 @@ import 'dart:developer' as developer;
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/model/live_category.dart';
+import 'package:pure_live/model/live_anchor_item.dart';
 import 'package:pure_live/plugins/fake_useragent.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/core/interface/live_site.dart';
-import 'package:pure_live/model/live_search_result.dart';
 import 'package:pure_live/core/danmaku/empty_danmaku.dart';
-import 'package:pure_live/model/live_category_result.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 
@@ -131,7 +130,7 @@ class KuaishowSite implements LiveSite {
   }
 
   @override
-  Future<LiveCategoryResult> getCategoryRooms(LiveArea category, {int page = 1}) async {
+  Future<List<LiveRoom>> getCategoryRooms(LiveArea category, {int page = 1, int pageSize = 30}) async {
     var api = category.areaId!.length < 7
         ? "https://live.kuaishou.com/live_api/gameboard/list"
         : "https://live.kuaishou.com/live_api/non-gameboard/list";
@@ -156,8 +155,7 @@ class KuaishowSite implements LiveSite {
       );
       items.add(roomItem);
     }
-    var hasMore = result["data"]["list"].length >= 20;
-    return LiveCategoryResult(hasMore: hasMore, items: items);
+    return items;
   }
 
   @override
@@ -184,7 +182,7 @@ class KuaishowSite implements LiveSite {
   }
 
   @override
-  Future<LiveCategoryResult> getRecommendRooms({int page = 1, required String nick}) async {
+  Future<List<LiveRoom>> getRecommendRooms({int page = 1, int pageSize = 30}) async {
     try {
       var resultText = await HttpClient.instance.getJson(
         "https://live.kuaishou.com/live_api/home/list",
@@ -217,8 +215,7 @@ class KuaishowSite implements LiveSite {
           }
         }
       }
-      var hasMore = false;
-      return LiveCategoryResult(hasMore: hasMore, items: items);
+      return items;
     } catch (e) {
       throw Exception(e.toString());
     }
@@ -383,14 +380,14 @@ class KuaishowSite implements LiveSite {
   }
 
   @override
-  Future<LiveSearchRoomResult> searchRooms(String keyword, {int page = 1}) async {
+  Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) async {
     // 快手无法搜索主播，只能搜索游戏分类这里不做展示
-    return LiveSearchRoomResult(hasMore: false, items: []);
+    return [];
   }
 
   @override
-  Future<LiveSearchAnchorResult> searchAnchors(String keyword, {int page = 1}) async {
-    return LiveSearchAnchorResult(hasMore: false, items: []);
+  Future<List<LiveAnchorItem>> searchAnchors(String keyword, {int page = 1, int pageSize = 30}) async {
+    return [];
   }
 
   @override

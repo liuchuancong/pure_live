@@ -3,50 +3,38 @@ import 'package:pure_live/model/live_anchor_item.dart';
 import 'package:pure_live/common/models/live_area.dart';
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/model/live_play_quality.dart';
-import 'package:pure_live/model/live_search_result.dart';
 import 'package:pure_live/common/models/live_message.dart';
-import 'package:pure_live/model/live_category_result.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 
 class LiveSite {
-  /// 站点唯一ID
   String id = "";
-
-  /// 站点名称
   String name = "";
 
-  /// 站点名称
   LiveDanmaku getDanmaku() {
     throw UnimplementedError();
   }
 
-  /// 读取网站的分类
-  Future<List<LiveCategory>> getCategores(int page, int pageSize) {
+  Future<List<LiveCategory>> getCategores(int page, int pageSize) async {
     return Future.value(<LiveCategory>[]);
   }
 
-  /// 搜索直播间
-  Future<LiveSearchRoomResult> searchRooms(String keyword, {int page = 1}) {
-    return Future.value(LiveSearchRoomResult(hasMore: false, items: <LiveRoom>[]));
+  Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) async {
+    return Future.value(<LiveRoom>[]);
   }
 
-  /// 搜索直播间
-  Future<LiveSearchAnchorResult> searchAnchors(String keyword, {int page = 1}) {
-    return Future.value(LiveSearchAnchorResult(hasMore: false, items: <LiveAnchorItem>[]));
+  Future<List<LiveAnchorItem>> searchAnchors(String keyword, {int page = 1, int pageSize = 30}) async {
+    return Future.value(<LiveAnchorItem>[]);
   }
 
-  /// 读取类目下房间
-  Future<LiveCategoryResult> getCategoryRooms(LiveArea category, {int page = 1}) {
-    return Future.value(LiveCategoryResult(hasMore: false, items: <LiveRoom>[]));
+  Future<List<LiveRoom>> getCategoryRooms(LiveArea category, {int page = 1, int pageSize = 30}) async {
+    return Future.value(<LiveRoom>[]);
   }
 
-  /// 读取推荐的房间
-  Future<LiveCategoryResult> getRecommendRooms({int page = 1, required String nick}) {
-    return Future.value(LiveCategoryResult(hasMore: false, items: <LiveRoom>[]));
+  Future<List<LiveRoom>> getRecommendRooms({int page = 1, int pageSize = 30}) async {
+    return Future.value(<LiveRoom>[]);
   }
 
-  /// 读取房间详情
-  Future<LiveRoom> getRoomDetail({required String roomId, required String platform}) {
+  Future<LiveRoom> getRoomDetail({required String roomId, required String platform}) async {
     return Future.value(
       LiveRoom(
         cover: '',
@@ -64,23 +52,19 @@ class LiveSite {
     );
   }
 
-  /// 读取房间清晰度
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) {
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
     return Future.value(<LivePlayQuality>[]);
   }
 
-  /// 读取播放链接
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) {
+  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
     return Future.value(<String>[]);
   }
 
-  /// 查询直播状态
-  Future<bool> getLiveStatus({required String platform, required String roomId}) {
+  Future<bool> getLiveStatus({required String platform, required String roomId}) async {
     return Future.value(false);
   }
 
-  /// 读取指定房间的SC
-  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required String roomId}) {
+  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required String roomId}) async {
     return Future.value([]);
   }
 }
