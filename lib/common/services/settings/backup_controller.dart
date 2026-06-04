@@ -12,6 +12,7 @@ import 'package:pure_live/common/services/settings/favorite_room_controller.dart
 import 'package:pure_live/common/services/settings/font_settings_controller.dart';
 import 'package:pure_live/common/services/settings/iptv_settings_controller.dart';
 import 'package:pure_live/common/services/settings/exit_settings_controller.dart';
+import 'package:pure_live/common/services/settings/refresh_config_controller.dart';
 import 'package:pure_live/common/services/settings/theme_settings_controller.dart';
 import 'package:pure_live/common/services/settings/proxy_settings_controller.dart';
 import 'package:pure_live/common/services/settings/player_settings_controller.dart';
@@ -49,6 +50,7 @@ class BackupController extends GetxController {
       'exit': Get.find<ExitSettingsController>().toJson(),
       'startup': Get.find<StartupController>().toJson(),
       'tags': Get.find<TagManagementController>().exportToJson(),
+      'refresh': Get.find<RefreshConfigController>().toJson(),
     };
   }
 
@@ -106,6 +108,8 @@ class BackupController extends GetxController {
 
     Get.find<StartupController>().fromJson(Map<String, dynamic>.from(data['startup'] ?? {}));
 
+    Get.find<RefreshConfigController>().fromJson(Map<String, dynamic>.from(data['refresh'] ?? {}));
+
     if (!Get.isRegistered<TagManagementController>()) {
       Get.put(TagManagementController());
     }
@@ -132,7 +136,7 @@ class BackupController extends GetxController {
     Get.find<WindowSizeController>().fromJson(data);
     Get.find<ExitSettingsController>().fromJson(data);
     Get.find<StartupController>().fromJson(data);
-
+    Get.find<RefreshConfigController>().fromJson(data);
     if (!Get.isRegistered<TagManagementController>()) {
       Get.put(TagManagementController());
     }

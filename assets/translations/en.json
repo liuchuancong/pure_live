@@ -899,5 +899,13 @@
     "danmaku_stroke": "Danmaku Stroke",
     "danmaku_fps": "Danmaku FPS",
     "github_login": "GitHub Login",
-    "paste_auth_link": "Paste the auth link"
+    "paste_auth_link": "Paste the auth link",
+    "refresh_settings": "Auto Refresh Settings",
+    "auto_refresh_follow": "Auto refresh follow list",
+    "auto_refresh_follow_subtitle": "Auto refresh followed live status regularly",
+    "auto_refresh_interval": "Refresh Interval",
+    "max_concurrent_refresh": "Max Concurrent Threads",
+    "minute": "min",
+    "hour": "h",
+    "refresh_settings_subtitle": "Set parameters for automatic follow refresh"
 }

@@ -899,5 +899,13 @@
     "danmaku_stroke": "弹幕描边",
     "danmaku_fps": "弹幕帧率",
     "github_login": "GitHub 登录",
-    "paste_auth_link": "请粘贴授权链接"
+    "paste_auth_link": "请粘贴授权链接",
+    "refresh_settings": "自动刷新设置",
+    "auto_refresh_follow": "开启关注自动刷新",
+    "auto_refresh_follow_subtitle": "定时自动拉取关注直播间状态",
+    "auto_refresh_interval": "刷新间隔时间",
+    "max_concurrent_refresh": "最大并发刷新线程",
+    "minute": "分钟",
+    "hour": "小时",
+    "refresh_settings_subtitle": "配置关注列表自动刷新参数"
 }

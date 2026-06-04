@@ -14,6 +14,7 @@ import 'package:pure_live/common/services/settings/favorite_room_controller.dart
 import 'package:pure_live/common/services/settings/exit_settings_controller.dart';
 import 'package:pure_live/common/services/settings/font_settings_controller.dart';
 import 'package:pure_live/common/services/settings/iptv_settings_controller.dart';
+import 'package:pure_live/common/services/settings/refresh_config_controller.dart';
 import 'package:pure_live/common/services/settings/proxy_settings_controller.dart';
 import 'package:pure_live/common/services/settings/theme_settings_controller.dart';
 import 'package:pure_live/common/services/settings/player_settings_controller.dart';
@@ -41,7 +42,7 @@ class SettingsService extends GetxService {
   ThemeSettingsController get theme => Get.find<ThemeSettingsController>();
   ProxySettingsController get proxy => Get.find<ProxySettingsController>();
   BackupController get backup => Get.find<BackupController>();
-
+  RefreshConfigController get refreshConfig => Get.find<RefreshConfigController>();
   @override
   void onInit() {
     super.onInit();
@@ -57,6 +58,7 @@ class SettingsService extends GetxService {
     Get.lazyPut(() => DanmakuSettingsController());
     Get.lazyPut(() => VolumeSettingsController());
     Get.lazyPut(() => HistoryController());
+    Get.lazyPut(() => RefreshConfigController());
     Get.lazyPut(() => FavoriteRoomController());
     Get.lazyPut(() => IptvSettingsController());
     Get.lazyPut(() => CacheController());
@@ -92,6 +94,7 @@ class SettingsService extends GetxService {
     Get.find<DanmakuSettingsController>();
     Get.find<VolumeSettingsController>();
     Get.find<HistoryController>();
+    Get.find<RefreshConfigController>();
     Get.find<FavoriteRoomController>();
     Get.find<IptvSettingsController>();
     Get.find<CacheController>();

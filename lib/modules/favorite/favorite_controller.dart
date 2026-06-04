@@ -3,9 +3,11 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:pure_live/modules/tags/live_tag.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
+import 'package:pure_live/common/services/settings/refresh_config_controller.dart';
 
 class FavoriteController extends GetxController with GetTickerProviderStateMixin {
   final TagManagementController tagController = Get.find<TagManagementController>();
+  final RefreshConfigController refreshConfigController = Get.find<RefreshConfigController>();
 
   late TabController tabController;
 
@@ -13,7 +15,9 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
   final tabSiteIndex = 0.obs;
   final tabOnlineIndex = 0.obs;
   StreamSubscription<dynamic>? subscription;
+  StreamSubscription<dynamic>? _configSubscription;
   Timer? _autoRefreshTimer;
+  Stopwatch? _refreshStopwatch;
 
   final refreshController = EasyRefreshController(controlFinishRefresh: true, controlFinishLoad: true);
   final onlineRooms = [].obs;
@@ -50,19 +54,28 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
       tabOnlineIndex.value = tabController.index;
     });
 
-    if (SettingsService.to.app.autoRefreshTime.v != 0) {
-      _autoRefreshTimer = Timer.periodic(
-        Duration(minutes: SettingsService.to.app.autoRefreshTime.v),
-        (timer) => onRefresh(),
-      );
-    }
+    _setupRefreshStrategy();
+    _configSubscription = refreshConfigController.configChanges.listen((config) {
+      _setupRefreshStrategy();
+    });
+
     listenFavorite();
+  }
+
+  void _setupRefreshStrategy() {
+    _autoRefreshTimer?.cancel();
+    final bool isEnabled = refreshConfigController.autoRefreshFavorite.value;
+    final int interval = refreshConfigController.autoRefreshInterval.value;
+    if (isEnabled && interval > 0) {
+      _autoRefreshTimer = Timer.periodic(Duration(minutes: interval), (timer) => onRefresh());
+    }
   }
 
   @override
   void onClose() {
     tabController.dispose();
     subscription?.cancel();
+    _configSubscription?.cancel();
     _autoRefreshTimer?.cancel();
     super.onClose();
   }
@@ -178,15 +191,23 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
       return false;
     }
 
+    _refreshStopwatch = Stopwatch()..start();
+
     var futures = SettingsService.to.fav.favoriteRooms.v
         .where((room) => room.platform!.isNotEmpty)
         .map((room) => Sites.of(room.platform!).liveSite.getRoomDetail(roomId: room.roomId!, platform: room.platform!))
         .toList();
     IndicatorResult refreshResult = IndicatorResult.success;
+    final int batchSize = refreshConfigController.maxConcurrentRefresh.value > 0
+        ? refreshConfigController.maxConcurrentRefresh.value
+        : 5;
+
     try {
-      for (int i = 0; i < futures.length; i += 5) {
+      for (int i = 0; i < futures.length; i += batchSize) {
         try {
-          List<LiveRoom> rooms = await Future.wait(futures.sublist(i, i + 5 > futures.length ? futures.length : i + 5));
+          List<LiveRoom> rooms = await Future.wait(
+            futures.sublist(i, i + batchSize > futures.length ? futures.length : i + batchSize),
+          );
           for (var room in rooms) {
             try {
               final list = List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
@@ -208,6 +229,10 @@ class FavoriteController extends GetxController with GetTickerProviderStateMixin
       refreshResult = IndicatorResult.fail;
       debugPrint('Error during refresh: $e');
     } finally {
+      _refreshStopwatch?.stop();
+      debugPrint('Refresh process finished in ${_refreshStopwatch?.elapsedMilliseconds} ms');
+      _refreshStopwatch = null;
+
       isLoading.value = false;
       EventBus.instance.emit('refresh_favorite_finish', true);
       refreshController.finishRefresh(refreshResult);
