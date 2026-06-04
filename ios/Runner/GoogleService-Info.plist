@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyAeP2bR4N5A9NqmeRlgQibbgHJm6gh5q1U</string>
+	<key>GCM_SENDER_ID</key>
+	<string>461427160915</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.mystyle.purelive</string>
+	<key>PROJECT_ID</key>
+	<string>pure-live-26c7f</string>
+	<key>STORAGE_BUCKET</key>
+	<string>pure-live-26c7f.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:461427160915:ios:ecdf416614414ce482d3a6</string>
+</dict>
+</plist>
