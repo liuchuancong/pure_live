@@ -47,6 +47,7 @@ class FavoritePage extends GetView<FavoriteController> {
                         });
 
                         return BasePageView<FavoriteController, LiveRoom>(
+                          controller: controller,
                           enableRefresh: true,
                           enableLoadMore: true,
                           contentBuilder: (context, list, scrollController) {

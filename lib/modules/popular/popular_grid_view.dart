@@ -22,6 +22,7 @@ class _PopularGridViewState extends State<PopularGridView> {
         final crossAxisCount = width > 1280 ? 5 : (width > 960 ? 4 : (width > 640 ? 3 : 2));
 
         return BasePageView<PopularGridController, LiveRoom>(
+          controller: controller,
           tag: widget.tag,
           showScrollToTopBtn: true,
           contentBuilder: (context, list, scrollController) {

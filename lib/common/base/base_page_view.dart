@@ -4,6 +4,7 @@ import 'package:pure_live/common/base/base_controller.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 
 class BasePageView<C extends BasePageController<T>, T> extends StatelessWidget {
+  final C controller;
   final Widget Function(BuildContext context, List<T> list, ScrollController scrollController) contentBuilder;
   final bool enableRefresh;
   final bool enableLoadMore;
@@ -17,11 +18,11 @@ class BasePageView<C extends BasePageController<T>, T> extends StatelessWidget {
     this.enableLoadMore = true,
     this.showScrollToTopBtn,
     this.tag,
+    required this.controller,
   });
 
   @override
   Widget build(BuildContext context) {
-    final controller = tag != null ? Get.find(tag: tag) as C : Get.find() as C;
     final bool showBtn = showScrollToTopBtn ?? (!PlatformUtils.isDesktop);
 
     return Stack(

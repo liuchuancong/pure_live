@@ -25,6 +25,7 @@ class _AreasRoomPageState extends State<AreasRoomPage> {
       child: Scaffold(
         appBar: AppBar(title: Text(controller.subCategory.areaName!)),
         body: BasePageView<AreaRoomsController, LiveRoom>(
+          controller: controller,
           contentBuilder: (context, list, scrollController) {
             return LayoutBuilder(
               builder: (context, constraint) {
