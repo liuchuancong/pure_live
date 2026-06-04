@@ -38,12 +38,5 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_macos_build_settings(target)
-    
-    # ✨ 强行把所有 Pod 插件的部署目标拉高到 11.0
-    target.build_configurations.each do |config|
-      config.build_settings['MACOSX_DEPLOYMENT_TARGET'] = '11.0'
-      # 显式关闭严格并发检查，防止 Swift 6 报错
-      config.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'minimal'
-    end
   end
 end
