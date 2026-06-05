@@ -213,7 +213,7 @@ class FirebaseManager {
       final jsonData = ArchethicUtils().decrypti(jsonString);
       final back = jsonDecode(jsonData) as Map<String, dynamic>;
       backup.importAllSettings(back);
-      favoriteController.reloadPage();
+      favoriteController.refreshData();
       ToastUtil.show(i18n('download_success'));
     } catch (e) {
       developer.log('❌ 下载失败（可能被安全规则拦截）: $e');

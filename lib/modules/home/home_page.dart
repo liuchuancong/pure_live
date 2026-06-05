@@ -95,7 +95,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
   }
 
   void handMoveRefresh() {
-    favoriteController.reloadPage();
+    favoriteController.refreshData();
   }
 
   void onDestinationSelected(int index) {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:pure_live/modules/tags/live_tag.dart';
@@ -20,14 +21,18 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
   Stopwatch? _refreshStopwatch;
   Timer? _debounceTimer;
 
-  final onlineRooms = [].obs;
-  final offlineRooms = [].obs;
+  final onlineRooms = <LiveRoom>[].obs;
+  final offlineRooms = <LiveRoom>[].obs;
 
   final selectedTagId = 'ALL'.obs;
   final visibleTags = <LiveTag>[].obs;
   final isLoading = true.obs;
 
-  FavoriteController() : super();
+  FavoriteController() : super() {
+    onExternalRefresh = () {
+      _fullRefreshRooms();
+    };
+  }
 
   @override
   void onInit() {
@@ -35,26 +40,23 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
 
     tabController = TabController(length: 2, vsync: this);
 
-    debounce(
-      SettingsService.to.fav.favoriteRooms,
-      (rooms) => debounceRefresh(),
-      time: const Duration(milliseconds: 1000),
-    );
+    debounce(SettingsService.to.fav.favoriteRooms, (_) => applyLocalFilter(), time: const Duration(milliseconds: 1000));
 
-    ever(selectedTagId, (_) => debounceRefresh());
-    ever(tagController.tags, (_) => debounceRefresh());
-    ever(tabSiteIndex, (_) => debounceRefresh());
-    ever(tagController.roomTagsMap, (_) => debounceRefresh());
+    ever(selectedTagId, (_) => applyLocalFilter());
+    ever(tabSiteIndex, (_) => applyLocalFilter());
+    ever(tabOnlineIndex, (_) => applyLocalFilter());
+    ever(tagController.tags, (_) => applyLocalFilter());
+    ever(tagController.roomTagsMap, (_) => applyLocalFilter());
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      refreshData();
+      applyLocalFilter();
     });
 
     tabController.addListener(() {
       if (tabOnlineIndex.value != tabController.index) {
         tabOnlineIndex.value = tabController.index;
         currentPage = 1;
-        debounceRefresh();
+        applyLocalFilter();
       }
     });
 
@@ -98,168 +100,162 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
     });
   }
 
-  List<LiveRoom> getFilteredRooms({required bool isOnline}) {
-    final List<dynamic> sourceList = isOnline ? onlineRooms : offlineRooms;
-    final typedList = sourceList.cast<LiveRoom>();
-
-    if (selectedTagId.value == 'ALL') {
-      return typedList;
-    }
-
-    return typedList.where((room) {
-      final List<String> roomTagIds = tagController.getTagsForRoom(room);
-      return roomTagIds.contains(selectedTagId.value);
-    }).toList();
-  }
-
   void changeSelectedTag(String tagId) {
     selectedTagId.value = tagId;
     currentPage = 1;
-    debounceRefresh();
-  }
-
-  void reloadPage() async {
-    await refreshData();
+    applyLocalFilter();
   }
 
   void updateRoomTags(LiveRoom room, List<String> newTagIds) {
-    final tagController = Get.find<TagManagementController>();
     tagController.setRoomTags(room.roomId.toString(), newTagIds);
-    debounceRefresh();
+    applyLocalFilter();
   }
 
-  List<LiveRoom> syncRooms() {
+  List<LiveRoom> getFilteredRooms() {
+    syncRooms();
+
+    final bool isOnline = tabOnlineIndex.value == 0;
+    final List<LiveRoom> source = isOnline ? onlineRooms : offlineRooms;
+
+    final currentAvailableSites = Sites().availableSites(containsAll: true);
+    if (tabSiteIndex.value < 0 || tabSiteIndex.value >= currentAvailableSites.length) {
+      return [];
+    }
+
+    final activeSite = currentAvailableSites[tabSiteIndex.value];
+    List<LiveRoom> siteFiltered = source;
+
+    if (activeSite.id != 'all') {
+      siteFiltered = source.where((room) {
+        return room.platform?.toUpperCase() == activeSite.id.toUpperCase();
+      }).toList();
+    }
+
+    if (selectedTagId.value == 'ALL') {
+      return siteFiltered;
+    }
+
+    return siteFiltered.where((room) {
+      final List<String> ids = tagController.getTagsForRoom(room);
+      return ids.contains(selectedTagId.value);
+    }).toList();
+  }
+
+  void syncRooms() {
     onlineRooms.clear();
     offlineRooms.clear();
-    List<dynamic> roomsBase = List.from(SettingsService.to.fav.favoriteRooms.v);
-    onlineRooms.addAll(roomsBase.where((room) => room.liveStatus == LiveStatus.live));
-    offlineRooms.addAll(roomsBase.where((room) => room.liveStatus != LiveStatus.live));
+
+    final List<LiveRoom> roomsBase = List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
+    onlineRooms.addAll(roomsBase.where((r) => r.liveStatus == LiveStatus.live));
+    offlineRooms.addAll(roomsBase.where((r) => r.liveStatus != LiveStatus.live));
+
     final currentAvailableSites = Sites().availableSites(containsAll: true);
+    visibleTags.clear();
+
     if (tabSiteIndex.value >= 0 && tabSiteIndex.value < currentAvailableSites.length) {
       final activeSite = currentAvailableSites[tabSiteIndex.value];
-      final targetList = tabOnlineIndex.value == 0 ? onlineRooms : offlineRooms;
-      final Set<String> activeTagIdSet = {};
-      for (var room in targetList) {
+      final target = tabOnlineIndex.value == 0 ? onlineRooms : offlineRooms;
+      final Set<String> tagIds = {};
+
+      for (var room in target) {
         if (activeSite.id == 'all' || room.platform?.toUpperCase() == activeSite.id.toUpperCase()) {
-          final List<String> currentRoomTagIds = tagController.getTagsForRoom(room);
-          for (var id in currentRoomTagIds) {
-            activeTagIdSet.add(id);
-          }
+          final ids = tagController.getTagsForRoom(room);
+          tagIds.addAll(ids);
         }
       }
 
-      final matchedTags = tagController.tags.where((t) => activeTagIdSet.contains(t.id)).toList();
-      matchedTags.sort((a, b) => a.order.compareTo(b.order));
-      visibleTags.assignAll(matchedTags);
+      final tags = tagController.tags.where((t) => tagIds.contains(t.id)).toList();
+      tags.sort((a, b) => a.order.compareTo(b.order));
+      visibleTags.assignAll(tags);
     }
 
     for (var room in onlineRooms) {
-      if (int.tryParse(room.watching!) == null) {
-        room.watching = "0";
-      }
+      room.watching = int.tryParse(room.watching ?? '')?.toString() ?? '0';
     }
 
     onlineRooms.sort((a, b) {
       if (selectedTagId.value == 'ALL') {
         return int.parse(b.watching!).compareTo(int.parse(a.watching!));
       }
-      int scoreA = _getRoomTagScore(a);
-      int scoreB = _getRoomTagScore(b);
-      if (scoreA != scoreB) {
-        return scoreB.compareTo(scoreA);
-      }
+      int sa = _getRoomTagScore(a);
+      int sb = _getRoomTagScore(b);
+      if (sa != sb) return sb.compareTo(sa);
       return int.parse(b.watching!).compareTo(int.parse(a.watching!));
     });
-
-    return getFilteredRooms(isOnline: tabOnlineIndex.value == 0);
   }
 
-  int _getRoomTagScore(dynamic room) {
-    final List<String> currentRoomTagIds = tagController.getTagsForRoom(room);
+  int _getRoomTagScore(LiveRoom room) {
+    final ids = tagController.getTagsForRoom(room);
+    if (ids.isEmpty) return 0;
 
-    if (currentRoomTagIds.isEmpty) return 0;
+    int highest = 0;
+    const maxScore = 1000000;
 
-    int highestScore = 0;
-    int maxScore = 1000000;
-
-    for (var id in currentRoomTagIds) {
-      final tagIndex = tagController.tags.indexWhere((t) => t.id == id);
-      if (tagIndex != -1) {
-        final tag = tagController.tags[tagIndex];
-        int currentScore = maxScore - (tag.order * 100);
-        if (currentScore > highestScore) {
-          highestScore = currentScore;
-        }
+    for (var id in ids) {
+      final idx = tagController.tags.indexWhere((t) => id == t.id);
+      if (idx != -1) {
+        final tag = tagController.tags[idx];
+        final score = maxScore - tag.order * 100;
+        if (score > highest) highest = score;
       }
     }
-    return highestScore;
+    return highest;
   }
 
-  Future<List<LiveRoom>> getData(int page, int pageSize) async {
-    if (SettingsService.to.fav.favoriteRooms.v.isEmpty) {
-      isLoading.value = false;
-      return [];
-    }
+  void applyLocalFilter() {
+    final filtered = getFilteredRooms();
+    updateLocalReactivePool(filtered);
+  }
 
-    final allFilteredBeforeRefresh = syncRooms();
+  Future<void> _fullRefreshRooms() async {
+    isLoading.value = true;
 
-    int startOffset = (page - 1) * pageSize;
-    if (startOffset >= allFilteredBeforeRefresh.length) {
-      isLoading.value = false;
-      return allFilteredBeforeRefresh;
-    }
-    int endOffset = startOffset + pageSize;
-    if (endOffset > allFilteredBeforeRefresh.length) {
-      endOffset = allFilteredBeforeRefresh.length;
-    }
+    List<LiveRoom> roomsToRefresh = getFilteredRooms();
 
-    final targetCurrentPageRooms = allFilteredBeforeRefresh.sublist(startOffset, endOffset);
+    await _refreshRoomDetails(roomsToRefresh);
+
+    applyLocalFilter();
+
+    isLoading.value = false;
+    EventBus.instance.emit('refresh_favorite_finish', true);
+  }
+
+  Future<void> _refreshRoomDetails(List<LiveRoom> rooms) async {
+    final valid = rooms.where((r) => r.platform?.isNotEmpty ?? false).toList();
+    if (valid.isEmpty) return;
 
     _refreshStopwatch = Stopwatch()..start();
 
-    var futures = targetCurrentPageRooms
-        .where((room) => room.platform!.isNotEmpty)
-        .map((room) => Sites.of(room.platform!).liveSite.getRoomDetail(roomId: room.roomId!, platform: room.platform!))
-        .toList();
-
-    final int batchSize = refreshConfigController.maxConcurrentRefresh.value > 0
+    final int batch = refreshConfigController.maxConcurrentRefresh.value > 0
         ? refreshConfigController.maxConcurrentRefresh.value
         : 5;
 
-    for (int i = 0; i < futures.length; i += batchSize) {
+    for (int i = 0; i < valid.length; i += batch) {
+      final end = i + batch > valid.length ? valid.length : i + batch;
+      final batchRooms = valid.sublist(i, end);
+
       try {
-        List<LiveRoom> rooms = await Future.wait(
-          futures.sublist(i, i + batchSize > futures.length ? futures.length : i + batchSize),
-        );
-        for (var room in rooms) {
-          final currentList = List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
-          final index = currentList.indexWhere((e) => e.roomId == room.roomId && e.platform == room.platform);
-          if (index != -1) {
-            currentList[index] = room;
-            SettingsService.to.fav.favoriteRooms.v = currentList;
+        final futures = batchRooms
+            .map(
+              (room) => Sites.of(room.platform!).liveSite.getRoomDetail(roomId: room.roomId!, platform: room.platform!),
+            )
+            .toList();
+
+        final results = await Future.wait(futures);
+        for (var updated in results) {
+          final list = List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
+          final idx = list.indexWhere((e) => e.roomId == updated.roomId && e.platform == updated.platform);
+          if (idx != -1) {
+            list[idx] = updated;
+            SettingsService.to.fav.favoriteRooms.v = list;
           }
         }
       } catch (e) {
-        debugPrint('Error during refresh for a batch of requests: $e');
+        developer.log('Error refreshing room details: $e');
       }
     }
 
     _refreshStopwatch?.stop();
-    debugPrint('Refresh process finished in ${_refreshStopwatch?.elapsedMilliseconds} ms');
     _refreshStopwatch = null;
-
-    isLoading.value = false;
-    EventBus.instance.emit('refresh_favorite_finish', true);
-
-    final allFilteredAfterRefresh = syncRooms();
-    return tyrannicalCast(allFilteredAfterRefresh);
-  }
-
-  List<LiveRoom> tyrannicalCast(List<dynamic> list) => list.cast<LiveRoom>();
-
-  @override
-  Future<void> syncLocalStreamStatus(int page, int pageSize) async {
-    final freshData = await getData(page, pageSize);
-    updateLocalReactivePool(freshData);
   }
 }

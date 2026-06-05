@@ -4,7 +4,7 @@ import 'package:pure_live/common/index.dart';
 abstract class LocalReactivePageController<T> extends BasePageScrollAndStateBone<T> {
   final List<T> _localRawPool = [];
 
-  Future<void> syncLocalStreamStatus(int page, int pageSize);
+  void Function()? onExternalRefresh;
 
   void updateLocalReactivePool(List<T> freshData) {
     _localRawPool.clear();
@@ -14,21 +14,8 @@ abstract class LocalReactivePageController<T> extends BasePageScrollAndStateBone
 
   @override
   Future<void> refreshData() async {
-    final bool isNetworkSafe = await checkNetworkBeforeRequest();
-    if (!isNetworkSafe) {
-      finishRefreshControllers(IndicatorResult.fail);
-      return;
-    }
-    try {
-      loadding = true;
-      await syncLocalStreamStatus(currentPage, pageSize.value);
-      _processLocalReactiveSlicing();
-    } catch (e) {
-      handleError(e, showPageError: list.isEmpty);
-      finishRefreshControllers(IndicatorResult.fail);
-    } finally {
-      loadding = false;
-    }
+    onExternalRefresh?.call();
+    _processLocalReactiveSlicing();
   }
 
   @override
@@ -37,7 +24,6 @@ abstract class LocalReactivePageController<T> extends BasePageScrollAndStateBone
     final maxPage = (_localRawPool.length / pageSize.value).ceil();
     if (page > maxPage) return;
     currentPage = page;
-    await syncLocalStreamStatus(currentPage, pageSize.value);
     _processLocalReactiveSlicing();
   }
 

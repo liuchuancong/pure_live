@@ -4,10 +4,27 @@ class PopularLocalReactiveController extends LocalReactivePageController<LiveRoo
   final Site site;
   PopularLocalReactiveController(this.site);
 
-  @override
-  Future<void> syncLocalStreamStatus(int page, int pageSize) async {
-    final freshData = await site.liveSite.getRecommendRooms(page: page, pageSize: pageSize);
-    updateLocalReactivePool(freshData);
+  Future<List<LiveRoom>> getLocalRawData() async {
+    try {
+      return await site.liveSite.getRecommendRooms(page: 1, pageSize: pageSize.value);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<List<LiveRoom>> refreshNetworkStatus(List<LiveRoom> currentPool, int page, int pageSize) async {
+    try {
+      return await site.liveSite.getRecommendRooms(page: page, pageSize: pageSize);
+    } catch (e) {
+      if (e.toString().contains("NoSuchMethodError") && e.toString().contains("'[]'")) {
+        throw Exception("loginRequired");
+      }
+      rethrow;
+    }
+  }
+
+  Future<List<LiveRoom>> getData(int page, int pageSize) async {
+    return [];
   }
 }
 
