@@ -71,7 +71,11 @@ class AppPages {
     GetPage(name: RoutePath.kBackup, page: BackupPage.new),
     GetPage(name: RoutePath.kIptv, page: IptvPage.new),
     GetPage(name: RoutePath.kAbout, page: AboutPage.new),
-    GetPage(name: RoutePath.kAreaRooms, page: AreasRoomPage.new, bindings: [AreaRoomsBinding()]),
+    GetPage(
+      name: RoutePath.kAreaRooms,
+      page: () => AreasRoomPage(site: Get.arguments[0], subCategory: Get.arguments[1]),
+      bindings: [AreaRoomsBinding()],
+    ),
     GetPage(
       name: RoutePath.kLivePlay,
       page: () => LivePlayPage(),

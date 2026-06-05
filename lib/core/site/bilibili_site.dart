@@ -184,7 +184,7 @@ class BiliBiliSite implements LiveSite {
   Future<List<LiveRoom>> getRecommendRooms({int page = 1, int pageSize = 30}) async {
     try {
       const baseUrl = "https://api.live.bilibili.com/xlive/web-interface/v1/second/getListByArea";
-      var url = "$baseUrl?platform=web&sort=online&page_size=30&page=$page";
+      var url = "$baseUrl?platform=web&sort=online&page_size=$pageSize&page=$page";
       var queryParams = await getWbiSign(url);
       var result = await HttpClient.instance.getJson(baseUrl, queryParameters: queryParams, header: await getHeader());
 

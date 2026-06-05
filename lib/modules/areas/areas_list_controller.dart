@@ -3,15 +3,15 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/model/live_category.dart';
 import 'package:pure_live/plugins/area_pic_mapper.dart';
 
-class AreasListController extends BasePageController<AppLiveCategory> {
+class AreasListController extends ServerAllPageController<AppLiveCategory> {
   final Site site;
   final tabIndex = 0.obs;
 
   AreasListController(this.site);
 
   @override
-  Future<List<AppLiveCategory>> getData(int page, int pageSize) async {
-    var result = await site.liveSite.getCategores(page, pageSize);
+  Future<List<AppLiveCategory>> fetchAllServerData() async {
+    var result = await site.liveSite.getCategores(currentPage, pageSize.value);
     var channels = result.map((e) => AppLiveCategory.fromLiveCategory(e)).toList();
     AreaPicMapper.updateAreaListMaps(channels);
     return channels;

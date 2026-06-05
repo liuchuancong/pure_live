@@ -1,17 +1,20 @@
 import 'package:pure_live/common/index.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 import 'package:pure_live/common/widgets/keep_alive_wrapper.dart';
-import 'package:pure_live/modules/area_rooms/area_rooms_controller.dart';
 
 class AreasRoomPage extends StatefulWidget {
-  const AreasRoomPage({super.key});
+  final Site site;
+  final LiveArea subCategory;
+
+  const AreasRoomPage({super.key, required this.site, required this.subCategory});
 
   @override
   State<AreasRoomPage> createState() => _AreasRoomPageState();
 }
 
 class _AreasRoomPageState extends State<AreasRoomPage> {
-  AreaRoomsController get controller => Get.find<AreaRoomsController>();
+  BasePageScrollAndStateBone<LiveRoom> get controller =>
+      Get.find<BasePageScrollAndStateBone<LiveRoom>>(tag: "${widget.site.id}_${widget.subCategory.areaId}");
 
   @override
   void initState() {
@@ -23,8 +26,8 @@ class _AreasRoomPageState extends State<AreasRoomPage> {
   Widget build(BuildContext context) {
     return KeepAliveWrapper(
       child: Scaffold(
-        appBar: AppBar(title: Text(controller.subCategory.areaName!)),
-        body: BasePageView<AreaRoomsController, LiveRoom>(
+        appBar: AppBar(title: Text(widget.subCategory.areaName!)),
+        body: BasePageView<BasePageScrollAndStateBone<LiveRoom>, LiveRoom>(
           controller: controller,
           contentBuilder: (context, list, scrollController) {
             return LayoutBuilder(
@@ -47,7 +50,7 @@ class _AreasRoomPageState extends State<AreasRoomPage> {
             );
           },
         ),
-        floatingActionButton: FavoriteAreaFloatingButton(area: controller.subCategory),
+        floatingActionButton: FavoriteAreaFloatingButton(area: widget.subCategory),
       ),
     );
   }

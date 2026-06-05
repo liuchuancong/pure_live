@@ -1,18 +1,16 @@
 import 'package:pure_live/common/index.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
-import 'package:pure_live/modules/popular/popular_grid_controller.dart';
 
 class PopularGridView extends StatefulWidget {
   final String tag;
-
   const PopularGridView(this.tag, {super.key});
-
   @override
   State<PopularGridView> createState() => _PopularGridViewState();
 }
 
 class _PopularGridViewState extends State<PopularGridView> {
-  PopularGridController get controller => Get.find<PopularGridController>(tag: widget.tag);
+  BasePageScrollAndStateBone<LiveRoom> get controller =>
+      Get.find<BasePageScrollAndStateBone<LiveRoom>>(tag: widget.tag);
 
   @override
   Widget build(BuildContext context) {
@@ -20,11 +18,11 @@ class _PopularGridViewState extends State<PopularGridView> {
       builder: (context, constraint) {
         final width = constraint.maxWidth;
         final crossAxisCount = width > 1280 ? 5 : (width > 960 ? 4 : (width > 640 ? 3 : 2));
-
-        return BasePageView<PopularGridController, LiveRoom>(
+        return BasePageView<BasePageScrollAndStateBone<LiveRoom>, LiveRoom>(
           controller: controller,
-          tag: widget.tag,
           showScrollToTopBtn: true,
+          pageSizeOptions: const [10, 20, 30, 50, 100],
+          showPageSizeSelector: true,
           contentBuilder: (context, list, scrollController) {
             return WaterfallFlow.builder(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),

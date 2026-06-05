@@ -5,7 +5,7 @@ import 'package:pure_live/modules/tags/live_tag.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
 import 'package:pure_live/common/services/settings/refresh_config_controller.dart';
 
-class FavoriteController extends BasePageController<LiveRoom> with GetTickerProviderStateMixin {
+class FavoriteController extends LocalReactivePageController<LiveRoom> with GetTickerProviderStateMixin {
   final TagManagementController tagController = Get.find<TagManagementController>();
   final RefreshConfigController refreshConfigController = Get.find<RefreshConfigController>();
 
@@ -18,6 +18,7 @@ class FavoriteController extends BasePageController<LiveRoom> with GetTickerProv
   StreamSubscription<dynamic>? _configSubscription;
   Timer? _autoRefreshTimer;
   Stopwatch? _refreshStopwatch;
+  Timer? _debounceTimer;
 
   final onlineRooms = [].obs;
   final offlineRooms = [].obs;
@@ -34,19 +35,17 @@ class FavoriteController extends BasePageController<LiveRoom> with GetTickerProv
 
     tabController = TabController(length: 2, vsync: this);
 
-    syncRooms();
+    debounce(
+      SettingsService.to.fav.favoriteRooms,
+      (rooms) => debounceRefresh(),
+      time: const Duration(milliseconds: 1000),
+    );
 
-    debounce(SettingsService.to.fav.favoriteRooms, (rooms) => syncRooms(), time: const Duration(milliseconds: 1000));
+    ever(selectedTagId, (_) => debounceRefresh());
+    ever(tagController.tags, (_) => debounceRefresh());
+    ever(tabSiteIndex, (_) => debounceRefresh());
+    ever(tagController.roomTagsMap, (_) => debounceRefresh());
 
-    ever(selectedTagId, (_) => syncRooms());
-    ever(tagController.tags, (_) => syncRooms());
-    ever(tabSiteIndex, (_) => syncRooms());
-    ever(tagController.roomTagsMap, (_) {
-      syncRooms();
-    });
-    ever(tagController.tags, (_) {
-      syncRooms();
-    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       refreshData();
     });
@@ -55,7 +54,7 @@ class FavoriteController extends BasePageController<LiveRoom> with GetTickerProv
       if (tabOnlineIndex.value != tabController.index) {
         tabOnlineIndex.value = tabController.index;
         currentPage = 1;
-        syncRooms();
+        debounceRefresh();
       }
     });
 
@@ -76,18 +75,26 @@ class FavoriteController extends BasePageController<LiveRoom> with GetTickerProv
     }
   }
 
+  void debounceRefresh() {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      refreshData();
+    });
+  }
+
   @override
   void onClose() {
     tabController.dispose();
     subscription?.cancel();
     _configSubscription?.cancel();
     _autoRefreshTimer?.cancel();
+    _debounceTimer?.cancel();
     super.onClose();
   }
 
   void listenFavorite() {
     subscription = EventBus.instance.listen('refresh_favorite_rooms', (data) {
-      refreshData();
+      debounceRefresh();
     });
   }
 
@@ -108,7 +115,7 @@ class FavoriteController extends BasePageController<LiveRoom> with GetTickerProv
   void changeSelectedTag(String tagId) {
     selectedTagId.value = tagId;
     currentPage = 1;
-    syncRooms();
+    debounceRefresh();
   }
 
   void reloadPage() async {
@@ -118,10 +125,10 @@ class FavoriteController extends BasePageController<LiveRoom> with GetTickerProv
   void updateRoomTags(LiveRoom room, List<String> newTagIds) {
     final tagController = Get.find<TagManagementController>();
     tagController.setRoomTags(room.roomId.toString(), newTagIds);
-    syncRooms();
+    debounceRefresh();
   }
 
-  void syncRooms() {
+  List<LiveRoom> syncRooms() {
     onlineRooms.clear();
     offlineRooms.clear();
     List<dynamic> roomsBase = List.from(SettingsService.to.fav.favoriteRooms.v);
@@ -164,31 +171,7 @@ class FavoriteController extends BasePageController<LiveRoom> with GetTickerProv
       return int.parse(b.watching!).compareTo(int.parse(a.watching!));
     });
 
-    final allFiltered = getFilteredRooms(isOnline: tabOnlineIndex.value == 0);
-    totalCount.value = allFiltered.length;
-
-    final int maxPage = (totalCount.value! / pageSize.value).ceil();
-    canLoadMore.value = currentPage < maxPage;
-
-    int startOffset = (currentPage - 1) * pageSize.value;
-    int endOffset = startOffset + pageSize.value;
-    if (startOffset > allFiltered.length) {
-      currentPage = 1;
-      startOffset = 0;
-      endOffset = pageSize.value;
-    }
-    if (endOffset > allFiltered.length) {
-      endOffset = allFiltered.length;
-    }
-
-    if (allFiltered.isEmpty) {
-      list.clear();
-    } else {
-      list.assignAll(allFiltered.sublist(startOffset, endOffset));
-    }
-
-    pageEmpty.value = allFiltered.isEmpty;
-    pageLoadding.value = false;
+    return getFilteredRooms(isOnline: tabOnlineIndex.value == 0);
   }
 
   int _getRoomTagScore(dynamic room) {
@@ -212,19 +195,33 @@ class FavoriteController extends BasePageController<LiveRoom> with GetTickerProv
     return highestScore;
   }
 
-  @override
   Future<List<LiveRoom>> getData(int page, int pageSize) async {
     if (SettingsService.to.fav.favoriteRooms.v.isEmpty) {
       isLoading.value = false;
       return [];
     }
 
+    final allFilteredBeforeRefresh = syncRooms();
+
+    int startOffset = (page - 1) * pageSize;
+    if (startOffset >= allFilteredBeforeRefresh.length) {
+      isLoading.value = false;
+      return allFilteredBeforeRefresh;
+    }
+    int endOffset = startOffset + pageSize;
+    if (endOffset > allFilteredBeforeRefresh.length) {
+      endOffset = allFilteredBeforeRefresh.length;
+    }
+
+    final targetCurrentPageRooms = allFilteredBeforeRefresh.sublist(startOffset, endOffset);
+
     _refreshStopwatch = Stopwatch()..start();
 
-    var futures = SettingsService.to.fav.favoriteRooms.v
+    var futures = targetCurrentPageRooms
         .where((room) => room.platform!.isNotEmpty)
         .map((room) => Sites.of(room.platform!).liveSite.getRoomDetail(roomId: room.roomId!, platform: room.platform!))
         .toList();
+
     final int batchSize = refreshConfigController.maxConcurrentRefresh.value > 0
         ? refreshConfigController.maxConcurrentRefresh.value
         : 5;
@@ -254,17 +251,15 @@ class FavoriteController extends BasePageController<LiveRoom> with GetTickerProv
     isLoading.value = false;
     EventBus.instance.emit('refresh_favorite_finish', true);
 
-    syncRooms();
-
-    int startOffset = (page - 1) * pageSize;
-    int endOffset = startOffset + pageSize;
-    final allFiltered = getFilteredRooms(isOnline: tabOnlineIndex.value == 0);
-
-    if (startOffset >= allFiltered.length) return [];
-    if (endOffset > allFiltered.length) endOffset = allFiltered.length;
-
-    return tyrannicalCast(allFiltered.sublist(startOffset, endOffset));
+    final allFilteredAfterRefresh = syncRooms();
+    return tyrannicalCast(allFilteredAfterRefresh);
   }
 
   List<LiveRoom> tyrannicalCast(List<dynamic> list) => list.cast<LiveRoom>();
+
+  @override
+  Future<void> syncLocalStreamStatus(int page, int pageSize) async {
+    final freshData = await getData(page, pageSize);
+    updateLocalReactivePool(freshData);
+  }
 }

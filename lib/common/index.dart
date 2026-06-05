@@ -31,5 +31,4 @@ export './widgets/app_status_view.dart';
 export './style/app_text_styles.dart';
 export './widgets/widget_extensions.dart';
 export 'package:pure_live/common/services/utils/hive_rx.dart';
-export 'package:pure_live/common/base/base_page_controller.dart';
-export 'package:pure_live/common/base/base_page_view.dart';
+export 'package:pure_live/common/base/index.dart';
