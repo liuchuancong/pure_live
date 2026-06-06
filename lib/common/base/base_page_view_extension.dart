@@ -47,7 +47,7 @@ extension BasePageViewContentExtension<C extends BasePageScrollAndStateBone<T>, 
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text('${i18n("per_page")}: ', style: const TextStyle(fontSize: 12)),
+                  Text('${i18n("per_page")}: ', style: AppTextStyles.t12),
                   const SizedBox(width: 4),
                   CompactPageSizeSelector(controller: controller, options: pageSizeOptions),
                 ],

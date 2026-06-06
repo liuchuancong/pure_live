@@ -314,7 +314,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
                   _showFontWeightSelector(context, fontModel);
                 }
               },
-              child: Text(i18n("apply"), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+              child: Text(i18n("apply"), style: AppTextStyles.t13Bold),
             ),
           ],
         ),
@@ -355,12 +355,12 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
                 _showFontWeightSelector(context, fontModel);
               }
             },
-            child: Text(i18n("apply"), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+            child: Text(i18n("apply"), style: AppTextStyles.t13Bold),
           ),
         ] else
           ElevatedButton.icon(
             icon: const Icon(Remix.download_cloud_2_line, size: 15),
-            label: Text(i18n("download"), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+            label: Text(i18n("download"), style: AppTextStyles.t13Bold),
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primaryContainer,
               foregroundColor: theme.colorScheme.onPrimaryContainer,

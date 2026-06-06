@@ -38,9 +38,9 @@ class DesktopPaginationBar extends StatelessWidget {
 
       if (current > 3) {
         pageNodes.add(
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 4),
-            child: Text("...", style: TextStyle(color: Colors.grey, fontSize: 13)),
+            child: Text("...", style: AppTextStyles.t13Muted),
           ),
         );
       }
@@ -59,18 +59,18 @@ class DesktopPaginationBar extends StatelessWidget {
       if (total != null && maxPage > 1) {
         if (end < maxPage - 1) {
           pageNodes.add(
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(horizontal: 4),
-              child: Text("...", style: TextStyle(color: Colors.grey, fontSize: 13)),
+              child: Text("...", style: AppTextStyles.t13Muted),
             ),
           );
         }
         pageNodes.add(_buildNumBlock(context, maxPage, current == maxPage));
       } else if (total == null && hasNext) {
         pageNodes.add(
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 4),
-            child: Text("...", style: TextStyle(color: Colors.grey, fontSize: 13)),
+            child: Text("...", style: AppTextStyles.t13Muted),
           ),
         );
       }
@@ -124,12 +124,12 @@ class DesktopPaginationBar extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (showSelector) ...[
-                  Text('${i18n("per_page")}: ', style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                  Text('${i18n("per_page")}: ', style: AppTextStyles.t13Muted),
                   const SizedBox(width: 6),
                   CompactPageSizeSelector(controller: controller, options: options),
                   const SizedBox(width: 24),
                 ],
-                Text(i18n("go_to"), style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                Text(i18n("go_to"), style: AppTextStyles.t13Muted),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 6),
                   child: SizedBox(
@@ -140,7 +140,7 @@ class DesktopPaginationBar extends StatelessWidget {
                       keyboardType: TextInputType.number,
                       textAlign: TextAlign.center,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      style: const TextStyle(fontSize: 13, height: 1.2),
+                      style: AppTextStyles.t13.copyWith(height: 1.2),
                       decoration: InputDecoration(
                         contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 4),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
@@ -149,7 +149,7 @@ class DesktopPaginationBar extends StatelessWidget {
                     ),
                   ),
                 ),
-                Text(i18n("page_unit"), style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                Text(i18n("page_unit"), style: AppTextStyles.t13Muted),
               ],
             ),
           ],
@@ -180,11 +180,9 @@ class DesktopPaginationBar extends StatelessWidget {
           ),
           child: Text(
             "$pageNum",
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-              color: isCurrent ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface,
-            ),
+            style: isCurrent
+                ? AppTextStyles.t13Bold.copyWith(color: theme.colorScheme.onPrimary)
+                : AppTextStyles.t13.copyWith(color: theme.colorScheme.onSurface),
           ),
         ),
       ),
@@ -219,11 +217,9 @@ class CompactPageSizeSelector extends StatelessWidget {
               child: Center(
                 child: Text(
                   '$value',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: currentSize == value ? FontWeight.bold : FontWeight.normal,
-                    color: currentSize == value ? Theme.of(context).colorScheme.primary : null,
-                  ),
+                  style: currentSize == value
+                      ? AppTextStyles.t13Bold.copyWith(color: Theme.of(context).colorScheme.primary)
+                      : AppTextStyles.t13,
                 ),
               ),
             );
@@ -239,7 +235,7 @@ class CompactPageSizeSelector extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('$currentSize', style: const TextStyle(fontSize: 13)),
+              Text('$currentSize', style: AppTextStyles.t13),
               const SizedBox(width: 4),
               Icon(Icons.arrow_drop_down_rounded, size: 18, color: Theme.of(context).hintColor),
             ],

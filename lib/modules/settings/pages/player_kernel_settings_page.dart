@@ -113,7 +113,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
               const SizedBox(width: 8),
               Text(
                 i18n("mpv_advanced_settings"),
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                style: AppTextStyles.t16Bold.copyWith(color: theme.colorScheme.primary),
               ),
             ],
           ),

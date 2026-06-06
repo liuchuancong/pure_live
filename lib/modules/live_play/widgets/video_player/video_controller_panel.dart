@@ -1534,12 +1534,7 @@ class SettingsPanel extends StatelessWidget {
                       const SizedBox(width: 10.0),
                       Text(
                         i18n("settings_danmaku_title"),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
+                        style: AppTextStyles.t16Bold.copyWith(color: Colors.white),
                       ),
                     ],
                   ),

@@ -281,7 +281,7 @@ class _UserManagerState extends State<UserManager> {
   Widget _buildSearchField(ThemeData theme) {
     return TextField(
       controller: searchController,
-      style: const TextStyle(fontSize: 14),
+      style: AppTextStyles.t14,
       decoration: InputDecoration(
         hintText: i18n('search_user_hint'),
         prefixIcon: const Icon(Remix.search_line, size: 18),

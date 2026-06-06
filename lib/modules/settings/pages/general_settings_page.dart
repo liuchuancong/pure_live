@@ -126,10 +126,7 @@ class GeneralSettingsPage extends GetView<SettingsService> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    i18n("preset_options"),
-                    style: TextStyle(fontSize: 13, color: theme.hintColor, fontWeight: FontWeight.w500),
-                  ),
+                  Text(i18n("preset_options"), style: AppTextStyles.t13.copyWith(color: theme.hintColor)),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -145,10 +142,7 @@ class GeneralSettingsPage extends GetView<SettingsService> {
                     }).toList(),
                   ),
                   const SizedBox(height: 20),
-                  Text(
-                    i18n("custom_input"),
-                    style: TextStyle(fontSize: 13, color: theme.hintColor, fontWeight: FontWeight.w500),
-                  ),
+                  Text(i18n("custom_input"), style: AppTextStyles.t13.copyWith(color: theme.hintColor)),
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -164,9 +158,9 @@ class GeneralSettingsPage extends GetView<SettingsService> {
                           ),
                         ),
                       ),
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.symmetric(horizontal: 8),
-                        child: Text("×", style: TextStyle(fontSize: 18)),
+                        child: Text("×", style: AppTextStyles.t18),
                       ),
                       Expanded(
                         child: TextField(
@@ -282,7 +276,7 @@ class GeneralSettingsPage extends GetView<SettingsService> {
                             child: TextField(
                               controller: inputController,
                               keyboardType: TextInputType.number,
-                              style: const TextStyle(fontSize: 14),
+                              style: AppTextStyles.t14,
                               maxLines: 1,
                               decoration: InputDecoration(
                                 hintText: i18n('custom_duration'),

@@ -99,11 +99,11 @@ class FontSettingsPage extends GetView<SettingsService> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+              Text(title, style: AppTextStyles.t15),
               Obx(
                 () => Text(
                   "${value.value.toStringAsFixed(1)} px",
-                  style: TextStyle(fontSize: 13, color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+                  style: AppTextStyles.t13Bold.copyWith(color: theme.colorScheme.primary),
                 ),
               ),
             ],

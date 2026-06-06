@@ -40,7 +40,7 @@ class WebDavPage extends GetView<WebDavPageController> {
                 isEditing
                     ? i18n("webdav_edit_config", args: {"name": existingConfig.name})
                     : i18n("webdav_add_new_config"),
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                style: AppTextStyles.t18Bold,
               ),
             ),
           ],

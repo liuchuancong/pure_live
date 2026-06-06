@@ -75,7 +75,7 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
                           Expanded(
                             child: Text(
                               i18n("cellular_warning_msg"),
-                              style: TextStyle(color: Colors.amber.shade900, fontSize: 13),
+                              style: AppTextStyles.t13Medium.copyWith(color: Colors.amber.shade900),
                             ),
                           ),
                           TextButton(
@@ -85,7 +85,7 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
                             },
                             child: Text(
                               i18n("never_show"),
-                              style: TextStyle(color: Colors.amber.shade900, fontSize: 13, fontWeight: FontWeight.bold),
+                              style: AppTextStyles.t13Bold.copyWith(color: Colors.amber.shade900),
                             ),
                           ),
                         ],
