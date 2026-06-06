@@ -69,7 +69,7 @@ dependencies:
       ref: main
       path: ./libs/universal/media_kit_libs_video
   video_player: ^2.11.1
-  better_player_plus: ^1.2.1 # 高级视频播放器
+  better_player_plus: ^1.3.0 # 高级视频播放器
   audio_service: ^0.18.18 # 后台音频服务
   audio_service_win: ^0.0.3
   audio_session: ^0.2.3 # 音频会话管理
