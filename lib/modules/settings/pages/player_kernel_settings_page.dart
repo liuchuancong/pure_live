@@ -215,7 +215,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
   void showVideoSetDialog() {
     List<String> playerList = PlatformUtils.isMobile
         ? PlayerConsts.names.values.toList()
-        : [PlayerConsts.names['mpv']!, PlayerConsts.names['fvp']!];
+        : [PlayerConsts.names['mpv']!];
 
     showDialog(
       context: Get.context!,
