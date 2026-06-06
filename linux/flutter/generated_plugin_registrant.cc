@@ -13,7 +13,6 @@
 #include <flutter_inappwebview_linux/flutter_inappwebview_linux_plugin.h>
 #include <flutter_js/flutter_js_plugin.h>
 #include <fullscreen_window/fullscreen_window_plugin.h>
-#include <fvp/fvp_plugin.h>
 #include <gtk/gtk_plugin.h>
 #include <media_kit_libs_linux/media_kit_libs_linux_plugin.h>
 #include <media_kit_video/media_kit_video_plugin.h>
@@ -45,9 +44,6 @@ void fl_register_plugins(FlPluginRegistry* registry) {
   g_autoptr(FlPluginRegistrar) fullscreen_window_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "FullscreenWindowPlugin");
   fullscreen_window_plugin_register_with_registrar(fullscreen_window_registrar);
-  g_autoptr(FlPluginRegistrar) fvp_registrar =
-      fl_plugin_registry_get_registrar_for_plugin(registry, "FvpPlugin");
-  fvp_plugin_register_with_registrar(fvp_registrar);
   g_autoptr(FlPluginRegistrar) gtk_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "GtkPlugin");
   gtk_plugin_register_with_registrar(gtk_registrar);

@@ -61,11 +61,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
     final PlayerEngine defaultEngine;
 
     if (PlatformUtils.isDesktop) {
-      if (targetEngine == PlayerEngine.fvp) {
-        defaultEngine = PlayerEngine.fvp;
-      } else {
-        defaultEngine = PlayerEngine.mediaKit;
-      }
+      defaultEngine = PlayerEngine.mediaKit;
     } else {
       defaultEngine = targetEngine;
     }

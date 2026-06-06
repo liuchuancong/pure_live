@@ -8,7 +8,6 @@ class PlayerConsts {
     'mpv': PlayerEngine.mediaKit,
     'ijk': PlayerEngine.fijk,
     'exo': PlayerEngine.exo,
-    'fvp': PlayerEngine.fvp,
   };
 
   static const Map<String, String> names = {
