@@ -21,7 +21,6 @@ class VersionController extends GetxController {
   // =========================
 
   final macosUrl = ''.obs;
-  final macosFvpUrl = ''.obs;
 
   late PackageInfo packageInfo;
 
@@ -75,7 +74,6 @@ class VersionController extends GetxController {
     // ========================= ===========================
 
     macosUrl.value = '$releaseUrl/PureLive-$latestVersion-macOS.dmg';
-    macosFvpUrl.value = '$releaseUrl/PureLive-$latestVersion-fvp-macOS.dmg';
 
     loading.value = false;
   }
