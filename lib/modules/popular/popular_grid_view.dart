@@ -20,9 +20,9 @@ class _PopularGridViewState extends State<PopularGridView> {
         final crossAxisCount = width > 1280 ? 5 : (width > 960 ? 4 : (width > 640 ? 3 : 2));
         return BasePageView<BasePageScrollAndStateBone<LiveRoom>, LiveRoom>(
           controller: controller,
-          showScrollToTopBtn: true,
-          pageSizeOptions: const [10, 20, 30, 50, 100],
-          showPageSizeSelector: true,
+          showScrollToTopBtn: SettingsService.to.page.showScrollToTopBtn.v,
+          pageSizeOptions: SettingsService.to.page.pageSizeOptions,
+          showPageSizeSelector: SettingsService.to.page.showPageSizeSelector.v,
           contentBuilder: (context, list, scrollController) {
             return WaterfallFlow.builder(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),

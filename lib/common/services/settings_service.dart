@@ -9,6 +9,7 @@ import 'package:pure_live/common/services/settings/startup_controller.dart';
 import 'package:pure_live/common/services/utils/legacy_settings_migration.dart';
 import 'package:pure_live/common/services/settings/window_size_controller.dart';
 import 'package:pure_live/common/services/settings/app_settings_controller.dart';
+import 'package:pure_live/common/services/settings/page_settings_controller.dart';
 import 'package:pure_live/common/services/settings/bilibili_account_service.dart';
 import 'package:pure_live/common/services/settings/favorite_room_controller.dart';
 import 'package:pure_live/common/services/settings/exit_settings_controller.dart';
@@ -43,6 +44,7 @@ class SettingsService extends GetxService {
   ProxySettingsController get proxy => Get.find<ProxySettingsController>();
   BackupController get backup => Get.find<BackupController>();
   RefreshConfigController get refreshConfig => Get.find<RefreshConfigController>();
+  PageSettingsController get page => Get.find<PageSettingsController>();
   @override
   void onInit() {
     super.onInit();
@@ -64,6 +66,7 @@ class SettingsService extends GetxService {
     Get.lazyPut(() => CacheController());
     Get.put(ExitSettingsController(), permanent: true);
     Get.lazyPut(() => CookieSettingsController());
+    Get.lazyPut(() => PageSettingsController());
     Get.lazyPut(() => WebDavController());
     Get.lazyPut(() => BackupController());
 

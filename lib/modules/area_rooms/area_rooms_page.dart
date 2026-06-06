@@ -29,6 +29,12 @@ class _AreasRoomPageState extends State<AreasRoomPage> {
         appBar: AppBar(title: Text(widget.subCategory.areaName!)),
         body: BasePageView<BasePageScrollAndStateBone<LiveRoom>, LiveRoom>(
           controller: controller,
+          enableRefresh: true,
+          enableLoadMore: true,
+          showScrollToTopBtn: SettingsService.to.page.showScrollToTopBtn.v,
+          showPageSizeSelector: SettingsService.to.page.showPageSizeSelector.v,
+          pageSizeOptions: SettingsService.to.page.pageSizeOptions,
+          emptyBuilder: (context) => EmptyView(icon: Icons.live_tv_rounded, title: i18n('no_data'), subtitle: ''),
           contentBuilder: (context, list, scrollController) {
             return LayoutBuilder(
               builder: (context, constraint) {

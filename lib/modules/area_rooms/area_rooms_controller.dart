@@ -16,7 +16,8 @@ class AreaServerAllController extends ServerAllPageController<LiveRoom> {
     } catch (e) {
       if (e.toString().contains("-352") ||
           (e.toString().contains("NoSuchMethodError") && e.toString().contains("'[]'"))) {
-        throw Exception("loginRequired");
+        notLogin.value = true;
+        return [];
       }
       rethrow;
     }
@@ -41,7 +42,8 @@ class AreaServerFixedController extends ServerFixedPageController<LiveRoom> {
     } catch (e) {
       if (e.toString().contains("-352") ||
           (e.toString().contains("NoSuchMethodError") && e.toString().contains("'[]'"))) {
-        throw Exception("loginRequired");
+        notLogin.value = true;
+        return [];
       }
       rethrow;
     }
@@ -64,7 +66,8 @@ class AreaServerRemoteController extends ServerRemotePageController<LiveRoom> {
     } catch (e) {
       if (e.toString().contains("-352") ||
           (e.toString().contains("NoSuchMethodError") && e.toString().contains("'[]'"))) {
-        throw Exception("loginRequired");
+        notLogin.value = true;
+        return [];
       }
       rethrow;
     }

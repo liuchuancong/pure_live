@@ -52,9 +52,9 @@ class FavoritePage extends GetView<FavoriteController> {
                           controller: controller,
                           enableRefresh: true,
                           enableLoadMore: true,
-                          showScrollToTopBtn: true,
-                          showPageSizeSelector: true,
-                          pageSizeOptions: const [5, 10, 20, 30, 50],
+                          showScrollToTopBtn: SettingsService.to.page.showScrollToTopBtn.v,
+                          showPageSizeSelector: SettingsService.to.page.showPageSizeSelector.v,
+                          pageSizeOptions: SettingsService.to.page.pageSizeOptions,
                           contentBuilder: (context, list, scrollController) {
                             return TabBarView(
                               children: availableSitesList.map((e) {

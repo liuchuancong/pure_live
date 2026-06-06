@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
+import 'package:pure_live/modules/settings/pages/page_settings.dart';
 
 class GeneralSettingsPage extends GetView<SettingsService> {
   const GeneralSettingsPage({super.key});
@@ -65,6 +66,13 @@ class GeneralSettingsPage extends GetView<SettingsService> {
             }),
 
             if (Platform.isWindows) ...[
+              context.buildTile(
+                icon: Remix.pages_line,
+                title: i18n('page_settings'),
+                subtitle: i18n('page_settings_subtitle'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => Get.to(() => const PageSettingsPage()),
+              ),
               context.buildSwitchTile(
                 title: i18n("startup"),
                 subtitle: "",
