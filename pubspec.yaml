@@ -99,6 +99,8 @@ dependencies:
 
   # -------------------------- 窗口/桌面端控制 --------------------------
   window_manager: ^0.5.1 # 桌面端窗口管理
+  windows_single_instance:  #单例
+    git: https://github.com/MSOB7YY/flutter_windows_single_instance.git
   tray_manager: ^0.5.2 # 系统托盘管理
   flutter_acrylic: ^1.1.4 # 亚克力毛玻璃效果
   screen_retriever:

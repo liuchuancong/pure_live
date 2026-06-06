@@ -8,6 +8,7 @@ import 'package:pure_live/modules/tags/tag_management_controller.dart';
 import 'package:pure_live/recorder/services/stream_resolver_service.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/core/iptv/services/channel_detail_controller.dart';
+import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
 
 class InitialServices {
@@ -39,6 +40,16 @@ class InitialServices {
   static Future<void> init() async {
     initGlobalServices();
     initLazyControllers();
+    initializedFFmpeg();
     await initDb();
+  }
+
+  static Future<void> initializedFFmpeg() async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await FFmpegKitExtended.initialize();
+      await Future.delayed(Duration(seconds: 2));
+      Get.put(RecordSettingsController());
+      Get.put(RecorderController());
+    });
   }
 }

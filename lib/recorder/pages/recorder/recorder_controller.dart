@@ -50,13 +50,9 @@ class RecorderController extends GetxService {
   @override
   void onInit() {
     super.onInit();
-
     _initResourceMonitor();
-
     _initVideoProcessorListener();
-
     _initFFmpegListener();
-
     restoreAndAutoPoll();
   }
 

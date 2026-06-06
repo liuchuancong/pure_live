@@ -28,7 +28,7 @@ class HuyaSite implements LiveSite {
   String name = "虎牙直播";
   @override
   LiveDanmaku getDanmaku() => HuyaDanmaku();
-
+  final Map<String, Future<String>> _tokenCache = {};
   static String? playUserAgent;
 
   // ignore: constant_identifier_names
@@ -650,15 +650,17 @@ class HuyaSite implements LiveSite {
   }
 
   /// return sFlvToken
-  Future<String> getCndTokenInfoEx(String stream) async {
-    var func = "getCdnTokenInfoEx";
-    var tid = HuyaUserId();
-    tid.sHuYaUA = "pc_exe&7060000&official";
-    var tReq = GetCdnTokenExReq();
-    tReq.tId = tid;
-    tReq.sStreamName = stream;
-    var resp = await tupClient.tupRequest(func, tReq, GetCdnTokenExResp());
-    return resp.sFlvToken;
+  Future<String> getCndTokenInfoEx(String stream) {
+    return _tokenCache.putIfAbsent(stream, () async {
+      var func = "getCdnTokenInfoEx";
+      var tid = HuyaUserId();
+      tid.sHuYaUA = "pc_exe&7060000&official";
+      var tReq = GetCdnTokenExReq();
+      tReq.tId = tid;
+      tReq.sStreamName = stream;
+      var resp = await tupClient.tupRequest(func, tReq, GetCdnTokenExResp());
+      return resp.sFlvToken;
+    });
   }
 
   int rotl64(int t) {
