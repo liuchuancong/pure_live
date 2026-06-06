@@ -296,8 +296,11 @@ flutter:
         - asset: assets/PingFangSC.ttf
 
 # FFmpeg配置
+# ffmpeg_kit_extended_config:
+#   type: "base" # pre-bundled builds: debug, base, full, audio, video, video_hw
+#   gpl: true # enable to include GPL libraries
+#   small: true # enable to use smaller builds
 ffmpeg_kit_extended_config:
-  type: "shared"  # 关键点：改为 shared 模式，避免与外部 ffmpeg_kit 重复打包
-  gpl: true
-  small: false
-
+  windows: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-windows/bundle-base-windows-x86_64-shared-lgpl.zip
+  android: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-android/bundle-base-shared-lgpl-release.aar
+  macos: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-macos/bundle-base-macos-universal-lgpl.xcframework.zip

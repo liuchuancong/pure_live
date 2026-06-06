@@ -4,5 +4,13 @@
 <dict>
 	<key>com.apple.security.app-sandbox</key>
 	<true/>
+    
+	<!-- 🔥 必须添加：允许 App 访问互联网（FFmpeg 播放网络视频、请求接口等必须） -->
+	<key>com.apple.security.network.client</key>
+	<true/>
+    
+	<!-- 💡 可选添加：允许 App 读写用户选择的文件（如果 FFmpeg 需要处理本地视频） -->
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
 </dict>
 </plist>
