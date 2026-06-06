@@ -6,8 +6,8 @@ import 'package:pure_live/common/services/utils/hive_rx.dart';
 class PageSettingsController extends GetxController {
   static PageSettingsController get to => Get.find<PageSettingsController>();
 
-  final RxBool showPageSizeSelector = hiveBool('page_show_size_selector', false);
-  final RxBool showGotoButton = hiveBool('page_show_goto_button', false);
+  final RxBool showPageSizeSelector = hiveBool('page_show_size_selector', true);
+  final RxBool showGotoButton = hiveBool('page_show_goto_button', true);
   final RxBool showScrollToTopBtn = hiveBool('page_show_scroll_top', true);
   final RxInt defaultPageSize = hiveInt('page_default_size', _getInitPageSize());
 

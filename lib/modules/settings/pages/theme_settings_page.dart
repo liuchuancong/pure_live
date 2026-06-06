@@ -2,6 +2,8 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/modules/settings/pages/page_settings.dart';
 import 'package:pure_live/modules/settings/pages/font_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/font_family_manager_page.dart';
 import 'package:pure_live/modules/settings/pages/loading_style_settings_page.dart';
@@ -85,6 +87,19 @@ class ThemeSettingsPage extends GetView<SettingsService> {
               onTap: showMainAxisSpacingDialog,
             ),
           ]),
+          if (PlatformUtils.isDesktop) ...[
+            const SizedBox(height: 20),
+            context.buildGroupTitle(i18n("page_settings")),
+            context.buildModernCard([
+              context.buildTile(
+                icon: Remix.pages_line,
+                title: i18n('page_settings'),
+                subtitle: i18n('page_settings_subtitle'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => Get.to(() => const PageSettingsPage()),
+              ),
+            ]),
+          ],
 
           const SizedBox(height: 20),
           context.buildGroupTitle(i18n("localization_settings")),

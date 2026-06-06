@@ -32,8 +32,7 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
 
   @override
   Widget build(BuildContext context) {
-    final bool showBtn = showScrollToTopBtn ?? (!PlatformUtils.isDesktop);
-
+    final bool showBtn = showScrollToTopBtn ?? true;
     return Stack(
       children: [
         Listener(
