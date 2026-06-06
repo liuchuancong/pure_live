@@ -410,10 +410,7 @@ class _UserManagerState extends State<UserManager> {
           child: Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(color: theme.colorScheme.primary, shape: BoxShape.circle),
-            child: Text(
-              '${index + 1}',
-              style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
-            ),
+            child: Text('${index + 1}', style: AppTextStyles.t11Bold.copyWith(color: Colors.white)),
           ),
         ),
       ],
@@ -424,10 +421,7 @@ class _UserManagerState extends State<UserManager> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(6)),
-      child: Text(
-        text,
-        style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600),
-      ),
+      child: Text(text, style: AppTextStyles.t11Medium.copyWith(color: color)),
     );
   }
 

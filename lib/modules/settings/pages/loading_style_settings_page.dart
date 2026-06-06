@@ -546,11 +546,7 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
                                   textAlign: TextAlign.center,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                    color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
-                                  ),
+                                  style: AppTextStyles.t11Bold.copyWith(color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface),
                                 ),
                               ),
                             ],

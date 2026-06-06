@@ -309,7 +309,7 @@ class CustomTitleBar extends StatelessWidget {
                                   IgnorePointer(
                                     child: Text(
                                       '[${currentSize.width.toInt()} × ${currentSize.height.toInt()}]',
-                                      style: TextStyle(color: iconColor.withValues(alpha: 0.6), fontSize: 12),
+                                      style: AppTextStyles.t12.copyWith(color: iconColor.withValues(alpha: 0.6)),
                                     ),
                                   ),
                               ],

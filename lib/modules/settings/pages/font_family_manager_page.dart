@@ -182,10 +182,8 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
                                       children: [
                                         Text(
                                           "${fontModel.files.length} ${i18n("font_units_suffix")}",
-                                          style: TextStyle(
-                                            fontSize: 12,
+                                          style: AppTextStyles.t12Medium.copyWith(
                                             color: theme.hintColor.withValues(alpha: 0.6),
-                                            fontWeight: FontWeight.w500,
                                           ),
                                         ),
 
@@ -253,15 +251,13 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
           ),
           title: Text(
             PlatformUtils.isWindows ? "PingFang" : "System Default",
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: isDefaultActive ? FontWeight.w700 : FontWeight.w600,
-              color: isDefaultActive ? theme.colorScheme.primary : null,
-            ),
+            style: isDefaultActive
+                ? AppTextStyles.t14Bold.copyWith(color: theme.colorScheme.primary)
+                : AppTextStyles.t14SemiBold,
           ),
           subtitle: Text(
             i18n("factory_default_desc"),
-            style: TextStyle(fontSize: 11, color: theme.hintColor.withValues(alpha: 0.7)),
+            style: AppTextStyles.t11.copyWith(color: theme.hintColor.withValues(alpha: 0.7)),
           ),
           trailing: isDefaultActive ? Icon(Icons.check_circle, color: theme.colorScheme.primary, size: 18) : null,
           onTap: _setDefaultFont,
@@ -291,7 +287,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
           children: [
             Text(
               i18n("font_currently_active"),
-              style: TextStyle(fontSize: 12, color: theme.colorScheme.primary, fontWeight: FontWeight.w700),
+              style: AppTextStyles.t12Bold.copyWith(color: theme.colorScheme.primary),
             ),
 
             const SizedBox(width: 6),
@@ -423,16 +419,13 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                i18n('font_selector_title', args: {"name": fontModel.name}),
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+              Text(i18n('font_selector_title', args: {"name": fontModel.name}), style: AppTextStyles.t18Bold),
 
               const SizedBox(height: 8),
 
               Text(
                 i18n('font_selector_subtitle'),
-                style: TextStyle(fontSize: 13, color: Theme.of(Get.context!).colorScheme.onSurfaceVariant),
+                style: AppTextStyles.t13.copyWith(color: Theme.of(Get.context!).colorScheme.onSurfaceVariant),
               ),
 
               const SizedBox(height: 16),
@@ -517,8 +510,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
             ),
             child: Text(
               diskSize,
-              style: TextStyle(
-                fontSize: 10,
+              style: AppTextStyles.t11Bold.copyWith(
                 color: theme.colorScheme.primary,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.2,
@@ -534,7 +526,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
           ),
           child: Text(
             fontModel.license['name'] ?? "OFL",
-            style: TextStyle(fontSize: 10, color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w700),
+            style: AppTextStyles.t11Bold.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
         ),
       ],

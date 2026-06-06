@@ -62,7 +62,10 @@ class ThemeSettingsPage extends GetView<SettingsService> {
                 );
                 final String displayName = isZh ? currentItem['nameZh']! : currentItem['nameEn']!;
 
-                return Text(displayName, style: TextStyle(color: Theme.of(context).colorScheme.outline, fontSize: 13));
+                return Text(
+                  displayName,
+                  style: AppTextStyles.t13.copyWith(color: Theme.of(context).colorScheme.outline),
+                );
               }),
             ),
           ]),
