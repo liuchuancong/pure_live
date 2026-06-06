@@ -85,7 +85,7 @@ class DesktopPaginationBar extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             OutlinedButton.icon(
-              onPressed: controller.loadding ? null : () => controller.refreshData(),
+              onPressed: controller.loadding.value ? null : () => controller.refreshData(),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
@@ -97,7 +97,7 @@ class DesktopPaginationBar extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextButton.icon(
-                  onPressed: (hasPrev && !controller.loadding) ? () => controller.goToPage(current - 1) : null,
+                  onPressed: (hasPrev && !controller.loadding.value) ? () => controller.goToPage(current - 1) : null,
                   icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 12),
                   label: Text(i18n("prev_page")),
                 ),
@@ -105,13 +105,13 @@ class DesktopPaginationBar extends StatelessWidget {
                 ...pageNodes,
                 const SizedBox(width: 8),
                 TextButton(
-                  onPressed: (hasNext && !controller.loadding) ? () => controller.goToPage(current + 1) : null,
+                  onPressed: (hasNext && !controller.loadding.value) ? () => controller.goToPage(current + 1) : null,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(i18n("next_page")),
                       const SizedBox(width: 4),
-                      if (controller.loadding)
+                      if (controller.loadding.value)
                         const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2))
                       else
                         const Icon(Icons.arrow_forward_ios_rounded, size: 12),
@@ -164,7 +164,7 @@ class DesktopPaginationBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 3),
       child: InkWell(
         borderRadius: BorderRadius.circular(6),
-        onTap: (isCurrent || controller.loadding) ? null : () => controller.goToPage(pageNum),
+        onTap: (isCurrent || controller.loadding.value) ? null : () => controller.goToPage(pageNum),
         child: Container(
           height: 32,
           padding: const EdgeInsets.symmetric(horizontal: 10),

@@ -5,7 +5,7 @@ import 'package:pure_live/common/global/platform_utils.dart';
 
 class BaseController extends GetxController {
   var pageLoadding = false.obs;
-  var loadding = false;
+  var loadding = false.obs;
   var pageEmpty = false.obs;
   var pageError = false.obs;
   var notLogin = false.obs;

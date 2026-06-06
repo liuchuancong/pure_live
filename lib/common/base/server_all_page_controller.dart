@@ -16,7 +16,7 @@ abstract class ServerAllPageController<T> extends BasePageScrollAndStateBone<T> 
 
   @override
   Future<void> goToPage(int page) async {
-    if (loadding || page < 1 || _rawAllData == null) return;
+    if (loadding.value || page < 1 || _rawAllData == null) return;
     final maxPage = (_rawAllData!.length / pageSize.value).ceil();
     if (page > maxPage) return;
     currentPage = page;
@@ -34,7 +34,7 @@ abstract class ServerAllPageController<T> extends BasePageScrollAndStateBone<T> 
 
   @override
   Future<void> loadData() async {
-    if (loadding) return;
+    if (loadding.value) return;
 
     if (_rawAllData != null) {
       processLocalPaging();
@@ -48,7 +48,7 @@ abstract class ServerAllPageController<T> extends BasePageScrollAndStateBone<T> 
     }
 
     try {
-      loadding = true;
+      loadding.value = true;
       pageError.value = false;
       pageEmpty.value = false;
       notLogin.value = false;
@@ -60,7 +60,7 @@ abstract class ServerAllPageController<T> extends BasePageScrollAndStateBone<T> 
       handleError(e, showPageError: list.isEmpty);
       finishRefreshControllers(IndicatorResult.fail);
     } finally {
-      loadding = false;
+      loadding.value = false;
       pageLoadding.value = false;
     }
   }

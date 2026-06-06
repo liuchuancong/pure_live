@@ -1,4 +1,5 @@
 import 'package:flutter/gestures.dart';
+import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/base/base_controller.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
@@ -147,6 +148,20 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
         ),
         if (showBtn)
           Positioned(right: 16, bottom: PlatformUtils.isDesktop ? 70 : 20, child: buildFloatingButtons(context)),
+        Obx(() {
+          if (controller.list.isNotEmpty && controller.loadding.value) {
+            return Container(
+              color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 1),
+              child: AppStatusView(
+                icon: Remix.loader_2_fill,
+                type: AppStatusType.loading,
+                title: i18n('refresh_loading'),
+                subtitle: '',
+              ),
+            );
+          }
+          return const SizedBox.shrink();
+        }),
       ],
     );
   }

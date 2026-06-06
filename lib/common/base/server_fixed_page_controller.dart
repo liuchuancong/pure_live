@@ -19,7 +19,7 @@ abstract class ServerFixedPageController<T> extends BasePageScrollAndStateBone<T
 
   @override
   Future<void> goToPage(int page) async {
-    if (loadding || page < 1) return;
+    if (loadding.value || page < 1) return;
     currentPage = page;
     await loadData();
   }
@@ -36,7 +36,7 @@ abstract class ServerFixedPageController<T> extends BasePageScrollAndStateBone<T
 
   @override
   Future<void> loadData() async {
-    if (loadding) return;
+    if (loadding.value) return;
     totalCount.value = null;
 
     if (_slicedSmallCache.containsKey(currentPage)) {
@@ -61,7 +61,7 @@ abstract class ServerFixedPageController<T> extends BasePageScrollAndStateBone<T
     final int currentGlobalEnd = currentGlobalStart + pageSize.value;
 
     try {
-      loadding = true;
+      loadding.value = true;
       pageError.value = false;
       pageEmpty.value = false;
       notLogin.value = false;
@@ -113,7 +113,7 @@ abstract class ServerFixedPageController<T> extends BasePageScrollAndStateBone<T
       handleError(e, showPageError: list.isEmpty);
       finishRefreshControllers(IndicatorResult.fail);
     } finally {
-      loadding = false;
+      loadding.value = false;
       pageLoadding.value = false;
     }
   }

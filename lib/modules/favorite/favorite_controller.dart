@@ -26,7 +26,6 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
 
   final selectedTagId = 'ALL'.obs;
   final visibleTags = <LiveTag>[].obs;
-  final isLoading = true.obs;
 
   FavoriteController() : super() {
     onExternalRefresh = () {
@@ -208,15 +207,11 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
   }
 
   Future<void> _fullRefreshRooms() async {
-    isLoading.value = true;
-
+    loadding.value = true;
     List<LiveRoom> roomsToRefresh = getFilteredRooms();
-
     await _refreshRoomDetails(roomsToRefresh);
-
     applyLocalFilter();
-
-    isLoading.value = false;
+    loadding.value = false;
     EventBus.instance.emit('refresh_favorite_finish', true);
   }
 

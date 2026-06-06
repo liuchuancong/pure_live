@@ -8,12 +8,12 @@ extension BasePageViewContentExtension<C extends BasePageScrollAndStateBone<T>, 
       return CallbackShortcuts(
         bindings: <ShortcutActivator, VoidCallback>{
           const SingleActivator(LogicalKeyboardKey.arrowLeft): () {
-            if (controller.currentPage > 1 && !controller.loadding) {
+            if (controller.currentPage > 1 && !controller.loadding.value) {
               controller.goToPage(controller.currentPage - 1);
             }
           },
           const SingleActivator(LogicalKeyboardKey.arrowRight): () {
-            if (controller.canLoadMore.value && !controller.loadding && enableLoadMore) {
+            if (controller.canLoadMore.value && !controller.loadding.value && enableLoadMore) {
               controller.goToPage(controller.currentPage + 1);
             }
           },

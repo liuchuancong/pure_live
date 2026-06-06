@@ -20,7 +20,7 @@ abstract class LocalReactivePageController<T> extends BasePageScrollAndStateBone
 
   @override
   Future<void> goToPage(int page) async {
-    if (loadding || page < 1) return;
+    if (loadding.value || page < 1) return;
     final maxPage = (_localRawPool.length / pageSize.value).ceil();
     if (page > maxPage) return;
     currentPage = page;

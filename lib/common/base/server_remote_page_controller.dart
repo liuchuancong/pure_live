@@ -19,7 +19,7 @@ abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<
 
   @override
   Future<void> goToPage(int page) async {
-    if (loadding || page < 1) return;
+    if (loadding.value || page < 1) return;
     if (page > currentPage && !canLoadMore.value && !_pageCache.containsKey(page)) return;
     currentPage = page;
     await loadData();
@@ -47,7 +47,7 @@ abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<
   }
 
   Future<void> _adaptiveRebuildAndFetchMore(List<T> historyPool) async {
-    if (loadding) return;
+    if (loadding.value) return;
 
     final int targetTotalItemsNeeded = currentPage * pageSize.value;
 
@@ -59,7 +59,7 @@ abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<
       }
 
       try {
-        loadding = true;
+        loadding.value = true;
         while (historyPool.length < targetTotalItemsNeeded) {
           final int missingCount = targetTotalItemsNeeded - historyPool.length;
           final result = await fetchNetworkData(_virtualNetworkPage, missingCount);
@@ -72,7 +72,7 @@ abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<
       } catch (e) {
         handleError(e, showPageError: list.isEmpty);
       } finally {
-        loadding = false;
+        loadding.value = false;
       }
     }
 
@@ -95,7 +95,7 @@ abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<
 
   @override
   Future<void> loadData() async {
-    if (loadding) return;
+    if (loadding.value) return;
     totalCount.value = null;
 
     if (_pageCache.containsKey(currentPage)) {
@@ -116,7 +116,7 @@ abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<
 
     final int previousPageSnapshot = currentPage;
     try {
-      loadding = true;
+      loadding.value = true;
       pageError.value = false;
       pageEmpty.value = false;
       notLogin.value = false;
@@ -150,7 +150,7 @@ abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<
       handleError(e, showPageError: list.isEmpty);
       finishRefreshControllers(IndicatorResult.fail);
     } finally {
-      loadding = false;
+      loadding.value = false;
       pageLoadding.value = false;
     }
   }
