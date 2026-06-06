@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
 
 abstract class ServerAllPageController<T> extends BasePageScrollAndStateBone<T> {
   List<T>? _rawAllData;
@@ -9,6 +10,7 @@ abstract class ServerAllPageController<T> extends BasePageScrollAndStateBone<T> 
   @override
   Future<void> refreshData() async {
     _rawAllData = null;
+    currentPage = 1;
     await loadData();
   }
 
@@ -18,7 +20,7 @@ abstract class ServerAllPageController<T> extends BasePageScrollAndStateBone<T> 
     final maxPage = (_rawAllData!.length / pageSize.value).ceil();
     if (page > maxPage) return;
     currentPage = page;
-    _processLocalPaging();
+    processLocalPaging();
   }
 
   @override
@@ -27,7 +29,7 @@ abstract class ServerAllPageController<T> extends BasePageScrollAndStateBone<T> 
     final int currentFirstItemIndex = (currentPage - 1) * pageSize.value;
     pageSize.value = newSize;
     currentPage = (currentFirstItemIndex ~/ newSize) + 1;
-    _processLocalPaging();
+    processLocalPaging();
   }
 
   @override
@@ -35,7 +37,7 @@ abstract class ServerAllPageController<T> extends BasePageScrollAndStateBone<T> 
     if (loadding) return;
 
     if (_rawAllData != null) {
-      _processLocalPaging();
+      processLocalPaging();
       return;
     }
 
@@ -50,10 +52,10 @@ abstract class ServerAllPageController<T> extends BasePageScrollAndStateBone<T> 
       pageError.value = false;
       pageEmpty.value = false;
       notLogin.value = false;
-      if (list.isEmpty) pageLoadding.value = true;
+      pageLoadding.value = true;
 
       _rawAllData = await fetchAllServerData();
-      _processLocalPaging();
+      processLocalPaging();
     } catch (e) {
       handleError(e, showPageError: list.isEmpty);
       finishRefreshControllers(IndicatorResult.fail);
@@ -63,10 +65,18 @@ abstract class ServerAllPageController<T> extends BasePageScrollAndStateBone<T> 
     }
   }
 
-  void _processLocalPaging() {
+  void processLocalPaging() {
     if (_rawAllData == null) return;
     final allItems = _rawAllData!;
     totalCount.value = allItems.length;
+
+    if (allItems.isEmpty) {
+      list.clear();
+      canLoadMore.value = false;
+      pageEmpty.value = true;
+      finishRefreshControllers(IndicatorResult.noMore);
+      return;
+    }
 
     int startIndex = (currentPage - 1) * pageSize.value;
     if (startIndex >= allItems.length) {
@@ -77,10 +87,24 @@ abstract class ServerAllPageController<T> extends BasePageScrollAndStateBone<T> 
     int endIndex = startIndex + pageSize.value;
     if (endIndex > allItems.length) endIndex = allItems.length;
 
-    list.assignAll(allItems.sublist(startIndex, endIndex));
+    final newData = allItems.sublist(startIndex, endIndex);
+
+    if (PlatformUtils.isDesktop) {
+      list.assignAll(newData);
+    } else {
+      if (currentPage == 1) {
+        list.assignAll(newData);
+      } else {
+        list.addAll(newData);
+      }
+    }
+
     canLoadMore.value = endIndex < allItems.length;
     pageEmpty.value = list.isEmpty;
     finishRefreshControllers(canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore);
-    scrollToTopImmediate();
+
+    if (currentPage == 1) {
+      scrollToTopImmediate();
+    }
   }
 }

@@ -22,7 +22,7 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
   void initState() {
     super.initState();
     if (!widget.isFlatten) {
-      _listWorker = ever(widget.controller.list, (_) => _createTabController());
+      _listWorker = ever(widget.controller.categories, (_) => _createTabController());
       _createTabController();
       widget.controller.tabIndex.addListener(_handleExternalIndexChange);
     }
@@ -30,7 +30,7 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
 
   void _createTabController() {
     if (widget.isFlatten) return;
-    final list = widget.controller.list;
+    final list = widget.controller.categories;
     if (list.isEmpty) return;
 
     if (_tabController != null && _tabController!.length == list.length) {
@@ -55,6 +55,8 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
     if (_tabController == null || _tabController!.indexIsChanging) return;
     if (widget.controller.tabIndex.value != _tabController!.index) {
       widget.controller.tabIndex.value = _tabController!.index;
+      widget.controller.currentPage = 1;
+      widget.controller.loadData();
     }
   }
 
@@ -81,56 +83,44 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Obx(() {
-      if (widget.controller.pageLoadding.value) {
-        return const AppStatusView(type: AppStatusType.loading, title: "", subtitle: "");
-      }
-
-      if (widget.controller.pageError.value) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Text(
-                  widget.controller.errorMsg.value,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.outline),
-                ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () => widget.controller.refreshData(),
-                icon: const Icon(Icons.refresh),
-                label: Text(i18n("retry")),
-              ),
-            ],
-          ),
-        );
-      }
-
-      if (widget.controller.pageEmpty.value || widget.controller.list.isEmpty) {
-        return EmptyView(
+    if (widget.isFlatten) {
+      return BasePageView<AreasListController, LiveArea>(
+        controller: widget.controller,
+        enableRefresh: true,
+        enableLoadMore: true,
+        showScrollToTopBtn: true,
+        showPageSizeSelector: true,
+        pageSizeOptions: const [5, 10, 20, 30, 50],
+        emptyBuilder: (context) => EmptyView(
           icon: Icons.area_chart_outlined,
           title: i18n("empty_areas_title"),
           subtitle: i18n("empty_areas_subtitle"),
+        ),
+        contentBuilder: (context, displayList, scrollController) {
+          return buildFlattenAreasView(displayList, scrollController);
+        },
+      );
+    }
+
+    return Obx(() {
+      final categoriesList = widget.controller.categories;
+
+      if (categoriesList.isEmpty || _tabController == null || _tabController!.length != categoriesList.length) {
+        return BasePageView<AreasListController, LiveArea>(
+          controller: widget.controller,
+          enableRefresh: true,
+          enableLoadMore: false,
+          showPageSizeSelector: false,
+          pageSizeOptions: const [],
+          emptyBuilder: (context) => EmptyView(
+            icon: Icons.area_chart_outlined,
+            title: i18n("empty_areas_title"),
+            subtitle: i18n("empty_areas_subtitle"),
+          ),
+          contentBuilder: (context, displayList, scrollController) {
+            return const SizedBox.shrink();
+          },
         );
-      }
-
-      final list = widget.controller.list;
-
-      if (widget.isFlatten) {
-        final allChildren = list.expand((e) => e.children).toList();
-        return buildFlattenAreasView(allChildren);
-      }
-
-      if (_tabController == null || _tabController!.length != list.length) {
-        return const AppStatusView(type: AppStatusType.loading, title: "", subtitle: "");
       }
 
       return Column(
@@ -138,43 +128,71 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
           TabBar(
             controller: _tabController,
             isScrollable: true,
-            tabs: list.map((e) => Tab(text: e.name)).toList(),
+            tabs: categoriesList.map((e) => Tab(text: e.name)).toList(),
           ),
           Expanded(
-            child: TabBarView(controller: _tabController, children: list.map((e) => buildAreasView(e)).toList()),
+            child: TabBarView(
+              controller: _tabController,
+              children: categoriesList.asMap().entries.map((entry) {
+                final index = entry.key;
+                final category = entry.value;
+
+                return BasePageView<AreasListController, LiveArea>(
+                  key: ValueKey("area_page_${category.name}"),
+                  controller: widget.controller,
+                  enableRefresh: true,
+                  enableLoadMore: true,
+                  showScrollToTopBtn: true,
+                  showPageSizeSelector: true,
+                  pageSizeOptions: const [5, 10, 20, 30, 50],
+                  emptyBuilder: (context) => EmptyView(
+                    icon: Icons.area_chart_outlined,
+                    title: i18n("empty_areas_title"),
+                    subtitle: i18n("empty_areas_subtitle"),
+                  ),
+                  contentBuilder: (context, displayList, scrollController) {
+                    final bool isCurrentTab = widget.controller.tabIndex.value == index;
+                    final List<LiveArea> finalData = isCurrentTab
+                        ? displayList
+                        : category.children.take(widget.controller.pageSize.value).toList();
+
+                    if (finalData.isEmpty) {
+                      return EmptyView(
+                        icon: Icons.area_chart_outlined,
+                        title: i18n("empty_areas_title"),
+                        subtitle: i18n("empty_areas_subtitle"),
+                      );
+                    }
+
+                    return buildFlattenAreasView(finalData, scrollController);
+                  },
+                );
+              }).toList(),
+            ),
           ),
         ],
       );
     });
   }
 
-  Widget buildAreasView(AppLiveCategory category) {
-    return buildFlattenAreasView(category.children);
-  }
-
-  Widget buildFlattenAreasView(List<dynamic> childrenList) {
+  Widget buildFlattenAreasView(List<LiveArea> childrenList, ScrollController scrollController) {
     return LayoutBuilder(
       builder: (context, constraint) {
         final width = constraint.maxWidth;
         final crossAxisCount = width > 1280 ? 9 : (width > 960 ? 7 : (width > 640 ? 5 : 3));
-        return childrenList.isNotEmpty
-            ? WaterfallFlow.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-                controller: widget.controller.scrollController,
-                gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
-                  lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
-                  crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: SettingsService.to.theme.crossAxisSpacing.v,
-                  mainAxisSpacing: SettingsService.to.theme.mainAxisSpacing.v,
-                ),
-                itemCount: childrenList.length,
-                itemBuilder: (context, index) => AreaCard(category: childrenList[index]),
-              )
-            : EmptyView(
-                icon: Icons.area_chart_outlined,
-                title: i18n("empty_areas_title"),
-                subtitle: i18n("empty_areas_subtitle"),
-              );
+
+        return WaterfallFlow.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+          controller: scrollController,
+          gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
+            lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: SettingsService.to.theme.crossAxisSpacing.v,
+            mainAxisSpacing: SettingsService.to.theme.mainAxisSpacing.v,
+          ),
+          itemCount: childrenList.length,
+          itemBuilder: (context, index) => AreaCard(category: childrenList[index]),
+        );
       },
     );
   }

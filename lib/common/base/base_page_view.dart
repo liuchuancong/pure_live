@@ -12,6 +12,10 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
   final bool showPageSizeSelector;
   final List<int> pageSizeOptions;
 
+  final Widget Function(BuildContext context)? notLoginBuilder;
+  final Widget Function(BuildContext context, String errorMsg)? errorBuilder;
+  final Widget Function(BuildContext context)? emptyBuilder;
+
   const BasePageView({
     super.key,
     required this.controller,
@@ -21,6 +25,9 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
     this.showScrollToTopBtn,
     this.showPageSizeSelector = false,
     this.pageSizeOptions = const [],
+    this.notLoginBuilder,
+    this.errorBuilder,
+    this.emptyBuilder,
   });
 
   @override
@@ -93,39 +100,36 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
                       return Obx(() {
                         if (controller.list.isEmpty) {
                           if (controller.notLogin.value) {
-                            return _buildScrollableStatus(
-                              constraint,
-                              controller,
-                              AppStatusView(
-                                type: AppStatusType.error,
-                                icon: Icons.account_circle_outlined,
-                                title: i18n("login_required_title"),
-                                subtitle: i18n("login_required_subtitle"),
-                                buttonText: i18n("go_to_login"),
-                                onButtonPressed: () => Get.toNamed(RoutePath.kSettingsAccount),
-                              ),
-                            );
+                            final view = notLoginBuilder != null
+                                ? notLoginBuilder!(context)
+                                : AppStatusView(
+                                    type: AppStatusType.error,
+                                    icon: Icons.account_circle_outlined,
+                                    title: i18n("login_required_title"),
+                                    subtitle: i18n("login_required_subtitle"),
+                                    buttonText: i18n("go_to_login"),
+                                    onButtonPressed: () => Get.toNamed(RoutePath.kSettingsAccount),
+                                  );
+                            return _buildScrollableStatus(constraint, controller, view);
                           }
                           if (controller.pageError.value) {
-                            return _buildScrollableStatus(
-                              constraint,
-                              controller,
-                              AppStatusView(
-                                type: AppStatusType.error,
-                                icon: Icons.wifi_off_rounded,
-                                title: i18n("network_error_title"),
-                                subtitle: controller.errorMsg.value,
-                                buttonText: i18n("retry"),
-                                onButtonPressed: () => controller.refreshData(),
-                              ),
-                            );
+                            final view = errorBuilder != null
+                                ? errorBuilder!(context, controller.errorMsg.value)
+                                : AppStatusView(
+                                    type: AppStatusType.error,
+                                    icon: Icons.wifi_off_rounded,
+                                    title: i18n("network_error_title"),
+                                    subtitle: controller.errorMsg.value,
+                                    buttonText: i18n("retry"),
+                                    onButtonPressed: () => controller.refreshData(),
+                                  );
+                            return _buildScrollableStatus(constraint, controller, view);
                           }
                           if (controller.pageEmpty.value) {
-                            return _buildScrollableStatus(
-                              constraint,
-                              controller,
-                              AppStatusView(type: AppStatusType.empty, title: i18n('no_data'), subtitle: ''),
-                            );
+                            final view = emptyBuilder != null
+                                ? emptyBuilder!(context)
+                                : AppStatusView(type: AppStatusType.empty, title: i18n('no_data'), subtitle: '');
+                            return _buildScrollableStatus(constraint, controller, view);
                           }
                           return AppStatusView(
                             type: AppStatusType.loading,
