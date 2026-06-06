@@ -43,7 +43,7 @@ class HomeMobileView extends StatelessWidget {
                 break;
               case HomeMenu.areas:
                 destinations.add(
-                  NavigationDestination(icon: const Icon(Icons.area_chart_rounded), label: i18n("areas_title")),
+                  NavigationDestination(icon: const Icon(Remix.dashboard_line), label: i18n("areas_title")),
                 );
                 break;
               case HomeMenu.record:

@@ -1,3 +1,4 @@
+import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 import 'package:pure_live/modules/areas/widgets/area_card.dart';
@@ -62,7 +63,7 @@ class FavoriteAreasPage extends GetView<FavoriteAreasController> {
                     : controller.favoriteAreas.where((e) => e.platform == siteId).toList()[index],
               ),
             )
-          : EmptyView(icon: Icons.area_chart_outlined, title: i18n("empty_areas_title"), subtitle: ''),
+          : EmptyView(icon: Remix.dashboard_line, title: i18n("empty_areas_title"), subtitle: ''),
     );
   }
 }

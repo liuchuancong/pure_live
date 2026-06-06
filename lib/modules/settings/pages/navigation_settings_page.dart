@@ -76,7 +76,7 @@ class NavigationSettingsPage extends StatelessWidget {
                       break;
                     case HomeMenu.areas:
                       titleText = i18n("areas_title");
-                      menuIcon = Icons.area_chart_rounded;
+                      menuIcon = Remix.dashboard_line;
                       break;
                     case HomeMenu.record:
                       titleText = i18n("record_center");

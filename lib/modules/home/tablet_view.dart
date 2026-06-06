@@ -42,10 +42,7 @@ class HomeTabletView extends StatelessWidget {
                   break;
                 case HomeMenu.areas:
                   destinations.add(
-                    NavigationRailDestination(
-                      icon: const Icon(Icons.area_chart_rounded),
-                      label: Text(i18n("areas_title")),
-                    ),
+                    NavigationRailDestination(icon: const Icon(Remix.dashboard_line), label: Text(i18n("areas_title"))),
                   );
                   break;
                 case HomeMenu.record:

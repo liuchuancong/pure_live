@@ -1,3 +1,4 @@
+import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
@@ -23,6 +24,12 @@ class _PopularGridViewState extends State<PopularGridView> {
           showScrollToTopBtn: SettingsService.to.page.showScrollToTopBtn.v,
           pageSizeOptions: SettingsService.to.page.pageSizeOptions,
           showPageSizeSelector: SettingsService.to.page.showPageSizeSelector.v,
+          emptyBuilder: (c) => AppStatusView(
+            type: AppStatusType.empty,
+            icon: RemixIcons.fire_fill,
+            title: i18n("empty_live_title"),
+            subtitle: i18n("empty_live_subtitle"),
+          ),
           contentBuilder: (context, list, scrollController) {
             return WaterfallFlow.builder(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),

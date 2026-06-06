@@ -1,3 +1,4 @@
+import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 import 'package:pure_live/modules/areas/widgets/area_card.dart';
@@ -92,7 +93,7 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
         showPageSizeSelector: SettingsService.to.page.showPageSizeSelector.v,
         pageSizeOptions: SettingsService.to.page.pageSizeOptions,
         emptyBuilder: (context) => EmptyView(
-          icon: Icons.area_chart_outlined,
+          icon: Remix.dashboard_line,
           title: i18n("empty_areas_title"),
           subtitle: i18n("empty_areas_subtitle"),
         ),
@@ -113,7 +114,7 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
           showPageSizeSelector: false,
           pageSizeOptions: SettingsService.to.page.pageSizeOptions,
           emptyBuilder: (context) => EmptyView(
-            icon: Icons.area_chart_outlined,
+            icon: Remix.dashboard_line,
             title: i18n("empty_areas_title"),
             subtitle: i18n("empty_areas_subtitle"),
           ),
@@ -146,7 +147,7 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
                   showPageSizeSelector: SettingsService.to.page.showPageSizeSelector.v,
                   pageSizeOptions: SettingsService.to.page.pageSizeOptions,
                   emptyBuilder: (context) => EmptyView(
-                    icon: Icons.area_chart_outlined,
+                    icon: Remix.dashboard_line,
                     title: i18n("empty_areas_title"),
                     subtitle: i18n("empty_areas_subtitle"),
                   ),
@@ -158,7 +159,7 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
 
                     if (finalData.isEmpty) {
                       return EmptyView(
-                        icon: Icons.area_chart_outlined,
+                        icon: Remix.dashboard_line,
                         title: i18n("empty_areas_title"),
                         subtitle: i18n("empty_areas_subtitle"),
                       );

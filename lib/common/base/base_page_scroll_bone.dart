@@ -11,7 +11,7 @@ abstract class BasePageScrollAndStateBone<T> extends BaseController {
   );
 
   int currentPage = 1;
-  final pageSize = 30.obs;
+  final pageSize = SettingsService.to.page.defaultPageSize.v.obs;
   final canLoadMore = false.obs;
   final list = <T>[].obs;
   final totalCount = Rxn<int>();

@@ -52,6 +52,12 @@ class FavoritePage extends GetView<FavoriteController> {
                           controller: controller,
                           enableRefresh: true,
                           enableLoadMore: true,
+                          emptyBuilder: (context) => AppStatusView(
+                            type: AppStatusType.empty,
+                            icon: Icons.favorite_rounded,
+                            title: i18n("empty_favorite_online_title"),
+                            subtitle: i18n("empty_favorite_online_subtitle"),
+                          ),
                           showScrollToTopBtn: SettingsService.to.page.showScrollToTopBtn.v,
                           showPageSizeSelector: SettingsService.to.page.showPageSizeSelector.v,
                           pageSizeOptions: SettingsService.to.page.pageSizeOptions,
