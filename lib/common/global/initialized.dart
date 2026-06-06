@@ -9,6 +9,7 @@ import 'package:pure_live/plugins/global.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:pure_live/plugins/cache_manager.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:screen_brightness/screen_brightness.dart';
 import 'package:pure_live/common/global/windows_utils.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
@@ -63,6 +64,11 @@ class AppInitializer {
     );
     if (PlatformUtils.isDesktop) {
       await DesktopManager.initialize();
+      if (Platform.isWindows) {
+        try {
+          await ScreenBrightness().setAutoReset(false);
+        } catch (_) {}
+      }
       Future.delayed(const Duration(milliseconds: 800), () {
         WindowUtils.markCurrentWindow(instanceId);
       });

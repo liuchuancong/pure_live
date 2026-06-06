@@ -108,9 +108,13 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
           targetAnchor: Alignment.topCenter,
           offset: const Offset(0, 5),
           child: MouseRegion(
-            onEnter: (_) => _isMouseInBar = true,
+            onEnter: (_) {
+              _isMouseInBar = true;
+              controller.stopHideController();
+            },
             onExit: (_) {
               _isMouseInBar = false;
+              controller.enableController();
               _startHideTimer();
             },
             child: _buildVolumeBarUI(),
