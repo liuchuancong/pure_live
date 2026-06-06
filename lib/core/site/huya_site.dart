@@ -223,6 +223,7 @@ class HuyaSite implements LiveSite {
           "Referer": "https://www.huya.com/",
         },
       );
+
       var result = json.decode(resultText);
       var items = <LiveRoom>[];
       for (var item in result["data"]["datas"]) {

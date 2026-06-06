@@ -146,7 +146,7 @@ class CCSite implements LiveSite {
     try {
       var result = await HttpClient.instance.getJson(
         "https://cc.163.com/api/category/live/",
-        queryParameters: {"format": "json", "start": (page - 1) * 20, "size": 20},
+        queryParameters: {"format": "json", "start": (page - 1) * pageSize, "size": pageSize},
       );
 
       var items = <LiveRoom>[];

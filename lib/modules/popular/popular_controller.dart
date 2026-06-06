@@ -4,7 +4,7 @@ import 'package:pure_live/modules/popular/popular_grid_controller.dart';
 class PopularController extends GetxController with GetTickerProviderStateMixin {
   late TabController tabController;
   int index = 0;
-  late List<dynamic> sites;
+  late List<Site> sites;
   bool _isTabControllerInitialized = false;
 
   @override
@@ -16,6 +16,35 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
     ever(SettingsService.to.fav.hotAreasList, (_) {
       _initTabController(isFirstLoad: false);
     });
+  }
+
+  void initControllers(List<Site> sites) {
+    for (Site site in sites) {
+      final tag = site.id;
+
+      if (!Get.isRegistered<BasePageScrollAndStateBone<LiveRoom>>(tag: tag)) {
+        Get.lazyPut<BasePageScrollAndStateBone<LiveRoom>>(() {
+          if (site.id == Sites.iptvSite) {
+            return PopularLocalReactiveController(site);
+          }
+
+          if (site.id == Sites.kuaishouSite) {
+            return PopularServerAllController(site);
+          }
+
+          if (site.id == Sites.douyuSite) {
+            return PopularServerFixedController(site, fixedSize: 40);
+          }
+          if (site.id == Sites.huyaSite) {
+            return PopularServerFixedController(site, fixedSize: 120);
+          }
+          if (site.id == Sites.douyinSite) {
+            return PopularServerFixedController(site, fixedSize: 20);
+          }
+          return PopularServerRemoteController(site);
+        }, tag: tag);
+      }
+    }
   }
 
   @override
@@ -39,12 +68,7 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
       return;
     }
 
-    for (var site in sites) {
-      if (!Get.isRegistered<PopularGridController>(tag: site.id)) {
-        Get.lazyPut(() => PopularGridController(site), tag: site.id);
-      }
-    }
-
+    initControllers(sites);
     if (isFirstLoad) {
       final preferPlatform = SettingsService.to.fav.preferPlatform.v;
       final pIndex = sites.indexWhere((e) => e.id == preferPlatform);
@@ -82,7 +106,7 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
   void _loadDataAtIndex(int i) {
     if (sites.isEmpty || i >= sites.length) return;
     var siteId = sites[i].id;
-    var gridController = Get.find<PopularGridController>(tag: siteId);
+    var gridController = Get.find<BasePageScrollAndStateBone<LiveRoom>>(tag: siteId);
     if (gridController.list.isEmpty) {
       gridController.loadData();
     }
