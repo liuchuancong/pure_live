@@ -438,7 +438,11 @@ class _AppStatusViewState extends State<AppStatusView> with SingleTickerProvider
       parsedColor = widget.iconColor ?? theme.colorScheme.primary;
     }
 
-    final double size = widget.isMini ? 24 : 50;
+    final double size = widget.isMini
+        ? 24
+        : Get.width > 680
+        ? 50
+        : 24;
 
     final spinkit = _getSpinKit(style, parsedColor, size);
     if (spinkit is! SizedBox) return spinkit;
