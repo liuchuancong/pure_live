@@ -4,7 +4,6 @@ import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:loading_indicator/loading_indicator.dart';
 import 'package:pure_live/common/index.dart' hide Indicator;
-import 'package:pure_live/modules/settings/pages/aurora_loading.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class LoadingStyleSettingsPage extends StatefulWidget {
@@ -87,8 +86,6 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
 
     if (key == 'rotatingPlain') {
       animWidget = SpinKitRotatingPlain(color: color, size: size);
-    } else if (key == 'auroraRing') {
-      animWidget = AuroraLoading(size: size);
     } else if (key == 'doubleBounce') {
       animWidget = SpinKitDoubleBounce(color: color, size: size);
     } else if (key == 'wave') {
@@ -546,7 +543,9 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
                                   textAlign: TextAlign.center,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: AppTextStyles.t11Bold.copyWith(color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface),
+                                  style: AppTextStyles.t11Bold.copyWith(
+                                    color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                                  ),
                                 ),
                               ),
                             ],

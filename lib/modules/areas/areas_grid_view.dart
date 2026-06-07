@@ -56,7 +56,9 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
     if (_tabController == null || _tabController!.indexIsChanging) return;
     if (widget.controller.tabIndex.value != _tabController!.index) {
       widget.controller.tabIndex.value = _tabController!.index;
-      widget.controller.currentPage = 1;
+      if (Get.width > 680) {
+        widget.controller.currentPage = 1;
+      }
       widget.controller.loadData();
     }
   }
@@ -89,11 +91,13 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
         controller: widget.controller,
         enableRefresh: true,
         enableLoadMore: true,
+        customMobileBottomPadding: 85,
+        customDesktopBottomPadding: 135,
         showScrollToTopBtn: SettingsService.to.page.showScrollToTopBtn.v,
         showPageSizeSelector: SettingsService.to.page.showPageSizeSelector.v,
         pageSizeOptions: SettingsService.to.page.pageSizeOptions,
         emptyBuilder: (context) => EmptyView(
-          icon: Remix.dashboard_line,
+          icon: Remix.apps_2_line,
           title: i18n("empty_areas_title"),
           subtitle: i18n("empty_areas_subtitle"),
         ),
@@ -114,7 +118,7 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
           showPageSizeSelector: false,
           pageSizeOptions: SettingsService.to.page.pageSizeOptions,
           emptyBuilder: (context) => EmptyView(
-            icon: Remix.dashboard_line,
+            icon: Remix.apps_2_line,
             title: i18n("empty_areas_title"),
             subtitle: i18n("empty_areas_subtitle"),
           ),
@@ -143,23 +147,23 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
                   controller: widget.controller,
                   enableRefresh: true,
                   enableLoadMore: true,
+                  customMobileBottomPadding: 85,
+                  customDesktopBottomPadding: 135,
                   showScrollToTopBtn: SettingsService.to.page.showScrollToTopBtn.v,
                   showPageSizeSelector: SettingsService.to.page.showPageSizeSelector.v,
                   pageSizeOptions: SettingsService.to.page.pageSizeOptions,
                   emptyBuilder: (context) => EmptyView(
-                    icon: Remix.dashboard_line,
+                    icon: Remix.apps_2_line,
                     title: i18n("empty_areas_title"),
                     subtitle: i18n("empty_areas_subtitle"),
                   ),
                   contentBuilder: (context, displayList, scrollController) {
                     final bool isCurrentTab = widget.controller.tabIndex.value == index;
-                    final List<LiveArea> finalData = isCurrentTab
-                        ? displayList
-                        : category.children.take(widget.controller.pageSize.value).toList();
+                    final List<LiveArea> finalData = isCurrentTab ? displayList : category.children;
 
                     if (finalData.isEmpty) {
                       return EmptyView(
-                        icon: Remix.dashboard_line,
+                        icon: Remix.apps_2_line,
                         title: i18n("empty_areas_title"),
                         subtitle: i18n("empty_areas_subtitle"),
                       );
@@ -183,7 +187,7 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
         final crossAxisCount = width > 1280 ? 9 : (width > 960 ? 7 : (width > 640 ? 5 : 3));
 
         return WaterfallFlow.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+          padding: const EdgeInsets.fromLTRB(6, 6, 6, 80),
           controller: scrollController,
           gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
             lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,

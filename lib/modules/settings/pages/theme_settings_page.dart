@@ -2,7 +2,6 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
-import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/settings/pages/page_settings.dart';
 import 'package:pure_live/modules/settings/pages/font_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/font_family_manager_page.dart';
@@ -50,25 +49,36 @@ class ThemeSettingsPage extends GetView<SettingsService> {
               value: SettingsService.to.theme.enableDynamicTheme,
               icon: Remix.magic_line,
             ),
-            context.buildTile(
-              icon: Remix.loader_4_line,
-              title: i18n("change_loading_style"),
-              subtitle: i18n("change_loading_style_subtitle"),
-              onTap: () => Get.to(() => const LoadingStyleSettingsPage()),
-              trailing: Obx(() {
-                final String currentKey = SettingsService.to.theme.loadingStyle.v;
-                final bool isZh = Get.locale?.languageCode == 'zh';
-                final Map<String, String> currentItem = AppConsts.allStyles.firstWhere(
-                  (item) => item['key'] == currentKey,
-                  orElse: () => {'key': 'default', 'nameEn': 'Default Ring', 'nameZh': '默认圆环'},
-                );
-                final String displayName = isZh ? currentItem['nameZh']! : currentItem['nameEn']!;
+            Obx(
+              () => context.buildTile(
+                iconWidget: SizedBox(
+                  key: ValueKey(SettingsService.to.theme.loadingStyle.v),
+                  width: 24,
+                  child: AppStatusView(
+                    type: AppStatusType.loading,
+                    title: i18n('refresh_loading'),
+                    subtitle: '',
+                    isMini: true,
+                  ),
+                ),
+                title: i18n("change_loading_style"),
+                subtitle: i18n("change_loading_style_subtitle"),
+                onTap: () => Get.to(() => const LoadingStyleSettingsPage()),
+                trailing: Obx(() {
+                  final String currentKey = SettingsService.to.theme.loadingStyle.v;
+                  final bool isZh = Get.locale?.languageCode == 'zh';
+                  final Map<String, String> currentItem = AppConsts.allStyles.firstWhere(
+                    (item) => item['key'] == currentKey,
+                    orElse: () => {'key': 'default', 'nameEn': 'Default Ring', 'nameZh': '默认圆环'},
+                  );
+                  final String displayName = isZh ? currentItem['nameZh']! : currentItem['nameEn']!;
 
-                return Text(
-                  displayName,
-                  style: AppTextStyles.t13.copyWith(color: Theme.of(context).colorScheme.outline),
-                );
-              }),
+                  return Text(
+                    displayName,
+                    style: AppTextStyles.t13.copyWith(color: Theme.of(context).colorScheme.outline),
+                  );
+                }),
+              ),
             ),
           ]),
           const SizedBox(height: 20),
@@ -87,7 +97,7 @@ class ThemeSettingsPage extends GetView<SettingsService> {
               onTap: showMainAxisSpacingDialog,
             ),
           ]),
-          if (PlatformUtils.isDesktop) ...[
+          if (Get.width > 680) ...[
             const SizedBox(height: 20),
             context.buildGroupTitle(i18n("page_settings")),
             context.buildModernCard([

@@ -63,7 +63,7 @@ class FavoriteAreasPage extends GetView<FavoriteAreasController> {
                     : controller.favoriteAreas.where((e) => e.platform == siteId).toList()[index],
               ),
             )
-          : EmptyView(icon: Remix.dashboard_line, title: i18n("empty_areas_title"), subtitle: ''),
+          : EmptyView(icon: Remix.apps_2_line, title: i18n("empty_areas_title"), subtitle: ''),
     );
   }
 }

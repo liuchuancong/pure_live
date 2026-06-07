@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/base/base_controller.dart';
-import 'package:pure_live/common/global/platform_utils.dart';
 
 abstract class BasePageScrollAndStateBone<T> extends BaseController {
   final ScrollController scrollController = ScrollController();
@@ -11,7 +10,7 @@ abstract class BasePageScrollAndStateBone<T> extends BaseController {
   );
 
   int currentPage = 1;
-  final pageSize = SettingsService.to.page.defaultPageSize.v.obs;
+  final pageSize = 20.obs;
   final canLoadMore = false.obs;
   final list = <T>[].obs;
   final totalCount = Rxn<int>();
@@ -19,8 +18,25 @@ abstract class BasePageScrollAndStateBone<T> extends BaseController {
   final showBackToTop = false.obs;
   final showBackToBottom = true.obs;
 
+  bool? _lastIsDesktop;
+
   BasePageScrollAndStateBone() {
     scrollController.addListener(_scrollListener);
+  }
+  void checkAndNotifyLayoutChange(bool isDesktop) {
+    if (_lastIsDesktop == isDesktop) return;
+    _lastIsDesktop = isDesktop;
+
+    if (isDesktop) {
+      pageSize.value = SettingsService.to.page.defaultPageSize.v;
+      final int currentFirstItemIndex = (currentPage - 1) * 20;
+      currentPage = (currentFirstItemIndex ~/ pageSize.value) + 1;
+      scheduleMicrotask(() => refreshData());
+    } else {
+      pageSize.value = 20;
+      currentPage = 1;
+      scheduleMicrotask(() => refreshData());
+    }
   }
 
   void _scrollListener() {
@@ -61,7 +77,7 @@ abstract class BasePageScrollAndStateBone<T> extends BaseController {
   }
 
   void finishRefreshControllers(IndicatorResult result) {
-    if (PlatformUtils.isDesktop) return;
+    if (_lastIsDesktop ?? Get.width > 680) return;
     easyRefreshController.finishRefresh(
       result == IndicatorResult.fail ? IndicatorResult.fail : IndicatorResult.success,
     );
@@ -82,11 +98,20 @@ abstract class BasePageScrollAndStateBone<T> extends BaseController {
     if (scrollController.offset > 0) {
       scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.linear);
     } else {
-      if (PlatformUtils.isDesktop) {
+      if (_lastIsDesktop ?? Get.width > 680) {
         refreshData();
       } else {
         easyRefreshController.callRefresh();
       }
+    }
+  }
+
+  Future<void> loadMoreData() async {
+    if (_lastIsDesktop ?? Get.width > 680) {
+      await goToPage(currentPage + 1);
+    } else {
+      currentPage++;
+      await loadData();
     }
   }
 

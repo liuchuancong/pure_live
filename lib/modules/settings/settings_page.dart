@@ -127,8 +127,4 @@ class SettingsPage extends GetView<SettingsService> {
       ),
     );
   }
-
-  // 统一封装的圆角卡片
-
-  // 统一封装的单元行，包含图标、主标题、描述和右侧箭头
 }

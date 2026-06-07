@@ -14,12 +14,17 @@ abstract class ServerFixedPageController<T> extends BasePageScrollAndStateBone<T
   Future<void> refreshData() async {
     _bigPageCache.clear();
     _slicedSmallCache.clear();
+    currentPage = 1;
+    if (Get.width <= 680) {
+      list.clear();
+    }
     await loadData();
   }
 
   @override
   Future<void> goToPage(int page) async {
     if (loadding.value || page < 1) return;
+    if (Get.width <= 680) return;
     currentPage = page;
     await loadData();
   }
@@ -27,6 +32,10 @@ abstract class ServerFixedPageController<T> extends BasePageScrollAndStateBone<T
   @override
   void setPageSize(int? newSize) {
     if (newSize == null || pageSize.value == newSize) return;
+    if (Get.width <= 680) {
+      pageSize.value = newSize;
+      return;
+    }
     final int currentFirstItemIndex = (currentPage - 1) * pageSize.value;
     pageSize.value = newSize;
     currentPage = (currentFirstItemIndex ~/ newSize) + 1;
@@ -39,10 +48,9 @@ abstract class ServerFixedPageController<T> extends BasePageScrollAndStateBone<T
     if (loadding.value) return;
     totalCount.value = null;
 
-    if (_slicedSmallCache.containsKey(currentPage)) {
+    if (Get.width > 680 && _slicedSmallCache.containsKey(currentPage)) {
       final cachedData = _slicedSmallCache[currentPage]!;
       list.assignAll(cachedData);
-      // 缓存也有极少数可能装不满（比如末尾页修改了pageSize），认准：只要数量够 pageSize 就能继续点
       canLoadMore.value = cachedData.length >= pageSize.value;
       pageEmpty.value = list.isEmpty;
       finishRefreshControllers(canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore);
@@ -57,6 +65,7 @@ abstract class ServerFixedPageController<T> extends BasePageScrollAndStateBone<T
     }
 
     final int previousPageSnapshot = currentPage;
+
     final int currentGlobalStart = (currentPage - 1) * pageSize.value;
     final int currentGlobalEnd = currentGlobalStart + pageSize.value;
 
@@ -101,13 +110,20 @@ abstract class ServerFixedPageController<T> extends BasePageScrollAndStateBone<T
         finishRefreshControllers(IndicatorResult.noMore);
         return;
       }
-      canLoadMore.value = combinedData.length >= pageSize.value;
 
-      _slicedSmallCache[currentPage] = combinedData;
-      list.assignAll(combinedData);
-      pageEmpty.value = list.isEmpty;
-      finishRefreshControllers(canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore);
-      scrollToTopImmediate();
+      if (Get.width > 680) {
+        canLoadMore.value = combinedData.length >= pageSize.value;
+        _slicedSmallCache[currentPage] = combinedData;
+        list.assignAll(combinedData);
+        pageEmpty.value = list.isEmpty;
+        finishRefreshControllers(canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore);
+        scrollToTopImmediate();
+      } else {
+        canLoadMore.value = combinedData.length >= pageSize.value;
+        list.addAll(combinedData);
+        pageEmpty.value = list.isEmpty;
+        finishRefreshControllers(canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore);
+      }
     } catch (e) {
       currentPage = previousPageSnapshot;
       handleError(e, showPageError: list.isEmpty);

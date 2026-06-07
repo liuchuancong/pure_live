@@ -9,41 +9,58 @@ abstract class LocalReactivePageController<T> extends BasePageScrollAndStateBone
   void updateLocalReactivePool(List<T> freshData) {
     _localRawPool.clear();
     _localRawPool.addAll(freshData);
-    _processLocalReactiveSlicing();
+    currentPage = 1;
+    _processDataDistribution();
   }
 
   @override
   Future<void> refreshData() async {
     onExternalRefresh?.call();
-    _processLocalReactiveSlicing();
+    currentPage = 1;
+    _processDataDistribution();
   }
 
   @override
   Future<void> goToPage(int page) async {
     if (loadding.value || page < 1) return;
+    if (Get.width <= 680) return;
+
     final maxPage = (_localRawPool.length / pageSize.value).ceil();
     if (page > maxPage) return;
     currentPage = page;
-    _processLocalReactiveSlicing();
+    _processDataDistribution();
   }
 
   @override
   void setPageSize(int? newSize) {
     if (newSize == null || pageSize.value == newSize) return;
+    if (Get.width <= 680) {
+      pageSize.value = newSize;
+      return;
+    }
+
     final int currentFirstItemIndex = (currentPage - 1) * pageSize.value;
     pageSize.value = newSize;
     currentPage = (currentFirstItemIndex ~/ newSize) + 1;
-    _processLocalReactiveSlicing();
+    _processDataDistribution();
   }
 
   @override
   Future<void> loadData() async {
-    _processLocalReactiveSlicing();
+    _processDataDistribution();
   }
 
-  void _processLocalReactiveSlicing() {
+  void _processDataDistribution() {
     totalCount.value = _localRawPool.length;
 
+    if (Get.width > 680) {
+      _processDesktopSlicing();
+    } else {
+      _processMobileDisplayAll();
+    }
+  }
+
+  void _processDesktopSlicing() {
     int startIndex = (currentPage - 1) * pageSize.value;
     if (startIndex >= _localRawPool.length) {
       if (_localRawPool.isEmpty) {
@@ -65,5 +82,20 @@ abstract class LocalReactivePageController<T> extends BasePageScrollAndStateBone
     pageEmpty.value = list.isEmpty;
     finishRefreshControllers(canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore);
     scrollToTopImmediate();
+  }
+
+  void _processMobileDisplayAll() {
+    if (_localRawPool.isEmpty) {
+      list.clear();
+      canLoadMore.value = false;
+      pageEmpty.value = true;
+      finishRefreshControllers(IndicatorResult.noMore);
+      return;
+    }
+
+    pageEmpty.value = false;
+    list.assignAll(_localRawPool);
+    canLoadMore.value = false;
+    finishRefreshControllers(IndicatorResult.noMore);
   }
 }

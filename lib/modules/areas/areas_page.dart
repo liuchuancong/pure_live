@@ -1,4 +1,5 @@
 import 'areas_grid_view.dart';
+import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/widgets/common_appbar_actions.dart';
 
@@ -14,6 +15,7 @@ class AreasPage extends GetView<AreasController> {
           if (availableSitesList.isEmpty) return const Scaffold();
           final int menuCount = SettingsService.to.app.savedMenuIds.v.length;
           bool showAction = Get.width <= 680;
+
           return Scaffold(
             appBar: AppBar(
               centerTitle: true,
@@ -30,11 +32,15 @@ class AreasPage extends GetView<AreasController> {
               children: availableSitesList.map((e) => AreaGridView(e.id)).toList(),
             ),
             floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-            floatingActionButton: FloatingActionButton(
+            floatingActionButton: FloatingActionButton.extended(
+              elevation: 3,
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
               onPressed: () {
                 Get.toNamed(RoutePath.kFavoriteAreas);
               },
-              child: const Icon(Icons.favorite_rounded),
+              icon: const Icon(Remix.heart_add_2_line, size: 18),
+              label: Text(i18n("favorite_areas"), style: AppTextStyles.t12Bold),
             ),
           );
         });

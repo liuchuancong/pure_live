@@ -1,3 +1,4 @@
+import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/favorite/room_grid_view.dart';
 import 'package:pure_live/common/widgets/common_appbar_actions.dart';
@@ -54,7 +55,7 @@ class FavoritePage extends GetView<FavoriteController> {
                           enableLoadMore: true,
                           emptyBuilder: (context) => AppStatusView(
                             type: AppStatusType.empty,
-                            icon: Icons.favorite_rounded,
+                            icon: Remix.heart_3_fill,
                             title: i18n("empty_favorite_online_title"),
                             subtitle: i18n("empty_favorite_online_subtitle"),
                           ),

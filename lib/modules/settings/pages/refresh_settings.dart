@@ -33,17 +33,19 @@ class RefreshSettingsPage extends GetView<RefreshConfigController> {
                       subtitle: _getIntervalText(controller.autoRefreshInterval.value),
                       onTap: showRefreshIntervalDialog,
                     ),
-                    context.buildTile(
-                      icon: Remix.server_line,
-                      title: i18n("max_concurrent_refresh"),
-                      subtitle: controller.maxConcurrentRefresh.value.toString(),
-                      onTap: showMaxConcurrentDialog,
-                    ),
                   ],
                 );
               }
               return const SizedBox.shrink();
             }),
+            Obx(
+              () => context.buildTile(
+                icon: Remix.server_line,
+                title: i18n("max_concurrent_refresh"),
+                subtitle: controller.maxConcurrentRefresh.value.toString(),
+                onTap: showMaxConcurrentDialog,
+              ),
+            ),
           ]),
           const SizedBox(height: 32),
         ],

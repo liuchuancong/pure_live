@@ -14,12 +14,16 @@ abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<
     currentPage = 1;
     _virtualNetworkPage = 1;
     _pageCache.clear();
+    if (Get.width <= 680) {
+      list.clear();
+    }
     await loadData();
   }
 
   @override
   Future<void> goToPage(int page) async {
     if (loadding.value || page < 1) return;
+    if (Get.width <= 680) return;
     if (page > currentPage && !canLoadMore.value && !_pageCache.containsKey(page)) return;
     currentPage = page;
     await loadData();
@@ -28,6 +32,10 @@ abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<
   @override
   void setPageSize(int? newSize) {
     if (newSize == null || pageSize.value == newSize) return;
+    if (Get.width <= 680) {
+      pageSize.value = newSize;
+      return;
+    }
 
     final int previousSize = pageSize.value;
     final int currentFirstItemIndex = (currentPage - 1) * previousSize;
@@ -98,7 +106,7 @@ abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<
     if (loadding.value) return;
     totalCount.value = null;
 
-    if (_pageCache.containsKey(currentPage)) {
+    if (Get.width > 680 && _pageCache.containsKey(currentPage)) {
       final cachedData = _pageCache[currentPage]!;
       list.assignAll(cachedData);
       canLoadMore.value = cachedData.length >= pageSize.value;
@@ -123,9 +131,10 @@ abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<
       if (list.isEmpty) pageLoadding.value = true;
 
       List<T> combinedResult = [];
+      final int sizeToFetch = pageSize.value;
 
-      while (combinedResult.length < pageSize.value) {
-        final int neededCount = pageSize.value - combinedResult.length;
+      while (combinedResult.length < sizeToFetch) {
+        final int neededCount = sizeToFetch - combinedResult.length;
         final result = await fetchNetworkData(_virtualNetworkPage, neededCount);
         if (result.isEmpty) break;
         combinedResult.addAll(result);
@@ -138,13 +147,19 @@ abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<
         return;
       }
 
-      canLoadMore.value = combinedResult.length >= pageSize.value;
-      _pageCache[currentPage] = combinedResult;
-      list.assignAll(combinedResult);
-      pageEmpty.value = list.isEmpty;
-
-      finishRefreshControllers(canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore);
-      scrollToTopImmediate();
+      if (Get.width > 680) {
+        canLoadMore.value = combinedResult.length >= pageSize.value;
+        _pageCache[currentPage] = combinedResult;
+        list.assignAll(combinedResult);
+        pageEmpty.value = list.isEmpty;
+        finishRefreshControllers(canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore);
+        scrollToTopImmediate();
+      } else {
+        canLoadMore.value = combinedResult.length >= pageSize.value;
+        list.addAll(combinedResult);
+        pageEmpty.value = list.isEmpty;
+        finishRefreshControllers(canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore);
+      }
     } catch (e) {
       currentPage = previousPageSnapshot;
       handleError(e, showPageError: list.isEmpty);

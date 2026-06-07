@@ -27,11 +27,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
   final selectedTagId = 'ALL'.obs;
   final visibleTags = <LiveTag>[].obs;
 
-  FavoriteController() : super() {
-    onExternalRefresh = () {
-      _fullRefreshRooms();
-    };
-  }
+  FavoriteController() : super();
 
   @override
   void onInit() {
@@ -54,7 +50,9 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
     tabController.addListener(() {
       if (tabOnlineIndex.value != tabController.index) {
         tabOnlineIndex.value = tabController.index;
-        currentPage = 1;
+        if (Get.width > 680) {
+          currentPage = 1;
+        }
         applyLocalFilter();
       }
     });
@@ -101,13 +99,42 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
 
   void changeSelectedTag(String tagId) {
     selectedTagId.value = tagId;
-    currentPage = 1;
+    if (Get.width > 680) {
+      currentPage = 1;
+    }
     applyLocalFilter();
   }
 
   void updateRoomTags(LiveRoom room, List<String> newTagIds) {
     tagController.setRoomTags(room.roomId.toString(), newTagIds);
     applyLocalFilter();
+  }
+
+  List<LiveRoom> getFilteredRoomsIgnoringLiveStatus() {
+    final List<LiveRoom> source = List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
+
+    final currentAvailableSites = Sites().availableSites(containsAll: true);
+    if (tabSiteIndex.value < 0 || tabSiteIndex.value >= currentAvailableSites.length) {
+      return [];
+    }
+
+    final activeSite = currentAvailableSites[tabSiteIndex.value];
+    List<LiveRoom> siteFiltered = source;
+
+    if (activeSite.id != 'all') {
+      siteFiltered = source.where((room) {
+        return room.platform?.toUpperCase() == activeSite.id.toUpperCase();
+      }).toList();
+    }
+
+    if (selectedTagId.value == 'ALL') {
+      return siteFiltered;
+    }
+
+    return siteFiltered.where((room) {
+      final List<String> ids = tagController.getTagsForRoom(room);
+      return ids.contains(selectedTagId.value);
+    }).toList();
   }
 
   List<LiveRoom> getFilteredRooms() {
@@ -206,9 +233,15 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
     updateLocalReactivePool(filtered);
   }
 
+  @override
+  Future<void> refreshData() async {
+    currentPage = 1;
+    await _fullRefreshRooms();
+  }
+
   Future<void> _fullRefreshRooms() async {
     loadding.value = true;
-    List<LiveRoom> roomsToRefresh = getFilteredRooms();
+    List<LiveRoom> roomsToRefresh = getFilteredRoomsIgnoringLiveStatus();
     await _refreshRoomDetails(roomsToRefresh);
     applyLocalFilter();
     loadding.value = false;

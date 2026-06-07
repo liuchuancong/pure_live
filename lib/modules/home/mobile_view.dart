@@ -31,7 +31,7 @@ class HomeMobileView extends StatelessWidget {
               case HomeMenu.favorites:
                 destinations.add(
                   NavigationDestination(
-                    icon: GestureDetector(onDoubleTap: onFavoriteDoubleTap, child: const Icon(Icons.favorite_rounded)),
+                    icon: GestureDetector(onDoubleTap: onFavoriteDoubleTap, child: const Icon(Remix.heart_3_fill)),
                     label: i18n("favorites_title"),
                   ),
                 );
@@ -43,7 +43,7 @@ class HomeMobileView extends StatelessWidget {
                 break;
               case HomeMenu.areas:
                 destinations.add(
-                  NavigationDestination(icon: const Icon(Remix.dashboard_line), label: i18n("areas_title")),
+                  NavigationDestination(icon: const Icon(Remix.apps_2_line), label: i18n("areas_title")),
                 );
                 break;
               case HomeMenu.record:

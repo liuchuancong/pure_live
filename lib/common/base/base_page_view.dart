@@ -1,8 +1,6 @@
 import 'package:flutter/gestures.dart';
-import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/base/base_controller.dart';
-import 'package:pure_live/common/global/platform_utils.dart';
 
 class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends StatelessWidget {
   final C controller;
@@ -12,6 +10,8 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
   final bool? showScrollToTopBtn;
   final bool showPageSizeSelector;
   final List<int> pageSizeOptions;
+  final double? customMobileBottomPadding;
+  final double? customDesktopBottomPadding;
 
   final Widget Function(BuildContext context)? notLoginBuilder;
   final Widget Function(BuildContext context, String errorMsg)? errorBuilder;
@@ -26,6 +26,8 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
     this.showScrollToTopBtn,
     this.showPageSizeSelector = false,
     this.pageSizeOptions = const [],
+    this.customMobileBottomPadding,
+    this.customDesktopBottomPadding,
     this.notLoginBuilder,
     this.errorBuilder,
     this.emptyBuilder,
@@ -34,6 +36,11 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
   @override
   Widget build(BuildContext context) {
     final bool showBtn = showScrollToTopBtn ?? true;
+    final double currentWidth = context.width;
+    final bool isDesktop = currentWidth > 680;
+
+    double bottomPadding = isDesktop ? (customDesktopBottomPadding ?? 70) : (customMobileBottomPadding ?? 20);
+
     return Stack(
       children: [
         Listener(
@@ -98,6 +105,8 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
                   child: LayoutBuilder(
                     builder: (context, constraint) {
                       return Obx(() {
+                        controller.checkAndNotifyLayoutChange(isDesktop);
+
                         if (controller.list.isEmpty) {
                           if (controller.notLogin.value) {
                             final view = notLoginBuilder != null
@@ -110,7 +119,7 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
                                     buttonText: i18n("go_to_login"),
                                     onButtonPressed: () => Get.toNamed(RoutePath.kSettingsAccount),
                                   );
-                            return _buildScrollableStatus(constraint, controller, view);
+                            return _buildScrollableStatus(isDesktop, constraint, controller, view);
                           }
                           if (controller.pageError.value) {
                             final view = errorBuilder != null
@@ -123,13 +132,13 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
                                     buttonText: i18n("retry"),
                                     onButtonPressed: () => controller.refreshData(),
                                   );
-                            return _buildScrollableStatus(constraint, controller, view);
+                            return _buildScrollableStatus(isDesktop, constraint, controller, view);
                           }
                           if (controller.pageEmpty.value) {
                             final view = emptyBuilder != null
                                 ? emptyBuilder!(context)
                                 : AppStatusView(type: AppStatusType.empty, title: i18n('no_data'), subtitle: '');
-                            return _buildScrollableStatus(constraint, controller, view);
+                            return _buildScrollableStatus(isDesktop, constraint, controller, view);
                           }
                           return AppStatusView(
                             type: AppStatusType.loading,
@@ -137,7 +146,7 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
                             subtitle: '',
                           );
                         }
-                        return buildActualContent(context, showBtn);
+                        return buildActualContent(context, isDesktop);
                       });
                     },
                   ),
@@ -146,28 +155,30 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
             ),
           ),
         ),
-        if (showBtn)
-          Positioned(right: 16, bottom: PlatformUtils.isDesktop ? 70 : 20, child: buildFloatingButtons(context)),
-        Obx(() {
-          if (controller.list.isNotEmpty && controller.loadding.value) {
-            return Container(
-              color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 1),
-              child: AppStatusView(
-                icon: Remix.loader_2_fill,
-                type: AppStatusType.loading,
-                title: i18n('refresh_loading'),
-                subtitle: '',
-              ),
-            );
-          }
-          return const SizedBox.shrink();
-        }),
+        if (showBtn) Positioned(right: 16, bottom: bottomPadding, child: buildFloatingButtons(context)),
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: Obx(() {
+            if (controller.list.isNotEmpty && controller.loadding.value && isDesktop) {
+              return SizedBox(
+                height: 2.5,
+                child: LinearProgressIndicator(
+                  backgroundColor: Colors.transparent,
+                  valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          }),
+        ),
       ],
     );
   }
 
-  Widget _buildScrollableStatus(BoxConstraints constraint, C controller, Widget statusView) {
-    if (PlatformUtils.isDesktop || !enableRefresh) {
+  Widget _buildScrollableStatus(bool isDesktop, BoxConstraints constraint, C controller, Widget statusView) {
+    if (isDesktop || !enableRefresh) {
       return Center(child: statusView);
     }
     return EasyRefresh(

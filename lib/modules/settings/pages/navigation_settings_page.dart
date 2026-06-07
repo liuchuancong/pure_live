@@ -68,7 +68,7 @@ class NavigationSettingsPage extends StatelessWidget {
                   switch (menu) {
                     case HomeMenu.favorites:
                       titleText = i18n("favorites_title");
-                      menuIcon = Icons.favorite_rounded;
+                      menuIcon = Remix.heart_3_fill;
                       break;
                     case HomeMenu.popular:
                       titleText = i18n("popular_title");
@@ -76,7 +76,7 @@ class NavigationSettingsPage extends StatelessWidget {
                       break;
                     case HomeMenu.areas:
                       titleText = i18n("areas_title");
-                      menuIcon = Remix.dashboard_line;
+                      menuIcon = Remix.apps_2_line;
                       break;
                     case HomeMenu.record:
                       titleText = i18n("record_center");

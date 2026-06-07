@@ -27,7 +27,7 @@ class HomeTabletView extends StatelessWidget {
                 case HomeMenu.favorites:
                   destinations.add(
                     NavigationRailDestination(
-                      icon: const Icon(Icons.favorite_rounded),
+                      icon: const Icon(Remix.heart_3_fill),
                       label: Text(i18n("favorites_title")),
                     ),
                   );
@@ -42,7 +42,7 @@ class HomeTabletView extends StatelessWidget {
                   break;
                 case HomeMenu.areas:
                   destinations.add(
-                    NavigationRailDestination(icon: const Icon(Remix.dashboard_line), label: Text(i18n("areas_title"))),
+                    NavigationRailDestination(icon: const Icon(Remix.apps_2_line), label: Text(i18n("areas_title"))),
                   );
                   break;
                 case HomeMenu.record:

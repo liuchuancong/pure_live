@@ -7,7 +7,6 @@ import 'package:loading_indicator/loading_indicator.dart';
 import 'package:pure_live/common/style/app_text_styles.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
 import 'package:pure_live/common/services/settings_service.dart';
-import 'package:pure_live/modules/settings/pages/aurora_loading.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 enum AppStatusType { loading, empty, error }
@@ -77,8 +76,6 @@ class _AppStatusViewState extends State<AppStatusView> with SingleTickerProvider
     switch (style) {
       case 'rotatingPlain':
         return SpinKitRotatingPlain(color: color, size: size);
-      case 'aurora_loading':
-        return const AuroraLoading(size: 50.0);
       case 'doubleBounce':
         return SpinKitDoubleBounce(color: color, size: size);
       case 'wave':

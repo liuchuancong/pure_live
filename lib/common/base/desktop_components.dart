@@ -75,6 +75,7 @@ class DesktopPaginationBar extends StatelessWidget {
         );
       }
 
+      // 还原为完全一致的居中 Row 结构
       return Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 24),
         decoration: BoxDecoration(

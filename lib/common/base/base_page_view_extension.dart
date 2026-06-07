@@ -1,10 +1,9 @@
 import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/global/platform_utils.dart';
 
 extension BasePageViewContentExtension<C extends BasePageScrollAndStateBone<T>, T> on BasePageView<C, T> {
-  Widget buildActualContent(BuildContext context, bool showBtn) {
-    if (PlatformUtils.isDesktop) {
+  Widget buildActualContent(BuildContext context, bool isDesktop) {
+    if (isDesktop) {
       return CallbackShortcuts(
         bindings: <ShortcutActivator, VoidCallback>{
           const SingleActivator(LogicalKeyboardKey.arrowLeft): () {
@@ -34,52 +33,21 @@ extension BasePageViewContentExtension<C extends BasePageScrollAndStateBone<T>, 
         ),
       );
     } else {
-      return Column(
-        children: [
-          if (showPageSizeSelector &&
-              (controller is ServerRemotePageController<T> || controller is ServerFixedPageController<T>))
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.15))),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text('${i18n("per_page")}: ', style: AppTextStyles.t12),
-                  const SizedBox(width: 4),
-                  CompactPageSizeSelector(controller: controller, options: pageSizeOptions),
-                ],
-              ),
-            ),
-          Expanded(
-            child: EasyRefresh(
-              controller: controller.easyRefreshController,
-              onRefresh: enableRefresh ? controller.refreshData : null,
-              onLoad: (enableLoadMore && controller.canLoadMore.value)
-                  ? () async {
-                      if (controller is ServerRemotePageController<T>) {
-                        final remoteCtrl = controller as ServerRemotePageController<T>;
-                        remoteCtrl.currentPage++;
-                        await remoteCtrl.loadData();
-                      } else {
-                        controller.currentPage++;
-                        await controller.loadData();
-                      }
-                    }
-                  : null,
-              child: contentBuilder(context, controller.list, controller.scrollController),
-            ),
-          ),
-        ],
+      return EasyRefresh(
+        controller: controller.easyRefreshController,
+        onRefresh: enableRefresh ? controller.refreshData : null,
+        onLoad: (enableLoadMore && controller.canLoadMore.value)
+            ? () async {
+                await controller.loadMoreData();
+              }
+            : null,
+        child: contentBuilder(context, controller.list, controller.scrollController),
       );
     }
   }
 
   Widget buildFloatingButtons(BuildContext context) {
     return Obx(() {
-      // 💡 彻底消灭 Positioned 降级隐患：此处的公开方法只输出纯净的 Column，将定位职责交还给主文件的 Stack 树
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [

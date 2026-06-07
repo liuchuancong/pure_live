@@ -31,6 +31,8 @@ class _AreasRoomPageState extends State<AreasRoomPage> {
           controller: controller,
           enableRefresh: true,
           enableLoadMore: true,
+          customMobileBottomPadding: 85,
+          customDesktopBottomPadding: 135,
           showScrollToTopBtn: SettingsService.to.page.showScrollToTopBtn.v,
           showPageSizeSelector: SettingsService.to.page.showPageSizeSelector.v,
           pageSizeOptions: SettingsService.to.page.pageSizeOptions,
@@ -47,7 +49,7 @@ class _AreasRoomPageState extends State<AreasRoomPage> {
                     crossAxisSpacing: SettingsService.to.theme.crossAxisSpacing.v,
                     mainAxisSpacing: SettingsService.to.theme.mainAxisSpacing.v,
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                  padding: const EdgeInsets.fromLTRB(6, 6, 6, 80),
                   controller: scrollController,
                   itemCount: list.length,
                   itemBuilder: (context, index) => RoomCard(room: list[index], dense: true),
@@ -66,6 +68,40 @@ class FavoriteAreaFloatingButton extends StatelessWidget {
   const FavoriteAreaFloatingButton({super.key, required this.area});
 
   final LiveArea area;
+
+  Widget _buildAvatar(BuildContext context) {
+    final theme = Theme.of(context);
+    final String firstChar = (area.areaName?.isNotEmpty ?? false) ? area.areaName!.substring(0, 1) : "";
+    final bool hasPic = area.areaPic != null && area.areaPic!.isNotEmpty;
+
+    return CircleAvatar(
+      radius: 18,
+      backgroundColor: theme.colorScheme.primaryContainer,
+      child: ClipOval(
+        child: hasPic
+            ? Image.network(
+                area.areaPic!,
+                width: 36,
+                height: 36,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Center(
+                    child: Text(
+                      firstChar,
+                      style: AppTextStyles.t12Bold.copyWith(color: theme.colorScheme.onPrimaryContainer),
+                    ),
+                  );
+                },
+              )
+            : Center(
+                child: Text(
+                  firstChar,
+                  style: AppTextStyles.t12Bold.copyWith(color: theme.colorScheme.onPrimaryContainer),
+                ),
+              ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -94,11 +130,7 @@ class FavoriteAreaFloatingButton extends StatelessWidget {
               }
             });
           },
-          child: CircleAvatar(
-            foregroundImage: (area.areaPic == '') ? null : NetworkImage(area.areaPic!),
-            radius: 18,
-            backgroundColor: Theme.of(context).disabledColor,
-          ),
+          child: _buildAvatar(context),
         );
       }
       return FloatingActionButton.extended(
@@ -108,13 +140,10 @@ class FavoriteAreaFloatingButton extends StatelessWidget {
           final list = List<LiveArea>.from(SettingsService.to.fav.favoriteAreas.v)..add(area);
           SettingsService.to.fav.favoriteAreas.v = list;
         },
-        icon: CircleAvatar(
-          foregroundImage: (area.areaPic == '') ? null : NetworkImage(area.areaPic!),
-          radius: 18,
-          backgroundColor: Theme.of(context).disabledColor,
-        ),
+        icon: _buildAvatar(context),
         label: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(i18n("follow"), style: Theme.of(context).textTheme.bodySmall),
             Text(area.areaName!, maxLines: 1, overflow: TextOverflow.ellipsis),
