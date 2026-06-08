@@ -101,6 +101,10 @@ class MediaKitAdapter implements UnifiedPlayer {
 
           await native.setProperty('http-proxy', proxyUrl);
         }
+
+        if (PlatformUtils.isMacOS) {
+          await native.setProperty('hwdec', 'no');
+        }
       }
 
       // =========================
@@ -126,13 +130,15 @@ class MediaKitAdapter implements UnifiedPlayer {
               _player,
               configuration: VideoControllerConfiguration(
                 vo: SettingsService.to.player.videoOutputDriver.v,
-                hwdec: SettingsService.to.player.videoHardwareDecoder.v,
+                hwdec: PlatformUtils.isMacOS ? 'no' : SettingsService.to.player.videoHardwareDecoder.v,
+                enableHardwareAcceleration: !PlatformUtils.isMacOS,
               ),
             )
           : VideoController(
               _player,
               configuration: VideoControllerConfiguration(
-                enableHardwareAcceleration: SettingsService.to.player.enableCodec.v,
+                enableHardwareAcceleration: PlatformUtils.isMacOS ? false : SettingsService.to.player.enableCodec.v,
+                hwdec: PlatformUtils.isMacOS ? 'no' : null,
                 androidAttachSurfaceAfterVideoParameters: false,
               ),
             );
