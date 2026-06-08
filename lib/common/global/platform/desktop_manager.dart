@@ -172,9 +172,10 @@ class DesktopManager {
           break;
 
         case 'exit_app':
-          await trayManager.destroy();
+          await windowManager.hide();
           await windowManager.setPreventClose(false);
-          await windowManager.close();
+          trayManager.destroy().catchError((e) => debugPrint('托盘注销失败: $e'));
+          windowManager.close().catchError((e) => debugPrint('窗口关闭失败: $e'));
           break;
       }
     } catch (e) {

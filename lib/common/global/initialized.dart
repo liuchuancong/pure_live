@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:developer';
 import 'app_path_manager.dart';
-import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/global.dart';
@@ -30,18 +29,13 @@ class AppInitializer {
 
     String instanceId = getInstanceIdFromArgs(args);
 
-    if (Platform.isWindows && !kDebugMode) {
+    if (Platform.isWindows) {
       await WindowsSingleInstance.ensureSingleInstance(
         args,
         "PureLive_InstanceID_$instanceId",
-        bringWindowToFront: false,
+        bringWindowToFront: true,
         exitFunction: () {
           exit(0);
-        },
-        onSecondWindow: (arguments) async {
-          await windowManager.restore();
-          await windowManager.show();
-          await windowManager.focus();
         },
       );
     }
