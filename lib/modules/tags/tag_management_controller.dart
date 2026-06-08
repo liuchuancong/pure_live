@@ -7,6 +7,9 @@ class TagManagementController extends GetxController {
   static const String _roomTagsMappingKey = 'room_to_tags_mapping_v1';
   final RxMap<String, List<String>> roomTagsMap = <String, List<String>>{}.obs;
   final RxList<LiveTag> tags = <LiveTag>[].obs;
+  static const Map<String, String> allTag = {'all': '全部'};
+  static String get allTagKey => allTag.keys.first;
+  static String get allTagLabel => allTag.values.first;
   @override
   void onInit() {
     super.onInit();

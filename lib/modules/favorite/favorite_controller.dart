@@ -24,7 +24,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
   final onlineRooms = <LiveRoom>[].obs;
   final offlineRooms = <LiveRoom>[].obs;
 
-  final selectedTagId = 'ALL'.obs;
+  final selectedTagId = TagManagementController.allTagKey.obs;
   final visibleTags = <LiveTag>[].obs;
 
   FavoriteController() : super();
@@ -121,13 +121,13 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
     final activeSite = currentAvailableSites[tabSiteIndex.value];
     List<LiveRoom> siteFiltered = source;
 
-    if (activeSite.id != 'all') {
+    if (activeSite.id != Sites.allSite) {
       siteFiltered = source.where((room) {
         return room.platform?.toUpperCase() == activeSite.id.toUpperCase();
       }).toList();
     }
 
-    if (selectedTagId.value == 'ALL') {
+    if (selectedTagId.value == TagManagementController.allTagKey) {
       return siteFiltered;
     }
 
@@ -151,13 +151,13 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
     final activeSite = currentAvailableSites[tabSiteIndex.value];
     List<LiveRoom> siteFiltered = source;
 
-    if (activeSite.id != 'all') {
+    if (activeSite.id != Sites.allSite) {
       siteFiltered = source.where((room) {
         return room.platform?.toUpperCase() == activeSite.id.toUpperCase();
       }).toList();
     }
 
-    if (selectedTagId.value == 'ALL') {
+    if (selectedTagId.value == TagManagementController.allTagKey) {
       return siteFiltered;
     }
 
@@ -184,7 +184,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
       final Set<String> tagIds = {};
 
       for (var room in target) {
-        if (activeSite.id == 'all' || room.platform?.toUpperCase() == activeSite.id.toUpperCase()) {
+        if (activeSite.id == Sites.allSite || room.platform?.toUpperCase() == activeSite.id.toUpperCase()) {
           final ids = tagController.getTagsForRoom(room);
           tagIds.addAll(ids);
         }
@@ -200,7 +200,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
     }
 
     onlineRooms.sort((a, b) {
-      if (selectedTagId.value == 'ALL') {
+      if (selectedTagId.value == TagManagementController.allTagKey) {
         return int.parse(b.watching!).compareTo(int.parse(a.watching!));
       }
       int sa = _getRoomTagScore(a);

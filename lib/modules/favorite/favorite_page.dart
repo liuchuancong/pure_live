@@ -2,6 +2,7 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/favorite/room_grid_view.dart';
 import 'package:pure_live/common/widgets/common_appbar_actions.dart';
+import 'package:pure_live/modules/tags/tag_management_controller.dart';
 
 class FavoritePage extends GetView<FavoriteController> {
   const FavoritePage({super.key});
@@ -37,7 +38,7 @@ class FavoritePage extends GetView<FavoriteController> {
                   tabController.addListener(() {
                     if (!tabController.indexIsChanging) {
                       if (controller.tabSiteIndex.value != tabController.index) {
-                        controller.selectedTagId.value = 'ALL';
+                        controller.selectedTagId.value = TagManagementController.allTagKey;
                         controller.tabSiteIndex.value = tabController.index;
                         controller.currentPage = 1;
                         controller.applyLocalFilter();

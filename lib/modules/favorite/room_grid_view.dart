@@ -1,5 +1,6 @@
 import 'package:pure_live/common/index.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
+import 'package:pure_live/modules/tags/tag_management_controller.dart';
 
 class RoomGridView extends GetView<FavoriteController> {
   const RoomGridView({
@@ -47,7 +48,7 @@ class RoomGridView extends GetView<FavoriteController> {
                   itemBuilder: (context, index) {
                     final isAll = index == 0;
                     final isSelected = isAll
-                        ? controller.selectedTagId.value == 'ALL'
+                        ? controller.selectedTagId.value == TagManagementController.allTagKey
                         : controller.selectedTagId.value == controller.visibleTags[index - 1].id;
                     final String label = isAll ? (i18n('recorder_tab_all')) : controller.visibleTags[index - 1].name;
                     return Padding(
@@ -74,7 +75,9 @@ class RoomGridView extends GetView<FavoriteController> {
                         ),
                         onSelected: (bool selected) {
                           if (selected) {
-                            final targetTagId = isAll ? 'ALL' : controller.visibleTags[index - 1].id;
+                            final targetTagId = isAll
+                                ? TagManagementController.allTagKey
+                                : controller.visibleTags[index - 1].id;
                             controller.changeSelectedTag(targetTagId);
                           }
                         },
