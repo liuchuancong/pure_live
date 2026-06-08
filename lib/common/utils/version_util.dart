@@ -4,7 +4,7 @@ import 'package:pure_live/plugins/race_http.dart';
 import 'package:pure_live/common/utils/githup_mirror.dart';
 
 class VersionUtil {
-  static const String version = '2.0.21';
+  static const String version = '2.0.22';
 
   static const String projectUrl = 'https://github.com/liuchuancong/pure_live';
   static const String issuesUrl = 'https://github.com/liuchuancong/pure_live/issues';
