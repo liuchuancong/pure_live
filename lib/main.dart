@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'dart:developer' show log;
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
@@ -16,15 +17,43 @@ import 'package:pure_live/core/iptv/services/iptv_import_manager.dart';
 
 void main(List<String> args) async {
   await AppInitializer().initialize(args);
-
-  runApp(
-    EasyLocalization(
-      supportedLocales: const [Locale('en'), Locale('zh')],
-      path: 'assets/translations',
-      fallbackLocale: const Locale('zh'),
-      child: MyApp(),
-    ),
+  runZonedGuarded(
+    () async {
+      runApp(
+        EasyLocalization(
+          supportedLocales: const [Locale('en'), Locale('zh')],
+          path: 'assets/translations',
+          fallbackLocale: const Locale('zh'),
+          child: MyApp(),
+        ),
+      );
+    },
+    (error, stack) {
+      _saveCrashLog(error.toString(), stack.toString());
+    },
   );
+}
+
+Future<void> _saveCrashLog(String exception, String stack) async {
+  try {
+    final directory = await getApplicationSupportDirectory();
+    final logFile = File('${directory.path}/crash_log.txt');
+    final now = DateTime.now();
+    final logContent =
+        '''
+==================================================
+崩溃时间: $now
+异常原因: $exception
+堆栈信息:
+$stack
+==================================================
+
+''';
+    await logFile.writeAsString(logContent, mode: FileMode.append);
+    log('错误日志已保存至: ${logFile.path}');
+  } catch (e) {
+    log('写入日志文件失败: $e');
+  }
 }
 
 class MyApp extends StatefulWidget {
