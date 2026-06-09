@@ -8,7 +8,7 @@ class LogController extends GetxController {
   final RxString serverAddress = hiveString('user_log_address', '');
   final RxInt serverPort = hiveInt('user_log_port', 0);
 
-  final RxBool storedEnableLog = hiveBool('user_enable_log', false);
+  final RxBool storedEnableLog = false.obs;
 
   static Function(Level, String)? onPrintLog;
 
