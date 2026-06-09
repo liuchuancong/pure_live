@@ -126,7 +126,7 @@
     "empty_favorite_subtitle": "Please follow live rooms first",
     "empty_favorite_title": "No Favorites",
     "empty_history": "No history here",
-   "empty_live_subtitle": "Click the button above\nto switch platform",
+    "empty_live_subtitle": "Click the button above\nto switch platform",
     "empty_live_title": "No Live Found",
     "empty_search_subtitle": "You can input other keyword",
     "empty_search_title": "No Live Found",
@@ -936,5 +936,12 @@
     "rows": "Rows",
     "page_size_options_manage": "Page Size Options",
     "current_options": "Current Active Options",
-    "adaptive_recommend": "自适应推荐"
+    "adaptive_recommend": "Adaptive Auto",
+    "log_manage": "Log Management",
+    "enable_local_log": "Enable Local Log",
+    "enable_local_log_desc": "Write logs to local files after enabling",
+    "open_log_dir": "Open Log Directory",
+    "open_log_dir_desc": "View local log files",
+    "log_dir_not_exist": "Log directory does not exist",
+    "open_log_dir_failed": "Failed to open log directory"
 }

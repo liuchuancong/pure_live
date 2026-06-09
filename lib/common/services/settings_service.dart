@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:pure_live/get/get.dart';
+import 'package:pure_live/common/services/settings/log_controller.dart';
 import 'package:pure_live/common/services/settings/cache_controller.dart';
 import 'package:pure_live/common/services/settings/backup_controller.dart';
 import 'package:pure_live/common/services/settings/history_controller.dart';
@@ -45,6 +46,7 @@ class SettingsService extends GetxService {
   BackupController get backup => Get.find<BackupController>();
   RefreshConfigController get refreshConfig => Get.find<RefreshConfigController>();
   PageSettingsController get page => Get.find<PageSettingsController>();
+  LogController get log => Get.find<LogController>();
   @override
   void onInit() {
     super.onInit();
@@ -69,6 +71,7 @@ class SettingsService extends GetxService {
     Get.lazyPut(() => PageSettingsController());
     Get.lazyPut(() => WebDavController());
     Get.lazyPut(() => BackupController());
+    Get.lazyPut(() => LogController());
 
     bool executionTriggered = false;
     final Timer fallbackTimer = Timer(const Duration(seconds: 3), () {
@@ -104,7 +107,6 @@ class SettingsService extends GetxService {
     Get.find<CookieSettingsController>();
     Get.find<WebDavController>();
     Get.find<BackupController>();
-
     _doMigration();
   }
 

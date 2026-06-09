@@ -4,29 +4,27 @@ import 'package:pure_live/core/common/core_error.dart';
 import 'package:pure_live/core/common/custom_interceptor.dart';
 
 class HttpClient {
-  static HttpClient? _httpUtil;
+  static const Duration _connectTimeout = Duration(seconds: 20);
+  static const Duration _receiveTimeout = Duration(seconds: 20);
+  static const Duration _sendTimeout = Duration(seconds: 20);
 
-  static HttpClient get instance {
-    _httpUtil ??= HttpClient();
-    return _httpUtil!;
-  }
+  static const int _downloadSuccessCode1 = 200;
+  static const int _downloadSuccessCode2 = 206;
 
-  late Dio dio;
-  HttpClient() {
-    dio = Dio(
-      BaseOptions(
-        connectTimeout: const Duration(seconds: 20),
-        receiveTimeout: const Duration(seconds: 20),
-        sendTimeout: const Duration(seconds: 20),
-      ),
-    );
-    dio.interceptors.add(CustomLogInterceptor());
-  }
+  static const String _errorGet = "发送GET请求失败";
+  static const String _errorPost = "发送POST请求失败";
+  static const String _errorHead = "发送HEAD请求失败";
+  static const String _errorDownload = "下载请求失败";
+  static const String _errorDownloadFailed = "下载失败";
+  static const String _errorDownloadCancel = "下载已取消";
 
-  /// Get请求，返回String
-  /// * [url] 请求链接
-  /// * [queryParameters] 请求参数
-  /// * [cancel] 任务取消Token
+  HttpClient._();
+  static final HttpClient instance = HttpClient._();
+
+  late final Dio dio = Dio(
+    BaseOptions(connectTimeout: _connectTimeout, receiveTimeout: _receiveTimeout, sendTimeout: _sendTimeout),
+  )..interceptors.add(CustomLogInterceptor());
+
   Future<String> getText(
     String url, {
     Map<String, dynamic>? queryParameters,
@@ -34,9 +32,7 @@ class HttpClient {
     CancelToken? cancel,
   }) async {
     try {
-      queryParameters ??= {};
-      header ??= {};
-      var result = await dio.get(
+      final result = await dio.get(
         url,
         queryParameters: queryParameters,
         options: Options(responseType: ResponseType.plain, headers: header),
@@ -44,18 +40,10 @@ class HttpClient {
       );
       return result.data;
     } catch (e) {
-      if (e is DioException && e.type == DioExceptionType.badResponse) {
-        throw HttpError(e.message ?? "", statusCode: e.response?.statusCode ?? 0);
-      } else {
-        throw HttpError("发送GET请求失败");
-      }
+      throw _handleError(e, _errorGet);
     }
   }
 
-  /// Get请求，返回Map
-  /// * [url] 请求链接
-  /// * [queryParameters] 请求参数
-  /// * [cancel] 任务取消Token
   Future<dynamic> getJson(
     String url, {
     Map<String, dynamic>? queryParameters,
@@ -63,9 +51,7 @@ class HttpClient {
     CancelToken? cancel,
   }) async {
     try {
-      queryParameters ??= {};
-      header ??= {};
-      var result = await dio.get(
+      final result = await dio.get(
         url,
         queryParameters: queryParameters,
         options: Options(responseType: ResponseType.json, headers: header),
@@ -73,18 +59,10 @@ class HttpClient {
       );
       return result.data;
     } catch (e) {
-      if (e is DioException && e.type == DioExceptionType.badResponse) {
-        throw HttpError(e.message ?? "", statusCode: e.response?.statusCode ?? 0);
-      } else {
-        throw HttpError("发送GET请求失败");
-      }
+      throw _handleError(e, _errorGet);
     }
   }
 
-  /// Get请求，返回Response
-  /// * [url] 请求链接
-  /// * [queryParameters] 请求参数
-  /// * [cancel] 任务取消Token
   Future<Response<dynamic>> get(
     String url, {
     Map<String, dynamic>? queryParameters,
@@ -92,9 +70,7 @@ class HttpClient {
     CancelToken? cancel,
   }) async {
     try {
-      queryParameters ??= {};
-      header ??= {};
-      var result = await dio.get(
+      final result = await dio.get(
         url,
         queryParameters: queryParameters,
         options: Options(responseType: ResponseType.json, headers: header),
@@ -102,19 +78,10 @@ class HttpClient {
       );
       return result;
     } catch (e) {
-      if (e is DioException && e.type == DioExceptionType.badResponse) {
-        throw HttpError(e.message ?? "", statusCode: e.response?.statusCode ?? 0);
-      } else {
-        throw HttpError("发送GET请求失败");
-      }
+      throw _handleError(e, _errorGet);
     }
   }
 
-  /// Post请求，返回Map
-  /// * [url] 请求链接
-  /// * [queryParameters] 请求参数
-  /// * [data] 内容
-  /// * [cancel] 任务取消Token
   Future<dynamic> postJson(
     String url, {
     Map<String, dynamic>? queryParameters,
@@ -124,10 +91,7 @@ class HttpClient {
     CancelToken? cancel,
   }) async {
     try {
-      queryParameters ??= {};
-      header ??= {};
-      data ??= {};
-      var result = await dio.post(
+      final result = await dio.post(
         url,
         queryParameters: queryParameters,
         data: data,
@@ -140,18 +104,10 @@ class HttpClient {
       );
       return result.data;
     } catch (e) {
-      if (e is DioException && e.type == DioExceptionType.badResponse) {
-        throw HttpError(e.message ?? "", statusCode: e.response?.statusCode ?? 0);
-      } else {
-        throw HttpError("发送POST请求失败");
-      }
+      throw _handleError(e, _errorPost);
     }
   }
 
-  /// Head请求，返回Response
-  /// * [url] 请求链接
-  /// * [queryParameters] 请求参数
-  /// * [cancel] 任务取消Token
   Future<Response> head(
     String url, {
     Map<String, dynamic>? queryParameters,
@@ -159,9 +115,7 @@ class HttpClient {
     CancelToken? cancel,
   }) async {
     try {
-      queryParameters ??= {};
-      header ??= {};
-      var result = await dio.head(
+      final result = await dio.head(
         url,
         queryParameters: queryParameters,
         options: Options(headers: header, receiveDataWhenStatusError: true),
@@ -171,18 +125,11 @@ class HttpClient {
     } catch (e) {
       if (e is DioException && e.type == DioExceptionType.badResponse) {
         return e.response!;
-      } else {
-        throw HttpError("发送HEAD请求失败");
       }
+      throw HttpError(_errorHead);
     }
   }
 
-  /// DOWNLOAD 文件
-  /// * [url] 下载链接
-  /// * [savePath] 保存路径
-  /// * [header] 可选请求头
-  /// * [cancel] 任务取消Token
-  /// * [onProgress] 下载进度 0~1
   Future<File> download(
     String url,
     String savePath, {
@@ -190,7 +137,6 @@ class HttpClient {
     CancelToken? cancel,
     Function(int value, int progress)? onReceiveProgress,
   }) async {
-    header ??= {};
     final tempPath = "$savePath.part";
     final tempFile = File(tempPath);
 
@@ -206,20 +152,27 @@ class HttpClient {
         options: Options(headers: header),
       );
 
-      if (response.statusCode == 200 || response.statusCode == 206) {
-        // 下载完成重命名临时文件
+      if (response.statusCode == _downloadSuccessCode1 || response.statusCode == _downloadSuccessCode2) {
         return await tempFile.rename(savePath);
       } else {
-        throw HttpError("下载失败", statusCode: response.statusCode ?? 0);
+        throw HttpError(_errorDownloadFailed, statusCode: response.statusCode ?? 0);
       }
     } on DioException catch (e) {
       if (CancelToken.isCancel(e)) {
-        throw HttpError("下载已取消");
+        throw HttpError(_errorDownloadCancel);
       } else if (e.type == DioExceptionType.badResponse) {
         throw HttpError(e.message ?? "", statusCode: e.response?.statusCode ?? 0);
       } else {
-        throw HttpError("下载请求失败");
+        throw HttpError(_errorDownload);
       }
+    }
+  }
+
+  HttpError _handleError(dynamic e, String defaultMsg) {
+    if (e is DioException && e.type == DioExceptionType.badResponse) {
+      return HttpError(e.message ?? defaultMsg, statusCode: e.response?.statusCode ?? 0);
+    } else {
+      return HttpError(defaultMsg);
     }
   }
 }

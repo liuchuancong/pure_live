@@ -1,46 +1,67 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:logger/logger.dart';
+import 'package:path/path.dart' as path;
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/utils.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:pure_live/common/global/app_path_manager.dart';
+import 'package:pure_live/common/services/settings/log_controller.dart';
 
 class Log {
-  static LogFileWriter? logFileWriter;
-  static void initWriter() {
-    logFileWriter = LogFileWriter();
+  static LogFileWriter? _logFileWriter;
+  static final List<DebugLogModel> _allLogs = [];
+  static final StreamController<List<DebugLogModel>> _logStreamController =
+      StreamController<List<DebugLogModel>>.broadcast();
+
+  static Stream<List<DebugLogModel>> get logStream => _logStreamController.stream;
+  static List<DebugLogModel> get allLogs => _allLogs;
+
+  static Future<void> init() async {
+    if (LogController.to.enableLog) {
+      _logFileWriter = LogFileWriter();
+      await _logFileWriter!.init();
+    }
   }
 
-  static void disposeWriter() {
-    logFileWriter?.close();
-    logFileWriter = null;
+  static void dispose() {
+    _logFileWriter?.close();
+    _logFileWriter = null;
+    _logStreamController.close();
+  }
+
+  static Future<void> updateLogStatus() async {
+    _logFileWriter?.close();
+    _logFileWriter = null;
+    if (LogController.to.enableLog) {
+      _logFileWriter = LogFileWriter();
+      await _logFileWriter!.init();
+    }
   }
 
   static void writeLog(Object content, [Level level = Level.info]) {
-    logFileWriter?.write("[${level.name.toUpperCase()}] $_currentTime：$content");
+    if (!LogController.to.enableLog || _logFileWriter == null) return;
+    _logFileWriter?.write("[${level.name.toUpperCase()}] $_currentTime：$content");
   }
 
-  static RxList<DebugLogModel> debugLogs = <DebugLogModel>[].obs;
-
   static void addDebugLog(String content, Color? color) {
-    if (kReleaseMode) {
-      return;
-    }
+    if (kReleaseMode) return;
     if (content.contains("请求响应")) {
       content = content.split("\n").join('\n💡 ');
     }
     try {
-      debugLogs.insert(0, DebugLogModel(DateTime.now(), content, color: color));
+      _allLogs.add(DebugLogModel(DateTime.now(), content, color: color));
+      _logStreamController.add(_allLogs);
     } catch (e) {
-      if (kDebugMode) {
-        print(e);
-      }
+      debugPrint('Add debug log error: $e');
     }
   }
 
-  static Logger logger = Logger(
+  static final Logger logger = Logger(
+    filter: ProductionFilter(),
     printer: PrettyPrinter(
       methodCount: 0,
       errorMethodCount: 8,
@@ -49,110 +70,146 @@ class Log {
       printEmojis: true,
       dateTimeFormat: DateTimeFormat.none,
     ),
+    output: kReleaseMode ? _NullOutput() : ConsoleOutput(),
   );
 
   static void d(String message, [bool writeFile = true]) {
-    addDebugLog(message, Colors.orange);
-    logger.d("${DateTime.now().toString()}\n$message");
-    if (writeFile) {
-      writeLog(message, Level.debug);
+    if (!kReleaseMode) {
+      addDebugLog(message, Colors.orange);
+      logger.d(message);
     }
+    if (writeFile) writeLog(message, Level.debug);
   }
 
   static void i(String message, [bool writeFile = true]) {
-    addDebugLog(message, Colors.blue);
-    logger.i("${DateTime.now().toString()}\n$message");
-    if (writeFile) {
-      logFileWriter?.write("[INFO] $_currentTime：$message");
-      writeLog(message, Level.info);
+    if (!kReleaseMode) {
+      addDebugLog(message, Colors.blue);
+      logger.i(message);
     }
+    if (writeFile) writeLog(message, Level.info);
   }
 
   static void e(String message, StackTrace stackTrace, [bool writeFile = true]) {
-    addDebugLog('$message\r\n\r\n$stackTrace', Colors.red);
-    logger.e("${DateTime.now().toString()}\n$message", stackTrace: stackTrace);
-    if (writeFile) {
-      writeLog("$message\n$stackTrace", Level.error);
+    if (!kReleaseMode) {
+      addDebugLog('$message\r\n\r\n$stackTrace', Colors.red);
+      logger.e(message, stackTrace: stackTrace);
     }
+    if (writeFile) writeLog("$message\n$stackTrace", Level.error);
   }
 
   static void w(String message, [bool writeFile = true]) {
-    addDebugLog(message, Colors.pink);
-    logger.w("${DateTime.now().toString()}\n$message");
-    if (writeFile) {
-      writeLog(message, Level.warning);
+    if (!kReleaseMode) {
+      addDebugLog(message, Colors.pink);
+      logger.w(message);
     }
+    if (writeFile) writeLog(message, Level.warning);
   }
 
   static void logPrint(dynamic obj, [bool writeFile = true]) {
-    addDebugLog(obj.toString(), Colors.red);
-    if (writeFile) {
-      writeLog(obj, Level.info);
+    final String content = obj.toString();
+    if (!kReleaseMode) {
+      addDebugLog(content, Colors.red);
+      if (kDebugMode) {
+        print(content);
+      }
     }
-    //logger.e(obj.toString(), obj, obj?.stackTrace);
-    if (kDebugMode) {
-      print(obj);
-    }
+    if (writeFile) writeLog(content, Level.info);
   }
 
   static String get _currentTime => Utils.timeFormat.format(DateTime.now());
 }
 
-class LogFileWriter {
-  late String fileName;
+class _NullOutput extends LogOutput {
+  @override
+  void output(OutputEvent event) {}
+}
 
-  late PackageInfo packageInfo;
+class LogFileWriter {
+  late final String _fileName;
+  IOSink? _fileWriter;
+  bool _isInitialized = false;
+
   LogFileWriter() {
-    var dt = DateFormat("yyyy-MM-dd HH-mm-ss").format(DateTime.now());
-    fileName = "$dt.log";
-    initFile();
+    var dt = DateFormat("yyyy-MM-dd_HH-mm-ss").format(DateTime.now());
+    _fileName = "$dt.log";
   }
-  IOSink? fileWriter;
-  void initFile() async {
-    var supportDir = await getApplicationSupportDirectory();
-    var logDir = Directory("${supportDir.path}/log");
-    if (!await logDir.exists()) {
-      await logDir.create();
+
+  Future<void> init() async {
+    if (_isInitialized) return;
+
+    try {
+      var supportDir = await getSafLogDir();
+      var logDir = Directory("${supportDir.path}/log");
+      if (!await logDir.exists()) {
+        await logDir.create(recursive: true);
+      }
+
+      var logFile = File("${logDir.path}/$_fileName");
+      _fileWriter = logFile.openWrite(mode: FileMode.append);
+      _isInitialized = true;
+
+      await _writeSystemInfo();
+    } catch (e) {
+      debugPrint("Init log file failed: $e");
     }
-    var logFile = File("${logDir.path}/$fileName");
-    fileWriter = logFile.openWrite(mode: FileMode.append);
-    writeSystemInfo();
+  }
+
+  Future<Directory> getSafLogDir() async {
+    Directory logDir;
+    if (Platform.isAndroid) {
+      final dir = await getDownloadsDirectory();
+      logDir = Directory(path.join(dir!.path, AppPathManager.dirLogs));
+    } else {
+      logDir = await AppPathManager().getDir(AppPathManager.dirLogs);
+    }
+
+    if (!await logDir.exists()) {
+      await logDir.create(recursive: true);
+    }
+    return logDir;
   }
 
   void write(String content) {
-    fileWriter?.write(content);
-    fileWriter?.write("\r\n");
+    if (!_isInitialized) return;
+    _fileWriter?.write("$content\r\n");
   }
 
-  Future close() async {
-    await fileWriter?.close();
+  Future<void> close() async {
+    await _fileWriter?.flush();
+    await _fileWriter?.close();
+    _isInitialized = false;
   }
 
-  Future<void> getPackageInfo() async {
-    packageInfo = await PackageInfo.fromPlatform();
-  }
+  Future<void> _writeSystemInfo() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      final deviceInfo = DeviceInfoPlugin();
 
-  void writeSystemInfo() async {
-    DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+      _fileWriter?.write("====================== System Info ======================\r\n");
+      _fileWriter?.write("Current Time: ${DateTime.now()}\r\n");
+      _fileWriter?.write("Platform    : ${Platform.operatingSystem}\r\n");
+      _fileWriter?.write("OS Version  : ${Platform.operatingSystemVersion}\r\n");
+      _fileWriter?.write("Locale      : ${Platform.localeName}\r\n");
+      _fileWriter?.write("App Version : ${packageInfo.version}+${packageInfo.buildNumber}\r\n");
 
-    write("System Info:");
-    write("Current Time: ${DateTime.now()}");
-    write("Platform: ${Platform.operatingSystem}");
-    write("Version: ${Platform.operatingSystemVersion}");
-    write("Local: ${Platform.localeName}");
-    write("App Version: ${packageInfo.version}+$packageInfo.buildNumber}");
-    if (Platform.isAndroid) {
-      write((await deviceInfo.androidInfo).data.toString());
-    } else if (Platform.isIOS) {
-      write((await deviceInfo.iosInfo).data.toString());
-    } else if (Platform.isLinux) {
-      write((await deviceInfo.linuxInfo).data.toString());
-    } else if (Platform.isMacOS) {
-      write((await deviceInfo.macOsInfo).data.toString());
-    } else if (Platform.isWindows) {
-      write((await deviceInfo.windowsInfo).data.toString());
+      String deviceData = "";
+      if (Platform.isAndroid) {
+        deviceData = (await deviceInfo.androidInfo).data.toString();
+      } else if (Platform.isIOS) {
+        deviceData = (await deviceInfo.iosInfo).data.toString();
+      } else if (Platform.isLinux) {
+        deviceData = (await deviceInfo.linuxInfo).data.toString();
+      } else if (Platform.isMacOS) {
+        deviceData = (await deviceInfo.macOsInfo).data.toString();
+      } else if (Platform.isWindows) {
+        deviceData = (await deviceInfo.windowsInfo).data.toString();
+      }
+      _fileWriter?.write("Device Data : $deviceData\r\n");
+      _fileWriter?.write("=========================================================\r\n\r\n");
+      await _fileWriter?.flush();
+    } catch (e) {
+      debugPrint("Write system info error: $e");
     }
-    write("End System Info");
   }
 }
 

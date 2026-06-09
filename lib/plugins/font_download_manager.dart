@@ -108,7 +108,7 @@ class FontDownloadManager {
 
         while (retryCount < maxRetries) {
           try {
-            await HttpClient().download(
+            await HttpClient.instance.download(
               fastestUrl!,
               file.path,
               header: {
