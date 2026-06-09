@@ -31,38 +31,36 @@ class WebSearchPage extends GetView<WebSearchController> {
           ),
         ],
       ),
-      body: Obx(() {
-        return Stack(
-          children: [
-            Positioned.fill(
-              child: InAppWebView(
-                onWebViewCreated: controller.onWebViewCreated,
-                onLoadStart: controller.onLoadStart,
-                onLoadStop: controller.onLoadStop,
-                onUpdateVisitedHistory: controller.onUpdateVisitedHistory,
-                initialSettings: InAppWebViewSettings(
-                  userAgent: controller.getDynamicUserAgent(),
-                  javaScriptEnabled: true,
-                  useWideViewPort: true,
-                  loadWithOverviewMode: true,
-                  supportZoom: true,
-                  builtInZoomControls: true,
-                  displayZoomControls: false,
-                  useShouldOverrideUrlLoading: true,
-                  domStorageEnabled: true,
-                  databaseEnabled: true,
-                  thirdPartyCookiesEnabled: true,
-                  cacheEnabled: true,
-                  isInspectable: true,
-                ),
-                onReceivedServerTrustAuthRequest: controller.onReceivedServerTrustAuthRequest,
-                shouldOverrideUrlLoading: controller.shouldOverrideUrlLoading,
-                onConsoleMessage: controller.onConsoleMessage,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: InAppWebView(
+              onWebViewCreated: controller.onWebViewCreated,
+              onLoadStart: controller.onLoadStart,
+              onLoadStop: controller.onLoadStop,
+              onUpdateVisitedHistory: controller.onUpdateVisitedHistory,
+              initialSettings: InAppWebViewSettings(
+                userAgent: controller.getDynamicUserAgent(),
+                javaScriptEnabled: true,
+                useWideViewPort: true,
+                loadWithOverviewMode: true,
+                supportZoom: true,
+                builtInZoomControls: true,
+                displayZoomControls: false,
+                useShouldOverrideUrlLoading: true,
+                domStorageEnabled: true,
+                databaseEnabled: true,
+                thirdPartyCookiesEnabled: true,
+                cacheEnabled: true,
+                isInspectable: true,
               ),
+              onReceivedServerTrustAuthRequest: controller.onReceivedServerTrustAuthRequest,
+              shouldOverrideUrlLoading: controller.shouldOverrideUrlLoading,
+              onConsoleMessage: controller.onConsoleMessage,
             ),
-          ],
-        );
-      }),
+          ),
+        ],
+      ),
     );
   }
 }
