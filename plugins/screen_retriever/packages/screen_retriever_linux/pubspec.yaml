@@ -1,0 +1,25 @@
+name: screen_retriever_linux
+description: Linux implementation of the screen_retriever plugin.
+version: 0.2.0
+repository: https://github.com/leanflutter/screen_retriever/tree/main/packages/screen_retriever_linux
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.3.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  screen_retriever_platform_interface: ^0.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  mostly_reasonable_lints: ^0.1.2
+
+flutter:
+  plugin:
+    implements: screen_retriever
+    platforms:
+      linux:
+        pluginClass: ScreenRetrieverLinuxPlugin

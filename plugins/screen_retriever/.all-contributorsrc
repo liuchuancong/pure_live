@@ -1,0 +1,71 @@
+{
+  "projectName": "screen_retriever",
+  "projectOwner": "leanflutter",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md",
+    "README-ZH.md"
+  ],
+  "imageSize": 100,
+  "commit": true,
+  "commitConvention": "none",
+  "contributors": [
+    {
+      "login": "lijy91",
+      "name": "LiJianying",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3889523?v=4",
+      "profile": "https://github.com/lijy91",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "ChristianEdwardPadilla",
+      "name": "Christian Padilla",
+      "avatar_url": "https://avatars.githubusercontent.com/u/37954976?v=4",
+      "profile": "https://github.com/ChristianEdwardPadilla",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "jpnurmi",
+      "name": "J-P Nurmi",
+      "avatar_url": "https://avatars.githubusercontent.com/u/140617?v=4",
+      "profile": "https://github.com/jpnurmi",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "Kingtous",
+      "name": "Kingtous",
+      "avatar_url": "https://avatars.githubusercontent.com/u/39793325?v=4",
+      "profile": "https://github.com/Kingtous",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "fufesou",
+      "name": "fufesou",
+      "avatar_url": "https://avatars.githubusercontent.com/u/13586388?v=4",
+      "profile": "https://github.com/fufesou",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "lukasz-lukasz-lukasz",
+      "name": "lukasz-lukasz-lukasz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/119860089?v=4",
+      "profile": "https://github.com/lukasz-lukasz-lukasz",
+      "contributions": [
+        "code"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "linkToUsage": true
+}
