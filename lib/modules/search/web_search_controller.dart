@@ -11,7 +11,6 @@ class WebSearchController extends GetxController {
 
   late String url;
   late String platform;
-  var loading = true.obs;
   var roomId = ''.obs;
   bool _isShowingDialog = false;
 
@@ -35,7 +34,6 @@ class WebSearchController extends GetxController {
   }
 
   void onLoadStart(InAppWebViewController controller, WebUri? uri) {
-    loading.value = true;
     if (uri != null) {
       Log.i("🚀 页面开始加载/跳转: ${uri.toString()}");
       _parseRoomId(uri.toString());
@@ -57,7 +55,6 @@ class WebSearchController extends GetxController {
     } catch (e, stackTrace) {
       Log.e("⚠️ 强行保存凭证时遇到小警告: $e", stackTrace);
     }
-    loading.value = false;
     if (uri != null) {
       Log.i("🏁 页面加载完成: ${uri.toString()}");
       _parseRoomId(uri.toString());

@@ -11,12 +11,12 @@
             "args": [
                 "--android-skip-build-dependency-validation"
             ],
-            // "env": {
-            //     "http_proxy": "http://127.0.0.1:7897",
-            //     "https_proxy": "http://127.0.0.1:7897",
-            //     "HTTP_PROXY": "http://127.0.0.1:7897",
-            //     "HTTPS_PROXY": "http://127.0.0.1:7897"
-            // }
+            "env": {
+                "http_proxy": "http://127.0.0.1:7897",
+                "https_proxy": "http://127.0.0.1:7897",
+                "HTTP_PROXY": "http://127.0.0.1:7897",
+                "HTTPS_PROXY": "http://127.0.0.1:7897"
+            }
         }
     ]
 }

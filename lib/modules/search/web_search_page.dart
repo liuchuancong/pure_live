@@ -20,20 +20,15 @@ class WebSearchPage extends GetView<WebSearchController> {
               onPressed: () => controller.closePage(),
             ),
           ),
-          Obx(() {
-            if (controller.loading.value) {
-              return const SizedBox();
-            }
-            return Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: IconButton(
-                icon: const Icon(Icons.bug_report),
-                onPressed: () async {
-                  await controller.webViewController!.openDevTools();
-                },
-              ),
-            );
-          }),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: IconButton(
+              icon: const Icon(Icons.bug_report),
+              onPressed: () async {
+                await controller.webViewController!.openDevTools();
+              },
+            ),
+          ),
         ],
       ),
       body: Obx(() {
@@ -65,8 +60,6 @@ class WebSearchPage extends GetView<WebSearchController> {
                 onConsoleMessage: controller.onConsoleMessage,
               ),
             ),
-
-            if (controller.loading.value) AppStatusView(type: AppStatusType.loading, title: "", subtitle: ""),
           ],
         );
       }),
