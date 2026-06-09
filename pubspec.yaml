@@ -103,7 +103,7 @@ dependencies:
   tray_manager: ^0.5.2 # 系统托盘管理
   flutter_acrylic: ^1.1.4 # 亚克力毛玻璃效果
   screen_retriever:
-    path: ./plugins/screen_retriever
+    git: https://github.com/liuchuancong/screen_retriever.git 
   win32: ^6.3.0 # Windows系统API
   android_intent_plus: ^6.0.0
   fullscreen_window: ^1.2.0
@@ -215,6 +215,9 @@ dependency_overrides:
       url: https://github.com/Predidit/media-kit.git
       ref: main
       path: ./libs/macos/media_kit_libs_macos_video
+  screen_retriever:
+    git: https://github.com/liuchuancong/screen_retriever.git 
+
 
 # 开发依赖
 dev_dependencies:
