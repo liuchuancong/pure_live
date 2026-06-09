@@ -33,7 +33,6 @@ class VideoControllerPanel extends StatefulWidget {
 class _VideoControllerPanelState extends State<VideoControllerPanel> {
   static const barHeight = 56.0;
 
-  // Video controllers
   VideoController get controller => widget.controller;
 
   @override
@@ -46,18 +45,21 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
 
   @override
   Widget build(BuildContext context) {
-    IconData iconData;
-    iconData = controller.room.getSavedVolume() <= 0
-        ? Icons.volume_mute
-        : controller.room.getSavedVolume() < 0.5
-        ? Icons.volume_down
-        : Icons.volume_up;
     return Material(
       type: MaterialType.transparency,
       child: Focus(
         autofocus: true,
-        child: Obx(
-          () => MouseRegion(
+        child: Obx(() {
+          final double currentVolume = controller.room.getSavedVolume();
+          final int percentage = (currentVolume * 100).round();
+
+          final IconData iconData = currentVolume <= 0
+              ? Icons.volume_mute
+              : currentVolume < 0.5
+              ? Icons.volume_down
+              : Icons.volume_up;
+
+          return MouseRegion(
             onHover: (event) => controller.enableController(),
             cursor: !controller.showController.value ? SystemMouseCursors.none : SystemMouseCursors.basic,
             child: Stack(
@@ -71,25 +73,29 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                     child: Card(
                       color: Colors.black,
                       child: Padding(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             Icon(iconData, color: Colors.white),
                             Padding(
-                              padding: const EdgeInsets.only(left: 8, right: 4),
+                              padding: const EdgeInsets.only(left: 8, right: 8),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
                                 child: SizedBox(
                                   width: 100,
                                   height: 20,
                                   child: LinearProgressIndicator(
-                                    value: controller.room.getSavedVolume(),
+                                    value: currentVolume,
                                     backgroundColor: Colors.white38,
-                                    valueColor: AlwaysStoppedAnimation(Colors.white),
+                                    valueColor: const AlwaysStoppedAnimation(Colors.white),
                                   ),
                                 ),
                               ),
+                            ),
+                            Text(
+                              "$percentage%",
+                              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -103,7 +109,6 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                     child: DanmakuViewer(controller: controller),
                   ),
                 ),
-
                 GestureDetector(
                   onTap: () {
                     GlobalPlayerService.instance.playerManager.isPlayingNow
@@ -124,8 +129,8 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                 BottomActionBar(controller: controller, barHeight: barHeight),
               ],
             ),
-          ),
-        ),
+          );
+        }),
       ),
     );
   }
@@ -614,7 +619,6 @@ class BrightnessVolumnDargArea extends StatefulWidget {
 class BrightnessVolumnDargAreaState extends State<BrightnessVolumnDargArea> {
   VideoController get controller => widget.controller;
 
-  // Darg bv ui control
   Timer? _hideBVTimer;
   bool _hideBVStuff = true;
   bool _isDargLeft = true;
@@ -675,7 +679,7 @@ class BrightnessVolumnDargAreaState extends State<BrightnessVolumnDargArea> {
 
     _cancelAndRestartHideBVTimer();
 
-    double sensitivity = 0.8; // 灵敏度系数，越小越慢
+    double sensitivity = 0.25;
     double deltaValue = -(delta.dy / (height / 2)) * sensitivity;
 
     double dragRange = _updateDargVarVal + deltaValue;
@@ -709,6 +713,8 @@ class BrightnessVolumnDargAreaState extends State<BrightnessVolumnDargArea> {
           : Icons.volume_up;
     }
 
+    final int percentage = (_updateDargVarVal * 100).round();
+
     return Listener(
       onPointerSignal: (event) {
         if (event is PointerScrollEvent) {
@@ -726,13 +732,13 @@ class BrightnessVolumnDargAreaState extends State<BrightnessVolumnDargArea> {
             child: Card(
               color: Colors.black,
               child: Padding(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     Icon(iconData, color: Colors.white),
                     Padding(
-                      padding: const EdgeInsets.only(left: 8, right: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: SizedBox(
@@ -741,10 +747,14 @@ class BrightnessVolumnDargAreaState extends State<BrightnessVolumnDargArea> {
                           child: LinearProgressIndicator(
                             value: _updateDargVarVal,
                             backgroundColor: Colors.white38,
-                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                            valueColor: const AlwaysStoppedAnimation(Colors.white),
                           ),
                         ),
                       ),
+                    ),
+                    Text(
+                      "$percentage%",
+                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -1532,10 +1542,7 @@ class SettingsPanel extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 10.0),
-                      Text(
-                        i18n("settings_danmaku_title"),
-                        style: AppTextStyles.t16Bold.copyWith(color: Colors.white),
-                      ),
+                      Text(i18n("settings_danmaku_title"), style: AppTextStyles.t16Bold.copyWith(color: Colors.white)),
                     ],
                   ),
                 ),
