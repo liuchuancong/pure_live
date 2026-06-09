@@ -26,6 +26,7 @@ class FavoritePage extends GetView<FavoriteController> {
                 isScrollable: true,
                 tabs: [
                   Tab(text: i18n("online_room_title")),
+                  Tab(text: i18n("recording_room_title")),
                   Tab(text: i18n("offline_room_title")),
                 ],
               ),
@@ -68,7 +69,7 @@ class FavoritePage extends GetView<FavoriteController> {
                               children: availableSitesList.map((e) {
                                 return RoomGridView(
                                   site: e.id,
-                                  isOnline: controller.tabOnlineIndex.value == 0,
+                                  isOnline: controller.tabOnlineIndex.value != 1,
                                   scrollController: scrollController,
                                   displayList: list,
                                 );

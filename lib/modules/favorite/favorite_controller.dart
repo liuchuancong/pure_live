@@ -23,7 +23,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
 
   final onlineRooms = <LiveRoom>[].obs;
   final offlineRooms = <LiveRoom>[].obs;
-
+  final replayRooms = <LiveRoom>[].obs;
   final selectedTagId = TagManagementController.allTagKey.obs;
   final visibleTags = <LiveTag>[].obs;
 
@@ -33,7 +33,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
   void onInit() {
     super.onInit();
 
-    tabController = TabController(length: 2, vsync: this);
+    tabController = TabController(length: 3, vsync: this);
 
     debounce(SettingsService.to.fav.favoriteRooms, (_) => applyLocalFilter(), time: const Duration(milliseconds: 1000));
 
@@ -77,7 +77,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
   void debounceRefresh() {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
-      refreshData();
+      _fullRefreshRooms();
     });
   }
 
@@ -110,6 +110,10 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
     applyLocalFilter();
   }
 
+  List<LiveRoom> getAllRooms() {
+    return List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
+  }
+
   List<LiveRoom> getFilteredRoomsIgnoringLiveStatus() {
     final List<LiveRoom> source = List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
 
@@ -140,8 +144,24 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
   List<LiveRoom> getFilteredRooms() {
     syncRooms();
 
-    final bool isOnline = tabOnlineIndex.value == 0;
-    final List<LiveRoom> source = isOnline ? onlineRooms : offlineRooms;
+    List<LiveRoom> source;
+
+    switch (tabOnlineIndex.value) {
+      case 0:
+        source = onlineRooms;
+        break;
+
+      case 1:
+        source = replayRooms;
+        break;
+
+      case 2:
+        source = offlineRooms;
+        break;
+
+      default:
+        source = onlineRooms;
+    }
 
     final currentAvailableSites = Sites().availableSites(containsAll: true);
     if (tabSiteIndex.value < 0 || tabSiteIndex.value >= currentAvailableSites.length) {
@@ -169,18 +189,39 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
 
   void syncRooms() {
     onlineRooms.clear();
+    replayRooms.clear();
     offlineRooms.clear();
 
     final List<LiveRoom> roomsBase = List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
-    onlineRooms.addAll(roomsBase.where((r) => r.liveStatus == LiveStatus.live));
+    onlineRooms.addAll(roomsBase.where((r) => r.liveStatus == LiveStatus.live && r.isRecord == false));
+
     offlineRooms.addAll(roomsBase.where((r) => r.liveStatus != LiveStatus.live));
+
+    replayRooms.addAll(roomsBase.where((r) => r.liveStatus == LiveStatus.live && r.isRecord == true));
 
     final currentAvailableSites = Sites().availableSites(containsAll: true);
     visibleTags.clear();
 
     if (tabSiteIndex.value >= 0 && tabSiteIndex.value < currentAvailableSites.length) {
       final activeSite = currentAvailableSites[tabSiteIndex.value];
-      final target = tabOnlineIndex.value == 0 ? onlineRooms : offlineRooms;
+      List<LiveRoom> target;
+
+      switch (tabOnlineIndex.value) {
+        case 0:
+          target = onlineRooms;
+          break;
+
+        case 1:
+          target = replayRooms;
+          break;
+
+        case 2:
+          target = offlineRooms;
+          break;
+
+        default:
+          target = onlineRooms;
+      }
       final Set<String> tagIds = {};
 
       for (var room in target) {
@@ -198,8 +239,20 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
     for (var room in onlineRooms) {
       room.watching = int.tryParse(room.watching ?? '')?.toString() ?? '0';
     }
+    for (var room in replayRooms) {
+      room.watching = int.tryParse(room.watching ?? '')?.toString() ?? '0';
+    }
 
     onlineRooms.sort((a, b) {
+      if (selectedTagId.value == TagManagementController.allTagKey) {
+        return int.parse(b.watching!).compareTo(int.parse(a.watching!));
+      }
+      int sa = _getRoomTagScore(a);
+      int sb = _getRoomTagScore(b);
+      if (sa != sb) return sb.compareTo(sa);
+      return int.parse(b.watching!).compareTo(int.parse(a.watching!));
+    });
+    replayRooms.sort((a, b) {
       if (selectedTagId.value == TagManagementController.allTagKey) {
         return int.parse(b.watching!).compareTo(int.parse(a.watching!));
       }
@@ -236,12 +289,21 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
   @override
   Future<void> refreshData() async {
     currentPage = 1;
-    await _fullRefreshRooms();
+    await _fullRefreshFilterRooms();
+  }
+
+  Future<void> _fullRefreshFilterRooms() async {
+    loadding.value = true;
+    List<LiveRoom> roomsToRefresh = getFilteredRoomsIgnoringLiveStatus();
+    await _refreshRoomDetails(roomsToRefresh);
+    applyLocalFilter();
+    loadding.value = false;
+    EventBus.instance.emit('refresh_favorite_finish', true);
   }
 
   Future<void> _fullRefreshRooms() async {
     loadding.value = true;
-    List<LiveRoom> roomsToRefresh = getFilteredRoomsIgnoringLiveStatus();
+    List<LiveRoom> roomsToRefresh = getAllRooms();
     await _refreshRoomDetails(roomsToRefresh);
     applyLocalFilter();
     loadding.value = false;

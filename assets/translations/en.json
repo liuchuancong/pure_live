@@ -964,5 +964,6 @@
     "video_quality_settings": "Video Quality Settings",
     "playback_behavior_settings": "Playback Behavior Settings",
     "core_kernel_settings": "Core Kernel Settings",
-    "view_logs_in_browser": "View Logs in Browser"
+    "view_logs_in_browser": "View Logs in Browser",
+    "recording_room_title": "Recording"
 }

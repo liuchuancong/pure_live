@@ -12,40 +12,56 @@ class PlayOther extends StatefulWidget {
   State<PlayOther> createState() => _PlayOtherState();
 }
 
-class _PlayOtherState extends State<PlayOther> {
+class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMixin {
+  late TabController tabController;
   final onlineRooms = <LiveRoom>[].obs;
+  final recordingRooms = <LiveRoom>[].obs;
   StreamSubscription<dynamic>? subscription;
   final loadingFinish = false.obs;
+
   @override
   void initState() {
     super.initState();
-    var rooms = <LiveRoom>[];
-    rooms = SettingsService.to.fav.favoriteRooms.v.where((room) => room.liveStatus == LiveStatus.live).toList();
-    for (var room in rooms) {
+    tabController = TabController(length: 2, vsync: this);
+    _updateRooms();
+    listenFavorite();
+  }
+
+  void _updateRooms() {
+    var allRooms = SettingsService.to.fav.favoriteRooms.v;
+
+    var liveList = allRooms.where((room) => room.liveStatus == LiveStatus.live && room.isRecord == false).toList();
+    for (var room in liveList) {
       if (int.tryParse(room.watching!) == null) {
         room.watching = "0";
       }
     }
-    rooms.sort((a, b) => int.parse(b.watching!).compareTo(int.parse(a.watching!)));
-    onlineRooms.value = rooms;
+    liveList.sort((a, b) => int.parse(b.watching!).compareTo(int.parse(a.watching!)));
+    onlineRooms.value = liveList;
+
+    var recordList = allRooms.where((room) => room.liveStatus == LiveStatus.live && room.isRecord == true).toList();
+    for (var room in recordList) {
+      if (int.tryParse(room.watching!) == null) {
+        room.watching = "0";
+      }
+    }
+    recordList.sort((a, b) => int.parse(b.watching!).compareTo(int.parse(a.watching!)));
+    recordingRooms.value = recordList;
+
     loadingFinish.value = true;
-    listenFavorite();
   }
 
   void listenFavorite() {
-    // 监听刷新关注页事件
     subscription = EventBus.instance.listen('refresh_favorite_finish', (data) {
-      loadingFinish.value = true;
-      var rooms = <LiveRoom>[];
-      rooms = SettingsService.to.fav.favoriteRooms.v.where((room) => room.liveStatus == LiveStatus.live).toList();
-      for (var room in rooms) {
-        if (int.tryParse(room.watching!) == null) {
-          room.watching = "0";
-        }
-      }
-      rooms.sort((a, b) => int.parse(b.watching!).compareTo(int.parse(a.watching!)));
-      onlineRooms.value = rooms;
+      _updateRooms();
     });
+  }
+
+  @override
+  void dispose() {
+    tabController.dispose();
+    subscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -55,7 +71,7 @@ class _PlayOtherState extends State<PlayOther> {
       clipBehavior: Clip.hardEdge,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
       child: Container(
-        constraints: BoxConstraints(maxWidth: 500, maxHeight: 400),
+        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 500),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -64,28 +80,27 @@ class _PlayOtherState extends State<PlayOther> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(children: [Text(i18n("live_now"), style: Theme.of(context).textTheme.titleMedium)]),
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 18),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                  ),
+                  Text(i18n("live_now"), style: Theme.of(context).textTheme.titleMedium),
+                  IconButton(icon: const Icon(Icons.close, size: 18), onPressed: () => Navigator.of(context).pop()),
                 ],
               ),
+            ),
+            TabBar(
+              controller: tabController,
+              labelColor: Theme.of(context).colorScheme.primary,
+              unselectedLabelColor: Theme.of(context).hintColor,
+              indicatorSize: TabBarIndicatorSize.label,
+              tabs: [
+                Tab(text: i18n("online_room_title")),
+                Tab(text: i18n("recording_room_title")),
+              ],
             ),
             Expanded(
               child: Obx(
                 () => loadingFinish.value
-                    ? ListView.builder(
-                        itemCount: onlineRooms.value.length,
-                        itemBuilder: (context, index) {
-                          return EnhancedListTile(
-                            room: onlineRooms.value[index],
-                            dense: true,
-                            onTap: widget.controller.switchRoom,
-                          );
-                        },
+                    ? TabBarView(
+                        controller: tabController,
+                        children: [_buildRoomList(onlineRooms.value), _buildRoomList(recordingRooms.value)],
                       )
                     : AppStatusView(type: AppStatusType.loading, title: "", subtitle: ""),
               ),
@@ -102,12 +117,7 @@ class _PlayOtherState extends State<PlayOther> {
                     },
                     child: Text(i18n("refresh")),
                   ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: Text(i18n("close")),
-                  ),
+                  TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n("close"))),
                 ],
               ),
             ),
@@ -116,9 +126,20 @@ class _PlayOtherState extends State<PlayOther> {
       ),
     );
   }
+
+  Widget _buildRoomList(List<LiveRoom> rooms) {
+    if (rooms.isEmpty) {
+      return AppStatusView(type: AppStatusType.empty, title: "", subtitle: "");
+    }
+    return ListView.builder(
+      itemCount: rooms.length,
+      itemBuilder: (context, index) {
+        return EnhancedListTile(room: rooms[index], dense: true, onTap: widget.controller.switchRoom);
+      },
+    );
+  }
 }
 
-// 增强版 ListTile（带观看数、平台标识等）
 class EnhancedListTile extends StatelessWidget {
   final LiveRoom room;
   final bool dense;
