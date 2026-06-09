@@ -14,13 +14,11 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      // 标题规范化
       appBar: AppBar(title: Text(i18n("player_kernel_settings"))),
       body: ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          // 分组标题规范化
           context.buildGroupTitle(i18n("core_kernel_settings")),
           context.buildModernCard([
             Obx(() {
@@ -28,7 +26,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
               String activeI18nKey = PlayerConsts.names[activeKey] ?? PlayerConsts.names[PlayerConsts.defaultKey]!;
 
               return context.buildTile(
-                icon: Remix.cpu_line,
+                icon: Remix.toggle_line,
                 title: i18n("kernel_switch"),
                 subtitle: i18n("kernel_switch_subtitle"),
                 onTap: showVideoSetDialog,
@@ -38,7 +36,6 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                 ),
               );
             }),
-
             Obx(() {
               String activeKey = SettingsService.to.player.videoPlayerKey.v;
               if (PlayerConsts.engines[activeKey] == PlayerEngine.exo) {
@@ -46,7 +43,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
               }
 
               return context.buildTile(
-                icon: Remix.shield_keyhole_line,
+                icon: Remix.global_line,
                 title: i18n("network_proxy"),
                 subtitle: i18n("network_proxy_subtitle"),
                 onTap: showProxySettingsDialog,
@@ -59,28 +56,25 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                 ),
               );
             }),
-            // 统一使用规范SwitchTile
             context.buildSwitchTile(
-              icon: Remix.volume_up_line,
+              icon: Remix.music_2_line,
               title: i18n('audio_only_mode'),
               subtitle: i18n("audio_only_mode_subtitle"),
               value: SettingsService.to.player.audioOnly,
             ),
             context.buildSwitchTile(
-              icon: Remix.flashlight_line,
+              icon: Remix.speed_up_line,
               title: i18n('enable_codec'),
               subtitle: i18n("gpu_decode"),
               value: SettingsService.to.player.enableCodec,
             ),
             context.buildSwitchTile(
-              icon: Remix.p2p_line,
+              icon: Remix.shut_down_line,
               title: i18n('force_destroy_player'),
               subtitle: i18n('force_destroy_player_subtitle'),
               value: SettingsService.to.player.useHardStopOnExit,
             ),
           ]),
-
-          // MPV内核专属设置
           Obx(() {
             String activeKey = SettingsService.to.player.videoPlayerKey.v;
             if (PlayerConsts.engines[activeKey] != PlayerEngine.mediaKit) {
@@ -88,7 +82,6 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
             }
             return _buildMpvSettings(context);
           }),
-
           const SizedBox(height: 32),
         ],
       ),
@@ -103,18 +96,16 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
         const Padding(padding: EdgeInsets.only(left: 16, right: 16, bottom: 0, top: 12), child: Divider()),
         if (Platform.isAndroid)
           context.buildSwitchTile(
-            icon: Remix.shield_flash_line,
+            icon: Remix.shield_check_line,
             title: i18n('compat_mode'),
             subtitle: i18n('compat_mode_subtitle'),
             value: SettingsService.to.player.playerCompatMode,
           ),
-
-        // 分组标题i18n规范化
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 5, 12, 4),
           child: Row(
             children: [
-              Icon(Remix.settings_5_line, size: 18, color: theme.colorScheme.primary),
+              Icon(Remix.equalizer_line, size: 18, color: theme.colorScheme.primary),
               const SizedBox(width: 8),
               Text(
                 i18n("mpv_advanced_settings"),
@@ -123,7 +114,6 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
             ],
           ),
         ),
-
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(
@@ -177,17 +167,16 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
             ],
           ),
         ),
-
         context.buildModernCard([
           context.buildSwitchTile(
-            icon: Remix.apps_2_add_fill,
+            icon: Remix.code_box_line,
             title: i18n("custom_output_hwdec"),
             value: SettingsService.to.player.customPlayerOutput,
           ),
           Obx(
             () => context.buildMenuTile<String>(
               title: i18n("video_output_driver"),
-              icon: Remix.tv_2_line,
+              icon: Remix.movie_line,
               value: SettingsService.to.player.videoOutputDriver.v,
               valueMap: PlayerConsts.videoOutputDrivers,
               onChanged: (e) => SettingsService.to.player.videoOutputDriver.v = e,

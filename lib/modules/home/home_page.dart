@@ -142,23 +142,38 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
       onPopInvokedWithResult: onBackButtonPressed,
       child: LayoutBuilder(
         builder: (context, constraint) {
+          final bool isTablet = constraint.maxWidth > 680;
+
           return Obx(() {
-            final activeMenuIds = SettingsService.to.app.savedMenuIds.v;
+            final activeMenuIds = List<String>.from(SettingsService.to.app.savedMenuIds.v);
+            if (isTablet) {
+              activeMenuIds.remove(HomeMenu.record.id);
+            }
             if (activeMenuIds.isEmpty) return const Scaffold();
 
-            final currentMenu = HomeMenu.values[_selectedIndex];
+            int adjustedIndex = _selectedIndex;
+            if (adjustedIndex >= HomeMenu.values.length ||
+                (isTablet && HomeMenu.values[adjustedIndex] == HomeMenu.record)) {
+              final fallbackMenu = HomeMenu.fromId(activeMenuIds.first);
+              if (fallbackMenu != null) {
+                adjustedIndex = fallbackMenu.index;
+              }
+            }
+
+            final currentMenu = HomeMenu.values[adjustedIndex];
             final currentWidget = _pageMap[currentMenu] ?? const SizedBox.shrink();
 
-            return constraint.maxWidth <= 680
+            return !isTablet
                 ? HomeMobileView(
                     body: currentWidget,
-                    index: _selectedIndex,
+                    index: adjustedIndex,
                     onDestinationSelected: onDestinationSelected,
                     onFavoriteDoubleTap: handMoveRefresh,
                   )
                 : HomeTabletView(
                     body: currentWidget,
-                    index: _selectedIndex,
+                    index: adjustedIndex,
+                    activeMenuIds: activeMenuIds,
                     onDestinationSelected: onDestinationSelected,
                   );
           });

@@ -38,12 +38,12 @@ class RecorderPage extends GetView<RecorderController> {
             actions: [
               IconButton(
                 tooltip: i18n("recorder_open_folder"),
-                icon: const Icon(Icons.folder_rounded, size: 22),
+                icon: const Icon(Remix.folder_video_line, size: 22),
                 onPressed: controller.openFileDir,
               ),
               IconButton(
                 tooltip: i18n("settings_title"),
-                icon: const Icon(Icons.settings_suggest_rounded, size: 22),
+                icon: const Icon(Remix.settings_5_line, size: 22),
                 onPressed: () => Get.toNamed(RoutePath.kRecordSettings),
               ),
               const SizedBox(width: 8),

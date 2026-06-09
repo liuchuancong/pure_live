@@ -29,7 +29,7 @@ class PlatformSettingsPage extends GetView<SettingsService> {
               ),
             ),
             context.buildTile(
-              icon: Remix.accessibility_fill,
+              icon: Remix.accessibility_line,
               title: i18n('third_party_auth'),
               subtitle: i18n('third_party_auth_subtitle'),
               onTap: () {

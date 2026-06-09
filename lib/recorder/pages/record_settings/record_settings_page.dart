@@ -31,39 +31,38 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
       body: Obx(
         () => ListView(
           physics: const BouncingScrollPhysics(),
-          padding: EdgeInsets.only(left: 16, right: 16, bottom: 16),
+          padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
           children: [
-            _buildSectionHeader(i18n("basic_config")),
+            context.buildGroupTitle(i18n("basic_config")),
             context.buildModernCard([
               context.buildTile(
-                icon: Icons.high_quality_rounded,
+                icon: Remix.hd_line,
                 title: i18n("default_record_quality"),
                 subtitle: controller.defaultQuality.value,
                 onTap: _showQualityDialog,
               ),
-
               context.buildSwitchTile(
-                icon: Icons.translate_rounded,
+                icon: Remix.translate_2,
                 title: i18n("use_pinyin_folder"),
                 subtitle: i18n("use_pinyin_folder_desc"),
                 value: controller.usePinyinForFolder,
               ),
             ]),
-
+            const SizedBox(height: 20),
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildSectionHeader(i18n("cache_management")),
+                context.buildGroupTitle(i18n("cache_management")),
                 Padding(
-                  padding: EdgeInsetsGeometry.only(right: 8),
+                  padding: const EdgeInsets.only(right: 8),
                   child: TextButton.icon(
                     onPressed: () => FileUtils.openFileOrUrl(controller.recordSavePath.value),
                     style: TextButton.styleFrom(
                       padding: EdgeInsets.zero,
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      foregroundColor: theme.colorScheme.primary, // 保持主题色
+                      foregroundColor: theme.colorScheme.primary,
                     ),
                     icon: const Icon(Remix.folder_open_line, size: 18),
                     label: Text(
@@ -74,42 +73,36 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                 ),
               ],
             ),
-
             context.buildModernCard([
               context.buildTile(
-                icon: Icons.folder_rounded,
+                icon: Remix.folder_video_line,
                 title: i18n("storage_directory"),
                 subtitle: controller.recordSavePath.value,
                 onTap: controller.pickRecordDir,
               ),
-
               context.buildSwitchTile(
-                icon: Icons.all_inbox_rounded,
+                icon: Remix.exchange_box_line,
                 title: i18n("enable_cache_limit"),
                 subtitle: i18n("enable_cache_limit_desc"),
                 value: controller.enableCacheLimit,
               ),
-
               if (controller.enableCacheLimit.value)
                 context.buildTile(
-                  icon: Icons.storage_rounded,
+                  icon: Remix.database_2_line,
                   title: i18n("cache_limit"),
                   subtitle: "${controller.maxCacheMB.value} MB",
                   onTap: _showCacheDialog,
                 ),
-
               Obx(() {
                 final size = controller.cacheSizeMB.value;
-
                 return context.buildTile(
-                  icon: Icons.sd_storage_rounded,
+                  icon: Remix.custom_size,
                   title: i18n("current_cache_size"),
                   subtitle: "${size.toStringAsFixed(2)} MB",
                 );
               }),
-
               context.buildTile(
-                icon: Icons.cleaning_services_rounded,
+                icon: Remix.delete_bin_4_line,
                 title: i18n("clear_all_cache"),
                 subtitle: i18n("clear_all_cache_desc"),
                 onTap: () async {
@@ -135,33 +128,30 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                 },
               ),
             ]),
-
-            _buildSectionHeader(i18n("record_performance_quality")),
+            const SizedBox(height: 20),
+            context.buildGroupTitle(i18n("record_performance_quality")),
             context.buildModernCard([
               context.buildSwitchTile(
-                icon: Icons.hd_rounded,
+                icon: Remix.video_download_line,
                 title: i18n("prefer_best_stream"),
                 subtitle: i18n("prefer_best_stream_desc"),
                 value: controller.preferBestStream,
               ),
-
               context.buildTile(
-                icon: Icons.timer_outlined,
+                icon: Remix.timer_flash_line,
                 title: i18n("rw_timeout"),
                 subtitle: "${controller.rwTimeout.value}s",
                 onTap: _showRwTimeoutDialog,
               ),
-
               context.buildTile(
-                icon: Icons.speed_rounded,
+                icon: Remix.speed_mini_line,
                 title: i18n("queue_size"),
                 subtitle: "${controller.threadQueueSize.value}",
                 onTap: _showQueueSizeDialog,
               ),
-
               context.buildSliderTile(
                 context,
-                icon: Icons.video_settings_rounded,
+                icon: Remix.film_line,
                 title: i18n("segment_duration"),
                 value: controller.segmentTime.value.toDouble(),
                 min: 60,
@@ -169,28 +159,26 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                 displayValue: _formatDuration(controller.segmentTime.value),
                 onChanged: (v) => controller.updateSegmentTime(v.toInt()),
               ),
-
               context.buildTile(
-                icon: Icons.task_alt_rounded,
+                icon: Remix.task_line,
                 title: i18n("max_record_tasks"),
                 subtitle: "${controller.maxTaskCount.value}",
                 onTap: _showMaxTaskDialog,
               ),
             ]),
-
-            _buildSectionHeader(i18n("auto_reconnect")),
+            const SizedBox(height: 20),
+            context.buildGroupTitle(i18n("auto_reconnect")),
             context.buildModernCard([
               context.buildSwitchTile(
-                icon: Icons.refresh_rounded,
+                icon: Remix.refresh_line,
                 title: i18n("auto_reconnect_switch"),
                 subtitle: i18n("auto_reconnect_desc"),
                 value: controller.autoReconnect,
               ),
-
               if (controller.autoReconnect.value)
                 context.buildSliderTile(
                   context,
-                  icon: Icons.repeat_rounded,
+                  icon: Remix.loop_left_line,
                   title: i18n("max_retry_count"),
                   value: controller.maxRetryCount.value.toDouble(),
                   min: 1,
@@ -198,10 +186,9 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                   displayValue: "${controller.maxRetryCount.value}",
                   onChanged: (v) => controller.updateMaxRetryCount(v.toInt()),
                 ),
-
               context.buildSliderTile(
                 context,
-                icon: Icons.timer_rounded,
+                icon: Remix.time_line,
                 title: i18n("retry_delay"),
                 value: controller.retryDelay.value.toDouble(),
                 min: 5,
@@ -210,20 +197,19 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                 onChanged: (v) => controller.updateRetryDelay(v.toInt()),
               ),
             ]),
-
-            _buildSectionHeader(i18n("polling_detection")),
+            const SizedBox(height: 20),
+            context.buildGroupTitle(i18n("polling_detection")),
             context.buildModernCard([
               context.buildSwitchTile(
-                icon: Icons.radar_rounded,
+                icon: Remix.radar_line,
                 title: i18n("enable_polling"),
                 subtitle: i18n("enable_polling_desc"),
                 value: controller.enablePolling,
               ),
-
               if (controller.enablePolling.value) ...[
                 context.buildSliderTile(
                   context,
-                  icon: Icons.schedule_rounded,
+                  icon: Remix.time_line,
                   title: i18n("check_interval"),
                   value: controller.liveCheckInterval.value.toDouble(),
                   min: 10,
@@ -231,18 +217,16 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                   displayValue: "${controller.liveCheckInterval.value}s",
                   onChanged: (v) => controller.updateLiveCheckInterval(v.toInt()),
                 ),
-
                 context.buildSwitchTile(
-                  icon: Icons.trending_up_rounded,
+                  icon: Remix.line_chart_line,
                   title: i18n("enable_backoff"),
                   subtitle: i18n("enable_backoff_desc"),
                   value: controller.enableBackoff,
                 ),
-
                 if (controller.enableBackoff.value)
                   context.buildSliderTile(
                     context,
-                    icon: Icons.hourglass_bottom_rounded,
+                    icon: Remix.hourglass_2_line,
                     title: i18n("max_check_interval"),
                     value: controller.maxCheckInterval.value.toDouble(),
                     min: 300,
@@ -250,32 +234,16 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                     displayValue: _formatDuration(controller.maxCheckInterval.value),
                     onChanged: (v) => controller.updateMaxCheckInterval(v.toInt()),
                   ),
-
                 context.buildSwitchTile(
-                  icon: Icons.power_settings_new_rounded,
+                  icon: Remix.shut_down_line,
                   title: i18n("auto_start_boot"),
                   subtitle: i18n("auto_start_boot_desc"),
                   value: controller.autoStartOnBoot,
                 ),
               ],
             ]),
-
             const SizedBox(height: 60),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 12, bottom: 12, top: 24),
-      child: Text(
-        title,
-        style: AppTextStyles.t15.copyWith(
-          fontWeight: FontWeight.bold,
-          color: Get.theme.colorScheme.primary,
-          letterSpacing: 1.2,
         ),
       ),
     );

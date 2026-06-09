@@ -31,24 +31,40 @@ class HomeMobileView extends StatelessWidget {
               case HomeMenu.favorites:
                 destinations.add(
                   NavigationDestination(
-                    icon: GestureDetector(onDoubleTap: onFavoriteDoubleTap, child: const Icon(Remix.heart_3_fill)),
+                    icon: GestureDetector(onDoubleTap: onFavoriteDoubleTap, child: const Icon(Remix.heart_3_line)),
+                    selectedIcon: GestureDetector(
+                      onDoubleTap: onFavoriteDoubleTap,
+                      child: const Icon(Remix.heart_3_fill),
+                    ),
                     label: i18n("favorites_title"),
                   ),
                 );
                 break;
               case HomeMenu.popular:
                 destinations.add(
-                  NavigationDestination(icon: const Icon(CustomIcons.popular), label: i18n("popular_title")),
+                  NavigationDestination(
+                    icon: const Icon(Remix.fire_line),
+                    selectedIcon: const Icon(Remix.fire_fill),
+                    label: i18n("popular_title"),
+                  ),
                 );
                 break;
               case HomeMenu.areas:
                 destinations.add(
-                  NavigationDestination(icon: const Icon(Remix.apps_2_line), label: i18n("areas_title")),
+                  NavigationDestination(
+                    icon: const Icon(Remix.apps_2_line),
+                    selectedIcon: const Icon(Remix.apps_2_fill),
+                    label: i18n("areas_title"),
+                  ),
                 );
                 break;
               case HomeMenu.record:
                 destinations.add(
-                  NavigationDestination(icon: const Icon(Remix.download_2_fill), label: i18n("record_center")),
+                  NavigationDestination(
+                    icon: const Icon(Remix.download_2_line),
+                    selectedIcon: const Icon(Remix.download_2_fill),
+                    label: i18n("record_center"),
+                  ),
                 );
                 break;
             }

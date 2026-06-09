@@ -164,7 +164,7 @@ extension AppLayoutFactory on BuildContext {
         mainAxisSize: MainAxisSize.min,
         children: [
           Padding(
-            padding: const EdgeInsets.only(top: 4),
+            padding: const EdgeInsets.only(top: 2),
             child: IconTheme(
               data: IconThemeData(color: iconColor ?? theme.colorScheme.primary, size: 22),
               child: iconWidget,
@@ -178,7 +178,7 @@ extension AppLayoutFactory on BuildContext {
         mainAxisSize: MainAxisSize.min,
         children: [
           Padding(
-            padding: const EdgeInsets.only(top: 4),
+            padding: const EdgeInsets.only(top: 2),
             child: Icon(icon, color: iconColor ?? theme.colorScheme.primary, size: 22),
           ),
         ],
@@ -186,6 +186,10 @@ extension AppLayoutFactory on BuildContext {
     }
 
     return ListTile(
+      horizontalTitleGap: 12,
+      minLeadingWidth: 0,
+      minVerticalPadding: 0,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       leading: leadingWidget,
       title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
       subtitle: subtitle != null && subtitle.isNotEmpty
@@ -199,13 +203,21 @@ extension AppLayoutFactory on BuildContext {
               ),
             )
           : null,
-      trailing:
-          trailing ??
-          (onTap != null
-              ? Icon(Icons.chevron_right_rounded, color: theme.hintColor.withValues(alpha: 0.4), size: 20)
-              : null),
+      trailing: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child:
+                trailing ??
+                (onTap != null
+                    ? Icon(Icons.chevron_right_rounded, color: theme.hintColor.withValues(alpha: 0.4), size: 20)
+                    : null),
+          ),
+        ],
+      ),
       onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
     );
   }
 
