@@ -1,7 +1,7 @@
-import 'package:tars_dart/tars/codec/tars_struct.dart';
-import 'package:tars_dart/tars/codec/tars_displayer.dart';
-import 'package:tars_dart/tars/codec/tars_input_stream.dart';
-import 'package:tars_dart/tars/codec/tars_output_stream.dart';
+import 'package:pure_live/pkg/tars/codec/tars_struct.dart';
+import 'package:pure_live/pkg/tars/codec/tars_displayer.dart';
+import 'package:pure_live/pkg/tars/codec/tars_input_stream.dart';
+import 'package:pure_live/pkg/tars/codec/tars_output_stream.dart';
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
 class GetCdnTokenResp extends TarsStruct {
@@ -22,27 +22,27 @@ class GetCdnTokenResp extends TarsStruct {
   String hlsAntiCode = "";
 
   @override
-  void readFrom(TarsInputStream _is) {
-    url = _is.read(url, 0, false);
-    cdnType = _is.read(cdnType, 1, false);
-    streamName = _is.read(streamName, 2, false);
-    presenterUid = _is.read(presenterUid, 3, false);
-    antiCode = _is.read(antiCode, 4, false);
-    sTime = _is.read(sTime, 5, false);
-    flvAntiCode = _is.read(flvAntiCode, 6, false);
-    hlsAntiCode = _is.read(hlsAntiCode, 7, false);
+  void readFrom(TarsInputStream inputStream) {
+    url = inputStream.read(url, 0, false);
+    cdnType = inputStream.read(cdnType, 1, false);
+    streamName = inputStream.read(streamName, 2, false);
+    presenterUid = inputStream.read(presenterUid, 3, false);
+    antiCode = inputStream.read(antiCode, 4, false);
+    sTime = inputStream.read(sTime, 5, false);
+    flvAntiCode = inputStream.read(flvAntiCode, 6, false);
+    hlsAntiCode = inputStream.read(hlsAntiCode, 7, false);
   }
 
   @override
-  void writeTo(TarsOutputStream _os) {
-    _os.write(url, 0);
-    _os.write(cdnType, 1);
-    _os.write(streamName, 2);
-    _os.write(presenterUid, 3);
-    _os.write(antiCode, 4);
-    _os.write(sTime, 5);
-    _os.write(flvAntiCode, 6);
-    _os.write(hlsAntiCode, 7);
+  void writeTo(TarsOutputStream outputStream) {
+    outputStream.write(url, 0);
+    outputStream.write(cdnType, 1);
+    outputStream.write(streamName, 2);
+    outputStream.write(presenterUid, 3);
+    outputStream.write(antiCode, 4);
+    outputStream.write(sTime, 5);
+    outputStream.write(flvAntiCode, 6);
+    outputStream.write(hlsAntiCode, 7);
   }
 
   @override
@@ -60,15 +60,15 @@ class GetCdnTokenResp extends TarsStruct {
 
   @override
   void displayAsString(StringBuffer sb, int level) {
-    TarsDisplayer _ds = TarsDisplayer(sb, level: level);
-    _ds.DisplayString(url, "url");
-    _ds.DisplayString(cdnType, "cdnType");
-    _ds.DisplayString(streamName, "streamName");
-    _ds.DisplayInt(presenterUid, "presenterUid");
-    _ds.DisplayString(antiCode, "antiCode");
-    _ds.DisplayString(sTime, "sTime");
-    _ds.DisplayString(flvAntiCode, "flvAntiCode");
-    _ds.DisplayString(hlsAntiCode, "hlsAntiCode");
+    TarsDisplayer ds = TarsDisplayer(sb, level: level);
+    ds.DisplayString(url, "url");
+    ds.DisplayString(cdnType, "cdnType");
+    ds.DisplayString(streamName, "streamName");
+    ds.DisplayInt(presenterUid, "presenterUid");
+    ds.DisplayString(antiCode, "antiCode");
+    ds.DisplayString(sTime, "sTime");
+    ds.DisplayString(flvAntiCode, "flvAntiCode");
+    ds.DisplayString(hlsAntiCode, "hlsAntiCode");
   }
 
   @override

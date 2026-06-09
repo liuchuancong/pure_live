@@ -157,12 +157,6 @@ dependencies:
   protobuf: ^6.0.0 # Protocol Buffers
   fixnum: ^1.1.0 # 固定精度数字
   dlna_dart: ^0.1.0 # DLNA投屏
-  dart_tars_protocol:
-    git: https://github.com/xiaoyaocz/dart_tars_protocol.git
-  tars_dart:
-    git:
-      url: https://github.com/xiaoyaocz/dart_simple_live.git
-      path: ./simple_live_core/packages/tars_dart
 
   # -------------------------- 功能组件 --------------------------
   url_launcher: ^6.1.12 # 打开外部链接

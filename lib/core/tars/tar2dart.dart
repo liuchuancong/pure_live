@@ -41,17 +41,17 @@ String generate(List<Field> fields) {
 
   // readFrom
   sb.writeln('@override');
-  sb.writeln('void readFrom(TarsInputStream _is) {');
+  sb.writeln('void readFrom(TarsInputStream inputStream) {');
   for (final f in fields) {
-    sb.writeln('  ${padRight(f.name, 20)} = _is.read(${f.name}, ${f.tag}, false);');
+    sb.writeln('  ${padRight(f.name, 20)} = inputStream.read(${f.name}, ${f.tag}, false);');
   }
   sb.writeln('}\n');
 
   // writeTo
   sb.writeln('@override');
-  sb.writeln('void writeTo(TarsOutputStream _os) {');
+  sb.writeln('void writeTo(TarsOutputStream outputStream) {');
   for (final f in fields) {
-    sb.writeln('  _os.write(${f.name}, ${f.tag});');
+    sb.writeln('  outputStream.write(${f.name}, ${f.tag});');
   }
   sb.writeln('}\n');
 
@@ -68,10 +68,10 @@ String generate(List<Field> fields) {
   // display
   sb.writeln('@override');
   sb.writeln('displayAsString(StringBuffer sb, int level) {');
-  sb.writeln('  TarsDisplayer _ds = TarsDisplayer(sb, level: level);');
+  sb.writeln('  TarsDisplayer ds = TarsDisplayer(sb, level: level);');
 
   for (final f in fields) {
-    sb.writeln('  _ds.${displayMethod(f.type)}(${f.name}, "${f.name}");');
+    sb.writeln('  ds.${displayMethod(f.type)}(${f.name}, "${f.name}");');
   }
   sb.writeln('}');
 

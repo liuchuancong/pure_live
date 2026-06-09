@@ -1,6 +1,6 @@
-import 'package:tars_dart/tars/codec/tars_struct.dart';
-import 'package:tars_dart/tars/codec/tars_input_stream.dart';
-import 'package:tars_dart/tars/codec/tars_output_stream.dart';
+import 'package:pure_live/pkg/tars/codec/tars_struct.dart';
+import 'package:pure_live/pkg/tars/codec/tars_input_stream.dart';
+import 'package:pure_live/pkg/tars/codec/tars_output_stream.dart';
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
 class HYPushMessage extends TarsStruct {
@@ -10,15 +10,15 @@ class HYPushMessage extends TarsStruct {
   int protocolType = 0;
 
   @override
-  void readFrom(TarsInputStream _is) {
-    pushType = _is.read(pushType, 0, false);
-    uri = _is.read(uri, 1, false);
-    msg = _is.readBytes(2, false);
-    protocolType = _is.read(protocolType, 3, false);
+  void readFrom(TarsInputStream inputStream) {
+    pushType = inputStream.read(pushType, 0, false);
+    uri = inputStream.read(uri, 1, false);
+    msg = inputStream.readBytes(2, false);
+    protocolType = inputStream.read(protocolType, 3, false);
   }
 
   @override
-  void writeTo(TarsOutputStream _os) {}
+  void writeTo(TarsOutputStream outputStream) {}
 
   @override
   Object deepCopy() {
@@ -40,15 +40,15 @@ class HYSender extends TarsStruct {
   int gender = 0;
 
   @override
-  void readFrom(TarsInputStream _is) {
-    uid = _is.read(uid, 0, false);
-    lMid = _is.read(lMid, 0, false);
-    nickName = _is.read(nickName, 2, false);
-    gender = _is.read(gender, 3, false);
+  void readFrom(TarsInputStream inputStream) {
+    uid = inputStream.read(uid, 0, false);
+    lMid = inputStream.read(lMid, 0, false);
+    nickName = inputStream.read(nickName, 2, false);
+    gender = inputStream.read(gender, 3, false);
   }
 
   @override
-  void writeTo(TarsOutputStream _os) {}
+  void writeTo(TarsOutputStream outputStream) {}
 
   @override
   Object deepCopy() {
@@ -69,14 +69,14 @@ class HYMessage extends TarsStruct {
   HYBulletFormat bulletFormat = HYBulletFormat();
 
   @override
-  void readFrom(TarsInputStream _is) {
-    userInfo = _is.readTarsStruct(userInfo, 0, false) as HYSender;
-    content = _is.read(content, 3, false);
-    bulletFormat = _is.readTarsStruct(bulletFormat, 6, false) as HYBulletFormat;
+  void readFrom(TarsInputStream inputStream) {
+    userInfo = inputStream.readTarsStruct(userInfo, 0, false) as HYSender;
+    content = inputStream.read(content, 3, false);
+    bulletFormat = inputStream.readTarsStruct(bulletFormat, 6, false) as HYBulletFormat;
   }
 
   @override
-  void writeTo(TarsOutputStream _os) {}
+  void writeTo(TarsOutputStream outputStream) {}
 
   @override
   Object deepCopy() {
@@ -97,15 +97,15 @@ class HYBulletFormat extends TarsStruct {
   int transitionType = 1;
 
   @override
-  void readFrom(TarsInputStream _is) {
-    fontColor = _is.read(fontColor, 0, false);
-    fontSize = _is.read(fontSize, 1, false);
-    textSpeed = _is.read(textSpeed, 2, false);
-    transitionType = _is.read(transitionType, 3, false);
+  void readFrom(TarsInputStream inputStream) {
+    fontColor = inputStream.read(fontColor, 0, false);
+    fontSize = inputStream.read(fontSize, 1, false);
+    textSpeed = inputStream.read(textSpeed, 2, false);
+    transitionType = inputStream.read(transitionType, 3, false);
   }
 
   @override
-  void writeTo(TarsOutputStream _os) {}
+  void writeTo(TarsOutputStream outputStream) {}
 
   @override
   Object deepCopy() {
