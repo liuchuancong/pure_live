@@ -20,108 +20,82 @@ class FontSettingsPage extends GetView<SettingsService> {
           ),
         ],
       ),
-      body: ListView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        children: [
-          context.buildGroupTitle(i18n("body_typography_group")),
-          context.buildModernCard([
-            _buildSliderTile(
-              context,
-              title: i18n("font_body_small_title"),
-              subtitle: i18n("font_body_small_desc"),
-              value: SettingsService.to.font.fontSizeBodySmall,
-              min: 9.0,
-              max: 15.0,
-            ),
-            const Divider(height: 1, indent: 56),
-            _buildSliderTile(
-              context,
-              title: i18n("font_body_medium_title"),
-              subtitle: i18n("font_body_medium_desc"),
-              value: SettingsService.to.font.fontSizeBodyMedium,
-              min: 11.0,
-              max: 17.0,
-            ),
-            const Divider(height: 1, indent: 56),
-            _buildSliderTile(
-              context,
-              title: i18n("font_body_large_title"),
-              subtitle: i18n("font_body_large_desc"),
-              value: SettingsService.to.font.fontSizeBodyLarge,
-              min: 12.0,
-              max: 18.0,
-            ),
-          ]),
-          const SizedBox(height: 20),
-
-          context.buildGroupTitle(i18n("header_typography_group")),
-          context.buildModernCard([
-            _buildSliderTile(
-              context,
-              title: i18n("font_title_medium_title"),
-              subtitle: i18n("font_title_medium_desc"),
-              value: SettingsService.to.font.fontSizeTitleMedium,
-              min: 13.0,
-              max: 20.0,
-            ),
-            const Divider(height: 1, indent: 56),
-            _buildSliderTile(
-              context,
-              title: i18n("font_title_large_title"),
-              subtitle: i18n("font_title_large_desc"),
-              value: SettingsService.to.font.fontSizeTitleLarge,
-              min: 16.0,
-              max: 26.0,
-            ),
-          ]),
-          const SizedBox(height: 32),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSliderTile(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required RxDouble value,
-    required double min,
-    required double max,
-  }) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(title, style: AppTextStyles.t15),
-              Obx(
-                () => Text(
-                  "${value.value.toStringAsFixed(1)} px",
-                  style: AppTextStyles.t13Bold.copyWith(color: theme.colorScheme.primary),
-                ),
+      body: Obx(
+        () => ListView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          children: [
+            context.buildGroupTitle(i18n("body_typography_group")),
+            context.buildModernCard([
+              context.buildSliderTile(
+                context,
+                icon: Remix.font_size,
+                title: i18n("font_body_small_title"),
+                value: SettingsService.to.font.fontSizeBodySmall.v,
+                min: 9.0,
+                max: 15.0,
+                displayValue: "${SettingsService.to.font.fontSizeBodySmall.v.toStringAsFixed(0)}px",
+                onChanged: (newValue) {
+                  SettingsService.to.font.fontSizeBodySmall.v = newValue;
+                },
               ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          Text(subtitle, style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
-          const SizedBox(height: 8),
-          Obx(
-            () => Slider(
-              value: value.value,
-              min: min,
-              max: max,
-              activeColor: theme.colorScheme.primary,
-              inactiveColor: theme.colorScheme.primary.withValues(alpha: 0.12),
-              onChanged: (val) => value.value = val,
-            ),
-          ),
-        ],
+              context.buildSliderTile(
+                context,
+                icon: Remix.text,
+                title: i18n("font_body_medium_title"),
+                value: SettingsService.to.font.fontSizeBodyMedium.v,
+                min: 11.0,
+                max: 17.0,
+                displayValue: "${SettingsService.to.font.fontSizeBodyMedium.v.toStringAsFixed(0)}px",
+                onChanged: (newValue) {
+                  SettingsService.to.font.fontSizeBodyMedium.v = newValue;
+                },
+              ),
+              context.buildSliderTile(
+                context,
+                icon: Remix.text_wrap,
+                title: i18n("font_body_large_title"),
+                value: SettingsService.to.font.fontSizeBodyLarge.v,
+                min: 12.0,
+                max: 18.0,
+                displayValue: "${SettingsService.to.font.fontSizeBodyLarge.v.toStringAsFixed(0)}px",
+                onChanged: (newValue) {
+                  SettingsService.to.font.fontSizeBodyLarge.v = newValue;
+                },
+              ),
+            ]),
+            const SizedBox(height: 20),
+
+            context.buildGroupTitle(i18n("header_typography_group")),
+            context.buildModernCard([
+              context.buildSliderTile(
+                context,
+                icon: Remix.heading,
+                title: i18n("font_title_medium_title"),
+                value: SettingsService.to.font.fontSizeTitleMedium.v,
+                min: 13.0,
+                max: 20.0,
+                displayValue: "${SettingsService.to.font.fontSizeTitleMedium.v.toStringAsFixed(0)}px",
+                onChanged: (newValue) {
+                  SettingsService.to.font.fontSizeTitleMedium.v = newValue;
+                },
+              ),
+              context.buildSliderTile(
+                context,
+                icon: Remix.bold,
+                title: i18n("font_title_large_title"),
+                value: SettingsService.to.font.fontSizeTitleLarge.v,
+                min: 16.0,
+                max: 26.0,
+                displayValue: "${SettingsService.to.font.fontSizeTitleLarge.v.toStringAsFixed(0)}px",
+                onChanged: (newValue) {
+                  SettingsService.to.font.fontSizeTitleLarge.v = newValue;
+                },
+              ),
+            ]),
+            const SizedBox(height: 32),
+          ],
+        ),
       ),
     );
   }
@@ -132,6 +106,6 @@ class FontSettingsPage extends GetView<SettingsService> {
     SettingsService.to.font.fontSizeBodyLarge.v = 14.0;
     SettingsService.to.font.fontSizeTitleMedium.v = 15.0;
     SettingsService.to.font.fontSizeTitleLarge.v = 20.0;
-    ToastUtil.show(i18n("settings_saved"));
+    ToastUtil.show(i18n("restore_default"));
   }
 }

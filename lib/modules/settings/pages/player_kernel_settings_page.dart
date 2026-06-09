@@ -14,16 +14,17 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(i18n("player_kernel"))),
+      // 标题规范化
+      appBar: AppBar(title: Text(i18n("player_kernel_settings"))),
       body: ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          context.buildGroupTitle(i18n("kernel_switch")),
+          // 分组标题规范化
+          context.buildGroupTitle(i18n("core_kernel_settings")),
           context.buildModernCard([
             Obx(() {
               String activeKey = SettingsService.to.player.videoPlayerKey.v;
-
               String activeI18nKey = PlayerConsts.names[activeKey] ?? PlayerConsts.names[PlayerConsts.defaultKey]!;
 
               return context.buildTile(
@@ -58,34 +59,36 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                 ),
               );
             }),
+            // 统一使用规范SwitchTile
             context.buildSwitchTile(
+              icon: Remix.volume_up_line,
               title: i18n('audio_only_mode'),
               subtitle: i18n("audio_only_mode_subtitle"),
               value: SettingsService.to.player.audioOnly,
-              icon: Remix.volume_up_line,
             ),
             context.buildSwitchTile(
+              icon: Remix.flashlight_line,
               title: i18n('enable_codec'),
               subtitle: i18n("gpu_decode"),
               value: SettingsService.to.player.enableCodec,
-              icon: Remix.flashlight_line,
             ),
-
             context.buildSwitchTile(
+              icon: Remix.p2p_line,
               title: i18n('force_destroy_player'),
               subtitle: i18n('force_destroy_player_subtitle'),
               value: SettingsService.to.player.useHardStopOnExit,
-              icon: Remix.p2p_line,
             ),
           ]),
+
+          // MPV内核专属设置
           Obx(() {
             String activeKey = SettingsService.to.player.videoPlayerKey.v;
             if (PlayerConsts.engines[activeKey] != PlayerEngine.mediaKit) {
               return const SizedBox.shrink();
             }
-
             return _buildMpvSettings(context);
           }),
+
           const SizedBox(height: 32),
         ],
       ),
@@ -100,11 +103,13 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
         const Padding(padding: EdgeInsets.only(left: 16, right: 16, bottom: 0, top: 12), child: Divider()),
         if (Platform.isAndroid)
           context.buildSwitchTile(
+            icon: Remix.shield_flash_line,
             title: i18n('compat_mode'),
             subtitle: i18n('compat_mode_subtitle'),
             value: SettingsService.to.player.playerCompatMode,
-            icon: Remix.shield_flash_line,
           ),
+
+        // 分组标题i18n规范化
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 5, 12, 4),
           child: Row(
@@ -118,6 +123,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
             ],
           ),
         ),
+
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(
@@ -152,19 +158,17 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
               const SizedBox(width: 12),
               InkWell(
                 borderRadius: BorderRadius.circular(8),
-                onTap: () {
-                  SettingsService.to.player.resetMpvPlayerSettings();
-                },
+                onTap: () => SettingsService.to.player.resetMpvPlayerSettings(),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(RemixIcons.refresh_line, size: 14, color: theme.colorScheme.error),
+                      const Icon(Remix.refresh_line, size: 14, color: Colors.red),
                       const SizedBox(width: 4),
                       Text(
-                        i18n("reset"), // Ensure "reset" key exists in your i18n file
-                        style: AppTextStyles.t12.copyWith(color: theme.colorScheme.error, fontWeight: FontWeight.w600),
+                        i18n("reset"),
+                        style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -176,9 +180,9 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
 
         context.buildModernCard([
           context.buildSwitchTile(
+            icon: Remix.apps_2_add_fill,
             title: i18n("custom_output_hwdec"),
             value: SettingsService.to.player.customPlayerOutput,
-            icon: Remix.apps_2_add_fill,
           ),
           Obx(
             () => context.buildMenuTile<String>(
@@ -212,6 +216,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     );
   }
 
+  // 播放器选择弹窗
   void showVideoSetDialog() {
     List<String> playerList = PlatformUtils.isMobile
         ? PlayerConsts.names.values.toList()
@@ -244,7 +249,6 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                   mainAxisSize: MainAxisSize.min,
                   children: playerList.map<Widget>((i18nKey) {
                     final String itemKey = PlayerConsts.getKeyByI18nKey(i18nKey);
-
                     return ListTile(
                       leading: Radio<String>(value: itemKey, activeColor: Theme.of(context).colorScheme.primary),
                       title: Text(i18n(i18nKey), style: AppTextStyles.t15),
@@ -270,6 +274,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     );
   }
 
+  // 代理设置弹窗（替换为统一SwitchTile）
   void showProxySettingsDialog() {
     final hostController = TextEditingController(text: SettingsService.to.proxy.proxyHost.v);
     final portController = TextEditingController(text: SettingsService.to.proxy.proxyPort.v.toString());
@@ -283,13 +288,11 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SwitchListTile(
-                  title: Text(i18n("enable_player_proxy")),
-                  value: SettingsService.to.proxy.enableProxy.v,
-                  activeThumbColor: Theme.of(context).colorScheme.primary,
-                  onChanged: (bool value) {
-                    SettingsService.to.proxy.enableProxy.v = value;
-                  },
+                // 🔥 替换为项目统一buildSwitchTile
+                context.buildSwitchTile(
+                  icon: Remix.shield_keyhole_line,
+                  title: i18n("enable_player_proxy"),
+                  value: SettingsService.to.proxy.enableProxy,
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -300,9 +303,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                     prefixIcon: const Icon(Remix.global_line, size: 20),
                     border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                   ),
-                  onChanged: (value) {
-                    SettingsService.to.proxy.proxyHost.v = value;
-                  },
+                  onChanged: (value) => SettingsService.to.proxy.proxyHost.v = value,
                 ),
                 const SizedBox(height: 16),
                 TextField(
@@ -316,9 +317,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                   ),
                   onChanged: (value) {
                     int? port = int.tryParse(value);
-                    if (port != null) {
-                      SettingsService.to.proxy.proxyPort.v = port;
-                    }
+                    if (port != null) SettingsService.to.proxy.proxyPort.v = port;
                   },
                 ),
               ],

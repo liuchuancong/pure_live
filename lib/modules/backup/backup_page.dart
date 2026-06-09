@@ -51,7 +51,7 @@ class _BackupPageState extends State<BackupPage> {
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           children: [
-            context.buildGroupTitle("Firebase"),
+            context.buildGroupTitle(i18n("cloud_backup")),
             context.buildModernCard([
               context.buildTile(
                 icon: Remix.account_circle_line,
@@ -65,9 +65,6 @@ class _BackupPageState extends State<BackupPage> {
                   }
                 },
               ),
-            ]),
-            context.buildGroupTitle(i18n("webdav")),
-            context.buildModernCard([
               context.buildTile(
                 icon: Remix.cloud_line,
                 title: i18n("webdav"),
@@ -83,7 +80,7 @@ class _BackupPageState extends State<BackupPage> {
                 ),
             ]),
             const SizedBox(height: 20),
-            context.buildGroupTitle(i18n("create_backup")),
+            context.buildGroupTitle(i18n("local_backup")),
             context.buildModernCard([
               context.buildTile(
                 icon: Remix.file_download_line,
@@ -105,7 +102,7 @@ class _BackupPageState extends State<BackupPage> {
               ),
             ]),
             const SizedBox(height: 20),
-            context.buildGroupTitle(i18n("auto_backup")),
+            context.buildGroupTitle(i18n("backup_settings")),
             context.buildModernCard([
               context.buildTile(
                 icon: Remix.folder_open_line,

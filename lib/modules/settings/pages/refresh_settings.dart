@@ -13,7 +13,7 @@ class RefreshSettingsPage extends GetView<RefreshConfigController> {
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          context.buildGroupTitle(i18n("refresh_settings")),
+          context.buildGroupTitle(i18n("auto_refresh_settings")),
           context.buildModernCard([
             context.buildSwitchTile(
               icon: Remix.refresh_line,
@@ -23,17 +23,11 @@ class RefreshSettingsPage extends GetView<RefreshConfigController> {
             ),
             Obx(() {
               if (controller.autoRefreshFavorite.value) {
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    context.buildTile(
-                      icon: Remix.time_line,
-                      title: i18n("auto_refresh_interval"),
-                      subtitle: _getIntervalText(controller.autoRefreshInterval.value),
-                      onTap: showRefreshIntervalDialog,
-                    ),
-                  ],
+                return context.buildTile(
+                  icon: Remix.time_line,
+                  title: i18n("auto_refresh_interval"),
+                  subtitle: _getIntervalText(controller.autoRefreshInterval.value),
+                  onTap: showRefreshIntervalDialog,
                 );
               }
               return const SizedBox.shrink();
@@ -54,31 +48,19 @@ class RefreshSettingsPage extends GetView<RefreshConfigController> {
   }
 
   String _getIntervalText(int minute) {
-    if (minute == 1) return "1 ${i18n("minute")}";
-    if (minute == 2) return "2 ${i18n("minute")}";
-    if (minute == 3) return "3 ${i18n("minute")}";
-    if (minute == 5) return "5 ${i18n("minute")}";
-    if (minute == 10) return "10 ${i18n("minute")}";
-    if (minute == 15) return "15 ${i18n("minute")}";
-    if (minute == 20) return "20 ${i18n("minute")}";
-    if (minute == 30) return "30 ${i18n("minute")}";
-    if (minute == 45) return "45 ${i18n("minute")}";
-    if (minute == 60) return "1 ${i18n("hour")}";
-    if (minute == 90) return "1.5 ${i18n("hour")}";
-    if (minute == 120) return "2 ${i18n("hour")}";
-    if (minute == 180) return "3 ${i18n("hour")}";
-    if (minute == 240) return "4 ${i18n("hour")}";
-    if (minute == 360) return "6 ${i18n("hour")}";
-    if (minute == 720) return "12 ${i18n("hour")}";
-    if (minute == 1440) return "24 ${i18n("hour")}";
-    return "$minute ${i18n("minute")}";
+    if (minute < 60) {
+      return "$minute ${i18n("minute")}";
+    } else if (minute == 60) {
+      return "1 ${i18n("hour")}";
+    } else if (minute == 90) {
+      return "1.5 ${i18n("hour")}";
+    } else {
+      return "${minute ~/ 60} ${i18n("hour")}";
+    }
   }
 
   void showRefreshIntervalDialog() {
     final Map<int, String> intervals = {
-      1: "1 ${i18n("minute")}",
-      2: "2 ${i18n("minute")}",
-      3: "3 ${i18n("minute")}",
       5: "5 ${i18n("minute")}",
       10: "10 ${i18n("minute")}",
       15: "15 ${i18n("minute")}",
@@ -91,8 +73,6 @@ class RefreshSettingsPage extends GetView<RefreshConfigController> {
       180: "3 ${i18n("hour")}",
       240: "4 ${i18n("hour")}",
       360: "6 ${i18n("hour")}",
-      720: "12 ${i18n("hour")}",
-      1440: "24 ${i18n("hour")}",
     };
 
     showDialog(

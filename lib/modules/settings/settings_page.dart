@@ -26,7 +26,7 @@ class SettingsPage extends GetView<SettingsService> {
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          context.buildGroupTitle(i18n("theme_customization")),
+          context.buildGroupTitle(i18n("theme_settings")),
           context.buildModernCard([
             context.buildTile(
               icon: Remix.palette_line,
@@ -57,7 +57,7 @@ class SettingsPage extends GetView<SettingsService> {
             ),
           ]),
           const SizedBox(height: 20),
-          context.buildGroupTitle(i18n("video")),
+          context.buildGroupTitle(i18n("video_settings")),
           context.buildModernCard([
             context.buildTile(
               icon: Remix.film_line,
@@ -68,7 +68,7 @@ class SettingsPage extends GetView<SettingsService> {
           ]),
 
           const SizedBox(height: 20),
-          context.buildGroupTitle(i18n("player_kernel")),
+          context.buildGroupTitle(i18n("player_kernel_settings")),
           context.buildModernCard([
             context.buildTile(
               icon: Remix.cpu_line,
@@ -79,7 +79,7 @@ class SettingsPage extends GetView<SettingsService> {
           ]),
 
           const SizedBox(height: 20),
-          context.buildGroupTitle(i18n("general")),
+          context.buildGroupTitle(i18n("general_settings")),
           context.buildModernCard([
             context.buildTile(
               icon: Remix.settings_4_line,
@@ -102,7 +102,7 @@ class SettingsPage extends GetView<SettingsService> {
           ]),
 
           const SizedBox(height: 20),
-          context.buildGroupTitle(i18n("cache_and_data")),
+          context.buildGroupTitle(i18n("data_manage")),
           context.buildModernCard([
             context.buildTile(
               icon: Remix.database_2_line,
@@ -113,10 +113,10 @@ class SettingsPage extends GetView<SettingsService> {
           ]),
 
           const SizedBox(height: 20),
-          context.buildGroupTitle(i18n("create_backup")),
+          context.buildGroupTitle(i18n("backup_manage")),
           context.buildModernCard([
             context.buildTile(
-              icon: Remix.refresh_line,
+              icon: Remix.cloud_line,
               title: i18n("backup_recover"),
               subtitle: i18n("backup_recover_desc"),
               onTap: () => Get.to(() => const BackupPage()),

@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/file_utils.dart';
-import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
 
@@ -160,8 +159,8 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                 onTap: _showQueueSizeDialog,
               ),
 
-              _buildSliderTile(
-                theme,
+              context.buildSliderTile(
+                context,
                 icon: Icons.video_settings_rounded,
                 title: i18n("segment_duration"),
                 value: controller.segmentTime.value.toDouble(),
@@ -189,8 +188,8 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
               ),
 
               if (controller.autoReconnect.value)
-                _buildSliderTile(
-                  theme,
+                context.buildSliderTile(
+                  context,
                   icon: Icons.repeat_rounded,
                   title: i18n("max_retry_count"),
                   value: controller.maxRetryCount.value.toDouble(),
@@ -200,8 +199,8 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                   onChanged: (v) => controller.updateMaxRetryCount(v.toInt()),
                 ),
 
-              _buildSliderTile(
-                theme,
+              context.buildSliderTile(
+                context,
                 icon: Icons.timer_rounded,
                 title: i18n("retry_delay"),
                 value: controller.retryDelay.value.toDouble(),
@@ -222,8 +221,8 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
               ),
 
               if (controller.enablePolling.value) ...[
-                _buildSliderTile(
-                  theme,
+                context.buildSliderTile(
+                  context,
                   icon: Icons.schedule_rounded,
                   title: i18n("check_interval"),
                   value: controller.liveCheckInterval.value.toDouble(),
@@ -241,8 +240,8 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                 ),
 
                 if (controller.enableBackoff.value)
-                  _buildSliderTile(
-                    theme,
+                  context.buildSliderTile(
+                    context,
                     icon: Icons.hourglass_bottom_rounded,
                     title: i18n("max_check_interval"),
                     value: controller.maxCheckInterval.value.toDouble(),
@@ -278,69 +277,6 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
           color: Get.theme.colorScheme.primary,
           letterSpacing: 1.2,
         ),
-      ),
-    );
-  }
-
-  Widget _buildSliderTile(
-    ThemeData theme, {
-    required IconData icon,
-    required String title,
-    required double value,
-    required double min,
-    required double max,
-    required String displayValue,
-    required ValueChanged<double> onChanged,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(width: 24, child: Icon(icon, size: 24, color: theme.colorScheme.primary)),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(title, style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w600)),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        displayValue,
-                        style: AppTextStyles.t13.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                Transform.translate(
-                  offset: const Offset(-8, 0),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: SfSlider(
-                      min: min,
-                      max: max,
-                      value: value,
-                      activeColor: theme.colorScheme.primary,
-                      inactiveColor: theme.colorScheme.primary.withValues(alpha: 0.15),
-                      onChanged: (dynamic v) => onChanged(v as double),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

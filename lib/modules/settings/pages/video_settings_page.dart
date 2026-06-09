@@ -14,13 +14,13 @@ class VideoSettingsPage extends GetView<SettingsService> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(i18n("video"))),
+      appBar: AppBar(title: Text(i18n("video_settings"))),
       body: ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          // 📦 分组一：音频控制 (Audio Settings)
-          context.buildGroupTitle(i18n("global_mute")),
+          // 音频设置
+          context.buildGroupTitle(i18n("audio_settings")),
           context.buildModernCard([
             Obx(
               () => context.buildSwitchTile(
@@ -32,21 +32,27 @@ class VideoSettingsPage extends GetView<SettingsService> {
             ),
             if (PlatformUtils.isMobile)
               Obx(
-                () => _buildSliderTile(
+                () => context.buildSliderTile(
                   context,
                   icon: Remix.phone_line,
                   title: i18n("mobile_default_volume"),
                   value: SettingsService.to.vol.defaultMobileVolume.v,
+                  min: 0.0,
+                  max: 100.0,
+                  displayValue: "${(SettingsService.to.vol.defaultMobileVolume.v * 100).toStringAsFixed(0)}%",
                   onChanged: (val) => SettingsService.to.vol.defaultMobileVolume.v = val,
                 ),
               ),
             if (PlatformUtils.isDesktop)
               Obx(
-                () => _buildSliderTile(
+                () => context.buildSliderTile(
                   context,
                   icon: Remix.computer_line,
                   title: i18n("desktop_default_volume"),
                   value: SettingsService.to.vol.defaultDesktopVolume.v,
+                  min: 0.0,
+                  max: 100.0,
+                  displayValue: "${(SettingsService.to.vol.defaultDesktopVolume.v * 100).toStringAsFixed(0)}%",
                   onChanged: (val) => SettingsService.to.vol.defaultDesktopVolume.v = val,
                 ),
               ),
@@ -54,8 +60,8 @@ class VideoSettingsPage extends GetView<SettingsService> {
 
           const SizedBox(height: 20),
 
-          // 📦 分组二：清晰度与画质 (Resolution & Quality)
-          context.buildGroupTitle(i18n("prefer_resolution")),
+          // 画质设置
+          context.buildGroupTitle(i18n("video_quality_settings")),
           context.buildModernCard([
             Obx(
               () => context.buildTile(
@@ -85,10 +91,25 @@ class VideoSettingsPage extends GetView<SettingsService> {
 
           const SizedBox(height: 20),
 
-          // 📦 分组三：播放行为 (Playback Behaviors)
-          context.buildGroupTitle(i18n("exit_float_window")),
+          // 播放行为设置
+          context.buildGroupTitle(i18n("playback_behavior_settings")),
           context.buildModernCard([
-            if (Platform.isAndroid) _buildBackgroundPlayTile(context),
+            if (Platform.isAndroid)
+              Obx(
+                () => context.buildSwitchTile(
+                  icon: Remix.music_2_line,
+                  title: i18n("enable_background_play"),
+                  subtitle: i18n("enable_background_play_subtitle"),
+                  value: SettingsService.to.app.enableBackgroundPlay,
+                  onChanged: (val) async {
+                    SettingsService.to.app.enableBackgroundPlay.v = val;
+                    if (val && Platform.isAndroid) {
+                      bool hasPermission = await LiveAudioService.requestPlatformPermissions();
+                      SettingsService.to.app.enableBackgroundPlay.v = hasPermission;
+                    }
+                  },
+                ),
+              ),
             context.buildSwitchTile(
               title: i18n("exit_float_window"),
               subtitle: i18n("exit_float_window_subtitle"),
@@ -112,8 +133,8 @@ class VideoSettingsPage extends GetView<SettingsService> {
 
           const SizedBox(height: 20),
 
-          // 📦 分组四：弹幕设置 (Danmaku Settings)
-          context.buildGroupTitle(i18n("show_danmaku")),
+          // 弹幕设置
+          context.buildGroupTitle(i18n("danmaku_settings")),
           context.buildModernCard([
             context.buildSwitchTile(
               title: i18n('show_danmaku'),
@@ -139,70 +160,6 @@ class VideoSettingsPage extends GetView<SettingsService> {
           ]),
           const SizedBox(height: 32),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSliderTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required double value,
-    required ValueChanged<double> onChanged,
-  }) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Icon(icon, color: theme.colorScheme.primary, size: 22),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
-                Row(
-                  children: [
-                    Expanded(
-                      child: SliderTheme(
-                        data: SliderTheme.of(context).copyWith(trackHeight: 3),
-                        child: Slider(value: value.clamp(0.0, 1.0), min: 0.0, max: 1.0, onChanged: onChanged),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    SizedBox(
-                      width: 36,
-                      child: Text(
-                        "${(value * 100).toInt()}%",
-                        style: AppTextStyles.t12.copyWith(color: theme.hintColor, fontWeight: FontWeight.w500),
-                        textAlign: TextAlign.end,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBackgroundPlayTile(BuildContext context) {
-    return Obx(
-      () => SwitchListTile(
-        secondary: const Icon(Remix.music_2_line, size: 24),
-        title: Text(i18n("enable_background_play")),
-        subtitle: Text(i18n("enable_background_play_subtitle")),
-        value: SettingsService.to.app.enableBackgroundPlay.v,
-        onChanged: (value) async {
-          SettingsService.to.app.enableBackgroundPlay.v = value;
-          if (value && Platform.isAndroid) {
-            bool hasPermission = await LiveAudioService.requestPlatformPermissions();
-            SettingsService.to.app.enableBackgroundPlay.v = hasPermission;
-          }
-        },
       ),
     );
   }

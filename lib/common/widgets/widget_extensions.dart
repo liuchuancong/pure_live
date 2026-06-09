@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
+import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:pure_live/common/style/app_text_styles.dart';
 
 extension AppLayoutFactory on BuildContext {
@@ -115,6 +116,7 @@ extension AppLayoutFactory on BuildContext {
     Color? iconColor,
     Color? subtitleColor,
     bool isLong = false,
+    ValueChanged<bool>? onChanged,
   }) {
     final theme = Theme.of(this);
     return Obx(
@@ -133,7 +135,10 @@ extension AppLayoutFactory on BuildContext {
               )
             : null,
         value: value.value,
-        onChanged: (val) => value.value = val,
+        onChanged: (val) {
+          value.value = val;
+          onChanged?.call(val);
+        },
         contentPadding: const EdgeInsets.only(left: 16, top: 2, bottom: 2, right: 8),
       ),
     );
@@ -317,6 +322,75 @@ extension AppLayoutFactory on BuildContext {
           ),
         );
       },
+    );
+  }
+
+  Widget buildSliderTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required double value,
+    required double min,
+    required double max,
+    required String displayValue,
+    required ValueChanged<double> onChanged,
+  }) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: SizedBox(width: 24, child: Icon(icon, size: 22, color: theme.colorScheme.primary)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(title, style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w600)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        displayValue,
+                        style: AppTextStyles.t13.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Transform.translate(
+                  offset: const Offset(-4, 0),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: SfSlider(
+                      min: min,
+                      max: max,
+                      value: value,
+                      activeColor: theme.colorScheme.primary,
+                      inactiveColor: theme.colorScheme.primary.withValues(alpha: 0.15),
+                      onChanged: (dynamic v) => onChanged(v as double),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

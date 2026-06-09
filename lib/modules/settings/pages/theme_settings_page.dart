@@ -144,46 +144,20 @@ class ThemeSettingsPage extends GetView<SettingsService> {
             ),
             const SizedBox(height: 20),
 
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-              child: Row(
-                children: [
-                  Icon(Remix.text_spacing, color: theme.colorScheme.primary, size: 22),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(i18n("text_size_title"), style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 2),
-                        Obx(
-                          () => Text(
-                            "${i18n("current_scale")}: ${SettingsService.to.font.textScaleFactor.v.toStringAsFixed(2)}",
-                            style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.75)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
             Obx(
-              () => Slider(
+              () => context.buildSliderTile(
+                context,
+                icon: Remix.text_spacing,
+                title: i18n("text_size_title"),
                 value: SettingsService.to.font.textScaleFactor.v,
-                min: 0.85,
-                max: 1.35,
-                divisions: 10,
-                label: SettingsService.to.font.textScaleFactor.v.toStringAsFixed(2),
-                activeColor: theme.colorScheme.primary,
-                inactiveColor: theme.colorScheme.primary.withValues(alpha: 0.15),
+                min: 0.5,
+                max: 2.0,
+                displayValue: SettingsService.to.font.textScaleFactor.v.toStringAsFixed(2),
                 onChanged: (val) {
                   SettingsService.to.font.textScaleFactor.v = val;
                 },
               ),
             ),
-
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Align(

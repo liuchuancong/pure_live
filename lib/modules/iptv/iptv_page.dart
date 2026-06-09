@@ -179,11 +179,11 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          context.buildGroupTitle(i18n("manage_page_title")),
+          context.buildGroupTitle(i18n("iptv_manage")),
           context.buildModernCard([
             context.buildTile(
               icon: Remix.cloud_line,
-              title: i18n("manage_page_title"),
+              title: i18n("iptv_list_manage"),
               subtitle: i18n("download_guide_sub"),
               onTap: () => Get.to(() => const IptvManagePage()),
             ),
@@ -224,12 +224,12 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
             ),
           ]),
           const SizedBox(height: 20),
-          context.buildGroupTitle(i18n("iptv_settings")),
+          context.buildGroupTitle(i18n("playlist_settings")),
           context.buildModernCard([
             context.buildTile(
               icon: Remix.download_2_line,
-              title: i18n("import_action"),
-              subtitle: "M3U / TXT",
+              title: i18n("import_playlist"),
+              subtitle: i18n("playlist_file_type"),
               onTap: () => showIptvImportDialog(),
             ),
           ]),
@@ -238,8 +238,8 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
           context.buildModernCard([
             context.buildTile(
               icon: Remix.file_add_line,
-              title: i18n("import_action"),
-              subtitle: "XML / GZ / JSON",
+              title: i18n("import_epg_source"),
+              subtitle: i18n("epg_file_type"),
               onTap: () => showEpgImportDialog(),
             ),
             Obx(
@@ -366,7 +366,6 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
                   style: ElevatedButton.styleFrom(
                     backgroundColor: theme.colorScheme.primary,
                     foregroundColor: theme.colorScheme.onPrimary,
-
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   ),
@@ -415,7 +414,6 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
               return Material(
                 color: Colors.transparent,
                 child: Obx(() {
-                  // 💡 判定当前小时数是否处于被激活状态
                   final bool isSelected = SettingsService.to.iptv.autoSyncHoursInterval.v == hours;
 
                   return ListTile(
@@ -435,7 +433,6 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
                     ),
                     onTap: () {
                       SettingsService.to.iptv.autoSyncHoursInterval.v = hours;
-
                       Navigator.of(context).pop();
                       ToastUtil.show(i18n("settings_saved"));
                     },
