@@ -22,7 +22,7 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
   bool _isMouseInIcon = false;
   bool _isMouseInBar = false;
   Timer? _hideTimer;
-  StreamSubscription? _volumeListener; // 监听全局音量变化
+  StreamSubscription? _volumeListener;
   StreamSubscription? _mobileVolWorker;
   StreamSubscription? _desktopVolWorker;
   static const double _barHeight = 150.0;
@@ -100,7 +100,7 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
     _overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
         width: _barWidth,
-        height: _barHeight + 20,
+        height: _barHeight + 45,
         child: CompositedTransformFollower(
           link: _layerLink,
           showWhenUnlinked: false,
@@ -153,35 +153,47 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
           ),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final double trackHeight = constraints.maxHeight - 40;
-              return GestureDetector(
-                onVerticalDragUpdate: (details) => _handleVolumeDrag(details, trackHeight),
-                child: Stack(
-                  alignment: Alignment.bottomCenter,
-                  children: [
-                    Container(
-                      width: 4,
-                      margin: const EdgeInsets.symmetric(vertical: 20),
-                      decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
-                    ),
-                    Positioned(
-                      bottom: 20,
-                      child: Container(
-                        width: 4,
-                        height: _volume * trackHeight,
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(2)),
+              final double trackHeight = constraints.maxHeight - 65;
+              final int percentage = (_volume * 100).round();
+              return Column(
+                children: [
+                  const SizedBox(height: 12),
+                  Text(
+                    "$percentage%",
+                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onVerticalDragUpdate: (details) => _handleVolumeDrag(details, trackHeight),
+                      child: Stack(
+                        alignment: Alignment.bottomCenter,
+                        children: [
+                          Container(
+                            width: 4,
+                            margin: const EdgeInsets.only(top: 10, bottom: 20),
+                            decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+                          ),
+                          Positioned(
+                            bottom: 20,
+                            child: Container(
+                              width: 4,
+                              height: _volume * trackHeight,
+                              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(2)),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 20 + (_volume * trackHeight) - 6,
+                            child: Container(
+                              width: 12,
+                              height: 12,
+                              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Positioned(
-                      bottom: 20 + (_volume * trackHeight) - 6,
-                      child: Container(
-                        width: 12,
-                        height: 12,
-                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               );
             },
           ),
