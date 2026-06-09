@@ -679,7 +679,18 @@ class RoomCard extends StatelessWidget {
                           ),
                   ),
                 ),
-                if (room.liveStatus == LiveStatus.live)
+                if (room.isRecord == true)
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: CountChip(
+                      icon: Icons.videocam_rounded,
+                      count: i18n("replay"),
+                      dense: dense,
+                      color: Get.theme.primaryColor,
+                    ),
+                  ),
+                if (room.isRecord == false && room.liveStatus == LiveStatus.live)
                   Positioned(
                     right: 8,
                     bottom: 8,
