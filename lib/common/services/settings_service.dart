@@ -47,17 +47,20 @@ class SettingsService extends GetxService {
   RefreshConfigController get refreshConfig => Get.find<RefreshConfigController>();
   PageSettingsController get page => Get.find<PageSettingsController>();
   LogController get log => Get.find<LogController>();
+
   @override
   void onInit() {
     super.onInit();
 
+    Get.lazyPut(() => LogController());
+    Get.lazyPut(() => BiliBiliAccountService());
+    Get.lazyPut(() => FontSettingsController());
+    Get.lazyPut(() => ExitSettingsController());
     Get.lazyPut(() => StartupController());
     Get.lazyPut(() => AppSettingsController());
     Get.lazyPut(() => ThemeSettingsController());
     Get.lazyPut(() => WindowSizeController());
     Get.lazyPut(() => ProxySettingsController());
-    Get.put(BiliBiliAccountService(), permanent: true);
-    Get.put(FontSettingsController(), permanent: true);
     Get.lazyPut(() => PlayerSettingsController());
     Get.lazyPut(() => DanmakuSettingsController());
     Get.lazyPut(() => VolumeSettingsController());
@@ -66,47 +69,39 @@ class SettingsService extends GetxService {
     Get.lazyPut(() => FavoriteRoomController());
     Get.lazyPut(() => IptvSettingsController());
     Get.lazyPut(() => CacheController());
-    Get.put(ExitSettingsController(), permanent: true);
     Get.lazyPut(() => CookieSettingsController());
     Get.lazyPut(() => PageSettingsController());
     Get.lazyPut(() => WebDavController());
     Get.lazyPut(() => BackupController());
-    Get.lazyPut(() => LogController());
 
-    bool executionTriggered = false;
-    final Timer fallbackTimer = Timer(const Duration(seconds: 3), () {
-      if (!executionTriggered) {
-        executionTriggered = true;
-        _forceEagerInitialization();
-      }
-    });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!executionTriggered) {
-        fallbackTimer.cancel();
-        executionTriggered = true;
-        _forceEagerInitialization();
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Future.delayed(const Duration(seconds: 2));
+      _forceEagerInitialization();
     });
   }
 
   void _forceEagerInitialization() {
-    Get.find<StartupController>();
-    Get.find<AppSettingsController>();
-    Get.find<ThemeSettingsController>();
-    Get.find<WindowSizeController>();
-    Get.find<ProxySettingsController>();
-    Get.find<PlayerSettingsController>();
-    Get.find<DanmakuSettingsController>();
-    Get.find<VolumeSettingsController>();
-    Get.find<HistoryController>();
-    Get.find<RefreshConfigController>();
-    Get.find<FavoriteRoomController>();
-    Get.find<IptvSettingsController>();
-    Get.find<CacheController>();
-    Get.find<CookieSettingsController>();
-    Get.find<WebDavController>();
-    Get.find<BackupController>();
+    Get.put(Get.find<LogController>());
+    Get.put(Get.find<BiliBiliAccountService>());
+    Get.put(Get.find<FontSettingsController>());
+    Get.put(Get.find<ExitSettingsController>());
+    Get.put(Get.find<StartupController>());
+    Get.put(Get.find<AppSettingsController>());
+    Get.put(Get.find<ThemeSettingsController>());
+    Get.put(Get.find<WindowSizeController>());
+    Get.put(Get.find<ProxySettingsController>());
+    Get.put(Get.find<PlayerSettingsController>());
+    Get.put(Get.find<DanmakuSettingsController>());
+    Get.put(Get.find<VolumeSettingsController>());
+    Get.put(Get.find<HistoryController>());
+    Get.put(Get.find<RefreshConfigController>());
+    Get.put(Get.find<FavoriteRoomController>());
+    Get.put(Get.find<IptvSettingsController>());
+    Get.put(Get.find<CacheController>());
+    Get.put(Get.find<CookieSettingsController>());
+    Get.find<PageSettingsController>();
+    Get.put(Get.find<WebDavController>());
+    Get.put(Get.find<BackupController>());
     _doMigration();
   }
 

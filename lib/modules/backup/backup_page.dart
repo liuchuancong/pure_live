@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/modules/backup/scan_page.dart';
 import 'package:pure_live/modules/auth/auth_controller.dart';
@@ -126,6 +127,26 @@ class _BackupPageState extends State<BackupPage> {
                 ),
                 onTap: () => logController.storedEnableLog.v = !logController.storedEnableLog.v,
               ),
+              Obx(() {
+                if (logController.serverPort.value == 0) return const SizedBox.shrink();
+                final String displayAddress = logController.serverAddress.value == '0.0.0.0'
+                    ? 'localhost'
+                    : logController.serverAddress.value;
+                final String urlStr = 'http://$displayAddress:${logController.serverPort.value}';
+                return context.buildTile(
+                  icon: Remix.global_line,
+                  title: i18n("view_logs_in_browser"),
+                  subtitle: urlStr,
+                  trailing: const Icon(Remix.arrow_right_s_line),
+                  onTap: () async {
+                    final Uri uri = Uri.parse(urlStr);
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    }
+                  },
+                );
+              }),
+
               context.buildTile(
                 icon: Remix.folder_open_line,
                 title: i18n("open_log_dir"),

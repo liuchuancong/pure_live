@@ -5,6 +5,8 @@ import 'package:pure_live/common/services/utils/hive_rx.dart';
 
 class LogController extends GetxController {
   static LogController get to => Get.find<LogController>();
+  final RxString serverAddress = hiveString('user_log_address', '');
+  final RxInt serverPort = hiveInt('user_log_port', 0);
 
   final RxBool storedEnableLog = hiveBool('user_enable_log', false);
 
@@ -13,7 +15,7 @@ class LogController extends GetxController {
   @override
   Future<void> onInit() async {
     super.onInit();
-    await Log.init();
+
     storedEnableLog.listen((value) {
       Log.updateLogStatus();
     });
@@ -23,6 +25,11 @@ class LogController extends GetxController {
   void onClose() {
     Log.dispose();
     super.onClose();
+  }
+
+  void updateServerInfo(String address, int port) {
+    serverAddress.value = address;
+    serverPort.value = port;
   }
 
   bool get enableLog => storedEnableLog.v;

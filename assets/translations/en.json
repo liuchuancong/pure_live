@@ -963,5 +963,6 @@
     "audio_settings": "Audio Settings",
     "video_quality_settings": "Video Quality Settings",
     "playback_behavior_settings": "Playback Behavior Settings",
-    "core_kernel_settings": "Core Kernel Settings"
+    "core_kernel_settings": "Core Kernel Settings",
+    "view_logs_in_browser": "View Logs in Browser"
 }

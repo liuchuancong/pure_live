@@ -1,13 +1,13 @@
 import 'dart:developer' as developer;
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/utils.dart';
+import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 class WebSearchController extends GetxController {
   InAppWebViewController? webViewController;
   final CookieManager cookieManager = CookieManager.instance();
-  late final WebViewEnvironment webViewEnvironment;
 
   late String url;
   late String platform;
@@ -21,6 +21,7 @@ class WebSearchController extends GetxController {
     final Map args = Get.arguments;
     url = args['url'];
     platform = args['platform'];
+    Log.i("🌐 页面初始化，目标 URL: $url, 平台: $platform");
   }
 
   String getDynamicUserAgent() {
@@ -29,20 +30,21 @@ class WebSearchController extends GetxController {
 
   void onWebViewCreated(InAppWebViewController controller) {
     webViewController = controller;
+    Log.i("🛠️ WebView 实例创建成功，开始加载 URL");
     webViewController!.loadUrl(urlRequest: URLRequest(url: WebUri(url)));
   }
 
   void onLoadStart(InAppWebViewController controller, WebUri? uri) {
     loading.value = true;
     if (uri != null) {
-      developer.log("🚀 页面开始加载/跳转: ${uri.toString()}");
+      Log.i("🚀 页面开始加载/跳转: ${uri.toString()}");
       _parseRoomId(uri.toString());
     }
   }
 
   void onUpdateVisitedHistory(InAppWebViewController controller, WebUri? uri, bool? isReload) {
     if (uri != null) {
-      developer.log("📜 历史记录变更（SPA跳转）: ${uri.toString()}");
+      Log.i("📜 历史记录变更（SPA跳转）: ${uri.toString()}");
       _parseRoomId(uri.toString());
     }
   }
@@ -50,14 +52,49 @@ class WebSearchController extends GetxController {
   Future<void> onLoadStop(InAppWebViewController controller, WebUri? uri) async {
     try {
       final cookieManager = CookieManager.instance();
-      await cookieManager.flush(); // 🚀 强行落盘持久化
-      developer.log("🍪 网页登录状态和本地 Cookies 已成功强行保存到磁盘。");
-    } catch (e) {
-      developer.log("⚠️ 强行保存凭证时遇到小警告: $e");
+      await cookieManager.flush();
+      Log.i("🍪 网页登录状态和本地 Cookies 已成功强行保存到磁盘。");
+    } catch (e, stackTrace) {
+      Log.e("⚠️ 强行保存凭证时遇到小警告: $e", stackTrace);
     }
     loading.value = false;
     if (uri != null) {
+      Log.i("🏁 页面加载完成: ${uri.toString()}");
       _parseRoomId(uri.toString());
+    }
+  }
+
+  void onReceivedHttpError(InAppWebViewController controller, URLRequest request, URLResponse response) {
+    Log.w(
+      "❌ 网页 HTTP 请求发生错误! \n"
+      "URL: ${request.url.toString()}\n"
+      "状态码: ${response.statusCode}\n"
+      "Headers: ${response.headers}",
+    );
+  }
+
+  void onReceivedError(InAppWebViewController controller, WebResourceRequest request, WebResourceError error) {
+    Log.e(
+      "🔥 WebView 核心加载失败！\n"
+      "触发 URL: ${request.url.toString()}\n"
+      "错误描述: ${error.description}",
+      StackTrace.current,
+    );
+  }
+
+  Future<ServerTrustAuthResponse?> onReceivedServerTrustAuthRequest(
+    InAppWebViewController controller,
+    URLAuthenticationChallenge challenge,
+  ) async {
+    Log.w(
+      "🔒 遇到 SSL 证书认证请求! 主机名: ${challenge.protectionSpace.host}, 错误类型: ${challenge.protectionSpace.authenticationMethod}",
+    );
+    return ServerTrustAuthResponse(action: ServerTrustAuthResponseAction.PROCEED);
+  }
+
+  void onConsoleMessage(InAppWebViewController controller, ConsoleMessage consoleMessage) {
+    if (consoleMessage.messageLevel == ConsoleMessageLevel.ERROR) {
+      Log.w("?? 网页内部 JS 报错: ${consoleMessage.message} (Level: ${consoleMessage.messageLevel})");
     }
   }
 
@@ -68,7 +105,7 @@ class WebSearchController extends GetxController {
     final uri = action.request.url;
     if (uri != null) {
       final link = uri.toString();
-      developer.log("点击链接: $link");
+      Log.i("点按链接跳转: $link");
       _parseRoomId(link);
     }
     return NavigationActionPolicy.ALLOW;

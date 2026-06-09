@@ -60,11 +60,9 @@ class WebSearchPage extends GetView<WebSearchController> {
                   cacheEnabled: true,
                   isInspectable: true,
                 ),
-                onReceivedServerTrustAuthRequest: (controller, challenge) async {
-                  debugPrint(challenge.protectionSpace.host);
-                  return ServerTrustAuthResponse(action: ServerTrustAuthResponseAction.PROCEED);
-                },
+                onReceivedServerTrustAuthRequest: controller.onReceivedServerTrustAuthRequest,
                 shouldOverrideUrlLoading: controller.shouldOverrideUrlLoading,
+                onConsoleMessage: controller.onConsoleMessage,
               ),
             ),
 
