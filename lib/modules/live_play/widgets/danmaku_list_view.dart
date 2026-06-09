@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:ui' as ui;
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -19,20 +20,17 @@ class DanmakuListView extends StatefulWidget {
 
 class DanmakuListViewState extends State<DanmakuListView> {
   final ScrollController _scrollController = ScrollController();
-
   static const Duration throttleDuration = Duration(milliseconds: 120);
 
   bool userScrolling = false;
-
   bool pendingScroll = false;
-
   Timer? throttleTimer;
 
   Worker? fullscreenWorker;
   Worker? windowFullscreenWorker;
-
   StreamSubscription? messagesSub;
   bool _autoScrollEnabled = true;
+
   LivePlayController get controller => Get.find<LivePlayController>();
 
   @override
@@ -67,14 +65,10 @@ class DanmakuListViewState extends State<DanmakuListView> {
   @override
   void dispose() {
     messagesSub?.cancel();
-
     fullscreenWorker?.dispose();
     windowFullscreenWorker?.dispose();
-
     throttleTimer?.cancel();
-
     _scrollController.dispose();
-
     super.dispose();
   }
 
@@ -83,21 +77,13 @@ class DanmakuListViewState extends State<DanmakuListView> {
 
     for (int i = 0; i < 3; i++) {
       await SchedulerBinding.instance.endOfFrame;
-
       if (!mounted) return;
 
-      if (!_scrollController.hasClients) {
-        continue;
-      }
-
+      if (!_scrollController.hasClients) continue;
       final position = _scrollController.position;
-
-      if (!position.hasContentDimensions) {
-        continue;
-      }
+      if (!position.hasContentDimensions) continue;
 
       final maxScroll = position.maxScrollExtent;
-
       if (position.pixels != maxScroll) {
         _scrollController.jumpTo(maxScroll);
       }
@@ -105,70 +91,48 @@ class DanmakuListViewState extends State<DanmakuListView> {
   }
 
   void scheduleAutoScroll() {
-    if (!mounted) return;
-    if (!_autoScrollEnabled) return;
-    if (!_scrollController.hasClients) return;
+    if (!mounted || !_autoScrollEnabled || !_scrollController.hasClients) return;
+
     final position = _scrollController.position;
     bool shouldAutoScroll = true;
     if (position.hasContentDimensions) {
       final distanceToBottom = position.maxScrollExtent - position.pixels;
       shouldAutoScroll = distanceToBottom <= 120;
     }
-    if (!shouldAutoScroll) {
-      return;
-    }
+    if (!shouldAutoScroll) return;
+
     pendingScroll = true;
     throttleTimer?.cancel();
     throttleTimer = Timer(throttleDuration, () async {
-      if (!mounted) return;
-      if (!pendingScroll) return;
+      if (!mounted || !pendingScroll) return;
       await forceScrollToBottom();
       pendingScroll = false;
     });
   }
 
   void onScrollNotification(ScrollNotification notification) {
-    if (notification is! UserScrollNotification) {
-      return;
-    }
-
-    if (!_scrollController.hasClients) {
-      return;
-    }
+    if (!_scrollController.hasClients) return;
 
     final position = _scrollController.position;
-
     final distanceToBottom = position.maxScrollExtent - position.pixels;
 
-    if (notification.direction == ScrollDirection.forward) {
-      if (distanceToBottom > 80) {
-        if (!userScrolling) {
+    if (notification is ScrollUpdateNotification) {
+      if (notification.dragDetails != null && notification.scrollDelta != null && notification.scrollDelta! > 0) {
+        if (_autoScrollEnabled) {
           setState(() {
-            userScrolling = true;
             _autoScrollEnabled = false;
+            userScrolling = true;
           });
         }
       }
     }
 
-    if (notification.direction == ScrollDirection.reverse) {
-      if (distanceToBottom < 60) {
-        if (userScrolling) {
-          setState(() {
-            userScrolling = false;
-          });
-        }
-      }
-    }
-    if (notification.direction == ScrollDirection.reverse || notification.direction == ScrollDirection.idle) {
-      final distanceToBottom = position.maxScrollExtent - position.pixels;
-      if (distanceToBottom <= 20) {
-        if (!_autoScrollEnabled) {
-          setState(() {
-            _autoScrollEnabled = true;
-            userScrolling = false;
-          });
-        }
+    if (notification is UserScrollNotification) {
+      if (distanceToBottom <= 10 && !_autoScrollEnabled) {
+        setState(() {
+          _autoScrollEnabled = true;
+          userScrolling = false;
+        });
       }
     }
   }
@@ -192,25 +156,35 @@ class DanmakuListViewState extends State<DanmakuListView> {
                 onScrollNotification(notification);
                 return false;
               },
-              child: Obx(() {
-                final list = controller.messages;
+              child: Listener(
+                onPointerSignal: (pointerSignal) {
+                  if (pointerSignal is PointerScrollEvent && pointerSignal.scrollDelta.dy > 0) {
+                    if (_autoScrollEnabled) {
+                      setState(() {
+                        _autoScrollEnabled = false;
+                        userScrolling = true;
+                      });
+                    }
+                  }
+                },
+                child: Obx(() {
+                  final list = controller.messages;
 
-                return ListView.builder(
-                  addAutomaticKeepAlives: false,
-                  addRepaintBoundaries: true,
-                  controller: _scrollController,
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-                  scrollCacheExtent: const ScrollCacheExtent.pixels(800),
-                  itemCount: list.length,
-                  itemBuilder: (_, index) {
-                    final msg = list[index];
-
-                    return DanmakuItem(key: ValueKey("${msg.userName}-${msg.message}-$index"), danmaku: msg);
-                  },
-                );
-              }),
+                  return ListView.builder(
+                    addAutomaticKeepAlives: false,
+                    addRepaintBoundaries: true,
+                    controller: _scrollController,
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+                    scrollCacheExtent: const ScrollCacheExtent.pixels(800),
+                    itemCount: list.length,
+                    itemBuilder: (_, index) {
+                      final msg = list[index];
+                      return DanmakuItem(key: ValueKey("${msg.userName}-${msg.message}-$index"), danmaku: msg);
+                    },
+                  );
+                }),
+              ),
             ),
-
             if (userScrolling)
               Positioned(
                 right: 12,
@@ -229,7 +203,6 @@ class DanmakuListViewState extends State<DanmakuListView> {
                       userScrolling = false;
                       _autoScrollEnabled = true;
                     });
-
                     await forceScrollToBottom();
                   },
                 ),
