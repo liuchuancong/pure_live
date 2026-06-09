@@ -277,7 +277,6 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // 🔥 替换为项目统一buildSwitchTile
                 context.buildSwitchTile(
                   icon: Remix.shield_keyhole_line,
                   title: i18n("enable_player_proxy"),

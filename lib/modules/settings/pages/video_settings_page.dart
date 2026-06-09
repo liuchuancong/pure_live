@@ -22,13 +22,11 @@ class VideoSettingsPage extends GetView<SettingsService> {
           // 音频设置
           context.buildGroupTitle(i18n("audio_settings")),
           context.buildModernCard([
-            Obx(
-              () => context.buildSwitchTile(
-                title: i18n("global_mute"),
-                subtitle: i18n("global_mute_subtitle"),
-                value: SettingsService.to.vol.globalVolumeMute,
-                icon: SettingsService.to.vol.globalVolumeMute.v ? Remix.volume_mute_line : Remix.volume_up_line,
-              ),
+            context.buildSwitchTile(
+              title: i18n("global_mute"),
+              subtitle: i18n("global_mute_subtitle"),
+              value: SettingsService.to.vol.globalVolumeMute,
+              icon: SettingsService.to.vol.globalVolumeMute.v ? Remix.volume_mute_line : Remix.volume_up_line,
             ),
             if (PlatformUtils.isMobile)
               Obx(
@@ -95,20 +93,18 @@ class VideoSettingsPage extends GetView<SettingsService> {
           context.buildGroupTitle(i18n("playback_behavior_settings")),
           context.buildModernCard([
             if (Platform.isAndroid)
-              Obx(
-                () => context.buildSwitchTile(
-                  icon: Remix.music_2_line,
-                  title: i18n("enable_background_play"),
-                  subtitle: i18n("enable_background_play_subtitle"),
-                  value: SettingsService.to.app.enableBackgroundPlay,
-                  onChanged: (val) async {
-                    SettingsService.to.app.enableBackgroundPlay.v = val;
-                    if (val && Platform.isAndroid) {
-                      bool hasPermission = await LiveAudioService.requestPlatformPermissions();
-                      SettingsService.to.app.enableBackgroundPlay.v = hasPermission;
-                    }
-                  },
-                ),
+              context.buildSwitchTile(
+                icon: Remix.music_2_line,
+                title: i18n("enable_background_play"),
+                subtitle: i18n("enable_background_play_subtitle"),
+                value: SettingsService.to.app.enableBackgroundPlay,
+                onChanged: (val) async {
+                  SettingsService.to.app.enableBackgroundPlay.v = val;
+                  if (val && Platform.isAndroid) {
+                    bool hasPermission = await LiveAudioService.requestPlatformPermissions();
+                    SettingsService.to.app.enableBackgroundPlay.v = hasPermission;
+                  }
+                },
               ),
             context.buildSwitchTile(
               title: i18n("exit_float_window"),
