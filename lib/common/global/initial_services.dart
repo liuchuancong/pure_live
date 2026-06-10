@@ -4,7 +4,6 @@ import 'package:pure_live/modules/auth/auth_controller.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/recorder/services/cache_service.dart';
 import 'package:pure_live/routes/route_observer_controller.dart';
-import 'package:pure_live/modules/auth/utils/firebase_manager.dart';
 import 'package:pure_live/recorder/services/stream_resolver_service.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/core/iptv/services/channel_detail_controller.dart';
@@ -44,19 +43,14 @@ class InitialServices {
   }
 
   static void _initHeavyServicesInBackground() {
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
+    Future.delayed(const Duration(seconds: 3), () {
       try {
-        FirebaseManager.getInstance().initial();
-        await Future.delayed(const Duration(seconds: 2));
-        Get.put(AuthController(), permanent: true);
-      } catch (_) {}
-      try {
-        await FFmpegKitExtended.initialize();
-        await Future.delayed(const Duration(seconds: 2));
+        FFmpegKitExtended.initialize();
         Get.put(CacheService(), permanent: true);
         Get.put(RecordSettingsController(), permanent: true);
         Get.put(RecorderController(), permanent: true);
         Get.lazyPut(() => StreamResolverService(), fenix: true);
+        Get.put(AuthController(), permanent: true);
       } catch (_) {}
     });
   }

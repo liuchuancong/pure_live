@@ -1,11 +1,15 @@
+import 'dart:io';
 import 'dart:async';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/common/log.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:pure_live/modules/auth/utils/firebase_manager.dart';
 
 class AuthController extends GetxController {
-  final fb.FirebaseAuth _auth = fb.FirebaseAuth.instance;
-
+  fb.FirebaseAuth? _auth;
+  final isConnectingObs = false.obs;
+  bool get isConnecting => isConnectingObs.value;
+  set isConnecting(bool value) => isConnectingObs.value = value;
   bool shouldGoReset = false;
 
   final isLoginObs = false.obs;
@@ -16,6 +20,10 @@ class AuthController extends GetxController {
   bool get isReady => isReadyObs.value;
   set isReady(bool value) => isReadyObs.value = value;
 
+  final isInitSuccessObs = false.obs;
+  bool get isInitSuccess => isInitSuccessObs.value;
+  set isInitSuccess(bool value) => isInitSuccessObs.value = value;
+
   fb.User? user;
   String userId = '';
 
@@ -24,44 +32,61 @@ class AuthController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    startAsyncInit();
+  }
 
-    final initialUser = _auth.currentUser;
-    if (initialUser != null && initialUser.uid.trim().isNotEmpty) {
-      isLogin = true;
-      user = initialUser;
-      userId = initialUser.uid;
-      _syncFirebaseConfigs();
-    }
+  Future<void> startAsyncInit() async {
+    if (isConnecting) return;
+    isConnecting = true;
+    try {
+      await _runFirebasePlatformInit();
 
-    _authSubscription = _auth.authStateChanges().listen((fb.User? firebaseUser) async {
-      if (firebaseUser != null) {
-        if (firebaseUser.uid.trim().isEmpty) return;
+      if (isInitSuccess) {
+        await FirebaseManager.getInstance().initial();
+        await Future.delayed(Duration.zero);
+        _auth = fb.FirebaseAuth.instance;
+        final initialUser = _auth?.currentUser;
+        if (initialUser != null && initialUser.uid.trim().isNotEmpty) {
+          isLogin = true;
+          user = initialUser;
+          userId = initialUser.uid;
+          await _syncFirebaseConfigs();
+        }
 
-        isLogin = true;
-        user = firebaseUser;
-        userId = firebaseUser.uid;
-        update();
+        _authSubscription = _auth?.authStateChanges().listen((fb.User? firebaseUser) async {
+          if (firebaseUser != null) {
+            if (firebaseUser.uid.trim().isEmpty) return;
 
-        await _syncFirebaseConfigs();
-      } else {
-        isLogin = false;
-        user = null;
-        userId = '';
-        FirebaseManager.canUploadConfig = false;
-        FirebaseManager.currentUserRole = null;
-      }
+            isLogin = true;
+            user = firebaseUser;
+            userId = firebaseUser.uid;
+            update();
 
-      isReady = true;
-      update();
-    });
+            await _syncFirebaseConfigs();
+          } else {
+            isLogin = false;
+            user = null;
+            userId = '';
+            FirebaseManager.canUploadConfig = false;
+            FirebaseManager.currentUserRole = null;
+          }
 
-    if (!isLogin) {
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (!isClosed) {
           isReady = true;
           update();
-        }
-      });
+        });
+      }
+    } catch (e) {
+      isInitSuccess = false;
+      Log.d('[AuthController] Firebase async init error: $e');
+    } finally {
+      isConnecting = false;
+    }
+
+    if (!isLogin) {
+      if (!isClosed) {
+        isReady = true;
+        update();
+      }
     }
   }
 
@@ -81,5 +106,30 @@ class AuthController extends GetxController {
   void onClose() {
     _authSubscription?.cancel();
     super.onClose();
+  }
+
+  Future<void> _runFirebasePlatformInit() async {
+    await Future.delayed(Duration.zero);
+    try {
+      final result = await canAccessFirebaseWebsite();
+      isInitSuccess = result;
+    } catch (e) {
+      isInitSuccess = false;
+      debugPrint('[FirebasePing] Network lookup timeout or failed: $e');
+    }
+  }
+
+  Future<bool> canAccessFirebaseWebsite() async {
+    try {
+      final client = HttpClient();
+      client.connectionTimeout = const Duration(seconds: 10);
+      final request = await client.getUrl(Uri.parse('https://firebase.google.com/?hl=zh-cn'));
+      final response = await request.close();
+      client.close();
+      return response.statusCode >= 200 && response.statusCode < 500;
+    } catch (e) {
+      Log.d('Firebase check failed: $e');
+      return false;
+    }
   }
 }

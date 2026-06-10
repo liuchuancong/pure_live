@@ -968,5 +968,9 @@
     "windows_desc": "适用于 Windows 桌面操作系统",
     "macos_desc": "适用于 macOS 桌面操作系统",
     "arch_arm64": "ARM64 (64位)",
-    "arch_arm32": "ARM32 (通用)"
+    "arch_arm32": "ARM32 (通用)",
+    "firebase_init_failed": "Firebase 初始化失败",
+    "firebase_init_failed_desc": "网络连接超时，请检查您的代理或网络设置后点击重试",
+    "firebase_connecting_desc": "正在尝试重新连接 Firebase 服务，请稍候...",
+    "firebase_connecting_title": "正在重新连接..."
 }

@@ -968,5 +968,10 @@
     "windows_desc": "For Windows desktop OS",
     "macos_desc": "For macOS desktop OS",
     "arch_arm64": "ARM64 (64-bit)",
-    "arch_arm32": "ARM32 (Universal)"
+    "arch_arm32": "ARM32 (Universal)",
+    "firebase_init_failed": "Firebase Initialization Failed",
+    "firebase_init_failed_desc": "Network connection timeout. Please check your proxy or network settings and try again.",
+    "firebase_connecting_desc": "Attempting to reconnect to Firebase services, please wait...",
+    "firebase_connecting_title": "Reconnecting..."
+
 }

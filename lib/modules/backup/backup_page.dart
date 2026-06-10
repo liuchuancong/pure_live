@@ -55,10 +55,56 @@ class _BackupPageState extends State<BackupPage> {
             context.buildGroupTitle(i18n("cloud_backup")),
             context.buildModernCard([
               context.buildTile(
-                icon: Remix.account_circle_line,
-                title: auth.isLogin ? i18n('firebase_mine') : i18n('firebase_sign_in'),
-                subtitle: auth.isLogin ? i18n('firebase_logged_in_desc') : i18n('firebase_login_desc'),
+                iconWidget: auth.isConnecting
+                    ? RotationTransition(
+                        turns: const AlwaysStoppedAnimation(0.5),
+                        child: Icon(Remix.refresh_line, color: Theme.of(context).colorScheme.primary, size: 22),
+                      )
+                    : Icon(
+                        Remix.account_circle_line,
+                        color: auth.isInitSuccess ? null : Theme.of(context).colorScheme.error,
+                        size: 22,
+                      ),
+                isLong: !auth.isInitSuccess,
+                subtitleColor: auth.isInitSuccess ? null : Theme.of(context).colorScheme.error.withValues(alpha: 0.8),
+                title: auth.isConnecting
+                    ? i18n('firebase_connecting_title')
+                    : (auth.isInitSuccess
+                          ? (auth.isLogin ? i18n('firebase_mine') : i18n('firebase_sign_in'))
+                          : i18n('firebase_init_failed')),
+                subtitle: auth.isConnecting
+                    ? i18n('firebase_connecting_desc')
+                    : (auth.isInitSuccess
+                          ? (auth.isLogin ? i18n('firebase_logged_in_desc') : i18n('firebase_login_desc'))
+                          : i18n('firebase_init_failed_desc')),
+                trailing: auth.isConnecting
+                    ? SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+                        ),
+                      )
+                    : null,
                 onTap: () {
+                  if (!auth.isInitSuccess) {
+                    if (auth.isConnecting) {
+                      Get.snackbar(
+                        i18n('firebase_init_failed'),
+                        i18n('firebase_connecting_desc'),
+                        snackPosition: SnackPosition.bottom,
+                      );
+                      return;
+                    }
+                    Get.snackbar(
+                      i18n('firebase_init_failed'),
+                      i18n('firebase_init_failed_desc'),
+                      snackPosition: SnackPosition.bottom,
+                    );
+                    auth.startAsyncInit();
+                    return;
+                  }
                   if (auth.isLogin) {
                     Get.toNamed(RoutePath.kMine);
                   } else {
@@ -66,6 +112,7 @@ class _BackupPageState extends State<BackupPage> {
                   }
                 },
               ),
+
               context.buildTile(
                 icon: Remix.cloud_line,
                 title: i18n("webdav"),
