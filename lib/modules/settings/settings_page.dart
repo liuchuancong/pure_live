@@ -9,6 +9,7 @@ import 'package:pure_live/modules/settings/pages/general_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/platform_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/navigation_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/cache_data_settings_page.dart';
+import 'package:pure_live/modules/settings/pages/network_proxy_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/player_kernel_settings_page.dart';
 
 class SettingsPage extends GetView<SettingsService> {
@@ -75,6 +76,16 @@ class SettingsPage extends GetView<SettingsService> {
               title: i18n("player_kernel"),
               subtitle: i18n("player_kernel_desc"),
               onTap: () => Get.to(() => const PlayerKernelSettingsPage()),
+            ),
+          ]),
+          const SizedBox(height: 20),
+          context.buildGroupTitle(i18n("network_proxy_settings")),
+          context.buildModernCard([
+            context.buildTile(
+              icon: Remix.global_line,
+              title: i18n("custom_network_proxy"),
+              subtitle: i18n("custom_network_proxy_desc"),
+              onTap: () => Get.to(() => const NetworkProxySettingsPage()),
             ),
           ]),
 

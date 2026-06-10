@@ -26,13 +26,13 @@ class VersionPage extends GetView<VersionController> {
             if (PlatformUtils.isAndroid) ...[
               _buildPlatformCard(
                 context,
-                title: i18n("android_mediakit"),
-                subtitle: i18n("using_mediakit_player"),
+                title: "Android",
+                subtitle: i18n("android_desc"),
                 icon: Remix.android_line,
                 children: [
-                  _buildDownloadSection(context, title: i18n("arm64"), urls: controller.apkUrl2.value),
+                  _buildDownloadSection(context, title: i18n("arch_arm64"), urls: controller.apkUrl2.value),
                   const SizedBox(height: 16),
-                  _buildDownloadSection(context, title: i18n("arm32"), urls: controller.apkUrl.value),
+                  _buildDownloadSection(context, title: i18n("arch_arm32"), urls: controller.apkUrl.value),
                   const SizedBox(height: 16),
                   _buildDownloadSection(context, title: i18n("arch_x86_64"), urls: controller.apkUrl3.value),
                 ],
@@ -42,8 +42,8 @@ class VersionPage extends GetView<VersionController> {
             if (PlatformUtils.isWindows) ...[
               _buildPlatformCard(
                 context,
-                title: i18n("windows_mediakit"),
-                subtitle: i18n("using_mediakit_player"),
+                title: "Windows",
+                subtitle: i18n("windows_desc"),
                 icon: Remix.windows_line,
                 children: [
                   _buildDownloadSection(context, title: i18n("exe_installer"), urls: controller.windowsUrl.value),
@@ -56,13 +56,14 @@ class VersionPage extends GetView<VersionController> {
             if (PlatformUtils.isMacOS) ...[
               _buildPlatformCard(
                 context,
-                title: i18n("macos_mediakit"),
-                subtitle: i18n("using_mediakit_player"),
+                title: "macOS",
+                subtitle: i18n("macos_desc"),
                 icon: Remix.macbook_line,
                 children: [_buildDownloadSection(context, title: i18n("macos_dmg"), urls: controller.macosUrl.value)],
               ),
               const SizedBox(height: 20),
             ],
+
             context.buildGroupTitle(i18n("update_log")),
             const SizedBox(height: 8),
             context.buildModernCard([

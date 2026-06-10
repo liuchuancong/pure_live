@@ -3,6 +3,7 @@ import 'package:dio/io.dart';
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/common/core_error.dart';
 import 'package:pure_live/core/common/custom_interceptor.dart';
+import 'package:pure_live/common/services/settings_service.dart';
 
 class HttpClient {
   static const Duration _connectTimeout = Duration(seconds: 20);
@@ -21,17 +22,36 @@ class HttpClient {
 
   HttpClient._();
   static final HttpClient instance = HttpClient._();
+  late Dio dio = _createDio();
+  Dio _createDio() {
+    return Dio(BaseOptions(connectTimeout: _connectTimeout, receiveTimeout: _receiveTimeout, sendTimeout: _sendTimeout))
+      ..interceptors.add(CustomLogInterceptor())
+      ..httpClientAdapter = IOHttpClientAdapter(
+        createHttpClient: () {
+          final client = io.HttpClient();
 
-  late final Dio dio =
-      Dio(BaseOptions(connectTimeout: _connectTimeout, receiveTimeout: _receiveTimeout, sendTimeout: _sendTimeout))
-        ..interceptors.add(CustomLogInterceptor())
-        ..httpClientAdapter = IOHttpClientAdapter(
-          createHttpClient: () {
-            final client = io.HttpClient();
-            client.findProxy = (uri) => 'DIRECT';
-            return client;
-          },
-        );
+          client.findProxy = (uri) {
+            final proxyCtrl = SettingsService.to.proxy;
+
+            if (proxyCtrl.enableAppProxy.value && proxyCtrl.appProxyHost.value.trim().isNotEmpty) {
+              return 'PROXY '
+                  '${proxyCtrl.appProxyHost.value.trim()}:'
+                  '${proxyCtrl.appProxyPort.value}';
+            }
+
+            return 'DIRECT';
+          };
+
+          return client;
+        },
+      );
+  }
+
+  void rebuildDio() {
+    final oldDio = dio;
+    dio = _createDio();
+    oldDio.close(force: false);
+  }
 
   Future<String> getText(
     String url, {
