@@ -8,7 +8,6 @@ import 'package:pure_live/common/global/initialized.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
-import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/routes/route_observer_controller.dart';
 import 'package:pure_live/core/iptv/services/epg_import_manager.dart';
 import 'package:pure_live/common/global/platform/desktop_manager.dart';
@@ -43,15 +42,6 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
     }
     initSharedMediaListener();
     initGlopalPlayer();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (SettingsService.to.app.enableBackgroundPlay.v) {
-        bool hasPermission = await LiveAudioService.requestPlatformPermissions();
-        if (!hasPermission) {
-          ToastUtil.show(i18n("background_play_permission_tip"));
-        }
-      }
-    });
   }
 
   Future<void> initGlopalPlayer() async {
@@ -65,8 +55,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
     } else {
       defaultEngine = targetEngine;
     }
-
-    await GlobalPlayerService.instance.initialize(defaultEngine: defaultEngine);
+    GlobalPlayerService.instance.initialize(defaultEngine: defaultEngine);
   }
 
   @override

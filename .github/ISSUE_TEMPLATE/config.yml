@@ -1,5 +1,5 @@
 # 是否允许用户创建空白 Issue（建议设为 false，强制使用模板或查看下方链接）
-blank_issues_enabled: true
+blank_issues_enabled: false
 
 # 在提问界面顶部显示的自定义联系/指引链接
 contact_links:

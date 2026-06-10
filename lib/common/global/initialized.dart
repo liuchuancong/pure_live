@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:developer';
 import 'app_path_manager.dart';
-import 'package:media_kit/media_kit.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/global.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
@@ -46,11 +45,12 @@ class AppInitializer {
     try {
       await Hive.initFlutter(hiveDir.path);
       await HivePrefUtil.init();
-      await InitialServices.init();
     } catch (e) {
       log("Hive Init Error: $e");
       exit(0);
     }
+
+    InitialServices.init();
     SmartDialog.config.toast = SmartConfigToast(
       displayTime: const Duration(milliseconds: 3000),
       intervalTime: const Duration(milliseconds: 100),
@@ -66,7 +66,6 @@ class AppInitializer {
     } else if (PlatformUtils.isMobile) {
       await MobileManager.initialize();
     }
-    MediaKit.ensureInitialized();
     await EasyLocalization.ensureInitialized();
     initRefresh();
     if (PlatformUtils.isDesktopNotMac) {
