@@ -1,11 +1,12 @@
 import 'dart:math';
 import 'dart:async';
 import 'dart:convert';
-import 'package:dio/dio.dart';
 import 'package:crypto/crypto.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:pure_live/core/common/log.dart';
 import 'package:timezone/data/latest.dart' as tz;
+import 'package:pure_live/plugins/race_http.dart';
 import 'package:pure_live/model/live_category.dart';
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/core/tars/huya_user_id.dart';
@@ -15,6 +16,7 @@ import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/core/danmaku/huya_danmaku.dart';
+import 'package:pure_live/common/utils/githup_mirror.dart';
 import 'package:pure_live/pkg/tars/net/base_tars_http.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/tars/get_cdn_token_ex_req.dart';
@@ -154,50 +156,19 @@ class HuyaSite implements LiveSite {
     'https://g.blfrp.cn/https://raw.githubusercontent.com/liuchuancong/pure_live/master/assets/play_config.json',
     'https://cdn.jsdelivr.net/gh/liuchuancong/pure_live@master/assets/play_config.json',
   ];
-  // 每次访问播放虎牙都需要获取一次，不太合理，倾向于在客户端获取保存替换
   Future<String> getHuYaUA() async {
-    // 1. 缓存拦截
     if (playUserAgent != null) {
-      debugPrint("UA 获取成功，使用缓存");
       return playUserAgent!;
     }
-
-    final cancelToken = CancelToken();
-    final completer = Completer<String>();
-    bool isAlreadySet = false;
-
-    try {
-      // 2. 启动并发请求（不等待它们完成）
-      for (final url in uaList) {
-        HttpClient.instance
-            .getJson("$url?ts=${DateTime.now().millisecondsSinceEpoch}", cancel: cancelToken)
-            .then((response) {
-              // 只要有一个成功，立即处理
-              if (isAlreadySet) return;
-
-              final data = (response is String) ? json.decode(response) : response;
-              final String? ua = data?['huya']?['user_agent'];
-
-              if (ua != null && !isAlreadySet) {
-                isAlreadySet = true;
-                playUserAgent = ua;
-                debugPrint("✅ 获胜线路: $url");
-                if (!completer.isCompleted) completer.complete(ua);
-                Future.microtask(() => cancelToken.cancel("done"));
-              }
-            })
-            .catchError((_) {});
-      }
-
-      final result = await completer.future.timeout(const Duration(seconds: 5));
-      return result;
-    } catch (e) {
-      debugPrint("⚠️ UA 获取失败，使用兜底值: $e");
-      playUserAgent = HYSDK_UA;
-      return HYSDK_UA;
-    } finally {
-      playUserAgent ??= HYSDK_UA;
+    final mirror = GitHubMirror(owner: 'liuchuancong', repo: 'pure_live', branch: 'master');
+    final urls = mirror.mirrors('assets/play_config.json');
+    final data = await RaceHttp.fetchJson(urls);
+    final String? ua = data?['huya']?['user_agent'];
+    if (ua != null) {
+      playUserAgent = ua;
     }
+    Log.d("HuyaSite: getHuYaUA: $ua");
+    return playUserAgent!;
   }
 
   Future<String> getPlayUrl(HuyaLineModel line, int bitRate) async {
