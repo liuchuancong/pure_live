@@ -5,6 +5,7 @@ import 'package:path/path.dart' as p;
 import 'package:drift/drift.dart' as drift;
 import 'package:pure_live/common/index.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:pure_live/core/common/log.dart';
 import 'package:synchronized/synchronized.dart';
 import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/plugins/db_service.dart';
@@ -52,7 +53,7 @@ class IptvImportManager {
       final initialFilePath = p.join(dir.path, 'download_iptv_${FileUtils.generateUuid()}$detectedExtension');
       tempFile = File(initialFilePath);
       await HttpClient.instance.download(url, tempFile.path);
-
+      Log.d('Downloaded file: ${tempFile.path}');
       if (!await tempFile.exists() || await tempFile.length() == 0) {
         if (showTips) ToastUtil.show(i18n("unsupported_file_format"));
         if (await tempFile.exists()) await tempFile.delete();

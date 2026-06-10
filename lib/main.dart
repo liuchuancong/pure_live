@@ -21,6 +21,7 @@ void main(List<String> args) async {
       supportedLocales: const [Locale('en'), Locale('zh')],
       path: 'assets/translations',
       fallbackLocale: const Locale('zh'),
+      assetLoader: const RootBundleAssetLoader(),
       child: MyApp(),
     ),
   );

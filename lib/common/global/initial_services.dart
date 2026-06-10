@@ -46,7 +46,7 @@ class InitialServices {
   static void _initHeavyServicesInBackground() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
-        await FirebaseManager.getInstance().initial();
+        FirebaseManager.getInstance().initial();
         await Future.delayed(const Duration(seconds: 2));
         Get.put(AuthController(), permanent: true);
       } catch (_) {}

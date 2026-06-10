@@ -12,10 +12,12 @@ class IptvSettingsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    Future.delayed(1.seconds, () {
-      AutoSyncScheduler.instance.checkAndExecuteAutoSync();
-      AutoSyncScheduler.instance.loadHotResources();
-      AutoSyncScheduler.instance.loadDefaultEpgResources();
+    Future.delayed(3.seconds, () {
+      if (SettingsService.to.fav.hotAreasList.v.contains(Sites.iptvSite)) {
+        AutoSyncScheduler.instance.checkAndExecuteAutoSync();
+        AutoSyncScheduler.instance.loadHotResources();
+        AutoSyncScheduler.instance.loadDefaultEpgResources();
+      }
     });
   }
 

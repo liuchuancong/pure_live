@@ -37,7 +37,6 @@ class AppInitializer {
 
     await Future.wait([
       Hive.initFlutter(hiveDir.path).then((_) => HivePrefUtil.init()),
-
       CustomImageCacheManager.initialize(),
     ]);
 

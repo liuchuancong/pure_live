@@ -53,10 +53,7 @@ class SettingsService extends GetxService {
   @override
   void onInit() {
     super.onInit();
-
     _registerLockingLazyPuts();
-
-    Get.put(ExitSettingsController(), permanent: true);
   }
 
   void _registerLockingLazyPuts() {
@@ -93,5 +90,8 @@ class SettingsService extends GetxService {
     Get.lazyPut(() => lockInject(() => BiliBiliAccountService()), fenix: true);
     Get.lazyPut(() => lockInject(() => FontSettingsController()), fenix: true);
     Get.lazyPut(() => lockInject(() => LogController()), fenix: true);
+
+    Get.put(ExitSettingsController(), permanent: true);
+    Get.put(IptvSettingsController(), permanent: true);
   }
 }
