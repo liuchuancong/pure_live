@@ -286,8 +286,11 @@ class Utils {
         if (await windowManager.isPreventClose()) {
           await windowManager.setPreventClose(false);
         }
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          exit(0);
+        Future.microtask(() async {
+          await windowManager.hide();
+          await windowManager.setPreventClose(false);
+          trayManager.destroy().catchError((e) => debugPrint('托盘注销失败: $e'));
+          windowManager.close().catchError((e) => debugPrint('窗口关闭失败: $e'));
         });
       } else if (exitChoose == 'minimize') {
         await _minimizeOrHideDesktopWindow();
