@@ -457,7 +457,7 @@ class LivePlayPage extends GetView<LivePlayController> {
         fit: StackFit.passthrough,
         children: [
           ColoredBox(color: Colors.black),
-          AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", iconColor: Colors.white),
+          AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", iconColor: Colors.white, isMini: true),
         ],
       ),
     );
