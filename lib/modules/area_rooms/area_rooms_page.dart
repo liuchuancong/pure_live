@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:pure_live/common/index.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 import 'package:pure_live/common/widgets/keep_alive_wrapper.dart';
@@ -74,15 +75,16 @@ class FavoriteAreaFloatingButton extends StatelessWidget {
     final String firstChar = (area.areaName?.isNotEmpty ?? false) ? area.areaName!.substring(0, 1) : "";
     final bool hasPic = area.areaPic != null && area.areaPic!.isNotEmpty;
 
-    return CircleAvatar(
-      radius: 18,
-      backgroundColor: theme.colorScheme.primaryContainer,
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(shape: BoxShape.circle, color: theme.colorScheme.primaryContainer),
       child: ClipOval(
         child: hasPic
             ? Image.network(
                 area.areaPic!,
-                width: 36,
-                height: 36,
+                width: 32,
+                height: 32,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
                   return Center(
@@ -107,47 +109,115 @@ class FavoriteAreaFloatingButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final isFavorite = SettingsService.to.fav.favoriteAreas.v.any((e) => e.areaId == area.areaId);
-      if (isFavorite) {
-        return FloatingActionButton(
-          elevation: 2,
-          backgroundColor: Theme.of(context).cardColor,
-          tooltip: i18n("unfollow"),
-          onPressed: () {
-            Get.dialog(
-              AlertDialog(
-                title: Text(i18n("unfollow")),
-                content: Text(i18n("unfollow_message", args: {"name": area.areaName!})),
-                actions: [
-                  TextButton(onPressed: () => Navigator.of(Get.context!).pop(false), child: Text(i18n("cancel"))),
-                  ElevatedButton(onPressed: () => Navigator.of(Get.context!).pop(true), child: Text(i18n("confirm"))),
-                ],
+
+      return Padding(
+        padding: EdgeInsets.only(
+          bottom: Get.width > 680
+              ? 24
+              : (MediaQuery.paddingOf(context).bottom > 0 ? MediaQuery.paddingOf(context).bottom : 12),
+          right: 0,
+        ),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOutCubic,
+          height: 48,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.95),
+            borderRadius: BorderRadius.circular(isFavorite ? 24 : 16),
+            border: Border.all(
+              color: isFavorite
+                  ? Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5)
+                  : Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 4)),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(isFavorite ? 24 : 16),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 2.0, sigmaY: 2.0),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(isFavorite ? 24 : 16),
+                onTap: () {
+                  if (isFavorite) {
+                    showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: Text(i18n("unfollow")),
+                        content: Text(i18n("unfollow_message", args: {"name": area.areaName!})),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(i18n("cancel"))),
+                          ElevatedButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: Text(i18n("confirm")),
+                          ),
+                        ],
+                      ),
+                    ).then((value) {
+                      if (value == true) {
+                        final list = List<LiveArea>.from(SettingsService.to.fav.favoriteAreas.v);
+                        list.removeWhere((e) => e.areaId == area.areaId);
+                        SettingsService.to.fav.favoriteAreas.v = list;
+                      }
+                    });
+                  } else {
+                    final list = List<LiveArea>.from(SettingsService.to.fav.favoriteAreas.v)..add(area);
+                    SettingsService.to.fav.favoriteAreas.v = list;
+                  }
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildAvatar(context),
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeInOutCubic,
+                        child: isFavorite
+                            ? const SizedBox.shrink()
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const SizedBox(width: 8),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        i18n("follow"),
+                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          color: Theme.of(context).hintColor,
+                                          height: 1.1,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 1),
+                                      ConstrainedBox(
+                                        constraints: BoxConstraints(maxWidth: Get.width > 680 ? 120 : 80),
+                                        child: Text(
+                                          area.areaName!,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppTextStyles.t12Bold.copyWith(
+                                            color: Theme.of(context).colorScheme.primary,
+                                            height: 1.2,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ).then((value) {
-              if (value == true) {
-                final list = List<LiveArea>.from(SettingsService.to.fav.favoriteAreas.v);
-                list.removeWhere((e) => e.areaId == area.areaId);
-                SettingsService.to.fav.favoriteAreas.v = list;
-              }
-            });
-          },
-          child: _buildAvatar(context),
-        );
-      }
-      return FloatingActionButton.extended(
-        elevation: 2,
-        backgroundColor: Theme.of(context).cardColor,
-        onPressed: () {
-          final list = List<LiveArea>.from(SettingsService.to.fav.favoriteAreas.v)..add(area);
-          SettingsService.to.fav.favoriteAreas.v = list;
-        },
-        icon: _buildAvatar(context),
-        label: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(i18n("follow"), style: Theme.of(context).textTheme.bodySmall),
-            Text(area.areaName!, maxLines: 1, overflow: TextOverflow.ellipsis),
-          ],
+            ),
+          ),
         ),
       );
     });
