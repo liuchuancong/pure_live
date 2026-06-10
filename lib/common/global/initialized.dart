@@ -10,7 +10,6 @@ import 'package:screen_brightness/screen_brightness.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/global/initial_services.dart';
-import 'package:pure_live/modules/auth/utils/firebase_manager.dart';
 import 'package:windows_single_instance/windows_single_instance.dart';
 import 'package:pure_live/common/global/platform/mobile_manager.dart';
 import 'package:pure_live/common/global/platform/desktop_manager.dart';
@@ -38,7 +37,7 @@ class AppInitializer {
 
     await Future.wait([
       Hive.initFlutter(hiveDir.path).then((_) => HivePrefUtil.init()),
-      FirebaseManager.getInstance().initial(),
+
       CustomImageCacheManager.initialize(),
     ]);
 

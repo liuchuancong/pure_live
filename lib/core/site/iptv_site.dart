@@ -14,8 +14,6 @@ import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/iptv/services/auto_sync_scheduler.dart';
 
 class IptvSite implements LiveSite {
-  final db = Get.find<DbService>().db;
-
   @override
   String id = 'iptv';
 
@@ -27,6 +25,7 @@ class IptvSite implements LiveSite {
 
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async {
+    final db = Get.find<DbService>().db;
     final providers = await db.getAllProviders();
 
     final categoryTypes = <LiveCategory>[];
@@ -63,6 +62,7 @@ class IptvSite implements LiveSite {
 
   @override
   Future<List<LiveRoom>> getCategoryRooms(LiveArea category, {int page = 1, int pageSize = 30}) async {
+    final db = Get.find<DbService>().db;
     final items = <LiveRoom>[];
 
     final ch = await db.getChannelById(category.areaId!);
@@ -104,6 +104,7 @@ class IptvSite implements LiveSite {
 
   @override
   Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
+    final db = Get.find<DbService>().db;
     final channel = await db.getChannelById(roomId);
     if (channel == null) {
       if (channel == null) {
@@ -330,6 +331,7 @@ class IptvSite implements LiveSite {
 
   @override
   Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) async {
+    final db = Get.find<DbService>().db;
     if (keyword.trim().isEmpty) return [];
     final matched = await db.searchChannelsByName(keyword);
     final items = matched.map((ch) {

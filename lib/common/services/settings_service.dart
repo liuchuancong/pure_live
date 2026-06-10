@@ -1,13 +1,11 @@
-import 'dart:async';
-import 'package:flutter/widgets.dart';
 import 'package:pure_live/get/get.dart';
+import 'package:pure_live/modules/tags/tag_management_controller.dart';
 import 'package:pure_live/common/services/settings/log_controller.dart';
 import 'package:pure_live/common/services/settings/cache_controller.dart';
 import 'package:pure_live/common/services/settings/backup_controller.dart';
 import 'package:pure_live/common/services/settings/history_controller.dart';
 import 'package:pure_live/common/services/settings/web_dav_controller.dart';
 import 'package:pure_live/common/services/settings/startup_controller.dart';
-import 'package:pure_live/common/services/utils/legacy_settings_migration.dart';
 import 'package:pure_live/common/services/settings/window_size_controller.dart';
 import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 import 'package:pure_live/common/services/settings/page_settings_controller.dart';
@@ -47,70 +45,34 @@ class SettingsService extends GetxService {
   RefreshConfigController get refreshConfig => Get.find<RefreshConfigController>();
   PageSettingsController get page => Get.find<PageSettingsController>();
   LogController get log => Get.find<LogController>();
+  TagManagementController get tagManagement => Get.find<TagManagementController>();
+
   @override
   void onInit() {
     super.onInit();
 
-    Get.lazyPut(() => StartupController());
-    Get.lazyPut(() => AppSettingsController());
-    Get.lazyPut(() => ThemeSettingsController());
-    Get.lazyPut(() => WindowSizeController());
-    Get.lazyPut(() => ProxySettingsController());
-    Get.put(BiliBiliAccountService(), permanent: true);
-    Get.put(FontSettingsController(), permanent: true);
-    Get.lazyPut(() => PlayerSettingsController());
-    Get.lazyPut(() => DanmakuSettingsController());
-    Get.lazyPut(() => VolumeSettingsController());
-    Get.lazyPut(() => HistoryController());
-    Get.lazyPut(() => RefreshConfigController());
-    Get.lazyPut(() => FavoriteRoomController());
-    Get.lazyPut(() => IptvSettingsController());
-    Get.lazyPut(() => CacheController());
+    Get.lazyPut(() => StartupController(), fenix: true);
+    Get.lazyPut(() => AppSettingsController(), fenix: true);
+    Get.lazyPut(() => ThemeSettingsController(), fenix: true);
+    Get.lazyPut(() => WindowSizeController(), fenix: true);
+    Get.lazyPut(() => ProxySettingsController(), fenix: true);
+    Get.lazyPut(() => PlayerSettingsController(), fenix: true);
+    Get.lazyPut(() => DanmakuSettingsController(), fenix: true);
+    Get.lazyPut(() => VolumeSettingsController(), fenix: true);
+    Get.lazyPut(() => HistoryController(), fenix: true);
+    Get.lazyPut(() => RefreshConfigController(), fenix: true);
+    Get.lazyPut(() => FavoriteRoomController(), fenix: true);
+    Get.lazyPut(() => IptvSettingsController(), fenix: true);
+    Get.lazyPut(() => CacheController(), fenix: true);
+    Get.lazyPut(() => CookieSettingsController(), fenix: true);
+    Get.lazyPut(() => PageSettingsController(), fenix: true);
+    Get.lazyPut(() => WebDavController(), fenix: true);
+    Get.lazyPut(() => BackupController(), fenix: true);
+    Get.lazyPut(() => TagManagementController(), fenix: true);
+    Get.lazyPut(() => BiliBiliAccountService(), fenix: true);
+    Get.lazyPut(() => FontSettingsController(), fenix: true);
+    Get.lazyPut(() => LogController(), fenix: true);
+
     Get.put(ExitSettingsController(), permanent: true);
-    Get.lazyPut(() => CookieSettingsController());
-    Get.lazyPut(() => PageSettingsController());
-    Get.lazyPut(() => WebDavController());
-    Get.lazyPut(() => BackupController());
-    Get.put(LogController(), permanent: true);
-
-    bool executionTriggered = false;
-    final Timer fallbackTimer = Timer(const Duration(seconds: 3), () {
-      if (!executionTriggered) {
-        executionTriggered = true;
-        _forceEagerInitialization();
-      }
-    });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!executionTriggered) {
-        fallbackTimer.cancel();
-        executionTriggered = true;
-        _forceEagerInitialization();
-      }
-    });
-  }
-
-  void _forceEagerInitialization() {
-    Get.find<StartupController>();
-    Get.find<AppSettingsController>();
-    Get.find<ThemeSettingsController>();
-    Get.find<WindowSizeController>();
-    Get.find<ProxySettingsController>();
-    Get.find<PlayerSettingsController>();
-    Get.find<DanmakuSettingsController>();
-    Get.find<VolumeSettingsController>();
-    Get.find<HistoryController>();
-    Get.find<RefreshConfigController>();
-    Get.find<FavoriteRoomController>();
-    Get.find<IptvSettingsController>();
-    Get.find<CacheController>();
-    Get.find<CookieSettingsController>();
-    Get.find<WebDavController>();
-    Get.find<BackupController>();
-    _doMigration();
-  }
-
-  Future<void> _doMigration() async {
-    await LegacySettingsMigration.migrateIfNeeded();
   }
 }

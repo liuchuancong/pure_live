@@ -4,7 +4,7 @@ import 'package:pure_live/modules/auth/auth_controller.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/recorder/services/cache_service.dart';
 import 'package:pure_live/routes/route_observer_controller.dart';
-import 'package:pure_live/modules/tags/tag_management_controller.dart';
+import 'package:pure_live/modules/auth/utils/firebase_manager.dart';
 import 'package:pure_live/recorder/services/stream_resolver_service.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/core/iptv/services/channel_detail_controller.dart';
@@ -13,21 +13,20 @@ import 'package:pure_live/recorder/pages/record_settings/record_settings_control
 
 class InitialServices {
   static void initGlobalServices() {
-    Get.put(TagManagementController(), permanent: true);
     Get.put(SettingsService(), permanent: true);
-    Get.put(CacheService(), permanent: true);
-    Get.put(AuthController(), permanent: true);
     Get.put(RouteObserverController(), permanent: true);
   }
 
   static void initLazyControllers() {
-    Get.lazyPut(() => RecordSettingsController());
-    Get.lazyPut(() => RecorderController());
+    // 关注
     Get.lazyPut(() => FavoriteController(), fenix: true);
+    // iptv频道
     Get.lazyPut(() => ChannelDetailController(), fenix: true);
+    // 热门
     Get.lazyPut(() => PopularController(), fenix: true);
+    // 分区
     Get.lazyPut(() => AreasController(), fenix: true);
-    Get.lazyPut(() => StreamResolverService(), fenix: true);
+    // 播放器状态
     Get.lazyPut(() => GlobalPlayerState(), fenix: true);
   }
 
@@ -38,18 +37,27 @@ class InitialServices {
   }
 
   static Future<void> init() async {
+    await initDb();
     initGlobalServices();
     initLazyControllers();
-    initializedFFmpeg();
-    await initDb();
+    _initHeavyServicesInBackground();
   }
 
-  static Future<void> initializedFFmpeg() async {
+  static void _initHeavyServicesInBackground() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await FFmpegKitExtended.initialize();
-      await Future.delayed(Duration(seconds: 2));
-      Get.put(RecordSettingsController());
-      Get.put(RecorderController());
+      try {
+        await FirebaseManager.getInstance().initial();
+        await Future.delayed(const Duration(seconds: 2));
+        Get.put(AuthController(), permanent: true);
+      } catch (_) {}
+      try {
+        await FFmpegKitExtended.initialize();
+        await Future.delayed(const Duration(seconds: 2));
+        Get.put(CacheService(), permanent: true);
+        Get.put(RecordSettingsController(), permanent: true);
+        Get.put(RecorderController(), permanent: true);
+        Get.lazyPut(() => StreamResolverService(), fenix: true);
+      } catch (_) {}
     });
   }
 }
