@@ -65,6 +65,32 @@ class DouyinSite implements LiveSite {
     }
   }
 
+  Future<Map<String, dynamic>> getUserInfoByCookie(String cookie) async {
+    try {
+      final url = "https://live.douyin.com/webcast/user/me/";
+      final result = await HttpClient.instance.getJson(
+        url,
+        queryParameters: {"aid": DouyinRequestParams.aidValue},
+        header: {
+          "user-agent": DouyinRequestParams.kDefaultUserAgent,
+          'accept': 'application/json, text/plain, */*',
+          'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8',
+          "Cookie": cookie,
+        },
+      );
+      if (result is Map<String, dynamic>) {
+        final data = result["data"];
+        if (data is Map<String, dynamic>) {
+          return data;
+        }
+      }
+      return {};
+    } catch (e) {
+      CoreLog.error(e);
+    }
+    return {};
+  }
+
   String extractCategoryDataJson(String source) {
     final startPattern = r'{\"pathname\":\"/\",\"categoryData\":';
     int startIndex = source.indexOf(startPattern);

@@ -8,7 +8,7 @@ class AccountPage extends GetView<AccountController> {
 
   @override
   Widget build(BuildContext context) {
-    final cookie = SettingsService.to.cookieManager;
+    final cookie = controller.cookie;
 
     return Scaffold(
       appBar: AppBar(title: Text(i18n('third_party_auth'))),
@@ -51,7 +51,11 @@ class AccountPage extends GetView<AccountController> {
                 context,
                 logo: 'assets/images/douyin.png',
                 title: i18n("site_douyin"),
-                subtitle: isLogined ? i18n("logined") : i18n("set_cookie"),
+                subtitle: isLogined
+                    ? controller.douyinNickName.value.isNotEmpty
+                          ? controller.douyinNickName.value
+                          : i18n("logined")
+                    : i18n("set_cookie"),
                 isLogined: isLogined,
                 onTap: () => isLogined
                     ? _showPlatformLogoutDialog(context, () => cookie.douyinCookie.v = "")

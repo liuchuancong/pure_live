@@ -965,5 +965,7 @@
     "playback_behavior_settings": "播放行为设置",
     "core_kernel_settings": "核心内核设置",
     "view_logs_in_browser": "在浏览器中查看日志",
-    "recording_room_title": "录播"
+    "recording_room_title": "录播",
+    "logined": "已登录",
+    "confirm_logout": "确定要退出登录吗？"
 }

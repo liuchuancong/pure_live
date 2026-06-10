@@ -15,7 +15,7 @@ class StartupController extends GetxController {
   }
 
   Future<void> loadHuyaUa() async {
-    await HuyaSite().getHuYaUA();
+    HuyaSite().getHuYaUA();
   }
 
   Future<void> setupLaunchAtStartup() async {

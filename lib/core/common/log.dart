@@ -15,12 +15,7 @@ import 'package:pure_live/common/services/settings/log_controller.dart';
 class Log {
   static LogFileWriter? _logFileWriter;
   static final List<DebugLogModel> _allLogs = [];
-  static final StreamController<List<DebugLogModel>> _logStreamController =
-      StreamController<List<DebugLogModel>>.broadcast();
-
   static HttpServer? _server;
-
-  static Stream<List<DebugLogModel>> get logStream => _logStreamController.stream;
   static List<DebugLogModel> get allLogs => _allLogs;
 
   static Future<void> init() async {
@@ -34,7 +29,6 @@ class Log {
   static void dispose() {
     _logFileWriter?.close();
     _logFileWriter = null;
-    _logStreamController.close();
     stopLogServer();
   }
 
@@ -45,13 +39,13 @@ class Log {
       await socket.close();
       return port;
     } catch (e) {
-      Log.w('获取空闲端口失败，尝试保底端口 8080: $e', true);
+      Log.w('获取空闲端口失败，尝试保底端口 8080: $e');
       try {
         final fallbackSocket = await ServerSocket.bind(InternetAddress.anyIPv4, 47854);
         await fallbackSocket.close();
         return 47854;
       } catch (fallbackError) {
-        Log.w('保底端口 47854 也被占用: $fallbackError', true);
+        Log.w('保底端口 47854 也被占用: $fallbackError');
         return 0;
       }
     }
@@ -83,9 +77,6 @@ class Log {
   static void _handleNativeRequest(HttpRequest request) {
     if (request.uri.path == '/clear') {
       _allLogs.clear();
-      if (!_logStreamController.isClosed) {
-        _logStreamController.add(_allLogs);
-      }
       request.response
         ..headers.contentType = ContentType.json
         ..write(jsonEncode({'success': true}))
@@ -297,18 +288,15 @@ class Log {
     _logFileWriter?.write("[${level.name.toUpperCase()}] $_currentTime：$content");
   }
 
-  static void addDebugLog(String content, Color? color) {
+  static void addDebugLog(String content, [Color? color]) {
     if (kReleaseMode) return;
+
+    String processedContent = content;
     if (content.contains("请求响应")) {
-      content = content.split("\n").join('\n💡 ');
+      processedContent = content.split("\n").join('\n💡 ');
     }
-    try {
-      _allLogs.add(DebugLogModel(DateTime.now(), content, color: color));
-      _logStreamController.add(_allLogs);
-    } catch (e, stackTrace) {
-      // 彻底消除 print，改用封装好的错误捕获并写入文件
-      Log.e('Add debug log error: $e', stackTrace, true);
-    }
+
+    _allLogs.add(DebugLogModel(DateTime.now(), processedContent, color: color));
   }
 
   static final Logger logger = Logger(
@@ -324,39 +312,39 @@ class Log {
     output: kReleaseMode ? _NullOutput() : ConsoleOutput(),
   );
 
-  static void d(String message, [bool writeFile = true]) {
+  static void d(String message) {
     if (!kReleaseMode) {
       addDebugLog(message, Colors.orange);
       logger.d(message);
     }
-    if (writeFile) writeLog(message, Level.debug);
+    if (LogController.to.enableLog) writeLog(message, Level.debug);
   }
 
-  static void i(String message, [bool writeFile = true]) {
+  static void i(String message) {
     if (!kReleaseMode) {
       addDebugLog(message, Colors.blue);
       logger.i(message);
     }
-    if (writeFile) writeLog(message, Level.info);
+    if (LogController.to.enableLog) writeLog(message, Level.info);
   }
 
-  static void e(String message, StackTrace stackTrace, [bool writeFile = true]) {
+  static void e(String message, StackTrace stackTrace) {
     if (!kReleaseMode) {
       addDebugLog('$message\r\n\r\n$stackTrace', Colors.red);
       logger.e(message, stackTrace: stackTrace);
     }
-    if (writeFile) writeLog("$message\n$stackTrace", Level.error);
+    if (LogController.to.enableLog) writeLog("$message\n$stackTrace", Level.error);
   }
 
-  static void w(String message, [bool writeFile = true]) {
+  static void w(String message) {
     if (!kReleaseMode) {
       addDebugLog(message, Colors.pink);
       logger.w(message);
     }
-    if (writeFile) writeLog(message, Level.warning);
+    if (LogController.to.enableLog) writeLog(message, Level.warning);
   }
 
-  static void logPrint(dynamic obj, [bool writeFile = true]) {
+  static void logPrint(dynamic obj) {
     final String content = obj.toString();
     if (!kReleaseMode) {
       addDebugLog(content, Colors.red);
@@ -364,7 +352,7 @@ class Log {
         print(content);
       }
     }
-    if (writeFile) writeLog(content, Level.info);
+    if (LogController.to.enableLog) writeLog(content, Level.info);
   }
 
   static String get _currentTime => Utils.timeFormat.format(DateTime.now());
@@ -402,7 +390,7 @@ class LogFileWriter {
       await _writeSystemInfo();
     } catch (e, stackTrace) {
       // 彻底消除 print，统一使用 Log.e
-      Log.e("Init log file failed: $e", stackTrace, false);
+      Log.e("Init log file failed: $e", stackTrace);
     }
   }
 
@@ -472,7 +460,7 @@ class LogFileWriter {
       _fileWriter?.write("=========================================================\r\n\r\n");
       await _fileWriter?.flush();
     } catch (e, stackTrace) {
-      Log.e("Init log file failed: $e", stackTrace, false);
+      Log.e("Init log file failed: $e", stackTrace);
     }
   }
 }

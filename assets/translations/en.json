@@ -965,5 +965,7 @@
     "playback_behavior_settings": "Playback Behavior Settings",
     "core_kernel_settings": "Core Kernel Settings",
     "view_logs_in_browser": "View Logs in Browser",
-    "recording_room_title": "Recording"
+    "recording_room_title": "Recording",
+    "logined": "Logged in",
+    "confirm_logout": "Are you sure you want to log out?"
 }

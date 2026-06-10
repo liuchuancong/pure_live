@@ -62,7 +62,11 @@ class KuaishouCookiePage extends GetView<KuaishouCookieController> {
                       icon: const Icon(Remix.settings_line, size: 18),
                       label: Text(
                         i18n("set"),
-                        style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w600, letterSpacing: 1),
+                        style: AppTextStyles.t14.copyWith(
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
