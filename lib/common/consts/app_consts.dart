@@ -78,7 +78,6 @@ class AppConsts {
 
   static const List<Map<String, String>> allStyles = [
     {'key': 'default', 'nameEn': 'Default Ring', 'nameZh': '默认圆环'},
-    {"key": "auroraRing", "nameEn": "Aurora Ring", "nameZh": "极光圆环"},
     {'key': 'rotatingPlain', 'nameEn': 'Rotating Plain', 'nameZh': '旋转方块'},
     {'key': 'doubleBounce', 'nameEn': 'Double Bounce', 'nameZh': '双重大圆'},
     {'key': 'wave', 'nameEn': 'Wave', 'nameZh': '波浪跳跃'},
