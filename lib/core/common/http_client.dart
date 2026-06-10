@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:io' as io;
+import 'package:dio/io.dart';
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/common/core_error.dart';
 import 'package:pure_live/core/common/custom_interceptor.dart';
@@ -21,9 +22,16 @@ class HttpClient {
   HttpClient._();
   static final HttpClient instance = HttpClient._();
 
-  late final Dio dio = Dio(
-    BaseOptions(connectTimeout: _connectTimeout, receiveTimeout: _receiveTimeout, sendTimeout: _sendTimeout),
-  )..interceptors.add(CustomLogInterceptor());
+  late final Dio dio =
+      Dio(BaseOptions(connectTimeout: _connectTimeout, receiveTimeout: _receiveTimeout, sendTimeout: _sendTimeout))
+        ..interceptors.add(CustomLogInterceptor())
+        ..httpClientAdapter = IOHttpClientAdapter(
+          createHttpClient: () {
+            final client = io.HttpClient();
+            client.findProxy = (uri) => 'DIRECT';
+            return client;
+          },
+        );
 
   Future<String> getText(
     String url, {
@@ -130,7 +138,7 @@ class HttpClient {
     }
   }
 
-  Future<File> download(
+  Future<io.File> download(
     String url,
     String savePath, {
     Map<String, dynamic>? header,
@@ -138,7 +146,7 @@ class HttpClient {
     Function(int value, int progress)? onReceiveProgress,
   }) async {
     final tempPath = "$savePath.part";
-    final tempFile = File(tempPath);
+    final tempFile = io.File(tempPath);
 
     try {
       if (!await tempFile.exists()) {
