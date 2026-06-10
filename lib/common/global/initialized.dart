@@ -22,69 +22,89 @@ class AppInitializer {
   factory AppInitializer() => _instance;
   AppInitializer._internal();
 
+  bool get isInitialized => _isInitialized;
+
   Future<void> initialize(List<String> args) async {
     if (_isInitialized) return;
+
     WidgetsFlutterBinding.ensureInitialized();
+    await EasyLocalization.ensureInitialized();
 
-    String instanceId = getInstanceIdFromArgs(args);
+    final String instanceId = _getInstanceIdFromArgs(args);
+    await _initWindowsSingleInstance(args, instanceId);
 
-    if (Platform.isWindows) {
-      await WindowsSingleInstance.ensureSingleInstance(
-        args,
-        "PureLive_InstanceID_$instanceId",
-        bringWindowToFront: true,
-        exitFunction: () {
-          exit(0);
-        },
-      );
-    }
     await AppPathManager().initialize(instanceId: instanceId);
-    await CustomImageCacheManager.initialize();
     final Directory hiveDir = await AppPathManager().getDir(AppPathManager.dirHiveDB);
-    await FirebaseManager.getInstance().initial();
-    try {
-      await Hive.initFlutter(hiveDir.path);
-      await HivePrefUtil.init();
-    } catch (e) {
-      log("Hive Init Error: $e");
-      exit(0);
-    }
+
+    await Future.wait([
+      Hive.initFlutter(hiveDir.path).then((_) => HivePrefUtil.init()),
+      FirebaseManager.getInstance().initial(),
+      CustomImageCacheManager.initialize(),
+    ]);
 
     InitialServices.init();
-    SmartDialog.config.toast = SmartConfigToast(
-      displayTime: const Duration(milliseconds: 3000),
-      intervalTime: const Duration(milliseconds: 100),
-    );
+    _initSmartDialog();
+    initRefresh();
 
     if (PlatformUtils.isDesktop) {
       await DesktopManager.initialize();
       if (Platform.isWindows) {
-        try {
-          await ScreenBrightness().setAutoReset(false);
-        } catch (_) {}
+        _initWindowsScreenBrightness();
       }
     } else if (PlatformUtils.isMobile) {
       await MobileManager.initialize();
     }
-    await EasyLocalization.ensureInitialized();
-    initRefresh();
-    if (PlatformUtils.isDesktopNotMac) {
-      if (instanceId.isEmpty) {
-        await SettingsService.to.startup.setupLaunchAtStartup();
-      }
+
+    if (PlatformUtils.isDesktopNotMac && instanceId.isEmpty) {
+      _setupLaunchAtStartupSafe();
     }
+
     _isInitialized = true;
   }
 
-  String getInstanceIdFromArgs(List<String> args) {
-    for (var arg in args) {
+  String _getInstanceIdFromArgs(List<String> args) {
+    for (final arg in args) {
       if (arg.startsWith('--instance=')) {
-        var parts = arg.split('=');
+        final parts = arg.split('=');
         return parts.length > 1 ? parts[1] : '';
       }
     }
     return '';
   }
 
-  bool get isInitialized => _isInitialized;
+  Future<void> _initWindowsSingleInstance(List<String> args, String instanceId) async {
+    if (!Platform.isWindows) return;
+    try {
+      final safeId = instanceId.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '');
+      await WindowsSingleInstance.ensureSingleInstance(
+        args,
+        "PureLive_InstanceID_$safeId",
+        bringWindowToFront: true,
+        exitFunction: () => exit(0),
+      );
+    } catch (e) {
+      log('WindowsSingleInstance initialization failed: $e');
+    }
+  }
+
+  void _initWindowsScreenBrightness() {
+    ScreenBrightness().setAutoReset(false).catchError((e) {
+      log('ScreenBrightness error: $e');
+    });
+  }
+
+  Future<void> _setupLaunchAtStartupSafe() async {
+    try {
+      await SettingsService.to.startup.setupLaunchAtStartup();
+    } catch (e) {
+      log('Setup launch at startup failed: $e');
+    }
+  }
+
+  void _initSmartDialog() {
+    SmartDialog.config.toast = SmartConfigToast(
+      displayTime: const Duration(milliseconds: 3000),
+      intervalTime: const Duration(milliseconds: 100),
+    );
+  }
 }
