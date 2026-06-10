@@ -121,6 +121,8 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
             icon: Remix.apps_2_line,
             title: i18n("empty_areas_title"),
             subtitle: i18n("empty_areas_subtitle"),
+            buttonText: i18n('refresh'),
+            onButtonPressed: () => widget.controller.refreshData(),
           ),
           contentBuilder: (context, displayList, scrollController) {
             return const SizedBox.shrink();

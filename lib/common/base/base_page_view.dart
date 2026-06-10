@@ -73,29 +73,68 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
                 Obx(() {
                   if (controller.showCellularBanner.value && controller.list.isNotEmpty) {
                     return Container(
-                      color: Colors.amber.shade100,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: Row(
-                        children: [
-                          Icon(Icons.signal_cellular_alt_rounded, color: Colors.amber.shade900, size: 18),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              i18n("cellular_warning_msg"),
-                              style: AppTextStyles.t13Medium.copyWith(color: Colors.amber.shade900),
-                            ),
+                      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                          width: 1,
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.signal_cellular_alt_rounded,
+                                  color: Theme.of(context).colorScheme.primary,
+                                  size: 18,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  i18n("cellular_warning_msg"),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              TextButton(
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Theme.of(context).colorScheme.primary,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                onPressed: () {
+                                  BaseController.neverShowCellularBanner = true;
+                                  controller.showCellularBanner.value = false;
+                                },
+                                child: Text(
+                                  i18n("never_show"),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          TextButton(
-                            onPressed: () {
-                              BaseController.neverShowCellularBanner = true;
-                              controller.showCellularBanner.value = false;
-                            },
-                            child: Text(
-                              i18n("never_show"),
-                              style: AppTextStyles.t13Bold.copyWith(color: Colors.amber.shade900),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     );
                   }

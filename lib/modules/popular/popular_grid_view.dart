@@ -29,6 +29,8 @@ class _PopularGridViewState extends State<PopularGridView> {
             icon: RemixIcons.fire_fill,
             title: i18n("empty_live_title"),
             subtitle: i18n("empty_live_subtitle"),
+            buttonText: i18n('refresh'),
+            onButtonPressed: () => controller.refreshData(),
           ),
           contentBuilder: (context, list, scrollController) {
             return WaterfallFlow.builder(
