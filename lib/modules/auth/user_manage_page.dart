@@ -246,16 +246,6 @@ class UserManager extends GetView<UserServerRemoteController> {
     );
   }
 
-  Widget _buildSectionTitle(ThemeData theme, String title, IconData icon) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: theme.colorScheme.primary),
-        const SizedBox(width: 8),
-        Text(title, style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.bold)),
-      ],
-    );
-  }
-
   Widget _buildUserCard(int index, UserItem user) {
     final theme = Theme.of(Get.context!);
     final int roleWeight = FirebaseManager.roleWeights[user.role] ?? 2;

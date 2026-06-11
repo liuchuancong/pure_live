@@ -982,5 +982,11 @@
     "favorites": "Favorites",
     "expand_all": "Expand All",
     "collapse_all": "Collapse All",
-    "config_raw_preview": "Cloud Config Raw Preview"
+    "config_raw_preview": "Cloud Config Raw Preview",
+    "config_preview": "Config Preview",
+    "local_config_preview": "Local Config Preview",
+    "local_backup_config": "Local Backup Config",
+    "backup_version": "Backup Version",
+    "tags": "Tags",
+    "config_modules": "Config Modules"
 }

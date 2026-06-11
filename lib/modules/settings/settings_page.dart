@@ -5,6 +5,7 @@ import 'package:pure_live/modules/backup/backup_page.dart';
 import 'package:pure_live/modules/settings/pages/refresh_settings.dart';
 import 'package:pure_live/modules/settings/pages/theme_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/video_settings_page.dart';
+import 'package:pure_live/modules/settings/pages/local_config_preveiw.dart';
 import 'package:pure_live/modules/settings/pages/general_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/platform_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/navigation_settings_page.dart';
@@ -22,7 +23,20 @@ class SettingsPage extends GetView<SettingsService> {
     double screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      appBar: AppBar(scrolledUnderElevation: screenWidth > 640 ? 0 : null, title: Text(i18n("settings_title"))),
+      appBar: AppBar(
+        scrolledUnderElevation: screenWidth > 640 ? 0 : null,
+        title: Text(i18n("settings_title")),
+        actions: [
+          TextButton(
+            onPressed: () => Get.to(() => LocalConfigPreviewPage()),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [Icon(Remix.file_text_line, size: 18), const SizedBox(width: 4), Text(i18n("config_preview"))],
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

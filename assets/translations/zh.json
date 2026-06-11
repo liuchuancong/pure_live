@@ -982,5 +982,11 @@
     "favorites": "收藏直播间",
     "expand_all": "展开全部节点",
     "collapse_all": "折叠全部节点",
-    "config_raw_preview": "云端配置元数据预览"
+    "config_raw_preview": "云端配置元数据预览",
+    "config_preview": "配置预览",
+    "local_config_preview": "本地配置预览",
+    "local_backup_config": "本地备份配置",
+    "backup_version": "备份版本",
+    "tags": "标签",
+    "config_modules": "配置模块"
 }
