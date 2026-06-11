@@ -35,4 +35,22 @@ class CookieSettingsController extends GetxController {
     BiliBiliAccountService.instance.setCookie(bilibiliCookie.v);
     BiliBiliAccountService.instance.loadUserInfo();
   }
+
+  static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
+    final cookie = rootConfig?['cookie'] as Map<String, dynamic>? ?? {};
+    return {
+      'bilibiliCookie': cookie['bilibiliCookie'] ?? '',
+      'huyaCookie': cookie['huyaCookie'] ?? '',
+      'douyinCookie': cookie['douyinCookie'] ?? '',
+      'kuaishouCookie': cookie['kuaishouCookie'] ?? '',
+      'bilibiliUid': cookie['bilibiliUid'] ?? 0,
+    };
+  }
+
+  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+    final cookie = Map<String, dynamic>.from(rootConfig['cookie'] ?? {});
+    updateFields.forEach((k, v) => cookie[k] = v);
+    rootConfig['cookie'] = cookie;
+    return rootConfig;
+  }
 }

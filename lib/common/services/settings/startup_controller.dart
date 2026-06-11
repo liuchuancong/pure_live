@@ -53,4 +53,16 @@ class StartupController extends GetxController {
   void fromJson(Map<String, dynamic> json) {
     enableStartUp.v = json['enableStartUp'] ?? true;
   }
+
+  static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
+    final startup = rootConfig?['startup'] as Map<String, dynamic>? ?? {};
+    return {'enableStartUp': startup['enableStartUp'] ?? true};
+  }
+
+  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+    final startup = Map<String, dynamic>.from(rootConfig['startup'] ?? {});
+    updateFields.forEach((k, v) => startup[k] = v);
+    rootConfig['startup'] = startup;
+    return rootConfig;
+  }
 }

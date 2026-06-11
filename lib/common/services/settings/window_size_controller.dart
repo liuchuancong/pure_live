@@ -45,4 +45,19 @@ class WindowSizeController extends GetxController {
     storedHeight.v = (json['storedHeight'] as num?)?.toDouble() ?? 720.0;
     windowSize.value = Size(storedWidth.v, storedHeight.v);
   }
+
+  static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
+    final windowSize = rootConfig?['windowSize'] as Map<String, dynamic>? ?? {};
+    return {
+      'storedWidth': (windowSize['storedWidth'] ?? 1280.0).toDouble(),
+      'storedHeight': (windowSize['storedHeight'] ?? 720.0).toDouble(),
+    };
+  }
+
+  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+    final windowSize = Map<String, dynamic>.from(rootConfig['windowSize'] ?? {});
+    updateFields.forEach((k, v) => windowSize[k] = v);
+    rootConfig['windowSize'] = windowSize;
+    return rootConfig;
+  }
 }

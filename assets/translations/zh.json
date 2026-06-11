@@ -972,5 +972,15 @@
     "firebase_init_failed": "Firebase 初始化失败",
     "firebase_init_failed_desc": "网络连接超时，请检查您的代理或网络设置后点击重试",
     "firebase_connecting_desc": "正在尝试重新连接 Firebase 服务，请稍候...",
-    "firebase_connecting_title": "正在重新连接..."
+    "firebase_connecting_title": "正在重新连接...",
+    "user_profile": "用户配置中心",
+    "user_not_found": "未找到该用户的数据文档",
+    "created_time": "账号注册时间",
+    "sync_time": "最后同步时间",
+    "never_sync": "从未进行云端同步",
+    "unknown_version": "未知客户端版本",
+    "favorites": "收藏直播间",
+    "expand_all": "展开全部节点",
+    "collapse_all": "折叠全部节点",
+    "config_raw_preview": "云端配置元数据预览"
 }

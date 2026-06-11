@@ -40,4 +40,23 @@ class IptvSettingsController extends GetxController {
     customIptvUserAgent.v = json['customIptvUserAgent'] ?? '';
     m3uDirectory.v = json['m3uDirectory'] ?? 'm3uDirectory';
   }
+
+  static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
+    final iptv = rootConfig?['iptv'] as Map<String, dynamic>? ?? {};
+    return {
+      'selectedSourceName': iptv['selectedSourceName'] ?? '',
+      'selectedSourceId': iptv['selectedSourceId'] ?? '',
+      'isAutoSyncEnabled': iptv['isAutoSyncEnabled'] ?? false,
+      'autoSyncHoursInterval': iptv['autoSyncHoursInterval'] ?? 24,
+      'customIptvUserAgent': iptv['customIptvUserAgent'] ?? '',
+      'm3uDirectory': iptv['m3uDirectory'] ?? 'm3uDirectory',
+    };
+  }
+
+  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+    final iptv = Map<String, dynamic>.from(rootConfig['iptv'] ?? {});
+    updateFields.forEach((k, v) => iptv[k] = v);
+    rootConfig['iptv'] = iptv;
+    return rootConfig;
+  }
 }

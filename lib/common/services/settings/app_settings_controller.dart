@@ -53,4 +53,26 @@ class AppSettingsController extends GetxController {
     showSplashPage.v = json['showSplashPage'] ?? true;
     savedMenuIds.v = List<String>.from(json['savedMenuIds'] ?? HomeMenu.values.map((e) => e.id).toList());
   }
+
+  static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
+    final app = rootConfig?['app'] as Map<String, dynamic>? ?? {};
+    return {
+      'autoRefreshTime': app['autoRefreshTime'] ?? 3,
+      'enableDenseFavorites': app['enableDenseFavorites'] ?? true,
+      'enableBackgroundPlay': app['enableBackgroundPlay'] ?? false,
+      'enableRotateScreen': app['enableRotateScreen'] ?? false,
+      'enableScreenKeepOn': app['enableScreenKeepOn'] ?? true,
+      'enableAutoCheckUpdate': app['enableAutoCheckUpdate'] ?? true,
+      'enableFullScreenDefault': app['enableFullScreenDefault'] ?? false,
+      'showSplashPage': app['showSplashPage'] ?? true,
+      'savedMenuIds': List<String>.from(app['savedMenuIds'] ?? []),
+    };
+  }
+
+  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+    final app = Map<String, dynamic>.from(rootConfig['app'] ?? {});
+    updateFields.forEach((k, v) => app[k] = v);
+    rootConfig['app'] = app;
+    return rootConfig;
+  }
 }

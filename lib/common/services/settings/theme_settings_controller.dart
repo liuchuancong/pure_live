@@ -70,4 +70,25 @@ class ThemeSettingsController extends GetxController {
     loadingStyle.v = json['loadingStyle'] ?? AppConsts.defaultLoadingStyleKey;
     loadingStyleColorSwitch.v = json['loadingStyleColorSwitch'] ?? '';
   }
+
+  static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
+    final theme = rootConfig?['theme'] as Map<String, dynamic>? ?? {};
+    return {
+      'themeMode': theme['themeMode'] ?? "System",
+      'enableDynamicTheme': theme['enableDynamicTheme'] ?? false,
+      'themeColorSwitch': theme['themeColorSwitch'] ?? Colors.blue.hex,
+      'language': theme['language'] ?? "简体中文",
+      'crossAxisSpacing': (theme['crossAxisSpacing'] ?? 6.0).toDouble(),
+      'mainAxisSpacing': (theme['mainAxisSpacing'] ?? 6.0).toDouble(),
+      'loadingStyle': theme['loadingStyle'] ?? AppConsts.defaultLoadingStyleKey,
+      'loadingStyleColorSwitch': theme['loadingStyleColorSwitch'] ?? '',
+    };
+  }
+
+  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+    final theme = Map<String, dynamic>.from(rootConfig['theme'] ?? {});
+    updateFields.forEach((k, v) => theme[k] = v);
+    rootConfig['theme'] = theme;
+    return rootConfig;
+  }
 }

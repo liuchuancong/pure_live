@@ -131,4 +131,24 @@ class FontSettingsController extends GetxController {
     fontSizeTitleLarge.v = json['fontSizeTitleLarge'] ?? 20.0;
     fontFamilyName.v = json['fontFamilyName'] ?? 'Default';
   }
+
+  static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
+    final font = rootConfig?['font'] as Map<String, dynamic>? ?? {};
+    return {
+      'textScaleFactor': (font['textScaleFactor'] ?? 1.0).toDouble(),
+      'fontSizeBodySmall': (font['fontSizeBodySmall'] ?? 12.0).toDouble(),
+      'fontSizeBodyMedium': (font['fontSizeBodyMedium'] ?? 13.0).toDouble(),
+      'fontSizeBodyLarge': (font['fontSizeBodyLarge'] ?? 14.0).toDouble(),
+      'fontSizeTitleMedium': (font['fontSizeTitleMedium'] ?? 15.0).toDouble(),
+      'fontSizeTitleLarge': (font['fontSizeTitleLarge'] ?? 20.0).toDouble(),
+      'fontFamilyName': font['fontFamilyName'] ?? 'Default',
+    };
+  }
+
+  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+    final font = Map<String, dynamic>.from(rootConfig['font'] ?? {});
+    updateFields.forEach((k, v) => font[k] = v);
+    rootConfig['font'] = font;
+    return rootConfig;
+  }
 }

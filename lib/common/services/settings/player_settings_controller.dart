@@ -79,4 +79,30 @@ class PlayerSettingsController extends GetxController {
     audioOnly.v = json['audioOnly'] ?? false;
     useHardStopOnExit.v = json['useHardStopOnExit'] ?? false;
   }
+
+  static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
+    final player = rootConfig?['player'] as Map<String, dynamic>? ?? {};
+    return {
+      'videoFitIndex': player['videoFitIndex'] ?? 0,
+      'videoPlayerKey': player['videoPlayerKey'] ?? 'mpv',
+      'preferResolution': player['preferResolution'] ?? PlayerConsts.resolutions.first,
+      'preferResolutionCellular': player['preferResolutionCellular'] ?? PlayerConsts.resolutions.first,
+      'enableCodec': player['enableCodec'] ?? true,
+      'playerCompatMode': player['playerCompatMode'] ?? false,
+      'customPlayerOutput': player['customPlayerOutput'] ?? false,
+      'videoOutputDriver': player['videoOutputDriver'] ?? 'gpu',
+      'audioOutputDriver': player['audioOutputDriver'] ?? 'auto',
+      'videoHardwareDecoder': player['videoHardwareDecoder'] ?? 'auto',
+      'floatPlay': player['floatPlay'] ?? false,
+      'audioOnly': player['audioOnly'] ?? false,
+      'useHardStopOnExit': player['useHardStopOnExit'] ?? false,
+    };
+  }
+
+  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+    final player = Map<String, dynamic>.from(rootConfig['player'] ?? {});
+    updateFields.forEach((k, v) => player[k] = v);
+    rootConfig['player'] = player;
+    return rootConfig;
+  }
 }

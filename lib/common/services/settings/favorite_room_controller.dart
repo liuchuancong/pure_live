@@ -105,4 +105,28 @@ class FavoriteRoomController extends GetxController {
 
     favoriteAreas.v = BackupMigrationUtil.parseObjectList(json['favoriteAreas'], (m) => LiveArea.fromJson(m));
   }
+
+  static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
+    final favorite = rootConfig?['favorite'] as Map<String, dynamic>? ?? {};
+    return {
+      'shieldList': List<String>.from(favorite['shieldList'] ?? []),
+      'hotAreasList': List<String>.from(favorite['hotAreasList'] ?? AppConsts.supportSites),
+      'preferPlatform': favorite['preferPlatform'] ?? Sites.bilibiliSite,
+      'favoriteRooms': BackupMigrationUtil.parseObjectList(
+        favorite['favoriteRooms'],
+        LiveRoom.fromJson,
+      ).map((e) => e.toJson()).toList(),
+      'favoriteAreas': BackupMigrationUtil.parseObjectList(
+        favorite['favoriteAreas'],
+        LiveArea.fromJson,
+      ).map((e) => e.toJson()).toList(),
+    };
+  }
+
+  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+    final favorite = Map<String, dynamic>.from(rootConfig['favorite'] ?? {});
+    updateFields.forEach((k, v) => favorite[k] = v);
+    rootConfig['favorite'] = favorite;
+    return rootConfig;
+  }
 }

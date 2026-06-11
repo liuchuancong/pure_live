@@ -33,4 +33,20 @@ class LogController extends GetxController {
   }
 
   bool get enableLog => storedEnableLog.v;
+
+  static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
+    final refresh = rootConfig?['refresh'] as Map<String, dynamic>? ?? {};
+    return {
+      'serverAddress': refresh['serverAddress'] ?? '',
+      'serverPort': refresh['serverPort'] ?? 0,
+      'storedEnableLog': refresh['storedEnableLog'] ?? false,
+    };
+  }
+
+  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+    final refresh = Map<String, dynamic>.from(rootConfig['refresh'] ?? {});
+    updateFields.forEach((k, v) => refresh[k] = v);
+    rootConfig['refresh'] = refresh;
+    return rootConfig;
+  }
 }

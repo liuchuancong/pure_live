@@ -88,4 +88,21 @@ class VolumeSettingsController extends GetxController {
       _roomVolumesRaw.v = '{}';
     }
   }
+
+  static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
+    final volume = rootConfig?['volume'] as Map<String, dynamic>? ?? {};
+    return {
+      'defaultMobileVolume': (volume['defaultMobileVolume'] ?? 0.5).toDouble(),
+      'defaultDesktopVolume': (volume['defaultDesktopVolume'] ?? 1.0).toDouble(),
+      'globalVolumeMute': volume['globalVolumeMute'] ?? false,
+      'roomVolumes': volume['roomVolumes'] ?? {},
+    };
+  }
+
+  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+    final volume = Map<String, dynamic>.from(rootConfig['volume'] ?? {});
+    updateFields.forEach((k, v) => volume[k] = v);
+    rootConfig['volume'] = volume;
+    return rootConfig;
+  }
 }

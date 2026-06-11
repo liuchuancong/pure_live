@@ -1,39 +1,46 @@
-from http.server import HTTPServer, SimpleHTTPRequestHandler
-import json
+import os
 
-class Handler(SimpleHTTPRequestHandler):
+# 1. 在这里修改您的目标目录
+target_dir = r"D:\flutter\pure_live\lib\modules\auth\components"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory='.', **kwargs)
+# 2. 更新后的文件列表
+files_to_create = [
+    "user_detail_main_page.dart",
+    "user_config_app.dart",
+    "user_config_theme.dart",
+    "user_config_font.dart",
+    "user_config_player.dart",
+    "user_config_danmaku.dart",
+    "user_config_volume.dart",
+    "user_config_favorite.dart",
+    "user_config_history.dart",
+    "user_config_tags.dart",
+    "user_config_iptv.dart",
+    "user_config_proxy.dart",
+    "user_config_cookie.dart",
+    "user_config_webdav.dart",
+    "user_config_exit.dart",
+    "user_config_startup.dart",
+    "user_config_windowSize.dart",
+    "user_config_refresh.dart",
+    "user_config_page.dart"
+]
 
-    def do_POST(self):
+# 3. 自动创建不存在的文件夹
+if not os.path.exists(target_dir):
+    os.makedirs(target_dir)
+    print(f"[目录] 成功创建目标文件夹: {target_dir}")
 
-        if self.path == '/save':
+# 4. 遍历并创建文件
+for file_name in files_to_create:
+    file_path = os.path.join(target_dir, file_name)
+    
+    if os.path.exists(file_path):
+        print(f"[-] 文件已存在，跳过: {file_name}")
+    else:
+        # 使用 'x' 模式确保只在文件不存在时创建，防止意外覆盖
+        with open(file_path, 'x', encoding='utf-8') as f:
+            pass
+        print(f"[+] 成功创建文件: {file_name}")
 
-            length = int(self.headers['Content-Length'])
-
-            body = self.rfile.read(length)
-
-            data = json.loads(body)
-
-            with open('./assets/version.json', 'w', encoding='utf-8') as f:
-                json.dump(
-                    data,
-                    f,
-                    ensure_ascii=False,
-                    indent=2
-                )
-
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(b'success')
-
-        else:
-            self.send_error(404)
-
-httpd = HTTPServer(('localhost', 8080), Handler)
-
-print('Server running:')
-print('http://localhost:8080/assets/index.html')
-
-httpd.serve_forever()
+print("\n新文件列表创建完成！")

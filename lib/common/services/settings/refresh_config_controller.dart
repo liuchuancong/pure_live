@@ -43,4 +43,20 @@ class RefreshConfigController extends GetxController {
     _configStream.close();
     super.onClose();
   }
+
+  static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
+    final refresh = rootConfig?['refresh'] as Map<String, dynamic>? ?? {};
+    return {
+      'autoRefreshFavorite': refresh['autoRefreshFavorite'] ?? false,
+      'autoRefreshInterval': refresh['autoRefreshInterval'] ?? 30,
+      'maxConcurrentRefresh': refresh['maxConcurrentRefresh'] ?? 2,
+    };
+  }
+
+  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+    final refresh = Map<String, dynamic>.from(rootConfig['refresh'] ?? {});
+    updateFields.forEach((k, v) => refresh[k] = v);
+    rootConfig['refresh'] = refresh;
+    return rootConfig;
+  }
 }

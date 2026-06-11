@@ -61,7 +61,7 @@ class AppPages {
     GetPage(name: RoutePath.kInitial, page: HomePage.new, participatesInRootNavigator: true, preventDuplicates: true),
     GetPage(name: RoutePath.kSignIn, page: SignInPage.new),
     GetPage(name: RoutePath.kMine, page: MinePage.new),
-    GetPage(name: RoutePath.kUserManage, page: () => const UserManager()),
+    GetPage(name: RoutePath.kUserManage, page: () => UserManager()),
     GetPage(name: RoutePath.kFavorite, page: FavoritePage.new),
     GetPage(name: RoutePath.kPopular, page: PopularPage.new),
     GetPage(name: RoutePath.kAreas, page: AreasPage.new),

@@ -972,6 +972,15 @@
     "firebase_init_failed": "Firebase Initialization Failed",
     "firebase_init_failed_desc": "Network connection timeout. Please check your proxy or network settings and try again.",
     "firebase_connecting_desc": "Attempting to reconnect to Firebase services, please wait...",
-    "firebase_connecting_title": "Reconnecting..."
-
+    "firebase_connecting_title": "Reconnecting...",
+    "user_profile": "User Profile",
+    "user_not_found": "User document not found",
+    "created_time": "Registration Time",
+    "sync_time": "Last Sync Time",
+    "never_sync": "Never Synced",
+    "unknown_version": "Unknown Version",
+    "favorites": "Favorites",
+    "expand_all": "Expand All",
+    "collapse_all": "Collapse All",
+    "config_raw_preview": "Cloud Config Raw Preview"
 }

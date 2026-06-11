@@ -5,11 +5,16 @@ import 'package:pure_live/common/services/utils/backup_migration_util.dart';
 class WebDavController extends GetxController {
   final RxString currentWebDavConfig = hiveString('currentWebDavConfig', '');
 
-  final Rx<List<WebDAVConfig>> webDavConfigs = hiveObject('webDavConfigs', <WebDAVConfig>[], fromJson: (Map<String, dynamic> json) {
+  final Rx<List<WebDAVConfig>> webDavConfigs = hiveObject(
+    'webDavConfigs',
+    <WebDAVConfig>[],
+    fromJson: (Map<String, dynamic> json) {
       return List<WebDAVConfig>.from((json['list'] ?? []).map((e) => WebDAVConfig.fromJson(e)));
-    }, toJson: (List<WebDAVConfig> list) {
+    },
+    toJson: (List<WebDAVConfig> list) {
       return {'list': list.map((e) => e.toJson()).toList()};
-    },);
+    },
+  );
 
   bool isWebDavConfigExist(String name) => webDavConfigs.v.any((e) => e.name == name);
 
@@ -46,5 +51,21 @@ class WebDavController extends GetxController {
   void fromJson(Map<String, dynamic> json) {
     currentWebDavConfig.v = json['currentWebDavConfig'] ?? '';
     webDavConfigs.v = BackupMigrationUtil.parseObjectList(json['webDavConfigs'], (m) => WebDAVConfig.fromJson(m));
+  }
+
+  static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
+    final webdav = rootConfig?['webdav'] as Map<String, dynamic>? ?? {};
+    final list = BackupMigrationUtil.parseObjectList(webdav['webDavConfigs'], WebDAVConfig.fromJson);
+    return {
+      'currentWebDavConfig': webdav['currentWebDavConfig'] ?? '',
+      'webDavConfigs': list.map((e) => e.toJson()).toList(),
+    };
+  }
+
+  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+    final webdav = Map<String, dynamic>.from(rootConfig['webdav'] ?? {});
+    updateFields.forEach((k, v) => webdav[k] = v);
+    rootConfig['webdav'] = webdav;
+    return rootConfig;
   }
 }

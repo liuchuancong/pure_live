@@ -46,4 +46,29 @@ class DanmakuSettingsController extends GetxController {
     enableDanmakuStroke.v = json['enableDanmakuStroke'] ?? true;
     danmakuFps.v = json['danmakuFps']?.toInt() ?? 60;
   }
+
+  static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
+    final danmaku = rootConfig?['danmaku'] as Map<String, dynamic>? ?? {};
+    return {
+      'hideDanmaku': danmaku['hideDanmaku'] ?? false,
+      'danmakuTopArea': (danmaku['danmakuTopArea'] ?? 0.0).toDouble(),
+      'danmakuArea': (danmaku['danmakuArea'] ?? 1.0).toDouble(),
+      'danmakuBottomArea': (danmaku['danmakuBottomArea'] ?? 0.5).toDouble(),
+      'danmakuSpeed': (danmaku['danmakuSpeed'] ?? 8.0).toDouble(),
+      'danmakuFontSize': (danmaku['danmakuFontSize'] ?? 16.0).toDouble(),
+      'danmakuFontBorder': (danmaku['danmakuFontBorder'] ?? 4.0).toDouble(),
+      'danmakuOpacity': (danmaku['danmakuOpacity'] ?? 1.0).toDouble(),
+      'enableDanmakuDisplay': danmaku['enableDanmakuDisplay'] ?? true,
+      'danmakuFontFamilyName': danmaku['danmakuFontFamilyName'] ?? 'Default',
+      'enableDanmakuStroke': danmaku['enableDanmakuStroke'] ?? true,
+      'danmakuFps': (danmaku['danmakuFps'] ?? 60).toInt(),
+    };
+  }
+
+  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+    final danmaku = Map<String, dynamic>.from(rootConfig['danmaku'] ?? {});
+    updateFields.forEach((k, v) => danmaku[k] = v);
+    rootConfig['danmaku'] = danmaku;
+    return rootConfig;
+  }
 }

@@ -36,4 +36,17 @@ class HistoryController extends GetxController {
   void fromJson(Map<String, dynamic> json) {
     historyRooms.v = BackupMigrationUtil.parseObjectList(json['historyRooms'], (m) => LiveRoom.fromJson(m));
   }
+
+  static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
+    final history = rootConfig?['history'] as Map<String, dynamic>? ?? {};
+    final list = BackupMigrationUtil.parseObjectList(history['historyRooms'], LiveRoom.fromJson);
+    return {'historyRooms': list.map((e) => e.toJson()).toList()};
+  }
+
+  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+    final history = Map<String, dynamic>.from(rootConfig['history'] ?? {});
+    updateFields.forEach((k, v) => history[k] = v);
+    rootConfig['history'] = history;
+    return rootConfig;
+  }
 }

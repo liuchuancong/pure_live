@@ -115,4 +115,21 @@ class ExitSettingsController extends GetxController {
     _stopWatchTimer.dispose();
     super.onClose();
   }
+
+  static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
+    final exit = rootConfig?['exit'] as Map<String, dynamic>? ?? {};
+    return {
+      'dontAskExit': exit['dontAskExit'] ?? false,
+      'exitChoose': exit['exitChoose'] ?? '',
+      'autoShutDownTime': exit['autoShutDownTime'] ?? 120,
+      'enableAutoShutDownTime': exit['enableAutoShutDownTime'] ?? false,
+    };
+  }
+
+  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+    final exit = Map<String, dynamic>.from(rootConfig['exit'] ?? {});
+    updateFields.forEach((k, v) => exit[k] = v);
+    rootConfig['exit'] = exit;
+    return rootConfig;
+  }
 }

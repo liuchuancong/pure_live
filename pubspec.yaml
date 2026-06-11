@@ -30,6 +30,7 @@ dependencies:
   pro_mpack: ^2.1.0
   share_plus: ^13.1.0
   photo_view: ^0.15.0
+  flutter_json: ^0.1.0
   # Local database (SQLite)
   drift: ^2.33.0
   sqlite3_flutter_libs: ^0.6.0+eol

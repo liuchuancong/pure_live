@@ -106,4 +106,22 @@ class PageSettingsController extends GetxController {
       _pageSizeOptionsRaw.v = '';
     }
   }
+
+  static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
+    final page = rootConfig?['page'] as Map<String, dynamic>? ?? {};
+    return {
+      'showPageSizeSelector': page['showPageSizeSelector'] ?? true,
+      'showGotoButton': page['showGotoButton'] ?? true,
+      'showScrollToTopBtn': page['showScrollToTopBtn'] ?? true,
+      'defaultPageSize': page['defaultPageSize'] ?? PageSettingsController._getInitPageSize(),
+      'pageSizeOptions': page['pageSizeOptions'] ?? PageSettingsController.getInitPageSizeOptions(),
+    };
+  }
+
+  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+    final page = Map<String, dynamic>.from(rootConfig['page'] ?? {});
+    updateFields.forEach((k, v) => page[k] = v);
+    rootConfig['page'] = page;
+    return rootConfig;
+  }
 }

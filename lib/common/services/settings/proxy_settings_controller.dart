@@ -44,4 +44,23 @@ class ProxySettingsController extends GetxController {
     appProxyHost.v = json['appProxyHost'] ?? '';
     appProxyPort.v = json['appProxyPort'] ?? 1080;
   }
+
+  static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
+    final proxy = rootConfig?['proxy'] as Map<String, dynamic>? ?? {};
+    return {
+      'enableProxy': proxy['enableProxy'] ?? false,
+      'proxyHost': proxy['proxyHost'] ?? '',
+      'proxyPort': proxy['proxyPort'] ?? 7897,
+      'enableAppProxy': proxy['enableAppProxy'] ?? false,
+      'appProxyHost': proxy['appProxyHost'] ?? '',
+      'appProxyPort': proxy['appProxyPort'] ?? 7897,
+    };
+  }
+
+  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+    final proxy = Map<String, dynamic>.from(rootConfig['proxy'] ?? {});
+    updateFields.forEach((k, v) => proxy[k] = v);
+    rootConfig['proxy'] = proxy;
+    return rootConfig;
+  }
 }

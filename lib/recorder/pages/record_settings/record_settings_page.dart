@@ -27,7 +27,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(i18n("record_settings")), centerTitle: true, elevation: 0),
+      appBar: AppBar(title: Text(i18n("record_settings"))),
       body: Obx(
         () => ListView(
           physics: const BouncingScrollPhysics(),
