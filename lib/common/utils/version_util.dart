@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/race_http.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pure_live/common/utils/githup_mirror.dart';
 
 class VersionUtil {
-  static const String version = '2.0.22';
+  static PackageInfo? _packageInfo;
 
   static const String projectUrl = 'https://github.com/liuchuancong/pure_live';
   static const String issuesUrl = 'https://github.com/liuchuancong/pure_live/issues';
@@ -27,7 +28,7 @@ class VersionUtil {
 
   final isHasNewVersion = false.obs;
 
-  static String latestVersion = version;
+  static String latestVersion = '';
   static int? latestBuildNumber;
   static int latestVersionNum = 0;
   static String latestUpdateLog = '';
@@ -39,6 +40,20 @@ class VersionUtil {
 
   static final RxBool historyLoading = false.obs;
   static final RxBool historyError = false.obs;
+
+  static Future<void> initPackageInfo() async {
+    _packageInfo = await PackageInfo.fromPlatform();
+  }
+
+  static String get version {
+    if (_packageInfo == null) return '0.0.0';
+    return _packageInfo!.version;
+  }
+
+  static int get buildNumber {
+    if (_packageInfo == null) return 0;
+    return int.tryParse(_packageInfo!.buildNumber) ?? 0;
+  }
 
   Future<void> checkUpdate() async {
     if (_cachedVersionJson != null) {

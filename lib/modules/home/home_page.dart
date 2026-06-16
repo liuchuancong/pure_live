@@ -115,6 +115,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
         child: NewVersionDialog(entry: entry),
       ),
     );
+    await VersionUtil.initPackageInfo();
     await VersionUtil().checkUpdate();
     bool isHasNerVersion = SettingsService.to.app.enableAutoCheckUpdate.v && VersionUtil.hasNewVersion();
     if (mounted) {
