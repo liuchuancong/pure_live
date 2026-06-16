@@ -40,6 +40,7 @@
   <application android:label="@string/AppName" android:name="${applicationName}"
     android:banner="@drawable/banner" android:largeHeap="true" android:usesCleartextTraffic="true"
     android:networkSecurityConfig="@xml/network_security_config"
+	android:extractNativeLibs="true"
     android:allowBackup="true"
     tools:replace="android:allowBackup"
     android:requestLegacyExternalStorage="true" android:enableOnBackInvokedCallback="false"
