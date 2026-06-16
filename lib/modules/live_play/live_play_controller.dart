@@ -125,12 +125,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
   Future<void> _preloadEmoji() async {
     emojiCache.clear();
-    EmojiManager().clearCache();
     await EmojiManager().preload(site);
-  }
-
-  void _clearCacheEmoji() {
-    EmojiManager().clearCache();
   }
 
   void _initDebounce() {
@@ -202,7 +197,6 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     if (SettingsService.to.danmaku.enableDanmakuDisplay.v) {
       liveDanmaku.stop();
     }
-    _clearCacheEmoji();
   }
 
   void setNormalScreen() => screenMode.value = VideoMode.normal;

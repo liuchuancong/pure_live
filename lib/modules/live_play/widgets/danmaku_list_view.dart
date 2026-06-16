@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/plugins/emoji_manager.dart';
+import 'package:flame_barrage/flame_barrage.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
 
@@ -360,7 +360,7 @@ List<EmojiToken> _parseEmojiTokens(String text) {
     return cached;
   }
 
-  final regex = EmojiManager.instance.emojiRegex;
+  final regex = EmojiAtlas.instance.regex;
 
   if (regex == null) {
     return [EmojiToken(isEmoji: false, value: text)];
@@ -404,7 +404,8 @@ List<InlineSpan> parseEmojis(String text, double size, Color color) {
       continue;
     }
 
-    final image = EmojiManager.getEmoji(token.value);
+    final info = EmojiAtlas.instance.find(token.value);
+    final image = info != null ? EmojiAtlas.instance.image(info.id) : null;
 
     if (image == null) {
       spans.add(TextSpan(text: token.value, style: style));

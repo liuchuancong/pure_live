@@ -602,6 +602,8 @@ class DanmakuViewer extends StatelessWidget {
           showStroke: controller.enableDanmakuStroke.value,
           fps: controller.danmakuFps.value,
           fontFamily: controller.danmakuFontFamilyName.value,
+          pictureCacheMaxSize: 9999,
+          barragePoolMaxSize: 300,
         ),
         emojiAtlas: EmojiAtlas.instance,
       ),
