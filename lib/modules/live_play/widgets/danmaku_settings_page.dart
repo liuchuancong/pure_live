@@ -89,8 +89,8 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
                   theme,
                   title: i18n("speed"),
                   value: controller.danmakuSpeed.value.toDouble(),
-                  min: 5,
-                  max: 20,
+                  min: 20,
+                  max: 400,
                   display: controller.danmakuSpeed.value.toStringAsFixed(2),
                   onChanged: (v) => controller.danmakuSpeed.value = v,
                   labelColor: labelColor,
@@ -125,7 +125,6 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
                   labelColor: labelColor,
                   digitColor: digitColor,
                 ),
-                // ... 前面已有的 opacity, speed, font_size, stroke 等 slider 组件
                 _slider(
                   theme,
                   title: i18n("danmaku_fps"),

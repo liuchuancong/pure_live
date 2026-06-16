@@ -601,6 +601,7 @@ class DanmakuViewer extends StatelessWidget {
           fontWeight: FontWeight.values[controller.danmakuFontBorder.value],
           showStroke: controller.enableDanmakuStroke.value,
           fps: controller.danmakuFps.value,
+          fontFamily: controller.danmakuFontFamilyName.value,
         ),
         emojiAtlas: EmojiAtlas.instance,
       ),
@@ -1687,7 +1688,7 @@ class DanmakuSetting extends StatelessWidget {
                 labelText: i18n("settings_danmaku_speed"),
                 valueWidget: SfSlider(
                   min: 5.0,
-                  max: 20.0,
+                  max: 400.0,
                   value: controller.danmakuSpeed.value,
                   activeColor: primaryColor,
                   inactiveColor: Colors.white12,

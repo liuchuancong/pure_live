@@ -104,6 +104,7 @@ class VideoController with ChangeNotifier {
   final danmakuOpacity = 1.0.obs;
   final enableDanmakuStroke = true.obs;
   final danmakuFps = 60.obs;
+  final danmakuFontFamilyName = ''.obs;
   VideoController({
     required this.room,
     required this.datasource,
@@ -128,6 +129,7 @@ class VideoController with ChangeNotifier {
     danmakuFontBorder.value = SettingsService.to.danmaku.danmakuFontBorder.v.toInt();
     danmakuOpacity.value = SettingsService.to.danmaku.danmakuOpacity.v;
     enableDanmakuStroke.value = SettingsService.to.danmaku.enableDanmakuStroke.v;
+    danmakuFontFamilyName.value = SettingsService.to.danmaku.danmakuFontFamilyName.v;
     initPagesConfig();
   }
 
@@ -370,9 +372,9 @@ class VideoController with ChangeNotifier {
   void sendDanmaku(LiveMessage msg) {
     if (hideDanmaku.value) return;
     if (GlobalPlayerService.instance.playerManager.isPlayingNow) {
-      // color: Color.fromARGB(255, msg.color.r, msg.color.g, msg.color.b),
-      // fontFamily: SettingsService.to.danmaku.danmakuFontFamilyName.v,
-      danmakuController.send(BarrageItem(content: msg.message));
+      danmakuController.send(
+        BarrageItem(content: msg.message, textColor: Color.fromARGB(255, msg.color.r, msg.color.g, msg.color.b)),
+      );
     }
   }
 
