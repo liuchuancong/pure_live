@@ -1,6 +1,7 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/auth/utils/firebase_manager.dart';
+import 'package:pure_live/modules/auth/components/user_detail_main_page.dart';
 
 class MinePage extends StatefulWidget {
   const MinePage({super.key});
@@ -27,7 +28,22 @@ class _MinePageState extends State<MinePage> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(i18n('firebase_mine'))),
+      appBar: AppBar(
+        title: Text(i18n('firebase_mine')),
+        actions: [
+          TextButton(
+            onPressed: () {
+              final uid = FirebaseManager.getInstance().auth.currentUser?.uid;
+              Get.to(() => UserDetailConfigMainPage(documentId: uid!));
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [Icon(Remix.file_text_line, size: 18), const SizedBox(width: 4), Text(i18n("config_preview"))],
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

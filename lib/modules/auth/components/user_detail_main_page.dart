@@ -32,18 +32,34 @@ class _UserDetailConfigMainPageState extends State<UserDetailConfigMainPage> {
   Future<void> _loadUserData() async {
     try {
       final docSnap = await FirebaseFirestore.instance.collection('users').doc(widget.documentId).get();
-      if (!docSnap.exists) throw Exception(i18n('user_not_found'));
 
-      final data = docSnap.data()!;
+      if (!docSnap.exists) {
+        throw Exception(i18n('user_not_found'));
+      }
+
+      final data = docSnap.data();
+      if (data == null) {
+        throw Exception('Document data is null');
+      }
+
       final model = UserFullModel.fromFirestore(data);
 
-      final configMap = json.decode(docSnap['config'] as String) as Map<String, dynamic>;
+      Map<String, dynamic> configMap = {};
+      final configData = data['config'];
+      if (configData is String && configData.isNotEmpty) {
+        final decoded = json.decode(configData);
+        if (decoded is Map<String, dynamic>) {
+          configMap = decoded;
+        }
+      }
 
-      final favoriteData = configMap['favorite'] as Map<String, dynamic>? ?? {};
-      final roomsList = favoriteData['favoriteRooms'] as List? ?? [];
+      final favoriteData = configMap['favorite'] as Map<String, dynamic>?;
+      final roomsList = favoriteData?['favoriteRooms'] as List? ?? [];
 
-      final historyData = configMap['history'] as Map<String, dynamic>? ?? {};
-      final historyList = historyData['historyRooms'] ?? historyData['historyList'] ?? [];
+      final historyData = configMap['history'] as Map<String, dynamic>?;
+      final historyList = historyData?['historyRooms'] ?? historyData?['historyList'];
+
+      if (!mounted) return;
 
       setState(() {
         _userModel = model;
@@ -53,6 +69,7 @@ class _UserDetailConfigMainPageState extends State<UserDetailConfigMainPage> {
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMsg = e.toString();
         _isLoading = false;
@@ -95,79 +112,80 @@ class _UserDetailConfigMainPageState extends State<UserDetailConfigMainPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: theme.dividerColor.withValues(alpha: 0.15), width: 0.5),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 4,
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: theme.colorScheme.primaryContainer,
-                        child: Icon(Remix.user_settings_line, color: theme.colorScheme.onPrimaryContainer, size: 18),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              _userModel!.email,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.secondaryContainer,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    verText,
-                                    style: AppTextStyles.t11.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: theme.colorScheme.onSecondaryContainer,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isCompact = MediaQuery.of(context).size.width <= 680;
+
+              if (isCompact) {
+                return Container(
+                  margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: theme.dividerColor.withValues(alpha: 0.15), width: 0.5),
                   ),
-                ),
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 12),
-                  width: 0.5,
-                  height: 64,
-                  color: theme.dividerColor.withValues(alpha: 0.2),
-                ),
-                Expanded(
-                  flex: 6,
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          Expanded(
-                            child: _buildCompactMeta(Remix.time_line, i18n('created_time'), createTimeStr, theme),
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: theme.colorScheme.primaryContainer,
+                            child: Icon(
+                              Remix.user_settings_line,
+                              color: theme.colorScheme.onPrimaryContainer,
+                              size: 18,
+                            ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _userModel!.email,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: theme.colorScheme.secondaryContainer,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        verText,
+                                        style: AppTextStyles.t11.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: theme.colorScheme.onSecondaryContainer,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        margin: const EdgeInsets.symmetric(vertical: 12),
+                        height: 0.5,
+                        color: theme.dividerColor.withValues(alpha: 0.2),
+                      ),
+                      _buildCompactMeta(Remix.time_line, i18n('created_time'), createTimeStr, theme),
+                      const SizedBox(height: 10),
+                      _buildCompactMeta(Remix.refresh_line, i18n('sync_time'), syncTimeStr, theme),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
                           Expanded(
                             child: _buildCompactMeta(
                               Remix.heart_3_line,
@@ -177,13 +195,7 @@ class _UserDetailConfigMainPageState extends State<UserDetailConfigMainPage> {
                               isPrimaryColor: true,
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(child: _buildCompactMeta(Remix.refresh_line, i18n('sync_time'), syncTimeStr, theme)),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 12),
                           Expanded(
                             child: _buildCompactMeta(
                               Remix.history_line,
@@ -197,9 +209,122 @@ class _UserDetailConfigMainPageState extends State<UserDetailConfigMainPage> {
                       ),
                     ],
                   ),
+                );
+              }
+
+              return Container(
+                margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: theme.dividerColor.withValues(alpha: 0.15), width: 0.5),
                 ),
-              ],
-            ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 4,
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: theme.colorScheme.primaryContainer,
+                            child: Icon(
+                              Remix.user_settings_line,
+                              color: theme.colorScheme.onPrimaryContainer,
+                              size: 18,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _userModel!.email,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: theme.colorScheme.secondaryContainer,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        verText,
+                                        style: AppTextStyles.t11.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: theme.colorScheme.onSecondaryContainer,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 12),
+                      width: 0.5,
+                      height: 64,
+                      color: theme.dividerColor.withValues(alpha: 0.2),
+                    ),
+                    Expanded(
+                      flex: 6,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildCompactMeta(Remix.time_line, i18n('created_time'), createTimeStr, theme),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _buildCompactMeta(
+                                  Remix.heart_3_line,
+                                  i18n('favorites'),
+                                  '$_favoriteCount',
+                                  theme,
+                                  isPrimaryColor: true,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildCompactMeta(Remix.refresh_line, i18n('sync_time'), syncTimeStr, theme),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _buildCompactMeta(
+                                  Remix.history_line,
+                                  i18n('history'),
+                                  '$_historyCount',
+                                  theme,
+                                  isPrimaryColor: true,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
 
           Padding(
