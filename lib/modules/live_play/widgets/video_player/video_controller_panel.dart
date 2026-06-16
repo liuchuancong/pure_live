@@ -6,6 +6,7 @@ import 'package:flutter/gestures.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
+import 'package:flame_barrage/flame_barrage.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:pure_live/modules/live_play/load_type.dart';
@@ -14,10 +15,8 @@ import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/live_play/play_other.dart';
 import 'package:scrollview_observer/scrollview_observer.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
-import 'package:pure_live/pkg/canvas_danmaku/danmaku_screen.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
-import 'package:pure_live/pkg/canvas_danmaku/models/danmaku_option.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/volume_control.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 
@@ -590,18 +589,20 @@ class DanmakuViewer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(
-      () => DanmakuScreen(
+      () => FlameBarrageWidget(
         controller: controller.danmakuController,
-        option: DanmakuOption(
+        config: BarrageConfig(
           fontSize: controller.danmakuFontSize.value,
           topAreaDistance: controller.danmakuTopArea.value,
           area: controller.danmakuArea.value,
           bottomAreaDistance: controller.danmakuBottomArea.value,
-          duration: controller.danmakuSpeed.value.toInt(),
+          baseSpeed: controller.danmakuSpeed.value,
           opacity: controller.danmakuOpacity.value,
-          fontWeight: controller.danmakuFontBorder.value.toInt(),
+          fontWeight: FontWeight.values[controller.danmakuFontBorder.value],
           showStroke: controller.enableDanmakuStroke.value,
+          fps: controller.danmakuFps.value,
         ),
+        emojiAtlas: EmojiAtlas.instance,
       ),
     );
   }
@@ -1725,7 +1726,7 @@ class DanmakuSetting extends StatelessWidget {
                   value: controller.danmakuFontBorder.value,
                   activeColor: primaryColor,
                   inactiveColor: Colors.white12,
-                  onChanged: (dynamic val) => controller.danmakuFontBorder.value = val as double,
+                  onChanged: (dynamic val) => controller.danmakuFontBorder.value = (val as double).toInt(),
                 ),
                 trailingWidget: Text(controller.danmakuFontBorder.value.toStringAsFixed(2), style: digitStyle),
               ),

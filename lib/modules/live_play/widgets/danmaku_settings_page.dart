@@ -121,7 +121,7 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
                   min: 0,
                   max: 8,
                   display: controller.danmakuFontBorder.value.toStringAsFixed(1),
-                  onChanged: (v) => controller.danmakuFontBorder.value = v,
+                  onChanged: (v) => controller.danmakuFontBorder.value = v.toInt(),
                   labelColor: labelColor,
                   digitColor: digitColor,
                 ),

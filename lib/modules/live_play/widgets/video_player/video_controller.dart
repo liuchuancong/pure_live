@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'video_controller_panel.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:battery_plus/battery_plus.dart';
+import 'package:flame_barrage/flame_barrage.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
@@ -17,10 +18,7 @@ import 'package:pure_live/player/models/player_exception.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/player/models/player_error_type.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
-import 'package:pure_live/pkg/canvas_danmaku/danmaku_controller.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
-import 'package:pure_live/pkg/canvas_danmaku/models/danmaku_option.dart';
-import 'package:pure_live/pkg/canvas_danmaku/models/danmaku_content_item.dart';
 
 typedef AudioOnlyCallback = void Function(bool value);
 
@@ -102,7 +100,7 @@ class VideoController with ChangeNotifier {
   final danmakuBottomArea = 0.0.obs;
   final danmakuSpeed = 8.0.obs;
   final danmakuFontSize = 16.0.obs;
-  final danmakuFontBorder = 4.0.obs;
+  final danmakuFontBorder = 4.obs;
   final danmakuOpacity = 1.0.obs;
   final enableDanmakuStroke = true.obs;
   final danmakuFps = 60.obs;
@@ -120,14 +118,14 @@ class VideoController with ChangeNotifier {
     required this.isAudioOnly,
     this.onAudioOnlyChanged,
   }) {
-    danmakuController = DanmakuController();
+    danmakuController = BarrageController();
 
     hideDanmaku.value = SettingsService.to.danmaku.hideDanmaku.v;
     danmakuTopArea.value = SettingsService.to.danmaku.danmakuTopArea.v;
     danmakuBottomArea.value = SettingsService.to.danmaku.danmakuBottomArea.v;
     danmakuSpeed.value = SettingsService.to.danmaku.danmakuSpeed.v;
     danmakuFontSize.value = SettingsService.to.danmaku.danmakuFontSize.v;
-    danmakuFontBorder.value = SettingsService.to.danmaku.danmakuFontBorder.v;
+    danmakuFontBorder.value = SettingsService.to.danmaku.danmakuFontBorder.v.toInt();
     danmakuOpacity.value = SettingsService.to.danmaku.danmakuOpacity.v;
     enableDanmakuStroke.value = SettingsService.to.danmaku.enableDanmakuStroke.v;
     initPagesConfig();
@@ -155,7 +153,7 @@ class VideoController with ChangeNotifier {
   final Battery _battery = Battery();
   final batteryLevel = 100.obs;
 
-  late DanmakuController danmakuController;
+  late BarrageController danmakuController;
 
   final ScrollController scheduleScrollController = ScrollController();
   late ListObserverController scheduleObserverController;
@@ -322,7 +320,7 @@ class VideoController with ChangeNotifier {
     danmakuBottomArea.value = dm.danmakuBottomArea.v;
     danmakuSpeed.value = dm.danmakuSpeed.v;
     danmakuFontSize.value = dm.danmakuFontSize.v;
-    danmakuFontBorder.value = dm.danmakuFontBorder.v;
+    danmakuFontBorder.value = dm.danmakuFontBorder.v.toInt();
     danmakuOpacity.value = dm.danmakuOpacity.v;
     enableDanmakuStroke.value = dm.enableDanmakuStroke.v;
     danmakuFps.value = dm.danmakuFps.v;
@@ -347,22 +345,22 @@ class VideoController with ChangeNotifier {
     ever<double>(danmakuBottomArea, (v) => dm.danmakuBottomArea.v = v);
     ever<double>(danmakuSpeed, (v) => dm.danmakuSpeed.v = v);
     ever<double>(danmakuFontSize, (v) => dm.danmakuFontSize.v = v);
-    ever<double>(danmakuFontBorder, (v) => dm.danmakuFontBorder.v = v);
+    ever<int>(danmakuFontBorder, (v) => dm.danmakuFontBorder.v = v.toDouble());
     ever<double>(danmakuOpacity, (v) => dm.danmakuOpacity.v = v);
     ever<bool>(enableDanmakuStroke, (v) => dm.enableDanmakuStroke.v = v);
     ever<int>(danmakuFps, (v) => dm.danmakuFps.v = v);
   }
 
   void updateDanmaku() {
-    danmakuController.updateOption(
-      DanmakuOption(
+    danmakuController.updateConfig(
+      BarrageConfig(
         fontSize: danmakuFontSize.value,
         area: danmakuArea.value,
         topAreaDistance: danmakuTopArea.value,
         bottomAreaDistance: danmakuBottomArea.value,
-        duration: danmakuSpeed.value.toInt(),
+        baseSpeed: danmakuSpeed.value,
         opacity: danmakuOpacity.value,
-        fontWeight: danmakuFontBorder.value.toInt(),
+        fontWeight: FontWeight.values[danmakuFontBorder.value],
         showStroke: enableDanmakuStroke.value,
         fps: danmakuFps.value,
       ),
@@ -372,13 +370,9 @@ class VideoController with ChangeNotifier {
   void sendDanmaku(LiveMessage msg) {
     if (hideDanmaku.value) return;
     if (GlobalPlayerService.instance.playerManager.isPlayingNow) {
-      danmakuController.addDanmaku(
-        DanmakuContentItem(
-          msg.message,
-          color: Color.fromARGB(255, msg.color.r, msg.color.g, msg.color.b),
-          fontFamily: SettingsService.to.danmaku.danmakuFontFamilyName.v,
-        ),
-      );
+      // color: Color.fromARGB(255, msg.color.r, msg.color.g, msg.color.b),
+      // fontFamily: SettingsService.to.danmaku.danmakuFontFamilyName.v,
+      danmakuController.send(BarrageItem(content: msg.message));
     }
   }
 
