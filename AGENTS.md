@@ -13,7 +13,7 @@
 
 ## Build, Test, and Development Commands
 
-Use Flutter `3.38.3` (see `.fvmrc`; with FVM, prefix commands with `fvm`).
+Use Flutter `3.38.5` (see `.fvmrc`; with FVM, prefix commands with `fvm`).
 
 - `flutter pub get`: install dependencies
 - `flutter run`: run on a device/emulator

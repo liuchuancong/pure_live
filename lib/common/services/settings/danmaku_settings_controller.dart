@@ -14,6 +14,17 @@ class DanmakuSettingsController extends GetxController {
   final RxBool enableDanmakuStroke = hiveBool('enableDanmakuStroke', true);
   final RxInt danmakuFps = hiveInt('danmakuFps', 60);
   final RxString danmakuFontFamilyName = hiveString('danmakuFontFamilyName', 'Default');
+  final RxBool enablePipDanmaku = hiveBool('enablePipDanmaku', true);
+  final RxBool pipDanmakuAutoScale = hiveBool('pipDanmakuAutoScale', true);
+  final RxBool pipDanmakuUseOriginalColor = hiveBool('pipDanmakuUseOriginalColor', true);
+  final RxInt pipDanmakuColor = hiveInt('pipDanmakuColor', 0xFFFFFFFF);
+  final RxDouble pipDanmakuFontSize = hiveDouble('pipDanmakuFontSize', 12.0);
+  final RxDouble pipDanmakuSpeed = hiveDouble('pipDanmakuSpeed', 90.0);
+  final RxDouble pipDanmakuOpacity = hiveDouble('pipDanmakuOpacity', 0.9);
+  final RxDouble pipDanmakuArea = hiveDouble('pipDanmakuArea', 0.5);
+  final RxInt pipDanmakuMaxVisibleCount = hiveInt('pipDanmakuMaxVisibleCount', 6);
+  final RxDouble pipDanmakuEmitInterval = hiveDouble('pipDanmakuEmitInterval', 0.35);
+  final RxInt pipDanmakuFps = hiveInt('pipDanmakuFps', 30);
 
   Map<String, dynamic> toJson() {
     return {
@@ -29,6 +40,17 @@ class DanmakuSettingsController extends GetxController {
       'danmakuFontFamilyName': danmakuFontFamilyName.v,
       'enableDanmakuStroke': enableDanmakuStroke.v,
       'danmakuFps': danmakuFps.v,
+      'enablePipDanmaku': enablePipDanmaku.v,
+      'pipDanmakuAutoScale': pipDanmakuAutoScale.v,
+      'pipDanmakuUseOriginalColor': pipDanmakuUseOriginalColor.v,
+      'pipDanmakuColor': pipDanmakuColor.v,
+      'pipDanmakuFontSize': pipDanmakuFontSize.v,
+      'pipDanmakuSpeed': pipDanmakuSpeed.v,
+      'pipDanmakuOpacity': pipDanmakuOpacity.v,
+      'pipDanmakuArea': pipDanmakuArea.v,
+      'pipDanmakuMaxVisibleCount': pipDanmakuMaxVisibleCount.v,
+      'pipDanmakuEmitInterval': pipDanmakuEmitInterval.v,
+      'pipDanmakuFps': pipDanmakuFps.v,
     };
   }
 
@@ -45,6 +67,17 @@ class DanmakuSettingsController extends GetxController {
     danmakuFontFamilyName.v = json['danmakuFontFamilyName'] ?? 'Default';
     enableDanmakuStroke.v = json['enableDanmakuStroke'] ?? true;
     danmakuFps.v = json['danmakuFps']?.toInt() ?? 60;
+    enablePipDanmaku.v = json['enablePipDanmaku'] ?? true;
+    pipDanmakuAutoScale.v = json['pipDanmakuAutoScale'] ?? true;
+    pipDanmakuUseOriginalColor.v = json['pipDanmakuUseOriginalColor'] ?? true;
+    pipDanmakuColor.v = json['pipDanmakuColor']?.toInt() ?? 0xFFFFFFFF;
+    pipDanmakuFontSize.v = (json['pipDanmakuFontSize'] ?? 12.0).toDouble().clamp(8.0, 24.0).toDouble();
+    pipDanmakuSpeed.v = (json['pipDanmakuSpeed'] ?? 90.0).toDouble().clamp(20.0, 400.0).toDouble();
+    pipDanmakuOpacity.v = (json['pipDanmakuOpacity'] ?? 0.9).toDouble().clamp(0.1, 1.0).toDouble();
+    pipDanmakuArea.v = (json['pipDanmakuArea'] ?? 0.5).toDouble().clamp(0.1, 1.0).toDouble();
+    pipDanmakuMaxVisibleCount.v = (json['pipDanmakuMaxVisibleCount'] ?? 6).toInt().clamp(1, 20).toInt();
+    pipDanmakuEmitInterval.v = (json['pipDanmakuEmitInterval'] ?? 0.35).toDouble().clamp(0.05, 2.0).toDouble();
+    pipDanmakuFps.v = (json['pipDanmakuFps'] ?? 30).toInt().clamp(15, 60).toInt();
   }
 
   static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
@@ -62,6 +95,17 @@ class DanmakuSettingsController extends GetxController {
       'danmakuFontFamilyName': danmaku['danmakuFontFamilyName'] ?? 'Default',
       'enableDanmakuStroke': danmaku['enableDanmakuStroke'] ?? true,
       'danmakuFps': (danmaku['danmakuFps'] ?? 60).toInt(),
+      'enablePipDanmaku': danmaku['enablePipDanmaku'] ?? true,
+      'pipDanmakuAutoScale': danmaku['pipDanmakuAutoScale'] ?? true,
+      'pipDanmakuUseOriginalColor': danmaku['pipDanmakuUseOriginalColor'] ?? true,
+      'pipDanmakuColor': (danmaku['pipDanmakuColor'] ?? 0xFFFFFFFF).toInt(),
+      'pipDanmakuFontSize': (danmaku['pipDanmakuFontSize'] ?? 12.0).toDouble().clamp(8.0, 24.0).toDouble(),
+      'pipDanmakuSpeed': (danmaku['pipDanmakuSpeed'] ?? 90.0).toDouble().clamp(20.0, 400.0).toDouble(),
+      'pipDanmakuOpacity': (danmaku['pipDanmakuOpacity'] ?? 0.9).toDouble().clamp(0.1, 1.0).toDouble(),
+      'pipDanmakuArea': (danmaku['pipDanmakuArea'] ?? 0.5).toDouble().clamp(0.1, 1.0).toDouble(),
+      'pipDanmakuMaxVisibleCount': (danmaku['pipDanmakuMaxVisibleCount'] ?? 6).toInt().clamp(1, 20).toInt(),
+      'pipDanmakuEmitInterval': (danmaku['pipDanmakuEmitInterval'] ?? 0.35).toDouble().clamp(0.05, 2.0).toDouble(),
+      'pipDanmakuFps': (danmaku['pipDanmakuFps'] ?? 30).toInt().clamp(15, 60).toInt(),
     };
   }
 

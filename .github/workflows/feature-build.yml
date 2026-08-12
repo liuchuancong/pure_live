@@ -1,0 +1,146 @@
+name: feature-build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "agent/**"
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: feature-build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Flutter 3.38.5 bundles Dart 3.10.4, matching pubspec.yaml.
+  FLUTTER_VERSION: 3.38.5
+
+jobs:
+  quality:
+    name: Analyze and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Resolve packages
+        run: flutter pub get
+
+      - name: Check new Dart files
+        run: >-
+          dart format --output=none --set-exit-if-changed
+          lib/modules/live_play/widgets/video_player/compact_danmaku_overlay.dart
+          test/danmaku_settings_controller_test.dart
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Test PiP danmaku settings
+        run: flutter test test/danmaku_settings_controller_test.dart
+
+  android:
+    name: Android APK
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Create ephemeral build key
+        shell: bash
+        run: |
+          keytool -genkeypair -v \
+            -keystore "$RUNNER_TEMP/feature-build.jks" \
+            -storepass feature-build \
+            -keypass feature-build \
+            -alias feature-build \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 1 \
+            -dname "CN=Pure Live Feature Build"
+          cat > android/key.properties <<EOF
+          storeFile=$RUNNER_TEMP/feature-build.jks
+          storePassword=feature-build
+          keyPassword=feature-build
+          keyAlias=feature-build
+          EOF
+
+      - name: Resolve packages
+        run: flutter pub get
+
+      - name: Build split release APKs
+        run: flutter build apk --release --split-per-abi
+
+      - name: Upload APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: pure-live-pip-danmaku-android
+          path: build/app/outputs/flutter-apk/*-release.apk
+          if-no-files-found: error
+          retention-days: 14
+
+  windows:
+    name: Windows portable
+    needs: quality
+    runs-on: windows-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Enable Windows desktop
+        run: flutter config --enable-windows-desktop
+
+      - name: Resolve packages
+        run: flutter pub get
+
+      - name: Build Windows release
+        run: flutter build windows --release
+
+      - name: Create portable archive
+        shell: pwsh
+        run: Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath PureLive-pip-danmaku-windows-x64.zip
+
+      - name: Upload Windows archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: pure-live-pip-danmaku-windows
+          path: PureLive-pip-danmaku-windows-x64.zip
+          if-no-files-found: error
+          retention-days: 14

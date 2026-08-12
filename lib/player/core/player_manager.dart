@@ -25,6 +25,8 @@ import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/player/core/audio_stream_loader.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
+import 'package:pure_live/modules/live_play/widgets/video_player/compact_danmaku_overlay.dart';
 
 class PlayerManager {
   final PlayerPool playerPool;
@@ -84,6 +86,9 @@ class PlayerManager {
   Timer? _hideTimer;
   late Floating floating;
   LiveRoom? currentFloatRoom;
+  VideoController? _videoController;
+  VoidCallback? _floatingDanmakuDisposer;
+  bool _appFloatingPrepared = false;
 
   UnifiedPlayer? get currentPlayer => _currentPlayer;
   PlayerEngine get currentEngine => _runtimeEngine ?? _defaultEngine ?? PlayerEngine.mediaKit;
@@ -95,6 +100,35 @@ class PlayerManager {
   Stream<int?> get width => _widthSubject.stream;
   Stream<int?> get height => _heightSubject.stream;
   bool get isPlayingNow => _playingSubject.value;
+  bool get shouldKeepDanmakuForAppFloating => _appFloatingPrepared || isFloating.value;
+
+  void attachVideoController(VideoController controller) {
+    _videoController = controller;
+  }
+
+  void detachVideoController(VideoController controller) {
+    if (identical(_videoController, controller)) {
+      _videoController = null;
+    }
+  }
+
+  void prepareAppFloating({required VoidCallback onClose}) {
+    _floatingDanmakuDisposer?.call();
+    _floatingDanmakuDisposer = onClose;
+    _appFloatingPrepared = true;
+  }
+
+  Widget _buildCompactDanmaku() {
+    final controller = _videoController;
+    return controller == null ? const SizedBox.shrink() : CompactDanmakuOverlay(controller: controller);
+  }
+
+  void _releaseAppFloatingResources() {
+    _appFloatingPrepared = false;
+    final disposer = _floatingDanmakuDisposer;
+    _floatingDanmakuDisposer = null;
+    disposer?.call();
+  }
 
   double get currentVideoRatio {
     final w = _widthSubject.value?.toDouble() ?? 1920;
@@ -343,6 +377,7 @@ class PlayerManager {
   }
 
   void showAppFloating() {
+    if (!_appFloatingPrepared) return;
     floatingManager.disposeFloating(_floatTag);
     _hideTimer?.cancel();
     double maxSide = Platform.isWindows ? 350 : 220;
@@ -390,6 +425,7 @@ class PlayerManager {
                 Positioned.fill(
                   child: getVideoWidget(videoFitIndex.value, fitList: SettingsService.to.player.videoFitArray),
                 ),
+                Positioned.fill(child: _buildCompactDanmaku()),
                 Positioned.fill(
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
@@ -471,9 +507,11 @@ class PlayerManager {
   }
 
   void closeAppFloating() {
-    if (!isFloating.value) return;
-    floatingManager.disposeFloating(_floatTag);
+    if (isFloating.value) {
+      floatingManager.disposeFloating(_floatTag);
+    }
     isFloating.value = false;
+    _releaseAppFloatingResources();
   }
 
   Widget buildPiPOverlay() {
@@ -495,6 +533,7 @@ class PlayerManager {
                 },
                 child: getVideoWidget(videoFitIndex.value, fitList: SettingsService.to.player.videoFitArray),
               ),
+              Positioned.fill(child: _buildCompactDanmaku()),
               Center(
                 child: Obx(
                   () => AnimatedOpacity(

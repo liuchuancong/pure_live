@@ -39,6 +39,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   final messages = <LiveMessage>[].obs;
   final isLiving = true.obs;
   final videoController = Rx<VideoController?>(null);
+  bool _floatingResourcesReleased = false;
 
   final detail = Rx<LiveRoom?>(null);
   final success = false.obs;
@@ -188,14 +189,28 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     super.onClose();
   }
 
+  void prepareAppFloating() {
+    GlobalPlayerService.instance.playerManager.prepareAppFloating(onClose: disposeAppFloatingResources);
+    _floatingResourcesReleased = false;
+  }
+
+  void disposeAppFloatingResources() {
+    if (_floatingResourcesReleased) return;
+    _floatingResourcesReleased = true;
+    if (SettingsService.to.danmaku.enableDanmakuDisplay.v) {
+      liveDanmaku.stop();
+    }
+    videoController.value?.dispose();
+  }
+
   void _disposeAll() {
     tabController.dispose();
     _stopWatchTimer.onStopTimer();
     if (Platform.isAndroid) {
       BackButtonInterceptor.removeByName("live_play_page");
     }
-    if (SettingsService.to.danmaku.enableDanmakuDisplay.v) {
-      liveDanmaku.stop();
+    if (!GlobalPlayerService.instance.playerManager.shouldKeepDanmakuForAppFloating) {
+      disposeAppFloatingResources();
     }
   }
 
