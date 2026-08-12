@@ -40,6 +40,8 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 
 产物位于 `local-artifacts/<version-build>/`，该目录不会提交到 Git。
 
+Windows 打包前会先清理 `build/windows/x64/runner/Release`，并检查 `AppData`、缓存数据库等运行时状态未进入便携包或安装器；请勿直接把运行过的 Release 目录手工压缩发布。
+
 可选参数：`-SkipQuality`、`-SkipAndroid`、`-SkipWindows`、`-SkipInstaller`、`-UseOfficialRepositories`。
 
 本地打包默认通过临时 Gradle init script 优先使用阿里云 Maven 镜像，并保留 Google/Maven Central 回退，解决国内网络的 TLS 中断；`-UseOfficialRepositories` 会只使用项目声明的官方仓库。该设置仅对当前脚本进程生效，不改全局 Gradle 配置。

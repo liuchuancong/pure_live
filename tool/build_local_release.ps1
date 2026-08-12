@@ -43,9 +43,17 @@ function Test-AndroidReleaseSigning {
 }
 
 $hasReleaseSigning = Test-AndroidReleaseSigning
-$androidSigning = if ($SkipAndroid) { 'not-built' } elseif ($hasReleaseSigning) { 'release' } else { 'qa-debug' }
 if ($RequireReleaseSigning -and -not $hasReleaseSigning) {
     throw 'Android release signing was required, but android/key.properties is missing or incomplete.'
+}
+
+if (-not $SkipAndroid) {
+    Get-ChildItem $output -File -Filter '*.apk' -ErrorAction SilentlyContinue | Remove-Item -Force
+}
+if (-not $SkipWindows) {
+    Get-ChildItem $output -File -ErrorAction SilentlyContinue |
+        Where-Object Name -Like '*windows-x64*' |
+        Remove-Item -Force
 }
 
 Push-Location $repoRoot
@@ -85,9 +93,24 @@ try {
     }
 
     if (-not $SkipWindows) {
+        $windowsSource = Join-Path $repoRoot 'build\windows\x64\runner\Release'
+        $expectedPrefix = [IO.Path]::GetFullPath($repoRoot).TrimEnd('\') + '\'
+        $windowsSourceFull = [IO.Path]::GetFullPath($windowsSource)
+        if (-not $windowsSourceFull.StartsWith($expectedPrefix, [StringComparison]::OrdinalIgnoreCase)) {
+            throw "Windows build output escaped the repository: $windowsSourceFull"
+        }
+        if (Test-Path -LiteralPath $windowsSourceFull) {
+            Remove-Item -LiteralPath $windowsSourceFull -Recurse -Force
+        }
         & $flutterw build windows --release --dart-define=PURELIVE_BUILD_SOURCE=local
         if ($LASTEXITCODE) { exit $LASTEXITCODE }
-        $windowsSource = Join-Path $repoRoot 'build\windows\x64\runner\Release'
+        $runtimeState = @(
+            Join-Path $windowsSource 'AppData'
+            Join-Path $windowsSource 'IPTV_CACHE'
+        ) | Where-Object { Test-Path -LiteralPath $_ }
+        if ($runtimeState) {
+            throw "Runtime state appeared in the clean Windows bundle: $($runtimeState -join ', ')"
+        }
         $zipPath = Join-Path $output "PureLive-$artifactVersion-windows-x64-portable.zip"
         Compress-Archive -Path (Join-Path $windowsSource '*') -DestinationPath $zipPath -Force
 
@@ -108,6 +131,14 @@ try {
 
     $sourceCommit = (git rev-parse HEAD).Trim()
     $trackedDirty = [bool](git status --porcelain --untracked-files=no)
+    $apks = Get-ChildItem $output -File -Filter '*.apk'
+    $androidSigning = if (-not $apks) {
+        'not-built'
+    } elseif ($apks | Where-Object Name -Like '*qa-debug-signed*') {
+        'qa-debug'
+    } else {
+        'release'
+    }
     $setupExecutable = Get-ChildItem $output -File -Filter '*windows-x64-setup.exe' | Select-Object -First 1
     $windowsPortable = Get-ChildItem $output -File -Filter '*windows-x64-portable.zip' | Select-Object -First 1
     $windowsSigning = if ($setupExecutable -and (Get-AuthenticodeSignature -LiteralPath $setupExecutable.FullName).Status -eq 'Valid') {
@@ -122,7 +153,7 @@ try {
         built_at_utc = [DateTime]::UtcNow.ToString('o')
         source_commit = $sourceCommit
         tracked_files_dirty = $trackedDirty
-        android_package = if ($SkipAndroid) { $null } elseif ($hasReleaseSigning) { 'com.mystyle.purelive' } else { 'com.mystyle.purelive.qa' }
+        android_package = if ($androidSigning -eq 'not-built') { $null } elseif ($androidSigning -eq 'release') { 'com.mystyle.purelive' } else { 'com.mystyle.purelive.qa' }
         android_signing = $androidSigning
         windows_signing = $windowsSigning
         build_source = 'local'
