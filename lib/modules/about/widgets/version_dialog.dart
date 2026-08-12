@@ -51,7 +51,7 @@ class NewVersionDialog extends StatelessWidget {
                     Navigator.pop(context);
                   }
                   launchUrl(
-                    Uri.parse('https://github.com/liuchuancong/pure_live'),
+                    Uri.parse(VersionUtil.projectUrl),
                     mode: LaunchMode.externalApplication,
                   );
                 },

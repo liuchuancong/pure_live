@@ -287,7 +287,7 @@ class CustomTitleBar extends StatelessWidget {
                           color: Colors.transparent,
                           child: InkWell(
                             onTap: () async {
-                              final url = Uri.parse('https://github.com/liuchuancong/pure_live');
+                              final url = Uri.parse(VersionUtil.projectUrl);
                               if (await canLaunchUrl(url)) {
                                 await launchUrl(url);
                               }
