@@ -15,8 +15,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Flutter 3.38.5 bundles Dart 3.10.4, matching pubspec.yaml.
-  FLUTTER_VERSION: 3.38.5
+  # The local windows_single_instance package requires Dart 3.11 or newer.
+  FLUTTER_VERSION: 3.44.9
 
 jobs:
   quality:
@@ -25,10 +25,10 @@ jobs:
     timeout-minutes: 35
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: zulu
           java-version: "17"
@@ -61,10 +61,10 @@ jobs:
     timeout-minutes: 55
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: zulu
           java-version: "17"
@@ -102,7 +102,7 @@ jobs:
         run: flutter build apk --release --split-per-abi
 
       - name: Upload APKs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pure-live-pip-danmaku-android
           path: build/app/outputs/flutter-apk/*-release.apk
@@ -116,7 +116,7 @@ jobs:
     timeout-minutes: 55
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -138,7 +138,7 @@ jobs:
         run: Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath PureLive-pip-danmaku-windows-x64.zip
 
       - name: Upload Windows archive
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pure-live-pip-danmaku-windows
           path: PureLive-pip-danmaku-windows-x64.zip
