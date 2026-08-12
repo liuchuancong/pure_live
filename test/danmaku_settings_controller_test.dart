@@ -1,0 +1,59 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:pure_live/common/services/settings/danmaku_settings_controller.dart';
+
+void main() {
+  group('PiP danmaku settings', () {
+    test('uses compact defaults for an older backup', () {
+      final config = DanmakuSettingsController.extractConfig({
+        'danmaku': <String, dynamic>{},
+      });
+
+      expect(config['enablePipDanmaku'], isTrue);
+      expect(config['pipDanmakuAutoScale'], isTrue);
+      expect(config['pipDanmakuUseOriginalColor'], isTrue);
+      expect(config['pipDanmakuFontSize'], 12.0);
+      expect(config['pipDanmakuSpeed'], 90.0);
+      expect(config['pipDanmakuMaxVisibleCount'], 6);
+      expect(config['pipDanmakuFps'], 30);
+    });
+
+    test('clamps imported compact values to supported ranges', () {
+      final config = DanmakuSettingsController.extractConfig({
+        'danmaku': {
+          'pipDanmakuFontSize': 100,
+          'pipDanmakuSpeed': 1,
+          'pipDanmakuOpacity': 0,
+          'pipDanmakuArea': 5,
+          'pipDanmakuMaxVisibleCount': 99,
+          'pipDanmakuEmitInterval': 9,
+          'pipDanmakuFps': 240,
+        },
+      });
+
+      expect(config['pipDanmakuFontSize'], 24.0);
+      expect(config['pipDanmakuSpeed'], 20.0);
+      expect(config['pipDanmakuOpacity'], 0.1);
+      expect(config['pipDanmakuArea'], 1.0);
+      expect(config['pipDanmakuMaxVisibleCount'], 20);
+      expect(config['pipDanmakuEmitInterval'], 2.0);
+      expect(config['pipDanmakuFps'], 60);
+    });
+
+    test('merges compact settings without dropping existing fields', () {
+      final root = <String, dynamic>{
+        'danmaku': {'hideDanmaku': false},
+        'player': {'engine': 'mpv'},
+      };
+
+      final merged = DanmakuSettingsController.mergeConfig(root, {
+        'enablePipDanmaku': true,
+        'pipDanmakuColor': 0xFFFF0000,
+      });
+
+      expect(merged['player'], {'engine': 'mpv'});
+      expect(merged['danmaku']['hideDanmaku'], isFalse);
+      expect(merged['danmaku']['enablePipDanmaku'], isTrue);
+      expect(merged['danmaku']['pipDanmakuColor'], 0xFFFF0000);
+    });
+  });
+}

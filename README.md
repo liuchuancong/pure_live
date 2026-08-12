@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <img src="https://github.com/liuchuancong/pure_live/blob/master/assets/icons/icon.png" width="150"/>
+  <img src="assets/icons/icon.png" width="150"/>
   <br>
   纯粹直播（Pure Live）
   <br>
@@ -10,19 +10,21 @@
 <h4 align="center">A Third-party Live Stream Aggregator Built with Flutter</h4>
 
 <p align="center">
-  <img alt="License" src="https://img.shields.io/github/license/liuchuancong/pure_live?color=blue">
-  <img alt="Latest Release" src="https://img.shields.io/github/v/release/liuchuancong/pure_live">
-  <img alt="Stars" src="https://img.shields.io/github/stars/liuchuancong/pure_live?color=yellow">
-  <img alt="Downloads" src="https://img.shields.io/github/downloads/liuchuancong/pure_live/total?style=flat-square">
+  <a href="https://github.com/wzgrx/pure_live/releases/latest"><img alt="Latest Release" src="https://img.shields.io/github/v/release/wzgrx/pure_live"></a>
+  <img alt="Build" src="https://github.com/wzgrx/pure_live/actions/workflows/feature-build.yml/badge.svg">
+  <img alt="License" src="https://img.shields.io/github/license/wzgrx/pure_live?color=blue">
+  <img alt="Downloads" src="https://img.shields.io/github/downloads/wzgrx/pure_live/total?style=flat-square">
 </p>
 
 > ⚠️ **本软件仅用于个人学习与技术交流，请勿用于商业用途。下载后请于 24 小时内删除。**
+
+> 本仓库是 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live) 的功能维护分支，增加了可配置的小窗弹幕，并提供独立构建与发布。最新安装包见 [Releases](https://github.com/wzgrx/pure_live/releases/latest)。
 
 ---
 
 ## 📺 支持平台
 <h1 align="center">
-  <img src="https://github.com/liuchuancong/pure_live/blob/master/assets/images/banner.png" width="860"/>
+  <img src="assets/images/banner.png" width="860"/>
 </h1>
 
 - 哔哩哔哩（Bilibili）  
@@ -44,7 +46,8 @@
 - ✅ **直播录制**：支持直播流实时录制，保存本地随时回放  
 - ✅ **自定义直播源**：通过 M3U/M3U8 导入网络或本地直播流  
 - ✅ **数据同步与备份**：支持 WebDAV 同步、本地导出/导入配置  
-- ✅ **弹幕增强**：支持弹幕过滤、合并与显示优化  
+- ✅ **弹幕增强**：支持弹幕过滤、合并、描边、FPS 与显示优化
+- ✅ **小窗弹幕**：Android 系统画中画、Windows 小窗和应用内悬浮窗均可显示弹幕
 - ✅ **定时关闭**：可设置倒计时自动退出应用  
 - ✅ **用户系统（可选）**：基于 [Firebase](https://console.firebase.google.com/) 实现注册/登录（需科学上网）
 
@@ -57,7 +60,7 @@
 - 本项目为 **非盈利性开源软件**，遵循 **[GPL-3.0 协议](LICENSE)**。  
 - **不提供任何 VIP 解锁、视频破解或盗链服务**。高清直播需您在对应平台拥有合法账号权限。  
 - 所有直播内容（视频、音频、图像等）**版权归属原平台所有**，本软件仅作技术聚合与转码展示。  
-- 若您认为本项目侵犯您的合法权益，请通过 [GitHub Issue](https://github.com/liuchuancong/pure_live/issues) 联系我们，我们将及时处理。
+- 若您认为本项目侵犯您的合法权益，请通过 [GitHub Issue](https://github.com/wzgrx/pure_live/issues) 联系我们，我们将及时处理。
 
 ---
 
@@ -82,6 +85,17 @@
 因平台限制，观看高清直播需登录。  
 您可通过应用内“三方认证”获取 Cookie，**仅用于本地请求，不上传任何信息**。
 
+### 💬 小窗弹幕
+
+进入直播间的弹幕设置后，可单独配置“小窗弹幕”：
+
+- 适用模式：Android 系统画中画、Windows 小窗、应用内悬浮窗。
+- 显示样式：保留平台原始颜色，或选择自定义颜色、字号与透明度。
+- 运动效果：速度、显示区域、最大数量、发送间隔与刷新 FPS。
+- 小窗适配：可开启自动缩放；小窗使用独立弹幕控制器，不影响主播放器弹幕队列。
+
+设置会保存到本地，重新进入直播间和再次开启小窗时继续生效。
+
 ### 📥 导入 M3U 源
 1. 打开 App → 设置 → 备份与还原 → 导入 M3U 源  
 2. 支持从 [123云盘](https://www.123pan.com/s/Jucxjv-NwYYd.html) 下载示例源  
@@ -91,6 +105,16 @@
 > - **Android**：清除缓存即可移除导入内容  
 > - **Windows**：配置文件位于  
 >   `安装目录\AppData\*`
+
+### 📦 下载与构建
+
+- 最新稳定构建：[GitHub Releases](https://github.com/wzgrx/pure_live/releases/latest)
+- Android：按设备架构选择 `arm64-v8a`、`armeabi-v7a` 或 `x86_64` APK。
+- Windows：下载 `PureLive-pip-danmaku-windows-x64.zip`，解压后直接运行。
+- 完整性校验：每个 Release 附带 `SHA256SUMS.txt`。
+- 开发构建和发布流程见 [run.MD](run.MD)。
+
+> Android Release 使用本仓库专用的持续集成签名。已有其他签名来源的同包名应用时，请先备份应用数据，再安装本仓库版本。
 
 ---
 
@@ -108,8 +132,9 @@
 
 ## 🤝 参与开发
 
-- **主开发者**：[@liuchuancong](https://github.com/liuchuancong)  
+- **上游主开发者**：[@liuchuancong](https://github.com/liuchuancong)
 - **协助开发者**：[@RebornQ](https://github.com/RebornQ)
+- **小窗弹幕维护分支**：[@wzgrx](https://github.com/wzgrx)
 
 > 📌 **欢迎贡献**！  
 > - 如发现 License 使用不当，请提交 Issue 或 Pull Request  
@@ -123,7 +148,7 @@
 
 ## 🌟 Star 趋势
 
-[![Stargazers over time](https://starchart.cc/liuchuancong/pure_live.svg)](https://starchart.cc/liuchuancong/pure_live)
+[![Stargazers over time](https://starchart.cc/wzgrx/pure_live.svg)](https://starchart.cc/wzgrx/pure_live)
 
 ---
 
@@ -132,7 +157,7 @@
 如果您觉得本项目对您有帮助，欢迎扫码支持开发者一杯咖啡 ☕
 
 <p align="center">
-  <img src="https://github.com/liuchuancong/pure_live/blob/master/assets/images/wechat.png" width="250" alt="WeChat Donate">
+  <img src="assets/images/wechat.png" width="250" alt="WeChat Donate">
 </p>
 
 > 您的支持是我持续维护的动力！感谢 ❤️

@@ -1,0 +1,209 @@
+name: build-and-release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "agent/**"
+    tags:
+      - "v*"
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: feature-build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # The local windows_single_instance package requires Dart 3.11 or newer.
+  FLUTTER_VERSION: 3.44.9
+
+jobs:
+  quality:
+    name: Analyze and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Resolve packages
+        run: flutter pub get
+
+      - name: Check new Dart files
+        run: >-
+          dart format --output=none --set-exit-if-changed
+          lib/modules/live_play/widgets/video_player/compact_danmaku_overlay.dart
+          test/danmaku_settings_controller_test.dart
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Test PiP danmaku settings
+        run: flutter test test/danmaku_settings_controller_test.dart
+
+  android:
+    name: Android APK
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Configure Android signing
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.PURELIVE_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.PURELIVE_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.PURELIVE_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.PURELIVE_KEY_ALIAS }}
+        run: |
+          if [[ -n "$KEYSTORE_BASE64" && -n "$STORE_PASSWORD" && -n "$KEY_PASSWORD" && -n "$KEY_ALIAS" ]]; then
+            echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/pure-live-release.jks"
+          elif [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "Release signing secrets are missing." >&2
+            exit 1
+          else
+            STORE_PASSWORD=feature-build
+            KEY_PASSWORD=feature-build
+            KEY_ALIAS=feature-build
+            keytool -genkeypair -v \
+              -keystore "$RUNNER_TEMP/pure-live-release.jks" \
+              -storepass "$STORE_PASSWORD" \
+              -keypass "$KEY_PASSWORD" \
+              -alias "$KEY_ALIAS" \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -dname "CN=Pure Live Feature Build"
+          fi
+          cat > android/key.properties <<EOF
+          storeFile=$RUNNER_TEMP/pure-live-release.jks
+          storePassword=$STORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          EOF
+
+      - name: Resolve packages
+        run: flutter pub get
+
+      - name: Build split release APKs
+        run: flutter build apk --release --split-per-abi
+
+      - name: Upload APKs
+        uses: actions/upload-artifact@v7
+        with:
+          name: pure-live-pip-danmaku-android
+          path: build/app/outputs/flutter-apk/*-release.apk
+          if-no-files-found: error
+          retention-days: 14
+
+  windows:
+    name: Windows portable
+    needs: quality
+    runs-on: windows-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Enable Windows desktop
+        run: flutter config --enable-windows-desktop
+
+      - name: Resolve packages
+        run: flutter pub get
+
+      - name: Build Windows release
+        run: flutter build windows --release
+
+      - name: Create portable archive
+        shell: pwsh
+        run: Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath PureLive-pip-danmaku-windows-x64.zip
+
+      - name: Upload Windows archive
+        uses: actions/upload-artifact@v7
+        with:
+          name: pure-live-pip-danmaku-windows
+          path: PureLive-pip-danmaku-windows-x64.zip
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs:
+      - android
+      - windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: pure-live-pip-danmaku-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Create SHA256 checksums
+        shell: bash
+        run: |
+          cd release-assets
+          sha256sum * > SHA256SUMS.txt
+
+      - name: Publish or update release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mapfile -t assets < <(find release-assets -maxdepth 1 -type f -print | sort)
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "${assets[@]}" --clobber --repo "$GITHUB_REPOSITORY"
+            gh release edit "$GITHUB_REF_NAME" \
+              --title "Pure Live $GITHUB_REF_NAME" \
+              --notes-file RELEASE_NOTES.md \
+              --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$GITHUB_REF_NAME" "${assets[@]}" \
+              --verify-tag \
+              --title "Pure Live $GITHUB_REF_NAME" \
+              --notes-file RELEASE_NOTES.md \
+              --repo "$GITHUB_REPOSITORY"
+          fi

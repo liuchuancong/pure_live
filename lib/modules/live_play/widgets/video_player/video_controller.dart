@@ -120,6 +120,7 @@ class VideoController with ChangeNotifier {
     this.onAudioOnlyChanged,
   }) {
     danmakuController = BarrageController();
+    pipDanmakuController = BarrageController();
 
     hideDanmaku.value = SettingsService.to.danmaku.hideDanmaku.v;
     danmakuTopArea.value = SettingsService.to.danmaku.danmakuTopArea.v;
@@ -131,6 +132,7 @@ class VideoController with ChangeNotifier {
     enableDanmakuStroke.value = SettingsService.to.danmaku.enableDanmakuStroke.v;
     danmakuFontFamilyName.value = SettingsService.to.danmaku.danmakuFontFamilyName.v;
     initPagesConfig();
+    GlobalPlayerService.instance.playerManager.attachVideoController(this);
   }
 
   void initPagesConfig() {
@@ -156,6 +158,7 @@ class VideoController with ChangeNotifier {
   final batteryLevel = 100.obs;
 
   late BarrageController danmakuController;
+  late BarrageController pipDanmakuController;
 
   final ScrollController scheduleScrollController = ScrollController();
   late ListObserverController scheduleObserverController;
@@ -372,9 +375,17 @@ class VideoController with ChangeNotifier {
   void sendDanmaku(LiveMessage msg) {
     if (hideDanmaku.value) return;
     if (GlobalPlayerService.instance.playerManager.isPlayingNow) {
+      final originalColor = Color.fromARGB(255, msg.color.r, msg.color.g, msg.color.b);
       danmakuController.send(
-        BarrageItem(content: msg.message, textColor: Color.fromARGB(255, msg.color.r, msg.color.g, msg.color.b)),
+        BarrageItem(content: msg.message, textColor: originalColor),
       );
+      final settings = SettingsService.to.danmaku;
+      if (settings.enablePipDanmaku.v) {
+        final compactColor = settings.pipDanmakuUseOriginalColor.v
+            ? originalColor
+            : Color(settings.pipDanmakuColor.v);
+        pipDanmakuController.send(BarrageItem(content: msg.message, textColor: compactColor));
+      }
     }
   }
 
@@ -408,6 +419,9 @@ class VideoController with ChangeNotifier {
 
   @override
   void dispose() async {
+    GlobalPlayerService.instance.playerManager.detachVideoController(this);
+    danmakuController.clear();
+    pipDanmakuController.clear();
     _errorSub?.cancel();
     _errorSub = null;
     _pipSub?.cancel();

@@ -4,8 +4,9 @@ import urllib.error
 import sys
 import os
 
-# 直接配置在线 API 地址
-API_URL = "https://cors.isteed.cc/https://api.github.com/repos/liuchuancong/pure_live/releases?per_page=3000"
+# GitHub Actions 中自动使用当前仓库，本地运行时默认使用维护分支仓库。
+REPOSITORY = os.environ.get("GITHUB_REPOSITORY", "wzgrx/pure_live")
+API_URL = f"https://api.github.com/repos/{REPOSITORY}/releases?per_page=100"
 OUTPUT_FILE = "assets/releases.json"
 
 def format_size(size):
