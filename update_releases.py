@@ -7,6 +7,8 @@ import os
 # GitHub Actions 中自动使用当前仓库，本地运行时默认使用维护分支仓库。
 REPOSITORY = os.environ.get("GITHUB_REPOSITORY", "wzgrx/pure_live")
 API_URL = f"https://api.github.com/repos/{REPOSITORY}/releases?per_page=100"
+UPSTREAM_REPOSITORY = "liuchuancong/pure_live"
+UPSTREAM_API_URL = f"https://api.github.com/repos/{UPSTREAM_REPOSITORY}/releases?per_page=100"
 OUTPUT_FILE = "assets/releases.json"
 
 def format_size(size):
@@ -21,7 +23,15 @@ def clean_name(name):
 
 def fetch_data(url):
     """获取网络数据并进行严格的前置检查"""
-    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    headers = {
+        "User-Agent": "PureLive-Release-Updater",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    req = urllib.request.Request(url, headers=headers)
     try:
         print(f"正在尝试连接服务器: {url}")
         with urllib.request.urlopen(req, timeout=30) as response:
@@ -64,6 +74,13 @@ def fetch_data(url):
 def main():
     # 核心修改：网络获取与严格校验
     data = fetch_data(API_URL)
+
+    # 维护分支保留上游旧版本记录；同名标签优先使用当前仓库的 Release。
+    if REPOSITORY != UPSTREAM_REPOSITORY:
+        upstream_data = fetch_data(UPSTREAM_API_URL)
+        current_tags = {release.get("tag_name") for release in data}
+        data.extend(release for release in upstream_data if release.get("tag_name") not in current_tags)
+        data.sort(key=lambda release: release.get("published_at") or "", reverse=True)
         
     if isinstance(data, dict):
         data = [data]

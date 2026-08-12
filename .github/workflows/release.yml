@@ -445,6 +445,8 @@ jobs:
 
     # 3. 运行更新脚本
     - name: Run update script
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
       run: python update_releases.py
 
     # 4. 检查是否有文件更新，采用拉取重构（Pull Rebase）后安全推送
