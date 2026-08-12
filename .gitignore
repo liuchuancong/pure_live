@@ -32,6 +32,11 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+/android/build/
+/android/.gradle/
+/local-artifacts/
+/.local-build/
+/build-audit-*
 
 # Symbolication related
 app.*.symbols
@@ -44,15 +49,17 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-pubspec.lock
-key.properties
-
+/android/key.properties
 **/*.jks
+**/*.keystore
+**/*.pfx
+**/*.key
+**/*.csr
+/assets/keystore/
 
 # /assets/keystore/
 /assets/pure_live_web/
 
-Podfile.lock
 # FVM Version Cache
 .fvm/
 linux/

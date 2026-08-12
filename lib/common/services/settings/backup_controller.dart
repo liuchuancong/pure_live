@@ -24,17 +24,18 @@ import 'package:pure_live/common/services/settings/danmaku_settings_controller.d
 class BackupController extends GetxController {
   static BackupController get to => Get.find();
 
-  static const int backupVersion = 2;
+  static const int backupVersion = 3;
 
   final RxString backupDirectory = hiveString('backupDirectory', '');
 
-  Map<String, dynamic> exportAllSettings() {
+  Map<String, dynamic> exportAllSettings({bool includeSensitiveData = false}) {
     if (!Get.isRegistered<TagManagementController>()) {
       Get.put(TagManagementController());
     }
 
-    return {
+    final data = <String, dynamic>{
       'backupVersion': backupVersion,
+      'sensitiveDataIncluded': includeSensitiveData,
       'app': Get.find<AppSettingsController>().toJson(),
       'theme': Get.find<ThemeSettingsController>().toJson(),
       'font': Get.find<FontSettingsController>().toJson(),
@@ -43,9 +44,7 @@ class BackupController extends GetxController {
       'volume': Get.find<VolumeSettingsController>().toJson(),
       'favorite': Get.find<FavoriteRoomController>().toJson(),
       'history': Get.find<HistoryController>().toJson(),
-      'webdav': Get.find<WebDavController>().toJson(),
       'iptv': Get.find<IptvSettingsController>().toJson(),
-      'cookie': Get.find<CookieSettingsController>().toJson(),
       'proxy': Get.find<ProxySettingsController>().toJson(),
       'windowSize': Get.find<WindowSizeController>().toJson(),
       'exit': Get.find<ExitSettingsController>().toJson(),
@@ -54,6 +53,21 @@ class BackupController extends GetxController {
       'refresh': Get.find<RefreshConfigController>().toJson(),
       'page': Get.find<PageSettingsController>().toJson(),
     };
+
+    if (includeSensitiveData) {
+      data['webdav'] = Get.find<WebDavController>().toJson();
+      data['cookie'] = Get.find<CookieSettingsController>().toJson();
+    }
+    return data;
+  }
+
+  /// Removes credentials and session cookies before a backup leaves the device.
+  static Map<String, dynamic> redactSensitiveData(Map<String, dynamic> source) {
+    final result = Map<String, dynamic>.from(source)
+      ..remove('webdav')
+      ..remove('cookie');
+    result['sensitiveDataIncluded'] = false;
+    return result;
   }
 
   void importAllSettings(Map<String, dynamic> data) {
@@ -66,6 +80,7 @@ class BackupController extends GetxController {
 
     switch (version) {
       case 2:
+      case 3:
         _importV2(data);
         break;
 
@@ -80,39 +95,77 @@ class BackupController extends GetxController {
   }
 
   void _importV2(Map<String, dynamic> data) {
-    Get.find<AppSettingsController>().fromJson(Map<String, dynamic>.from(data['app'] ?? {}));
+    Get.find<AppSettingsController>().fromJson(
+      Map<String, dynamic>.from(data['app'] ?? {}),
+    );
 
-    Get.find<ThemeSettingsController>().fromJson(Map<String, dynamic>.from(data['theme'] ?? {}));
+    Get.find<ThemeSettingsController>().fromJson(
+      Map<String, dynamic>.from(data['theme'] ?? {}),
+    );
 
-    Get.find<FontSettingsController>().fromJson(Map<String, dynamic>.from(data['font'] ?? {}));
+    Get.find<FontSettingsController>().fromJson(
+      Map<String, dynamic>.from(data['font'] ?? {}),
+    );
 
-    Get.find<PlayerSettingsController>().fromJson(Map<String, dynamic>.from(data['player'] ?? {}));
+    Get.find<PlayerSettingsController>().fromJson(
+      Map<String, dynamic>.from(data['player'] ?? {}),
+    );
 
-    Get.find<DanmakuSettingsController>().fromJson(Map<String, dynamic>.from(data['danmaku'] ?? {}));
+    Get.find<DanmakuSettingsController>().fromJson(
+      Map<String, dynamic>.from(data['danmaku'] ?? {}),
+    );
 
-    Get.find<VolumeSettingsController>().fromJson(Map<String, dynamic>.from(data['volume'] ?? {}));
+    Get.find<VolumeSettingsController>().fromJson(
+      Map<String, dynamic>.from(data['volume'] ?? {}),
+    );
 
-    Get.find<FavoriteRoomController>().fromJson(Map<String, dynamic>.from(data['favorite'] ?? {}));
+    Get.find<FavoriteRoomController>().fromJson(
+      Map<String, dynamic>.from(data['favorite'] ?? {}),
+    );
 
-    Get.find<HistoryController>().fromJson(Map<String, dynamic>.from(data['history'] ?? {}));
+    Get.find<HistoryController>().fromJson(
+      Map<String, dynamic>.from(data['history'] ?? {}),
+    );
 
-    Get.find<WebDavController>().fromJson(Map<String, dynamic>.from(data['webdav'] ?? {}));
+    if (data.containsKey('webdav')) {
+      Get.find<WebDavController>().fromJson(
+        Map<String, dynamic>.from(data['webdav'] ?? {}),
+      );
+    }
 
-    Get.find<IptvSettingsController>().fromJson(Map<String, dynamic>.from(data['iptv'] ?? {}));
+    Get.find<IptvSettingsController>().fromJson(
+      Map<String, dynamic>.from(data['iptv'] ?? {}),
+    );
 
-    Get.find<CookieSettingsController>().fromJson(Map<String, dynamic>.from(data['cookie'] ?? {}));
+    if (data.containsKey('cookie')) {
+      Get.find<CookieSettingsController>().fromJson(
+        Map<String, dynamic>.from(data['cookie'] ?? {}),
+      );
+    }
 
-    Get.find<ProxySettingsController>().fromJson(Map<String, dynamic>.from(data['proxy'] ?? {}));
+    Get.find<ProxySettingsController>().fromJson(
+      Map<String, dynamic>.from(data['proxy'] ?? {}),
+    );
 
-    Get.find<WindowSizeController>().fromJson(Map<String, dynamic>.from(data['windowSize'] ?? {}));
+    Get.find<WindowSizeController>().fromJson(
+      Map<String, dynamic>.from(data['windowSize'] ?? {}),
+    );
 
-    Get.find<ExitSettingsController>().fromJson(Map<String, dynamic>.from(data['exit'] ?? {}));
+    Get.find<ExitSettingsController>().fromJson(
+      Map<String, dynamic>.from(data['exit'] ?? {}),
+    );
 
-    Get.find<StartupController>().fromJson(Map<String, dynamic>.from(data['startup'] ?? {}));
+    Get.find<StartupController>().fromJson(
+      Map<String, dynamic>.from(data['startup'] ?? {}),
+    );
 
-    Get.find<RefreshConfigController>().fromJson(Map<String, dynamic>.from(data['refresh'] ?? {}));
+    Get.find<RefreshConfigController>().fromJson(
+      Map<String, dynamic>.from(data['refresh'] ?? {}),
+    );
 
-    Get.find<PageSettingsController>().fromJson(Map<String, dynamic>.from(data['page'] ?? {}));
+    Get.find<PageSettingsController>().fromJson(
+      Map<String, dynamic>.from(data['page'] ?? {}),
+    );
 
     if (!Get.isRegistered<TagManagementController>()) {
       Get.put(TagManagementController());
@@ -120,7 +173,9 @@ class BackupController extends GetxController {
 
     final tagsData = data['tags'];
     if (tagsData is Map) {
-      Get.find<TagManagementController>().importFromJson(Map<String, dynamic>.from(tagsData));
+      Get.find<TagManagementController>().importFromJson(
+        Map<String, dynamic>.from(tagsData),
+      );
     }
   }
 
@@ -148,7 +203,9 @@ class BackupController extends GetxController {
 
     final legacyTags = data['custom_tags_data'];
     if (legacyTags is Map) {
-      Get.find<TagManagementController>().importFromJson(Map<String, dynamic>.from(legacyTags));
+      Get.find<TagManagementController>().importFromJson(
+        Map<String, dynamic>.from(legacyTags),
+      );
     }
   }
 
@@ -179,13 +236,21 @@ class BackupController extends GetxController {
     }
   }
 
-  Map<String, dynamic> exportToTVSettings() {
+  Map<String, dynamic> exportToTVSettings({bool includeSensitiveData = false}) {
     final danmaku = Get.find<DanmakuSettingsController>().toJson();
-    final cookie = Get.find<CookieSettingsController>().toJson();
     final iptv = Get.find<IptvSettingsController>().toJson();
     final favorite = Get.find<FavoriteRoomController>().toJson();
     final history = Get.find<HistoryController>().toJson();
 
-    return {...danmaku, ...cookie, ...favorite, ...history, 'customIptvUserAgent': iptv['customIptvUserAgent']};
+    final data = <String, dynamic>{
+      ...danmaku,
+      ...favorite,
+      ...history,
+      'customIptvUserAgent': iptv['customIptvUserAgent'],
+    };
+    if (includeSensitiveData) {
+      data.addAll(Get.find<CookieSettingsController>().toJson());
+    }
+    return data;
   }
 }

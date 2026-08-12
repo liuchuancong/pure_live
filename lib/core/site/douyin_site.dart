@@ -31,11 +31,9 @@ class DouyinSite implements LiveSite {
 
   static const String kDefaultAuthority = "live.douyin.com";
 
-  static const String kDefaultCookie =
-      "ttwid=1%7CB1qls3GdnZhUov9o2NxOMxxYS2ff6OSvEWbv0ytbES4%7C1680522049%7C280d802d6d478e3e78d0c807f7c487e7ffec0ae4e5fdd6a0fe74c3c6af149511";
-
   /// 用户设置的 cookie
   static String cookie = "";
+  static Future<String>? _anonymousCookieRequest;
 
   Map<String, dynamic> headers = {
     "Authority": kDefaultAuthority,
@@ -46,23 +44,43 @@ class DouyinSite implements LiveSite {
   Future<Map<String, dynamic>> getRequestHeaders() async {
     try {
       if (cookie.isNotEmpty) {
-        headers["cookie"] = cookie;
-        return headers;
+        return {...headers, "cookie": cookie};
       } else if (SettingsService.to.cookieManager.douyinCookie.v.isNotEmpty) {
         cookie = SettingsService.to.cookieManager.douyinCookie.v;
-        headers["cookie"] = cookie;
-        return headers;
+        return {...headers, "cookie": cookie};
       }
 
-      headers["cookie"] = kDefaultCookie;
-      return headers;
-    } catch (e) {
-      CoreLog.error(e);
-      if (!(headers["cookie"]?.toString().isNotEmpty ?? false)) {
-        headers["cookie"] = kDefaultCookie;
+      final anonymousCookie = await (_anonymousCookieRequest ??=
+          _fetchAnonymousCookie());
+      _anonymousCookieRequest = null;
+      if (anonymousCookie.isNotEmpty) {
+        cookie = anonymousCookie;
+        return {...headers, "cookie": cookie};
       }
-      return headers;
+      return Map<String, dynamic>.from(headers);
+    } catch (e) {
+      _anonymousCookieRequest = null;
+      CoreLog.error(e);
+      return Map<String, dynamic>.from(headers);
     }
+  }
+
+  Future<String> _fetchAnonymousCookie() async {
+    final response = await HttpClient.instance.get(
+      'https://live.douyin.com/',
+      queryParameters: const {'from_nav': '1'},
+      header: headers,
+    );
+    final setCookieValues =
+        response.headers.map['set-cookie'] ?? const <String>[];
+    final pairs = <String>[];
+    for (final value in setCookieValues) {
+      final pair = value.split(';').first.trim();
+      if (pair.startsWith('ttwid=') || pair.startsWith('UIFID_TEMP=')) {
+        pairs.add(pair);
+      }
+    }
+    return pairs.join('; ');
   }
 
   Future<Map<String, dynamic>> getUserInfoByCookie(String cookie) async {
@@ -129,7 +147,8 @@ class DouyinSite implements LiveSite {
       var id = '${item["partition"]["id_str"]},${item["partition"]["type"]}';
       for (var subItem in item["sub_partition"]) {
         var subCategory = LiveArea(
-          areaId: '${subItem["partition"]["id_str"]},${subItem["partition"]["type"]}',
+          areaId:
+              '${subItem["partition"]["id_str"]},${subItem["partition"]["type"]}',
           typeName: item["partition"]["title"] ?? '',
           areaType: id,
           areaName: subItem["partition"]["title"] ?? '',
@@ -139,7 +158,11 @@ class DouyinSite implements LiveSite {
         subs.add(subCategory);
       }
 
-      var category = LiveCategory(children: subs, id: id, name: asT<String?>(item["partition"]["title"]) ?? "");
+      var category = LiveCategory(
+        children: subs,
+        id: id,
+        name: asT<String?>(item["partition"]["title"]) ?? "",
+      );
       subs.insert(
         0,
         LiveArea(
@@ -157,12 +180,17 @@ class DouyinSite implements LiveSite {
   }
 
   @override
-  Future<List<LiveRoom>> getCategoryRooms(LiveArea category, {int page = 1, int pageSize = 30}) async {
+  Future<List<LiveRoom>> getCategoryRooms(
+    LiveArea category, {
+    int page = 1,
+    int pageSize = 30,
+  }) async {
     var ids = category.areaId?.split(',');
     var partitionId = ids?[0];
     var partitionType = ids?[1];
 
-    String serverUrl = "https://live.douyin.com/webcast/web/partition/detail/room/v2/";
+    String serverUrl =
+        "https://live.douyin.com/webcast/web/partition/detail/room/v2/";
     var uri = Uri.parse(serverUrl).replace(
       scheme: "https",
       port: 443,
@@ -189,7 +217,10 @@ class DouyinSite implements LiveSite {
       },
     );
     var requestUrl = DouyinSign.getAbogusUrl(uri.toString(), kDefaultUserAgent);
-    var result = await HttpClient.instance.getJson(requestUrl, header: await getRequestHeaders());
+    var result = await HttpClient.instance.getJson(
+      requestUrl,
+      header: await getRequestHeaders(),
+    );
     var items = <LiveRoom>[];
     for (var item in result["data"]["data"]) {
       var roomItem = LiveRoom(
@@ -202,7 +233,8 @@ class DouyinSite implements LiveSite {
         status: true,
         platform: Sites.douyinSite,
         area: item['tag_name'].toString(),
-        watching: item["room"]?["room_view_stats"]?["display_value"].toString() ?? '',
+        watching:
+            item["room"]?["room_view_stats"]?["display_value"].toString() ?? '',
       );
       items.add(roomItem);
     }
@@ -210,9 +242,13 @@ class DouyinSite implements LiveSite {
   }
 
   @override
-  Future<List<LiveRoom>> getRecommendRooms({int page = 1, int pageSize = 30}) async {
+  Future<List<LiveRoom>> getRecommendRooms({
+    int page = 1,
+    int pageSize = 30,
+  }) async {
     try {
-      String serverUrl = "https://live.douyin.com/webcast/web/partition/detail/room/v2/";
+      String serverUrl =
+          "https://live.douyin.com/webcast/web/partition/detail/room/v2/";
       var uri = Uri.parse(serverUrl).replace(
         scheme: "https",
         port: 443,
@@ -238,8 +274,14 @@ class DouyinSite implements LiveSite {
           "req_from": '2',
         },
       );
-      var requestUrl = DouyinSign.getAbogusUrl(uri.toString(), kDefaultUserAgent);
-      var result = await HttpClient.instance.getJson(requestUrl, header: await getRequestHeaders());
+      var requestUrl = DouyinSign.getAbogusUrl(
+        uri.toString(),
+        kDefaultUserAgent,
+      );
+      var result = await HttpClient.instance.getJson(
+        requestUrl,
+        header: await getRequestHeaders(),
+      );
       var items = <LiveRoom>[];
       for (var item in result["data"]["data"]) {
         var roomItem = LiveRoom(
@@ -249,8 +291,11 @@ class DouyinSite implements LiveSite {
           nick: item["room"]["owner"]["nickname"].toString(),
           platform: Sites.douyinSite,
           area: item["tag_name"] ?? '热门推荐',
-          avatar: item["room"]["owner"]["avatar_thumb"]["url_list"][0].toString(),
-          watching: item["room"]?["room_view_stats"]?["display_value"].toString() ?? '',
+          avatar: item["room"]["owner"]["avatar_thumb"]["url_list"][0]
+              .toString(),
+          watching:
+              item["room"]?["room_view_stats"]?["display_value"].toString() ??
+              '',
           liveStatus: LiveStatus.live,
         );
         items.add(roomItem);
@@ -262,7 +307,10 @@ class DouyinSite implements LiveSite {
   }
 
   @override
-  Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
+  Future<LiveRoom> getRoomDetail({
+    required String platform,
+    required String roomId,
+  }) async {
     if (roomId.length <= 16) {
       return await getRoomDetailByWebRid(roomId);
     }
@@ -303,7 +351,9 @@ class DouyinSite implements LiveSite {
       cover: roomStatus ? room["cover"]["url_list"][0].toString() : "",
       nick: owner["nickname"].toString(),
       avatar: owner["avatar_thumb"]["url_list"][0].toString(),
-      watching: roomStatus ? room["room_view_stats"]["display_value"].toString() : "",
+      watching: roomStatus
+          ? room["room_view_stats"]["display_value"].toString()
+          : "",
       status: roomStatus,
       link: "https://live.douyin.com/$webRid",
       platform: Sites.douyinSite,
@@ -311,7 +361,12 @@ class DouyinSite implements LiveSite {
       liveStatus: roomStatus ? LiveStatus.live : LiveStatus.offline,
       introduction: owner["signature"].toString(),
       notice: "",
-      danmakuData: DouyinDanmakuArgs(webRid: webRid, roomId: roomId, userId: userUniqueId, cookie: headers["cookie"]),
+      danmakuData: DouyinDanmakuArgs(
+        webRid: webRid,
+        roomId: roomId,
+        userId: userUniqueId,
+        cookie: headers["cookie"],
+      ),
       data: room["stream_url"],
     );
   }
@@ -355,11 +410,15 @@ class DouyinSite implements LiveSite {
       roomId: webRid,
       title: roomData["title"].toString(),
       cover: roomStatus ? roomData["cover"]["url_list"][0].toString() : "",
-      nick: roomStatus ? owner["nickname"].toString() : userData["nickname"].toString(),
+      nick: roomStatus
+          ? owner["nickname"].toString()
+          : userData["nickname"].toString(),
       avatar: roomStatus
           ? owner["avatar_thumb"]["url_list"][0].toString()
           : userData["avatar_thumb"]["url_list"][0].toString(),
-      watching: roomStatus ? roomData["room_view_stats"]["display_value"].toString() : "",
+      watching: roomStatus
+          ? roomData["room_view_stats"]["display_value"].toString()
+          : "",
       status: roomStatus,
       liveStatus: roomStatus ? LiveStatus.live : LiveStatus.offline,
       link: "https://live.douyin.com/$webRid",
@@ -367,7 +426,12 @@ class DouyinSite implements LiveSite {
       area: '',
       introduction: owner?["signature"]?.toString() ?? "",
       notice: "",
-      danmakuData: DouyinDanmakuArgs(webRid: webRid, roomId: roomId, userId: userUniqueId, cookie: headers["cookie"]),
+      danmakuData: DouyinDanmakuArgs(
+        webRid: webRid,
+        roomId: roomId,
+        userId: userUniqueId,
+        cookie: headers["cookie"],
+      ),
       data: roomStatus ? roomData["stream_url"] : {},
     );
   }
@@ -379,7 +443,8 @@ class DouyinSite implements LiveSite {
     var detail = await _getRoomDataByHtml(roomId);
     var webRid = roomId;
 
-    var realRoomId = detail["roomStore"]["roomInfo"]["room"]["id_str"].toString();
+    var realRoomId = detail["roomStore"]["roomInfo"]["room"]["id_str"]
+        .toString();
     var userUniqueId = detail["userStore"]["odin"]["user_unique_id"].toString();
     var roomInfo = detail["roomStore"]["roomInfo"]["room"];
     var owner = roomInfo["owner"];
@@ -393,7 +458,9 @@ class DouyinSite implements LiveSite {
       roomId: roomId,
       title: roomInfo["title"].toString(),
       cover: roomStatus ? roomInfo["cover"]["url_list"][0].toString() : "",
-      nick: roomStatus ? owner["nickname"].toString() : anchor["nickname"].toString(),
+      nick: roomStatus
+          ? owner["nickname"].toString()
+          : anchor["nickname"].toString(),
       avatar: roomStatus
           ? owner["avatar_thumb"]["url_list"][0].toString()
           : anchor["avatar_thumb"]["url_list"][0].toString(),
@@ -430,7 +497,10 @@ class DouyinSite implements LiveSite {
   /// 进入直播间前需要先获取cookie
   /// - [webRid] 直播间RID
   Future<String> _getWebCookie(String webRid) async {
-    var headResp = await HttpClient.instance.head("https://live.douyin.com/$webRid", header: headers);
+    var headResp = await HttpClient.instance.head(
+      "https://live.douyin.com/$webRid",
+      header: headers,
+    );
     var dyCookie = "";
     headResp.headers["set-cookie"]?.forEach((element) {
       var cookie = element.split(";")[0];
@@ -462,8 +532,16 @@ class DouyinSite implements LiveSite {
       },
     );
 
-    var renderData = RegExp(r'\{\\"state\\":\{\\"appStore.*?\]\\n').firstMatch(result)?.group(0) ?? "";
-    var str = renderData.trim().replaceAll('\\"', '"').replaceAll(r"\\", r"\").replaceAll(']\\n', "");
+    var renderData =
+        RegExp(
+          r'\{\\"state\\":\{\\"appStore.*?\]\\n',
+        ).firstMatch(result)?.group(0) ??
+        "";
+    var str = renderData
+        .trim()
+        .replaceAll('\\"', '"')
+        .replaceAll(r"\\", r"\")
+        .replaceAll(']\\n', "");
 
     var renderDataJson = json.decode(str);
     return renderDataJson["state"];
@@ -498,7 +576,10 @@ class DouyinSite implements LiveSite {
     );
     var requestUrl = DouyinSign.getAbogusUrl(uri.toString(), kDefaultUserAgent);
     var requestHeader = await getRequestHeaders();
-    var result = await HttpClient.instance.getJson(requestUrl, header: requestHeader);
+    var result = await HttpClient.instance.getJson(
+      requestUrl,
+      header: requestHeader,
+    );
 
     return result["data"];
   }
@@ -522,15 +603,24 @@ class DouyinSite implements LiveSite {
   }
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
+  Future<List<LivePlayQuality>> getPlayQualites({
+    required LiveRoom detail,
+  }) async {
     List<LivePlayQuality> qualities = [];
 
-    var qulityList = detail.data["live_core_sdk_data"]["pull_data"]["options"]["qualities"];
-    var streamData = detail.data["live_core_sdk_data"]["pull_data"]["stream_data"].toString();
+    var qulityList =
+        detail.data["live_core_sdk_data"]["pull_data"]["options"]["qualities"];
+    var streamData = detail
+        .data["live_core_sdk_data"]["pull_data"]["stream_data"]
+        .toString();
 
     if (!streamData.startsWith('{')) {
-      var flvList = (detail.data["flv_pull_url"] as Map).values.cast<String>().toList();
-      var hlsList = (detail.data["hls_pull_url_map"] as Map).values.cast<String>().toList();
+      var flvList = (detail.data["flv_pull_url"] as Map).values
+          .cast<String>()
+          .toList();
+      var hlsList = (detail.data["hls_pull_url_map"] as Map).values
+          .cast<String>()
+          .toList();
       for (var quality in qulityList) {
         int level = quality["level"];
         List<String> urls = [];
@@ -542,7 +632,11 @@ class DouyinSite implements LiveSite {
         if (hlsIndex >= 0 && hlsIndex < hlsList.length) {
           urls.add(hlsList[hlsIndex]);
         }
-        var qualityItem = LivePlayQuality(quality: quality["name"], sort: level, data: urls);
+        var qualityItem = LivePlayQuality(
+          quality: quality["name"],
+          sort: level,
+          data: urls,
+        );
         if (urls.isNotEmpty) {
           qualities.add(qualityItem);
         }
@@ -551,16 +645,22 @@ class DouyinSite implements LiveSite {
       var qualityData = json.decode(streamData)["data"] as Map;
       for (var quality in qulityList) {
         List<String> urls = [];
-        var flvUrl = qualityData[quality["sdk_key"]]?["main"]?["flv"]?.toString();
+        var flvUrl = qualityData[quality["sdk_key"]]?["main"]?["flv"]
+            ?.toString();
 
         if (flvUrl != null && flvUrl.isNotEmpty) {
           urls.add(flvUrl);
         }
-        var hlsUrl = qualityData[quality["sdk_key"]]?["main"]?["hls"]?.toString();
+        var hlsUrl = qualityData[quality["sdk_key"]]?["main"]?["hls"]
+            ?.toString();
         if (hlsUrl != null && hlsUrl.isNotEmpty) {
           urls.add(hlsUrl);
         }
-        var qualityItem = LivePlayQuality(quality: quality["name"], sort: quality["level"], data: urls);
+        var qualityItem = LivePlayQuality(
+          quality: quality["name"],
+          sort: quality["level"],
+          data: urls,
+        );
         if (urls.isNotEmpty) {
           qualities.add(qualityItem);
         }
@@ -572,12 +672,19 @@ class DouyinSite implements LiveSite {
   }
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
+  Future<List<String>> getPlayUrls({
+    required LiveRoom detail,
+    required LivePlayQuality quality,
+  }) async {
     return quality.data;
   }
 
   @override
-  Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) async {
+  Future<List<LiveRoom>> searchRooms(
+    String keyword, {
+    int page = 1,
+    int pageSize = 30,
+  }) async {
     String serverUrl = "https://www.douyin.com/aweme/v1/web/live/search/";
     var uri = Uri.parse(serverUrl).replace(
       scheme: "https",
@@ -630,8 +737,10 @@ class DouyinSite implements LiveSite {
         'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8',
         'cookie': dyCookie,
         'priority': 'u=1, i',
-        'referer': 'https://www.douyin.com/search/${Uri.encodeComponent(keyword)}?type=live',
-        'sec-ch-ua': '"Microsoft Edge";v="125", "Chromium";v="125", "Not.A/Brand";v="24"',
+        'referer':
+            'https://www.douyin.com/search/${Uri.encodeComponent(keyword)}?type=live',
+        'sec-ch-ua':
+            '"Microsoft Edge";v="125", "Chromium";v="125", "Not.A/Brand";v="24"',
         'sec-ch-ua-mobile': '?0',
         'sec-ch-ua-platform': '"Windows"',
         'sec-fetch-dest': 'empty',
@@ -665,18 +774,27 @@ class DouyinSite implements LiveSite {
   }
 
   @override
-  Future<List<LiveAnchorItem>> searchAnchors(String keyword, {int page = 1, int pageSize = 30}) async {
+  Future<List<LiveAnchorItem>> searchAnchors(
+    String keyword, {
+    int page = 1,
+    int pageSize = 30,
+  }) async {
     throw Exception("抖音暂不支持搜索主播，请直接搜索直播间");
   }
 
   @override
-  Future<bool> getLiveStatus({required String platform, required String roomId}) async {
+  Future<bool> getLiveStatus({
+    required String platform,
+    required String roomId,
+  }) async {
     var result = await getRoomDetail(roomId: roomId, platform: platform);
     return result.status!;
   }
 
   @override
-  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required String roomId}) {
+  Future<List<LiveSuperChatMessage>> getSuperChatMessage({
+    required String roomId,
+  }) {
     return Future.value(<LiveSuperChatMessage>[]);
   }
 
@@ -699,6 +817,7 @@ class DouyinSite implements LiveSite {
     for (var item in values) {
       stringBuffer.write(item);
     }
-    return int.tryParse(stringBuffer.toString()) ?? math.Random().nextInt(1000000000);
+    return int.tryParse(stringBuffer.toString()) ??
+        math.Random().nextInt(1000000000);
   }
 }

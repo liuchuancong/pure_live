@@ -1,8 +1,8 @@
 {
-  "version": "2.0.23",
-  "build_number": 34,
-  "version_num": 2002334,
-  "version_desc": "- Android 系统画中画、Windows 小窗和应用内悬浮窗支持显示弹幕。\n- 小窗弹幕支持颜色、字号、速度、透明度、显示区域、最大数量、发送间隔、FPS 和自动缩放。\n- 使用独立小窗弹幕控制器，优化悬浮窗切换时的资源保留与释放。\n- 修复 Windows 构建中的移动端屏幕方向插件目标问题。\n- 更新 Flutter、FFmpeg 构建产物地址和 GitHub Actions。\n",
+  "version": "2.0.24",
+  "build_number": 35,
+  "version_num": 2002435,
+  "version_desc": "- 完善本机优先的 Android、Windows 构建、测试、安装包和 SHA-256 校验流程。\n- 固定 Flutter、Dart、Git 依赖和原生媒体产物版本，提高构建可复现性。\n- 增加六个直播平台公开接口探测，移除失效的斗鱼第三方签名中转并动态获取抖音 Cookie。\n- 备份格式升级到 v3，默认排除 Cookie 与 WebDAV 凭据，清理仓库中的历史签名私钥。\n- 修复播放器、小窗弹幕、定时器和事件监听的资源释放问题。\n- GitHub Actions 调整为手动兜底，日常质量门禁和发布改为本机执行。\n",
   "prerelease": false,
   "download_url": "https://github.com/wzgrx/pure_live/releases"
 }

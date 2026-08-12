@@ -21,20 +21,29 @@ import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 
 enum VideoMode { normal, widescreen, fullscreen }
 
-class LivePlayController extends StateController with GetSingleTickerProviderStateMixin {
+class LivePlayController extends StateController
+    with GetSingleTickerProviderStateMixin {
   LivePlayController({required this.room, required this.site});
 
   final String site;
   final LiveRoom room;
 
   final RecorderController recorderController = Get.find<RecorderController>();
-  final StopWatchTimer _stopWatchTimer = StopWatchTimer(mode: StopWatchMode.countDown);
+  final StopWatchTimer _stopWatchTimer = StopWatchTimer(
+    mode: StopWatchMode.countDown,
+  );
+  Worker? _timerWorker;
+  StreamSubscription<dynamic>? _timerEndedSubscription;
 
   late Site currentSite;
   late LiveDanmaku liveDanmaku;
   late TabController tabController;
 
-  final List<String> tabs = [i18n('danmaku_list'), i18n('danmaku_settings'), i18n('block_list')];
+  final List<String> tabs = [
+    i18n('danmaku_list'),
+    i18n('danmaku_settings'),
+    i18n('block_list'),
+  ];
 
   final messages = <LiveMessage>[].obs;
   final isLiving = true.obs;
@@ -111,7 +120,11 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
   void _initBackInterceptor() {
     if (Platform.isAndroid) {
-      BackButtonInterceptor.add(myInterceptor, zIndex: 1, name: "live_play_page");
+      BackButtonInterceptor.add(
+        myInterceptor,
+        zIndex: 1,
+        name: "live_play_page",
+      );
     }
   }
 
@@ -130,11 +143,11 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   }
 
   void _initDebounce() {
-    everAll([closeTimeFlag, closeTimes], (_) => _toggleTimer());
+    _timerWorker = everAll([closeTimeFlag, closeTimes], (_) => _toggleTimer());
   }
 
   void _initTimer() {
-    _stopWatchTimer.fetchEnded.listen((_) {
+    _timerEndedSubscription = _stopWatchTimer.fetchEnded.listen((_) {
       _stopWatchTimer.onStopTimer();
       exit(0);
     });
@@ -190,7 +203,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   }
 
   void prepareAppFloating() {
-    GlobalPlayerService.instance.playerManager.prepareAppFloating(onClose: disposeAppFloatingResources);
+    GlobalPlayerService.instance.playerManager.prepareAppFloating(
+      onClose: disposeAppFloatingResources,
+    );
     _floatingResourcesReleased = false;
   }
 
@@ -205,11 +220,22 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
   void _disposeAll() {
     tabController.dispose();
+    _timerWorker?.dispose();
+    _timerWorker = null;
+    final timerEndedSubscription = _timerEndedSubscription;
+    if (timerEndedSubscription != null) {
+      unawaited(timerEndedSubscription.cancel());
+    }
+    _timerEndedSubscription = null;
     _stopWatchTimer.onStopTimer();
+    unawaited(_stopWatchTimer.dispose());
     if (Platform.isAndroid) {
       BackButtonInterceptor.removeByName("live_play_page");
     }
-    if (!GlobalPlayerService.instance.playerManager.shouldKeepDanmakuForAppFloating) {
+    if (!GlobalPlayerService
+        .instance
+        .playerManager
+        .shouldKeepDanmakuForAppFloating) {
       disposeAppFloatingResources();
     }
   }
@@ -228,7 +254,10 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   }) async {
     final roomId = detail.value?.roomId;
     if (roomId == null) return LiveRoom();
-    var liveRoom = await currentSite.liveSite.getRoomDetail(roomId: roomId, platform: detail.value!.platform!);
+    var liveRoom = await currentSite.liveSite.getRoomDetail(
+      roomId: roomId,
+      platform: detail.value!.platform!,
+    );
     // ================= IPTV =================
     bool isIptv = currentSite.id == Sites.iptvSite;
     if (isIptv) {
@@ -238,7 +267,11 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
       return detail.value!;
     }
 
-    handleCurrentLineAndQuality(reloadDataType: reloadDataType, line: line, isReCalculate: isReCalculate);
+    handleCurrentLineAndQuality(
+      reloadDataType: reloadDataType,
+      line: line,
+      isReCalculate: isReCalculate,
+    );
 
     detail.value = null;
     detail.value = liveRoom;
@@ -266,7 +299,8 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
       const except = [Sites.kuaishouSite, Sites.iptvSite, Sites.ccSite];
 
-      if (!except.contains(liveRoom.platform) && SettingsService.to.danmaku.enableDanmakuDisplay.v) {
+      if (!except.contains(liveRoom.platform) &&
+          SettingsService.to.danmaku.enableDanmakuDisplay.v) {
         final needReconnect = _needReconnectDanmaku(liveRoom);
         if (needReconnect) {
           liveDanmaku.stop();
@@ -287,7 +321,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
       GlobalPlayerState.to.isWindowFullscreen.value = false;
 
       ToastUtil.show(
-        liveRoom.liveStatus == LiveStatus.banned ? i18n('server_error_retry_later') : i18n('stream_not_live'),
+        liveRoom.liveStatus == LiveStatus.banned
+            ? i18n('server_error_retry_later')
+            : i18n('stream_not_live'),
       );
 
       restoryQualityAndLines();
@@ -297,7 +333,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   }
 
   void switchRoom(LiveRoom newRoom) async {
-    bool sameRoom = detail.value?.roomId == newRoom.roomId && detail.value?.platform == newRoom.platform;
+    bool sameRoom =
+        detail.value?.roomId == newRoom.roomId &&
+        detail.value?.platform == newRoom.platform;
 
     if (!sameRoom) {
       messages.clear();
@@ -309,7 +347,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     }
 
     final manager = GlobalPlayerService.instance.playerManager;
-    manager.close();
+    await manager.close();
 
     success.value = false;
     isLiving.value = true;
@@ -331,7 +369,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     await EmojiManager.instance.preload(newRoom.platform!);
 
     onInitPlayerState(
-      reloadDataType: newRoom.platform == Sites.bilibiliSite ? ReloadDataType.changeLine : ReloadDataType.refreash,
+      reloadDataType: newRoom.platform == Sites.bilibiliSite
+          ? ReloadDataType.changeLine
+          : ReloadDataType.refreash,
     );
   }
 
@@ -360,7 +400,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     int line = 0,
     bool isReCalculate = true,
   }) {
-    if (reloadDataType == ReloadDataType.changeLine && isReCalculate && playUrls.isNotEmpty) {
+    if (reloadDataType == ReloadDataType.changeLine &&
+        isReCalculate &&
+        playUrls.isNotEmpty) {
       currentLineIndex.value = (currentLineIndex.value + 1) % playUrls.length;
     }
   }
@@ -390,7 +432,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
     liveDanmaku.onMessage = (msg) {
       if (msg.type == LiveMessageType.chat) {
-        if (SettingsService.to.fav.shieldList.v.every((e) => !msg.message.contains(e))) {
+        if (SettingsService.to.fav.shieldList.v.every(
+          (e) => !msg.message.contains(e),
+        )) {
           _addMessage(msg);
           if (rxVideoCtrl.value != null) {
             rxVideoCtrl.value!.sendDanmaku(msg);
@@ -436,7 +480,8 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
         "cache-control": "no-cache",
         "dnt": "1",
         "pragma": "no-cache",
-        "sec-ch-ua": '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
+        "sec-ch-ua":
+            '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
         "sec-ch-ua-mobile": "?0",
         "sec-ch-ua-platform": '"macOS"',
         "sec-fetch-dest": "document",
@@ -478,14 +523,22 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   // =========================================================
   // 切换清晰度
   // =========================================================
-  void setResolution(ReloadDataType reloadDataType, int qualityIndex, int lineIndex) {
-    GlobalPlayerService.instance.playerManager.close();
-    videoController.value?.destory();
+  Future<void> setResolution(
+    ReloadDataType reloadDataType,
+    int qualityIndex,
+    int lineIndex,
+  ) async {
+    await GlobalPlayerService.instance.playerManager.close();
+    await videoController.value?.destory();
 
     currentQuality.value = qualityIndex;
     currentLineIndex.value = lineIndex;
 
-    onInitPlayerState(reloadDataType: reloadDataType, line: currentLineIndex.value, isReCalculate: false);
+    onInitPlayerState(
+      reloadDataType: reloadDataType,
+      line: currentLineIndex.value,
+      isReCalculate: false,
+    );
   }
 
   // =========================================================
@@ -493,7 +546,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   // =========================================================
   Future<void> getPlayQualites() async {
     try {
-      var playQualites = await currentSite.liveSite.getPlayQualites(detail: detail.value!);
+      var playQualites = await currentSite.liveSite.getPlayQualites(
+        detail: detail.value!,
+      );
 
       if (playQualites.isEmpty) {
         ToastUtil.show(i18n('cannot_read_video_info'));
@@ -505,7 +560,8 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
       if (!hasUseDefaultResolution) {
         String userPrefer;
-        final List<ConnectivityResult> connectivityResult = await (Connectivity().checkConnectivity());
+        final List<ConnectivityResult> connectivityResult =
+            await (Connectivity().checkConnectivity());
 
         if (connectivityResult.contains(ConnectivityResult.mobile)) {
           userPrefer = SettingsService.to.player.preferResolutionCellular.v;
@@ -513,7 +569,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
           userPrefer = SettingsService.to.player.preferResolution.v;
         }
 
-        List<String> availableQualities = playQualites.map((e) => e.quality).toList();
+        List<String> availableQualities = playQualites
+            .map((e) => e.quality)
+            .toList();
         int matchedIndex = availableQualities.indexOf(userPrefer);
 
         // 尝试直接匹配用户偏好的分辨率
@@ -529,7 +587,8 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
         if (preferLevel == -1) preferLevel = 0;
 
         double preferRatio = preferLevel / (systemResolutions.length - 1);
-        int targetIndex = (preferRatio * (availableQualities.length - 1)).round();
+        int targetIndex = (preferRatio * (availableQualities.length - 1))
+            .round();
 
         targetIndex = targetIndex.clamp(0, availableQualities.length - 1);
         currentQuality.value = targetIndex;
@@ -591,7 +650,8 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
       webUrl = "https://www.douyu.com/${detail.value?.roomId}";
     } else if (site == Sites.ccSite) {
       log(detail.value!.userId.toString(), name: "cc_user_id");
-      naviteUrl = "cc://join-room/${detail.value?.roomId}/${detail.value?.userId}/";
+      naviteUrl =
+          "cc://join-room/${detail.value?.roomId}/${detail.value?.userId}/";
       webUrl = "https://cc.163.com/${detail.value?.roomId}";
     } else if (site == Sites.kuaishouSite) {
       naviteUrl =
@@ -610,10 +670,19 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     }
   }
 
-  Future<void> startCatchUp({required String catchUpUrl, int? startTime, int? endTime}) async {
+  Future<void> startCatchUp({
+    required String catchUpUrl,
+    int? startTime,
+    int? endTime,
+  }) async {
     var room = detail.value!;
     detail.value = null;
-    detail.value = room.copyWith(catchUpUrl: catchUpUrl, isCatchUp: true, catchUpStart: startTime, catchUpEnd: endTime);
+    detail.value = room.copyWith(
+      catchUpUrl: catchUpUrl,
+      isCatchUp: true,
+      catchUpStart: startTime,
+      catchUpEnd: endTime,
+    );
     await _switchToUrl(catchUpUrl);
   }
 

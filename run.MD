@@ -1,94 +1,114 @@
-# 构建与发布
+# 本地构建、测试与发布
 
-项目使用 Flutter `3.44.9`（Dart 3.11+）。推荐先安装 FVM，并在仓库根目录执行：
+本仓库采用“本机优先、Actions 手动兜底”的流程，固定使用 Flutter `3.44.9`。`pubspec.lock`、Git 依赖提交和 FFmpeg 产物地址均已固定，便于复现结果。
 
-```shell
-fvm install
-fvm flutter pub get
-fvm flutter analyze --no-fatal-infos --no-fatal-warnings
-fvm flutter test test/danmaku_settings_controller_test.dart
+## Windows 11 一键质量门禁
+
+仓库脚本依次执行锁定依赖解析、变更 Dart 文件格式检查、静态分析、完整测试和直播接口探测：
+
+```powershell
+PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
 ```
 
-## 本地构建
+`tool/flutterw.ps1` 按以下顺序寻找 Flutter：
 
-### Windows 便携版
+1. 环境变量 `PURE_LIVE_FLUTTER` 指向的 `flutter.bat`；
+2. `.fvm/flutter_sdk/bin/flutter.bat`；
+3. `%LOCALAPPDATA%\Codex\flutter\sdk-3.44.9\flutter\bin\flutter.bat`；
+4. `PATH` 中的 Flutter。
 
-```shell
-fvm flutter config --enable-windows-desktop
-fvm flutter build windows --release
+路径较长时脚本会临时映射空闲盘符，规避 FFmpeg Native Assets 在 Windows 上超过传统路径长度后的构建失败。
+
+Android 构建使用 JDK 17。脚本优先读取 `PURE_LIVE_JAVA_HOME`，其次使用 `%LOCALAPPDATA%\Codex\java\temurin-17*`；Android Studio 2026 自带的 JDK 25 不适用于当前 Gradle 8.14 / AGP 8.11.1 组合。
+
+Android 打包前会由 `tool/prefetch_android_native.ps1` 下载并逐一校验 media_kit 的四个 libmpv JAR，避免 Gradle 直接访问 GitHub Release 时因连接中断生成损坏缓存。
+
+Windows 的 `flutter_inappwebview_windows` 需要 `nuget.exe`。脚本会自动发现 `%LOCALAPPDATA%\Codex\nuget\nuget.exe` 或 `PATH` 中的 NuGet；建议从 `https://dist.nuget.org/` 下载并核验 Microsoft Authenticode 签名。
+
+## 一键生成安装包
+
+```powershell
+PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 ```
 
-产物目录：`build/windows/x64/runner/Release/`。
+默认生成：
 
-### Windows MSIX
+- Android `arm64-v8a`、`armeabi-v7a`、`x86_64` 分架构 APK；
+- Windows x64 便携 ZIP；
+- 安装了 Inno Setup 6 时，额外生成 Windows EXE 安装包；
+- 所有文件的 `SHA256SUMS.txt`。
 
-```shell
-fvm dart run msix:create --signtool-options "/td SHA256"
+产物位于 `local-artifacts/<version-build>/`，该目录不会提交到 Git。
+
+可选参数：`-SkipQuality`、`-SkipAndroid`、`-SkipWindows`、`-SkipInstaller`、`-UseOfficialRepositories`。
+
+本地打包默认通过临时 Gradle init script 优先使用阿里云 Maven 镜像，并保留 Google/Maven Central 回退，解决国内网络的 TLS 中断；`-UseOfficialRepositories` 会只使用项目声明的官方仓库。该设置仅对当前脚本进程生效，不改全局 Gradle 配置。
+
+### Android 正式签名
+
+在 `android/key.properties` 中配置以下字段，密钥文件放在仓库外部：
+
+```properties
+storeFile=C:/secure/path/pure-live-release.jks
+storePassword=...
+keyPassword=...
+keyAlias=...
 ```
 
-### Android 通用
+未配置时，本地 release 构建使用 Android 调试签名，并自动改用 `com.mystyle.purelive.qa` 与“纯粹直播 QA”名称，可和手机上的正式版并存。QA APK 文件名包含 `qa-debug-signed`，本地发布脚本默认阻止其进入正式 Release。
 
-```shell
-fvm flutter build apk --release
+将 QA 包安装到已连接的 Android 设备并完成启动探测：
+
+```powershell
+PowerShell -ExecutionPolicy Bypass -File .\tool\install_android_qa.ps1
 ```
 
-### Android 分包
+正式发布时使用 `-RequireReleaseSigning`，缺少或不完整的外部签名配置会在构建前终止：
 
-```shell
-fvm flutter build apk --release --split-per-abi
+```powershell
+PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 -RequireReleaseSigning
 ```
 
-### macOS 打包
+## 单独命令
 
-```shell
-fvm flutter build macos --release
+```powershell
+.\tool\flutterw.ps1 pub get --enforce-lockfile
+.\tool\flutterw.ps1 analyze --no-fatal-infos --no-fatal-warnings
+.\tool\flutterw.ps1 test
+python .\tool\interface_probe.py
+.\tool\flutterw.ps1 build apk --release --split-per-abi
+.\tool\flutterw.ps1 build windows --release
 ```
 
-如果想打包 dmg，则需要运行以下命令：
+## 从本地产物发布 GitHub Release
 
-```shell
-python3 -m venv .venv
+提交并推送代码后，可由本机直接上传产物，不占用 Actions 构建分钟：
 
-# Windows
-.venv\Scripts\activate
-# Unix/Linux/MacOS
-source .venv/bin/activate
-
-pip install dmgbuild
-fvm dart run dmg --no-sign --no-notarization
+```powershell
+PowerShell -ExecutionPolicy Bypass -File .\tool\publish_local_release.ps1 `
+  -Tag v2.0.24 -CreateTag
 ```
 
-> 参考链接：https://pub.dev/packages/dmg
+脚本要求工作树已提交，并通过 GitHub CLI 当前登录身份创建或更新 Release。
 
 ## GitHub Actions
 
-`.github/workflows/feature-build.yml` 提供以下自动化流程：
+`.github/workflows/feature-build.yml` 只支持手动触发，可选择 Android 和 Windows 构建；它始终先运行完整静态分析、测试与接口探测。产物仅保留 3 天。
 
-1. 功能分支 `agent/**` 推送或 Pull Request：运行格式检查、静态分析、专项测试、Android 分架构 APK 和 Windows 便携版构建。
-2. 推送 `v*` 标签：完成同一套质量门禁和构建后，自动创建 GitHub Release。
-3. Release 同时上传三个 Android APK、Windows ZIP 与 `SHA256SUMS.txt`。
-
-Android 正式发布使用以下 GitHub Actions Secrets：
+Android 手动云构建要求以下 Secrets：
 
 - `PURELIVE_KEYSTORE_BASE64`
 - `PURELIVE_STORE_PASSWORD`
 - `PURELIVE_KEY_PASSWORD`
 - `PURELIVE_KEY_ALIAS`
 
-普通分支在 Secrets 缺失时会生成临时测试签名；标签发布会校验正式发布签名配置。
+`.github/workflows/update_releases.yml` 同样只支持手动触发，不再每日消耗 Actions 配额。仓库不再通过标签自动构建或发布。
 
-旧的 `.github/workflows/release.yml` 保留为手动的多平台签名发布流程，不响应标签推送，避免同一标签重复创建 Release。
+## 发布检查清单
 
-## 发布新版本
-
-1. 同步 `pubspec.yaml`、`assets/version.json` 和 `RELEASE_NOTES.md` 的版本与更新内容。
-2. 确认 `master` 已包含待发布提交，并已推送到远端。
-3. 创建并推送标签，例如：
-
-```shell
-git tag -a v2.0.23 -m "Pure Live v2.0.23"
-git push origin v2.0.23
-```
-
-4. 在 Actions 页面确认 `build-and-release` 的质量、Android、Windows 和 Release 四个任务全部通过。
-5. 在 [Releases](https://github.com/wzgrx/pure_live/releases) 核对附件与 SHA256 校验文件。
+1. 更新 `pubspec.yaml`、`assets/version.json` 与 `RELEASE_NOTES.md`。
+2. 运行 `tool/local_ci.ps1`。
+3. 运行 `tool/build_local_release.ps1`，核对 APK、EXE/ZIP 和 SHA-256。
+4. 运行 `tool/install_android_qa.ps1` 在真机并存安装并启动 QA 包；正式版升级必须使用同一发布签名。
+5. 提交并推送 `master`，再运行 `tool/publish_local_release.ps1`。
+6. 在 [Releases](https://github.com/wzgrx/pure_live/releases) 核对附件和校验文件。

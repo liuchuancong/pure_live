@@ -44,8 +44,11 @@ class PlayerManager {
     required this.preloadManager,
     required this.lineManager,
   }) {
-    isInPip.listen((value) {
+    _pipStateSubscription = isInPip.listen((value) {
       GlobalPlayerState.to.isPipMode.value = value;
+      if (!value && !isFloating.value && !_appFloatingPrepared) {
+        _videoController?.clearPipDanmaku();
+      }
     });
   }
 
@@ -78,6 +81,7 @@ class PlayerManager {
 
   final List<StreamSubscription> _subscriptions = [];
   StreamSubscription<PiPStatus>? _pipSubscription;
+  StreamSubscription<bool>? _pipStateSubscription;
 
   bool _disposed = false;
   bool _isSwitchingDueToFallback = false;
@@ -91,7 +95,8 @@ class PlayerManager {
   bool _appFloatingPrepared = false;
 
   UnifiedPlayer? get currentPlayer => _currentPlayer;
-  PlayerEngine get currentEngine => _runtimeEngine ?? _defaultEngine ?? PlayerEngine.mediaKit;
+  PlayerEngine get currentEngine =>
+      _runtimeEngine ?? _defaultEngine ?? PlayerEngine.mediaKit;
   Stream<PlayerState> get onStateChanged => _stateSubject.stream;
   Stream<bool> get onPlaying => _playingSubject.stream;
   Stream<bool> get onLoading => _loadingSubject.stream;
@@ -100,7 +105,10 @@ class PlayerManager {
   Stream<int?> get width => _widthSubject.stream;
   Stream<int?> get height => _heightSubject.stream;
   bool get isPlayingNow => _playingSubject.value;
-  bool get shouldKeepDanmakuForAppFloating => _appFloatingPrepared || isFloating.value;
+  bool get shouldKeepDanmakuForAppFloating =>
+      _appFloatingPrepared || isFloating.value;
+  bool get isCompactModeActive =>
+      isInPip.value || isFloating.value || _appFloatingPrepared;
 
   void attachVideoController(VideoController controller) {
     _videoController = controller;
@@ -120,7 +128,9 @@ class PlayerManager {
 
   Widget _buildCompactDanmaku() {
     final controller = _videoController;
-    return controller == null ? const SizedBox.shrink() : CompactDanmakuOverlay(controller: controller);
+    return controller == null
+        ? const SizedBox.shrink()
+        : CompactDanmakuOverlay(controller: controller);
   }
 
   void _releaseAppFloatingResources() {
@@ -128,6 +138,9 @@ class PlayerManager {
     final disposer = _floatingDanmakuDisposer;
     _floatingDanmakuDisposer = null;
     disposer?.call();
+    if (!isInPip.value && !isFloating.value) {
+      _videoController?.clearPipDanmaku();
+    }
   }
 
   double get currentVideoRatio {
@@ -137,7 +150,10 @@ class PlayerManager {
     return w / h;
   }
 
-  Future<void> initialize({PlayerEngine engine = PlayerEngine.mediaKit, bool audioOnly = false}) async {
+  Future<void> initialize({
+    PlayerEngine engine = PlayerEngine.mediaKit,
+    bool audioOnly = false,
+  }) async {
     if (_disposed) return;
     _stateSubject.add(PlayerState.initializing);
     try {
@@ -184,10 +200,15 @@ class PlayerManager {
     }
     if (_currentPlayer == null || _runtimeEngine == null) {
       final String savedKey = SettingsService.to.player.videoPlayerKey.v;
-      final String validKey = PlayerConsts.engines.containsKey(savedKey) ? savedKey : PlayerConsts.defaultKey;
+      final String validKey = PlayerConsts.engines.containsKey(savedKey)
+          ? savedKey
+          : PlayerConsts.defaultKey;
       _defaultEngine = PlayerConsts.engines[validKey]!;
       _runtimeEngine = _defaultEngine;
-      log('No current player, initializing with default engine: _defaultEngine', name: 'PlayerManager');
+      log(
+        'No current player, initializing with default engine: $_defaultEngine',
+        name: 'PlayerManager',
+      );
       await initialize(engine: _defaultEngine!, audioOnly: audioOnly);
     } else if (_runtimeEngine != _defaultEngine && !_isSwitchingDueToFallback) {
       await switchEngine(_defaultEngine!, isManual: false);
@@ -197,7 +218,10 @@ class PlayerManager {
 
     final player = _currentPlayer;
     if (player == null) {
-      throw PlayerException(message: 'Current player is null', type: PlayerErrorType.lifecycle);
+      throw PlayerException(
+        message: 'Current player is null',
+        type: PlayerErrorType.lifecycle,
+      );
     }
 
     String targetUrl = url;
@@ -220,7 +244,9 @@ class PlayerManager {
         },
       );
       try {
-        final pipePath = await completer.future.timeout(const Duration(seconds: 30));
+        final pipePath = await completer.future.timeout(
+          const Duration(seconds: 30),
+        );
         await Future.delayed(const Duration(seconds: 2));
         if (!_isSessionValid(mySessionId)) {
           audioLoader.stop();
@@ -231,7 +257,10 @@ class PlayerManager {
       } catch (e) {
         audioLoader.stop();
         if (!_isSessionValid(mySessionId)) return;
-        throw PlayerException(message: 'Audio pipe init timeout', type: PlayerErrorType.unknown);
+        throw PlayerException(
+          message: 'Audio pipe init timeout',
+          type: PlayerErrorType.unknown,
+        );
       }
     } else if (!audioOnly) {
       audioLoader.stop();
@@ -245,12 +274,25 @@ class PlayerManager {
 
     try {
       _stateSubject.add(PlayerState.preparing);
-      await player.setDataSource(targetUrl, targetPlayUrls, headers, room: room, audioOnly: audioOnly);
+      await player.setDataSource(
+        targetUrl,
+        targetPlayUrls,
+        headers,
+        room: room,
+        audioOnly: audioOnly,
+      );
       if (!_isSessionValid(mySessionId)) return;
 
       LiveAudioService.setPlayer(player);
-      LiveAudioService.start(room!.roomId!, room.nick ?? "", room.title ?? "", room.avatar);
-      videoKey.value = ValueKey("video_{DateTime.now().millisecondsSinceEpoch}");
+      LiveAudioService.start(
+        room!.roomId!,
+        room.nick ?? "",
+        room.title ?? "",
+        room.avatar,
+      );
+      videoKey.value = ValueKey(
+        "video_${DateTime.now().millisecondsSinceEpoch}",
+      );
       _stateSubject.add(PlayerState.ready);
     } on PlayerException catch (e) {
       if (!_isHandlingError && _isSessionValid(mySessionId)) {
@@ -274,10 +316,18 @@ class PlayerManager {
 
   Future<void> replay() async {
     if (_currentUrl == null) return;
-    await play(_currentUrl!, _currentPlayUrls, _currentHeaders, room: currentFloatRoom);
+    await play(
+      _currentUrl!,
+      _currentPlayUrls,
+      _currentHeaders,
+      room: currentFloatRoom,
+    );
   }
 
-  Future<void> switchEngine(PlayerEngine engine, {bool isManual = false}) async {
+  Future<void> switchEngine(
+    PlayerEngine engine, {
+    bool isManual = false,
+  }) async {
     if (_disposed || _isClosing) return;
     if (_runtimeEngine == engine && _currentPlayer != null) return;
     try {
@@ -288,13 +338,15 @@ class PlayerManager {
       _currentPlayer = newPlayer;
       _runtimeEngine = engine;
       if (isManual) _defaultEngine = engine;
-      log('Switch engine to engine', name: 'PlayerManager');
+      log('Switch engine to $engine', name: 'PlayerManager');
       await _bindPlayerStreams(newPlayer);
       LiveAudioService.setPlayer(_currentPlayer!);
       if (oldPlayer != null && oldEngine != null) {
         await _safeDestroyPlayer(oldPlayer, oldEngine);
       }
-      videoKey.value = ValueKey("video_{DateTime.now().millisecondsSinceEpoch}");
+      videoKey.value = ValueKey(
+        "video_${DateTime.now().millisecondsSinceEpoch}",
+      );
     } catch (e, s) {
       final exception = PlayerException(
         message: 'Switch engine failed',
@@ -307,16 +359,23 @@ class PlayerManager {
     }
   }
 
-  Future<void> _safeDestroyPlayer(UnifiedPlayer player, PlayerEngine engine) async {
+  Future<void> _safeDestroyPlayer(
+    UnifiedPlayer player,
+    PlayerEngine engine,
+  ) async {
     try {
       await player.hardDispose();
       await playerPool.removeFromCache(engine);
     } catch (e, s) {
-      log("destroy player error: e", stackTrace: s);
+      log("destroy player error: $e", stackTrace: s);
     }
   }
 
-  Future<void> preload(String url, List<String> playUrls, Map<String, String> headers) async {
+  Future<void> preload(
+    String url,
+    List<String> playUrls,
+    Map<String, String> headers,
+  ) async {
     if (_disposed || _isClosing) return;
     final standby = await playerPool.getPlayer(_runtimeEngine!);
     await preloadManager.preload(standby, url, playUrls, headers);
@@ -359,7 +418,9 @@ class PlayerManager {
     if (PlatformUtils.isAndroid) {
       final status = await floating.pipStatus;
       if (status == PiPStatus.disabled) {
-        final rational = isVerticalVideo.value ? Rational.vertical() : Rational.landscape();
+        final rational = isVerticalVideo.value
+            ? Rational.vertical()
+            : Rational.landscape();
         await floating.enable(ImmediatePiP(aspectRatio: rational));
       }
     } else if (Platform.isWindows) {
@@ -419,11 +480,17 @@ class PlayerManager {
             width: floatWidth,
             height: floatHeight,
             clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Colors.black),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: Colors.black,
+            ),
             child: Stack(
               children: [
                 Positioned.fill(
-                  child: getVideoWidget(videoFitIndex.value, fitList: SettingsService.to.player.videoFitArray),
+                  child: getVideoWidget(
+                    videoFitIndex.value,
+                    fitList: SettingsService.to.player.videoFitArray,
+                  ),
                 ),
                 Positioned.fill(child: _buildCompactDanmaku()),
                 Positioned.fill(
@@ -432,7 +499,9 @@ class PlayerManager {
                     onTap: () {
                       closeAppFloating();
                       if (currentFloatRoom != null) {
-                        AppNavigator.toLiveRoomDetail(liveRoom: currentFloatRoom!);
+                        AppNavigator.toLiveRoomDetail(
+                          liveRoom: currentFloatRoom!,
+                        );
                       }
                     },
                     child: const SizedBox.expand(),
@@ -451,9 +520,13 @@ class PlayerManager {
                           var isPlay = snapshot.data ?? true;
                           return IconButton(
                             iconSize: 42,
-                            style: IconButton.styleFrom(backgroundColor: Colors.black45),
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.black45,
+                            ),
                             icon: Icon(
-                              isPlay ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                              isPlay
+                                  ? Icons.pause_circle_filled
+                                  : Icons.play_circle_filled,
                               color: Colors.white,
                             ),
                             onPressed: () {
@@ -478,8 +551,14 @@ class PlayerManager {
                         child: IconButton(
                           constraints: const BoxConstraints(),
                           padding: const EdgeInsets.all(4),
-                          style: IconButton.styleFrom(backgroundColor: Colors.black45),
-                          icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.black45,
+                          ),
+                          icon: const Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                           onPressed: () async {
                             await stop();
                           },
@@ -495,7 +574,11 @@ class PlayerManager {
         right: 50,
         top: 100,
         slideType: FloatingEdgeType.onRightAndTop,
-        params: FloatingParams(isSnapToEdge: false, snapToEdgeSpace: 10, dragOpacity: 0.8),
+        params: FloatingParams(
+          isSnapToEdge: false,
+          snapToEdgeSpace: 10,
+          dragOpacity: 0.8,
+        ),
       ),
     );
     floatingManager.getFloating(_floatTag).open(Get.context!);
@@ -512,6 +595,9 @@ class PlayerManager {
     }
     isFloating.value = false;
     _releaseAppFloatingResources();
+    if (!isInPip.value) {
+      _videoController?.clearPipDanmaku();
+    }
   }
 
   Widget buildPiPOverlay() {
@@ -531,7 +617,10 @@ class PlayerManager {
                 onDoubleTap: () async {
                   await exitPip();
                 },
-                child: getVideoWidget(videoFitIndex.value, fitList: SettingsService.to.player.videoFitArray),
+                child: getVideoWidget(
+                  videoFitIndex.value,
+                  fitList: SettingsService.to.player.videoFitArray,
+                ),
               ),
               Positioned.fill(child: _buildCompactDanmaku()),
               Center(
@@ -546,9 +635,13 @@ class PlayerManager {
                         var isPlay = snapshot.data ?? true;
                         return IconButton(
                           iconSize: 42,
-                          style: IconButton.styleFrom(backgroundColor: Colors.black45),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.black45,
+                          ),
                           icon: Icon(
-                            isPlay ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                            isPlay
+                                ? Icons.pause_circle_filled
+                                : Icons.play_circle_filled,
                             color: Colors.white,
                           ),
                           onPressed: () {
@@ -583,13 +676,18 @@ class PlayerManager {
     );
   }
 
-  Widget buildAudioOnlyUI(BuildContext context, LivePlayController livePlayController) {
+  Widget buildAudioOnlyUI(
+    BuildContext context,
+    LivePlayController livePlayController,
+  ) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxWidth = constraints.maxWidth;
         final maxHeight = constraints.maxHeight;
         final compact = maxHeight < 500;
-        final avatarSize = compact ? (maxHeight * 0.22).clamp(50.0, 76.0) : 100.0;
+        final avatarSize = compact
+            ? (maxHeight * 0.22).clamp(50.0, 76.0)
+            : 100.0;
         final titleSize = compact ? 14.0 : 22.0;
         final nickSize = compact ? 11.0 : 13.0;
         final badgeTextSize = compact ? 11.0 : 13.0;
@@ -603,8 +701,13 @@ class PlayerManager {
           alignment: Alignment.center,
           color: Colors.transparent,
           child: SingleChildScrollView(
-            physics: compact ? const ClampingScrollPhysics() : const NeverScrollableScrollPhysics(),
-            padding: EdgeInsets.symmetric(horizontal: compact ? 16 : 24, vertical: compact ? 4 : 24),
+            physics: compact
+                ? const ClampingScrollPhysics()
+                : const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.symmetric(
+              horizontal: compact ? 16 : 24,
+              vertical: compact ? 4 : 24,
+            ),
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: compact ? maxWidth : 460),
               child: Column(
@@ -624,7 +727,10 @@ class PlayerManager {
                       height: avatarSize,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.5),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          width: 1.5,
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.white.withValues(alpha: 0.04),
@@ -638,7 +744,10 @@ class PlayerManager {
                           livePlayController.detail.value?.avatar ?? '',
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Remix.user_3_line, color: Colors.white24),
+                              const Icon(
+                                Remix.user_3_line,
+                                color: Colors.white24,
+                              ),
                         ),
                       ),
                     ),
@@ -662,11 +771,16 @@ class PlayerManager {
                   ),
                   SizedBox(height: gapSmall),
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 14, vertical: compact ? 2 : 5),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: compact ? 8 : 14,
+                      vertical: compact ? 2 : 5,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.06),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.08),
+                      ),
                     ),
                     child: Text(
                       livePlayController.detail.value?.nick ?? '',
@@ -679,11 +793,16 @@ class PlayerManager {
                   ),
                   SizedBox(height: gapMedium),
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 16, vertical: compact ? 5 : 8),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: compact ? 10 : 16,
+                      vertical: compact ? 5 : 8,
+                    ),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(30),
                       color: Colors.white.withValues(alpha: 0.08),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -715,8 +834,13 @@ class PlayerManager {
     );
   }
 
-  Widget getVideoWidget(int fitIndex, {Widget? controls, required List<BoxFit> fitList}) {
-    final LivePlayController livePlayController = Get.find<LivePlayController>();
+  Widget getVideoWidget(
+    int fitIndex, {
+    Widget? controls,
+    required List<BoxFit> fitList,
+  }) {
+    final LivePlayController livePlayController =
+        Get.find<LivePlayController>();
     return PureLivePipWidget(
       child: Container(
         color: Colors.black,
@@ -749,9 +873,15 @@ class PlayerManager {
                             child: StreamBuilder<List<int?>>(
                               stream: CombineLatestStream.list([width, height]),
                               builder: (context, snapshot) {
-                                final vW = snapshot.data?[0]?.toDouble() ?? 1920.0;
-                                final vH = snapshot.data?[1]?.toDouble() ?? 1080.0;
-                                return SizedBox(width: vW, height: vH, child: _currentPlayer!.getVideoWidget());
+                                final vW =
+                                    snapshot.data?[0]?.toDouble() ?? 1920.0;
+                                final vH =
+                                    snapshot.data?[1]?.toDouble() ?? 1080.0;
+                                return SizedBox(
+                                  width: vW,
+                                  height: vH,
+                                  child: _currentPlayer!.getVideoWidget(),
+                                );
                               },
                             ),
                           ),
@@ -765,7 +895,11 @@ class PlayerManager {
             if (!Platform.isAndroid) {
               return content;
             }
-            return PiPSwitcher(floating: floating, childWhenEnabled: content, childWhenDisabled: content);
+            return PiPSwitcher(
+              floating: floating,
+              childWhenEnabled: content,
+              childWhenDisabled: content,
+            );
           },
         ),
       ),
@@ -775,7 +909,12 @@ class PlayerManager {
   Widget _buildPlaceholder() {
     return Container(
       color: Colors.black,
-      child: AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", iconColor: Colors.white),
+      child: AppStatusView(
+        type: AppStatusType.loading,
+        title: "",
+        subtitle: "",
+        iconColor: Colors.white,
+      ),
     );
   }
 
@@ -784,7 +923,9 @@ class PlayerManager {
     _isClosing = true;
     await LiveAudioService.stop();
     audioLoader.stop();
-    SettingsService.to.player.useHardStopOnExit.v ? await hardDispose() : await softStop();
+    SettingsService.to.player.useHardStopOnExit.v
+        ? await hardDispose()
+        : await softStop();
     _isClosing = false;
   }
 
@@ -821,7 +962,7 @@ class PlayerManager {
   Future<void> _handleError(PlayerException error, {int? sessionId}) async {
     if (_disposed || _isClosing) return;
     if (_isHandlingError) {
-      log("skip duplicated error handling: {error.message}");
+      log("skip duplicated error handling: ${error.message}");
       return;
     }
     final mySessionId = sessionId ?? _sessionId;
@@ -834,7 +975,8 @@ class PlayerManager {
       _stateSubject.add(PlayerState.error);
 
       bool lineSwitched = false;
-      if ((error.type == PlayerErrorType.network || error.type == PlayerErrorType.source) &&
+      if ((error.type == PlayerErrorType.network ||
+              error.type == PlayerErrorType.source) &&
           _currentPlayUrls.length > 1) {
         lineManager.markFailed(_currentUrl!);
         if (!lineManager.hasAvailable(_currentPlayUrls)) {
@@ -843,10 +985,15 @@ class PlayerManager {
           final nextLine = lineManager.next(_currentPlayUrls);
           if (nextLine != _currentUrl) {
             lineSwitched = true;
-            log("switch line => nextLine");
+            log("switch line => $nextLine");
             await Future.delayed(const Duration(seconds: 2));
             if (!_isSessionValid(mySessionId)) return;
-            await play(nextLine, _currentPlayUrls, _currentHeaders, room: currentFloatRoom);
+            await play(
+              nextLine,
+              _currentPlayUrls,
+              _currentHeaders,
+              room: currentFloatRoom,
+            );
             return;
           }
         }
@@ -854,9 +1001,14 @@ class PlayerManager {
 
       log(error.type.toString());
       if (!lineSwitched && fallbackManager.shouldFallback(error)) {
-        final nextEngine = await fallbackManager.fallback(_runtimeEngine!, error);
+        final nextEngine = await fallbackManager.fallback(
+          _runtimeEngine!,
+          error,
+        );
         if (nextEngine == _runtimeEngine) {
-          log("skip fallback: nextEngine(${nextEngine.name}) == currentEngine(${_runtimeEngine?.name})");
+          log(
+            "skip fallback: nextEngine(${nextEngine.name}) == currentEngine(${_runtimeEngine?.name})",
+          );
           return;
         }
         log(
@@ -916,7 +1068,7 @@ class PlayerManager {
     _subscriptions.add(
       player.onError.listen((error) {
         if (!_isHandlingError) {
-          _handleError(error);
+          unawaited(_handleError(error));
         }
       }),
     );
@@ -956,7 +1108,8 @@ class PlayerManager {
     _isClosing = true;
     _hideTimer?.cancel();
     closeAppFloating();
-    _pipSubscription?.cancel();
+    await _pipSubscription?.cancel();
+    await _pipStateSubscription?.cancel();
     await _clearSubscriptions();
     await playerPool.disposeAll();
     await Future.wait([

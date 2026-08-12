@@ -7,5 +7,5 @@ capabilities: internetClient
 languages: zh-cn
 install_certificate: "false"
 certificate_path: ${MSIX_CERT_PATH}
-certificate_password: xxxx
+certificate_password: ${MSIX_CERT_PASSWORD}
 signtool_options: /td SHA256

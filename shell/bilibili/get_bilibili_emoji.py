@@ -7,13 +7,16 @@ from concurrent.futures import ThreadPoolExecutor
 # Bilibili 官方表情接口
 API_URL_BILIBILI = "https://api.live.bilibili.com/xlive/web-ucenter/v2/emoticon/GetEmoticons?platform=pc&room_id=24158116"
 
+BILIBILI_COOKIE = os.environ.get("BILIBILI_COOKIE", "").strip()
+
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "Accept": "application/json, text/plain, */*",
     "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
     "Connection": "keep-alive",
-    "Cookie":  "buvid3=3CA40A72-FB82-B6AF-FD4D-F97C748CE51116816infoc; b_nut=1767097716; theme_style=light; _uuid=81792DB3-5F37-CB16-D96A-C210510B310FEB513111infoc; buvid_fp=5cafd03fba7f3aa062d87ea6244f1dfe; buvid4=7C18E803-C361-D840-3880-BCC00A511C0C17769-025123020-NhzsO055o6/hPhqHoqbCrrRQ7QAEqOM/R7eq566XUPgBCnQV6SeTyKLUJrlKtA1j; rpdid=0zbfAI3bnj|Q3STAq3a|3sF|3w1VAyQa; DedeUserID=22836336; DedeUserID__ckMd5=b0d5d8a0e137e5b5; theme-tip-show=SHOWED; CURRENT_QUALITY=80; CURRENT_FNVAL=2000; SESSDATA=b14a2354%2C1795523735%2Caadce%2A51CjDNj7QrxkVa3xBGcTkSoYDLLkoqh__KEPV6My7DZeU17r8vOvhgJ_w7B4i3KQWzysISVnV2MTAxMzdPWUdSR1RYUGVuc3JaYkVpN0xkaGVocDB3b1MxOXZqdS1ubXVzc3dnNkEyTmRvQjlTcFNvZ0JNbUhmazlHZ25wYmZKNzlxWWdHSGgyRVFnIIEC; bili_jct=e9be39f228c761a5ab2ceff1c4030ac1; sid=8nsz7trr; bili_ticket=eyJhbGciOiJIUzI1NiIsImtpZCI6InMwMyIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3ODAyMzA5NDAsImlhdCI6MTc3OTk3MTY4MCwicGx0IjotMX0.eQvTvWG9XWY6FgUtZVkdEFqwUHya6pRLLjuRAtPTk0M; bili_ticket_expires=1780230880; LIVE_BUVID=AUTO5217799717405232; home_feed_column=5; browser_resolution=1611-848; PVID=8; bp_t_offset_22836336=1208258224025763840; b_lsid=23E4EFED_19E79AE890E"
 }
+if BILIBILI_COOKIE:
+    HEADERS["Cookie"] = BILIBILI_COOKIE
 # ======================================================
 
 def _find_flutter_root(start_dir):

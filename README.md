@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://github.com/wzgrx/pure_live/releases/latest"><img alt="Latest Release" src="https://img.shields.io/github/v/release/wzgrx/pure_live"></a>
-  <img alt="Build" src="https://github.com/wzgrx/pure_live/actions/workflows/feature-build.yml/badge.svg">
+  <img alt="Manual Build" src="https://github.com/wzgrx/pure_live/actions/workflows/feature-build.yml/badge.svg">
   <img alt="License" src="https://img.shields.io/github/license/wzgrx/pure_live?color=blue">
   <img alt="Downloads" src="https://img.shields.io/github/downloads/wzgrx/pure_live/total?style=flat-square">
 </p>
@@ -66,10 +66,10 @@
 
 ## 🛡️ 隐私策略
 
-- 本应用 **不开源收集任何用户隐私数据**。  
-- 所有请求均直接发往官方接口（如 Bilibili、Douyu 等），**无中间代理或数据中转**。  
-- 用户 Cookie 仅用于本地身份认证（如 B站高清直播），**不会上传或存储到任何服务器**。  
-- 应用无广告、无追踪、无后台服务。若杀毒软件误报，请自行判断或拒绝使用。
+- 项目未集成广告或行为追踪 SDK；直播请求主要发往对应平台，登录、版本更新和用户主动配置的同步功能会访问 Firebase、GitHub 或 WebDAV。
+- 用户 Cookie 用于对应平台的身份认证。自备份格式 v3 起，本地导出、Firebase、WebDAV 和 TV 同步默认排除 Cookie 与 WebDAV 凭据；旧版备份可能含有这些字段，请妥善保管。
+- Android 在后台音频播放时会启用媒体播放前台服务，并显示系统通知；关闭播放后释放相关资源。
+- Android 已关闭系统级应用数据备份，避免系统云备份复制本地会话数据。
 
 ---
 
@@ -83,7 +83,7 @@
 
 ### 🔑 Bilibili 高清直播
 因平台限制，观看高清直播需登录。  
-您可通过应用内“三方认证”获取 Cookie，**仅用于本地请求，不上传任何信息**。
+您可通过应用内“三方认证”获取 Cookie。Cookie 用于对应平台请求，并默认从所有同步和导出备份中剔除。
 
 ### 💬 小窗弹幕
 
@@ -110,11 +110,11 @@
 
 - 最新稳定构建：[GitHub Releases](https://github.com/wzgrx/pure_live/releases/latest)
 - Android：按设备架构选择 `arm64-v8a`、`armeabi-v7a` 或 `x86_64` APK。
-- Windows：下载 `PureLive-pip-danmaku-windows-x64.zip`，解压后直接运行。
+- Windows：下载 `PureLive-*-windows-x64-setup.exe` 安装，或使用 `PureLive-*-windows-x64-portable.zip` 便携包。
 - 完整性校验：每个 Release 附带 `SHA256SUMS.txt`。
-- 开发构建和发布流程见 [run.MD](run.MD)。
+- 本仓库优先使用本机构建以节省 Actions 配额；开发、测试和本地发布流程见 [run.MD](run.MD)。
 
-> Android Release 使用本仓库专用的持续集成签名。已有其他签名来源的同包名应用时，请先备份应用数据，再安装本仓库版本。
+> 正式 Android Release 必须使用仓库专用签名。本地未配置正式密钥时，脚本生成包名为 `com.mystyle.purelive.qa` 的调试签名 QA 包，可与已安装的正式版并存；QA 包不会被本地发布脚本误传到正式 Release。
 
 ---
 
