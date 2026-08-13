@@ -11,6 +11,8 @@ on:
 jobs:
   build-android:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     strategy:
       matrix:
         branch: [master]
@@ -54,6 +56,8 @@ jobs:
           retention-days: 1
   build-windows:
     runs-on: windows-latest
+    permissions:
+      contents: write
     strategy:
       matrix:
         branch: [master]
