@@ -28,7 +28,7 @@ jobs:
 
     steps:
       - name: 签出代码
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ matrix.branch }}
 
@@ -47,7 +47,7 @@ jobs:
           echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
 
       - name: 设置JAVA环境
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: "17"
@@ -77,7 +77,7 @@ jobs:
           fi
 
       - name: 上传 APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android-apks-${{ matrix.branch }}
           path: build/app/outputs/flutter-apk/*.apk
@@ -96,7 +96,7 @@ jobs:
 
     steps:
       - name: 签出代码
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ matrix.branch }}
 
@@ -226,7 +226,7 @@ jobs:
           }
 
       - name: 上传 Windows 安装包
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-installer-${{ matrix.branch }}
           path: |
@@ -247,7 +247,7 @@ jobs:
 
     steps:
       - name: 签出代码
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ matrix.branch }}
 
@@ -295,7 +295,7 @@ jobs:
             "build/macos/Build/Products/Release/纯粹直播.app"
 
       - name: 上传 DMG
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: macos-dmg-${{ matrix.branch }}
           path: PureLive-*.dmg
@@ -319,7 +319,7 @@ jobs:
 
     steps:
       - name: 签出代码
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: master
       - name: 计算 Tag
@@ -437,14 +437,14 @@ jobs:
     steps:
     # 1. 检出仓库代码（显式指定 master 分支，并拉取所有历史以便合并）
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         ref: master
         fetch-depth: 0
 
     # 2. 设置 Python 环境
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v7
       with:
         python-version: '3.10'
 
