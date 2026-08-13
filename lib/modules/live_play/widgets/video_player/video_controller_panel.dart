@@ -589,23 +589,25 @@ class DanmakuViewer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(
-      () => FlameBarrageWidget(
-        controller: controller.danmakuController,
-        config: BarrageConfig(
-          fontSize: controller.danmakuFontSize.value,
-          topAreaDistance: controller.danmakuTopArea.value,
-          area: controller.danmakuArea.value,
-          bottomAreaDistance: controller.danmakuBottomArea.value,
-          baseSpeed: controller.danmakuSpeed.value,
-          opacity: controller.danmakuOpacity.value,
-          fontWeight: FontWeight.values[controller.danmakuFontBorder.value],
-          showStroke: controller.enableDanmakuStroke.value,
-          fps: controller.danmakuFps.value,
-          fontFamily: controller.danmakuFontFamilyName.value,
-          pictureCacheMaxSize: 9999,
-          barragePoolMaxSize: 300,
+      () => RepaintBoundary(
+        child: FlameBarrageWidget(
+          controller: controller.danmakuController,
+          config: BarrageConfig(
+            fontSize: controller.danmakuFontSize.value,
+            topAreaDistance: controller.danmakuTopArea.value,
+            area: controller.danmakuArea.value,
+            bottomAreaDistance: controller.danmakuBottomArea.value,
+            baseSpeed: controller.danmakuSpeed.value,
+            opacity: controller.danmakuOpacity.value,
+            fontWeight: FontWeight.values[controller.danmakuFontBorder.value],
+            showStroke: controller.enableDanmakuStroke.value,
+            fps: controller.danmakuFps.value,
+            fontFamily: controller.danmakuFontFamilyName.value,
+            pictureCacheMaxSize: 600,
+            barragePoolMaxSize: 300,
+          ),
+          emojiAtlas: EmojiAtlas.instance,
         ),
-        emojiAtlas: EmojiAtlas.instance,
       ),
     );
   }

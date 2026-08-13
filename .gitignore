@@ -2,6 +2,7 @@
 *.class
 *.log
 *.pyc
+__pycache__/
 *.swp
 .DS_Store
 .atom/
@@ -35,6 +36,7 @@ migrate_working_dir/
 /android/build/
 /android/.gradle/
 /local-artifacts/
+/local-smoke/
 /.local-build/
 /build-audit-*
 

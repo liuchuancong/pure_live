@@ -2,7 +2,7 @@
   "version": "2.0.24",
   "build_number": 35,
   "version_num": 2002435,
-  "version_desc": "- 完善本机优先的 Android、Windows 构建、测试、安装包和 SHA-256 校验流程。\n- 固定 Flutter、Dart、Git 依赖和原生媒体产物版本，提高构建可复现性。\n- 增加六个直播平台公开接口探测，移除失效的斗鱼第三方签名中转并动态获取抖音 Cookie。\n- 备份格式升级到 v3，默认排除 Cookie 与 WebDAV 凭据，清理仓库中的历史签名私钥。\n- 修复播放器、小窗弹幕、定时器和事件监听的资源释放问题。\n- GitHub Actions 调整为手动兜底，日常质量门禁和发布改为本机执行。\n",
+  "version_desc": "- 在系统设置和视频设置中增加独立小窗弹幕入口、样式预览与默认值恢复。\n- Android 自动请求当前分辨率的最高刷新率，恢复 Impeller 默认渲染并优化封面解码缓存与弹幕重绘。\n- 完善本机优先的 Android、Windows 构建、测试、安装包和 SHA-256 校验流程。\n- 固定 Flutter、Dart、Git 依赖和原生媒体产物版本，提高构建可复现性。\n- 增加六个直播平台公开接口探测，移除失效的斗鱼第三方签名中转并动态获取抖音 Cookie。\n- 备份格式升级到 v3，默认排除 Cookie 与 WebDAV 凭据，清理仓库中的历史签名私钥。\n- 修复播放器、小窗弹幕、定时器和事件监听的资源释放问题。\n- GitHub Actions 调整为手动兜底，日常质量门禁和发布改为本机执行。\n",
   "prerelease": false,
   "download_url": "https://github.com/wzgrx/pure_live/releases"
 }

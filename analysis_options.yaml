@@ -1,6 +1,8 @@
 include: package:flutter_lints/flutter.yaml
-analyzer: 
-  exclude: 
+formatter:
+  page_width: 120
+analyzer:
+  exclude:
     - "**/*.g.dart"
     - "**/*_en.dart"
     - "**/*_zh_CN.dart"

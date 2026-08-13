@@ -16,6 +16,20 @@ class GeneralSettingsPage extends GetView<SettingsService> {
         children: [
           context.buildGroupTitle(i18n("general")),
           context.buildModernCard([
+            if (Platform.isAndroid)
+              Obx(() {
+                final info = DisplayModeService.info.value;
+                final suffix = info == null
+                    ? ''
+                    : ' · ${info.currentRefreshRate.toStringAsFixed(0)} / ${info.maxRefreshRate.toStringAsFixed(0)} Hz';
+                return context.buildSwitchTile(
+                  title: i18n('high_refresh_rate'),
+                  subtitle: '${i18n('high_refresh_rate_subtitle')}$suffix',
+                  value: SettingsService.to.app.enableHighRefreshRate,
+                  icon: Remix.speed_up_line,
+                  isLong: true,
+                );
+              }),
             context.buildSwitchTile(
               title: i18n('splash_animation'),
               subtitle: i18n("splash_animation_subtitle"),

@@ -37,6 +37,11 @@ class CommonAvatar extends StatelessWidget {
         child: CachedNetworkImage(
           imageUrl: avatarUrl!,
           fit: BoxFit.cover,
+          filterQuality: FilterQuality.low,
+          memCacheWidth: (size * MediaQuery.devicePixelRatioOf(context)).round().clamp(48, 256).toInt(),
+          maxWidthDiskCache: 256,
+          fadeInDuration: const Duration(milliseconds: 100),
+          fadeOutDuration: Duration.zero,
           placeholder: (_, _) => Container(color: Theme.of(context).disabledColor.withValues(alpha: 0.2)),
           errorWidget: (_, _, _) => fallback(),
         ),

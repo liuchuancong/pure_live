@@ -32,3 +32,5 @@ python .\tool\interface_probe.py
 探测 Bilibili、Douyu、Huya、Kuaishou、Douyin、网易 CC 的公开分类/推荐入口及关键 JSON/HTML 字段。Bilibili WBI 签名接口、登录态清晰度、弹幕 WebSocket 和实际 CDN 播放仍需在应用内用真实直播间验证。
 
 接口属于外部服务，任何时刻都可能变化；发布前应重新运行探测并执行真机播放回归。
+
+返回 [文档索引](README.md)。

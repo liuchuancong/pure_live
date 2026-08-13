@@ -12,6 +12,56 @@ class RoomCard extends StatelessWidget {
   final LiveRoom room;
   final bool dense;
 
+  Widget _buildCover(BuildContext context, bool isDark) {
+    final coverUrl = room.cover?.trim() ?? '';
+    if (coverUrl.isEmpty) return _coverFallback(context, isDark);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final logicalWidth = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : MediaQuery.sizeOf(context).width / 2;
+        final cacheWidth = (logicalWidth * MediaQuery.devicePixelRatioOf(context)).round().clamp(320, 1440).toInt();
+
+        return CachedNetworkImage(
+          imageUrl: coverUrl,
+          cacheManager: CustomImageCacheManager.instance,
+          fit: BoxFit.cover,
+          filterQuality: FilterQuality.low,
+          memCacheWidth: cacheWidth,
+          maxWidthDiskCache: 1440,
+          fadeInDuration: const Duration(milliseconds: 120),
+          fadeOutDuration: Duration.zero,
+          useOldImageOnUrlChange: true,
+          placeholder: (_, _) => _coverPlaceholder(context, isDark),
+          errorWidget: (_, _, _) => _coverFallback(context, isDark),
+        );
+      },
+    );
+  }
+
+  Widget _coverPlaceholder(BuildContext context, bool isDark) {
+    return ColoredBox(
+      color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
+      child: Center(
+        child: Icon(
+          Icons.live_tv_rounded,
+          size: dense ? 28 : 36,
+          color: Theme.of(context).disabledColor.withValues(alpha: 0.35),
+        ),
+      ),
+    );
+  }
+
+  Widget _coverFallback(BuildContext context, bool isDark) {
+    return ColoredBox(
+      color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
+      child: Center(
+        child: Icon(Icons.broken_image_rounded, size: dense ? 32 : 44, color: Theme.of(context).disabledColor),
+      ),
+    );
+  }
+
   void onTap(BuildContext context) async {
     AppNavigator.toLiveRoomDetail(liveRoom: room);
   }
@@ -613,70 +663,7 @@ class RoomCard extends StatelessWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     color: isDark ? Colors.grey[850] : Colors.grey[100],
 
-                    child: room.platform == Sites.iptvSite
-                        ? CachedNetworkImage(
-                            imageUrl: room.cover!,
-                            cacheManager: CustomImageCacheManager.instance,
-                            fit: BoxFit.cover,
-                            fadeInDuration: const Duration(milliseconds: 250),
-                            fadeOutDuration: const Duration(milliseconds: 250),
-                            placeholder: (context, url) => Container(
-                              color: Theme.of(context).focusColor,
-                              child: const Center(
-                                child: SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: AppStatusView(
-                                    type: AppStatusType.loading,
-                                    title: "",
-                                    subtitle: "",
-                                    isMini: true,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            errorWidget: (context, url, error) {
-                              return Container(
-                                color: Theme.of(context).focusColor,
-                                child: Center(
-                                  child: Icon(
-                                    Icons.broken_image_rounded,
-                                    size: dense ? 36 : 60,
-                                    color: Theme.of(context).disabledColor,
-                                  ),
-                                ),
-                              );
-                            },
-                          )
-                        : Image.network(
-                            room.cover!,
-                            fit: BoxFit.cover,
-                            gaplessPlayback: false,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Container(
-                                color: isDark ? Colors.grey[850] : Colors.grey[100],
-                                child: const Center(
-                                  child: SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: AppStatusView(
-                                      type: AppStatusType.loading,
-                                      title: "",
-                                      subtitle: "",
-                                      isMini: true,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: isDark ? Colors.grey[850] : Colors.grey[100],
-                                child: AppStatusView(type: AppStatusType.error, title: "", subtitle: "", isMini: true),
-                              );
-                            },
-                          ),
+                    child: _buildCover(context, isDark),
                   ),
                 ),
                 if (room.isRecord == true)

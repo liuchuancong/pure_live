@@ -39,22 +39,22 @@ def fetch_data(url):
             if response.status != 200:
                 print(f"❌ 错误：服务器响应状态码为 {response.status}", file=sys.stderr)
                 sys.exit(1)
-                
+
             raw_data = response.read()
-            
+
             # 2. 检查返回内容是否为空
             if not raw_data:
                 print("❌ 错误：网络请求成功，但返回的内容为空（0字节）", file=sys.stderr)
                 sys.exit(1)
-                
+
             print("解析 JSON 数据中...")
             data = json.loads(raw_data.decode('utf-8'))
-            
+
             # 3. 验证数据结构是否符合预期
             if not data:
                 print("❌ 错误：获取到的 JSON 数据内容为空列表或空字典", file=sys.stderr)
                 sys.exit(1)
-                
+
             print("网络数据校验通过，成功获取到发布历史。")
             return data
 
@@ -81,10 +81,10 @@ def main():
         current_tags = {release.get("tag_name") for release in data}
         data.extend(release for release in upstream_data if release.get("tag_name") not in current_tags)
         data.sort(key=lambda release: release.get("published_at") or "", reverse=True)
-        
+
     if isinstance(data, dict):
         data = [data]
-        
+
     result = []
     for release in data:
         author = release.get("author", {})
@@ -101,7 +101,7 @@ def main():
             "changelog": release.get("body", "").strip(),
             "files": []
         }
-        
+
         for asset in release.get("assets", []):
             item["files"].append({
                 "name": clean_name(asset.get("name", "")),
@@ -110,13 +110,13 @@ def main():
                 "url": asset.get("browser_download_url")
             })
         result.append(item)
-        
+
     # 自动创建 assets 文件夹
     os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
-    
+
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
-        
+
     print("生成完成:", OUTPUT_FILE)
 
 if __name__ == "__main__":

@@ -1,16 +1,11 @@
-# 是否允许用户创建空白 Issue（建议设为 false，强制使用模板或查看下方链接）
 blank_issues_enabled: false
-
-# 在提问界面顶部显示的自定义联系/指引链接
 contact_links:
-  - name: "🚩 第一步：查阅项目文档"
-    url: https://github.com/liuchuancong/pure_live
-    about: "在提问之前，请务必先查阅使用文档，90% 的播放配置问题都能在这里找到答案。"
-    
-  - name: "🔍 第二步：搜索已有 Issue"
-    url: https://github.com/liuchuancong/pure_live/issues
-    about: "请先搜索关键词，看看是否已经有人反馈过相同的问题，避免重复提交。"
-    
-  - name: "📸 第三步：准备截图或录屏(推荐)"
-    url: https://github.com/liuchuancong/pure_live
-    about: "如果是视频黑屏、报错或 UI 异常，请务必准备好控制台报错截图或现象录屏。"
+  - name: 使用与构建文档
+    url: https://github.com/wzgrx/pure_live#文档
+    about: 提交问题前先核对功能说明、构建流程和常见问题。
+  - name: 搜索已有 Issue
+    url: https://github.com/wzgrx/pure_live/issues
+    about: 使用平台、播放器、设备型号和报错关键词搜索重复问题。
+  - name: 私密安全报告
+    url: https://github.com/wzgrx/pure_live/security/advisories/new
+    about: 涉及凭据、隐私或可被利用的漏洞时使用私密报告入口。

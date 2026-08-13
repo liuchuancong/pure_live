@@ -5,6 +5,7 @@ import 'package:pure_live/modules/backup/backup_page.dart';
 import 'package:pure_live/modules/settings/pages/refresh_settings.dart';
 import 'package:pure_live/modules/settings/pages/theme_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/video_settings_page.dart';
+import 'package:pure_live/modules/settings/pages/pip_danmaku_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/local_config_preveiw.dart';
 import 'package:pure_live/modules/settings/pages/general_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/platform_settings_page.dart';
@@ -79,6 +80,12 @@ class SettingsPage extends GetView<SettingsService> {
               title: i18n("video"),
               subtitle: i18n("video_desc"),
               onTap: () => Get.to(() => const VideoSettingsPage()),
+            ),
+            context.buildTile(
+              icon: Remix.picture_in_picture_2_line,
+              title: i18n('pip_danmaku'),
+              subtitle: i18n('pip_danmaku_desc'),
+              onTap: () => Get.to(() => const PipDanmakuSettingsPage()),
             ),
           ]),
 

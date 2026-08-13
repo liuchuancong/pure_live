@@ -18,18 +18,33 @@ USER_AGENT = (
 def request_json(url: str, params: dict[str, object] | None = None, attempts: int = 3) -> object:
     if params:
         url = f"{url}?{urllib.parse.urlencode(params)}"
-    request = urllib.request.Request(
-        url,
-        headers={"User-Agent": USER_AGENT, "Referer": urllib.parse.urlsplit(url).scheme + "://" + urllib.parse.urlsplit(url).netloc + "/"},
-    )
+    origin = urllib.parse.urlsplit(url)
     last_error: Exception | None = None
     for attempt in range(1, attempts + 1):
         try:
+            # Rebuild the request for every retry. Some CDNs close or rate-limit a
+            # keep-alive connection after an empty/HTML challenge response.
+            request = urllib.request.Request(
+                url,
+                headers={
+                    "User-Agent": USER_AGENT,
+                    "Referer": f"{origin.scheme}://{origin.netloc}/",
+                    "Accept": "application/json,text/plain,*/*",
+                    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+                    "Cache-Control": "no-cache",
+                    "Connection": "close",
+                },
+            )
             with urllib.request.urlopen(request, timeout=20) as response:
                 payload = response.read().decode("utf-8", errors="replace")
             if not payload.strip():
                 raise ValueError("empty response body")
-            return json.loads(payload)
+            try:
+                return json.loads(payload.lstrip("\ufeff"))
+            except json.JSONDecodeError as error:
+                content_type = response.headers.get("Content-Type", "unknown")
+                preview = payload[:80].replace("\r", " ").replace("\n", " ")
+                raise ValueError(f"non-JSON response ({content_type}): {preview!r}") from error
         except Exception as error:  # noqa: BLE001 - preserve endpoint diagnostics
             last_error = error
             if attempt < attempts:

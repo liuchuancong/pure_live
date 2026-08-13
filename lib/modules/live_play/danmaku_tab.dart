@@ -13,10 +13,6 @@ class DanmakuTabView extends GetView<LivePlayController> {
       if (controller.detail.value == null || controller.videoController.value == null) {
         return AppStatusView(type: AppStatusType.loading, title: "", subtitle: "");
       }
-      if (!SettingsService.to.danmaku.enableDanmakuDisplay.v) {
-        return Padding(padding: EdgeInsetsGeometry.all(12), child: const KeywordBlockPage());
-      }
-
       return Column(
         children: [
           Container(
@@ -31,7 +27,25 @@ class DanmakuTabView extends GetView<LivePlayController> {
             child: TabBarView(
               controller: controller.tabController,
               children: [
-                DanmakuListView(room: controller.detail.value!),
+                SettingsService.to.danmaku.enableDanmakuDisplay.v
+                    ? DanmakuListView(room: controller.detail.value!)
+                    : Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.comments_disabled_outlined, size: 42, color: Theme.of(context).disabledColor),
+                              const SizedBox(height: 12),
+                              Text(
+                                i18n('danmaku_display_disabled_hint'),
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                 DanmakuSettingsPage(controller: controller.videoController.value!),
                 const KeywordBlockPage(),
               ],

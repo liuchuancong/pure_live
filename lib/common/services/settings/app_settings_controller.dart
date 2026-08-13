@@ -1,7 +1,12 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 
 class AppSettingsController extends GetxController {
+  Worker? _highRefreshRateWorker;
+
   final RxInt autoRefreshTime = hiveInt('autoRefreshTime', 3);
   final RxBool enableDenseFavorites = hiveBool('enableDenseFavorites', true);
   final RxBool enableBackgroundPlay = hiveBool('enableBackgroundPlay', false);
@@ -12,8 +17,28 @@ class AppSettingsController extends GetxController {
   final RxBool enableAutoCheckUpdate = hiveBool('enableAutoCheckUpdate', true);
   final RxBool enableFullScreenDefault = hiveBool('enableFullScreenDefault', false);
   final RxBool showSplashPage = hiveBool('showSplashPage', true);
+  final RxBool enableHighRefreshRate = hiveBool('enableHighRefreshRate', true);
 
   late final RxList<String> savedMenuIds = hiveStringList('savedMenuIds', HomeMenu.values.map((e) => e.id).toList());
+
+  @override
+  void onInit() {
+    super.onInit();
+    if (Platform.isAndroid) {
+      unawaited(DisplayModeService.setHighRefreshRate(enableHighRefreshRate.v));
+      _highRefreshRateWorker = ever<bool>(
+        enableHighRefreshRate,
+        (enabled) => unawaited(DisplayModeService.setHighRefreshRate(enabled)),
+      );
+    }
+  }
+
+  @override
+  void onClose() {
+    _highRefreshRateWorker?.dispose();
+    _highRefreshRateWorker = null;
+    super.onClose();
+  }
 
   void toggleMenuVisibility(HomeMenu menu, bool visible) {
     final ids = List<String>.from(savedMenuIds.v);
@@ -38,6 +63,7 @@ class AppSettingsController extends GetxController {
       'enableAutoCheckUpdate': enableAutoCheckUpdate.v,
       'enableFullScreenDefault': enableFullScreenDefault.v,
       'showSplashPage': showSplashPage.v,
+      'enableHighRefreshRate': enableHighRefreshRate.v,
       'savedMenuIds': savedMenuIds.v,
     };
   }
@@ -51,6 +77,7 @@ class AppSettingsController extends GetxController {
     enableAutoCheckUpdate.v = json['enableAutoCheckUpdate'] ?? true;
     enableFullScreenDefault.v = json['enableFullScreenDefault'] ?? false;
     showSplashPage.v = json['showSplashPage'] ?? true;
+    enableHighRefreshRate.v = json['enableHighRefreshRate'] ?? true;
     savedMenuIds.v = List<String>.from(json['savedMenuIds'] ?? HomeMenu.values.map((e) => e.id).toList());
   }
 
@@ -65,6 +92,7 @@ class AppSettingsController extends GetxController {
       'enableAutoCheckUpdate': app['enableAutoCheckUpdate'] ?? true,
       'enableFullScreenDefault': app['enableFullScreenDefault'] ?? false,
       'showSplashPage': app['showSplashPage'] ?? true,
+      'enableHighRefreshRate': app['enableHighRefreshRate'] ?? true,
       'savedMenuIds': List<String>.from(app['savedMenuIds'] ?? []),
     };
   }

@@ -81,7 +81,6 @@
     </activity>
     <meta-data android:name="flutterEmbedding" android:value="2" />
     <meta-data android:name="ic_notification" android:resource="@drawable/ic_launcher_foreground" />
-    <meta-data android:name="io.flutter.embedding.android.EnableImpeller" android:value="false" />
     <service android:name="flutter.overlay.window.flutter_overlay_window.OverlayService"
       android:exported="false" />
     <provider android:name="androidx.core.content.FileProvider"

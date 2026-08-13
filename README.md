@@ -1,163 +1,123 @@
 <h1 align="center">
   <br>
-  <img src="assets/icons/icon.png" width="150"/>
+  <img src="assets/icons/icon.png" width="150" alt="Pure Live 图标"/>
   <br>
   纯粹直播（Pure Live）
   <br>
 </h1>
 
-<h4 align="center">一款开源的第三方多平台直播聚合播放器</h4>
-<h4 align="center">A Third-party Live Stream Aggregator Built with Flutter</h4>
+<h4 align="center">基于 Flutter 的开源多平台直播聚合播放器</h4>
 
 <p align="center">
   <a href="https://github.com/wzgrx/pure_live/releases/latest"><img alt="Latest Release" src="https://img.shields.io/github/v/release/wzgrx/pure_live"></a>
-  <img alt="Manual Build" src="https://github.com/wzgrx/pure_live/actions/workflows/feature-build.yml/badge.svg">
-  <img alt="License" src="https://img.shields.io/github/license/wzgrx/pure_live?color=blue">
-  <img alt="Downloads" src="https://img.shields.io/github/downloads/wzgrx/pure_live/total?style=flat-square">
+  <a href="https://github.com/wzgrx/pure_live/actions/workflows/feature-build.yml"><img alt="Manual Build" src="https://github.com/wzgrx/pure_live/actions/workflows/feature-build.yml/badge.svg"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/wzgrx/pure_live?color=blue"></a>
+  <a href="https://github.com/wzgrx/pure_live/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/wzgrx/pure_live/total?style=flat-square"></a>
 </p>
 
-> ⚠️ **本软件仅用于个人学习与技术交流，请勿用于商业用途。下载后请于 24 小时内删除。**
+> 本仓库基于 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live) 持续维护，新增可配置的小窗弹幕，并完善本机构建、依赖锁定、接口探测和发布流程。
 
-> 本仓库是 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live) 的功能维护分支，增加了可配置的小窗弹幕，并提供独立构建与发布。最新安装包见 [Releases](https://github.com/wzgrx/pure_live/releases/latest)。
+- **最新稳定版**：[v2.0.23](https://github.com/wzgrx/pure_live/releases/tag/v2.0.23)
+- **当前开发版**：`2.0.24+35`（`master`）
+- **主要发布平台**：Android、Windows
 
----
+![Pure Live 界面预览](assets/images/banner.png)
 
-## 📺 支持平台
-<h1 align="center">
-  <img src="assets/images/banner.png" width="860"/>
-</h1>
+## 功能概览
 
-- 哔哩哔哩（Bilibili）  
-- 虎牙直播（Huya）  
-- 斗鱼直播（Douyu）  
-- 快手（Kuaishou）  
-- 抖音（Douyin）  
-- 网易 CC 直播  
-- 自定义 M3U8 源（支持本地/网络导入）
+- **直播平台**：Bilibili、虎牙、斗鱼、快手、抖音、网易 CC。
+- **自定义直播源**：导入本地或网络 M3U/M3U8，按分区和平台筛选。
+- **多播放器**：Android/TV 可切换 IJKPlayer、EXOPlayer 和 MPV Player。
+- **弹幕增强**：过滤、合并、描边、透明度、字号、速度、显示区域、数量、间隔和刷新 FPS。
+- **小窗弹幕**：覆盖 Android 系统画中画、Windows 小窗和应用内悬浮窗。
+- **数据管理**：本地导入导出、WebDAV 同步，以及可选的 Firebase 用户同步。
+- **播放工具**：直播录制、定时关闭、后台音频和系统媒体通知。
+- **高刷新率适配**：Android 自动请求当前分辨率支持的最高刷新率，并优化封面解码、缓存和弹幕重绘。
 
-支持按分区筛选、隐藏不关注平台，节省流量与内存。
+## 小窗弹幕
 
----
+进入“设置 → 视频设置 → 小窗弹幕”，或在直播间切换到“弹幕设置”，即可配置：
 
-## ✨ 核心功能
+- 保留平台原始颜色，或设置统一颜色、字号和透明度；
+- 调整速度、显示区域、最大数量、发送间隔和刷新 FPS；
+- 根据小窗尺寸自动缩放；
+- 使用独立弹幕控制器，切换窗口模式时不污染主播放器队列；
+- 配置保存在本地，再次进入直播间时继续生效。
 
-- ✅ **多端支持**：Android / Android TV / Windows / macOS （iOS 待合作者支持）  
-- ✅ **多播放器切换**：内置 IJKPlayer / EXOPlayer / MPV Player（Android/TV）  
-- ✅ **直播录制**：支持直播流实时录制，保存本地随时回放  
-- ✅ **自定义直播源**：通过 M3U/M3U8 导入网络或本地直播流  
-- ✅ **数据同步与备份**：支持 WebDAV 同步、本地导出/导入配置  
-- ✅ **弹幕增强**：支持弹幕过滤、合并、描边、FPS 与显示优化
-- ✅ **小窗弹幕**：Android 系统画中画、Windows 小窗和应用内悬浮窗均可显示弹幕
-- ✅ **定时关闭**：可设置倒计时自动退出应用  
-- ✅ **用户系统（可选）**：基于 [Firebase](https://console.firebase.google.com/) 实现注册/登录（需科学上网）
+独立设置页提供实时样式预览和恢复默认值；即使主播放器的全局弹幕已关闭，小窗弹幕设置入口仍保持可见。
 
-> 💡 提示：如需使用 Firebase 功能，可自行 Fork 项目并在 Firebase 控制台部署服务。
+## 下载
 
----
+前往 [GitHub Releases](https://github.com/wzgrx/pure_live/releases/latest) 获取安装包：
 
-## 🔒 声明与合规
+- Android：按设备架构选择 `arm64-v8a`、`armeabi-v7a` 或 `x86_64` APK；
+- Windows：按 Release 附件说明选择安装包或便携 ZIP；
+- 下载后使用同一 Release 中的 `SHA256SUMS.txt` 校验完整性。
 
-- 本项目为 **非盈利性开源软件**，遵循 **[GPL-3.0 协议](LICENSE)**。  
-- **不提供任何 VIP 解锁、视频破解或盗链服务**。高清直播需您在对应平台拥有合法账号权限。  
-- 所有直播内容（视频、音频、图像等）**版权归属原平台所有**，本软件仅作技术聚合与转码展示。  
-- 若您认为本项目侵犯您的合法权益，请通过 [GitHub Issue](https://github.com/wzgrx/pure_live/issues) 联系我们，我们将及时处理。
+正式 Android 包使用本仓库维护者的发布签名。缺少正式密钥的本机构建会自动生成包名为 `com.mystyle.purelive.qa` 的 QA 包，可与正式版并存，发布脚本会阻止其进入正式 Release。
 
----
+## 本地开发
 
-## 🛡️ 隐私策略
+项目固定使用 Flutter `3.44.9` / Dart `3.12.2`。Windows 11 上运行完整质量门禁：
 
-- 项目未集成广告或行为追踪 SDK；直播请求主要发往对应平台，登录、版本更新和用户主动配置的同步功能会访问 Firebase、GitHub 或 WebDAV。
-- 用户 Cookie 用于对应平台的身份认证。自备份格式 v3 起，本地导出、Firebase、WebDAV 和 TV 同步默认排除 Cookie 与 WebDAV 凭据；旧版备份可能含有这些字段，请妥善保管。
-- Android 在后台音频播放时会启用媒体播放前台服务，并显示系统通知；关闭播放后释放相关资源。
-- Android 已关闭系统级应用数据备份，避免系统云备份复制本地会话数据。
+```powershell
+PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
+```
 
----
+生成 Android 分架构 APK、Windows 便携包、可选 EXE 安装器和 SHA-256 文件：
 
-## 🛠 使用说明
+```powershell
+PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
+```
 
-### ▶️ 播放器选择
-- **Android/TV**：可在设置中切换 IJKPlayer / EXOPlayer / MPV Player。
-- **字幕支持**：
-  - Android：使用系统自带实时字幕功能
-  - Windows：启用 Windows 11 的 *Live Captions*（任务栏搜索即可）
+本地脚本优先完成依赖解析、格式检查、静态分析、测试和外部接口探测；GitHub Actions 仅保留手动兜底入口，以减少配额消耗。完整说明见 [本地构建与发布](docs/BUILD_AND_RELEASE.md)。
 
-### 🔑 Bilibili 高清直播
-因平台限制，观看高清直播需登录。  
-您可通过应用内“三方认证”获取 Cookie。Cookie 用于对应平台请求，并默认从所有同步和导出备份中剔除。
+## 文档
 
-### 💬 小窗弹幕
+| 文档 | 内容 |
+| --- | --- |
+| [文档索引](docs/README.md) | 开发、发布、依赖和功能文档入口 |
+| [构建与发布](docs/BUILD_AND_RELEASE.md) | 本机质量门禁、签名、打包和 Release 流程 |
+| [依赖与接口审计](docs/DEPENDENCY_AUDIT.md) | 固定工具链、升级约束和接口探测范围 |
+| [高刷新率与性能验证](docs/PERFORMANCE.md) | Android 120 Hz 适配、渲染优化和真机帧统计 |
+| [WebDAV 配置](docs/WEBDAV.md) | 通用配置字段、坚果云示例和故障排查 |
+| [参与贡献](CONTRIBUTING.md) | 分支、提交、测试和 Pull Request 要求 |
+| [安全策略](SECURITY.md) | 私密漏洞报告和签名材料管理 |
+| [版本说明](RELEASE_NOTES.md) | 当前开发版本变更 |
 
-进入直播间的弹幕设置后，可单独配置“小窗弹幕”：
+## 数据与隐私
 
-- 适用模式：Android 系统画中画、Windows 小窗、应用内悬浮窗。
-- 显示样式：保留平台原始颜色，或选择自定义颜色、字号与透明度。
-- 运动效果：速度、显示区域、最大数量、发送间隔与刷新 FPS。
-- 小窗适配：可开启自动缩放；小窗使用独立弹幕控制器，不影响主播放器弹幕队列。
+- 项目未集成广告或行为追踪 SDK；直播请求主要发往对应平台。
+- 登录、版本更新和用户主动启用的同步功能会访问 Firebase、GitHub 或用户配置的 WebDAV 服务。
+- 平台 Cookie 仅用于对应平台身份认证。备份格式 v3 默认排除 Cookie 与 WebDAV 凭据；旧备份仍应按敏感文件保管。
+- Android 已关闭系统级应用数据备份；后台音频播放时会显示媒体播放前台服务通知，停止播放后释放相关资源。
 
-设置会保存到本地，重新进入直播间和再次开启小窗时继续生效。
+## 常见问题
 
-### 📥 导入 M3U 源
-1. 打开 App → 设置 → 备份与还原 → 导入 M3U 源  
-2. 支持从 [123云盘](https://www.123pan.com/s/Jucxjv-NwYYd.html) 下载示例源  
-3. 源转换工具推荐：[直播源转换器](https://kukuqi666.github.io/Tvbox-decrypt)
+| 现象 | 处理方式 |
+| --- | --- |
+| Windows 恢复手机备份后只有弹幕、没有画面 | 进入“设置 → 播放器”，重新选择或重置播放器 |
+| 黑屏、卡顿或部分清晰度播放失败 | 切换 IJK / MPV / EXO，检查账号清晰度权限和硬件解码支持 |
+| Bilibili 高清直播不可选 | 在应用内完成对应平台认证，Cookie 默认从同步备份中剔除 |
+| 小窗中弹幕过密 | 降低显示区域、最大数量或字号，增大发送间隔 |
 
-> 📂 存储位置：
-> - **Android**：清除缓存即可移除导入内容  
-> - **Windows**：配置文件位于  
->   `安装目录\AppData\*`
+不同厂商系统对后台播放、画中画和硬件解码的实现存在差异，提交问题时请附应用版本、系统版本、设备型号、播放器类型和可复现直播间。
 
-### 📦 下载与构建
+## 参与开发
 
-- 最新稳定构建：[GitHub Releases](https://github.com/wzgrx/pure_live/releases/latest)
-- Android：按设备架构选择 `arm64-v8a`、`armeabi-v7a` 或 `x86_64` APK。
-- Windows：下载 `PureLive-*-windows-x64-setup.exe` 安装，或使用 `PureLive-*-windows-x64-portable.zip` 便携包。
-- 完整性校验：每个 Release 附带 `SHA256SUMS.txt`。
-- 本仓库优先使用本机构建以节省 Actions 配额；开发、测试和本地发布流程见 [run.MD](run.MD)。
+- 上游项目：[@liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)
+- 维护仓库：[@wzgrx/pure_live](https://github.com/wzgrx/pure_live)
+- 提交改动前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)，UI 变更请附截图或录屏。
 
-> 正式 Android Release 必须使用仓库专用签名。本地未配置正式密钥时，脚本生成包名为 `com.mystyle.purelive.qa` 的调试签名 QA 包，可与已安装的正式版并存；QA 包不会被本地发布脚本误传到正式 Release。
+代码参考：
 
----
-
-## ❓ 常见问题
-
-| 问题 | 解决方案 |
-|------|--------|
-| 关闭软件时弹出“快速异常检测失败” | Windows 特定提示，**不影响使用**，可忽略 |
-| Windows 恢复手机备份后无画面、仅有弹幕 | 进入 **设置 → 播放器**，重新选择或重置播放器 |
-| 部分设备无法播放（黑屏/卡顿） | 尝试切换播放器（IJK ↔ MPV ↔ EXO），或检查硬件解码支持 |
-
-> ⚠️ **华为设备兼容性**：因系统框架限制，部分华为机型可能存在卡顿，暂无优化方案，敬请谅解。
-
----
-
-## 🤝 参与开发
-
-- **上游主开发者**：[@liuchuancong](https://github.com/liuchuancong)
-- **协助开发者**：[@RebornQ](https://github.com/RebornQ)
-- **小窗弹幕维护分支**：[@wzgrx](https://github.com/wzgrx)
-
-> 📌 **欢迎贡献**！  
-> - 如发现 License 使用不当，请提交 Issue 或 Pull Request  
-> - 如有 macOS/iOS 打包能力，欢迎联系合作！
-
-### 代码参考
-- [dart_simple_live](https://github.com/xiaoyaocz/dart_simple_live)  
+- [dart_simple_live](https://github.com/xiaoyaocz/dart_simple_live)
 - [pure_live (Jackiu1997)](https://github.com/Jackiu1997/pure_live)
 
----
+## 许可与内容说明
 
-## 🌟 Star 趋势
+项目代码采用 [GNU Affero General Public License v3.0](LICENSE)。应用聚合第三方直播平台与用户配置的直播源；使用者应遵守对应平台条款和所在地规则。视频、音频、图像及直播内容的权利归原权利人所有。权利相关问题可通过 [GitHub Issues](https://github.com/wzgrx/pure_live/issues) 联系维护者。
+
+## Star 趋势
 
 [![Stargazers over time](https://starchart.cc/wzgrx/pure_live.svg)](https://starchart.cc/wzgrx/pure_live)
-
----
-
-## ☕ 捐助支持
-
-如果您觉得本项目对您有帮助，欢迎扫码支持开发者一杯咖啡 ☕
-
-<p align="center">
-  <img src="assets/images/wechat.png" width="250" alt="WeChat Donate">
-</p>
-
-> 您的支持是我持续维护的动力！感谢 ❤️

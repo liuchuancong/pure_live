@@ -1,0 +1,67 @@
+name: Bug 报告
+description: 报告可复现的播放、弹幕、界面、备份或安装问题
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: 请先使用关键词搜索已有 Issue，并移除日志中的 Cookie、令牌、账号和本地隐私数据。
+  - type: input
+    id: version
+    attributes:
+      label: Pure Live 版本
+      description: 例如 v2.0.23 或 master 提交 SHA
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: 平台
+      options:
+        - Android 手机/平板
+        - Android TV
+        - Windows
+        - macOS
+        - 其他
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: 系统与设备
+      description: 系统版本、设备型号、CPU 架构；播放问题请附播放器类型
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. 打开……
+        2. 选择……
+        3. 出现……
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期结果
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际结果与日志
+      description: 可拖入截图或录屏；粘贴日志前请清理敏感字段
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 提交检查
+      options:
+        - label: 已搜索重复问题
+          required: true
+        - label: 已清理 Cookie、令牌、账号、私有直播源和个人数据
+          required: true

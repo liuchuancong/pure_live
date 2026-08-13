@@ -2,6 +2,17 @@
 
 本仓库采用“本机优先、Actions 手动兜底”的流程，固定使用 Flutter `3.44.9`。`pubspec.lock`、Git 依赖提交和 FFmpeg 产物地址均已固定，便于复现结果。
 
+最近完整核验：2026-08-13，Windows 11 + JDK 17 + Flutter 3.44.9；Android QA 真机安装与 Windows 安装包启动探测通过。每次发布仍需在当前提交上重新执行全部门禁。
+
+## 前置环境
+
+- Windows 11 x64，已启用 Flutter Windows 桌面开发所需的 Visual Studio C++ 工具；
+- Android SDK 及可用的 Android 设备或模拟器；
+- JDK 17；
+- Python 3，用于直播接口探测和发布历史更新；
+- 可选：Inno Setup 6，用于生成 Windows EXE 安装包；
+- 可选：GitHub CLI，用于从本机创建并上传 Release。
+
 ## Windows 11 一键质量门禁
 
 仓库脚本依次执行锁定依赖解析、变更 Dart 文件格式检查、静态分析、完整测试和直播接口探测：
@@ -106,6 +117,12 @@ Android 手动云构建要求以下 Secrets：
 
 `.github/workflows/update_releases.yml` 同样只支持手动触发，不再每日消耗 Actions 配额。仓库不再通过标签自动构建或发布。
 
+需要在本机刷新 `assets/releases.json` 时，从仓库根目录运行：
+
+```powershell
+python .\tool\update_releases.py
+```
+
 ## 发布检查清单
 
 1. 更新 `pubspec.yaml`、`assets/version.json` 与 `RELEASE_NOTES.md`。
@@ -114,3 +131,5 @@ Android 手动云构建要求以下 Secrets：
 4. 运行 `tool/install_android_qa.ps1` 在真机并存安装并启动 QA 包；正式版升级必须使用同一发布签名。
 5. 提交并推送 `master`，再运行 `tool/publish_local_release.ps1`。
 6. 在 [Releases](https://github.com/wzgrx/pure_live/releases) 核对附件和校验文件。
+
+返回 [文档索引](README.md)。
