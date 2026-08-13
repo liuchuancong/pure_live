@@ -59,19 +59,38 @@ if ($executable -eq $flutter -and $env:JAVA_HOME -and $FlutterArgs[0] -notin @('
 
 $workDir = $repoRoot
 $substDrive = $null
+$substMappingFile = Join-Path $repoRoot '.dart_tool\pure_live_subst_drive.txt'
 if ($repoRoot.Length -gt 80) {
     $repoParent = Split-Path -Parent $repoRoot
     $repoLeaf = Split-Path -Leaf $repoRoot
-    foreach ($letter in 'P','Q','R','S') {
-        $candidate = "${letter}:"
-        if (-not (Test-Path "$candidate\")) {
-            & subst.exe $candidate $repoParent
-            if ($LASTEXITCODE -eq 0) {
-                $substDrive = $candidate
-                $workDir = "$candidate\$repoLeaf"
-                break
-            }
+    $candidate = 'P:'
+    $savedDrive = if (Test-Path -LiteralPath $substMappingFile) {
+        (Get-Content -LiteralPath $substMappingFile -Raw).Trim()
+    }
+    if ($savedDrive -and $savedDrive -ne $candidate) {
+        throw "Long-path workspace must use the stable $candidate mapping; remove stale mapping $savedDrive first."
+    }
+    foreach ($candidate in @($candidate)) {
+        $existingTarget = (& subst.exe) |
+            Where-Object { $_ -match "^$([Regex]::Escape($candidate))\\:\s*=>\s*(.+)$" } |
+            ForEach-Object { $Matches[1].Trim() } |
+            Select-Object -First 1
+        if ($existingTarget -and
+            -not ([IO.Path]::GetFullPath($existingTarget).Equals([IO.Path]::GetFullPath($repoParent), [StringComparison]::OrdinalIgnoreCase))) {
+            continue
         }
+        if (-not $existingTarget) {
+            & subst.exe $candidate $repoParent
+            if ($LASTEXITCODE -ne 0) { continue }
+        }
+        $substDrive = $candidate
+        $workDir = "$candidate\$repoLeaf"
+        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $substMappingFile) | Out-Null
+        Set-Content -LiteralPath $substMappingFile -Value $candidate -NoNewline -Encoding ascii
+        break
+    }
+    if (-not $substDrive) {
+        throw 'No stable subst drive was available for the long repository path.'
     }
 }
 
@@ -82,9 +101,6 @@ try {
     $flutterExitCode = $LASTEXITCODE
 } finally {
     Pop-Location
-    if ($substDrive) {
-        & subst.exe $substDrive /d | Out-Null
-    }
 }
 $global:LASTEXITCODE = $flutterExitCode
 if ($flutterExitCode -ne 0) {

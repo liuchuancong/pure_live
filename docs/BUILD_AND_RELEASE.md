@@ -28,7 +28,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
 3. `%LOCALAPPDATA%\Codex\flutter\sdk-3.44.9\flutter\bin\flutter.bat`；
 4. `PATH` 中的 Flutter。
 
-路径较长时脚本会临时映射空闲盘符，规避 FFmpeg Native Assets 在 Windows 上超过传统路径长度后的构建失败。
+路径较长时脚本会为当前仓库保留稳定的 `P:` 短盘符映射，规避 FFmpeg Native Assets 在 Windows 上超过传统路径长度后的构建失败。映射记录位于未跟踪的 `.dart_tool/pure_live_subst_drive.txt`；连续的 `pub get`、分析、测试和构建会复用同一盘符，避免 Native Assets 增量缓存引用已经释放的盘符。
 
 Android 构建使用 JDK 17。脚本优先读取 `PURE_LIVE_JAVA_HOME`，其次使用 `%LOCALAPPDATA%\Codex\java\temurin-17*`；Android Studio 2026 自带的 JDK 25 不适用于当前 Gradle 8.14 / AGP 8.11.1 组合。
 
