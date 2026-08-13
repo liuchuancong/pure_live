@@ -35,6 +35,7 @@ migrate_working_dir/
 /build/
 /android/build/
 /android/.gradle/
+/android/.kotlin/
 /local-artifacts/
 /local-smoke/
 /.local-build/
