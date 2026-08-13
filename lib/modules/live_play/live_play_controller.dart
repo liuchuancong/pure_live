@@ -29,6 +29,8 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
 
   final RecorderController recorderController = Get.find<RecorderController>();
   final StopWatchTimer _stopWatchTimer = StopWatchTimer(mode: StopWatchMode.countDown);
+  Worker? _timerWorker;
+  StreamSubscription<dynamic>? _timerEndedSubscription;
 
   late Site currentSite;
   late LiveDanmaku liveDanmaku;
@@ -39,6 +41,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   final messages = <LiveMessage>[].obs;
   final isLiving = true.obs;
   final videoController = Rx<VideoController?>(null);
+  bool _floatingResourcesReleased = false;
 
   final detail = Rx<LiveRoom?>(null);
   final success = false.obs;
@@ -129,11 +132,11 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   }
 
   void _initDebounce() {
-    everAll([closeTimeFlag, closeTimes], (_) => _toggleTimer());
+    _timerWorker = everAll([closeTimeFlag, closeTimes], (_) => _toggleTimer());
   }
 
   void _initTimer() {
-    _stopWatchTimer.fetchEnded.listen((_) {
+    _timerEndedSubscription = _stopWatchTimer.fetchEnded.listen((_) {
       _stopWatchTimer.onStopTimer();
       exit(0);
     });
@@ -178,7 +181,6 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     }
 
     videoController.value?.clearListener();
-    success.value = false;
     return false;
   }
 
@@ -188,14 +190,36 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     super.onClose();
   }
 
+  void prepareAppFloating() {
+    GlobalPlayerService.instance.playerManager.prepareAppFloating(onClose: disposeAppFloatingResources);
+    _floatingResourcesReleased = false;
+  }
+
+  void disposeAppFloatingResources() {
+    if (_floatingResourcesReleased) return;
+    _floatingResourcesReleased = true;
+    if (SettingsService.to.danmaku.enableDanmakuDisplay.v) {
+      liveDanmaku.stop();
+    }
+    videoController.value?.dispose();
+  }
+
   void _disposeAll() {
     tabController.dispose();
+    _timerWorker?.dispose();
+    _timerWorker = null;
+    final timerEndedSubscription = _timerEndedSubscription;
+    if (timerEndedSubscription != null) {
+      unawaited(timerEndedSubscription.cancel());
+    }
+    _timerEndedSubscription = null;
     _stopWatchTimer.onStopTimer();
+    unawaited(_stopWatchTimer.dispose());
     if (Platform.isAndroid) {
       BackButtonInterceptor.removeByName("live_play_page");
     }
-    if (SettingsService.to.danmaku.enableDanmakuDisplay.v) {
-      liveDanmaku.stop();
+    if (!GlobalPlayerService.instance.playerManager.shouldKeepDanmakuForAppFloating) {
+      disposeAppFloatingResources();
     }
   }
 
@@ -294,7 +318,7 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
     }
 
     final manager = GlobalPlayerService.instance.playerManager;
-    manager.close();
+    await manager.close();
 
     success.value = false;
     isLiving.value = true;
@@ -463,9 +487,9 @@ class LivePlayController extends StateController with GetSingleTickerProviderSta
   // =========================================================
   // 切换清晰度
   // =========================================================
-  void setResolution(ReloadDataType reloadDataType, int qualityIndex, int lineIndex) {
-    GlobalPlayerService.instance.playerManager.close();
-    videoController.value?.destory();
+  Future<void> setResolution(ReloadDataType reloadDataType, int qualityIndex, int lineIndex) async {
+    await GlobalPlayerService.instance.playerManager.close();
+    await videoController.value?.destory();
 
     currentQuality.value = qualityIndex;
     currentLineIndex.value = lineIndex;

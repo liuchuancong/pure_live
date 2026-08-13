@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:fullscreen_window/fullscreen_window.dart';
 import 'package:pure_live/player/utils/window_helper.dart';
-import 'package:auto_orientation_v2/auto_orientation_v2.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
 
@@ -35,7 +34,10 @@ class WindowService {
       if (kIsWeb) {
         await document.documentElement?.requestFullscreen();
       } else if (Platform.isAndroid || Platform.isIOS) {
-        await AutoOrientation.landscapeAutoMode(forceSensor: true);
+        await SystemChrome.setPreferredOrientations([
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ]);
       } else if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
         await doEnterWindowFullScreen();
       }
