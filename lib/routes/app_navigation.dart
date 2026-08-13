@@ -4,7 +4,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/utils.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
-import 'package:pure_live/modules/live_play/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 
 /// APP页面跳转封装
 /// * 需要参数的页面都应使用此类
@@ -47,18 +47,26 @@ class BackButtonObserver extends RouteObserver<PageRoute<dynamic>> {
     if (route.settings.name == RoutePath.kLivePlay) {
       try {
         final livePlayController = Get.find<LivePlayController>();
-        livePlayController.success.value = false;
+        final state = livePlayController.state.value;
+
+        // 更新房间状态
+        livePlayController.updateRoom(success: false);
 
         final manager = GlobalPlayerService.instance.playerManager;
         if (SettingsService.to.player.floatPlay.v) {
+          livePlayController.prepareAppFloating();
           Future.delayed(Duration(milliseconds: 200), () {
             manager.showAppFloating();
           });
         } else {
-          if (livePlayController.videoController.value != null) {
-            livePlayController.videoController.value?.clearListener();
+          // 清理播放器
+          final videoController = state.player.videoController;
+          if (videoController != null) {
+            videoController.clearListener();
           }
-          if (livePlayController.isCurrentRoomAudioOnly.value) {
+
+          // 检查是否音频模式
+          if (state.player.isCurrentRoomAudioOnly) {
             manager.hardDispose();
           } else {
             manager.close();

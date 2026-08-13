@@ -1,8 +1,8 @@
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/modules/live_play/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku_list_view.dart';
 import 'package:pure_live/modules/live_play/widgets/keyword_block_page.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku_settings_page.dart';
+import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 
 class DanmakuTabView extends GetView<LivePlayController> {
   const DanmakuTabView({super.key});
@@ -10,7 +10,8 @@ class DanmakuTabView extends GetView<LivePlayController> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      if (controller.detail.value == null || controller.videoController.value == null) {
+      final state = controller.state.value;
+      if (state.room.detail == null || state.player.videoController == null) {
         return AppStatusView(type: AppStatusType.loading, title: "", subtitle: "");
       }
       if (!SettingsService.to.danmaku.enableDanmakuDisplay.v) {
@@ -31,8 +32,8 @@ class DanmakuTabView extends GetView<LivePlayController> {
             child: TabBarView(
               controller: controller.tabController,
               children: [
-                DanmakuListView(room: controller.detail.value!),
-                DanmakuSettingsPage(controller: controller.videoController.value!),
+                DanmakuListView(room: state.room.detail!),
+                DanmakuSettingsPage(controller: state.player.videoController!),
                 const KeywordBlockPage(),
               ],
             ),

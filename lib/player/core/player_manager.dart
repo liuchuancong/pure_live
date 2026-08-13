@@ -24,7 +24,9 @@ import 'package:pure_live/player/utils/pip_window_widget.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/player/core/audio_stream_loader.dart';
-import 'package:pure_live/modules/live_play/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
+import 'package:pure_live/modules/live_play/widgets/video_player/compact_danmaku_overlay.dart';
 
 class PlayerManager {
   final PlayerPool playerPool;
@@ -42,8 +44,11 @@ class PlayerManager {
     required this.preloadManager,
     required this.lineManager,
   }) {
-    isInPip.listen((value) {
+    _pipStateSubscription = isInPip.listen((value) {
       GlobalPlayerState.to.isPipMode.value = value;
+      if (!value && !isFloating.value && !_appFloatingPrepared) {
+        _videoController?.clearPipDanmaku();
+      }
     });
   }
 
@@ -76,6 +81,7 @@ class PlayerManager {
 
   final List<StreamSubscription> _subscriptions = [];
   StreamSubscription<PiPStatus>? _pipSubscription;
+  StreamSubscription<bool>? _pipStateSubscription;
 
   bool _disposed = false;
   bool _isSwitchingDueToFallback = false;
@@ -84,6 +90,9 @@ class PlayerManager {
   Timer? _hideTimer;
   late Floating floating;
   LiveRoom? currentFloatRoom;
+  VideoController? _videoController;
+  VoidCallback? _floatingDanmakuDisposer;
+  bool _appFloatingPrepared = false;
 
   UnifiedPlayer? get currentPlayer => _currentPlayer;
   PlayerEngine get currentEngine => _runtimeEngine ?? _defaultEngine ?? PlayerEngine.mediaKit;
@@ -95,6 +104,39 @@ class PlayerManager {
   Stream<int?> get width => _widthSubject.stream;
   Stream<int?> get height => _heightSubject.stream;
   bool get isPlayingNow => _playingSubject.value;
+  bool get shouldKeepDanmakuForAppFloating => _appFloatingPrepared || isFloating.value;
+  bool get isCompactModeActive => isInPip.value || isFloating.value || _appFloatingPrepared;
+
+  void attachVideoController(VideoController controller) {
+    _videoController = controller;
+  }
+
+  void detachVideoController(VideoController controller) {
+    if (identical(_videoController, controller)) {
+      _videoController = null;
+    }
+  }
+
+  void prepareAppFloating({required VoidCallback onClose}) {
+    _floatingDanmakuDisposer?.call();
+    _floatingDanmakuDisposer = onClose;
+    _appFloatingPrepared = true;
+  }
+
+  Widget _buildCompactDanmaku() {
+    final controller = _videoController;
+    return controller == null ? const SizedBox.shrink() : CompactDanmakuOverlay(controller: controller);
+  }
+
+  void _releaseAppFloatingResources() {
+    _appFloatingPrepared = false;
+    final disposer = _floatingDanmakuDisposer;
+    _floatingDanmakuDisposer = null;
+    disposer?.call();
+    if (!isInPip.value && !isFloating.value) {
+      _videoController?.clearPipDanmaku();
+    }
+  }
 
   double get currentVideoRatio {
     final w = _widthSubject.value?.toDouble() ?? 1920;
@@ -153,7 +195,7 @@ class PlayerManager {
       final String validKey = PlayerConsts.engines.containsKey(savedKey) ? savedKey : PlayerConsts.defaultKey;
       _defaultEngine = PlayerConsts.engines[validKey]!;
       _runtimeEngine = _defaultEngine;
-      log('No current player, initializing with default engine: _defaultEngine', name: 'PlayerManager');
+      log('No current player, initializing with default engine: $_defaultEngine', name: 'PlayerManager');
       await initialize(engine: _defaultEngine!, audioOnly: audioOnly);
     } else if (_runtimeEngine != _defaultEngine && !_isSwitchingDueToFallback) {
       await switchEngine(_defaultEngine!, isManual: false);
@@ -216,7 +258,7 @@ class PlayerManager {
 
       LiveAudioService.setPlayer(player);
       LiveAudioService.start(room!.roomId!, room.nick ?? "", room.title ?? "", room.avatar);
-      videoKey.value = ValueKey("video_{DateTime.now().millisecondsSinceEpoch}");
+      videoKey.value = ValueKey("video_${DateTime.now().millisecondsSinceEpoch}");
       _stateSubject.add(PlayerState.ready);
     } on PlayerException catch (e) {
       if (!_isHandlingError && _isSessionValid(mySessionId)) {
@@ -254,13 +296,13 @@ class PlayerManager {
       _currentPlayer = newPlayer;
       _runtimeEngine = engine;
       if (isManual) _defaultEngine = engine;
-      log('Switch engine to engine', name: 'PlayerManager');
+      log('Switch engine to $engine', name: 'PlayerManager');
       await _bindPlayerStreams(newPlayer);
       LiveAudioService.setPlayer(_currentPlayer!);
       if (oldPlayer != null && oldEngine != null) {
         await _safeDestroyPlayer(oldPlayer, oldEngine);
       }
-      videoKey.value = ValueKey("video_{DateTime.now().millisecondsSinceEpoch}");
+      videoKey.value = ValueKey("video_${DateTime.now().millisecondsSinceEpoch}");
     } catch (e, s) {
       final exception = PlayerException(
         message: 'Switch engine failed',
@@ -278,7 +320,7 @@ class PlayerManager {
       await player.hardDispose();
       await playerPool.removeFromCache(engine);
     } catch (e, s) {
-      log("destroy player error: e", stackTrace: s);
+      log("destroy player error: $e", stackTrace: s);
     }
   }
 
@@ -343,6 +385,7 @@ class PlayerManager {
   }
 
   void showAppFloating() {
+    if (!_appFloatingPrepared) return;
     floatingManager.disposeFloating(_floatTag);
     _hideTimer?.cancel();
     double maxSide = Platform.isWindows ? 350 : 220;
@@ -390,6 +433,7 @@ class PlayerManager {
                 Positioned.fill(
                   child: getVideoWidget(videoFitIndex.value, fitList: SettingsService.to.player.videoFitArray),
                 ),
+                Positioned.fill(child: _buildCompactDanmaku()),
                 Positioned.fill(
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
@@ -471,9 +515,14 @@ class PlayerManager {
   }
 
   void closeAppFloating() {
-    if (!isFloating.value) return;
-    floatingManager.disposeFloating(_floatTag);
+    if (isFloating.value) {
+      floatingManager.disposeFloating(_floatTag);
+    }
     isFloating.value = false;
+    _releaseAppFloatingResources();
+    if (!isInPip.value) {
+      _videoController?.clearPipDanmaku();
+    }
   }
 
   Widget buildPiPOverlay() {
@@ -495,6 +544,7 @@ class PlayerManager {
                 },
                 child: getVideoWidget(videoFitIndex.value, fitList: SettingsService.to.player.videoFitArray),
               ),
+              Positioned.fill(child: _buildCompactDanmaku()),
               Center(
                 child: Obx(
                   () => AnimatedOpacity(
@@ -558,120 +608,130 @@ class PlayerManager {
         final gapMedium = compact ? 8.0 : 16.0;
         final gapSmall = compact ? 4.0 : 8.0;
 
-        return Container(
-          width: maxWidth,
-          height: maxHeight,
-          alignment: Alignment.center,
-          color: Colors.transparent,
-          child: SingleChildScrollView(
-            physics: compact ? const ClampingScrollPhysics() : const NeverScrollableScrollPhysics(),
-            padding: EdgeInsets.symmetric(horizontal: compact ? 16 : 24, vertical: compact ? 4 : 24),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: compact ? maxWidth : 460),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.95, end: 1.05),
-                    duration: const Duration(milliseconds: 1500),
-                    curve: Curves.easeInOut,
-                    builder: (context, scale, child) {
-                      return Transform.scale(scale: scale, child: child);
-                    },
-                    child: Container(
-                      width: avatarSize,
-                      height: avatarSize,
+        return Obx(() {
+          final state = livePlayController.state.value;
+          final detail = state.room.detail;
+          final avatar = detail?.avatar ?? '';
+          final title = detail?.title ?? '';
+          final nick = detail?.nick ?? '';
+
+          return Container(
+            width: maxWidth,
+            height: maxHeight,
+            alignment: Alignment.center,
+            color: Colors.transparent,
+            child: SingleChildScrollView(
+              physics: compact ? const ClampingScrollPhysics() : const NeverScrollableScrollPhysics(),
+              padding: EdgeInsets.symmetric(horizontal: compact ? 16 : 24, vertical: compact ? 4 : 24),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: compact ? maxWidth : 460),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.95, end: 1.05),
+                      duration: const Duration(milliseconds: 1500),
+                      curve: Curves.easeInOut,
+                      builder: (context, scale, child) {
+                        return Transform.scale(scale: scale, child: child);
+                      },
+                      child: Container(
+                        width: avatarSize,
+                        height: avatarSize,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.white.withValues(alpha: 0.04),
+                              blurRadius: compact ? 10 : 20,
+                              spreadRadius: compact ? 4 : 8,
+                            ),
+                          ],
+                        ),
+                        child: ClipOval(
+                          child: avatar.isNotEmpty
+                              ? Image.network(
+                                  avatar,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const Icon(Remix.user_3_line, color: Colors.white24),
+                                )
+                              : const Icon(Remix.user_3_line, color: Colors.white24),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: gapLarge),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 24),
+                      child: Text(
+                        title,
+                        textAlign: TextAlign.center,
+                        maxLines: compact ? 1 : 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: titleSize,
+                          fontWeight: FontWeight.w700,
+                          height: 1.25,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: gapSmall),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 14, vertical: compact ? 2 : 5),
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.5),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.white.withValues(alpha: 0.04),
-                            blurRadius: compact ? 10 : 20,
-                            spreadRadius: compact ? 4 : 8,
+                        color: Colors.white.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                      ),
+                      child: Text(
+                        nick,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.75),
+                          fontSize: nickSize,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: gapMedium),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 16, vertical: compact ? 5 : 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        color: Colors.white.withValues(alpha: 0.08),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Remix.headphone_line,
+                            color: Colors.white.withValues(alpha: 0.85),
+                            size: compact ? 12 : 16,
+                          ),
+                          SizedBox(width: compact ? 4 : 8),
+                          Text(
+                            i18n("audio_only_mode"),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: badgeTextSize,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.2,
+                            ),
                           ),
                         ],
                       ),
-                      child: ClipOval(
-                        child: Image.network(
-                          livePlayController.detail.value?.avatar ?? '',
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Remix.user_3_line, color: Colors.white24),
-                        ),
-                      ),
                     ),
-                  ),
-                  SizedBox(height: gapLarge),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 24),
-                    child: Text(
-                      livePlayController.detail.value?.title ?? '',
-                      textAlign: TextAlign.center,
-                      maxLines: compact ? 1 : 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: titleSize,
-                        fontWeight: FontWeight.w700,
-                        height: 1.25,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: gapSmall),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 14, vertical: compact ? 2 : 5),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-                    ),
-                    child: Text(
-                      livePlayController.detail.value?.nick ?? '',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.75),
-                        fontSize: nickSize,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: gapMedium),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 16, vertical: compact ? 5 : 8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(30),
-                      color: Colors.white.withValues(alpha: 0.08),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Remix.headphone_line,
-                          color: Colors.white.withValues(alpha: 0.85),
-                          size: compact ? 12 : 16,
-                        ),
-                        SizedBox(width: compact ? 4 : 8),
-                        Text(
-                          i18n("audio_only_mode"),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: badgeTextSize,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        );
+          );
+        });
       },
     );
   }
@@ -698,7 +758,7 @@ class PlayerManager {
                 height: double.infinity,
                 child: Stack(
                   children: [
-                    if (livePlayController.isCurrentRoomAudioOnly.value)
+                    if (livePlayController.state.value.player.isCurrentRoomAudioOnly)
                       buildAudioOnlyUI(context, livePlayController)
                     else
                       Positioned.fill(
@@ -782,7 +842,7 @@ class PlayerManager {
   Future<void> _handleError(PlayerException error, {int? sessionId}) async {
     if (_disposed || _isClosing) return;
     if (_isHandlingError) {
-      log("skip duplicated error handling: {error.message}");
+      log("skip duplicated error handling: ${error.message}");
       return;
     }
     final mySessionId = sessionId ?? _sessionId;
@@ -804,7 +864,7 @@ class PlayerManager {
           final nextLine = lineManager.next(_currentPlayUrls);
           if (nextLine != _currentUrl) {
             lineSwitched = true;
-            log("switch line => nextLine");
+            log("switch line => $nextLine");
             await Future.delayed(const Duration(seconds: 2));
             if (!_isSessionValid(mySessionId)) return;
             await play(nextLine, _currentPlayUrls, _currentHeaders, room: currentFloatRoom);
@@ -877,7 +937,7 @@ class PlayerManager {
     _subscriptions.add(
       player.onError.listen((error) {
         if (!_isHandlingError) {
-          _handleError(error);
+          unawaited(_handleError(error));
         }
       }),
     );
@@ -917,7 +977,8 @@ class PlayerManager {
     _isClosing = true;
     _hideTimer?.cancel();
     closeAppFloating();
-    _pipSubscription?.cancel();
+    await _pipSubscription?.cancel();
+    await _pipStateSubscription?.cancel();
     await _clearSubscriptions();
     await playerPool.disposeAll();
     await Future.wait([

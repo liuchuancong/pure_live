@@ -1,5 +1,6 @@
 import 'package:pure_live/common/index.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
+import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:pure_live/common/widgets/count_button.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 
@@ -137,6 +138,113 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
                   digitColor: digitColor,
                 ),
               ]),
+              const SizedBox(height: 20),
+
+              context.buildGroupTitle(i18n("pip_danmaku")),
+              const SizedBox(height: 8),
+              context.buildModernCard([
+                _switch(
+                  theme,
+                  title: i18n("pip_danmaku_enable"),
+                  value: SettingsService.to.danmaku.enablePipDanmaku.v,
+                  onChanged: (v) => SettingsService.to.danmaku.enablePipDanmaku.v = v,
+                  labelColor: labelColor,
+                ),
+                if (SettingsService.to.danmaku.enablePipDanmaku.v) ...[
+                  _switch(
+                    theme,
+                    title: i18n("pip_danmaku_auto_scale"),
+                    value: SettingsService.to.danmaku.pipDanmakuAutoScale.v,
+                    onChanged: (v) => SettingsService.to.danmaku.pipDanmakuAutoScale.v = v,
+                    labelColor: labelColor,
+                  ),
+                  _switch(
+                    theme,
+                    title: i18n("pip_danmaku_original_color"),
+                    value: SettingsService.to.danmaku.pipDanmakuUseOriginalColor.v,
+                    onChanged: (v) => SettingsService.to.danmaku.pipDanmakuUseOriginalColor.v = v,
+                    labelColor: labelColor,
+                  ),
+                  if (!SettingsService.to.danmaku.pipDanmakuUseOriginalColor.v)
+                    _colorPickerRow(labelColor: labelColor, digitColor: digitColor),
+                  _slider(
+                    theme,
+                    title: i18n("font_size"),
+                    value: SettingsService.to.danmaku.pipDanmakuFontSize.v,
+                    min: 8,
+                    max: 24,
+                    display: SettingsService.to.danmaku.pipDanmakuFontSize.v.toStringAsFixed(1),
+                    onChanged: (v) => SettingsService.to.danmaku.pipDanmakuFontSize.v = v,
+                    labelColor: labelColor,
+                    digitColor: digitColor,
+                  ),
+                  _slider(
+                    theme,
+                    title: i18n("speed"),
+                    value: SettingsService.to.danmaku.pipDanmakuSpeed.v,
+                    min: 20,
+                    max: 400,
+                    display: SettingsService.to.danmaku.pipDanmakuSpeed.v.toStringAsFixed(0),
+                    onChanged: (v) => SettingsService.to.danmaku.pipDanmakuSpeed.v = v,
+                    labelColor: labelColor,
+                    digitColor: digitColor,
+                  ),
+                  _slider(
+                    theme,
+                    title: i18n("opacity"),
+                    value: SettingsService.to.danmaku.pipDanmakuOpacity.v,
+                    min: 0.1,
+                    max: 1,
+                    display: "${(SettingsService.to.danmaku.pipDanmakuOpacity.v * 100).toInt()}%",
+                    onChanged: (v) => SettingsService.to.danmaku.pipDanmakuOpacity.v = v,
+                    labelColor: labelColor,
+                    digitColor: digitColor,
+                  ),
+                  _slider(
+                    theme,
+                    title: i18n("danmaku_area"),
+                    value: SettingsService.to.danmaku.pipDanmakuArea.v,
+                    min: 0.1,
+                    max: 1,
+                    display: "${(SettingsService.to.danmaku.pipDanmakuArea.v * 100).toInt()}%",
+                    onChanged: (v) => SettingsService.to.danmaku.pipDanmakuArea.v = v,
+                    labelColor: labelColor,
+                    digitColor: digitColor,
+                  ),
+                  _counter(
+                    theme,
+                    title: i18n("pip_danmaku_max_visible"),
+                    value: SettingsService.to.danmaku.pipDanmakuMaxVisibleCount.v,
+                    min: 1,
+                    max: 20,
+                    onChanged: (v) => SettingsService.to.danmaku.pipDanmakuMaxVisibleCount.v = v,
+                    labelColor: labelColor,
+                    digitColor: digitColor,
+                  ),
+                  _slider(
+                    theme,
+                    title: i18n("pip_danmaku_interval"),
+                    value: SettingsService.to.danmaku.pipDanmakuEmitInterval.v,
+                    min: 0.05,
+                    max: 2,
+                    display: "${SettingsService.to.danmaku.pipDanmakuEmitInterval.v.toStringAsFixed(2)}s",
+                    onChanged: (v) => SettingsService.to.danmaku.pipDanmakuEmitInterval.v = v,
+                    labelColor: labelColor,
+                    digitColor: digitColor,
+                  ),
+                  _slider(
+                    theme,
+                    title: i18n("danmaku_fps"),
+                    value: SettingsService.to.danmaku.pipDanmakuFps.v.toDouble(),
+                    min: 15,
+                    max: 60,
+                    display: "${SettingsService.to.danmaku.pipDanmakuFps.v} FPS",
+                    onChanged: (v) => SettingsService.to.danmaku.pipDanmakuFps.v = v.toInt(),
+                    labelColor: labelColor,
+                    digitColor: digitColor,
+                  ),
+                ],
+              ]),
               const SizedBox(height: 24),
             ],
           ),
@@ -205,6 +313,7 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
     ThemeData theme, {
     required String title,
     required int value,
+    int min = 0,
     required int max,
     required ValueChanged<int> onChanged,
     required Color labelColor,
@@ -221,7 +330,7 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
           ),
           CountButton(
             maxValue: max,
-            minValue: 0,
+            minValue: min,
             selectedValue: value,
             onChanged: onChanged,
             textStyle: TextStyle(color: digitColor, fontSize: 14, fontWeight: FontWeight.bold),
@@ -229,6 +338,57 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
         ],
       ),
     );
+  }
+
+  Widget _colorPickerRow({required Color labelColor, required Color digitColor}) {
+    final color = Color(SettingsService.to.danmaku.pipDanmakuColor.v);
+    return InkWell(
+      onTap: () => _showPipColorPicker(color),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              i18n("pip_danmaku_color"),
+              style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600, color: labelColor),
+            ),
+            Row(
+              children: [
+                ColorIndicator(width: 28, height: 28, borderRadius: 14, color: color),
+                const SizedBox(width: 8),
+                Text(
+                  '#${color.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase()}',
+                  style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.bold, color: digitColor),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showPipColorPicker(Color initialColor) async {
+    final confirmed = await ColorPicker(
+      color: initialColor,
+      onColorChanged: (color) => SettingsService.to.danmaku.pipDanmakuColor.v = color.toARGB32(),
+      enableOpacity: false,
+      showColorCode: true,
+      showColorName: false,
+      showMaterialName: false,
+      pickersEnabled: const {
+        ColorPickerType.both: false,
+        ColorPickerType.primary: true,
+        ColorPickerType.accent: true,
+        ColorPickerType.bw: true,
+        ColorPickerType.custom: true,
+        ColorPickerType.wheel: true,
+      },
+    ).showPickerDialog(context);
+    if (!confirmed) {
+      SettingsService.to.danmaku.pipDanmakuColor.v = initialColor.toARGB32();
+    }
   }
 
   Widget _switch(

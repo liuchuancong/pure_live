@@ -1,7 +1,7 @@
 name: pure_live
 description: 纯粹直播,一款开源的第三方多平台直播聚合播放器.
 publish_to: none
-version: 2.0.22+33
+version: 2.0.23+34
 
 environment:
   sdk: ^3.10.4
@@ -75,7 +75,7 @@ dependencies:
   audio_service: ^0.18.18 # 后台音频服务
   audio_service_win: ^0.0.3
   audio_session: ^0.2.3 # 音频会话管理
-  ffmpeg_kit_extended_flutter: ^0.5.7
+  ffmpeg_kit_extended_flutter: ^0.5.13
   flv_lzc:
     git: https://github.com/liuchuancong/flv_lzc.git # ijk视频解析
 
@@ -120,7 +120,6 @@ dependencies:
   battery_plus: ^7.0.0 # 电池状态获取
   permission_handler: ^12.0.1 # 权限管理
   device_info_plus: ^13.1.0 # 设备信息
-  auto_orientation_v2: ^2.3.6 # 屏幕自动旋转
   mobile_scanner: ^7.1.3 # 二维码扫描
 
   # -------------------------- 数据存储/数据库 --------------------------
@@ -151,7 +150,11 @@ dependencies:
   # -------------------------- 网页/JS解析 --------------------------
   flutter_js: ^0.8.5 # JS引擎执行
   html: ^0.15.4 # HTML解析
-  flutter_inappwebview: ^6.2.0-beta.3 # 内置浏览器
+  flutter_inappwebview:
+    git:
+      url: https://github.com/guide-inc-org/guide-flutter_inappwebview.git
+      path: flutter_inappwebview
+      ref: sbi_fx_pc/v6.2.0-beta.3
   dart_quickjs:
     git: https://github.com/liuchuancong/dart_quickjs.git # QuickJS引擎
 
@@ -293,11 +296,11 @@ flutter:
         - asset: assets/PingFangSC.ttf
 
 # FFmpeg配置
-# ffmpeg_kit_extended_config:
-#   type: "base" # pre-bundled builds: debug, base, full, audio, video, video_hw
-#   gpl: true # enable to include GPL libraries
-#   small: true # enable to use smaller builds
 ffmpeg_kit_extended_config:
-  windows: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-windows/bundle-base-windows-x86_64-shared-lgpl.zip
-  android: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-android/bundle-base-shared-lgpl-release.aar
-  macos: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-macos/bundle-base-macos-universal-lgpl.xcframework.zip
+  # type: "base" # 预打包构建：debug, base, full, audio, video, video_hw
+  # gpl: true # 启用以包含 GPL 库
+  # small: true # 启用以使用更小的构建
+  windows: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.5-windows/bundle-base-windows-x86_64-shared-lgpl.zip
+  android: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.5-android/bundle-base-shared-lgpl-release.aar
+  macos: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.5-macos/bundle-base-macos-universal-lgpl.xcframework.zip
+

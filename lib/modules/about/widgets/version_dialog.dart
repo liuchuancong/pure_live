@@ -50,10 +50,7 @@ class NewVersionDialog extends StatelessWidget {
                   } else {
                     Navigator.pop(context);
                   }
-                  launchUrl(
-                    Uri.parse('https://github.com/liuchuancong/pure_live'),
-                    mode: LaunchMode.externalApplication,
-                  );
+                  launchUrl(Uri.parse(VersionUtil.projectUrl), mode: LaunchMode.externalApplication);
                 },
                 child: Text(i18n('open_source_free'), style: AppTextStyles.t20),
               ),
