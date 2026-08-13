@@ -59,7 +59,8 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
               : Icons.volume_up;
 
           return MouseRegion(
-            onHover: (event) => controller.enableController(),
+            onEnter: (_) => controller.onMouseEnterPlayer(),
+            onExit: (_) => controller.onMouseExitPlayer(),
             cursor: !controller.showController.value ? SystemMouseCursors.none : SystemMouseCursors.basic,
             child: Stack(
               children: [
