@@ -7,11 +7,11 @@
 - Flutter 3.44.9 / Dart 3.12.2（`.fvmrc`）。
 - Android compileSdk/targetSdk 36，JDK 17，AGP 8.11.1，Gradle 8.14，Kotlin 2.2.20。
 - Google Services Gradle Plugin 4.5.0。
-- FFmpeg Kit Extended Flutter 0.5.13，桌面/Android 产物固定到 builders v0.10.5。
+- FFmpeg Kit Extended Flutter 0.5.13，按插件配置解析 builders v0.10.5，并复用 Native Assets 共享缓存。
 
 AGP、Gradle 和 Kotlin 不按“最新数字”单独升级，而与 Flutter 3.44.9 的模板兼容矩阵一起升级。`permission_handler` 暂留 12.x，因为 13.x 要求 compileSdk 37。
 
-`flutter pub outdated --json` 已核对所有直接依赖，当前结果没有被 pub 标记为已撤回或受已知安全公告影响的版本。未跟随最高版本的直接依赖均有约束原因：`meta` 由当前 Flutter SDK 固定，`build_runner` 的新版本需要更高 Dart SDK，`permission_handler` 13.x 需要 compileSdk 37，`xml` 7.x 被当前 WebDAV 依赖约束在 6.x。它们应随下一次 Flutter/Android 工具链升级一起复测，而不是单包强制覆盖。
+`dart pub outdated --no-dev-dependencies` 已于 2026-08-13 复核。直接依赖中 `meta` 由当前 Flutter SDK 固定，`permission_handler` 13.x 需要 compileSdk 37，`xml` 7.x 被当前 WebDAV 依赖约束在 6.x；其余直接运行时依赖均处于当前约束的可解析版本。它们应随下一次 Flutter/Android 工具链升级一起复测，而不是单包强制覆盖。
 
 ## 可复现依赖
 
@@ -29,7 +29,7 @@ AGP、Gradle 和 Kotlin 不按“最新数字”单独升级，而与 Flutter 3.
 python .\tool\interface_probe.py
 ```
 
-探测 Bilibili、Douyu、Huya、Kuaishou、Douyin、网易 CC 的公开分类/推荐入口及关键 JSON/HTML 字段。Bilibili WBI 签名接口、登录态清晰度、弹幕 WebSocket 和实际 CDN 播放仍需在应用内用真实直播间验证。
+当前脚本共检查 14 项：Bilibili、Douyu、Huya、Kuaishou、Douyin、网易 CC 的公开分类/推荐入口、Douyu/Huya/CC 搜索，以及 Bilibili WBI 签名、弹幕 token、`host_list` 和 `wss_port`。弹幕认证回应、登录态清晰度和实际 CDN 播放仍需在应用内用真实直播间验证。
 
 接口属于外部服务，任何时刻都可能变化；发布前应重新运行探测并执行真机播放回归。
 

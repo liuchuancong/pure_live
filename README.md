@@ -32,6 +32,8 @@
 - **小窗弹幕**：覆盖 Android 系统画中画、Windows 小窗和应用内悬浮窗。
 - **数据管理**：本地导入导出、WebDAV 同步，以及可选的 Firebase 用户同步。
 - **播放工具**：直播录制、定时关闭、后台音频和系统媒体通知。
+- **搜索与互动**：跨平台原生直播搜索，以及仅保存在本机的昵称、头衔、字幕、体验币和礼物特效。
+- **ASMR 助眠**：Android 纯音频后台播放、媒体保活和 30–480 分钟自动停止。
 - **高刷新率适配**：Android 自动请求当前分辨率支持的最高刷新率，并优化封面解码、缓存和弹幕重绘。
 
 ## 小窗弹幕
@@ -50,7 +52,7 @@
 
 前往 [GitHub Releases](https://github.com/wzgrx/pure_live/releases/latest) 获取安装包：
 
-- Android：按设备架构选择 `arm64-v8a`、`armeabi-v7a` 或 `x86_64` APK；
+- Android：当前优先发布 `arm64-v8a` APK；
 - Windows：按 Release 附件说明选择安装包或便携 ZIP；
 - 下载后使用同一 Release 中的 `SHA256SUMS.txt` 校验完整性。
 
@@ -64,7 +66,7 @@
 PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
 ```
 
-生成 Android 分架构 APK、Windows 便携包、可选 EXE 安装器和 SHA-256 文件：
+生成 Android `arm64-v8a` APK、Windows x64 便携包、可选 EXE 安装器和 SHA-256 文件：
 
 ```powershell
 PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
@@ -79,6 +81,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 | [文档索引](docs/README.md) | 开发、发布、依赖和功能文档入口 |
 | [构建与发布](docs/BUILD_AND_RELEASE.md) | 本机质量门禁、签名、打包和 Release 流程 |
 | [依赖与接口审计](docs/DEPENDENCY_AUDIT.md) | 固定工具链、升级约束和接口探测范围 |
+| [平台接口与兼容性](docs/PLATFORM_COMPATIBILITY.md) | 分区、搜索、弹幕和人数指标的当前能力 |
 | [高刷新率与性能验证](docs/PERFORMANCE.md) | Android 120 Hz 适配、渲染优化和真机帧统计 |
 | [WebDAV 配置](docs/WEBDAV.md) | 通用配置字段、坚果云示例和故障排查 |
 | [参与贡献](CONTRIBUTING.md) | 分支、提交、测试和 Pull Request 要求 |

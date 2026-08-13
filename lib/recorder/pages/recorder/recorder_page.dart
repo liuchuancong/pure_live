@@ -243,7 +243,7 @@ class _TaskCard extends GetView<RecorderController> {
             width: 150,
             height: 90,
             decoration: BoxDecoration(
-              image: DecorationImage(image: NetworkImage(task.cover), fit: BoxFit.cover),
+              image: DecorationImage(image: NetworkImage(normalizeNetworkImageUrl(task.cover)), fit: BoxFit.cover),
             ),
           ),
           Positioned(
@@ -501,7 +501,9 @@ class _TaskCard extends GetView<RecorderController> {
                           children: [
                             CircleAvatar(
                               radius: 12,
-                              backgroundImage: task.avatar.isNotEmpty ? NetworkImage(task.avatar) : null,
+                              backgroundImage: normalizeNetworkImageUrl(task.avatar).isNotEmpty
+                                  ? NetworkImage(normalizeNetworkImageUrl(task.avatar))
+                                  : null,
                             ),
                             const SizedBox(width: 7),
                             Expanded(

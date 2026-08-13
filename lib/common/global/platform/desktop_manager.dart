@@ -493,6 +493,7 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
   }
 
   void _showProductSelectionDialog(LiveRoom room) {
+    final avatarUrl = normalizeNetworkImageUrl(room.avatar);
     showDialog(
       context: Get.context!,
       builder: (BuildContext context) {
@@ -508,10 +509,8 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
                   children: [
                     CircleAvatar(
                       radius: 24,
-                      backgroundImage: room.avatar != null && room.avatar!.isNotEmpty
-                          ? NetworkImage(room.avatar!)
-                          : null,
-                      child: room.avatar == null || room.avatar!.isEmpty ? const Icon(Icons.person) : null,
+                      backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                      child: avatarUrl.isEmpty ? const Icon(Icons.person) : null,
                     ),
                     const SizedBox(width: 12),
                     Expanded(

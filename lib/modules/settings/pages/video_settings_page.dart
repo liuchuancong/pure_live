@@ -104,8 +104,52 @@ class VideoSettingsPage extends GetView<SettingsService> {
                   if (val && Platform.isAndroid) {
                     bool hasPermission = await LiveAudioService.requestPlatformPermissions();
                     SettingsService.to.app.enableBackgroundPlay.v = hasPermission;
+                    await LiveAudioService.syncKeepAlive();
+                  } else if (!val) {
+                    SettingsService.to.app.enableAsmrSleepMode.v = false;
+                    await LiveAudioService.configureSleepTimer(
+                      enabled: false,
+                      minutes: SettingsService.to.app.asmrSleepMinutes.v,
+                    );
+                    await LiveAudioService.releaseKeepAlive();
                   }
                 },
+              ),
+            if (Platform.isAndroid)
+              context.buildSwitchTile(
+                icon: Remix.moon_clear_line,
+                title: i18n('asmr_sleep_mode'),
+                subtitle: i18n('asmr_sleep_mode_desc'),
+                value: SettingsService.to.app.enableAsmrSleepMode,
+                onChanged: (val) async {
+                  if (val) {
+                    final hasPermission = await LiveAudioService.requestPlatformPermissions();
+                    SettingsService.to.app.enableAsmrSleepMode.v = hasPermission;
+                    if (hasPermission) {
+                      SettingsService.to.app.enableBackgroundPlay.v = true;
+                      SettingsService.to.player.audioOnly.v = true;
+                    }
+                  } else {
+                    SettingsService.to.app.enableAsmrSleepMode.v = false;
+                  }
+                  await LiveAudioService.configureSleepTimer(
+                    enabled: SettingsService.to.app.enableAsmrSleepMode.v,
+                    minutes: SettingsService.to.app.asmrSleepMinutes.v,
+                  );
+                },
+              ),
+            if (Platform.isAndroid)
+              Obx(
+                () => context.buildTile(
+                  icon: Remix.timer_2_line,
+                  title: i18n('asmr_sleep_timer'),
+                  subtitle: i18n('asmr_sleep_timer_desc'),
+                  trailing: Text(
+                    '${SettingsService.to.app.asmrSleepMinutes.v} ${i18n('minutes')}',
+                    style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
+                  ),
+                  onTap: () => _showAsmrSleepTimerDialog(context),
+                ),
               ),
             context.buildSwitchTile(
               title: i18n("exit_float_window"),
@@ -164,6 +208,36 @@ class VideoSettingsPage extends GetView<SettingsService> {
           ]),
           const SizedBox(height: 32),
         ],
+      ),
+    );
+  }
+
+  void _showAsmrSleepTimerDialog(BuildContext context) {
+    const options = [30, 45, 60, 90, 120, 180, 240, 480];
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: Text(i18n('asmr_sleep_timer')),
+        children: options
+            .map(
+              (minutes) => Obx(
+                () => ListTile(
+                  title: Text('$minutes ${i18n('minutes')}'),
+                  trailing: SettingsService.to.app.asmrSleepMinutes.v == minutes
+                      ? Icon(Icons.check_rounded, color: Theme.of(dialogContext).colorScheme.primary)
+                      : null,
+                  onTap: () async {
+                    SettingsService.to.app.asmrSleepMinutes.v = minutes;
+                    await LiveAudioService.configureSleepTimer(
+                      enabled: SettingsService.to.app.enableAsmrSleepMode.v,
+                      minutes: minutes,
+                    );
+                    if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+                  },
+                ),
+              ),
+            )
+            .toList(),
       ),
     );
   }

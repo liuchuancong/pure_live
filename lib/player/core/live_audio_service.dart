@@ -3,6 +3,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:pure_live/player/core/live_audio_handler.dart';
 import 'package:pure_live/player/interface/unified_player_interface.dart';
+import 'package:pure_live/player/core/background_playback_service.dart';
 
 class LiveAudioService {
   static LiveAudioHandler? _handler;
@@ -54,11 +55,30 @@ class LiveAudioService {
     );
 
     await handler.playMediaItem(item);
+    handler.configureSleepTimer(
+      SettingsService.to.app.enableAsmrSleepMode.v
+          ? Duration(minutes: SettingsService.to.app.asmrSleepMinutes.v)
+          : null,
+    );
+  }
+
+  static Future<void> configureSleepTimer({required bool enabled, required int minutes}) async {
+    _handler?.configureSleepTimer(enabled ? Duration(minutes: minutes.clamp(15, 480).toInt()) : null);
+    await syncKeepAlive();
   }
 
   static Future<void> stop() async {
     if (_handler == null) return;
     await _handler!.stop();
+  }
+
+  static Future<void> releaseKeepAlive() => BackgroundPlaybackService.setKeepAlive(false);
+
+  static Future<void> syncKeepAlive() {
+    final shouldKeepAlive =
+        (_handler?.playbackState.value.playing ?? false) &&
+        (SettingsService.to.app.enableBackgroundPlay.v || SettingsService.to.app.enableAsmrSleepMode.v);
+    return BackgroundPlaybackService.setKeepAlive(shouldKeepAlive);
   }
 
   static Future<bool> requestPlatformPermissions() async {

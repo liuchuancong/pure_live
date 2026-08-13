@@ -4,10 +4,16 @@
 from __future__ import annotations
 
 import json
+import hashlib
+import gzip
 import sys
 import time
+import http.cookiejar
 import urllib.parse
 import urllib.request
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(errors="replace")
 
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -36,7 +42,15 @@ def request_json(url: str, params: dict[str, object] | None = None, attempts: in
                 },
             )
             with urllib.request.urlopen(request, timeout=20) as response:
-                payload = response.read().decode("utf-8", errors="replace")
+                raw_payload = response.read()
+                # A few platform CDNs return gzip even when the client did not
+                # advertise compression. urllib deliberately leaves it intact.
+                if (
+                    response.headers.get("Content-Encoding", "").lower() == "gzip"
+                    or raw_payload.startswith(b"\x1f\x8b")
+                ):
+                    raw_payload = gzip.decompress(raw_payload)
+                payload = raw_payload.decode("utf-8", errors="replace")
             if not payload.strip():
                 raise ValueError("empty response body")
             try:
@@ -59,6 +73,59 @@ def require_path(value: object, *path: str) -> None:
         if not isinstance(current, dict) or part not in current:
             raise ValueError(f"missing JSON path: {'.'.join(path)}")
         current = current[part]
+
+
+def bilibili_danmaku_probe() -> None:
+    """Validate the signed endpoint and the current secure socket nodes."""
+    jar = http.cookiejar.CookieJar()
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+
+    def bili_json(url: str) -> dict[str, object]:
+        request = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": USER_AGENT,
+                "Referer": "https://live.bilibili.com/6",
+                "Accept": "application/json,text/plain,*/*",
+            },
+        )
+        with opener.open(request, timeout=20) as response:
+            return json.loads(response.read().decode("utf-8"))
+
+    spi = bili_json("https://api.bilibili.com/x/frontend/finger/spi")
+    require_path(spi, "data", "b_3")
+    nav = bili_json("https://api.bilibili.com/x/web-interface/nav")
+    wbi_img = nav.get("data", {}).get("wbi_img", {}) if isinstance(nav.get("data"), dict) else {}
+    img_url = str(wbi_img.get("img_url", ""))
+    sub_url = str(wbi_img.get("sub_url", ""))
+    if not img_url or not sub_url:
+        raise ValueError("WBI image keys missing")
+
+    source = "".join(urllib.parse.urlsplit(url).path.rsplit("/", 1)[-1].split(".", 1)[0] for url in (img_url, sub_url))
+    table = [
+        46, 47, 18, 2, 53, 8, 23, 32, 15, 50, 10, 31, 58, 3, 45, 35,
+        27, 43, 5, 49, 33, 9, 42, 19, 29, 28, 14, 39, 12, 38, 41, 13,
+        37, 48, 7, 16, 24, 55, 40, 61, 26, 17, 0, 1, 60, 51, 30, 4,
+        22, 25, 54, 21, 56, 59, 6, 63, 57, 62, 11, 36, 20, 34, 44, 52,
+    ]
+    mixin_key = "".join(source[index] for index in table if index < len(source))[:32]
+    params = {"id": "6", "type": "0", "wts": str(int(time.time()))}
+    filtered = {key: "".join(char for char in value if char not in "!'()*") for key, value in params.items()}
+    query = urllib.parse.urlencode(sorted(filtered.items()))
+    filtered["w_rid"] = hashlib.md5(f"{query}{mixin_key}".encode()).hexdigest()
+    response = bili_json(
+        "https://api.live.bilibili.com/xlive/web-room/v1/index/getDanmuInfo?"
+        + urllib.parse.urlencode(filtered)
+    )
+    if response.get("code") != 0:
+        raise ValueError(f"getDanmuInfo code={response.get('code')}")
+    data = response.get("data", {})
+    hosts = data.get("host_list", []) if isinstance(data, dict) else []
+    if not data.get("token") or not hosts:
+        raise ValueError("danmaku token/host_list missing")
+    for host in hosts:
+        if not host.get("host") or int(host.get("wss_port", 0)) <= 0:
+            raise ValueError("invalid secure danmaku endpoint")
 
 
 def main() -> int:
@@ -116,6 +183,46 @@ def main() -> int:
             lambda: require_path(
                 request_json("https://cc.163.com/api/category/live/", {"format": "json", "start": 0, "size": 30}),
                 "lives",
+            ),
+        ),
+        ("bilibili.danmaku", bilibili_danmaku_probe),
+        (
+            "douyu.search",
+            lambda: require_path(
+                request_json(
+                    "https://www.douyu.com/japi/search/api/searchShow",
+                    {"kw": "ASMR", "page": 1, "pageSize": 20},
+                ),
+                "data",
+                "relateShow",
+            ),
+        ),
+        (
+            "huya.search",
+            lambda: require_path(
+                request_json(
+                    "https://search.cdn.huya.com/",
+                    {
+                        "m": "Search",
+                        "do": "getSearchContent",
+                        "q": "ASMR",
+                        "uid": 0,
+                        "v": 4,
+                        "typ": -5,
+                        "livestate": 0,
+                        "rows": 20,
+                        "start": 0,
+                    },
+                ),
+                "response",
+            ),
+        ),
+        (
+            "cc.search",
+            lambda: require_path(
+                request_json("https://cc.163.com/search/anchor", {"query": "ASMR", "size": 20, "page": 1}),
+                "webcc_anchor",
+                "result",
             ),
         ),
     ]

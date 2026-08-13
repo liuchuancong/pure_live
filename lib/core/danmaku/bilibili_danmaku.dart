@@ -14,13 +14,13 @@ class BiliBiliDanmakuArgs {
   final int roomId;
   final String token;
   final String buvid;
-  final String serverHost;
+  final List<String> serverUrls;
   final int uid;
   final String cookie;
   BiliBiliDanmakuArgs({
     required this.roomId,
     required this.token,
-    required this.serverHost,
+    required this.serverUrls,
     required this.buvid,
     required this.uid,
     required this.cookie,
@@ -30,7 +30,7 @@ class BiliBiliDanmakuArgs {
     return json.encode({
       "roomId": roomId,
       "token": token,
-      "serverHost": serverHost,
+      "serverUrls": serverUrls,
       "buvid": buvid,
       "uid": uid,
       "cookie": cookie,
@@ -40,7 +40,7 @@ class BiliBiliDanmakuArgs {
 
 class BiliBiliDanmaku implements LiveDanmaku {
   @override
-  int heartbeatTime = 60 * 1000;
+  int heartbeatTime = 30 * 1000;
   bool _connected = false;
 
   @override
@@ -70,16 +70,23 @@ class BiliBiliDanmaku implements LiveDanmaku {
   @override
   Future start(dynamic args) async {
     danmakuArgs = args as BiliBiliDanmakuArgs;
+    markDisconnected();
+    if (danmakuArgs.token.isEmpty) {
+      onClose?.call("弹幕连接信息获取失败，请稍后重试");
+      return;
+    }
+    final endpoints = danmakuArgs.serverUrls.isEmpty
+        ? const ['wss://broadcastlv.chat.bilibili.com/sub']
+        : danmakuArgs.serverUrls;
     webScoketUtils = WebScoketUtils(
-      url: "wss://${args.serverHost}/sub",
+      url: endpoints.first,
+      serverUrls: endpoints,
       headers: args.cookie.isEmpty ? null : {"cookie": args.cookie},
       heartBeatTime: heartbeatTime,
       onMessage: (e) {
         decodeMessage(e);
       },
       onReady: () {
-        onReady?.call();
-        markConnected();
         joinRoom(danmakuArgs);
       },
       onHeartBeat: () {
@@ -120,6 +127,7 @@ class BiliBiliDanmaku implements LiveDanmaku {
 
   @override
   Future stop() async {
+    markDisconnected();
     onMessage = null;
     onClose = null;
     webScoketUtils?.close();
@@ -185,6 +193,18 @@ class BiliBiliDanmaku implements LiveDanmaku {
         var group = text.split(RegExp(r"[\x00-\x1f]+", unicode: true, multiLine: true));
         for (var item in group.where((x) => x.length > 2 && x.startsWith('{'))) {
           parseMessage(item);
+        }
+      } else if (operation == 8) {
+        // The transport is usable only after Bilibili acknowledges auth.
+        final text = utf8.decode(body, allowMalformed: true).trim();
+        final auth = text.isEmpty ? const <String, dynamic>{'code': 0} : json.decode(text);
+        if ((asT<int?>(auth['code']) ?? -1) == 0 && !isConnected) {
+          markConnected();
+          heartbeat();
+          onReady?.call();
+        } else if ((asT<int?>(auth['code']) ?? -1) != 0) {
+          markDisconnected();
+          webScoketUtils?.reconnect();
         }
       }
     } catch (e) {

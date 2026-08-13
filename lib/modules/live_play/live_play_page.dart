@@ -16,6 +16,7 @@ import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/common/utils/share_command_handler.dart';
 import 'package:pure_live/modules/live_play/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/local_interaction_sheet.dart';
 import 'package:pure_live/modules/live_play/widgets/video_keyboard.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller_panel.dart';
 
@@ -306,6 +307,17 @@ class LivePlayPage extends GetView<LivePlayController> {
                 }
               } else if (index == 6) {
                 ShareCommandHandler.instance.onShareRoomPressed(controller.detail.value!);
+              } else if (index == 7) {
+                showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  showDragHandle: true,
+                  builder: (_) => LocalInteractionSheet(
+                    controller: controller.localInteractionController,
+                    onMessage: (message, showAsDanmaku) =>
+                        controller.emitLocalMessage(message, showAsDanmaku: showAsDanmaku),
+                  ),
+                );
               }
               controller.isMenuOpen = false;
             },
@@ -356,6 +368,14 @@ class LivePlayPage extends GetView<LivePlayController> {
                   child: MenuListTile(
                     leading: const Icon(RemixIcons.share_forward_line, size: 20),
                     text: i18n("share"), // Make sure to add "share" to your i18n file
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 7,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: MenuListTile(
+                    leading: const Icon(Icons.auto_awesome_rounded, size: 20),
+                    text: i18n('local_interaction_title'),
                   ),
                 ),
               ];
@@ -636,10 +656,17 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Icon(Icons.whatshot_rounded, size: 14),
+        Icon(
+          controller.detail.value?.effectiveAudienceMetricType == AudienceMetricType.onlineViewers
+              ? Icons.people_alt_rounded
+              : Icons.whatshot_rounded,
+          size: 14,
+        ),
         const SizedBox(width: 4),
         Text(
-          controller.detail.value?.watching != null ? readableCount(controller.detail.value!.watching!) : '0',
+          controller.detail.value?.watching != null
+              ? '${i18n(controller.detail.value!.audienceMetricI18nKey)} · ${readableCount(controller.detail.value!.watching!)}'
+              : '0',
           style: Get.textTheme.bodySmall,
         ),
       ],

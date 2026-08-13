@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
+import 'package:pure_live/plugins/cache_manager.dart';
 
 class CacheController extends GetxController {
   final cacheSizeMB = 0.0.obs;
   final refreshTurns = 0.0.obs;
+  final imageCacheEpoch = 0.obs;
 
   @override
   void onInit() {
@@ -15,9 +17,10 @@ class CacheController extends GetxController {
   Future<double> getCacheSize() async {
     final recordsDir = await AppPathManager().recordsDir;
     final imageCacheDir = await AppPathManager().imageCacheDir;
+    final managedImageCacheDir = await CustomImageCacheManager.cacheDirectory();
     final downloadDir = await AppPathManager().downloadDir;
     final iptvCacheDir = await AppPathManager().iptvCacheDir;
-    final List<Directory> targetDirs = [recordsDir, imageCacheDir, downloadDir, iptvCacheDir];
+    final List<Directory> targetDirs = [recordsDir, imageCacheDir, managedImageCacheDir, downloadDir, iptvCacheDir];
 
     double totalSizeBytes = 0;
     for (final dir in targetDirs) {
@@ -34,6 +37,10 @@ class CacheController extends GetxController {
   }
 
   Future<void> clearCache() async {
+    await CustomImageCacheManager.instance.emptyCache();
+    PaintingBinding.instance.imageCache
+      ..clear()
+      ..clearLiveImages();
     final recordsDir = await AppPathManager().recordsDir;
     final imageCacheDir = await AppPathManager().imageCacheDir;
     final downloadDir = await AppPathManager().downloadDir;
@@ -48,6 +55,17 @@ class CacheController extends GetxController {
       } catch (_) {}
     }
     cacheSizeMB.value = 0;
+    imageCacheEpoch.value++;
+  }
+
+  /// Drop only thumbnails and force visible cards to request fresh images.
+  Future<void> refreshImageCache() async {
+    await CustomImageCacheManager.instance.emptyCache();
+    PaintingBinding.instance.imageCache
+      ..clear()
+      ..clearLiveImages();
+    imageCacheEpoch.value++;
+    await getCacheSize();
   }
 
   Future<void> handleManualRefresh() async {

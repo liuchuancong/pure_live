@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       build_android:
-        description: Build Android split APKs
+        description: Build Android arm64-v8a APK
         required: true
         type: boolean
         default: true
@@ -49,7 +49,7 @@ jobs:
         run: python tool/interface_probe.py
 
   android:
-    name: Android APKs
+    name: Android arm64-v8a APK
     if: inputs.build_android
     needs: quality
     runs-on: ubuntu-latest
@@ -86,12 +86,12 @@ jobs:
           EOF
       - name: Resolve locked packages
         run: flutter pub get --enforce-lockfile
-      - name: Build split release APKs
-        run: flutter build apk --release --split-per-abi --dart-define=PURELIVE_BUILD_SOURCE=github-manual
+      - name: Build arm64-v8a release APK
+        run: flutter build apk --release --split-per-abi --target-platform android-arm64 --dart-define=PURELIVE_BUILD_SOURCE=github-manual
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pure-live-android
-          path: build/app/outputs/flutter-apk/*-release.apk
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
           if-no-files-found: error
           retention-days: 3
 

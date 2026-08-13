@@ -1,6 +1,5 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:waterfall_flow/waterfall_flow.dart';
 
 class PopularGridView extends StatefulWidget {
   final String tag;
@@ -33,14 +32,18 @@ class _PopularGridViewState extends State<PopularGridView> {
             onButtonPressed: () => controller.refreshData(),
           ),
           contentBuilder: (context, list, scrollController) {
-            return WaterfallFlow.builder(
+            final spacing = SettingsService.to.theme.crossAxisSpacing.v;
+            final itemWidth = (width - 12 - spacing * (crossAxisCount - 1)) / crossAxisCount;
+            return GridView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
               controller: scrollController,
-              gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
-                lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
+              cacheExtent: 480,
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: crossAxisCount,
-                crossAxisSpacing: SettingsService.to.theme.crossAxisSpacing.v,
+                crossAxisSpacing: spacing,
                 mainAxisSpacing: SettingsService.to.theme.mainAxisSpacing.v,
+                mainAxisExtent: itemWidth * 9 / 16 + 72,
               ),
               itemCount: list.length,
               itemBuilder: (context, index) => RoomCard(room: list[index], dense: true),

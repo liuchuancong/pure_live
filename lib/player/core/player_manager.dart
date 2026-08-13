@@ -741,7 +741,7 @@ class PlayerManager {
                       ),
                       child: ClipOval(
                         child: Image.network(
-                          livePlayController.detail.value?.avatar ?? '',
+                          normalizeNetworkImageUrl(livePlayController.detail.value?.avatar),
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
                               const Icon(

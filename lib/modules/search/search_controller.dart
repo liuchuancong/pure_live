@@ -5,11 +5,21 @@ import 'package:url_launcher/url_launcher.dart';
 class SearchController extends GetxController with GetSingleTickerProviderStateMixin {
   late TabController tabController;
   var index = 0.obs;
+  final results = <LiveRoom>[].obs;
+  final loading = false.obs;
+  final searched = false.obs;
+  final errorMessage = ''.obs;
   bool _isWebView2Available = true;
+  int _searchGeneration = 0;
+  int _settledTabIndex = 0;
   SearchController() {
-    tabController = TabController(length: Sites().availableSites().length, vsync: this);
+    tabController = TabController(length: Sites().availableSites().length + 1, vsync: this);
     tabController.addListener(() {
       index.value = tabController.index;
+      if (!tabController.indexIsChanging && _settledTabIndex != tabController.index) {
+        _settledTabIndex = tabController.index;
+        if (searched.v) doSearch();
+      }
     });
   }
 
@@ -63,17 +73,69 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
     return false;
   }
 
-  void doSearch() {
-    if (searchController.text.isEmpty) {
+  Future<void> doSearch() async {
+    final keyword = searchController.text.trim();
+    if (keyword.isEmpty) {
       ToastUtil.show(i18n("please_input_keyword"));
+      return;
+    }
+    FocusManager.instance.primaryFocus?.unfocus();
+    final generation = ++_searchGeneration;
+    loading.v = true;
+    searched.v = true;
+    errorMessage.v = '';
+    results.clear();
+
+    final sites = Sites().availableSites();
+    final selectedSites = index.v == 0 ? sites : [sites[index.v - 1]];
+    final failures = <String>[];
+    final batches = await Future.wait(
+      selectedSites.map((site) async {
+        try {
+          return await site.liveSite.searchRooms(keyword, page: 1, pageSize: 30);
+        } catch (error) {
+          failures.add(site.name);
+          debugPrint('Native search failed for ${site.id}: $error');
+          return <LiveRoom>[];
+        }
+      }),
+    );
+    if (generation != _searchGeneration) return;
+
+    final unique = <String, LiveRoom>{};
+    for (final room in batches.expand((items) => items)) {
+      unique['${room.platform}:${room.roomId}'] = room;
+    }
+    final rooms = unique.values.toList()
+      ..sort((a, b) {
+        final liveOrder = (b.liveStatus == LiveStatus.live ? 1 : 0) - (a.liveStatus == LiveStatus.live ? 1 : 0);
+        if (liveOrder != 0) return liveOrder;
+        return _numericHeat(b.watching).compareTo(_numericHeat(a.watching));
+      });
+    results.assignAll(rooms);
+    if (failures.isNotEmpty) {
+      errorMessage.v = i18n('search_partial_failure', args: {'sites': failures.join('、')});
+    }
+    loading.v = false;
+  }
+
+  int _numericHeat(String? value) {
+    final text = value?.trim() ?? '';
+    final number = double.tryParse(text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
+    return (text.contains('万') ? number * 10000 : number).round();
+  }
+
+  void openWebSearch() {
+    if (index.v == 0) {
+      ToastUtil.show(i18n('select_platform_for_web_search'));
       return;
     }
     if (Platform.isWindows && !_isWebView2Available) {
       showWebView2MissingDialog();
       return;
     }
-    final site = Sites().availableSites()[index.value];
-    String url = buildSearchUrl(site.id, searchController.text);
+    final site = Sites().availableSites()[index.v - 1];
+    final url = buildSearchUrl(site.id, searchController.text.trim());
     Get.toNamed(RoutePath.kWebSearch, arguments: {'url': url, 'platform': site.id});
   }
 
@@ -127,5 +189,13 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
         }
       }
     });
+  }
+
+  @override
+  void onClose() {
+    _searchGeneration++;
+    tabController.dispose();
+    searchController.dispose();
+    super.onClose();
   }
 }

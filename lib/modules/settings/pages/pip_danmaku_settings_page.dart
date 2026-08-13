@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/widgets/count_button.dart';
@@ -233,7 +235,7 @@ class PipDanmakuSettingsSection extends StatelessWidget {
                 value: value,
                 activeColor: theme.colorScheme.primary,
                 inactiveColor: theme.colorScheme.primary.withValues(alpha: 0.15),
-                onChanged: (dynamic nextValue) => onChanged(nextValue as double),
+                onChanged: (dynamic nextValue) => onChanged((nextValue as num).toDouble()),
               ),
             ),
           ),
@@ -359,8 +361,27 @@ class PipDanmakuSettingsSection extends StatelessWidget {
   }
 }
 
-class _PipDanmakuPreview extends StatelessWidget {
+class _PipDanmakuPreview extends StatefulWidget {
   const _PipDanmakuPreview();
+
+  @override
+  State<_PipDanmakuPreview> createState() => _PipDanmakuPreviewState();
+}
+
+class _PipDanmakuPreviewState extends State<_PipDanmakuPreview> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 12))..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -368,8 +389,8 @@ class _PipDanmakuPreview extends StatelessWidget {
       final settings = SettingsService.to.danmaku;
       final unifiedColor = Color(settings.pipDanmakuColor.v);
       final colors = settings.pipDanmakuUseOriginalColor.v
-          ? const [Color(0xFFFFFFFF), Color(0xFF64B5F6), Color(0xFFFFD54F)]
-          : [unifiedColor, unifiedColor, unifiedColor];
+          ? const [Color(0xFFFFFFFF), Color(0xFF64B5F6), Color(0xFFFFD54F), Color(0xFF81C784)]
+          : [unifiedColor];
       final opacity = settings.enablePipDanmaku.v ? settings.pipDanmakuOpacity.v : 0.25;
 
       return RepaintBoundary(
@@ -392,6 +413,23 @@ class _PipDanmakuPreview extends StatelessWidget {
                       : 1.0;
                   final fontSize = settings.pipDanmakuFontSize.v * scale;
                   final areaHeight = constraints.maxHeight * settings.pipDanmakuArea.v;
+                  final previewText = i18n('pip_danmaku_preview_text');
+                  final painters = List<TextPainter>.generate(
+                    settings.pipDanmakuMaxVisibleCount.v.clamp(1, 20).toInt(),
+                    (index) => TextPainter(
+                      text: TextSpan(
+                        text: '$previewText ${index + 1}',
+                        style: TextStyle(
+                          color: colors[index % colors.length].withValues(alpha: opacity),
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.w600,
+                          shadows: const [Shadow(color: Colors.black, blurRadius: 2, offset: Offset(0.5, 0.5))],
+                        ),
+                      ),
+                      maxLines: 1,
+                      textDirection: TextDirection.ltr,
+                    )..layout(),
+                  );
 
                   return Stack(
                     children: [
@@ -401,26 +439,23 @@ class _PipDanmakuPreview extends StatelessWidget {
                         top: 0,
                         height: areaHeight,
                         child: ClipRect(
-                          child: Stack(
-                            children: [
-                              for (var index = 0; index < colors.length; index++)
-                                Positioned(
-                                  left: 18.0 + index * 42,
-                                  top: 12.0 + index * (fontSize * 1.8),
-                                  child: Opacity(
-                                    opacity: opacity,
-                                    child: Text(
-                                      '${i18n('pip_danmaku_preview_text')} ${index + 1}',
-                                      style: TextStyle(
-                                        color: colors[index],
-                                        fontSize: fontSize,
-                                        fontWeight: FontWeight.w600,
-                                        shadows: const [Shadow(color: Colors.black, blurRadius: 2)],
-                                      ),
-                                    ),
-                                  ),
+                          child: AnimatedBuilder(
+                            animation: _controller,
+                            builder: (context, _) {
+                              final fps = settings.pipDanmakuFps.v.clamp(15, 60);
+                              final frame = (_controller.value * 12 * fps).floor();
+                              final quantizedProgress = frame / (12 * fps);
+                              return CustomPaint(
+                                size: Size(constraints.maxWidth, areaHeight),
+                                painter: _PipDanmakuPreviewPainter(
+                                  progress: quantizedProgress,
+                                  painters: painters,
+                                  fontSize: fontSize,
+                                  speed: settings.pipDanmakuSpeed.v,
+                                  emitInterval: settings.pipDanmakuEmitInterval.v,
                                 ),
-                            ],
+                              );
+                            },
                           ),
                         ),
                       ),
@@ -443,5 +478,48 @@ class _PipDanmakuPreview extends StatelessWidget {
         ),
       );
     });
+  }
+}
+
+class _PipDanmakuPreviewPainter extends CustomPainter {
+  const _PipDanmakuPreviewPainter({
+    required this.progress,
+    required this.painters,
+    required this.fontSize,
+    required this.speed,
+    required this.emitInterval,
+  });
+
+  final double progress;
+  final List<TextPainter> painters;
+  final double fontSize;
+  final double speed;
+  final double emitInterval;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    final laneHeight = math.max(fontSize * 1.55, 18.0);
+    final laneCount = math.max(1, (size.height / laneHeight).floor());
+    final elapsedSeconds = progress * 12;
+
+    for (var index = 0; index < painters.length; index++) {
+      final painter = painters[index];
+      final travel = size.width + painter.width + 24;
+      final phaseDistance = index * math.max(speed * emitInterval, painter.width * 0.7);
+      final travelled = elapsedSeconds * speed + phaseDistance;
+      final x = size.width - (travelled % travel);
+      final y = (index % laneCount) * laneHeight + math.max(0, (laneHeight - painter.height) / 2);
+      painter.paint(canvas, Offset(x, y));
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _PipDanmakuPreviewPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.painters != painters ||
+        oldDelegate.fontSize != fontSize ||
+        oldDelegate.speed != speed ||
+        oldDelegate.emitInterval != emitInterval;
   }
 }

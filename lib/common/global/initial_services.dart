@@ -2,6 +2,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/modules/auth/auth_controller.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
+import 'package:pure_live/modules/live_play/local_interaction_controller.dart';
 import 'package:pure_live/recorder/services/cache_service.dart';
 import 'package:pure_live/routes/route_observer_controller.dart';
 import 'package:pure_live/recorder/services/stream_resolver_service.dart';
@@ -13,6 +14,7 @@ import 'package:pure_live/recorder/pages/record_settings/record_settings_control
 class InitialServices {
   static void initGlobalServices() {
     Get.put(SettingsService(), permanent: true);
+    Get.put(LocalInteractionController(), permanent: true);
     Get.put(RouteObserverController(), permanent: true);
   }
 

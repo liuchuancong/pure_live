@@ -2,6 +2,8 @@ import 'package:pure_live/player/core/live_room_volume_manager.dart';
 
 enum LiveStatus { live, offline, replay, unknown, banned }
 
+enum AudienceMetricType { popularity, onlineViewers, totalViewers, followers, unknown }
+
 class LiveRoom {
   String? roomId;
   String? userId = '';
@@ -12,6 +14,7 @@ class LiveRoom {
   String? cover = '';
   String? area = '';
   String? watching = '';
+  AudienceMetricType? audienceMetricType;
   String? followers = '';
   String? platform = 'UNKNOWN';
   List<String> tagIds = [];
@@ -59,6 +62,7 @@ class LiveRoom {
     this.cover = '',
     this.area,
     this.watching = '0',
+    this.audienceMetricType,
     this.followers = '0',
     this.platform,
     this.liveStatus,
@@ -88,6 +92,10 @@ class LiveRoom {
       cover = json['cover'] ?? '',
       area = json['area'] ?? '',
       watching = json['watching']?.toString() ?? '0',
+      audienceMetricType = AudienceMetricType.values.firstWhere(
+        (value) => value.name == json['audienceMetricType'],
+        orElse: () => AudienceMetricType.unknown,
+      ),
       followers = json['followers']?.toString() ?? '0',
       platform = json['platform'] ?? 'UNKNOWN',
       tagIds = List<String>.from(json['tagIds'] ?? []),
@@ -115,6 +123,7 @@ class LiveRoom {
     String? cover,
     String? area,
     String? watching,
+    AudienceMetricType? audienceMetricType,
     String? followers,
     String? platform,
     String? introduction,
@@ -143,6 +152,7 @@ class LiveRoom {
       cover: cover ?? this.cover,
       area: area ?? this.area,
       watching: watching ?? this.watching,
+      audienceMetricType: audienceMetricType ?? this.audienceMetricType,
       followers: followers ?? this.followers,
       platform: platform ?? this.platform,
       introduction: introduction ?? this.introduction,
@@ -190,6 +200,7 @@ class LiveRoom {
       'cover': cover,
       'area': area,
       'watching': watching,
+      'audienceMetricType': effectiveAudienceMetricType.name,
       'followers': followers,
       'platform': platform,
       'tagIds': tagIds,
@@ -207,4 +218,24 @@ class LiveRoom {
       'catchUpEnd': catchUpEnd,
     };
   }
+
+  AudienceMetricType get effectiveAudienceMetricType {
+    if (audienceMetricType != null && audienceMetricType != AudienceMetricType.unknown) {
+      return audienceMetricType!;
+    }
+    return switch (platform) {
+      'bilibili' || 'douyu' => AudienceMetricType.popularity,
+      'huya' || 'kuaishou' => AudienceMetricType.onlineViewers,
+      'douyin' => AudienceMetricType.totalViewers,
+      _ => AudienceMetricType.unknown,
+    };
+  }
+
+  String get audienceMetricI18nKey => switch (effectiveAudienceMetricType) {
+    AudienceMetricType.popularity => 'audience_popularity',
+    AudienceMetricType.onlineViewers => 'audience_online',
+    AudienceMetricType.totalViewers => 'audience_total',
+    AudienceMetricType.followers => 'audience_followers',
+    AudienceMetricType.unknown => 'audience_count',
+  };
 }

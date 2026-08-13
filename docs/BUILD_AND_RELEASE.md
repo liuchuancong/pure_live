@@ -44,7 +44,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 
 默认生成：
 
-- Android `arm64-v8a`、`armeabi-v7a`、`x86_64` 分架构 APK；
+- Android `arm64-v8a` APK（默认优先且仅构建这一架构）；
 - Windows x64 便携 ZIP；
 - 安装了 Inno Setup 6 时，额外生成 Windows EXE 安装包；
 - 所有文件的 `SHA256SUMS.txt`。
@@ -89,7 +89,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 -Require
 .\tool\flutterw.ps1 analyze --no-fatal-infos --no-fatal-warnings
 .\tool\flutterw.ps1 test
 python .\tool\interface_probe.py
-.\tool\flutterw.ps1 build apk --release --split-per-abi
+.\tool\flutterw.ps1 build apk --release --split-per-abi --target-platform android-arm64
 .\tool\flutterw.ps1 build windows --release
 ```
 

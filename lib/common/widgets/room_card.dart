@@ -13,31 +13,36 @@ class RoomCard extends StatelessWidget {
   final bool dense;
 
   Widget _buildCover(BuildContext context, bool isDark) {
-    final coverUrl = room.cover?.trim() ?? '';
+    final coverUrl = normalizeNetworkImageUrl(room.cover);
     if (coverUrl.isEmpty) return _coverFallback(context, isDark);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final logicalWidth = constraints.maxWidth.isFinite
-            ? constraints.maxWidth
-            : MediaQuery.sizeOf(context).width / 2;
-        final cacheWidth = (logicalWidth * MediaQuery.devicePixelRatioOf(context)).round().clamp(320, 1440).toInt();
+    return Obx(() {
+      final epoch = SettingsService.to.cache.imageCacheEpoch.value;
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final logicalWidth = constraints.maxWidth.isFinite
+              ? constraints.maxWidth
+              : MediaQuery.sizeOf(context).width / 2;
+          final cacheWidth = (logicalWidth * MediaQuery.devicePixelRatioOf(context)).round().clamp(240, 960).toInt();
 
-        return CachedNetworkImage(
-          imageUrl: coverUrl,
-          cacheManager: CustomImageCacheManager.instance,
-          fit: BoxFit.cover,
-          filterQuality: FilterQuality.low,
-          memCacheWidth: cacheWidth,
-          maxWidthDiskCache: 1440,
-          fadeInDuration: const Duration(milliseconds: 120),
-          fadeOutDuration: Duration.zero,
-          useOldImageOnUrlChange: true,
-          placeholder: (_, _) => _coverPlaceholder(context, isDark),
-          errorWidget: (_, _, _) => _coverFallback(context, isDark),
-        );
-      },
-    );
+          return CachedNetworkImage(
+            key: ValueKey('$coverUrl#$epoch'),
+            cacheKey: '$coverUrl#$epoch',
+            imageUrl: coverUrl,
+            cacheManager: CustomImageCacheManager.instance,
+            fit: BoxFit.cover,
+            filterQuality: FilterQuality.low,
+            memCacheWidth: cacheWidth,
+            maxWidthDiskCache: 960,
+            fadeInDuration: Duration.zero,
+            fadeOutDuration: Duration.zero,
+            useOldImageOnUrlChange: false,
+            placeholder: (_, _) => _coverPlaceholder(context, isDark),
+            errorWidget: (_, _, _) => _coverFallback(context, isDark),
+          );
+        },
+      );
+    });
   }
 
   Widget _coverPlaceholder(BuildContext context, bool isDark) {
@@ -640,98 +645,105 @@ class RoomCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Card(
-      margin: EdgeInsets.zero,
-      elevation: isDark ? 2 : 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      color: isDark ? Colors.grey[900] : Colors.white,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => onTap(context),
-        onLongPress: () => onLongPress(context),
-        onSecondaryTap: () => onLongPress(context),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
-              children: [
-                AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: Card(
-                    margin: EdgeInsets.zero,
-                    clipBehavior: Clip.antiAlias,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    color: isDark ? Colors.grey[850] : Colors.grey[100],
+    return RepaintBoundary(
+      child: Card(
+        margin: EdgeInsets.zero,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        color: isDark ? Colors.grey[900] : Colors.white,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => onTap(context),
+          onLongPress: () => onLongPress(context),
+          onSecondaryTap: () => onLongPress(context),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                children: [
+                  AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: Card(
+                      margin: EdgeInsets.zero,
+                      clipBehavior: Clip.antiAlias,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      color: isDark ? Colors.grey[850] : Colors.grey[100],
 
-                    child: _buildCover(context, isDark),
-                  ),
-                ),
-                if (room.isRecord == true)
-                  Positioned(
-                    right: 8,
-                    top: 8,
-                    child: CountChip(
-                      icon: Icons.videocam_rounded,
-                      count: i18n("replay"),
-                      dense: dense,
-                      color: Get.theme.primaryColor,
+                      child: _buildCover(context, isDark),
                     ),
                   ),
-                if (room.isRecord == false && room.liveStatus == LiveStatus.live)
-                  Positioned(
-                    right: 8,
-                    bottom: 8,
-                    child: CountChip(
-                      icon: Icons.whatshot_rounded,
-                      count: readableCount(room.watching ?? "0"),
-                      dense: dense,
-                      color: Get.theme.primaryColor,
-                    ),
-                  ),
-              ],
-            ),
-            ListTile(
-              dense: dense,
-              minLeadingWidth: dense ? 34 : 40,
-              contentPadding: EdgeInsets.symmetric(horizontal: dense ? 10 : 12, vertical: dense ? 4 : 6),
-              horizontalTitleGap: dense ? 8 : 12,
-              leading: CommonAvatar(avatarUrl: room.avatar, fallbackName: room.nick, dense: dense),
-              title: Text(
-                room.title ?? '',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: (dense ? AppTextStyles.t13 : AppTextStyles.t15).copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : Colors.black87,
-                ),
-              ),
-              subtitle: Text(
-                room.nick ?? '',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: (dense ? AppTextStyles.t12 : AppTextStyles.t13).copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.grey[400] : Colors.grey[700],
-                ),
-              ),
-              trailing: dense
-                  ? null
-                  : Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.grey[800] : Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
+                  if (room.isRecord == true)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: CountChip(
+                        icon: Icons.videocam_rounded,
+                        count: i18n("replay"),
+                        dense: dense,
+                        color: Get.theme.primaryColor,
                       ),
-                      child: Text(
-                        room.platform?.toUpperCase() ?? '',
-                        style: AppTextStyles.t11.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.grey[300] : Colors.grey[800],
+                    ),
+                  if (room.isRecord == false && room.liveStatus == LiveStatus.live)
+                    Positioned(
+                      right: 8,
+                      bottom: 8,
+                      child: CountChip(
+                        icon: switch (room.effectiveAudienceMetricType) {
+                          AudienceMetricType.onlineViewers => Icons.people_alt_rounded,
+                          AudienceMetricType.followers => Icons.favorite_rounded,
+                          AudienceMetricType.totalViewers => Icons.visibility_rounded,
+                          _ => Icons.whatshot_rounded,
+                        },
+                        count: '${i18n(room.audienceMetricI18nKey)} · ${readableCount(room.watching ?? "0")}',
+                        dense: dense,
+                        color: Get.theme.primaryColor,
+                      ),
+                    ),
+                ],
+              ),
+              ListTile(
+                dense: dense,
+                minLeadingWidth: dense ? 34 : 40,
+                contentPadding: EdgeInsets.symmetric(horizontal: dense ? 10 : 12, vertical: dense ? 4 : 6),
+                horizontalTitleGap: dense ? 8 : 12,
+                leading: CommonAvatar(avatarUrl: room.avatar, fallbackName: room.nick, dense: dense),
+                title: Text(
+                  room.title ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: (dense ? AppTextStyles.t13 : AppTextStyles.t15).copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+                subtitle: Text(
+                  room.nick ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: (dense ? AppTextStyles.t12 : AppTextStyles.t13).copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.grey[400] : Colors.grey[700],
+                  ),
+                ),
+                trailing: dense
+                    ? null
+                    : Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.grey[800] : Colors.grey[100],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          room.platform?.toUpperCase() ?? '',
+                          style: AppTextStyles.t11.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.grey[300] : Colors.grey[800],
+                          ),
                         ),
                       ),
-                    ),
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );

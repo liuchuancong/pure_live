@@ -6,6 +6,7 @@
 
 - [本地构建、测试与发布](BUILD_AND_RELEASE.md)：固定工具链、一键质量门禁、Android 签名、Windows 打包与本地发布。
 - [依赖与接口审计](DEPENDENCY_AUDIT.md)：依赖锁定策略、暂缓升级原因和直播平台接口探测边界。
+- [平台接口与兼容性](PLATFORM_COMPATIBILITY.md)：各平台分区、搜索、弹幕和人数指标的当前能力。
 - [Android 高刷新率与性能验证](PERFORMANCE.md)：120 Hz 请求、渲染优化和真机帧统计方法。
 - [参与贡献](../CONTRIBUTING.md)：分支、提交、测试和 Pull Request 约定。
 - [版本说明](../RELEASE_NOTES.md)：当前开发版本变更。

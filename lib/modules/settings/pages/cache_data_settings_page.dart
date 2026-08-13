@@ -43,6 +43,16 @@ class CacheDataSettingsPage extends StatelessWidget {
               );
             }),
             context.buildTile(
+              icon: Remix.image_2_line,
+              title: i18n('refresh_thumbnails'),
+              subtitle: i18n('refresh_thumbnails_desc'),
+              trailing: const Icon(Icons.refresh_rounded),
+              onTap: () async {
+                await SettingsService.to.cache.refreshImageCache();
+                Get.snackbar(i18n('done'), i18n('thumbnails_refreshed'), snackPosition: SnackPosition.bottom);
+              },
+            ),
+            context.buildTile(
               icon: Remix.delete_bin_6_line,
               title: i18n("clear_all_cache"),
               subtitle: i18n("clear_all_cache_meida_desc"),

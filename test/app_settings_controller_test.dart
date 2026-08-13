@@ -7,6 +7,8 @@ void main() {
       final config = AppSettingsController.extractConfig({'app': <String, dynamic>{}});
 
       expect(config['enableHighRefreshRate'], isTrue);
+      expect(config['enableAsmrSleepMode'], isFalse);
+      expect(config['asmrSleepMinutes'], 60);
     });
 
     test('preserves unrelated app fields when updating refresh mode', () {

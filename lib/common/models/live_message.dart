@@ -51,7 +51,7 @@ class LiveMessage {
 
 class LiveMessageColor {
   final int r, g, b;
-  LiveMessageColor(this.r, this.g, this.b);
+  const LiveMessageColor(this.r, this.g, this.b);
   static LiveMessageColor get white => LiveMessageColor(255, 255, 255);
   static LiveMessageColor numberToColor(int intColor) {
     var obj = intColor.toRadixString(16);

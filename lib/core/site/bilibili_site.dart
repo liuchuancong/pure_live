@@ -346,16 +346,33 @@ class BiliBiliSite implements LiveSite {
       var roomInfo = await getRoomInfo(roomId: roomId);
       var realRoomId = roomInfo["room_info"]["room_id"].toString();
       const danmuInfoBaseUrl = "https://api.live.bilibili.com/xlive/web-room/v1/index/getDanmuInfo";
-      var danmuInfoUrl = "$danmuInfoBaseUrl?id=$realRoomId";
-      var queryParams = await getWbiSign(danmuInfoUrl);
-      var roomDanmakuResult = await HttpClient.instance.getJson(
-        danmuInfoBaseUrl,
-        queryParameters: queryParams,
-        header: await getHeader(),
-      );
-      List<String> serverHosts = (roomDanmakuResult["data"]["host_list"] as List)
-          .map<String>((e) => e["host"].toString())
-          .toList();
+      Map<String, dynamic> danmakuData = const {};
+      try {
+        var danmuInfoUrl = "$danmuInfoBaseUrl?id=$realRoomId&type=0";
+        var queryParams = await getWbiSign(danmuInfoUrl);
+        final roomDanmakuResult = await HttpClient.instance.getJson(
+          danmuInfoBaseUrl,
+          queryParameters: queryParams,
+          header: await getHeader(),
+        );
+        if (roomDanmakuResult["data"] is Map) {
+          danmakuData = Map<String, dynamic>.from(roomDanmakuResult["data"]);
+        }
+      } catch (error) {
+        // Video playback remains available when only the chat endpoint changes.
+        debugPrint('Bilibili danmaku discovery failed: $error');
+      }
+      final hostList = (danmakuData["host_list"] as List?) ?? const [];
+      final serverUrls = <String>[];
+      for (final item in hostList) {
+        final host = item?["host"]?.toString().trim() ?? '';
+        if (host.isEmpty) continue;
+        final port = int.tryParse(item?["wss_port"]?.toString() ?? '') ?? 443;
+        final endpoint = 'wss://$host${port == 443 ? '' : ':$port'}/sub';
+        if (!serverUrls.contains(endpoint)) serverUrls.add(endpoint);
+      }
+      const officialFallback = 'wss://broadcastlv.chat.bilibili.com/sub';
+      if (!serverUrls.contains(officialFallback)) serverUrls.add(officialFallback);
       return LiveRoom(
         roomId: roomId,
         title: roomInfo["room_info"]["title"].toString(),
@@ -373,8 +390,8 @@ class BiliBiliSite implements LiveSite {
         danmakuData: BiliBiliDanmakuArgs(
           roomId: int.tryParse(realRoomId) ?? 0,
           uid: userId,
-          token: roomDanmakuResult["data"]["token"].toString(),
-          serverHost: serverHosts.isNotEmpty ? serverHosts.first : "broadcastlv.chat.bilibili.com",
+          token: danmakuData["token"]?.toString() ?? '',
+          serverUrls: serverUrls,
           buvid: buvid3,
           cookie: cookie,
         ),

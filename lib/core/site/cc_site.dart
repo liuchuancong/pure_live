@@ -86,6 +86,7 @@ class CCSite implements LiveSite {
           cover: item["cover"].toString(),
           nick: item["nickname"].toString(),
           watching: item["webcc_visitor"].toString(),
+          audienceMetricType: AudienceMetricType.onlineViewers,
           avatar: item["purl"],
           area: item["game_name"] ?? '',
           liveStatus: LiveStatus.live,
@@ -157,6 +158,7 @@ class CCSite implements LiveSite {
           cover: item["cover"].toString(),
           nick: item["nickname"].toString(),
           watching: item["vision_visitor"].toString(),
+          audienceMetricType: AudienceMetricType.onlineViewers,
           avatar: item["purl"],
           area: item["game_name"] ?? '',
           liveStatus: LiveStatus.live,
@@ -187,6 +189,7 @@ class CCSite implements LiveSite {
       return LiveRoom(
         cover: roomInfo["cover"],
         watching: roomInfo["follower_num"].toString(),
+        audienceMetricType: AudienceMetricType.followers,
         roomId: roomInfo["ccid"].toString(),
         area: roomInfo["gamename"],
         title: roomInfo["title"],
@@ -233,6 +236,7 @@ class CCSite implements LiveSite {
         liveStatus: item['status'] != null && item['status'] == 1 ? LiveStatus.live : LiveStatus.offline,
         avatar: item["portrait"].toString(),
         watching: item["follower_num"].toString(),
+        audienceMetricType: AudienceMetricType.followers,
         platform: Sites.ccSite,
       );
       items.add(roomItem);
@@ -242,32 +246,17 @@ class CCSite implements LiveSite {
 
   @override
   Future<List<LiveAnchorItem>> searchAnchors(String keyword, {int page = 1, int pageSize = 30}) async {
-    var resultText = await HttpClient.instance.getJson(
-      "https://search.cdn.huya.com/",
-      queryParameters: {
-        "m": "Search",
-        "do": "getSearchContent",
-        "q": keyword,
-        "uid": 0,
-        "v": 1,
-        "typ": -5,
-        "livestate": 0,
-        "rows": pageSize,
-        "start": (page - 1) * pageSize,
-      },
-    );
-    var result = json.decode(resultText);
-    var items = <LiveAnchorItem>[];
-    for (var item in result["response"]["1"]["docs"]) {
-      var anchorItem = LiveAnchorItem(
-        roomId: item["room_id"].toString(),
-        avatar: item["game_avatarUrl180"].toString(),
-        userName: item["game_nick"].toString(),
-        liveStatus: item["gameLiveOn"],
-      );
-      items.add(anchorItem);
-    }
-    return items;
+    final rooms = await searchRooms(keyword, page: page, pageSize: pageSize);
+    return rooms
+        .map(
+          (room) => LiveAnchorItem(
+            roomId: room.roomId ?? '',
+            avatar: room.avatar ?? '',
+            userName: room.nick ?? '',
+            liveStatus: room.liveStatus == LiveStatus.live,
+          ),
+        )
+        .toList();
   }
 
   @override

@@ -84,12 +84,11 @@ try {
         }
         & (Join-Path $PSScriptRoot 'prefetch_android_native.ps1')
         if ($LASTEXITCODE) { exit $LASTEXITCODE }
-        & $flutterw build apk --release --split-per-abi --dart-define=PURELIVE_BUILD_SOURCE=local
+        & $flutterw build apk --release --split-per-abi --target-platform android-arm64 --dart-define=PURELIVE_BUILD_SOURCE=local
         if ($LASTEXITCODE) { exit $LASTEXITCODE }
-        Get-ChildItem 'build\app\outputs\flutter-apk\*-release.apk' | ForEach-Object {
-            $signingLabel = if ($hasReleaseSigning) { '' } else { 'qa-debug-signed-' }
-            Copy-Item $_.FullName (Join-Path $output ("PureLive-$artifactVersion-$signingLabel" + $_.Name.Substring(4))) -Force
-        }
+        $arm64Apk = Get-Item 'build\app\outputs\flutter-apk\app-arm64-v8a-release.apk'
+        $signingLabel = if ($hasReleaseSigning) { '' } else { 'qa-debug-signed-' }
+        Copy-Item $arm64Apk.FullName (Join-Path $output "PureLive-$artifactVersion-${signingLabel}arm64-v8a-release.apk") -Force
     }
 
     if (-not $SkipWindows) {

@@ -1,6 +1,9 @@
 package com.mystyle.purelive
 
+import android.content.Context
+import android.net.wifi.WifiManager
 import android.os.Build
+import android.os.PowerManager
 import android.view.Display
 import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -9,6 +12,9 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : AudioServiceActivity() {
     companion object {
         private const val DISPLAY_MODE_CHANNEL = "pure_live/display_mode"
+        private const val BACKGROUND_PLAYBACK_CHANNEL = "pure_live/background_playback"
+        private var playbackWakeLock: PowerManager.WakeLock? = null
+        private var playbackWifiLock: WifiManager.WifiLock? = null
     }
 
     private var highRefreshRateEnabled = true
@@ -29,7 +35,49 @@ class MainActivity : AudioServiceActivity() {
                 else -> result.notImplemented()
             }
         }
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            BACKGROUND_PLAYBACK_CHANNEL,
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "setKeepAlive" -> {
+                    setPlaybackKeepAlive(call.argument<Boolean>("enabled") ?: false)
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
         applyPreferredDisplayMode(highRefreshRateEnabled)
+    }
+
+    @Suppress("DEPRECATION")
+    private fun setPlaybackKeepAlive(enabled: Boolean) {
+        if (enabled) {
+            if (playbackWakeLock == null) {
+                val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+                playbackWakeLock = powerManager.newWakeLock(
+                    PowerManager.PARTIAL_WAKE_LOCK,
+                    "$packageName:backgroundPlayback",
+                ).apply { setReferenceCounted(false) }
+            }
+            if (playbackWakeLock?.isHeld != true) playbackWakeLock?.acquire()
+
+            if (playbackWifiLock == null) {
+                val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+                val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    WifiManager.WIFI_MODE_FULL_LOW_LATENCY
+                } else {
+                    WifiManager.WIFI_MODE_FULL_HIGH_PERF
+                }
+                playbackWifiLock = wifiManager.createWifiLock(mode, "$packageName:backgroundPlayback").apply {
+                    setReferenceCounted(false)
+                }
+            }
+            if (playbackWifiLock?.isHeld != true) playbackWifiLock?.acquire()
+        } else {
+            if (playbackWifiLock?.isHeld == true) playbackWifiLock?.release()
+            if (playbackWakeLock?.isHeld == true) playbackWakeLock?.release()
+        }
     }
 
     override fun onResume() {

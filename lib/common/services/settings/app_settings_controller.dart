@@ -10,6 +10,8 @@ class AppSettingsController extends GetxController {
   final RxInt autoRefreshTime = hiveInt('autoRefreshTime', 3);
   final RxBool enableDenseFavorites = hiveBool('enableDenseFavorites', true);
   final RxBool enableBackgroundPlay = hiveBool('enableBackgroundPlay', false);
+  final RxBool enableAsmrSleepMode = hiveBool('enableAsmrSleepMode', false);
+  final RxInt asmrSleepMinutes = hiveInt('asmrSleepMinutes', 60);
   final RxBool enableRotateScreen = hiveBool('enableRotateScreen', false);
 
   final RxBool enableScreenKeepOn = hiveBool('enableScreenKeepOn', true);
@@ -58,6 +60,8 @@ class AppSettingsController extends GetxController {
       'autoRefreshTime': autoRefreshTime.v,
       'enableDenseFavorites': enableDenseFavorites.v,
       'enableBackgroundPlay': enableBackgroundPlay.v,
+      'enableAsmrSleepMode': enableAsmrSleepMode.v,
+      'asmrSleepMinutes': asmrSleepMinutes.v,
       'enableRotateScreen': enableRotateScreen.v,
       'enableScreenKeepOn': enableScreenKeepOn.v,
       'enableAutoCheckUpdate': enableAutoCheckUpdate.v,
@@ -72,6 +76,8 @@ class AppSettingsController extends GetxController {
     autoRefreshTime.v = json['autoRefreshTime'] ?? 3;
     enableDenseFavorites.v = json['enableDenseFavorites'] ?? true;
     enableBackgroundPlay.v = json['enableBackgroundPlay'] ?? false;
+    enableAsmrSleepMode.v = json['enableAsmrSleepMode'] ?? false;
+    asmrSleepMinutes.v = (((json['asmrSleepMinutes'] as num?)?.toInt() ?? 60).clamp(15, 480)).toInt();
     enableRotateScreen.v = json['enableRotateScreen'] ?? false;
     enableScreenKeepOn.v = json['enableScreenKeepOn'] ?? true;
     enableAutoCheckUpdate.v = json['enableAutoCheckUpdate'] ?? true;
@@ -87,6 +93,8 @@ class AppSettingsController extends GetxController {
       'autoRefreshTime': app['autoRefreshTime'] ?? 3,
       'enableDenseFavorites': app['enableDenseFavorites'] ?? true,
       'enableBackgroundPlay': app['enableBackgroundPlay'] ?? false,
+      'enableAsmrSleepMode': app['enableAsmrSleepMode'] ?? false,
+      'asmrSleepMinutes': (((app['asmrSleepMinutes'] as num?)?.toInt() ?? 60).clamp(15, 480)).toInt(),
       'enableRotateScreen': app['enableRotateScreen'] ?? false,
       'enableScreenKeepOn': app['enableScreenKeepOn'] ?? true,
       'enableAutoCheckUpdate': app['enableAutoCheckUpdate'] ?? true,

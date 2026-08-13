@@ -285,6 +285,6 @@ flutter:
 #   gpl: true # enable to include GPL libraries
 #   small: true # enable to use smaller builds
 ffmpeg_kit_extended_config:
-  windows: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.5-windows/bundle-base-windows-x86_64-shared-lgpl.zip
-  android: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.5-android/bundle-base-shared-lgpl-release.aar
-  macos: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.5-macos/bundle-base-macos-universal-lgpl.xcframework.zip
+  type: base
+  gpl: false
+  small: false
