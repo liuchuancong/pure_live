@@ -1,325 +1,234 @@
 name: app-build-action
-
 on:
-  # 1. 支持手动触发：可以在 GitHub 网页端手动点击运行，并输入 Tag
   workflow_dispatch:
     inputs:
       tag_name:
         description: '发布 Release 的 Tag (例如 v1.0.0)'
         required: true
-
-  # 2. 支持推送 Tag 触发：当你 git push tag 时自动运行
   push:
     tags:
       - "v*"
-
 jobs:
-
-  # =========================================================
-  # ANDROID
-  # =========================================================
-
   build-android:
-    runs-on: macos-latest
-
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         branch: [master]
-
     steps:
       - name: 签出代码
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           ref: ${{ matrix.branch }}
-
       - name: 下载Android keystore
         id: android_keystore
         uses: timheuer/base64-to-file@v1.2
         with:
           fileName: key.jks
           encodedString: ${{ secrets.KEYSTORE_BASE64 }}
-
       - name: 创建key.properties
         run: |
           echo "storeFile=${{ steps.android_keystore.outputs.filePath }}" > android/key.properties
           echo "storePassword=${{ secrets.STORE_PASSWORD }}" >> android/key.properties
           echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
           echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
-
       - name: 设置JAVA环境
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: "17"
           cache: 'gradle'
-
       - name: 设置Flutter环境
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
-
       - name: 更新Flutter packages
         run: flutter pub get
-
       - name: 打包 APK
         run: flutter build apk --release --split-per-abi
-
-      - name: 重命名 APK
-        shell: bash
-        run: |
-          cd build/app/outputs/flutter-apk
-
-          if [ "${{ matrix.branch }}" = "fvp" ]; then
-            for f in app-*-release.apk; do
-              mv "$f" "${f/-release.apk/-fvp.apk}"
-            done
-          fi
-
       - name: 上传 APK
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
-          name: android-apks-${{ matrix.branch }}
+          name: android-apks-master
           path: build/app/outputs/flutter-apk/*.apk
           retention-days: 1
-
-  # =========================================================
-  # WINDOWS
-  # =========================================================
-
   build-windows:
     runs-on: windows-latest
-
     strategy:
       matrix:
         branch: [master]
-
     steps:
       - name: 签出代码
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           ref: ${{ matrix.branch }}
-
       - name: Decode MSIX Certificate
         shell: pwsh
         run: |
           $certBase64 = "${{ secrets.CERTIFICATE }}".Trim() -replace '\s+', ''
-
           if ([string]::IsNullOrEmpty($certBase64)) {
             Write-Error "Secret is empty!"
             exit 1
           }
-
           $certBytes = [System.Convert]::FromBase64String($certBase64)
-
           $certPath = Join-Path -Path (Get-Location) -ChildPath "certificate.pfx"
-
           [IO.File]::WriteAllBytes($certPath, $certBytes)
-
           echo "FINAL_CERT_PATH=$certPath" >> $env:GITHUB_ENV
-          
       - name: Update make_config.yaml
         shell: pwsh
         run: |
           $configPath = "windows/packaging/msix/make_config.yaml"
-
-          # 1. 直接读取 GitHub Actions 的环境变量，并把 \ 替换为 /
           $absolutePath = $env:FINAL_CERT_PATH -replace '\\', '/'
-
           if (Test-Path $configPath) {
               $content = Get-Content $configPath -Raw
-
-              # 2. 正则替换配置文件中的路径
               $content = $content -replace 'certificate_path:\s*.*', "certificate_path: $absolutePath"
-
               Set-Content $configPath $content
-
               Write-Host "Success: certificate_path set to $absolutePath"
           }
           else {
               Write-Error "Config file not found!"
               exit 1
           }
-
       - name: 设置Flutter环境
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
-
       - name: 启用 Flutter Windows
         run: flutter config --enable-windows-desktop
-
       - name: 更新Flutter packages
         run: flutter pub get
-
       - name: Install Inno Setup
         run: |
           $url = "https://jrsoftware.org/download.php/is.exe"
           $output = "${{ runner.temp }}\innosetup.exe"
-
           Invoke-WebRequest -Uri $url -OutFile $output
-
           Start-Process -FilePath $output -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait
-
           echo "C:\Program Files (x86)\Inno Setup 6" >> $env:GITHUB_PATH
-
       - name: Copy Chinese language pack
         run: |
           $source = "windows\packaging\exe\ChineseSimplified.isl"
           $target = "C:\Program Files (x86)\Inno Setup 6\Languages\ChineseSimplified.isl"
-
           if (Test-Path $source) {
             Copy-Item $source $target -Force
           }
-
-      - name: Install fastforge
-        run: dart pub global activate fastforge
-
+      - name: Install fastforge (from source)
+        shell: pwsh
+        run: |
+          git clone https://github.com/SlotSun/fastforge.git
+          cd fastforge
+          dart pub global activate melos
+          melos run activate
       - name: Get version
         id: get_version
         shell: pwsh
         run: |
           $lines = Get-Content pubspec.yaml
-
           foreach ($line in $lines) {
             if ($line -match '^\s*version:\s*(\S+)') {
               $v = $matches[1] -replace '[`"''`]', ''
-
               "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-
               exit 0
             }
           }
-
           Write-Error "Version not found"
-
           exit 1
-
       - name: Package Windows
         run: fastforge package --platform windows --targets exe,msix
-
       - name: Rename installers
         shell: pwsh
         run: |
           $VERSION = "${{ steps.get_version.outputs.version }}"
           $DIST_DIR = "dist"
-
-          $SUFFIX = ""
-
-          if ("${{ matrix.branch }}" -eq "fvp") {
-            $SUFFIX = "-fvp"
-          }
-
-          # EXE
           $EXE_FILE = Get-ChildItem $DIST_DIR -Recurse -Filter "*.exe" | Select-Object -First 1
-
           if ($EXE_FILE) {
-            Copy-Item $EXE_FILE.FullName "PureLive-$VERSION$SUFFIX-windows-x64-setup.exe"
+            Copy-Item $EXE_FILE.FullName "PureLive-$VERSION-windows-x64-setup.exe"
           }
-
-          # MSIX
           $MSIX_FILE = Get-ChildItem $DIST_DIR -Recurse -Filter "*.msix" | Select-Object -First 1
-
           if ($MSIX_FILE) {
-            Copy-Item $MSIX_FILE.FullName "PureLive-$VERSION$SUFFIX-windows-x64.msix"
+            Copy-Item $MSIX_FILE.FullName "PureLive-$VERSION-windows-x64.msix"
           }
-
       - name: 上传 Windows 安装包
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
-          name: windows-installer-${{ matrix.branch }}
+          name: windows-installer-master
           path: |
             PureLive-*.exe
             PureLive-*.msix
           retention-days: 1
-
-  # =========================================================
-  # MACOS
-  # =========================================================
-
   build-macos:
     runs-on: macos-latest
     timeout-minutes: 50
     strategy:
       matrix:
         branch: [master]
-
     steps:
       - name: 签出代码
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           ref: ${{ matrix.branch }}
-
-      - name: Set suffix
-        id: suffix
-        shell: bash
-        run: |
-          if [ "${{ matrix.branch }}" = "fvp" ]; then
-            echo "suffix=-fvp" >> $GITHUB_OUTPUT
-          else
-            echo "suffix=" >> $GITHUB_OUTPUT
-          fi
-
+      - name: 设置JAVA环境（fastforge 可能需要）
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: "21"
       - name: 设置Flutter环境
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
-
+      - name: 启用 Flutter macOS
+        run: flutter config --enable-macos-desktop
       - name: 更新Flutter packages
         run: flutter pub get
-
-      - name: Build macOS
-        run: flutter build macos --release -v
-
+      - name: Install fastforge (from source)
+        shell: bash
+        run: |
+          git clone https://github.com/SlotSun/fastforge.git
+          cd fastforge
+          dart pub global activate melos
+          melos run activate
       - name: Get version
         id: get_version
         run: |
           VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //; s/[`"'"'"']//g')
-
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Install create-dmg
-        run: brew install create-dmg
-
-      - name: Create DMG
+      - name: Build macOS with fastforge
+        run: fastforge package --platform macos --targets dmg,zip --skip-clean
+      - name: Rename artifacts
+        shell: bash
         run: |
-          create-dmg \
-            --volname "PureLive" \
-            --window-pos 200 120 \
-            --window-size 800 400 \
-            --icon-size 100 \
-            --app-drop-link 600 185 \
-            "PureLive-${{ steps.get_version.outputs.version }}${{ steps.suffix.outputs.suffix }}-macOS.dmg" \
-            "build/macos/Build/Products/Release/纯粹直播.app"
-
-      - name: 上传 DMG
-        uses: actions/upload-artifact@v7
+          VERSION="${{ steps.get_version.outputs.version }}"
+          cd dist
+          for f in *.dmg; do
+            if [[ -f "$f" ]]; then
+              mv "$f" "PureLive-${VERSION}-macOS.dmg"
+            fi
+          done
+          for f in *.zip; do
+            if [[ -f "$f" ]]; then
+              mv "$f" "PureLive-${VERSION}-macOS.zip"
+            fi
+          done
+      - name: 上传 DMG & ZIP
+        uses: actions/upload-artifact@v4
         with:
-          name: macos-dmg-${{ matrix.branch }}
-          path: PureLive-*.dmg
+          name: macos-dmg-master
+          path: |
+            PureLive-*.dmg
+            PureLive-*.zip
           retention-days: 1
-
-  # =========================================================
-  # RELEASE
-  # ======================
-
-     
   publish-release:
     runs-on: ubuntu-latest
-
     needs:
       - build-android
       - build-windows
       - build-macos
-
     permissions:
       contents: write
-
     steps:
       - name: 签出代码
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           ref: master
       - name: 计算 Tag
@@ -334,13 +243,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-
       - name: 读取版本描述
         id: version
         uses: juliangruber/read-file-action@v1
         with:
           path: assets/version.json
-
       - name: 构建 Release Body
         id: release_body
         run: |
@@ -373,9 +280,7 @@ jobs:
           ${{ fromJson(steps.version.outputs.content).version_desc }}
 
           EOF
-
           echo "body_path=$(pwd)/release_body.txt" >> $GITHUB_OUTPUT
-
       - name: 删除已有 Release（如果存在）
         continue-on-error: true
         env:
@@ -388,85 +293,52 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.TOKEN }}
         run: |
-          git push origin :refs/tags/${{ steps.tag.outputs.tag }}    
+          git push origin :refs/tags/${{ steps.tag.outputs.tag }}
       - name: 上传至 Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
-
           name: ${{ steps.tag.outputs.tag }}
-
           body_path: ${{ steps.release_body.outputs.body_path }}
-
           prerelease: false
-
           generate_release_notes: false
-
           append_body: false
-
           make_latest: true
-
           fail_on_unmatched_files: false
-
           files: |
             artifacts/android-apks-master/*.apk
-            artifacts/android-apks-fvp/*.apk
-
             artifacts/windows-installer-master/*.exe
             artifacts/windows-installer-master/*.msix
-
-            artifacts/windows-installer-fvp/*.exe
-            artifacts/windows-installer-fvp/*.msix
-
             artifacts/macos-dmg-master/*.dmg
-            artifacts/macos-dmg-fvp/*.dmg
-
+            artifacts/macos-dmg-master/*.zip
       - name: 输出状态
         if: always()
         run: 'echo "✅ Release published with status: ${{ job.status }}"'
-
-  # =========================================================
-  # Build Release JSON
-  # ======================
   update-json:
     runs-on: ubuntu-latest
     needs: publish-release
     permissions:
       contents: write
-
     steps:
-    # 1. 检出仓库代码（显式指定 master 分支，并拉取所有历史以便合并）
     - name: Checkout repository
-      uses: actions/checkout@v7
+      uses: actions/checkout@v4
       with:
         ref: master
         fetch-depth: 0
-
-    # 2. 设置 Python 环境
     - name: Set up Python
-      uses: actions/setup-python@v7
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
-
-    # 3. 运行更新脚本
     - name: Run update script
       run: python update_releases.py
-
-    # 4. 检查是否有文件更新，采用拉取重构（Pull Rebase）后安全推送
     - name: Commit and Push changes
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        
-        # 检查是否有文件变动
         if [ -n "$(git status --porcelain)" ]; then
           git add assets/releases.json
           git commit -m "chore: 手动更新 releases.json 数据 [skip ci]"
-          
-          # 【核心防御】推送前先拉取远程最新修改，用 rebase 保持提交线干净
           git pull --rebase origin master
-          
-          # 推送到远程 master 分支
           git push origin master
         else
           echo "数据未发生变化，无需更新。"
