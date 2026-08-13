@@ -203,24 +203,32 @@ jobs:
         shell: bash
         run: |
           VERSION="${{ steps.get_version.outputs.version }}"
-          cd dist
-          for f in *.dmg; do
+
+          mkdir -p dist/release
+
+          find dist -type f \( -name "*.dmg" -o -name "*.zip" \) -print
+
+          for f in dist/*/*.dmg; do
             if [[ -f "$f" ]]; then
-              mv "$f" "PureLive-${VERSION}-macOS.dmg"
+              mv "$f" "dist/release/PureLive-${VERSION}-macOS.dmg"
             fi
           done
-          for f in *.zip; do
+
+          for f in dist/*/*.zip; do
             if [[ -f "$f" ]]; then
-              mv "$f" "PureLive-${VERSION}-macOS.zip"
+              mv "$f" "dist/release/PureLive-${VERSION}-macOS.zip"
             fi
           done
+
+          echo "=== Release files ==="
+          ls -lah dist/release
       - name: 上传 DMG & ZIP
         uses: actions/upload-artifact@v4
         with:
           name: macos-dmg-master
           path: |
-            PureLive-*.dmg
-            PureLive-*.zip
+            dist/release/PureLive-*.dmg
+            dist/release/PureLive-*.zip
           retention-days: 1
        # 完成
       - run: echo "🍏 This job's status is ${{ job.status }}."
