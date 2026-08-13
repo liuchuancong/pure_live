@@ -11,10 +11,22 @@ class KeywordBlockPage extends StatefulWidget {
 class _KeywordBlockPageState extends State<KeywordBlockPage> {
   SettingsService get controller => Get.find<SettingsService>();
   final TextEditingController textEditingController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+  final RxBool _isFocused = false.obs;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() {
+      _isFocused.value = _focusNode.hasFocus;
+    });
+  }
 
   @override
   void dispose() {
+    _focusNode.dispose();
     textEditingController.dispose();
+    _isFocused.close();
     super.dispose();
   }
 
@@ -26,6 +38,7 @@ class _KeywordBlockPageState extends State<KeywordBlockPage> {
     }
     SettingsService.to.fav.addShieldList(keyword);
     textEditingController.clear();
+    _focusNode.requestFocus();
   }
 
   void remove(int itemIndex) {
@@ -41,24 +54,71 @@ class _KeywordBlockPageState extends State<KeywordBlockPage> {
       child: Wrap(
         runSpacing: 16,
         children: [
-          TextField(
-            keyboardType: TextInputType.text,
-            controller: textEditingController,
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => add(),
-            style: theme.textTheme.bodyMedium,
-            decoration: InputDecoration(
-              hintText: i18n("please_enter_keyword"),
-              suffixIcon: Padding(
-                padding: const EdgeInsets.only(right: 4),
-                child: IconButton(
-                  onPressed: add,
-                  icon: Icon(Remix.add_circle_line, color: theme.colorScheme.primary),
-                  tooltip: i18n('add'),
+          // 优化后的输入框，带边框和焦点状态
+          Obx(() {
+            final isFocused = _isFocused.value;
+            return TextField(
+              keyboardType: TextInputType.text,
+              controller: textEditingController,
+              focusNode: _focusNode,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => add(),
+              style: theme.textTheme.bodyMedium,
+              cursorColor: theme.colorScheme.primary,
+              decoration: InputDecoration(
+                hintText: i18n("please_enter_keyword"),
+                hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                ),
+                // 添加边框
+                filled: true,
+                fillColor: isFocused
+                    ? theme.colorScheme.primary.withValues(alpha: 0.04)
+                    : theme.colorScheme.surfaceContainerLow,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                // 圆角边框
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
+                ),
+                // 启用状态边框
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
+                ),
+                // 聚焦状态边框
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+                ),
+                // 错误状态边框（可选）
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: theme.colorScheme.error, width: 1.5),
+                ),
+                // 聚焦错误状态边框（可选）
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: theme.colorScheme.error, width: 2),
+                ),
+                suffixIcon: Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: IconButton(
+                    onPressed: add,
+                    icon: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Remix.add_circle_line, color: theme.colorScheme.primary, size: 20),
+                    ),
+                    tooltip: i18n('add'),
+                  ),
                 ),
               ),
-            ),
-          ),
+            );
+          }),
           Obx(() {
             if (SettingsService.to.fav.shieldList.v.isEmpty) {
               return const SizedBox.shrink();

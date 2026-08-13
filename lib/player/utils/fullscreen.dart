@@ -5,7 +5,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:fullscreen_window/fullscreen_window.dart';
 import 'package:pure_live/player/utils/window_helper.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
-import 'package:pure_live/modules/live_play/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 
 class WindowService {
   static final WindowService _instance = WindowService._internal();
@@ -15,7 +15,8 @@ class WindowService {
     if (!Platform.isWindows) return;
     if (GlobalPlayerState.to.isFullscreen.value) {
       final livePlayController = Get.find<LivePlayController>();
-      livePlayController.videoController.value!.toggleFullScreen();
+      final videoController = livePlayController.state.value.player.videoController;
+      videoController?.toggleFullScreen();
     }
     Future.microtask(() {
       WindowHelper.instance.enterPiP(videoRatio);

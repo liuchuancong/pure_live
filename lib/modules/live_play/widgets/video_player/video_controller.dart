@@ -18,7 +18,7 @@ import 'package:pure_live/player/models/player_exception.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/player/models/player_error_type.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
-import 'package:pure_live/modules/live_play/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 
 typedef AudioOnlyCallback = void Function(bool value);
 

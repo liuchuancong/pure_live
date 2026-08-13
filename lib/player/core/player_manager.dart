@@ -24,7 +24,7 @@ import 'package:pure_live/player/utils/pip_window_widget.dart';
 import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/player/core/audio_stream_loader.dart';
-import 'package:pure_live/modules/live_play/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/compact_danmaku_overlay.dart';
 
@@ -608,120 +608,130 @@ class PlayerManager {
         final gapMedium = compact ? 8.0 : 16.0;
         final gapSmall = compact ? 4.0 : 8.0;
 
-        return Container(
-          width: maxWidth,
-          height: maxHeight,
-          alignment: Alignment.center,
-          color: Colors.transparent,
-          child: SingleChildScrollView(
-            physics: compact ? const ClampingScrollPhysics() : const NeverScrollableScrollPhysics(),
-            padding: EdgeInsets.symmetric(horizontal: compact ? 16 : 24, vertical: compact ? 4 : 24),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: compact ? maxWidth : 460),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.95, end: 1.05),
-                    duration: const Duration(milliseconds: 1500),
-                    curve: Curves.easeInOut,
-                    builder: (context, scale, child) {
-                      return Transform.scale(scale: scale, child: child);
-                    },
-                    child: Container(
-                      width: avatarSize,
-                      height: avatarSize,
+        return Obx(() {
+          final state = livePlayController.state.value;
+          final detail = state.room.detail;
+          final avatar = detail?.avatar ?? '';
+          final title = detail?.title ?? '';
+          final nick = detail?.nick ?? '';
+
+          return Container(
+            width: maxWidth,
+            height: maxHeight,
+            alignment: Alignment.center,
+            color: Colors.transparent,
+            child: SingleChildScrollView(
+              physics: compact ? const ClampingScrollPhysics() : const NeverScrollableScrollPhysics(),
+              padding: EdgeInsets.symmetric(horizontal: compact ? 16 : 24, vertical: compact ? 4 : 24),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: compact ? maxWidth : 460),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.95, end: 1.05),
+                      duration: const Duration(milliseconds: 1500),
+                      curve: Curves.easeInOut,
+                      builder: (context, scale, child) {
+                        return Transform.scale(scale: scale, child: child);
+                      },
+                      child: Container(
+                        width: avatarSize,
+                        height: avatarSize,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.white.withValues(alpha: 0.04),
+                              blurRadius: compact ? 10 : 20,
+                              spreadRadius: compact ? 4 : 8,
+                            ),
+                          ],
+                        ),
+                        child: ClipOval(
+                          child: avatar.isNotEmpty
+                              ? Image.network(
+                                  avatar,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const Icon(Remix.user_3_line, color: Colors.white24),
+                                )
+                              : const Icon(Remix.user_3_line, color: Colors.white24),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: gapLarge),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 24),
+                      child: Text(
+                        title,
+                        textAlign: TextAlign.center,
+                        maxLines: compact ? 1 : 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: titleSize,
+                          fontWeight: FontWeight.w700,
+                          height: 1.25,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: gapSmall),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 14, vertical: compact ? 2 : 5),
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.5),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.white.withValues(alpha: 0.04),
-                            blurRadius: compact ? 10 : 20,
-                            spreadRadius: compact ? 4 : 8,
+                        color: Colors.white.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                      ),
+                      child: Text(
+                        nick,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.75),
+                          fontSize: nickSize,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: gapMedium),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 16, vertical: compact ? 5 : 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        color: Colors.white.withValues(alpha: 0.08),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Remix.headphone_line,
+                            color: Colors.white.withValues(alpha: 0.85),
+                            size: compact ? 12 : 16,
+                          ),
+                          SizedBox(width: compact ? 4 : 8),
+                          Text(
+                            i18n("audio_only_mode"),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: badgeTextSize,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.2,
+                            ),
                           ),
                         ],
                       ),
-                      child: ClipOval(
-                        child: Image.network(
-                          livePlayController.detail.value?.avatar ?? '',
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Remix.user_3_line, color: Colors.white24),
-                        ),
-                      ),
                     ),
-                  ),
-                  SizedBox(height: gapLarge),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 24),
-                    child: Text(
-                      livePlayController.detail.value?.title ?? '',
-                      textAlign: TextAlign.center,
-                      maxLines: compact ? 1 : 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: titleSize,
-                        fontWeight: FontWeight.w700,
-                        height: 1.25,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: gapSmall),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 14, vertical: compact ? 2 : 5),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-                    ),
-                    child: Text(
-                      livePlayController.detail.value?.nick ?? '',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.75),
-                        fontSize: nickSize,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: gapMedium),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 16, vertical: compact ? 5 : 8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(30),
-                      color: Colors.white.withValues(alpha: 0.08),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Remix.headphone_line,
-                          color: Colors.white.withValues(alpha: 0.85),
-                          size: compact ? 12 : 16,
-                        ),
-                        SizedBox(width: compact ? 4 : 8),
-                        Text(
-                          i18n("audio_only_mode"),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: badgeTextSize,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        );
+          );
+        });
       },
     );
   }
@@ -748,7 +758,7 @@ class PlayerManager {
                 height: double.infinity,
                 child: Stack(
                   children: [
-                    if (livePlayController.isCurrentRoomAudioOnly.value)
+                    if (livePlayController.state.value.player.isCurrentRoomAudioOnly)
                       buildAudioOnlyUI(context, livePlayController)
                     else
                       Positioned.fill(
