@@ -98,20 +98,6 @@ jobs:
         run: flutter config --enable-windows-desktop
       - name: 更新Flutter packages
         run: flutter pub get
-      - name: Install Inno Setup
-        run: |
-          $url = "https://jrsoftware.org/download.php/is.exe"
-          $output = "${{ runner.temp }}\innosetup.exe"
-          Invoke-WebRequest -Uri $url -OutFile $output
-          Start-Process -FilePath $output -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" -Wait
-          echo "C:\Program Files (x86)\Inno Setup 6" >> $env:GITHUB_PATH
-      - name: Copy Chinese language pack
-        run: |
-          $source = "windows\packaging\exe\ChineseSimplified.isl"
-          $target = "C:\Program Files (x86)\Inno Setup 6\Languages\ChineseSimplified.isl"
-          if (Test-Path $source) {
-            Copy-Item $source $target -Force
-          }
       - name: Install fastforge (from source)
         shell: pwsh
         run: |
@@ -119,6 +105,14 @@ jobs:
           cd fastforge
           dart pub global activate melos
           melos run activate
+          choco install innosetup
+      - name: Copy Chinese language pack
+        run: |
+          $source = "windows\packaging\exe\ChineseSimplified.isl"
+          $target = "C:\Program Files (x86)\Inno Setup 6\Languages\ChineseSimplified.isl"
+          if (Test-Path $source) {
+            Copy-Item $source $target -Force
+          }
       - name: Get version
         id: get_version
         shell: pwsh
@@ -134,7 +128,7 @@ jobs:
           Write-Error "Version not found"
           exit 1
       - name: Package Windows
-        run: fastforge package --platform windows --targets exe,msix
+        run: fastforge package --platform windows --targets msix,zip,exe --skip-clean
       - name: Rename installers
         shell: pwsh
         run: |
@@ -159,6 +153,8 @@ jobs:
   build-macos:
     runs-on: macos-latest
     timeout-minutes: 50
+    permissions:
+      contents: write
     strategy:
       matrix:
         branch: [master]
@@ -181,9 +177,13 @@ jobs:
         run: flutter config --enable-macos-desktop
       - name: 更新Flutter packages
         run: flutter pub get
-      - name: Install fastforge (from source)
-        shell: bash
-        run: |
+      # 安装 appdmg npm install -g appdmg
+      - name: Install appdmg
+        run: npm install -g appdmg
+
+      # 设置 Fastforge 环境
+      - name: Install fast-forge
+        run: | 
           git clone https://github.com/SlotSun/fastforge.git
           cd fastforge
           dart pub global activate melos
@@ -218,6 +218,8 @@ jobs:
             PureLive-*.dmg
             PureLive-*.zip
           retention-days: 1
+       # 完成
+      - run: echo "🍏 This job's status is ${{ job.status }}."
   publish-release:
     runs-on: ubuntu-latest
     needs:
