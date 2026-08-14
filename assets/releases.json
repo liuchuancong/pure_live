@@ -2,55 +2,55 @@
   {
     "version": "2.0.23",
     "title": "v2.0.23",
-    "date": "2026-08-13",
+    "date": "2026-08-14",
     "github": "https://github.com/liuchuancong/pure_live/releases/tag/v2.0.23",
     "author": {
       "name": "github-actions[bot]",
       "avatar": "https://avatars.githubusercontent.com/in/15368?v=4",
       "profile": "https://github.com/apps/github-actions"
     },
-    "changelog": "# 纯粹直播 master\r\n|版本|下载地址|\r\n|---|---|\r\n|TV版|[pure_live_TV](https://github.com/liuchuancong/pure_live_TV/releases/latest)|\r\n|Windows/macOS/Android版|[pure_live](https://github.com/liuchuancong/pure_live/releases/latest)|\r\n\r\n### 🖥️ Windows 版\r\n- **EXE 安装包**：适合所有用户，自动创建快捷方式\r\n- **MSIX 包**：现代应用格式，支持干净卸载（需 Windows 10/11）\r\n- 适配：Win10/11 (x64)，自动创建桌面快捷方式\r\n- 功能：多直播源、WebDAV、弹幕显示\r\n- 快捷键：空格(播放/暂停) \\| ESC(全屏切换) \\| 上下键(音量) \\| R(刷新)\r\n\r\n### 🍎 macOS 版\r\n感谢 RebornQ 开发 | 适配：macOS 10.15+ (x64) | 同 Windows 核心功能\r\n\r\n### 📱 Android 版\r\n适配：Android 6.0+ | 功能：WebDAV、多播放器切换、弹幕、应用内更新\r\n\r\n### 📺 TV 版\r\n适配：Android TV 6.0+ | 功能：直播源同步、多播放器、弹幕、应用内更新\r\n\r\n### 📝 本次更新\r\n\r\n- 优化播放页面。\r\n- Android 系统画中画、Windows 小窗和应用内悬浮窗支持显示弹幕。\r\n- 小窗弹幕支持颜色、字号、速度、透明度、显示区域、最大数量、发送间隔、FPS 和自动缩放。\r\n- 使用独立小窗弹幕控制器，优化悬浮窗切换时的资源保留与释放。\r\n- 修复 Windows 构建中的移动端屏幕方向插件目标问题。\r\n- 更新 Flutter、FFmpeg 构建产物地址和 GitHub Actions。",
+    "changelog": "# 纯粹直播 master\n|版本|下载地址|\n|---|---|\n|TV版|[pure_live_TV](https://github.com/liuchuancong/pure_live_TV/releases/latest)|\n|Windows/macOS/Android版|[pure_live](https://github.com/liuchuancong/pure_live/releases/latest)|\n\n### 🖥️ Windows 版\n- **EXE 安装包**：适合所有用户，自动创建快捷方式\n- **MSIX 包**：现代应用格式，支持干净卸载（需 Windows 10/11）\n- 适配：Win10/11 (x64)，自动创建桌面快捷方式\n- 功能：多直播源、WebDAV、弹幕显示\n- 快捷键：空格(播放/暂停) \\| ESC(全屏切换) \\| 上下键(音量) \\| R(刷新)\n\n### 🍎 macOS 版\n感谢 RebornQ 开发 | 适配：macOS 10.15+ (x64) | 同 Windows 核心功能\n\n### 📱 Android 版\n适配：Android 6.0+ | 功能：WebDAV、多播放器切换、弹幕、应用内更新\n\n### 📺 TV 版\n适配：Android TV 6.0+ | 功能：直播源同步、多播放器、弹幕、应用内更新\n\n### 📝 本次更新\n\n- 优化播放页面。\n- Android 系统画中画、Windows 小窗和应用内悬浮窗支持显示弹幕。\n- 小窗弹幕支持颜色、字号、速度、透明度、显示区域、最大数量、发送间隔、FPS 和自动缩放。\n- 使用独立小窗弹幕控制器，优化悬浮窗切换时的资源保留与释放。\n- 修复 Windows 构建中的移动端屏幕方向插件目标问题。\n- 更新 Flutter、FFmpeg 构建产物地址和 GitHub Actions。",
     "files": [
       {
         "name": "arm64-v8a",
         "size": "122.69mb",
-        "downloads": 1796,
+        "downloads": 0,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.23/app-arm64-v8a-release.apk"
       },
       {
         "name": "armeabi-v7a",
-        "size": "109.63mb",
-        "downloads": 110,
+        "size": "109.64mb",
+        "downloads": 0,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.23/app-armeabi-v7a-release.apk"
       },
       {
         "name": "x86_64",
         "size": "137.33mb",
-        "downloads": 57,
+        "downloads": 0,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.23/app-x86_64-release.apk"
       },
       {
         "name": "PureLive-2.0.23+34-macOS.dmg",
-        "size": "102.56mb",
-        "downloads": 14,
+        "size": "102.57mb",
+        "downloads": 0,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.23/PureLive-2.0.23%2B34-macOS.dmg"
       },
       {
         "name": "PureLive-2.0.23+34-macOS.zip",
-        "size": "100.89mb",
-        "downloads": 10,
+        "size": "100.9mb",
+        "downloads": 0,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.23/PureLive-2.0.23%2B34-macOS.zip"
       },
       {
         "name": "PureLive-2.0.23+34-windows-x64-setup.exe",
-        "size": "62.88mb",
-        "downloads": 508,
+        "size": "62.89mb",
+        "downloads": 0,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.23/PureLive-2.0.23%2B34-windows-x64-setup.exe"
       },
       {
         "name": "PureLive-2.0.23+34-windows-x64.msix",
         "size": "87.8mb",
-        "downloads": 165,
+        "downloads": 0,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.23/PureLive-2.0.23%2B34-windows-x64.msix"
       }
     ]
@@ -70,7 +70,7 @@
       {
         "name": "arm64-v8a",
         "size": "122.25mb",
-        "downloads": 14089,
+        "downloads": 14092,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.22/app-arm64-v8a-release.apk"
       },
       {
