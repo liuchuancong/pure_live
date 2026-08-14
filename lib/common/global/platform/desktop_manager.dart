@@ -11,9 +11,9 @@ import 'package:pure_live/routes/app_navigation.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/plugins/share_command_handler.dart';
-import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/routes/route_observer_controller.dart';
 import 'package:pure_live/common/utils/share_command_handler.dart';
+import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 
 class DesktopManager {
   static State? _currentState;

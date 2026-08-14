@@ -1,10 +1,10 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/modules/auth/auth_controller.dart';
-import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/recorder/services/cache_service.dart';
 import 'package:pure_live/routes/route_observer_controller.dart';
 import 'package:pure_live/recorder/services/stream_resolver_service.dart';
+import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/core/iptv/services/channel_detail_controller.dart';
 import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart';

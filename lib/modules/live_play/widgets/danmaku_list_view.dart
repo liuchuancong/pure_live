@@ -5,7 +5,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:flame_barrage/flame_barrage.dart';
-import 'package:pure_live/modules/live_play/player_state.dart';
+import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 
 class DanmakuListView extends StatefulWidget {

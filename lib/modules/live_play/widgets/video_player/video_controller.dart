@@ -12,12 +12,12 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:volume_controller/volume_controller.dart';
 import 'package:pure_live/player/core/player_manager.dart';
-import 'package:pure_live/modules/live_play/load_type.dart';
 import 'package:scrollview_observer/scrollview_observer.dart';
 import 'package:pure_live/player/models/player_exception.dart';
-import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/player/models/player_error_type.dart';
+import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
+import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 
 typedef AudioOnlyCallback = void Function(bool value);

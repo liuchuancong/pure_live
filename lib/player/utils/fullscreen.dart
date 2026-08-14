@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:fullscreen_window/fullscreen_window.dart';
 import 'package:pure_live/player/utils/window_helper.dart';
-import 'package:pure_live/modules/live_play/player_state.dart';
+import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 
 class WindowService {

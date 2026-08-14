@@ -3,8 +3,8 @@ import 'package:pure_live/core/site/huya_site.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
-import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:pure_live/modules/live_play/states/live_play_state.dart';
+import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 

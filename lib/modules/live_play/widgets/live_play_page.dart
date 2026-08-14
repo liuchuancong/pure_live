@@ -1,22 +1,22 @@
 import 'dart:io';
 import 'dart:async';
-import 'widgets/index.dart';
+import 'index.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pure_live/common/utils/live_url_tool.dart';
-import 'package:pure_live/modules/live_play/load_type.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/index.dart' hide BackButton;
-import 'package:pure_live/modules/live_play/play_other.dart';
 import 'package:pure_live/recorder/models/record_status.dart';
-import 'package:pure_live/modules/live_play/danmaku_tab.dart';
-import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/modules/live_play/states/ui_state.dart';
+import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/common/utils/share_command_handler.dart';
+import 'package:pure_live/modules/live_play/widgets/play_other.dart';
+import 'package:pure_live/modules/live_play/widgets/danmaku_tab.dart';
 import 'package:pure_live/modules/live_play/widgets/video_keyboard.dart';
+import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller_panel.dart';
 
