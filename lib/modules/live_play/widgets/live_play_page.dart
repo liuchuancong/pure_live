@@ -117,11 +117,13 @@ class LivePlayPage extends GetView<LivePlayController> {
             Obx(() {
               final detail = controller.state.value.room.detail;
               if (detail == null) return const SizedBox.shrink();
+              final isMobile = Get.width <= 680;
+              final nickMaxW = isMobile ? 60.0 : 240.0;
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 60),
+                    constraints: BoxConstraints(maxWidth: nickMaxW),
                     child: Text(
                       detail.nick ?? '',
                       maxLines: 1,

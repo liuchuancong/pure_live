@@ -469,6 +469,12 @@ class VideoController with ChangeNotifier {
     stopHideController();
   }
 
+  void onMouseHoverPlayer() {
+    _isMouseOverPlayer = false;
+    _isMouseOverPlayer = false;
+    enableController(); // 重新开始计时
+  }
+
   // 鼠标离开播放器区域
   void onMouseExitPlayer() {
     _isMouseOverPlayer = false;
