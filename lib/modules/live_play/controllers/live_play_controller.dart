@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/plugins/event_bus.dart';
 import 'package:pure_live/plugins/emoji_manager.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:pure_live/model/live_play_quality.dart';
@@ -254,6 +255,8 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
 
       if (liveRoom.platform != Sites.iptvSite) {
         SettingsService.to.history.addRoomToHistory(liveRoom);
+        SettingsService.to.fav.updateRoom(liveRoom);
+        EventBus.instance.emit('refresh_room_changed', true);
       }
 
       const except = [Sites.kuaishouSite, Sites.iptvSite, Sites.ccSite];
@@ -276,6 +279,10 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
     setNormalScreen();
     GlobalPlayerState.to.isFullscreen.value = false;
     GlobalPlayerState.to.isWindowFullscreen.value = false;
+    if (liveRoom.platform != Sites.iptvSite) {
+      SettingsService.to.fav.updateRoom(liveRoom);
+      EventBus.instance.emit('refresh_room_changed', true);
+    }
     ToastUtil.show(
       liveRoom.liveStatus == LiveStatus.banned ? i18n('server_error_retry_later') : i18n('stream_not_live'),
     );

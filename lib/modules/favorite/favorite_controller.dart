@@ -16,6 +16,8 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
   final tabSiteIndex = 0.obs;
   final tabOnlineIndex = 0.obs;
   StreamSubscription<dynamic>? subscription;
+  StreamSubscription<dynamic>? roomChangedSubscription;
+
   StreamSubscription<dynamic>? _configSubscription;
   Timer? _autoRefreshTimer;
   Stopwatch? _refreshStopwatch;
@@ -63,6 +65,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
     });
 
     listenFavorite();
+    listenRoomChanged();
   }
 
   void _setupRefreshStrategy() {
@@ -85,6 +88,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
   void onClose() {
     tabController.dispose();
     subscription?.cancel();
+    roomChangedSubscription?.cancel();
     _configSubscription?.cancel();
     _autoRefreshTimer?.cancel();
     _debounceTimer?.cancel();
@@ -94,6 +98,12 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
   void listenFavorite() {
     subscription = EventBus.instance.listen('refresh_favorite_rooms', (data) {
       debounceRefresh();
+    });
+  }
+
+  void listenRoomChanged() {
+    roomChangedSubscription = EventBus.instance.listen('refresh_room_changed', (data) {
+      syncRooms();
     });
   }
 
