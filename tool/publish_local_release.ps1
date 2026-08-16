@@ -58,8 +58,10 @@ try {
     }
     $files = Get-ChildItem $ArtifactDirectory -File | ForEach-Object FullName
     if ($PSCmdlet.ShouldProcess($Tag, 'Publish GitHub release from local artifacts')) {
-        gh release view $Tag --repo wzgrx/pure_live *> $null
-        if ($LASTEXITCODE -eq 0) {
+        $releaseList = gh release list --repo wzgrx/pure_live --limit 100 --json tagName | ConvertFrom-Json
+        if ($LASTEXITCODE) { throw 'Failed to query existing GitHub Releases.' }
+        $releaseExists = @($releaseList).tagName -contains $Tag
+        if ($releaseExists) {
             gh release upload $Tag @files --clobber --repo wzgrx/pure_live
         } else {
             gh release create $Tag @files --verify-tag --title "Pure Live $Tag" --notes-file RELEASE_NOTES.md --repo wzgrx/pure_live
