@@ -26,3 +26,28 @@ foreach ($asset in $assets) {
     }
     Write-Host "Verified $($asset.Name)"
 }
+
+# The ffmpeg_kit build hook uses Dart HttpClient, which may stall on GitHub's
+# release-asset redirect on some Windows networks. Seed its deterministic
+# shared cache with curl so Android builds remain resumable and observable.
+$ffmpegCache = Join-Path $repoRoot '.dart_tool\hooks_runner\shared\ffmpeg_kit_extended_flutter\build\ffmpeg_kit_cache\android'
+$ffmpegName = 'bundle-base-shared-lgpl-release.aar'
+$ffmpegPath = Join-Path $ffmpegCache $ffmpegName
+$ffmpegPartial = "$ffmpegPath.partial"
+$ffmpegSha256 = 'c3cc680706a24669a41cb078f2d9983aac3d17188ebef1db50c73b388471000d'
+$ffmpegUrl = "https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.5-android/$ffmpegName"
+New-Item -ItemType Directory -Force -Path $ffmpegCache | Out-Null
+$ffmpegValid = (Test-Path -LiteralPath $ffmpegPath) -and
+    ((Get-FileHash -LiteralPath $ffmpegPath -Algorithm SHA256).Hash.ToLowerInvariant() -eq $ffmpegSha256)
+if (-not $ffmpegValid) {
+    Remove-Item -LiteralPath $ffmpegPath,$ffmpegPartial -Force -ErrorAction SilentlyContinue
+    & curl.exe -L --fail --retry 10 --retry-all-errors --continue-at - --output $ffmpegPartial $ffmpegUrl
+    if ($LASTEXITCODE) { exit $LASTEXITCODE }
+    $actual = (Get-FileHash -LiteralPath $ffmpegPartial -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($actual -ne $ffmpegSha256) {
+        Remove-Item -LiteralPath $ffmpegPartial -Force
+        throw "SHA-256 mismatch for $ffmpegName"
+    }
+    Move-Item -LiteralPath $ffmpegPartial -Destination $ffmpegPath -Force
+}
+Write-Host "Verified $ffmpegName"

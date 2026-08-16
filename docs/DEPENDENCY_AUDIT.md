@@ -21,6 +21,7 @@ AGP、Gradle 和 Kotlin 按 Flutter 3.47 的兼容矩阵升级，并跟进 9.1/2
 - `flame_barrage 0.0.4` 暂存于 `plugins/flame_barrage`，仅修补引擎移动时忽略逐条速度的问题并保留原许可证；上游发布等效修复后再恢复 hosted 依赖。
 - `media_kit`、`flutter_inappwebview`、`screen_retriever`、`dart_quickjs` 均固定到 2026-08-16 复核的完整 Git 提交，不跟随可变分支。
 - `flv_lzc` 固定自上游 `030d611` 并存放在 `plugins/flv_lzc`；仅移除 Android 注册阶段的临时 `SurfaceTexture` 探测，规避 Flutter 3.47 平台纹理注册断言，保留上游许可证和来源说明。
+- Android 本地构建会预取并校验 MediaKit arm64 库与 FFmpeg Kit AAR；后者预先写入 Native Assets 共享缓存，避开 Windows Dart 下载器在 GitHub Release 重定向处长时间等待。
 - 删除已停止作用的 `sqlite3_flutter_libs`；项目使用 `sqlite3` 3.x 的 Native Assets。
 - 升级 `app_links`、`connectivity_plus`、`pro_mpack` 与 Syncfusion sliders，并通过静态分析和完整测试。
 - GitHub Actions 固定到已核验的完整提交 SHA，Dependabot 每月汇总检查 pub、Gradle 和 Actions 更新；工作流仍仅手动运行，不因依赖检查消耗构建分钟。
