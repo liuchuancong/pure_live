@@ -13,6 +13,11 @@ on:
         required: true
         type: boolean
         default: false
+      run_quality:
+        description: Run analyze, tests and public interface probes first
+        required: true
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -27,6 +32,7 @@ env:
 jobs:
   quality:
     name: Analyze, test and probe
+    if: inputs.run_quality
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -50,7 +56,7 @@ jobs:
 
   android:
     name: Android arm64-v8a APK
-    if: inputs.build_android
+    if: ${{ always() && inputs.build_android && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
     needs: quality
     runs-on: ubuntu-latest
     timeout-minutes: 55
@@ -97,7 +103,7 @@ jobs:
 
   windows:
     name: Windows portable
-    if: inputs.build_windows
+    if: ${{ always() && inputs.build_windows && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
     needs: quality
     runs-on: windows-latest
     timeout-minutes: 55

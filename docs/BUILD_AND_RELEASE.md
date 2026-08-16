@@ -111,7 +111,10 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\publish_local_release.ps1 `
 
 ## GitHub Actions
 
-`.github/workflows/feature-build.yml` 只支持手动触发，可选择 Android 和 Windows 构建；它始终先运行完整静态分析、测试与接口探测。产物仅保留 3 天。
+`.github/workflows/feature-build.yml` 只支持手动触发，可选择 Android 和 Windows 构建；默认先运行完整静态分析、测试与接口探测。产物仅保留 3 天。
+
+代码未变化且当前提交已经在本机通过完整门禁时，可关闭手动工作流的
+`run_quality`，仅调用托管 Runner 完成 Secrets 正式签名；默认仍会执行完整门禁。
 
 Android 手动云构建要求以下 Secrets：
 
