@@ -81,7 +81,8 @@ WindowsSingleInstancePlugin::WindowsSingleInstancePlugin(flutter::PluginRegistra
 
 WindowsSingleInstancePlugin::~WindowsSingleInstancePlugin() {
   if (mutex != NULL) {
-      ::ReleaseMutex(mutex);
+      ::CloseHandle(mutex);
+      mutex = NULL;
   }
 }
 
@@ -143,7 +144,7 @@ bool WindowsSingleInstancePlugin::isSingleInstance(std::wstring name) {
 
   // Check for existing window
   std::wstring mutex_str = name.append(L".win.mutex");
-  mutex = ::CreateMutex(NULL, TRUE, mutex_str.c_str());
+  mutex = ::CreateMutex(NULL, FALSE, mutex_str.c_str());
   if (mutex == NULL || GetLastError() == ERROR_ALREADY_EXISTS) {
       return false;
   }

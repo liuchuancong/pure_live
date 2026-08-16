@@ -1,4 +1,5 @@
-blank_issues_enabled: false
+blank_issues_enabled: true
+
 contact_links:
   - name: 使用与构建文档
     url: https://github.com/wzgrx/pure_live#文档

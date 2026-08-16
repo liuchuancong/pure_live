@@ -1,23 +1,24 @@
 import 'dart:io';
 import 'dart:async';
-import 'widgets/index.dart';
+import 'index.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pure_live/common/utils/live_url_tool.dart';
-import 'package:pure_live/modules/live_play/load_type.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/index.dart' hide BackButton;
-import 'package:pure_live/modules/live_play/play_other.dart';
 import 'package:pure_live/recorder/models/record_status.dart';
-import 'package:pure_live/modules/live_play/danmaku_tab.dart';
-import 'package:pure_live/modules/live_play/player_state.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:pure_live/modules/live_play/states/ui_state.dart';
+import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/common/utils/share_command_handler.dart';
-import 'package:pure_live/modules/live_play/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/widgets/play_other.dart';
+import 'package:pure_live/modules/live_play/widgets/danmaku_tab.dart';
 import 'package:pure_live/modules/live_play/local_interaction_sheet.dart';
 import 'package:pure_live/modules/live_play/widgets/video_keyboard.dart';
+import 'package:pure_live/modules/live_play/controllers/player_state.dart';
+import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller_panel.dart';
 
 class LivePlayPage extends GetView<LivePlayController> {
@@ -29,10 +30,13 @@ class LivePlayPage extends GetView<LivePlayController> {
       _updateWakelock();
       final manager = GlobalPlayerService.instance.playerManager;
       final isInPip = manager.isInPip.value;
-      final mode = controller.screenMode.value;
-      if (controller.videoController.value != null) {
+      final state = controller.state.value;
+      final mode = state.ui.screenMode;
+      final videoController = state.player.videoController;
+
+      if (videoController != null) {
         return VideoKeyboardShortcuts(
-          controller: controller.videoController.value!,
+          controller: videoController,
           child: Container(
             color: Colors.black,
             width: double.infinity,
@@ -51,6 +55,7 @@ class LivePlayPage extends GetView<LivePlayController> {
           ),
         );
       }
+
       return Container(
         color: Colors.black,
         width: double.infinity,
@@ -102,8 +107,7 @@ class LivePlayPage extends GetView<LivePlayController> {
         title: Row(
           children: [
             Obx(() {
-              final avatar = controller.detail.value?.avatar;
-
+              final avatar = controller.state.value.room.detail?.avatar;
               return CircleAvatar(
                 foregroundImage: avatar != null && avatar.isNotEmpty ? CachedNetworkImageProvider(avatar) : null,
                 radius: 16,
@@ -112,13 +116,15 @@ class LivePlayPage extends GetView<LivePlayController> {
             }),
             const SizedBox(width: 8),
             Obx(() {
-              final detail = controller.detail.value;
+              final detail = controller.state.value.room.detail;
               if (detail == null) return const SizedBox.shrink();
+              final isMobile = Get.width <= 680;
+              final nickMaxW = isMobile ? 60.0 : 240.0;
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 60),
+                    constraints: BoxConstraints(maxWidth: nickMaxW),
                     child: Text(
                       detail.nick ?? '',
                       maxLines: 1,
@@ -137,7 +143,7 @@ class LivePlayPage extends GetView<LivePlayController> {
             }),
             const SizedBox(width: 8),
             Obx(() {
-              final detail = controller.detail.value;
+              final detail = controller.state.value.room.detail;
               if (detail == null) return const SizedBox.shrink();
               return FavoriteFloatingButton(room: detail);
             }),
@@ -145,7 +151,7 @@ class LivePlayPage extends GetView<LivePlayController> {
         ),
         actions: [
           Obx(() {
-            final room = controller.detail.value;
+            final room = controller.state.value.room.detail;
             if (room == null) return const SizedBox.shrink();
             final task = controller.recorderController.tasks.firstWhereOrNull(
               (t) => t.platform == room.platform && t.roomId == room.roomId,
@@ -186,7 +192,7 @@ class LivePlayPage extends GetView<LivePlayController> {
                           : Remix.add_circle_line,
                       size: 14,
                     ),
-                    const SizedBox(width: 4), // 🌟 Tightened inner gap from 8px down to 4px
+                    const SizedBox(width: 4),
                     Text(
                       isRunning
                           ? i18n("recording")
@@ -282,10 +288,10 @@ class LivePlayPage extends GetView<LivePlayController> {
             position: PopupMenuPosition.under,
             icon: const Icon(Remix.apps_2_line),
             onOpened: () {
-              controller.isMenuOpen = true;
+              controller.updateUI(isMenuOpen: true);
             },
             onCanceled: () {
-              controller.isMenuOpen = false;
+              controller.updateUI(isMenuOpen: false);
             },
             onSelected: (int index) {
               if (index == 0) {
@@ -299,14 +305,15 @@ class LivePlayPage extends GetView<LivePlayController> {
               } else if (index == 4) {
                 showVolumeSettingsDialog(context);
               } else if (index == 5) {
-                if (controller.detail.value != null) {
-                  LiveUrlTool.getPlayUrlByRoomId(
-                    roomId: controller.detail.value?.roomId ?? '',
-                    platform: controller.detail.value?.platform ?? '',
-                  );
+                final detail = controller.state.value.room.detail;
+                if (detail != null) {
+                  LiveUrlTool.getPlayUrlByRoomId(roomId: detail.roomId ?? '', platform: detail.platform ?? '');
                 }
               } else if (index == 6) {
-                ShareCommandHandler.instance.onShareRoomPressed(controller.detail.value!);
+                final detail = controller.state.value.room.detail;
+                if (detail != null) {
+                  ShareCommandHandler.instance.onShareRoomPressed(detail);
+                }
               } else if (index == 7) {
                 showModalBottomSheet<void>(
                   context: context,
@@ -319,7 +326,7 @@ class LivePlayPage extends GetView<LivePlayController> {
                   ),
                 );
               }
-              controller.isMenuOpen = false;
+              controller.updateUI(isMenuOpen: false);
             },
             itemBuilder: (BuildContext context) {
               return [
@@ -363,11 +370,11 @@ class LivePlayPage extends GetView<LivePlayController> {
                   ),
                 ),
                 PopupMenuItem(
-                  value: 6, // Make sure to increment the value to avoid duplicate key conflicts
+                  value: 6,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: MenuListTile(
                     leading: const Icon(RemixIcons.share_forward_line, size: 20),
-                    text: i18n("share"), // Make sure to add "share" to your i18n file
+                    text: i18n("share"),
                   ),
                 ),
                 PopupMenuItem(
@@ -395,16 +402,16 @@ class LivePlayPage extends GetView<LivePlayController> {
                           buildVideoPlayer(),
                           const ResolutionsRow(),
                           const Divider(height: 1),
-                          // ====================== IPTV 优化 ======================
                           Obx(() {
-                            if (controller.success.isFalse || controller.site == Sites.iptvSite) {
+                            final state = controller.state.value;
+                            if (!state.room.success || controller.site == Sites.iptvSite) {
                               return const SizedBox.shrink();
                             }
-                            final state = GlobalPlayerState.to;
-                            if (state.isFullscreen.value || state.isWindowFullscreen.value) {
+                            final globalState = GlobalPlayerState.to;
+                            if (globalState.isFullscreen.value || globalState.isWindowFullscreen.value) {
                               return const SizedBox.shrink();
                             }
-                            return Expanded(child: DanmakuTabView(key: ValueKey(state.isFullscreen.value)));
+                            return Expanded(child: DanmakuTabView(key: ValueKey(globalState.isFullscreen.value)));
                           }),
                         ],
                       )
@@ -412,31 +419,36 @@ class LivePlayPage extends GetView<LivePlayController> {
                         children: <Widget>[
                           Expanded(child: buildVideoPlayer()),
                           Obx(() {
-                            bool isRoomExits = controller.detail.value != null;
-                            return isRoomExits
-                                ? SizedBox(
-                                    width: controller.detail.value!.platform == Sites.iptvSite ? 0 : 400,
-                                    child: Column(
-                                      children: [
-                                        const ResolutionsRow(),
-                                        const Divider(height: 1),
-                                        Obx(() {
-                                          if (controller.success.isFalse ||
-                                              controller.detail.value!.platform == Sites.iptvSite) {
-                                            return const SizedBox.shrink();
-                                          }
-                                          final state = GlobalPlayerState.to;
-                                          if (state.isFullscreen.value || state.isWindowFullscreen.value) {
-                                            return const SizedBox.shrink();
-                                          }
-                                          return Expanded(
-                                            child: DanmakuTabView(key: ValueKey(state.isFullscreen.value)),
-                                          );
-                                        }),
-                                      ],
-                                    ),
-                                  )
-                                : Container();
+                            final state = controller.state.value;
+                            final detail = state.room.detail;
+                            if (detail == null) {
+                              return Container();
+                            }
+                            if (detail.platform == Sites.iptvSite) {
+                              return const SizedBox.shrink();
+                            }
+
+                            return SizedBox(
+                              width: 400,
+                              child: Column(
+                                children: [
+                                  const ResolutionsRow(),
+                                  const Divider(height: 1),
+                                  // 检查是否显示弹幕列表
+                                  if (state.room.success) ...[
+                                    Obx(() {
+                                      final globalState = GlobalPlayerState.to;
+                                      if (globalState.isFullscreen.value || globalState.isWindowFullscreen.value) {
+                                        return const SizedBox.shrink();
+                                      }
+                                      return Expanded(
+                                        child: DanmakuTabView(key: ValueKey(globalState.isFullscreen.value)),
+                                      );
+                                    }),
+                                  ],
+                                ],
+                              ),
+                            );
                           }),
                         ],
                       ),
@@ -449,10 +461,8 @@ class LivePlayPage extends GetView<LivePlayController> {
   }
 
   void showDlnaCastDialog() {
-    LiveUrlTool.castPlayUrlByRoomId(
-      roomId: controller.detail.value?.roomId ?? '',
-      platform: controller.detail.value?.platform ?? '',
-    );
+    final detail = controller.state.value.room.detail;
+    LiveUrlTool.castPlayUrlByRoomId(roomId: detail?.roomId ?? '', platform: detail?.platform ?? '');
   }
 
   Widget buildVideoPlayer() {
@@ -460,13 +470,19 @@ class LivePlayPage extends GetView<LivePlayController> {
       aspectRatio: 16 / 9,
       child: Container(
         color: Colors.black,
-        child: Obx(
-          () => controller.success.value
-              ? VideoPlayer(controller: controller.videoController.value!)
-              : controller.isLiving.value
-              ? buildLoading()
-              : NotLivingVideoWidget(controller: controller, key: UniqueKey()),
-        ),
+        child: Obx(() {
+          final state = controller.state.value;
+          if (state.room.isLoading) {
+            return buildLoading();
+          }
+          if (state.room.success && state.player.videoController != null) {
+            return VideoPlayer(controller: state.player.videoController!);
+          }
+          if (state.room.isLiving) {
+            return buildLoading();
+          }
+          return NotLivingVideoWidget(controller: controller, key: UniqueKey());
+        }),
       ),
     );
   }
@@ -590,13 +606,14 @@ class LivePlayPage extends GetView<LivePlayController> {
                 SettingsService.to.vol.globalVolumeMute.v = tempMute.value;
                 SettingsService.to.vol.defaultMobileVolume.v = tempMobileVol.value.clamp(0.0, 1.0);
                 SettingsService.to.vol.defaultDesktopVolume.v = tempDesktopVol.value.clamp(0.0, 1.0);
+                final videoController = controller.state.value.player.videoController;
                 if (tempMute.value) {
-                  controller.videoController.value?.setVolume(0.0);
+                  videoController?.setVolume(0.0);
                 } else {
                   if (PlatformUtils.isMobile) {
-                    controller.videoController.value?.setVolume(tempMobileVol.value);
+                    videoController?.setVolume(tempMobileVol.value);
                   } else {
-                    controller.videoController.value?.setVolume(tempDesktopVol.value);
+                    videoController?.setVolume(tempDesktopVol.value);
                   }
                 }
                 Navigator.pop(context);
@@ -613,28 +630,29 @@ class LivePlayPage extends GetView<LivePlayController> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        content: Obx(
-          () => Column(
+        content: Obx(() {
+          final uiState = controller.state.value.ui;
+          return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               SwitchListTile(
                 title: Text(i18n("sleep_timer")),
                 contentPadding: EdgeInsets.zero,
-                value: controller.closeTimeFlag.value,
+                value: uiState.closeTimeFlag,
                 activeThumbColor: Theme.of(context).colorScheme.primary,
-                onChanged: (bool value) => controller.closeTimeFlag.value = value,
+                onChanged: (bool value) => controller.updateTimerFlag(value),
               ),
               Slider(
                 min: 0,
                 max: 240,
                 label: i18n("auto_refresh_time"),
-                value: controller.closeTimes.toDouble(),
-                onChanged: (value) => controller.closeTimes.value = value.toInt(),
+                value: uiState.closeTimes.toDouble(),
+                onChanged: (value) => controller.updateTimerTimes(value.toInt()),
               ),
-              Text(i18n("auto_close_time", args: {"time": controller.closeTimes.toString()})),
+              Text(i18n("auto_close_time", args: {"time": uiState.closeTimes.toString()})),
             ],
-          ),
-        ),
+          );
+        }),
       ),
     );
   }
@@ -651,22 +669,15 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
   LivePlayController get controller => Get.find<LivePlayController>();
 
   Widget buildInfoCount() {
-    // ====================== IPTV 不显示观看人数 ======================
+    final state = controller.state.value;
     if (controller.site == Sites.iptvSite) return const SizedBox.shrink();
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          controller.detail.value?.effectiveAudienceMetricType == AudienceMetricType.onlineViewers
-              ? Icons.people_alt_rounded
-              : Icons.whatshot_rounded,
-          size: 14,
-        ),
+        const Icon(Icons.whatshot_rounded, size: 14),
         const SizedBox(width: 4),
         Text(
-          controller.detail.value?.watching != null
-              ? '${i18n(controller.detail.value!.audienceMetricI18nKey)} · ${readableCount(controller.detail.value!.watching!)}'
-              : '0',
+          state.room.detail?.watching != null ? readableCount(state.room.detail!.watching!) : '0',
           style: Get.textTheme.bodySmall,
         ),
       ],
@@ -675,11 +686,12 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
 
   Widget _buildResolutionSelector() {
     return Obx(() {
-      if (!controller.success.value || controller.qualites.isEmpty) {
+      final state = controller.state.value;
+      if (!state.room.success || state.player.qualites.isEmpty) {
         return const SizedBox.shrink();
       }
-      final currentIndex = controller.currentQuality.value;
-      final currentQualityName = controller.qualites[currentIndex].quality;
+      final currentIndex = state.player.currentQuality;
+      final currentQualityName = state.player.qualites[currentIndex].quality;
 
       return PopupMenuButton<int>(
         tooltip: i18n('toolbox_select_quality'),
@@ -687,10 +699,10 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         offset: const Offset(0.0, 5.0),
         onOpened: () {
-          controller.isMenuOpen = true;
+          controller.updateUI(isMenuOpen: true);
         },
         onCanceled: () {
-          controller.isMenuOpen = false;
+          controller.updateUI(isMenuOpen: false);
         },
         position: PopupMenuPosition.under,
         child: Padding(
@@ -701,12 +713,12 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
           ),
         ),
         onSelected: (newQualityIndex) {
-          controller.isMenuOpen = false;
-          controller.setResolution(ReloadDataType.changeQuality, newQualityIndex, controller.currentLineIndex.value);
+          controller.updateUI(isMenuOpen: false);
+          controller.setResolution(ReloadDataType.changeQuality, newQualityIndex, state.player.currentLineIndex);
         },
         itemBuilder: (context) {
-          return List.generate(controller.qualites.length, (index) {
-            final qualityRate = controller.qualites[index];
+          return List.generate(state.player.qualites.length, (index) {
+            final qualityRate = state.player.qualites[index];
             final isSelected = index == currentIndex;
             return PopupMenuItem<int>(
               value: index,
@@ -725,10 +737,11 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
 
   Widget _buildLineSelector() {
     return Obx(() {
-      if (!controller.success.value || controller.playUrls.isEmpty) {
+      final state = controller.state.value;
+      if (!state.room.success || state.player.playUrls.isEmpty) {
         return const SizedBox.shrink();
       }
-      final currentIndex = controller.currentLineIndex.value;
+      final currentIndex = state.player.currentLineIndex;
       final currentLineName = i18n("toolbox_line", args: {"index": (currentIndex + 1).toString()});
 
       return PopupMenuButton<int>(
@@ -737,10 +750,10 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         offset: const Offset(0.0, 5.0),
         onOpened: () {
-          controller.isMenuOpen = true;
+          controller.updateUI(isMenuOpen: true);
         },
         onCanceled: () {
-          controller.isMenuOpen = false;
+          controller.updateUI(isMenuOpen: false);
         },
         position: PopupMenuPosition.under,
         child: Padding(
@@ -751,11 +764,11 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
           ),
         ),
         onSelected: (newLineIndex) {
-          controller.isMenuOpen = false;
-          controller.setResolution(ReloadDataType.changeLine, controller.currentQuality.value, newLineIndex);
+          controller.updateUI(isMenuOpen: false);
+          controller.setResolution(ReloadDataType.changeLine, state.player.currentQuality, newLineIndex);
         },
         itemBuilder: (context) {
-          return List.generate(controller.playUrls.length, (index) {
+          return List.generate(state.player.playUrls.length, (index) {
             final isSelected = index == currentIndex;
             return PopupMenuItem<int>(
               value: index,
@@ -775,7 +788,8 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      if (!controller.success.value) {
+      final state = controller.state.value;
+      if (!state.room.success) {
         return Container(height: 55);
       }
       return Container(
@@ -794,6 +808,7 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
   }
 }
 
+// FavoriteFloatingButton, NotLivingVideoWidget, _ActionTile 保持不变
 class FavoriteFloatingButton extends StatefulWidget {
   const FavoriteFloatingButton({super.key, required this.room});
 
@@ -818,6 +833,12 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
         setState(() {});
       }
     });
+  }
+
+  @override
+  void dispose() {
+    subscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -880,6 +901,7 @@ class NotLivingVideoWidget extends StatelessWidget {
   const NotLivingVideoWidget({super.key, required this.controller});
 
   final LivePlayController controller;
+
   @override
   Widget build(BuildContext context) {
     return Material(

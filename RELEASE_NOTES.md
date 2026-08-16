@@ -1,6 +1,18 @@
-# Pure Live v2.0.25
+# Pure Live v2.0.26
 
-本版本在 v2.0.24 体验优化基础上，重点修复虎牙弹幕协议、完善搜索分页和缩略图自动刷新，并更新低风险运行时依赖。
+本版本合并上游 `master@2cd1877` 的直播播放架构与平台更新，并集中处理上游仓库近期反馈的播放器、弹幕、音量、字体、全屏、Windows 退出和直播间闪退问题。
+
+## 上游反馈修复
+
+- 修复弹幕显示区域重新进入直播间后回到 100% 的问题，并迁移早期无效速度值（[#731](https://github.com/liuchuancong/pure_live/issues/731)、[#732](https://github.com/liuchuancong/pure_live/issues/732)、[#733](https://github.com/liuchuancong/pure_live/issues/733)）。
+- 本地修补 `flame_barrage 0.0.4` 的逐条速度计算，让多行弹幕恢复自然速度差异并保留防追尾计算（[#732](https://github.com/liuchuancong/pure_live/issues/732)）。
+- 串行等待播放器关闭、销毁和重新初始化，消除点击刷新后旧播放器延迟暂停新会话的竞态（[#731](https://github.com/liuchuancong/pure_live/issues/731)）。
+- 所有桌面播放器统一应用房间或默认音量，音量变更完成后同步持久化和界面提示（[#735](https://github.com/liuchuancong/pure_live/issues/735)）。
+- 串行加载字体清单和用户字体，等待 Hive 写入完成，并在字体加载后刷新主题（[#736](https://github.com/liuchuancong/pure_live/issues/736)）。
+- Windows/macOS/Linux 全屏统一使用 `window_manager`，修复 Windows 侧边任务栏导致的全屏黑边，同时补齐 macOS 窗口全屏（[#708](https://github.com/liuchuancong/pure_live/issues/708)、[#480](https://github.com/liuchuancong/pure_live/issues/480)）。
+- 修复 Windows 单实例互斥体句柄释放、命名管道超时和进程退出路径，规避 WebView2/Geolocation DLL 卸载挂起导致的二次启动失败（[#738](https://github.com/liuchuancong/pure_live/issues/738)）。
+- 直播页子控制器使用独立标签并由父控制器直接持有，路由入口校验平台和房间号，状态对象支持显式清空旧错误与弹幕房间，降低偶发进房失败和搜索结果闪退（[#730](https://github.com/liuchuancong/pure_live/issues/730)、[#739](https://github.com/liuchuancong/pure_live/issues/739)）。
+- 全局关闭弹幕时仍显示“弹幕设置”和“屏蔽列表”，保留主播放器及小窗弹幕调整入口。
 
 ## 新增与优化
 
@@ -33,7 +45,7 @@
 ## 下载说明
 
 - Android：当前优先发布 `arm64-v8a` APK。
-- Windows：优先下载 `PureLive-2.0.25-windows-x64-setup.exe`，也可使用便携 ZIP。
+- Windows：优先下载 `PureLive-2.0.26-windows-x64-setup.exe`，也可使用便携 ZIP。
 - `SHA256SUMS.txt` 可用于校验下载文件完整性。
 
 Android APK 使用此仓库专用的发布签名。若设备上已有其他签名来源的同包名应用，需要先备份应用数据再安装本版本。本机构建未配置发布密钥时会生成包名为 `com.mystyle.purelive.qa` 的 QA 包，可与正式版并存，不作为正式 Release 附件。

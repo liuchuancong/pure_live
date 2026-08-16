@@ -1,7 +1,7 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/modules/auth/auth_controller.dart';
-import 'package:pure_live/modules/live_play/player_state.dart';
+import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/local_interaction_controller.dart';
 import 'package:pure_live/recorder/services/cache_service.dart';
 import 'package:pure_live/routes/route_observer_controller.dart';
@@ -19,15 +19,10 @@ class InitialServices {
   }
 
   static void initLazyControllers() {
-    // 关注
     Get.lazyPut(() => FavoriteController(), fenix: true);
-    // iptv频道
     Get.lazyPut(() => ChannelDetailController(), fenix: true);
-    // 热门
     Get.lazyPut(() => PopularController(), fenix: true);
-    // 分区
     Get.lazyPut(() => AreasController(), fenix: true);
-    // 播放器状态
     Get.lazyPut(() => GlobalPlayerState(), fenix: true);
   }
 

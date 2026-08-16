@@ -21,7 +21,7 @@ class MyTheme {
       return selectedName;
     }
     if (PlatformUtils.isWindows) {
-      return 'PingFang';
+      return 'Microsoft YaHei';
     }
     if (PlatformUtils.isAndroid) {
       return GoogleFonts.roboto().fontFamily;
@@ -137,7 +137,7 @@ class MyTheme {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         labelStyle: textTheme.bodyMedium,
         hintStyle: textTheme.bodyMedium?.copyWith(color: baseTheme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6)),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: baseTheme.colorScheme.primary, width: 1.5),

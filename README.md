@@ -18,7 +18,8 @@
 > 本仓库基于 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live) 持续维护，新增可配置的小窗弹幕，并完善本机构建、依赖锁定、接口探测和发布流程。
 
 - **最新稳定版**：[v2.0.23](https://github.com/wzgrx/pure_live/releases/tag/v2.0.23)
-- **当前开发版**：`2.0.25+36`（`master`）
+- **当前开发版**：`2.0.26+37`（`master`）
+- **上游同步基线**：`liuchuancong/pure_live@2cd1877`（2026-08-16）
 - **主要发布平台**：Android、Windows
 
 ![Pure Live 界面预览](assets/images/banner.png)

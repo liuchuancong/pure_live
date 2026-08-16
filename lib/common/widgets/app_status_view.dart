@@ -441,7 +441,7 @@ class _AppStatusViewState extends State<AppStatusView> with SingleTickerProvider
     final double size = widget.isMini
         ? 24
         : Get.width > 680
-        ? 50
+        ? 32
         : 24;
 
     final spinkit = _getSpinKit(style, parsedColor, size);
@@ -465,8 +465,8 @@ class _AppStatusViewState extends State<AppStatusView> with SingleTickerProvider
           ).createShader(rect);
         },
         child: Container(
-          width: widget.isMini ? 20 : 44,
-          height: widget.isMini ? 20 : 44,
+          width: widget.isMini ? 20 : 28,
+          height: widget.isMini ? 20 : 28,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(width: widget.isMini ? 2.0 : 3.5, color: Colors.white),

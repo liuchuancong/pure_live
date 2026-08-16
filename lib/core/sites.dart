@@ -17,6 +17,18 @@ class Sites {
   static const String kuaishouSite = "kuaishou";
   static const String ccSite = "cc";
   static const String iptvSite = "iptv";
+  static const Set<String> supportedSiteIds = {
+    bilibiliSite,
+    douyuSite,
+    huyaSite,
+    douyinSite,
+    kuaishouSite,
+    ccSite,
+    iptvSite,
+  };
+
+  static bool isSupported(String id) => supportedSiteIds.contains(id.trim().toLowerCase());
+
   static List<Site> get supportSites => [
     Site(id: "bilibili", name: i18n("site_bilibili"), logo: "assets/images/bilibili_2.png", liveSite: BiliBiliSite()),
     Site(id: "douyu", name: i18n("site_douyu"), logo: "assets/images/douyu.png", liveSite: DouyuSite()),

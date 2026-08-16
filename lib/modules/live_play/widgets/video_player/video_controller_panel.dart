@@ -9,14 +9,14 @@ import 'package:pure_live/plugins/event_bus.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
-import 'package:pure_live/modules/live_play/load_type.dart';
 import 'package:pure_live/common/widgets/count_button.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
-import 'package:pure_live/modules/live_play/play_other.dart';
 import 'package:scrollview_observer/scrollview_observer.dart';
-import 'package:pure_live/modules/live_play/player_state.dart';
+import 'package:pure_live/modules/live_play/states/load_type.dart';
+import 'package:pure_live/modules/live_play/widgets/play_other.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
-import 'package:pure_live/modules/live_play/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/controllers/player_state.dart';
+import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/volume_control.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 
@@ -59,7 +59,8 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
               : Icons.volume_up;
 
           return MouseRegion(
-            onHover: (event) => controller.enableController(),
+            onHover: (_) => controller.onMouseHoverPlayer(),
+            onExit: (_) => controller.onMouseExitPlayer(),
             cursor: !controller.showController.value ? SystemMouseCursors.none : SystemMouseCursors.basic,
             child: Stack(
               children: [
@@ -589,25 +590,23 @@ class DanmakuViewer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(
-      () => RepaintBoundary(
-        child: FlameBarrageWidget(
-          controller: controller.danmakuController,
-          config: BarrageConfig(
-            fontSize: controller.danmakuFontSize.value,
-            topAreaDistance: controller.danmakuTopArea.value,
-            area: controller.danmakuArea.value,
-            bottomAreaDistance: controller.danmakuBottomArea.value,
-            baseSpeed: controller.danmakuSpeed.value,
-            opacity: controller.danmakuOpacity.value,
-            fontWeight: FontWeight.values[controller.danmakuFontBorder.value],
-            showStroke: controller.enableDanmakuStroke.value,
-            fps: controller.danmakuFps.value,
-            fontFamily: controller.danmakuFontFamilyName.value,
-            pictureCacheMaxSize: 600,
-            barragePoolMaxSize: 300,
-          ),
-          emojiAtlas: EmojiAtlas.instance,
+      () => FlameBarrageWidget(
+        controller: controller.danmakuController,
+        config: BarrageConfig(
+          fontSize: controller.danmakuFontSize.value,
+          topAreaDistance: controller.danmakuTopArea.value,
+          area: controller.danmakuArea.value,
+          bottomAreaDistance: controller.danmakuBottomArea.value,
+          baseSpeed: controller.danmakuSpeed.value,
+          opacity: controller.danmakuOpacity.value,
+          fontWeight: FontWeight.values[controller.danmakuFontBorder.value],
+          showStroke: controller.enableDanmakuStroke.value,
+          fps: controller.danmakuFps.value,
+          fontFamily: controller.danmakuFontFamilyName.value,
+          pictureCacheMaxSize: 9999,
+          barragePoolMaxSize: 300,
         ),
+        emojiAtlas: EmojiAtlas.instance,
       ),
     );
   }
@@ -843,9 +842,9 @@ class LineSelectorButton extends StatelessWidget {
                 child: Obx(
                   () => ListView.builder(
                     padding: const EdgeInsets.symmetric(vertical: 10),
-                    itemCount: controller.livePlayController.playUrls.length,
+                    itemCount: controller.livePlayController.state.value.player.playUrls.length,
                     itemBuilder: (context, index) {
-                      final isSelected = index == controller.livePlayController.currentLineIndex.value;
+                      final isSelected = index == controller.livePlayController.state.value.player.currentLineIndex;
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 6.0),
                         child: Center(
@@ -853,7 +852,7 @@ class LineSelectorButton extends StatelessWidget {
                             onTap: () {
                               controller.livePlayController.setResolution(
                                 ReloadDataType.changeLine,
-                                controller.livePlayController.currentQuality.value,
+                                controller.livePlayController.state.value.player.currentQuality,
                                 index,
                               );
                               Navigator.of(context).pop();
@@ -904,7 +903,7 @@ class LineSelectorButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      if (controller.livePlayController.playUrls.isEmpty) return const SizedBox.shrink();
+      if (controller.livePlayController.state.value.player.playUrls.isEmpty) return const SizedBox.shrink();
       final bool isMobile =
           Theme.of(context).platform == TargetPlatform.android || Theme.of(context).platform == TargetPlatform.iOS;
 
@@ -913,7 +912,8 @@ class LineSelectorButton extends StatelessWidget {
       }
 
       const double itemHeight = 40.0;
-      final double totalMenuHeight = (controller.livePlayController.playUrls.length * itemHeight) + 32;
+      final double totalMenuHeight =
+          (controller.livePlayController.state.value.player.playUrls.length * itemHeight) + 32;
       return PopupMenuButton<int>(
         position: PopupMenuPosition.over,
         offset: Offset(30, -totalMenuHeight),
@@ -926,7 +926,7 @@ class LineSelectorButton extends StatelessWidget {
           controller.isMenuOpen.value = false;
           controller.livePlayController.setResolution(
             ReloadDataType.changeLine,
-            controller.livePlayController.currentQuality.value,
+            controller.livePlayController.state.value.player.currentQuality,
             index,
           );
           controller.enableController();
@@ -941,19 +941,20 @@ class LineSelectorButton extends StatelessWidget {
           side: const BorderSide(color: Colors.white10),
         ),
         child: _buildButtonChild(),
-        itemBuilder: (context) => List.generate(controller.livePlayController.playUrls.length, (index) {
-          final isSelected = index == controller.livePlayController.currentLineIndex.value;
-          return PopupMenuItem(
-            value: index,
-            height: itemHeight,
-            child: Center(
-              child: Text(
-                i18n("toolbox_line", args: {"index": (index + 1).toString()}),
-                style: AppTextStyles.t13.copyWith(color: isSelected ? Get.theme.colorScheme.primary : Colors.white),
-              ),
-            ),
-          );
-        }),
+        itemBuilder: (context) =>
+            List.generate(controller.livePlayController.state.value.player.playUrls.length, (index) {
+              final isSelected = index == controller.livePlayController.state.value.player.currentLineIndex;
+              return PopupMenuItem(
+                value: index,
+                height: itemHeight,
+                child: Center(
+                  child: Text(
+                    i18n("toolbox_line", args: {"index": (index + 1).toString()}),
+                    style: AppTextStyles.t13.copyWith(color: isSelected ? Get.theme.colorScheme.primary : Colors.white),
+                  ),
+                ),
+              );
+            }),
       );
     });
   }
@@ -965,7 +966,10 @@ class LineSelectorButton extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
       child: Text(
-        i18n("toolbox_line", args: {"index": (controller.livePlayController.currentLineIndex.value + 1).toString()}),
+        i18n(
+          "toolbox_line",
+          args: {"index": (controller.livePlayController.state.value.player.currentLineIndex + 1).toString()},
+        ),
         style: AppTextStyles.t13.copyWith(color: Colors.white),
       ),
     );
@@ -1007,10 +1011,10 @@ class ResolutionSelectorButton extends StatelessWidget {
                 child: Obx(
                   () => ListView.builder(
                     padding: const EdgeInsets.symmetric(vertical: 10),
-                    itemCount: controller.livePlayController.qualites.length,
+                    itemCount: controller.livePlayController.state.value.player.qualites.length,
                     itemBuilder: (context, index) {
-                      final isSelected = index == controller.livePlayController.currentQuality.value;
-                      final qualityName = controller.livePlayController.qualites[index].quality;
+                      final isSelected = index == controller.livePlayController.state.value.player.currentQuality;
+                      final qualityName = controller.livePlayController.state.value.player.qualites[index].quality;
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 6.0),
                         child: Center(
@@ -1019,7 +1023,7 @@ class ResolutionSelectorButton extends StatelessWidget {
                               controller.livePlayController.setResolution(
                                 ReloadDataType.changeQuality,
                                 index,
-                                controller.livePlayController.currentLineIndex.value,
+                                controller.livePlayController.state.value.player.currentLineIndex,
                               );
                               Navigator.of(context).pop();
                             },
@@ -1069,7 +1073,7 @@ class ResolutionSelectorButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      if (controller.livePlayController.qualites.isEmpty) return const SizedBox.shrink();
+      if (controller.livePlayController.state.value.player.qualites.isEmpty) return const SizedBox.shrink();
 
       final bool isMobile =
           Theme.of(context).platform == TargetPlatform.android || Theme.of(context).platform == TargetPlatform.iOS;
@@ -1079,7 +1083,7 @@ class ResolutionSelectorButton extends StatelessWidget {
       }
 
       // Windows 桌面端样式
-      final qualityCount = controller.livePlayController.qualites.length;
+      final qualityCount = controller.livePlayController.state.value.player.qualites.length;
       const double itemHeight = 40.0;
       final double totalMenuHeight = (qualityCount * itemHeight) + 32;
 
@@ -1101,7 +1105,7 @@ class ResolutionSelectorButton extends StatelessWidget {
           controller.livePlayController.setResolution(
             ReloadDataType.changeQuality,
             index,
-            controller.livePlayController.currentLineIndex.value,
+            controller.livePlayController.state.value.player.currentLineIndex,
           );
           controller.enableController();
         },
@@ -1113,13 +1117,13 @@ class ResolutionSelectorButton extends StatelessWidget {
         ),
         child: _buildButtonChild(),
         itemBuilder: (context) => List.generate(qualityCount, (index) {
-          final isSelected = index == controller.livePlayController.currentQuality.value;
+          final isSelected = index == controller.livePlayController.state.value.player.currentQuality;
           return PopupMenuItem(
             value: index,
             height: itemHeight,
             child: Center(
               child: Text(
-                controller.livePlayController.qualites[index].quality,
+                controller.livePlayController.state.value.player.qualites[index].quality,
                 style: AppTextStyles.t13.copyWith(color: isSelected ? Get.theme.colorScheme.primary : Colors.white),
               ),
             ),
@@ -1130,8 +1134,8 @@ class ResolutionSelectorButton extends StatelessWidget {
   }
 
   Widget _buildButtonChild() {
-    final currentIndex = controller.livePlayController.currentQuality.value;
-    final qualityName = controller.livePlayController.qualites[currentIndex].quality;
+    final currentIndex = controller.livePlayController.state.value.player.currentQuality;
+    final qualityName = controller.livePlayController.state.value.player.qualites[currentIndex].quality;
     return Container(
       height: 30,
       padding: const EdgeInsets.symmetric(horizontal: 8),

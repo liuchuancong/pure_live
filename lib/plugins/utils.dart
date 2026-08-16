@@ -8,6 +8,23 @@ class Utils {
   static DateFormat dateFormatWithYear = DateFormat("yyyy-MM-dd HH:mm");
   static DateFormat timeFormat = DateFormat("HH:mm:ss");
 
+  static Future<void> exitDesktopApplication() async {
+    if (!Platform.isWindows && !Platform.isLinux && !Platform.isMacOS) return;
+
+    await windowManager.hide();
+    await windowManager.setPreventClose(false);
+    try {
+      await trayManager.destroy().timeout(const Duration(seconds: 2));
+    } catch (e) {
+      debugPrint('托盘注销超时: $e');
+    }
+    try {
+      await windowManager.close().timeout(const Duration(seconds: 2));
+    } catch (e) {
+      debugPrint('窗口关闭超时: $e');
+    }
+  }
+
   /// 处理时间
   static String parseTime(DateTime? dt) {
     if (dt == null) {
@@ -286,12 +303,7 @@ class Utils {
         if (await windowManager.isPreventClose()) {
           await windowManager.setPreventClose(false);
         }
-        Future.microtask(() async {
-          await windowManager.hide();
-          await windowManager.setPreventClose(false);
-          trayManager.destroy().catchError((e) => debugPrint('托盘注销失败: $e'));
-          windowManager.close().catchError((e) => debugPrint('窗口关闭失败: $e'));
-        });
+        Future.microtask(exitDesktopApplication);
       } else if (exitChoose == 'minimize') {
         await _minimizeOrHideDesktopWindow();
         return true;
@@ -348,11 +360,7 @@ class Utils {
                   SettingsService.to.exit.dontAskExit.v = shouldNotAskAgain;
                   SettingsService.to.exit.exitChoose.v = 'exit';
                   Navigator.of(context).pop();
-                  await windowManager.hide();
-
-                  await windowManager.setPreventClose(false);
-                  trayManager.destroy().catchError((e) => debugPrint('托盘注销失败: $e'));
-                  windowManager.close().catchError((e) => debugPrint('窗口关闭失败: $e'));
+                  await exitDesktopApplication();
                 },
                 child: Text(i18n("exit_app")),
               ),

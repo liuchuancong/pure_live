@@ -1,0 +1,1 @@
+enum EngineState { running, paused }

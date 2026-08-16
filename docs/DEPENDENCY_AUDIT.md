@@ -16,7 +16,8 @@ AGP、Gradle 和 Kotlin 不按“最新数字”单独升级，而与 Flutter 3.
 ## 可复现依赖
 
 - 应用提交 `pubspec.lock`，所有 hosted 包锁定具体版本。
-- `media_kit`、`flv_lzc`、`screen_retriever`、`dart_quickjs` 均固定完整 Git 提交，不再跟随可变的 `main`。
+- `flame_barrage 0.0.4` 暂存于 `plugins/flame_barrage`，仅修补引擎移动时忽略逐条速度的问题并保留原许可证；上游发布等效修复后再恢复 hosted 依赖。
+- `media_kit`、`flutter_inappwebview`、`flv_lzc`、`screen_retriever`、`dart_quickjs` 均固定完整 Git 提交，不再跟随可变分支。
 - 删除已停止作用的 `sqlite3_flutter_libs`；项目使用 `sqlite3` 3.x 的 Native Assets。
 - 升级 `app_links`、`connectivity_plus`、`pro_mpack` 与 Syncfusion sliders，并通过静态分析和完整测试。
 - GitHub Actions 固定到已核验的完整提交 SHA，Dependabot 每月汇总检查 pub、Gradle 和 Actions 更新；工作流仍仅手动运行，不因依赖检查消耗构建分钟。

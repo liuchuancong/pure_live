@@ -18,7 +18,7 @@ class DanmakuSettingsController extends GetxController {
   final RxDouble danmakuTopArea = hiveDouble('danmakuTopArea', 0.0);
   final RxDouble danmakuArea = hiveDouble('danmakuArea', 1.0);
   final RxDouble danmakuBottomArea = hiveDouble('danmakuBottomArea', 0.5);
-  final RxDouble danmakuSpeed = hiveDouble('danmakuSpeed', 8.0);
+  final RxDouble danmakuSpeed = hiveDouble('danmakuSpeed', 120.0);
   final RxDouble danmakuFontSize = hiveDouble('danmakuFontSize', 16.0);
   final RxDouble danmakuFontBorder = hiveDouble('danmakuFontBorder', 4.0);
   final RxDouble danmakuOpacity = hiveDouble('danmakuOpacity', 1.0);
@@ -85,7 +85,7 @@ class DanmakuSettingsController extends GetxController {
     danmakuTopArea.v = json['danmakuTopArea']?.toDouble() ?? 0.0;
     danmakuArea.v = json['danmakuArea']?.toDouble() ?? 1.0;
     danmakuBottomArea.v = json['danmakuBottomArea']?.toDouble() ?? 0.5;
-    danmakuSpeed.v = json['danmakuSpeed']?.toDouble() ?? 8.0;
+    danmakuSpeed.v = (json['danmakuSpeed'] ?? 120.0).toDouble().clamp(20.0, 400.0).toDouble();
     danmakuFontSize.v = json['danmakuFontSize']?.toDouble() ?? 16.0;
     danmakuFontBorder.v = json['danmakuFontBorder']?.toDouble() ?? 4.0;
     danmakuOpacity.v = json['danmakuOpacity']?.toDouble() ?? 1.0;
@@ -122,7 +122,7 @@ class DanmakuSettingsController extends GetxController {
       'danmakuTopArea': (danmaku['danmakuTopArea'] ?? 0.0).toDouble(),
       'danmakuArea': (danmaku['danmakuArea'] ?? 1.0).toDouble(),
       'danmakuBottomArea': (danmaku['danmakuBottomArea'] ?? 0.5).toDouble(),
-      'danmakuSpeed': (danmaku['danmakuSpeed'] ?? 8.0).toDouble(),
+      'danmakuSpeed': (danmaku['danmakuSpeed'] ?? 120.0).toDouble().clamp(20.0, 400.0).toDouble(),
       'danmakuFontSize': (danmaku['danmakuFontSize'] ?? 16.0).toDouble(),
       'danmakuFontBorder': (danmaku['danmakuFontBorder'] ?? 4.0).toDouble(),
       'danmakuOpacity': (danmaku['danmakuOpacity'] ?? 1.0).toDouble(),

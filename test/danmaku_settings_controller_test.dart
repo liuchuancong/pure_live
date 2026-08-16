@@ -2,11 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/common/services/settings/danmaku_settings_controller.dart';
 
 void main() {
-  group('PiP danmaku settings', () {
+  group('danmaku settings', () {
     test('uses compact defaults for an older backup', () {
-      final config = DanmakuSettingsController.extractConfig({
-        'danmaku': <String, dynamic>{},
-      });
+      final config = DanmakuSettingsController.extractConfig({'danmaku': <String, dynamic>{}});
 
       expect(config['enablePipDanmaku'], isTrue);
       expect(config['pipDanmakuAutoScale'], isTrue);
@@ -15,6 +13,19 @@ void main() {
       expect(config['pipDanmakuSpeed'], 90.0);
       expect(config['pipDanmakuMaxVisibleCount'], 6);
       expect(config['pipDanmakuFps'], 30);
+      expect(config['danmakuSpeed'], 120.0);
+    });
+
+    test('clamps legacy main-player speed to the supported range', () {
+      final slow = DanmakuSettingsController.extractConfig({
+        'danmaku': {'danmakuSpeed': 8},
+      });
+      final fast = DanmakuSettingsController.extractConfig({
+        'danmaku': {'danmakuSpeed': 800},
+      });
+
+      expect(slow['danmakuSpeed'], 20.0);
+      expect(fast['danmakuSpeed'], 400.0);
     });
 
     test('clamps imported compact values to supported ranges', () {

@@ -5,8 +5,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:flame_barrage/flame_barrage.dart';
-import 'package:pure_live/modules/live_play/player_state.dart';
-import 'package:pure_live/modules/live_play/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/controllers/player_state.dart';
+import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 
 class DanmakuListView extends StatefulWidget {
   final LiveRoom room;
@@ -39,7 +39,7 @@ class DanmakuListViewState extends State<DanmakuListView> {
   void initState() {
     super.initState();
 
-    messagesSub = controller.messages.listen((_) {
+    messagesSub = controller.state.listen((state) {
       scheduleAutoScroll();
     });
 
@@ -193,7 +193,7 @@ class DanmakuListViewState extends State<DanmakuListView> {
                 return false;
               },
               child: Obx(() {
-                final list = controller.messages;
+                final list = controller.state.value.danmaku.messages;
 
                 return ListView.builder(
                   addAutomaticKeepAlives: false,

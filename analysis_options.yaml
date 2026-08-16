@@ -7,5 +7,12 @@ analyzer:
     - "**/*_en.dart"
     - "**/*_zh_CN.dart"
     - "**/*.js"
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
 linter:
   rules:

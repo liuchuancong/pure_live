@@ -20,12 +20,12 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
         : SettingsService.to.font.fontFamilyName as Rx<String>;
   }
 
-  void _activateFont(FontModel model, {String? targetFileName}) {
+  Future<void> _activateFont(FontModel model, {String? targetFileName}) async {
     if (isDanmakuSettings) {
-      SettingsService.to.danmaku.danmakuFontFamilyName.v = model.id;
+      await SettingsService.to.font.activateDanmakuFontFamily(model);
       Get.updateLocale(Get.locale ?? const Locale('zh', 'CN'));
     } else {
-      SettingsService.to.font.activateFontFamily(model, targetFileName: targetFileName);
+      await SettingsService.to.font.activateFontFamily(model, targetFileName: targetFileName);
     }
   }
 
@@ -303,11 +303,11 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
               ),
-              onPressed: () {
+              onPressed: () async {
                 if (fontModel.files.length <= 1) {
-                  _activateFont(fontModel);
+                  await _activateFont(fontModel);
                 } else {
-                  _showFontWeightSelector(context, fontModel);
+                  await _showFontWeightSelector(context, fontModel);
                 }
               },
               child: Text(i18n("apply"), style: AppTextStyles.t13Bold),
@@ -344,11 +344,11 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
             ),
-            onPressed: () {
+            onPressed: () async {
               if (fontModel.files.length <= 1) {
-                _activateFont(fontModel);
+                await _activateFont(fontModel);
               } else {
-                _showFontWeightSelector(context, fontModel);
+                await _showFontWeightSelector(context, fontModel);
               }
             },
             child: Text(i18n("apply"), style: AppTextStyles.t13Bold),
@@ -374,7 +374,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
               if (success) {
                 await SettingsService.to.font.refreshFontDiskSizes();
 
-                _activateFont(fontModel);
+                await _activateFont(fontModel);
               } else {
                 ToastUtil.show(i18n("font_load_failed"));
               }
@@ -384,7 +384,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
     );
   }
 
-  void _showFontWeightSelector(BuildContext context, FontModel fontModel) async {
+  Future<void> _showFontWeightSelector(BuildContext context, FontModel fontModel) async {
     final path = await AppPathManager().getFontFamilyFolderPath(fontModel.id);
 
     final fontDir = Directory(path);
@@ -441,10 +441,10 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
                       title: Text(i18n('font_auto_weight')),
                       subtitle: Text(i18n('font_auto_weight_desc')),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      onTap: () {
+                      onTap: () async {
                         Navigator.of(context).pop();
 
-                        _activateFont(fontModel);
+                        await _activateFont(fontModel);
                       },
                     ),
 
@@ -475,7 +475,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
                             license: fontModel.license,
                           );
 
-                          _activateFont(modifiedModel, targetFileName: fileNameWithExt);
+                          await _activateFont(modifiedModel, targetFileName: fileNameWithExt);
                         },
                       );
                     }),

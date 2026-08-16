@@ -74,12 +74,7 @@ class AppInitializer {
     if (!Platform.isWindows) return;
     try {
       final safeId = instanceId.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '');
-      await WindowsSingleInstance.ensureSingleInstance(
-        args,
-        "PureLive_InstanceID_$safeId",
-        bringWindowToFront: true,
-        exitFunction: () => exit(0),
-      );
+      await WindowsSingleInstance.ensureSingleInstance(args, "PureLive_InstanceID_$safeId", bringWindowToFront: true);
     } catch (e) {
       log('WindowsSingleInstance initialization failed: $e');
     }

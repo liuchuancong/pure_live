@@ -9,7 +9,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 
 class WindowsSingleInstance {
-  static const MethodChannel _channel = MethodChannel('windows_single_instance');
+  static const MethodChannel _channel = MethodChannel(
+    'windows_single_instance',
+  );
   static const _kErrorPipeConnected = 0x80070217;
 
   WindowsSingleInstance._();
@@ -38,11 +40,11 @@ class WindowsSingleInstance {
       return CreateNamedPipe(
         cPipe,
         FILE_FLAGS_AND_ATTRIBUTES(
-          PIPE_ACCESS_INBOUND | FILE_FLAG_FIRST_PIPE_INSTANCE | FILE_FLAG_OVERLAPPED,
+          PIPE_ACCESS_INBOUND |
+              FILE_FLAG_FIRST_PIPE_INSTANCE |
+              FILE_FLAG_OVERLAPPED,
         ),
-        NAMED_PIPE_MODE(
-          PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
-        ),
+        NAMED_PIPE_MODE(PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT),
         PIPE_UNLIMITED_INSTANCES,
         4096,
         4096,
@@ -74,7 +76,12 @@ class WindowsSingleInstance {
         final data = calloc<Uint8>(dataSize);
         final numRead = calloc<Uint32>();
         try {
-          while (!GetOverlappedResult(pipeHandle, overlap, numRead, false).value) {
+          while (!GetOverlappedResult(
+            pipeHandle,
+            overlap,
+            numRead,
+            false,
+          ).value) {
             sleep(const Duration(milliseconds: 200));
           }
 
@@ -94,8 +101,22 @@ class WindowsSingleInstance {
     }
   }
 
-  static void _writePipeData(String filename, List<String>? arguments) {
-    final pipe = _openPipe(filename);
+  static bool _writePipeData(String filename, List<String>? arguments) {
+    HANDLE pipe = INVALID_HANDLE_VALUE;
+    for (
+      var attempt = 0;
+      attempt < 20 && pipe == INVALID_HANDLE_VALUE;
+      attempt++
+    ) {
+      pipe = _openPipe(filename);
+      if (pipe == INVALID_HANDLE_VALUE) {
+        sleep(const Duration(milliseconds: 50));
+      }
+    }
+    if (pipe == INVALID_HANDLE_VALUE) {
+      debugPrint('Pipe open timed out');
+      return false;
+    }
     final bytesString = jsonEncode(arguments ?? []);
     final bytes = bytesString.toNativeUtf8();
     final numWritten = malloc<Uint32>();
@@ -106,6 +127,12 @@ class WindowsSingleInstance {
       free(bytes);
       CloseHandle(pipe);
     }
+    return true;
+  }
+
+  static Never _terminateCurrentProcess() {
+    TerminateProcess(GetCurrentProcess(), 0);
+    exit(0);
   }
 
   static void _startReadPipeIsolate(Map args) {
@@ -134,13 +161,18 @@ class WindowsSingleInstance {
   }) async {
     if (!Platform.isWindows) return;
     final fullPipeName = "\\\\.\\pipe\\$pipeName";
-    final bool isSingleInstance = await _channel.invokeMethod('isSingleInstance', <String, Object>{
-      "pipe": pipeName,
-    });
+    final bool isSingleInstance = await _channel.invokeMethod(
+      'isSingleInstance',
+      <String, Object>{"pipe": pipeName},
+    );
     if (!isSingleInstance) {
       _writePipeData(fullPipeName, arguments);
-      await (exitFunction?.call() ?? Future.value(exit(0)));
-      return;
+      if (exitFunction != null) {
+        await exitFunction();
+        return;
+      }
+      // A forced exit avoids waiting in third-party DLL process-detach hooks.
+      _terminateCurrentProcess();
     }
 
     // No callback so don't bother starting pipe
@@ -157,7 +189,10 @@ class WindowsSingleInstance {
           if (bringWindowToFront) _bringWindowToFront();
         }
       });
-    await Isolate.spawn(_startReadPipeIsolate, {"port": reader.sendPort, "pipe": fullPipeName});
+    await Isolate.spawn(_startReadPipeIsolate, {
+      "port": reader.sendPort,
+      "pipe": fullPipeName,
+    });
   }
 
   static void _bringWindowToFront() {
