@@ -58,13 +58,20 @@ function Install-VerifiedAsset {
     Write-Host "Verified $Name (persistent cache: $persistentRoot)"
 }
 
-$mediaKitName = 'default-arm64-v8a.jar'
-Install-VerifiedAsset `
-    -Name $mediaKitName `
-    -Destination (Join-Path $repoRoot "build\media_kit_libs_android_video\v1.2.7\$mediaKitName") `
-    -CachePath (Join-Path $persistentRoot "media-kit\v1.2.7\$mediaKitName") `
-    -Url "https://github.com/Predidit/libmpv-android-video-build/releases/download/v1.2.7/$mediaKitName" `
-    -Sha256 '13e882d96b8cd235425172b022e4a94dfcae5f07985dff85c8d648e7369fa2d1'
+$mediaKitAssets = @(
+    @{ Name = 'default-arm64-v8a.jar'; Sha256 = '13e882d96b8cd235425172b022e4a94dfcae5f07985dff85c8d648e7369fa2d1' },
+    @{ Name = 'default-armeabi-v7a.jar'; Sha256 = '7f522ed762ea6dfeba93a02e3837c5538790030b9965a03ed3a00276adc7b32c' },
+    @{ Name = 'default-x86_64.jar'; Sha256 = 'aed0fffc99e5e554d48e1af90bc700133c25fbc02615bf1bf17db9299365c481' },
+    @{ Name = 'default-x86.jar'; Sha256 = '9269643264a1c9689116467f313d5e1b23ea56a68d338ab940c5e8fcf07061c6' }
+)
+foreach ($asset in $mediaKitAssets) {
+    Install-VerifiedAsset `
+        -Name $asset.Name `
+        -Destination (Join-Path $repoRoot "build\media_kit_libs_android_video\v1.2.7\$($asset.Name)") `
+        -CachePath (Join-Path $persistentRoot "media-kit\v1.2.7\$($asset.Name)") `
+        -Url "https://github.com/Predidit/libmpv-android-video-build/releases/download/v1.2.7/$($asset.Name)" `
+        -Sha256 $asset.Sha256
+}
 
 # The ffmpeg_kit build hook uses Dart HttpClient, which may stall on GitHub's
 # release-asset redirect on some Windows networks. Seed its deterministic
