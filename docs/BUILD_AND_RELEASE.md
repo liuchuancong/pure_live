@@ -82,6 +82,11 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\install_android_qa.ps1
 PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 -RequireReleaseSigning
 ```
 
+签名材料只保存在 GitHub Secrets、Actions 托管额度紧张时，可在本机注册
+Windows x64 临时自托管 Runner，再手动运行
+`local-signed-android` 工作流。编译仍在本机完成，工作流仅把签名 Secrets
+注入临时进程；任务结束后会清理 JKS 和 `android/key.properties`。
+
 ## 单独命令
 
 ```powershell
