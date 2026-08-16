@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/common/models/live_message.dart';
 import 'package:pure_live/pkg/tars/codec/tars_struct.dart';
@@ -8,6 +9,7 @@ import 'package:pure_live/core/common/web_socket_util.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/pkg/tars/codec/tars_input_stream.dart';
 import 'package:pure_live/pkg/tars/codec/tars_output_stream.dart';
+
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
 class HuyaDanmakuArgs {
@@ -183,6 +185,10 @@ class HuyaDanmaku implements LiveDanmaku {
         onReady?.call();
         markConnected();
         joinRoom();
+        // Request the first room statistic immediately. Waiting for the
+        // 60-second periodic tick keeps the UI on the fallback heat value for
+        // a full minute even though the socket is already ready.
+        heartbeat();
       },
       onHeartBeat: () {
         heartbeat();

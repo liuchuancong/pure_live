@@ -6,7 +6,7 @@
 
 - `LiveRoom` 分别保存平台热度、真实并发在线和本场累计观看，旧版 `watching` 字段只用于备份兼容。
 - 增加“平台热度优先 / 真实在线人数优先”全局排行方式，以及虎牙、抖音、快手、网易 CC 的独立真实在线开关。
-- 虎牙列表/详情的 `totalCount`、`userCount` 都按热度处理，只有进房后的 URI 8006 弹幕心跳按在线人数处理；抖音 `display_value/total_user` 保留为累计观看，`user_count/onlineUserForAnchor` 按在线人数处理。
+- 虎牙列表/详情的 `totalCount`、`userCount` 都按热度处理，进房后立即请求 URI 8006 弹幕心跳并按在线人数处理；抖音 `display_value/total_user` 保留为累计观看，`user_count/onlineUserForAnchor` 按在线人数处理。
 - 哔哩哔哩 `online`/心跳和斗鱼 `ol/hot` 保留热度标签，避免把几百万热度误显示为同时在线人数。
 
 ## 助眠与定时器
