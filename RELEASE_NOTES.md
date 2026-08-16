@@ -33,7 +33,7 @@
 
 - Android 正式包名保持 `com.mystyle.purelive`，本地优先构建 `arm64-v8a`。
 - Windows 构建继续按需执行，本版本发布先提供 Android arm64 安装包。
-- Flutter Analyze 零问题，38 项单元/Widget 测试与 15/15 平台接口探测通过。
+- Flutter Analyze 零问题，39 项单元/Widget 测试与 15/15 平台接口探测通过。
 
 ---
 

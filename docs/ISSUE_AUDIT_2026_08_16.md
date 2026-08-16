@@ -30,7 +30,7 @@
 ## 验证边界
 
 - Flutter Analyze：零问题。
-- Flutter 单元/Widget 测试：38 项通过。
+- Flutter 单元/Widget 测试：39 项通过。
 - 平台公开接口探测：15/15 通过。
 - Bilibili 访客弹幕：`uid=0` 认证回应 `code=0` 并收到通知帧。
 - Android `arm64-v8a`：本机 release 构建并覆盖安装。Android 16 / 120 Hz 设备连续 5 次冷启动一次进入，耗时 239–274 ms；Bilibili 视频与实时弹幕在竖屏、横屏均显示；系统活动刷新率及应用请求均为 120 Hz。厂商后台策略下的整夜播放继续作为长时验收项记录。

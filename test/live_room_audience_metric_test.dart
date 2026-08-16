@@ -63,5 +63,20 @@ void main() {
       expect(updated.popularity, '500万');
       expect(updated.onlineViewers, '3200');
     });
+
+    test('migrates duplicated Huya heat out of the online-viewer field', () {
+      final room = LiveRoom.fromJson({
+        'roomId': '998',
+        'platform': 'huya',
+        'watching': '5636930',
+        'popularity': '5636930',
+        'onlineViewers': '5636930',
+        'audienceMetricType': 'onlineViewers',
+      });
+
+      expect(room.effectivePopularity, '5636930');
+      expect(room.effectiveOnlineViewers, isEmpty);
+      expect(room.effectiveAudienceMetricType, AudienceMetricType.popularity);
+    });
   });
 }

@@ -127,7 +127,20 @@ class LiveRoom {
       catchUpUrl = json['catchUpUrl'],
       isCatchUp = json['isCatchUp'] ?? false,
       catchUpStart = json['catchUpStart'],
-      catchUpEnd = json['catchUpEnd'];
+      catchUpEnd = json['catchUpEnd'] {
+    // Builds created before v2.0.32 temporarily copied Huya's multi-million
+    // room heat from userCount into onlineViewers. Clear only the recognizable
+    // duplicated value; a later URI 8006 heartbeat has a distinct count and is
+    // preserved.
+    if (platform == 'huya' &&
+        _hasExplicitAudienceValue(onlineViewers) &&
+        _hasAudienceValue(popularity) &&
+        parseAudienceNumber(onlineViewers) == parseAudienceNumber(popularity)) {
+      onlineViewers = '';
+      audienceMetricType = AudienceMetricType.popularity;
+      watching = popularity;
+    }
+  }
 
   /// 创建一个新的LiveRoom实例，并用提供的值更新指定字段
   LiveRoom copyWith({
