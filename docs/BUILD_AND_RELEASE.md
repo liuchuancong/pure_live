@@ -2,7 +2,7 @@
 
 本仓库采用“本机优先、Actions 手动兜底”的流程，固定使用 Flutter `3.44.9`。`pubspec.lock`、Git 依赖提交和 FFmpeg 产物地址均已固定，便于复现结果。
 
-最近完整核验：2026-08-16，Windows 11 + JDK 17 + Flutter 3.44.9；Android arm64 QA APK 签名/架构校验与 Windows 安装包启动探测通过。每次发布仍需在当前提交上重新执行全部门禁。
+最近完整核验：2026-08-16，Windows 11 + JDK 17 + Flutter 3.44.9；Android arm64 正式 APK 签名/架构校验与 Windows 安装包启动探测通过。每次发布仍需在当前提交上重新执行全部门禁。
 
 ## 前置环境
 
@@ -68,12 +68,12 @@ keyPassword=...
 keyAlias=...
 ```
 
-未配置时，本地 release 构建使用 Android 调试签名，并自动改用 `com.mystyle.purelive.qa` 与“纯粹直播 QA”名称，可和手机上的正式版并存。QA APK 文件名包含 `qa-debug-signed`，本地发布脚本默认阻止其进入正式 Release。
+Android 始终使用 `com.mystyle.purelive` 和“纯粹直播”名称。未配置发布密钥时，本地 release 构建使用 Android 调试签名，文件名包含 `debug-signed`；本地发布脚本默认阻止调试签名 APK 进入正式 Release。
 
-将 QA 包安装到已连接的 Android 设备并完成启动探测：
+将本地 APK 安装到已连接的 Android 设备并完成启动探测：
 
 ```powershell
-PowerShell -ExecutionPolicy Bypass -File .\tool\install_android_qa.ps1
+PowerShell -ExecutionPolicy Bypass -File .\tool\install_android_local.ps1
 ```
 
 正式发布时使用 `-RequireReleaseSigning`，缺少或不完整的外部签名配置会在构建前终止：
@@ -136,7 +136,7 @@ python .\tool\update_releases.py
 1. 更新 `pubspec.yaml`、`assets/version.json` 与 `RELEASE_NOTES.md`。
 2. 运行 `tool/local_ci.ps1`。
 3. 运行 `tool/build_local_release.ps1`，核对 APK、EXE/ZIP 和 SHA-256。
-4. 运行 `tool/install_android_qa.ps1` 在真机并存安装并启动 QA 包；正式版升级必须使用同一发布签名。
+4. 运行 `tool/install_android_local.ps1` 在真机覆盖安装并启动；正式 Release 使用仓库持久签名验证升级链。
 5. 提交并推送 `master`，再运行 `tool/publish_local_release.ps1`。
 6. 在 [Releases](https://github.com/wzgrx/pure_live/releases) 核对附件和校验文件。
 

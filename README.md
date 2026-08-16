@@ -57,7 +57,7 @@
 - Windows：按 Release 附件说明选择安装包或便携 ZIP；
 - 下载后使用同一 Release 中的 `SHA256SUMS.txt` 校验完整性。
 
-正式 Android 包使用本仓库维护者的发布签名。缺少正式密钥的本机构建会自动生成包名为 `com.mystyle.purelive.qa` 的 QA 包，可与正式版并存，发布脚本会阻止其进入正式 Release。
+Android 始终使用正式包名 `com.mystyle.purelive`，不再生成并存 QA 包。正式 Release 使用仓库专用持久签名，可直接覆盖旧正式版；缺少发布密钥的本机测试包使用调试签名，发布脚本会阻止其进入正式 Release。
 
 ## 本地开发
 

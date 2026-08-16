@@ -36,29 +36,29 @@ if (-not $ApkPath) {
         default { throw "Unsupported device ABI: $abi" }
     }
     $ApkPath = Get-ChildItem (Join-Path $repoRoot 'local-artifacts') -Recurse -File -ErrorAction SilentlyContinue |
-        Where-Object { $_.Name -like "*qa-debug-signed-$abiName-release.apk" } |
+        Where-Object { $_.Name -like "*debug-signed-$abiName-release.apk" -or $_.Name -like "*-$abiName-release.apk" } |
         Sort-Object LastWriteTime -Descending |
         Select-Object -First 1 -ExpandProperty FullName
 }
-if (-not $ApkPath -or -not (Test-Path -LiteralPath $ApkPath)) { throw 'A matching QA APK was not found. Run tool/build_local_release.ps1 first.' }
+if (-not $ApkPath -or -not (Test-Path -LiteralPath $ApkPath)) { throw 'A matching local APK was not found. Run tool/build_local_release.ps1 first.' }
 
 $badging = & $aapt dump badging $ApkPath
-if ($LASTEXITCODE -or ($badging -join "`n") -notmatch "package: name='com\.mystyle\.purelive\.qa'") {
-    throw 'The selected APK is not the side-by-side Pure Live QA package.'
+if ($LASTEXITCODE -or ($badging -join "`n") -notmatch "package: name='com\.mystyle\.purelive'") {
+    throw 'The selected APK does not use the formal Pure Live package id.'
 }
 
 & $adb -s $Device install -r $ApkPath
 if ($LASTEXITCODE) { throw 'adb install failed.' }
-& $adb -s $Device shell monkey -p com.mystyle.purelive.qa -c android.intent.category.LAUNCHER 1 | Out-Host
-if ($LASTEXITCODE) { throw 'The QA launcher activity did not start.' }
+& $adb -s $Device shell monkey -p com.mystyle.purelive -c android.intent.category.LAUNCHER 1 | Out-Host
+if ($LASTEXITCODE) { throw 'The Pure Live launcher activity did not start.' }
 Start-Sleep -Seconds 3
-$packageState = & $adb -s $Device shell dumpsys package com.mystyle.purelive.qa
+$packageState = & $adb -s $Device shell dumpsys package com.mystyle.purelive
 $versionMatch = [regex]::Match(($packageState -join "`n"), 'versionName=([^\s]+)')
-if (-not $versionMatch.Success) { throw 'The installed QA package was not found after launch.' }
+if (-not $versionMatch.Success) { throw 'The installed Pure Live package was not found after launch.' }
 [pscustomobject]@{
     Device = $Device
     Apk = (Resolve-Path -LiteralPath $ApkPath).Path
-    Package = 'com.mystyle.purelive.qa'
+    Package = 'com.mystyle.purelive'
     Version = $versionMatch.Groups[1].Value
-    ProcessId = (& $adb -s $Device shell pidof com.mystyle.purelive.qa).Trim()
+    ProcessId = (& $adb -s $Device shell pidof com.mystyle.purelive).Trim()
 }

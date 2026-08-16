@@ -38,7 +38,7 @@ try {
     }
     $apks = Get-ChildItem $ArtifactDirectory -File -Filter '*.apk'
     if ($apks -and $metadata.android_signing -ne 'release' -and -not $AllowQaArtifacts) {
-        throw 'QA/debug-signed APKs are blocked from an official Release. Configure the repository release key or publish Windows-only artifacts.'
+        throw 'Debug-signed APKs are blocked from an official Release. Configure the repository release key or publish Windows-only artifacts.'
     }
 
     $checksumPath = Join-Path $ArtifactDirectory 'SHA256SUMS.txt'

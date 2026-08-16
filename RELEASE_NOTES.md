@@ -48,4 +48,4 @@
 - Windows：优先下载 `PureLive-2.0.26-windows-x64-setup.exe`，也可使用便携 ZIP。
 - `SHA256SUMS.txt` 可用于校验下载文件完整性。
 
-Android APK 使用此仓库专用的发布签名。若设备上已有其他签名来源的同包名应用，需要先备份应用数据再安装本版本。本机构建未配置发布密钥时会生成包名为 `com.mystyle.purelive.qa` 的 QA 包，可与正式版并存，不作为正式 Release 附件。
+Android APK 固定使用正式包名 `com.mystyle.purelive` 和此仓库专用的持久发布签名，可直接覆盖本仓库旧正式版，不再生成并存 QA 包。缺少发布密钥的本机测试包仍使用同一正式包名，但调试签名产物不会进入正式 Release。

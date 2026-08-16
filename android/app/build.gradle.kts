@@ -10,12 +10,7 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// A local build without the repository release key uses a side-by-side QA package.
-// This lets maintainers install it on a phone that already has the signed release.
-val isQaBuild = providers.gradleProperty("pureLiveQaBuild").orNull.toBoolean()
-if (!isQaBuild) {
-    apply(plugin = "com.google.gms.google-services")
-}
+apply(plugin = "com.google.gms.google-services")
 
 // 加载签名配置
 val keystorePropertiesFile = rootProject.file("key.properties")
@@ -53,13 +48,13 @@ android {
     }
 
     defaultConfig {
-        applicationId = if (isQaBuild) "com.mystyle.purelive.qa" else "com.mystyle.purelive"
+        applicationId = "com.mystyle.purelive"
         minSdk = flutter.minSdkVersion 
         multiDexEnabled = true 
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
-        versionName = if (isQaBuild) "${flutter.versionName}-qa" else flutter.versionName
-        manifestPlaceholders["appLabel"] = if (isQaBuild) "纯粹直播 QA" else "纯粹直播"
+        versionName = flutter.versionName
+        manifestPlaceholders["appLabel"] = "纯粹直播"
     }
 
     signingConfigs {
@@ -78,7 +73,7 @@ android {
             signingConfig = if (hasReleaseSigning) {
                 signingConfigs.getByName("release")
             } else {
-                logger.warn("Release key not configured; using the local debug key for QA packaging.")
+                logger.warn("Release key not configured; using the local debug key for a test-only formal-package build.")
                 signingConfigs.getByName("debug")
             }
             isMinifyEnabled = true

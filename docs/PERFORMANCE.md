@@ -17,7 +17,7 @@ Pure Live 在 Android 上默认启用高刷新率模式：应用会在当前屏�
 
 ## 真机检查
 
-安装 QA APK 后，可先确认系统给应用分配的显示模式：
+安装本地 APK 后，可先确认系统给应用分配的显示模式：
 
 ```powershell
 adb shell dumpsys display | Select-String -Pattern "mMode|supportedModes|refreshRate"
@@ -26,9 +26,9 @@ adb shell dumpsys display | Select-String -Pattern "mMode|supportedModes|refresh
 检查应用渲染帧统计：
 
 ```powershell
-adb shell dumpsys gfxinfo com.mystyle.purelive.qa reset
+adb shell dumpsys gfxinfo com.mystyle.purelive reset
 # 在手机上连续滚动首页、收藏页并进入/退出直播间
-adb shell dumpsys gfxinfo com.mystyle.purelive.qa framestats > .\local-artifacts\gfxinfo-framestats.txt
+adb shell dumpsys gfxinfo com.mystyle.purelive framestats > .\local-artifacts\gfxinfo-framestats.txt
 ```
 
 重点观察：

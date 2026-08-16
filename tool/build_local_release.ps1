@@ -72,12 +72,7 @@ try {
     }
 
     if (-not $SkipAndroid) {
-        if ($hasReleaseSigning) {
-            $env:GRADLE_OPTS = $previousGradleOpts
-        } else {
-            $env:GRADLE_OPTS = (@($previousGradleOpts, '-Dorg.gradle.project.pureLiveQaBuild=true') |
-                Where-Object { $_ }) -join ' '
-        }
+        $env:GRADLE_OPTS = $previousGradleOpts
         if ($RequireReleaseSigning) {
             $env:GRADLE_OPTS = (@($env:GRADLE_OPTS, '-Dorg.gradle.project.pureLiveRequireReleaseSigning=true') |
                 Where-Object { $_ }) -join ' '
@@ -87,7 +82,7 @@ try {
         & $flutterw build apk --release --split-per-abi --target-platform android-arm64 --dart-define=PURELIVE_BUILD_SOURCE=local
         if ($LASTEXITCODE) { exit $LASTEXITCODE }
         $arm64Apk = Get-Item 'build\app\outputs\flutter-apk\app-arm64-v8a-release.apk'
-        $signingLabel = if ($hasReleaseSigning) { '' } else { 'qa-debug-signed-' }
+        $signingLabel = if ($hasReleaseSigning) { '' } else { 'debug-signed-' }
         Copy-Item $arm64Apk.FullName (Join-Path $output "PureLive-$artifactVersion-${signingLabel}arm64-v8a-release.apk") -Force
     }
 
@@ -133,8 +128,8 @@ try {
     $apks = Get-ChildItem $output -File -Filter '*.apk'
     $androidSigning = if (-not $apks) {
         'not-built'
-    } elseif ($apks | Where-Object Name -Like '*qa-debug-signed*') {
-        'qa-debug'
+    } elseif ($apks | Where-Object Name -Like '*debug-signed*') {
+        'debug'
     } else {
         'release'
     }
@@ -152,7 +147,7 @@ try {
         built_at_utc = [DateTime]::UtcNow.ToString('o')
         source_commit = $sourceCommit
         tracked_files_dirty = $trackedDirty
-        android_package = if ($androidSigning -eq 'not-built') { $null } elseif ($androidSigning -eq 'release') { 'com.mystyle.purelive' } else { 'com.mystyle.purelive.qa' }
+        android_package = if ($androidSigning -eq 'not-built') { $null } else { 'com.mystyle.purelive' }
         android_signing = $androidSigning
         windows_signing = $windowsSigning
         build_source = 'local'
