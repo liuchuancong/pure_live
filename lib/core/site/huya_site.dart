@@ -38,6 +38,19 @@ class HuyaSite implements LiveSite {
   static const String HYSDK_UA = "HYSDK(Windows,30000002)_APP(pc_exe&7090000&official)_SDK(trans&2.35.0.5996)";
   static Map<String, String> requestHeaders = {'Origin': baseUrl, 'Referer': baseUrl, 'User-Agent': HYSDK_UA};
   final BaseTarsHttp tupClient = BaseTarsHttp("http://wup.huya.com", "liveui", headers: requestHeaders);
+
+  /// Huya's public room detail currently returns `userCount` and
+  /// `totalCount` as the same multi-million popularity value. Treating
+  /// `userCount` as a concurrent head count relabels heat as people online.
+  /// The explicit room online count arrives later through danmaku push URI
+  /// 8006, where [LivePlayController.updateRuntimeAudience] stores it in the
+  /// separate `onlineViewers` field.
+  static ({String popularity, String onlineViewers}) parseRoomAudience(Map<String, dynamic>? liveData) {
+    final totalCount = liveData?['totalCount']?.toString().trim() ?? '';
+    final userCount = liveData?['userCount']?.toString().trim() ?? '';
+    return (popularity: totalCount.isNotEmpty ? totalCount : userCount, onlineViewers: '');
+  }
+
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async {
     List<LiveCategory> categories = [
@@ -329,12 +342,13 @@ class HuyaSite implements LiveSite {
         }
       }
       bool isXingxiu = data['liveData']['gid'] == 1663;
+      final audience = parseRoomAudience(Map<String, dynamic>.from(data['liveData'] as Map));
       return LiveRoom(
         cover: data['liveData']?['screenshot'] ?? '',
-        watching: data['liveData']?['userCount']?.toString() ?? '',
-        onlineViewers: data['liveData']?['userCount']?.toString() ?? '',
-        popularity: data['liveData']?['totalCount']?.toString() ?? '',
-        audienceMetricType: AudienceMetricType.onlineViewers,
+        watching: audience.popularity,
+        onlineViewers: audience.onlineViewers,
+        popularity: audience.popularity,
+        audienceMetricType: AudienceMetricType.popularity,
         roomId: roomId,
         area: data['liveData']?['gameFullName'] ?? '',
         title: data['liveData']?['introduction'] ?? '',

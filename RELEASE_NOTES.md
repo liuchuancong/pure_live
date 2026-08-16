@@ -6,7 +6,7 @@
 
 - `LiveRoom` 分别保存平台热度、真实并发在线和本场累计观看，旧版 `watching` 字段只用于备份兼容。
 - 增加“平台热度优先 / 真实在线人数优先”全局排行方式，以及虎牙、抖音、快手、网易 CC 的独立真实在线开关。
-- 虎牙列表 `totalCount` 按热度处理，房间 `userCount` 和心跳按在线人数处理；抖音 `display_value/total_user` 保留为累计观看，`user_count/onlineUserForAnchor` 按在线人数处理。
+- 虎牙列表/详情的 `totalCount`、`userCount` 都按热度处理，只有进房后的 URI 8006 弹幕心跳按在线人数处理；抖音 `display_value/total_user` 保留为累计观看，`user_count/onlineUserForAnchor` 按在线人数处理。
 - 哔哩哔哩 `online`/心跳和斗鱼 `ol/hot` 保留热度标签，避免把几百万热度误显示为同时在线人数。
 
 ## 助眠与定时器
@@ -33,7 +33,7 @@
 
 - Android 正式包名保持 `com.mystyle.purelive`，本地优先构建 `arm64-v8a`。
 - Windows 构建继续按需执行，本版本发布先提供 Android arm64 安装包。
-- Flutter Analyze 零问题，36 项单元/Widget 测试与 15/15 平台接口探测通过。
+- Flutter Analyze 零问题，38 项单元/Widget 测试与 15/15 平台接口探测通过。
 
 ---
 
