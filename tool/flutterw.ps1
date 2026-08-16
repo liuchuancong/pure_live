@@ -63,14 +63,13 @@ $substMappingFile = Join-Path $repoRoot '.dart_tool\pure_live_subst_drive.txt'
 if ($repoRoot.Length -gt 80) {
     $repoParent = Split-Path -Parent $repoRoot
     $repoLeaf = Split-Path -Leaf $repoRoot
-    $candidate = 'P:'
     $savedDrive = if (Test-Path -LiteralPath $substMappingFile) {
         (Get-Content -LiteralPath $substMappingFile -Raw).Trim()
     }
-    if ($savedDrive -and $savedDrive -ne $candidate) {
-        throw "Long-path workspace must use the stable $candidate mapping; remove stale mapping $savedDrive first."
-    }
-    foreach ($candidate in @($candidate)) {
+    $driveCandidates = @($savedDrive, 'P:', 'Q:', 'R:', 'S:', 'T:', 'U:', 'V:', 'W:') |
+        Where-Object { $_ } |
+        Select-Object -Unique
+    foreach ($candidate in $driveCandidates) {
         $existingTarget = (& subst.exe) |
             Where-Object { $_ -match "^$([Regex]::Escape($candidate))\\:\s*=>\s*(.+)$" } |
             ForEach-Object { $Matches[1].Trim() } |

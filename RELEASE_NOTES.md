@@ -15,6 +15,7 @@
 - 适配 Dart 3.13 的参数修饰符诊断。
 - Android 各插件统一使用 API 37 编译，兼容仍声明较低 compileSdk 的旧插件。
 - 兼容第三方插件混合 Java/Kotlin 字节码目标，继续保留迁移警告便于后续切换 AGP 内置 Kotlin。
+- 长路径短盘符支持 `P:` 到 `W:` 自动分配，本地主工作区与临时自托管 Runner 可并行使用各自稳定映射。
 - 仅优先构建 Android `arm64-v8a`，Windows 仅构建 x64，减少本机与 Actions 重复耗时。
 
 ## 验证
