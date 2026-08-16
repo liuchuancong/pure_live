@@ -1,8 +1,8 @@
 {
-  "version": "2.0.28",
-  "build_number": 39,
-  "version_num": 2002839,
-  "version_desc": "- Android 动态检测当前设备和分辨率支持的最高刷新率，显示模式变化后自动重新应用。\n- 增加本地用户与互动总开关、独立设置入口和画面字幕开关。\n- 弹幕列表改用独立消息源，样式更新按帧合并并减少拖动滑块时的持久化写入。\n- 隔离延迟服务初始化故障并补充播放器错误诊断。\n",
+  "version": "2.0.29",
+  "build_number": 40,
+  "version_num": 2002940,
+  "version_desc": "- Flutter/Dart 与 Android 构建链升级到当前兼容稳定版本。\n- 更新项目直接依赖并切换至官方 flutter_inappwebview 当前提交。\n- Android 使用 API 37 编译，补齐 AGP 9 和旧插件兼容处理。\n- arm64-v8a 与 Windows x64 本地 release 构建通过。\n",
   "prerelease": false,
   "download_url": "https://github.com/wzgrx/pure_live/releases"
 }

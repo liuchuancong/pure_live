@@ -22,8 +22,9 @@ subprojects {
 
 subprojects {
     afterEvaluate {
-         if (project.name != "app") {
+        if (project.name != "app") {
             extensions.findByType(com.android.build.gradle.BaseExtension::class.java)?.apply {
+                compileSdkVersion(37)
                 defaultConfig.minSdk = 23
 
                 if (namespace.isNullOrBlank()) {

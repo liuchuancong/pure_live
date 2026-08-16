@@ -17,8 +17,8 @@
 
 > 本仓库基于 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live) 持续维护，新增可配置的小窗弹幕，并完善本机构建、依赖锁定、接口探测和发布流程。
 
-- **最新稳定版**：[v2.0.28](https://github.com/wzgrx/pure_live/releases/tag/v2.0.28)
-- **当前开发版**：`2.0.28+39`（`master`）
+- **最新稳定版**：[v2.0.29](https://github.com/wzgrx/pure_live/releases/tag/v2.0.29)
+- **当前开发版**：`2.0.29+40`（`master`）
 - **上游同步基线**：`liuchuancong/pure_live@2cd1877`（2026-08-16）
 - **主要发布平台**：Android、Windows
 
@@ -61,7 +61,7 @@ Android 始终使用正式包名 `com.mystyle.purelive`，不再生成并存 QA 
 
 ## 本地开发
 
-项目固定使用 Flutter `3.44.9` / Dart `3.12.2`。Windows 11 上运行完整质量门禁：
+项目固定使用 Flutter `3.47.0` / Dart `3.13.0`。Windows 11 上运行完整质量门禁：
 
 ```powershell
 PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1

@@ -30,9 +30,9 @@ if (requireReleaseSigning && !hasReleaseSigning) {
     throw GradleException("Release signing is required but android/key.properties is incomplete.")
 }
 
-android {
+extensions.configure<com.android.build.api.dsl.ApplicationExtension> {
     namespace = "com.mystyle.purelive"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
     lint {
         disable.add("NullSafeMutableLiveData")
@@ -43,15 +43,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
-    }
-
     defaultConfig {
         applicationId = "com.mystyle.purelive"
         minSdk = flutter.minSdkVersion 
         multiDexEnabled = true 
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 37
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         manifestPlaceholders["appLabel"] = "纯粹直播"
@@ -87,6 +83,12 @@ android {
             isMinifyEnabled = false
             isShrinkResources = false
         }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
 

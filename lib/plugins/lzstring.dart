@@ -158,18 +158,14 @@ class LZString {
   /// Produces invalid UTF-16 strings from [uncompressed].
   ///
   /// Can be decompressed with [decompress].
-  static Future<String?> compress(final String? uncompressed) async => compressSync(uncompressed);
+  static Future<String?> compress(String? uncompressed) async => compressSync(uncompressed);
 
   /// Synchronously produces invalid UTF-16 strings from [uncompressed].
   ///
   /// Can be decompressed with [decompress].
-  static String? compressSync(final String? uncompressed) => _compress(uncompressed, 16, (a) => String.fromCharCode(a));
+  static String? compressSync(String? uncompressed) => _compress(uncompressed, 16, (a) => String.fromCharCode(a));
 
-  static String? _compress(
-    String? uncompressed,
-    int bitsPerChar,
-    GetCharFromInt getCharFromInt,
-  ) {
+  static String? _compress(String? uncompressed, int bitsPerChar, GetCharFromInt getCharFromInt) {
     if (uncompressed == null) return null;
     int? value;
     Map<String, int> contextDictionary = <String, int>{};
@@ -384,10 +380,10 @@ class LZString {
   }
 
   /// Decompress invalid UTF-16 strings produced by [compress].
-  static Future<String?> decompress(final String? compressed) async => decompressSync(compressed);
+  static Future<String?> decompress(String? compressed) async => decompressSync(compressed);
 
   /// Synchronously decompress invalid UTF-16 strings produced by [compress].
-  static String? decompressSync(final String? compressed) {
+  static String? decompressSync(String? compressed) {
     if (compressed?.isEmpty ?? true) return null;
     return _decompress(compressed!.length, 32768, (index) => compressed.codeUnitAt(index));
   }

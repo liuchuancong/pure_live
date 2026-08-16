@@ -5,10 +5,10 @@ packages:
     dependency: transitive
     description:
       name: _fe_analyzer_shared
-      sha256: cd6add6f846f35fb79f3c315296703c1a24f3cfd7f4739d91a74961c1c7e9f1b
+      sha256: "1b0e6a07425a3e460666e88bf1c949ccc7bb0116ad562ce94a1eca60fe820725"
       url: "https://pub.dev"
     source: hosted
-    version: "100.0.0"
+    version: "103.0.0"
   _flutterfire_internals:
     dependency: transitive
     description:
@@ -21,10 +21,10 @@ packages:
     dependency: transitive
     description:
       name: analyzer
-      sha256: "6ba98576948803398b69e3a444df24eacdbe12ed699c7014e120ea38552debbf"
+      sha256: "61c04d0c1bfed555c681ea079519933f071a5a026578ff73c4ff0df2d3462e5e"
       url: "https://pub.dev"
     source: hosted
-    version: "13.0.0"
+    version: "13.3.0"
   android_file_picker:
     dependency: transitive
     description:
@@ -205,10 +205,10 @@ packages:
     dependency: transitive
     description:
       name: build
-      sha256: "45d14a0fb23e018d8287c32fc98d726ce466b231928ed9b9200f29bd3ccd39ae"
+      sha256: b94f5da9ed3d081fd4ecc426c260998b5f4f4eb2f6d89b7e5472edef0b2b2a1b
       url: "https://pub.dev"
     source: hosted
-    version: "4.0.7"
+    version: "4.0.10"
   build_config:
     dependency: transitive
     description:
@@ -229,10 +229,10 @@ packages:
     dependency: "direct dev"
     description:
       name: build_runner
-      sha256: "5367e521935b102bdf1e735d2aab461e36b2edca6517662d088dd04cc39f8d16"
+      sha256: "90363d438bd9f84a4d5bbb83352251f57d2d9d771bc95a44e6a33fe25fa52774"
       url: "https://pub.dev"
     source: hosted
-    version: "2.15.1"
+    version: "2.16.0"
   built_collection:
     dependency: transitive
     description:
@@ -457,6 +457,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.9"
+  cupertino_ui:
+    dependency: transitive
+    description:
+      name: cupertino_ui
+      sha256: "7ed8ce4159d342eec4c65f4ea6eec57adaf9365404378541f38efc1da20a5b3d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   dart_quickjs:
     dependency: "direct main"
     description:
@@ -478,10 +486,10 @@ packages:
     dependency: transitive
     description:
       name: dart_style
-      sha256: "59d53ef8eaed9d288ed9767618e2b31c4fa0383a127db59d5eb2e737a7638a60"
+      sha256: "3f88fc9c96c568d631356507355a2d1e983ee000c9ac008bdcb39b5bf53ce777"
       url: "https://pub.dev"
     source: hosted
-    version: "3.1.9"
+    version: "3.1.12"
   date_format:
     dependency: "direct main"
     description:
@@ -858,19 +866,18 @@ packages:
     dependency: "direct main"
     description:
       path: flutter_inappwebview
-      ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
-      resolved-ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
-      url: "https://github.com/guide-inc-org/guide-flutter_inappwebview.git"
+      ref: "17527cae5a3371c1e87f9c1df4281a7710debf28"
+      resolved-ref: "17527cae5a3371c1e87f9c1df4281a7710debf28"
+      url: "https://github.com/pichillilorenzo/flutter_inappwebview.git"
     source: git
     version: "6.2.0-beta.3"
   flutter_inappwebview_android:
     dependency: transitive
     description:
-      path: flutter_inappwebview_android
-      ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
-      resolved-ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
-      url: "https://github.com/guide-inc-org/guide-flutter_inappwebview.git"
-    source: git
+      name: flutter_inappwebview_android
+      sha256: "8dfb76bd4e507112c3942c2272eeb01fab2e42be11374e5eb226f58698e7a04b"
+      url: "https://pub.dev"
+    source: hosted
     version: "1.2.0-beta.3"
   flutter_inappwebview_internal_annotations:
     dependency: transitive
@@ -883,47 +890,50 @@ packages:
   flutter_inappwebview_ios:
     dependency: transitive
     description:
-      path: flutter_inappwebview_ios
-      ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
-      resolved-ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
-      url: "https://github.com/guide-inc-org/guide-flutter_inappwebview.git"
-    source: git
+      name: flutter_inappwebview_ios
+      sha256: ae8a78829398771be863aa3c8804a9d40728e1815e66c9c966f86d2cc3ae4fd9
+      url: "https://pub.dev"
+    source: hosted
     version: "1.2.0-beta.3"
+  flutter_inappwebview_linux:
+    dependency: transitive
+    description:
+      name: flutter_inappwebview_linux
+      sha256: "2e1a3b09bb911fb5a8bb155cb7f1eb1428a19b6e20363b9db48beef428b8cef5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.0-beta.1"
   flutter_inappwebview_macos:
     dependency: transitive
     description:
-      path: flutter_inappwebview_macos
-      ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
-      resolved-ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
-      url: "https://github.com/guide-inc-org/guide-flutter_inappwebview.git"
-    source: git
+      name: flutter_inappwebview_macos
+      sha256: "545148cb5c46475ce669ab21621e9f2ad66e05f8e80b2cf49d4018879ab52393"
+      url: "https://pub.dev"
+    source: hosted
     version: "1.2.0-beta.3"
   flutter_inappwebview_platform_interface:
     dependency: transitive
     description:
-      path: flutter_inappwebview_platform_interface
-      ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
-      resolved-ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
-      url: "https://github.com/guide-inc-org/guide-flutter_inappwebview.git"
-    source: git
+      name: flutter_inappwebview_platform_interface
+      sha256: e3522c76e6760d1c0a9ff690e30e1503f226783d3277fa4d26675911977e9766
+      url: "https://pub.dev"
+    source: hosted
     version: "1.4.0-beta.3"
   flutter_inappwebview_web:
     dependency: transitive
     description:
-      path: flutter_inappwebview_web
-      ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
-      resolved-ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
-      url: "https://github.com/guide-inc-org/guide-flutter_inappwebview.git"
-    source: git
+      name: flutter_inappwebview_web
+      sha256: e98b8875ccb6a3fd255873318db45c18ab135ed0ed22d20169abad9f5c810eb9
+      url: "https://pub.dev"
+    source: hosted
     version: "1.2.0-beta.3"
   flutter_inappwebview_windows:
     dependency: transitive
     description:
-      path: flutter_inappwebview_windows
-      ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
-      resolved-ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
-      url: "https://github.com/guide-inc-org/guide-flutter_inappwebview.git"
-    source: git
+      name: flutter_inappwebview_windows
+      sha256: "902edd6f6326952af822e21aa928f7426d723d45c94c15e6ce3c2d5640d28ad7"
+      url: "https://pub.dev"
+    source: hosted
     version: "0.7.0-beta.3"
   flutter_js:
     dependency: "direct main"
@@ -937,10 +947,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_json
-      sha256: "091e1083d9b49d7f8f22f0d9f2453d79fa662c86c67f94e7bc4e183bb4d1eabb"
+      sha256: "2570f4e922bb6307d858740f8e4e8b553836875a899722717f9d2aadd0445bd5"
       url: "https://pub.dev"
     source: hosted
-    version: "0.1.0"
+    version: "0.2.0"
   flutter_launcher_icons:
     dependency: "direct dev"
     description:
@@ -1113,10 +1123,10 @@ packages:
     dependency: "direct overridden"
     description:
       name: hooks
-      sha256: "9a62a50b50b769a737bc0a8ff381f333529df3ab746b2f6b02e83760231455ba"
+      sha256: "03a564c3704524ee0f7fc56fc621e8796cc2eb8c24d1f1a33b34979815b285c4"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.2"
+    version: "2.1.0"
   html:
     dependency: "direct main"
     description:
@@ -1161,18 +1171,18 @@ packages:
     dependency: transitive
     description:
       name: image
-      sha256: f9881ff4998044947ec38d098bc7c8316ae1186fa786eddffdb867b9bc94dfce
+      sha256: "6300175e00616bbc832e2fc91bfa4d776af5402c81c7151bee6905bb08473c52"
       url: "https://pub.dev"
     source: hosted
-    version: "4.8.0"
+    version: "4.9.1"
   intl:
     dependency: transitive
     description:
       name: intl
-      sha256: "3df61194eb431efc39c4ceba583b95633a403f46c9fd341e550ce0bfa50e9aa5"
+      sha256: "1ca20c894b1717686a2319b8548763d812bc0aabdac580420a44c5178c57a867"
       url: "https://pub.dev"
     source: hosted
-    version: "0.20.2"
+    version: "0.20.3"
   intl_utils:
     dependency: "direct dev"
     description:
@@ -1345,10 +1355,10 @@ packages:
     dependency: transitive
     description:
       name: matcher
-      sha256: dc0b7dc7651697ea4ff3e69ef44b0407ea32c487a39fff6a4004fa585e901861
+      sha256: "31bd099b47c10cd1aeb55146a2d46ce0277630ecef3f7dae54ad7873f36696cd"
       url: "https://pub.dev"
     source: hosted
-    version: "0.12.19"
+    version: "0.12.20"
   material_color_utilities:
     dependency: transitive
     description:
@@ -1357,6 +1367,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.13.0"
+  material_ui:
+    dependency: transitive
+    description:
+      name: material_ui
+      sha256: d9b4f6c69b80bc83d0a14357c86e4c14c8076e807ae73cf2960c8560f623995f
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   media_kit:
     dependency: "direct main"
     description:
@@ -1450,10 +1468,10 @@ packages:
     dependency: "direct main"
     description:
       name: meta
-      sha256: "1741988757a65eb6b36abe716829688cf01910bbf91c34354ff7ec1c3de2b349"
+      sha256: "307249ce4ff29d58a18e97f6345f539382eb9c9c29ecda628900f31de0443dd9"
       url: "https://pub.dev"
     source: hosted
-    version: "1.18.0"
+    version: "1.19.0"
   mime:
     dependency: "direct main"
     description:
@@ -1634,18 +1652,18 @@ packages:
     dependency: "direct main"
     description:
       name: permission_handler
-      sha256: fe54465bcc62a4564c6e4db337bbaded6c0c0fa6e10487414436d163114784f6
+      sha256: e7317eb2eb611d1bf0386b6b974be9c50449f975f19a90a7b8ea013550302b30
       url: "https://pub.dev"
     source: hosted
-    version: "12.0.3"
+    version: "13.0.1"
   permission_handler_android:
     dependency: transitive
     description:
       name: permission_handler_android
-      sha256: "1e3bc410ca1bf84662104b100eb126e066cb55791b7451307f9708d4007350e6"
+      sha256: d7676c6fcf2f0b92537ec41476a6ead45a00b0d8bbb852395a6f9f33f49d6242
       url: "https://pub.dev"
     source: hosted
-    version: "13.0.1"
+    version: "14.0.0"
   permission_handler_apple:
     dependency: transitive
     description:
@@ -1810,10 +1828,10 @@ packages:
     dependency: transitive
     description:
       name: record_use
-      sha256: "2551bd8eecfe95d14ae75f6021ad0248be5c27f138c2ec12fcb52b500b3ba1ed"
+      sha256: "3b4ab682aff40175afca6ff090cc5aa7ce9dafe8dfbae1537a6c678e6678baee"
       url: "https://pub.dev"
     source: hosted
-    version: "0.6.0"
+    version: "1.1.0"
   remixicon:
     dependency: "direct main"
     description:
@@ -2256,10 +2274,10 @@ packages:
     dependency: transitive
     description:
       name: test_api
-      sha256: "949a932224383300f01be9221c39180316445ecb8e7547f70a41a35bf421fb9e"
+      sha256: "2a122cbe059f8b610d3a5415f42e255b6c17b1f21eee1d960f31080237fb4f11"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.11"
+    version: "0.7.12"
   timezone:
     dependency: "direct main"
     description:
@@ -2424,10 +2442,10 @@ packages:
     dependency: transitive
     description:
       name: vector_math
-      sha256: d530bd74fea330e6e364cda7a85019c434070188383e1cd8d9777ee586914c5b
+      sha256: f36f9f3be64c6198714492bb455c11056e33e2f85d9a0b676a48301e44fdcf47
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.0"
+    version: "2.4.2"
   video_player:
     dependency: "direct main"
     description:
@@ -2615,10 +2633,10 @@ packages:
     dependency: "direct main"
     description:
       name: xml
-      sha256: "971043b3a0d3da28727e40ed3e0b5d18b742fa5a68665cca88e74b7876d5e025"
+      sha256: "67f0aff7be013d107995e9b75bf4e7f2c3ef2dfdb2c8e68024bba0a7fd5756a4"
       url: "https://pub.dev"
     source: hosted
-    version: "6.6.1"
+    version: "7.0.1"
   yaml:
     dependency: transitive
     description:
@@ -2628,5 +2646,5 @@ packages:
     source: hosted
     version: "3.1.3"
 sdks:
-  dart: ">=3.12.0 <4.0.0"
+  dart: ">=3.13.0 <4.0.0"
   flutter: ">=3.44.0"

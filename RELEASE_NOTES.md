@@ -1,34 +1,31 @@
-# Pure Live v2.0.28
+# Pure Live v2.0.29
 
-本版本继续完善 Android 高刷新率适配、本地互动开关以及弹幕与服务初始化热路径。
+本版本完成 Flutter、Dart、Android 构建链和项目直接依赖的集中升级，并保留 v2.0.28 的动态高刷新率、小窗弹幕和本地互动优化。
 
-## 动态刷新率
+## 工具链与依赖
 
-- Android 原生层监听当前显示器的模式变化、折叠/展开、外接屏变化和应用恢复前台事件。
-- 每次按当前物理分辨率重新检测支持模式，同时设置最高刷新率对应的首选模式 ID 与首选刷新率，不为追求 Hz 切换分辨率。
-- 显示变化事件使用 160 ms 去抖，并把当前、最高、请求刷新率及可用刷新率列表实时回传 Flutter 设置页。
-- 关闭“高刷新率显示”后清除窗口刷新率请求，交还系统动态调度。
+- Flutter 由 3.44.9 升级至 3.47.0，Dart 升级至 3.13.0。
+- Android 升级至 compileSdk/targetSdk 37、AGP 9.1.1、Gradle 9.3.1 与 Kotlin 2.4.10。
+- 升级 `flutter_json` 0.2.0、`permission_handler` 13.0.1、`xml` 7.0.1、`hooks` 2.1.0、`image` 4.9.1、`build_runner` 2.16.0 等依赖。
+- `flutter_inappwebview` 切换至官方仓库当前 6.2.0-beta.3 提交，修复 AGP 9 已移除旧 ProGuard 默认配置造成的构建中断。
+- Git 依赖逐项核对默认分支并固定完整提交；GitHub Actions 同步 Flutter 3.47.0，并升级 `download-artifact` 8.0.1。
 
-## 本地用户与互动
+## 兼容性与构建
 
-- “设置 → 本地用户与互动”增加独立总开关，关闭后隐藏直播间入口并阻止生成本地字幕和礼物效果。
-- 独立设置页支持本地昵称、头衔、体验币/等级状态和“在画面显示本地字幕与礼物特效”开关。
-- 直播间互动面板继续提供本地字幕、体验币、礼物、等级和最近记录；数据只保存在本机。
-
-## 性能与稳定性
-
-- 弹幕列表改用独立响应式消息源，播放器其他状态变化不再触发自动滚动；固定保留最近 100 条并复用现有消息组件。
-- 播放器内弹幕样式变化按渲染帧合并，配置持久化使用 160 ms 尾端去抖并在退出前补写最终值。
-- FFmpeg、缓存、录制、解析和账号服务分别隔离初始化故障，单项异常不再中断后续服务初始化。
-- 播放质量与直播间初始化补充不包含请求参数的错误类型和调用栈记录。
+- 适配 Dart 3.13 的参数修饰符诊断。
+- Android 各插件统一使用 API 37 编译，兼容仍声明较低 compileSdk 的旧插件。
+- 兼容第三方插件混合 Java/Kotlin 字节码目标，继续保留迁移警告便于后续切换 AGP 内置 Kotlin。
+- 仅优先构建 Android `arm64-v8a`，Windows 仅构建 x64，减少本机与 Actions 重复耗时。
 
 ## 验证
 
-- Flutter Analyze、单元测试、Widget 测试及 Android arm64-v8a 原生编译通过。
-- Android 正式包继续使用 `com.mystyle.purelive` 和既有发布签名，可覆盖安装 v2.0.27。
+- Flutter Analyze 零问题通过。
+- 27 项单元测试与 Widget 测试全部通过。
+- Android `arm64-v8a` release 原生编译与 Windows x64 release 原生编译通过。
+- 外部平台接口由本机发布门禁重新探测；设备刷新率、温控和长时间后台播放数据继续按具体机型记录。
 
 ## 下载说明
 
-- Android：优先发布 `arm64-v8a` APK。
-- Windows：提供 `windows-x64` 安装包和便携 ZIP。
+- Android：`arm64-v8a` APK，正式包名为 `com.mystyle.purelive`。
+- Windows：x64 安装包和便携 ZIP。
 - 使用 `SHA256SUMS.txt` 校验文件完整性。

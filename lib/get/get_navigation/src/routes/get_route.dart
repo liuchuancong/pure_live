@@ -82,22 +82,20 @@ class GetPage<T> extends Page<T> {
     this.arguments,
     this.showCupertinoParallax = true,
     this.preventDuplicates = true,
-    this.preventDuplicateHandlingMode =
-        PreventDuplicateHandlingMode.reorderRoutes,
+    this.preventDuplicateHandlingMode = PreventDuplicateHandlingMode.reorderRoutes,
     this.completer,
     this.inheritParentPath = true,
     LocalKey? key,
     super.canPop,
     super.onPopInvoked = _defaultPopInvokedHandler,
     super.restorationId,
-  })  : path = _nameToRegex(name),
-        assert(name.startsWith('/'),
-            'It is necessary to start route name [$name] with a slash: /$name'),
-        super(
-          key: key ?? ValueKey(name),
-          name: name,
-          // arguments: Get.arguments,
-        );
+  }) : path = _nameToRegex(name),
+       assert(name.startsWith('/'), 'It is necessary to start route name [$name] with a slash: /$name'),
+       super(
+         key: key ?? ValueKey(name),
+         name: name,
+         // arguments: Get.arguments,
+       );
   // settings = RouteSettings(name: name, arguments: Get.arguments);
 
   GetPage<T> copyWith({
@@ -124,7 +122,7 @@ class GetPage<T> extends Page<T> {
     GetPage? unknownRoute,
     List<GetMiddleware>? middlewares,
     bool? preventDuplicates,
-    final double Function(BuildContext context)? gestureWidth,
+    double Function(BuildContext context)? gestureWidth,
     bool? participatesInRootNavigator,
     Object? arguments,
     bool? showCupertinoParallax,
@@ -136,8 +134,7 @@ class GetPage<T> extends Page<T> {
   }) {
     return GetPage(
       key: key ?? this.key,
-      participatesInRootNavigator:
-          participatesInRootNavigator ?? this.participatesInRootNavigator,
+      participatesInRootNavigator: participatesInRootNavigator ?? this.participatesInRootNavigator,
       preventDuplicates: preventDuplicates ?? this.preventDuplicates,
       name: name ?? this.name,
       page: page ?? this.page,
@@ -154,16 +151,14 @@ class GetPage<T> extends Page<T> {
       binding: binding ?? this.binding,
       customTransition: customTransition ?? this.customTransition,
       transitionDuration: transitionDuration ?? this.transitionDuration,
-      reverseTransitionDuration:
-          reverseTransitionDuration ?? this.reverseTransitionDuration,
+      reverseTransitionDuration: reverseTransitionDuration ?? this.reverseTransitionDuration,
       fullscreenDialog: fullscreenDialog ?? this.fullscreenDialog,
       children: children ?? this.children,
       unknownRoute: unknownRoute ?? this.unknownRoute,
       middlewares: middlewares ?? this.middlewares,
       gestureWidth: gestureWidth ?? this.gestureWidth,
       arguments: arguments ?? this.arguments,
-      showCupertinoParallax:
-          showCupertinoParallax ?? this.showCupertinoParallax,
+      showCupertinoParallax: showCupertinoParallax ?? this.showCupertinoParallax,
       completer: completer ?? this.completer,
       inheritParentPath: inheritParentPath ?? this.inheritParentPath,
       canPop: canPop ?? this.canPop,
@@ -198,9 +193,7 @@ class GetPage<T> extends Page<T> {
       return "$buffer";
     }
 
-    var stringPath = '$path/?'
-        .replaceAllMapped(RegExp(r'(\.)?:(\w+)(\?)?'), recursiveReplace)
-        .replaceAll('//', '/');
+    var stringPath = '$path/?'.replaceAllMapped(RegExp(r'(\.)?:(\w+)(\?)?'), recursiveReplace).replaceAll('//', '/');
 
     return PathDecoded(RegExp('^$stringPath\$'), keys);
   }
@@ -212,8 +205,7 @@ class GetPage<T> extends Page<T> {
   }
 
   @override
-  String toString() =>
-      '${objectRuntimeType(this, 'Page')}("$name", $key, $arguments)';
+  String toString() => '${objectRuntimeType(this, 'Page')}("$name", $key, $arguments)';
 
   @override
   int get hashCode {
@@ -234,7 +226,6 @@ class PathDecoded {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
 
-    return other is PathDecoded &&
-        other.regex == regex; // && listEquals(other.keys, keys);
+    return other is PathDecoded && other.regex == regex; // && listEquals(other.keys, keys);
   }
 }

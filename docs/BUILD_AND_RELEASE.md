@@ -1,8 +1,8 @@
 # 本地构建、测试与发布
 
-本仓库采用“本机优先、Actions 手动兜底”的流程，固定使用 Flutter `3.44.9`。`pubspec.lock`、Git 依赖提交和 FFmpeg 产物地址均已固定，便于复现结果。
+本仓库采用“本机优先、Actions 手动兜底”的流程，固定使用 Flutter `3.47.0`。`pubspec.lock`、Git 依赖提交和 FFmpeg 产物地址均已固定，便于复现结果。
 
-最近完整核验：2026-08-16，Windows 11 + JDK 17 + Flutter 3.44.9；Android arm64 正式 APK 签名/架构校验与 Windows 安装包启动探测通过。每次发布仍需在当前提交上重新执行全部门禁。
+最近完整核验：2026-08-16，Windows 11 + JDK 17 + Flutter 3.47.0；静态分析、27 项测试、Android arm64 原生编译与 Windows x64 原生编译通过。每次发布仍需在当前提交上重新执行全部门禁。
 
 ## 前置环境
 
@@ -25,12 +25,12 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
 
 1. 环境变量 `PURE_LIVE_FLUTTER` 指向的 `flutter.bat`；
 2. `.fvm/flutter_sdk/bin/flutter.bat`；
-3. `%LOCALAPPDATA%\Codex\flutter\sdk-3.44.9\flutter\bin\flutter.bat`；
+3. `%LOCALAPPDATA%\Codex\flutter\sdk-3.47.0\flutter\bin\flutter.bat`；
 4. `PATH` 中的 Flutter。
 
 路径较长时脚本会为当前仓库保留稳定的 `P:` 短盘符映射，规避 FFmpeg Native Assets 在 Windows 上超过传统路径长度后的构建失败。映射记录位于未跟踪的 `.dart_tool/pure_live_subst_drive.txt`；连续的 `pub get`、分析、测试和构建会复用同一盘符，避免 Native Assets 增量缓存引用已经释放的盘符。
 
-Android 构建使用 JDK 17。脚本优先读取 `PURE_LIVE_JAVA_HOME`，其次使用 `%LOCALAPPDATA%\Codex\java\temurin-17*`；Android Studio 2026 自带的 JDK 25 不适用于当前 Gradle 8.14 / AGP 8.11.1 组合。
+Android 构建使用 JDK 17。脚本优先读取 `PURE_LIVE_JAVA_HOME`，其次使用 `%LOCALAPPDATA%\Codex\java\temurin-17*`；当前 Android 工具链为 compileSdk/targetSdk 37、Gradle 9.3.1、AGP 9.1.1 和 Kotlin 2.4.10。
 
 Android 打包前会由 `tool/prefetch_android_native.ps1` 下载并逐一校验 media_kit 的四个 libmpv JAR，避免 Gradle 直接访问 GitHub Release 时因连接中断生成损坏缓存。
 
@@ -104,7 +104,7 @@ python .\tool\interface_probe.py
 
 ```powershell
 PowerShell -ExecutionPolicy Bypass -File .\tool\publish_local_release.ps1 `
-  -Tag v2.0.28 -CreateTag
+  -Tag v2.0.29 -CreateTag
 ```
 
 脚本要求工作树已提交，并通过 GitHub CLI 当前登录身份创建或更新 Release。

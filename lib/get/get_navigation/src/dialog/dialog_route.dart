@@ -5,26 +5,20 @@ import '../router_report.dart';
 class GetDialogRoute<T> extends PopupRoute<T> {
   GetDialogRoute({
     required RoutePageBuilder pageBuilder,
-    bool barrierDismissible = true,
-    String? barrierLabel,
-    Color barrierColor = const Color(0x80000000),
-    Duration transitionDuration = const Duration(milliseconds: 200),
-    RouteTransitionsBuilder? transitionBuilder,
+    this.barrierDismissible = true,
+    this.barrierLabel,
+    this.barrierColor = const Color(0x80000000),
+    this.transitionDuration = const Duration(milliseconds: 200),
+    this.transitionBuilder,
     super.settings,
-  })  : widget = pageBuilder,
-        _barrierDismissible = barrierDismissible,
-        _barrierLabel = barrierLabel,
-        _barrierColor = barrierColor,
-        _transitionDuration = transitionDuration,
-        _transitionBuilder = transitionBuilder {
+  }) : widget = pageBuilder {
     RouterReportManager.instance.reportCurrentRoute(this);
   }
 
   final RoutePageBuilder widget;
 
   @override
-  bool get barrierDismissible => _barrierDismissible;
-  final bool _barrierDismissible;
+  final bool barrierDismissible;
 
   @override
   void dispose() {
@@ -33,22 +27,18 @@ class GetDialogRoute<T> extends PopupRoute<T> {
   }
 
   @override
-  String? get barrierLabel => _barrierLabel;
-  final String? _barrierLabel;
+  final String? barrierLabel;
 
   @override
-  Color get barrierColor => _barrierColor;
-  final Color _barrierColor;
+  final Color barrierColor;
 
   @override
-  Duration get transitionDuration => _transitionDuration;
-  final Duration _transitionDuration;
+  final Duration transitionDuration;
 
-  final RouteTransitionsBuilder? _transitionBuilder;
+  final RouteTransitionsBuilder? transitionBuilder;
 
   @override
-  Widget buildPage(BuildContext context, Animation<double> animation,
-      Animation<double> secondaryAnimation) {
+  Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
     return Semantics(
       scopesRoute: true,
       explicitChildNodes: true,
@@ -57,16 +47,18 @@ class GetDialogRoute<T> extends PopupRoute<T> {
   }
 
   @override
-  Widget buildTransitions(BuildContext context, Animation<double> animation,
-      Animation<double> secondaryAnimation, Widget child) {
-    if (_transitionBuilder == null) {
+  Widget buildTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (transitionBuilder == null) {
       return FadeTransition(
-          opacity: CurvedAnimation(
-            parent: animation,
-            curve: Curves.linear,
-          ),
-          child: child);
+        opacity: CurvedAnimation(parent: animation, curve: Curves.linear),
+        child: child,
+      );
     } // Some default transition
-    return _transitionBuilder(context, animation, secondaryAnimation, child);
+    return transitionBuilder!(context, animation, secondaryAnimation, child);
   }
 }
