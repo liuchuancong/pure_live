@@ -109,11 +109,11 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                 Obx(
                   () => Offstage(
                     offstage: controller.hideDanmaku.value,
-                    child: DanmakuViewer(controller: controller),
+                    child: DanmakuViewer(key: controller.danmuKey, controller: controller),
                   ),
                 ),
                 GestureDetector(
-                  onTapDown: (details) => _lastTapPosition = details.localPosition,
+                  onTapDown: (details) => _lastTapPosition = details.globalPosition,
                   onTap: () {
                     final position = _lastTapPosition;
                     if (position != null && controller.handleDanmakuPointer(position, longPress: false)) return;
@@ -122,7 +122,7 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                         : GlobalPlayerService.instance.playerManager.togglePlayPause();
                   },
                   onLongPressStart: (details) {
-                    controller.handleDanmakuPointer(details.localPosition, longPress: true);
+                    controller.handleDanmakuPointer(details.globalPosition, longPress: true);
                   },
                   onDoubleTap: () {
                     if (!controller.showLocked.value) {
@@ -611,7 +611,8 @@ class DanmakuViewer extends StatelessWidget {
           bottomAreaDistance: controller.danmakuBottomArea.value,
           baseSpeed: controller.danmakuSpeed.value,
           opacity: controller.danmakuOpacity.value,
-          fontWeight: FontWeight.values[controller.danmakuFontBorder.value],
+          fontWeight: FontWeight.w600,
+          strokeWidth: controller.danmakuFontBorder.value,
           showStroke: controller.enableDanmakuStroke.value,
           fps: settings.resolvedDanmakuFps(),
           fontFamily: controller.danmakuFontFamilyName.value,
@@ -1767,11 +1768,11 @@ class DanmakuSetting extends StatelessWidget {
                 labelText: i18n("settings_danmaku_fontBorder"),
                 valueWidget: SfSlider(
                   min: 0.0,
-                  max: 8.0,
+                  max: 4.0,
                   value: controller.danmakuFontBorder.value,
                   activeColor: primaryColor,
                   inactiveColor: Colors.white12,
-                  onChanged: (dynamic val) => controller.danmakuFontBorder.value = (val as double).toInt(),
+                  onChanged: (dynamic val) => controller.danmakuFontBorder.value = val as double,
                 ),
                 trailingWidget: Text(controller.danmakuFontBorder.value.toStringAsFixed(2), style: digitStyle),
               ),

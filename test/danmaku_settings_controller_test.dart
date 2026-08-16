@@ -16,6 +16,9 @@ void main() {
       expect(config['danmakuAutoFps'], isTrue);
       expect(config['pipDanmakuAutoFps'], isTrue);
       expect(config['danmakuSpeed'], 120.0);
+      expect(config['danmakuFontBorder'], 1.5);
+      expect(config['enableDanmakuTapInteraction'], isTrue);
+      expect(config['enableDanmakuLongPressInteraction'], isTrue);
     });
 
     test('clamps legacy main-player speed to the supported range', () {
@@ -28,6 +31,14 @@ void main() {
 
       expect(slow['danmakuSpeed'], 20.0);
       expect(fast['danmakuSpeed'], 400.0);
+    });
+
+    test('clamps imported stroke width to the renderer range', () {
+      final config = DanmakuSettingsController.extractConfig({
+        'danmaku': {'danmakuFontBorder': 8},
+      });
+
+      expect(config['danmakuFontBorder'], 4.0);
     });
 
     test('clamps imported compact values to supported ranges', () {

@@ -1,11 +1,14 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
+
 import 'proto/douyin.pb.dart';
+
 import 'package:crypto/crypto.dart';
 import 'package:pure_live/core/danmaku/xbogus.dart';
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/common/models/live_message.dart';
+import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/core/common/web_socket_util.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/utils/douyin/douyin_request_params.dart';
@@ -180,11 +183,16 @@ class DouyinDanmaku implements LiveDanmaku {
 
   void unPackWebcastRoomUserSeqMessage(List<int> payload) {
     var roomUserSeqMessage = RoomUserSeqMessage.fromBuffer(payload);
+    final onlineText = roomUserSeqMessage.onlineUserForAnchor;
+    if (!RegExp(r'[0-9]').hasMatch(onlineText)) return;
+    final online = LiveRoom.parseAudienceNumber(onlineText);
 
     onMessage?.call(
       LiveMessage(
         type: LiveMessageType.online,
-        data: roomUserSeqMessage.totalUser.toInt(),
+        // totalUser is cumulative. onlineUserForAnchor is the concurrent
+        // audience field shown to the anchor and must be kept separate.
+        data: online,
         color: LiveMessageColor.white,
         message: "",
         userName: "",

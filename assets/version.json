@@ -1,8 +1,8 @@
 {
-  "version": "2.0.31",
-  "build_number": 42,
-  "version_num": 2003142,
-  "version_desc": "- 优化直播间顶部布局，手机端关注和录制使用紧凑图标，释放主播信息空间。\n- 明确耳机为当前房间纯音频、电视为投屏、小窗为画中画，并固定顺序。\n- 取消遗留全局纯音频默认值，关闭 ASMR 后新直播间正常播放视频。\n- 音频与视频切换复用当前播放地址，减少重复接口请求和等待。\n",
+  "version": "2.0.32",
+  "build_number": 43,
+  "version_num": 2003243,
+  "version_desc": "- 严格拆分平台热度、真实在线人数与累计观看，并提供全局排行口径和分平台开关。\n- 重新设计自动助眠、当前直播间停止和应用定时退出，支持 1 分钟至 365 天自定义。\n- 弹幕最佳模板调整为画面顶部 20%，样式实时生效，并修复横竖屏点击和长按坐标。\n- 增强六平台本地身份、等级、体验币、礼物目录和画面礼物效果。\n- 更新 video_player 2.14.0，并复核 Better Player Plus 与 MediaKit 固定提交。\n",
   "prerelease": false,
   "download_url": "https://github.com/wzgrx/pure_live/releases"
 }

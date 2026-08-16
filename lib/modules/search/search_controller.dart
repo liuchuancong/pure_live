@@ -148,11 +148,11 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
         final liveOrder = (b.liveStatus == LiveStatus.live ? 1 : 0) - (a.liveStatus == LiveStatus.live ? 1 : 0);
         if (liveOrder != 0) return liveOrder;
         if (SettingsService.to.app.preferRealOnlineCounts.v) {
-          final supportedOrder = (b.supportsRealOnlineCount ? 1 : 0) - (a.supportsRealOnlineCount ? 1 : 0);
+          final supportedOrder = (_realOnlineEnabled(b) ? 1 : 0) - (_realOnlineEnabled(a) ? 1 : 0);
           if (supportedOrder != 0) return supportedOrder;
-          if (!a.supportsRealOnlineCount) return a.platform.toString().compareTo(b.platform.toString());
+          if (!_realOnlineEnabled(a)) return a.platform.toString().compareTo(b.platform.toString());
         }
-        return _numericHeat(b.watching).compareTo(_numericHeat(a.watching));
+        return _audienceValue(b).compareTo(_audienceValue(a));
       });
     results.assignAll(rooms);
     _currentPage = page;
@@ -165,10 +165,15 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
     loadingMore.v = false;
   }
 
-  int _numericHeat(String? value) {
-    final text = value?.trim() ?? '';
-    final number = double.tryParse(text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
-    return (text.contains('万') ? number * 10000 : number).round();
+  bool _realOnlineEnabled(LiveRoom room) =>
+      room.supportsRealOnlineCount && SettingsService.to.app.isRealOnlineEnabledFor(room.platform);
+
+  int _audienceValue(LiveRoom room) {
+    final app = SettingsService.to.app;
+    return room.audienceSortValue(
+      preferRealOnline: app.preferRealOnlineCounts.v,
+      platformEnabled: app.isRealOnlineEnabledFor(room.platform),
+    );
   }
 
   void openWebSearch() {

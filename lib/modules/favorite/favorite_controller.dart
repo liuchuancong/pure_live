@@ -247,31 +247,32 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
       visibleTags.assignAll(tags);
     }
 
-    for (var room in onlineRooms) {
-      room.watching = int.tryParse(room.watching ?? '')?.toString() ?? '0';
-    }
-    for (var room in replayRooms) {
-      room.watching = int.tryParse(room.watching ?? '')?.toString() ?? '0';
-    }
-
     onlineRooms.sort((a, b) {
       if (selectedTagId.value == TagManagementController.allTagKey) {
-        return int.parse(b.watching!).compareTo(int.parse(a.watching!));
+        return _audienceSortValue(b).compareTo(_audienceSortValue(a));
       }
       int sa = _getRoomTagScore(a);
       int sb = _getRoomTagScore(b);
       if (sa != sb) return sb.compareTo(sa);
-      return int.parse(b.watching!).compareTo(int.parse(a.watching!));
+      return _audienceSortValue(b).compareTo(_audienceSortValue(a));
     });
     replayRooms.sort((a, b) {
       if (selectedTagId.value == TagManagementController.allTagKey) {
-        return int.parse(b.watching!).compareTo(int.parse(a.watching!));
+        return _audienceSortValue(b).compareTo(_audienceSortValue(a));
       }
       int sa = _getRoomTagScore(a);
       int sb = _getRoomTagScore(b);
       if (sa != sb) return sb.compareTo(sa);
-      return int.parse(b.watching!).compareTo(int.parse(a.watching!));
+      return _audienceSortValue(b).compareTo(_audienceSortValue(a));
     });
+  }
+
+  int _audienceSortValue(LiveRoom room) {
+    final app = SettingsService.to.app;
+    return room.audienceSortValue(
+      preferRealOnline: app.preferRealOnlineCounts.v,
+      platformEnabled: app.isRealOnlineEnabledFor(room.platform),
+    );
   }
 
   int _getRoomTagScore(LiveRoom room) {

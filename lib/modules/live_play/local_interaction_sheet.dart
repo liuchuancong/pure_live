@@ -40,6 +40,7 @@ class _LocalInteractionSheetState extends State<LocalInteractionSheet> {
   Widget build(BuildContext context) {
     final local = widget.controller;
     final gifts = LocalInteractionController.giftsForPlatform(widget.platform);
+    final pack = LocalInteractionController.packForPlatform(widget.platform);
     final colors = Theme.of(context).colorScheme;
     return SafeArea(
       child: Padding(
@@ -72,7 +73,7 @@ class _LocalInteractionSheetState extends State<LocalInteractionSheet> {
                   Obx(
                     () => Chip(
                       avatar: const Icon(Icons.toll_rounded, size: 18),
-                      label: Text('${local.coins.v} · Lv.${local.level}'),
+                      label: Text('${local.coins.v} ${i18n(pack.currencyKey)} · ${i18n(pack.levelKey)} ${local.level}'),
                     ),
                   ),
                 ],

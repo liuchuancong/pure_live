@@ -9,6 +9,7 @@ void main() {
       expect(config['enableHighRefreshRate'], isTrue);
       expect(config['enableAsmrSleepMode'], isFalse);
       expect(config['asmrSleepMinutes'], 60);
+      expect(config['realOnlinePlatforms'], AppSettingsController.defaultRealOnlinePlatforms);
     });
 
     test('preserves unrelated app fields when updating refresh mode', () {
@@ -22,6 +23,18 @@ void main() {
       expect(merged['player'], {'engine': 'mpv'});
       expect(merged['app']['showSplashPage'], isFalse);
       expect(merged['app']['enableHighRefreshRate'], isFalse);
+    });
+
+    test('accepts long sleep timers and clamps them to one year', () {
+      final custom = AppSettingsController.extractConfig({
+        'app': {'asmrSleepMinutes': 10080},
+      });
+      final excessive = AppSettingsController.extractConfig({
+        'app': {'asmrSleepMinutes': AppSettingsController.maxSleepMinutes + 1},
+      });
+
+      expect(custom['asmrSleepMinutes'], 10080);
+      expect(excessive['asmrSleepMinutes'], AppSettingsController.maxSleepMinutes);
     });
   });
 }

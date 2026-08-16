@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'dart:convert';
+
 import 'package:pure_live/common/index.dart';
 import 'package:html_unescape/html_unescape.dart';
 import 'package:pure_live/model/live_category.dart';
@@ -24,9 +25,7 @@ class DouyuSite implements LiveSite {
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async {
     List<LiveCategory> categories = [];
-    var result = await HttpClient.instance.getJson(
-      "https://m.douyu.com/api/cate/list",
-    );
+    var result = await HttpClient.instance.getJson("https://m.douyu.com/api/cate/list");
     var subCateList = result["data"]["cate2Info"] as List;
     for (var item in result["data"]["cate1Info"]) {
       var cate1Id = item["cate1Id"];
@@ -44,13 +43,7 @@ class DouyuSite implements LiveSite {
           ),
         );
       });
-      categories.add(
-        LiveCategory(
-          id: cate1Id.toString(),
-          name: cate1Name.toString(),
-          children: subCategories,
-        ),
-      );
+      categories.add(LiveCategory(id: cate1Id.toString(), name: cate1Name.toString(), children: subCategories));
     }
     // 根据ID排序
     categories.sort((a, b) => int.parse(a.id).compareTo(int.parse(b.id)));
@@ -61,12 +54,7 @@ class DouyuSite implements LiveSite {
   Future<List<LiveArea>> getSubCategories(LiveCategory liveCategory) async {
     var result = await HttpClient.instance.getJson(
       "https://www.douyu.com/japi/weblist/apinc/getC2List",
-      queryParameters: {
-        "shortName": liveCategory.name,
-        "customClassId": liveCategory.id,
-        "offset": 0,
-        "limit": 200,
-      },
+      queryParameters: {"shortName": liveCategory.name, "customClassId": liveCategory.id, "offset": 0, "limit": 200},
     );
 
     List<LiveArea> subs = [];
@@ -87,11 +75,7 @@ class DouyuSite implements LiveSite {
   }
 
   @override
-  Future<List<LiveRoom>> getCategoryRooms(
-    LiveArea category, {
-    int page = 1,
-    int pageSize = 30,
-  }) async {
+  Future<List<LiveRoom>> getCategoryRooms(LiveArea category, {int page = 1, int pageSize = 30}) async {
     var result = await HttpClient.instance.getJson(
       "https://www.douyu.com/gapi/rkc/directory/mixList/2_${category.areaId}/$page",
       queryParameters: {},
@@ -105,14 +89,14 @@ class DouyuSite implements LiveSite {
       var roomItem = LiveRoom(
         cover: item['rs16'].toString(),
         watching: item['ol'].toString(),
+        popularity: item['ol'].toString(),
+        audienceMetricType: AudienceMetricType.popularity,
         roomId: item['rid'].toString(),
         title: item['rn'].toString(),
         nick: item['nn'].toString(),
         area: item['c2name'].toString(),
         liveStatus: LiveStatus.live,
-        avatar: item['av'].toString().isNotEmpty
-            ? 'https://apic.douyucdn.cn/upload/${item['av']}_middle.jpg'
-            : '',
+        avatar: item['av'].toString().isNotEmpty ? 'https://apic.douyucdn.cn/upload/${item['av']}_middle.jpg' : '',
         status: true,
         platform: Sites.douyuSite,
       );
@@ -122,9 +106,7 @@ class DouyuSite implements LiveSite {
   }
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({
-    required LiveRoom detail,
-  }) async {
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
     var data = detail.data.toString();
     data += "&cdn=&rate=-1&ver=Douyu_223061205&iar=1&ive=1&hevc=0&fa=0";
     List<LivePlayQuality> qualities = [];
@@ -148,21 +130,13 @@ class DouyuSite implements LiveSite {
       return 0;
     });
     for (var item in result["data"]["multirates"]) {
-      qualities.add(
-        LivePlayQuality(
-          quality: item["name"].toString(),
-          data: DouyuPlayData(item["rate"], cdns),
-        ),
-      );
+      qualities.add(LivePlayQuality(quality: item["name"].toString(), data: DouyuPlayData(item["rate"], cdns)));
     }
     return qualities;
   }
 
   @override
-  Future<List<String>> getPlayUrls({
-    required LiveRoom detail,
-    required LivePlayQuality quality,
-  }) async {
+  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
     var args = detail.data.toString();
     var data = quality.data as DouyuPlayData;
 
@@ -176,20 +150,14 @@ class DouyuSite implements LiveSite {
     return urls;
   }
 
-  Future<String> getPlayUrl(
-    String roomId,
-    String args,
-    int rate,
-    String cdn,
-  ) async {
+  Future<String> getPlayUrl(String roomId, String args, int rate, String cdn) async {
     args += "&cdn=$cdn&rate=$rate";
     var result = await HttpClient.instance.postJson(
       "https://www.douyu.com/lapi/live/getH5Play/$roomId",
       data: args,
       header: {
         'referer': 'https://www.douyu.com/$roomId',
-        'user-agent':
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43",
+        'user-agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43",
       },
       formUrlEncoded: true,
     );
@@ -198,10 +166,7 @@ class DouyuSite implements LiveSite {
   }
 
   @override
-  Future<List<LiveRoom>> getRecommendRooms({
-    int page = 1,
-    int pageSize = 30,
-  }) async {
+  Future<List<LiveRoom>> getRecommendRooms({int page = 1, int pageSize = 30}) async {
     try {
       var result = await HttpClient.instance.getJson(
         "https://www.douyu.com/japi/weblist/apinc/allpage/6/$page",
@@ -217,6 +182,8 @@ class DouyuSite implements LiveSite {
         var roomItem = LiveRoom(
           cover: item['rs16'].toString(),
           watching: item['ol'].toString(),
+          popularity: item['ol'].toString(),
+          audienceMetricType: AudienceMetricType.popularity,
           roomId: item['rid'].toString(),
           title: item['rn'].toString(),
           nick: item['nn'].toString(),
@@ -235,18 +202,14 @@ class DouyuSite implements LiveSite {
   }
 
   @override
-  Future<LiveRoom> getRoomDetail({
-    required String platform,
-    required String roomId,
-  }) async {
+  Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
     try {
       var result = await HttpClient.instance.getJson(
         "https://www.douyu.com/betard/$roomId",
         queryParameters: {},
         header: {
           'referer': 'https://www.douyu.com/$roomId',
-          'user-agent':
-              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43',
+          'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43',
         },
       );
       Map roomInfo;
@@ -261,8 +224,7 @@ class DouyuSite implements LiveSite {
         queryParameters: {},
         header: {
           'referer': 'https://www.douyu.com/$roomId',
-          'user-agent':
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43",
+          'user-agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43",
         },
       );
       var crptext = json.decode(jsEncResult)["data"]["room$roomId"].toString();
@@ -270,6 +232,8 @@ class DouyuSite implements LiveSite {
       return LiveRoom(
         cover: roomInfo["room_pic"].toString(),
         watching: roomInfo["room_biz_all"]["hot"].toString(),
+        popularity: roomInfo["room_biz_all"]["hot"].toString(),
+        audienceMetricType: AudienceMetricType.popularity,
         roomId: roomId,
         title: roomInfo["room_name"].toString(),
         nick: roomInfo["owner_name"].toString(),
@@ -277,9 +241,7 @@ class DouyuSite implements LiveSite {
         introduction: roomInfo["show_details"].toString(),
         area: roomInfo["second_lvl_name"]?.toString() ?? '',
         notice: "",
-        liveStatus: roomInfo["show_status"] == 1
-            ? LiveStatus.live
-            : LiveStatus.offline,
+        liveStatus: roomInfo["show_status"] == 1 ? LiveStatus.live : LiveStatus.offline,
         status: roomInfo["show_status"] == 1,
         danmakuData: roomInfo["room_id"].toString(),
         data: DouyuSign.getSign(crptext, roomInfo["room_id"].toString()),
@@ -301,18 +263,13 @@ class DouyuSite implements LiveSite {
   }
 
   @override
-  Future<List<LiveRoom>> searchRooms(
-    String keyword, {
-    int page = 1,
-    int pageSize = 30,
-  }) async {
+  Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) async {
     var did = generateRandomString(32);
     var result = await HttpClient.instance.getJson(
       "https://www.douyu.com/japi/search/api/searchShow",
       queryParameters: {"kw": keyword, "page": page, "pageSize": 20},
       header: {
-        'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.51',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.51',
         'referer': 'https://www.douyu.com/search/',
         'Cookie': 'dy_did=$did;acf_did=$did',
       },
@@ -332,13 +289,13 @@ class DouyuSite implements LiveSite {
         cover: item["roomSrc"].toString(),
         area: item["cateName"].toString(),
         avatar: item["avatar"].toString(),
-        liveStatus: liveStatus && roomType == 0
-            ? LiveStatus.live
-            : LiveStatus.offline,
+        liveStatus: liveStatus && roomType == 0 ? LiveStatus.live : LiveStatus.offline,
         status: liveStatus && roomType == 0,
         nick: item["nickName"].toString(),
         platform: Sites.douyuSite,
         watching: item["hot"].toString(),
+        popularity: item["hot"].toString(),
+        audienceMetricType: AudienceMetricType.popularity,
       );
       items.add(roomItem);
     }
@@ -357,23 +314,13 @@ class DouyuSite implements LiveSite {
   }
 
   @override
-  Future<List<LiveAnchorItem>> searchAnchors(
-    String keyword, {
-    int page = 1,
-    int pageSize = 30,
-  }) async {
+  Future<List<LiveAnchorItem>> searchAnchors(String keyword, {int page = 1, int pageSize = 30}) async {
     var did = generateRandomString(32);
     var result = await HttpClient.instance.getJson(
       "https://www.douyu.com/japi/search/api/searchUser",
-      queryParameters: {
-        "kw": keyword,
-        "page": page,
-        "pageSize": 20,
-        "filterType": 1,
-      },
+      queryParameters: {"kw": keyword, "page": page, "pageSize": 20, "filterType": 1},
       header: {
-        'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.51',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.51',
         'referer': 'https://www.douyu.com/search/',
         'Cookie': 'dy_did=$did;acf_did=$did',
       },
@@ -381,10 +328,8 @@ class DouyuSite implements LiveSite {
 
     var items = <LiveAnchorItem>[];
     for (var item in result["data"]["relateUser"]) {
-      var liveStatus =
-          (int.tryParse(item["anchorInfo"]["isLive"].toString()) ?? 0) == 1;
-      var roomType =
-          (int.tryParse(item["anchorInfo"]["roomType"].toString()) ?? 0);
+      var liveStatus = (int.tryParse(item["anchorInfo"]["isLive"].toString()) ?? 0) == 1;
+      var roomType = (int.tryParse(item["anchorInfo"]["roomType"].toString()) ?? 0);
       var roomItem = LiveAnchorItem(
         roomId: item["anchorInfo"]["rid"].toString(),
         avatar: item["anchorInfo"]["avatar"].toString(),
@@ -397,10 +342,7 @@ class DouyuSite implements LiveSite {
   }
 
   @override
-  Future<bool> getLiveStatus({
-    required String platform,
-    required String roomId,
-  }) async {
+  Future<bool> getLiveStatus({required String platform, required String roomId}) async {
     var detail = await getRoomDetail(roomId: roomId, platform: platform);
     return detail.status!;
   }
@@ -418,9 +360,7 @@ class DouyuSite implements LiveSite {
   }
 
   @override
-  Future<List<LiveSuperChatMessage>> getSuperChatMessage({
-    required String roomId,
-  }) {
+  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required String roomId}) {
     //尚不支持
     return Future.value([]);
   }

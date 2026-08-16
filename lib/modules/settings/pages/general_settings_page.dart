@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
+import 'package:pure_live/modules/settings/pages/audience_metric_settings_page.dart';
 
 class GeneralSettingsPage extends GetView<SettingsService> {
   const GeneralSettingsPage({super.key});
@@ -31,19 +32,12 @@ class GeneralSettingsPage extends GetView<SettingsService> {
                   isLong: true,
                 );
               }),
-            context.buildSwitchTile(
-              title: i18n('prefer_real_online_counts'),
-              subtitle: i18n('prefer_real_online_counts_desc'),
-              value: SettingsService.to.app.preferRealOnlineCounts,
-              icon: Icons.people_alt_rounded,
-              isLong: true,
-            ),
             context.buildTile(
-              title: i18n('audience_metric_support'),
-              subtitle: i18n('audience_metric_support_summary'),
-              icon: Icons.info_outline_rounded,
+              title: i18n('audience_metric_settings'),
+              subtitle: i18n('audience_metric_settings_desc'),
+              icon: Icons.groups_2_rounded,
               trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () => _showAudienceMetricSupport(context),
+              onTap: () => Get.to(() => const AudienceMetricSettingsPage()),
             ),
             context.buildSwitchTile(
               title: i18n('splash_animation'),
@@ -77,7 +71,7 @@ class GeneralSettingsPage extends GetView<SettingsService> {
                   if (!isEnabled || value == 0) {
                     subtitleText = "$configMinutes ${i18n('minutes')}";
                   } else {
-                    final displayTime = StopWatchTimer.getDisplayTime(value, hours: false, milliSecond: false);
+                    final displayTime = StopWatchTimer.getDisplayTime(value, hours: true, milliSecond: false);
                     subtitleText = "${i18n('remaining_time')}: $displayTime";
                   }
 
@@ -118,19 +112,6 @@ class GeneralSettingsPage extends GetView<SettingsService> {
           ]),
           const SizedBox(height: 32),
         ],
-      ),
-    );
-  }
-
-  void _showAudienceMetricSupport(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(i18n('audience_metric_support')),
-        content: SingleChildScrollView(
-          child: Text(i18n('audience_metric_support_detail'), style: const TextStyle(height: 1.55)),
-        ),
-        actions: [FilledButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(i18n('confirm')))],
       ),
     );
   }
@@ -267,6 +248,8 @@ class GeneralSettingsPage extends GetView<SettingsService> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text(i18n('app_exit_timer_explain'), style: Theme.of(context).textTheme.bodySmall),
+                  const SizedBox(height: 12),
                   Obx(() {
                     final selectedValue = SettingsService.to.exit.autoShutDownTime.v;
                     return Wrap(
@@ -295,57 +278,37 @@ class GeneralSettingsPage extends GetView<SettingsService> {
                     );
                   }),
                   const SizedBox(height: 20),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Container(
-                          height: 60,
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Center(
-                            child: TextField(
-                              controller: inputController,
-                              keyboardType: TextInputType.number,
-                              style: AppTextStyles.t14,
-                              maxLines: 1,
-                              decoration: InputDecoration(
-                                hintText: i18n('custom_duration'),
-                                suffixText: i18n('minutes'),
-                                isDense: true,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
-                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                          minimumSize: const Size(0, 40),
-                          fixedSize: const Size.fromHeight(40),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
-                        onPressed: () {
-                          final int? parsedValue = int.tryParse(inputController.text);
-                          if (parsedValue != null && parsedValue > 0) {
-                            SettingsService.to.exit.updateShutDownTime(parsedValue);
-                          }
-                          Navigator.of(context).pop();
-                        },
-                        child: Text(i18n('confirm')),
-                      ),
-                    ],
+                  TextField(
+                    controller: inputController,
+                    keyboardType: TextInputType.number,
+                    style: AppTextStyles.t14,
+                    maxLines: 1,
+                    decoration: InputDecoration(
+                      labelText: i18n('custom_duration'),
+                      suffixText: i18n('minutes'),
+                      helperText: i18n('app_exit_timer_custom_hint'),
+                      border: const OutlineInputBorder(),
+                    ),
                   ),
                 ],
               ),
             ),
           ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n('cancel'))),
+            FilledButton(
+              onPressed: () {
+                final parsedValue = int.tryParse(inputController.text.trim());
+                if (parsedValue == null || parsedValue < 1) {
+                  ToastUtil.show(i18n('app_exit_timer_custom_hint'));
+                  return;
+                }
+                SettingsService.to.exit.updateShutDownTime(parsedValue);
+                Navigator.of(context).pop();
+              },
+              child: Text(i18n('save')),
+            ),
+          ],
         );
       },
     );

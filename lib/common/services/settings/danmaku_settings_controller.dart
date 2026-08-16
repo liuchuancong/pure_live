@@ -21,14 +21,15 @@ class DanmakuSettingsController extends GetxController {
   final RxDouble danmakuBottomArea = hiveDouble('danmakuBottomArea', 0.5);
   final RxDouble danmakuSpeed = hiveDouble('danmakuSpeed', 120.0);
   final RxDouble danmakuFontSize = hiveDouble('danmakuFontSize', 16.0);
-  final RxDouble danmakuFontBorder = hiveDouble('danmakuFontBorder', 4.0);
+  final RxDouble danmakuFontBorder = hiveDouble('danmakuFontBorder', 1.5);
   final RxDouble danmakuOpacity = hiveDouble('danmakuOpacity', 1.0);
   final RxBool enableDanmakuDisplay = hiveBool('enableDanmakuDisplay', true);
   final RxBool enableDanmakuStroke = hiveBool('enableDanmakuStroke', true);
   final RxInt danmakuFps = hiveInt('danmakuFps', 60);
   final RxBool danmakuAutoFps = hiveBool('danmakuAutoFps', true);
-  final RxBool enableDanmakuTapInteraction = hiveBool('enableDanmakuTapInteraction', false);
-  final RxBool enableDanmakuLongPressInteraction = hiveBool('enableDanmakuLongPressInteraction', false);
+  final RxBool enableDanmakuTapInteraction = hiveBool('enableDanmakuTapInteraction', true);
+  final RxBool enableDanmakuLongPressInteraction = hiveBool('enableDanmakuLongPressInteraction', true);
+  final RxInt danmakuInteractionMigration = hiveInt('danmakuInteractionMigration', 0);
   final RxString savedDanmakuTemplate = hiveString('savedDanmakuTemplate', '');
   final RxString danmakuFontFamilyName = hiveString('danmakuFontFamilyName', 'Default');
   final RxBool enablePipDanmaku = hiveBool('enablePipDanmaku', defaultEnablePipDanmaku);
@@ -43,6 +44,16 @@ class DanmakuSettingsController extends GetxController {
   final RxDouble pipDanmakuEmitInterval = hiveDouble('pipDanmakuEmitInterval', defaultPipDanmakuEmitInterval);
   final RxInt pipDanmakuFps = hiveInt('pipDanmakuFps', defaultPipDanmakuFps);
   final RxBool pipDanmakuAutoFps = hiveBool('pipDanmakuAutoFps', true);
+
+  @override
+  void onInit() {
+    super.onInit();
+    if (danmakuInteractionMigration.v < 1) {
+      enableDanmakuTapInteraction.v = true;
+      enableDanmakuLongPressInteraction.v = true;
+      danmakuInteractionMigration.v = 1;
+    }
+  }
 
   int resolvedDanmakuFps({bool pip = false}) {
     final auto = pip ? pipDanmakuAutoFps.v : danmakuAutoFps.v;
@@ -110,15 +121,15 @@ class DanmakuSettingsController extends GetxController {
     danmakuBottomArea.v = json['danmakuBottomArea']?.toDouble() ?? 0.5;
     danmakuSpeed.v = (json['danmakuSpeed'] ?? 120.0).toDouble().clamp(20.0, 400.0).toDouble();
     danmakuFontSize.v = json['danmakuFontSize']?.toDouble() ?? 16.0;
-    danmakuFontBorder.v = json['danmakuFontBorder']?.toDouble() ?? 4.0;
+    danmakuFontBorder.v = (json['danmakuFontBorder']?.toDouble() ?? 1.5).clamp(0.0, 4.0).toDouble();
     danmakuOpacity.v = json['danmakuOpacity']?.toDouble() ?? 1.0;
     enableDanmakuDisplay.v = json['enableDanmakuDisplay'] ?? true;
     danmakuFontFamilyName.v = json['danmakuFontFamilyName'] ?? 'Default';
     enableDanmakuStroke.v = json['enableDanmakuStroke'] ?? true;
     danmakuFps.v = json['danmakuFps']?.toInt() ?? 60;
     danmakuAutoFps.v = json['danmakuAutoFps'] ?? true;
-    enableDanmakuTapInteraction.v = json['enableDanmakuTapInteraction'] ?? false;
-    enableDanmakuLongPressInteraction.v = json['enableDanmakuLongPressInteraction'] ?? false;
+    enableDanmakuTapInteraction.v = json['enableDanmakuTapInteraction'] ?? true;
+    enableDanmakuLongPressInteraction.v = json['enableDanmakuLongPressInteraction'] ?? true;
     savedDanmakuTemplate.v = json['savedDanmakuTemplate']?.toString() ?? '';
     enablePipDanmaku.v = json['enablePipDanmaku'] ?? defaultEnablePipDanmaku;
     pipDanmakuAutoScale.v = json['pipDanmakuAutoScale'] ?? defaultPipDanmakuAutoScale;
@@ -152,15 +163,15 @@ class DanmakuSettingsController extends GetxController {
       'danmakuBottomArea': (danmaku['danmakuBottomArea'] ?? 0.5).toDouble(),
       'danmakuSpeed': (danmaku['danmakuSpeed'] ?? 120.0).toDouble().clamp(20.0, 400.0).toDouble(),
       'danmakuFontSize': (danmaku['danmakuFontSize'] ?? 16.0).toDouble(),
-      'danmakuFontBorder': (danmaku['danmakuFontBorder'] ?? 4.0).toDouble(),
+      'danmakuFontBorder': (danmaku['danmakuFontBorder'] ?? 1.5).toDouble().clamp(0.0, 4.0).toDouble(),
       'danmakuOpacity': (danmaku['danmakuOpacity'] ?? 1.0).toDouble(),
       'enableDanmakuDisplay': danmaku['enableDanmakuDisplay'] ?? true,
       'danmakuFontFamilyName': danmaku['danmakuFontFamilyName'] ?? 'Default',
       'enableDanmakuStroke': danmaku['enableDanmakuStroke'] ?? true,
       'danmakuFps': (danmaku['danmakuFps'] ?? 60).toInt(),
       'danmakuAutoFps': danmaku['danmakuAutoFps'] ?? true,
-      'enableDanmakuTapInteraction': danmaku['enableDanmakuTapInteraction'] ?? false,
-      'enableDanmakuLongPressInteraction': danmaku['enableDanmakuLongPressInteraction'] ?? false,
+      'enableDanmakuTapInteraction': danmaku['enableDanmakuTapInteraction'] ?? true,
+      'enableDanmakuLongPressInteraction': danmaku['enableDanmakuLongPressInteraction'] ?? true,
       'savedDanmakuTemplate': danmaku['savedDanmakuTemplate']?.toString() ?? '',
       'enablePipDanmaku': danmaku['enablePipDanmaku'] ?? defaultEnablePipDanmaku,
       'pipDanmakuAutoScale': danmaku['pipDanmakuAutoScale'] ?? defaultPipDanmakuAutoScale,

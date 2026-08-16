@@ -36,34 +36,44 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
               context.buildModernCard([
                 Padding(
                   padding: const EdgeInsets.all(12),
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      FilledButton.tonalIcon(
-                        onPressed: () => _applyPreset('best'),
-                        icon: const Icon(Icons.auto_awesome_rounded),
-                        label: Text(i18n('danmaku_template_best')),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          FilledButton.tonalIcon(
+                            onPressed: () => _applyPreset('best'),
+                            icon: const Icon(Icons.auto_awesome_rounded),
+                            label: Text(i18n('danmaku_template_best')),
+                          ),
+                          OutlinedButton(
+                            onPressed: () => _applyPreset('comfort'),
+                            child: Text(i18n('danmaku_template_comfort')),
+                          ),
+                          OutlinedButton(
+                            onPressed: () => _applyPreset('dense'),
+                            child: Text(i18n('danmaku_template_dense')),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: _saveTemplate,
+                            icon: const Icon(Icons.save_outlined),
+                            label: Text(i18n('save_current_template')),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: _restoreTemplate,
+                            icon: const Icon(Icons.restore_rounded),
+                            label: Text(i18n('restore_saved_template')),
+                          ),
+                          TextButton(onPressed: () => _applyPreset('default'), child: Text(i18n('reset'))),
+                        ],
                       ),
-                      OutlinedButton(
-                        onPressed: () => _applyPreset('comfort'),
-                        child: Text(i18n('danmaku_template_comfort')),
+                      const SizedBox(height: 10),
+                      Text(
+                        '${i18n('danmaku_best_preset_desc')}\n${i18n('danmaku_realtime_hint')}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.45),
                       ),
-                      OutlinedButton(
-                        onPressed: () => _applyPreset('dense'),
-                        child: Text(i18n('danmaku_template_dense')),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: _saveTemplate,
-                        icon: const Icon(Icons.save_outlined),
-                        label: Text(i18n('save_current_template')),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: _restoreTemplate,
-                        icon: const Icon(Icons.restore_rounded),
-                        label: Text(i18n('restore_saved_template')),
-                      ),
-                      TextButton(onPressed: () => _applyPreset('default'), child: Text(i18n('reset'))),
                     ],
                   ),
                 ),
@@ -132,7 +142,7 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
                   value: controller.danmakuSpeed.value.toDouble(),
                   min: 20,
                   max: 400,
-                  display: controller.danmakuSpeed.value.toStringAsFixed(2),
+                  display: '${controller.danmakuSpeed.value.toInt()} px/s',
                   onChanged: (v) => controller.danmakuSpeed.value = v,
                   labelColor: labelColor,
                   digitColor: digitColor,
@@ -143,7 +153,7 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
                   value: controller.danmakuFontSize.value.toDouble(),
                   min: 10,
                   max: 30,
-                  display: controller.danmakuFontSize.value.toStringAsFixed(2),
+                  display: '${controller.danmakuFontSize.value.toStringAsFixed(1)} px',
                   onChanged: (v) => controller.danmakuFontSize.value = v,
                   labelColor: labelColor,
                   digitColor: digitColor,
@@ -160,9 +170,9 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
                   title: i18n("stroke"),
                   value: controller.danmakuFontBorder.value.toDouble(),
                   min: 0,
-                  max: 8,
-                  display: controller.danmakuFontBorder.value.toStringAsFixed(1),
-                  onChanged: (v) => controller.danmakuFontBorder.value = v.toInt(),
+                  max: 4,
+                  display: '${controller.danmakuFontBorder.value.toStringAsFixed(1)} px',
+                  onChanged: (v) => controller.danmakuFontBorder.value = v,
                   labelColor: labelColor,
                   digitColor: digitColor,
                 ),
@@ -226,17 +236,17 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
 
   void _applyPreset(String preset) {
     final values = switch (preset) {
-      'best' => const [0.72, 0.0, 12.0, 125.0, 17.0, 4.0, 0.92, 1.0],
-      'comfort' => const [0.65, 0.0, 16.0, 105.0, 18.0, 4.0, 0.9, 1.0],
-      'dense' => const [0.9, 0.0, 8.0, 145.0, 15.0, 3.0, 0.88, 1.0],
-      _ => const [1.0, 0.0, 0.0, 120.0, 16.0, 4.0, 1.0, 1.0],
+      'best' => const [0.20, 0.0, 0.0, 118.0, 16.0, 1.5, 0.92, 1.0],
+      'comfort' => const [0.35, 0.0, 0.0, 105.0, 17.0, 1.5, 0.9, 1.0],
+      'dense' => const [0.55, 0.0, 0.0, 138.0, 15.0, 1.2, 0.88, 1.0],
+      _ => const [1.0, 0.0, 0.0, 120.0, 16.0, 1.5, 1.0, 1.0],
     };
     controller.danmakuArea.v = values[0];
     controller.danmakuTopArea.v = values[1];
     controller.danmakuBottomArea.v = values[2];
     controller.danmakuSpeed.v = values[3];
     controller.danmakuFontSize.v = values[4];
-    controller.danmakuFontBorder.v = values[5].toInt();
+    controller.danmakuFontBorder.v = values[5];
     controller.danmakuOpacity.v = values[6];
     controller.enableDanmakuStroke.v = values[7] == 1;
     SettingsService.to.danmaku.danmakuAutoFps.v = true;
@@ -272,7 +282,7 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
       controller.danmakuBottomArea.v = (value['bottom'] as num).toDouble();
       controller.danmakuSpeed.v = (value['speed'] as num).toDouble();
       controller.danmakuFontSize.v = (value['fontSize'] as num).toDouble();
-      controller.danmakuFontBorder.v = (value['fontBorder'] as num).toInt();
+      controller.danmakuFontBorder.v = (value['fontBorder'] as num).toDouble();
       controller.danmakuOpacity.v = (value['opacity'] as num).toDouble();
       controller.enableDanmakuStroke.v = value['stroke'] == true;
       controller.danmakuFps.v = (value['fps'] as num?)?.toInt() ?? 60;

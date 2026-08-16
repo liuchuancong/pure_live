@@ -13,6 +13,8 @@ AGP、Gradle 和 Kotlin 按 Flutter 3.47 的兼容矩阵升级，并跟进 9.1/2
 
 `flutter pub outdated` 已于 2026-08-16 再次复核。本次升级 `flutter_json` 0.2.0、`permission_handler` 13.0.1、`xml` 7.0.1、`hooks` 2.1.0、`image` 4.9.1、`build_runner` 2.16.0，并将 `synchronized` 锁定到 3.4.1+2；`flutter_inappwebview` 使用官方仓库当前 6.2.0-beta.3 提交。所有直接运行时依赖处于当前上游最新版或项目 Git 仓库最新提交；报告中的 8 项更新均属于 Flutter SDK 或当前上游约束锁定的传递依赖。
 
+播放器依赖在 v2.0.32 再次单独核验：`video_player` 更新并锁定到 2.14.0，`better_player_plus` 已是 1.3.5；项目使用的 `Predidit/media-kit` 修订分支 HEAD 仍为 `994465d9bfca3f39d0b41199d16e7fd93fe97881`。`pub outdated` 中其余较新版本均为当前 Flutter SDK或上游依赖约束下暂不可解析的传递包，未用强制 override 破坏播放器组合兼容性。
+
 ## 可复现依赖
 
 - 应用提交 `pubspec.lock`，所有 hosted 包锁定具体版本。

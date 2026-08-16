@@ -5,6 +5,7 @@ import 'index.dart';
 
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pure_live/common/utils/live_url_tool.dart';
@@ -48,7 +49,7 @@ class LivePlayPage extends GetView<LivePlayController> {
             // landscape engine attached, then the old widget detached the
             // shared controller and left the new overlay silent.  Replace the
             // layout atomically so danmaku survives orientation/fullscreen.
-            child: _buildConstrainedChild(isInPip, mode, context),
+            child: _withLocalGiftEffect(_buildConstrainedChild(isInPip, mode, context)),
           ),
         );
       }
@@ -57,9 +58,48 @@ class LivePlayPage extends GetView<LivePlayController> {
         color: Colors.black,
         width: double.infinity,
         height: double.infinity,
-        child: _buildConstrainedChild(isInPip, mode, context),
+        child: _withLocalGiftEffect(_buildConstrainedChild(isInPip, mode, context)),
       );
     });
+  }
+
+  Widget _withLocalGiftEffect(Widget child) {
+    final message = controller.localGiftEffect.value;
+    if (message == null) return child;
+    final color = Color.fromARGB(255, message.color.r, message.color.g, message.color.b);
+    final fullEffect = message.data is Map && message.data['effect'] == 'full';
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        child,
+        IgnorePointer(
+          child: Center(
+            child: TweenAnimationBuilder<double>(
+              key: ValueKey(message),
+              tween: Tween(begin: .72, end: 1),
+              duration: const Duration(milliseconds: 420),
+              curve: Curves.easeOutBack,
+              builder: (context, scale, effectChild) => Transform.scale(scale: scale, child: effectChild),
+              child: Container(
+                constraints: BoxConstraints(maxWidth: fullEffect ? 440 : 320),
+                padding: EdgeInsets.symmetric(horizontal: fullEffect ? 28 : 20, vertical: fullEffect ? 24 : 14),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: [color.withValues(alpha: .94), Colors.black.withValues(alpha: .78)]),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Colors.white.withValues(alpha: .45)),
+                  boxShadow: [BoxShadow(color: color.withValues(alpha: .55), blurRadius: fullEffect ? 42 : 24)],
+                ),
+                child: Text(
+                  message.message,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white, fontSize: fullEffect ? 20 : 16, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildConstrainedChild(bool isInPip, VideoMode mode, BuildContext context) {
@@ -631,34 +671,69 @@ class LivePlayPage extends GetView<LivePlayController> {
   }
 
   void showTimerDialog(BuildContext context) {
-    showDialog(
+    final durationController = TextEditingController(text: controller.state.value.ui.closeTimes.toString());
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
+        title: Text(i18n('room_playback_timer')),
         content: Obx(() {
           final uiState = controller.state.value.ui;
           return Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               SwitchListTile(
-                title: Text(i18n("sleep_timer")),
+                title: Text(i18n('room_playback_timer_enable')),
+                subtitle: Text(i18n('room_playback_timer_desc')),
                 contentPadding: EdgeInsets.zero,
                 value: uiState.closeTimeFlag,
                 activeThumbColor: Theme.of(context).colorScheme.primary,
                 onChanged: (bool value) => controller.updateTimerFlag(value),
               ),
-              Slider(
-                min: 0,
-                max: 240,
-                label: i18n("auto_refresh_time"),
-                value: uiState.closeTimes.toDouble(),
-                onChanged: (value) => controller.updateTimerTimes(value.toInt()),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: const [15, 30, 45, 60, 90, 120, 240, 480]
+                    .map(
+                      (minutes) => ActionChip(
+                        label: Text('$minutes ${i18n('minutes')}'),
+                        onPressed: () => durationController.text = minutes.toString(),
+                      ),
+                    )
+                    .toList(),
               ),
-              Text(i18n("auto_close_time", args: {"time": uiState.closeTimes.toString()})),
+              const SizedBox(height: 16),
+              TextField(
+                controller: durationController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: i18n('room_playback_timer_duration'),
+                  suffixText: i18n('minutes'),
+                  helperText: i18n('room_playback_timer_custom_hint'),
+                  border: const OutlineInputBorder(),
+                ),
+              ),
             ],
           );
         }),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n('cancel'))),
+          FilledButton(
+            onPressed: () {
+              final minutes = int.tryParse(durationController.text.trim());
+              if (minutes == null || minutes < 1 || minutes > AppSettingsController.maxSleepMinutes) {
+                ToastUtil.show(i18n('room_playback_timer_custom_hint'));
+                return;
+              }
+              controller.updateTimerTimes(minutes);
+              controller.updateTimerFlag(true);
+              Navigator.of(context).pop();
+            },
+            child: Text(i18n('start_timer')),
+          ),
+        ],
       ),
-    );
+    ).whenComplete(durationController.dispose);
   }
 }
 
@@ -673,19 +748,41 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
   LivePlayController get controller => Get.find<LivePlayController>();
 
   Widget buildInfoCount() {
-    final state = controller.state.value;
     if (controller.site == Sites.iptvSite) return const SizedBox.shrink();
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Icon(Icons.whatshot_rounded, size: 14),
-        const SizedBox(width: 4),
-        Text(
-          state.room.detail?.watching != null ? readableCount(state.room.detail!.watching!) : '0',
-          style: Get.textTheme.bodySmall,
-        ),
-      ],
-    );
+    return Obx(() {
+      final room = controller.state.value.room.detail;
+      if (room == null) return const SizedBox.shrink();
+      final app = SettingsService.to.app;
+      final type = room.audienceType(
+        preferRealOnline: app.preferRealOnlineCounts.v,
+        platformEnabled: app.isRealOnlineEnabledFor(room.platform),
+      );
+      final value = room.audienceValue(
+        preferRealOnline: app.preferRealOnlineCounts.v,
+        platformEnabled: app.isRealOnlineEnabledFor(room.platform),
+      );
+      final icon = switch (type) {
+        AudienceMetricType.onlineViewers => Icons.people_alt_rounded,
+        AudienceMetricType.totalViewers => Icons.visibility_rounded,
+        AudienceMetricType.followers => Icons.favorite_rounded,
+        _ => Icons.whatshot_rounded,
+      };
+      final label = i18n(switch (type) {
+        AudienceMetricType.onlineViewers => 'audience_online',
+        AudienceMetricType.totalViewers => 'audience_total',
+        AudienceMetricType.followers => 'audience_followers',
+        AudienceMetricType.popularity => 'audience_popularity',
+        AudienceMetricType.unknown => 'audience_count',
+      });
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14),
+          const SizedBox(width: 4),
+          Text('$label ${readableCount(value)}', style: Get.textTheme.bodySmall),
+        ],
+      );
+    });
   }
 
   Widget _buildResolutionSelector() {

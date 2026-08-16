@@ -72,6 +72,8 @@ class DanmakuController extends GetxController {
             videoController.sendDanmaku(msg);
           }
         }
+      } else if (msg.type == LiveMessageType.online) {
+        _main.updateRuntimeAudience(msg.data);
       }
     };
 

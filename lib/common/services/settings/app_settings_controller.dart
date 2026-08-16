@@ -5,6 +5,9 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 
 class AppSettingsController extends GetxController {
+  static const int maxSleepMinutes = 525600;
+  static const List<String> defaultRealOnlinePlatforms = ['huya', 'douyin', 'kuaishou', 'cc'];
+
   Worker? _highRefreshRateWorker;
 
   final RxInt autoRefreshTime = hiveInt('autoRefreshTime', 3);
@@ -21,6 +24,7 @@ class AppSettingsController extends GetxController {
   final RxBool showSplashPage = hiveBool('showSplashPage', true);
   final RxBool enableHighRefreshRate = hiveBool('enableHighRefreshRate', true);
   final RxBool preferRealOnlineCounts = hiveBool('preferRealOnlineCounts', false);
+  late final RxList<String> realOnlinePlatforms = hiveStringList('realOnlinePlatforms', defaultRealOnlinePlatforms);
 
   late final RxList<String> savedMenuIds = hiveStringList('savedMenuIds', HomeMenu.values.map((e) => e.id).toList());
 
@@ -53,6 +57,18 @@ class AppSettingsController extends GetxController {
     savedMenuIds.v = ids;
   }
 
+  bool isRealOnlineEnabledFor(String? platform) => realOnlinePlatforms.contains(platform);
+
+  void setRealOnlineEnabledFor(String platform, bool enabled) {
+    final next = List<String>.from(realOnlinePlatforms);
+    if (enabled) {
+      if (!next.contains(platform)) next.add(platform);
+    } else {
+      next.remove(platform);
+    }
+    realOnlinePlatforms.v = next;
+  }
+
   // ======================
   // 备份/恢复
   // ======================
@@ -70,6 +86,7 @@ class AppSettingsController extends GetxController {
       'showSplashPage': showSplashPage.v,
       'enableHighRefreshRate': enableHighRefreshRate.v,
       'preferRealOnlineCounts': preferRealOnlineCounts.v,
+      'realOnlinePlatforms': realOnlinePlatforms.v,
       'savedMenuIds': savedMenuIds.v,
     };
   }
@@ -79,7 +96,7 @@ class AppSettingsController extends GetxController {
     enableDenseFavorites.v = json['enableDenseFavorites'] ?? true;
     enableBackgroundPlay.v = json['enableBackgroundPlay'] ?? false;
     enableAsmrSleepMode.v = json['enableAsmrSleepMode'] ?? false;
-    asmrSleepMinutes.v = (((json['asmrSleepMinutes'] as num?)?.toInt() ?? 60).clamp(1, 720)).toInt();
+    asmrSleepMinutes.v = (((json['asmrSleepMinutes'] as num?)?.toInt() ?? 60).clamp(1, maxSleepMinutes)).toInt();
     enableRotateScreen.v = json['enableRotateScreen'] ?? false;
     enableScreenKeepOn.v = json['enableScreenKeepOn'] ?? true;
     enableAutoCheckUpdate.v = json['enableAutoCheckUpdate'] ?? true;
@@ -87,6 +104,7 @@ class AppSettingsController extends GetxController {
     showSplashPage.v = json['showSplashPage'] ?? true;
     enableHighRefreshRate.v = json['enableHighRefreshRate'] ?? true;
     preferRealOnlineCounts.v = json['preferRealOnlineCounts'] ?? false;
+    realOnlinePlatforms.v = List<String>.from(json['realOnlinePlatforms'] ?? defaultRealOnlinePlatforms);
     savedMenuIds.v = List<String>.from(json['savedMenuIds'] ?? HomeMenu.values.map((e) => e.id).toList());
   }
 
@@ -97,7 +115,7 @@ class AppSettingsController extends GetxController {
       'enableDenseFavorites': app['enableDenseFavorites'] ?? true,
       'enableBackgroundPlay': app['enableBackgroundPlay'] ?? false,
       'enableAsmrSleepMode': app['enableAsmrSleepMode'] ?? false,
-      'asmrSleepMinutes': (((app['asmrSleepMinutes'] as num?)?.toInt() ?? 60).clamp(1, 720)).toInt(),
+      'asmrSleepMinutes': (((app['asmrSleepMinutes'] as num?)?.toInt() ?? 60).clamp(1, maxSleepMinutes)).toInt(),
       'enableRotateScreen': app['enableRotateScreen'] ?? false,
       'enableScreenKeepOn': app['enableScreenKeepOn'] ?? true,
       'enableAutoCheckUpdate': app['enableAutoCheckUpdate'] ?? true,
@@ -105,6 +123,7 @@ class AppSettingsController extends GetxController {
       'showSplashPage': app['showSplashPage'] ?? true,
       'enableHighRefreshRate': app['enableHighRefreshRate'] ?? true,
       'preferRealOnlineCounts': app['preferRealOnlineCounts'] ?? false,
+      'realOnlinePlatforms': List<String>.from(app['realOnlinePlatforms'] ?? defaultRealOnlinePlatforms),
       'savedMenuIds': List<String>.from(app['savedMenuIds'] ?? []),
     };
   }

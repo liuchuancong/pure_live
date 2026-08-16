@@ -13,8 +13,19 @@ class LiveRoom {
   String? avatar = '';
   String? cover = '';
   String? area = '';
+
+  /// Legacy single audience field kept for backup compatibility.
   String? watching = '';
   AudienceMetricType? audienceMetricType;
+
+  /// Platform popularity/heat. This is not a head count.
+  String? popularity = '';
+
+  /// Concurrent viewers when the platform exposes an explicit value.
+  String? onlineViewers = '';
+
+  /// Cumulative viewers for the current live session.
+  String? totalViewers = '';
   String? followers = '';
   String? platform = 'UNKNOWN';
   List<String> tagIds = [];
@@ -63,6 +74,9 @@ class LiveRoom {
     this.area,
     this.watching = '0',
     this.audienceMetricType,
+    this.popularity = '',
+    this.onlineViewers = '',
+    this.totalViewers = '',
     this.followers = '0',
     this.platform,
     this.liveStatus,
@@ -96,6 +110,9 @@ class LiveRoom {
         (value) => value.name == json['audienceMetricType'],
         orElse: () => AudienceMetricType.unknown,
       ),
+      popularity = json['popularity']?.toString() ?? '',
+      onlineViewers = json['onlineViewers']?.toString() ?? '',
+      totalViewers = json['totalViewers']?.toString() ?? '',
       followers = json['followers']?.toString() ?? '0',
       platform = json['platform'] ?? 'UNKNOWN',
       tagIds = List<String>.from(json['tagIds'] ?? []),
@@ -124,6 +141,9 @@ class LiveRoom {
     String? area,
     String? watching,
     AudienceMetricType? audienceMetricType,
+    String? popularity,
+    String? onlineViewers,
+    String? totalViewers,
     String? followers,
     String? platform,
     String? introduction,
@@ -153,11 +173,16 @@ class LiveRoom {
       area: area ?? this.area,
       watching: watching ?? this.watching,
       audienceMetricType: audienceMetricType ?? this.audienceMetricType,
+      popularity: popularity ?? this.popularity,
+      onlineViewers: onlineViewers ?? this.onlineViewers,
+      totalViewers: totalViewers ?? this.totalViewers,
       followers: followers ?? this.followers,
       platform: platform ?? this.platform,
       introduction: introduction ?? this.introduction,
       notice: notice ?? this.notice,
       status: status ?? this.status,
+      data: data ?? this.data,
+      danmakuData: danmakuData ?? this.danmakuData,
       isRecord: isRecord ?? this.isRecord,
       liveStatus: liveStatus ?? this.liveStatus,
       epgId: epgId ?? this.epgId,
@@ -201,6 +226,9 @@ class LiveRoom {
       'area': area,
       'watching': watching,
       'audienceMetricType': effectiveAudienceMetricType.name,
+      'popularity': popularity,
+      'onlineViewers': onlineViewers,
+      'totalViewers': totalViewers,
       'followers': followers,
       'platform': platform,
       'tagIds': tagIds,
@@ -225,7 +253,8 @@ class LiveRoom {
     }
     return switch (platform) {
       'bilibili' || 'douyu' => AudienceMetricType.popularity,
-      'huya' || 'kuaishou' => AudienceMetricType.onlineViewers,
+      'kuaishou' => AudienceMetricType.onlineViewers,
+      'huya' => AudienceMetricType.popularity,
       'douyin' => AudienceMetricType.totalViewers,
       _ => AudienceMetricType.unknown,
     };
@@ -239,5 +268,67 @@ class LiveRoom {
     AudienceMetricType.unknown => 'audience_count',
   };
 
-  bool get supportsRealOnlineCount => effectiveAudienceMetricType == AudienceMetricType.onlineViewers;
+  String get effectivePopularity {
+    if (_hasAudienceValue(popularity)) return popularity!.trim();
+    return effectiveAudienceMetricType == AudienceMetricType.popularity ? (watching ?? '').trim() : '';
+  }
+
+  String get effectiveOnlineViewers {
+    if (_hasExplicitAudienceValue(onlineViewers)) return onlineViewers!.trim();
+    return effectiveAudienceMetricType == AudienceMetricType.onlineViewers && _hasExplicitAudienceValue(watching)
+        ? (watching ?? '').trim()
+        : '';
+  }
+
+  String get effectiveTotalViewers {
+    if (_hasAudienceValue(totalViewers)) return totalViewers!.trim();
+    return effectiveAudienceMetricType == AudienceMetricType.totalViewers ? (watching ?? '').trim() : '';
+  }
+
+  bool get supportsRealOnlineCount => _hasExplicitAudienceValue(effectiveOnlineViewers);
+
+  String audienceValue({required bool preferRealOnline, required bool platformEnabled}) {
+    if (preferRealOnline && platformEnabled && supportsRealOnlineCount) return effectiveOnlineViewers;
+    if (_hasAudienceValue(effectivePopularity)) return effectivePopularity;
+    if (_hasAudienceValue(effectiveTotalViewers)) return effectiveTotalViewers;
+    if (supportsRealOnlineCount) return effectiveOnlineViewers;
+    return (watching ?? '0').trim();
+  }
+
+  AudienceMetricType audienceType({required bool preferRealOnline, required bool platformEnabled}) {
+    if (preferRealOnline && platformEnabled && supportsRealOnlineCount) return AudienceMetricType.onlineViewers;
+    if (_hasAudienceValue(effectivePopularity)) return AudienceMetricType.popularity;
+    if (_hasAudienceValue(effectiveTotalViewers)) return AudienceMetricType.totalViewers;
+    if (supportsRealOnlineCount) return AudienceMetricType.onlineViewers;
+    return effectiveAudienceMetricType;
+  }
+
+  int audienceSortValue({required bool preferRealOnline, required bool platformEnabled}) {
+    return parseAudienceNumber(audienceValue(preferRealOnline: preferRealOnline, platformEnabled: platformEnabled));
+  }
+
+  static int parseAudienceNumber(String? value) {
+    final text = value?.trim().toLowerCase() ?? '';
+    if (text.isEmpty) return 0;
+    final match = RegExp(r'([0-9]+(?:\.[0-9]+)?)').firstMatch(text.replaceAll(',', ''));
+    final number = double.tryParse(match?.group(1) ?? '') ?? 0;
+    final multiplier = text.contains('亿')
+        ? 100000000
+        : (text.contains('万') || text.contains('w'))
+        ? 10000
+        : text.contains('k')
+        ? 1000
+        : 1;
+    return (number * multiplier).round();
+  }
+
+  static bool _hasAudienceValue(String? value) {
+    final text = value?.trim() ?? '';
+    return text.isNotEmpty && text != 'null' && parseAudienceNumber(text) > 0;
+  }
+
+  static bool _hasExplicitAudienceValue(String? value) {
+    final text = value?.trim() ?? '';
+    return text.isNotEmpty && text != 'null' && RegExp(r'[0-9]').hasMatch(text);
+  }
 }

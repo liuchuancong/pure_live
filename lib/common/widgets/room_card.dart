@@ -687,23 +687,34 @@ class RoomCard extends StatelessWidget {
                     Positioned(
                       right: 8,
                       bottom: 8,
-                      child: Obx(
-                        () => CountChip(
-                          icon: SettingsService.to.app.preferRealOnlineCounts.v
-                              ? Icons.people_alt_rounded
-                              : switch (room.effectiveAudienceMetricType) {
-                                  AudienceMetricType.onlineViewers => Icons.people_alt_rounded,
-                                  AudienceMetricType.followers => Icons.favorite_rounded,
-                                  AudienceMetricType.totalViewers => Icons.visibility_rounded,
-                                  _ => Icons.whatshot_rounded,
-                                },
-                          count: SettingsService.to.app.preferRealOnlineCounts.v
-                              ? '${i18n('audience_online')} · ${room.supportsRealOnlineCount ? readableCount(room.watching ?? "0") : i18n('audience_real_online_unavailable')}'
-                              : '${i18n(room.audienceMetricI18nKey)} · ${readableCount(room.watching ?? "0")}',
+                      child: Obx(() {
+                        final app = SettingsService.to.app;
+                        final preferReal = app.preferRealOnlineCounts.v;
+                        final platformEnabled = app.isRealOnlineEnabledFor(room.platform);
+                        final type = room.audienceType(preferRealOnline: preferReal, platformEnabled: platformEnabled);
+                        final value = room.audienceValue(
+                          preferRealOnline: preferReal,
+                          platformEnabled: platformEnabled,
+                        );
+                        final labelKey = switch (type) {
+                          AudienceMetricType.popularity => 'audience_popularity',
+                          AudienceMetricType.onlineViewers => 'audience_online',
+                          AudienceMetricType.totalViewers => 'audience_total',
+                          AudienceMetricType.followers => 'audience_followers',
+                          AudienceMetricType.unknown => 'audience_count',
+                        };
+                        return CountChip(
+                          icon: switch (type) {
+                            AudienceMetricType.onlineViewers => Icons.people_alt_rounded,
+                            AudienceMetricType.followers => Icons.favorite_rounded,
+                            AudienceMetricType.totalViewers => Icons.visibility_rounded,
+                            _ => Icons.whatshot_rounded,
+                          },
+                          count: '${i18n(labelKey)} · ${readableCount(value)}',
                           dense: dense,
                           color: Get.theme.primaryColor,
-                        ),
-                      ),
+                        );
+                      }),
                     ),
                 ],
               ),

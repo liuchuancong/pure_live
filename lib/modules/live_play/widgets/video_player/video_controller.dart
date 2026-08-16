@@ -78,7 +78,7 @@ class DanmakuManager {
       dm.danmakuSpeed.v = migratedSpeed;
     }
     videoController.danmakuFontSize.value = dm.danmakuFontSize.v;
-    videoController.danmakuFontBorder.value = dm.danmakuFontBorder.v.toInt();
+    videoController.danmakuFontBorder.value = dm.danmakuFontBorder.v;
     videoController.danmakuOpacity.value = dm.danmakuOpacity.v;
     videoController.enableDanmakuStroke.value = dm.enableDanmakuStroke.v;
     videoController.danmakuFps.value = dm.danmakuFps.v;
@@ -248,7 +248,7 @@ class VideoController with ChangeNotifier {
   final danmakuBottomArea = 0.0.obs;
   final danmakuSpeed = 120.0.obs;
   final danmakuFontSize = 16.0.obs;
-  final danmakuFontBorder = 4.obs;
+  final danmakuFontBorder = 1.5.obs;
   final danmakuOpacity = 1.0.obs;
   final enableDanmakuStroke = true.obs;
   final danmakuFps = 60.obs;
@@ -584,7 +584,8 @@ class VideoController with ChangeNotifier {
         bottomAreaDistance: danmakuBottomArea.value,
         baseSpeed: danmakuSpeed.value,
         opacity: danmakuOpacity.value,
-        fontWeight: FontWeight.values[danmakuFontBorder.value],
+        fontWeight: FontWeight.w600,
+        strokeWidth: danmakuFontBorder.value,
         showStroke: enableDanmakuStroke.value,
         fps: SettingsService.to.danmaku.resolvedDanmakuFps(),
         trackHeight: (danmakuFontSize.value * 1.55).clamp(24.0, 64.0).toDouble(),
@@ -597,8 +598,18 @@ class VideoController with ChangeNotifier {
     _danmakuManager.sendDanmaku(msg, _playerManager.isPlayingNow, _playerManager.isCompactModeActive);
   }
 
-  bool handleDanmakuPointer(Offset position, {required bool longPress}) =>
-      _danmakuManager.handlePointer(position, longPress: longPress);
+  bool handleDanmakuPointer(Offset globalPosition, {required bool longPress}) {
+    final renderObject = danmuKey.currentContext?.findRenderObject();
+    if (renderObject is! RenderBox || !renderObject.hasSize) return false;
+    final localPosition = renderObject.globalToLocal(globalPosition);
+    if (localPosition.dx < 0 ||
+        localPosition.dy < 0 ||
+        localPosition.dx > renderObject.size.width ||
+        localPosition.dy > renderObject.size.height) {
+      return false;
+    }
+    return _danmakuManager.handlePointer(localPosition, longPress: longPress);
+  }
 
   void clearPipDanmaku() => pipDanmakuController.clear();
 

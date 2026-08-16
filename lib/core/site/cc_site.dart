@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/model/live_category.dart';
 import 'package:pure_live/core/common/core_log.dart';
@@ -87,6 +88,7 @@ class CCSite implements LiveSite {
           nick: item["nickname"].toString(),
           watching: item["webcc_visitor"].toString(),
           audienceMetricType: AudienceMetricType.onlineViewers,
+          onlineViewers: item["webcc_visitor"].toString(),
           avatar: item["purl"],
           area: item["game_name"] ?? '',
           liveStatus: LiveStatus.live,
@@ -159,6 +161,7 @@ class CCSite implements LiveSite {
           nick: item["nickname"].toString(),
           watching: item["vision_visitor"].toString(),
           audienceMetricType: AudienceMetricType.onlineViewers,
+          onlineViewers: item["vision_visitor"].toString(),
           avatar: item["purl"],
           area: item["game_name"] ?? '',
           liveStatus: LiveStatus.live,
@@ -186,10 +189,15 @@ class CCSite implements LiveSite {
       String urlToGetReal = "https://cc.163.com/live/channel/?channelids=$channelId";
       var resultReal = await HttpClient.instance.getJson(urlToGetReal, queryParameters: {'anchor_ccid': roomId});
       var roomInfo = resultReal["data"][0];
+      final onlineViewers =
+          [roomInfo['webcc_visitor'], roomInfo['vision_visitor'], roomInfo['visitor'], roomInfo['online_num']]
+              .map((value) => value?.toString() ?? '')
+              .firstWhere((value) => LiveRoom.parseAudienceNumber(value) > 0, orElse: () => '');
       return LiveRoom(
         cover: roomInfo["cover"],
-        watching: roomInfo["follower_num"].toString(),
-        audienceMetricType: AudienceMetricType.followers,
+        watching: onlineViewers.isNotEmpty ? onlineViewers : roomInfo["follower_num"].toString(),
+        onlineViewers: onlineViewers,
+        audienceMetricType: onlineViewers.isNotEmpty ? AudienceMetricType.onlineViewers : AudienceMetricType.followers,
         roomId: roomInfo["ccid"].toString(),
         area: roomInfo["gamename"],
         title: roomInfo["title"],

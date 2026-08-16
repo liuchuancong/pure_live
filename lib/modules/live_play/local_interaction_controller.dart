@@ -18,11 +18,33 @@ class LocalGift {
   final String effect;
 }
 
+class LocalPlatformPack {
+  const LocalPlatformPack({
+    required this.id,
+    required this.name,
+    required this.currencyKey,
+    required this.levelKey,
+    required this.accentColor,
+    required this.badge,
+  });
+
+  final String id;
+  final String name;
+  final String currencyKey;
+  final String levelKey;
+  final Color accentColor;
+  final String badge;
+}
+
 class LocalInteractionController extends GetxController {
   final RxBool enabled = hiveBool('localInteraction.enabled', true);
   final RxString userName = hiveString('localInteraction.userName', 'Pure Live');
   final RxString selectedTitle = hiveString('localInteraction.title', 'listener');
   final RxBool showAsDanmaku = hiveBool('localInteraction.showAsDanmaku', true);
+  final RxBool showPlatformBadge = hiveBool('localInteraction.showPlatformBadge', true);
+  final RxBool showLevelBadge = hiveBool('localInteraction.showLevelBadge', true);
+  final RxBool enableGiftEffects = hiveBool('localInteraction.enableGiftEffects', true);
+  final RxString previewPlatform = hiveString('localInteraction.previewPlatform', Sites.bilibiliSite);
   final RxInt coins = hiveInt('localInteraction.coins', 1000);
   final RxInt experience = hiveInt('localInteraction.experience', 0);
   final RxList<String> history = hiveStringList('localInteraction.history', const []);
@@ -49,6 +71,57 @@ class LocalInteractionController extends GetxController {
       emoji: '🏰',
       price: 2000,
       color: LiveMessageColor(138, 43, 226),
+    ),
+  ];
+
+  static const platformPacks = <LocalPlatformPack>[
+    LocalPlatformPack(
+      id: Sites.bilibiliSite,
+      name: '哔哩哔哩',
+      currencyKey: 'local_currency_bili',
+      levelKey: 'local_level_bili',
+      accentColor: Color(0xFF00AEEC),
+      badge: '📺',
+    ),
+    LocalPlatformPack(
+      id: Sites.douyuSite,
+      name: '斗鱼',
+      currencyKey: 'local_currency_douyu',
+      levelKey: 'local_level_douyu',
+      accentColor: Color(0xFFFF6A00),
+      badge: '🐟',
+    ),
+    LocalPlatformPack(
+      id: Sites.huyaSite,
+      name: '虎牙',
+      currencyKey: 'local_currency_huya',
+      levelKey: 'local_level_huya',
+      accentColor: Color(0xFFFF9800),
+      badge: '🐯',
+    ),
+    LocalPlatformPack(
+      id: Sites.douyinSite,
+      name: '抖音',
+      currencyKey: 'local_currency_douyin',
+      levelKey: 'local_level_douyin',
+      accentColor: Color(0xFFFE2C55),
+      badge: '🎵',
+    ),
+    LocalPlatformPack(
+      id: Sites.kuaishouSite,
+      name: '快手',
+      currencyKey: 'local_currency_kuaishou',
+      levelKey: 'local_level_kuaishou',
+      accentColor: Color(0xFFFF4906),
+      badge: '🎬',
+    ),
+    LocalPlatformPack(
+      id: Sites.ccSite,
+      name: '网易 CC',
+      currencyKey: 'local_currency_cc',
+      levelKey: 'local_level_cc',
+      accentColor: Color(0xFFFF4D7D),
+      badge: '🎮',
     ),
   ];
 
@@ -226,6 +299,9 @@ class LocalInteractionController extends GetxController {
 
   static List<LocalGift> giftsForPlatform(String platform) => _platformGifts[platform] ?? gifts;
 
+  static LocalPlatformPack packForPlatform(String platform) =>
+      platformPacks.firstWhere((pack) => pack.id == platform, orElse: () => platformPacks.first);
+
   static String platformBadgeKey(String platform) => switch (platform) {
     Sites.bilibiliSite => 'local_badge_bilibili',
     Sites.douyuSite => 'local_badge_douyu',
@@ -236,7 +312,12 @@ class LocalInteractionController extends GetxController {
     _ => 'local_badge_generic',
   };
 
-  String profileLabel(String platform) => '${i18n(platformBadgeKey(platform))} · $titleLabel';
+  String profileLabel(String platform) {
+    final parts = <String>[];
+    if (showPlatformBadge.v) parts.add('${packForPlatform(platform).badge} ${i18n(platformBadgeKey(platform))}');
+    parts.add(titleLabel);
+    return parts.join(' · ');
+  }
 
   LiveMessage createChat(String text, {String platform = ''}) {
     return LiveMessage(
@@ -244,7 +325,7 @@ class LocalInteractionController extends GetxController {
       userName: '${profileLabel(platform)} · ${userName.v}',
       message: text.trim(),
       color: LiveMessageColor.white,
-      userLevel: level.toString(),
+      userLevel: showLevelBadge.v ? level.toString() : '',
       isLocal: true,
     );
   }
@@ -268,10 +349,10 @@ class LocalInteractionController extends GetxController {
         'count': 1,
         'local': true,
         'platform': platform,
-        'effect': gift.effect,
+        'effect': enableGiftEffects.v ? gift.effect : 'none',
       },
       color: gift.color,
-      userLevel: level.toString(),
+      userLevel: showLevelBadge.v ? level.toString() : '',
       fansName: titleLabel,
       isLocal: true,
     );

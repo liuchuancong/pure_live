@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
@@ -139,7 +140,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
                   title: i18n('asmr_sleep_timer'),
                   subtitle: i18n('asmr_sleep_timer_desc'),
                   trailing: Text(
-                    '${SettingsService.to.app.asmrSleepMinutes.v} ${i18n('minutes')}',
+                    _formatDuration(SettingsService.to.app.asmrSleepMinutes.v),
                     style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
                   ),
                   onTap: () => _showAsmrSleepTimerDialog(context),
@@ -207,69 +208,75 @@ class VideoSettingsPage extends GetView<SettingsService> {
   }
 
   void _showAsmrSleepTimerDialog(BuildContext context) {
-    const options = [30, 45, 60, 90, 120, 180, 240, 480];
+    const options = [15, 30, 45, 60, 90, 120, 240, 480, 720, 1440];
     final customController = TextEditingController(text: SettingsService.to.app.asmrSleepMinutes.v.toString());
     showDialog<void>(
       context: context,
-      builder: (dialogContext) => SimpleDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text(i18n('asmr_sleep_timer')),
-        children: [
-          ...options.map(
-            (minutes) => Obx(
-              () => ListTile(
-                title: Text('$minutes ${i18n('minutes')}'),
-                trailing: SettingsService.to.app.asmrSleepMinutes.v == minutes
-                    ? Icon(Icons.check_rounded, color: Theme.of(dialogContext).colorScheme.primary)
-                    : null,
-                onTap: () async {
-                  SettingsService.to.app.asmrSleepMinutes.v = minutes;
-                  await LiveAudioService.configureSleepTimer(
-                    enabled: LiveAudioService.isSleepSessionActive,
-                    minutes: minutes,
-                  );
-                  if (dialogContext.mounted) Navigator.of(dialogContext).pop();
-                },
-              ),
-            ),
-          ),
-          const Divider(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-            child: Row(
+        content: SizedBox(
+          width: 360,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: customController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: i18n('custom_sleep_minutes'),
-                      helperText: i18n('custom_sleep_minutes_range'),
-                    ),
-                  ),
+                Text(i18n('asmr_sleep_timer_explain'), style: Theme.of(dialogContext).textTheme.bodySmall),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: options
+                      .map(
+                        (minutes) => ActionChip(
+                          label: Text(_formatDuration(minutes)),
+                          onPressed: () => customController.text = minutes.toString(),
+                        ),
+                      )
+                      .toList(),
                 ),
-                const SizedBox(width: 12),
-                FilledButton(
-                  onPressed: () async {
-                    final minutes = int.tryParse(customController.text.trim());
-                    if (minutes == null || minutes < 1 || minutes > 720) {
-                      ToastUtil.show(i18n('custom_sleep_minutes_range'));
-                      return;
-                    }
-                    SettingsService.to.app.asmrSleepMinutes.v = minutes;
-                    await LiveAudioService.configureSleepTimer(
-                      enabled: LiveAudioService.isSleepSessionActive,
-                      minutes: minutes,
-                    );
-                    if (dialogContext.mounted) Navigator.of(dialogContext).pop();
-                  },
-                  child: Text(i18n('save')),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: customController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: i18n('custom_sleep_minutes'),
+                    helperText: i18n('custom_sleep_minutes_range'),
+                    suffixText: i18n('minutes'),
+                    border: const OutlineInputBorder(),
+                  ),
                 ),
               ],
             ),
           ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(i18n('cancel'))),
+          FilledButton(
+            onPressed: () async {
+              final minutes = int.tryParse(customController.text.trim());
+              if (minutes == null || minutes < 1 || minutes > AppSettingsController.maxSleepMinutes) {
+                ToastUtil.show(i18n('custom_sleep_minutes_range'));
+                return;
+              }
+              SettingsService.to.app.asmrSleepMinutes.v = minutes;
+              await LiveAudioService.configureSleepTimer(
+                enabled: LiveAudioService.isSleepSessionActive,
+                minutes: minutes,
+              );
+              if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+            },
+            child: Text(i18n('save')),
+          ),
         ],
       ),
     ).whenComplete(customController.dispose);
+  }
+
+  String _formatDuration(int minutes) {
+    if (minutes % 1440 == 0) return '${minutes ~/ 1440} ${i18n('days')}';
+    if (minutes % 60 == 0) return '${minutes ~/ 60} ${i18n('hours')}';
+    return '$minutes ${i18n('minutes')}';
   }
 
   void showPreferResolutionSelectorDialog() {

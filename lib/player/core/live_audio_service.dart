@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:pure_live/player/core/live_audio_handler.dart';
 import 'package:pure_live/player/interface/unified_player_interface.dart';
@@ -69,7 +70,7 @@ class LiveAudioService {
   }
 
   static Future<void> configureSleepTimer({required bool enabled, required int minutes}) async {
-    _sleepMinutes = minutes.clamp(1, 720).toInt();
+    _sleepMinutes = minutes.clamp(1, AppSettingsController.maxSleepMinutes).toInt();
     BackgroundPlaybackService.sleepSessionActive = enabled;
     _handler?.configureSleepTimer(enabled ? Duration(minutes: _sleepMinutes) : null);
     await syncKeepAlive();

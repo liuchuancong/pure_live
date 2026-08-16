@@ -42,6 +42,7 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
 
   final Rx<LivePlayState> state = const LivePlayState().obs;
   final RxList<LiveMessage> danmakuMessages = <LiveMessage>[].obs;
+  final Rxn<LiveMessage> localGiftEffect = Rxn<LiveMessage>();
 
   late Site currentSite;
   late TabController tabController;
@@ -50,6 +51,7 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
 
   bool _floatingResourcesReleased = false;
   bool _asmrSessionActive = false;
+  Timer? _localGiftEffectTimer;
   late final String _controllerTag;
 
   @override
@@ -65,7 +67,7 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
       // ASMR is the only automatic audio-only entry point. Manual headphone
       // switching is scoped to the current room and is never persisted.
       player: PlayerState(isCurrentRoomAudioOnly: autoStartAsmr),
-      ui: UIState(closeTimes: 240, closeTimeFlag: false),
+      ui: UIState(closeTimes: 60, closeTimeFlag: false),
     );
     unawaited(
       LiveAudioService.configureSleepTimer(enabled: autoStartAsmr, minutes: SettingsService.to.app.asmrSleepMinutes.v),
@@ -77,7 +79,7 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
   }
 
   void _initControllers() {
-    timerController = Get.put(TimerController(), tag: 'timer-$_controllerTag');
+    timerController = Get.put(TimerController(onEnded: _onRoomPlaybackTimerEnded), tag: 'timer-$_controllerTag');
     danmakuController = Get.put(DanmakuController(this), tag: 'danmaku-$_controllerTag');
     playerController = Get.put(PlayerController(this), tag: 'player-$_controllerTag');
 
@@ -187,11 +189,41 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
     updateDanmaku(messages: currentMessages);
   }
 
+  Future<void> _onRoomPlaybackTimerEnded() async {
+    updateUI(closeTimeFlag: false);
+    await GlobalPlayerService.instance.playerManager.pause();
+    await LiveAudioService.stop();
+    ToastUtil.show(i18n('room_playback_timer_finished'));
+  }
+
+  void updateRuntimeAudience(dynamic value) {
+    final rawValue = value?.toString().trim() ?? '';
+    if (!RegExp(r'[0-9]').hasMatch(rawValue)) return;
+    final count = LiveRoom.parseAudienceNumber(rawValue);
+    final detail = state.value.room.detail;
+    if (detail == null) return;
+    final text = count.toString();
+    final isPopularityHeartbeat = detail.platform == Sites.bilibiliSite;
+    updateRoom(
+      detail: detail.copyWith(
+        watching: text,
+        popularity: isPopularityHeartbeat ? text : detail.popularity,
+        onlineViewers: isPopularityHeartbeat ? detail.onlineViewers : text,
+        audienceMetricType: isPopularityHeartbeat ? AudienceMetricType.popularity : AudienceMetricType.onlineViewers,
+      ),
+    );
+  }
+
   void emitLocalMessage(LiveMessage msg, {required bool showAsDanmaku}) {
     if (!localInteractionController.enabled.v) return;
     addDanmakuMessage(msg);
     if (showAsDanmaku) {
       state.value.player.videoController?.sendDanmaku(msg);
+    }
+    if (msg.type == LiveMessageType.gift && localInteractionController.enableGiftEffects.v) {
+      localGiftEffect.v = msg;
+      _localGiftEffectTimer?.cancel();
+      _localGiftEffectTimer = Timer(const Duration(seconds: 3), () => localGiftEffect.v = null);
     }
   }
 
@@ -521,6 +553,7 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
 
   @override
   void onClose() {
+    _localGiftEffectTimer?.cancel();
     tabController.dispose();
 
     if (Platform.isAndroid) {

@@ -1,9 +1,12 @@
-import 'dart:io';
 import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 
 class TimerController extends GetxController {
+  TimerController({required this.onEnded});
+
+  final FutureOr<void> Function() onEnded;
   final StopWatchTimer _stopWatchTimer = StopWatchTimer(mode: StopWatchMode.countDown);
   StreamSubscription<dynamic>? _timerEndedSubscription;
 
@@ -16,17 +19,19 @@ class TimerController extends GetxController {
   void _initTimer() {
     _timerEndedSubscription = _stopWatchTimer.fetchEnded.listen((_) {
       _stopWatchTimer.onStopTimer();
-      exit(0);
+      unawaited(Future.sync(onEnded));
     });
   }
 
   void toggleTimer(bool enabled, int minutes) {
     if (enabled) {
       _stopWatchTimer.onStopTimer();
-      _stopWatchTimer.setPresetMinuteTime(minutes, add: false);
+      _stopWatchTimer.onResetTimer();
+      _stopWatchTimer.setPresetMinuteTime(minutes.clamp(1, 525600).toInt(), add: false);
       _stopWatchTimer.onStartTimer();
     } else {
       _stopWatchTimer.onStopTimer();
+      _stopWatchTimer.onResetTimer();
     }
   }
 

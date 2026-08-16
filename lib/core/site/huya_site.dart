@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:crypto/crypto.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -109,6 +110,8 @@ class HuyaSite implements LiveSite {
         cover: cover,
         nick: item["nick"].toString(),
         watching: item["totalCount"].toString(),
+        popularity: item["totalCount"].toString(),
+        audienceMetricType: AudienceMetricType.popularity,
         avatar: item["avatar180"],
         area: item["gameFullName"].toString(),
         liveStatus: LiveStatus.live,
@@ -214,6 +217,8 @@ class HuyaSite implements LiveSite {
           nick: item["nick"].toString(),
           avatar: item["avatar180"],
           watching: item["totalCount"].toString(),
+          popularity: item["totalCount"].toString(),
+          audienceMetricType: AudienceMetricType.popularity,
           platform: Sites.huyaSite,
           liveStatus: LiveStatus.live,
           status: true,
@@ -327,6 +332,9 @@ class HuyaSite implements LiveSite {
       return LiveRoom(
         cover: data['liveData']?['screenshot'] ?? '',
         watching: data['liveData']?['userCount']?.toString() ?? '',
+        onlineViewers: data['liveData']?['userCount']?.toString() ?? '',
+        popularity: data['liveData']?['totalCount']?.toString() ?? '',
+        audienceMetricType: AudienceMetricType.onlineViewers,
         roomId: roomId,
         area: data['liveData']?['gameFullName'] ?? '',
         title: data['liveData']?['introduction'] ?? '',
@@ -412,6 +420,8 @@ class HuyaSite implements LiveSite {
         liveStatus: LiveStatus.live,
         avatar: item["game_imgUrl"].toString(),
         watching: item["game_total_count"].toString(),
+        popularity: item["game_total_count"].toString(),
+        audienceMetricType: AudienceMetricType.popularity,
         platform: Sites.huyaSite,
       );
       items.add(roomItem);
