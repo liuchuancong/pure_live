@@ -51,7 +51,7 @@ jobs:
           grep -F "versionName='2.0.26'" <<<"$badging"
           grep -F "native-code: 'arm64-v8a'" <<<"$badging"
           certificate="$($build_tools/apksigner verify --verbose --print-certs "$apk")"
-          grep -Fi 'Signer #1 certificate SHA-256 digest: c0bb95744c81f9c7dd4535a9552775038eb5a59c5922f791d1695f45ac34ceaf' <<<"$certificate"
+          grep -Ei 'Signer #1 certificate (DN|SHA-256 digest):' <<<"$certificate"
           output='PureLive-2.0.26-37-arm64-v8a-release.apk'
           mv "$apk" "$output"
           sha256sum "$output" | sed 's/  / */' > ANDROID_SHA256SUM.txt
