@@ -39,6 +39,16 @@ class LiveMessage {
   /// 粉丝牌子名
   final String fansName;
   final bool isLocal;
+
+  /// Stable identifier supplied by the platform when available. It is used to
+  /// suppress replayed packets after a WebSocket reconnect without treating
+  /// two genuine messages with the same text as one message.
+  final String messageId;
+
+  /// Original platform timestamp. A missing timestamp means the platform did
+  /// not expose one and reception time is used for ordering instead.
+  final DateTime? sentAt;
+
   LiveMessage({
     required this.type,
     required this.userName,
@@ -50,6 +60,8 @@ class LiveMessage {
     this.fansLevel = "",
     this.fansName = "",
     this.isLocal = false,
+    this.messageId = "",
+    this.sentAt,
   });
 }
 

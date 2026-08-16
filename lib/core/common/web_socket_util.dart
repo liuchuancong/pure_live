@@ -91,26 +91,33 @@ class WebScoketUtils {
         await channel.sink.close();
         return;
       }
-      _ready(channel);
+      _ready(channel, generation);
     } catch (error) {
       if (!_manualClose && generation == _generation) {
         _scheduleReconnect(error.toString());
       }
     } finally {
-      if (generation == _generation) _connecting = false;
+      // A manual close increments the generation while channel.ready is still
+      // pending. Leaving this flag set in that path permanently blocks a later
+      // connection attempt on the same helper.
+      _connecting = false;
     }
   }
 
-  void _ready(IOWebSocketChannel channel) {
+  void _ready(IOWebSocketChannel channel, int generation) {
     status = SocketStatus.connected;
     reconnectTimer?.cancel();
     reconnectTimer = null;
 
     streamSubscription = channel.stream.listen(
-      receiveMessage,
-      onError: (Object error, StackTrace stackTrace) => _scheduleReconnect(error.toString()),
+      (data) {
+        if (!_manualClose && generation == _generation) receiveMessage(data);
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        if (!_manualClose && generation == _generation) _scheduleReconnect(error.toString());
+      },
       onDone: () {
-        if (!_manualClose) _scheduleReconnect('WebSocket closed');
+        if (!_manualClose && generation == _generation) _scheduleReconnect('WebSocket closed');
       },
       cancelOnError: true,
     );
@@ -142,7 +149,7 @@ class WebScoketUtils {
 
     if (reconnectTime >= maxReconnectTime) {
       onClose?.call('重连超过最大次数，与服务器断开连接：$message');
-      close();
+      unawaited(close());
       return;
     }
 
@@ -173,13 +180,13 @@ class WebScoketUtils {
     } catch (_) {}
   }
 
-  void close() {
+  Future<void> close() async {
     _manualClose = true;
     _generation++;
     status = SocketStatus.closed;
     reconnectTimer?.cancel();
     reconnectTimer = null;
-    unawaited(_disposeSocket());
+    await _disposeSocket();
   }
 
   void reconnect() {

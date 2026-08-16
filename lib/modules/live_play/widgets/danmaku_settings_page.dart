@@ -22,66 +22,67 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
     final theme = Theme.of(context);
     final Color labelColor = theme.colorScheme.onSurface;
     final Color digitColor = theme.colorScheme.primary;
+    Widget reactiveCard(List<Widget> Function() builder) => Obx(() => context.buildModernCard(builder()));
 
     return Scaffold(
       body: SingleChildScrollView(
         physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Obx(
-          () => Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              context.buildGroupTitle(i18n('danmaku_templates')),
-              const SizedBox(height: 8),
-              context.buildModernCard([
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          FilledButton.tonalIcon(
-                            onPressed: () => _applyPreset('best'),
-                            icon: const Icon(Icons.auto_awesome_rounded),
-                            label: Text(i18n('danmaku_template_best')),
-                          ),
-                          OutlinedButton(
-                            onPressed: () => _applyPreset('comfort'),
-                            child: Text(i18n('danmaku_template_comfort')),
-                          ),
-                          OutlinedButton(
-                            onPressed: () => _applyPreset('dense'),
-                            child: Text(i18n('danmaku_template_dense')),
-                          ),
-                          OutlinedButton.icon(
-                            onPressed: _saveTemplate,
-                            icon: const Icon(Icons.save_outlined),
-                            label: Text(i18n('save_current_template')),
-                          ),
-                          OutlinedButton.icon(
-                            onPressed: _restoreTemplate,
-                            icon: const Icon(Icons.restore_rounded),
-                            label: Text(i18n('restore_saved_template')),
-                          ),
-                          TextButton(onPressed: () => _applyPreset('default'), child: Text(i18n('reset'))),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        '${i18n('danmaku_best_preset_desc')}\n${i18n('danmaku_realtime_hint')}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.45),
-                      ),
-                    ],
-                  ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            context.buildGroupTitle(i18n('danmaku_templates')),
+            const SizedBox(height: 8),
+            context.buildModernCard([
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        FilledButton.tonalIcon(
+                          onPressed: () => _applyPreset('best'),
+                          icon: const Icon(Icons.auto_awesome_rounded),
+                          label: Text(i18n('danmaku_template_best')),
+                        ),
+                        OutlinedButton(
+                          onPressed: () => _applyPreset('comfort'),
+                          child: Text(i18n('danmaku_template_comfort')),
+                        ),
+                        OutlinedButton(
+                          onPressed: () => _applyPreset('dense'),
+                          child: Text(i18n('danmaku_template_dense')),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: _saveTemplate,
+                          icon: const Icon(Icons.save_outlined),
+                          label: Text(i18n('save_current_template')),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: _restoreTemplate,
+                          icon: const Icon(Icons.restore_rounded),
+                          label: Text(i18n('restore_saved_template')),
+                        ),
+                        TextButton(onPressed: () => _applyPreset('default'), child: Text(i18n('reset'))),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      '${i18n('danmaku_best_preset_desc')}\n${i18n('danmaku_realtime_hint')}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.45),
+                    ),
+                  ],
                 ),
-              ]),
-              const SizedBox(height: 20),
-              context.buildGroupTitle(i18n("danmaku_area")),
-              const SizedBox(height: 8),
-              context.buildModernCard([
+              ),
+            ]),
+            const SizedBox(height: 20),
+            context.buildGroupTitle(i18n("danmaku_area")),
+            const SizedBox(height: 8),
+            reactiveCard(
+              () => [
                 _slider(
                   theme,
                   title: i18n("danmaku_area"),
@@ -93,13 +94,15 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
                   labelColor: labelColor,
                   digitColor: digitColor,
                 ),
-              ]),
+              ],
+            ),
 
-              const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-              context.buildGroupTitle(i18n("position")),
-              const SizedBox(height: 8),
-              context.buildModernCard([
+            context.buildGroupTitle(i18n("position")),
+            const SizedBox(height: 8),
+            reactiveCard(
+              () => [
                 _counter(
                   theme,
                   title: i18n("margin_top"),
@@ -118,13 +121,15 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
                   labelColor: labelColor,
                   digitColor: digitColor,
                 ),
-              ]),
+              ],
+            ),
 
-              const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-              context.buildGroupTitle(i18n("style")),
-              const SizedBox(height: 8),
-              context.buildModernCard([
+            context.buildGroupTitle(i18n("style")),
+            const SizedBox(height: 8),
+            reactiveCard(
+              () => [
                 _slider(
                   theme,
                   title: i18n("opacity"),
@@ -203,11 +208,13 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
                       style: TextStyle(color: digitColor, fontWeight: FontWeight.w600),
                     ),
                   ),
-              ]),
-              const SizedBox(height: 20),
-              context.buildGroupTitle(i18n('danmaku_screen_interaction')),
-              const SizedBox(height: 8),
-              context.buildModernCard([
+              ],
+            ),
+            const SizedBox(height: 20),
+            context.buildGroupTitle(i18n('danmaku_screen_interaction')),
+            const SizedBox(height: 8),
+            reactiveCard(
+              () => [
                 _switch(
                   theme,
                   title: i18n('danmaku_tap_action'),
@@ -222,13 +229,13 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
                   onChanged: (v) => SettingsService.to.danmaku.enableDanmakuLongPressInteraction.v = v,
                   labelColor: labelColor,
                 ),
-              ]),
-              const SizedBox(height: 20),
+              ],
+            ),
+            const SizedBox(height: 20),
 
-              const PipDanmakuSettingsSection(),
-              const SizedBox(height: 24),
-            ],
-          ),
+            const PipDanmakuSettingsSection(),
+            const SizedBox(height: 24),
+          ],
         ),
       ),
     );

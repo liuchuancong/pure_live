@@ -33,7 +33,7 @@ class DanmakuMessageActions {
                 onTap: () {
                   SettingsService.to.fav.addBlockedDanmakuUser(message.userName);
                   if (Get.isRegistered<LivePlayController>()) {
-                    Get.find<LivePlayController>().danmakuMessages.removeWhere(
+                    Get.find<LivePlayController>().removeDanmakuWhere(
                       (item) => item.userName.trim().toLowerCase() == message.userName.trim().toLowerCase(),
                     );
                   }
@@ -81,7 +81,7 @@ class DanmakuMessageActions {
     if (keyword == null || keyword.isEmpty) return;
     SettingsService.to.fav.addShieldList(keyword);
     if (Get.isRegistered<LivePlayController>()) {
-      Get.find<LivePlayController>().danmakuMessages.removeWhere(
+      Get.find<LivePlayController>().removeDanmakuWhere(
         (item) => item.message.toLowerCase().contains(keyword.toLowerCase()),
       );
     }

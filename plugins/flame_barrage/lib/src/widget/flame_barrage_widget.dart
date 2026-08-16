@@ -39,7 +39,7 @@ class _FlameBarrageWidgetState extends State<FlameBarrageWidget> {
       _engine.updateConfig(widget.config);
     }
     if (oldWidget.controller != widget.controller) {
-      oldWidget.controller.detach();
+      oldWidget.controller.detach(_engine);
       _initControllerCallbacks();
     }
   }
@@ -80,7 +80,7 @@ class _FlameBarrageWidgetState extends State<FlameBarrageWidget> {
 
   @override
   void dispose() {
-    widget.controller.detach();
+    widget.controller.detach(_engine);
     super.dispose();
   }
 

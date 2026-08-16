@@ -28,8 +28,14 @@ class BarrageController {
     _engine = engine;
   }
 
-  void detach() {
+  void detach([dynamic engine]) {
+    if (engine != null && !identical(_engine, engine)) return;
     _engine = null;
+    _onAddDanmaku = null;
+    _onUpdateOption = null;
+    _onPause = null;
+    _onResume = null;
+    _onClear = null;
   }
 
   void send(dynamic item) {
@@ -83,6 +89,16 @@ class BarrageController {
     if (currentEngine != null) {
       try {
         return currentEngine.activePoolSize as int;
+      } catch (_) {}
+    }
+    return 0;
+  }
+
+  int get pendingMessageCount {
+    final currentEngine = _engine;
+    if (currentEngine != null) {
+      try {
+        return currentEngine.pendingMessageCount as int;
       } catch (_) {}
     }
     return 0;

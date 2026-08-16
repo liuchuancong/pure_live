@@ -81,6 +81,8 @@ class BiliBiliDanmaku implements LiveDanmaku {
 
   @override
   Future start(dynamic args) async {
+    await webScoketUtils?.close();
+    webScoketUtils = null;
     danmakuArgs = args as BiliBiliDanmakuArgs;
     _stopped = false;
     _credentialRefreshCount = 0;
@@ -103,10 +105,11 @@ class BiliBiliDanmaku implements LiveDanmaku {
         return;
       }
     }
-    _connect(danmakuArgs);
+    await _connect(danmakuArgs);
   }
 
-  void _connect(BiliBiliDanmakuArgs args) {
+  Future<void> _connect(BiliBiliDanmakuArgs args) async {
+    if (_stopped) return;
     final endpoints = args.serverUrls.isEmpty ? const ['wss://broadcastlv.chat.bilibili.com/sub'] : args.serverUrls;
     webScoketUtils = WebScoketUtils(
       url: endpoints.first,
@@ -137,7 +140,7 @@ class BiliBiliDanmaku implements LiveDanmaku {
         onClose?.call("服务器连接失败$e");
       },
     );
-    webScoketUtils?.connect();
+    await webScoketUtils?.connect();
   }
 
   Future<void> _refreshCredentialsAndReconnect() async {
@@ -148,8 +151,9 @@ class BiliBiliDanmaku implements LiveDanmaku {
       final refreshed = await danmakuArgs.refresh?.call();
       if (_stopped || refreshed == null || refreshed.token.isEmpty) return;
       danmakuArgs = refreshed;
-      webScoketUtils?.close();
-      _connect(refreshed);
+      await webScoketUtils?.close();
+      if (_stopped) return;
+      await _connect(refreshed);
     } catch (error) {
       CoreLog.error(error);
     } finally {
@@ -187,7 +191,8 @@ class BiliBiliDanmaku implements LiveDanmaku {
     onMessage = null;
     onClose = null;
     onReady = null;
-    webScoketUtils?.close();
+    await webScoketUtils?.close();
+    webScoketUtils = null;
   }
 
   List<int> encodeData(String msg, int action) {
@@ -315,12 +320,20 @@ class BiliBiliDanmaku implements LiveDanmaku {
           var color = asT<int?>(obj["info"][0][3]) ?? 0;
           if (obj["info"][2] != null && obj["info"][2].length != 0) {
             var username = obj["info"][2][1].toString();
+            final metadata = obj["info"][0] is List ? obj["info"][0] as List : const <dynamic>[];
+            final rawTimestamp = metadata.length > 4 ? int.tryParse(metadata[4]?.toString() ?? '') : null;
+            final rawNonce = metadata.length > 5 ? metadata[5]?.toString() ?? '' : '';
+            final sentAt = rawTimestamp == null
+                ? null
+                : DateTime.fromMillisecondsSinceEpoch(rawTimestamp > 100000000000 ? rawTimestamp : rawTimestamp * 1000);
             var liveMsg = LiveMessage(
               type: LiveMessageType.chat,
               userName: username,
               userId: obj["info"][2][0]?.toString() ?? '',
               message: message,
               color: color == 0 ? LiveMessageColor.white : LiveMessageColor.numberToColor(color),
+              messageId: rawNonce.isEmpty ? '' : 'bilibili:$rawNonce',
+              sentAt: sentAt,
             );
             onMessage?.call(liveMsg);
           }

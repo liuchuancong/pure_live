@@ -1,8 +1,8 @@
 {
-  "version": "2.0.32",
-  "build_number": 43,
-  "version_num": 2003243,
-  "version_desc": "- 严格拆分平台热度、真实在线人数与累计观看，并提供全局排行口径和分平台开关。\n- 重新设计自动助眠、当前直播间停止和应用定时退出，支持 1 分钟至 365 天自定义。\n- 弹幕最佳模板调整为画面顶部 20%，样式实时生效，并修复横竖屏点击和长按坐标。\n- 增强六平台本地身份、等级、体验币、礼物目录和画面礼物效果。\n- 更新 video_player 2.14.0，并复核 Better Player Plus 与 MediaKit 固定提交。\n",
+  "version": "2.0.33",
+  "build_number": 44,
+  "version_num": 2003344,
+  "version_desc": "- 弹幕连接按平台和房间隔离，快速切换、横竖屏与小窗切换时不再串房。\n- 增加消息时间校验、稳定 ID 去重和有界积压队列，减少旧消息、重复循环、停更与恢复后突发。\n- 统一主画面、小窗弹幕速度与逻辑帧时钟，高刷新率和恢复播放时运动更稳定。\n- 弹幕历史改为批量刷新，屏蔽管理及设置页分区响应并使用虚拟列表，优化 Android 与 Windows 滚动。\n- 修复抖音 ACK/压缩响应、斗鱼合帧解析与房间校验，增强 Bilibili、虎牙消息元数据。\n",
   "prerelease": false,
   "download_url": "https://github.com/wzgrx/pure_live/releases"
 }

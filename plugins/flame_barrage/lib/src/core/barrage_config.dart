@@ -21,6 +21,8 @@ class BarrageConfig {
     this.trackHeight = 36,
     this.emojiSize = 24,
     this.maxVisibleCount = 80,
+    this.maxPendingCount = 120,
+    this.maxPendingAge = const Duration(seconds: 5),
     this.emitInterval = 0.1,
     this.baseSpeed = 120.0,
     this.strokeWidth = 1.0,
@@ -79,6 +81,13 @@ class BarrageConfig {
   /// Hard cap regulating max concurrent components allowed in the active layout rendering tree.
   final int maxVisibleCount;
 
+  /// Hard cap for messages waiting on a free lane. Live streams can produce
+  /// large bursts; an unbounded queue eventually renders minutes-old content.
+  final int maxPendingCount;
+
+  /// Maximum wall-clock age of a message before it enters the screen.
+  final Duration maxPendingAge;
+
   /// The dispatch clock ticking time interval during normal concurrency traffic pumping.
   final double emitInterval;
 
@@ -130,6 +139,8 @@ class BarrageConfig {
     double? trackHeight,
     double? emojiSize,
     int? maxVisibleCount,
+    int? maxPendingCount,
+    Duration? maxPendingAge,
     double? emitInterval,
     double? baseSpeed,
     double? overlapSafeGap,
@@ -157,6 +168,8 @@ class BarrageConfig {
       trackHeight: trackHeight ?? this.trackHeight,
       emojiSize: emojiSize ?? this.emojiSize,
       maxVisibleCount: maxVisibleCount ?? this.maxVisibleCount,
+      maxPendingCount: maxPendingCount ?? this.maxPendingCount,
+      maxPendingAge: maxPendingAge ?? this.maxPendingAge,
       emitInterval: emitInterval ?? this.emitInterval,
       baseSpeed: baseSpeed ?? this.baseSpeed,
       overlapSafeGap: overlapSafeGap ?? this.overlapSafeGap,
@@ -189,6 +202,8 @@ class BarrageConfig {
         other.trackHeight == trackHeight &&
         other.emojiSize == emojiSize &&
         other.maxVisibleCount == maxVisibleCount &&
+        other.maxPendingCount == maxPendingCount &&
+        other.maxPendingAge == maxPendingAge &&
         other.emitInterval == emitInterval &&
         other.baseSpeed == baseSpeed &&
         other.overlapSafeGap == overlapSafeGap &&
@@ -218,6 +233,8 @@ class BarrageConfig {
       trackHeight,
       emojiSize,
       maxVisibleCount,
+      maxPendingCount,
+      maxPendingAge,
       emitInterval,
       overlapSafeGap,
       noEmojiMode,

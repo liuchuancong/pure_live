@@ -55,6 +55,8 @@ class CompactDanmakuOverlay extends StatelessWidget {
                   trackHeight: (fontSize * 1.8).clamp(18.0, 44.0).toDouble(),
                   emojiSize: (fontSize * 1.35).clamp(14.0, 32.0).toDouble(),
                   maxVisibleCount: maxVisibleCount,
+                  maxPendingCount: 36,
+                  maxPendingAge: const Duration(seconds: 3),
                   emitInterval: emitInterval,
                   overlapSafeGap: (fontSize * 1.5).clamp(16.0, 40.0).toDouble(),
                   barragePoolMaxSize: 60,

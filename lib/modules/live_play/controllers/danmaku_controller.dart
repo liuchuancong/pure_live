@@ -1,119 +1,264 @@
-import 'package:pure_live/common/index.dart';
-import 'package:pure_live/core/interface/live_danmaku.dart';
-import 'package:pure_live/modules/live_play/states/live_play_state.dart';
-import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
+import 'dart:async';
 
+import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/common/core_log.dart';
+import 'package:pure_live/core/interface/live_danmaku.dart';
+import 'package:pure_live/modules/live_play/controllers/danmaku_message_gate.dart';
+import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/states/live_play_state.dart';
+
+/// Owns exactly one room-bound danmaku session.
+///
+/// Room switches, setting changes, player reloads and floating-window teardown
+/// can arrive in the same event-loop turn. Every transition is serialized and
+/// every callback carries a session token, so an old socket can never append a
+/// packet to the newly opened room.
 class DanmakuController extends GetxController {
   DanmakuController(this._main);
 
   final LivePlayController _main;
-  late LiveDanmaku liveDanmaku;
-  bool _initialized = false;
+  final DanmakuMessageGate _messageGate = DanmakuMessageGate();
+
+  LiveDanmaku? _liveDanmaku;
+  Future<void> _operationTail = Future<void>.value();
   Worker? _settingsWorker;
+  Worker? _filterWorker;
+
+  int _requestEpoch = 0;
+  int _sessionToken = 0;
+  String? _sessionKey;
+  String? _connectingKey;
+  String? _gateRoomKey;
+  String? _lastStatusText;
+  DateTime? _lastStatusAt;
+  Set<String> _blockedUsers = const <String>{};
+  List<String> _blockedKeywords = const <String>[];
 
   LivePlayState get _state => _main.state.value;
+  bool get _initialized => _liveDanmaku != null;
+  LiveDanmaku get liveDanmaku => _liveDanmaku!;
 
   @override
   void onInit() {
     super.onInit();
-    final settings = SettingsService.to.danmaku;
+    final settings = SettingsService.to;
     _settingsWorker = everAll([
-      settings.enableDanmakuDisplay,
-      settings.enablePipDanmaku,
-    ], (_) => _syncConnectionForSettings());
+      settings.danmaku.enableDanmakuDisplay,
+      settings.danmaku.enablePipDanmaku,
+    ], (_) => unawaited(_syncConnectionForSettings()));
+    _filterWorker = everAll([settings.fav.blockedDanmakuUsers, settings.fav.shieldList], (_) => _refreshFilters());
+    _refreshFilters();
   }
 
+  /// Initial engine installation is synchronous so room initialization cannot
+  /// race ahead of dependency setup.
   void initDanmaku(LiveDanmaku danmaku) {
-    if (_initialized) {
-      liveDanmaku.stop();
+    if (_liveDanmaku == null) {
+      _liveDanmaku = danmaku;
+      return;
     }
-    liveDanmaku = danmaku;
-    _initialized = true;
+    unawaited(replaceDanmaku(danmaku));
+  }
+
+  Future<void> replaceDanmaku(LiveDanmaku danmaku) {
+    final request = ++_requestEpoch;
+    return _serialize(() async {
+      if (request != _requestEpoch) return;
+      await _disconnectInternal(clearRenderer: true);
+      if (request != _requestEpoch) return;
+      _liveDanmaku = danmaku;
+      _messageGate.clear();
+      _gateRoomKey = null;
+    });
   }
 
   bool needReconnect(LiveRoom room) {
     if (!_initialized) return true;
-    final currentRoomId = _state.danmaku.currentDanmakuRoomId;
-    final newRoomId = room.roomId?.toString();
-
-    if (currentRoomId == null) return true;
-    if (currentRoomId != newRoomId) return true;
-    if (!liveDanmaku.isConnected) return true;
-
-    return false;
+    final key = _roomKey(room);
+    return _sessionKey != key && _connectingKey != key;
   }
 
-  void setupDanmaku() {
-    if (!_initialized) return;
-    final room = _state.room.detail;
-    if (room == null) return;
-    final settings = SettingsService.to.danmaku;
-    if (!settings.enableDanmakuDisplay.v && !settings.enablePipDanmaku.v) return;
+  Future<void> connectRoom(LiveRoom room) {
+    final request = ++_requestEpoch;
+    final key = _roomKey(room);
+    return _serialize(() async {
+      if (request != _requestEpoch || !_initialized) return;
+      if (_sessionKey == key || _connectingKey == key) return;
 
-    if (room.isRecord == true) {
-      _main.addSystemMessage(i18n('recording_mode_notice'));
-    }
+      final previousKey = _sessionKey ?? _connectingKey;
+      await _disconnectInternal(clearRenderer: previousKey != null && previousKey != key);
+      if (request != _requestEpoch || !_initialized) return;
 
-    _main.addSystemMessage(i18n('connect_danmaku_server'));
+      if (_gateRoomKey != key) {
+        _messageGate.clear();
+        _gateRoomKey = key;
+      }
 
-    liveDanmaku.onMessage = (msg) {
-      if (msg.type == LiveMessageType.chat) {
-        final favorite = SettingsService.to.fav;
-        final blockedUser = favorite.blockedDanmakuUsers.any(
-          (user) => user.toLowerCase() == msg.userName.trim().toLowerCase(),
-        );
-        final blockedKeyword = favorite.shieldList.any(
-          (keyword) => keyword.isNotEmpty && msg.message.toLowerCase().contains(keyword.toLowerCase()),
-        );
-        if (!blockedUser && !blockedKeyword) {
-          _main.addDanmakuMessage(msg);
-          final videoController = _state.player.videoController;
-          if (videoController != null) {
-            videoController.sendDanmaku(msg);
-          }
+      final engine = liveDanmaku;
+      final token = ++_sessionToken;
+      _connectingKey = key;
+      _installCallbacks(engine, room, key, token);
+
+      if (room.isRecord == true) _addStatusMessage(i18n('recording_mode_notice'));
+      _addStatusMessage(i18n('connect_danmaku_server'));
+
+      try {
+        await engine.start(room.danmakuData);
+      } catch (error, stackTrace) {
+        CoreLog.e(error.toString(), stackTrace);
+        if (_acceptsCallback(engine, key, token)) {
+          _connectingKey = null;
+          _sessionKey = null;
+          _main.updateDanmakuRoomId(null);
         }
+      }
+
+      if (request != _requestEpoch || !_acceptsCallback(engine, key, token)) {
+        _detachCallbacks(engine);
+        await engine.stop();
+      }
+    });
+  }
+
+  Future<void> stopDanmaku({bool clearRenderer = true}) {
+    final request = ++_requestEpoch;
+    return _serialize(() async {
+      if (request != _requestEpoch) return;
+      await _disconnectInternal(clearRenderer: clearRenderer);
+    });
+  }
+
+  void _installCallbacks(LiveDanmaku engine, LiveRoom room, String key, int token) {
+    engine.onMessage = (msg) {
+      if (!_acceptsCallback(engine, key, token)) return;
+      if (msg.type == LiveMessageType.chat) {
+        if (!_messageGate.accepts(msg) || _isBlocked(msg)) return;
+        _main.addDanmakuMessage(msg);
+        _state.player.videoController?.sendDanmaku(msg);
       } else if (msg.type == LiveMessageType.online) {
         _main.updateRuntimeAudience(msg.data);
       }
     };
 
-    liveDanmaku.onClose = (msg) {
-      _main.addSystemMessage(msg);
+    engine.onClose = (msg) {
+      if (!_acceptsCallback(engine, key, token)) return;
+      _addStatusMessage(msg);
+      // Transient reconnect notices retain ownership of this session. A final
+      // failure releases the room key so a manual refresh creates a fresh
+      // transport instead of remaining attached to a dead socket.
+      if (!msg.contains('正在尝试重连')) {
+        _sessionKey = null;
+        _connectingKey = null;
+        _main.updateDanmakuRoomId(null);
+      }
     };
 
-    liveDanmaku.onReady = () {
-      _main.addSystemMessage(i18n('danmaku_connected'));
+    engine.onReady = () {
+      if (!_acceptsCallback(engine, key, token)) return;
+      _connectingKey = null;
+      _sessionKey = key;
+      _main.updateDanmakuRoomId(room.roomId?.toString());
+      _addStatusMessage(i18n('danmaku_connected'));
     };
   }
 
-  void stopDanmaku() {
-    if (_initialized) liveDanmaku.stop();
+  bool _acceptsCallback(LiveDanmaku engine, String key, int token) {
+    return token == _sessionToken && identical(_liveDanmaku, engine) && (_sessionKey == key || _connectingKey == key);
   }
 
-  void _syncConnectionForSettings() {
+  bool _isBlocked(LiveMessage message) {
+    final user = message.userName.trim().toLowerCase();
+    if (user.isNotEmpty && _blockedUsers.contains(user)) return true;
+    final text = message.message.toLowerCase();
+    return _blockedKeywords.any(text.contains);
+  }
+
+  void _refreshFilters() {
+    final favorite = SettingsService.to.fav;
+    _blockedUsers = favorite.blockedDanmakuUsers
+        .map((user) => user.trim().toLowerCase())
+        .where((user) => user.isNotEmpty)
+        .toSet();
+    _blockedKeywords = favorite.shieldList
+        .map((keyword) => keyword.trim().toLowerCase())
+        .where((keyword) => keyword.isNotEmpty)
+        .toList(growable: false);
+  }
+
+  void _addStatusMessage(String text) {
+    final now = DateTime.now();
+    if (_lastStatusText == text &&
+        _lastStatusAt != null &&
+        now.difference(_lastStatusAt!) < const Duration(seconds: 3)) {
+      return;
+    }
+    _lastStatusText = text;
+    _lastStatusAt = now;
+    _main.addSystemMessage(text);
+  }
+
+  Future<void> _disconnectInternal({required bool clearRenderer}) async {
+    final engine = _liveDanmaku;
+    _sessionToken++;
+    _sessionKey = null;
+    _connectingKey = null;
+    _main.updateDanmakuRoomId(null);
+    if (clearRenderer) _main.clearRenderedDanmaku();
+    if (engine == null) return;
+    _detachCallbacks(engine);
+    try {
+      await engine.stop();
+    } catch (error, stackTrace) {
+      CoreLog.e(error.toString(), stackTrace);
+    }
+  }
+
+  void _detachCallbacks(LiveDanmaku engine) {
+    engine.onMessage = null;
+    engine.onClose = null;
+    engine.onReady = null;
+  }
+
+  Future<void> _syncConnectionForSettings() async {
     if (!_initialized) return;
     final room = _state.room.detail;
     if (room == null) return;
     const except = [Sites.kuaishouSite, Sites.iptvSite, Sites.ccSite];
-    if (except.contains(room.platform)) return;
-
     final settings = SettingsService.to.danmaku;
-    if (!settings.enableDanmakuDisplay.v && !settings.enablePipDanmaku.v) {
-      stopDanmaku();
-      _main.updateDanmakuRoomId(null);
-      return;
+    try {
+      if (except.contains(room.platform) || (!settings.enableDanmakuDisplay.v && !settings.enablePipDanmaku.v)) {
+        await stopDanmaku();
+      } else {
+        await connectRoom(room);
+      }
+    } catch (error, stackTrace) {
+      CoreLog.e(error.toString(), stackTrace);
     }
+  }
 
-    if (needReconnect(room)) {
-      setupDanmaku();
-      liveDanmaku.start(room.danmakuData);
-      _main.updateDanmakuRoomId(room.roomId);
-    }
+  String _roomKey(LiveRoom room) => '${room.platform ?? ''}:${room.roomId ?? ''}';
+
+  Future<void> _serialize(Future<void> Function() operation) {
+    final next = _operationTail.then((_) => operation());
+    _operationTail = next.catchError((Object error, StackTrace stackTrace) {
+      CoreLog.e(error.toString(), stackTrace);
+    });
+    return next;
   }
 
   @override
   void onClose() {
     _settingsWorker?.dispose();
+    _filterWorker?.dispose();
+    _requestEpoch++;
+    _sessionToken++;
+    final engine = _liveDanmaku;
+    if (engine != null) {
+      _detachCallbacks(engine);
+      unawaited(engine.stop());
+    }
+    _main.updateDanmakuRoomId(null);
+    _main.clearRenderedDanmaku();
     super.onClose();
   }
 }

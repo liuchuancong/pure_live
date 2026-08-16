@@ -27,8 +27,9 @@ class DanmakuListViewState extends State<DanmakuListView> {
 
   bool userScrolling = false;
   bool _autoScrollEnabled = true;
-  int _pendingMessageCount = 0;
-  LiveMessage? _lastObservedMessage;
+  final ValueNotifier<int> _pendingMessageCount = ValueNotifier<int>(0);
+  int _lastControllerLength = 0;
+  LiveMessage? _lastControllerTail;
   List<LiveMessage> _visibleMessages = const [];
   List<LiveMessage>? _scheduledSnapshot;
 
@@ -43,7 +44,8 @@ class DanmakuListViewState extends State<DanmakuListView> {
   void initState() {
     super.initState();
     _visibleMessages = List<LiveMessage>.from(controller.danmakuMessages);
-    if (_visibleMessages.isNotEmpty) _lastObservedMessage = _visibleMessages.last;
+    _lastControllerLength = _visibleMessages.length;
+    _lastControllerTail = _visibleMessages.isEmpty ? null : _visibleMessages.last;
 
     messagesSub = controller.danmakuMessages.listen((_) => _onMessagesChanged());
 
@@ -65,12 +67,17 @@ class DanmakuListViewState extends State<DanmakuListView> {
   void _onMessagesChanged() {
     if (!mounted) return;
     final snapshot = List<LiveMessage>.from(controller.danmakuMessages);
-    final newest = snapshot.isEmpty ? null : snapshot.last;
-    if (identical(newest, _lastObservedMessage)) return;
-    _lastObservedMessage = newest;
+    final nextTail = snapshot.isEmpty ? null : snapshot.last;
+    final tailChanged = !identical(nextTail, _lastControllerTail);
+    final lengthDelta = snapshot.length - _lastControllerLength;
+    final addedCount = lengthDelta > 0 ? lengthDelta : (tailChanged ? 1 : 0);
+    _lastControllerLength = snapshot.length;
+    _lastControllerTail = nextTail;
 
     if (!_autoScrollEnabled) {
-      setState(() => _pendingMessageCount++);
+      if (addedCount > 0) {
+        _pendingMessageCount.value = (_pendingMessageCount.value + addedCount).clamp(0, 9999);
+      }
       return;
     }
 
@@ -92,6 +99,7 @@ class DanmakuListViewState extends State<DanmakuListView> {
     windowFullscreenWorker?.dispose();
     throttleTimer?.cancel();
     _composerController.dispose();
+    _pendingMessageCount.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -102,8 +110,8 @@ class DanmakuListViewState extends State<DanmakuListView> {
     if (!mounted || !_scrollController.hasClients) return;
     final position = _scrollController.position;
     if (!position.hasContentDimensions) return;
-    if ((position.maxScrollExtent - position.pixels).abs() > 0.5) {
-      _scrollController.jumpTo(position.maxScrollExtent);
+    if ((position.pixels - position.minScrollExtent).abs() > 0.5) {
+      _scrollController.jumpTo(position.minScrollExtent);
     }
   }
 
@@ -115,8 +123,8 @@ class DanmakuListViewState extends State<DanmakuListView> {
     setState(() {
       _autoScrollEnabled = false;
       userScrolling = true;
-      _pendingMessageCount = 0;
     });
+    _pendingMessageCount.value = 0;
   }
 
   Future<void> _resumeAutoScroll() async {
@@ -124,20 +132,19 @@ class DanmakuListViewState extends State<DanmakuListView> {
       _visibleMessages = List<LiveMessage>.from(controller.danmakuMessages);
       _autoScrollEnabled = true;
       userScrolling = false;
-      _pendingMessageCount = 0;
     });
+    _lastControllerLength = controller.danmakuMessages.length;
+    _pendingMessageCount.value = 0;
     await forceScrollToBottom();
   }
 
   void onScrollNotification(ScrollNotification notification) {
     if (notification is! UserScrollNotification || !_scrollController.hasClients) return;
     final position = _scrollController.position;
-    final distanceToBottom = position.maxScrollExtent - position.pixels;
-    if (notification.direction == ScrollDirection.forward && distanceToBottom > 24) {
+    final distanceToBottom = position.pixels - position.minScrollExtent;
+    if (notification.direction != ScrollDirection.idle && distanceToBottom > 24) {
       _pauseAutoScroll();
-    } else if ((notification.direction == ScrollDirection.reverse || notification.direction == ScrollDirection.idle) &&
-        distanceToBottom <= 12 &&
-        !_autoScrollEnabled) {
+    } else if (notification.direction == ScrollDirection.idle && distanceToBottom <= 12 && !_autoScrollEnabled) {
       _resumeAutoScroll();
     }
   }
@@ -179,11 +186,12 @@ class DanmakuListViewState extends State<DanmakuListView> {
                       addAutomaticKeepAlives: false,
                       addRepaintBoundaries: true,
                       controller: _scrollController,
+                      reverse: true,
                       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-                      scrollCacheExtent: const ScrollCacheExtent.pixels(600),
+                      scrollCacheExtent: const ScrollCacheExtent.pixels(360),
                       itemCount: _visibleMessages.length,
                       itemBuilder: (_, index) {
-                        final msg = _visibleMessages[index];
+                        final msg = _visibleMessages[_visibleMessages.length - 1 - index];
                         return DanmakuItem(key: ObjectKey(msg), danmaku: msg);
                       },
                     ),
@@ -200,11 +208,14 @@ class DanmakuListViewState extends State<DanmakuListView> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         ),
                         icon: const Icon(Icons.arrow_downward_rounded, size: 18),
-                        label: Text(
-                          _pendingMessageCount > 0
-                              ? i18n('danmaku_new_messages', args: {'count': '$_pendingMessageCount'})
-                              : i18n('scroll_to_bottom'),
-                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        label: ValueListenableBuilder<int>(
+                          valueListenable: _pendingMessageCount,
+                          builder: (context, count, _) => Text(
+                            count > 0
+                                ? i18n('danmaku_new_messages', args: {'count': '$count'})
+                                : i18n('scroll_to_bottom'),
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
                         ),
                         onPressed: _resumeAutoScroll,
                       ),
@@ -290,13 +301,6 @@ class DanmakuItem extends StatelessWidget {
             color: cardBgColor, // 动态背景色
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: vibrantColor.withValues(alpha: 0.08), width: 0.5),
-            boxShadow: [
-              BoxShadow(
-                color: vibrantColor.withValues(alpha: isDark ? 0.05 : 0.02),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -308,11 +312,7 @@ class DanmakuItem extends StatelessWidget {
                   width: 8,
                   height: 8,
                   margin: const EdgeInsets.only(top: 6, right: 10),
-                  decoration: BoxDecoration(
-                    color: vibrantColor,
-                    shape: BoxShape.circle,
-                    boxShadow: [BoxShadow(color: vibrantColor.withValues(alpha: 0.2), blurRadius: 6)],
-                  ),
+                  decoration: BoxDecoration(color: vibrantColor, shape: BoxShape.circle),
                 ),
 
                 Expanded(

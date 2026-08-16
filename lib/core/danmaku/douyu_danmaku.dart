@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
+
 import '../common/binary_writer.dart';
+
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/common/models/live_message.dart';
 import 'package:pure_live/core/common/web_socket_util.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
+import 'package:meta/meta.dart';
 
 class DouyuDanmaku implements LiveDanmaku {
   @override
@@ -34,33 +37,47 @@ class DouyuDanmaku implements LiveDanmaku {
   String serverUrl = "wss://danmuproxy.douyu.com:8506";
 
   WebScoketUtils? webScoketUtils;
+  String _roomId = '';
+  int _generation = 0;
+
+  @visibleForTesting
+  void debugSetRoomId(String roomId) => _roomId = roomId;
 
   @override
   Future start(dynamic args) async {
+    final generation = ++_generation;
+    await webScoketUtils?.close();
+    webScoketUtils = null;
+    if (generation != _generation) return;
+    _roomId = args.toString();
+    markDisconnected();
     webScoketUtils = WebScoketUtils(
       url: serverUrl,
       heartBeatTime: heartbeatTime,
       onMessage: (e) {
-        decodeMessage(e);
+        if (generation == _generation) decodeMessage(e);
       },
       onReady: () {
-        onReady?.call();
+        if (generation != _generation) return;
         markConnected();
+        onReady?.call();
         joinRoom(args);
       },
       onHeartBeat: () {
         heartbeat();
       },
       onReconnect: () {
+        if (generation != _generation) return;
         markDisconnected();
         onClose?.call("与服务器断开连接，正在尝试重连");
       },
       onClose: (e) {
+        if (generation != _generation) return;
         markDisconnected();
         onClose?.call("服务器连接失败$e");
       },
     );
-    webScoketUtils?.connect();
+    await webScoketUtils?.connect();
   }
 
   void joinRoom(dynamic roomId) {
@@ -76,35 +93,46 @@ class DouyuDanmaku implements LiveDanmaku {
 
   @override
   Future stop() async {
+    _generation++;
+    markDisconnected();
     onMessage = null;
     onClose = null;
-    webScoketUtils?.close();
+    onReady = null;
+    await webScoketUtils?.close();
+    webScoketUtils = null;
   }
 
   void decodeMessage(List<int> data) {
     try {
-      String? result = deserializeDouyu(data);
-      if (result == null) {
-        return;
-      }
-      var jsonData = sttToJObject(result);
+      for (final result in deserializeDouyuPackets(data)) {
+        final jsonData = sttToJObject(result);
+        if (jsonData is! Map) continue;
 
-      var type = jsonData["type"]?.toString();
-      //斗鱼好像不会返回人气值
-      if (type == "chatmsg") {
-        // 屏蔽阴间弹幕
-        if (jsonData["dms"] == null) {
-          return;
+        var type = jsonData["type"]?.toString();
+        //斗鱼好像不会返回人气值
+        if (type == "chatmsg") {
+          // 屏蔽阴间弹幕
+          if (jsonData["dms"] == null) continue;
+          final packetRoomId = jsonData['rid']?.toString() ?? '';
+          if (packetRoomId.isNotEmpty && _roomId.isNotEmpty && packetRoomId != _roomId) continue;
+          var col = int.tryParse(jsonData["col"].toString()) ?? 0;
+          final rawTimestamp = int.tryParse(jsonData['cst']?.toString() ?? '');
+          final sentAt = rawTimestamp == null
+              ? null
+              : DateTime.fromMillisecondsSinceEpoch(rawTimestamp > 100000000000 ? rawTimestamp : rawTimestamp * 1000);
+          final messageId = jsonData['cid']?.toString() ?? '';
+          var liveMsg = LiveMessage(
+            type: LiveMessageType.chat,
+            userName: jsonData["nn"].toString(),
+            userId: jsonData['uid']?.toString() ?? '',
+            message: jsonData["txt"].toString(),
+            color: getColor(col),
+            messageId: messageId.isEmpty ? '' : 'douyu:$messageId',
+            sentAt: sentAt,
+          );
+
+          onMessage?.call(liveMsg);
         }
-        var col = int.tryParse(jsonData["col"].toString()) ?? 0;
-        var liveMsg = LiveMessage(
-          type: LiveMessageType.chat,
-          userName: jsonData["nn"].toString(),
-          message: jsonData["txt"].toString(),
-          color: getColor(col),
-        );
-
-        onMessage?.call(liveMsg);
       }
     } catch (e) {
       CoreLog.error(e);
@@ -135,23 +163,32 @@ class DouyuDanmaku implements LiveDanmaku {
   }
 
   String? deserializeDouyu(List<int> buffer) {
+    final packets = deserializeDouyuPackets(buffer);
+    return packets.isEmpty ? null : packets.first;
+  }
+
+  /// A single WebSocket frame often contains several Douyu protocol packets.
+  /// Parsing only the first packet silently loses chat messages and can leave
+  /// the UI looking frozen during busy rooms.
+  List<String> deserializeDouyuPackets(List<int> buffer) {
+    final packets = <String>[];
     try {
-      var reader = BinaryReader(Uint8List.fromList(buffer));
-      int fullMsgLength = reader.readInt32(endian: Endian.little); //fullMsgLength
-      reader.readInt32(endian: Endian.little); //fullMsgLength2
-      int bodyLength = fullMsgLength - 9;
-      reader.readShort(endian: Endian.little); //packType
-      reader.readByte(endian: Endian.little); //encrypted
-      reader.readByte(endian: Endian.little); //reserved
-
-      var bytes = reader.readBytes(bodyLength);
-
-      reader.readByte(endian: Endian.little); //固定为0
-      return utf8.decode(bytes);
+      var offset = 0;
+      while (offset + 12 <= buffer.length) {
+        final header = ByteData.sublistView(Uint8List.fromList(buffer), offset, offset + 4);
+        final fullMsgLength = header.getUint32(0, Endian.little);
+        final frameLength = fullMsgLength + 4;
+        final bodyLength = fullMsgLength - 9;
+        if (fullMsgLength < 9 || bodyLength < 0 || offset + frameLength > buffer.length) break;
+        final bodyStart = offset + 12;
+        final bodyEnd = bodyStart + bodyLength;
+        packets.add(utf8.decode(buffer.sublist(bodyStart, bodyEnd), allowMalformed: true));
+        offset += frameLength;
+      }
     } catch (e) {
       CoreLog.error(e);
-      return null;
     }
+    return packets;
   }
 
   //辣鸡STT
@@ -172,9 +209,10 @@ class DouyuDanmaku implements LiveDanmaku {
         if (field.isEmpty) {
           continue;
         }
-        var tokens = field.split("@=");
-        var k = tokens[0];
-        var v = unscapeSlashAt(tokens[1]);
+        final separator = field.indexOf("@=");
+        if (separator <= 0) continue;
+        var k = field.substring(0, separator);
+        var v = unscapeSlashAt(field.substring(separator + 2));
         result[k] = sttToJObject(v);
       }
       return result;

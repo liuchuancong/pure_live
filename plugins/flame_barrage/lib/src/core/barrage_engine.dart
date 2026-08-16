@@ -7,6 +7,13 @@ import 'package:flame_barrage/flame_barrage.dart';
 import 'package:flame_barrage/src/core/engine_clock.dart';
 import 'package:flame_barrage/src/model/barrage/engine_state.dart';
 
+class _PendingBarrage {
+  const _PendingBarrage(this.item, this.enqueuedAtMs);
+
+  final BarrageItem item;
+  final int enqueuedAtMs;
+}
+
 class BarrageEngine extends FlameGame with TapCallbacks {
   BarrageEngine({required BarrageConfig config, required this.emojiAtlas})
     : _config = config,
@@ -31,9 +38,8 @@ class BarrageEngine extends FlameGame with TapCallbacks {
   final SpeedStrategy _speedStrategy = const SpeedStrategy();
   final BarragePool _pool;
 
-  final Queue<BarrageItem> _waiting = Queue<BarrageItem>();
-  // ==== 新增：暂停缓存队列 ====
-  final Queue<BarrageItem> _pausedBuffer = Queue<BarrageItem>();
+  final Queue<_PendingBarrage> _waiting = Queue<_PendingBarrage>();
+  final Queue<_PendingBarrage> _pausedBuffer = Queue<_PendingBarrage>();
 
   List<BarrageEntry> _activeEntries = [];
   List<BarrageEntry> _backbufferEntries = [];
@@ -60,7 +66,10 @@ class BarrageEngine extends FlameGame with TapCallbacks {
     }
     final double finalTop = topInset + _config.topAreaDistance;
     final double finalBottom = bottomInset + _config.bottomAreaDistance;
-    return (rawHeight * _config.area) - finalTop - finalBottom;
+    // TrackManager applies the configured area percentage. Returning an
+    // already-scaled value here applied the percentage twice (20% became 4%)
+    // and made lane availability change unexpectedly after rotation.
+    return (rawHeight - finalTop - finalBottom).clamp(0.0, rawHeight).toDouble();
   }
 
   double _getTopOffset() {
@@ -95,7 +104,11 @@ class BarrageEngine extends FlameGame with TapCallbacks {
   }
 
   void _flushPausedBuffer() {
+    final maxPendingCount = _config.maxPendingCount.clamp(1, 10000);
     while (_pausedBuffer.isNotEmpty) {
+      while (_waiting.length >= maxPendingCount) {
+        _waiting.removeFirst();
+      }
       _waiting.add(_pausedBuffer.removeFirst());
     }
   }
@@ -213,10 +226,19 @@ class BarrageEngine extends FlameGame with TapCallbacks {
   }
 
   void pushMessage(BarrageItem item) {
+    final pending = _PendingBarrage(item, DateTime.now().millisecondsSinceEpoch);
+    final maxPendingCount = _config.maxPendingCount.clamp(1, 10000);
+    while (_waiting.length + _pausedBuffer.length >= maxPendingCount) {
+      if (_waiting.isNotEmpty) {
+        _waiting.removeFirst();
+      } else {
+        _pausedBuffer.removeFirst();
+      }
+    }
     if (isPaused) {
-      _pausedBuffer.add(item);
+      _pausedBuffer.add(pending);
     } else {
-      _waiting.add(item);
+      _waiting.add(pending);
     }
   }
 
@@ -229,7 +251,11 @@ class BarrageEngine extends FlameGame with TapCallbacks {
     _frameAccumulator += dt;
     if (_frameAccumulator + 0.000001 < frameInterval) return;
     final elapsed = _frameAccumulator.clamp(0.0, frameInterval * 3).toDouble();
-    _frameAccumulator = (_frameAccumulator - frameInterval).clamp(0.0, frameInterval).toDouble();
+    // Consume the accumulated frame time exactly once. Subtracting only one
+    // target interval while advancing by the whole accumulator counted the
+    // remainder again on the next frame and accelerated danmaku during frame
+    // drops. Excessive resume gaps are deliberately discarded by the cap.
+    _frameAccumulator = 0.0;
     super.update(elapsed);
 
     clock.tick(elapsed);
@@ -291,9 +317,14 @@ class BarrageEngine extends FlameGame with TapCallbacks {
   }
 
   void _dispatchWaiting(int now) {
+    final wallNow = DateTime.now().millisecondsSinceEpoch;
+    final maxAgeMs = _config.maxPendingAge.inMilliseconds.clamp(0, 600000);
+    while (_waiting.isNotEmpty && wallNow - _waiting.first.enqueuedAtMs > maxAgeMs) {
+      _waiting.removeFirst();
+    }
     if (_waiting.isEmpty) return;
     if (_currentAliveCount >= _config.maxVisibleCount) return;
-    final item = _waiting.first;
+    final item = _waiting.first.item;
     final resolvedConfig = _config.copyWith(
       textColor: item.textColor,
       fontSize: item.fontSize,
@@ -455,6 +486,11 @@ class BarrageEngine extends FlameGame with TapCallbacks {
     _backbufferEntries.clear();
     _pool.clear();
     _currentAliveCount = 0;
+    _emitTimer = 0.0;
+    _metricTimer = 0.0;
+    _cleanupTimer = 0.0;
+    _frameAccumulator = 0.0;
+    clock.reset();
     for (final track in _trackManager.tracks) {
       track.lastRight = 0.0;
       track.lastEntry = null;
@@ -471,8 +507,11 @@ class BarrageEngine extends FlameGame with TapCallbacks {
       (item.fontWeight ?? _config.fontWeight).toString(),
       (item.textColor ?? _config.textColor).toARGB32(),
       item.emojiSize ?? _config.emojiSize,
-      item.fontFamily ?? '',
-    ].join('');
+      item.fontFamily ?? _config.fontFamily ?? '',
+      item.showStroke ?? _config.showStroke,
+      item.strokeWidth ?? _config.strokeWidth,
+      (item.strokeColor ?? _config.strokeColor).toARGB32(),
+    ].join('|');
   }
 
   @override
@@ -483,4 +522,5 @@ class BarrageEngine extends FlameGame with TapCallbacks {
 
   int get activeCacheSize => _pictureCache.size;
   int get activePoolSize => _pool.currentSize;
+  int get pendingMessageCount => _waiting.length + _pausedBuffer.length;
 }

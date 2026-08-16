@@ -43,15 +43,12 @@ enum CatchupUrlType { default_, playseek, offset }
 
 // 弹幕管理器
 class DanmakuManager {
-  static const List<double> _speedFactors = [0.90, 0.96, 1.02, 1.08, 1.14];
-
   final BarrageController controller;
   final BarrageController pipController;
   final List<Worker> workers = [];
   final SettingsService settingsService;
   final VideoController videoController;
   final RxInt _visualSettingsRevision = 0.obs;
-  int _speedVariant = 0;
   bool _configUpdateScheduled = false;
   bool _settingsDirty = false;
   bool _disposed = false;
@@ -158,14 +155,15 @@ class DanmakuManager {
     final originalColor = Color.fromARGB(255, msg.color.r, msg.color.g, msg.color.b);
     final settings = settingsService.danmaku;
     if (settings.enableDanmakuDisplay.v && !videoController.hideDanmaku.value) {
-      final speed = videoController.danmakuSpeed.value * _speedFactors[_speedVariant++ % _speedFactors.length];
       controller.send(
         BarrageItem(
           content: msg.message,
           userId: msg.userId,
           userName: msg.userName,
           textColor: originalColor,
-          baseSpeed: speed,
+          // A single px/s value keeps portrait, landscape and desktop motion
+          // consistent. Lane collision avoidance is handled by the engine.
+          baseSpeed: videoController.danmakuSpeed.value,
           onTapUp: settings.enableDanmakuTapInteraction.v ? () => _openMessageActions(msg, fromLongPress: false) : null,
           onLongTapDown: settings.enableDanmakuLongPressInteraction.v
               ? () => _openMessageActions(msg, fromLongPress: true)
@@ -588,6 +586,8 @@ class VideoController with ChangeNotifier {
         strokeWidth: danmakuFontBorder.value,
         showStroke: enableDanmakuStroke.value,
         fps: SettingsService.to.danmaku.resolvedDanmakuFps(),
+        maxPendingCount: 120,
+        maxPendingAge: const Duration(seconds: 5),
         trackHeight: (danmakuFontSize.value * 1.55).clamp(24.0, 64.0).toDouble(),
         emojiSize: (danmakuFontSize.value * 1.3).clamp(16.0, 48.0).toDouble(),
       ),
@@ -612,6 +612,13 @@ class VideoController with ChangeNotifier {
   }
 
   void clearPipDanmaku() => pipDanmakuController.clear();
+
+  void clearDanmaku() {
+    danmakuController.resume();
+    pipDanmakuController.resume();
+    danmakuController.clear();
+    pipDanmakuController.clear();
+  }
 
   // EPG管理
   Future<void> loadFullChannelSchedule(String? epgId) async {
@@ -735,6 +742,7 @@ class VideoController with ChangeNotifier {
   }
 
   Future<void> refresh() async {
+    _livePlayController.invalidateRoomLoad();
     clearListener();
     await _playerManager.close();
     await destory();
@@ -742,6 +750,7 @@ class VideoController with ChangeNotifier {
   }
 
   Future<void> changeLine() async {
+    _livePlayController.invalidateRoomLoad();
     clearListener();
     await _playerManager.close();
     await destory();

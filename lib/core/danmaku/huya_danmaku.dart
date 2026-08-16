@@ -171,19 +171,26 @@ class HuyaDanmaku implements LiveDanmaku {
   ];
 
   late HuyaDanmakuArgs danmakuArgs;
+  int _generation = 0;
 
   @override
   Future start(dynamic args) async {
+    final generation = ++_generation;
+    await webScoketUtils?.close();
+    webScoketUtils = null;
+    if (generation != _generation) return;
     danmakuArgs = args as HuyaDanmakuArgs;
+    markDisconnected();
     webScoketUtils = WebScoketUtils(
       url: serverUrl,
       heartBeatTime: heartbeatTime,
       onMessage: (e) {
-        decodeMessage(e);
+        if (generation == _generation) decodeMessage(e);
       },
       onReady: () {
-        onReady?.call();
+        if (generation != _generation) return;
         markConnected();
+        onReady?.call();
         joinRoom();
         // Request the first room statistic immediately. Waiting for the
         // 60-second periodic tick keeps the UI on the fallback heat value for
@@ -194,15 +201,17 @@ class HuyaDanmaku implements LiveDanmaku {
         heartbeat();
       },
       onReconnect: () {
+        if (generation != _generation) return;
         markDisconnected();
         onClose?.call("与服务器断开连接，正在尝试重连");
       },
       onClose: (e) {
+        if (generation != _generation) return;
         markDisconnected();
         onClose?.call("服务器连接失败$e");
       },
     );
-    webScoketUtils?.connect();
+    await webScoketUtils?.connect();
   }
 
   void joinRoom() {
@@ -239,9 +248,13 @@ class HuyaDanmaku implements LiveDanmaku {
 
   @override
   Future stop() async {
+    _generation++;
+    markDisconnected();
     onMessage = null;
     onClose = null;
-    webScoketUtils?.close();
+    onReady = null;
+    await webScoketUtils?.close();
+    webScoketUtils = null;
   }
 
   void decodeMessage(List<int> data) {
@@ -266,6 +279,7 @@ class HuyaDanmaku implements LiveDanmaku {
               color: color <= 0 ? LiveMessageColor.white : LiveMessageColor.numberToColor(color),
               message: content,
               userName: uname,
+              userId: messageNotice.userInfo.uid.toString(),
             ),
           );
         } else if (wSPushMessage.uri == 8006) {
