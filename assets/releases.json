@@ -1,5 +1,131 @@
 [
   {
+    "version": "2.0.26",
+    "title": "Pure Live v2.0.26",
+    "date": "2026-08-16",
+    "github": "https://github.com/wzgrx/pure_live/releases/tag/v2.0.26",
+    "author": {
+      "name": "github-actions[bot]",
+      "avatar": "https://avatars.githubusercontent.com/in/15368?v=4",
+      "profile": "https://github.com/apps/github-actions"
+    },
+    "changelog": "# Pure Live v2.0.26\n\n本版本合并上游 `master@2cd1877` 的直播播放架构与平台更新，并集中处理上游仓库近期反馈的播放器、弹幕、音量、字体、全屏、Windows 退出和直播间闪退问题。\n\n## 上游反馈修复\n\n- 修复弹幕显示区域重新进入直播间后回到 100% 的问题，并迁移早期无效速度值（[#731](https://github.com/liuchuancong/pure_live/issues/731)、[#732](https://github.com/liuchuancong/pure_live/issues/732)、[#733](https://github.com/liuchuancong/pure_live/issues/733)）。\n- 本地修补 `flame_barrage 0.0.4` 的逐条速度计算，让多行弹幕恢复自然速度差异并保留防追尾计算（[#732](https://github.com/liuchuancong/pure_live/issues/732)）。\n- 串行等待播放器关闭、销毁和重新初始化，消除点击刷新后旧播放器延迟暂停新会话的竞态（[#731](https://github.com/liuchuancong/pure_live/issues/731)）。\n- 所有桌面播放器统一应用房间或默认音量，音量变更完成后同步持久化和界面提示（[#735](https://github.com/liuchuancong/pure_live/issues/735)）。\n- 串行加载字体清单和用户字体，等待 Hive 写入完成，并在字体加载后刷新主题（[#736](https://github.com/liuchuancong/pure_live/issues/736)）。\n- Windows/macOS/Linux 全屏统一使用 `window_manager`，修复 Windows 侧边任务栏导致的全屏黑边，同时补齐 macOS 窗口全屏（[#708](https://github.com/liuchuancong/pure_live/issues/708)、[#480](https://github.com/liuchuancong/pure_live/issues/480)）。\n- 修复 Windows 单实例互斥体句柄释放、命名管道超时和进程退出路径，规避 WebView2/Geolocation DLL 卸载挂起导致的二次启动失败（[#738](https://github.com/liuchuancong/pure_live/issues/738)）。\n- 直播页子控制器使用独立标签并由父控制器直接持有，路由入口校验平台和房间号，状态对象支持显式清空旧错误与弹幕房间，降低偶发进房失败和搜索结果闪退（[#730](https://github.com/liuchuancong/pure_live/issues/730)、[#739](https://github.com/liuchuancong/pure_live/issues/739)）。\n- 全局关闭弹幕时仍显示“弹幕设置”和“屏蔽列表”，保留主播放器及小窗弹幕调整入口。\n\n## 新增与优化\n\n- 更新虎牙弹幕注册身份、Tars 加入房间字段和 `OnUserHeartBeat` 心跳包，修复视频正常但弹幕长时间无消息的问题。\n- 全平台原生搜索支持滚动加载下一页、结果去重、直播优先排序和分页失败隔离。\n- “刷新设置”新增缩略图自动刷新开关与 5 分钟至 6 小时周期；缓存统计/清理改用异步 I/O 并增加并发保护，默认关闭定时刷新以避免额外流量。\n- 接口探测新增虎牙直播间数字 `uid` 校验；协议序列化新增确定性单元测试。\n- 更新 `better_player_plus`、`flame_barrage` 和 `file_picker` 到当前稳定兼容版本。\n- 在系统“设置”和“视频设置”中新增独立小窗弹幕入口，提供实时样式预览、默认值恢复及完整的颜色、字号、速度、透明度、区域、数量、间隔和 FPS 调节。\n- 全局弹幕关闭时仍保留直播间的“弹幕设置”和“屏蔽列表”标签，避免设置入口随弹幕列表一同消失。\n- Android 默认请求当前分辨率支持的最高刷新率，设置页显示当前/最高 Hz，并支持用户关闭高刷新率模式。\n- 恢复 Android API 29+ 的 Impeller 默认渲染路径；直播封面按显示尺寸解码并统一缓存，弹幕增加重绘隔离并限制图片缓存，降低列表滚动和高密度弹幕卡顿。\n- 新增 Windows 本机一键质量门禁、Android 分架构 APK、Windows 便携包、EXE 安装包和 SHA-256 校验流程。\n- 固定 Flutter 3.44.9、Dart 3.12.2、Git 依赖提交及原生媒体产物，提交 `pubspec.lock`，提高构建可复现性。\n- 新增 Bilibili、Douyu、Huya、Kuaishou、Douyin、网易 CC 公开接口探测。\n- 移除失效的斗鱼第三方 HTML 签名中转；抖音匿名 Cookie 改为运行时获取，避免硬编码过期值。\n- 备份格式升级到 v3，本地导出、Firebase、WebDAV 和 TV 同步默认排除 Cookie 与 WebDAV 凭据。\n- 清理仓库中的签名私钥、证书和构建报告；正式 Android 签名改为仓库外部配置。\n- 修复播放器、小窗弹幕、直播切换、分享监听、定时器和订阅的资源释放问题。\n- 修复 Bilibili 弹幕节点端口处理，增加动态节点轮换、认证回应确认、30 秒心跳和有界重连。\n- 增加缩略图链接归一化、浏览器兼容请求头和“刷新直播缩略图”，修复部分平台封面长期停留在占位图的问题。\n- 小窗弹幕样式预览改为实时动画，颜色、字号、速度、透明度、区域、数量、间隔和 FPS 调整后立即反映。\n- 首页、分区、收藏和搜索统一改用固定高度懒加载网格，降低瀑布流布局和超大封面解码带来的滚动抖动。\n- 增加全平台原生直播搜索、直播优先排序、跨平台去重与部分平台故障提示。\n- 区分热度、在线、累计观看和粉丝数，避免把平台不同口径的字段统一显示成在线人数。\n- 增加 Android ASMR 助眠模式、纯音频后台保活和可配置自动停止时间。\n- 增加本地昵称、头衔、字幕、体验币、等级和礼物特效；相关数据仅保存在本机。\n- GitHub Actions 改为手动兜底并缩短产物保留时间，取消每日定时任务和标签自动构建。\n\n## 下载说明\n\n- Android：当前优先发布 `arm64-v8a` APK。\n- Windows：优先下载 `PureLive-2.0.26-windows-x64-setup.exe`，也可使用便携 ZIP。\n- `SHA256SUMS.txt` 可用于校验下载文件完整性。\n\nAndroid APK 使用此仓库专用的发布签名。若设备上已有其他签名来源的同包名应用，需要先备份应用数据再安装本版本。本机构建未配置发布密钥时会生成包名为 `com.mystyle.purelive.qa` 的 QA 包，可与正式版并存，不作为正式 Release 附件。",
+    "files": [
+      {
+        "name": "ANDROID_SHA256SUM.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.0.26/ANDROID_SHA256SUM.txt"
+      },
+      {
+        "name": "BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.0.26/BUILD_METADATA.json"
+      },
+      {
+        "name": "PureLive-2.0.26-37-arm64-v8a",
+        "size": "122.68mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.0.26/PureLive-2.0.26-37-arm64-v8a-release.apk"
+      },
+      {
+        "name": "PureLive-2.0.26-37-windows-x64-portable.zip",
+        "size": "81.46mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.0.26/PureLive-2.0.26-37-windows-x64-portable.zip"
+      },
+      {
+        "name": "PureLive-2.0.26-windows-x64-setup.exe",
+        "size": "62.35mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.0.26/PureLive-2.0.26-windows-x64-setup.exe"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.0.26/SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
+    "version": "2.0.25-qa.1",
+    "title": "Pure Live v2.0.25 QA 1 (arm64-v8a + Windows x64)",
+    "date": "2026-08-16",
+    "github": "https://github.com/wzgrx/pure_live/releases/tag/v2.0.25-qa.1",
+    "author": {
+      "name": "wzgrx",
+      "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
+      "profile": "https://github.com/wzgrx"
+    },
+    "changelog": "# Pure Live v2.0.25\n\n本版本在 v2.0.24 体验优化基础上，重点修复虎牙弹幕协议、完善搜索分页和缩略图自动刷新，并更新低风险运行时依赖。\n\n## 新增与优化\n\n- 更新虎牙弹幕注册身份、Tars 加入房间字段和 `OnUserHeartBeat` 心跳包，修复视频正常但弹幕长时间无消息的问题。\n- 全平台原生搜索支持滚动加载下一页、结果去重、直播优先排序和分页失败隔离。\n- “刷新设置”新增缩略图自动刷新开关与 5 分钟至 6 小时周期；缓存统计/清理改用异步 I/O 并增加并发保护，默认关闭定时刷新以避免额外流量。\n- 接口探测新增虎牙直播间数字 `uid` 校验；协议序列化新增确定性单元测试。\n- 更新 `better_player_plus`、`flame_barrage` 和 `file_picker` 到当前稳定兼容版本。\n- 在系统“设置”和“视频设置”中新增独立小窗弹幕入口，提供实时样式预览、默认值恢复及完整的颜色、字号、速度、透明度、区域、数量、间隔和 FPS 调节。\n- 全局弹幕关闭时仍保留直播间的“弹幕设置”和“屏蔽列表”标签，避免设置入口随弹幕列表一同消失。\n- Android 默认请求当前分辨率支持的最高刷新率，设置页显示当前/最高 Hz，并支持用户关闭高刷新率模式。\n- 恢复 Android API 29+ 的 Impeller 默认渲染路径；直播封面按显示尺寸解码并统一缓存，弹幕增加重绘隔离并限制图片缓存，降低列表滚动和高密度弹幕卡顿。\n- 新增 Windows 本机一键质量门禁、Android 分架构 APK、Windows 便携包、EXE 安装包和 SHA-256 校验流程。\n- 固定 Flutter 3.44.9、Dart 3.12.2、Git 依赖提交及原生媒体产物，提交 `pubspec.lock`，提高构建可复现性。\n- 新增 Bilibili、Douyu、Huya、Kuaishou、Douyin、网易 CC 公开接口探测。\n- 移除失效的斗鱼第三方 HTML 签名中转；抖音匿名 Cookie 改为运行时获取，避免硬编码过期值。\n- 备份格式升级到 v3，本地导出、Firebase、WebDAV 和 TV 同步默认排除 Cookie 与 WebDAV 凭据。\n- 清理仓库中的签名私钥、证书和构建报告；正式 Android 签名改为仓库外部配置。\n- 修复播放器、小窗弹幕、直播切换、分享监听、定时器和订阅的资源释放问题。\n- 修复 Bilibili 弹幕节点端口处理，增加动态节点轮换、认证回应确认、30 秒心跳和有界重连。\n- 增加缩略图链接归一化、浏览器兼容请求头和“刷新直播缩略图”，修复部分平台封面长期停留在占位图的问题。\n- 小窗弹幕样式预览改为实时动画，颜色、字号、速度、透明度、区域、数量、间隔和 FPS 调整后立即反映。\n- 首页、分区、收藏和搜索统一改用固定高度懒加载网格，降低瀑布流布局和超大封面解码带来的滚动抖动。\n- 增加全平台原生直播搜索、直播优先排序、跨平台去重与部分平台故障提示。\n- 区分热度、在线、累计观看和粉丝数，避免把平台不同口径的字段统一显示成在线人数。\n- 增加 Android ASMR 助眠模式、纯音频后台保活和可配置自动停止时间。\n- 增加本地昵称、头衔、字幕、体验币、等级和礼物特效；相关数据仅保存在本机。\n- GitHub Actions 改为手动兜底并缩短产物保留时间，取消每日定时任务和标签自动构建。\n\n## 下载说明\n\n- Android：当前优先发布 `arm64-v8a` APK。\n- Windows：优先下载 `PureLive-2.0.25-windows-x64-setup.exe`，也可使用便携 ZIP。\n- `SHA256SUMS.txt` 可用于校验下载文件完整性。\n\nAndroid APK 使用此仓库专用的发布签名。若设备上已有其他签名来源的同包名应用，需要先备份应用数据再安装本版本。本机构建未配置发布密钥时会生成包名为 `com.mystyle.purelive.qa` 的 QA 包，可与正式版并存，不作为正式 Release 附件。",
+    "files": [
+      {
+        "name": "BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.0.25-qa.1/BUILD_METADATA.json"
+      },
+      {
+        "name": "PureLive-2.0.25-36-qa-debug-signed-arm64-v8a",
+        "size": "122.68mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.0.25-qa.1/PureLive-2.0.25-36-qa-debug-signed-arm64-v8a-release.apk"
+      },
+      {
+        "name": "PureLive-2.0.25-36-windows-x64-portable.zip",
+        "size": "81.58mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.0.25-qa.1/PureLive-2.0.25-36-windows-x64-portable.zip"
+      },
+      {
+        "name": "PureLive-2.0.25-windows-x64-setup.exe",
+        "size": "62.42mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.0.25-qa.1/PureLive-2.0.25-windows-x64-setup.exe"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.0.25-qa.1/SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
+    "version": "2.0.24-qa.1",
+    "title": "Pure Live v2.0.24 QA 1 (arm64-v8a)",
+    "date": "2026-08-13",
+    "github": "https://github.com/wzgrx/pure_live/releases/tag/v2.0.24-qa.1",
+    "author": {
+      "name": "wzgrx",
+      "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
+      "profile": "https://github.com/wzgrx"
+    },
+    "changelog": "本地 ARM64 QA 测试版，源自 master `1a0629a5`，未消耗 GitHub Actions 构建额度。\n\n重点更新：\n- 修复 Bilibili 弹幕节点发现、端口、认证确认、心跳、节点轮换和有界重连。\n- 修复并增加直播缩略图刷新，优化固定高度懒加载网格和封面解码。\n- 小窗弹幕样式预览实时响应颜色、字号、速度、透明度、区域、数量、间隔和 FPS。\n- 增加跨平台原生直播搜索，并区分热度、在线、累计观看和粉丝数。\n- 增加 Android ASMR 纯音频后台保活及 30–480 分钟自动停止。\n- 增加本地昵称、头衔、字幕、体验币、等级和礼物体验。\n\n说明：此附件为 QA debug 签名，包名 `com.mystyle.purelive.qa`，可与正式版并行安装。仅包含 `arm64-v8a`。",
+    "files": [
+      {
+        "name": "BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.0.24-qa.1/BUILD_METADATA.json"
+      },
+      {
+        "name": "PureLive-2.0.24-35-qa-debug-signed-arm64-v8a",
+        "size": "122.96mb",
+        "downloads": 1,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.0.24-qa.1/PureLive-2.0.24-35-qa-debug-signed-arm64-v8a-release.apk"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.0.24-qa.1/SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
     "version": "2.0.23",
     "title": "Pure Live v2.0.23",
     "date": "2026-08-12",
@@ -14,7 +140,7 @@
       {
         "name": "arm64-v8a",
         "size": "122.47mb",
-        "downloads": 0,
+        "downloads": 4,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.0.23/app-arm64-v8a-release.apk"
       },
       {
@@ -38,7 +164,7 @@
       {
         "name": "SHA256SUMS.txt",
         "size": "0.0mb",
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.0.23/SHA256SUMS.txt"
       }
     ]
@@ -58,37 +184,37 @@
       {
         "name": "arm64-v8a",
         "size": "122.25mb",
-        "downloads": 13685,
+        "downloads": 14178,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.22/app-arm64-v8a-release.apk"
       },
       {
         "name": "armeabi-v7a",
         "size": "109.11mb",
-        "downloads": 2056,
+        "downloads": 2103,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.22/app-armeabi-v7a-release.apk"
       },
       {
         "name": "x86_64",
         "size": "136.7mb",
-        "downloads": 1090,
+        "downloads": 1134,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.22/app-x86_64-release.apk"
       },
       {
         "name": "PureLive-2.0.22+33-macOS.dmg",
         "size": "105.02mb",
-        "downloads": 607,
+        "downloads": 628,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.22/PureLive-2.0.22%2B33-macOS.dmg"
       },
       {
         "name": "PureLive-2.0.22+33-windows-x64-setup.exe",
         "size": "65.76mb",
-        "downloads": 5913,
+        "downloads": 6263,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.22/PureLive-2.0.22%2B33-windows-x64-setup.exe"
       },
       {
         "name": "PureLive-2.0.22+33-windows-x64.msix",
         "size": "91.62mb",
-        "downloads": 1655,
+        "downloads": 1732,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.22/PureLive-2.0.22%2B33-windows-x64.msix"
       }
     ]
@@ -108,19 +234,19 @@
       {
         "name": "arm64-v8a",
         "size": "126.58mb",
-        "downloads": 6442,
+        "downloads": 6464,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.21/app-arm64-v8a-release.apk"
       },
       {
         "name": "armeabi-v7a",
         "size": "112.22mb",
-        "downloads": 680,
+        "downloads": 686,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.21/app-armeabi-v7a-release.apk"
       },
       {
         "name": "x86_64",
         "size": "140.33mb",
-        "downloads": 343,
+        "downloads": 344,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.21/app-x86_64-release.apk"
       },
       {
@@ -132,7 +258,7 @@
       {
         "name": "PureLive-2.0.21+32-windows-x64-setup.exe",
         "size": "61.45mb",
-        "downloads": 2374,
+        "downloads": 2381,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.21/PureLive-2.0.21%2B32-windows-x64-setup.exe"
       },
       {
@@ -158,13 +284,13 @@
       {
         "name": "arm64-v8a",
         "size": "120.69mb",
-        "downloads": 3961,
+        "downloads": 3969,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.20/app-arm64-v8a-release.apk"
       },
       {
         "name": "armeabi-v7a",
         "size": "106.36mb",
-        "downloads": 370,
+        "downloads": 374,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.20/app-armeabi-v7a-release.apk"
       },
       {
@@ -182,7 +308,7 @@
       {
         "name": "PureLive-2.0.20+31-windows-x64-setup.exe",
         "size": "55.68mb",
-        "downloads": 1055,
+        "downloads": 1056,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.20/PureLive-2.0.20%2B31-windows-x64-setup.exe"
       },
       {
@@ -208,13 +334,13 @@
       {
         "name": "arm64-v8a",
         "size": "126.31mb",
-        "downloads": 503,
+        "downloads": 507,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.19/app-arm64-v8a-release.apk"
       },
       {
         "name": "armeabi-v7a",
         "size": "110.37mb",
-        "downloads": 62,
+        "downloads": 63,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.19/app-armeabi-v7a-release.apk"
       },
       {
@@ -226,13 +352,13 @@
       {
         "name": "PureLive-2.0.19+30-macOS.dmg",
         "size": "99.14mb",
-        "downloads": 39,
+        "downloads": 40,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.19/PureLive-2.0.19%2B30-macOS.dmg"
       },
       {
         "name": "PureLive-2.0.19+30-windows-x64-setup.exe",
         "size": "59.35mb",
-        "downloads": 143,
+        "downloads": 144,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.19/PureLive-2.0.19%2B30-windows-x64-setup.exe"
       },
       {
@@ -258,25 +384,25 @@
       {
         "name": "arm64-v8a-fvp",
         "size": "101.21mb",
-        "downloads": 1199,
+        "downloads": 1207,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.18/app-arm64-v8a-fvp.apk"
       },
       {
         "name": "arm64-v8a",
         "size": "111.75mb",
-        "downloads": 3454,
+        "downloads": 3458,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.18/app-arm64-v8a-release.apk"
       },
       {
         "name": "armeabi-v7a-fvp",
         "size": "88.79mb",
-        "downloads": 222,
+        "downloads": 230,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.18/app-armeabi-v7a-fvp.apk"
       },
       {
         "name": "armeabi-v7a",
         "size": "98.45mb",
-        "downloads": 340,
+        "downloads": 346,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.18/app-armeabi-v7a-release.apk"
       },
       {
@@ -300,13 +426,13 @@
       {
         "name": "PureLive-2.0.18+29-fvp-windows-x64-setup.exe",
         "size": "46.99mb",
-        "downloads": 626,
+        "downloads": 632,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.18/PureLive-2.0.18%2B29-fvp-windows-x64-setup.exe"
       },
       {
         "name": "PureLive-2.0.18+29-fvp-windows-x64.msix",
         "size": "65.21mb",
-        "downloads": 245,
+        "downloads": 251,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.18/PureLive-2.0.18%2B29-fvp-windows-x64.msix"
       },
       {
@@ -318,13 +444,13 @@
       {
         "name": "PureLive-2.0.18+29-windows-x64-setup.exe",
         "size": "53.3mb",
-        "downloads": 957,
+        "downloads": 962,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.18/PureLive-2.0.18%2B29-windows-x64-setup.exe"
       },
       {
         "name": "PureLive-2.0.18+29-windows-x64.msix",
         "size": "74.16mb",
-        "downloads": 297,
+        "downloads": 305,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.18/PureLive-2.0.18%2B29-windows-x64.msix"
       }
     ]
@@ -344,13 +470,13 @@
       {
         "name": "arm64-v8a-fvp",
         "size": "70.02mb",
-        "downloads": 1023,
+        "downloads": 1026,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.16/app-arm64-v8a-fvp.apk"
       },
       {
         "name": "arm64-v8a",
         "size": "79.3mb",
-        "downloads": 2594,
+        "downloads": 2597,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.16/app-arm64-v8a-release.apk"
       },
       {
@@ -404,7 +530,7 @@
       {
         "name": "PureLive-2.0.16+27-windows-x64-setup.exe",
         "size": "37.48mb",
-        "downloads": 1079,
+        "downloads": 1091,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.16/PureLive-2.0.16%2B27-windows-x64-setup.exe"
       },
       {
@@ -430,13 +556,13 @@
       {
         "name": "arm64-v8a",
         "size": "77.86mb",
-        "downloads": 5610,
+        "downloads": 5614,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.15/app-arm64-v8a-release.apk"
       },
       {
         "name": "armeabi-v7a",
         "size": "69.76mb",
-        "downloads": 773,
+        "downloads": 774,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.15/app-armeabi-v7a-release.apk"
       },
       {
@@ -460,7 +586,7 @@
       {
         "name": "PureLive-2.0.15+26-windows-x64.msix",
         "size": "52.09mb",
-        "downloads": 677,
+        "downloads": 678,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.15/PureLive-2.0.15%2B26-windows-x64.msix"
       }
     ]
@@ -480,13 +606,13 @@
       {
         "name": "arm64-v8a",
         "size": "77.53mb",
-        "downloads": 4719,
+        "downloads": 4724,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.14/app-arm64-v8a-release.apk"
       },
       {
         "name": "armeabi-v7a",
         "size": "69.42mb",
-        "downloads": 688,
+        "downloads": 694,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.14/app-armeabi-v7a-release.apk"
       },
       {
@@ -504,7 +630,7 @@
       {
         "name": "PureLive-2.0.14+25-windows-x64-setup.exe",
         "size": "37.08mb",
-        "downloads": 2039,
+        "downloads": 2041,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.14/PureLive-2.0.14%2B25-windows-x64-setup.exe"
       },
       {
@@ -530,7 +656,7 @@
       {
         "name": "arm64-v8a",
         "size": "67.95mb",
-        "downloads": 855,
+        "downloads": 856,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.13/app-arm64-v8a-release.apk"
       },
       {
@@ -548,13 +674,13 @@
       {
         "name": "PureLive-2.0.13+24-macOS.dmg",
         "size": "57.63mb",
-        "downloads": 39,
+        "downloads": 40,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.13/PureLive-2.0.13%2B24-macOS.dmg"
       },
       {
         "name": "PureLive-2.0.13+24-windows-x64-setup.exe",
         "size": "39.56mb",
-        "downloads": 288,
+        "downloads": 290,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.13/PureLive-2.0.13%2B24-windows-x64-setup.exe"
       },
       {
@@ -580,7 +706,7 @@
       {
         "name": "arm64-v8a",
         "size": "67.68mb",
-        "downloads": 8945,
+        "downloads": 8948,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.12/app-arm64-v8a-release.apk"
       },
       {
@@ -674,7 +800,7 @@
       {
         "name": "arm64-v8a",
         "size": "67.57mb",
-        "downloads": 242,
+        "downloads": 243,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.10/app-arm64-v8a-release.apk"
       },
       {
@@ -692,7 +818,7 @@
       {
         "name": "PureLive-2.0.10+21-windows-x64-setup.exe",
         "size": "36.52mb",
-        "downloads": 203,
+        "downloads": 204,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.10/PureLive-2.0.10%2B21-windows-x64-setup.exe"
       },
       {
@@ -736,7 +862,7 @@
       {
         "name": "PureLive-2.0.9+20-windows-x64-setup.exe",
         "size": "36.39mb",
-        "downloads": 357,
+        "downloads": 358,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.9/PureLive-2.0.9%2B20-windows-x64-setup.exe"
       }
     ]
@@ -832,7 +958,7 @@
       {
         "name": "arm64-v8a",
         "size": "67.37mb",
-        "downloads": 2313,
+        "downloads": 2315,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.6/app-arm64-v8a-release.apk"
       },
       {
@@ -946,25 +1072,25 @@
       {
         "name": "2.0.3-arm64-v8a-TV",
         "size": "47.54mb",
-        "downloads": 1030,
+        "downloads": 1032,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.3/2.0.3-app-arm64-v8a-release-TV.apk"
       },
       {
         "name": "2.0.3-armeabi-v7a-TV",
         "size": "43.55mb",
-        "downloads": 351,
+        "downloads": 355,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.3/2.0.3-app-armeabi-v7a-release-TV.apk"
       },
       {
         "name": "arm64-v8a",
         "size": "65.75mb",
-        "downloads": 2554,
+        "downloads": 2555,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.3/app-arm64-v8a-release.apk"
       },
       {
         "name": "armeabi-v7a",
         "size": "59.92mb",
-        "downloads": 2854,
+        "downloads": 2856,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.3/app-armeabi-v7a-release.apk"
       },
       {
@@ -1078,7 +1204,7 @@
       {
         "name": "arm64-v8a",
         "size": "59.21mb",
-        "downloads": 4048,
+        "downloads": 4049,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.0/app-arm64-v8a-release.apk"
       },
       {
@@ -1128,7 +1254,7 @@
       {
         "name": "pure_live-1.9.9+9-windows.msix",
         "size": "49.06mb",
-        "downloads": 1697,
+        "downloads": 1698,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v1.9.9/pure_live-1.9.9%2B9-windows.msix"
       }
     ]
@@ -1605,7 +1731,7 @@
       {
         "name": "arm64-v8a",
         "size": "29.74mb",
-        "downloads": 3668,
+        "downloads": 3669,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v1.8.4/app-arm64-v8a-release.apk"
       },
       {
@@ -2257,7 +2383,7 @@
       {
         "name": "armeabi-v7a",
         "size": "29.35mb",
-        "downloads": 215,
+        "downloads": 216,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/1.4.0/app-armeabi-v7a-release.apk"
       },
       {
@@ -2519,19 +2645,6 @@
       "profile": "https://github.com/liuchuancong"
     },
     "changelog": "-修复抖音弹幕显示\r\n-修复弹幕bug\r\n-优化项目\r\n\r\n\r\n添加Q群交流：73592135",
-    "files": []
-  },
-  {
-    "version": "1.2.0",
-    "title": "Version:1.2.0",
-    "date": "2023-10-13",
-    "github": "https://github.com/liuchuancong/pure_live/releases/tag/1.2.0",
-    "author": {
-      "name": "liuchuancong",
-      "avatar": "https://avatars.githubusercontent.com/u/36957912?v=4",
-      "profile": "https://github.com/liuchuancong"
-    },
-    "changelog": "-Feature: 添加抖音直播\r\n-Fix: 蓝奏云对免费用户apk文件无法下载，需要开通会员9元一月，目前使用zip压缩下载，对您带来不便，敬请谅解",
     "files": []
   }
 ]
