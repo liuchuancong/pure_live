@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/modules/auth/auth_controller.dart';
@@ -41,14 +43,32 @@ class InitialServices {
 
   static void _initHeavyServicesInBackground() {
     Future.delayed(const Duration(seconds: 3), () {
-      try {
-        FFmpegKitExtended.initialize();
+      _initializeSafely('FFmpegKitExtended', FFmpegKitExtended.initialize);
+      _initializeSafely('CacheService', () {
         Get.put(CacheService(), permanent: true);
+      });
+      _initializeSafely('RecordSettingsController', () {
         Get.put(RecordSettingsController(), permanent: true);
+      });
+      _initializeSafely('RecorderController', () {
         Get.put(RecorderController(), permanent: true);
-        Get.lazyPut(() => StreamResolverService(), fenix: true);
+      });
+      _initializeSafely('StreamResolverService', () => Get.lazyPut(() => StreamResolverService(), fenix: true));
+      _initializeSafely('AuthController', () {
         Get.put(AuthController(), permanent: true);
-      } catch (_) {}
+      });
     });
+  }
+
+  static void _initializeSafely(String name, void Function() initialize) {
+    try {
+      initialize();
+    } catch (error, stackTrace) {
+      developer.log(
+        '$name initialization failed (${error.runtimeType})',
+        name: 'InitialServices',
+        stackTrace: stackTrace,
+      );
+    }
   }
 }

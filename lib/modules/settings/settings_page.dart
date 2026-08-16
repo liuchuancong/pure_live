@@ -13,6 +13,7 @@ import 'package:pure_live/modules/settings/pages/navigation_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/cache_data_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/network_proxy_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/player_kernel_settings_page.dart';
+import 'package:pure_live/modules/settings/pages/local_interaction_settings_page.dart';
 
 class SettingsPage extends GetView<SettingsService> {
   const SettingsPage({super.key});
@@ -107,6 +108,17 @@ class SettingsPage extends GetView<SettingsService> {
               title: i18n("custom_network_proxy"),
               subtitle: i18n("custom_network_proxy_desc"),
               onTap: () => Get.to(() => const NetworkProxySettingsPage()),
+            ),
+          ]),
+
+          const SizedBox(height: 20),
+          context.buildGroupTitle(i18n('local_interaction_settings')),
+          context.buildModernCard([
+            context.buildTile(
+              icon: Icons.auto_awesome_rounded,
+              title: i18n('local_interaction_title'),
+              subtitle: i18n('local_interaction_settings_desc'),
+              onTap: () => Get.to(() => const LocalInteractionSettingsPage()),
             ),
           ]),
 

@@ -315,6 +315,7 @@ class LivePlayPage extends GetView<LivePlayController> {
                   ShareCommandHandler.instance.onShareRoomPressed(detail);
                 }
               } else if (index == 7) {
+                if (!controller.localInteractionController.enabled.v) return;
                 showModalBottomSheet<void>(
                   context: context,
                   isScrollControlled: true,
@@ -377,14 +378,15 @@ class LivePlayPage extends GetView<LivePlayController> {
                     text: i18n("share"),
                   ),
                 ),
-                PopupMenuItem(
-                  value: 7,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: MenuListTile(
-                    leading: const Icon(Icons.auto_awesome_rounded, size: 20),
-                    text: i18n('local_interaction_title'),
+                if (controller.localInteractionController.enabled.v)
+                  PopupMenuItem(
+                    value: 7,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: MenuListTile(
+                      leading: const Icon(Icons.auto_awesome_rounded, size: 20),
+                      text: i18n('local_interaction_title'),
+                    ),
                   ),
-                ),
               ];
             },
           ),

@@ -1,8 +1,8 @@
 {
-  "version": "2.0.27",
-  "build_number": 38,
-  "version_num": 2002738,
-  "version_desc": "- 修复哔哩哔哩直播间连接成功但弹幕消息被丢弃的问题。\n- 增加 WBI 密钥定时刷新、失败重试和 WebSocket 浏览器请求头。\n- 修复小窗弹幕字号、速度、区域、透明度、数量、间隔和 FPS 预览不实时刷新。\n- 同步修复实际小窗画面的样式实时更新。\n",
+  "version": "2.0.28",
+  "build_number": 39,
+  "version_num": 2002839,
+  "version_desc": "- Android 动态检测当前设备和分辨率支持的最高刷新率，显示模式变化后自动重新应用。\n- 增加本地用户与互动总开关、独立设置入口和画面字幕开关。\n- 弹幕列表改用独立消息源，样式更新按帧合并并减少拖动滑块时的持久化写入。\n- 隔离延迟服务初始化故障并补充播放器错误诊断。\n",
   "prerelease": false,
   "download_url": "https://github.com/wzgrx/pure_live/releases"
 }

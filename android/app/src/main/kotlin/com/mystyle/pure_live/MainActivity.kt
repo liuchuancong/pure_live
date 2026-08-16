@@ -1,8 +1,11 @@
 package com.mystyle.purelive
 
 import android.content.Context
+import android.hardware.display.DisplayManager
 import android.net.wifi.WifiManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.PowerManager
 import android.view.Display
 import com.ryanheise.audioservice.AudioServiceActivity
@@ -18,21 +21,42 @@ class MainActivity : AudioServiceActivity() {
     }
 
     private var highRefreshRateEnabled = true
+    private var displayModeChannel: MethodChannel? = null
+    private var displayListenerRegistered = false
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val displayModeRefresh = Runnable {
+        val info = applyPreferredDisplayMode(highRefreshRateEnabled)
+        displayModeChannel?.invokeMethod("displayModeChanged", info)
+    }
+    private val displayListener = object : DisplayManager.DisplayListener {
+        override fun onDisplayAdded(displayId: Int) = scheduleDisplayModeRefresh()
+
+        override fun onDisplayRemoved(displayId: Int) = scheduleDisplayModeRefresh()
+
+        override fun onDisplayChanged(displayId: Int) {
+            val currentDisplayId = activeDisplay()?.displayId
+            if (currentDisplayId == null || currentDisplayId == displayId) {
+                scheduleDisplayModeRefresh()
+            }
+        }
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        MethodChannel(
+        displayModeChannel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             DISPLAY_MODE_CHANNEL,
-        ).setMethodCallHandler { call, result ->
-            when (call.method) {
-                "setHighRefreshRate" -> {
-                    highRefreshRateEnabled = call.argument<Boolean>("enabled") ?: true
-                    result.success(applyPreferredDisplayMode(highRefreshRateEnabled))
-                }
+        ).also { channel ->
+            channel.setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "setHighRefreshRate" -> {
+                        highRefreshRateEnabled = call.argument<Boolean>("enabled") ?: true
+                        result.success(applyPreferredDisplayMode(highRefreshRateEnabled))
+                    }
 
-                "getDisplayModeInfo" -> result.success(displayModeInfo())
-                else -> result.notImplemented()
+                    "getDisplayModeInfo" -> result.success(displayModeInfo())
+                    else -> result.notImplemented()
+                }
             }
         }
         MethodChannel(
@@ -48,6 +72,12 @@ class MainActivity : AudioServiceActivity() {
             }
         }
         applyPreferredDisplayMode(highRefreshRateEnabled)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        registerDisplayListener()
+        scheduleDisplayModeRefresh(delayMillis = 0)
     }
 
     @Suppress("DEPRECATION")
@@ -82,7 +112,38 @@ class MainActivity : AudioServiceActivity() {
 
     override fun onResume() {
         super.onResume()
-        applyPreferredDisplayMode(highRefreshRateEnabled)
+        scheduleDisplayModeRefresh(delayMillis = 0)
+    }
+
+    override fun onStop() {
+        unregisterDisplayListener()
+        super.onStop()
+    }
+
+    override fun onDestroy() {
+        mainHandler.removeCallbacks(displayModeRefresh)
+        displayModeChannel = null
+        super.onDestroy()
+    }
+
+    private fun registerDisplayListener() {
+        if (displayListenerRegistered) return
+        val displayManager = getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+        displayManager.registerDisplayListener(displayListener, mainHandler)
+        displayListenerRegistered = true
+    }
+
+    private fun unregisterDisplayListener() {
+        if (!displayListenerRegistered) return
+        val displayManager = getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+        displayManager.unregisterDisplayListener(displayListener)
+        displayListenerRegistered = false
+        mainHandler.removeCallbacks(displayModeRefresh)
+    }
+
+    private fun scheduleDisplayModeRefresh(delayMillis: Long = 160) {
+        mainHandler.removeCallbacks(displayModeRefresh)
+        mainHandler.postDelayed(displayModeRefresh, delayMillis)
     }
 
     @Suppress("DEPRECATION")
@@ -103,11 +164,16 @@ class MainActivity : AudioServiceActivity() {
 
         val attributes = window.attributes
         val targetModeId = if (enabled) preferredMode.modeId else 0
-        if (attributes.preferredDisplayModeId != targetModeId) {
+        val targetRefreshRate = if (enabled) preferredMode.refreshRate else 0f
+        if (
+            attributes.preferredDisplayModeId != targetModeId ||
+            kotlin.math.abs(attributes.preferredRefreshRate - targetRefreshRate) > 0.01f
+        ) {
             attributes.preferredDisplayModeId = targetModeId
+            attributes.preferredRefreshRate = targetRefreshRate
             window.attributes = attributes
         }
-        return displayModeInfo(preferredMode)
+        return displayModeInfo(if (enabled) preferredMode else currentMode)
     }
 
     private fun displayModeInfo(preferredMode: Display.Mode? = null): Map<String, Any> {
@@ -142,7 +208,9 @@ class MainActivity : AudioServiceActivity() {
             "supportedRefreshRates" to rates,
             "width" to currentMode.physicalWidth,
             "height" to currentMode.physicalHeight,
+            "displayId" to activeDisplay.displayId,
             "preferredDisplayModeId" to window.attributes.preferredDisplayModeId,
+            "requestedRefreshRate" to window.attributes.preferredRefreshRate.toDouble(),
         )
     }
 }

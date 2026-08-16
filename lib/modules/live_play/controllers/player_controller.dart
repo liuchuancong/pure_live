@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/site/huya_site.dart';
 import 'package:pure_live/model/live_play_quality.dart';
@@ -103,7 +105,12 @@ class PlayerController extends GetxController {
       }
 
       await getPlayUrl();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      developer.log(
+        'Play quality loading failed (${error.runtimeType})',
+        name: 'PlayerController',
+        stackTrace: stackTrace,
+      );
       ToastUtil.show(i18n('read_video_failed'));
       _main.updateRoom(success: false);
     }

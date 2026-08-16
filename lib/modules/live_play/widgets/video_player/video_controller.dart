@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:developer';
+import 'package:flutter/scheduler.dart';
 import 'video_controller_panel.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:battery_plus/battery_plus.dart';
@@ -45,7 +46,11 @@ class DanmakuManager {
   final List<Worker> workers = [];
   final SettingsService settingsService;
   final VideoController videoController;
+  final RxInt _visualSettingsRevision = 0.obs;
   int _speedVariant = 0;
+  bool _configUpdateScheduled = false;
+  bool _settingsDirty = false;
+  bool _disposed = false;
 
   DanmakuManager({
     required this.controller,
@@ -90,22 +95,42 @@ class DanmakuManager {
       videoController.danmakuFontFamilyName,
     ];
 
-    for (final rxProperty in visualProperties) {
-      workers.add(ever(rxProperty, (_) => videoController.updateDanmaku()));
-    }
+    workers.add(
+      everAll(visualProperties, (_) {
+        _settingsDirty = true;
+        _visualSettingsRevision.value++;
+        _scheduleConfigUpdate();
+      }),
+    );
+    workers.add(
+      debounce<int>(_visualSettingsRevision, (_) => _persistVisualSettings(), time: const Duration(milliseconds: 160)),
+    );
+  }
 
-    workers.addAll([
-      ever<double>(videoController.danmakuArea, (v) => dm.danmakuArea.v = v),
-      ever<double>(videoController.danmakuTopArea, (v) => dm.danmakuTopArea.v = v),
-      ever<double>(videoController.danmakuBottomArea, (v) => dm.danmakuBottomArea.v = v),
-      ever<double>(videoController.danmakuSpeed, (v) => dm.danmakuSpeed.v = v),
-      ever<double>(videoController.danmakuFontSize, (v) => dm.danmakuFontSize.v = v),
-      ever<int>(videoController.danmakuFontBorder, (v) => dm.danmakuFontBorder.v = v.toDouble()),
-      ever<double>(videoController.danmakuOpacity, (v) => dm.danmakuOpacity.v = v),
-      ever<bool>(videoController.enableDanmakuStroke, (v) => dm.enableDanmakuStroke.v = v),
-      ever<int>(videoController.danmakuFps, (v) => dm.danmakuFps.v = v),
-      ever<String>(videoController.danmakuFontFamilyName, (v) => dm.danmakuFontFamilyName.v = v),
-    ]);
+  void _scheduleConfigUpdate() {
+    if (_disposed || _configUpdateScheduled) return;
+    _configUpdateScheduled = true;
+    SchedulerBinding.instance.scheduleFrameCallback((_) {
+      _configUpdateScheduled = false;
+      if (!_disposed) videoController.updateDanmaku();
+    });
+    SchedulerBinding.instance.scheduleFrame();
+  }
+
+  void _persistVisualSettings() {
+    if (!_settingsDirty) return;
+    final dm = settingsService.danmaku;
+    dm.danmakuArea.v = videoController.danmakuArea.value;
+    dm.danmakuTopArea.v = videoController.danmakuTopArea.value;
+    dm.danmakuBottomArea.v = videoController.danmakuBottomArea.value;
+    dm.danmakuSpeed.v = videoController.danmakuSpeed.value;
+    dm.danmakuFontSize.v = videoController.danmakuFontSize.value;
+    dm.danmakuFontBorder.v = videoController.danmakuFontBorder.value.toDouble();
+    dm.danmakuOpacity.v = videoController.danmakuOpacity.value;
+    dm.enableDanmakuStroke.v = videoController.enableDanmakuStroke.value;
+    dm.danmakuFps.v = videoController.danmakuFps.value;
+    dm.danmakuFontFamilyName.v = videoController.danmakuFontFamilyName.value;
+    _settingsDirty = false;
   }
 
   void sendDanmaku(LiveMessage msg, bool isPlaying, bool isCompactMode) {
@@ -125,6 +150,8 @@ class DanmakuManager {
   }
 
   void dispose() {
+    _persistVisualSettings();
+    _disposed = true;
     for (final worker in workers) {
       worker.dispose();
     }

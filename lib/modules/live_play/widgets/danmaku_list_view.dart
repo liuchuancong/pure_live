@@ -39,7 +39,7 @@ class DanmakuListViewState extends State<DanmakuListView> {
   void initState() {
     super.initState();
 
-    messagesSub = controller.state.listen((state) {
+    messagesSub = controller.danmakuMessages.listen((_) {
       scheduleAutoScroll();
     });
 
@@ -193,7 +193,7 @@ class DanmakuListViewState extends State<DanmakuListView> {
                 return false;
               },
               child: Obx(() {
-                final list = controller.state.value.danmaku.messages;
+                final list = controller.danmakuMessages;
 
                 return ListView.builder(
                   addAutomaticKeepAlives: false,
@@ -205,7 +205,7 @@ class DanmakuListViewState extends State<DanmakuListView> {
                   itemBuilder: (_, index) {
                     final msg = list[index];
 
-                    return DanmakuItem(key: ValueKey("${msg.userName}-${msg.message}-$index"), danmaku: msg);
+                    return DanmakuItem(key: ObjectKey(msg), danmaku: msg);
                   },
                 );
               }),

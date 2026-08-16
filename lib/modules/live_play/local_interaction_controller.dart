@@ -17,6 +17,7 @@ class LocalGift {
 }
 
 class LocalInteractionController extends GetxController {
+  final RxBool enabled = hiveBool('localInteraction.enabled', true);
   final RxString userName = hiveString('localInteraction.userName', 'Pure Live');
   final RxString selectedTitle = hiveString('localInteraction.title', 'listener');
   final RxBool showAsDanmaku = hiveBool('localInteraction.showAsDanmaku', true);
@@ -51,13 +52,21 @@ class LocalInteractionController extends GetxController {
 
   static const titles = <String>['listener', 'night_owl', 'supporter', 'guardian'];
 
-  int get level => experience.v ~/ 500 + 1;
+  int get level => levelForExperience(experience.v);
 
   String get titleLabel => i18n('local_title_${selectedTitle.v}');
 
-  void updateName(String value) {
+  static int levelForExperience(int value) => (value < 0 ? 0 : value) ~/ 500 + 1;
+
+  static String normalizeUserName(String value) {
     final name = value.trim();
-    if (name.isNotEmpty) userName.v = name.substring(0, name.length.clamp(0, 20).toInt());
+    if (name.isEmpty) return '';
+    return name.substring(0, name.length.clamp(0, 20).toInt());
+  }
+
+  void updateName(String value) {
+    final name = normalizeUserName(value);
+    if (name.isNotEmpty) userName.v = name;
   }
 
   void recharge(int amount) {
@@ -77,6 +86,7 @@ class LocalInteractionController extends GetxController {
   }
 
   LiveMessage? sendGift(LocalGift gift) {
+    if (!enabled.v) return null;
     if (coins.v < gift.price) return null;
     coins.v -= gift.price;
     experience.v += gift.price;
@@ -98,4 +108,6 @@ class LocalInteractionController extends GetxController {
     history.insert(0, value);
     if (history.length > 30) history.removeRange(30, history.length);
   }
+
+  void clearHistory() => history.clear();
 }

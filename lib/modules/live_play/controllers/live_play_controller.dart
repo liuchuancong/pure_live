@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'dart:developer' as developer;
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:pure_live/plugins/emoji_manager.dart';
@@ -38,6 +39,7 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
   final LocalInteractionController localInteractionController = Get.find<LocalInteractionController>();
 
   final Rx<LivePlayState> state = const LivePlayState().obs;
+  final RxList<LiveMessage> danmakuMessages = <LiveMessage>[].obs;
 
   late Site currentSite;
   late TabController tabController;
@@ -158,19 +160,25 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
   }
 
   void updateDanmaku({List<LiveMessage>? messages, String? currentDanmakuRoomId}) {
+    if (messages != null) {
+      danmakuMessages.assignAll(messages);
+    }
     state.value = state.value.copyWith(
       danmaku: state.value.danmaku.copyWith(messages: messages, currentDanmakuRoomId: currentDanmakuRoomId),
     );
   }
 
   void addDanmakuMessage(LiveMessage msg) {
-    final currentMessages = List<LiveMessage>.from(state.value.danmaku.messages);
-    if (currentMessages.length > 100) currentMessages.removeAt(0);
+    final currentMessages = List<LiveMessage>.from(danmakuMessages);
+    if (currentMessages.length >= 100) {
+      currentMessages.removeRange(0, currentMessages.length - 99);
+    }
     currentMessages.add(msg);
     updateDanmaku(messages: currentMessages);
   }
 
   void emitLocalMessage(LiveMessage msg, {required bool showAsDanmaku}) {
+    if (!localInteractionController.enabled.v) return;
     addDanmakuMessage(msg);
     if (showAsDanmaku) {
       state.value.player.videoController?.sendDanmaku(msg);
@@ -280,7 +288,12 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
           updateDanmakuRoomId(liveRoom.roomId);
         }
       }
-    } catch (_) {
+    } catch (error, stackTrace) {
+      developer.log(
+        'Live room initialization failed (${error.runtimeType})',
+        name: 'LivePlayController',
+        stackTrace: stackTrace,
+      );
       updateRoom(success: false);
     }
   }

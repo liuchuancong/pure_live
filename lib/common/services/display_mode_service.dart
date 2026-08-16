@@ -8,6 +8,8 @@ class DisplayModeInfo {
     required this.maxRefreshRate,
     required this.preferredRefreshRate,
     required this.supportedRefreshRates,
+    this.requestedRefreshRate,
+    this.displayId,
     this.width,
     this.height,
   });
@@ -17,6 +19,8 @@ class DisplayModeInfo {
   final double maxRefreshRate;
   final double preferredRefreshRate;
   final List<double> supportedRefreshRates;
+  final double? requestedRefreshRate;
+  final int? displayId;
   final int? width;
   final int? height;
 
@@ -37,6 +41,8 @@ class DisplayModeInfo {
       maxRefreshRate: number('maxRefreshRate'),
       preferredRefreshRate: number('preferredRefreshRate'),
       supportedRefreshRates: rates,
+      requestedRefreshRate: map['requestedRefreshRate'] is num ? number('requestedRefreshRate') : null,
+      displayId: (map['displayId'] as num?)?.toInt(),
       width: (map['width'] as num?)?.toInt(),
       height: (map['height'] as num?)?.toInt(),
     );
@@ -48,8 +54,19 @@ class DisplayModeService {
 
   static const MethodChannel _channel = MethodChannel('pure_live/display_mode');
   static final Rx<DisplayModeInfo?> info = Rx<DisplayModeInfo?>(null);
+  static bool _handlerInstalled = false;
+
+  static void _ensureHandler() {
+    if (_handlerInstalled) return;
+    _handlerInstalled = true;
+    _channel.setMethodCallHandler((call) async {
+      if (call.method != 'displayModeChanged' || call.arguments is! Map) return;
+      info.value = DisplayModeInfo.fromMap(Map<dynamic, dynamic>.from(call.arguments as Map));
+    });
+  }
 
   static Future<DisplayModeInfo?> setHighRefreshRate(bool enabled) async {
+    _ensureHandler();
     try {
       final result = await _channel.invokeMapMethod<dynamic, dynamic>('setHighRefreshRate', {'enabled': enabled});
       if (result == null) return null;
@@ -64,6 +81,7 @@ class DisplayModeService {
   }
 
   static Future<DisplayModeInfo?> refreshInfo() async {
+    _ensureHandler();
     try {
       final result = await _channel.invokeMapMethod<dynamic, dynamic>('getDisplayModeInfo');
       if (result == null) return null;
