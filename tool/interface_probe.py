@@ -128,6 +128,38 @@ def bilibili_danmaku_probe() -> None:
             raise ValueError("invalid secure danmaku endpoint")
 
 
+def huya_danmaku_identity_probe() -> None:
+    """Ensure a live room exposes the numeric uid required by the gateway."""
+    recommendation = request_json(
+        "https://www.huya.com/cache.php",
+        {"m": "LiveList", "do": "getLiveListByPage", "tagAll": 0, "page": 1},
+    )
+    if not isinstance(recommendation, dict):
+        raise ValueError("invalid recommendation response")
+    data = recommendation.get("data", {})
+    rooms = data.get("datas", []) if isinstance(data, dict) else []
+    if not rooms or not isinstance(rooms[0], dict):
+        raise ValueError("no live room available for identity probe")
+    room_id = str(rooms[0].get("profileRoom", "")).strip()
+    if not room_id:
+        raise ValueError("recommended room id missing")
+
+    detail = request_json(
+        "https://mp.huya.com/cache.php",
+        {"m": "Live", "do": "profileRoom", "roomid": room_id, "showSecret": 1},
+    )
+    if not isinstance(detail, dict) or detail.get("status") != 200:
+        raise ValueError(f"room detail status={detail.get('status') if isinstance(detail, dict) else 'invalid'}")
+    detail_data = detail.get("data", {})
+    profile = detail_data.get("profileInfo", {}) if isinstance(detail_data, dict) else {}
+    try:
+        uid = int(profile.get("uid", 0)) if isinstance(profile, dict) else 0
+    except (TypeError, ValueError) as error:
+        raise ValueError("profileInfo.uid is not numeric") from error
+    if uid <= 0:
+        raise ValueError("profileInfo.uid missing")
+
+
 def main() -> int:
     probes = [
         (
@@ -186,6 +218,7 @@ def main() -> int:
             ),
         ),
         ("bilibili.danmaku", bilibili_danmaku_probe),
+        ("huya.danmaku_identity", huya_danmaku_identity_probe),
         (
             "douyu.search",
             lambda: require_path(

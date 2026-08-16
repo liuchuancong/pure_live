@@ -1,3 +1,4 @@
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/search/search_controller.dart' as pure_live;
 
@@ -83,18 +84,54 @@ class SearchPage extends GetView<pure_live.SearchController> {
                     ],
                   ),
                 Expanded(
-                  child: GridView.builder(
-                    padding: const EdgeInsets.all(8),
-                    cacheExtent: 480,
+                  child: CustomScrollView(
+                    controller: controller.scrollController,
+                    scrollCacheExtent: const ScrollCacheExtent.pixels(480),
                     keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: columns,
-                      crossAxisSpacing: spacing,
-                      mainAxisSpacing: spacing,
-                      mainAxisExtent: itemWidth * 9 / 16 + 72,
-                    ),
-                    itemCount: controller.results.length,
-                    itemBuilder: (context, index) => RoomCard(room: controller.results[index], dense: true),
+                    slivers: [
+                      SliverPadding(
+                        padding: const EdgeInsets.all(8),
+                        sliver: SliverGrid(
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: columns,
+                            crossAxisSpacing: spacing,
+                            mainAxisSpacing: spacing,
+                            mainAxisExtent: itemWidth * 9 / 16 + 72,
+                          ),
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) => RoomCard(room: controller.results[index], dense: true),
+                            childCount: controller.results.length,
+                          ),
+                        ),
+                      ),
+                      SliverToBoxAdapter(
+                        child: SafeArea(
+                          top: false,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+                            child: Center(
+                              child: controller.loadingMore.v
+                                  ? const SizedBox.square(
+                                      dimension: 28,
+                                      child: CircularProgressIndicator(strokeWidth: 2.5),
+                                    )
+                                  : controller.hasMore.v
+                                  ? TextButton.icon(
+                                      onPressed: controller.loadMore,
+                                      icon: const Icon(Icons.expand_more_rounded),
+                                      label: Text(i18n('load_more_results')),
+                                    )
+                                  : Text(
+                                      i18n('all_results_loaded'),
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

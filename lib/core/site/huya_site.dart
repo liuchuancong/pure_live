@@ -338,7 +338,11 @@ class HuyaSite implements LiveSite {
         liveStatus: data['liveStatus'] == "ON" || data['liveStatus'] == "REPLAY" ? LiveStatus.live : LiveStatus.offline,
         platform: Sites.huyaSite,
         data: HuyaUrlDataModel(url: "", lines: huyaLines, bitRates: huyaBiterates, uid: "", isXingxiu: isXingxiu),
-        danmakuData: HuyaDanmakuArgs(ayyuid: data["profileInfo"]["yyid"] ?? 0, topSid: topSid, subSid: subSid),
+        danmakuData: HuyaDanmakuArgs(
+          uid: int.tryParse(data["profileInfo"]?["uid"]?.toString() ?? "") ?? 0,
+          topSid: topSid,
+          subSid: subSid,
+        ),
         link: "https://www.huya.com/$roomId",
       );
     } else {

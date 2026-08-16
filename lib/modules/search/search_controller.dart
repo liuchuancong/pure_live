@@ -7,11 +7,16 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
   var index = 0.obs;
   final results = <LiveRoom>[].obs;
   final loading = false.obs;
+  final loadingMore = false.obs;
+  final hasMore = false.obs;
   final searched = false.obs;
   final errorMessage = ''.obs;
+  final ScrollController scrollController = ScrollController();
   bool _isWebView2Available = true;
   int _searchGeneration = 0;
   int _settledTabIndex = 0;
+  int _currentPage = 0;
+  String _activeKeyword = '';
   SearchController() {
     tabController = TabController(length: Sites().availableSites().length + 1, vsync: this);
     tabController.addListener(() {
@@ -21,6 +26,12 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
         if (searched.v) doSearch();
       }
     });
+    scrollController.addListener(_handleSearchScroll);
+  }
+
+  void _handleSearchScroll() {
+    if (!scrollController.hasClients || scrollController.position.extentAfter > 480) return;
+    loadMore();
   }
 
   TextEditingController searchController = TextEditingController();
@@ -80,19 +91,40 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
       return;
     }
     FocusManager.instance.primaryFocus?.unfocus();
+    if (scrollController.hasClients) scrollController.jumpTo(0);
     final generation = ++_searchGeneration;
+    _activeKeyword = keyword;
+    _currentPage = 0;
     loading.v = true;
+    loadingMore.v = false;
+    hasMore.v = false;
     searched.v = true;
     errorMessage.v = '';
     results.clear();
 
+    await _searchPage(keyword: keyword, page: 1, generation: generation, append: false);
+  }
+
+  Future<void> loadMore() async {
+    if (loading.v || loadingMore.v || !hasMore.v || _activeKeyword.isEmpty) return;
+    final generation = _searchGeneration;
+    loadingMore.v = true;
+    await _searchPage(keyword: _activeKeyword, page: _currentPage + 1, generation: generation, append: true);
+  }
+
+  Future<void> _searchPage({
+    required String keyword,
+    required int page,
+    required int generation,
+    required bool append,
+  }) async {
     final sites = Sites().availableSites();
     final selectedSites = index.v == 0 ? sites : [sites[index.v - 1]];
     final failures = <String>[];
     final batches = await Future.wait(
       selectedSites.map((site) async {
         try {
-          return await site.liveSite.searchRooms(keyword, page: 1, pageSize: 30);
+          return await site.liveSite.searchRooms(keyword, page: page, pageSize: 20);
         } catch (error) {
           failures.add(site.name);
           debugPrint('Native search failed for ${site.id}: $error');
@@ -102,7 +134,11 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
     );
     if (generation != _searchGeneration) return;
 
-    final unique = <String, LiveRoom>{};
+    final unique = <String, LiveRoom>{
+      if (append)
+        for (final room in results) '${room.platform}:${room.roomId}': room,
+    };
+    final previousCount = unique.length;
     for (final room in batches.expand((items) => items)) {
       unique['${room.platform}:${room.roomId}'] = room;
     }
@@ -113,10 +149,14 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
         return _numericHeat(b.watching).compareTo(_numericHeat(a.watching));
       });
     results.assignAll(rooms);
+    _currentPage = page;
+    final receivedResults = batches.any((items) => items.isNotEmpty);
+    hasMore.v = receivedResults && unique.length > previousCount;
     if (failures.isNotEmpty) {
       errorMessage.v = i18n('search_partial_failure', args: {'sites': failures.join('、')});
     }
     loading.v = false;
+    loadingMore.v = false;
   }
 
   int _numericHeat(String? value) {
@@ -195,6 +235,9 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
   void onClose() {
     _searchGeneration++;
     tabController.dispose();
+    scrollController
+      ..removeListener(_handleSearchScroll)
+      ..dispose();
     searchController.dispose();
     super.onClose();
   }

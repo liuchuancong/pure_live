@@ -1,3 +1,4 @@
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
 
@@ -93,7 +94,7 @@ class RoomGridView extends GetView<FavoriteController> {
                 return GridView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                   controller: scrollController,
-                  cacheExtent: 480,
+                  scrollCacheExtent: const ScrollCacheExtent.pixels(480),
                   keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: crossAxisCount,

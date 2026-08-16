@@ -1,4 +1,5 @@
 import 'package:remixicon/remixicon.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/common/index.dart';
 
 class PopularGridView extends StatefulWidget {
@@ -37,7 +38,7 @@ class _PopularGridViewState extends State<PopularGridView> {
             return GridView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
               controller: scrollController,
-              cacheExtent: 480,
+              scrollCacheExtent: const ScrollCacheExtent.pixels(480),
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: crossAxisCount,

@@ -18,7 +18,7 @@
 > 本仓库基于 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live) 持续维护，新增可配置的小窗弹幕，并完善本机构建、依赖锁定、接口探测和发布流程。
 
 - **最新稳定版**：[v2.0.23](https://github.com/wzgrx/pure_live/releases/tag/v2.0.23)
-- **当前开发版**：`2.0.24+35`（`master`）
+- **当前开发版**：`2.0.25+36`（`master`）
 - **主要发布平台**：Android、Windows
 
 ![Pure Live 界面预览](assets/images/banner.png)
@@ -32,7 +32,7 @@
 - **小窗弹幕**：覆盖 Android 系统画中画、Windows 小窗和应用内悬浮窗。
 - **数据管理**：本地导入导出、WebDAV 同步，以及可选的 Firebase 用户同步。
 - **播放工具**：直播录制、定时关闭、后台音频和系统媒体通知。
-- **搜索与互动**：跨平台原生直播搜索，以及仅保存在本机的昵称、头衔、字幕、体验币和礼物特效。
+- **搜索与互动**：跨平台原生直播搜索、滚动分页加载，以及仅保存在本机的昵称、头衔、字幕、体验币和礼物特效。
 - **ASMR 助眠**：Android 纯音频后台播放、媒体保活和 30–480 分钟自动停止。
 - **高刷新率适配**：Android 自动请求当前分辨率支持的最高刷新率，并优化封面解码、缓存和弹幕重绘。
 
@@ -73,6 +73,8 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 ```
 
 本地脚本优先完成依赖解析、格式检查、静态分析、测试和外部接口探测；GitHub Actions 仅保留手动兜底入口，以减少配额消耗。完整说明见 [本地构建与发布](docs/BUILD_AND_RELEASE.md)。
+
+缩略图除支持手动刷新外，也可在“设置 → 刷新设置”启用定时自动刷新并选择 5 分钟到 6 小时的周期。
 
 ## 文档
 

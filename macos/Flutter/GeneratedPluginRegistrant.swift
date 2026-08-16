@@ -15,7 +15,7 @@ import connectivity_plus
 import device_info_plus
 import dynamic_color
 import ffmpeg_kit_extended_flutter
-import file_picker
+import file_picker_darwin
 import firebase_auth
 import firebase_core
 import flutter_inappwebview_macos

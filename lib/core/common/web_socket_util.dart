@@ -57,7 +57,7 @@ class WebScoketUtils {
 
   static List<String> _uniqueEndpoints(String primary, String? backup, List<String>? candidates) {
     final endpoints = <String>[];
-    for (final endpoint in <String>[primary, if (backup != null) backup, ...?candidates]) {
+    for (final endpoint in <String>[primary, ?backup, ...?candidates]) {
       final value = endpoint.trim();
       if (value.isNotEmpty && !endpoints.contains(value)) endpoints.add(value);
     }

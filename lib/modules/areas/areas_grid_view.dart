@@ -1,4 +1,5 @@
 import 'package:remixicon/remixicon.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/areas/widgets/area_card.dart';
 import 'package:pure_live/modules/areas/areas_list_controller.dart';
@@ -192,7 +193,7 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
         return GridView.builder(
           padding: const EdgeInsets.fromLTRB(6, 6, 6, 80),
           controller: scrollController,
-          cacheExtent: 480,
+          scrollCacheExtent: const ScrollCacheExtent.pixels(480),
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,

@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/widgets/keep_alive_wrapper.dart';
 
@@ -45,7 +46,7 @@ class _AreasRoomPageState extends State<AreasRoomPage> {
                 final spacing = SettingsService.to.theme.crossAxisSpacing.v;
                 final itemWidth = (width - 12 - spacing * (crossAxisCount - 1)) / crossAxisCount;
                 return GridView.builder(
-                  cacheExtent: 480,
+                  scrollCacheExtent: const ScrollCacheExtent.pixels(480),
                   keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: crossAxisCount,
