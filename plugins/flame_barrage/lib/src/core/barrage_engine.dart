@@ -43,6 +43,7 @@ class BarrageEngine extends FlameGame with TapCallbacks {
   double _emitTimer = 0.0;
   double _metricTimer = 0.0;
   double _cleanupTimer = 0.0;
+  double _frameAccumulator = 0.0;
   bool _initialized = false;
 
   EngineState _state = EngineState.running;
@@ -119,6 +120,23 @@ class BarrageEngine extends FlameGame with TapCallbacks {
         break;
       }
     }
+  }
+
+  /// Dispatches a Flutter-layer pointer to the top-most visible barrage item.
+  /// This lets the video gesture surface keep swipe/double-tap handling while
+  /// still supporting precise danmaku actions.
+  bool triggerItemAt(double x, double y, {required bool longPress}) {
+    for (var i = _activeEntries.length - 1; i >= 0; i--) {
+      final entry = _activeEntries[i];
+      if (!entry.active || x < entry.x || x > entry.x + entry.width || y < entry.y || y > entry.y + entry.height) {
+        continue;
+      }
+      final callback = longPress ? entry.item.onLongTapDown : entry.item.onTapUp;
+      if (callback == null) return false;
+      callback();
+      return true;
+    }
+    return false;
   }
 
   @override
@@ -204,13 +222,20 @@ class BarrageEngine extends FlameGame with TapCallbacks {
 
   @override
   void update(double dt) {
-    super.update(dt);
     if (!_initialized || isPaused) return;
 
-    clock.tick(dt);
+    final targetFps = _config.fps.clamp(1, 240);
+    final frameInterval = 1.0 / targetFps;
+    _frameAccumulator += dt;
+    if (_frameAccumulator + 0.000001 < frameInterval) return;
+    final elapsed = _frameAccumulator.clamp(0.0, frameInterval * 3).toDouble();
+    _frameAccumulator = (_frameAccumulator - frameInterval).clamp(0.0, frameInterval).toDouble();
+    super.update(elapsed);
+
+    clock.tick(elapsed);
     final int nowMs = clock.now();
 
-    _emitTimer += dt;
+    _emitTimer += elapsed;
     if (_emitTimer >= _config.emitInterval) {
       _emitTimer = 0.0;
       _dispatchWaiting(nowMs);
@@ -236,7 +261,7 @@ class BarrageEngine extends FlameGame with TapCallbacks {
       }
     }
 
-    _cleanupTimer += dt;
+    _cleanupTimer += elapsed;
     if (_cleanupTimer >= 0.5) {
       _cleanupTimer = 0.0;
 
@@ -258,7 +283,7 @@ class BarrageEngine extends FlameGame with TapCallbacks {
       _backbufferEntries = temp;
     }
 
-    _metricTimer += dt;
+    _metricTimer += elapsed;
     if (_metricTimer >= 0.032) {
       _metricTimer = 0.0;
       _updateTrackMetrics(nowMs);

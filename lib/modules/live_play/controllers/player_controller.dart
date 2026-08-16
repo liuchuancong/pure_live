@@ -2,6 +2,7 @@ import 'dart:developer' as developer;
 
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/site/huya_site.dart';
+import 'package:pure_live/core/site/bilibili_site.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
@@ -27,26 +28,13 @@ class PlayerController extends GetxController {
     Map<String, String> headers = {};
 
     if (currentSite.id == Sites.bilibiliSite) {
+      final cookie = SettingsService.to.cookieManager.bilibiliCookie.v.trim();
+      final roomId = currentRoom?.roomId ?? '';
       headers = {
-        "cookie": SettingsService.to.cookieManager.bilibiliCookie.v,
-        "authority": "api.bilibili.com",
-        "accept":
-            "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        "accept-language": "zh-CN,zh;q=0.9",
-        "cache-control": "no-cache",
-        "dnt": "1",
-        "pragma": "no-cache",
-        "sec-ch-ua": '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": '"macOS"',
-        "sec-fetch-dest": "document",
-        "sec-fetch-mode": "navigate",
-        "sec-fetch-site": "none",
-        "sec-fetch-user": "?1",
-        "upgrade-insecure-requests": "1",
-        "user-agent":
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-        "referer": "https://live.bilibili.com",
+        'user-agent': BiliBiliSite.kDefaultUserAgent,
+        'origin': 'https://live.bilibili.com',
+        'referer': 'https://live.bilibili.com/$roomId',
+        if (cookie.isNotEmpty) 'cookie': cookie,
       };
     } else if (currentSite.id == Sites.huyaSite) {
       final ua = await HuyaSite().getHuYaUA();
@@ -167,6 +155,8 @@ class PlayerController extends GetxController {
 
   Future<void> changeCurrentRoomAudioOnly(bool value) async {
     if (_state.player.isCurrentRoomAudioOnly == value) return;
+    await GlobalPlayerService.instance.playerManager.hardDispose();
+    await destroyPlayer();
     _main.updatePlayer(isCurrentRoomAudioOnly: value);
     await _main.onInitPlayerState();
   }

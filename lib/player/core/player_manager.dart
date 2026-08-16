@@ -1,28 +1,34 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:developer';
+
 import 'player_pool.dart';
 import 'line_fallback_manager.dart';
 import '../models/player_state.dart';
 import 'preload_player_manager.dart';
 import '../models/player_engine.dart';
 import 'engine_fallback_manager.dart';
+
 import 'package:floating/floating.dart';
+
 import '../models/player_exception.dart';
+
 import 'package:remixicon/remixicon.dart';
+
 import '../models/player_error_type.dart';
+
 import 'package:rxdart/rxdart.dart' hide Rx;
 import 'package:pure_live/common/index.dart';
+
 import '../interface/unified_player_interface.dart';
+
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:flutter_floating/flutter_floating.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/utils/pip_window_widget.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
-import 'package:pure_live/player/core/audio_stream_loader.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
@@ -32,7 +38,6 @@ class PlayerManager {
   final PlayerPool playerPool;
   final EngineFallbackManager fallbackManager;
   final PreloadPlayerManager preloadManager;
-  final AudioStreamLoader audioLoader = AudioStreamLoader();
   final LineFallbackManager lineManager;
 
   int _sessionId = 0;
@@ -57,6 +62,7 @@ class PlayerManager {
   UnifiedPlayer? _currentPlayer;
   PlayerEngine? _runtimeEngine;
   PlayerEngine? _defaultEngine;
+  bool _runtimeAudioOnly = false;
 
   String? _currentUrl;
   List<String> _currentPlayUrls = [];
@@ -152,6 +158,7 @@ class PlayerManager {
       _defaultEngine = engine;
       _runtimeEngine = engine;
       _currentPlayer = await playerPool.getPlayer(engine, audioOnly: audioOnly);
+      _runtimeAudioOnly = audioOnly;
       await _bindPlayerStreams(_currentPlayer!);
       LiveAudioService.setPlayer(_currentPlayer!);
       if (Platform.isAndroid) {
@@ -198,7 +205,9 @@ class PlayerManager {
       log('No current player, initializing with default engine: $_defaultEngine', name: 'PlayerManager');
       await initialize(engine: _defaultEngine!, audioOnly: audioOnly);
     } else if (_runtimeEngine != _defaultEngine && !_isSwitchingDueToFallback) {
-      await switchEngine(_defaultEngine!, isManual: false);
+      await switchEngine(_defaultEngine!, isManual: false, audioOnly: audioOnly);
+    } else if (_runtimeAudioOnly != audioOnly) {
+      await _recreateForAudioMode(audioOnly);
     }
 
     if (!_isSessionValid(mySessionId)) return;
@@ -208,42 +217,11 @@ class PlayerManager {
       throw PlayerException(message: 'Current player is null', type: PlayerErrorType.lifecycle);
     }
 
-    String targetUrl = url;
-    List<String> targetPlayUrls = List.from(playUrls);
-
-    if (audioOnly && room?.roomId != null) {
-      audioLoader.stop();
-      final completer = Completer<String>();
-      audioLoader.startAudioStream(
-        remoteStreamUrl: url,
-        uniqueId: room!.roomId!,
-        platform: room.platform ?? "",
-        onAudioReady: (audioPipePath) {
-          if (!completer.isCompleted) completer.complete(audioPipePath);
-        },
-        onFFmpegEvent: (event) {
-          if (event.type == FFmpegEventType.error) {
-            log(event.data['message'] ?? 'FFmpeg stream extract failed');
-          }
-        },
-      );
-      try {
-        final pipePath = await completer.future.timeout(const Duration(seconds: 30));
-        await Future.delayed(const Duration(seconds: 2));
-        if (!_isSessionValid(mySessionId)) {
-          audioLoader.stop();
-          return;
-        }
-        targetUrl = pipePath;
-        targetPlayUrls = [pipePath];
-      } catch (e) {
-        audioLoader.stop();
-        if (!_isSessionValid(mySessionId)) return;
-        throw PlayerException(message: 'Audio pipe init timeout', type: PlayerErrorType.unknown);
-      }
-    } else if (!audioOnly) {
-      audioLoader.stop();
-    }
+    // Every bundled player has a native audio-only path.  Opening the original
+    // live URL directly avoids a second FFmpeg decode pipeline and removes the
+    // previous fixed two-second wait / 30-second pipe timeout.
+    final String targetUrl = url;
+    final List<String> targetPlayUrls = List.from(playUrls);
 
     _currentUrl = targetUrl;
     _currentPlayUrls = targetPlayUrls;
@@ -292,16 +270,34 @@ class PlayerManager {
     await play(_currentUrl!, _currentPlayUrls, _currentHeaders, room: currentFloatRoom);
   }
 
-  Future<void> switchEngine(PlayerEngine engine, {bool isManual = false}) async {
+  Future<void> _recreateForAudioMode(bool audioOnly) async {
+    final engine = _runtimeEngine;
+    if (engine == null || _runtimeAudioOnly == audioOnly) return;
+    final oldPlayer = _currentPlayer;
+    await _clearSubscriptions();
+    if (oldPlayer != null) {
+      await playerPool.removeFromCache(engine);
+    }
+    final newPlayer = await playerPool.getPlayer(engine, audioOnly: audioOnly);
+    _currentPlayer = newPlayer;
+    _runtimeAudioOnly = audioOnly;
+    await _bindPlayerStreams(newPlayer);
+    LiveAudioService.setPlayer(newPlayer);
+    videoKey.value = ValueKey("video_${DateTime.now().millisecondsSinceEpoch}");
+  }
+
+  Future<void> switchEngine(PlayerEngine engine, {bool isManual = false, bool? audioOnly}) async {
     if (_disposed || _isClosing) return;
     if (_runtimeEngine == engine && _currentPlayer != null) return;
     try {
       final oldPlayer = _currentPlayer;
       final oldEngine = _runtimeEngine;
       await _clearSubscriptions();
-      final newPlayer = await playerPool.getPlayer(engine);
+      final targetAudioOnly = audioOnly ?? _runtimeAudioOnly;
+      final newPlayer = await playerPool.getPlayer(engine, audioOnly: targetAudioOnly);
       _currentPlayer = newPlayer;
       _runtimeEngine = engine;
+      _runtimeAudioOnly = targetAudioOnly;
       if (isManual) _defaultEngine = engine;
       log('Switch engine to $engine', name: 'PlayerManager');
       await _bindPlayerStreams(newPlayer);
@@ -811,7 +807,6 @@ class PlayerManager {
     _sessionId++;
     _isClosing = true;
     await LiveAudioService.stop();
-    audioLoader.stop();
     SettingsService.to.player.useHardStopOnExit.v ? await hardDispose() : await softStop();
     _isClosing = false;
   }
@@ -839,6 +834,7 @@ class PlayerManager {
     }
     _currentPlayer = null;
     _runtimeEngine = null;
+    _runtimeAudioOnly = false;
     isInitialized.value = false;
   }
 

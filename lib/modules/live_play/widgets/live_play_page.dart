@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:async';
+
 import 'index.dart';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
@@ -41,17 +43,12 @@ class LivePlayPage extends GetView<LivePlayController> {
             color: Colors.black,
             width: double.infinity,
             height: double.infinity,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 50),
-              child: _buildConstrainedChild(isInPip, mode, context),
-              layoutBuilder: (currentChild, previousChildren) {
-                return Stack(
-                  alignment: Alignment.center,
-                  fit: StackFit.expand,
-                  children: <Widget>[...previousChildren, ?currentChild],
-                );
-              },
-            ),
+            // A BarrageController may attach to one Flame engine at a time.
+            // AnimatedSwitcher kept the old portrait engine alive while the
+            // landscape engine attached, then the old widget detached the
+            // shared controller and left the new overlay silent.  Replace the
+            // layout atomically so danmaku survives orientation/fullscreen.
+            child: _buildConstrainedChild(isInPip, mode, context),
           ),
         );
       }
@@ -60,17 +57,7 @@ class LivePlayPage extends GetView<LivePlayController> {
         color: Colors.black,
         width: double.infinity,
         height: double.infinity,
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 50),
-          child: _buildConstrainedChild(isInPip, mode, context),
-          layoutBuilder: (currentChild, previousChildren) {
-            return Stack(
-              alignment: Alignment.center,
-              fit: StackFit.expand,
-              children: <Widget>[...previousChildren, ?currentChild],
-            );
-          },
-        ),
+        child: _buildConstrainedChild(isInPip, mode, context),
       );
     });
   }
@@ -322,6 +309,7 @@ class LivePlayPage extends GetView<LivePlayController> {
                   showDragHandle: true,
                   builder: (_) => LocalInteractionSheet(
                     controller: controller.localInteractionController,
+                    platform: controller.state.value.room.detail?.platform ?? controller.site,
                     onMessage: (message, showAsDanmaku) =>
                         controller.emitLocalMessage(message, showAsDanmaku: showAsDanmaku),
                   ),
@@ -726,9 +714,8 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
               value: index,
               child: Text(
                 qualityRate.quality,
-                style: Theme.of(
-                  context,
-                ).textTheme.labelSmall?.copyWith(color: isSelected ? Get.theme.colorScheme.primary : null),
+                style: Theme.of(context).textTheme.labelSmall
+                    ?.copyWith(color: isSelected ? Get.theme.colorScheme.primary : null),
               ),
             );
           });
@@ -776,9 +763,8 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
               value: index,
               child: Text(
                 i18n("toolbox_line", args: {"index": (index + 1).toString()}),
-                style: Theme.of(
-                  context,
-                ).textTheme.labelSmall?.copyWith(color: isSelected ? Get.theme.colorScheme.primary : null),
+                style: Theme.of(context).textTheme.labelSmall
+                    ?.copyWith(color: isSelected ? Get.theme.colorScheme.primary : null),
               ),
             );
           });

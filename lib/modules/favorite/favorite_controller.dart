@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer' as developer;
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:pure_live/modules/tags/live_tag.dart';
@@ -329,6 +330,8 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
     final int batch = refreshConfigController.maxConcurrentRefresh.value > 0
         ? refreshConfigController.maxConcurrentRefresh.value
         : 5;
+    final persistedRooms = List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
+    var changed = false;
 
     for (int i = 0; i < valid.length; i += batch) {
       final end = i + batch > valid.length ? valid.length : i + batch;
@@ -343,17 +346,21 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
 
         final results = await Future.wait(futures);
         for (var updated in results) {
-          final list = List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
-          final idx = list.indexWhere((e) => e.roomId == updated.roomId && e.platform == updated.platform);
+          final idx = persistedRooms.indexWhere((e) => e.roomId == updated.roomId && e.platform == updated.platform);
           if (idx != -1) {
-            list[idx] = updated;
-            SettingsService.to.fav.favoriteRooms.v = list;
+            // 平台详情接口不认识本地标签；刷新时保留它们。整个刷新周期
+            // 只提交一次 Hive，避免每个房间各写一份完整收藏列表。
+            updated.tagIds = List<String>.from(persistedRooms[idx].tagIds);
+            persistedRooms[idx] = updated;
+            changed = true;
           }
         }
       } catch (e) {
         developer.log('Error refreshing room details: $e');
       }
     }
+
+    if (changed) SettingsService.to.fav.favoriteRooms.v = persistedRooms;
 
     _refreshStopwatch?.stop();
     _refreshStopwatch = null;

@@ -56,6 +56,16 @@ class BarrageController {
     _onClear?.call();
   }
 
+  bool triggerItemAt(double x, double y, {required bool longPress}) {
+    final currentEngine = _engine;
+    if (currentEngine == null) return false;
+    try {
+      return currentEngine.triggerItemAt(x, y, longPress: longPress) as bool;
+    } catch (_) {
+      return false;
+    }
+  }
+
   int get totalEmitted => _totalEmittedCount;
 
   int get pictureCacheCount {

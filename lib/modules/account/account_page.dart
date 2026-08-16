@@ -13,7 +13,7 @@ class AccountPage extends GetView<AccountController> {
     return Scaffold(
       appBar: AppBar(title: Text(i18n('third_party_auth'))),
       body: ListView(
-        physics: const BouncingScrollPhysics(),
+        physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
           context.buildGroupTitle(i18n('third_party_auth')),

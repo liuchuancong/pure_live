@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:pure_live/common/index.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:pure_live/common/widgets/count_button.dart';
@@ -23,12 +25,50 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
 
     return Scaffold(
       body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
+        physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Obx(
           () => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              context.buildGroupTitle(i18n('danmaku_templates')),
+              const SizedBox(height: 8),
+              context.buildModernCard([
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      FilledButton.tonalIcon(
+                        onPressed: () => _applyPreset('best'),
+                        icon: const Icon(Icons.auto_awesome_rounded),
+                        label: Text(i18n('danmaku_template_best')),
+                      ),
+                      OutlinedButton(
+                        onPressed: () => _applyPreset('comfort'),
+                        child: Text(i18n('danmaku_template_comfort')),
+                      ),
+                      OutlinedButton(
+                        onPressed: () => _applyPreset('dense'),
+                        child: Text(i18n('danmaku_template_dense')),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: _saveTemplate,
+                        icon: const Icon(Icons.save_outlined),
+                        label: Text(i18n('save_current_template')),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: _restoreTemplate,
+                        icon: const Icon(Icons.restore_rounded),
+                        label: Text(i18n('restore_saved_template')),
+                      ),
+                      TextButton(onPressed: () => _applyPreset('default'), child: Text(i18n('reset'))),
+                    ],
+                  ),
+                ),
+              ]),
+              const SizedBox(height: 20),
               context.buildGroupTitle(i18n("danmaku_area")),
               const SizedBox(height: 8),
               context.buildModernCard([
@@ -126,16 +166,51 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
                   labelColor: labelColor,
                   digitColor: digitColor,
                 ),
-                _slider(
+                _switch(
                   theme,
-                  title: i18n("danmaku_fps"),
-                  value: controller.danmakuFps.value.toDouble(),
-                  min: 30,
-                  max: 240,
-                  display: "${controller.danmakuFps.value.toInt()} FPS",
-                  onChanged: (v) => controller.danmakuFps.value = v.toInt(),
+                  title: '${i18n("danmaku_fps")} · ${i18n("dynamic_follow_display")}',
+                  value: SettingsService.to.danmaku.danmakuAutoFps.v,
+                  onChanged: (v) => SettingsService.to.danmaku.danmakuAutoFps.v = v,
                   labelColor: labelColor,
-                  digitColor: digitColor,
+                ),
+                if (!SettingsService.to.danmaku.danmakuAutoFps.v)
+                  _slider(
+                    theme,
+                    title: i18n("danmaku_fps"),
+                    value: controller.danmakuFps.value.toDouble(),
+                    min: 30,
+                    max: 240,
+                    display: "${controller.danmakuFps.value.toInt()} FPS",
+                    onChanged: (v) => controller.danmakuFps.value = v.toInt(),
+                    labelColor: labelColor,
+                    digitColor: digitColor,
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: Text(
+                      '${SettingsService.to.danmaku.resolvedDanmakuFps()} FPS',
+                      style: TextStyle(color: digitColor, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+              ]),
+              const SizedBox(height: 20),
+              context.buildGroupTitle(i18n('danmaku_screen_interaction')),
+              const SizedBox(height: 8),
+              context.buildModernCard([
+                _switch(
+                  theme,
+                  title: i18n('danmaku_tap_action'),
+                  value: SettingsService.to.danmaku.enableDanmakuTapInteraction.v,
+                  onChanged: (v) => SettingsService.to.danmaku.enableDanmakuTapInteraction.v = v,
+                  labelColor: labelColor,
+                ),
+                _switch(
+                  theme,
+                  title: i18n('danmaku_long_press_action'),
+                  value: SettingsService.to.danmaku.enableDanmakuLongPressInteraction.v,
+                  onChanged: (v) => SettingsService.to.danmaku.enableDanmakuLongPressInteraction.v = v,
+                  labelColor: labelColor,
                 ),
               ]),
               const SizedBox(height: 20),
@@ -147,6 +222,65 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
         ),
       ),
     );
+  }
+
+  void _applyPreset(String preset) {
+    final values = switch (preset) {
+      'best' => const [0.72, 0.0, 12.0, 125.0, 17.0, 4.0, 0.92, 1.0],
+      'comfort' => const [0.65, 0.0, 16.0, 105.0, 18.0, 4.0, 0.9, 1.0],
+      'dense' => const [0.9, 0.0, 8.0, 145.0, 15.0, 3.0, 0.88, 1.0],
+      _ => const [1.0, 0.0, 0.0, 120.0, 16.0, 4.0, 1.0, 1.0],
+    };
+    controller.danmakuArea.v = values[0];
+    controller.danmakuTopArea.v = values[1];
+    controller.danmakuBottomArea.v = values[2];
+    controller.danmakuSpeed.v = values[3];
+    controller.danmakuFontSize.v = values[4];
+    controller.danmakuFontBorder.v = values[5].toInt();
+    controller.danmakuOpacity.v = values[6];
+    controller.enableDanmakuStroke.v = values[7] == 1;
+    SettingsService.to.danmaku.danmakuAutoFps.v = true;
+    ToastUtil.show(i18n('danmaku_template_applied'));
+  }
+
+  void _saveTemplate() {
+    SettingsService.to.danmaku.savedDanmakuTemplate.v = jsonEncode({
+      'area': controller.danmakuArea.v,
+      'top': controller.danmakuTopArea.v,
+      'bottom': controller.danmakuBottomArea.v,
+      'speed': controller.danmakuSpeed.v,
+      'fontSize': controller.danmakuFontSize.v,
+      'fontBorder': controller.danmakuFontBorder.v,
+      'opacity': controller.danmakuOpacity.v,
+      'stroke': controller.enableDanmakuStroke.v,
+      'fps': controller.danmakuFps.v,
+      'autoFps': SettingsService.to.danmaku.danmakuAutoFps.v,
+    });
+    ToastUtil.show(i18n('danmaku_template_saved'));
+  }
+
+  void _restoreTemplate() {
+    final raw = SettingsService.to.danmaku.savedDanmakuTemplate.v;
+    if (raw.isEmpty) {
+      ToastUtil.show(i18n('danmaku_template_empty'));
+      return;
+    }
+    try {
+      final value = jsonDecode(raw) as Map<String, dynamic>;
+      controller.danmakuArea.v = (value['area'] as num).toDouble();
+      controller.danmakuTopArea.v = (value['top'] as num).toDouble();
+      controller.danmakuBottomArea.v = (value['bottom'] as num).toDouble();
+      controller.danmakuSpeed.v = (value['speed'] as num).toDouble();
+      controller.danmakuFontSize.v = (value['fontSize'] as num).toDouble();
+      controller.danmakuFontBorder.v = (value['fontBorder'] as num).toInt();
+      controller.danmakuOpacity.v = (value['opacity'] as num).toDouble();
+      controller.enableDanmakuStroke.v = value['stroke'] == true;
+      controller.danmakuFps.v = (value['fps'] as num?)?.toInt() ?? 60;
+      SettingsService.to.danmaku.danmakuAutoFps.v = value['autoFps'] != false;
+      ToastUtil.show(i18n('danmaku_template_applied'));
+    } catch (_) {
+      ToastUtil.show(i18n('danmaku_template_empty'));
+    }
   }
 
   Widget _slider(

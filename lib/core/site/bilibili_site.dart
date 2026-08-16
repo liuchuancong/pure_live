@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:crypto/crypto.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/model/live_category.dart';
@@ -347,47 +348,92 @@ class BiliBiliSite implements LiveSite {
     return queryParams;
   }
 
+  Future<BiliBiliDanmakuArgs> _discoverDanmaku(int realRoomId, {int maxAttempts = 4}) async {
+    const baseUrl = "https://api.live.bilibili.com/xlive/web-room/v1/index/getDanmuInfo";
+    final headers = await getHeader();
+    Map<String, dynamic>? data;
+    Object? lastError;
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        final signed = await getWbiSign('$baseUrl?id=$realRoomId&type=0', forceRefresh: attempt == 1 || attempt == 3);
+        final response = await HttpClient.instance.getJson(baseUrl, queryParameters: signed, header: headers);
+        final candidate = response['data'];
+        if (response['code'] == 0 && candidate is Map && candidate['token']?.toString().isNotEmpty == true) {
+          data = Map<String, dynamic>.from(candidate);
+          break;
+        }
+        lastError = StateError('getDanmuInfo code=${response['code']}');
+      } catch (error) {
+        lastError = error;
+      }
+      if (attempt + 1 < maxAttempts) {
+        await Future<void>.delayed(Duration(milliseconds: 180 * (attempt + 1)));
+      }
+    }
+    if (data == null) throw StateError('Bilibili danmaku discovery failed: $lastError');
+
+    // The generic gateway has stable public DNS while some ISP/mobile DNS
+    // resolvers intermittently omit the regional comet records returned by
+    // host_list. Try it first and retain the regional nodes as failovers.
+    const officialFallback = 'wss://broadcastlv.chat.bilibili.com/sub';
+    final serverUrls = <String>[officialFallback];
+    for (final item in (data['host_list'] as List?) ?? const []) {
+      final host = item?['host']?.toString().trim() ?? '';
+      if (host.isEmpty) continue;
+      final port = int.tryParse(item?['wss_port']?.toString() ?? '') ?? 443;
+      final endpoint = 'wss://$host${port == 443 ? '' : ':$port'}/sub';
+      if (!serverUrls.contains(endpoint)) serverUrls.add(endpoint);
+    }
+    return BiliBiliDanmakuArgs(
+      roomId: realRoomId,
+      // A remembered uid without its login cookie is not an authenticated
+      // identity. Sending it in a guest auth packet makes the gateway close
+      // the socket on some rooms; anonymous danmaku uses uid=0.
+      uid: cookie.trim().isEmpty ? 0 : userId,
+      token: data['token']?.toString() ?? '',
+      serverUrls: serverUrls,
+      buvid: buvid3,
+      cookie: headers['cookie'] ?? cookie,
+      headers: {
+        'user-agent': headers['user-agent'] ?? kDefaultUserAgent,
+        'origin': 'https://live.bilibili.com',
+        'referer': 'https://live.bilibili.com/$realRoomId',
+        if ((headers['cookie'] ?? '').isNotEmpty) 'cookie': headers['cookie'],
+      },
+      refresh: () => _discoverDanmaku(realRoomId),
+    );
+  }
+
   @override
   Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
     try {
       var roomInfo = await getRoomInfo(roomId: roomId);
       var realRoomId = roomInfo["room_info"]["room_id"].toString();
-      const danmuInfoBaseUrl = "https://api.live.bilibili.com/xlive/web-room/v1/index/getDanmuInfo";
-      Map<String, dynamic> danmakuData = const {};
-      final danmakuHeaders = await getHeader();
+      BiliBiliDanmakuArgs danmakuArgs;
       try {
-        final danmuInfoUrl = "$danmuInfoBaseUrl?id=$realRoomId&type=0";
-        for (var attempt = 0; attempt < 2; attempt++) {
-          final queryParams = await getWbiSign(danmuInfoUrl, forceRefresh: attempt > 0);
-          final roomDanmakuResult = await HttpClient.instance.getJson(
-            danmuInfoBaseUrl,
-            queryParameters: queryParams,
-            header: danmakuHeaders,
-          );
-          final data = roomDanmakuResult["data"];
-          if (roomDanmakuResult["code"] == 0 && data is Map && data["token"]?.toString().isNotEmpty == true) {
-            danmakuData = Map<String, dynamic>.from(data);
-            break;
-          }
-          if (attempt == 1) {
-            throw StateError('getDanmuInfo code=${roomDanmakuResult["code"]}');
-          }
-        }
+        // Room entry must not wait through the whole chat retry chain.  A
+        // single quick discovery gives playback priority; the websocket layer
+        // then refreshes credentials with the full retry policy when needed.
+        danmakuArgs = await _discoverDanmaku(int.tryParse(realRoomId) ?? 0, maxAttempts: 1);
       } catch (error) {
-        // Video playback remains available when only the chat endpoint changes.
         debugPrint('Bilibili danmaku discovery failed: $error');
+        final headers = await getHeader();
+        danmakuArgs = BiliBiliDanmakuArgs(
+          roomId: int.tryParse(realRoomId) ?? 0,
+          uid: cookie.trim().isEmpty ? 0 : userId,
+          token: '',
+          serverUrls: const ['wss://broadcastlv.chat.bilibili.com/sub'],
+          buvid: buvid3,
+          cookie: headers['cookie'] ?? cookie,
+          headers: {
+            'user-agent': headers['user-agent'] ?? kDefaultUserAgent,
+            'origin': 'https://live.bilibili.com',
+            'referer': 'https://live.bilibili.com/$realRoomId',
+            if ((headers['cookie'] ?? '').isNotEmpty) 'cookie': headers['cookie'],
+          },
+          refresh: () => _discoverDanmaku(int.tryParse(realRoomId) ?? 0),
+        );
       }
-      final hostList = (danmakuData["host_list"] as List?) ?? const [];
-      final serverUrls = <String>[];
-      for (final item in hostList) {
-        final host = item?["host"]?.toString().trim() ?? '';
-        if (host.isEmpty) continue;
-        final port = int.tryParse(item?["wss_port"]?.toString() ?? '') ?? 443;
-        final endpoint = 'wss://$host${port == 443 ? '' : ':$port'}/sub';
-        if (!serverUrls.contains(endpoint)) serverUrls.add(endpoint);
-      }
-      const officialFallback = 'wss://broadcastlv.chat.bilibili.com/sub';
-      if (!serverUrls.contains(officialFallback)) serverUrls.add(officialFallback);
       return LiveRoom(
         roomId: roomId,
         title: roomInfo["room_info"]["title"].toString(),
@@ -402,20 +448,7 @@ class BiliBiliSite implements LiveSite {
         introduction: roomInfo["room_info"]["description"].toString(),
         notice: "",
         platform: Sites.bilibiliSite,
-        danmakuData: BiliBiliDanmakuArgs(
-          roomId: int.tryParse(realRoomId) ?? 0,
-          uid: userId,
-          token: danmakuData["token"]?.toString() ?? '',
-          serverUrls: serverUrls,
-          buvid: buvid3,
-          cookie: danmakuHeaders['cookie'] ?? cookie,
-          headers: {
-            'user-agent': danmakuHeaders['user-agent'] ?? kDefaultUserAgent,
-            'origin': 'https://live.bilibili.com',
-            'referer': 'https://live.bilibili.com/$realRoomId',
-            if ((danmakuHeaders['cookie'] ?? '').isNotEmpty) 'cookie': danmakuHeaders['cookie'],
-          },
-        ),
+        danmakuData: danmakuArgs,
       );
     } catch (e) {
       LiveRoom liveRoom =

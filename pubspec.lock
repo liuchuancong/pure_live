@@ -1025,12 +1025,10 @@ packages:
   flv_lzc:
     dependency: "direct main"
     description:
-      path: "."
-      ref: "030d611dd4ebff40962a13209bb56230853f4f9f"
-      resolved-ref: "030d611dd4ebff40962a13209bb56230853f4f9f"
-      url: "https://github.com/liuchuancong/flv_lzc.git"
-    source: git
-    version: "1.0.4"
+      path: "plugins/flv_lzc"
+      relative: true
+    source: path
+    version: "1.0.4+purelive.1"
   font_awesome_flutter:
     dependency: "direct main"
     description:
@@ -2258,10 +2256,10 @@ packages:
     dependency: "direct main"
     description:
       name: synchronized
-      sha256: "61894a1956de6b4fc1aefd0892e109514a1a706cbece3ac59decd90ff5a7a423"
+      sha256: "3a7b5d17422dd0f8d5c6c14feaa5a1c65638b9455f871a96f08437562c046931"
       url: "https://pub.dev"
     source: hosted
-    version: "3.4.1+1"
+    version: "3.4.1+2"
   term_glyph:
     dependency: transitive
     description:

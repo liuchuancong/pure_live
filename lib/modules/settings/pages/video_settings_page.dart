@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
@@ -17,7 +18,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
     return Scaffold(
       appBar: AppBar(title: Text(i18n("video_settings"))),
       body: ListView(
-        physics: const BouncingScrollPhysics(),
+        physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
           // 音频设置
@@ -106,12 +107,9 @@ class VideoSettingsPage extends GetView<SettingsService> {
                     SettingsService.to.app.enableBackgroundPlay.v = hasPermission;
                     await LiveAudioService.syncKeepAlive();
                   } else if (!val) {
-                    SettingsService.to.app.enableAsmrSleepMode.v = false;
-                    await LiveAudioService.configureSleepTimer(
-                      enabled: false,
-                      minutes: SettingsService.to.app.asmrSleepMinutes.v,
-                    );
-                    await LiveAudioService.releaseKeepAlive();
+                    if (!LiveAudioService.isSleepSessionActive) {
+                      await LiveAudioService.releaseKeepAlive();
+                    }
                   }
                 },
               ),
@@ -125,17 +123,9 @@ class VideoSettingsPage extends GetView<SettingsService> {
                   if (val) {
                     final hasPermission = await LiveAudioService.requestPlatformPermissions();
                     SettingsService.to.app.enableAsmrSleepMode.v = hasPermission;
-                    if (hasPermission) {
-                      SettingsService.to.app.enableBackgroundPlay.v = true;
-                      SettingsService.to.player.audioOnly.v = true;
-                    }
                   } else {
                     SettingsService.to.app.enableAsmrSleepMode.v = false;
                   }
-                  await LiveAudioService.configureSleepTimer(
-                    enabled: SettingsService.to.app.enableAsmrSleepMode.v,
-                    minutes: SettingsService.to.app.asmrSleepMinutes.v,
-                  );
                 },
               ),
             if (Platform.isAndroid)
@@ -214,32 +204,68 @@ class VideoSettingsPage extends GetView<SettingsService> {
 
   void _showAsmrSleepTimerDialog(BuildContext context) {
     const options = [30, 45, 60, 90, 120, 180, 240, 480];
+    final customController = TextEditingController(text: SettingsService.to.app.asmrSleepMinutes.v.toString());
     showDialog<void>(
       context: context,
       builder: (dialogContext) => SimpleDialog(
         title: Text(i18n('asmr_sleep_timer')),
-        children: options
-            .map(
-              (minutes) => Obx(
-                () => ListTile(
-                  title: Text('$minutes ${i18n('minutes')}'),
-                  trailing: SettingsService.to.app.asmrSleepMinutes.v == minutes
-                      ? Icon(Icons.check_rounded, color: Theme.of(dialogContext).colorScheme.primary)
-                      : null,
-                  onTap: () async {
+        children: [
+          ...options.map(
+            (minutes) => Obx(
+              () => ListTile(
+                title: Text('$minutes ${i18n('minutes')}'),
+                trailing: SettingsService.to.app.asmrSleepMinutes.v == minutes
+                    ? Icon(Icons.check_rounded, color: Theme.of(dialogContext).colorScheme.primary)
+                    : null,
+                onTap: () async {
+                  SettingsService.to.app.asmrSleepMinutes.v = minutes;
+                  await LiveAudioService.configureSleepTimer(
+                    enabled: LiveAudioService.isSleepSessionActive,
+                    minutes: minutes,
+                  );
+                  if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+                },
+              ),
+            ),
+          ),
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: customController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: i18n('custom_sleep_minutes'),
+                      helperText: i18n('custom_sleep_minutes_range'),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                FilledButton(
+                  onPressed: () async {
+                    final minutes = int.tryParse(customController.text.trim());
+                    if (minutes == null || minutes < 1 || minutes > 720) {
+                      ToastUtil.show(i18n('custom_sleep_minutes_range'));
+                      return;
+                    }
                     SettingsService.to.app.asmrSleepMinutes.v = minutes;
                     await LiveAudioService.configureSleepTimer(
-                      enabled: SettingsService.to.app.enableAsmrSleepMode.v,
+                      enabled: LiveAudioService.isSleepSessionActive,
                       minutes: minutes,
                     );
                     if (dialogContext.mounted) Navigator.of(dialogContext).pop();
                   },
+                  child: Text(i18n('save')),
                 ),
-              ),
-            )
-            .toList(),
+              ],
+            ),
+          ),
+        ],
       ),
-    );
+    ).whenComplete(customController.dispose);
   }
 
   void showPreferResolutionSelectorDialog() {

@@ -2,8 +2,11 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:brotli/brotli.dart';
+
 import '../common/binary_writer.dart';
+
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/common/models/live_message.dart';
 import 'package:pure_live/core/common/convert_helper.dart';
@@ -18,6 +21,7 @@ class BiliBiliDanmakuArgs {
   final int uid;
   final String cookie;
   final Map<String, dynamic> headers;
+  final Future<BiliBiliDanmakuArgs?> Function()? refresh;
   BiliBiliDanmakuArgs({
     required this.roomId,
     required this.token,
@@ -26,6 +30,7 @@ class BiliBiliDanmakuArgs {
     required this.uid,
     required this.cookie,
     this.headers = const {},
+    this.refresh,
   });
   @override
   String toString() {
@@ -69,17 +74,40 @@ class BiliBiliDanmaku implements LiveDanmaku {
 
   WebScoketUtils? webScoketUtils;
   late BiliBiliDanmakuArgs danmakuArgs;
+  bool _refreshingCredentials = false;
+  bool _stopped = false;
+  int _credentialRefreshCount = 0;
+  Timer? _authTimer;
+
   @override
   Future start(dynamic args) async {
     danmakuArgs = args as BiliBiliDanmakuArgs;
+    _stopped = false;
+    _credentialRefreshCount = 0;
     markDisconnected();
     if (danmakuArgs.token.isEmpty) {
-      onClose?.call("弹幕连接信息获取失败，请稍后重试");
-      return;
+      for (var attempt = 0; attempt < 3 && !_stopped; attempt++) {
+        try {
+          final refreshed = await danmakuArgs.refresh?.call();
+          if (refreshed != null && refreshed.token.isNotEmpty) {
+            danmakuArgs = refreshed;
+            break;
+          }
+        } catch (error) {
+          CoreLog.error(error);
+        }
+        if (attempt < 2) await Future<void>.delayed(Duration(milliseconds: 500 * (attempt + 1)));
+      }
+      if (_stopped || danmakuArgs.token.isEmpty) {
+        onClose?.call("弹幕连接信息仍在更新，请稍后刷新房间");
+        return;
+      }
     }
-    final endpoints = danmakuArgs.serverUrls.isEmpty
-        ? const ['wss://broadcastlv.chat.bilibili.com/sub']
-        : danmakuArgs.serverUrls;
+    _connect(danmakuArgs);
+  }
+
+  void _connect(BiliBiliDanmakuArgs args) {
+    final endpoints = args.serverUrls.isEmpty ? const ['wss://broadcastlv.chat.bilibili.com/sub'] : args.serverUrls;
     webScoketUtils = WebScoketUtils(
       url: endpoints.first,
       serverUrls: endpoints,
@@ -90,20 +118,43 @@ class BiliBiliDanmaku implements LiveDanmaku {
       },
       onReady: () {
         joinRoom(danmakuArgs);
+        _authTimer?.cancel();
+        _authTimer = Timer(const Duration(seconds: 8), () {
+          if (!_stopped && !isConnected) webScoketUtils?.reconnect();
+        });
       },
       onHeartBeat: () {
         heartbeat();
       },
       onReconnect: () {
+        _authTimer?.cancel();
         markDisconnected();
         onClose?.call("与服务器断开连接，正在尝试重连");
       },
       onClose: (e) {
+        _authTimer?.cancel();
         markDisconnected();
         onClose?.call("服务器连接失败$e");
       },
     );
     webScoketUtils?.connect();
+  }
+
+  Future<void> _refreshCredentialsAndReconnect() async {
+    if (_stopped || _refreshingCredentials || _credentialRefreshCount >= 3) return;
+    _refreshingCredentials = true;
+    _credentialRefreshCount++;
+    try {
+      final refreshed = await danmakuArgs.refresh?.call();
+      if (_stopped || refreshed == null || refreshed.token.isEmpty) return;
+      danmakuArgs = refreshed;
+      webScoketUtils?.close();
+      _connect(refreshed);
+    } catch (error) {
+      CoreLog.error(error);
+    } finally {
+      _refreshingCredentials = false;
+    }
   }
 
   void joinRoom(BiliBiliDanmakuArgs args) {
@@ -129,9 +180,13 @@ class BiliBiliDanmaku implements LiveDanmaku {
 
   @override
   Future stop() async {
+    _stopped = true;
+    _authTimer?.cancel();
+    _authTimer = null;
     markDisconnected();
     onMessage = null;
     onClose = null;
+    onReady = null;
     webScoketUtils?.close();
   }
 
@@ -238,12 +293,14 @@ class BiliBiliDanmaku implements LiveDanmaku {
       final auth = decoded is Map ? decoded : const <String, dynamic>{};
       final code = int.tryParse(auth['code']?.toString() ?? '') ?? -1;
       if (code == 0 && !isConnected) {
+        _authTimer?.cancel();
         markConnected();
         heartbeat();
         onReady?.call();
       } else if (code != 0) {
+        _authTimer?.cancel();
         markDisconnected();
-        webScoketUtils?.reconnect();
+        unawaited(_refreshCredentialsAndReconnect());
       }
     }
   }
@@ -261,6 +318,7 @@ class BiliBiliDanmaku implements LiveDanmaku {
             var liveMsg = LiveMessage(
               type: LiveMessageType.chat,
               userName: username,
+              userId: obj["info"][2][0]?.toString() ?? '',
               message: message,
               color: color == 0 ? LiveMessageColor.white : LiveMessageColor.numberToColor(color),
             );

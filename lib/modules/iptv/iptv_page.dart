@@ -94,7 +94,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
             }
 
             return ListView.separated(
-              physics: const BouncingScrollPhysics(),
+              physics: const PureLiveScrollPhysics(),
               shrinkWrap: true,
               itemCount: sources.length,
               separatorBuilder: (context, index) => const SizedBox(height: 4),
@@ -176,7 +176,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
     return Scaffold(
       appBar: AppBar(title: Text(i18n("iptv_settings"))),
       body: ListView(
-        physics: const BouncingScrollPhysics(),
+        physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
           context.buildGroupTitle(i18n("iptv_manage")),

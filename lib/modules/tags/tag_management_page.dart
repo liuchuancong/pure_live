@@ -27,7 +27,7 @@ class TagManagementPage extends GetView<TagManagementController> {
           Padding(padding: const EdgeInsets.fromLTRB(16, 12, 16, 4), child: _buildTipBanner(theme)),
           Expanded(
             child: ListView(
-              physics: const BouncingScrollPhysics(),
+              physics: const PureLiveScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               children: [
                 context.buildGroupTitle(i18n('tag_management')),

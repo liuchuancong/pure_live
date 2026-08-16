@@ -22,14 +22,13 @@ class PipDanmakuSettingsPage extends StatelessWidget {
         ],
       ),
       body: ListView(
-        physics: const BouncingScrollPhysics(),
+        physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
           Text(
             i18n('pip_danmaku_desc'),
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 20),
           context.buildGroupTitle(i18n('pip_danmaku_preview')),
@@ -167,17 +166,33 @@ class PipDanmakuSettingsSection extends StatelessWidget {
                 labelColor: labelColor,
                 digitColor: digitColor,
               ),
-              _slider(
+              _switch(
                 theme,
-                title: i18n('danmaku_fps'),
-                value: settings.pipDanmakuFps.v.toDouble(),
-                min: 15,
-                max: 60,
-                display: '${settings.pipDanmakuFps.v} FPS',
-                onChanged: (value) => settings.pipDanmakuFps.v = value.toInt(),
+                title: '${i18n('danmaku_fps')} · ${i18n('dynamic_follow_display')}',
+                value: settings.pipDanmakuAutoFps.v,
+                onChanged: (value) => settings.pipDanmakuAutoFps.v = value,
                 labelColor: labelColor,
-                digitColor: digitColor,
               ),
+              if (!settings.pipDanmakuAutoFps.v)
+                _slider(
+                  theme,
+                  title: i18n('danmaku_fps'),
+                  value: settings.pipDanmakuFps.v.toDouble(),
+                  min: 15,
+                  max: 240,
+                  display: '${settings.pipDanmakuFps.v} FPS',
+                  onChanged: (value) => settings.pipDanmakuFps.v = value.toInt(),
+                  labelColor: labelColor,
+                  digitColor: digitColor,
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Text(
+                    '${settings.resolvedDanmakuFps(pip: true)} FPS',
+                    style: TextStyle(color: digitColor, fontWeight: FontWeight.w600),
+                  ),
+                ),
             ],
           ]),
         ],
@@ -400,7 +415,7 @@ class _PipDanmakuPreviewState extends State<PipDanmakuPreview> with SingleTicker
       final area = settings.pipDanmakuArea.v;
       final maxVisibleCount = settings.pipDanmakuMaxVisibleCount.v;
       final emitInterval = settings.pipDanmakuEmitInterval.v;
-      final fps = settings.pipDanmakuFps.v.clamp(15, 60);
+      final fps = settings.resolvedDanmakuFps(pip: true);
       final colors = useOriginalColor
           ? const [Color(0xFFFFFFFF), Color(0xFF64B5F6), Color(0xFFFFD54F), Color(0xFF81C784)]
           : [unifiedColor];

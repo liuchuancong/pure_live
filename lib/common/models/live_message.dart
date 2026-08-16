@@ -18,6 +18,7 @@ class LiveMessage {
 
   /// 用户名
   final String userName;
+  final String userId;
 
   /// 信息
   final String message;
@@ -37,15 +38,18 @@ class LiveMessage {
 
   /// 粉丝牌子名
   final String fansName;
+  final bool isLocal;
   LiveMessage({
     required this.type,
     required this.userName,
+    this.userId = "",
     required this.message,
     this.data,
     required this.color,
     this.userLevel = "",
     this.fansLevel = "",
     this.fansName = "",
+    this.isLocal = false,
   });
 }
 

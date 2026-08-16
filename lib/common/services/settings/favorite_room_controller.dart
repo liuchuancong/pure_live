@@ -4,6 +4,7 @@ import 'package:pure_live/common/services/utils/backup_migration_util.dart';
 
 class FavoriteRoomController extends GetxController {
   final RxList<String> shieldList = hiveStringList('shieldList', []);
+  final RxList<String> blockedDanmakuUsers = hiveStringList('blockedDanmakuUsers', []);
   final RxList<String> hotAreasList = hiveStringList('hotAreasList', AppConsts.supportSites);
   final RxString preferPlatform = hiveString('preferPlatform', Sites.bilibiliSite);
   final Rx<List<LiveRoom>> favoriteRooms = hiveObject(
@@ -67,6 +68,12 @@ class FavoriteRoomController extends GetxController {
 
   void addShieldList(String value) => shieldList.v.add(value);
   void removeShieldList(int idx) => shieldList.v.removeAt(idx);
+  void addBlockedDanmakuUser(String value) {
+    final user = value.trim();
+    if (user.isNotEmpty && !blockedDanmakuUsers.contains(user)) blockedDanmakuUsers.add(user);
+  }
+
+  void removeBlockedDanmakuUser(int idx) => blockedDanmakuUsers.removeAt(idx);
 
   LiveRoom? getRoomById(String roomId, String platform) {
     for (final room in favoriteRooms.v) {
@@ -87,6 +94,7 @@ class FavoriteRoomController extends GetxController {
   Map<String, dynamic> toJson() {
     return {
       'shieldList': shieldList.v,
+      'blockedDanmakuUsers': blockedDanmakuUsers.v,
       'hotAreasList': hotAreasList.v,
       'preferPlatform': preferPlatform.v,
       'favoriteRooms': favoriteRooms.v.map((e) => e.toJson()).toList(),
@@ -96,6 +104,7 @@ class FavoriteRoomController extends GetxController {
 
   void fromJson(Map<String, dynamic> json) {
     shieldList.v = List<String>.from(json['shieldList'] ?? []);
+    blockedDanmakuUsers.v = List<String>.from(json['blockedDanmakuUsers'] ?? []);
 
     hotAreasList.v = List<String>.from(json['hotAreasList'] ?? AppConsts.supportSites);
 
@@ -110,6 +119,7 @@ class FavoriteRoomController extends GetxController {
     final favorite = rootConfig?['favorite'] as Map<String, dynamic>? ?? {};
     return {
       'shieldList': List<String>.from(favorite['shieldList'] ?? []),
+      'blockedDanmakuUsers': List<String>.from(favorite['blockedDanmakuUsers'] ?? []),
       'hotAreasList': List<String>.from(favorite['hotAreasList'] ?? AppConsts.supportSites),
       'preferPlatform': favorite['preferPlatform'] ?? Sites.bilibiliSite,
       'favoriteRooms': BackupMigrationUtil.parseObjectList(

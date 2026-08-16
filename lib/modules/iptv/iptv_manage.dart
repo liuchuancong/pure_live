@@ -169,7 +169,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
         final networkItems = allItems.where((e) => e.isNetwork).toList();
         final localItems = allItems.where((e) => !e.isNetwork).toList();
         return CustomScrollView(
-          physics: const BouncingScrollPhysics(),
+          physics: const PureLiveScrollPhysics(),
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),

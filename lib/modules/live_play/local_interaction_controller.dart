@@ -7,6 +7,7 @@ class LocalGift {
     required this.emoji,
     required this.price,
     required this.color,
+    this.effect = 'ticker',
   });
 
   final String id;
@@ -14,6 +15,7 @@ class LocalGift {
   final String emoji;
   final int price;
   final LiveMessageColor color;
+  final String effect;
 }
 
 class LocalInteractionController extends GetxController {
@@ -50,6 +52,153 @@ class LocalInteractionController extends GetxController {
     ),
   ];
 
+  static const _platformGifts = <String, List<LocalGift>>{
+    Sites.bilibiliSite: [
+      LocalGift(
+        id: 'bili_snack',
+        nameKey: 'local_gift_bili_snack',
+        emoji: '🌶️',
+        price: 10,
+        color: LiveMessageColor(255, 102, 102),
+      ),
+      LocalGift(
+        id: 'bili_tv',
+        nameKey: 'local_gift_bili_tv',
+        emoji: '📺',
+        price: 100,
+        color: LiveMessageColor(84, 197, 248),
+      ),
+      LocalGift(
+        id: 'bili_voyage',
+        nameKey: 'local_gift_bili_voyage',
+        emoji: '⚓',
+        price: 1980,
+        color: LiveMessageColor(255, 99, 146),
+        effect: 'full',
+      ),
+    ],
+    Sites.douyuSite: [
+      LocalGift(
+        id: 'douyu_ball',
+        nameKey: 'local_gift_douyu_ball',
+        emoji: '🐟',
+        price: 10,
+        color: LiveMessageColor(255, 144, 0),
+      ),
+      LocalGift(
+        id: 'douyu_rocket',
+        nameKey: 'local_gift_douyu_rocket',
+        emoji: '🚀',
+        price: 500,
+        color: LiveMessageColor(255, 123, 0),
+      ),
+      LocalGift(
+        id: 'douyu_super_rocket',
+        nameKey: 'local_gift_douyu_super_rocket',
+        emoji: '🛰️',
+        price: 2000,
+        color: LiveMessageColor(255, 76, 0),
+        effect: 'full',
+      ),
+    ],
+    Sites.huyaSite: [
+      LocalGift(
+        id: 'huya_stick',
+        nameKey: 'local_gift_huya_stick',
+        emoji: '✨',
+        price: 10,
+        color: LiveMessageColor(255, 202, 40),
+      ),
+      LocalGift(
+        id: 'huya_sword',
+        nameKey: 'local_gift_huya_sword',
+        emoji: '⚔️',
+        price: 300,
+        color: LiveMessageColor(255, 174, 0),
+      ),
+      LocalGift(
+        id: 'huya_one',
+        nameKey: 'local_gift_huya_one',
+        emoji: '🐯',
+        price: 1000,
+        color: LiveMessageColor(255, 128, 0),
+        effect: 'full',
+      ),
+    ],
+    Sites.douyinSite: [
+      LocalGift(
+        id: 'douyin_heart',
+        nameKey: 'local_gift_douyin_heart',
+        emoji: '💖',
+        price: 10,
+        color: LiveMessageColor(254, 44, 85),
+      ),
+      LocalGift(
+        id: 'douyin_badge',
+        nameKey: 'local_gift_douyin_badge',
+        emoji: '🎖️',
+        price: 200,
+        color: LiveMessageColor(255, 86, 124),
+      ),
+      LocalGift(
+        id: 'douyin_carnival',
+        nameKey: 'local_gift_douyin_carnival',
+        emoji: '🎡',
+        price: 3000,
+        color: LiveMessageColor(254, 44, 85),
+        effect: 'full',
+      ),
+    ],
+    Sites.kuaishouSite: [
+      LocalGift(
+        id: 'ks_beer',
+        nameKey: 'local_gift_ks_beer',
+        emoji: '🍺',
+        price: 10,
+        color: LiveMessageColor(255, 98, 0),
+      ),
+      LocalGift(
+        id: 'ks_arrow',
+        nameKey: 'local_gift_ks_arrow',
+        emoji: '🏹',
+        price: 500,
+        color: LiveMessageColor(255, 74, 0),
+      ),
+      LocalGift(
+        id: 'ks_guard',
+        nameKey: 'local_gift_ks_guard',
+        emoji: '🛡️',
+        price: 1500,
+        color: LiveMessageColor(255, 58, 48),
+        effect: 'full',
+      ),
+    ],
+    Sites.ccSite: [
+      LocalGift(
+        id: 'cc_flower',
+        nameKey: 'local_gift_cc_flower',
+        emoji: '🌺',
+        price: 10,
+        color: LiveMessageColor(255, 92, 155),
+      ),
+      LocalGift(
+        id: 'cc_car',
+        nameKey: 'local_gift_cc_car',
+        emoji: '🏎️',
+        price: 500,
+        color: LiveMessageColor(255, 66, 80),
+      ),
+      LocalGift(
+        id: 'cc_guard',
+        nameKey: 'local_gift_cc_guard',
+        emoji: '👑',
+        price: 1800,
+        color: LiveMessageColor(163, 89, 255),
+        effect: 'full',
+      ),
+    ],
+  };
+
   static const titles = <String>['listener', 'night_owl', 'supporter', 'guardian'];
 
   int get level => levelForExperience(experience.v);
@@ -75,32 +224,56 @@ class LocalInteractionController extends GetxController {
     _addHistory('${i18n('local_recharge_record')} +$amount');
   }
 
-  LiveMessage createChat(String text) {
+  static List<LocalGift> giftsForPlatform(String platform) => _platformGifts[platform] ?? gifts;
+
+  static String platformBadgeKey(String platform) => switch (platform) {
+    Sites.bilibiliSite => 'local_badge_bilibili',
+    Sites.douyuSite => 'local_badge_douyu',
+    Sites.huyaSite => 'local_badge_huya',
+    Sites.douyinSite => 'local_badge_douyin',
+    Sites.kuaishouSite => 'local_badge_kuaishou',
+    Sites.ccSite => 'local_badge_cc',
+    _ => 'local_badge_generic',
+  };
+
+  String profileLabel(String platform) => '${i18n(platformBadgeKey(platform))} · $titleLabel';
+
+  LiveMessage createChat(String text, {String platform = ''}) {
     return LiveMessage(
       type: LiveMessageType.chat,
-      userName: '$titleLabel · ${userName.v}',
+      userName: '${profileLabel(platform)} · ${userName.v}',
       message: text.trim(),
       color: LiveMessageColor.white,
       userLevel: level.toString(),
+      isLocal: true,
     );
   }
 
-  LiveMessage? sendGift(LocalGift gift) {
+  LiveMessage? sendGift(LocalGift gift, {String platform = ''}) {
     if (!enabled.v) return null;
     if (coins.v < gift.price) return null;
     coins.v -= gift.price;
     experience.v += gift.price;
     final giftName = i18n(gift.nameKey);
-    final message = '${gift.emoji} $titleLabel · ${userName.v} ${i18n('local_sent_gift')} $giftName ×1';
+    final badge = profileLabel(platform);
+    final message = '${gift.emoji} $badge · ${userName.v} ${i18n('local_sent_gift')} $giftName ×1';
     _addHistory(message);
     return LiveMessage(
       type: LiveMessageType.gift,
       userName: userName.v,
       message: message,
-      data: {'giftId': gift.id, 'price': gift.price, 'count': 1, 'local': true},
+      data: {
+        'giftId': gift.id,
+        'price': gift.price,
+        'count': 1,
+        'local': true,
+        'platform': platform,
+        'effect': gift.effect,
+      },
       color: gift.color,
       userLevel: level.toString(),
       fansName: titleLabel,
+      isLocal: true,
     );
   }
 

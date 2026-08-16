@@ -2,7 +2,7 @@
 
 本仓库采用“本机优先、Actions 手动兜底”的流程，固定使用 Flutter `3.47.0`。`pubspec.lock`、Git 依赖提交和 FFmpeg 产物地址均已固定，便于复现结果。
 
-最近完整核验：2026-08-16，Windows 11 + JDK 17 + Flutter 3.47.0；静态分析、27 项测试、Android arm64 原生编译与 Windows x64 原生编译通过。每次发布仍需在当前提交上重新执行全部门禁。
+最近完整核验：2026-08-16，Windows 11 + JDK 17 + Flutter 3.47.0；静态分析、28 项测试、15 项平台接口探测与 Android arm64 原生编译通过。Windows x64 沿用同日上一轮构建结果；每次发布仍需在当前提交上重新执行全部门禁。
 
 ## 前置环境
 
@@ -104,7 +104,7 @@ python .\tool\interface_probe.py
 
 ```powershell
 PowerShell -ExecutionPolicy Bypass -File .\tool\publish_local_release.ps1 `
-  -Tag v2.0.29 -CreateTag
+  -Tag v2.0.30 -CreateTag
 ```
 
 脚本要求工作树已提交，并通过 GitHub CLI 当前登录身份创建或更新 Release。

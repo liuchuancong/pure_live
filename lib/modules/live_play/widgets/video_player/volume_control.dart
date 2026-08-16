@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
@@ -25,6 +26,7 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
   StreamSubscription? _volumeListener;
   StreamSubscription? _mobileVolWorker;
   StreamSubscription? _desktopVolWorker;
+  StreamSubscription? _controllerVolumeSub;
   static const double _barHeight = 150.0;
   static const double _barWidth = 44.0;
 
@@ -43,6 +45,7 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
     _volumeListener?.cancel();
     _mobileVolWorker?.cancel();
     _desktopVolWorker?.cancel();
+    _controllerVolumeSub?.cancel();
     _removeOverlay();
     super.dispose();
   }
@@ -52,6 +55,14 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
     _volumeListener = v.globalVolumeMute.stream.listen((_) => _updateVolumeFromGlobal());
     _mobileVolWorker = v.defaultMobileVolume.stream.listen((_) => _updateVolumeFromGlobal());
     _desktopVolWorker = v.defaultDesktopVolume.stream.listen((_) => _updateVolumeFromGlobal());
+    _controllerVolumeSub = controller.currentVolume.stream.listen((value) {
+      if (!mounted || (_volume - value).abs() < 0.001) return;
+      setState(() {
+        _volume = value;
+        if (value > 0) _lastVolume = value;
+      });
+      _overlayEntry?.markNeedsBuild();
+    });
   }
 
   void _updateVolumeFromGlobal() {

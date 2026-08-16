@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:developer';
+
 import 'app_path_manager.dart';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/global.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
@@ -40,7 +42,12 @@ class AppInitializer {
       CustomImageCacheManager.initialize(),
     ]);
 
-    InitialServices.init();
+    // Settings and controller registration is a hard startup dependency for
+    // MyApp.build.  Leaving this future detached created a first-launch race:
+    // a freshly upgraded install could build the widget tree before
+    // SettingsService was registered, then work on a later launch only because
+    // the database/cache files had already been created.
+    await InitialServices.init();
     _initSmartDialog();
     initRefresh();
 

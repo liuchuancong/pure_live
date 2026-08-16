@@ -238,4 +238,6 @@ class LiveRoom {
     AudienceMetricType.followers => 'audience_followers',
     AudienceMetricType.unknown => 'audience_count',
   };
+
+  bool get supportsRealOnlineCount => effectiveAudienceMetricType == AudienceMetricType.onlineViewers;
 }

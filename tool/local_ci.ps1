@@ -17,7 +17,12 @@ try {
     $dartFiles = @(
         git diff --name-only --diff-filter=ACMR HEAD -- '*.dart'
         git ls-files --others --exclude-standard -- '*.dart'
-    ) | Where-Object { $_ -and $_ -notin $formatExclusions -and (Test-Path -LiteralPath $_) } | Sort-Object -Unique
+    ) | Where-Object {
+        $_ -and
+        $_ -notin $formatExclusions -and
+        -not $_.StartsWith('plugins/flv_lzc/', [StringComparison]::OrdinalIgnoreCase) -and
+        (Test-Path -LiteralPath $_)
+    } | Sort-Object -Unique
     if ($dartFiles.Count -gt 0) {
         & $flutterw dart format --output=none --set-exit-if-changed @dartFiles
         if ($LASTEXITCODE) { exit $LASTEXITCODE }

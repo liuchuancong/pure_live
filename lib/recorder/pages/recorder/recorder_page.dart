@@ -1,4 +1,5 @@
 import 'dart:ui';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/routes/app_navigation.dart';
@@ -67,7 +68,7 @@ class RecorderPage extends GetView<RecorderController> {
             ),
           ),
           body: TabBarView(
-            physics: const BouncingScrollPhysics(),
+            physics: const PureLiveScrollPhysics(),
             children: [
               _TaskList(filter: null),
               _TaskList(filter: (e) => e.status == RecordStatus.running),

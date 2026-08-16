@@ -163,6 +163,38 @@ class _KeywordBlockPageState extends State<KeywordBlockPage> {
               ],
             );
           }),
+          Obx(() {
+            final users = SettingsService.to.fav.blockedDanmakuUsers;
+            if (users.isEmpty) return const SizedBox.shrink();
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  i18n('blocked_danmaku_users', args: {'count': '${users.length}'}),
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: users
+                      .asMap()
+                      .entries
+                      .map((entry) {
+                        return InputChip(
+                          avatar: const Icon(Icons.person_off_rounded, size: 16),
+                          label: Text(entry.value),
+                          onDeleted: () => SettingsService.to.fav.removeBlockedDanmakuUser(entry.key),
+                        );
+                      })
+                      .toList(growable: false),
+                ),
+              ],
+            );
+          }),
         ],
       ),
     );

@@ -8,6 +8,7 @@
 - [依赖与接口审计](DEPENDENCY_AUDIT.md)：依赖锁定策略、暂缓升级原因和直播平台接口探测边界。
 - [平台接口与兼容性](PLATFORM_COMPATIBILITY.md)：各平台分区、搜索、弹幕和人数指标的当前能力。
 - [Android 高刷新率与性能验证](PERFORMANCE.md)：120 Hz 请求、渲染优化和真机帧统计方法。
+- [上游问题审计（2026-08-16）](ISSUE_AUDIT_2026_08_16.md)：本轮问题对应根因、代码落点和验证状态。
 - [参与贡献](../CONTRIBUTING.md)：分支、提交、测试和 Pull Request 约定。
 - [版本说明](../RELEASE_NOTES.md)：当前开发版本变更。
 - [安全策略](../SECURITY.md)：漏洞报告、凭据和签名材料管理。

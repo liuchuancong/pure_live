@@ -15,7 +15,7 @@ class NavigationSettingsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(i18n("navigation_display_settings"))),
       body: ListView(
-        physics: const BouncingScrollPhysics(),
+        physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
           _buildTipBanner(theme),

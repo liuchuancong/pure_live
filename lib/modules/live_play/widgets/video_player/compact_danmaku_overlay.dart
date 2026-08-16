@@ -26,7 +26,7 @@ class CompactDanmakuOverlay extends StatelessWidget {
       final area = settings.pipDanmakuArea.v;
       final speed = settings.pipDanmakuSpeed.v;
       final opacity = settings.pipDanmakuOpacity.v;
-      final fps = settings.pipDanmakuFps.v;
+      final fps = settings.resolvedDanmakuFps(pip: true);
       final maxVisibleCount = settings.pipDanmakuMaxVisibleCount.v;
       final emitInterval = settings.pipDanmakuEmitInterval.v;
       final fontFamily = controller.danmakuFontFamilyName.value;

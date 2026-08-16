@@ -58,7 +58,14 @@ class DanmakuController extends GetxController {
 
     liveDanmaku.onMessage = (msg) {
       if (msg.type == LiveMessageType.chat) {
-        if (SettingsService.to.fav.shieldList.v.every((e) => !msg.message.contains(e))) {
+        final favorite = SettingsService.to.fav;
+        final blockedUser = favorite.blockedDanmakuUsers.any(
+          (user) => user.toLowerCase() == msg.userName.trim().toLowerCase(),
+        );
+        final blockedKeyword = favorite.shieldList.any(
+          (keyword) => keyword.isNotEmpty && msg.message.toLowerCase().contains(keyword.toLowerCase()),
+        );
+        if (!blockedUser && !blockedKeyword) {
           _main.addDanmakuMessage(msg);
           final videoController = _state.player.videoController;
           if (videoController != null) {

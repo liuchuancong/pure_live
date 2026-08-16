@@ -10,7 +10,7 @@ class RefreshSettingsPage extends GetView<RefreshConfigController> {
     return Scaffold(
       appBar: AppBar(title: Text(i18n("refresh_settings"))),
       body: ListView(
-        physics: const BouncingScrollPhysics(),
+        physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
           context.buildGroupTitle(i18n("auto_refresh_settings")),
@@ -113,7 +113,7 @@ class RefreshSettingsPage extends GetView<RefreshConfigController> {
                   width: dialogWidth,
                   child: ListView(
                     shrinkWrap: true,
-                    physics: const BouncingScrollPhysics(),
+                    physics: const PureLiveScrollPhysics(),
                     children: intervals.entries.map((e) {
                       return RadioListTile<int>(
                         title: Text(e.value),
@@ -155,7 +155,7 @@ class RefreshSettingsPage extends GetView<RefreshConfigController> {
                   width: dialogWidth,
                   child: ListView.builder(
                     shrinkWrap: true,
-                    physics: const BouncingScrollPhysics(),
+                    physics: const PureLiveScrollPhysics(),
                     itemCount: 20,
                     itemBuilder: (context, index) {
                       final val = index + 1;

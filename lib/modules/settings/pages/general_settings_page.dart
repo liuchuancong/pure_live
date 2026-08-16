@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
@@ -11,7 +12,7 @@ class GeneralSettingsPage extends GetView<SettingsService> {
     return Scaffold(
       appBar: AppBar(title: Text(i18n("general"))),
       body: ListView(
-        physics: const BouncingScrollPhysics(),
+        physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
           context.buildGroupTitle(i18n("general")),
@@ -30,6 +31,20 @@ class GeneralSettingsPage extends GetView<SettingsService> {
                   isLong: true,
                 );
               }),
+            context.buildSwitchTile(
+              title: i18n('prefer_real_online_counts'),
+              subtitle: i18n('prefer_real_online_counts_desc'),
+              value: SettingsService.to.app.preferRealOnlineCounts,
+              icon: Icons.people_alt_rounded,
+              isLong: true,
+            ),
+            context.buildTile(
+              title: i18n('audience_metric_support'),
+              subtitle: i18n('audience_metric_support_summary'),
+              icon: Icons.info_outline_rounded,
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => _showAudienceMetricSupport(context),
+            ),
             context.buildSwitchTile(
               title: i18n('splash_animation'),
               subtitle: i18n("splash_animation_subtitle"),
@@ -103,6 +118,19 @@ class GeneralSettingsPage extends GetView<SettingsService> {
           ]),
           const SizedBox(height: 32),
         ],
+      ),
+    );
+  }
+
+  void _showAudienceMetricSupport(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(i18n('audience_metric_support')),
+        content: SingleChildScrollView(
+          child: Text(i18n('audience_metric_support_detail'), style: const TextStyle(height: 1.55)),
+        ),
+        actions: [FilledButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(i18n('confirm')))],
       ),
     );
   }

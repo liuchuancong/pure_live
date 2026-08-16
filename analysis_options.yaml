@@ -14,5 +14,8 @@ analyzer:
     - windows/**
     - macos/**
     - linux/**
+    # Third-party source is pinned and patched only in its Android registrar.
+    # Keep the app quality gate focused on code maintained in this repository.
+    - plugins/flv_lzc/**
 linter:
   rules:

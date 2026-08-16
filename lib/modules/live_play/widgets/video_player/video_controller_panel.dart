@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:ui' as ui;
+
 import 'package:flutter_svg/svg.dart';
 import 'package:flutter/gestures.dart';
 import 'package:remixicon/remixicon.dart';
@@ -31,6 +32,7 @@ class VideoControllerPanel extends StatefulWidget {
 
 class _VideoControllerPanelState extends State<VideoControllerPanel> {
   static const barHeight = 56.0;
+  Offset? _lastTapPosition;
 
   VideoController get controller => widget.controller;
 
@@ -49,7 +51,7 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
       child: Focus(
         autofocus: true,
         child: Obx(() {
-          final double currentVolume = controller.room.getSavedVolume();
+          final double currentVolume = controller.currentVolume.value;
           final int percentage = (currentVolume * 100).round();
 
           final IconData iconData = currentVolume <= 0
@@ -110,10 +112,16 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                   ),
                 ),
                 GestureDetector(
+                  onTapDown: (details) => _lastTapPosition = details.localPosition,
                   onTap: () {
+                    final position = _lastTapPosition;
+                    if (position != null && controller.handleDanmakuPointer(position, longPress: false)) return;
                     GlobalPlayerService.instance.playerManager.isPlayingNow
                         ? controller.enableController()
                         : GlobalPlayerService.instance.playerManager.togglePlayPause();
+                  },
+                  onLongPressStart: (details) {
+                    controller.handleDanmakuPointer(details.localPosition, longPress: true);
                   },
                   onDoubleTap: () {
                     if (!controller.showLocked.value) {
@@ -224,7 +232,10 @@ class TopActionBar extends StatelessWidget {
                 ),
               ),
 
-              AudioOnlyButton(controller: controller),
+              if (Platform.isAndroid)
+                AsmrSessionButton(controller: controller)
+              else
+                AudioOnlyButton(controller: controller),
               if (controller.room.platform == Sites.iptvSite)
                 IconButton(
                   icon: const Icon(Icons.assignment_outlined), // 节目单账本图标
@@ -350,7 +361,7 @@ class TopActionBar extends StatelessWidget {
                 child: ListView.builder(
                   controller: controller.scheduleScrollController,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  physics: const BouncingScrollPhysics(),
+                  physics: const PureLiveScrollPhysics(),
                   itemCount: controller.currentChannelSchedule.length,
                   itemBuilder: (context, index) {
                     final prog = controller.currentChannelSchedule[index];
@@ -589,9 +600,13 @@ class DanmakuViewer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => FlameBarrageWidget(
+    return Obx(() {
+      final settings = SettingsService.to.danmaku;
+      return FlameBarrageWidget(
         controller: controller.danmakuController,
+        // Video gestures own the full surface and forward only hits on actual
+        // barrage bounds, so volume/brightness/double-tap remain responsive.
+        enablePointerEvents: false,
         config: BarrageConfig(
           fontSize: controller.danmakuFontSize.value,
           topAreaDistance: controller.danmakuTopArea.value,
@@ -601,14 +616,16 @@ class DanmakuViewer extends StatelessWidget {
           opacity: controller.danmakuOpacity.value,
           fontWeight: FontWeight.values[controller.danmakuFontBorder.value],
           showStroke: controller.enableDanmakuStroke.value,
-          fps: controller.danmakuFps.value,
+          fps: settings.resolvedDanmakuFps(),
           fontFamily: controller.danmakuFontFamilyName.value,
+          trackHeight: (controller.danmakuFontSize.value * 1.55).clamp(24.0, 64.0).toDouble(),
+          emojiSize: (controller.danmakuFontSize.value * 1.3).clamp(16.0, 48.0).toDouble(),
           pictureCacheMaxSize: 9999,
           barragePoolMaxSize: 300,
         ),
         emojiAtlas: EmojiAtlas.instance,
-      ),
-    );
+      );
+    });
   }
 }
 
@@ -1179,7 +1196,7 @@ class BottomActionBar extends StatelessWidget {
             builder: (context, constraints) {
               return SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                physics: const PureLiveScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(minWidth: constraints.maxWidth),
                   child: Padding(
@@ -1400,18 +1417,48 @@ class AudioOnlyButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        controller.enableController();
-        controller.toggleAudioOnly();
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 2),
-        alignment: Alignment.center,
-        height: 25,
-        child: Icon(controller.isAudioOnly ? Remix.headphone_line : Remix.tv_2_line, color: Colors.white, size: 20),
+    return Tooltip(
+      message: i18n(controller.isAudioOnly ? 'restore_video_mode' : 'switch_audio_only_mode'),
+      child: GestureDetector(
+        onTap: () {
+          controller.enableController();
+          controller.toggleAudioOnly();
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          alignment: Alignment.center,
+          height: 32,
+          child: Icon(controller.isAudioOnly ? Remix.tv_2_line : Remix.headphone_line, color: Colors.white, size: 20),
+        ),
       ),
     );
+  }
+}
+
+class AsmrSessionButton extends StatelessWidget {
+  const AsmrSessionButton({super.key, required this.controller});
+
+  final VideoController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final liveController = controller.livePlayController;
+    return Obx(() {
+      final active = liveController.asmrSessionActive.v;
+      return Tooltip(
+        message: i18n(active ? 'asmr_room_stop' : 'asmr_room_start'),
+        child: IconButton(
+          visualDensity: VisualDensity.compact,
+          iconSize: 21,
+          color: active ? const Color(0xFFFFD166) : Colors.white,
+          onPressed: () {
+            controller.enableController();
+            liveController.toggleAsmrSession();
+          },
+          icon: Icon(active ? Remix.moon_fill : Remix.moon_line),
+        ),
+      );
+    });
   }
 }
 
@@ -1645,7 +1692,7 @@ class DanmakuSetting extends StatelessWidget {
       () => SizedBox(
         height: isWide ? 350.0 : 280.0,
         child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
+          physics: const PureLiveScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,

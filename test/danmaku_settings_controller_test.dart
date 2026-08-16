@@ -13,6 +13,8 @@ void main() {
       expect(config['pipDanmakuSpeed'], 90.0);
       expect(config['pipDanmakuMaxVisibleCount'], 6);
       expect(config['pipDanmakuFps'], 30);
+      expect(config['danmakuAutoFps'], isTrue);
+      expect(config['pipDanmakuAutoFps'], isTrue);
       expect(config['danmakuSpeed'], 120.0);
     });
 
@@ -47,7 +49,7 @@ void main() {
       expect(config['pipDanmakuArea'], 1.0);
       expect(config['pipDanmakuMaxVisibleCount'], 20);
       expect(config['pipDanmakuEmitInterval'], 2.0);
-      expect(config['pipDanmakuFps'], 60);
+      expect(config['pipDanmakuFps'], 240);
     });
 
     test('merges compact settings without dropping existing fields', () {

@@ -21,3 +21,8 @@
 -keep interface tv.danmaku.ijk.media.player.** { *; }
 -keep class androidx.media3.exoplayer.video.** { *; }
 -dontwarn android.view.Choreographer$VsyncCallback
+
+# Room instantiates generated database implementations reflectively. R8 full
+# mode otherwise removes their zero-argument constructors; WorkManager then
+# crashes in InitializationProvider before Flutter starts.
+-keep class * extends androidx.room.RoomDatabase { <init>(); }

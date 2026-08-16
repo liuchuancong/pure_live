@@ -476,7 +476,7 @@ class RoomCard extends StatelessWidget {
                           child: GridView.builder(
                             controller: tagScrollController,
                             shrinkWrap: true,
-                            physics: const BouncingScrollPhysics(),
+                            physics: const PureLiveScrollPhysics(),
                             itemCount: tagController.tags.length,
                             padding: const EdgeInsets.only(right: 10, top: 4, bottom: 4, left: 2),
                             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -687,16 +687,22 @@ class RoomCard extends StatelessWidget {
                     Positioned(
                       right: 8,
                       bottom: 8,
-                      child: CountChip(
-                        icon: switch (room.effectiveAudienceMetricType) {
-                          AudienceMetricType.onlineViewers => Icons.people_alt_rounded,
-                          AudienceMetricType.followers => Icons.favorite_rounded,
-                          AudienceMetricType.totalViewers => Icons.visibility_rounded,
-                          _ => Icons.whatshot_rounded,
-                        },
-                        count: '${i18n(room.audienceMetricI18nKey)} · ${readableCount(room.watching ?? "0")}',
-                        dense: dense,
-                        color: Get.theme.primaryColor,
+                      child: Obx(
+                        () => CountChip(
+                          icon: SettingsService.to.app.preferRealOnlineCounts.v
+                              ? Icons.people_alt_rounded
+                              : switch (room.effectiveAudienceMetricType) {
+                                  AudienceMetricType.onlineViewers => Icons.people_alt_rounded,
+                                  AudienceMetricType.followers => Icons.favorite_rounded,
+                                  AudienceMetricType.totalViewers => Icons.visibility_rounded,
+                                  _ => Icons.whatshot_rounded,
+                                },
+                          count: SettingsService.to.app.preferRealOnlineCounts.v
+                              ? '${i18n('audience_online')} · ${room.supportsRealOnlineCount ? readableCount(room.watching ?? "0") : i18n('audience_real_online_unavailable')}'
+                              : '${i18n(room.audienceMetricI18nKey)} · ${readableCount(room.watching ?? "0")}',
+                          dense: dense,
+                          color: Get.theme.primaryColor,
+                        ),
                       ),
                     ),
                 ],

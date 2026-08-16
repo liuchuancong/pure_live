@@ -7,7 +7,10 @@ void main() {
       expect(LiveRoom(platform: 'bilibili').effectiveAudienceMetricType, AudienceMetricType.popularity);
       expect(LiveRoom(platform: 'douyu').effectiveAudienceMetricType, AudienceMetricType.popularity);
       expect(LiveRoom(platform: 'huya').effectiveAudienceMetricType, AudienceMetricType.onlineViewers);
+      expect(LiveRoom(platform: 'kuaishou').effectiveAudienceMetricType, AudienceMetricType.onlineViewers);
       expect(LiveRoom(platform: 'douyin').effectiveAudienceMetricType, AudienceMetricType.totalViewers);
+      expect(LiveRoom(platform: 'huya').supportsRealOnlineCount, isTrue);
+      expect(LiveRoom(platform: 'bilibili').supportsRealOnlineCount, isFalse);
     });
 
     test('round-trips an explicit metric and migrates older records', () {

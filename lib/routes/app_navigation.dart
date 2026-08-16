@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:developer';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/utils.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
@@ -10,6 +11,8 @@ import 'package:pure_live/modules/live_play/controllers/live_play_controller.dar
 /// * 需要参数的页面都应使用此类
 /// * 如不需要参数，可以使用Get.toNamed
 class AppNavigator {
+  static bool _openingLiveRoom = false;
+
   /// 跳转至分类详情
   static void toCategoryDetail({required Site site, required LiveArea category}) {
     Get.toNamed(RoutePath.kAreaRooms, arguments: [site, category]);
@@ -17,6 +20,7 @@ class AppNavigator {
 
   /// 跳转至直播间
   static Future<void> toLiveRoomDetail({required LiveRoom liveRoom}) async {
+    if (_openingLiveRoom) return;
     final platform = (liveRoom.platform?.trim() ?? '').toLowerCase();
     final roomId = liveRoom.roomId?.trim() ?? '';
     if (platform.isEmpty || roomId.isEmpty || !Sites.isSupported(platform)) {
@@ -26,7 +30,12 @@ class AppNavigator {
     final normalizedRoom = liveRoom.platform == platform && liveRoom.roomId == roomId
         ? liveRoom
         : liveRoom.copyWith(platform: platform, roomId: roomId);
-    await Get.toNamed(RoutePath.kLivePlay, arguments: normalizedRoom, parameters: {"site": platform});
+    _openingLiveRoom = true;
+    try {
+      await Get.toNamed(RoutePath.kLivePlay, arguments: normalizedRoom, parameters: {"site": platform});
+    } finally {
+      _openingLiveRoom = false;
+    }
   }
 
   static Future<void> offAndToRoomDetail({required LiveRoom liveRoom}) async {

@@ -1,6 +1,7 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller_panel.dart';
+import 'package:pure_live/player/core/live_audio_service.dart';
 
 class VideoPlayer extends StatefulWidget {
   final VideoController controller;
@@ -41,7 +42,7 @@ class _VideoPlayerState extends State<VideoPlayer> with WidgetsBindingObserver {
     final player = GlobalPlayerService.instance.playerManager;
 
     if (state == AppLifecycleState.paused) {
-      if (!SettingsService.to.app.enableBackgroundPlay.v) {
+      if (!LiveAudioService.shouldContinueInBackground) {
         if (player.isPlayingNow) {
           _isPausedByLifecycle = true;
           player.pause();

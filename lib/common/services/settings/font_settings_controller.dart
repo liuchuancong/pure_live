@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/models/font_model.dart';
@@ -11,6 +12,7 @@ import 'package:pure_live/common/services/medels/download_status.dart';
 import 'package:pure_live/common/services/settings/danmaku_settings_controller.dart';
 
 class FontSettingsController extends GetxController {
+  Future<void>? _initialization;
   final RxDouble textScaleFactor = hiveDouble('textScaleFactor', 1.0);
   final RxDouble fontSizeBodySmall = hiveDouble('fontSizeBodySmall', 12.0);
   final RxDouble fontSizeBodyMedium = hiveDouble('fontSizeBodyMedium', 13.0);
@@ -27,7 +29,7 @@ class FontSettingsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    unawaited(_initializeFonts());
+    unawaited(ensureInitialized());
 
     everAll([
       fontSizeBodySmall,
@@ -39,10 +41,16 @@ class FontSettingsController extends GetxController {
     ], (_) => refreshSystemTheme());
   }
 
+  Future<void> ensureInitialized() => _initialization ??= _initializeFonts();
+
   Future<void> _initializeFonts() async {
     await _loadInitialFontManifest();
     await initUserFontLifecycle();
-    refreshSystemTheme();
+    // This also runs before runApp so the selected custom font is ready for
+    // the first ThemeData. Accessing Get.context here asks GetX for its root
+    // navigator before GetMaterialApp exists and leaves Android on the native
+    // splash screen. MyApp reads the initialized settings on its first build;
+    // interactive font changes still call refreshSystemTheme below.
   }
 
   Future<void> _loadInitialFontManifest() async {

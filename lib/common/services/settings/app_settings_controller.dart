@@ -20,6 +20,7 @@ class AppSettingsController extends GetxController {
   final RxBool enableFullScreenDefault = hiveBool('enableFullScreenDefault', false);
   final RxBool showSplashPage = hiveBool('showSplashPage', true);
   final RxBool enableHighRefreshRate = hiveBool('enableHighRefreshRate', true);
+  final RxBool preferRealOnlineCounts = hiveBool('preferRealOnlineCounts', false);
 
   late final RxList<String> savedMenuIds = hiveStringList('savedMenuIds', HomeMenu.values.map((e) => e.id).toList());
 
@@ -68,6 +69,7 @@ class AppSettingsController extends GetxController {
       'enableFullScreenDefault': enableFullScreenDefault.v,
       'showSplashPage': showSplashPage.v,
       'enableHighRefreshRate': enableHighRefreshRate.v,
+      'preferRealOnlineCounts': preferRealOnlineCounts.v,
       'savedMenuIds': savedMenuIds.v,
     };
   }
@@ -77,13 +79,14 @@ class AppSettingsController extends GetxController {
     enableDenseFavorites.v = json['enableDenseFavorites'] ?? true;
     enableBackgroundPlay.v = json['enableBackgroundPlay'] ?? false;
     enableAsmrSleepMode.v = json['enableAsmrSleepMode'] ?? false;
-    asmrSleepMinutes.v = (((json['asmrSleepMinutes'] as num?)?.toInt() ?? 60).clamp(15, 480)).toInt();
+    asmrSleepMinutes.v = (((json['asmrSleepMinutes'] as num?)?.toInt() ?? 60).clamp(1, 720)).toInt();
     enableRotateScreen.v = json['enableRotateScreen'] ?? false;
     enableScreenKeepOn.v = json['enableScreenKeepOn'] ?? true;
     enableAutoCheckUpdate.v = json['enableAutoCheckUpdate'] ?? true;
     enableFullScreenDefault.v = json['enableFullScreenDefault'] ?? false;
     showSplashPage.v = json['showSplashPage'] ?? true;
     enableHighRefreshRate.v = json['enableHighRefreshRate'] ?? true;
+    preferRealOnlineCounts.v = json['preferRealOnlineCounts'] ?? false;
     savedMenuIds.v = List<String>.from(json['savedMenuIds'] ?? HomeMenu.values.map((e) => e.id).toList());
   }
 
@@ -94,13 +97,14 @@ class AppSettingsController extends GetxController {
       'enableDenseFavorites': app['enableDenseFavorites'] ?? true,
       'enableBackgroundPlay': app['enableBackgroundPlay'] ?? false,
       'enableAsmrSleepMode': app['enableAsmrSleepMode'] ?? false,
-      'asmrSleepMinutes': (((app['asmrSleepMinutes'] as num?)?.toInt() ?? 60).clamp(15, 480)).toInt(),
+      'asmrSleepMinutes': (((app['asmrSleepMinutes'] as num?)?.toInt() ?? 60).clamp(1, 720)).toInt(),
       'enableRotateScreen': app['enableRotateScreen'] ?? false,
       'enableScreenKeepOn': app['enableScreenKeepOn'] ?? true,
       'enableAutoCheckUpdate': app['enableAutoCheckUpdate'] ?? true,
       'enableFullScreenDefault': app['enableFullScreenDefault'] ?? false,
       'showSplashPage': app['showSplashPage'] ?? true,
       'enableHighRefreshRate': app['enableHighRefreshRate'] ?? true,
+      'preferRealOnlineCounts': app['preferRealOnlineCounts'] ?? false,
       'savedMenuIds': List<String>.from(app['savedMenuIds'] ?? []),
     };
   }

@@ -192,7 +192,10 @@ class MixedLayout {
       return cached;
     }
 
-    final builder = ui.ParagraphBuilder(ui.ParagraphStyle(fontSize: config.fontSize, height: 1.0));
+    // A 1.0 line box clips the ascent of several CJK/custom fonts and also
+    // leaves no room for the stroke at the top edge.  Keep a small symmetric
+    // vertical allowance so glyphs remain complete at every configured size.
+    final builder = ui.ParagraphBuilder(ui.ParagraphStyle(fontSize: config.fontSize, height: 1.15));
 
     if (isStroke) {
       final strokePaint = ui.Paint()

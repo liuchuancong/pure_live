@@ -1,8 +1,11 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:developer';
+
 import 'package:flutter/scheduler.dart';
+
 import 'video_controller_panel.dart';
+
 import 'package:pure_live/common/index.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:flame_barrage/flame_barrage.dart';
@@ -20,6 +23,7 @@ import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/widgets/danmaku_message_actions.dart';
 
 typedef AudioOnlyCallback = void Function(bool value);
 
@@ -51,6 +55,7 @@ class DanmakuManager {
   bool _configUpdateScheduled = false;
   bool _settingsDirty = false;
   bool _disposed = false;
+  DateTime? _lastLongPressAction;
 
   DanmakuManager({
     required this.controller,
@@ -105,6 +110,20 @@ class DanmakuManager {
     workers.add(
       debounce<int>(_visualSettingsRevision, (_) => _persistVisualSettings(), time: const Duration(milliseconds: 160)),
     );
+    workers.add(everAll([dm.danmakuAutoFps, DisplayModeService.info], (_) => _scheduleConfigUpdate()));
+  }
+
+  void _openMessageActions(LiveMessage message, {required bool fromLongPress}) {
+    final now = DateTime.now();
+    if (fromLongPress) {
+      _lastLongPressAction = now;
+    } else if (_lastLongPressAction != null && now.difference(_lastLongPressAction!) < const Duration(seconds: 1)) {
+      return;
+    }
+    final context = Get.context;
+    if (context == null) return;
+    controller.pause();
+    unawaited(DanmakuMessageActions.show(context, message).whenComplete(controller.resume));
   }
 
   void _scheduleConfigUpdate() {
@@ -140,13 +159,32 @@ class DanmakuManager {
     final settings = settingsService.danmaku;
     if (settings.enableDanmakuDisplay.v && !videoController.hideDanmaku.value) {
       final speed = videoController.danmakuSpeed.value * _speedFactors[_speedVariant++ % _speedFactors.length];
-      controller.send(BarrageItem(content: msg.message, textColor: originalColor, baseSpeed: speed));
+      controller.send(
+        BarrageItem(
+          content: msg.message,
+          userId: msg.userId,
+          userName: msg.userName,
+          textColor: originalColor,
+          baseSpeed: speed,
+          onTapUp: settings.enableDanmakuTapInteraction.v ? () => _openMessageActions(msg, fromLongPress: false) : null,
+          onLongTapDown: settings.enableDanmakuLongPressInteraction.v
+              ? () => _openMessageActions(msg, fromLongPress: true)
+              : null,
+        ),
+      );
     }
 
     if (settings.enablePipDanmaku.v && isCompactMode) {
       final compactColor = settings.pipDanmakuUseOriginalColor.v ? originalColor : Color(settings.pipDanmakuColor.v);
       pipController.send(BarrageItem(content: msg.message, textColor: compactColor));
     }
+  }
+
+  bool handlePointer(Offset position, {required bool longPress}) {
+    final settings = settingsService.danmaku;
+    final enabled = longPress ? settings.enableDanmakuLongPressInteraction.v : settings.enableDanmakuTapInteraction.v;
+    if (!enabled) return false;
+    return controller.triggerItemAt(position.dx, position.dy, longPress: longPress);
   }
 
   void dispose() {
@@ -201,6 +239,7 @@ class VideoController with ChangeNotifier {
   final isMenuOpen = false.obs;
   final showVolume = false.obs;
   final batteryLevel = 100.obs;
+  final currentVolume = 1.0.obs;
 
   // 弹幕相关
   final hideDanmaku = false.obs;
@@ -269,6 +308,7 @@ class VideoController with ChangeNotifier {
        _settingsService = settingsService ?? SettingsService.to,
        _dbService = dbService ?? Get.find<DbService>(),
        _livePlayController = livePlayController ?? Get.find<LivePlayController>() {
+    currentVolume.value = room.getSavedVolume();
     _initControllers();
     _initPagesConfig();
   }
@@ -448,12 +488,14 @@ class VideoController with ChangeNotifier {
   }
 
   Future<void> setVolume(double value) async {
+    final resolved = value.clamp(0.0, 1.0).toDouble();
     if (PlatformHelper.isDesktop) {
-      await _playerManager.setVolume(value);
+      await _playerManager.setVolume(resolved);
     } else {
-      await _volumeController.setVolume(value);
+      await _volumeController.setVolume(resolved);
     }
-    await room.saveCurrentVolume(value);
+    currentVolume.value = resolved;
+    await room.saveCurrentVolume(resolved);
   }
 
   // 亮度管理
@@ -544,7 +586,9 @@ class VideoController with ChangeNotifier {
         opacity: danmakuOpacity.value,
         fontWeight: FontWeight.values[danmakuFontBorder.value],
         showStroke: enableDanmakuStroke.value,
-        fps: danmakuFps.value,
+        fps: SettingsService.to.danmaku.resolvedDanmakuFps(),
+        trackHeight: (danmakuFontSize.value * 1.55).clamp(24.0, 64.0).toDouble(),
+        emojiSize: (danmakuFontSize.value * 1.3).clamp(16.0, 48.0).toDouble(),
       ),
     );
   }
@@ -552,6 +596,9 @@ class VideoController with ChangeNotifier {
   void sendDanmaku(LiveMessage msg) {
     _danmakuManager.sendDanmaku(msg, _playerManager.isPlayingNow, _playerManager.isCompactModeActive);
   }
+
+  bool handleDanmakuPointer(Offset position, {required bool longPress}) =>
+      _danmakuManager.handlePointer(position, longPress: longPress);
 
   void clearPipDanmaku() => pipDanmakuController.clear();
 
@@ -659,9 +706,8 @@ class VideoController with ChangeNotifier {
   }
 
   void retryRoom() async {
-    var liveRoom = await Sites.of(
-      room.platform!,
-    ).liveSite.getRoomDetail(roomId: room.roomId!, platform: room.platform!);
+    var liveRoom = await Sites.of(room.platform!).liveSite
+        .getRoomDetail(roomId: room.roomId!, platform: room.platform!);
 
     if (liveRoom.liveStatus == LiveStatus.offline) {
       _livePlayController.setNormalScreen();

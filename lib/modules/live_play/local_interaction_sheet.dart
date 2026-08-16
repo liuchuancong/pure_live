@@ -2,9 +2,10 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/live_play/local_interaction_controller.dart';
 
 class LocalInteractionSheet extends StatefulWidget {
-  const LocalInteractionSheet({super.key, required this.controller, required this.onMessage});
+  const LocalInteractionSheet({super.key, required this.controller, required this.platform, required this.onMessage});
 
   final LocalInteractionController controller;
+  final String platform;
   final void Function(LiveMessage message, bool showAsDanmaku) onMessage;
 
   @override
@@ -31,13 +32,14 @@ class _LocalInteractionSheetState extends State<LocalInteractionSheet> {
   void _sendChat() {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
-    widget.onMessage(widget.controller.createChat(text), widget.controller.showAsDanmaku.v);
+    widget.onMessage(widget.controller.createChat(text, platform: widget.platform), widget.controller.showAsDanmaku.v);
     _messageController.clear();
   }
 
   @override
   Widget build(BuildContext context) {
     final local = widget.controller;
+    final gifts = LocalInteractionController.giftsForPlatform(widget.platform);
     final colors = Theme.of(context).colorScheme;
     return SafeArea(
       child: Padding(
@@ -127,13 +129,13 @@ class _LocalInteractionSheetState extends State<LocalInteractionSheet> {
                   crossAxisSpacing: 8,
                   childAspectRatio: .9,
                 ),
-                itemCount: LocalInteractionController.gifts.length,
+                itemCount: gifts.length,
                 itemBuilder: (context, index) {
-                  final gift = LocalInteractionController.gifts[index];
+                  final gift = gifts[index];
                   return InkWell(
                     borderRadius: BorderRadius.circular(14),
                     onTap: () {
-                      final message = local.sendGift(gift);
+                      final message = local.sendGift(gift, platform: widget.platform);
                       if (message == null) {
                         ToastUtil.show(i18n('local_coins_insufficient'));
                         return;

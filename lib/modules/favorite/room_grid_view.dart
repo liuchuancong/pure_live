@@ -42,7 +42,7 @@ class RoomGridView extends GetView<FavoriteController> {
                 color: Colors.transparent,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
+                  physics: const PureLiveScrollPhysics(),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   itemCount: controller.visibleTags.length + 1,
                   itemBuilder: (context, index) {

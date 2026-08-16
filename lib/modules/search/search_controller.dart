@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:pure_live/common/index.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -146,6 +147,11 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
       ..sort((a, b) {
         final liveOrder = (b.liveStatus == LiveStatus.live ? 1 : 0) - (a.liveStatus == LiveStatus.live ? 1 : 0);
         if (liveOrder != 0) return liveOrder;
+        if (SettingsService.to.app.preferRealOnlineCounts.v) {
+          final supportedOrder = (b.supportsRealOnlineCount ? 1 : 0) - (a.supportsRealOnlineCount ? 1 : 0);
+          if (supportedOrder != 0) return supportedOrder;
+          if (!a.supportsRealOnlineCount) return a.platform.toString().compareTo(b.platform.toString());
+        }
         return _numericHeat(b.watching).compareTo(_numericHeat(a.watching));
       });
     results.assignAll(rooms);

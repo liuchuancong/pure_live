@@ -1,7 +1,7 @@
 name: pure_live
 description: 纯粹直播,一款开源的第三方多平台直播聚合播放器.
 publish_to: none
-version: 2.0.29+40
+version: 2.0.30+41
 
 environment:
   sdk: ^3.13.0
@@ -78,10 +78,10 @@ dependencies:
   audio_service_win: ^0.0.3
   audio_session: ^0.2.3 # 音频会话管理
   ffmpeg_kit_extended_flutter: ^0.5.13
+  # Vendored from liuchuancong/flv_lzc@030d611 so the Android attach-time
+  # SurfaceTexture crash fix is reproducible in local/offline release builds.
   flv_lzc:
-    git:
-      url: https://github.com/liuchuancong/flv_lzc.git
-      ref: 030d611dd4ebff40962a13209bb56230853f4f9f
+    path: plugins/flv_lzc
 
   # -------------------------- UI组件/界面样式 --------------------------
   flutter_svg: ^2.2.1 # SVG图片渲染

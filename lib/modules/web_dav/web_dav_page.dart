@@ -166,7 +166,7 @@ class WebDavPage extends GetView<WebDavPageController> {
       key: _scaffoldKey,
       backgroundColor: Theme.of(Get.context!).colorScheme.surface,
       body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
+        physics: const PureLiveScrollPhysics(),
         slivers: [_buildAppBar(), _buildNavigationBar(), _buildBodyContent()],
       ),
       endDrawer: _buildDrawer(),

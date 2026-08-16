@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/file_utils.dart';
@@ -59,7 +60,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
         final fontModels = SettingsService.to.font.fontList;
 
         return ListView(
-          physics: const BouncingScrollPhysics(),
+          physics: const PureLiveScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
           children: [
             context.buildGroupTitle(i18n("factory_default_group")),

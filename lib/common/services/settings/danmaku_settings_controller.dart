@@ -1,5 +1,6 @@
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
+import 'package:pure_live/common/services/display_mode_service.dart';
 
 class DanmakuSettingsController extends GetxController {
   static const bool defaultEnablePipDanmaku = true;
@@ -25,6 +26,10 @@ class DanmakuSettingsController extends GetxController {
   final RxBool enableDanmakuDisplay = hiveBool('enableDanmakuDisplay', true);
   final RxBool enableDanmakuStroke = hiveBool('enableDanmakuStroke', true);
   final RxInt danmakuFps = hiveInt('danmakuFps', 60);
+  final RxBool danmakuAutoFps = hiveBool('danmakuAutoFps', true);
+  final RxBool enableDanmakuTapInteraction = hiveBool('enableDanmakuTapInteraction', false);
+  final RxBool enableDanmakuLongPressInteraction = hiveBool('enableDanmakuLongPressInteraction', false);
+  final RxString savedDanmakuTemplate = hiveString('savedDanmakuTemplate', '');
   final RxString danmakuFontFamilyName = hiveString('danmakuFontFamilyName', 'Default');
   final RxBool enablePipDanmaku = hiveBool('enablePipDanmaku', defaultEnablePipDanmaku);
   final RxBool pipDanmakuAutoScale = hiveBool('pipDanmakuAutoScale', defaultPipDanmakuAutoScale);
@@ -37,6 +42,18 @@ class DanmakuSettingsController extends GetxController {
   final RxInt pipDanmakuMaxVisibleCount = hiveInt('pipDanmakuMaxVisibleCount', defaultPipDanmakuMaxVisibleCount);
   final RxDouble pipDanmakuEmitInterval = hiveDouble('pipDanmakuEmitInterval', defaultPipDanmakuEmitInterval);
   final RxInt pipDanmakuFps = hiveInt('pipDanmakuFps', defaultPipDanmakuFps);
+  final RxBool pipDanmakuAutoFps = hiveBool('pipDanmakuAutoFps', true);
+
+  int resolvedDanmakuFps({bool pip = false}) {
+    final auto = pip ? pipDanmakuAutoFps.v : danmakuAutoFps.v;
+    final configured = pip ? pipDanmakuFps.v : danmakuFps.v;
+    if (!auto) return configured.clamp(pip ? 15 : 30, 240).toInt();
+    final display = DisplayModeService.info.value;
+    final current = display?.currentRefreshRate ?? 0;
+    final maximum = display?.maxRefreshRate ?? 0;
+    final detected = maximum > 0 ? maximum : (current > 0 ? current : 60);
+    return detected.round().clamp(pip ? 15 : 30, 240).toInt();
+  }
 
   void resetPipDanmaku() {
     enablePipDanmaku.v = defaultEnablePipDanmaku;
@@ -50,6 +67,7 @@ class DanmakuSettingsController extends GetxController {
     pipDanmakuMaxVisibleCount.v = defaultPipDanmakuMaxVisibleCount;
     pipDanmakuEmitInterval.v = defaultPipDanmakuEmitInterval;
     pipDanmakuFps.v = defaultPipDanmakuFps;
+    pipDanmakuAutoFps.v = true;
   }
 
   Map<String, dynamic> toJson() {
@@ -66,6 +84,10 @@ class DanmakuSettingsController extends GetxController {
       'danmakuFontFamilyName': danmakuFontFamilyName.v,
       'enableDanmakuStroke': enableDanmakuStroke.v,
       'danmakuFps': danmakuFps.v,
+      'danmakuAutoFps': danmakuAutoFps.v,
+      'enableDanmakuTapInteraction': enableDanmakuTapInteraction.v,
+      'enableDanmakuLongPressInteraction': enableDanmakuLongPressInteraction.v,
+      'savedDanmakuTemplate': savedDanmakuTemplate.v,
       'enablePipDanmaku': enablePipDanmaku.v,
       'pipDanmakuAutoScale': pipDanmakuAutoScale.v,
       'pipDanmakuUseOriginalColor': pipDanmakuUseOriginalColor.v,
@@ -77,6 +99,7 @@ class DanmakuSettingsController extends GetxController {
       'pipDanmakuMaxVisibleCount': pipDanmakuMaxVisibleCount.v,
       'pipDanmakuEmitInterval': pipDanmakuEmitInterval.v,
       'pipDanmakuFps': pipDanmakuFps.v,
+      'pipDanmakuAutoFps': pipDanmakuAutoFps.v,
     };
   }
 
@@ -93,6 +116,10 @@ class DanmakuSettingsController extends GetxController {
     danmakuFontFamilyName.v = json['danmakuFontFamilyName'] ?? 'Default';
     enableDanmakuStroke.v = json['enableDanmakuStroke'] ?? true;
     danmakuFps.v = json['danmakuFps']?.toInt() ?? 60;
+    danmakuAutoFps.v = json['danmakuAutoFps'] ?? true;
+    enableDanmakuTapInteraction.v = json['enableDanmakuTapInteraction'] ?? false;
+    enableDanmakuLongPressInteraction.v = json['enableDanmakuLongPressInteraction'] ?? false;
+    savedDanmakuTemplate.v = json['savedDanmakuTemplate']?.toString() ?? '';
     enablePipDanmaku.v = json['enablePipDanmaku'] ?? defaultEnablePipDanmaku;
     pipDanmakuAutoScale.v = json['pipDanmakuAutoScale'] ?? defaultPipDanmakuAutoScale;
     pipDanmakuUseOriginalColor.v = json['pipDanmakuUseOriginalColor'] ?? defaultPipDanmakuUseOriginalColor;
@@ -112,7 +139,8 @@ class DanmakuSettingsController extends GetxController {
         .toDouble()
         .clamp(0.05, 2.0)
         .toDouble();
-    pipDanmakuFps.v = (json['pipDanmakuFps'] ?? defaultPipDanmakuFps).toInt().clamp(15, 60).toInt();
+    pipDanmakuFps.v = (json['pipDanmakuFps'] ?? defaultPipDanmakuFps).toInt().clamp(15, 240).toInt();
+    pipDanmakuAutoFps.v = json['pipDanmakuAutoFps'] ?? true;
   }
 
   static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
@@ -130,6 +158,10 @@ class DanmakuSettingsController extends GetxController {
       'danmakuFontFamilyName': danmaku['danmakuFontFamilyName'] ?? 'Default',
       'enableDanmakuStroke': danmaku['enableDanmakuStroke'] ?? true,
       'danmakuFps': (danmaku['danmakuFps'] ?? 60).toInt(),
+      'danmakuAutoFps': danmaku['danmakuAutoFps'] ?? true,
+      'enableDanmakuTapInteraction': danmaku['enableDanmakuTapInteraction'] ?? false,
+      'enableDanmakuLongPressInteraction': danmaku['enableDanmakuLongPressInteraction'] ?? false,
+      'savedDanmakuTemplate': danmaku['savedDanmakuTemplate']?.toString() ?? '',
       'enablePipDanmaku': danmaku['enablePipDanmaku'] ?? defaultEnablePipDanmaku,
       'pipDanmakuAutoScale': danmaku['pipDanmakuAutoScale'] ?? defaultPipDanmakuAutoScale,
       'pipDanmakuUseOriginalColor': danmaku['pipDanmakuUseOriginalColor'] ?? defaultPipDanmakuUseOriginalColor,
@@ -155,7 +187,8 @@ class DanmakuSettingsController extends GetxController {
           .toDouble()
           .clamp(0.05, 2.0)
           .toDouble(),
-      'pipDanmakuFps': (danmaku['pipDanmakuFps'] ?? defaultPipDanmakuFps).toInt().clamp(15, 60).toInt(),
+      'pipDanmakuFps': (danmaku['pipDanmakuFps'] ?? defaultPipDanmakuFps).toInt().clamp(15, 240).toInt(),
+      'pipDanmakuAutoFps': danmaku['pipDanmakuAutoFps'] ?? true,
     };
   }
 
