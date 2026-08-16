@@ -17,6 +17,7 @@ class BiliBiliDanmakuArgs {
   final List<String> serverUrls;
   final int uid;
   final String cookie;
+  final Map<String, dynamic> headers;
   BiliBiliDanmakuArgs({
     required this.roomId,
     required this.token,
@@ -24,16 +25,17 @@ class BiliBiliDanmakuArgs {
     required this.buvid,
     required this.uid,
     required this.cookie,
+    this.headers = const {},
   });
   @override
   String toString() {
     return json.encode({
       "roomId": roomId,
-      "token": token,
+      "hasToken": token.isNotEmpty,
       "serverUrls": serverUrls,
-      "buvid": buvid,
+      "hasBuvid": buvid.isNotEmpty,
       "uid": uid,
-      "cookie": cookie,
+      "hasCookie": cookie.isNotEmpty,
     });
   }
 }
@@ -81,7 +83,7 @@ class BiliBiliDanmaku implements LiveDanmaku {
     webScoketUtils = WebScoketUtils(
       url: endpoints.first,
       serverUrls: endpoints,
-      headers: args.cookie.isEmpty ? null : {"cookie": args.cookie},
+      headers: args.headers.isNotEmpty ? args.headers : (args.cookie.isEmpty ? null : {"cookie": args.cookie}),
       heartBeatTime: heartbeatTime,
       onMessage: (e) {
         decodeMessage(e);
@@ -163,52 +165,86 @@ class BiliBiliDanmaku implements LiveDanmaku {
 
   void decodeMessage(List<int> data) {
     try {
-      //协议版本。0为JSON，可以直接解析；1为房间人气值,Body为4位Int32；2为压缩过Buffer，需要解压再处理
-      int protocolVersion = readInt(data, 6, 2);
-      //操作类型。3=心跳回应，内容为房间人气值；5=通知，弹幕、广播等全部信息；8=进房回应，空
-      int operation = readInt(data, 8, 4);
-      //内容
-      var body = data.skip(16).toList();
-      if (operation == 3) {
-        var online = readInt(body, 0, 4);
-
-        onMessage?.call(
-          LiveMessage(
-            type: LiveMessageType.online,
-            data: online,
-            color: LiveMessageColor.white,
-            message: "",
-            userName: "",
-          ),
-        );
-      } else if (operation == 5) {
-        if (protocolVersion == 2) {
-          body = zlib.decode(body);
-        } else if (protocolVersion == 3) {
-          body = brotli.decode(body);
-        }
-
-        var text = utf8.decode(body, allowMalformed: true);
-
-        var group = text.split(RegExp(r"[\x00-\x1f]+", unicode: true, multiLine: true));
-        for (var item in group.where((x) => x.length > 2 && x.startsWith('{'))) {
-          parseMessage(item);
-        }
-      } else if (operation == 8) {
-        // The transport is usable only after Bilibili acknowledges auth.
-        final text = utf8.decode(body, allowMalformed: true).trim();
-        final auth = text.isEmpty ? const <String, dynamic>{'code': 0} : json.decode(text);
-        if ((asT<int?>(auth['code']) ?? -1) == 0 && !isConnected) {
-          markConnected();
-          heartbeat();
-          onReady?.call();
-        } else if ((asT<int?>(auth['code']) ?? -1) != 0) {
-          markDisconnected();
-          webScoketUtils?.reconnect();
-        }
-      }
+      _decodePacketStream(data, depth: 0);
     } catch (e) {
       CoreLog.error(e);
+    }
+  }
+
+  /// A WebSocket message can contain multiple Bilibili packets. Compressed
+  /// notification packets contain another complete packet stream, rather than
+  /// plain JSON. Parsing the 16-byte frames recursively keeps packet-length
+  /// bytes away from the JSON decoder and prevents valid DANMU_MSG events from
+  /// being dropped.
+  void _decodePacketStream(List<int> data, {required int depth}) {
+    if (depth > 8) {
+      throw const FormatException('Bilibili danmaku packet nesting is too deep');
+    }
+
+    var offset = 0;
+    while (offset + 16 <= data.length) {
+      final packetLength = readInt(data, offset, 4);
+      final headerLength = readInt(data, offset + 4, 2);
+      final protocolVersion = readInt(data, offset + 6, 2);
+      final operation = readInt(data, offset + 8, 4);
+
+      if (headerLength < 16 || packetLength < headerLength || offset + packetLength > data.length) {
+        throw FormatException(
+          'Invalid Bilibili danmaku frame: offset=$offset, packet=$packetLength, header=$headerLength, total=${data.length}',
+        );
+      }
+
+      final body = data.sublist(offset + headerLength, offset + packetLength);
+      _decodePacket(protocolVersion, operation, body, depth: depth);
+      offset += packetLength;
+    }
+
+    if (offset != data.length) {
+      throw FormatException('Incomplete Bilibili danmaku frame: parsed=$offset, total=${data.length}');
+    }
+  }
+
+  void _decodePacket(int protocolVersion, int operation, List<int> body, {required int depth}) {
+    if (operation == 3) {
+      if (body.length < 4) return;
+      final online = readInt(body, 0, 4);
+      onMessage?.call(
+        LiveMessage(
+          type: LiveMessageType.online,
+          data: online,
+          color: LiveMessageColor.white,
+          message: "",
+          userName: "",
+        ),
+      );
+      return;
+    }
+
+    if (operation == 5) {
+      if (protocolVersion == 2 || protocolVersion == 3) {
+        final decoded = protocolVersion == 2 ? zlib.decode(body) : brotli.decode(body);
+        _decodePacketStream(decoded, depth: depth + 1);
+      } else {
+        final text = utf8.decode(body, allowMalformed: true).trim();
+        if (text.isNotEmpty) parseMessage(text);
+      }
+      return;
+    }
+
+    if (operation == 8) {
+      // The transport is usable only after Bilibili acknowledges auth.
+      final text = utf8.decode(body, allowMalformed: true).trim();
+      final dynamic decoded = text.isEmpty ? const <String, dynamic>{'code': 0} : json.decode(text);
+      final auth = decoded is Map ? decoded : const <String, dynamic>{};
+      final code = int.tryParse(auth['code']?.toString() ?? '') ?? -1;
+      if (code == 0 && !isConnected) {
+        markConnected();
+        heartbeat();
+        onReady?.call();
+      } else if (code != 0) {
+        markDisconnected();
+        webScoketUtils?.reconnect();
+      }
     }
   }
 
@@ -269,10 +305,10 @@ class BiliBiliDanmaku implements LiveDanmaku {
       result = data.getUint8(0);
     }
     if (len == 2) {
-      result = data.getInt16(0, Endian.big);
+      result = data.getUint16(0, Endian.big);
     }
     if (len == 4) {
-      result = data.getInt32(0, Endian.big);
+      result = data.getUint32(0, Endian.big);
     }
     if (len == 8) {
       result = data.getInt64(0, Endian.big);

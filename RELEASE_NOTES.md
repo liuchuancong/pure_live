@@ -1,6 +1,15 @@
-# Pure Live v2.0.26
+# Pure Live v2.0.27
 
-本版本合并上游 `master@2cd1877` 的直播播放架构与平台更新，并集中处理上游仓库近期反馈的播放器、弹幕、音量、字体、全屏、Windows 退出和直播间闪退问题。
+本版本在 v2.0.26 的播放器与平台修复基础上，继续修复哔哩哔哩直播弹幕和小窗样式实时预览问题。
+
+## 本次增量修复
+
+- 按哔哩哔哩 16 字节协议帧递归解析 Brotli/Zlib 压缩包和同一 WebSocket 消息内的多个数据包，修复连接认证成功但 `DANMU_MSG` 被包头字节干扰后丢弃的问题。
+- WBI 图片密钥增加 6 小时缓存有效期；`getDanmuInfo` 在签名或令牌异常时强制刷新密钥并重试一次。
+- 弹幕 WebSocket 补齐动态 `buvid` Cookie、Origin、Referer 和 User-Agent，并保留官方节点轮换与重连。
+- 小窗预览把字号、速度、透明度、区域、最大数量、间隔和 FPS 全部纳入 GetX 同步依赖收集，滑动设置后当前帧立即重建。
+- 实际小窗弹幕层同步采用相同的响应式读取方式，设置变化无需退出直播间或切换页面即可生效。
+- 新增 Bilibili 压缩多包协议测试和小窗字号实时更新 Widget 测试。
 
 ## 上游反馈修复
 
@@ -45,7 +54,7 @@
 ## 下载说明
 
 - Android：当前优先发布 `arm64-v8a` APK。
-- Windows：优先下载 `PureLive-2.0.26-windows-x64-setup.exe`，也可使用便携 ZIP。
+- Windows：优先下载 `PureLive-2.0.27-windows-x64-setup.exe`，也可使用便携 ZIP。
 - `SHA256SUMS.txt` 可用于校验下载文件完整性。
 
 Android APK 固定使用正式包名 `com.mystyle.purelive` 和此仓库专用的持久发布签名，可直接覆盖本仓库旧正式版，不再生成并存 QA 包。缺少发布密钥的本机测试包仍使用同一正式包名，但调试签名产物不会进入正式 Release。

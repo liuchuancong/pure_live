@@ -222,6 +222,7 @@ class BiliBiliSite implements LiveSite {
 
   static String kImgKey = '';
   static String kSubKey = '';
+  static DateTime? _wbiKeysUpdatedAt;
   static const List<int> mixinKeyEncTab = [
     46,
     47,
@@ -288,8 +289,13 @@ class BiliBiliSite implements LiveSite {
     44,
     52,
   ];
-  Future<(String, String)> getWbiKeys() async {
-    if (kImgKey.isNotEmpty && kSubKey.isNotEmpty) {
+  Future<(String, String)> getWbiKeys({bool forceRefresh = false}) async {
+    final cacheAge = _wbiKeysUpdatedAt == null ? null : DateTime.now().difference(_wbiKeysUpdatedAt!);
+    if (!forceRefresh &&
+        kImgKey.isNotEmpty &&
+        kSubKey.isNotEmpty &&
+        cacheAge != null &&
+        cacheAge < const Duration(hours: 6)) {
       return (kImgKey, kSubKey);
     }
     // 获取最新的 img_key 和 sub_key
@@ -305,6 +311,7 @@ class BiliBiliSite implements LiveSite {
 
     kImgKey = imgKey;
     kSubKey = subKey;
+    _wbiKeysUpdatedAt = DateTime.now();
 
     return (imgKey, subKey);
   }
@@ -314,8 +321,8 @@ class BiliBiliSite implements LiveSite {
     return mixinKeyEncTab.fold("", (s, i) => s + origin[i]).substring(0, 32);
   }
 
-  Future<Map<String, String>> getWbiSign(String url) async {
-    var (imgKey, subKey) = await getWbiKeys();
+  Future<Map<String, String>> getWbiSign(String url, {bool forceRefresh = false}) async {
+    var (imgKey, subKey) = await getWbiKeys(forceRefresh: forceRefresh);
 
     // 为请求参数进行 wbi 签名
     var mixinKey = getMixinKey(imgKey + subKey);
@@ -347,16 +354,24 @@ class BiliBiliSite implements LiveSite {
       var realRoomId = roomInfo["room_info"]["room_id"].toString();
       const danmuInfoBaseUrl = "https://api.live.bilibili.com/xlive/web-room/v1/index/getDanmuInfo";
       Map<String, dynamic> danmakuData = const {};
+      final danmakuHeaders = await getHeader();
       try {
-        var danmuInfoUrl = "$danmuInfoBaseUrl?id=$realRoomId&type=0";
-        var queryParams = await getWbiSign(danmuInfoUrl);
-        final roomDanmakuResult = await HttpClient.instance.getJson(
-          danmuInfoBaseUrl,
-          queryParameters: queryParams,
-          header: await getHeader(),
-        );
-        if (roomDanmakuResult["data"] is Map) {
-          danmakuData = Map<String, dynamic>.from(roomDanmakuResult["data"]);
+        final danmuInfoUrl = "$danmuInfoBaseUrl?id=$realRoomId&type=0";
+        for (var attempt = 0; attempt < 2; attempt++) {
+          final queryParams = await getWbiSign(danmuInfoUrl, forceRefresh: attempt > 0);
+          final roomDanmakuResult = await HttpClient.instance.getJson(
+            danmuInfoBaseUrl,
+            queryParameters: queryParams,
+            header: danmakuHeaders,
+          );
+          final data = roomDanmakuResult["data"];
+          if (roomDanmakuResult["code"] == 0 && data is Map && data["token"]?.toString().isNotEmpty == true) {
+            danmakuData = Map<String, dynamic>.from(data);
+            break;
+          }
+          if (attempt == 1) {
+            throw StateError('getDanmuInfo code=${roomDanmakuResult["code"]}');
+          }
         }
       } catch (error) {
         // Video playback remains available when only the chat endpoint changes.
@@ -393,7 +408,13 @@ class BiliBiliSite implements LiveSite {
           token: danmakuData["token"]?.toString() ?? '',
           serverUrls: serverUrls,
           buvid: buvid3,
-          cookie: cookie,
+          cookie: danmakuHeaders['cookie'] ?? cookie,
+          headers: {
+            'user-agent': danmakuHeaders['user-agent'] ?? kDefaultUserAgent,
+            'origin': 'https://live.bilibili.com',
+            'referer': 'https://live.bilibili.com/$realRoomId',
+            if ((danmakuHeaders['cookie'] ?? '').isNotEmpty) 'cookie': danmakuHeaders['cookie'],
+          },
         ),
       );
     } catch (e) {

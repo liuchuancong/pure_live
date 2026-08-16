@@ -11,34 +11,51 @@ class CompactDanmakuOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final settings = SettingsService.to.danmaku;
-      if (!settings.enablePipDanmaku.v || controller.hideDanmaku.value) {
+      final enabled = settings.enablePipDanmaku.v;
+      final hidden = controller.hideDanmaku.value;
+      if (!enabled || hidden) {
         return const SizedBox.shrink();
       }
+
+      // Keep all reactive reads in the Obx callback. LayoutBuilder executes
+      // later, outside GetX dependency collection, so deferred reads would
+      // leave the active PiP overlay on its previous style until another UI
+      // rebuild happened.
+      final autoScale = settings.pipDanmakuAutoScale.v;
+      final configuredFontSize = settings.pipDanmakuFontSize.v;
+      final area = settings.pipDanmakuArea.v;
+      final speed = settings.pipDanmakuSpeed.v;
+      final opacity = settings.pipDanmakuOpacity.v;
+      final fps = settings.pipDanmakuFps.v;
+      final maxVisibleCount = settings.pipDanmakuMaxVisibleCount.v;
+      final emitInterval = settings.pipDanmakuEmitInterval.v;
+      final fontFamily = controller.danmakuFontFamilyName.value;
+      final showStroke = controller.enableDanmakuStroke.value;
 
       return IgnorePointer(
         child: LayoutBuilder(
           builder: (context, constraints) {
             final width = constraints.maxWidth.isFinite ? constraints.maxWidth : 350.0;
-            final scale = settings.pipDanmakuAutoScale.v ? (width / 350.0).clamp(0.65, 1.0).toDouble() : 1.0;
-            final fontSize = settings.pipDanmakuFontSize.v * scale;
+            final scale = autoScale ? (width / 350.0).clamp(0.65, 1.0).toDouble() : 1.0;
+            final fontSize = configuredFontSize * scale;
 
             return RepaintBoundary(
               child: FlameBarrageWidget(
                 controller: controller.pipDanmakuController,
                 config: BarrageConfig(
                   fontSize: fontSize,
-                  fontFamily: controller.danmakuFontFamilyName.value,
-                  area: settings.pipDanmakuArea.v,
-                  baseSpeed: settings.pipDanmakuSpeed.v * scale,
-                  opacity: settings.pipDanmakuOpacity.v,
-                  showStroke: controller.enableDanmakuStroke.value,
+                  fontFamily: fontFamily,
+                  area: area,
+                  baseSpeed: speed * scale,
+                  opacity: opacity,
+                  showStroke: showStroke,
                   strokeWidth: 1.0,
-                  fps: settings.pipDanmakuFps.v,
+                  fps: fps,
                   safeArea: false,
                   trackHeight: (fontSize * 1.8).clamp(18.0, 44.0).toDouble(),
                   emojiSize: (fontSize * 1.35).clamp(14.0, 32.0).toDouble(),
-                  maxVisibleCount: settings.pipDanmakuMaxVisibleCount.v,
-                  emitInterval: settings.pipDanmakuEmitInterval.v,
+                  maxVisibleCount: maxVisibleCount,
+                  emitInterval: emitInterval,
                   overlapSafeGap: (fontSize * 1.5).clamp(16.0, 40.0).toDouble(),
                   barragePoolMaxSize: 60,
                   pictureCacheMaxSize: 300,

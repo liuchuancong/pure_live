@@ -1,7 +1,7 @@
 name: pure_live
 description: 纯粹直播,一款开源的第三方多平台直播聚合播放器.
 publish_to: none
-version: 2.0.26+37
+version: 2.0.27+38
 
 environment:
   sdk: ^3.10.4
@@ -224,6 +224,7 @@ dependency_overrides:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  shared_preferences: ^2.5.5 # widget tests mock localization persistence
   change_app_package_name: ^1.5.0 # 修改应用包名
   json_serializable: ^6.7.1 # JSON序列化
   build_runner: ^2.4.15 # 代码生成器

@@ -34,7 +34,7 @@ class PipDanmakuSettingsPage extends StatelessWidget {
           const SizedBox(height: 20),
           context.buildGroupTitle(i18n('pip_danmaku_preview')),
           const SizedBox(height: 8),
-          const _PipDanmakuPreview(),
+          const PipDanmakuPreview(),
           const SizedBox(height: 20),
           const PipDanmakuSettingsSection(),
           const SizedBox(height: 24),
@@ -361,14 +361,14 @@ class PipDanmakuSettingsSection extends StatelessWidget {
   }
 }
 
-class _PipDanmakuPreview extends StatefulWidget {
-  const _PipDanmakuPreview();
+class PipDanmakuPreview extends StatefulWidget {
+  const PipDanmakuPreview({super.key});
 
   @override
-  State<_PipDanmakuPreview> createState() => _PipDanmakuPreviewState();
+  State<PipDanmakuPreview> createState() => _PipDanmakuPreviewState();
 }
 
-class _PipDanmakuPreviewState extends State<_PipDanmakuPreview> with SingleTickerProviderStateMixin {
+class _PipDanmakuPreviewState extends State<PipDanmakuPreview> with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
   @override
@@ -387,11 +387,23 @@ class _PipDanmakuPreviewState extends State<_PipDanmakuPreview> with SingleTicke
   Widget build(BuildContext context) {
     return Obx(() {
       final settings = SettingsService.to.danmaku;
+      // Read every Rx value directly in the Obx callback. Values read only in
+      // LayoutBuilder/AnimatedBuilder execute after dependency collection and
+      // therefore do not trigger a preview rebuild when the slider changes.
+      final enabled = settings.enablePipDanmaku.v;
+      final autoScale = settings.pipDanmakuAutoScale.v;
+      final useOriginalColor = settings.pipDanmakuUseOriginalColor.v;
       final unifiedColor = Color(settings.pipDanmakuColor.v);
-      final colors = settings.pipDanmakuUseOriginalColor.v
+      final configuredFontSize = settings.pipDanmakuFontSize.v;
+      final speed = settings.pipDanmakuSpeed.v;
+      final opacity = enabled ? settings.pipDanmakuOpacity.v : 0.25;
+      final area = settings.pipDanmakuArea.v;
+      final maxVisibleCount = settings.pipDanmakuMaxVisibleCount.v;
+      final emitInterval = settings.pipDanmakuEmitInterval.v;
+      final fps = settings.pipDanmakuFps.v.clamp(15, 60);
+      final colors = useOriginalColor
           ? const [Color(0xFFFFFFFF), Color(0xFF64B5F6), Color(0xFFFFD54F), Color(0xFF81C784)]
           : [unifiedColor];
-      final opacity = settings.enablePipDanmaku.v ? settings.pipDanmakuOpacity.v : 0.25;
 
       return RepaintBoundary(
         child: AspectRatio(
@@ -408,14 +420,12 @@ class _PipDanmakuPreviewState extends State<_PipDanmakuPreview> with SingleTicke
               ),
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final scale = settings.pipDanmakuAutoScale.v
-                      ? (constraints.maxWidth / 350).clamp(0.65, 1.0).toDouble()
-                      : 1.0;
-                  final fontSize = settings.pipDanmakuFontSize.v * scale;
-                  final areaHeight = constraints.maxHeight * settings.pipDanmakuArea.v;
+                  final scale = autoScale ? (constraints.maxWidth / 350).clamp(0.65, 1.0).toDouble() : 1.0;
+                  final fontSize = configuredFontSize * scale;
+                  final areaHeight = constraints.maxHeight * area;
                   final previewText = i18n('pip_danmaku_preview_text');
                   final painters = List<TextPainter>.generate(
-                    settings.pipDanmakuMaxVisibleCount.v.clamp(1, 20).toInt(),
+                    maxVisibleCount.clamp(1, 20).toInt(),
                     (index) => TextPainter(
                       text: TextSpan(
                         text: '$previewText ${index + 1}',
@@ -442,7 +452,6 @@ class _PipDanmakuPreviewState extends State<_PipDanmakuPreview> with SingleTicke
                           child: AnimatedBuilder(
                             animation: _controller,
                             builder: (context, _) {
-                              final fps = settings.pipDanmakuFps.v.clamp(15, 60);
                               final frame = (_controller.value * 12 * fps).floor();
                               final quantizedProgress = frame / (12 * fps);
                               return CustomPaint(
@@ -451,15 +460,15 @@ class _PipDanmakuPreviewState extends State<_PipDanmakuPreview> with SingleTicke
                                   progress: quantizedProgress,
                                   painters: painters,
                                   fontSize: fontSize,
-                                  speed: settings.pipDanmakuSpeed.v,
-                                  emitInterval: settings.pipDanmakuEmitInterval.v,
+                                  speed: speed,
+                                  emitInterval: emitInterval,
                                 ),
                               );
                             },
                           ),
                         ),
                       ),
-                      if (!settings.enablePipDanmaku.v)
+                      if (!enabled)
                         Center(
                           child: DecoratedBox(
                             decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),

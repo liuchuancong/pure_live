@@ -1,8 +1,8 @@
 {
-  "version": "2.0.26",
-  "build_number": 37,
-  "version_num": 2002637,
-  "version_desc": "- 合并上游 master 最新直播播放架构与平台修复。\n- 修复弹幕区域重置、弹幕同速和刷新后延迟暂停。\n- 修复桌面默认音量、音量提示、字体持久化与直播间闪退。\n- 修复 Windows 侧边任务栏全屏黑边和退出进程挂起。\n- 保留小窗弹幕、高刷新率、后台助眠和本机构建优化。\n",
+  "version": "2.0.27",
+  "build_number": 38,
+  "version_num": 2002738,
+  "version_desc": "- 修复哔哩哔哩直播间连接成功但弹幕消息被丢弃的问题。\n- 增加 WBI 密钥定时刷新、失败重试和 WebSocket 浏览器请求头。\n- 修复小窗弹幕字号、速度、区域、透明度、数量、间隔和 FPS 预览不实时刷新。\n- 同步修复实际小窗画面的样式实时更新。\n",
   "prerelease": false,
   "download_url": "https://github.com/wzgrx/pure_live/releases"
 }
