@@ -88,6 +88,7 @@ class LivePlayPage extends GetView<LivePlayController> {
   }
 
   Widget buildNormalPlayerView(BuildContext context) {
+    final compactHeader = MediaQuery.sizeOf(context).width < 600;
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
@@ -102,41 +103,47 @@ class LivePlayPage extends GetView<LivePlayController> {
               );
             }),
             const SizedBox(width: 8),
-            Obx(() {
-              final detail = controller.state.value.room.detail;
-              if (detail == null) return const SizedBox.shrink();
-              final isMobile = Get.width <= 680;
-              final nickMaxW = isMobile ? 60.0 : 240.0;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: nickMaxW),
-                    child: Text(
+            Expanded(
+              child: Obx(() {
+                final detail = controller.state.value.room.detail;
+                if (detail == null) return const SizedBox.shrink();
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
                       detail.nick ?? '',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.labelSmall,
                     ),
-                  ),
-                  Text(
-                    (detail.area == null || detail.area!.isEmpty)
-                        ? (detail.platform?.toUpperCase() ?? '')
-                        : "${detail.platform?.toUpperCase()} / ${detail.area}",
-                    style: Theme.of(context).textTheme.labelSmall,
-                  ),
-                ],
-              );
-            }),
-            const SizedBox(width: 8),
-            Obx(() {
-              final detail = controller.state.value.room.detail;
-              if (detail == null) return const SizedBox.shrink();
-              return FavoriteFloatingButton(room: detail);
-            }),
+                    Text(
+                      (detail.area == null || detail.area!.isEmpty)
+                          ? (detail.platform?.toUpperCase() ?? '')
+                          : "${detail.platform?.toUpperCase()} / ${detail.area}",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                  ],
+                );
+              }),
+            ),
           ],
         ),
         actions: [
+          Obx(() {
+            final detail = controller.state.value.room.detail;
+            if (detail == null) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: FavoriteFloatingButton(
+                key: ValueKey('${detail.platform}:${detail.roomId}'),
+                room: detail,
+                compact: compactHeader,
+              ),
+            );
+          }),
           Obx(() {
             final room = controller.state.value.room.detail;
             if (room == null) return const SizedBox.shrink();
@@ -149,122 +156,129 @@ class LivePlayPage extends GetView<LivePlayController> {
                 task?.status == RecordStatus.reconnecting ||
                 task?.status == RecordStatus.preparing;
             final theme = Theme.of(Get.context!);
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOut,
-              height: 38,
-              child: FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: isRunning
-                      ? Colors.redAccent.withValues(alpha: 0.12)
-                      : exists
-                      ? theme.colorScheme.primary.withValues(alpha: 0.10)
-                      : theme.colorScheme.surfaceContainerHighest,
-                  foregroundColor: isRunning
-                      ? Colors.redAccent
-                      : exists
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.onSurfaceVariant,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      isRunning
-                          ? Remix.record_circle_fill
-                          : exists
-                          ? Remix.checkbox_circle_fill
-                          : Remix.add_circle_line,
-                      size: 14,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      isRunning
-                          ? i18n("recording")
-                          : exists
-                          ? i18n("monitored")
-                          : i18n("record"),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.1,
-                      ),
-                    ),
-                  ],
-                ),
-                onPressed: () async {
-                  if (!exists) {
-                    await controller.recorderController.addTask(room: room);
-                    ToastUtil.show(i18n("record_task_added"));
-                    return;
-                  }
-                  final action = await showDialog<String>(
-                    context: Get.context!,
-                    builder: (context) {
-                      return AlertDialog(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                        title: Row(
-                          children: [
-                            Icon(
-                              isRunning ? Remix.record_circle_fill : Remix.checkbox_circle_fill,
-                              color: isRunning ? Colors.redAccent : theme.colorScheme.primary,
-                              size: 22,
-                            ),
-                            const SizedBox(width: 10),
-                            Text(isRunning ? i18n("recording") : i18n("record_task")),
-                          ],
-                        ),
-                        content: Column(
+            final label = isRunning
+                ? i18n("recording")
+                : exists
+                ? i18n("monitored")
+                : i18n("record");
+            final icon = isRunning
+                ? Remix.record_circle_fill
+                : exists
+                ? Remix.checkbox_circle_fill
+                : Remix.record_circle_line;
+            return Tooltip(
+              message: label,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOut,
+                width: compactHeader ? 40 : null,
+                height: 38,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: isRunning
+                        ? Colors.redAccent.withValues(alpha: 0.12)
+                        : exists
+                        ? theme.colorScheme.primary.withValues(alpha: 0.10)
+                        : theme.colorScheme.surfaceContainerHighest,
+                    foregroundColor: isRunning
+                        ? Colors.redAccent
+                        : exists
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurfaceVariant,
+                    padding: compactHeader ? EdgeInsets.zero : const EdgeInsets.symmetric(horizontal: 8),
+                    minimumSize: compactHeader ? const Size(38, 38) : null,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: compactHeader
+                      ? Icon(icon, size: 18)
+                      : Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            _ActionTile(
-                              icon: Icons.video_library_rounded,
-                              title: i18n("go_record_center"),
-                              color: theme.colorScheme.primary,
-                              onTap: () => Navigator.pop(context, "page"),
-                            ),
-                            if (!isRunning)
-                              _ActionTile(
-                                icon: Icons.play_arrow_rounded,
-                                title: i18n("start_record_now"),
-                                color: Colors.green,
-                                onTap: () => Navigator.pop(context, "start"),
+                            Icon(icon, size: 14),
+                            const SizedBox(width: 4),
+                            Text(
+                              label,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.1,
                               ),
-                            if (isRunning)
-                              _ActionTile(
-                                icon: Icons.stop_circle_outlined,
-                                title: i18n("stop_record"),
-                                color: Colors.orange,
-                                onTap: () => Navigator.pop(context, "stop"),
-                              ),
-                            _ActionTile(
-                              icon: Icons.delete_outline_rounded,
-                              title: i18n("remove_monitor"),
-                              color: Colors.redAccent,
-                              onTap: () => Navigator.pop(context, "delete"),
                             ),
                           ],
                         ),
-                      );
-                    },
-                  );
-                  switch (action) {
-                    case "page":
-                      Get.toNamed(RoutePath.kRecordPage);
-                      break;
-                    case "start":
-                      controller.recorderController.forceStartTask(task);
-                      break;
-                    case "stop":
-                      controller.recorderController.stopTask(task);
-                      break;
-                    case "delete":
-                      controller.recorderController.unRecorder(task);
-                      break;
-                  }
-                },
+                  onPressed: () async {
+                    if (!exists) {
+                      await controller.recorderController.addTask(room: room);
+                      ToastUtil.show(i18n("record_task_added"));
+                      return;
+                    }
+                    final action = await showDialog<String>(
+                      context: Get.context!,
+                      builder: (context) {
+                        return AlertDialog(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                          title: Row(
+                            children: [
+                              Icon(
+                                isRunning ? Remix.record_circle_fill : Remix.checkbox_circle_fill,
+                                color: isRunning ? Colors.redAccent : theme.colorScheme.primary,
+                                size: 22,
+                              ),
+                              const SizedBox(width: 10),
+                              Text(isRunning ? i18n("recording") : i18n("record_task")),
+                            ],
+                          ),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _ActionTile(
+                                icon: Icons.video_library_rounded,
+                                title: i18n("go_record_center"),
+                                color: theme.colorScheme.primary,
+                                onTap: () => Navigator.pop(context, "page"),
+                              ),
+                              if (!isRunning)
+                                _ActionTile(
+                                  icon: Icons.play_arrow_rounded,
+                                  title: i18n("start_record_now"),
+                                  color: Colors.green,
+                                  onTap: () => Navigator.pop(context, "start"),
+                                ),
+                              if (isRunning)
+                                _ActionTile(
+                                  icon: Icons.stop_circle_outlined,
+                                  title: i18n("stop_record"),
+                                  color: Colors.orange,
+                                  onTap: () => Navigator.pop(context, "stop"),
+                                ),
+                              _ActionTile(
+                                icon: Icons.delete_outline_rounded,
+                                title: i18n("remove_monitor"),
+                                color: Colors.redAccent,
+                                onTap: () => Navigator.pop(context, "delete"),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                    switch (action) {
+                      case "page":
+                        Get.toNamed(RoutePath.kRecordPage);
+                        break;
+                      case "start":
+                        controller.recorderController.forceStartTask(task);
+                        break;
+                      case "stop":
+                        controller.recorderController.stopTask(task);
+                        break;
+                      case "delete":
+                        controller.recorderController.unRecorder(task);
+                        break;
+                    }
+                  },
+                ),
               ),
             );
           }),
@@ -796,11 +810,11 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
   }
 }
 
-// FavoriteFloatingButton, NotLivingVideoWidget, _ActionTile 保持不变
 class FavoriteFloatingButton extends StatefulWidget {
-  const FavoriteFloatingButton({super.key, required this.room});
+  const FavoriteFloatingButton({super.key, required this.room, this.compact = false});
 
   final LiveRoom room;
+  final bool compact;
 
   @override
   State<FavoriteFloatingButton> createState() => _FavoriteFloatingButtonState();
@@ -829,9 +843,48 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
     super.dispose();
   }
 
+  Future<void> _toggleFavorite(bool isFavorite) async {
+    if (!isFavorite) {
+      SettingsService.to.fav.addRoom(widget.room);
+      EventBus.instance.emit('changeFavorite', true);
+      if (mounted) setState(() {});
+      return;
+    }
+
+    final confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        title: Text(i18n("unfollow")),
+        content: Text(i18n("unfollow_message", args: {"name": widget.room.nick ?? ''})),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(Get.context!).pop(false), child: Text(i18n("cancel"))),
+          ElevatedButton(onPressed: () => Navigator.of(Get.context!).pop(true), child: Text(i18n("confirm"))),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    SettingsService.to.fav.removeRoom(widget.room);
+    EventBus.instance.emit('changeFavorite', true);
+    if (mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
-    bool isFavorite = SettingsService.to.fav.isFavorite(widget.room);
+    final isFavorite = SettingsService.to.fav.isFavorite(widget.room);
+    final label = i18n(isFavorite ? "followed" : "follow");
+    if (widget.compact) {
+      return Tooltip(
+        message: label,
+        child: IconButton.filledTonal(
+          visualDensity: VisualDensity.compact,
+          constraints: const BoxConstraints.tightFor(width: 40, height: 38),
+          padding: EdgeInsets.zero,
+          onPressed: () => _toggleFavorite(isFavorite),
+          icon: Icon(isFavorite ? Remix.heart_3_fill : Remix.heart_3_line, size: 19),
+        ),
+      );
+    }
+
     return isFavorite
         ? FilledButton(
             style: ButtonStyle(
@@ -844,25 +897,8 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
               minimumSize: WidgetStateProperty.all(Size.zero),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            onPressed: () {
-              Get.dialog(
-                AlertDialog(
-                  title: Text(i18n("unfollow")),
-                  content: Text(i18n("unfollow_message", args: {"name": widget.room.nick!})),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.of(Get.context!).pop(false), child: Text(i18n("cancel"))),
-                    ElevatedButton(onPressed: () => Navigator.of(Get.context!).pop(true), child: Text(i18n("confirm"))),
-                  ],
-                ),
-              ).then((value) {
-                if (value ?? false) {
-                  setState(() => isFavorite = !isFavorite);
-                  SettingsService.to.fav.removeRoom(widget.room);
-                  EventBus.instance.emit('changeFavorite', true);
-                }
-              });
-            },
-            child: Text(i18n("followed")),
+            onPressed: () => _toggleFavorite(isFavorite),
+            child: Text(label),
           )
         : FilledButton(
             style: ButtonStyle(
@@ -875,12 +911,8 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
               minimumSize: WidgetStateProperty.all(Size.zero),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            onPressed: () {
-              setState(() => isFavorite = !isFavorite);
-              SettingsService.to.fav.addRoom(widget.room);
-              EventBus.instance.emit('changeFavorite', true);
-            },
-            child: Text(i18n("follow")),
+            onPressed: () => _toggleFavorite(isFavorite),
+            child: Text(label),
           );
   }
 }

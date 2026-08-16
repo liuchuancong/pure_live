@@ -67,7 +67,7 @@ class PlayerController extends GetxController {
       currentLineIndex: playerState.currentLineIndex,
       currentQuality: playerState.currentQuality,
       isAudioOnly: playerState.isCurrentRoomAudioOnly,
-      onAudioOnlyChanged: changeCurrentRoomAudioOnly,
+      onAudioOnlyChanged: _main.setCurrentRoomAudioOnlyFromUser,
     );
 
     _main.updatePlayer(videoController: videoController);
@@ -158,6 +158,13 @@ class PlayerController extends GetxController {
     await GlobalPlayerService.instance.playerManager.hardDispose();
     await destroyPlayer();
     _main.updatePlayer(isCurrentRoomAudioOnly: value);
+
+    final room = currentRoom;
+    if (room != null && _state.player.playUrls.isNotEmpty) {
+      await setPlayer(roomId: room.roomId!);
+      _main.updateRoom(success: true);
+      return;
+    }
     await _main.onInitPlayerState();
   }
 

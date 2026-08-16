@@ -125,6 +125,10 @@ class VideoSettingsPage extends GetView<SettingsService> {
                     SettingsService.to.app.enableAsmrSleepMode.v = hasPermission;
                   } else {
                     SettingsService.to.app.enableAsmrSleepMode.v = false;
+                    await LiveAudioService.configureSleepTimer(
+                      enabled: false,
+                      minutes: SettingsService.to.app.asmrSleepMinutes.v,
+                    );
                   }
                 },
               ),

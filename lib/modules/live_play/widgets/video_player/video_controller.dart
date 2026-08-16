@@ -25,7 +25,7 @@ import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku_message_actions.dart';
 
-typedef AudioOnlyCallback = void Function(bool value);
+typedef AudioOnlyCallback = Future<void> Function(bool value);
 
 enum PlayerStatus { idle, loading, playing, error, disposed }
 
@@ -698,11 +698,17 @@ class VideoController with ChangeNotifier {
   }
 
   // 播放控制
+  bool _audioModeSwitching = false;
+
   Future<void> toggleAudioOnly() async {
+    if (_audioModeSwitching) return;
+    _audioModeSwitching = true;
     clearListener();
-    await _playerManager.hardDispose();
-    await destory();
-    onAudioOnlyChanged?.call(!isAudioOnly);
+    try {
+      await onAudioOnlyChanged?.call(!isAudioOnly);
+    } finally {
+      _audioModeSwitching = false;
+    }
   }
 
   void retryRoom() async {

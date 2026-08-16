@@ -58,12 +58,6 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
               );
             }),
             context.buildSwitchTile(
-              icon: Remix.music_2_line,
-              title: i18n('audio_only_mode'),
-              subtitle: i18n("audio_only_mode_subtitle"),
-              value: SettingsService.to.player.audioOnly,
-            ),
-            context.buildSwitchTile(
               icon: Remix.speed_up_line,
               title: i18n('enable_codec'),
               subtitle: i18n("gpu_decode"),

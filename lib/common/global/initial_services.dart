@@ -49,21 +49,18 @@ class InitialServices {
     // Load and register the persisted custom font before MyApp builds its
     // first ThemeData. This makes the selection survive a full process restart.
     await SettingsService.to.font.ensureInitialized();
-    await _migrateAsmrAudioOnlyCoupling();
+    await _migrateRoomScopedAudioOnly();
     initLazyControllers();
     _initHeavyServicesInBackground();
   }
 
-  /// v2.0.29 coupled the ASMR default switch to the global audio-only flag.
-  /// Migrate that one legacy state once so disabling ASMR restores normal video
-  /// on the next launch, while future audio-only choices remain independent.
-  static Future<void> _migrateAsmrAudioOnlyCoupling() async {
-    const migrationKey = 'migration.asmr_audio_only_decoupled.v230';
+  /// Retire the legacy global default so an old backup or persisted value can
+  /// no longer make new rooms audio-only after ASMR has been disabled.
+  static Future<void> _migrateRoomScopedAudioOnly() async {
+    const migrationKey = 'migration.room_scoped_audio_only.v231';
     if (HivePrefUtil.getBool(migrationKey) == true) return;
-    final settings = SettingsService.to;
-    if (!settings.app.enableAsmrSleepMode.v && settings.player.audioOnly.v) {
-      settings.player.audioOnly.v = false;
-    }
+    await HivePrefUtil.remove('audioOnly');
+    SettingsService.to.player.audioOnly.v = false;
     await HivePrefUtil.setBool(migrationKey, true);
   }
 

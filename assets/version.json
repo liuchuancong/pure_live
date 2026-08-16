@@ -1,8 +1,8 @@
 {
-  "version": "2.0.30",
-  "build_number": 41,
-  "version_num": 2003041,
-  "version_desc": "- 修复 ASMR 默认开关与房间音频会话重复联动，增加自定义停止时间。\n- 修复 Bilibili 访客弹幕、横屏弹幕、小窗实时预览与动态弹幕帧率。\n- 增加弹幕模板、本地输入、用户和关键词屏蔽及平台人数口径。\n- 优化 120 Hz、收藏刷新、播放首帧、后台媒体服务和首次启动稳定性。\n",
+  "version": "2.0.31",
+  "build_number": 42,
+  "version_num": 2003142,
+  "version_desc": "- 优化直播间顶部布局，手机端关注和录制使用紧凑图标，释放主播信息空间。\n- 明确耳机为当前房间纯音频、电视为投屏、小窗为画中画，并固定顺序。\n- 取消遗留全局纯音频默认值，关闭 ASMR 后新直播间正常播放视频。\n- 音频与视频切换复用当前播放地址，减少重复接口请求和等待。\n",
   "prerelease": false,
   "download_url": "https://github.com/wzgrx/pure_live/releases"
 }

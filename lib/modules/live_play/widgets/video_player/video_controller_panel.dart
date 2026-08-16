@@ -9,6 +9,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
+import 'package:pure_live/common/utils/live_url_tool.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:pure_live/common/widgets/count_button.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
@@ -232,10 +233,6 @@ class TopActionBar extends StatelessWidget {
                 ),
               ),
 
-              if (Platform.isAndroid)
-                AsmrSessionButton(controller: controller)
-              else
-                AudioOnlyButton(controller: controller),
               if (controller.room.platform == Sites.iptvSite)
                 IconButton(
                   icon: const Icon(Icons.assignment_outlined), // 节目单账本图标
@@ -263,6 +260,8 @@ class TopActionBar extends StatelessWidget {
                 const DatetimeInfo(),
                 BatteryInfo(controller: controller),
               ],
+              AudioOnlyButton(controller: controller),
+              if (PlatformUtils.isAndroid) CastButton(controller: controller),
               if (!GlobalPlayerState.to.fullscreenUI && PlatformUtils.isAndroid) PIPButton(controller: controller),
               if (PlatformUtils.isWindows) PIPButton(controller: controller),
             ],
@@ -579,15 +578,13 @@ class PIPButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
+    return IconButton(
+      tooltip: i18n('float_window_play'),
+      color: Colors.white,
+      onPressed: () {
         GlobalPlayerService.instance.playerManager.enablePip();
       },
-      child: Container(
-        alignment: Alignment.center,
-        padding: const EdgeInsets.all(12),
-        child: const Icon(CustomIcons.float_window, color: Colors.white),
-      ),
+      icon: const Icon(CustomIcons.float_window),
     );
   }
 }
@@ -1417,48 +1414,40 @@ class AudioOnlyButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: i18n(controller.isAudioOnly ? 'restore_video_mode' : 'switch_audio_only_mode'),
-      child: GestureDetector(
-        onTap: () {
-          controller.enableController();
-          controller.toggleAudioOnly();
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          alignment: Alignment.center,
-          height: 32,
-          child: Icon(controller.isAudioOnly ? Remix.tv_2_line : Remix.headphone_line, color: Colors.white, size: 20),
-        ),
-      ),
+    return IconButton(
+      tooltip: i18n(controller.isAudioOnly ? 'restore_video_mode' : 'switch_audio_only_mode'),
+      visualDensity: VisualDensity.compact,
+      iconSize: 21,
+      color: controller.isAudioOnly ? const Color(0xFFFFD166) : Colors.white,
+      onPressed: () {
+        controller.enableController();
+        controller.toggleAudioOnly();
+      },
+      // The headphone always means room-scoped audio-only. A television icon
+      // is reserved exclusively for casting so the two actions stay distinct.
+      icon: Icon(controller.isAudioOnly ? Remix.headphone_fill : Remix.headphone_line),
     );
   }
 }
 
-class AsmrSessionButton extends StatelessWidget {
-  const AsmrSessionButton({super.key, required this.controller});
+class CastButton extends StatelessWidget {
+  const CastButton({super.key, required this.controller});
 
   final VideoController controller;
 
   @override
   Widget build(BuildContext context) {
-    final liveController = controller.livePlayController;
-    return Obx(() {
-      final active = liveController.asmrSessionActive.v;
-      return Tooltip(
-        message: i18n(active ? 'asmr_room_stop' : 'asmr_room_start'),
-        child: IconButton(
-          visualDensity: VisualDensity.compact,
-          iconSize: 21,
-          color: active ? const Color(0xFFFFD166) : Colors.white,
-          onPressed: () {
-            controller.enableController();
-            liveController.toggleAsmrSession();
-          },
-          icon: Icon(active ? Remix.moon_fill : Remix.moon_line),
-        ),
-      );
-    });
+    return IconButton(
+      tooltip: i18n('cast_screen'),
+      visualDensity: VisualDensity.compact,
+      iconSize: 21,
+      color: Colors.white,
+      onPressed: () {
+        controller.enableController();
+        LiveUrlTool.castPlayUrlByRoomId(roomId: controller.room.roomId ?? '', platform: controller.room.platform ?? '');
+      },
+      icon: const Icon(Remix.tv_2_line),
+    );
   }
 }
 

@@ -42,7 +42,6 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
 
   final Rx<LivePlayState> state = const LivePlayState().obs;
   final RxList<LiveMessage> danmakuMessages = <LiveMessage>[].obs;
-  final RxBool asmrSessionActive = false.obs;
 
   late Site currentSite;
   late TabController tabController;
@@ -50,7 +49,7 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
   final List<String> tabs = [i18n('danmaku_list'), i18n('danmaku_settings'), i18n('block_list')];
 
   bool _floatingResourcesReleased = false;
-  bool _audioOnlyForcedByAsmr = false;
+  bool _asmrSessionActive = false;
   late final String _controllerTag;
 
   @override
@@ -60,12 +59,12 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
     currentSite = Sites.of(site);
 
     final autoStartAsmr = Platform.isAndroid && SettingsService.to.app.enableAsmrSleepMode.v;
-    final defaultAudioOnly = SettingsService.to.player.audioOnly.v;
-    asmrSessionActive.v = autoStartAsmr;
-    _audioOnlyForcedByAsmr = autoStartAsmr && !defaultAudioOnly;
+    _asmrSessionActive = autoStartAsmr;
     state.value = LivePlayState(
       room: RoomState(detail: room),
-      player: PlayerState(isCurrentRoomAudioOnly: defaultAudioOnly || autoStartAsmr),
+      // ASMR is the only automatic audio-only entry point. Manual headphone
+      // switching is scoped to the current room and is never persisted.
+      player: PlayerState(isCurrentRoomAudioOnly: autoStartAsmr),
       ui: UIState(closeTimes: 240, closeTimeFlag: false),
     );
     unawaited(
@@ -196,29 +195,15 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
     }
   }
 
-  /// Toggles the sleep behavior for this playback session only.  The settings
-  /// switch controls auto-start for future rooms; the room action never writes
-  /// the user's default pure-audio preference.
-  Future<void> toggleAsmrSession() async {
-    final next = !asmrSessionActive.v;
-    if (next) {
-      final hasPermission = await LiveAudioService.requestPlatformPermissions();
-      if (!hasPermission) return;
-      _audioOnlyForcedByAsmr = !state.value.player.isCurrentRoomAudioOnly;
-      asmrSessionActive.v = true;
-      await LiveAudioService.configureSleepTimer(enabled: true, minutes: SettingsService.to.app.asmrSleepMinutes.v);
-      if (_audioOnlyForcedByAsmr) {
-        await playerController.changeCurrentRoomAudioOnly(true);
-      }
-      return;
+  /// Applies the headphone action to this room only. Restoring video also
+  /// ends an automatically started ASMR timer, while manually entering audio
+  /// mode does not implicitly create a sleep session.
+  Future<void> setCurrentRoomAudioOnlyFromUser(bool value) async {
+    if (!value && _asmrSessionActive) {
+      _asmrSessionActive = false;
+      await LiveAudioService.configureSleepTimer(enabled: false, minutes: SettingsService.to.app.asmrSleepMinutes.v);
     }
-
-    asmrSessionActive.v = false;
-    await LiveAudioService.configureSleepTimer(enabled: false, minutes: SettingsService.to.app.asmrSleepMinutes.v);
-    if (_audioOnlyForcedByAsmr && !SettingsService.to.player.audioOnly.v) {
-      _audioOnlyForcedByAsmr = false;
-      await playerController.changeCurrentRoomAudioOnly(false);
-    }
+    await playerController.changeCurrentRoomAudioOnly(value);
   }
 
   void addSystemMessage(String text) {
@@ -413,14 +398,12 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
     updateUI(refreshKey: 0);
 
     final autoStartAsmr = Platform.isAndroid && SettingsService.to.app.enableAsmrSleepMode.v;
-    final audioOnly = SettingsService.to.player.audioOnly.v;
-    asmrSessionActive.v = autoStartAsmr;
-    _audioOnlyForcedByAsmr = autoStartAsmr && !audioOnly;
+    _asmrSessionActive = autoStartAsmr;
     await LiveAudioService.configureSleepTimer(
       enabled: autoStartAsmr,
       minutes: SettingsService.to.app.asmrSleepMinutes.v,
     );
-    updatePlayer(isCurrentRoomAudioOnly: audioOnly || autoStartAsmr);
+    updatePlayer(isCurrentRoomAudioOnly: autoStartAsmr);
 
     updateRoom(detail: newRoom);
     currentSite = Sites.of(newRoom.platform!);
@@ -553,7 +536,6 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
     Get.delete<PlayerController>(tag: 'player-$_controllerTag', force: true);
 
     state.close();
-    asmrSessionActive.close();
     super.onClose();
   }
 }
