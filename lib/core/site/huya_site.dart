@@ -42,9 +42,9 @@ class HuyaSite implements LiveSite {
   /// Huya's public room detail currently returns `userCount` and
   /// `totalCount` as the same multi-million popularity value. Treating
   /// `userCount` as a concurrent head count relabels heat as people online.
-  /// The explicit room online count arrives later through danmaku push URI
-  /// 8006, where [LivePlayController.updateRuntimeAudience] stores it in the
-  /// separate `onlineViewers` field.
+  /// Current website captures show URI 8006 `iAttendeeCount` in the same
+  /// multi-million range, so it is also kept as popularity rather than a
+  /// concurrent-viewer head count.
   static ({String popularity, String onlineViewers}) parseRoomAudience(Map<String, dynamic>? liveData) {
     final totalCount = liveData?['totalCount']?.toString().trim() ?? '';
     final userCount = liveData?['userCount']?.toString().trim() ?? '';

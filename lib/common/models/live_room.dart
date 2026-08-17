@@ -35,11 +35,13 @@ class LiveRoom {
       hasTotalViewers: false,
       onlineAvailability: AudienceOnlineAvailability.unsupported,
     ),
-    // Huya exposes concurrent viewers after joining the room (push URI 8006).
+    // Huya's current website URI 8006 calls the field iAttendeeCount, but live
+    // captures stay in the same multi-million popularity range as totalCount.
+    // Keep it as heat until the public protocol exposes a distinct head count.
     'huya': AudiencePlatformCapability(
       hasPopularity: true,
       hasTotalViewers: false,
-      onlineAvailability: AudienceOnlineAvailability.roomRealtime,
+      onlineAvailability: AudienceOnlineAvailability.unsupported,
     ),
     'douyin': AudiencePlatformCapability(
       hasPopularity: false,
@@ -190,14 +192,12 @@ class LiveRoom {
       isCatchUp = json['isCatchUp'] ?? false,
       catchUpStart = json['catchUpStart'],
       catchUpEnd = json['catchUpEnd'] {
-    // Builds created before v2.0.32 temporarily copied Huya's multi-million
-    // room heat from userCount into onlineViewers. Clear only the recognizable
-    // duplicated value; a later URI 8006 heartbeat has a distinct count and is
-    // preserved.
-    if (platform == 'huya' &&
-        _hasExplicitAudienceValue(onlineViewers) &&
-        _hasAudienceValue(popularity) &&
-        parseAudienceNumber(onlineViewers) == parseAudienceNumber(popularity)) {
+    // Earlier builds stored Huya's userCount/URI 8006 popularity in the
+    // concurrent-viewer field. Current captures confirm both are popularity.
+    if (platform == 'huya' && _hasExplicitAudienceValue(onlineViewers)) {
+      if (!_hasAudienceValue(popularity)) {
+        popularity = onlineViewers;
+      }
       onlineViewers = '';
       audienceMetricType = AudienceMetricType.popularity;
       watching = popularity;

@@ -9,15 +9,16 @@ void main() {
       expect(LiveRoom(platform: 'huya').effectiveAudienceMetricType, AudienceMetricType.popularity);
       expect(LiveRoom(platform: 'kuaishou').effectiveAudienceMetricType, AudienceMetricType.onlineViewers);
       expect(LiveRoom(platform: 'douyin').effectiveAudienceMetricType, AudienceMetricType.totalViewers);
-      expect(LiveRoom(platform: 'huya', onlineViewers: '3210').supportsRealOnlineCount, isTrue);
-      expect(LiveRoom(platform: 'huya').supportsRealOnlineCount, isTrue);
+      expect(LiveRoom(platform: 'huya', onlineViewers: '3210').supportsRealOnlineCount, isFalse);
+      expect(LiveRoom(platform: 'huya').supportsRealOnlineCount, isFalse);
       expect(LiveRoom(platform: 'huya').hasRealOnlineCount, isFalse);
+      expect(LiveRoom(platform: 'douyin').supportsRealOnlineCount, isTrue);
       expect(LiveRoom(platform: 'bilibili').supportsRealOnlineCount, isFalse);
     });
 
     test('keeps heat and concurrent viewers separate when selecting a mode', () {
       final room = LiveRoom(
-        platform: 'huya',
+        platform: 'douyin',
         watching: '5600000',
         popularity: '5600000',
         onlineViewers: '18342',
@@ -37,15 +38,15 @@ void main() {
     });
 
     test('keeps an explicit zero concurrent count instead of falling back to heat', () {
-      final room = LiveRoom(platform: 'huya', popularity: '500万', onlineViewers: '0');
+      final room = LiveRoom(platform: 'douyin', popularity: '500万', onlineViewers: '0');
 
       expect(room.supportsRealOnlineCount, isTrue);
       expect(room.audienceValue(preferRealOnline: true, platformEnabled: true), '0');
       expect(room.audienceType(preferRealOnline: true, platformEnabled: true), AudienceMetricType.onlineViewers);
     });
 
-    test('shows a pending online value instead of relabelling heat while waiting for heartbeat', () {
-      final room = LiveRoom(platform: 'huya', popularity: '500万');
+    test('shows a pending online value instead of relabelling heat while waiting for a platform value', () {
+      final room = LiveRoom(platform: 'douyin', popularity: '500万');
 
       expect(room.audienceValue(preferRealOnline: true, platformEnabled: true), isEmpty);
       expect(room.audienceType(preferRealOnline: true, platformEnabled: true), AudienceMetricType.onlineViewers);
@@ -82,13 +83,13 @@ void main() {
       expect(updated.onlineViewers, '3200');
     });
 
-    test('migrates duplicated Huya heat out of the online-viewer field', () {
+    test('migrates Huya URI 8006 heat out of the online-viewer field', () {
       final room = LiveRoom.fromJson({
         'roomId': '998',
         'platform': 'huya',
         'watching': '5636930',
         'popularity': '5636930',
-        'onlineViewers': '5636930',
+        'onlineViewers': '3212923',
         'audienceMetricType': 'onlineViewers',
       });
 

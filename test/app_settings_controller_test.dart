@@ -36,5 +36,15 @@ void main() {
       expect(custom['asmrSleepMinutes'], 10080);
       expect(excessive['asmrSleepMinutes'], AppSettingsController.maxSleepMinutes);
     });
+
+    test('removes platforms whose public values are heat only', () {
+      final config = AppSettingsController.extractConfig({
+        'app': {
+          'realOnlinePlatforms': ['huya', 'douyin', 'kuaishou', 'cc'],
+        },
+      });
+
+      expect(config['realOnlinePlatforms'], ['douyin', 'kuaishou', 'cc']);
+    });
   });
 }

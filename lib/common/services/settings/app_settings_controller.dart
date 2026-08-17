@@ -6,7 +6,7 @@ import 'package:pure_live/common/consts/app_consts.dart';
 
 class AppSettingsController extends GetxController {
   static const int maxSleepMinutes = 525600;
-  static const List<String> defaultRealOnlinePlatforms = ['huya', 'douyin', 'kuaishou', 'cc'];
+  static const List<String> defaultRealOnlinePlatforms = ['douyin', 'kuaishou', 'cc'];
 
   Worker? _highRefreshRateWorker;
 
@@ -31,6 +31,7 @@ class AppSettingsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _removeUnsupportedOnlinePlatforms();
     if (Platform.isAndroid) {
       unawaited(DisplayModeService.setHighRefreshRate(enableHighRefreshRate.v));
       _highRefreshRateWorker = ever<bool>(
@@ -38,6 +39,20 @@ class AppSettingsController extends GetxController {
         (enabled) => unawaited(DisplayModeService.setHighRefreshRate(enabled)),
       );
     }
+  }
+
+  void _removeUnsupportedOnlinePlatforms() {
+    final supported = normalizeRealOnlinePlatforms(realOnlinePlatforms);
+    if (supported.length != realOnlinePlatforms.length) {
+      realOnlinePlatforms.v = supported;
+    }
+  }
+
+  static List<String> normalizeRealOnlinePlatforms(Iterable<String> platforms) {
+    return platforms
+        .where((platform) => LiveRoom.audienceCapabilityFor(platform).supportsConcurrentOnline)
+        .toSet()
+        .toList();
   }
 
   @override
@@ -60,6 +75,7 @@ class AppSettingsController extends GetxController {
   bool isRealOnlineEnabledFor(String? platform) => realOnlinePlatforms.contains(platform);
 
   void setRealOnlineEnabledFor(String platform, bool enabled) {
+    if (!LiveRoom.audienceCapabilityFor(platform).supportsConcurrentOnline) return;
     final next = List<String>.from(realOnlinePlatforms);
     if (enabled) {
       if (!next.contains(platform)) next.add(platform);
@@ -105,6 +121,7 @@ class AppSettingsController extends GetxController {
     enableHighRefreshRate.v = json['enableHighRefreshRate'] ?? true;
     preferRealOnlineCounts.v = json['preferRealOnlineCounts'] ?? false;
     realOnlinePlatforms.v = List<String>.from(json['realOnlinePlatforms'] ?? defaultRealOnlinePlatforms);
+    _removeUnsupportedOnlinePlatforms();
     savedMenuIds.v = List<String>.from(json['savedMenuIds'] ?? HomeMenu.values.map((e) => e.id).toList());
   }
 
@@ -123,7 +140,9 @@ class AppSettingsController extends GetxController {
       'showSplashPage': app['showSplashPage'] ?? true,
       'enableHighRefreshRate': app['enableHighRefreshRate'] ?? true,
       'preferRealOnlineCounts': app['preferRealOnlineCounts'] ?? false,
-      'realOnlinePlatforms': List<String>.from(app['realOnlinePlatforms'] ?? defaultRealOnlinePlatforms),
+      'realOnlinePlatforms': normalizeRealOnlinePlatforms(
+        List<String>.from(app['realOnlinePlatforms'] ?? defaultRealOnlinePlatforms),
+      ),
       'savedMenuIds': List<String>.from(app['savedMenuIds'] ?? []),
     };
   }

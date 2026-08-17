@@ -13,12 +13,7 @@ import time
 
 from interface_probe import USER_AGENT, request_json
 
-HOST = "cdnws.api.huya.com"
-HEARTBEAT = bytes.fromhex(
-    "00031d0000690000006910032c3c4c56086f6e6c696e657569660f4f6e557365724865617274426561747d00003c08"
-    "00010604745265711d00002f0a0a0c1600260036076164725f77617046000b1203aef00f2203aef00f3c426d5202605c"
-    "60017c82000bb01f9cac0b8c980ca80c20"
-)
+HOST = "wsapi.huya.com"
 
 
 def _head(type_id: int, tag: int) -> bytes:
@@ -46,20 +41,21 @@ def _tars_string(value: str, tag: int) -> bytes:
     return _head(7, tag) + struct.pack(">I", len(encoded)) + encoded
 
 
+def _tars_bytes(value: bytes, tag: int) -> bytes:
+    return _head(13, tag) + _head(0, 0) + _tars_int(len(value), 0) + value
+
+
+def _tars_string_list(values: list[str], tag: int) -> bytes:
+    return _head(9, tag) + _tars_int(len(values), 0) + b"".join(_tars_string(value, 0) for value in values)
+
+
 def _join_packet(uid: int) -> bytes:
-    inner = b"".join(
-        [
-            _tars_int(uid, 0),
-            _tars_int(0, 1),
-            _tars_string("", 2),
-            _tars_string("", 3),
-            _tars_int(0, 4),
-            _tars_int(0, 5),
-            _tars_int(uid, 6),
-            _tars_int(3, 7),
-        ]
-    )
-    return _tars_int(1, 0) + _head(13, 1) + _head(0, 0) + _tars_int(len(inner), 0) + inner
+    inner = _tars_string_list([f"live:{uid}", f"chat:{uid}"], 0) + _tars_string("", 1)
+    return _tars_int(16, 0) + _tars_bytes(inner, 1)
+
+
+def _heartbeat_packet() -> bytes:
+    return _tars_int(20, 0) + _tars_bytes(b"", 1)
 
 
 def _read_exact(connection: ssl.SSLSocket, length: int) -> bytes:
@@ -182,7 +178,7 @@ def main() -> int:
     connection = _connect()
     try:
         _send_frame(connection, _join_packet(uid))
-        _send_frame(connection, HEARTBEAT)
+        _send_frame(connection, _heartbeat_packet())
         started = time.monotonic()
         fragmented = bytearray()
         while time.monotonic() - started < 30:
@@ -201,8 +197,11 @@ def main() -> int:
             if final:
                 message = bytes(fragmented)
                 fragmented.clear()
-                if _outer_command(message) == 7:
-                    print(f"PASS huya.danmaku_websocket room={room_id} uid={uid} push_bytes={len(message)}")
+                if _outer_command(message) == 22:
+                    print(
+                        f"PASS huya.danmaku_websocket room={room_id} uid={uid} "
+                        f"command=22 push_bytes={len(message)}"
+                    )
                     return 0
         raise TimeoutError("Huya did not send a push message within 30 seconds")
     finally:

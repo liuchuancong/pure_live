@@ -17,14 +17,15 @@
 
 ## 热度、在线与累计观看
 
-- WebSocket 观看更新改为带类型数据：哔哩哔哩 operation 3 只更新热度，`WATCHED_CHANGE` 只更新本场累计看过；虎牙 URI 8006、抖音 `onlineUserForAnchor` 只更新并发在线。
-- 平台能力与房间当前是否已取得数值分离：虎牙进房后取实时在线，抖音/快手/网易 CC 可从列表或详情取在线；哔哩哔哩和斗鱼公开数据继续按热度/累计口径标注。
+- WebSocket 观看更新改为带类型数据：哔哩哔哩 operation 3 只更新热度，`WATCHED_CHANGE` 只更新本场累计看过；抖音 `onlineUserForAnchor` 只更新并发在线。
+- 虎牙弹幕同步到当前网页协议：使用 `wsapi.huya.com`、房间组注册与批量推送；实连确认列表/详情的 `totalCount/userCount` 及直播间 URI 8006 `iAttendeeCount` 都处于同一热度口径，不再标成真实在线人数。
+- 平台能力与房间当前是否已取得数值分离：抖音/快手/网易 CC 可从列表或详情取在线；哔哩哔哩、斗鱼和虎牙公开数据继续按热度/累计口径标注。
 - 真实在线模式下，支持平台尚未取得明确值时显示“待刷新”，几百万热度不再代替在线数参与排行；不支持并发人数的平台排在支持平台之后。
 - 收藏和搜索结果监听全局口径与分平台开关，切换后立即重新排序。
 
 ## 验证与构建
 
-- Flutter Analyze 零问题，57 项单元/Widget 测试通过；15/15 平台公开接口探测通过。
+- Flutter Analyze 零问题，59 项单元/Widget 测试通过；15/15 平台公开接口探测与虎牙当前 WebSocket 实连通过。
 - Android 继续优先构建正式包名 `com.mystyle.purelive` 的正式签名 `arm64-v8a` APK，并在连接设备上覆盖安装验证。
 
 ---
@@ -124,8 +125,8 @@
 ## 观看数据与排行
 
 - `LiveRoom` 分别保存平台热度、真实并发在线和本场累计观看，旧版 `watching` 字段只用于备份兼容。
-- 增加“平台热度优先 / 真实在线人数优先”全局排行方式，以及虎牙、抖音、快手、网易 CC 的独立真实在线开关。
-- 虎牙列表/详情的 `totalCount`、`userCount` 都按热度处理，进房后立即请求 URI 8006 弹幕心跳并按在线人数处理；抖音 `display_value/total_user` 保留为累计观看，`user_count/onlineUserForAnchor` 按在线人数处理。
+- 增加“平台热度优先 / 真实在线人数优先”全局排行方式，以及抖音、快手、网易 CC 的独立真实在线开关。
+- 虎牙列表/详情的 `totalCount`、`userCount` 以及房间 URI 8006 `iAttendeeCount` 都按热度处理；抖音 `display_value/total_user` 保留为累计观看，`user_count/onlineUserForAnchor` 按在线人数处理。
 - 哔哩哔哩 `online`/心跳和斗鱼 `ol/hot` 保留热度标签，避免把几百万热度误显示为同时在线人数。
 
 ## 助眠与定时器
