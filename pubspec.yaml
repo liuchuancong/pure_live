@@ -178,6 +178,16 @@ dependency_overrides:
   app_links: 7.0.0
   meta: 1.18.0
   hooks: ^2.0.0
+  flutter_inappwebview_platform_interface:
+    git:
+      url: https://github.com/guide-inc-org/guide-flutter_inappwebview.git
+      path: flutter_inappwebview_platform_interface
+      ref: sbi_fx_pc/v6.2.0-beta.3
+  flutter_inappwebview_macos:
+    git:
+      url: https://github.com/guide-inc-org/guide-flutter_inappwebview.git
+      path: flutter_inappwebview_macos
+      ref: sbi_fx_pc/v6.2.0-beta.3
   media_kit:
     git:
       url: https://github.com/Predidit/media-kit.git
