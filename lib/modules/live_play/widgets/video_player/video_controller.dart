@@ -500,6 +500,8 @@ class VideoController with ChangeNotifier {
   void updateDanmaku() {
     danmakuController.updateConfig(
       BarrageConfig(
+        useUniformSpeed: false,
+        dynamicSpeedWhileFlying: true,
         noEmojiMode: noEmojiMode.value,
         fontSize: danmakuFontSize.value,
         area: danmakuArea.value,
