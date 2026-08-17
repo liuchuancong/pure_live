@@ -1,5 +1,37 @@
 [
   {
+    "version": "2.0.35",
+    "title": "Pure Live v2.0.35",
+    "date": "2026-08-17",
+    "github": "https://github.com/wzgrx/pure_live/releases/tag/v2.0.35",
+    "author": {
+      "name": "wzgrx",
+      "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
+      "profile": "https://github.com/wzgrx"
+    },
+    "changelog": "# Pure Live v2.0.35\n\n本版本修复真机回归中发现的哔哩哔哩热门直播间热度偶发显示为 `1`，并完成 Android 120 Hz、游客弹幕、横竖屏、小窗、纯音频和后台播放链路验收。\n\n## 观看指标稳定性\n\n- 进入同一直播间时合并列表、详情接口和弹幕心跳中的观看指标，详情接口短暂返回哨兵值时保留列表中的可靠热度。\n- 哔哩哔哩热门房间从千级以上瞬时骤降至 `1` 时不再覆盖现有热度；后续数值合理的实时心跳仍会正常刷新。\n- 运行时观看指标忽略无效零值，在线人数、累计观看与平台热度继续使用各自独立字段和标签。\n\n## 真机验收\n\n- OnePlus Android 16 arm64 真机覆盖安装保留应用数据；多次冷启动无崩溃，前台窗口和弹幕动画以设备最高 120 Hz 运行。\n- 哔哩哔哩游客直播间弹幕连续刷新；竖屏、横屏、全屏及系统画中画均验证画面弹幕，设置页字号预览实时变化。\n- 纯音频切换、系统媒体会话、前台服务通知、Partial WakeLock 与 Wi-Fi Lock 均通过后台探测。\n\n## 构建与验证\n\n- 本机质量门禁覆盖 Built-in Kotlin 审计、Flutter Analyze、完整测试及 15 个平台接口探测。\n- Android 继续优先生成正式包名 `com.mystyle.purelive` 的正式签名 `arm64-v8a` APK。",
+    "files": [
+      {
+        "name": "BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.0.35/BUILD_METADATA.json"
+      },
+      {
+        "name": "PureLive-2.0.35-46-arm64-v8a",
+        "size": "122.04mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.0.35/PureLive-2.0.35-46-arm64-v8a-release.apk"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.0.35/SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
     "version": "2.0.34",
     "title": "Pure Live v2.0.34",
     "date": "2026-08-17",
@@ -360,7 +392,7 @@
       {
         "name": "arm64-v8a",
         "size": "122.25mb",
-        "downloads": 14195,
+        "downloads": 14196,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.22/app-arm64-v8a-release.apk"
       },
       {
@@ -410,13 +442,13 @@
       {
         "name": "arm64-v8a",
         "size": "126.58mb",
-        "downloads": 6468,
+        "downloads": 6470,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.21/app-arm64-v8a-release.apk"
       },
       {
         "name": "armeabi-v7a",
         "size": "112.22mb",
-        "downloads": 686,
+        "downloads": 687,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.21/app-armeabi-v7a-release.apk"
       },
       {
@@ -460,7 +492,7 @@
       {
         "name": "arm64-v8a",
         "size": "120.69mb",
-        "downloads": 3973,
+        "downloads": 3974,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.20/app-arm64-v8a-release.apk"
       },
       {
@@ -484,7 +516,7 @@
       {
         "name": "PureLive-2.0.20+31-windows-x64-setup.exe",
         "size": "55.68mb",
-        "downloads": 1057,
+        "downloads": 1059,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.20/PureLive-2.0.20%2B31-windows-x64-setup.exe"
       },
       {
@@ -706,7 +738,7 @@
       {
         "name": "PureLive-2.0.16+27-windows-x64-setup.exe",
         "size": "37.48mb",
-        "downloads": 1091,
+        "downloads": 1092,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.16/PureLive-2.0.16%2B27-windows-x64-setup.exe"
       },
       {
