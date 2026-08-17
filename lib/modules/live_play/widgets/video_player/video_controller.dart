@@ -56,6 +56,7 @@ class DanmakuManager {
 
     // 设置初始值
     videoController.hideDanmaku.value = dm.hideDanmaku.v;
+    videoController.danmakuArea.value = dm.danmakuArea.v;
     videoController.danmakuTopArea.value = dm.danmakuTopArea.v;
     videoController.danmakuBottomArea.value = dm.danmakuBottomArea.v;
     videoController.danmakuSpeed.value = dm.danmakuSpeed.v;
@@ -63,6 +64,7 @@ class DanmakuManager {
     videoController.danmakuFontBorder.value = dm.danmakuFontBorder.v.toInt();
     videoController.danmakuOpacity.value = dm.danmakuOpacity.v;
     videoController.enableDanmakuStroke.value = dm.enableDanmakuStroke.v;
+    videoController.danmakuFps.value = dm.danmakuFps.v;
     videoController.danmakuFontFamilyName.value = dm.danmakuFontFamilyName.v;
 
     // 设置 workers
@@ -495,7 +497,6 @@ class VideoController with ChangeNotifier {
   void updateDanmaku() {
     danmakuController.updateConfig(
       BarrageConfig(
-        emitInterval: 0.016,
         fontSize: danmakuFontSize.value,
         area: danmakuArea.value,
         topAreaDistance: danmakuTopArea.value,
