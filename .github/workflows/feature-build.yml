@@ -169,8 +169,9 @@ jobs:
       - name: Install Debian 13 build dependencies
         shell: bash
         run: |
-          apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+          sed -i 's|http://|https://|g' /etc/apt/sources.list.d/debian.sources
+          apt-get -o Acquire::Retries=5 update
+          DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=5 install -y --no-install-recommends \
             ca-certificates curl git xz-utils \
             clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libasound2-dev \
             libayatana-appindicator3-dev \
