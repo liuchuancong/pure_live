@@ -42,6 +42,11 @@ endif()
 function(APPLY_STANDARD_SETTINGS TARGET)
   target_compile_features(${TARGET} PUBLIC cxx_std_14)
   target_compile_options(${TARGET} PRIVATE -Wall -Werror)
+  # Flutter may add warning switches from a newer Clang than the host runner.
+  # Keep real warnings fatal while ignoring only unsupported warning names.
+  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_compile_options(${TARGET} PRIVATE -Wno-unknown-warning-option)
+  endif()
   target_compile_options(${TARGET} PRIVATE "$<$<NOT:$<CONFIG:Debug>>:-O3>")
   target_compile_definitions(${TARGET} PRIVATE "$<$<NOT:$<CONFIG:Debug>>:NDEBUG>")
 endfunction()
