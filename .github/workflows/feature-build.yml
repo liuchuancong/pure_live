@@ -172,7 +172,11 @@ jobs:
           sudo apt-get -o Acquire::Retries=5 install -y \
             clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libasound2-dev \
             libayatana-appindicator3-dev libsecret-1-dev libva-dev libvdpau-dev \
-            libpulse-dev libxv-dev
+            libpulse-dev libxv-dev libunwind-dev libgnutls28-dev liblcms2-dev \
+            libarchive-dev libgbm-dev libxss-dev libxrandr-dev libegl1-mesa-dev \
+            libwayland-dev libxkbcommon-dev libfontconfig1-dev libharfbuzz-dev \
+            libfribidi-dev libfreetype6-dev zlib1g-dev libdrm-dev libx11-dev \
+            libxext-dev libxfixes-dev libxcb1-dev
       - name: Install pinned Flutter SDK from the official archive
         shell: bash
         run: |
@@ -199,7 +203,7 @@ jobs:
           echo "5179c8f5cf1237d2300e2d8559a7bc55  $archive.tmp" | md5sum --check --strict
           mv "$archive.tmp" "$archive"
       - name: Build Linux release
-        run: flutter build linux --release --dart-define=PURELIVE_BUILD_SOURCE=github-manual
+        run: flutter --verbose build linux --release --dart-define=PURELIVE_BUILD_SOURCE=github-manual
       - name: Create portable archive
         run: tar -C build/linux/x64/release/bundle -czf PureLive-linux-x64.tar.gz .
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
