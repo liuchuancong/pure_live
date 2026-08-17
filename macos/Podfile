@@ -1,4 +1,4 @@
-platform :osx, '10.15'
+platform :osx, '12.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -40,10 +40,8 @@ post_install do |installer|
     flutter_additional_macos_build_settings(target)
     
     target.build_configurations.each do |config|
-      config.build_settings['MACOSX_DEPLOYMENT_TARGET'] = '10.15'
-      config.build_settings['SWIFT_VERSION'] = '5.0'
-      config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
-      config.build_settings['APPLICATION_EXTENSION_API_ONLY'] = 'NO'
+      config.build_settings['MACOSX_DEPLOYMENT_TARGET'] = '12.0'  # 改为 12.0
+      config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
     end
   end
 end
