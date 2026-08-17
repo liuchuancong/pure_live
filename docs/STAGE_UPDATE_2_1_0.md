@@ -44,6 +44,8 @@ Android 与 Windows 优先使用本机 5090 环境，Apple 平台仅使用一次
 3. `tool/install_android_local.ps1`：连接设备覆盖安装、冷启动与前台窗口检查。
 4. `manual-build`：Linux、macOS、iOS 编译与短期构建归档。
 
+正式签名 APK 默认通过本机临时 Runner 注入 GitHub Secrets；`signed-build-*` 标签仅用于临时 Runner 服务异常时的一次托管构建回退。
+
 本阶段本机门禁结果：Built-in Kotlin 审计与 Flutter Analyze 零问题、63 项单元/Widget 测试通过、20/20 平台接口探测通过。
 
 返回 [文档索引](README.md)。
