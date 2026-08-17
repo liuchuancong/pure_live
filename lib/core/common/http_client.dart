@@ -1,7 +1,9 @@
 import 'dart:io' as io;
+import 'package:dio/io.dart';
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/common/core_error.dart';
 import 'package:pure_live/core/common/custom_interceptor.dart';
+import 'package:pure_live/common/services/settings_service.dart';
 
 class HttpClient {
   static const Duration _connectTimeout = Duration(seconds: 20);
@@ -23,6 +25,24 @@ class HttpClient {
   late Dio dio = _createDio();
   Dio _createDio() {
     return Dio(BaseOptions(connectTimeout: _connectTimeout, receiveTimeout: _receiveTimeout, sendTimeout: _sendTimeout))
+      ..httpClientAdapter = IOHttpClientAdapter(
+        createHttpClient: () {
+          final client = io.HttpClient();
+          client.idleTimeout = const Duration(seconds: 30);
+          client.findProxy = (uri) {
+            final proxyCtrl = SettingsService.to.proxy;
+            if (proxyCtrl.enableAppProxy.value &&
+                proxyCtrl.appProxyHost.value.trim().isNotEmpty &&
+                proxyCtrl.appProxyPort.value > 0) {
+              final host = proxyCtrl.appProxyHost.value.trim();
+              final port = proxyCtrl.appProxyPort.value;
+              return 'PROXY $host:$port';
+            }
+            return 'DIRECT';
+          };
+          return client;
+        },
+      )
       ..interceptors.add(CustomLogInterceptor());
   }
 

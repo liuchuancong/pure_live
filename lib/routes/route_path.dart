@@ -78,6 +78,10 @@ class RoutePath {
 
   static const kHuyaCookie = "/huya_cookie";
 
+  static const kDouyinCookie = "/douyin_cookie";
+
+  static const kTwitchCookie = "/twitch_cookie";
+
   // WebDavPage
   static const kWebDavPage = "/web_dav_page";
 

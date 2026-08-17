@@ -60,6 +60,7 @@ class LiveUrlTool {
       String id = await _getRealDouyinRoomId(realUrl);
       return [id, Sites.douyinSite];
     }
+
     if (url.contains("webcast.amemv.com")) {
       var reg = RegExp(r"reflow/(\d+)");
       String id = reg.firstMatch(url)?.group(1) ?? "";
@@ -81,7 +82,11 @@ class LiveUrlTool {
       String id = reg.firstMatch(realUrl)?.group(1) ?? "";
       return [id, Sites.ccSite];
     }
-
+    if (realUrl.contains("twitch.tv/")) {
+      final regExp = RegExp(r'twitch\.tv/([^/?]+)');
+      String id = regExp.firstMatch(url)?.group(1) ?? "";
+      return [id, Sites.twitchSite];
+    }
     return [];
   }
 
