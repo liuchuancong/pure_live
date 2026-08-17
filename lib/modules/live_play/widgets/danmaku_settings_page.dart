@@ -92,7 +92,7 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
                   value: controller.danmakuSpeed.value.toDouble(),
                   min: 20,
                   max: 400,
-                  display: controller.danmakuSpeed.value.toStringAsFixed(2),
+                  display: controller.danmakuSpeed.value.toInt().toString(),
                   onChanged: (v) => controller.danmakuSpeed.value = v,
                   labelColor: labelColor,
                   digitColor: digitColor,
