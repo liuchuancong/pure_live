@@ -2,7 +2,7 @@
 
 本仓库采用“本机优先、Actions 手动兜底”的流程，固定使用 Flutter `3.47.0`。`pubspec.lock`、Git 依赖提交和 FFmpeg 产物地址均已固定，便于复现结果。
 
-最近完整核验：2026-08-17，Windows 11 + Java 25 + Flutter 3.47.0；Built-in Kotlin 审计与静态分析零问题、63 项测试、20/20 平台接口探测通过。Android arm64 已在 OnePlus Android 16 / 120 Hz 真机覆盖安装并确认数据保留、多次冷启动、游客弹幕、横竖屏与全屏弹幕、系统画中画弹幕、实时设置预览及纯音频切换；后台媒体会话、前台服务通知、Partial WakeLock 与 Wi-Fi Lock 持续有效，崩溃缓冲区为空。Windows x64 最近一次 release 便携程序持续运行 20 秒、窗口正常响应，标准错误仅包含 Impeller 后端选择信息。
+最近完整核验：2026-08-18，Windows 11 + Java 25 + Flutter 3.47.0；Built-in Kotlin 审计与静态分析零问题、64 项测试、25/25 平台接口探测通过。Android arm64 已在 OnePlus Android 16 / 120 Hz 真机覆盖安装并确认数据保留、多次冷启动、游客弹幕、横竖屏与全屏弹幕、系统画中画弹幕、实时设置预览及纯音频切换；后台媒体会话、前台服务通知、Partial WakeLock 与 Wi-Fi Lock 持续有效，崩溃缓冲区为空。Windows x64 最近一次 release 便携程序持续运行 20 秒、窗口正常响应，标准错误仅包含 Impeller 后端选择信息。
 
 ## 前置环境
 
@@ -89,7 +89,9 @@ Windows x64 临时自托管 Runner，再手动运行
 
 临时 Runner 注册服务异常时，可显式推送 `signed-build-*` 标签，使用同一工作流的一次性 GitHub 托管回退作业生成正式签名 arm64 APK；普通提交不触发该作业，本机门禁与 Windows 构建仍保持优先。
 
-Linux、macOS 和 iOS 通常通过 `manual-build` 手动开关补建；也可显式推送 `stage-build-*` 标签触发同一工作流的阶段构建回退。标签路径仅运行 Linux 与 Apple 作业，普通分支推送、Android 和 Windows 均保持本机优先。
+Linux、macOS 和 iOS 通常通过 `manual-build` 手动开关补建；阶段标签也支持精确补建：`stage-linux-*` 运行 Linux，`stage-ios-*` 运行 iOS，`stage-apple-*` 在一个 macOS Runner 内连续构建 macOS 与 iOS。普通分支推送、Android 和 Windows 均保持本机优先。
+
+Linux 版使用系统浏览器承接“继续网页搜索”，避免引入额外 WPE WebKit 运行时；平台原生搜索、直播详情、弹幕与播放链路仍在应用内完成。Windows/macOS/Android/iOS 使用锁定修订版 `flutter_inappwebview`。
 
 ## 单独命令
 

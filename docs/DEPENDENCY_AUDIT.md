@@ -20,7 +20,7 @@ Android 已启用 AGP 9 Built-in Kotlin。主应用、`flv_lzc` 以及六个仍�
 - 应用提交 `pubspec.lock`，所有 hosted 包锁定具体版本。
 - `flame_barrage 0.0.4` 暂存于 `plugins/flame_barrage`，仅修补引擎移动时忽略逐条速度的问题并保留原许可证；上游发布等效修复后再恢复 hosted 依赖。
 - `plugins/built_in_kotlin/` 保存 `better_player_plus 1.3.5`、`floating 6.0.0`、`flutter_exit_app 2.1.2`、`flutter_js 0.8.7`、`mobile_scanner 7.4.0` 和 `share_handler_android 0.0.11` 的源快照，仅迁移 Android 构建脚本并保留上游许可证；上游发布 Built-in Kotlin 版本后逐项恢复 hosted 依赖。
-- `media_kit`、`screen_retriever`、`dart_quickjs` 固定到已复核的完整 Git 提交；网页内核同步上游迁移到 `flutter_inappwebview_ultra 1.0.0`，覆盖 Android、iOS、macOS、Windows、Linux 插件实现。
+- `media_kit`、`screen_retriever`、`dart_quickjs` 固定到已复核的完整 Git 提交；网页内核同步上游锁定到 `guide-inc-org/guide-flutter_inappwebview` 的 `sbi_fx_pc/v6.2.0-beta.3`（解析提交 `3e6c4c4a`），覆盖 Android、iOS、macOS 与 Windows。Linux 的网页搜索使用系统浏览器，避免额外 WPE WebKit 原生依赖。
 - Windows 单实例插件同步上游恢复为 hosted `windows_single_instance 1.2.0`，删除仓库内旧副本；`file_picker` 使用稳定版 12.0.0 API。
 - `flv_lzc` 固定自上游 `030d611` 并存放在 `plugins/flv_lzc`；仅移除 Android 注册阶段的临时 `SurfaceTexture` 探测，规避 Flutter 3.47 平台纹理注册断言，保留上游许可证和来源说明。
 - Android 本地构建会预取并校验 MediaKit arm64 库与 FFmpeg Kit AAR；后者预先写入 Native Assets 共享缓存，避开 Windows Dart 下载器在 GitHub Release 重定向处长时间等待。
@@ -36,7 +36,7 @@ Android 已启用 AGP 9 Built-in Kotlin。主应用、`flv_lzc` 以及六个仍�
 python .\tool\interface_probe.py
 ```
 
-当前脚本共检查 20 项：Bilibili、Douyu、Huya、Kuaishou、Douyin、网易 CC、Twitch 的公开分类/推荐入口、搜索、Bilibili WBI 签名与弹幕节点、Huya 弹幕注册身份，以及 Twitch 房间元数据和播放令牌。弹幕认证回应、登录态清晰度和实际 CDN 播放仍需在应用内用真实直播间验证。
+当前脚本共检查 25 项：Bilibili、Douyu、Huya、Kuaishou、Douyin、网易 CC、Twitch、SOOP Live 的公开分类/推荐入口、搜索、Bilibili 弹幕节点、Huya 弹幕注册身份、Twitch 房间元数据与播放令牌，以及 SOOP 房间元数据和播放令牌。弹幕认证回应、登录态清晰度和实际 CDN 播放仍需在应用内用真实直播间验证。
 
 虎牙另提供 `python .\tool\huya_danmaku_probe.py` 实时 WebSocket 回归；2026-08-16 已验证注册、新版心跳和真实推送接收。该项依赖当前直播间与平台网关状态，保留为发布前手动检查。
 

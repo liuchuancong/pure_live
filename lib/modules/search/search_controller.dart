@@ -188,17 +188,22 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
     );
   }
 
-  void openWebSearch() {
+  Future<void> openWebSearch() async {
     if (index.v == 0) {
       ToastUtil.show(i18n('select_platform_for_web_search'));
+      return;
+    }
+    final site = Sites().availableSites()[index.v - 1];
+    final url = buildSearchUrl(site.id, searchController.text.trim());
+    if (Platform.isLinux) {
+      final opened = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      if (!opened) ToastUtil.show(i18n('external_browser_not_opened'));
       return;
     }
     if (Platform.isWindows && !_isWebView2Available) {
       showWebView2MissingDialog();
       return;
     }
-    final site = Sites().availableSites()[index.v - 1];
-    final url = buildSearchUrl(site.id, searchController.text.trim());
     Get.toNamed(RoutePath.kWebSearch, arguments: {'url': url, 'platform': site.id});
   }
 

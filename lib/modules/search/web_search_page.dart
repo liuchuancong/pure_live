@@ -8,6 +8,30 @@ class WebSearchPage extends GetView<WebSearchController> {
 
   @override
   Widget build(BuildContext context) {
+    if (controller.usesExternalBrowser) {
+      return Scaffold(
+        appBar: AppBar(title: Text(i18n("web_search"))),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.open_in_browser_rounded, size: 48),
+                const SizedBox(height: 16),
+                Text(i18n('linux_web_search_external_tip'), textAlign: TextAlign.center),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: controller.openExternalBrowser,
+                  icon: const Icon(Icons.open_in_new_rounded),
+                  label: Text(i18n('open_in_system_browser')),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text(i18n("web_search")),
@@ -26,7 +50,7 @@ class WebSearchPage extends GetView<WebSearchController> {
             child: IconButton(
               icon: const Icon(Icons.bug_report),
               onPressed: () async {
-                await controller.webViewController!.openDevTools();
+                await controller.webViewController?.openDevTools();
               },
             ),
           ),

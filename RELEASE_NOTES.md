@@ -1,18 +1,19 @@
 # Pure Live v2.1.0
 
-这是一次阶段性大更新：同步上游 2026-08-17 最新代码与 Twitch 平台，并汇总此前完成的弹幕稳定性、小窗、120 Hz、播放、助眠、本地互动、Built-in Kotlin 和本机发布工程。
+这是一次阶段性大更新：同步上游 `24ff92b6`（2026-08-18）的 Twitch、SOOP Live 与网页内核更新，并汇总此前完成的弹幕稳定性、小窗、120 Hz、播放、助眠、本地互动、Built-in Kotlin 和本机发布工程。
 
-## 上游同步与 Twitch
+## 上游同步、Twitch 与 SOOP Live
 
 - 新增 Twitch 分类、推荐、频道搜索、房间详情、直播清晰度、外部打开、Cookie 设置和 IRC 弹幕。
 - Twitch `viewersCount` 作为真实并发人数进入显示、筛选和排行；本地互动同步增加 Twitch 徽章、Bits、订阅等级与礼物体验包。
 - Twitch IRC 解析支持无颜色用户、转义显示名、用户 ID、消息 ID、平台时间与多行数据；登录 Cookie 中的 `auth-token`/`login` 用于聊天认证。
-- 接口探测从 15 项扩展为 20 项，覆盖 Twitch 分类、目录、搜索、房间元数据和播放令牌。
+- 新增 SOOP Live 分类、推荐、搜索、房间详情、播放线路、Cookie、弹幕、并发在线人数、链接识别与本地互动体验包。
+- 接口探测从 15 项扩展为 25 项，覆盖 Twitch 与 SOOP Live 的分类、目录/推荐、搜索、房间元数据和播放令牌。
 
 ## 弹幕、依赖与界面
 
 - 主画面和小窗增加“纯文字模式”，小窗预览实时反映该开关；兼容上游旧存储键。
-- 合并 `file_picker 12.0.0` 稳定 API、`windows_single_instance 1.2.0`、`flutter_inappwebview_ultra 1.0.0`、默认音量百分比修正和网页关闭清理。
+- 合并 `file_picker 12.0.0` 稳定 API、`windows_single_instance 1.2.0`、锁定修订版 `flutter_inappwebview 6.2.0-beta.3`、默认音量百分比修正和网页关闭清理；Linux 网页搜索使用系统浏览器。
 - 继续保留统一 px/s 速度、动态跟随屏幕最高刷新率、过期队列淘汰、房间会话隔离、手机固定小窗预览和 AGP 9 Built-in Kotlin 修复。
 - 更新仓库说明、平台兼容表、依赖审计和阶段更新文档。
 
@@ -21,7 +22,7 @@
 - Android arm64 与 Windows x64 继续优先在本机完成质量门禁、正式构建和启动验证。
 - 手动工作流扩展到 Linux x64、macOS arm64 和 iOS 设备编译；Apple 两个平台共用一次 macOS 作业。
 - iOS 生成无签名设备 `.app` 归档，供后续证书签名与 IPA 封装。
-- Built-in Kotlin 审计与 Flutter Analyze 零问题，63 项单元/Widget 测试及 20/20 平台接口探测通过。
+- Built-in Kotlin 审计与 Flutter Analyze 零问题，64 项单元/Widget 测试及 25/25 平台接口探测通过。
 
 ---
 
