@@ -9,10 +9,11 @@ import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/common/convert_helper.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/danmaku/bilibili_danmaku.dart';
+import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 
 class BiliBiliSite implements LiveSite {
   @override
-  String id = "bilibili";
+  String id = Sites.bilibiliSite;
 
   @override
   String name = "哔哩哔哩直播";
@@ -380,15 +381,11 @@ class BiliBiliSite implements LiveSite {
         ),
       );
     } catch (e) {
-      LiveRoom liveRoom =
-          SettingsService.to.fav.favoriteRooms.v.firstWhereOrNull(
-            (r) => r.roomId == roomId && r.platform == platform,
-          ) ??
-          LiveRoom(roomId: roomId, platform: platform);
-
-      liveRoom.liveStatus = LiveStatus.offline;
-      liveRoom.status = false;
-      return liveRoom;
+      if (Get.isRegistered<PlayerController>()) {
+        final PlayerController playerController = Get.find<PlayerController>();
+        return playerController.currentRoom!.getLiveRoomWithError();
+      }
+      return LiveRoom(roomId: roomId, platform: platform).getLiveRoomWithError();
     }
   }
 

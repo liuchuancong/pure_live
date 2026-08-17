@@ -1,4 +1,5 @@
 import 'site/huya_site.dart';
+import 'site/soop_site.dart';
 import 'site/douyu_site.dart';
 import 'site/douyin_site.dart';
 import 'interface/live_site.dart';
@@ -19,7 +20,7 @@ class Sites {
   static const String ccSite = "cc";
   static const String iptvSite = "iptv";
   static const String twitchSite = "twitch";
-  static const String youtubeSite = 'youtube';
+  static const String soopSite = 'soop';
 
   static List<Site> get supportSites => [
     Site(id: bilibiliSite, name: i18n("site_bilibili"), logo: "assets/images/bilibili_2.png", liveSite: BiliBiliSite()),
@@ -29,6 +30,7 @@ class Sites {
     Site(id: kuaishouSite, name: i18n("site_kuaishou"), logo: "assets/images/kuaishou.png", liveSite: KuaishowSite()),
     Site(id: ccSite, name: i18n("site_cc"), logo: "assets/images/cc.png", liveSite: CCSite()),
     Site(id: twitchSite, name: i18n("site_twitch"), logo: "assets/images/twitch.png", liveSite: TwitchSite()),
+    Site(id: soopSite, name: i18n("site_soop"), logo: "assets/images/soop.png", liveSite: SoopSite()),
     Site(id: iptvSite, name: i18n("site_iptv"), logo: "assets/images/logo.png", liveSite: IptvSite()),
   ];
 

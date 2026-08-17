@@ -15,7 +15,7 @@ import 'package:pure_live/core/iptv/services/auto_sync_scheduler.dart';
 
 class IptvSite implements LiveSite {
   @override
-  String id = 'iptv';
+  String id = Sites.iptvSite;
 
   @override
   String name = '网络';

@@ -10,10 +10,11 @@ import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/danmaku/douyu_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
+import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 
 class DouyuSite implements LiveSite {
   @override
-  String id = "douyu";
+  String id = Sites.douyuSite;
 
   @override
   String name = "斗鱼直播";
@@ -246,15 +247,11 @@ class DouyuSite implements LiveSite {
         isRecord: roomInfo["videoLoop"] == 1,
       );
     } catch (e) {
-      LiveRoom liveRoom =
-          SettingsService.to.fav.favoriteRooms.v.firstWhereOrNull(
-            (r) => r.roomId == roomId && r.platform == platform,
-          ) ??
-          LiveRoom(roomId: roomId, platform: platform);
-
-      liveRoom.liveStatus = LiveStatus.offline;
-      liveRoom.status = false;
-      return liveRoom;
+      if (Get.isRegistered<PlayerController>()) {
+        final PlayerController playerController = Get.find<PlayerController>();
+        return playerController.currentRoom!.getLiveRoomWithError();
+      }
+      return LiveRoom(roomId: roomId, platform: platform).getLiveRoomWithError();
     }
   }
 

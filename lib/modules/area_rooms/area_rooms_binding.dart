@@ -19,6 +19,9 @@ class AreaRoomsBinding extends Binding {
         if (site.id == Sites.huyaSite) {
           return AreaServerFixedController(site, subCategory, fixedSize: 120);
         }
+        if (site.id == Sites.soopSite) {
+          return AreaServerFixedController(site, subCategory, fixedSize: 60);
+        }
         return AreaServerRemoteController(site, subCategory);
       }, tag: tag),
     ];

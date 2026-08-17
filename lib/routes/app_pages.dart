@@ -35,12 +35,14 @@ import 'package:pure_live/modules/tags/tag_management_binding.dart';
 import 'package:pure_live/modules/hot_areas/hot_areas_binding.dart';
 import 'package:pure_live/modules/shield/danmu_shield_binding.dart';
 import 'package:pure_live/modules/areas/favorite_areas_binding.dart';
+import 'package:pure_live/modules/account/soop/soop_cookie_page.dart';
 import 'package:pure_live/modules/account/huya/huya_cookie_page.dart';
 import 'package:pure_live/modules/area_rooms/area_rooms_binding.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_page.dart';
 import 'package:pure_live/modules/account/bilibili/qr_login_page.dart';
 import 'package:pure_live/modules/account/bilibili/bilibili_bings.dart';
 import 'package:pure_live/modules/account/bilibili/web_login_page.dart';
+import 'package:pure_live/modules/account/soop/soop_cookie_binding.dart';
 import 'package:pure_live/modules/live_play/widgets/live_play_page.dart';
 import 'package:pure_live/modules/account/huya/huya_cookie_binding.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_binding.dart';
@@ -116,6 +118,8 @@ class AppPages {
     GetPage(name: RoutePath.kDouyuCookie, page: () => const DouyinCookiePage(), bindings: [DouyinCookieBinding()]),
 
     GetPage(name: RoutePath.kTwitchCookie, page: () => const TwitchCookiePage(), bindings: [TwitchCookieBinding()]),
+
+    GetPage(name: RoutePath.kSoop, page: () => const SoopCookiePage(), bindings: [SoopCookieBinding()]),
 
     GetPage(
       name: RoutePath.kKuaishouCookie,
