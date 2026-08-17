@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: local-signed-android
+  group: local-signed-android-${{ github.event_name }}
   cancel-in-progress: false
 
 jobs:
