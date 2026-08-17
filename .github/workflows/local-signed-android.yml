@@ -17,11 +17,21 @@ jobs:
     timeout-minutes: 55
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
-        with:
-          distribution: zulu
-          java-version: "25"
-          cache: gradle
+      - name: Select cached local Java 25
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jdk = Get-ChildItem (Join-Path $env:RUNNER_TOOL_CACHE 'Java_Zulu_jdk\25*\x64') `
+            -Directory -ErrorAction SilentlyContinue |
+            Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'bin\java.exe') } |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1 -ExpandProperty FullName
+          if (-not $jdk) {
+            throw 'Cached Java 25 was not found on the local runner.'
+          }
+          "JAVA_HOME=$jdk" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          (Join-Path $jdk 'bin') | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          & (Join-Path $jdk 'bin\java.exe') -version
 
       - name: Configure temporary release signing
         shell: pwsh
