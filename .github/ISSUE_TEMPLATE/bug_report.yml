@@ -17,8 +17,8 @@ body:
     id: version
     attributes:
       label: PureLive 版本
-      description: 例如：2.0.23+34
-      placeholder: "2.0.23+34"
+      description: 例如：2.0.24+35
+      placeholder: "2.0.24+35"
     validations:
       required: true
 

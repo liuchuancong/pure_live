@@ -1,8 +1,8 @@
 {
-  "version": "2.0.23",
-  "build_number": 34,
-  "version_num": 2002334,
-  "version_desc": "- 优化播放页面。\n- Android 系统画中画、Windows 小窗和应用内悬浮窗支持显示弹幕。\n- 小窗弹幕支持颜色、字号、速度、透明度、显示区域、最大数量、发送间隔、FPS 和自动缩放。\n- 使用独立小窗弹幕控制器，优化悬浮窗切换时的资源保留与释放。\n- 修复 Windows 构建中的移动端屏幕方向插件目标问题。\n- 更新 Flutter、FFmpeg 构建产物地址和 GitHub Actions。\n",
+  "version": "2.0.24",
+  "build_number": 35,
+  "version_num": 2002435,
+  "version_desc": "- 添加弹幕无表情模式以及修复弹幕。\n- 修复音量设定。\n- 修复字体设置。\n- 修复搜索打开直播间闪退的问题。\n- 添加Twitch & SoopLive 平台(需要科学上网)。\n- 优化部分代码。\n\n\n\n",
   "prerelease": false,
   "download_url": "https://github.com/liuchuancong/pure_live/releases"
 }
