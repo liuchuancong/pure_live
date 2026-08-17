@@ -48,6 +48,8 @@ concurrency:
 
 env:
   FLUTTER_VERSION: 3.47.0
+  FLUTTER_LINUX_ARCHIVE: stable/linux/flutter_linux_3.47.0-stable.tar.xz
+  FLUTTER_LINUX_SHA256: 26cd99d3d94b1367e6b50535a18aeef0282c10a535bbe3ec493534dcdab75296
 
 jobs:
   quality:
@@ -61,10 +63,18 @@ jobs:
         with:
           distribution: zulu
           java-version: "25"
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
+      - name: Install pinned Flutter SDK from the official archive
+        shell: bash
+        run: |
+          archive="$RUNNER_TEMP/flutter-linux.tar.xz"
+          curl --fail --location --retry 3 \
+            "https://storage.googleapis.com/flutter_infra_release/releases/$FLUTTER_LINUX_ARCHIVE" \
+            --output "$archive"
+          echo "$FLUTTER_LINUX_SHA256  $archive" | sha256sum --check --strict
+          tar --extract --file "$archive" --directory "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - name: Verify Flutter SDK
+        run: flutter --version
       - name: Resolve locked packages
         run: flutter pub get --enforce-lockfile
       - name: Analyze
@@ -163,10 +173,18 @@ jobs:
             libayatana-appindicator3-dev \
             libepoxy-dev libsecret-1-dev libwayland-dev libwpe-1.0-dev \
             libwpebackend-fdo-1.0-dev libwpewebkit-1.0-dev
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
+      - name: Install pinned Flutter SDK from the official archive
+        shell: bash
+        run: |
+          archive="$RUNNER_TEMP/flutter-linux.tar.xz"
+          curl --fail --location --retry 3 \
+            "https://storage.googleapis.com/flutter_infra_release/releases/$FLUTTER_LINUX_ARCHIVE" \
+            --output "$archive"
+          echo "$FLUTTER_LINUX_SHA256  $archive" | sha256sum --check --strict
+          tar --extract --file "$archive" --directory "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - name: Verify Flutter SDK
+        run: flutter --version
       - name: Resolve locked packages
         run: flutter pub get --enforce-lockfile
       - name: Build Linux release
