@@ -6,6 +6,7 @@ void main() {
     expect(Sites.isSupported('bilibili'), isTrue);
     expect(Sites.isSupported(' HUYA '), isTrue);
     expect(Sites.isSupported(' Twitch '), isTrue);
+    expect(Sites.isSupported(' SOOP '), isTrue);
     expect(Sites.isSupported('unknown-platform'), isFalse);
   });
 }

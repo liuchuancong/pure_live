@@ -104,6 +104,44 @@ def post_json(
     raise last_error
 
 
+def post_form_json(
+    url: str,
+    payload: dict[str, object],
+    params: dict[str, object] | None = None,
+    attempts: int = 3,
+) -> object:
+    """POST form data with bounded retries for platform player endpoints."""
+    if params:
+        url = f"{url}?{urllib.parse.urlencode(params)}"
+    body = urllib.parse.urlencode(payload).encode()
+    last_error: Exception | None = None
+    for attempt in range(1, attempts + 1):
+        try:
+            request = urllib.request.Request(
+                url,
+                data=body,
+                method="POST",
+                headers={
+                    "User-Agent": USER_AGENT,
+                    "Accept": "application/json,text/plain,*/*",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Origin": "https://www.sooplive.co.kr",
+                    "Referer": "https://www.sooplive.co.kr/",
+                },
+            )
+            with urllib.request.urlopen(request, timeout=20) as response:
+                raw_payload = response.read()
+            if not raw_payload.strip():
+                raise ValueError("empty response body")
+            return json.loads(raw_payload.decode("utf-8", errors="replace").lstrip("\ufeff"))
+        except Exception as error:  # noqa: BLE001 - preserve endpoint diagnostics
+            last_error = error
+            if attempt < attempts:
+                time.sleep(attempt)
+    assert last_error is not None
+    raise last_error
+
+
 def require_path(value: object, *path: str) -> None:
     current = value
     for part in path:
@@ -215,10 +253,13 @@ def twitch_gql(payload: object) -> object:
     for node in nodes:
         if not isinstance(node, dict):
             raise ValueError("invalid Twitch GQL response")
-        if node.get("errors"):
-            raise ValueError(f"Twitch GQL errors: {node['errors']}")
         if "data" not in node:
             raise ValueError("Twitch GQL data missing")
+        # Twitch may return usable search data together with errors from an
+        # unrelated nested field (for example ``latestVideo``).  Match the
+        # client behaviour and only reject the response when no data survived.
+        if node.get("errors") and node.get("data") is None:
+            raise ValueError(f"Twitch GQL errors: {node['errors']}")
     return response
 
 
@@ -348,6 +389,104 @@ def twitch_playback_probe() -> None:
     require_path(response, "data", "streamPlaybackAccessToken", "signature")
 
 
+_soop_channel_cache: dict[str, object] | None = None
+
+
+def soop_live_channel() -> dict[str, object]:
+    global _soop_channel_cache
+    if _soop_channel_cache is not None:
+        return _soop_channel_cache
+    recommendation = request_json(
+        "https://live.sooplive.co.kr/api/main_broad_list_api.php",
+        {"selectType": "action", "selectValue": "all", "orderType": "view_cnt", "pageNo": 1, "lang": "ko_KR"},
+    )
+    rooms = recommendation.get("broad", []) if isinstance(recommendation, dict) else []
+    if not rooms or not isinstance(rooms[0], dict):
+        raise ValueError("SOOP recommendation returned no live rooms")
+    room_id = str(rooms[0].get("user_id", "")).strip()
+    response = post_form_json(
+        "https://live.sooplive.co.kr/afreeca/player_live_api.php",
+        {
+            "bid": room_id,
+            "bno": "",
+            "type": "live",
+            "pwd": "",
+            "player_type": "html5",
+            "stream_type": "common",
+            "quality": "HD",
+            "mode": "landing",
+            "from_api": "0",
+            "is_revive": "false",
+        },
+        {"bjid": room_id},
+    )
+    channel = response.get("CHANNEL", {}) if isinstance(response, dict) else {}
+    if not isinstance(channel, dict) or channel.get("RESULT") != 1:
+        raise ValueError("SOOP player channel is not live")
+    _soop_channel_cache = channel
+    return channel
+
+
+def soop_search_probe() -> None:
+    room_id = str(soop_live_channel().get("BJID", "")).strip()
+    response = request_json(
+        "https://sch.sooplive.co.kr/api.php",
+        {
+            "l": "DF",
+            "m": "liveSearch",
+            "c": "UTF-8",
+            "w": "webk",
+            "isMobile": 0,
+            "onlyParent": 1,
+            "szType": "json",
+            "szOrder": "score",
+            "szKeyword": room_id,
+            "nPageNo": 1,
+            "nListCnt": 5,
+            "tab": "live",
+            "location": "total_search",
+            "isHashSearch": 0,
+            "v": "2.0",
+        },
+    )
+    if not isinstance(response, dict) or not isinstance(response.get("REAL_BROAD"), list):
+        raise ValueError("SOOP live search result missing")
+
+
+def soop_room_probe() -> None:
+    channel = soop_live_channel()
+    for key in ("BNO", "BJID", "CHATNO", "CHDOMAIN", "CHPT", "VIEWPRESET"):
+        if key not in channel or channel[key] in (None, "", []):
+            raise ValueError(f"SOOP player field missing: {key}")
+
+
+def soop_playback_probe() -> None:
+    channel = soop_live_channel()
+    room_id = str(channel["BJID"])
+    bno = str(channel["BNO"])
+    presets = channel["VIEWPRESET"]
+    if not isinstance(presets, list) or not presets or not isinstance(presets[0], dict):
+        raise ValueError("SOOP quality presets missing")
+    quality = str(presets[0].get("name", "")).strip()
+    aid_response = post_form_json(
+        "https://live.sooplive.co.kr/afreeca/player_live_api.php",
+        {
+            "bid": room_id,
+            "bno": bno,
+            "type": "aid",
+            "pwd": "",
+            "player_type": "html5",
+            "stream_type": "common",
+            "quality": quality,
+            "mode": "landing",
+            "from_api": "0",
+            "is_revive": "false",
+        },
+        {"bjid": room_id},
+    )
+    require_path(aid_response, "CHANNEL", "AID")
+
+
 def main() -> int:
     probes = [
         (
@@ -451,6 +590,44 @@ def main() -> int:
         ("twitch.search", twitch_search_probe),
         ("twitch.room", twitch_room_probe),
         ("twitch.playback", twitch_playback_probe),
+        (
+            "soop.categories",
+            lambda: require_path(
+                request_json(
+                    "https://sch.sooplive.co.kr/api.php",
+                    {
+                        "m": "categoryList",
+                        "szKeyword": "",
+                        "szOrder": "view_cnt",
+                        "nPageNo": 1,
+                        "nListCnt": 5,
+                        "nOffset": 0,
+                        "szPlatform": "pc",
+                    },
+                ),
+                "data",
+                "list",
+            ),
+        ),
+        (
+            "soop.recommend",
+            lambda: require_path(
+                request_json(
+                    "https://live.sooplive.co.kr/api/main_broad_list_api.php",
+                    {
+                        "selectType": "action",
+                        "selectValue": "all",
+                        "orderType": "view_cnt",
+                        "pageNo": 1,
+                        "lang": "ko_KR",
+                    },
+                ),
+                "broad",
+            ),
+        ),
+        ("soop.search", soop_search_probe),
+        ("soop.room", soop_room_probe),
+        ("soop.playback_token", soop_playback_probe),
     ]
 
     failures: list[str] = []

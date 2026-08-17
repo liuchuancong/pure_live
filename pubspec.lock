@@ -859,13 +859,23 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.0"
+  flutter_inappwebview:
+    dependency: "direct main"
+    description:
+      path: flutter_inappwebview
+      ref: "sbi_fx_pc/v6.2.0-beta.3"
+      resolved-ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
+      url: "https://github.com/guide-inc-org/guide-flutter_inappwebview.git"
+    source: git
+    version: "6.2.0-beta.3"
   flutter_inappwebview_android:
     dependency: transitive
     description:
-      name: flutter_inappwebview_android
-      sha256: "8dfb76bd4e507112c3942c2272eeb01fab2e42be11374e5eb226f58698e7a04b"
-      url: "https://pub.dev"
-    source: hosted
+      path: flutter_inappwebview_android
+      ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
+      resolved-ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
+      url: "https://github.com/guide-inc-org/guide-flutter_inappwebview.git"
+    source: git
     version: "1.2.0-beta.3"
   flutter_inappwebview_internal_annotations:
     dependency: transitive
@@ -875,61 +885,50 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.0"
-  flutter_inappwebview_linux:
+  flutter_inappwebview_ios:
     dependency: transitive
     description:
-      name: flutter_inappwebview_linux
-      sha256: "2e1a3b09bb911fb5a8bb155cb7f1eb1428a19b6e20363b9db48beef428b8cef5"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.1.0-beta.1"
+      path: flutter_inappwebview_ios
+      ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
+      resolved-ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
+      url: "https://github.com/guide-inc-org/guide-flutter_inappwebview.git"
+    source: git
+    version: "1.2.0-beta.3"
   flutter_inappwebview_macos:
     dependency: transitive
     description:
-      name: flutter_inappwebview_macos
-      sha256: "545148cb5c46475ce669ab21621e9f2ad66e05f8e80b2cf49d4018879ab52393"
-      url: "https://pub.dev"
-    source: hosted
+      path: flutter_inappwebview_macos
+      ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
+      resolved-ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
+      url: "https://github.com/guide-inc-org/guide-flutter_inappwebview.git"
+    source: git
     version: "1.2.0-beta.3"
   flutter_inappwebview_platform_interface:
     dependency: transitive
     description:
-      name: flutter_inappwebview_platform_interface
-      sha256: e3522c76e6760d1c0a9ff690e30e1503f226783d3277fa4d26675911977e9766
-      url: "https://pub.dev"
-    source: hosted
+      path: flutter_inappwebview_platform_interface
+      ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
+      resolved-ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
+      url: "https://github.com/guide-inc-org/guide-flutter_inappwebview.git"
+    source: git
     version: "1.4.0-beta.3"
-  flutter_inappwebview_ultra:
-    dependency: "direct main"
-    description:
-      name: flutter_inappwebview_ultra
-      sha256: "445c59f178f8dd48188be464db13c7368a7f9ec41b0e34affbf13530156f43fc"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.0"
-  flutter_inappwebview_ultra_ios:
-    dependency: transitive
-    description:
-      name: flutter_inappwebview_ultra_ios
-      sha256: "5d5620d85184288050052eca2be81ddf2e76895d630bceb5a864aa98ef1148da"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.0"
   flutter_inappwebview_web:
     dependency: transitive
     description:
-      name: flutter_inappwebview_web
-      sha256: e98b8875ccb6a3fd255873318db45c18ab135ed0ed22d20169abad9f5c810eb9
-      url: "https://pub.dev"
-    source: hosted
+      path: flutter_inappwebview_web
+      ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
+      resolved-ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
+      url: "https://github.com/guide-inc-org/guide-flutter_inappwebview.git"
+    source: git
     version: "1.2.0-beta.3"
   flutter_inappwebview_windows:
     dependency: transitive
     description:
-      name: flutter_inappwebview_windows
-      sha256: "902edd6f6326952af822e21aa928f7426d723d45c94c15e6ce3c2d5640d28ad7"
-      url: "https://pub.dev"
-    source: hosted
+      path: flutter_inappwebview_windows
+      ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
+      resolved-ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
+      url: "https://github.com/guide-inc-org/guide-flutter_inappwebview.git"
+    source: git
     version: "0.7.0-beta.3"
   flutter_js:
     dependency: "direct main"

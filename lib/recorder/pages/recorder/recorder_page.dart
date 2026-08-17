@@ -202,6 +202,8 @@ class _TaskCard extends GetView<RecorderController> {
         return const Color.fromARGB(255, 204, 71, 9);
       case Sites.twitchSite:
         return const Color(0xFF9146FF);
+      case Sites.soopSite:
+        return const Color(0xFF0675E8);
       default:
         return const Color.fromARGB(255, 11, 223, 117);
     }

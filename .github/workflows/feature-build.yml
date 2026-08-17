@@ -162,23 +162,16 @@ jobs:
     name: Linux x64 portable
     if: ${{ always() && ((github.event_name == 'push' && (startsWith(github.ref_name, 'stage-build-') || startsWith(github.ref_name, 'stage-linux-'))) || inputs.build_linux) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
     needs: quality
-    runs-on: ubuntu-24.04
-    container: debian:13-slim
+    runs-on: ubuntu-22.04
     timeout-minutes: 70
     steps:
-      - name: Install Debian 13 build dependencies
-        shell: bash
-        run: |
-          sed -i 's|http://|https://|g' /etc/apt/sources.list.d/debian.sources
-          apt-get -o Acquire::Retries=5 update
-          DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=5 install -y --no-install-recommends \
-            ca-certificates curl git xz-utils \
-            clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libasound2-dev \
-            libayatana-appindicator3-dev \
-            libepoxy-dev libsecret-1-dev libwayland-dev libwpe-1.0-dev \
-            libwpebackend-fdo-1.0-dev libwpewebkit-2.0-dev
-          rm -rf /var/lib/apt/lists/*
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install Linux desktop dependencies
+        run: |
+          sudo apt-get -o Acquire::Retries=5 update
+          sudo apt-get -o Acquire::Retries=5 install -y \
+            clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libasound2-dev \
+            libayatana-appindicator3-dev libsecret-1-dev
       - name: Install pinned Flutter SDK from the official archive
         shell: bash
         run: |

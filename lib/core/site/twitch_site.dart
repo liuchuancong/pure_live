@@ -14,7 +14,7 @@ import 'package:pure_live/core/utils/twitch/twitch_models.dart';
 
 class TwitchSite implements LiveSite {
   @override
-  String id = 'twitch';
+  String id = Sites.twitchSite;
 
   @override
   String name = 'Twitch';

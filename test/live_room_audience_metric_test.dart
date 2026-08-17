@@ -10,6 +10,8 @@ void main() {
       expect(LiveRoom(platform: 'kuaishou').effectiveAudienceMetricType, AudienceMetricType.onlineViewers);
       expect(LiveRoom(platform: 'twitch').effectiveAudienceMetricType, AudienceMetricType.onlineViewers);
       expect(LiveRoom(platform: 'twitch').supportsRealOnlineCount, isTrue);
+      expect(LiveRoom(platform: 'soop').effectiveAudienceMetricType, AudienceMetricType.onlineViewers);
+      expect(LiveRoom(platform: 'soop').supportsRealOnlineCount, isTrue);
       expect(LiveRoom(platform: 'douyin').effectiveAudienceMetricType, AudienceMetricType.totalViewers);
       expect(LiveRoom(platform: 'huya', onlineViewers: '3210').supportsRealOnlineCount, isFalse);
       expect(LiveRoom(platform: 'huya').supportsRealOnlineCount, isFalse);

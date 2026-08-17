@@ -22,9 +22,11 @@ class FavoriteRoomController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    if (siteCatalogMigration.v < 1) {
-      if (!hotAreasList.contains(Sites.twitchSite)) hotAreasList.add(Sites.twitchSite);
-      siteCatalogMigration.v = 1;
+    if (siteCatalogMigration.v < 2) {
+      for (final site in Sites.supportSites) {
+        if (!hotAreasList.contains(site.id)) hotAreasList.add(site.id);
+      }
+      siteCatalogMigration.v = 2;
     }
   }
 

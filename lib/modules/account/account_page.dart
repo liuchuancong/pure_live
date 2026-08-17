@@ -89,6 +89,19 @@ class AccountPage extends GetView<AccountController> {
                     : Get.toNamed(RoutePath.kTwitchCookie),
               );
             }),
+            Obx(() {
+              final isLogined = cookie.soopCookie.v.isNotEmpty;
+              return _buildAccountTile(
+                context,
+                logo: 'assets/images/soop.png',
+                title: i18n("site_soop"),
+                subtitle: isLogined ? i18n("logined") : i18n("set_cookie"),
+                isLogined: isLogined,
+                onTap: () => isLogined
+                    ? _showPlatformLogoutDialog(context, () => cookie.soopCookie.v = "")
+                    : Get.toNamed(RoutePath.kSoop),
+              );
+            }),
             _buildAccountTile(
               context,
               logo: 'assets/images/douyu.png',

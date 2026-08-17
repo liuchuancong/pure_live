@@ -1180,5 +1180,15 @@
   "local_badge_twitch": "Twitch 徽章",
   "local_gift_twitch_cheer": "Cheer",
   "local_gift_twitch_sub": "订阅星标",
-  "local_gift_twitch_hype_train": "Hype Train"
+  "local_gift_twitch_hype_train": "Hype Train",
+  "soop_cookie_hint": "粘贴 SOOP Live Cookie",
+  "soop_cookie_tip": "登录 SOOP Live 网页并进入任意直播间，在浏览器开发者工具的网络请求中复制完整 Cookie。Cookie 仅保存在本机。",
+  "site_soop": "Soop",
+  "audience_soop_detail": "分类、推荐、搜索和直播间元数据中的 view_cnt/current_view_cnt 按当前并发观看人数显示",
+  "local_currency_soop": "星气球",
+  "local_level_soop": "粉丝等级",
+  "local_badge_soop": "SOOP 徽章",
+  "local_gift_soop_star_balloon": "星气球",
+  "local_gift_soop_sticker": "贴纸",
+  "local_gift_soop_signature_balloon": "签名气球"
 }

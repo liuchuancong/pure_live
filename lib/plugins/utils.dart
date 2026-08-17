@@ -1,7 +1,9 @@
 import 'dart:io';
+
 import 'package:pure_live/common/index.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:pure_live/modules/account/bilibili/web_login_controller.dart';
 
 class Utils {
   static DateFormat dateFormat = DateFormat("MM-dd HH:mm");
@@ -12,16 +14,23 @@ class Utils {
     if (!Platform.isWindows && !Platform.isLinux && !Platform.isMacOS) return;
 
     await windowManager.hide();
-    await windowManager.setPreventClose(false);
+    if (await windowManager.isPreventClose()) {
+      await windowManager.setPreventClose(false);
+    }
+    if (Get.isRegistered<BiliBiliWebLoginController>()) {
+      final controller = Get.find<BiliBiliWebLoginController>();
+      controller.showWebView.value = false;
+      await Future.delayed(const Duration(milliseconds: 300));
+    }
     try {
       await trayManager.destroy().timeout(const Duration(seconds: 2));
     } catch (e) {
       debugPrint('托盘注销超时: $e');
     }
     try {
-      await windowManager.close().timeout(const Duration(seconds: 2));
+      await windowManager.destroy().timeout(const Duration(seconds: 2));
     } catch (e) {
-      debugPrint('窗口关闭超时: $e');
+      debugPrint('窗口销毁超时: $e');
     }
   }
 
@@ -304,6 +313,7 @@ class Utils {
           await windowManager.setPreventClose(false);
         }
         Future.microtask(exitDesktopApplication);
+        return true;
       } else if (exitChoose == 'minimize') {
         await _minimizeOrHideDesktopWindow();
         return true;

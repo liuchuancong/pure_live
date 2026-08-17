@@ -1180,5 +1180,15 @@
   "local_badge_twitch": "Twitch badge",
   "local_gift_twitch_cheer": "Cheer",
   "local_gift_twitch_sub": "Subscription star",
-  "local_gift_twitch_hype_train": "Hype Train"
+  "local_gift_twitch_hype_train": "Hype Train",
+  "site_soop": "Soop",
+  "soop_cookie_hint": "Paste the SOOP Live Cookie",
+  "soop_cookie_tip": "Sign in to SOOP Live and open a channel, then copy the complete Cookie from a browser developer-tools network request. The Cookie stays on this device.",
+  "audience_soop_detail": "view_cnt and current_view_cnt from category, recommendation, search and room metadata are shown as current concurrent viewers",
+  "local_currency_soop": "Star Balloons",
+  "local_level_soop": "Fan level",
+  "local_badge_soop": "SOOP badge",
+  "local_gift_soop_star_balloon": "Star Balloon",
+  "local_gift_soop_sticker": "Sticker",
+  "local_gift_soop_signature_balloon": "Signature Balloon"
 }

@@ -22,10 +22,11 @@ import 'package:pure_live/pkg/tars/net/base_tars_http.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/tars/get_cdn_token_ex_req.dart';
 import 'package:pure_live/core/tars/get_cdn_token_ex_resp.dart';
+import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 
 class HuyaSite implements LiveSite {
   @override
-  String id = "huya";
+  String id = Sites.huyaSite;
   static const baseUrl = "https://m.huya.com/";
   @override
   String name = "虎牙直播";
@@ -368,15 +369,12 @@ class HuyaSite implements LiveSite {
         link: "https://www.huya.com/$roomId",
       );
     } else {
-      LiveRoom liveRoom =
-          SettingsService.to.fav.favoriteRooms.v.firstWhereOrNull(
-            (r) => r.roomId == roomId && r.platform == platform,
-          ) ??
-          LiveRoom(roomId: roomId, platform: platform);
-
-      liveRoom.liveStatus = LiveStatus.offline;
-      liveRoom.status = false;
-      return liveRoom;
+      if (Get.isRegistered<PlayerController>()) {
+        final PlayerController playerController = Get.find<PlayerController>();
+        final currentRoom = playerController.currentRoom;
+        if (currentRoom != null) return currentRoom.getLiveRoomWithError();
+      }
+      return LiveRoom(roomId: roomId, platform: platform).getLiveRoomWithError();
     }
   }
 

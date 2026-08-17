@@ -546,6 +546,10 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
         nativeUrl = "https://www.twitch.tv/${detail.roomId}";
         webUrl = "https://www.twitch.tv/${detail.roomId}";
         break;
+      case Sites.soopSite:
+        nativeUrl = "https://play.sooplive.co.kr/${detail.roomId}";
+        webUrl = nativeUrl;
+        break;
       case Sites.kuaishouSite:
         nativeUrl =
             "kwai://liveaggregatesquare?liveStreamId=${detail.link}&recoStreamId=${detail.link}&recoLiveStreamId=${detail.link}&liveSquareSource=28&path=/rest/n/live/feed/sharePage/slide/more&mt_product=H5_OUTSIDE_CLIENT_SHARE";

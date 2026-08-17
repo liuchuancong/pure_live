@@ -1,8 +1,8 @@
 {
-  "version": "2.0.36",
-  "build_number": 47,
-  "version_num": 2003647,
-  "version_desc": "- 优化 Android 系统小窗切换：预渲染紧凑视频层、传入画面边界并启用无缝缩放，减少黑帧和停顿。\n- 手机小窗弹幕设置页固定实时预览，仅滚动参数区域。\n- 识别哔哩哔哩访客昵称脱敏，优先读取 rich user 完整昵称并显示访客来源提示。\n- 重新分离热度、并发在线和累计观看；虎牙同步当前房间组/批量推送协议，并将 URI 8006 按热度处理。\n- 本地构建继续优先正式签名 arm64-v8a。\n",
+  "version": "2.1.0",
+  "build_number": 48,
+  "version_num": 2010048,
+  "version_desc": "- 同步上游 Twitch、SOOP Live、网页内核与桌面退出修复。\n- 完成弹幕稳定性、小窗实时预览、动态高刷新率、ASMR 后台播放、本地互动及观看指标升级。\n- 阶段构建覆盖 Android arm64、Windows x64、Linux x64、macOS arm64 与 iOS 设备包。\n",
   "prerelease": false,
   "download_url": "https://github.com/wzgrx/pure_live/releases"
 }

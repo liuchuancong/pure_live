@@ -65,6 +65,13 @@ class LiveRoom {
       hasTotalViewers: false,
       onlineAvailability: AudienceOnlineAvailability.roomList,
     ),
+    // SOOP list/detail fields are named view_cnt/current_view_cnt and expose
+    // the current viewers rather than a separate platform heat score.
+    'soop': AudiencePlatformCapability(
+      hasPopularity: false,
+      hasTotalViewers: false,
+      onlineAvailability: AudienceOnlineAvailability.roomList,
+    ),
   };
 
   static const AudiencePlatformCapability _unknownAudienceCapability = AudiencePlatformCapability(
@@ -335,7 +342,7 @@ class LiveRoom {
     }
     return switch (platform) {
       'bilibili' || 'douyu' => AudienceMetricType.popularity,
-      'kuaishou' || 'twitch' => AudienceMetricType.onlineViewers,
+      'kuaishou' || 'twitch' || 'soop' => AudienceMetricType.onlineViewers,
       'huya' => AudienceMetricType.popularity,
       'douyin' => AudienceMetricType.totalViewers,
       _ => AudienceMetricType.unknown,
@@ -459,5 +466,16 @@ class LiveRoom {
   static bool _hasExplicitAudienceValue(String? value) {
     final text = value?.trim() ?? '';
     return text.isNotEmpty && text != 'null' && RegExp(r'[0-9]').hasMatch(text);
+  }
+}
+
+extension LiveRoomExtension on LiveRoom {
+  /// 设置 离线状态 失败
+  LiveRoom getLiveRoomWithError() {
+    var liveRoom = this;
+    liveRoom.liveStatus = LiveStatus.offline;
+    liveRoom.status = false;
+    liveRoom.isRecord = false;
+    return liveRoom;
   }
 }

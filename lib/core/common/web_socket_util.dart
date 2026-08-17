@@ -29,6 +29,7 @@ class WebScoketUtils {
   final Function()? onReady;
   final Function()? onHeartBeat;
   final Map<String, dynamic>? headers;
+  final Iterable<String>? protocols;
 
   WebScoketUtils({
     required this.url,
@@ -40,6 +41,7 @@ class WebScoketUtils {
     this.onHeartBeat,
     this.headers,
     this.backupUrl,
+    this.protocols,
     List<String>? serverUrls,
   }) : serverUrls = _uniqueEndpoints(url, backupUrl, serverUrls);
 
@@ -83,6 +85,7 @@ class WebScoketUtils {
       final channel = IOWebSocketChannel.connect(
         endpoint,
         connectTimeout: const Duration(seconds: 10),
+        protocols: protocols,
         headers: headers,
       );
       webSocket = channel;

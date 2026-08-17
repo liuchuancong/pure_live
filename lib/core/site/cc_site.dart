@@ -9,10 +9,11 @@ import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
+import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 
 class CCSite implements LiveSite {
   @override
-  String id = "cc";
+  String id = Sites.ccSite;
 
   @override
   String name = "网易CC直播";
@@ -213,15 +214,12 @@ class CCSite implements LiveSite {
         data: roomInfo["quickplay"] ?? roomInfo["stream_list"],
       );
     } catch (e) {
-      LiveRoom liveRoom =
-          SettingsService.to.fav.favoriteRooms.v.firstWhereOrNull(
-            (r) => r.roomId == roomId && r.platform == platform,
-          ) ??
-          LiveRoom(roomId: roomId, platform: platform);
-
-      liveRoom.liveStatus = LiveStatus.offline;
-      liveRoom.status = false;
-      return liveRoom;
+      if (Get.isRegistered<PlayerController>()) {
+        final PlayerController playerController = Get.find<PlayerController>();
+        final currentRoom = playerController.currentRoom;
+        if (currentRoom != null) return currentRoom.getLiveRoomWithError();
+      }
+      return LiveRoom(roomId: roomId, platform: platform).getLiveRoomWithError();
     }
   }
 

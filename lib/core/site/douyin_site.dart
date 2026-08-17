@@ -16,7 +16,7 @@ import 'package:pure_live/core/utils/douyin/douyin_request_params.dart';
 
 class DouyinSite implements LiveSite {
   @override
-  String id = "douyin";
+  String id = Sites.douyinSite;
 
   @override
   String name = "抖音直播";

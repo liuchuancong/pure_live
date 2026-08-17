@@ -131,6 +131,14 @@ class LocalInteractionController extends GetxController {
       accentColor: Color(0xFF9146FF),
       badge: '💜',
     ),
+    LocalPlatformPack(
+      id: Sites.soopSite,
+      name: 'SOOP',
+      currencyKey: 'local_currency_soop',
+      levelKey: 'local_level_soop',
+      accentColor: Color(0xFF0675E8),
+      badge: '🎈',
+    ),
   ];
 
   static const _platformGifts = <String, List<LocalGift>>{
@@ -302,6 +310,30 @@ class LocalInteractionController extends GetxController {
         effect: 'full',
       ),
     ],
+    Sites.soopSite: [
+      LocalGift(
+        id: 'soop_star_balloon',
+        nameKey: 'local_gift_soop_star_balloon',
+        emoji: '⭐',
+        price: 10,
+        color: LiveMessageColor(6, 117, 232),
+      ),
+      LocalGift(
+        id: 'soop_sticker',
+        nameKey: 'local_gift_soop_sticker',
+        emoji: '🎟️',
+        price: 300,
+        color: LiveMessageColor(52, 147, 245),
+      ),
+      LocalGift(
+        id: 'soop_signature_balloon',
+        nameKey: 'local_gift_soop_signature_balloon',
+        emoji: '🎈',
+        price: 2000,
+        color: LiveMessageColor(0, 88, 190),
+        effect: 'full',
+      ),
+    ],
   };
 
   static const titles = <String>['listener', 'night_owl', 'supporter', 'guardian'];
@@ -342,6 +374,7 @@ class LocalInteractionController extends GetxController {
     Sites.kuaishouSite => 'local_badge_kuaishou',
     Sites.ccSite => 'local_badge_cc',
     Sites.twitchSite => 'local_badge_twitch',
+    Sites.soopSite => 'local_badge_soop',
     _ => 'local_badge_generic',
   };
 
