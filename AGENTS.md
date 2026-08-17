@@ -14,7 +14,7 @@
 
 ## Toolchain and commands
 
-Use Flutter `3.44.9` from `.fvmrc`. On Windows, call the repository wrapper so the same SDK is selected consistently:
+Use Flutter `3.47.0` from `.fvmrc`. On Windows, call the repository wrapper so the same SDK is selected consistently:
 
 ```powershell
 .\tool\flutterw.ps1 pub get --enforce-lockfile

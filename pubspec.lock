@@ -172,10 +172,9 @@ packages:
   better_player_plus:
     dependency: "direct main"
     description:
-      name: better_player_plus
-      sha256: bd09b6a18e4949ff47c6fc6e6b401cb27e5f88e3bd435989c6f3e27ec1af8bd8
-      url: "https://pub.dev"
-    source: hosted
+      path: "plugins/built_in_kotlin/better_player_plus"
+      relative: true
+    source: path
     version: "1.3.5"
   boolean_selector:
     dependency: transitive
@@ -804,10 +803,9 @@ packages:
   floating:
     dependency: "direct main"
     description:
-      name: floating
-      sha256: e51ce1dbcab3ea83da0ad1b07f2091b99c0e8680184c780a000567f41234d454
-      url: "https://pub.dev"
-    source: hosted
+      path: "plugins/built_in_kotlin/floating"
+      relative: true
+    source: path
     version: "6.0.0"
   flutter:
     dependency: "direct main"
@@ -841,10 +839,9 @@ packages:
   flutter_exit_app:
     dependency: "direct main"
     description:
-      name: flutter_exit_app
-      sha256: daf0b63f56a34423fe3ff154700e095bdb720eb919a1a4145c89fda90eeeb59d
-      url: "https://pub.dev"
-    source: hosted
+      path: "plugins/built_in_kotlin/flutter_exit_app"
+      relative: true
+    source: path
     version: "2.1.2"
   flutter_floating:
     dependency: "direct main"
@@ -938,10 +935,9 @@ packages:
   flutter_js:
     dependency: "direct main"
     description:
-      name: flutter_js
-      sha256: "046428059ac7bef71e305dc35fc24be933b684684a43e83eab7ebd0dc407ad85"
-      url: "https://pub.dev"
-    source: hosted
+      path: "plugins/built_in_kotlin/flutter_js"
+      relative: true
+    source: path
     version: "0.8.7"
   flutter_json:
     dependency: "direct main"
@@ -1028,7 +1024,7 @@ packages:
       path: "plugins/flv_lzc"
       relative: true
     source: path
-    version: "1.0.4+purelive.1"
+    version: "1.0.4+purelive.2"
   font_awesome_flutter:
     dependency: "direct main"
     description:
@@ -1481,10 +1477,9 @@ packages:
   mobile_scanner:
     dependency: "direct main"
     description:
-      name: mobile_scanner
-      sha256: ce3f059ebd6dbfab7292bba0e893e354b46730636820d3c9ef69005ce2d55bce
-      url: "https://pub.dev"
-    source: hosted
+      path: "plugins/built_in_kotlin/mobile_scanner"
+      relative: true
+    source: path
     version: "7.4.0"
   move_to_desktop:
     dependency: "direct main"
@@ -1976,12 +1971,11 @@ packages:
     source: hosted
     version: "0.0.25"
   share_handler_android:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: share_handler_android
-      sha256: caf555b933dc72783aa37fef75688c7b86bd6f7bc17d80fbf585bc42f123cc8d
-      url: "https://pub.dev"
-    source: hosted
+      path: "plugins/built_in_kotlin/share_handler_android"
+      relative: true
+    source: path
     version: "0.0.11"
   share_handler_ios:
     dependency: transitive

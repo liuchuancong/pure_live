@@ -1,0 +1,40 @@
+name: flutter_js
+description: A Javascript engine to use with flutter.
+  It uses Quickjs on Android and JavascriptCore on IOS
+version: 0.8.7
+homepage: https://github.com/abner/flutter_js
+repository: https://github.com/abner/flutter_js
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.44.0"
+dependencies:
+  flutter:
+    sdk: flutter
+  ffi: ^2.0.0
+  http: ^1.0.0
+  sync_http: ^0.3.0
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: io.abner.flutter_js
+        pluginClass: FlutterJsPlugin
+      ios:
+        pluginClass: FlutterJsPlugin
+      linux:
+        #default_package: flutter_js_linux_win
+        pluginClass: FlutterJsPlugin
+      macos:
+        pluginClass: FlutterJsPlugin
+      # windows:
+      #   default_package: flutter_js_linux_windows
+      windows:
+        pluginClass: FlutterJsPlugin
+
+  assets:
+    - assets/js/

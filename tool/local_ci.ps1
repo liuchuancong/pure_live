@@ -11,6 +11,9 @@ try {
     & $flutterw pub get --enforce-lockfile
     if ($LASTEXITCODE) { exit $LASTEXITCODE }
 
+    python (Join-Path $PSScriptRoot 'audit_built_in_kotlin.py')
+    if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
     # This file vendors a large JavaScript implementation in raw Dart strings;
     # dart format rewrites the embedded source and makes upstream comparison noisy.
     $formatExclusions = @('lib/core/scripts/douyin_sign.dart')
@@ -20,6 +23,7 @@ try {
     ) | Where-Object {
         $_ -and
         $_ -notin $formatExclusions -and
+        -not $_.StartsWith('plugins/built_in_kotlin/', [StringComparison]::OrdinalIgnoreCase) -and
         -not $_.StartsWith('plugins/flv_lzc/', [StringComparison]::OrdinalIgnoreCase) -and
         (Test-Path -LiteralPath $_)
     } | Sort-Object -Unique

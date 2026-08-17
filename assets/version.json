@@ -1,8 +1,8 @@
 {
-  "version": "2.0.33",
-  "build_number": 44,
-  "version_num": 2003344,
-  "version_desc": "- 弹幕连接按平台和房间隔离，快速切换、横竖屏与小窗切换时不再串房。\n- 增加消息时间校验、稳定 ID 去重和有界积压队列，减少旧消息、重复循环、停更与恢复后突发。\n- 统一主画面、小窗弹幕速度与逻辑帧时钟，高刷新率和恢复播放时运动更稳定。\n- 弹幕历史改为批量刷新，屏蔽管理及设置页分区响应并使用虚拟列表，优化 Android 与 Windows 滚动。\n- 修复抖音 ACK/压缩响应、斗鱼合帧解析与房间校验，增强 Bilibili、虎牙消息元数据。\n",
+  "version": "2.0.34",
+  "build_number": 45,
+  "version_num": 2003445,
+  "version_desc": "- Android 构建迁移至 AGP 9 Built-in Kotlin，移除重复 Kotlin Gradle Plugin，缩短配置链并降低插件版本冲突。\n- 内置兼容补丁覆盖播放器、小窗、退出、JavaScript、扫码与分享插件，同时保留上游许可证和来源信息。\n- 升级 AGP 9.3.1、Gradle 9.5.0 与 Java 25 构建运行时，统一 Java/Kotlin 17 应用字节码目标并增加自动审计。\n- 本地构建继续优先 arm64-v8a，Windows 与 Android 共用完整质量门禁。\n",
   "prerelease": false,
   "download_url": "https://github.com/wzgrx/pure_live/releases"
 }

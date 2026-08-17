@@ -1,3 +1,33 @@
+# Pure Live v2.0.34
+
+本版本完成 Android AGP 9 Built-in Kotlin 迁移，并升级本机构建工具链，重点解决第三方插件各自加载不同 Kotlin/AGP 版本造成的配置冲突和后续 Flutter 兼容风险。
+
+## Android 构建工具链
+
+- Android Gradle Plugin 升级到 9.3.1，Gradle Wrapper 升级到 9.5.0；compileSdk/targetSdk 继续使用 API 37。
+- 主应用和本地插件移除 `kotlin-android`、独立 KGP classpath、旧 `android.kotlinOptions` 以及把 Kotlin 目录挂到 Java source set 的旧配置。
+- Java 25 用作 Gradle/lint 构建运行时，应用和插件产出的 Java/Kotlin 字节码统一为 17，兼顾新工具链与 Android 运行版本。
+- 长路径 Windows 工作区继续使用稳定短盘符；针对 Pub Cache 与工作区跨盘，关闭会损坏可迁移缓存的 Kotlin 增量模式。
+
+## 插件兼容与依赖
+
+- 内置 `better_player_plus`、`floating`、`flutter_exit_app`、`flutter_js`、`mobile_scanner`、`share_handler_android` 的最小兼容补丁，并保留各自许可证、上游地址和原版本。
+- `flv_lzc` 同步迁移到 Built-in Kotlin；所有本地插件统一复用根项目 AGP，不再把旧 AGP 带入 lint/构建 classpath。
+- 所有直接运行时依赖仍处于当前可解析最新版；`pub outdated` 剩余更新均为 Flutter SDK或上游约束锁定的传递依赖，未使用破坏兼容性的强制覆盖。
+
+## 自动回归
+
+- 新增 `tool/audit_built_in_kotlin.py`，在本地 CI 中检查工具链下限、Built-in Kotlin 开关和所有本地 Gradle 模块，阻止旧 KGP/AGP classpath 重新进入项目。
+- GitHub 手动构建同步使用 Java 25；本机仍优先生成正式包名 `com.mystyle.purelive` 的 `arm64-v8a` APK，Windows x64 按需构建。
+
+## 验证结果
+
+- Built-in Kotlin 审计和 Flutter Analyze 零问题，49 项单元/Widget 测试及 15/15 平台接口探测通过。
+- Android `arm64-v8a` release 编译通过，APK 包名 `com.mystyle.purelive`、版本 `2.0.34 (2045)`、targetSdk 37、单一 arm64 ABI 与 v2 签名结构核验通过。
+- Windows x64 release 编译通过；便携程序持续启动 20 秒，进程存活、主窗口响应、MediaKit D3D11 与 FFmpeg Kit 正常加载。
+
+---
+
 # Pure Live v2.0.33
 
 本版本集中重构弹幕房间会话、协议去重、积压队列和高刷新率运动时钟，修复串房、旧消息重放、偶发停更、重复循环以及横竖屏/小窗切换后的不稳定问题，并同步优化 Android 与 Windows 的弹幕列表和设置页面滚动。

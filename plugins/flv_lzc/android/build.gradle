@@ -4,19 +4,6 @@ version '1.0.0'
 group = "com.example.my_flutter_plugin"
 version = "1.0-SNAPSHOT"
 
-buildscript {
-    ext.kotlin_version = "2.2.20"
-    repositories {
-        google()
-        mavenCentral()
-    }
-
-    dependencies {
-        classpath("com.android.tools.build:gradle:8.11.1")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
-    }
-}
-
 allprojects {
     repositories {
         google()
@@ -25,7 +12,6 @@ allprojects {
 }
 
 apply plugin: "com.android.library"
-apply plugin: "kotlin-android"
 
 android {
     namespace = "com.example.my_flutter_plugin"
@@ -35,15 +21,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17
-    }
-
-    sourceSets {
-        main.java.srcDirs += "src/main/kotlin"
-        test.java.srcDirs += "src/test/kotlin"
     }
 
     defaultConfig {

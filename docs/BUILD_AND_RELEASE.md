@@ -2,13 +2,13 @@
 
 本仓库采用“本机优先、Actions 手动兜底”的流程，固定使用 Flutter `3.47.0`。`pubspec.lock`、Git 依赖提交和 FFmpeg 产物地址均已固定，便于复现结果。
 
-最近完整核验：2026-08-17，Windows 11 + JDK 17 + Flutter 3.47.0；静态分析零问题、49 项测试与 15/15 平台接口探测通过，Android arm64 和 Windows x64 均在当前源码上完成 release 编译。Windows 便携程序启动后持续运行 20 秒、窗口正常响应且标准错误为空；每次发布仍需在当前提交上重新执行全部门禁。
+最近完整核验：2026-08-17，Windows 11 + Java 25 + Flutter 3.47.0；Built-in Kotlin 审计与静态分析零问题、49 项测试和 15/15 平台接口探测通过，Android arm64 与 Windows x64 均在当前源码上完成 release 编译。arm64 APK 已核验包名、版本、API 37、单一 ABI 和 v2 签名；Windows 便携程序启动后持续运行 20 秒、窗口正常响应，标准错误仅包含 Impeller 后端选择信息。当前 ADB 设备列表为空，Android 真机播放、小窗和后台场景保留为安装后验收项。
 
 ## 前置环境
 
 - Windows 11 x64，已启用 Flutter Windows 桌面开发所需的 Visual Studio C++ 工具；
 - Android SDK 及可用的 Android 设备或模拟器；
-- JDK 17；
+- Java 25 构建运行时（Android 应用和插件字节码目标仍为 17）；
 - Python 3，用于直播接口探测和发布历史更新；
 - 可选：Inno Setup 6，用于生成 Windows EXE 安装包；
 - 可选：GitHub CLI，用于从本机创建并上传 Release。
@@ -30,7 +30,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
 
 路径较长时脚本会从 `P:` 到 `W:` 为当前工作区选择并保留一个稳定的短盘符映射，规避 FFmpeg Native Assets 在 Windows 上超过传统路径长度后的构建失败，也支持本地主工作区与临时自托管 Runner 并行构建。映射记录位于未跟踪的 `.dart_tool/pure_live_subst_drive.txt`；连续的 `pub get`、分析、测试和构建会复用同一盘符，避免 Native Assets 增量缓存引用已经释放的盘符。
 
-Android 构建使用 JDK 17。脚本优先读取 `PURE_LIVE_JAVA_HOME`，其次使用 `%LOCALAPPDATA%\Codex\java\temurin-17*`；当前 Android 工具链为 compileSdk/targetSdk 37、Gradle 9.3.1、AGP 9.1.1 和 Kotlin 2.4.10。
+Android 构建使用 Java 25 运行 Gradle 与 lint，应用和插件的 Java/Kotlin 字节码目标保持 17。脚本优先读取 `PURE_LIVE_JAVA_HOME`，随后检测 Android Studio JBR，最后回退到本机 Temurin；当前工具链为 compileSdk/targetSdk 37、Gradle 9.5.0、AGP 9.3.1 和 AGP Built-in Kotlin。`tool/audit_built_in_kotlin.py` 会在本地 CI 中阻止独立 KGP、模块私有 AGP classpath 和旧 Kotlin DSL 回归。
 
 Android 打包前会由 `tool/prefetch_android_native.ps1` 下载并逐一校验 media_kit 的四个 libmpv JAR，避免 Gradle 直接访问 GitHub Release 时因连接中断生成损坏缓存。
 

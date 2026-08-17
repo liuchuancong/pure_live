@@ -32,13 +32,17 @@ if (-not $env:ANDROID_HOME) {
 if (-not $env:JAVA_HOME) {
     $localTemurin = Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Codex\java\temurin-17*\jdk-17*') -Directory -ErrorAction SilentlyContinue |
         Sort-Object Name -Descending | Select-Object -First 1 -ExpandProperty FullName
-    $javaCandidates = @($env:PURE_LIVE_JAVA_HOME, $localTemurin, 'C:\Program Files\Android\Android Studio\jbr') |
+    $javaCandidates = @($env:PURE_LIVE_JAVA_HOME, 'C:\Program Files\Android\Android Studio\jbr', $localTemurin) |
         Where-Object { $_ }
     $javaHome = $javaCandidates | Where-Object { Test-Path -LiteralPath (Join-Path $_ 'bin\java.exe') } | Select-Object -First 1
     if ($javaHome) { $env:JAVA_HOME = $javaHome }
 }
 if ($env:JAVA_HOME) {
     $env:PATH = "$(Join-Path $env:JAVA_HOME 'bin');$env:PATH"
+}
+if ($env:GRADLE_OPTS -notmatch '(?:^|\s)--enable-native-access=ALL-UNNAMED(?:\s|$)') {
+    $env:GRADLE_OPTS = (@($env:GRADLE_OPTS, '--enable-native-access=ALL-UNNAMED') |
+        Where-Object { $_ }) -join ' '
 }
 $localNuGet = Join-Path $env:LOCALAPPDATA 'Codex\nuget\nuget.exe'
 if (-not (Get-Command nuget.exe -ErrorAction SilentlyContinue) -and (Test-Path -LiteralPath $localNuGet)) {

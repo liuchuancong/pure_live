@@ -1,11 +1,11 @@
 name: flv_lzc
 description: A Video Player Flutter plugin based on ijkplayer, support FLV/H.265 and most popular protocols and codecs. Fixed compatibility issues for modern Flutter versions.
-version: 1.0.4+purelive.1
+version: 1.0.4+purelive.2
 homepage: https://pub.dev/packages/flv_lzc
 
 environment:
-  sdk: ^3.10.3
-  flutter: '>=3.3.0'
+  sdk: ^3.12.0
+  flutter: '>=3.44.0'
 
 dependencies:
   flutter:
