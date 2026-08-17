@@ -1,8 +1,8 @@
 {
-  "version": "2.0.34",
-  "build_number": 45,
-  "version_num": 2003445,
-  "version_desc": "- Android 构建迁移至 AGP 9 Built-in Kotlin，移除重复 Kotlin Gradle Plugin，缩短配置链并降低插件版本冲突。\n- 内置兼容补丁覆盖播放器、小窗、退出、JavaScript、扫码与分享插件，同时保留上游许可证和来源信息。\n- 升级 AGP 9.3.1、Gradle 9.5.0 与 Java 25 构建运行时，统一 Java/Kotlin 17 应用字节码目标并增加自动审计。\n- 本地构建继续优先 arm64-v8a，Windows 与 Android 共用完整质量门禁。\n",
+  "version": "2.0.35",
+  "build_number": 46,
+  "version_num": 2003546,
+  "version_desc": "- 修复哔哩哔哩热门直播间进入详情后热度偶发跳成 1：合并列表、详情与弹幕心跳的同房间指标，并过滤瞬时异常骤降。\n- 保留正常热度心跳更新，同时忽略无效的零值运行时指标。\n- 真机覆盖验证游客弹幕、横竖屏弹幕、系统小窗弹幕、实时设置预览、纯音频、120 Hz 与后台播放锁。\n- 本地构建继续优先正式签名 arm64-v8a。\n",
   "prerelease": false,
   "download_url": "https://github.com/wzgrx/pure_live/releases"
 }

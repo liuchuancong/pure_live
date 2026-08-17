@@ -2,7 +2,7 @@
 
 本仓库采用“本机优先、Actions 手动兜底”的流程，固定使用 Flutter `3.47.0`。`pubspec.lock`、Git 依赖提交和 FFmpeg 产物地址均已固定，便于复现结果。
 
-最近完整核验：2026-08-17，Windows 11 + Java 25 + Flutter 3.47.0；Built-in Kotlin 审计与静态分析零问题、49 项测试和 15/15 平台接口探测通过，Android arm64 与 Windows x64 均在当前源码上完成 release 编译。arm64 APK 已核验包名、版本、API 37、单一 ABI 和 v2 签名；Windows 便携程序启动后持续运行 20 秒、窗口正常响应，标准错误仅包含 Impeller 后端选择信息。当前 ADB 设备列表为空，Android 真机播放、小窗和后台场景保留为安装后验收项。
+最近完整核验：2026-08-17，Windows 11 + Java 25 + Flutter 3.47.0；Built-in Kotlin 审计与静态分析零问题、51 项测试和 15/15 平台接口探测通过。Android arm64 已在 OnePlus Android 16 / 120 Hz 真机覆盖安装并确认数据保留、多次冷启动、游客弹幕、横竖屏与全屏弹幕、系统画中画弹幕、实时设置预览及纯音频切换；后台媒体会话、前台服务通知、Partial WakeLock 与 Wi-Fi Lock 持续有效，崩溃缓冲区为空。Windows x64 最近一次 release 便携程序持续运行 20 秒、窗口正常响应，标准错误仅包含 Impeller 后端选择信息。
 
 ## 前置环境
 

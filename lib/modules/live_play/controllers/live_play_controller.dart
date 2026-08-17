@@ -227,16 +227,16 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
     final count = LiveRoom.parseAudienceNumber(rawValue);
     final detail = state.value.room.detail;
     if (detail == null) return;
+    if (count <= 0) return;
     final text = count.toString();
     final isPopularityHeartbeat = detail.platform == Sites.bilibiliSite;
-    updateRoom(
-      detail: detail.copyWith(
-        watching: text,
-        popularity: isPopularityHeartbeat ? text : detail.popularity,
-        onlineViewers: isPopularityHeartbeat ? detail.onlineViewers : text,
-        audienceMetricType: isPopularityHeartbeat ? AudienceMetricType.popularity : AudienceMetricType.onlineViewers,
-      ),
+    final candidate = detail.copyWith(
+      watching: text,
+      popularity: isPopularityHeartbeat ? text : detail.popularity,
+      onlineViewers: isPopularityHeartbeat ? detail.onlineViewers : text,
+      audienceMetricType: isPopularityHeartbeat ? AudienceMetricType.popularity : AudienceMetricType.onlineViewers,
     );
+    updateRoom(detail: candidate.withAudienceFallbackFrom(detail));
   }
 
   void emitLocalMessage(LiveMessage msg, {required bool showAsDanmaku}) {
@@ -315,10 +315,11 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
     updateRoom(isLoading: true, loadError: null);
 
     try {
-      final liveRoom = await currentSite.liveSite.getRoomDetail(
+      final fetchedRoom = await currentSite.liveSite.getRoomDetail(
         roomId: roomId,
         platform: state.value.room.detail!.platform!,
       );
+      final liveRoom = fetchedRoom.withAudienceFallbackFrom(state.value.room.detail!);
       if (!_isRoomLoadCurrent(loadEpoch, roomId, requestedPlatform)) return liveRoom;
 
       if (currentSite.id == Sites.iptvSite) {

@@ -320,6 +320,42 @@ class LiveRoom {
     return parseAudienceNumber(audienceValue(preferRealOnline: preferRealOnline, platformEnabled: platformEnabled));
   }
 
+  /// Keeps a reliable audience snapshot when a room-detail request or the
+  /// first websocket heartbeat omits a metric. Bilibili can transiently return
+  /// `1` for a busy room while its list API still has the current popularity;
+  /// accepting that value makes the room header jump from hundreds of
+  /// thousands to one. A later plausible heartbeat is still accepted.
+  LiveRoom withAudienceFallbackFrom(LiveRoom fallback) {
+    if (roomId != fallback.roomId || platform != fallback.platform) return this;
+
+    final currentPopularity = effectivePopularity;
+    final fallbackPopularity = fallback.effectivePopularity;
+    final currentPopularityCount = parseAudienceNumber(currentPopularity);
+    final fallbackPopularityCount = parseAudienceNumber(fallbackPopularity);
+    final hasTransientBilibiliDrop =
+        platform == 'bilibili' &&
+        fallbackPopularityCount >= 1000 &&
+        currentPopularityCount <= 1 &&
+        currentPopularityCount * 100 < fallbackPopularityCount;
+    final useFallbackPopularity = !_hasAudienceValue(currentPopularity) || hasTransientBilibiliDrop;
+
+    final mergedPopularity = useFallbackPopularity ? fallbackPopularity : currentPopularity;
+    final mergedOnlineViewers = _hasExplicitAudienceValue(onlineViewers) ? onlineViewers : fallback.onlineViewers;
+    final mergedTotalViewers = _hasAudienceValue(totalViewers) ? totalViewers : fallback.totalViewers;
+    final mergedMetricType = useFallbackPopularity ? fallback.effectiveAudienceMetricType : effectiveAudienceMetricType;
+    final mergedWatching = mergedMetricType == AudienceMetricType.popularity && _hasAudienceValue(mergedPopularity)
+        ? mergedPopularity
+        : watching;
+
+    return copyWith(
+      watching: mergedWatching,
+      popularity: mergedPopularity,
+      onlineViewers: mergedOnlineViewers,
+      totalViewers: mergedTotalViewers,
+      audienceMetricType: mergedMetricType,
+    );
+  }
+
   static int parseAudienceNumber(String? value) {
     final text = value?.trim().toLowerCase() ?? '';
     if (text.isEmpty) return 0;

@@ -78,5 +78,43 @@ void main() {
       expect(room.effectiveOnlineViewers, isEmpty);
       expect(room.effectiveAudienceMetricType, AudienceMetricType.popularity);
     });
+
+    test('keeps Bilibili list popularity when detail temporarily returns one', () {
+      final listRoom = LiveRoom(
+        roomId: '545068',
+        platform: 'bilibili',
+        watching: '278000',
+        popularity: '278000',
+        audienceMetricType: AudienceMetricType.popularity,
+      );
+      final detailRoom = LiveRoom(
+        roomId: '545068',
+        platform: 'bilibili',
+        watching: '1',
+        popularity: '1',
+        audienceMetricType: AudienceMetricType.popularity,
+      );
+
+      final merged = detailRoom.withAudienceFallbackFrom(listRoom);
+
+      expect(merged.watching, '278000');
+      expect(merged.effectivePopularity, '278000');
+    });
+
+    test('accepts a plausible later Bilibili popularity heartbeat', () {
+      final previous = LiveRoom(
+        roomId: '545068',
+        platform: 'bilibili',
+        watching: '278000',
+        popularity: '278000',
+        audienceMetricType: AudienceMetricType.popularity,
+      );
+      final heartbeat = previous.copyWith(watching: '281500', popularity: '281500');
+
+      final merged = heartbeat.withAudienceFallbackFrom(previous);
+
+      expect(merged.watching, '281500');
+      expect(merged.effectivePopularity, '281500');
+    });
   });
 }
