@@ -63,18 +63,20 @@ class FontSettingsController extends GetxController {
 
   Future<void> initUserFontLifecycle() async {
     final id = fontFamilyName.v;
-    if (id != 'Default') {
-      if (await FontDownloadManager.instance.checkFontDownloaded(id)) {
-        await FontDownloadManager.instance.loadFont(id);
-      }
-    }
     if (fontList.isEmpty) {
       return;
     }
     curFontModel.value = fontList.firstWhere((e) => e.id == id, orElse: () => fontList.first);
-    fontState.value = await FontDownloadManager.instance.checkFontDownloaded(curFontModel.value!.id)
-        ? DownloadState.downloaded
-        : DownloadState.notDownloaded;
+    if (id == 'Default') {
+      fontState.value = DownloadState.notDownloaded;
+      return;
+    }
+
+    final downloaded = await FontDownloadManager.instance.checkFontDownloaded(id);
+    fontState.value = downloaded ? DownloadState.downloaded : DownloadState.notDownloaded;
+    if (downloaded) {
+      await FontDownloadManager.instance.loadFont(id);
+    }
   }
 
   Future<void> activateFontFamily(FontModel fontModel, {String? targetFileName}) async {

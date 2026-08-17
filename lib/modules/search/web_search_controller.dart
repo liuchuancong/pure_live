@@ -1,9 +1,10 @@
 import 'dart:developer' as developer;
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/utils.dart';
 import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/routes/app_navigation.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:flutter_inappwebview_ultra/flutter_inappwebview_ultra.dart';
 
 class WebSearchController extends GetxController {
   InAppWebViewController? webViewController;
@@ -13,7 +14,7 @@ class WebSearchController extends GetxController {
   late String platform;
   var roomId = ''.obs;
   bool _isShowingDialog = false;
-
+  final showWebView = true.obs;
   @override
   void onInit() {
     super.onInit();
@@ -174,6 +175,9 @@ class WebSearchController extends GetxController {
 
         if (confirm == true) {
           webViewController?.stopLoading();
+          webViewController?.dispose();
+          showWebView.value = false;
+          await Future.delayed(const Duration(milliseconds: 500));
           AppNavigator.offAndToRoomDetail(
             liveRoom: LiveRoom(roomId: roomId.value, platform: platform),
           );
@@ -191,18 +195,30 @@ class WebSearchController extends GetxController {
     if (await webViewController?.canGoBack() ?? false) {
       webViewController?.goBack();
     } else {
-      Navigator.pop(Get.context!);
+      try {
+        webViewController?.stopLoading();
+        webViewController?.dispose();
+        showWebView.value = false;
+        await Future.delayed(const Duration(milliseconds: 500));
+        Navigator.pop(Get.context!);
+      } catch (e) {
+        Navigator.pop(Get.context!);
+      }
     }
   }
 
   void closePage() {
+    showWebView.value = false;
     webViewController?.stopLoading();
+    webViewController?.dispose();
     Navigator.pop(Get.context!);
   }
 
   @override
   void onClose() {
+    showWebView.value = false;
     webViewController?.stopLoading();
+    webViewController?.dispose();
     webViewController = null;
     super.onClose();
   }

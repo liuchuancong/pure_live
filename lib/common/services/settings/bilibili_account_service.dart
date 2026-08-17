@@ -1,8 +1,9 @@
 import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/common/http_client.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:pure_live/common/models/bilibili_user_info_page.dart';
+import 'package:flutter_inappwebview_ultra/flutter_inappwebview_ultra.dart';
 
 class BiliBiliAccountService extends GetxController {
   static BiliBiliAccountService get instance => Get.find<BiliBiliAccountService>();

@@ -107,6 +107,36 @@ void main() {
     );
     expect(scrollableState.position.pixels, greaterThan(0));
   });
+
+  testWidgets('pure-text switch refreshes preview content immediately', (tester) async {
+    await tester.pumpWidget(
+      EasyLocalization(
+        supportedLocales: const [Locale('zh')],
+        path: 'assets/translations',
+        fallbackLocale: const Locale('zh'),
+        assetLoader: const _TestAssetLoader(),
+        child: Builder(
+          builder: (context) => GetMaterialApp(
+            locale: context.locale,
+            localizationsDelegates: context.localizationDelegates,
+            supportedLocales: context.supportedLocales,
+            home: const Scaffold(body: SizedBox(width: 350, child: PipDanmakuPreview())),
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+
+    dynamic painter = _previewPainter(tester);
+    expect((painter.painters.first.text as TextSpan).text, contains('🎉'));
+
+    SettingsService.to.danmaku.pipDanmakuNoEmojiMode.value = true;
+    await tester.pump();
+
+    painter = _previewPainter(tester);
+    expect((painter.painters.first.text as TextSpan).text, isNot(contains('🎉')));
+  });
 }
 
 class _TestAssetLoader extends AssetLoader {
@@ -122,6 +152,7 @@ class _TestAssetLoader extends AssetLoader {
     'pip_danmaku_reset': 'Reset',
     'pip_danmaku_enable': 'Enable',
     'pip_danmaku_auto_scale': 'Auto scale',
+    'danmaku_no_emoji': 'Pure text',
     'pip_danmaku_original_color': 'Original color',
     'font_size': 'Font size',
     'speed': 'Speed',

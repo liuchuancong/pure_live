@@ -66,6 +66,7 @@ class DanmakuManager {
 
     // 设置初始值
     videoController.hideDanmaku.value = dm.hideDanmaku.v;
+    videoController.noEmojiMode.value = dm.noEmojiMode.v;
     videoController.danmakuArea.value = dm.danmakuArea.v;
     videoController.danmakuTopArea.value = dm.danmakuTopArea.v;
     videoController.danmakuBottomArea.value = dm.danmakuBottomArea.v;
@@ -95,6 +96,7 @@ class DanmakuManager {
       videoController.enableDanmakuStroke,
       videoController.danmakuFps,
       videoController.danmakuFontFamilyName,
+      videoController.noEmojiMode,
     ];
 
     workers.add(
@@ -146,6 +148,7 @@ class DanmakuManager {
     dm.enableDanmakuStroke.v = videoController.enableDanmakuStroke.value;
     dm.danmakuFps.v = videoController.danmakuFps.value;
     dm.danmakuFontFamilyName.v = videoController.danmakuFontFamilyName.value;
+    dm.noEmojiMode.v = videoController.noEmojiMode.value;
     _settingsDirty = false;
   }
 
@@ -241,6 +244,7 @@ class VideoController with ChangeNotifier {
 
   // 弹幕相关
   final hideDanmaku = false.obs;
+  final noEmojiMode = false.obs;
   final danmakuArea = 1.0.obs;
   final danmakuTopArea = 0.0.obs;
   final danmakuBottomArea = 0.0.obs;
@@ -585,6 +589,7 @@ class VideoController with ChangeNotifier {
         fontWeight: FontWeight.w600,
         strokeWidth: danmakuFontBorder.value,
         showStroke: enableDanmakuStroke.value,
+        noEmojiMode: noEmojiMode.value,
         fps: SettingsService.to.danmaku.resolvedDanmakuFps(),
         maxPendingCount: 120,
         maxPendingAge: const Duration(seconds: 5),

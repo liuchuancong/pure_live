@@ -83,6 +83,13 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
             const SizedBox(height: 8),
             reactiveCard(
               () => [
+                _switch(
+                  theme,
+                  title: i18n('danmaku_no_emoji'),
+                  value: controller.noEmojiMode.value,
+                  onChanged: (value) => controller.noEmojiMode.value = value,
+                  labelColor: labelColor,
+                ),
                 _slider(
                   theme,
                   title: i18n("danmaku_area"),

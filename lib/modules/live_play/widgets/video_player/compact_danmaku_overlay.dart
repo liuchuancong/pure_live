@@ -22,6 +22,7 @@ class CompactDanmakuOverlay extends StatelessWidget {
       // leave the active PiP overlay on its previous style until another UI
       // rebuild happened.
       final autoScale = settings.pipDanmakuAutoScale.v;
+      final noEmojiMode = settings.pipDanmakuNoEmojiMode.v;
       final configuredFontSize = settings.pipDanmakuFontSize.v;
       final area = settings.pipDanmakuArea.v;
       final speed = settings.pipDanmakuSpeed.v;
@@ -49,6 +50,7 @@ class CompactDanmakuOverlay extends StatelessWidget {
                   baseSpeed: speed * scale,
                   opacity: opacity,
                   showStroke: showStroke,
+                  noEmojiMode: noEmojiMode,
                   strokeWidth: 1.0,
                   fps: fps,
                   safeArea: false,

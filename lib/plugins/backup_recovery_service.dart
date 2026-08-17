@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:convert';
+
 import 'file_utils.dart';
+
 import 'package:pure_live/common/index.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:date_format/date_format.dart' hide S;
@@ -36,7 +38,7 @@ class BackupRecoveryService {
     }
   }
 
-  void recoverSettingsFromFile() async {
+  Future<void> recoverSettingsFromFile() async {
     final backup = Get.find<BackupController>();
     final result = await FilePicker.pickFile(
       dialogTitle: i18n("select_recover_file"),

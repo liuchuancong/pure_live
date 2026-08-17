@@ -173,6 +173,13 @@ class PipDanmakuSettingsSection extends StatelessWidget {
             if (settings.enablePipDanmaku.v) ...[
               _switch(
                 theme,
+                title: i18n('danmaku_no_emoji'),
+                value: settings.pipDanmakuNoEmojiMode.v,
+                onChanged: (value) => settings.pipDanmakuNoEmojiMode.v = value,
+                labelColor: labelColor,
+              ),
+              _switch(
+                theme,
                 title: i18n('pip_danmaku_auto_scale'),
                 value: settings.pipDanmakuAutoScale.v,
                 onChanged: (value) => settings.pipDanmakuAutoScale.v = value,
@@ -493,6 +500,7 @@ class _PipDanmakuPreviewState extends State<PipDanmakuPreview> with SingleTicker
       // therefore do not trigger a preview rebuild when the slider changes.
       final enabled = settings.enablePipDanmaku.v;
       final autoScale = settings.pipDanmakuAutoScale.v;
+      final noEmojiMode = settings.pipDanmakuNoEmojiMode.v;
       final useOriginalColor = settings.pipDanmakuUseOriginalColor.v;
       final unifiedColor = Color(settings.pipDanmakuColor.v);
       final configuredFontSize = settings.pipDanmakuFontSize.v;
@@ -529,7 +537,7 @@ class _PipDanmakuPreviewState extends State<PipDanmakuPreview> with SingleTicker
                     maxVisibleCount.clamp(1, 20).toInt(),
                     (index) => TextPainter(
                       text: TextSpan(
-                        text: '$previewText ${index + 1}',
+                        text: '$previewText ${index + 1}${noEmojiMode ? '' : ' 🎉'}',
                         style: TextStyle(
                           color: colors[index % colors.length].withValues(alpha: opacity),
                           fontSize: fontSize,

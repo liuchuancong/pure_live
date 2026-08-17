@@ -19,6 +19,17 @@ void main() {
       expect(config['danmakuFontBorder'], 1.5);
       expect(config['enableDanmakuTapInteraction'], isTrue);
       expect(config['enableDanmakuLongPressInteraction'], isTrue);
+      expect(config['noEmojiMode'], isFalse);
+      expect(config['pipDanmakuNoEmojiMode'], isFalse);
+    });
+
+    test('migrates the upstream compact pure-text backup key', () {
+      final config = DanmakuSettingsController.extractConfig({
+        'danmaku': {'noEmojiMode': true, 'pipDanmaNoEmojiMode': true},
+      });
+
+      expect(config['noEmojiMode'], isTrue);
+      expect(config['pipDanmakuNoEmojiMode'], isTrue);
     });
 
     test('clamps legacy main-player speed to the supported range', () {

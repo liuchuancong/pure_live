@@ -44,7 +44,9 @@ import 'package:pure_live/modules/account/bilibili/web_login_page.dart';
 import 'package:pure_live/modules/live_play/widgets/live_play_page.dart';
 import 'package:pure_live/modules/account/huya/huya_cookie_binding.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_binding.dart';
+import 'package:pure_live/modules/account/twitch/twitch_cookie_page.dart';
 import 'package:pure_live/modules/account/douyin/douyin_cookie_page.dart';
+import 'package:pure_live/modules/account/twitch/twitch_cookie_binding.dart';
 import 'package:pure_live/modules/live_play/bindings/live_play_binding.dart';
 import 'package:pure_live/modules/account/douyin/douyin_cookie_binding.dart';
 import 'package:pure_live/modules/account/kuaishou/kuaishou_cookie_page.dart';
@@ -112,6 +114,8 @@ class AppPages {
     GetPage(name: RoutePath.kHuyaCookie, page: () => const HuyaCookiePage(), bindings: [HuyaCookieBinding()]),
 
     GetPage(name: RoutePath.kDouyuCookie, page: () => const DouyinCookiePage(), bindings: [DouyinCookieBinding()]),
+
+    GetPage(name: RoutePath.kTwitchCookie, page: () => const TwitchCookiePage(), bindings: [TwitchCookieBinding()]),
 
     GetPage(
       name: RoutePath.kKuaishouCookie,

@@ -14,8 +14,11 @@ class DanmakuSettingsController extends GetxController {
   static const int defaultPipDanmakuMaxVisibleCount = 6;
   static const double defaultPipDanmakuEmitInterval = 0.35;
   static const int defaultPipDanmakuFps = 30;
+  static const bool defaultNoEmojiMode = false;
+  static const bool defaultPipDanmakuNoEmojiMode = false;
 
   final RxBool hideDanmaku = hiveBool('hideDanmaku', false);
+  final RxBool noEmojiMode = hiveBool('noEmojiMode', defaultNoEmojiMode);
   final RxDouble danmakuTopArea = hiveDouble('danmakuTopArea', 0.0);
   final RxDouble danmakuArea = hiveDouble('danmakuArea', 1.0);
   final RxDouble danmakuBottomArea = hiveDouble('danmakuBottomArea', 0.5);
@@ -34,6 +37,9 @@ class DanmakuSettingsController extends GetxController {
   final RxString danmakuFontFamilyName = hiveString('danmakuFontFamilyName', 'Default');
   final RxBool enablePipDanmaku = hiveBool('enablePipDanmaku', defaultEnablePipDanmaku);
   final RxBool pipDanmakuAutoScale = hiveBool('pipDanmakuAutoScale', defaultPipDanmakuAutoScale);
+  // Keep the upstream storage key for existing users while exposing a
+  // consistently-spelled Dart API and backup key.
+  final RxBool pipDanmakuNoEmojiMode = hiveBool('pipDanmaNoEmojiMode', defaultPipDanmakuNoEmojiMode);
   final RxBool pipDanmakuUseOriginalColor = hiveBool('pipDanmakuUseOriginalColor', defaultPipDanmakuUseOriginalColor);
   final RxInt pipDanmakuColor = hiveInt('pipDanmakuColor', defaultPipDanmakuColor);
   final RxDouble pipDanmakuFontSize = hiveDouble('pipDanmakuFontSize', defaultPipDanmakuFontSize);
@@ -69,6 +75,7 @@ class DanmakuSettingsController extends GetxController {
   void resetPipDanmaku() {
     enablePipDanmaku.v = defaultEnablePipDanmaku;
     pipDanmakuAutoScale.v = defaultPipDanmakuAutoScale;
+    pipDanmakuNoEmojiMode.v = defaultPipDanmakuNoEmojiMode;
     pipDanmakuUseOriginalColor.v = defaultPipDanmakuUseOriginalColor;
     pipDanmakuColor.v = defaultPipDanmakuColor;
     pipDanmakuFontSize.v = defaultPipDanmakuFontSize;
@@ -84,6 +91,7 @@ class DanmakuSettingsController extends GetxController {
   Map<String, dynamic> toJson() {
     return {
       'hideDanmaku': hideDanmaku.v,
+      'noEmojiMode': noEmojiMode.v,
       'danmakuTopArea': danmakuTopArea.v,
       'danmakuArea': danmakuArea.v,
       'danmakuBottomArea': danmakuBottomArea.v,
@@ -101,6 +109,7 @@ class DanmakuSettingsController extends GetxController {
       'savedDanmakuTemplate': savedDanmakuTemplate.v,
       'enablePipDanmaku': enablePipDanmaku.v,
       'pipDanmakuAutoScale': pipDanmakuAutoScale.v,
+      'pipDanmakuNoEmojiMode': pipDanmakuNoEmojiMode.v,
       'pipDanmakuUseOriginalColor': pipDanmakuUseOriginalColor.v,
       'pipDanmakuColor': pipDanmakuColor.v,
       'pipDanmakuFontSize': pipDanmakuFontSize.v,
@@ -116,6 +125,7 @@ class DanmakuSettingsController extends GetxController {
 
   void fromJson(Map<String, dynamic> json) {
     hideDanmaku.v = json['hideDanmaku'] ?? false;
+    noEmojiMode.v = json['noEmojiMode'] ?? defaultNoEmojiMode;
     danmakuTopArea.v = json['danmakuTopArea']?.toDouble() ?? 0.0;
     danmakuArea.v = json['danmakuArea']?.toDouble() ?? 1.0;
     danmakuBottomArea.v = json['danmakuBottomArea']?.toDouble() ?? 0.5;
@@ -133,6 +143,8 @@ class DanmakuSettingsController extends GetxController {
     savedDanmakuTemplate.v = json['savedDanmakuTemplate']?.toString() ?? '';
     enablePipDanmaku.v = json['enablePipDanmaku'] ?? defaultEnablePipDanmaku;
     pipDanmakuAutoScale.v = json['pipDanmakuAutoScale'] ?? defaultPipDanmakuAutoScale;
+    pipDanmakuNoEmojiMode.v =
+        json['pipDanmakuNoEmojiMode'] ?? json['pipDanmaNoEmojiMode'] ?? defaultPipDanmakuNoEmojiMode;
     pipDanmakuUseOriginalColor.v = json['pipDanmakuUseOriginalColor'] ?? defaultPipDanmakuUseOriginalColor;
     pipDanmakuColor.v = json['pipDanmakuColor']?.toInt() ?? defaultPipDanmakuColor;
     pipDanmakuFontSize.v = (json['pipDanmakuFontSize'] ?? defaultPipDanmakuFontSize)
@@ -158,6 +170,7 @@ class DanmakuSettingsController extends GetxController {
     final danmaku = rootConfig?['danmaku'] as Map<String, dynamic>? ?? {};
     return {
       'hideDanmaku': danmaku['hideDanmaku'] ?? false,
+      'noEmojiMode': danmaku['noEmojiMode'] ?? defaultNoEmojiMode,
       'danmakuTopArea': (danmaku['danmakuTopArea'] ?? 0.0).toDouble(),
       'danmakuArea': (danmaku['danmakuArea'] ?? 1.0).toDouble(),
       'danmakuBottomArea': (danmaku['danmakuBottomArea'] ?? 0.5).toDouble(),
@@ -175,6 +188,8 @@ class DanmakuSettingsController extends GetxController {
       'savedDanmakuTemplate': danmaku['savedDanmakuTemplate']?.toString() ?? '',
       'enablePipDanmaku': danmaku['enablePipDanmaku'] ?? defaultEnablePipDanmaku,
       'pipDanmakuAutoScale': danmaku['pipDanmakuAutoScale'] ?? defaultPipDanmakuAutoScale,
+      'pipDanmakuNoEmojiMode':
+          danmaku['pipDanmakuNoEmojiMode'] ?? danmaku['pipDanmaNoEmojiMode'] ?? defaultPipDanmakuNoEmojiMode,
       'pipDanmakuUseOriginalColor': danmaku['pipDanmakuUseOriginalColor'] ?? defaultPipDanmakuUseOriginalColor,
       'pipDanmakuColor': (danmaku['pipDanmakuColor'] ?? defaultPipDanmakuColor).toInt(),
       'pipDanmakuFontSize': (danmaku['pipDanmakuFontSize'] ?? defaultPipDanmakuFontSize)

@@ -1,4 +1,4 @@
-blank_issues_enabled: true
+blank_issues_enabled: false
 
 contact_links:
   - name: 使用与构建文档
@@ -10,3 +10,4 @@ contact_links:
   - name: 私密安全报告
     url: https://github.com/wzgrx/pure_live/security/advisories/new
     about: 涉及凭据、隐私或可被利用的漏洞时使用私密报告入口。
+
