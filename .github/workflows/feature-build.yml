@@ -162,7 +162,9 @@ jobs:
     name: Linux x64 portable
     if: ${{ always() && ((github.event_name == 'push' && (startsWith(github.ref_name, 'stage-build-') || startsWith(github.ref_name, 'stage-linux-'))) || inputs.build_linux) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
     needs: quality
-    runs-on: ubuntu-22.04
+    # Predidit's current verified libmpv bundle targets glibc >= 2.38 and
+    # GLIBCXX >= 3.4.32, both provided by the Ubuntu 24.04 runner image.
+    runs-on: ubuntu-24.04
     timeout-minutes: 70
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -203,7 +205,7 @@ jobs:
           echo "5179c8f5cf1237d2300e2d8559a7bc55  $archive.tmp" | md5sum --check --strict
           mv "$archive.tmp" "$archive"
       - name: Build Linux release
-        run: flutter --verbose build linux --release --dart-define=PURELIVE_BUILD_SOURCE=github-manual
+        run: flutter build linux --release --dart-define=PURELIVE_BUILD_SOURCE=github-manual
       - name: Create portable archive
         run: tar -C build/linux/x64/release/bundle -czf PureLive-linux-x64.tar.gz .
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
