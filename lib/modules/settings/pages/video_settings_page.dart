@@ -34,11 +34,12 @@ class VideoSettingsPage extends GetView<SettingsService> {
                   context,
                   icon: Remix.phone_line,
                   title: i18n("mobile_default_volume"),
-                  value: SettingsService.to.vol.defaultMobileVolume.v,
+                  value: SettingsService.to.vol.defaultMobileVolume.v * 100,
                   min: 0.0,
                   max: 100.0,
-                  displayValue: "${(SettingsService.to.vol.defaultMobileVolume.v).toStringAsFixed(0)}%",
-                  onChanged: (val) => SettingsService.to.vol.defaultMobileVolume.v = val,
+                  displayValue: "${(SettingsService.to.vol.defaultMobileVolume.v * 100).toStringAsFixed(0)}%",
+                  onChanged: (val) =>
+                      SettingsService.to.vol.defaultMobileVolume.v = double.parse((val / 100).toStringAsFixed(2)),
                 ),
               ),
             if (PlatformUtils.isDesktop)
@@ -47,11 +48,13 @@ class VideoSettingsPage extends GetView<SettingsService> {
                   context,
                   icon: Remix.computer_line,
                   title: i18n("desktop_default_volume"),
-                  value: SettingsService.to.vol.defaultDesktopVolume.v,
+                  value: SettingsService.to.vol.defaultDesktopVolume.v * 100,
                   min: 0.0,
                   max: 100.0,
-                  displayValue: "${(SettingsService.to.vol.defaultDesktopVolume.v).toStringAsFixed(0)}%",
-                  onChanged: (val) => SettingsService.to.vol.defaultDesktopVolume.v = val,
+                  displayValue: "${(SettingsService.to.vol.defaultDesktopVolume.v * 100).toStringAsFixed(0)}%",
+                  onChanged: (val) {
+                    SettingsService.to.vol.defaultDesktopVolume.v = double.parse((val / 100).toStringAsFixed(2));
+                  },
                 ),
               ),
           ]),
