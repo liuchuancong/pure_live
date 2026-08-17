@@ -1,5 +1,5 @@
 import 'package:pure_live/common/index.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:flutter_inappwebview_ultra/flutter_inappwebview_ultra.dart';
 import 'package:pure_live/common/services/settings/bilibili_account_service.dart';
 
 class BiliBiliWebLoginController extends GetxController {

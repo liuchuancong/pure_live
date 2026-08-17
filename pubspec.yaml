@@ -149,11 +149,7 @@ dependencies:
   # -------------------------- 网页/JS解析 --------------------------
   flutter_js: ^0.8.5 # JS引擎执行
   html: ^0.15.4 # HTML解析
-  flutter_inappwebview:
-    git:
-      url: https://github.com/guide-inc-org/guide-flutter_inappwebview.git
-      path: flutter_inappwebview
-      ref: sbi_fx_pc/v6.2.0-beta.3
+  flutter_inappwebview_ultra: ^1.0.0
   dart_quickjs:
     git: https://github.com/liuchuancong/dart_quickjs.git # QuickJS引擎
 

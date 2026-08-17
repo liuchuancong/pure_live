@@ -1,6 +1,6 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:flutter_inappwebview_ultra/flutter_inappwebview_ultra.dart';
 import 'package:pure_live/modules/account/bilibili/web_login_controller.dart';
 
 class BiliBiliWebLoginPage extends GetView<BiliBiliWebLoginController> {

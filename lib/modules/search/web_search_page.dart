@@ -1,6 +1,6 @@
 import 'web_search_controller.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:flutter_inappwebview_ultra/flutter_inappwebview_ultra.dart';
 
 class WebSearchPage extends GetView<WebSearchController> {
   const WebSearchPage({super.key});
