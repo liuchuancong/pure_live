@@ -10,6 +10,7 @@ class AudienceMetricSettingsPage extends StatelessWidget {
     (id: 'douyin', name: '抖音', detailKey: 'audience_douyin_detail'),
     (id: 'kuaishou', name: '快手', detailKey: 'audience_kuaishou_detail'),
     (id: 'cc', name: '网易 CC', detailKey: 'audience_cc_detail'),
+    (id: 'twitch', name: 'Twitch', detailKey: 'audience_twitch_detail'),
   ];
 
   @override

@@ -1170,8 +1170,15 @@
   "local_level_cc": "守护等级",
   "danmaku_best_preset_desc": "最佳观看：弹幕只占画面顶部约 20%，速度与密度适中，避免遮挡主体内容。",
   "danmaku_realtime_hint": "本页调整会立即作用于上方直播画面；保存当前模板只用于以后快速恢复。",
-  "danmaku_no_emoji": "弹幕无表情",
-  "twitch_cookie_hint": "输入Twitch直播cookie",
-  "twitch_cookie_tip": "登录后，进入直播间。在浏览器中按F12，复制同一URL请求头中的Cookie（通常是第一个），将其粘贴到下面的输入框中，然后点击设置按钮来配置Twitch直播Cookie。",
-  "site_twitch": "Twitch"
+  "danmaku_no_emoji": "纯文字模式（隐藏表情）",
+  "twitch_cookie_hint": "粘贴 Twitch Cookie",
+  "twitch_cookie_tip": "登录 Twitch 网页并进入任意直播间，在浏览器开发者工具的网络请求中复制完整 Cookie；其中 auth-token 与 login 用于读取聊天。Cookie 仅保存在本机。",
+  "site_twitch": "Twitch",
+  "audience_twitch_detail": "目录、搜索和直播间元数据的 viewersCount 均按当前并发观看人数显示",
+  "local_currency_twitch": "Bits",
+  "local_level_twitch": "订阅等级",
+  "local_badge_twitch": "Twitch 徽章",
+  "local_gift_twitch_cheer": "Cheer",
+  "local_gift_twitch_sub": "订阅星标",
+  "local_gift_twitch_hype_train": "Hype Train"
 }

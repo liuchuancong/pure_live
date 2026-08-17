@@ -19,6 +19,8 @@ USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
 )
+TWITCH_GQL_URL = "https://gql.twitch.tv/gql"
+TWITCH_CLIENT_ID = "kimne78kx3ncx6brgo4mv6wki5h1ko"
 
 
 def request_json(url: str, params: dict[str, object] | None = None, attempts: int = 3) -> object:
@@ -59,6 +61,41 @@ def request_json(url: str, params: dict[str, object] | None = None, attempts: in
                 content_type = response.headers.get("Content-Type", "unknown")
                 preview = payload[:80].replace("\r", " ").replace("\n", " ")
                 raise ValueError(f"non-JSON response ({content_type}): {preview!r}") from error
+        except Exception as error:  # noqa: BLE001 - preserve endpoint diagnostics
+            last_error = error
+            if attempt < attempts:
+                time.sleep(attempt)
+    assert last_error is not None
+    raise last_error
+
+
+def post_json(
+    url: str,
+    payload: object,
+    headers: dict[str, str] | None = None,
+    attempts: int = 3,
+) -> object:
+    """POST JSON with bounded retries and preserve response diagnostics."""
+    body = json.dumps(payload, separators=(",", ":")).encode()
+    last_error: Exception | None = None
+    for attempt in range(1, attempts + 1):
+        try:
+            request = urllib.request.Request(
+                url,
+                data=body,
+                method="POST",
+                headers={
+                    "User-Agent": USER_AGENT,
+                    "Accept": "application/json",
+                    "Content-Type": "text/plain; charset=UTF-8",
+                    **(headers or {}),
+                },
+            )
+            with urllib.request.urlopen(request, timeout=20) as response:
+                raw_payload = response.read()
+            if not raw_payload.strip():
+                raise ValueError("empty response body")
+            return json.loads(raw_payload.decode("utf-8", errors="replace").lstrip("\ufeff"))
         except Exception as error:  # noqa: BLE001 - preserve endpoint diagnostics
             last_error = error
             if attempt < attempts:
@@ -160,6 +197,157 @@ def huya_danmaku_identity_probe() -> None:
         raise ValueError("profileInfo.uid missing")
 
 
+def twitch_persisted_request(operation: str, sha256_hash: str, variables: dict[str, object]) -> dict[str, object]:
+    return {
+        "operationName": operation,
+        "variables": variables,
+        "extensions": {"persistedQuery": {"version": 1, "sha256Hash": sha256_hash}},
+    }
+
+
+def twitch_gql(payload: object) -> object:
+    response = post_json(
+        TWITCH_GQL_URL,
+        payload,
+        headers={"Client-Id": TWITCH_CLIENT_ID, "Device-Id": "12345678901234567890"},
+    )
+    nodes = response if isinstance(response, list) else [response]
+    for node in nodes:
+        if not isinstance(node, dict):
+            raise ValueError("invalid Twitch GQL response")
+        if node.get("errors"):
+            raise ValueError(f"Twitch GQL errors: {node['errors']}")
+        if "data" not in node:
+            raise ValueError("Twitch GQL data missing")
+    return response
+
+
+def twitch_categories_probe() -> None:
+    response = twitch_gql(
+        twitch_persisted_request(
+            "SearchCategoryTags",
+            "b4cb189d8d17aadf29c61e9d7c7e7dcfc932e93b77b3209af5661bffb484195f",
+            {"userQuery": "", "limit": 5},
+        )
+    )
+    require_path(response, "data", "searchCategoryTags")
+
+
+def twitch_directory_probe() -> None:
+    response = twitch_gql(
+        [
+            twitch_persisted_request(
+                "DirectoryPage_Game",
+                "76cb069d835b8a02914c08dc42c421d0dafda8af5b113a3f19141824b901402f",
+                {
+                    "imageWidth": 50,
+                    "slug": "just-chatting",
+                    "options": {
+                        "sort": "VIEWER_COUNT",
+                        "recommendationsContext": {"platform": "web"},
+                        "requestID": "JIRA-VXP-2397",
+                        "freeformTags": None,
+                        "tags": [],
+                        "broadcasterLanguages": [],
+                        "systemFilters": [],
+                    },
+                    "sortTypeIsRecency": False,
+                    "limit": 5,
+                    "includeCostreaming": True,
+                },
+            )
+        ]
+    )
+    if not isinstance(response, list) or not response:
+        raise ValueError("Twitch directory result missing")
+    require_path(response[0], "data", "game", "streams", "edges")
+
+
+def twitch_search_probe() -> None:
+    response = twitch_gql(
+        twitch_persisted_request(
+            "SearchResultsPage_SearchResults",
+            "7f3580f6ac6cd8aa1424cff7c974a07143827d6fa36bba1b54318fe7f0b68dc5",
+            {
+                "platform": "web",
+                "query": "twitch",
+                "options": {"targets": None, "shouldSkipDiscoveryControl": False},
+                "requestID": "808c9f2e-f52e-431c-8dc7-d2e3c1831d77",
+                "includeIsDJ": True,
+            },
+        )
+    )
+    require_path(response, "data", "searchFor", "channels", "edges")
+
+
+def twitch_room_probe() -> None:
+    payload = [
+        twitch_persisted_request(
+            "ChannelShell",
+            "fea4573a7bf2644f5b3f2cbbdcbee0d17312e48d2e55f080589d053aad353f11",
+            {"login": "twitch"},
+        ),
+        twitch_persisted_request(
+            "StreamMetadata",
+            "b57f9b910f8cd1a4659d894fe7550ccc81ec9052c01e438b290fd66a040b9b93",
+            {"channelLogin": "twitch", "includeIsDJ": True},
+        ),
+    ]
+    response = twitch_gql(payload)
+    if not isinstance(response, list) or len(response) < 2:
+        raise ValueError("Twitch room metadata incomplete")
+    require_path(response[0], "data", "userOrError", "login")
+    require_path(response[1], "data", "user")
+
+
+def twitch_playback_probe() -> None:
+    directory_payload = [
+        twitch_persisted_request(
+            "DirectoryPage_Game",
+            "76cb069d835b8a02914c08dc42c421d0dafda8af5b113a3f19141824b901402f",
+            {
+                "imageWidth": 50,
+                "slug": "just-chatting",
+                "options": {
+                    "sort": "VIEWER_COUNT",
+                    "recommendationsContext": {"platform": "web"},
+                    "requestID": "JIRA-VXP-2397",
+                    "freeformTags": None,
+                    "tags": [],
+                    "broadcasterLanguages": [],
+                    "systemFilters": [],
+                },
+                "sortTypeIsRecency": False,
+                "limit": 1,
+                "includeCostreaming": True,
+            },
+        )
+    ]
+    directory = twitch_gql(directory_payload)
+    try:
+        login = directory[0]["data"]["game"]["streams"]["edges"][0]["node"]["broadcaster"]["login"]
+    except (IndexError, KeyError, TypeError) as error:
+        raise ValueError("Twitch live channel missing") from error
+    response = twitch_gql(
+        twitch_persisted_request(
+            "PlaybackAccessToken",
+            "ed230aa1e33e07eebb8928504583da78a5173989fadfb1ac94be06a04f3cdbe9",
+            {
+                "isLive": True,
+                "login": login,
+                "isVod": False,
+                "vodID": "",
+                "playerType": "site",
+                "isClip": False,
+                "clipID": "",
+                "platform": "site",
+            },
+        )
+    )
+    require_path(response, "data", "streamPlaybackAccessToken", "value")
+    require_path(response, "data", "streamPlaybackAccessToken", "signature")
+
+
 def main() -> int:
     probes = [
         (
@@ -258,6 +446,11 @@ def main() -> int:
                 "result",
             ),
         ),
+        ("twitch.categories", twitch_categories_probe),
+        ("twitch.directory", twitch_directory_probe),
+        ("twitch.search", twitch_search_probe),
+        ("twitch.room", twitch_room_probe),
+        ("twitch.playback", twitch_playback_probe),
     ]
 
     failures: list[str] = []

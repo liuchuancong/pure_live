@@ -13,6 +13,21 @@ on:
         required: true
         type: boolean
         default: false
+      build_linux:
+        description: Build Linux x64 portable archive
+        required: true
+        type: boolean
+        default: false
+      build_macos:
+        description: Build macOS arm64 application archive
+        required: true
+        type: boolean
+        default: false
+      build_ios:
+        description: Build unsigned iOS device application archive
+        required: true
+        type: boolean
+        default: false
       run_quality:
         description: Run analyze, tests and public interface probes first
         required: true
@@ -124,5 +139,81 @@ jobs:
         with:
           name: pure-live-windows
           path: PureLive-windows-x64.zip
+          if-no-files-found: error
+          retention-days: 3
+
+  linux:
+    name: Linux x64 portable
+    if: ${{ always() && inputs.build_linux && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    needs: quality
+    runs-on: ubuntu-22.04
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install Linux desktop dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev \
+            libepoxy-dev libsecret-1-dev libwayland-dev libwpe-1.0-dev \
+            libwpebackend-fdo-1.0-dev libwpewebkit-1.0-dev
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - name: Resolve locked packages
+        run: flutter pub get --enforce-lockfile
+      - name: Build Linux release
+        run: flutter build linux --release --dart-define=PURELIVE_BUILD_SOURCE=github-manual
+      - name: Create portable archive
+        run: tar -C build/linux/x64/release/bundle -czf PureLive-linux-x64.tar.gz .
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pure-live-linux-x64
+          path: PureLive-linux-x64.tar.gz
+          if-no-files-found: error
+          retention-days: 3
+
+  apple:
+    name: Apple platform packages
+    if: ${{ always() && (inputs.build_macos || inputs.build_ios) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    needs: quality
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - name: Resolve locked packages
+        run: flutter pub get --enforce-lockfile
+      - name: Build macOS release
+        if: inputs.build_macos
+        run: flutter build macos --release --dart-define=PURELIVE_BUILD_SOURCE=github-manual
+      - name: Archive macOS application
+        if: inputs.build_macos
+        run: |
+          app_path="$(find build/macos/Build/Products/Release -maxdepth 1 -type d -name '*.app' -print -quit)"
+          test -n "$app_path"
+          ditto -c -k --sequesterRsrc --keepParent "$app_path" PureLive-macos-arm64.zip
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: inputs.build_macos
+        with:
+          name: pure-live-macos-arm64
+          path: PureLive-macos-arm64.zip
+          if-no-files-found: error
+          retention-days: 3
+      - name: Build iOS device application
+        if: inputs.build_ios
+        run: flutter build ios --release --no-codesign --dart-define=PURELIVE_BUILD_SOURCE=github-manual
+      - name: Archive iOS application
+        if: inputs.build_ios
+        run: ditto -c -k --sequesterRsrc --keepParent build/ios/iphoneos/Runner.app PureLive-ios-unsigned-app.zip
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: inputs.build_ios
+        with:
+          name: pure-live-ios-unsigned-app
+          path: PureLive-ios-unsigned-app.zip
           if-no-files-found: error
           retention-days: 3

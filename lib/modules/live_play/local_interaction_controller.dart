@@ -123,6 +123,14 @@ class LocalInteractionController extends GetxController {
       accentColor: Color(0xFFFF4D7D),
       badge: '🎮',
     ),
+    LocalPlatformPack(
+      id: Sites.twitchSite,
+      name: 'Twitch',
+      currencyKey: 'local_currency_twitch',
+      levelKey: 'local_level_twitch',
+      accentColor: Color(0xFF9146FF),
+      badge: '💜',
+    ),
   ];
 
   static const _platformGifts = <String, List<LocalGift>>{
@@ -270,6 +278,30 @@ class LocalInteractionController extends GetxController {
         effect: 'full',
       ),
     ],
+    Sites.twitchSite: [
+      LocalGift(
+        id: 'twitch_cheer',
+        nameKey: 'local_gift_twitch_cheer',
+        emoji: '💎',
+        price: 10,
+        color: LiveMessageColor(145, 70, 255),
+      ),
+      LocalGift(
+        id: 'twitch_sub',
+        nameKey: 'local_gift_twitch_sub',
+        emoji: '⭐',
+        price: 500,
+        color: LiveMessageColor(169, 112, 255),
+      ),
+      LocalGift(
+        id: 'twitch_hype_train',
+        nameKey: 'local_gift_twitch_hype_train',
+        emoji: '🚂',
+        price: 2000,
+        color: LiveMessageColor(112, 44, 190),
+        effect: 'full',
+      ),
+    ],
   };
 
   static const titles = <String>['listener', 'night_owl', 'supporter', 'guardian'];
@@ -309,6 +341,7 @@ class LocalInteractionController extends GetxController {
     Sites.douyinSite => 'local_badge_douyin',
     Sites.kuaishouSite => 'local_badge_kuaishou',
     Sites.ccSite => 'local_badge_cc',
+    Sites.twitchSite => 'local_badge_twitch',
     _ => 'local_badge_generic',
   };
 

@@ -6,7 +6,7 @@ import 'package:pure_live/common/consts/app_consts.dart';
 
 class AppSettingsController extends GetxController {
   static const int maxSleepMinutes = 525600;
-  static const List<String> defaultRealOnlinePlatforms = ['douyin', 'kuaishou', 'cc'];
+  static const List<String> defaultRealOnlinePlatforms = ['douyin', 'kuaishou', 'cc', 'twitch'];
 
   Worker? _highRefreshRateWorker;
 
@@ -25,12 +25,17 @@ class AppSettingsController extends GetxController {
   final RxBool enableHighRefreshRate = hiveBool('enableHighRefreshRate', true);
   final RxBool preferRealOnlineCounts = hiveBool('preferRealOnlineCounts', false);
   late final RxList<String> realOnlinePlatforms = hiveStringList('realOnlinePlatforms', defaultRealOnlinePlatforms);
+  final RxInt audienceMetricMigration = hiveInt('audienceMetricMigration', 0);
 
   late final RxList<String> savedMenuIds = hiveStringList('savedMenuIds', HomeMenu.values.map((e) => e.id).toList());
 
   @override
   void onInit() {
     super.onInit();
+    if (audienceMetricMigration.v < 1) {
+      if (!realOnlinePlatforms.contains('twitch')) realOnlinePlatforms.add('twitch');
+      audienceMetricMigration.v = 1;
+    }
     _removeUnsupportedOnlinePlatforms();
     if (Platform.isAndroid) {
       unawaited(DisplayModeService.setHighRefreshRate(enableHighRefreshRate.v));

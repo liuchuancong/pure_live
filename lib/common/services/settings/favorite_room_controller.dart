@@ -6,6 +6,7 @@ class FavoriteRoomController extends GetxController {
   final RxList<String> shieldList = hiveStringList('shieldList', []);
   final RxList<String> blockedDanmakuUsers = hiveStringList('blockedDanmakuUsers', []);
   final RxList<String> hotAreasList = hiveStringList('hotAreasList', AppConsts.supportSites);
+  final RxInt siteCatalogMigration = hiveInt('siteCatalogMigration', 0);
   final RxString preferPlatform = hiveString('preferPlatform', Sites.bilibiliSite);
   final Rx<List<LiveRoom>> favoriteRooms = hiveObject(
     'favoriteRooms',
@@ -17,6 +18,15 @@ class FavoriteRoomController extends GetxController {
       return {'list': list.map((e) => e.toJson()).toList()};
     },
   );
+
+  @override
+  void onInit() {
+    super.onInit();
+    if (siteCatalogMigration.v < 1) {
+      if (!hotAreasList.contains(Sites.twitchSite)) hotAreasList.add(Sites.twitchSite);
+      siteCatalogMigration.v = 1;
+    }
+  }
 
   final Rx<List<LiveArea>> favoriteAreas = hiveObject(
     'favoriteAreas',

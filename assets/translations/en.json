@@ -1170,8 +1170,15 @@
   "local_level_cc": "Guardian level",
   "danmaku_best_preset_desc": "Best viewing uses about the top 20% of the picture with moderate speed and density.",
   "danmaku_realtime_hint": "Changes apply to the live picture immediately. Save Current only creates a reusable restore point.",
-  "danmaku_no_emoji": "No Emoji Mode",
-  "twitch_cookie_hint": "Enter Twitch live cookie",
-  "twitch_cookie_tip": "After logging in, enter the live room. Press F12 in the browser, copy the Cookie from the request header of the same URL (usually the first one), paste it into the input box below, and click the Set button to configure the Twitch Live Cookie.",
-  "site_twitch": "Twitch"
+  "danmaku_no_emoji": "Pure text mode (hide emoji)",
+  "twitch_cookie_hint": "Paste the Twitch Cookie",
+  "twitch_cookie_tip": "Sign in to Twitch and open a live channel, then copy the complete Cookie from a browser developer-tools network request. The auth-token and login fields are used to read chat. The Cookie stays on this device.",
+  "site_twitch": "Twitch",
+  "audience_twitch_detail": "viewersCount from directory, search and room metadata is shown as the current concurrent viewer count",
+  "local_currency_twitch": "Bits",
+  "local_level_twitch": "Subscription level",
+  "local_badge_twitch": "Twitch badge",
+  "local_gift_twitch_cheer": "Cheer",
+  "local_gift_twitch_sub": "Subscription star",
+  "local_gift_twitch_hype_train": "Hype Train"
 }
