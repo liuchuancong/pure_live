@@ -222,20 +222,27 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
 
   void updateRuntimeAudience(dynamic value) {
     if (isClosed) return;
-    final rawValue = value?.toString().trim() ?? '';
+    final update = value is LiveAudienceUpdate ? value : null;
+    final rawValue = (update?.value ?? value)?.toString().trim() ?? '';
     if (!RegExp(r'[0-9]').hasMatch(rawValue)) return;
     final count = LiveRoom.parseAudienceNumber(rawValue);
     final detail = state.value.room.detail;
     if (detail == null) return;
-    if (count <= 0) return;
+    if (count < 0) return;
     final text = count.toString();
-    final isPopularityHeartbeat = detail.platform == Sites.bilibiliSite;
-    final candidate = detail.copyWith(
-      watching: text,
-      popularity: isPopularityHeartbeat ? text : detail.popularity,
-      onlineViewers: isPopularityHeartbeat ? detail.onlineViewers : text,
-      audienceMetricType: isPopularityHeartbeat ? AudienceMetricType.popularity : AudienceMetricType.onlineViewers,
-    );
+    final inferredKind = detail.platform == Sites.bilibiliSite
+        ? LiveAudienceMetricKind.popularity
+        : LiveAudienceMetricKind.onlineViewers;
+    final kind = update?.kind ?? inferredKind;
+    final candidate = switch (kind) {
+      LiveAudienceMetricKind.popularity => detail.copyWith(
+        watching: text,
+        popularity: text,
+        audienceMetricType: AudienceMetricType.popularity,
+      ),
+      LiveAudienceMetricKind.onlineViewers => detail.copyWith(onlineViewers: text),
+      LiveAudienceMetricKind.totalViewers => detail.copyWith(totalViewers: text),
+    };
     updateRoom(detail: candidate.withAudienceFallbackFrom(detail));
   }
 

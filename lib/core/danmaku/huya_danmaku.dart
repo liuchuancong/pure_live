@@ -289,7 +289,7 @@ class HuyaDanmaku implements LiveDanmaku {
           onMessage?.call(
             LiveMessage(
               type: LiveMessageType.online,
-              data: online,
+              data: LiveAudienceUpdate(kind: LiveAudienceMetricKind.onlineViewers, value: online),
               color: LiveMessageColor.white,
               message: "",
               userName: "",

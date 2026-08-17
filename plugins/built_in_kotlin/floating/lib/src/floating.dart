@@ -21,7 +21,10 @@ enum PiPStatus {
 class Floating {
   final _channel = const MethodChannel('floating');
   final _controller = StreamController<PiPStatus>();
-  final _probeInterval = const Duration(milliseconds: 10);
+  // Method-channel polling every 10 ms caused continuous work even while PiP
+  // was idle. 100 ms remains responsive while removing most of that UI-thread
+  // and platform-channel pressure.
+  final _probeInterval = const Duration(milliseconds: 100);
 
   /// Have to be shared between all [Floating] instances to understand
   /// if the [PiPStatus.automatic] was configured.
@@ -91,16 +94,13 @@ class Floating {
   //
   // This stream will call listeners only when the value changed.
   Stream<PiPStatus> get pipStatusStream {
-    _timer ??= Timer.periodic(
-      _probeInterval,
-      (_) async {
-        final currentStatus = await pipStatus;
-        if (_controller.isClosed) {
-          return;
-        }
-        _controller.add(currentStatus);
-      },
-    );
+    _timer ??= Timer.periodic(_probeInterval, (_) async {
+      final currentStatus = await pipStatus;
+      if (_controller.isClosed) {
+        return;
+      }
+      _controller.add(currentStatus);
+    });
     _stream ??= _controller.stream.asBroadcastStream();
     return _stream!.distinct();
   }
@@ -120,15 +120,15 @@ class Floating {
     lastEnableArguments = arguments;
     final (aspectRatio, sourceRectHint, autoEnable) = switch (arguments) {
       ImmediatePiP(:final aspectRatio, :final sourceRectHint) => (
-          aspectRatio,
-          sourceRectHint,
-          false,
-        ),
+        aspectRatio,
+        sourceRectHint,
+        false,
+      ),
       OnLeavePiP(:final aspectRatio, :final sourceRectHint) => (
-          aspectRatio,
-          sourceRectHint,
-          true,
-        ),
+        aspectRatio,
+        sourceRectHint,
+        true,
+      ),
     };
 
     if (!aspectRatio.fitsInAndroidRequirements) {
@@ -139,20 +139,17 @@ class Floating {
     // current ones, e.g. current one is ImmediatePiP but OnLeavePiP
     // was called before.
     await cancelOnLeavePiP();
-    final bool? enabledSuccessfully = await _channel.invokeMethod(
-      'enablePip',
-      {
-        ...aspectRatio.toMap(),
-        if (sourceRectHint != null)
-          'sourceRectHintLTRB': [
-            sourceRectHint.left,
-            sourceRectHint.top,
-            sourceRectHint.right,
-            sourceRectHint.bottom,
-          ],
-        'autoEnable': autoEnable,
-      },
-    );
+    final bool? enabledSuccessfully = await _channel.invokeMethod('enablePip', {
+      ...aspectRatio.toMap(),
+      if (sourceRectHint != null)
+        'sourceRectHintLTRB': [
+          sourceRectHint.left,
+          sourceRectHint.top,
+          sourceRectHint.right,
+          sourceRectHint.bottom,
+        ],
+      'autoEnable': autoEnable,
+    });
     return enabledSuccessfully ?? false
         ? PiPStatus.enabled
         : PiPStatus.unavailable;
@@ -173,26 +170,20 @@ class Rational {
 
   const Rational(this.numerator, this.denominator);
 
-  const Rational.square()
-      : numerator = 1,
-        denominator = 1;
+  const Rational.square() : numerator = 1, denominator = 1;
 
-  const Rational.landscape()
-      : numerator = 16,
-        denominator = 9;
+  const Rational.landscape() : numerator = 16, denominator = 9;
 
-  const Rational.vertical()
-      : numerator = 9,
-        denominator = 16;
+  const Rational.vertical() : numerator = 9, denominator = 16;
 
   @override
   String toString() =>
       'Rational(numerator: $numerator, denominator: $denominator)';
 
   Map<String, dynamic> toMap() => {
-        'numerator': numerator,
-        'denominator': denominator,
-      };
+    'numerator': numerator,
+    'denominator': denominator,
+  };
 }
 
 /// Extension for [Rational] to confirm whether Android aspect ration
@@ -218,7 +209,8 @@ class RationalNotMatchingAndroidRequirementsException implements Exception {
   RationalNotMatchingAndroidRequirementsException(this.rational);
 
   @override
-  String toString() => 'RationalNotMatchingAndroidRequirementsException('
+  String toString() =>
+      'RationalNotMatchingAndroidRequirementsException('
       '${rational.numerator}/${rational.denominator} does not fit into '
       'Android-supported aspect ratios. Boundaries: '
       'min: 1/2.39, max: 2.39/1. '

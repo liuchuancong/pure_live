@@ -23,6 +23,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
   Timer? _autoRefreshTimer;
   Stopwatch? _refreshStopwatch;
   Timer? _debounceTimer;
+  final List<Worker> _audienceWorkers = [];
 
   final onlineRooms = <LiveRoom>[].obs;
   final offlineRooms = <LiveRoom>[].obs;
@@ -45,6 +46,8 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
     ever(tabOnlineIndex, (_) => applyLocalFilter());
     ever(tagController.tags, (_) => applyLocalFilter());
     ever(tagController.roomTagsMap, (_) => applyLocalFilter());
+    _audienceWorkers.add(ever(SettingsService.to.app.preferRealOnlineCounts, (_) => applyLocalFilter()));
+    _audienceWorkers.add(ever(SettingsService.to.app.realOnlinePlatforms, (_) => applyLocalFilter()));
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       applyLocalFilter();
@@ -93,6 +96,9 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
     _configSubscription?.cancel();
     _autoRefreshTimer?.cancel();
     _debounceTimer?.cancel();
+    for (final worker in _audienceWorkers) {
+      worker.dispose();
+    }
     super.onClose();
   }
 

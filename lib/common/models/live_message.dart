@@ -12,6 +12,17 @@ enum LiveMessageType {
   superChat,
 }
 
+enum LiveAudienceMetricKind { popularity, onlineViewers, totalViewers }
+
+/// Typed audience updates prevent platform heat, concurrent viewers and
+/// cumulative viewers from being silently relabelled as the same number.
+class LiveAudienceUpdate {
+  const LiveAudienceUpdate({required this.kind, required this.value});
+
+  final LiveAudienceMetricKind kind;
+  final int value;
+}
+
 class LiveMessage {
   /// 消息类型
   final LiveMessageType type;
@@ -24,7 +35,8 @@ class LiveMessage {
   final String message;
 
   /// 数据
-  /// 单Type=Online时，Data为人气值(long)
+  /// When [type] is [LiveMessageType.online], this is normally a
+  /// [LiveAudienceUpdate]. Legacy engines may still send a numeric value.
   final dynamic data;
 
   /// 弹幕颜色

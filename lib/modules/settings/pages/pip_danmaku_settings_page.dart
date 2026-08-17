@@ -21,23 +21,13 @@ class PipDanmakuSettingsPage extends StatelessWidget {
           ),
         ],
       ),
-      body: ListView(
-        physics: const PureLiveScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        children: [
-          Text(
-            i18n('pip_danmaku_desc'),
-            style: Theme.of(context).textTheme.bodyMedium
-                ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: 20),
-          context.buildGroupTitle(i18n('pip_danmaku_preview')),
-          const SizedBox(height: 8),
-          const PipDanmakuPreview(),
-          const SizedBox(height: 20),
-          const PipDanmakuSettingsSection(),
-          const SizedBox(height: 24),
-        ],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth >= 840) {
+            return _DesktopPipDanmakuLayout(maxPreviewWidth: math.min(520, constraints.maxWidth * 0.43));
+          }
+          return _MobilePipDanmakuLayout(availableHeight: constraints.maxHeight, availableWidth: constraints.maxWidth);
+        },
       ),
     );
   }
@@ -57,6 +47,102 @@ class PipDanmakuSettingsPage extends StatelessWidget {
     if (confirmed == true) {
       SettingsService.to.danmaku.resetPipDanmaku();
     }
+  }
+}
+
+/// Keeps the preview visible while the long settings pane scrolls. On a phone
+/// this is a compact top panel; on desktop/tablet the same idea becomes a
+/// two-column editor.
+class _MobilePipDanmakuLayout extends StatelessWidget {
+  const _MobilePipDanmakuLayout({required this.availableHeight, required this.availableWidth});
+
+  final double availableHeight;
+  final double availableWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    final naturalHeight = math.max(0, availableWidth - 32) * 9 / 16;
+    final previewHeight = math.min(naturalHeight, math.max(96.0, availableHeight * 0.31)).toDouble();
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+          child: Text(
+            i18n('pip_danmaku_desc'),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+          child: Column(
+            key: const ValueKey('pip-danmaku-preview-pane'),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              context.buildGroupTitle(i18n('pip_danmaku_preview')),
+              const SizedBox(height: 6),
+              SizedBox(
+                height: previewHeight,
+                width: double.infinity,
+                child: const Center(child: PipDanmakuPreview()),
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: ListView(
+            key: const ValueKey('pip-danmaku-settings-scroll'),
+            physics: const PureLiveScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            children: const [PipDanmakuSettingsSection()],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DesktopPipDanmakuLayout extends StatelessWidget {
+  const _DesktopPipDanmakuLayout({required this.maxPreviewWidth});
+
+  final double maxPreviewWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          width: maxPreviewWidth,
+          child: ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              Text(
+                i18n('pip_danmaku_desc'),
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 20),
+              context.buildGroupTitle(i18n('pip_danmaku_preview')),
+              const SizedBox(height: 8),
+              const PipDanmakuPreview(key: ValueKey('pip-danmaku-preview-pane')),
+            ],
+          ),
+        ),
+        const VerticalDivider(width: 1),
+        Expanded(
+          child: ListView(
+            key: const ValueKey('pip-danmaku-settings-scroll'),
+            physics: const PureLiveScrollPhysics(),
+            padding: const EdgeInsets.all(20),
+            children: const [PipDanmakuSettingsSection(), SizedBox(height: 24)],
+          ),
+        ),
+      ],
+    );
   }
 }
 

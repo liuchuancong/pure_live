@@ -46,6 +46,11 @@ class FloatingPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
               call.argument("denominator") ?: 9
             )
           )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+          // Video and Flutter textures can resize without a screenshot-style
+          // cross-fade; this keeps the system transition continuous.
+          builder.setSeamlessResizeEnabled(true)
+        }
         val sourceRectHintLTRB = call.argument<List<Int>>("sourceRectHintLTRB")
         if (sourceRectHintLTRB?.size == 4) {
           val bounds = Rect(

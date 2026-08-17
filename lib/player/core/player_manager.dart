@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:developer';
+import 'dart:math' as math;
 
 import 'player_pool.dart';
 import 'line_fallback_manager.dart';
@@ -10,6 +11,7 @@ import '../models/player_engine.dart';
 import 'engine_fallback_manager.dart';
 
 import 'package:floating/floating.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../models/player_exception.dart';
 
@@ -72,6 +74,7 @@ class PlayerManager {
   final RxBool hasError = false.obs;
   final RxBool isVerticalVideo = false.obs;
   final RxBool isInPip = false.obs;
+  final RxBool isPipPreparing = false.obs;
   final RxBool isFloating = false.obs;
   final RxBool isHovered = false.obs;
   final RxInt videoFitIndex = 0.obs;
@@ -99,6 +102,8 @@ class PlayerManager {
   VideoController? _videoController;
   VoidCallback? _floatingDanmakuDisposer;
   bool _appFloatingPrepared = false;
+  bool _pipTransitionInFlight = false;
+  final GlobalKey _pipSourceKey = GlobalKey(debugLabel: 'pip-video-source');
 
   UnifiedPlayer? get currentPlayer => _currentPlayer;
   PlayerEngine get currentEngine => _runtimeEngine ?? _defaultEngine ?? PlayerEngine.mediaKit;
@@ -111,7 +116,7 @@ class PlayerManager {
   Stream<int?> get height => _heightSubject.stream;
   bool get isPlayingNow => _playingSubject.value;
   bool get shouldKeepDanmakuForAppFloating => _appFloatingPrepared || isFloating.value;
-  bool get isCompactModeActive => isInPip.value || isFloating.value || _appFloatingPrepared;
+  bool get isCompactModeActive => isInPip.value || isPipPreparing.value || isFloating.value || _appFloatingPrepared;
 
   void attachVideoController(VideoController controller) {
     _videoController = controller;
@@ -368,15 +373,45 @@ class PlayerManager {
 
   Future<void> enablePip() async {
     if (PlatformUtils.isAndroid) {
-      final status = await floating.pipStatus;
-      if (status == PiPStatus.disabled) {
-        final rational = isVerticalVideo.value ? Rational.vertical() : Rational.landscape();
-        await floating.enable(ImmediatePiP(aspectRatio: rational));
+      if (_pipTransitionInFlight) return;
+      _pipTransitionInFlight = true;
+      try {
+        final status = await floating.pipStatus;
+        if (status != PiPStatus.disabled) return;
+
+        // Android captures the Activity at the start of the PiP animation.
+        // Build the compact video-only surface first, then enter PiP after a
+        // rendered frame so Texture/PlatformView players do not show an app
+        // icon or a black placeholder while being reattached.
+        final sourceRectHint = _currentPipSourceRect();
+        isPipPreparing.value = true;
+        await SchedulerBinding.instance.endOfFrame;
+
+        final rational = isVerticalVideo.value ? const Rational.vertical() : const Rational.landscape();
+        final result = await floating.enable(ImmediatePiP(aspectRatio: rational, sourceRectHint: sourceRectHint));
+        if (result == PiPStatus.enabled) isInPip.value = true;
+      } finally {
+        isPipPreparing.value = false;
+        _pipTransitionInFlight = false;
       }
     } else if (Platform.isWindows) {
       await WindowService().enterWinPiP(currentVideoRatio);
       isInPip.value = true;
     }
+  }
+
+  math.Rectangle<int>? _currentPipSourceRect() {
+    final context = _pipSourceKey.currentContext;
+    final renderObject = context?.findRenderObject();
+    if (renderObject is! RenderBox || !renderObject.hasSize) return null;
+    final origin = renderObject.localToGlobal(Offset.zero);
+    final ratio = View.of(context!).devicePixelRatio;
+    final left = (origin.dx * ratio).round();
+    final top = (origin.dy * ratio).round();
+    final width = (renderObject.size.width * ratio).round();
+    final height = (renderObject.size.height * ratio).round();
+    if (width <= 0 || height <= 0) return null;
+    return math.Rectangle<int>(left, top, width, height);
   }
 
   Future<void> exitPip() async {
@@ -741,56 +776,60 @@ class PlayerManager {
 
   Widget getVideoWidget(int fitIndex, {Widget? controls, required List<BoxFit> fitList}) {
     final LivePlayController livePlayController = Get.find<LivePlayController>();
-    return PureLivePipWidget(
-      child: Container(
-        color: Colors.black,
-        padding: const EdgeInsets.all(0),
-        child: StreamBuilder<bool>(
-          stream: onPlaying,
-          initialData: isPlayingNow,
-          builder: (context, snapshot) {
-            if (_currentPlayer == null) {
-              return _buildPlaceholder();
-            }
-            final boxFit = fitList[fitIndex];
-            final content = KeyedSubtree(
-              key: videoKey.value,
-              child: Container(
-                color: Colors.black,
-                width: double.infinity,
-                height: double.infinity,
-                child: Stack(
-                  children: [
-                    if (livePlayController.state.value.player.isCurrentRoomAudioOnly)
-                      buildAudioOnlyUI(context, livePlayController)
-                    else
-                      Positioned.fill(
-                        child: Container(
-                          color: Colors.black,
-                          child: FittedBox(
-                            fit: boxFit,
-                            clipBehavior: Clip.hardEdge,
-                            child: StreamBuilder<List<int?>>(
-                              stream: CombineLatestStream.list([width, height]),
-                              builder: (context, snapshot) {
-                                final vW = snapshot.data?[0]?.toDouble() ?? 1920.0;
-                                final vH = snapshot.data?[1]?.toDouble() ?? 1080.0;
-                                return SizedBox(width: vW, height: vH, child: _currentPlayer!.getVideoWidget());
-                              },
+    return RepaintBoundary(
+      key: _pipSourceKey,
+      child: PureLivePipWidget(
+        child: Container(
+          color: Colors.black,
+          padding: const EdgeInsets.all(0),
+          child: StreamBuilder<bool>(
+            stream: onPlaying,
+            initialData: isPlayingNow,
+            builder: (context, snapshot) {
+              if (_currentPlayer == null) {
+                return _buildPlaceholder();
+              }
+              final boxFit = fitList[fitIndex];
+              final content = KeyedSubtree(
+                key: videoKey.value,
+                child: Container(
+                  color: Colors.black,
+                  width: double.infinity,
+                  height: double.infinity,
+                  child: Stack(
+                    children: [
+                      if (livePlayController.state.value.player.isCurrentRoomAudioOnly)
+                        buildAudioOnlyUI(context, livePlayController)
+                      else
+                        Positioned.fill(
+                          child: Container(
+                            color: Colors.black,
+                            child: FittedBox(
+                              fit: boxFit,
+                              clipBehavior: Clip.hardEdge,
+                              child: StreamBuilder<List<int?>>(
+                                stream: CombineLatestStream.list([width, height]),
+                                builder: (context, snapshot) {
+                                  final vW = snapshot.data?[0]?.toDouble() ?? 1920.0;
+                                  final vH = snapshot.data?[1]?.toDouble() ?? 1080.0;
+                                  return SizedBox(width: vW, height: vH, child: _currentPlayer!.getVideoWidget());
+                                },
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    if (controls != null) Positioned.fill(child: controls),
-                  ],
+                      if (controls != null) Positioned.fill(child: controls),
+                    ],
+                  ),
                 ),
-              ),
-            );
-            if (!Platform.isAndroid) {
+              );
+              // The same player surface is used in and out of PiP. Wrapping
+              // identical children in PiPSwitcher rebuilt an AnimatedSwitcher
+              // exactly when Android started its resize animation, adding a
+              // needless transition on the hottest frame.
               return content;
-            }
-            return PiPSwitcher(floating: floating, childWhenEnabled: content, childWhenDisabled: content);
-          },
+            },
+          ),
         ),
       ),
     );

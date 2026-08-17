@@ -31,6 +31,7 @@ class DanmakuController extends GetxController {
   String? _gateRoomKey;
   String? _lastStatusText;
   DateTime? _lastStatusAt;
+  bool _maskedNameNoticeShown = false;
   Set<String> _blockedUsers = const <String>{};
   List<String> _blockedKeywords = const <String>[];
 
@@ -96,6 +97,7 @@ class DanmakuController extends GetxController {
 
       final engine = liveDanmaku;
       final token = ++_sessionToken;
+      _maskedNameNoticeShown = false;
       _connectingKey = key;
       _installCallbacks(engine, room, key, token);
 
@@ -133,6 +135,12 @@ class DanmakuController extends GetxController {
       if (!_acceptsCallback(engine, key, token)) return;
       if (msg.type == LiveMessageType.chat) {
         if (!_messageGate.accepts(msg) || _isBlocked(msg)) return;
+        if (!_maskedNameNoticeShown &&
+            room.platform == Sites.bilibiliSite &&
+            RegExp(r'\*{2,}|＊{2,}').hasMatch(msg.userName)) {
+          _maskedNameNoticeShown = true;
+          _addStatusMessage(i18n('bilibili_guest_name_masked'));
+        }
         _main.addDanmakuMessage(msg);
         _state.player.videoController?.sendDanmaku(msg);
       } else if (msg.type == LiveMessageType.online) {

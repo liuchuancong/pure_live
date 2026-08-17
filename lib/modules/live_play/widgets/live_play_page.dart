@@ -32,7 +32,7 @@ class LivePlayPage extends GetView<LivePlayController> {
     return Obx(() {
       _updateWakelock();
       final manager = GlobalPlayerService.instance.playerManager;
-      final isInPip = manager.isInPip.value;
+      final isInPip = manager.isInPip.value || manager.isPipPreparing.value;
       final state = controller.state.value;
       final mode = state.ui.screenMode;
       final videoController = state.player.videoController;
@@ -779,7 +779,10 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
         children: [
           Icon(icon, size: 14),
           const SizedBox(width: 4),
-          Text('$label ${readableCount(value)}', style: Get.textTheme.bodySmall),
+          Text(
+            '$label ${value.isEmpty ? i18n('audience_waiting') : readableCount(value)}',
+            style: Get.textTheme.bodySmall,
+          ),
         ],
       );
     });

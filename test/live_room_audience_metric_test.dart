@@ -10,6 +10,8 @@ void main() {
       expect(LiveRoom(platform: 'kuaishou').effectiveAudienceMetricType, AudienceMetricType.onlineViewers);
       expect(LiveRoom(platform: 'douyin').effectiveAudienceMetricType, AudienceMetricType.totalViewers);
       expect(LiveRoom(platform: 'huya', onlineViewers: '3210').supportsRealOnlineCount, isTrue);
+      expect(LiveRoom(platform: 'huya').supportsRealOnlineCount, isTrue);
+      expect(LiveRoom(platform: 'huya').hasRealOnlineCount, isFalse);
       expect(LiveRoom(platform: 'bilibili').supportsRealOnlineCount, isFalse);
     });
 
@@ -40,6 +42,22 @@ void main() {
       expect(room.supportsRealOnlineCount, isTrue);
       expect(room.audienceValue(preferRealOnline: true, platformEnabled: true), '0');
       expect(room.audienceType(preferRealOnline: true, platformEnabled: true), AudienceMetricType.onlineViewers);
+    });
+
+    test('shows a pending online value instead of relabelling heat while waiting for heartbeat', () {
+      final room = LiveRoom(platform: 'huya', popularity: '500万');
+
+      expect(room.audienceValue(preferRealOnline: true, platformEnabled: true), isEmpty);
+      expect(room.audienceType(preferRealOnline: true, platformEnabled: true), AudienceMetricType.onlineViewers);
+      expect(room.audienceSortValue(preferRealOnline: true, platformEnabled: true), 0);
+    });
+
+    test('puts unsupported heat values behind supported platforms in concurrent mode', () {
+      final bilibili = LiveRoom(platform: 'bilibili', popularity: '500万');
+      final douyin = LiveRoom(platform: 'douyin', onlineViewers: '3200');
+
+      expect(bilibili.audienceSortValue(preferRealOnline: true, platformEnabled: true), -1);
+      expect(douyin.audienceSortValue(preferRealOnline: true, platformEnabled: true), 3200);
     });
 
     test('round-trips an explicit metric and migrates older records', () {

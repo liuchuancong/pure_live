@@ -220,7 +220,7 @@ class DouyinDanmaku implements LiveDanmaku {
         type: LiveMessageType.online,
         // totalUser is cumulative. onlineUserForAnchor is the concurrent
         // audience field shown to the anchor and must be kept separate.
-        data: online,
+        data: LiveAudienceUpdate(kind: LiveAudienceMetricKind.onlineViewers, value: online),
         color: LiveMessageColor.white,
         message: "",
         userName: "",

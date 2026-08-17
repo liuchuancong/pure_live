@@ -18,6 +18,7 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
   int _settledTabIndex = 0;
   int _currentPage = 0;
   String _activeKeyword = '';
+  final List<Worker> _audienceWorkers = [];
   SearchController() {
     tabController = TabController(length: Sites().availableSites().length + 1, vsync: this);
     tabController.addListener(() {
@@ -143,17 +144,7 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
     for (final room in batches.expand((items) => items)) {
       unique['${room.platform}:${room.roomId}'] = room;
     }
-    final rooms = unique.values.toList()
-      ..sort((a, b) {
-        final liveOrder = (b.liveStatus == LiveStatus.live ? 1 : 0) - (a.liveStatus == LiveStatus.live ? 1 : 0);
-        if (liveOrder != 0) return liveOrder;
-        if (SettingsService.to.app.preferRealOnlineCounts.v) {
-          final supportedOrder = (_realOnlineEnabled(b) ? 1 : 0) - (_realOnlineEnabled(a) ? 1 : 0);
-          if (supportedOrder != 0) return supportedOrder;
-          if (!_realOnlineEnabled(a)) return a.platform.toString().compareTo(b.platform.toString());
-        }
-        return _audienceValue(b).compareTo(_audienceValue(a));
-      });
+    final rooms = unique.values.toList()..sort(_compareRooms);
     results.assignAll(rooms);
     _currentPage = page;
     final receivedResults = batches.any((items) => items.isNotEmpty);
@@ -167,6 +158,23 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
 
   bool _realOnlineEnabled(LiveRoom room) =>
       room.supportsRealOnlineCount && SettingsService.to.app.isRealOnlineEnabledFor(room.platform);
+
+  void _resortCurrentResults() {
+    if (results.isEmpty) return;
+    final rooms = List<LiveRoom>.from(results)..sort(_compareRooms);
+    results.assignAll(rooms);
+  }
+
+  int _compareRooms(LiveRoom a, LiveRoom b) {
+    final liveOrder = (b.liveStatus == LiveStatus.live ? 1 : 0) - (a.liveStatus == LiveStatus.live ? 1 : 0);
+    if (liveOrder != 0) return liveOrder;
+    if (SettingsService.to.app.preferRealOnlineCounts.v) {
+      final supportedOrder = (_realOnlineEnabled(b) ? 1 : 0) - (_realOnlineEnabled(a) ? 1 : 0);
+      if (supportedOrder != 0) return supportedOrder;
+      if (!_realOnlineEnabled(a)) return a.platform.toString().compareTo(b.platform.toString());
+    }
+    return _audienceValue(b).compareTo(_audienceValue(a));
+  }
 
   int _audienceValue(LiveRoom room) {
     final app = SettingsService.to.app;
@@ -232,6 +240,8 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
   @override
   void onInit() {
     super.onInit();
+    _audienceWorkers.add(ever(SettingsService.to.app.preferRealOnlineCounts, (_) => _resortCurrentResults()));
+    _audienceWorkers.add(ever(SettingsService.to.app.realOnlinePlatforms, (_) => _resortCurrentResults()));
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (Platform.isWindows) {
         _isWebView2Available = await isWebView2Installed();
@@ -250,6 +260,9 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
       ..removeListener(_handleSearchScroll)
       ..dispose();
     searchController.dispose();
+    for (final worker in _audienceWorkers) {
+      worker.dispose();
+    }
     super.onClose();
   }
 }

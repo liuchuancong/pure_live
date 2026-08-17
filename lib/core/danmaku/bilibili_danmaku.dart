@@ -271,7 +271,7 @@ class BiliBiliDanmaku implements LiveDanmaku {
       onMessage?.call(
         LiveMessage(
           type: LiveMessageType.online,
-          data: online,
+          data: LiveAudienceUpdate(kind: LiveAudienceMetricKind.popularity, value: online),
           color: LiveMessageColor.white,
           message: "",
           userName: "",
@@ -319,8 +319,8 @@ class BiliBiliDanmaku implements LiveDanmaku {
           var message = obj["info"][1].toString();
           var color = asT<int?>(obj["info"][0][3]) ?? 0;
           if (obj["info"][2] != null && obj["info"][2].length != 0) {
-            var username = obj["info"][2][1].toString();
             final metadata = obj["info"][0] is List ? obj["info"][0] as List : const <dynamic>[];
+            final username = _preferredBilibiliUserName(obj, metadata, obj["info"][2][1]?.toString() ?? '');
             final rawTimestamp = metadata.length > 4 ? int.tryParse(metadata[4]?.toString() ?? '') : null;
             final rawNonce = metadata.length > 5 ? metadata[5]?.toString() ?? '' : '';
             final sentAt = rawTimestamp == null
@@ -337,6 +337,19 @@ class BiliBiliDanmaku implements LiveDanmaku {
             );
             onMessage?.call(liveMsg);
           }
+        }
+      } else if (cmd == "WATCHED_CHANGE") {
+        final value = int.tryParse(obj["data"]?["num"]?.toString() ?? '');
+        if (value != null && value >= 0) {
+          onMessage?.call(
+            LiveMessage(
+              type: LiveMessageType.online,
+              data: LiveAudienceUpdate(kind: LiveAudienceMetricKind.totalViewers, value: value),
+              color: LiveMessageColor.white,
+              message: "",
+              userName: "",
+            ),
+          );
         }
       } else if (cmd == "SUPER_CHAT_MESSAGE") {
         if (obj["data"] == null) {
@@ -364,6 +377,51 @@ class BiliBiliDanmaku implements LiveDanmaku {
     } catch (e) {
       CoreLog.error(e);
     }
+  }
+
+  String _preferredBilibiliUserName(dynamic packet, List<dynamic> metadata, String legacyName) {
+    dynamic richInfo;
+    if (metadata.length > 15) richInfo = metadata[15];
+    if (richInfo is String && richInfo.trimLeft().startsWith('{')) {
+      try {
+        richInfo = json.decode(richInfo);
+      } catch (_) {
+        richInfo = null;
+      }
+    }
+
+    String readName(dynamic root) {
+      if (root is! Map) return '';
+      final user = root['user'] is Map ? root['user'] : root;
+      if (user is! Map) return '';
+      final base = user['base'];
+      if (base is! Map) return '';
+      final name = base['name']?.toString().trim() ?? '';
+      if (name.isNotEmpty) return name;
+      final origin = base['origin_info'];
+      return origin is Map ? origin['name']?.toString().trim() ?? '' : '';
+    }
+
+    // Current packets include a richer user object in info[0][15]. Logged-in
+    // sessions may expose a complete name there even when the legacy slot is
+    // masked. Guest sessions currently mask both locations and omit the uid.
+    dynamic packetUserInfo;
+    dynamic packetDataUserInfo;
+    if (packet is Map) {
+      packetUserInfo = packet['uinfo'];
+      final data = packet['data'];
+      if (data is Map) packetDataUserInfo = data['uinfo'];
+    }
+    final candidates = <String>[];
+    for (final candidate in [richInfo, packetUserInfo, packetDataUserInfo]) {
+      final name = readName(candidate);
+      if (name.isNotEmpty) candidates.add(name);
+    }
+    final masked = RegExp(r'\*{2,}|＊{2,}');
+    for (final candidate in [...candidates, legacyName]) {
+      if (candidate.isNotEmpty && !masked.hasMatch(candidate)) return candidate;
+    }
+    return candidates.isNotEmpty ? candidates.first : legacyName;
   }
 
   int readInt(List<int> buffer, int start, int len) {

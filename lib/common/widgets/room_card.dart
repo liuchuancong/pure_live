@@ -710,7 +710,8 @@ class RoomCard extends StatelessWidget {
                             AudienceMetricType.totalViewers => Icons.visibility_rounded,
                             _ => Icons.whatshot_rounded,
                           },
-                          count: '${i18n(labelKey)} · ${readableCount(value)}',
+                          count:
+                              '${i18n(labelKey)} · ${value.isEmpty ? i18n('audience_waiting') : readableCount(value)}',
                           dense: dense,
                           color: Get.theme.primaryColor,
                         );

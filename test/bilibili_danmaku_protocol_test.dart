@@ -40,19 +40,69 @@ void main() {
       danmaku.decodeMessage(stream.takeBytes());
 
       expect(received.first.type, LiveMessageType.online);
-      expect(received.first.data, 12345);
+      expect(received.first.data, isA<LiveAudienceUpdate>());
+      expect((received.first.data as LiveAudienceUpdate).kind, LiveAudienceMetricKind.popularity);
+      expect((received.first.data as LiveAudienceUpdate).value, 12345);
       expect(received.last.message, 'visible');
       expect(danmaku.isConnected, isTrue);
       expect(readyCount, 1);
     });
+
+    test('prefers the complete rich username over a masked legacy field', () {
+      final danmaku = BiliBiliDanmaku();
+      final received = <LiveMessage>[];
+      danmaku.onMessage = received.add;
+
+      danmaku.decodeMessage(_chatPacket('hello', '旧***', richUserName: '完整用户名'));
+
+      expect(received.single.userName, '完整用户名');
+      expect(received.single.userId, '1000');
+    });
+
+    test('does not replace a complete legacy username with masked rich data', () {
+      final danmaku = BiliBiliDanmaku();
+      final received = <LiveMessage>[];
+      danmaku.onMessage = received.add;
+
+      danmaku.decodeMessage(_chatPacket('hello', '完整旧用户名', richUserName: '新***'));
+
+      expect(received.single.userName, '完整旧用户名');
+    });
+
+    test('keeps cumulative watched count separate from popularity', () {
+      final danmaku = BiliBiliDanmaku();
+      final received = <LiveMessage>[];
+      danmaku.onMessage = received.add;
+      final body = json.encode({
+        'cmd': 'WATCHED_CHANGE',
+        'data': {'num': 18342},
+      });
+
+      danmaku.decodeMessage(_packet(utf8.encode(body), operation: 5));
+
+      final update = received.single.data as LiveAudienceUpdate;
+      expect(update.kind, LiveAudienceMetricKind.totalViewers);
+      expect(update.value, 18342);
+    });
   });
 }
 
-Uint8List _chatPacket(String message, String userName) {
+Uint8List _chatPacket(String message, String userName, {String? richUserName}) {
+  final metadata = <dynamic>[0, 1, 25, 0x64B5F6];
+  if (richUserName != null) {
+    while (metadata.length <= 15) {
+      metadata.add(null);
+    }
+    metadata[15] = {
+      'user': {
+        'base': {'name': richUserName},
+      },
+    };
+  }
   final payload = json.encode({
     'cmd': 'DANMU_MSG:4:0:2:2:2:0',
     'info': [
-      [0, 1, 25, 0x64B5F6],
+      metadata,
       message,
       [1000, userName],
     ],
