@@ -93,7 +93,7 @@ Linux、macOS 和 iOS 通常通过 `manual-build` 手动开关补建；阶段标
 
 Linux 版使用系统浏览器承接“继续网页搜索”，避免引入额外 WPE WebKit 运行时；平台原生搜索、直播详情、弹幕与播放链路仍在应用内完成。Windows/macOS/Android/iOS 使用锁定修订版 `flutter_inappwebview`。
 
-Ubuntu 22.04 构建会同时安装 `libva`、VDPAU、PulseAudio 与 XVideo 开发包，以满足打包版 `libmpv.so` 的链接依赖；Android 使用仓库内的同版本网页内核兼容副本通过 AGP 9.3.1 / R8 构建。
+Ubuntu 24.04 构建会同时安装 `libva`、VDPAU、PulseAudio、Wayland、EGL 与 X11 开发包，以满足当前锁定 `libmpv.so` 的 glibc 2.38 / GLIBCXX 3.4.32 基线和链接依赖；Android 使用仓库内的同版本网页内核兼容副本通过 AGP 9.3.1 / R8 构建。Linux 归档携带应用与媒体库，目标系统仍需提供 GTK、托盘、显卡驱动和音频运行库。
 
 ## 单独命令
 
@@ -119,7 +119,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\publish_local_release.ps1 `
 
 ## GitHub Actions
 
-`.github/workflows/feature-build.yml` 只支持手动触发，可分别选择 Android arm64、Windows x64、Linux x64、macOS arm64 和 iOS 设备编译；默认先运行完整静态分析、测试与接口探测。产物仅保留 3 天。
+`.github/workflows/feature-build.yml` 支持手动触发，可分别选择 Android arm64、Windows x64、Linux x64、macOS universal 和 iOS arm64 设备编译；默认先运行完整静态分析、测试与接口探测。`stage-linux-*`、`stage-ios-*` 与 `stage-apple-*` 标签仅用于精确阶段补建，产物保留 3 天。
 
 代码未变化且当前提交已经在本机通过完整门禁时，可关闭手动工作流的
 `run_quality`，仅调用托管 Runner 完成 Secrets 正式签名；默认仍会执行完整门禁。
@@ -131,7 +131,7 @@ Android 手动云构建要求以下 Secrets：
 - `PURELIVE_KEY_PASSWORD`
 - `PURELIVE_KEY_ALIAS`
 
-`.github/workflows/update_releases.yml` 同样只支持手动触发，不再每日消耗 Actions 配额。仓库不再通过标签自动构建或发布。
+`.github/workflows/update_releases.yml` 只支持手动触发，不再每日消耗 Actions 配额。正式 Release 不由标签自动发布；仅上述显式阶段标签会启动对应平台编译。
 
 需要在本机刷新 `assets/releases.json` 时，从仓库根目录运行：
 

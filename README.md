@@ -20,7 +20,7 @@
 - **最新稳定版**：[v2.1.0](https://github.com/wzgrx/pure_live/releases/tag/v2.1.0)
 - **当前版本**：`2.1.0+48`（阶段性大更新）
 - **上游同步基线**：`liuchuancong/pure_live@24ff92b6`（2026-08-18）
-- **构建平台**：Android arm64、Windows x64、Linux x64、macOS arm64、iOS 设备包
+- **构建平台**：Android arm64、Windows x64、Linux x64、macOS universal、iOS arm64 设备包
 
 ![Pure Live 界面预览](assets/images/banner.png)
 
@@ -78,7 +78,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
 PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 ```
 
-本地脚本优先完成依赖解析、格式检查、静态分析、测试和外部接口探测；GitHub Actions 仅保留手动兜底入口，以减少配额消耗。完整说明见 [本地构建与发布](docs/BUILD_AND_RELEASE.md)。
+本地脚本优先完成依赖解析、格式检查、静态分析、测试和外部接口探测；GitHub Actions 仅保留手动入口与显式阶段构建标签，以减少配额消耗。完整说明见 [本地构建与发布](docs/BUILD_AND_RELEASE.md)。
 
 缩略图除支持手动刷新外，也可在“设置 → 刷新设置”启用定时自动刷新并选择 5 分钟到 6 小时的周期。
 

@@ -20,7 +20,8 @@
 ## 全平台构建
 
 - Android arm64 与 Windows x64 继续优先在本机完成质量门禁、正式构建和启动验证。
-- 手动工作流扩展到 Linux x64、macOS arm64 和 iOS 设备编译；Apple 两个平台共用一次 macOS 作业。
+- 阶段工作流扩展到 Linux x64、macOS universal 和 iOS arm64 设备编译；Apple 两个平台共用一次 macOS 作业。
+- Linux 使用 Ubuntu 24.04 构建，以匹配当前锁定 `libmpv` 的 glibc/GLIBCXX 基线；macOS 主程序实测同时包含 x86_64 与 arm64。
 - iOS 生成无签名设备 `.app` 归档，供后续证书签名与 IPA 封装。
 - Built-in Kotlin 审计与 Flutter Analyze 零问题，64 项单元/Widget 测试及 25/25 平台接口探测通过。
 

@@ -1,6 +1,6 @@
 # 依赖与接口审计
 
-最近核验日期：2026-08-17
+最近核验日期：2026-08-18
 
 ## 固定工具链
 
@@ -11,7 +11,7 @@
 
 Android 已启用 AGP 9 Built-in Kotlin。主应用、`flv_lzc` 以及六个仍使用独立 KGP 的插件已完成本地迁移，根设置不再声明或应用 `org.jetbrains.kotlin.android`。当前 Flutter 3.47 的通用依赖检查会把 AGP 自带编译器套用到独立 KGP 最低版本规则，因此 Gradle 属性跳过该项误判，同时由 `tool/audit_built_in_kotlin.py` 固定检查 AGP/Gradle 下限、开关和全部本地模块；实际 release 编译继续作为最终门禁。
 
-`flutter pub outdated` 已于 2026-08-17 再次复核。所有直接运行时依赖处于当前上游最新版、项目固定 Git 提交或本地兼容补丁；报告中的 8 项更新均属于 Flutter SDK 或当前上游约束锁定的传递依赖，当前锁定版本未受已知 pub 安全公告影响。完整 Android release 日志中已无第三方插件应用 KGP 的迁移警告。
+`flutter pub outdated` 已于 2026-08-18 再次复核。所有直接运行时依赖处于当前上游最新版、项目固定 Git 提交或本地兼容补丁；报告中的 8 项更新均属于 Flutter SDK 或当前上游约束锁定的传递依赖，当前锁定版本未受已知 pub 安全公告影响。完整 Android release 日志中已无第三方插件应用 KGP 的迁移警告。
 
 播放器依赖在 v2.0.33 再次单独核验：`video_player` 锁定到 2.14.0，`better_player_plus` 为 1.3.5；项目使用的 `Predidit/media-kit` 修订分支 HEAD 仍为 `994465d9bfca3f39d0b41199d16e7fd93fe97881`。`pub outdated` 中其余较新版本均为当前 Flutter SDK 或上游依赖约束锁定的传递包，未用强制 override 破坏播放器组合兼容性。
 
@@ -26,7 +26,8 @@ Android 已启用 AGP 9 Built-in Kotlin。主应用、`flv_lzc` 以及六个仍�
 - Android 本地构建会预取并校验 MediaKit arm64 库与 FFmpeg Kit AAR；后者预先写入 Native Assets 共享缓存，避开 Windows Dart 下载器在 GitHub Release 重定向处长时间等待。
 - 删除已停止作用的 `sqlite3_flutter_libs`；项目使用 `sqlite3` 3.x 的 Native Assets。
 - 升级 `app_links`、`connectivity_plus`、`pro_mpack` 与 Syncfusion sliders，并通过静态分析和完整测试。
-- GitHub Actions 固定到已核验的完整提交 SHA，Dependabot 每月汇总检查 pub、Gradle 和 Actions 更新；工作流仍仅手动运行，不因依赖检查消耗构建分钟。
+- GitHub Actions 固定到已核验的完整提交 SHA，Dependabot 每月汇总检查 pub、Gradle 和 Actions 更新；日常分支推送不构建，仅手动入口或显式阶段标签按平台运行。
+- 当前锁定的 Predidit Linux `libmpv` 需要 glibc 2.38 与 GLIBCXX 3.4.32，因此 Linux 作业固定使用 Ubuntu 24.04；Ubuntu 22.04 链接失败属于二进制基线不匹配，而非缺少单个开发包。
 
 ## 直播接口探测
 

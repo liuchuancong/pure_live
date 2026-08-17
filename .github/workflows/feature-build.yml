@@ -19,7 +19,7 @@ on:
         type: boolean
         default: false
       build_macos:
-        description: Build macOS arm64 application archive
+        description: Build macOS universal application archive
         required: true
         type: boolean
         default: false
@@ -244,12 +244,12 @@ jobs:
         run: |
           app_path="$(find build/macos/Build/Products/Release -maxdepth 1 -type d -name '*.app' -print -quit)"
           test -n "$app_path"
-          ditto -c -k --sequesterRsrc --keepParent "$app_path" PureLive-macos-arm64.zip
+          ditto -c -k --sequesterRsrc --keepParent "$app_path" PureLive-macos-universal.zip
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
         with:
-          name: pure-live-macos-arm64
-          path: PureLive-macos-arm64.zip
+          name: pure-live-macos-universal
+          path: PureLive-macos-universal.zip
           if-no-files-found: error
           retention-days: 3
       - name: Build iOS device application

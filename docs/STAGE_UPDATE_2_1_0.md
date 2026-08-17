@@ -31,11 +31,11 @@
 | --- | --- | --- | --- |
 | Android | arm64-v8a | 正式包名 APK | Windows 本机签名构建、ADB 覆盖安装与启动探测 |
 | Windows | x64 | 便携 ZIP / 可选 EXE | Windows 本机构建与进程/窗口启动探测 |
-| Linux | x64 | `tar.gz` 便携包 | Ubuntu 22.04 手动工作流编译 |
-| macOS | arm64 | `.app` ZIP | macOS 15 手动工作流编译 |
+| Linux | x64 | `tar.gz` 便携包 | Ubuntu 24.04 阶段工作流编译与 ELF x86-64 核验 |
+| macOS | universal | `.app` ZIP | macOS 15 编译，主程序含 x86_64 与 arm64 |
 | iOS | arm64 device | 无签名 `.app` ZIP | macOS 15 `flutter build ios --no-codesign` |
 
-Android 与 Windows 优先使用本机 5090 环境，Apple 平台仅使用一次 macOS 作业同时构建，以控制 Actions 用量。五平台开关均为手动触发，日常提交不会自动消耗构建分钟。
+Android 与 Windows 优先使用本机 5090 环境，Apple 平台仅使用一次 macOS 作业同时构建，以控制 Actions 用量。五平台支持手动选择；显式阶段标签只补建指定平台，日常分支提交不会自动消耗构建分钟。
 
 阶段标签可按平台精确补建：`stage-linux-*` 只构建 Linux，`stage-ios-*` 只构建 iOS，`stage-apple-*` 在同一 macOS Runner 构建 macOS 与 iOS；`signed-build-*` 只补建正式签名 Android arm64。普通分支提交不自动运行这些作业。
 
@@ -49,5 +49,13 @@ Android 与 Windows 优先使用本机 5090 环境，Apple 平台仅使用一次
 正式签名 APK 默认通过本机临时 Runner 注入 GitHub Secrets；`signed-build-*` 标签仅用于临时 Runner 服务异常时的一次托管构建回退。
 
 本阶段本机门禁结果：Built-in Kotlin 审计与 Flutter Analyze 零问题、64 项单元/Widget 测试通过、25/25 平台接口探测通过。
+
+## 最终构建验收
+
+- Android arm64 正式签名：[run 32051382539](https://github.com/wzgrx/pure_live/actions/runs/32051382539) 通过；包名 `com.mystyle.purelive`、版本 `2.1.0 (2048)`、单一 `arm64-v8a`，v2 签名证书与 v2.0.36 正式包一致。
+- Windows x64 在本机完成便携 ZIP 与 EXE 安装器；程序持续启动 20 秒后进程存活、窗口句柄有效且 UI 线程响应。
+- Linux x64：[run 32053307686](https://github.com/wzgrx/pure_live/actions/runs/32053307686) 通过；归档含 1320 项，主程序为 x86-64 PIE ELF。
+- macOS universal 与 iOS arm64：[run 32051400058](https://github.com/wzgrx/pure_live/actions/runs/32051400058) 通过；macOS 主程序含 x86_64/arm64，iOS 主程序为 arm64，iOS 归档保持无签名状态。
+- 所有正式附件均在本机重新计算 SHA-256；Android、Linux 与 Apple Actions 外层归档摘要和 GitHub Artifact 摘要一致。
 
 返回 [文档索引](README.md)。
