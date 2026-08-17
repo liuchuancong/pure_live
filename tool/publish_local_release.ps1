@@ -33,8 +33,13 @@ try {
     if (-not (Test-Path -LiteralPath $metadataPath)) { throw 'BUILD_METADATA.json is missing.' }
     $metadata = Get-Content -LiteralPath $metadataPath -Raw | ConvertFrom-Json
     $headCommit = (git rev-parse HEAD).Trim()
-    if ($metadata.source_commit -ne $headCommit -or $metadata.tracked_files_dirty) {
-        throw 'Artifacts were not built from the current clean commit; rebuild them after committing.'
+    $releaseCommit = if ($metadata.release_commit) {
+        $metadata.release_commit
+    } else {
+        $metadata.source_commit
+    }
+    if ($releaseCommit -ne $headCommit -or $metadata.tracked_files_dirty) {
+        throw 'Release metadata does not match the current clean commit.'
     }
     $apks = Get-ChildItem $ArtifactDirectory -File -Filter '*.apk'
     if ($apks -and $metadata.android_signing -ne 'release' -and -not $AllowQaArtifacts) {
