@@ -242,6 +242,7 @@ class CCSite implements LiveSite {
         liveStatus: item['status'] != null && item['status'] == 1 ? LiveStatus.live : LiveStatus.offline,
         avatar: item["portrait"].toString(),
         watching: item["follower_num"].toString(),
+        followers: item["follower_num"].toString(),
         audienceMetricType: AudienceMetricType.followers,
         platform: Sites.ccSite,
       );

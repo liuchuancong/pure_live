@@ -1,4 +1,5 @@
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 
 class AudienceMetricSettingsPage extends StatelessWidget {
   const AudienceMetricSettingsPage({super.key});
@@ -52,25 +53,7 @@ class AudienceMetricSettingsPage extends StatelessWidget {
           context.buildGroupTitle(i18n('audience_online_platforms')),
           context.buildModernCard([
             for (final platform in _platforms)
-              Obx(() {
-                final capability = LiveRoom.audienceCapabilityFor(platform.id);
-                final supported = capability.supportsConcurrentOnline;
-                final sourceLabel = supported
-                    ? i18n(
-                        capability.onlineAvailableInRoomLists
-                            ? 'audience_source_room_list'
-                            : 'audience_source_room_realtime',
-                      )
-                    : i18n('audience_source_not_exposed');
-                return SwitchListTile(
-                  secondary: Icon(supported ? Icons.people_alt_rounded : Icons.whatshot_rounded),
-                  title: Text(platform.name),
-                  subtitle: Text('$sourceLabel\n${i18n(platform.detailKey)}'),
-                  isThreeLine: true,
-                  value: supported && app.isRealOnlineEnabledFor(platform.id),
-                  onChanged: supported ? (value) => app.setRealOnlineEnabledFor(platform.id, value) : null,
-                );
-              }),
+              _AudiencePlatformTile(id: platform.id, name: platform.name, detailKey: platform.detailKey, app: app),
           ]),
           const SizedBox(height: 12),
           Padding(
@@ -80,6 +63,44 @@ class AudienceMetricSettingsPage extends StatelessWidget {
           const SizedBox(height: 32),
         ],
       ),
+    );
+  }
+}
+
+class _AudiencePlatformTile extends StatelessWidget {
+  const _AudiencePlatformTile({required this.id, required this.name, required this.detailKey, required this.app});
+
+  final String id;
+  final String name;
+  final String detailKey;
+  final AppSettingsController app;
+
+  @override
+  Widget build(BuildContext context) {
+    final capability = LiveRoom.audienceCapabilityFor(id);
+    final supported = capability.supportsConcurrentOnline;
+    final sourceLabel = supported
+        ? i18n(capability.onlineAvailableInRoomLists ? 'audience_source_room_list' : 'audience_source_room_realtime')
+        : i18n('audience_source_not_exposed');
+
+    Widget tile({required bool value, ValueChanged<bool>? onChanged}) {
+      return SwitchListTile(
+        key: ValueKey('audience-platform-$id'),
+        secondary: Icon(supported ? Icons.people_alt_rounded : Icons.whatshot_rounded),
+        title: Text(name),
+        subtitle: Text('$sourceLabel\n${i18n(detailKey)}'),
+        isThreeLine: true,
+        value: value,
+        onChanged: onChanged,
+      );
+    }
+
+    // Unsupported rows are deliberately not wrapped in Obx. An Obx builder
+    // without an Rx read is rejected by GetX and previously left this whole
+    // card looking like a large empty grey block.
+    if (!supported) return tile(value: false);
+    return Obx(
+      () => tile(value: app.isRealOnlineEnabledFor(id), onChanged: (value) => app.setRealOnlineEnabledFor(id, value)),
     );
   }
 }

@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/modules/search/search_capability.dart';
+import 'package:pure_live/modules/search/search_ranking.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SearchController extends GetxController with GetSingleTickerProviderStateMixin {
@@ -12,23 +14,32 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
   final hasMore = false.obs;
   final searched = false.obs;
   final errorMessage = ''.obs;
+  final includeOffline = true.obs;
+  final sortMode = LiveSearchSortMode.smart.obs;
   final ScrollController scrollController = ScrollController();
   bool _isWebView2Available = true;
   int _searchGeneration = 0;
   int _settledTabIndex = 0;
   int _currentPage = 0;
   String _activeKeyword = '';
+  final Map<String, LiveRoom> _rawResults = {};
+  final Map<String, bool> _hasMoreByPlatform = {};
   final List<Worker> _audienceWorkers = [];
   SearchController() {
     tabController = TabController(length: Sites().availableSites().length + 1, vsync: this);
-    tabController.addListener(() {
-      index.value = tabController.index;
-      if (!tabController.indexIsChanging && _settledTabIndex != tabController.index) {
-        _settledTabIndex = tabController.index;
-        if (searched.v) doSearch();
-      }
-    });
+    tabController.addListener(_handleTabChange);
     scrollController.addListener(_handleSearchScroll);
+  }
+
+  void _handleTabChange() {
+    if (tabController.indexIsChanging) return;
+    final animationValue = tabController.animation?.value ?? tabController.index.toDouble();
+    if ((animationValue - tabController.index).abs() > 0.001) return;
+    if (_settledTabIndex == tabController.index) return;
+
+    _settledTabIndex = tabController.index;
+    index.value = tabController.index;
+    if (searched.v) doSearch();
   }
 
   void _handleSearchScroll() {
@@ -106,6 +117,8 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
     hasMore.v = false;
     searched.v = true;
     errorMessage.v = '';
+    _rawResults.clear();
+    _hasMoreByPlatform.clear();
     results.clear();
 
     await _searchPage(keyword: keyword, page: 1, generation: generation, append: false);
@@ -125,59 +138,123 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
     required bool append,
   }) async {
     final sites = Sites().availableSites();
-    final selectedSites = index.v == 0 ? sites : [sites[index.v - 1]];
-    final failures = <String>[];
+    final selectedSites = index.v == 0 ? sites : (index.v <= sites.length ? [sites[index.v - 1]] : <Site>[]);
+    if (!append) {
+      for (final site in selectedSites) {
+        final capability = LiveSearchCapabilities.forPlatform(site.id);
+        _hasMoreByPlatform[site.id] = capability.supportsNativeSearch;
+      }
+    }
+    final searchableSites = selectedSites.where((site) {
+      final capability = LiveSearchCapabilities.forPlatform(site.id);
+      return capability.supportsNativeSearch && (!append || (_hasMoreByPlatform[site.id] ?? true));
+    }).toList();
+
+    if (searchableSites.isEmpty) {
+      if (generation != _searchGeneration) return;
+      if (selectedSites.length == 1 &&
+          !LiveSearchCapabilities.forPlatform(selectedSites.single.id).supportsNativeSearch) {
+        errorMessage.v = i18n('search_web_only_platform', args: {'site': selectedSites.single.name});
+      }
+      _applyFiltersAndSort();
+      hasMore.v = false;
+      loading.v = false;
+      loadingMore.v = false;
+      return;
+    }
+
     final batches = await Future.wait(
-      selectedSites.map((site) async {
+      searchableSites.map((site) async {
         try {
-          return await site.liveSite.searchRooms(keyword, page: page, pageSize: 20);
+          final rooms = await site.liveSite.searchRooms(keyword, page: page, pageSize: 20);
+          return _SiteSearchBatch(site: site, rooms: rooms);
         } catch (error) {
-          failures.add(site.name);
           debugPrint('Native search failed for ${site.id}: $error');
-          return <LiveRoom>[];
+          return _SiteSearchBatch(site: site, rooms: const [], failed: true);
         }
       }),
     );
     if (generation != _searchGeneration) return;
 
-    final unique = <String, LiveRoom>{
-      if (append)
-        for (final room in results) '${room.platform}:${room.roomId}': room,
-    };
-    final previousCount = unique.length;
-    for (final room in batches.expand((items) => items)) {
-      unique['${room.platform}:${room.roomId}'] = room;
+    final failures = <String>[];
+    for (final batch in batches) {
+      final capability = LiveSearchCapabilities.forPlatform(batch.site.id);
+      final beforeCount = _rawResults.length;
+      for (final room in batch.rooms) {
+        _rawResults[_roomKey(room)] = room;
+      }
+      final addedCount = _rawResults.length - beforeCount;
+      if (batch.failed) failures.add(batch.site.name);
+      _hasMoreByPlatform[batch.site.id] =
+          !batch.failed && capability.supportsPagination && batch.rooms.isNotEmpty && addedCount > 0;
     }
-    final rooms = unique.values.toList()..sort(_compareRooms);
-    results.assignAll(rooms);
+
+    _applyFiltersAndSort();
     _currentPage = page;
-    final receivedResults = batches.any((items) => items.isNotEmpty);
-    hasMore.v = receivedResults && unique.length > previousCount;
+    hasMore.v = selectedSites.any((site) => _hasMoreByPlatform[site.id] ?? false);
     if (failures.isNotEmpty) {
       errorMessage.v = i18n('search_partial_failure', args: {'sites': failures.join('、')});
+    } else {
+      errorMessage.v = '';
     }
     loading.v = false;
     loadingMore.v = false;
   }
 
-  bool _realOnlineEnabled(LiveRoom room) =>
-      room.supportsRealOnlineCount && SettingsService.to.app.isRealOnlineEnabledFor(room.platform);
-
-  void _resortCurrentResults() {
-    if (results.isEmpty) return;
-    final rooms = List<LiveRoom>.from(results)..sort(_compareRooms);
-    results.assignAll(rooms);
+  String _roomKey(LiveRoom room) {
+    final platform = room.platform?.trim().toLowerCase() ?? 'unknown';
+    final roomId = room.roomId?.trim() ?? '';
+    if (roomId.isNotEmpty) return '$platform:$roomId';
+    return '$platform:${room.nick?.trim()}:${room.title?.trim()}';
   }
 
-  int _compareRooms(LiveRoom a, LiveRoom b) {
-    final liveOrder = (b.liveStatus == LiveStatus.live ? 1 : 0) - (a.liveStatus == LiveStatus.live ? 1 : 0);
-    if (liveOrder != 0) return liveOrder;
-    if (SettingsService.to.app.preferRealOnlineCounts.v) {
-      final supportedOrder = (_realOnlineEnabled(b) ? 1 : 0) - (_realOnlineEnabled(a) ? 1 : 0);
-      if (supportedOrder != 0) return supportedOrder;
-      if (!_realOnlineEnabled(a)) return a.platform.toString().compareTo(b.platform.toString());
+  bool get hasFilteredOfflineResults => _rawResults.isNotEmpty && results.isEmpty && !includeOffline.v;
+
+  void _applyFiltersAndSort() {
+    final platformOrder = Sites().availableSites().map((site) => site.id).toList();
+    results.assignAll(
+      LiveSearchRanking.apply(
+        rooms: _rawResults.values,
+        mode: sortMode.v,
+        includeOffline: includeOffline.v,
+        platformOrder: platformOrder,
+        audienceValue: _audienceValue,
+      ),
+    );
+  }
+
+  void setIncludeOffline(bool value) {
+    includeOffline.v = value;
+    _applyFiltersAndSort();
+  }
+
+  void setSortMode(LiveSearchSortMode value) {
+    sortMode.v = value;
+    _applyFiltersAndSort();
+  }
+
+  String get capabilityText {
+    final sites = Sites().availableSites();
+    if (index.v > 0 && index.v <= sites.length) {
+      final site = sites[index.v - 1];
+      final capability = LiveSearchCapabilities.forPlatform(site.id);
+      return switch (capability.coverage) {
+        NativeSearchCoverage.liveAndOffline => i18n('search_coverage_live_and_offline', args: {'site': site.name}),
+        NativeSearchCoverage.liveOnly => i18n('search_coverage_live_only', args: {'site': site.name}),
+        NativeSearchCoverage.localChannels => i18n('search_coverage_local', args: {'site': site.name}),
+        NativeSearchCoverage.webOnly => i18n('search_coverage_web_only', args: {'site': site.name}),
+      };
     }
-    return _audienceValue(b).compareTo(_audienceValue(a));
+
+    final nativeCount = sites.where((site) => LiveSearchCapabilities.forPlatform(site.id).supportsNativeSearch).length;
+    final webOnlySites = sites
+        .where((site) => !LiveSearchCapabilities.forPlatform(site.id).supportsNativeSearch)
+        .map((site) => site.name)
+        .join('、');
+    return i18n(
+      webOnlySites.isEmpty ? 'search_coverage_all_native' : 'search_coverage_all',
+      args: {'native': '$nativeCount', 'total': '${sites.length}', 'sites': webOnlySites},
+    );
   }
 
   int _audienceValue(LiveRoom room) {
@@ -249,8 +326,8 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
   @override
   void onInit() {
     super.onInit();
-    _audienceWorkers.add(ever(SettingsService.to.app.preferRealOnlineCounts, (_) => _resortCurrentResults()));
-    _audienceWorkers.add(ever(SettingsService.to.app.realOnlinePlatforms, (_) => _resortCurrentResults()));
+    _audienceWorkers.add(ever(SettingsService.to.app.preferRealOnlineCounts, (_) => _applyFiltersAndSort()));
+    _audienceWorkers.add(ever(SettingsService.to.app.realOnlinePlatforms, (_) => _applyFiltersAndSort()));
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (Platform.isWindows) {
         _isWebView2Available = await isWebView2Installed();
@@ -264,6 +341,7 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
   @override
   void onClose() {
     _searchGeneration++;
+    tabController.removeListener(_handleTabChange);
     tabController.dispose();
     scrollController
       ..removeListener(_handleSearchScroll)
@@ -274,4 +352,12 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
     }
     super.onClose();
   }
+}
+
+class _SiteSearchBatch {
+  const _SiteSearchBatch({required this.site, required this.rooms, this.failed = false});
+
+  final Site site;
+  final List<LiveRoom> rooms;
+  final bool failed;
 }

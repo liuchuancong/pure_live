@@ -54,10 +54,10 @@ class Sites {
 
   List<Site> availableSites({bool containsAll = false}) {
     final List<String> savedIds = SettingsService.to.fav.hotAreasList.v;
-
-    List<Site> result = [];
+    final supportedById = {for (final site in supportSites) site.id: site};
+    final List<Site> result = [];
     for (String id in savedIds) {
-      final match = supportSites.firstWhereOrNull((element) => element.id == id);
+      final match = supportedById[id];
       if (match != null) {
         result.add(match);
       }

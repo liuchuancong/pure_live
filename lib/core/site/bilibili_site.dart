@@ -497,6 +497,7 @@ class BiliBiliSite implements LiveSite {
         nick: item["uname"].toString(),
         watching: item["online"].toString(),
         popularity: item["online"].toString(),
+        followers: item["attentions"]?.toString() ?? '',
         audienceMetricType: AudienceMetricType.popularity,
         liveStatus: (asT<int?>(item["live_status"]) ?? 0) == 1 ? LiveStatus.live : LiveStatus.offline,
         area: item["cate_name"].toString(),
