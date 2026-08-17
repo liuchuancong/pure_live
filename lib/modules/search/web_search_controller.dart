@@ -194,11 +194,15 @@ class WebSearchController extends GetxController {
     if (await webViewController?.canGoBack() ?? false) {
       webViewController?.goBack();
     } else {
-      webViewController?.stopLoading();
-      webViewController?.dispose();
-      showWebView.value = false;
-      await Future.delayed(const Duration(milliseconds: 500));
-      Navigator.pop(Get.context!);
+      try {
+        webViewController?.stopLoading();
+        webViewController?.dispose();
+        showWebView.value = false;
+        await Future.delayed(const Duration(milliseconds: 500));
+        Navigator.pop(Get.context!);
+      } catch (e) {
+        Navigator.pop(Get.context!);
+      }
     }
   }
 
