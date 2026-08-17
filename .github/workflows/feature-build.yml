@@ -38,6 +38,7 @@ on:
       - "stage-build-*"
       - "stage-linux-*"
       - "stage-apple-*"
+      - "stage-ios-*"
 
 permissions:
   contents: read
@@ -211,7 +212,7 @@ jobs:
 
   apple:
     name: Apple platform packages
-    if: ${{ always() && ((github.event_name == 'push' && (startsWith(github.ref_name, 'stage-build-') || startsWith(github.ref_name, 'stage-apple-'))) || inputs.build_macos || inputs.build_ios) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    if: ${{ always() && ((github.event_name == 'push' && (startsWith(github.ref_name, 'stage-build-') || startsWith(github.ref_name, 'stage-apple-') || startsWith(github.ref_name, 'stage-ios-'))) || inputs.build_macos || inputs.build_ios) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
     needs: quality
     runs-on: macos-15
     timeout-minutes: 90
@@ -231,16 +232,16 @@ jobs:
       - name: Resolve locked packages
         run: flutter pub get --enforce-lockfile
       - name: Build macOS release
-        if: ${{ github.event_name == 'push' || inputs.build_macos }}
+        if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
         run: flutter build macos --release --dart-define=PURELIVE_BUILD_SOURCE=github-manual
       - name: Archive macOS application
-        if: ${{ github.event_name == 'push' || inputs.build_macos }}
+        if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
         run: |
           app_path="$(find build/macos/Build/Products/Release -maxdepth 1 -type d -name '*.app' -print -quit)"
           test -n "$app_path"
           ditto -c -k --sequesterRsrc --keepParent "$app_path" PureLive-macos-arm64.zip
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: ${{ github.event_name == 'push' || inputs.build_macos }}
+        if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
         with:
           name: pure-live-macos-arm64
           path: PureLive-macos-arm64.zip
