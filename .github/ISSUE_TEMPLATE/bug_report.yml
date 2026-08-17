@@ -1,0 +1,83 @@
+name: 🐛 Bug 反馈
+description: 提交 PureLive 程序 Bug 或异常问题
+title: "[Bug] "
+labels:
+  - bug
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 提交前请确认
+
+        请先阅读项目文档并搜索已有 Issue。
+        为方便定位问题，请完整填写以下信息。
+
+  - type: input
+    id: version
+    attributes:
+      label: PureLive 版本
+      description: 例如：2.0.23+34
+      placeholder: "2.0.23+34"
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: 设备信息
+      description: 请填写设备使用的系统及版本，例如 Android 15、Windows 11、macOS 15.6
+      placeholder: "例如：Windows 11 / Android 15 / macOS 15.6"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      description: 请详细描述遇到的问题。
+      placeholder: |
+        例如：
+        打开直播间后点击播放，一直显示加载中，无法播放。
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤
+      description: 请描述如何触发这个问题。
+      placeholder: |
+        1. 打开 PureLive
+        2. 进入直播间
+        3. 点击播放
+        4. 出现问题
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: 截图 / 录屏
+      description: 请提供能够说明问题的截图或录屏。
+      placeholder: |
+        请将截图或录屏拖拽到这里。
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志
+      description: 如果有报错或异常日志，请粘贴在这里。
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 其他信息
+      description: 其他可能有帮助的信息。
+    validations:
+      required: false

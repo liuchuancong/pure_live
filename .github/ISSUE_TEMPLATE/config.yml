@@ -1,4 +1,4 @@
-blank_issues_enabled: true
+blank_issues_enabled: false
 
 contact_links:
   - name: "📖 ① 先阅读项目文档"
@@ -9,14 +9,10 @@ contact_links:
     url: https://github.com/liuchuancong/pure_live/issues
     about: "提交前先搜索关键词，看看是否已经有人遇到相同问题以及是否已有解决方案。"
 
-  - name: "🐛 ③ 确认这是程序 Bug"
+  - name: "🌐 ③ 确认播放源 / 网络是否正常"
     url: https://github.com/liuchuancong/pure_live/issues
-    about: "请先确认问题不是直播源失效、网络异常、地区限制或配置错误导致的。"
+    about: "请先确认问题不是直播源失效、网络异常、地区限制、代理或配置错误导致的。"
 
-  - name: "🎬 ④ 准备截图 / 录屏 / 日志"
-    url: https://github.com/liuchuancong/pure_live
-    about: "黑屏、闪退、播放异常、UI 问题请尽量提供截图或录屏；如果有报错，请附上完整日志。"
-
-  - name: "📦 ⑤ 提供版本和系统信息"
+  - name: "📦 ④ 查看历史版本"
     url: https://github.com/liuchuancong/pure_live/releases
-    about: "请注明 PureLive 版本、操作系统及 CPU 架构，例如 Windows 11 x64、macOS Apple Silicon 等。"
+    about: "请确认是否使用最新版本，并准备好 PureLive 版本、操作系统和 CPU 架构信息。"
