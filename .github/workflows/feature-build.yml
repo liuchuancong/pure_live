@@ -187,6 +187,17 @@ jobs:
         run: flutter --version
       - name: Resolve locked packages
         run: flutter pub get --enforce-lockfile
+      - name: Prefetch verified Linux native sources
+        shell: bash
+        run: |
+          archive_dir="build/linux/x64/release"
+          archive="$archive_dir/mimalloc-2.1.2.tar.gz"
+          mkdir -p "$archive_dir"
+          curl --fail --location --retry 6 --retry-all-errors \
+            https://github.com/microsoft/mimalloc/archive/refs/tags/v2.1.2.tar.gz \
+            --output "$archive.tmp"
+          echo "5179c8f5cf1237d2300e2d8559a7bc55  $archive.tmp" | md5sum --check --strict
+          mv "$archive.tmp" "$archive"
       - name: Build Linux release
         run: flutter build linux --release --dart-define=PURELIVE_BUILD_SOURCE=github-manual
       - name: Create portable archive
