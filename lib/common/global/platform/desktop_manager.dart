@@ -14,6 +14,7 @@ import 'package:pure_live/plugins/share_command_handler.dart';
 import 'package:pure_live/routes/route_observer_controller.dart';
 import 'package:pure_live/common/utils/share_command_handler.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
+import 'package:pure_live/modules/account/bilibili/web_login_controller.dart';
 
 class DesktopManager {
   static State? _currentState;
@@ -174,6 +175,11 @@ class DesktopManager {
         case 'exit_app':
           await windowManager.hide();
           await windowManager.setPreventClose(false);
+          if (!Get.isRegistered<BiliBiliWebLoginController>()) {
+            final biliBiliWebLoginController = Get.find<BiliBiliWebLoginController>();
+            biliBiliWebLoginController.showWebView.value = false;
+            await Future.delayed(const Duration(milliseconds: 500));
+          }
           trayManager.destroy().catchError((e) => debugPrint('托盘注销失败: $e'));
           windowManager.close().catchError((e) => debugPrint('窗口关闭失败: $e'));
           break;
