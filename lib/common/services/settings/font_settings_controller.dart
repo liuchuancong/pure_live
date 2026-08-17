@@ -25,8 +25,7 @@ class FontSettingsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _loadInitialFontManifest();
-    initUserFontLifecycle();
+    _init();
 
     everAll([
       fontSizeBodySmall,
@@ -36,6 +35,11 @@ class FontSettingsController extends GetxController {
       fontSizeTitleLarge,
       fontFamilyName,
     ], (_) => refreshSystemTheme());
+  }
+
+  Future<void> _init() async {
+    await _loadInitialFontManifest();
+    await initUserFontLifecycle();
   }
 
   Future<void> _loadInitialFontManifest() async {
@@ -48,18 +52,30 @@ class FontSettingsController extends GetxController {
 
   Future<void> initUserFontLifecycle() async {
     final id = fontFamilyName.v;
-    if (id != 'Default') {
-      if (await FontDownloadManager.instance.checkFontDownloaded(id)) {
-        await FontDownloadManager.instance.loadFont(id);
-      }
+
+    if (fontList.isNotEmpty) {
+      curFontModel.value = fontList.firstWhere((e) => e.id == id, orElse: () => fontList.first);
     }
-    if (fontList.isEmpty) {
+
+    if (id == 'Default') {
+      fontState.value = DownloadState.notDownloaded;
       return;
     }
-    curFontModel.value = fontList.firstWhere((e) => e.id == id, orElse: () => fontList.first);
-    fontState.value = await FontDownloadManager.instance.checkFontDownloaded(curFontModel.value!.id)
-        ? DownloadState.downloaded
-        : DownloadState.notDownloaded;
+
+    final downloaded = await FontDownloadManager.instance.checkFontDownloaded(id);
+
+    if (!downloaded) {
+      fontState.value = DownloadState.notDownloaded;
+      return;
+    }
+
+    await FontDownloadManager.instance.loadFont(id);
+
+    fontState.value = DownloadState.downloaded;
+
+    Get.updateLocale(Get.locale ?? const Locale('zh', 'CN'));
+
+    refreshSystemTheme();
   }
 
   Future<void> activateFontFamily(FontModel fontModel, {String? targetFileName}) async {
