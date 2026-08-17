@@ -32,6 +32,13 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
               context.buildGroupTitle(i18n("danmaku_area")),
               const SizedBox(height: 8),
               context.buildModernCard([
+                _switch(
+                  theme,
+                  title: i18n("danmaku_no_emoji"),
+                  value: SettingsService.to.danmaku.noEmojiMode.v,
+                  onChanged: (v) => SettingsService.to.danmaku.noEmojiMode.v = v,
+                  labelColor: labelColor,
+                ),
                 _slider(
                   theme,
                   title: i18n("danmaku_area"),
@@ -151,6 +158,13 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
                   labelColor: labelColor,
                 ),
                 if (SettingsService.to.danmaku.enablePipDanmaku.v) ...[
+                  _switch(
+                    theme,
+                    title: i18n("danmaku_no_emoji"),
+                    value: SettingsService.to.danmaku.pipDanmaNoEmojiMode.v,
+                    onChanged: (v) => SettingsService.to.danmaku.pipDanmaNoEmojiMode.v = v,
+                    labelColor: labelColor,
+                  ),
                   _switch(
                     theme,
                     title: i18n("pip_danmaku_auto_scale"),

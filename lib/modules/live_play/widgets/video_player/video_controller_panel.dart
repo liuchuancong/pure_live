@@ -593,6 +593,7 @@ class DanmakuViewer extends StatelessWidget {
       () => FlameBarrageWidget(
         controller: controller.danmakuController,
         config: BarrageConfig(
+          noEmojiMode: controller.noEmojiMode.value,
           fontSize: controller.danmakuFontSize.value,
           topAreaDistance: controller.danmakuTopArea.value,
           area: controller.danmakuArea.value,

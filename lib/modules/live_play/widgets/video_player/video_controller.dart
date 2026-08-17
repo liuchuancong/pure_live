@@ -56,6 +56,7 @@ class DanmakuManager {
 
     // 设置初始值
     videoController.hideDanmaku.value = dm.hideDanmaku.v;
+    videoController.noEmojiMode.value = dm.noEmojiMode.v;
     videoController.danmakuArea.value = dm.danmakuArea.v;
     videoController.danmakuTopArea.value = dm.danmakuTopArea.v;
     videoController.danmakuBottomArea.value = dm.danmakuBottomArea.v;
@@ -80,6 +81,7 @@ class DanmakuManager {
       videoController.danmakuOpacity,
       videoController.enableDanmakuStroke,
       videoController.danmakuFps,
+      videoController.noEmojiMode,
     ];
 
     for (final rxProperty in visualProperties) {
@@ -96,6 +98,7 @@ class DanmakuManager {
       ever<double>(videoController.danmakuOpacity, (v) => dm.danmakuOpacity.v = v),
       ever<bool>(videoController.enableDanmakuStroke, (v) => dm.enableDanmakuStroke.v = v),
       ever<int>(videoController.danmakuFps, (v) => dm.danmakuFps.v = v),
+      ever<bool>(videoController.noEmojiMode, (v) => dm.noEmojiMode.v = v),
     ]);
   }
 
@@ -176,7 +179,7 @@ class VideoController with ChangeNotifier {
   final enableDanmakuStroke = true.obs;
   final danmakuFps = 60.obs;
   final danmakuFontFamilyName = ''.obs;
-
+  final noEmojiMode = false.obs;
   // EPG相关
   final RxList<database.EpgProgramme> currentChannelSchedule = <database.EpgProgramme>[].obs;
   final ScrollController scheduleScrollController = ScrollController();
@@ -497,6 +500,7 @@ class VideoController with ChangeNotifier {
   void updateDanmaku() {
     danmakuController.updateConfig(
       BarrageConfig(
+        noEmojiMode: noEmojiMode.value,
         fontSize: danmakuFontSize.value,
         area: danmakuArea.value,
         topAreaDistance: danmakuTopArea.value,
