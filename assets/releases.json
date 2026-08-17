@@ -1,5 +1,37 @@
 [
   {
+    "version": "2.0.34",
+    "title": "Pure Live v2.0.34",
+    "date": "2026-08-17",
+    "github": "https://github.com/wzgrx/pure_live/releases/tag/v2.0.34",
+    "author": {
+      "name": "wzgrx",
+      "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
+      "profile": "https://github.com/wzgrx"
+    },
+    "changelog": "# Pure Live v2.0.34\n\n本版本完成 Android AGP 9 Built-in Kotlin 迁移，并升级本机构建工具链，重点解决第三方插件各自加载不同 Kotlin/AGP 版本造成的配置冲突和后续 Flutter 兼容风险。\n\n## Android 构建工具链\n\n- Android Gradle Plugin 升级到 9.3.1，Gradle Wrapper 升级到 9.5.0；compileSdk/targetSdk 继续使用 API 37。\n- 主应用和本地插件移除 `kotlin-android`、独立 KGP classpath、旧 `android.kotlinOptions` 以及把 Kotlin 目录挂到 Java source set 的旧配置。\n- Java 25 用作 Gradle/lint 构建运行时，应用和插件产出的 Java/Kotlin 字节码统一为 17，兼顾新工具链与 Android 运行版本。\n- 长路径 Windows 工作区继续使用稳定短盘符；针对 Pub Cache 与工作区跨盘，关闭会损坏可迁移缓存的 Kotlin 增量模式。\n\n## 插件兼容与依赖\n\n- 内置 `better_player_plus`、`floating`、`flutter_exit_app`、`flutter_js`、`mobile_scanner`、`share_handler_android` 的最小兼容补丁，并保留各自许可证、上游地址和原版本。\n- `flv_lzc` 同步迁移到 Built-in Kotlin；所有本地插件统一复用根项目 AGP，不再把旧 AGP 带入 lint/构建 classpath。\n- 所有直接运行时依赖仍处于当前可解析最新版；`pub outdated` 剩余更新均为 Flutter SDK或上游约束锁定的传递依赖，未使用破坏兼容性的强制覆盖。\n\n## 自动回归\n\n- 新增 `tool/audit_built_in_kotlin.py`，在本地 CI 中检查工具链下限、Built-in Kotlin 开关和所有本地 Gradle 模块，阻止旧 KGP/AGP classpath 重新进入项目。\n- GitHub 手动构建同步使用 Java 25；本机仍优先生成正式包名 `com.mystyle.purelive` 的 `arm64-v8a` APK，Windows x64 按需构建。\n\n## 验证结果\n\n- Built-in Kotlin 审计和 Flutter Analyze 零问题，49 项单元/Widget 测试及 15/15 平台接口探测通过。\n- Android `arm64-v8a` release 编译通过，APK 包名 `com.mystyle.purelive`、版本 `2.0.34 (2045)`、targetSdk 37、单一 arm64 ABI 与 v2 签名结构核验通过。\n- Windows x64 release 编译通过；便携程序持续启动 20 秒，进程存活、主窗口响应、MediaKit D3D11 与 FFmpeg Kit 正常加载。",
+    "files": [
+      {
+        "name": "BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.0.34/BUILD_METADATA.json"
+      },
+      {
+        "name": "PureLive-2.0.34-45-arm64-v8a",
+        "size": "122.04mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.0.34/PureLive-2.0.34-45-arm64-v8a-release.apk"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.0.34/SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
     "version": "2.0.33",
     "title": "Pure Live v2.0.33",
     "date": "2026-08-16",

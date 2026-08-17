@@ -17,8 +17,8 @@
 
 > 本仓库基于 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live) 持续维护，新增可配置的小窗弹幕，并完善本机构建、依赖锁定、接口探测和发布流程。
 
-- **最新稳定版**：[v2.0.33](https://github.com/wzgrx/pure_live/releases/tag/v2.0.33)
-- **当前开发版本**：`2.0.34+45`（`master`）
+- **最新稳定版**：[v2.0.34](https://github.com/wzgrx/pure_live/releases/tag/v2.0.34)
+- **当前版本**：`2.0.34+45`（`master`）
 - **上游同步基线**：`liuchuancong/pure_live@2cd1877`（2026-08-16）
 - **主要发布平台**：Android、Windows
 
@@ -92,7 +92,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 | [WebDAV 配置](docs/WEBDAV.md) | 通用配置字段、坚果云示例和故障排查 |
 | [参与贡献](CONTRIBUTING.md) | 分支、提交、测试和 Pull Request 要求 |
 | [安全策略](SECURITY.md) | 私密漏洞报告和签名材料管理 |
-| [版本说明](RELEASE_NOTES.md) | 当前开发版本变更 |
+| [版本说明](RELEASE_NOTES.md) | 当前版本变更与历史记录 |
 
 ## 数据与隐私
 
