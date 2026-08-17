@@ -13,7 +13,7 @@
 ## 弹幕、依赖与界面
 
 - 主画面和小窗增加“纯文字模式”，小窗预览实时反映该开关；兼容上游旧存储键。
-- 合并 `file_picker 12.0.0` 稳定 API、`windows_single_instance 1.2.0`、锁定修订版 `flutter_inappwebview 6.2.0-beta.3`、默认音量百分比修正和网页关闭清理；Linux 网页搜索使用系统浏览器。
+- 合并 `file_picker 12.0.0` 稳定 API、`windows_single_instance 1.2.0`、锁定修订版 `flutter_inappwebview 6.2.0-beta.3`、默认音量百分比修正和网页关闭清理；补齐网页内核的 AGP 9 / R8 兼容补丁，Linux 网页搜索使用系统浏览器。
 - 继续保留统一 px/s 速度、动态跟随屏幕最高刷新率、过期队列淘汰、房间会话隔离、手机固定小窗预览和 AGP 9 Built-in Kotlin 修复。
 - 更新仓库说明、平台兼容表、依赖审计和阶段更新文档。
 

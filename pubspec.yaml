@@ -192,6 +192,10 @@ dependencies:
   app_links: ^7.2.1
 # 依赖覆盖（强制指定版本）
 dependency_overrides:
+  # 上游网页内核的 Android 子包仍引用 AGP 9 已移除的默认 ProGuard 文件；
+  # 本地副本只调整 Android 构建脚本，Dart/Java 实现保持解析提交 3e6c4c4a。
+  flutter_inappwebview_android:
+    path: plugins/built_in_kotlin/flutter_inappwebview_android
   # share_handler 传递依赖的 Android 实现使用本地 Built-in Kotlin 兼容补丁。
   share_handler_android:
     path: plugins/built_in_kotlin/share_handler_android

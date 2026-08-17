@@ -869,13 +869,11 @@ packages:
     source: git
     version: "6.2.0-beta.3"
   flutter_inappwebview_android:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      path: flutter_inappwebview_android
-      ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
-      resolved-ref: "3e6c4c4a25340cd363af9d38891d88498b90be26"
-      url: "https://github.com/guide-inc-org/guide-flutter_inappwebview.git"
-    source: git
+      path: "plugins/built_in_kotlin/flutter_inappwebview_android"
+      relative: true
+    source: path
     version: "1.2.0-beta.3"
   flutter_inappwebview_internal_annotations:
     dependency: transitive

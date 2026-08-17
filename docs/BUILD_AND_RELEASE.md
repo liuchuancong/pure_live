@@ -93,6 +93,8 @@ Linux、macOS 和 iOS 通常通过 `manual-build` 手动开关补建；阶段标
 
 Linux 版使用系统浏览器承接“继续网页搜索”，避免引入额外 WPE WebKit 运行时；平台原生搜索、直播详情、弹幕与播放链路仍在应用内完成。Windows/macOS/Android/iOS 使用锁定修订版 `flutter_inappwebview`。
 
+Ubuntu 22.04 构建会同时安装 `libva`、VDPAU、PulseAudio 与 XVideo 开发包，以满足打包版 `libmpv.so` 的链接依赖；Android 使用仓库内的同版本网页内核兼容副本通过 AGP 9.3.1 / R8 构建。
+
 ## 单独命令
 
 ```powershell

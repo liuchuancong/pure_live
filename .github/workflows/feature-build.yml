@@ -171,7 +171,8 @@ jobs:
           sudo apt-get -o Acquire::Retries=5 update
           sudo apt-get -o Acquire::Retries=5 install -y \
             clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libasound2-dev \
-            libayatana-appindicator3-dev libsecret-1-dev
+            libayatana-appindicator3-dev libsecret-1-dev libva-dev libvdpau-dev \
+            libpulse-dev libxv-dev
       - name: Install pinned Flutter SDK from the official archive
         shell: bash
         run: |
