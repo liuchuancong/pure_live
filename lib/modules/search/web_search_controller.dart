@@ -3,7 +3,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/utils.dart';
 import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/routes/app_navigation.dart';
-import 'package:flutter_inappwebview_ultra/flutter_inappwebview_ultra.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 class WebSearchController extends GetxController {
   InAppWebViewController? webViewController;
