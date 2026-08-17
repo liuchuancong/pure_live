@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:pure_live/common/index.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:pure_live/modules/account/bilibili/web_login_controller.dart';
 
 class Utils {
   static DateFormat dateFormat = DateFormat("MM-dd HH:mm");
@@ -286,9 +287,15 @@ class Utils {
         if (await windowManager.isPreventClose()) {
           await windowManager.setPreventClose(false);
         }
+
         Future.microtask(() async {
           await windowManager.hide();
           await windowManager.setPreventClose(false);
+          if (!Get.isRegistered<BiliBiliWebLoginController>()) {
+            final biliBiliWebLoginController = Get.find<BiliBiliWebLoginController>();
+            biliBiliWebLoginController.showWebView.value = false;
+            await Future.delayed(const Duration(milliseconds: 500));
+          }
           trayManager.destroy().catchError((e) => debugPrint('托盘注销失败: $e'));
           windowManager.close().catchError((e) => debugPrint('窗口关闭失败: $e'));
         });
