@@ -35,6 +35,8 @@
 
 Android 与 Windows 优先使用本机 5090 环境，Apple 平台仅使用一次 macOS 作业同时构建，以控制 Actions 用量。五平台开关均为手动触发，日常提交不会自动消耗构建分钟。
 
+当网页手动调度入口受 GitHub API 状态影响时，可显式推送 `stage-build-*` 标签；该标签只补建 Linux、macOS 与 iOS，Android/Windows 仍保留本机构建，不会让普通分支提交自动运行。
+
 ## 回归门禁
 
 1. `tool/local_ci.ps1`：锁定依赖、Built-in Kotlin 审计、格式、Analyze、完整测试、20 项接口探测。

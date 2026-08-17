@@ -87,6 +87,8 @@ Windows x64 临时自托管 Runner，再手动运行
 `local-signed-android` 工作流。编译仍在本机完成，工作流仅把签名 Secrets
 注入临时进程；工作流直接复用 Runner 工具缓存中的 Java 25，任务结束后会清理 JKS 和 `android/key.properties`。
 
+Linux、macOS 和 iOS 通常通过 `manual-build` 手动开关补建；也可显式推送 `stage-build-*` 标签触发同一工作流的阶段构建回退。标签路径仅运行 Linux 与 Apple 作业，普通分支推送、Android 和 Windows 均保持本机优先。
+
 ## 单独命令
 
 ```powershell

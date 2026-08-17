@@ -33,6 +33,9 @@ on:
         required: true
         type: boolean
         default: true
+  push:
+    tags:
+      - "stage-build-*"
 
 permissions:
   contents: read
@@ -47,7 +50,7 @@ env:
 jobs:
   quality:
     name: Analyze, test and probe
-    if: inputs.run_quality
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_quality }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -144,7 +147,7 @@ jobs:
 
   linux:
     name: Linux x64 portable
-    if: ${{ always() && inputs.build_linux && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    if: ${{ always() && (github.event_name == 'push' || inputs.build_linux) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
     needs: quality
     runs-on: ubuntu-22.04
     timeout-minutes: 70
@@ -176,7 +179,7 @@ jobs:
 
   apple:
     name: Apple platform packages
-    if: ${{ always() && (inputs.build_macos || inputs.build_ios) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    if: ${{ always() && (github.event_name == 'push' || inputs.build_macos || inputs.build_ios) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
     needs: quality
     runs-on: macos-15
     timeout-minutes: 90
@@ -189,29 +192,29 @@ jobs:
       - name: Resolve locked packages
         run: flutter pub get --enforce-lockfile
       - name: Build macOS release
-        if: inputs.build_macos
+        if: ${{ github.event_name == 'push' || inputs.build_macos }}
         run: flutter build macos --release --dart-define=PURELIVE_BUILD_SOURCE=github-manual
       - name: Archive macOS application
-        if: inputs.build_macos
+        if: ${{ github.event_name == 'push' || inputs.build_macos }}
         run: |
           app_path="$(find build/macos/Build/Products/Release -maxdepth 1 -type d -name '*.app' -print -quit)"
           test -n "$app_path"
           ditto -c -k --sequesterRsrc --keepParent "$app_path" PureLive-macos-arm64.zip
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: inputs.build_macos
+        if: ${{ github.event_name == 'push' || inputs.build_macos }}
         with:
           name: pure-live-macos-arm64
           path: PureLive-macos-arm64.zip
           if-no-files-found: error
           retention-days: 3
       - name: Build iOS device application
-        if: inputs.build_ios
+        if: ${{ github.event_name == 'push' || inputs.build_ios }}
         run: flutter build ios --release --no-codesign --dart-define=PURELIVE_BUILD_SOURCE=github-manual
       - name: Archive iOS application
-        if: inputs.build_ios
+        if: ${{ github.event_name == 'push' || inputs.build_ios }}
         run: ditto -c -k --sequesterRsrc --keepParent build/ios/iphoneos/Runner.app PureLive-ios-unsigned-app.zip
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: inputs.build_ios
+        if: ${{ github.event_name == 'push' || inputs.build_ios }}
         with:
           name: pure-live-ios-unsigned-app
           path: PureLive-ios-unsigned-app.zip
