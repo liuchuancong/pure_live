@@ -174,14 +174,24 @@ class DesktopManager {
 
         case 'exit_app':
           await windowManager.hide();
-          await windowManager.setPreventClose(false);
-          if (!Get.isRegistered<BiliBiliWebLoginController>()) {
-            final biliBiliWebLoginController = Get.find<BiliBiliWebLoginController>();
-            biliBiliWebLoginController.showWebView.value = false;
-            await Future.delayed(const Duration(milliseconds: 500));
+          if (await windowManager.isPreventClose()) {
+            await windowManager.setPreventClose(false);
           }
-          trayManager.destroy().catchError((e) => debugPrint('托盘注销失败: $e'));
-          windowManager.close().catchError((e) => debugPrint('窗口关闭失败: $e'));
+          if (Get.isRegistered<BiliBiliWebLoginController>()) {
+            final controller = Get.find<BiliBiliWebLoginController>();
+            controller.showWebView.value = false;
+            await Future.delayed(const Duration(milliseconds: 300));
+          }
+          try {
+            await trayManager.destroy();
+          } catch (e) {
+            debugPrint('托盘注销失败: $e');
+          }
+          try {
+            await windowManager.destroy();
+          } catch (e) {
+            debugPrint('窗口销毁失败: $e');
+          }
           break;
       }
     } catch (e) {

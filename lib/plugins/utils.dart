@@ -288,17 +288,25 @@ class Utils {
           await windowManager.setPreventClose(false);
         }
 
-        Future.microtask(() async {
-          await windowManager.hide();
-          await windowManager.setPreventClose(false);
-          if (!Get.isRegistered<BiliBiliWebLoginController>()) {
-            final biliBiliWebLoginController = Get.find<BiliBiliWebLoginController>();
-            biliBiliWebLoginController.showWebView.value = false;
-            await Future.delayed(const Duration(milliseconds: 500));
-          }
-          trayManager.destroy().catchError((e) => debugPrint('托盘注销失败: $e'));
-          windowManager.close().catchError((e) => debugPrint('窗口关闭失败: $e'));
-        });
+        if (Get.isRegistered<BiliBiliWebLoginController>()) {
+          final controller = Get.find<BiliBiliWebLoginController>();
+          controller.showWebView.value = false;
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+
+        try {
+          await trayManager.destroy();
+        } catch (e) {
+          debugPrint('托盘注销失败: $e');
+        }
+
+        try {
+          await windowManager.close();
+        } catch (e) {
+          debugPrint('窗口关闭失败: $e');
+        }
+
+        return true;
       } else if (exitChoose == 'minimize') {
         await _minimizeOrHideDesktopWindow();
         return true;
