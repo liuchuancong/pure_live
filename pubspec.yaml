@@ -100,8 +100,7 @@ dependencies:
 
   # -------------------------- 窗口/桌面端控制 --------------------------
   window_manager: ^0.5.1 # 桌面端窗口管理
-  windows_single_instance:
-    path: ./plugins/windows_single_instance
+  windows_single_instance: ^1.2.0
   tray_manager: ^0.5.2 # 系统托盘管理
   flutter_acrylic: ^1.1.4 # 亚克力毛玻璃效果
   screen_retriever:
@@ -131,7 +130,7 @@ dependencies:
   path_provider: ^2.1.5 # 获取文件路径
   path: ^1.9.1 # 路径处理
   file: ^7.0.1 # 文件操作
-  file_picker: ^12.0.0-beta.5 # 文件选择器
+  file_picker: ^12.0.0 # 文件选择器
   uri_to_file: ^1.0.0 # URI转文件
   open_filex: ^4.7.0 # 打开本地文件
   mime: ^2.0.0 # MIME类型处理

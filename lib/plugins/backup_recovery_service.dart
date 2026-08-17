@@ -36,17 +36,21 @@ class BackupRecoveryService {
     }
   }
 
-  void recoverSettingsFromFile() async {
+  Future<void> recoverSettingsFromFile() async {
     final backup = Get.find<BackupController>();
-    FilePickerResult? result = await FilePicker.pickFiles(
+
+    final result = await FilePicker.pickFile(
       dialogTitle: i18n("select_recover_file"),
       type: FileType.custom,
       allowedExtensions: ['txt'],
     );
 
-    if (result == null || result.files.single.path == null) return;
+    if (result == null || result.path == null) {
+      return;
+    }
 
-    final file = File(result.files.single.path!);
+    final file = File(result.path!);
+
     if (backup.recover(file)) {
       ToastUtil.show(i18n("recover_backup_success"));
     } else {

@@ -21,17 +21,20 @@ class IptvImportManager {
 
   /// 1. 本地文件浏览器选择导入
   Future<bool> importFromLocalPicker() async {
-    FilePickerResult? result = await FilePicker.pickFiles(
+    final result = await FilePicker.pickFile(
       dialogTitle: i18n("select_recover_file"),
       type: FileType.custom,
       allowedExtensions: ['m3u', 'txt'],
     );
 
-    if (result == null || result.files.single.path == null) return false;
+    if (result == null || result.path == null) {
+      return false;
+    }
 
-    final file = File(result.files.single.path!);
+    final file = File(result.path!);
     final name = FileUtils.getBaseName(file.path);
-    return await importIptvFile(file: file, providerName: name);
+
+    return importIptvFile(file: file, providerName: name);
   }
 
   Future<bool> importFromNetworkUrl(
