@@ -88,9 +88,11 @@ class LiveUrlTool {
       String id = regExp.firstMatch(url)?.group(1) ?? "";
       return [id, Sites.twitchSite];
     }
-    if (realUrl.contains("sooplive.co.kr/")) {
-      final regExp = RegExp(r'(?:www\.|play\.)?sooplive\.co\.kr/([^/?]+)');
+    if (realUrl.contains("sooplive.com/") || realUrl.contains("sooplive.co.kr/")) {
+      final regExp = RegExp(r'(?:www\.|play\.)?sooplive\.(?:com|co\.kr)/([^/?]+)');
+
       final id = regExp.firstMatch(realUrl)?.group(1) ?? "";
+
       return [id, Sites.soopSite];
     }
     return [];
