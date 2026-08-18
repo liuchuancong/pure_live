@@ -379,10 +379,9 @@ jobs:
           exit 1
 
       - name: Package Windows EXE and MSIX
+        shell: pwsh
         run: |
-          fastforge package \
-            --platform windows \
-            --targets exe,msix
+          fastforge package --platform windows --targets exe,msix
 
       - name: Rename Windows installers
         shell: pwsh
