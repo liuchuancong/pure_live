@@ -1,5 +1,5 @@
-import 'package:flame_barrage/flame_barrage.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:flame_barrage/flame_barrage.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 
 class CompactDanmakuOverlay extends StatelessWidget {
@@ -61,7 +61,7 @@ class CompactDanmakuOverlay extends StatelessWidget {
                   maxPendingAge: const Duration(seconds: 3),
                   emitInterval: emitInterval,
                   overlapSafeGap: (fontSize * 1.5).clamp(16.0, 40.0).toDouble(),
-                  barragePoolMaxSize: 60,
+                  barragePoolMaxSize: 1000,
                   pictureCacheMaxSize: 300,
                 ),
                 emojiAtlas: EmojiAtlas.instance,

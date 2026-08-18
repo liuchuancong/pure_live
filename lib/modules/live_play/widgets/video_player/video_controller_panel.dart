@@ -9,8 +9,8 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
-import 'package:pure_live/common/utils/live_url_tool.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
+import 'package:pure_live/common/utils/live_url_tool.dart';
 import 'package:pure_live/common/widgets/count_button.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:scrollview_observer/scrollview_observer.dart';
@@ -622,7 +622,7 @@ class DanmakuViewer extends StatelessWidget {
           trackHeight: (controller.danmakuFontSize.value * 1.55).clamp(24.0, 64.0).toDouble(),
           emojiSize: (controller.danmakuFontSize.value * 1.3).clamp(16.0, 48.0).toDouble(),
           pictureCacheMaxSize: 600,
-          barragePoolMaxSize: 300,
+          barragePoolMaxSize: 1000,
         ),
         emojiAtlas: EmojiAtlas.instance,
       );
