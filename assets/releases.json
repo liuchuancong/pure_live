@@ -1,5 +1,49 @@
 [
   {
+    "version": "2.1.1",
+    "title": "Pure Live v2.1.1",
+    "date": "2026-08-18",
+    "github": "https://github.com/wzgrx/pure_live/releases/tag/v2.1.1",
+    "author": {
+      "name": "wzgrx",
+      "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
+      "profile": "https://github.com/wzgrx"
+    },
+    "changelog": "# Pure Live v2.1.1\n\n本版本集中修复观看口径设置空白、首页平台横滑掉帧和跨平台搜索能力不透明的问题，并继续以 Android arm64 与 Windows x64 为本机优先构建目标。\n\n## 设置与首页流畅度\n\n- 修复“真实在线平台开关”中仅提供热度的平台仍被错误包入无响应式读取的 `Obx`，导致 GetX 拒绝构建并只留下大块灰色卡片的问题。\n- 支持真实在线的平台继续提供独立开关；Bilibili、斗鱼、虎牙等仅提供热度的平台显示禁用状态、数据来源和口径说明。\n- 首页手势横滑到半程时不再提前启动目标平台网络请求和网格重建；页面完全停稳后再加载，并保留已构建页面、列表与滚动位置。\n- 平台目录一次建立 ID 索引，避免按每个已启用平台重复实例化全部适配器；直播卡片使用稳定 Key，减少切页时的无效重建。\n\n## 跨平台搜索\n\n- 搜索页增加“包含未开播”筛选，以及综合、平台顺序、观众优先、粉丝优先四种排序。\n- 综合排序固定直播中的房间优先，再比较当前观看口径、粉丝数和主页平台顺序；平台优先直接使用用户在主页平台设置中的拖动顺序。\n- 每个平台独立维护翻页结束状态，空页、重复页和非分页来源会停止继续请求，避免反复拉取相同结果。\n- 搜索页动态显示当前平台覆盖范围：Bilibili、斗鱼、网易 CC、Twitch 可返回部分未开播结果；虎牙、抖音、SOOP 主要返回当前直播；快手使用网页搜索；IPTV 搜索本机导入频道。\n- Bilibili 与网易 CC 搜索结果补充可用粉丝字段；平台响应缺少粉丝数时保持稳定次序，不以热度冒充粉丝。\n\n## 构建与验证\n\n- Built-in Kotlin 审计与 Flutter Analyze 零问题，70 项单元/Widget 测试通过。\n- 25/25 平台公开接口探测通过，覆盖分类、推荐、搜索、弹幕节点、房间元数据和播放令牌。\n- Android 继续使用正式包名 `com.mystyle.purelive`，优先生成 `arm64-v8a` release；Windows 生成 x64 便携 ZIP 与安装程序。\n\n---\n\n# Pure Live v2.1.0\n\n这是一次阶段性大更新：同步上游 `24ff92b6`（2026-08-18）的 Twitch、SOOP Live 与网页内核更新，并汇总此前完成的弹幕稳定性、小窗、120 Hz、播放、助眠、本地互动、Built-in Kotlin 和本机发布工程。\n\n## 上游同步、Twitch 与 SOOP Live\n\n- 新增 Twitch 分类、推荐、频道搜索、房间详情、直播清晰度、外部打开、Cookie 设置和 IRC 弹幕。\n- Twitch `viewersCount` 作为真实并发人数进入显示、筛选和排行；本地互动同步增加 Twitch 徽章、Bits、订阅等级与礼物体验包。\n- Twitch IRC 解析支持无颜色用户、转义显示名、用户 ID、消息 ID、平台时间与多行数据；登录 Cookie 中的 `auth-token`/`login` 用于聊天认证。\n- 新增 SOOP Live 分类、推荐、搜索、房间详情、播放线路、Cookie、弹幕、并发在线人数、链接识别与本地互动体验包。\n- 接口探测从 15 项扩展为 25 项，覆盖 Twitch 与 SOOP Live 的分类、目录/推荐、搜索、房间元数据和播放令牌。\n\n## 弹幕、依赖与界面\n\n- 主画面和小窗增加“纯文字模式”，小窗预览实时反映该开关；兼容上游旧存储键。\n- 合并 `file_picker 12.0.0` 稳定 API、`windows_single_instance 1.2.0`、锁定修订版 `flutter_inappwebview 6.2.0-beta.3`、默认音量百分比修正和网页关闭清理；补齐网页内核的 AGP 9 / R8 兼容补丁，Linux 网页搜索使用系统浏览器。\n- 继续保留统一 px/s 速度、动态跟随屏幕最高刷新率、过期队列淘汰、房间会话隔离、手机固定小窗预览和 AGP 9 Built-in Kotlin 修复。\n- 更新仓库说明、平台兼容表、依赖审计和阶段更新文档。\n\n## 全平台构建\n\n- Android arm64 与 Windows x64 继续优先在本机完成质量门禁、正式构建和启动验证。\n- 阶段工作流扩展到 Linux x64、macOS universal 和 iOS arm64 设备编译；Apple 两个平台共用一次 macOS 作业。\n- Linux 使用 Ubuntu 24.04 构建，以匹配当前锁定 `libmpv` 的 glibc/GLIBCXX 基线；macOS 主程序实测同时包含 x86_64 与 arm64。\n- iOS 生成无签名设备 `.app` 归档，供后续证书签名与 IPA 封装。\n- Built-in Kotlin 审计与 Flutter Analyze 零问题，64 项单元/Widget 测试及 25/25 平台接口探测通过。\n\n---\n\n# Pure Live v2.0.36\n\n本版本集中修复 Android 系统画中画切换停顿、手机长设置页看不到小窗弹幕预览、哔哩哔哩访客昵称脱敏来源不清，以及热度/在线人数切换与排行不一致的问题。\n\n## 画中画与设置预览\n\n- 进入 Android 系统画中画前先构建并渲染紧凑视频层，复用同一播放器 Element，减少 Texture 重新挂载时出现的应用图标、黑帧和画面延迟。\n- 向系统传入当前视频物理边界 `sourceRectHint`；Android 12+ 启用视频无缝缩放，并移除播放器上内容相同的二次 `AnimatedSwitcher`。\n- 画中画状态探测周期从 10 ms 调整为 100 ms，显著减少普通播放期间持续的平台通道压力。\n- 手机端小窗弹幕设置改为“上方固定预览 + 下方独立滚动参数”，桌面/平板使用双栏布局；字号、颜色、速度、密度、透明度、区域和 FPS 继续实时作用于预览。\n\n## 弹幕昵称\n\n- 当前哔哩哔哩访客 WebSocket 会话实测会同时脱敏旧用户名、rich user 名称与 UID；这是平台返回数据，并非客户端把昵称改成星号。\n- 解析器优先读取新版 `info[0][15].user.base.name`，登录会话返回完整 rich user 时直接显示完整昵称；访客仍收到脱敏值时，弹幕列表只提示一次数据来源与登录入口。\n- 新增新版 rich user、脱敏兼容和累计观看消息回归测试。\n\n## 热度、在线与累计观看\n\n- WebSocket 观看更新改为带类型数据：哔哩哔哩 operation 3 只更新热度，`WATCHED_CHANGE` 只更新本场累计看过；抖音 `onlineUserForAnchor` 只更新并发在线。\n- 虎牙弹幕同步到当前网页协议：使用 `wsapi.huya.com`、房间组注册与批量推送；实连确认列表/详情的 `totalCount/userCount` 及直播间 URI 8006 `iAttendeeCount` 都处于同一热度口径，不再标成真实在线人数。\n- 平台能力与房间当前是否已取得数值分离：抖音/快手/网易 CC 可从列表或详情取在线；哔哩哔哩、斗鱼和虎牙公开数据继续按热度/累计口径标注。\n- 真实在线模式下，支持平台尚未取得明确值时显示“待刷新”，几百万热度不再代替在线数参与排行；不支持并发人数的平台排在支持平台之后。\n- 收藏和搜索结果监听全局口径与分平台开关，切换后立即重新排序。\n\n## 验证与构建\n\n- Flutter Analyze 零问题，59 项单元/Widget 测试通过；15/15 平台公开接口探测与虎牙当前 WebSocket 实连通过。\n- Android 继续优先构建正式包名 `com.mystyle.purelive` 的正式签名 `arm64-v8a` APK，并在连接设备上覆盖安装验证。\n\n---\n\n# Pure Live v2.0.35\n\n本版本修复真机回归中发现的哔哩哔哩热门直播间热度偶发显示为 `1`，并完成 Android 120 Hz、游客弹幕、横竖屏、小窗、纯音频和后台播放链路验收。\n\n## 观看指标稳定性\n\n- 进入同一直播间时合并列表、详情接口和弹幕心跳中的观看指标，详情接口短暂返回哨兵值时保留列表中的可靠热度。\n- 哔哩哔哩热门房间从千级以上瞬时骤降至 `1` 时不再覆盖现有热度；后续数值合理的实时心跳仍会正常刷新。\n- 运行时观看指标忽略无效零值，在线人数、累计观看与平台热度继续使用各自独立字段和标签。\n\n## 真机验收\n\n- OnePlus Android 16 arm64 真机覆盖安装保留应用数据；多次冷启动无崩溃，前台窗口和弹幕动画以设备最高 120 Hz 运行。\n- 哔哩哔哩游客直播间弹幕连续刷新；竖屏、横屏、全屏及系统画中画均验证画面弹幕，设置页字号预览实时变化。\n- 纯音频切换、系统媒体会话、前台服务通知、Partial WakeLock 与 Wi-Fi Lock 均通过后台探测。\n\n## 构建与验证\n\n- 本机质量门禁覆盖 Built-in Kotlin 审计、Flutter Analyze、完整测试及 15 个平台接口探测。\n- Android 继续优先生成正式包名 `com.mystyle.purelive` 的正式签名 `arm64-v8a` APK。\n\n---\n\n# Pure Live v2.0.34\n\n本版本完成 Android AGP 9 Built-in Kotlin 迁移，并升级本机构建工具链，重点解决第三方插件各自加载不同 Kotlin/AGP 版本造成的配置冲突和后续 Flutter 兼容风险。\n\n## Android 构建工具链\n\n- Android Gradle Plugin 升级到 9.3.1，Gradle Wrapper 升级到 9.5.0；compileSdk/targetSdk 继续使用 API 37。\n- 主应用和本地插件移除 `kotlin-android`、独立 KGP classpath、旧 `android.kotlinOptions` 以及把 Kotlin 目录挂到 Java source set 的旧配置。\n- Java 25 用作 Gradle/lint 构建运行时，应用和插件产出的 Java/Kotlin 字节码统一为 17，兼顾新工具链与 Android 运行版本。\n- 长路径 Windows 工作区继续使用稳定短盘符；针对 Pub Cache 与工作区跨盘，关闭会损坏可迁移缓存的 Kotlin 增量模式。\n\n## 插件兼容与依赖\n\n- 内置 `better_player_plus`、`floating`、`flutter_exit_app`、`flutter_js`、`mobile_scanner`、`share_handler_android` 的最小兼容补丁，并保留各自许可证、上游地址和原版本。\n- `flv_lzc` 同步迁移到 Built-in Kotlin；所有本地插件统一复用根项目 AGP，不再把旧 AGP 带入 lint/构建 classpath。\n- 所有直接运行时依赖仍处于当前可解析最新版；`pub outdated` 剩余更新均为 Flutter SDK或上游约束锁定的传递依赖，未使用破坏兼容性的强制覆盖。\n\n## 自动回归\n\n- 新增 `tool/audit_built_in_kotlin.py`，在本地 CI 中检查工具链下限、Built-in Kotlin 开关和所有本地 Gradle 模块，阻止旧 KGP/AGP classpath 重新进入项目。\n- GitHub 手动构建同步使用 Java 25；本机仍优先生成正式包名 `com.mystyle.purelive` 的 `arm64-v8a` APK，Windows x64 按需构建。\n\n## 验证结果\n\n- Built-in Kotlin 审计和 Flutter Analyze 零问题，49 项单元/Widget 测试及 15/15 平台接口探测通过。\n- Android `arm64-v8a` release 编译通过，APK 包名 `com.mystyle.purelive`、版本 `2.0.34 (2045)`、targetSdk 37、单一 arm64 ABI 与 v2 签名结构核验通过。\n- Windows x64 release 编译通过；便携程序持续启动 20 秒，进程存活、主窗口响应、MediaKit D3D11 与 FFmpeg Kit 正常加载。\n\n---\n\n# Pure Live v2.0.33\n\n本版本集中重构弹幕房间会话、协议去重、积压队列和高刷新率运动时钟，修复串房、旧消息重放、偶发停更、重复循环以及横竖屏/小窗切换后的不稳定问题，并同步优化 Android 与 Windows 的弹幕列表和设置页面滚动。\n\n## 弹幕连接与房间隔离\n\n- 所有房间切换、设置开关和小窗销毁操作进入串行会话队列；回调携带平台、房间与会话编号，旧 WebSocket 的迟到消息不会进入新房间。\n- 房间详情请求增加代次校验，快速切房或切换线路时丢弃上一房间的迟到响应，避免旧详情重新覆盖当前播放器和弹幕连接。\n- WebSocket 关闭改为可等待的完整清理，连接代次同时约束消息、错误和关闭事件；Bilibili、抖音、斗鱼、虎牙都在重启前释放旧连接并清空全部回调。\n- 应用悬浮窗离开直播页后保留轻量弹幕会话，关闭悬浮窗时再按顺序停止连接、清空画面和释放控制器；重新进房不会继承残留队列。\n\n## 平台协议稳定性\n\n- Bilibili 读取弹幕时间戳和消息随机 ID；抖音校验消息内房间 ID，并保存消息 ID、用户 ID 和发送时间；斗鱼校验 `rid/cid/cst`，虎牙补充用户 ID。\n- 稳定平台消息 ID 使用 10 分钟重放窗口，无 ID 平台使用 2.5 秒短指纹窗口；超过 45 秒的平台历史消息直接丢弃，兼顾断线去重和正常重复发言。\n- 修正抖音 ACK 将扩展游标误写到 `payloadType` 的问题，并兼容压缩标记缺失但具有 GZip 文件头的响应。\n- 斗鱼现在解析同一 WebSocket 帧内的全部协议包，不再只处理第一条造成热门房间间歇性漏弹幕。\n\n## 渲染、速度与列表\n\n- 主画面与小窗等待队列分别限制为 120/36 条，并淘汰 5/3 秒未取得轨道的消息，轨道拥堵或应用恢复后不再补放几分钟前的内容。\n- Flame 弹幕改用受帧间隔约束的逻辑时钟，后台恢复不产生大跨度跳动；所有轨道严格使用用户设置的同一 px/s 速度，Android、横竖屏、小窗与 Windows 表现一致。\n- 修正 20% 显示区域被重复计算成 4% 的轨道高度问题；补全字体、描边与颜色缓存键，样式调整后相同文字也会立即使用新画面。\n- 弹幕历史按 32 ms 批量合并，移除逐条复制 500 条列表和重建直播页的路径；上滑阅读时只更新独立新消息计数，列表使用反向懒加载并降低预缓存范围。\n- 屏蔽管理改为虚拟化 Sliver 列表，弹幕设置按区域局部响应式更新；移除列表每行阴影，改善 Android 120 Hz 与 Windows 鼠标滚轮滚动。\n\n## 验证与构建\n\n- Android 继续优先构建正式包名 `com.mystyle.purelive` 的 `arm64-v8a` 安装包。\n- Windows x64 使用同一会话、队列、逻辑时钟和滚动实现，并重新生成便携包/安装器。\n- 新增平台消息时间、房间校验、重复抑制、斗鱼合帧解析和渲染队列上限回归测试。\n- Flutter Analyze 零问题，49 项单元/Widget 测试和 15/15 平台接口探测通过；Android arm64、Windows x64 编译及 Windows 启动响应探测通过。\n\n---\n\n# Pure Live v2.0.32\n\n本版本重新校正观看数据口径，重做三类定时器的名称与交互，完善画面弹幕的实时样式、模板和点击操作，并将本地互动扩展为六个平台体验包。\n\n## 观看数据与排行\n\n- `LiveRoom` 分别保存平台热度、真实并发在线和本场累计观看，旧版 `watching` 字段只用于备份兼容。\n- 增加“平台热度优先 / 真实在线人数优先”全局排行方式，以及抖音、快手、网易 CC 的独立真实在线开关。\n- 虎牙列表/详情的 `totalCount`、`userCount` 以及房间 URI 8006 `iAttendeeCount` 都按热度处理；抖音 `display_value/total_user` 保留为累计观看，`user_count/onlineUserForAnchor` 按在线人数处理。\n- 哔哩哔哩 `online`/心跳和斗鱼 `ol/hot` 保留热度标签，避免把几百万热度误显示为同时在线人数。\n\n## 助眠与定时器\n\n- “新直播间自动助眠”仅决定新房间是否自动进入纯音频；耳机按钮只切换当前房间，电视按钮仍为投屏。\n- 自动助眠停止时长支持快捷选项和 1 分钟至 365 天任意分钟输入，重新排版输入框与操作按钮，解决窄屏文字重叠。\n- 直播间菜单改名为“当前直播间播放定时器”，到时暂停当前直播和后台音频；通用设置改名为“应用定时退出”，到时退出整个应用，三种行为互相独立。\n\n## 弹幕与交互\n\n- “最佳观看”模板调整为画面顶部约 20%，速度 118 px/s、字号 16 px、描边 1.5 px；舒适与高密度模板分别占顶部约 35% 和 55%。\n- 设置页的区域、速度、字号、描边、透明度和帧率通过同一响应式控制器立即更新直播画面，并补充单位和实时生效说明。\n- 修正描边值被错误映射成字体粗细的问题；描边宽度改为 0–4 px 连续值。\n- 画面弹幕点击/长按默认启用，指针统一从全局坐标换算到弹幕画布坐标，竖屏、横屏和全屏均与单击播放、双击全屏等手势分流。\n- 弹幕操作面板打开时暂停画面弹幕，下滑关闭后继续；弹幕列表上滑阅读时冻结快照，回到底部后再同步新消息。\n\n## 本地互动与播放器\n\n- 六个平台体验包分别提供主题色、身份徽章、等级称呼、本地体验币和礼物目录，可单独控制身份、等级与礼物画面效果。\n- 高价值本地礼物在直播画面显示更醒目的主题横幅；所有充值、等级、弹幕和礼物记录仍只保存在本机。\n- `video_player` 更新至 2.14.0，`better_player_plus` 1.3.5 与 MediaKit 修订分支最新固定提交完成兼容复核。\n\n## 构建目标\n\n- Android 正式包名保持 `com.mystyle.purelive`，本地优先构建 `arm64-v8a`。\n- Windows 构建继续按需执行，本版本发布先提供 Android arm64 安装包。\n- Flutter Analyze 零问题，39 项单元/Widget 测试与 15/15 平台接口探测通过。\n\n---\n\n# Pure Live v2.0.31\n\n本版本修正直播间顶部栏空间分配与音频/投屏图标语义，并完成 ASMR 自动助眠和房间纯音频的最终解耦。\n\n## 直播间布局\n\n- 手机端将“已关注/关注”和“录制/监控中”收敛为带长按提示的紧凑图标，主播头像、名称和分区使用剩余宽度并自动省略。\n- 平板和桌面继续显示文字按钮，关注、录制状态与原操作流程保持一致。\n- 修复主播昵称为空时取消关注弹窗的空值崩溃点。\n\n## 音频、投屏与 ASMR\n\n- 播放画面右上控制顺序统一为“耳机纯音频 → 电视投屏 → 小窗播放”；耳机在启用纯音频后保持耳机形状并高亮，电视图标仅表示 DLNA 投屏。\n- 移除房间月亮按钮和播放器内核页的遗留全局纯音频默认项，手动耳机切换仅对当前房间生效，切换房间后重新遵循 ASMR 设置。\n- 新增一次性配置迁移，清理旧版 `audioOnly` 持久值；ASMR 关闭时，新打开或切换的直播间从视频模式开始。\n- ASMR 开启时，新房间自动进入纯音频、启用后台保活和停止计时；手动恢复视频同步结束该次助眠计时。\n- 关闭设置页 ASMR 开关时立即撤销活动中的助眠计时。\n- 纯音频和视频切换复用当前清晰度与播放线路，省去房间详情、清晰度和地址的重复网络获取，缩短切换等待。\n\n## 验证\n\n- Flutter Analyze 零问题。\n- 30 项单元测试与 Widget 测试全部通过。\n- Android 优先构建 `arm64-v8a`。\n\n---\n\n# Pure Live v2.0.30\n\n本版本集中修复 ASMR 状态、Bilibili 访客弹幕、横屏弹幕、列表阅读、首次启动与直播首帧问题，并补齐动态弹幕帧率、平台人数口径和本地互动输入。\n\n## ASMR 与后台播放\n\n- 设置页“进入直播自动启动助眠”只控制新房间默认行为；直播间月亮按钮只控制当前会话；通用纯音频偏好保持独立。\n- 增加 v2.0.29 遗留状态一次性迁移，关闭 ASMR 后新房间恢复画面。\n- 停止时间支持预设和 1–720 分钟自定义输入。\n- 音频模式直接使用播放器原生音频输出，移除 FFmpeg 二次解码、固定等待和管道超时。\n- 媒体前台服务在短暂中断期间保持，CPU/Wi-Fi 锁按播放会话同步；定时到点完整停止并释放资源。\n\n## 弹幕\n\n- Bilibili 房间播放和弹幕发现解耦；token、buvid 与 WebSocket 节点支持后台刷新、认证拒绝重取和有界重连。针对部分移动 DNS 不解析区域 comet 域名的情况，优先连接官方通用网关，再轮换区域节点。\n- 访客 `uid=0` WebSocket 实连通过，公开直播弹幕接收不依赖账号登录。\n- 横竖屏切换只保留一个 Flame 弹幕引擎，修复共享控制器被旧过渡页面解绑的问题。\n- 弹幕 FPS 参数进入引擎更新调度；主播放器与小窗支持动态跟随设备最高刷新率。\n- 新增最佳、舒适、高密度模板，支持保存和恢复自定义模板。\n- 画面弹幕提供可选点击和长按操作；弹幕列表长按/右键可复制、屏蔽用户或屏蔽关键词。\n- 用户上滑列表后冻结当前快照并累计新消息，回到底部时一次同步；列表容量提升到 500 条并以 80 ms 合帧更新。\n- 修正自定义字体与描边下的顶部裁切，轨道高度随字号动态调整。\n\n## 互动、人数与流畅度\n\n- 本地互动开关启用后，弹幕列表底部直接显示输入框；本地弹幕可进入列表和画面弹幕。\n- 六个平台分别提供礼物目录、等级徽章和高价值礼物效果标记，充值、等级、头衔和历史仅保存在本机。\n- 新增“优先显示真实在线人数”和平台支持说明；虎牙/快手显示在线人数，其他平台保留热度、累计观看或粉丝等原生统计口径。\n- Android 与桌面列表采用夹持滚动物理模型，iOS/macOS 保留弹性模型；全应用页面移除统一强制弹簧阻尼。\n- 收藏刷新改为整批只持久化一次并保留本地标签，减少热门房间定时刷新造成的 Hive 放大写入与界面抖动。\n- MediaKit 修正探测参数名，将直播流分析窗口缩短至 2 秒、网络超时收紧至 15 秒；Bilibili CDN 请求头移除错误的 API authority。\n- 播放器原生音量、房间持久值和控制栏改用同一响应式状态。\n\n## 启动与稳定性\n\n- 数据库、设置、自定义字体和直播页必需依赖在首屏前完成注册，修复更新安装后首次点击闪退与搜索结果快速进房竞态。\n- 保留 Room 生成数据库的反射构造器，修复 release 混淆后 WorkManager 在 Flutter 首帧前崩溃。\n- 内置修订版 `flv_lzc`，移除插件注册阶段创建临时 `SurfaceTexture` 的探测代码，修复 Flutter 3.47 下偶发原生 `registerTexture` 终止。\n- 后台媒体通知只显示直播流实际支持的播放/暂停与停止动作，并保留其图标资源，消除 release 资源压缩后的通知动作异常。\n- 直播路由增加防重复推入，避免连续点击创建多个播放器会话。\n- 自定义字体在首个 ThemeData 构建前注册，重启后首次界面直接应用选择。\n\n## 依赖与验证\n\n- `synchronized` 更新至 3.4.1+2；其余直接运行时依赖复核为当前上游版本或固定 Git 提交。\n- Flutter Analyze 零问题（固定的第三方播放器源码独立排除）。\n- 28 项单元测试与 Widget 测试全部通过。\n- 平台接口探测 15/15 通过；Bilibili 访客弹幕 WebSocket 认证与通知帧实连通过。\n- Android 16 / 120 Hz 真机覆盖安装后连续 5 次冷启动均一次进入，启动耗时 239–274 ms；崩溃缓冲区中 `FATAL`、WorkDatabase 与 `registerTexture` 均为 0。\n- 同一真机确认 Bilibili 视频与实时弹幕在竖屏、横屏均显示，本地弹幕输入框可用；系统为应用分配并请求 120 Hz。\n- Android 优先构建 `arm64-v8a`，Windows 仅构建 x64。\n\n## 下载说明\n\n- Android 正式包名保持 `com.mystyle.purelive`。\n- 使用 `SHA256SUMS.txt` 校验本机构建产物。",
+    "files": [
+      {
+        "name": "BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.1.1/BUILD_METADATA.json"
+      },
+      {
+        "name": "PureLive-2.1.1-49-arm64-v8a",
+        "size": "122.18mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.1.1/PureLive-2.1.1-49-arm64-v8a-release.apk"
+      },
+      {
+        "name": "PureLive-2.1.1-49-windows-x64-portable.zip",
+        "size": "80.76mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.1.1/PureLive-2.1.1-49-windows-x64-portable.zip"
+      },
+      {
+        "name": "PureLive-2.1.1-windows-x64-setup.exe",
+        "size": "61.8mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.1.1/PureLive-2.1.1-windows-x64-setup.exe"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.1.1/SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
     "version": "2.1.0",
     "title": "Pure Live v2.1.0",
     "date": "2026-08-17",
@@ -20,7 +64,7 @@
       {
         "name": "PureLive-2.1.0-48-arm64-v8a",
         "size": "122.17mb",
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.1.0/PureLive-2.1.0-48-arm64-v8a-release.apk"
       },
       {
@@ -76,43 +120,43 @@
       {
         "name": "arm64-v8a",
         "size": "122.55mb",
-        "downloads": 483,
+        "downloads": 556,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.24/app-arm64-v8a-release.apk"
       },
       {
         "name": "armeabi-v7a",
         "size": "109.48mb",
-        "downloads": 19,
+        "downloads": 20,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.24/app-armeabi-v7a-release.apk"
       },
       {
         "name": "x86_64",
         "size": "137.2mb",
-        "downloads": 9,
+        "downloads": 10,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.24/app-x86_64-release.apk"
       },
       {
         "name": "PureLive-2.0.24+35-macOS.dmg",
         "size": "102.65mb",
-        "downloads": 4,
+        "downloads": 5,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.24/PureLive-2.0.24%2B35-macOS.dmg"
       },
       {
         "name": "PureLive-2.0.24+35-macOS.zip",
         "size": "100.97mb",
-        "downloads": 5,
+        "downloads": 7,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.24/PureLive-2.0.24%2B35-macOS.zip"
       },
       {
         "name": "PureLive-2.0.24+35-windows-x64-setup.exe",
         "size": "62.9mb",
-        "downloads": 85,
+        "downloads": 112,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.24/PureLive-2.0.24%2B35-windows-x64-setup.exe"
       },
       {
         "name": "PureLive-2.0.24+35-windows-x64.msix",
         "size": "87.84mb",
-        "downloads": 23,
+        "downloads": 27,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.24/PureLive-2.0.24%2B35-windows-x64.msix"
       }
     ]
@@ -542,7 +586,7 @@
       {
         "name": "arm64-v8a",
         "size": "122.25mb",
-        "downloads": 14199,
+        "downloads": 14200,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.22/app-arm64-v8a-release.apk"
       },
       {
@@ -566,13 +610,13 @@
       {
         "name": "PureLive-2.0.22+33-windows-x64-setup.exe",
         "size": "65.76mb",
-        "downloads": 6290,
+        "downloads": 6291,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.22/PureLive-2.0.22%2B33-windows-x64-setup.exe"
       },
       {
         "name": "PureLive-2.0.22+33-windows-x64.msix",
         "size": "91.62mb",
-        "downloads": 1743,
+        "downloads": 1744,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.22/PureLive-2.0.22%2B33-windows-x64.msix"
       }
     ]
