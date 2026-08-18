@@ -1,8 +1,18 @@
 {
-  "version": "2.1.2",
-  "build_number": 50,
-  "version_num": 2010250,
-  "version_desc": "Windows 专项稳定性更新\n- 安装目录可选，应用配置、关注、历史、IPTV、图片缓存与插件缓存统一保存在安装目录 AppData。\n- 升级时识别旧版 List 和新版 JSON 配置，合并多个历史安装位置的关注、历史、屏蔽与 IPTV 数据。\n- 切换磁盘或重装时保留旧安装位置索引，迁移前自动创建回滚备份。\n- 减少首页、分区、搜索与收藏页的重复滚动监听、切页中间帧请求、动画占位和重复绘制。\n- 窗口缩放事件合并为稳定帧更新，退出前强制落盘设置，并修正应用内更新附件名。\n",
+  "version": "2.1.1",
+  "build_number": 49,
+  "version_num": 2010149,
+  "version_desc": "- 修复真实在线平台设置卡片空白，明确展示各平台数据来源与支持状态。\n- 优化首页平台横滑，页面停稳后再加载目标平台并保留已构建网格。\n- 搜索增加平台覆盖说明、直播与未开播筛选、四种排序及逐平台分页终止。\n",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases"
+  "download_url": "https://github.com/wzgrx/pure_live/releases",
+  "platforms": {
+    "windows": {
+      "version": "2.1.2",
+      "build_number": 50,
+      "version_num": 2010250,
+      "version_desc": "Windows 专项稳定性更新\n- 安装目录可选，应用配置、关注、历史、IPTV、图片缓存与插件缓存统一保存在安装目录 AppData。\n- 升级时识别旧版 List 和新版 JSON 配置，合并多个历史安装位置的关注、历史、屏蔽与 IPTV 数据。\n- 切换磁盘或重装时保留旧安装位置索引，迁移前自动创建回滚备份。\n- 减少首页、分区、搜索与收藏页的重复滚动监听、切页中间帧请求、动画占位和重复绘制。\n- 窗口缩放事件合并为稳定帧更新，退出前强制落盘设置，并修正应用内更新附件名。\n",
+      "prerelease": false,
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.1.2"
+    }
+  }
 }

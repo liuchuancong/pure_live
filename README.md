@@ -17,8 +17,9 @@
 
 > 本仓库基于 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live) 持续维护，新增可配置的小窗弹幕，并完善本机构建、依赖锁定、接口探测和发布流程。
 
-- **最新稳定版**：[v2.1.1](https://github.com/wzgrx/pure_live/releases/tag/v2.1.1)
-- **当前版本**：`2.1.2+50`（Windows 数据迁移与流畅度专项）
+- **Windows 最新稳定版**：[v2.1.2](https://github.com/wzgrx/pure_live/releases/tag/v2.1.2)（数据迁移与流畅度专项）
+- **Android/Linux/macOS/iOS 最新稳定版**：[v2.1.1](https://github.com/wzgrx/pure_live/releases/tag/v2.1.1)
+- **当前源码版本**：`2.1.2+50`
 - **上游同步基线**：`liuchuancong/pure_live@222b3bfb`（2026-08-18）
 - **构建平台**：Android arm64、Windows x64、Linux x64、macOS universal、iOS arm64 设备包
 
@@ -56,8 +57,8 @@
 
 前往 [GitHub Releases](https://github.com/wzgrx/pure_live/releases/latest) 获取安装包：
 
-- Android：当前优先发布 `arm64-v8a` APK；
-- Windows：按 Release 附件说明选择安装包或便携 ZIP；
+- Android：当前优先发布 `arm64-v8a` APK，本轮仍使用 v2.1.1 正式签名包；
+- Windows：v2.1.2 可选安装目录的 EXE 安装包或便携 ZIP；
 - 下载后使用同一 Release 中的 `SHA256SUMS.txt` 校验完整性。
 
 Linux、macOS 与 iOS 的阶段构建由“全部平台”手动工作流生成；Linux 网页搜索会交给系统浏览器，原生搜索与播放继续在应用内完成；iOS 附件是设备 `.app` 编译归档，签名与 IPA 封装在持有 Apple 证书的环境中完成。阶段更新范围见 [v2.1.0 阶段更新说明](docs/STAGE_UPDATE_2_1_0.md)。

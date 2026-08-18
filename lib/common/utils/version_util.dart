@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/plugins/race_http.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pure_live/common/utils/githup_mirror.dart';
@@ -92,12 +93,32 @@ class VersionUtil {
   }
 
   static void _applyVersionData(Map<String, dynamic> data) {
-    latestVersion = data['version']?.toString() ?? version;
-    latestVersionNum = data['version_num'] ?? 0;
-    latestBuildNumber = data['build_number'];
-    latestUpdateLog = data['version_desc']?.toString() ?? '';
-    prerelease = data['prerelease'] == true;
-    downloadUrl = data['download_url']?.toString() ?? '';
+    final selected = selectPlatformVersionData(data, platform: _currentPlatformKey);
+    latestVersion = selected['version']?.toString() ?? version;
+    latestVersionNum = selected['version_num'] ?? 0;
+    latestBuildNumber = selected['build_number'];
+    latestUpdateLog = selected['version_desc']?.toString() ?? '';
+    prerelease = selected['prerelease'] == true;
+    downloadUrl = selected['download_url']?.toString() ?? '';
+  }
+
+  /// Keeps update announcements aligned with the artifacts that were really
+  /// published for each platform. The top-level object remains the fallback
+  /// for older feeds and older clients.
+  static Map<String, dynamic> selectPlatformVersionData(Map<String, dynamic> data, {required String platform}) {
+    final platforms = data['platforms'];
+    final platformData = platforms is Map ? platforms[platform] : null;
+    if (platformData is! Map) return data;
+    return {...data, ...Map<String, dynamic>.from(platformData)};
+  }
+
+  static String get _currentPlatformKey {
+    if (PlatformUtils.isWindows) return 'windows';
+    if (PlatformUtils.isAndroid) return 'android';
+    if (PlatformUtils.isMacOS) return 'macos';
+    if (PlatformUtils.isIOS) return 'ios';
+    if (PlatformUtils.isLinux) return 'linux';
+    return 'default';
   }
 
   static bool hasNewVersion() {
