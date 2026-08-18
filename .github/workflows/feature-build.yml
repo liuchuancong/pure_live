@@ -450,58 +450,24 @@ jobs:
       - name: Install Linux desktop dependencies
         run: |
           sudo apt-get -o Acquire::Retries=5 update
-
           sudo apt-get -o Acquire::Retries=5 install -y \
-            clang \
-            cmake \
-            ninja-build \
-            pkg-config \
-            libgtk-3-dev \
-            liblzma-dev \
-            libasound2-dev \
-            libayatana-appindicator3-dev \
-            libsecret-1-dev \
-            libva-dev \
-            libvdpau-dev \
-            libpulse-dev \
-            libxv-dev \
-            libunwind-dev \
-            libgnutls28-dev \
-            liblcms2-dev \
-            libarchive-dev \
-            libgbm-dev \
-            libxss-dev \
-            libxrandr-dev \
-            libegl1-mesa-dev \
-            libwayland-dev \
-            libxkbcommon-dev \
-            libfontconfig1-dev \
-            libharfbuzz-dev \
-            libfribidi-dev \
-            libfreetype6-dev \
-            zlib1g-dev \
-            libdrm-dev \
-            libx11-dev \
-            libxext-dev \
-            libxfixes-dev \
-            libxcb1-dev
+            clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libasound2-dev \
+            libayatana-appindicator3-dev libsecret-1-dev libva-dev libvdpau-dev \
+            libpulse-dev libxv-dev libunwind-dev libgnutls28-dev liblcms2-dev \
+            libarchive-dev libgbm-dev libxss-dev libxrandr-dev libegl1-mesa-dev \
+            libwayland-dev libxkbcommon-dev libfontconfig1-dev libharfbuzz-dev \
+            libfribidi-dev libfreetype6-dev zlib1g-dev libdrm-dev libx11-dev \
+            libxext-dev libxfixes-dev libxcb1-dev
 
-      - name: Install pinned Flutter SDK
+      - name: Install pinned Flutter SDK from the official archive
         shell: bash
         run: |
           archive="$RUNNER_TEMP/flutter-linux.tar.xz"
-
           curl --fail --location --retry 3 \
             "https://storage.googleapis.com/flutter_infra_release/releases/$FLUTTER_LINUX_ARCHIVE" \
             --output "$archive"
-
-          echo "$FLUTTER_LINUX_SHA256  $archive" |
-            sha256sum --check --strict
-
-          tar --extract \
-            --file "$archive" \
-            --directory "$RUNNER_TEMP"
-
+          echo "$FLUTTER_LINUX_SHA256  $archive" | sha256sum --check --strict
+          tar --extract --file "$archive" --directory "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
 
       - name: Verify Flutter SDK
@@ -515,16 +481,11 @@ jobs:
         run: |
           archive_dir="build/linux/x64/release"
           archive="$archive_dir/mimalloc-2.1.2.tar.gz"
-
           mkdir -p "$archive_dir"
-
           curl --fail --location --retry 6 --retry-all-errors \
             https://github.com/microsoft/mimalloc/archive/refs/tags/v2.1.2.tar.gz \
             --output "$archive.tmp"
-
-          echo "5179c8f5cf1237d2300e2d8559a7bc55  $archive.tmp" |
-            md5sum --check --strict
-
+          echo "5179c8f5cf1237d2300e2d8559a7bc55  $archive.tmp" | md5sum --check --strict
           mv "$archive.tmp" "$archive"
 
       - name: Build Linux release
