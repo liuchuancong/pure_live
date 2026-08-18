@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/utils.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
@@ -74,7 +75,7 @@ class AppNavigator {
 
 class BackButtonObserver extends RouteObserver<PageRoute<dynamic>> {
   @override
-  void didPop(Route route, Route? previousRoute) {
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
     super.didPop(route, previousRoute);
     if (route.settings.name == RoutePath.kLivePlay) {
       try {
@@ -86,10 +87,18 @@ class BackButtonObserver extends RouteObserver<PageRoute<dynamic>> {
 
         final manager = GlobalPlayerService.instance.playerManager;
         if (SettingsService.to.player.floatPlay.v) {
-          livePlayController.prepareAppFloating();
-          Future.delayed(Duration(milliseconds: 200), () {
-            manager.showAppFloating();
-          });
+          // Route.completed fires after the reverse transition and overlay
+          // entries are removed. A fixed delay raced on high-refresh devices
+          // and briefly mounted the room and floating player at the same time.
+          final routeUnmounted = route is TransitionRoute<dynamic>
+              ? route.completed.then<void>((_) {})
+              : SchedulerBinding.instance.endOfFrame;
+          livePlayController.prepareAppFloating(routeUnmounted: routeUnmounted);
+          unawaited(
+            routeUnmounted.then((_) {
+              manager.showAppFloating();
+            }),
+          );
         } else {
           // 清理播放器
           final videoController = state.player.videoController;

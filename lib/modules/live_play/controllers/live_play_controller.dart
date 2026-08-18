@@ -613,9 +613,16 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
   void setWidescreen() => updateUI(screenMode: VideoMode.widescreen);
   void setFullScreen() => updateUI(screenMode: VideoMode.fullscreen);
 
-  void prepareAppFloating() {
-    GlobalPlayerService.instance.playerManager.prepareAppFloating(onClose: disposeAppFloatingResources);
+  void prepareAppFloating({Future<void>? routeUnmounted}) {
     _floatingResourcesReleased = false;
+    GlobalPlayerService.instance.playerManager.prepareAppFloating(
+      onClose: () async {
+        // A popped route may remain mounted for its reverse transition. Its
+        // Obx widgets must unsubscribe before this controller closes Rx state.
+        if (routeUnmounted != null) await routeUnmounted;
+        await disposeAppFloatingResources();
+      },
+    );
   }
 
   Future<void> disposeAppFloatingResources() async {
