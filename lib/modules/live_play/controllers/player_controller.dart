@@ -166,13 +166,12 @@ class PlayerController extends GetxController {
   Future<void> _applyCurrentRoomAudioOnly(bool value) async {
     if (_state.player.isCurrentRoomAudioOnly == value) return;
 
-    // Remove the widget first so Flutter detaches the old native video surface
-    // before media_kit disposes it. The old order disposed MediaCodec while its
-    // widget was still building and could leave a release-mode grey ErrorWidget.
+    // Keep the room controller alive and remove only its widget while the native
+    // surface changes. Besides preserving barrage/gesture state, this keeps one
+    // transition lock for the entire operation; a newly-created controller can
+    // no longer accept a second tap while the previous player is still closing.
     _main.updateRoom(isLoading: true, success: false);
-    final oldController = _state.player.videoController;
-    _main.updatePlayer(videoController: null);
-    await oldController?.destory();
+    final controller = _state.player.videoController;
     await SchedulerBinding.instance.endOfFrame;
 
     try {
@@ -181,9 +180,13 @@ class PlayerController extends GetxController {
 
       final room = currentRoom;
       if (room != null && _state.player.playUrls.isNotEmpty) {
-        final controller = await setPlayer(roomId: room.roomId!);
+        if (controller != null) {
+          await controller.changeAudioOnlyMode(value);
+        } else {
+          final replacement = await setPlayer(roomId: room.roomId!);
+          await replacement?.initialization;
+        }
         _main.updateRoom(success: true, isLoading: false);
-        await controller?.initialization;
         return;
       }
       await _main.onInitPlayerState();

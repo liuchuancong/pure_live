@@ -221,7 +221,7 @@ class VideoController with ChangeNotifier {
   final String qualiteName;
   final int currentLineIndex;
   final int currentQuality;
-  final bool isAudioOnly;
+  bool isAudioOnly;
   final AudioOnlyCallback? onAudioOnlyChanged;
 
   final Battery _battery;
@@ -380,6 +380,19 @@ class VideoController with ChangeNotifier {
 
   Future<void> _playVideo() async {
     await _playerManager.play(datasource, playUrs, headers, room: room, audioOnly: isAudioOnly);
+  }
+
+  /// Rebinds the existing room controller to a freshly-created native player.
+  ///
+  /// The UI controller deliberately survives this operation. Recreating it on
+  /// every headphone tap used to give the replacement button a separate
+  /// transition lock while the previous native player was still shutting down,
+  /// so repeated audio/video taps could overlap and replace the video area with
+  /// Flutter's release-mode error widget.
+  Future<void> changeAudioOnlyMode(bool value) async {
+    if (_isDisposed || isAudioOnly == value) return;
+    isAudioOnly = value;
+    await _playerManager.play(datasource, playUrs, headers, room: room, audioOnly: value);
   }
 
   void _setupDefaultFullscreen() {

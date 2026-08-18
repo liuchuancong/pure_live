@@ -15,6 +15,14 @@ import 'package:pure_live/common/global/platform/desktop_manager.dart';
 import 'package:pure_live/core/iptv/services/iptv_import_manager.dart';
 
 void main(List<String> args) async {
+  // Flutter abbreviates every framework error after the first one. In release
+  // builds that abbreviation hides the actual exception behind a diagnostics
+  // node, making a grey player surface impossible to diagnose from logcat.
+  // Always retain the concrete exception and stack locally on the device.
+  FlutterError.onError = (details) {
+    FlutterError.dumpErrorToConsole(details, forceReport: true);
+  };
+
   await AppInitializer().initialize(args);
 
   runApp(
