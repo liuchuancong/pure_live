@@ -27,8 +27,12 @@ class RoomCard extends StatelessWidget {
 
           return CachedNetworkImage(
             key: ValueKey('$coverUrl#$epoch'),
-            cacheKey: '$coverUrl#$epoch',
+            // The cache is already emptied before imageCacheEpoch changes.
+            // Keeping the on-disk key stable avoids a new duplicate file for
+            // the same room cover on every scheduled thumbnail refresh.
+            cacheKey: coverUrl,
             imageUrl: coverUrl,
+            httpHeaders: networkImageHeaders(coverUrl),
             cacheManager: CustomImageCacheManager.instance,
             fit: BoxFit.cover,
             filterQuality: FilterQuality.low,

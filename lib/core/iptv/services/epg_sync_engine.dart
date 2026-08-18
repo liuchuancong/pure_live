@@ -1,5 +1,7 @@
 import 'dart:io';
+
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/plugins/db_service.dart';
@@ -18,7 +20,7 @@ class EpgSyncEngine {
   Future<bool> updateEpgCache(database.EpgSource source, {bool forceUpdate = false, bool showTips = false}) async {
     if (source.url.trim().isEmpty) return false;
     try {
-      final tempDir = Directory.systemTemp;
+      final tempDir = await getTemporaryDirectory();
       final lowercaseUrl = source.url.toLowerCase();
       final String ext = lowercaseUrl.endsWith('.json') ? '.json' : (lowercaseUrl.endsWith('.gz') ? '.gz' : '.xml');
 
@@ -28,8 +30,7 @@ class EpgSyncEngine {
         source.url,
         tempFile.path,
         header: {
-          "user-agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+          "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
         },
       );
       final bool success = await EpgImportManager().importEpgFile(

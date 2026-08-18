@@ -29,8 +29,9 @@ class _AreaCardState extends State<AreaCard> {
           final cacheWidth = (logicalWidth * MediaQuery.devicePixelRatioOf(context)).round().clamp(160, 640).toInt();
           return CachedNetworkImage(
             key: ValueKey('$imageUrl#$epoch'),
-            cacheKey: '$imageUrl#$epoch',
+            cacheKey: imageUrl,
             imageUrl: imageUrl,
+            httpHeaders: networkImageHeaders(imageUrl),
             cacheManager: CustomImageCacheManager.instance,
             fit: BoxFit.cover,
             filterQuality: FilterQuality.low,
@@ -38,10 +39,16 @@ class _AreaCardState extends State<AreaCard> {
             maxWidthDiskCache: 640,
             fadeInDuration: Duration.zero,
             fadeOutDuration: Duration.zero,
-            placeholder: (context, url) =>
-                AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", isMini: true),
-            errorWidget: (context, url, error) =>
-                AppStatusView(type: AppStatusType.error, title: "", subtitle: "", isMini: true),
+            placeholder: (context, url) => ColoredBox(
+              color: Theme.of(context).colorScheme.surfaceContainerLow,
+              child: Center(
+                child: Icon(Icons.live_tv_rounded, color: Theme.of(context).disabledColor.withValues(alpha: 0.3)),
+              ),
+            ),
+            errorWidget: (context, url, error) => ColoredBox(
+              color: Theme.of(context).colorScheme.surfaceContainerLow,
+              child: Center(child: Icon(Icons.broken_image_rounded, color: Theme.of(context).disabledColor)),
+            ),
           );
         },
       );
@@ -65,8 +72,7 @@ class _AreaCardState extends State<AreaCard> {
               cover: '',
               nick: widget.category.areaName,
               watching: '',
-              avatar:
-                  'https://img95.699pic.com/xsj/0q/x6/7p.jpg%21/fw/700/watermark/url/L3hzai93YXRlcl9kZXRhaWwyLnBuZw/align/southeast',
+              avatar: 'https://img95.699pic.com/xsj/0q/x6/7p.jpg%21/fw/700/watermark/url/L3hzai93YXRlcl9kZXRhaWwyLnBuZw/align/southeast',
               area: '',
               liveStatus: LiveStatus.live,
               status: true,

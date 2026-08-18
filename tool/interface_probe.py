@@ -203,6 +203,32 @@ def bilibili_danmaku_probe() -> None:
             raise ValueError("invalid secure danmaku endpoint")
 
 
+def bilibili_recommend_probe() -> None:
+    """Validate the anonymous homepage feed and a transformed cover URL."""
+    response = request_json(
+        "https://api.live.bilibili.com/xlive/web-interface/v1/webMain/getMoreRecList",
+        {"platform": "web", "page": 1},
+    )
+    if not isinstance(response, dict) or response.get("code") != 0:
+        raise ValueError(f"recommend code={response.get('code') if isinstance(response, dict) else 'invalid'}")
+    data = response.get("data", {})
+    rooms = data.get("recommend_room_list", []) if isinstance(data, dict) else []
+    if not rooms or not isinstance(rooms[0], dict):
+        raise ValueError("recommend_room_list missing")
+    cover = str(rooms[0].get("cover", "")).strip()
+    if not cover.startswith("https://"):
+        raise ValueError("recommend cover URL missing")
+    cover_request = urllib.request.Request(
+        f"{cover}@400w.jpg",
+        headers={"User-Agent": USER_AGENT, "Referer": "https://live.bilibili.com/", "Accept": "image/*"},
+    )
+    with urllib.request.urlopen(cover_request, timeout=20) as cover_response:
+        if cover_response.status != 200 or not cover_response.headers.get_content_type().startswith("image/"):
+            raise ValueError(f"cover response={cover_response.status} {cover_response.headers.get_content_type()}")
+        if len(cover_response.read(128)) < 64:
+            raise ValueError("cover response is empty")
+
+
 def huya_danmaku_identity_probe() -> None:
     """Ensure a live room exposes the numeric uid required by the gateway."""
     recommendation = request_json(
@@ -544,6 +570,7 @@ def main() -> int:
                 "lives",
             ),
         ),
+        ("bilibili.recommend", bilibili_recommend_probe),
         ("bilibili.danmaku", bilibili_danmaku_probe),
         ("huya.danmaku_identity", huya_danmaku_identity_probe),
         (
@@ -640,14 +667,28 @@ def main() -> int:
             print(f"FAIL {name}: {error}")
 
     try:
-        request = urllib.request.Request("https://live.douyin.com/?from_nav=1", headers={"User-Agent": USER_AGENT})
-        with urllib.request.urlopen(request, timeout=20) as response:
-            html = response.read().decode("utf-8", errors="replace")
-            cookies = response.headers.get_all("Set-Cookie") or []
-        if r'{\"pathname\":\"/\",\"categoryData\":' not in html:
-            raise ValueError("categoryData marker missing")
-        if not any(cookie.startswith("ttwid=") for cookie in cookies):
-            raise ValueError("anonymous ttwid cookie missing")
+        last_error: Exception | None = None
+        for attempt in range(1, 4):
+            try:
+                request = urllib.request.Request(
+                    "https://live.douyin.com/?from_nav=1",
+                    headers={"User-Agent": USER_AGENT, "Connection": "close"},
+                )
+                with urllib.request.urlopen(request, timeout=20) as response:
+                    html = response.read().decode("utf-8", errors="replace")
+                    cookies = response.headers.get_all("Set-Cookie") or []
+                if r'{\"pathname\":\"/\",\"categoryData\":' not in html:
+                    raise ValueError("categoryData marker missing")
+                if not any(cookie.startswith("ttwid=") for cookie in cookies):
+                    raise ValueError("anonymous ttwid cookie missing")
+                break
+            except Exception as error:  # noqa: BLE001 - bounded transient retry
+                last_error = error
+                if attempt < 3:
+                    time.sleep(attempt)
+        else:
+            assert last_error is not None
+            raise last_error
         print("PASS douyin.home")
     except Exception as error:  # noqa: BLE001 - command-line diagnostic
         failures.append("douyin.home")

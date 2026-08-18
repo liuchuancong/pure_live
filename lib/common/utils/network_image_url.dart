@@ -21,3 +21,21 @@ String normalizeNetworkImageUrl(String? source) {
   }
   return '';
 }
+
+/// Headers required by image CDNs that validate the request origin.
+///
+/// Keep this host-scoped: forwarding a platform referer to unrelated image
+/// hosts would be both unnecessary and harmful to cache sharing.
+Map<String, String>? networkImageHeaders(String source) {
+  final uri = Uri.tryParse(source);
+  final host = uri?.host.toLowerCase() ?? '';
+  if (host == 'hdslb.com' || host.endsWith('.hdslb.com')) {
+    return const {
+      'Referer': 'https://live.bilibili.com/',
+      'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+          '(KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+    };
+  }
+  return null;
+}

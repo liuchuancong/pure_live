@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:path/path.dart' as p;
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/db_service.dart';
@@ -40,7 +41,7 @@ class IptvSyncEngine {
 
       await deletePlaylistsByName(provider.name);
 
-      final tempDir = Directory.systemTemp;
+      final tempDir = await getTemporaryDirectory();
       tempFile = File(p.join(tempDir.path, 'sync_${provider.id}$ext'));
       await tempFile.writeAsString(rawStringContent);
 

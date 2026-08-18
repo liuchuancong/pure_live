@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/plugins/race_http.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pure_live/common/utils/githup_mirror.dart';
@@ -8,9 +9,9 @@ import 'package:pure_live/common/utils/githup_mirror.dart';
 class VersionUtil {
   static PackageInfo? _packageInfo;
 
-  static const String projectUrl = 'https://github.com/liuchuancong/pure_live';
-  static const String issuesUrl = 'https://github.com/liuchuancong/pure_live/issues';
-  static const String githubUrl = 'https://github.com/liuchuancong';
+  static const String projectUrl = 'https://github.com/wzgrx/pure_live';
+  static const String issuesUrl = 'https://github.com/wzgrx/pure_live/issues';
+  static const String githubUrl = 'https://github.com/wzgrx';
 
   static const String email = '17792321552@163.com';
   static const String emailUrl = 'mailto:17792321552@163.com?subject=PureLive Feedback';
@@ -21,9 +22,9 @@ class VersionUtil {
   static const String kanbanUrl =
       'https://jackiu-notes.notion.site/50bc0d3d377445eea029c6e3d4195671?v=663125e639b047cea5e69d8264926b8b';
 
-  static const String releaseUrl = 'https://api.github.com/repos/liuchuancong/pure_live/releases?per_page=30';
+  static const String releaseUrl = 'https://api.github.com/repos/wzgrx/pure_live/releases?per_page=30';
 
-  static final GitHubMirror mirror = GitHubMirror(owner: 'liuchuancong', repo: 'pure_live', branch: 'master');
+  static final GitHubMirror mirror = GitHubMirror(owner: 'wzgrx', repo: 'pure_live', branch: 'master');
 
   static List<String> get _versionUrls => mirror.mirrors('assets/version.json');
 
@@ -92,12 +93,32 @@ class VersionUtil {
   }
 
   static void _applyVersionData(Map<String, dynamic> data) {
-    latestVersion = data['version']?.toString() ?? version;
-    latestVersionNum = data['version_num'] ?? 0;
-    latestBuildNumber = data['build_number'];
-    latestUpdateLog = data['version_desc']?.toString() ?? '';
-    prerelease = data['prerelease'] == true;
-    downloadUrl = data['download_url']?.toString() ?? '';
+    final selected = selectPlatformVersionData(data, platform: _currentPlatformKey);
+    latestVersion = selected['version']?.toString() ?? version;
+    latestVersionNum = selected['version_num'] ?? 0;
+    latestBuildNumber = selected['build_number'];
+    latestUpdateLog = selected['version_desc']?.toString() ?? '';
+    prerelease = selected['prerelease'] == true;
+    downloadUrl = selected['download_url']?.toString() ?? '';
+  }
+
+  /// Keeps update announcements aligned with the artifacts that were really
+  /// published for each platform. The top-level object remains the fallback
+  /// for older feeds and older clients.
+  static Map<String, dynamic> selectPlatformVersionData(Map<String, dynamic> data, {required String platform}) {
+    final platforms = data['platforms'];
+    final platformData = platforms is Map ? platforms[platform] : null;
+    if (platformData is! Map) return data;
+    return {...data, ...Map<String, dynamic>.from(platformData)};
+  }
+
+  static String get _currentPlatformKey {
+    if (PlatformUtils.isWindows) return 'windows';
+    if (PlatformUtils.isAndroid) return 'android';
+    if (PlatformUtils.isMacOS) return 'macos';
+    if (PlatformUtils.isIOS) return 'ios';
+    if (PlatformUtils.isLinux) return 'linux';
+    return 'default';
   }
 
   static bool hasNewVersion() {

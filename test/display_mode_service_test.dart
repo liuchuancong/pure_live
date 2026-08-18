@@ -24,4 +24,24 @@ void main() {
     expect(info.width, 1080);
     expect(info.height, 2400);
   });
+
+  test('parses Windows current and maximum monitor refresh rates', () {
+    final info = DisplayModeInfo.fromMap({
+      'enabled': true,
+      'currentRefreshRate': 200.0,
+      'maxRefreshRate': 200.0,
+      'preferredRefreshRate': 200.0,
+      'supportedRefreshRates': [60.0, 120.0, 165.0, 200.0],
+      'requestedRefreshRate': 200.0,
+      'width': 3840,
+      'height': 2400,
+    });
+
+    expect(info.currentRefreshRate, 200.0);
+    expect(info.maxRefreshRate, 200.0);
+    expect(info.supportedRefreshRates, [60.0, 120.0, 165.0, 200.0]);
+    expect(info.displayId, isNull);
+    expect(info.width, 3840);
+    expect(info.height, 2400);
+  });
 }

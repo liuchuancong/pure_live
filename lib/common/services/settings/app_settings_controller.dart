@@ -43,6 +43,11 @@ class AppSettingsController extends GetxController {
         enableHighRefreshRate,
         (enabled) => unawaited(DisplayModeService.setHighRefreshRate(enabled)),
       );
+    } else if (Platform.isWindows) {
+      // Flutter follows the active Windows monitor's vsync. The native runner
+      // reports that monitor's current/supported modes and pushes updates when
+      // the window moves between displays or Windows changes display mode.
+      unawaited(DisplayModeService.refreshInfo());
     }
   }
 

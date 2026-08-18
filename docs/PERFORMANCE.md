@@ -1,4 +1,4 @@
-# Android 高刷新率与性能验证
+# Android 高刷新率与 Windows 性能验证
 
 Pure Live 在 Android 上默认启用高刷新率模式：应用会在当前屏幕分辨率的可用显示模式中请求最高刷新率。原生层持续监听显示器模式变化，折叠屏切换、外接屏变化、应用恢复前台或系统调整显示模式后都会重新检测并回传当前/最高 Hz。用户可在“设置 → 通用 → 高刷新率显示”关闭该选项。
 
@@ -23,6 +23,10 @@ Pure Live 在 Android 上默认启用高刷新率模式：应用会在当前屏�
 - 收藏直播间详情刷新在内存中批量合并，整个周期只写入一次 Hive，并保留本地标签，降低定时刷新时的序列化、磁盘写入和响应式重建次数。
 - Android 系统画中画先在原窗口预渲染紧凑视频层，再带当前视频物理边界 `sourceRectHint` 进入系统动画；Android 12+ 开启视频无缝缩放，并移除同一播放器上的重复 `AnimatedSwitcher`。
 - 画中画状态探测从每 10 ms 一次降为 100 ms 一次，减少非小窗状态下长期存在的平台通道调用，同时保持进入/退出状态更新及时。
+- Windows 首页、分区、收藏和搜索的网格使用桌面端自适应预加载范围，避免超大 `cacheExtent` 一次解码过多封面。
+- 移除基础页面与控制器之间的重复鼠标滚轮/滚动通知监听；回到顶部和底部动画根据当前距离约束在 220–520 ms。
+- 分区 Tab 横滑只在动画停稳后启动加载；窗口拖动/缩放尺寸通知以 80 ms 尾端去抖合并，避免一次手势中反复跨平台查询和全页布局。
+- 分区封面的加载/错误状态使用静态占位，网格项使用稳定 Key 且不再重复叠加 keep-alive 和 repaint 层。
 
 高刷新率会增加 GPU、CPU 和电量消耗。设备处于省电模式、过热、低电量或厂商应用级刷新率限制时，系统仍可能降低实际刷新率。
 
@@ -53,6 +57,18 @@ adb shell dumpsys gfxinfo com.mystyle.purelive framestats > .\local-artifacts\gf
 发布性能结论时记录设备型号、Android 版本、屏幕 Hz、应用版本、播放器、直播清晰度、弹幕 FPS，以及测试是否处于充电/省电/高温状态。
 
 本轮 Android 16 / 120 Hz 设备实测：`mActiveRenderFrameRate=120.00001`，系统记录 `AppRequestRefreshRates=120 Hz`；覆盖安装后的 5 次冷启动 `TotalTime` 为 239–274 ms，均保持前台可见且崩溃缓冲区为空。横竖屏切换后视频弹幕与弹幕列表继续更新。
+
+## Windows 检查
+
+Windows release 构建后从干净的 `build\windows\x64\runner\Release` 启动，覆盖以下操作：
+
+1. 关注、热门、分区三个主页导航；
+2. 平台 Tab 点击与横向手势；
+3. 12 张直播卡片的纵向鼠标滚轮；
+4. 封面网络回填、热度标签与翻页栏重建；
+5. Alt+F4 正常退出与 Hive 落盘。
+
+2026-08-18 本机快照中，Windows x64 release 在首页与热门页均持续保持 `Responding=true`；平台切换后新的 12 张卡片和封面在同一页内完成回填，纵向滚轮后无整页空白、跳页或失响应。5 秒稳态观测期内工作集保持约 262 MiB，窗口与句柄数稳定。这是桌面 release 烟雾验收，具体 GPU/CPU 帧时仍应在目标机型上使用 Flutter DevTools Performance 重复采样。
 
 参考：[Flutter Impeller 官方说明](https://docs.flutter.dev/perf/impeller)、[Android 帧率优化说明](https://developer.android.com/media/optimize/performance/frame-rate)。
 

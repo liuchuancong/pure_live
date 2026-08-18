@@ -1,4 +1,5 @@
 import 'dart:ui';
+
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/widgets/keep_alive_wrapper.dart';
@@ -46,7 +47,9 @@ class _AreasRoomPageState extends State<AreasRoomPage> {
                 final spacing = SettingsService.to.theme.crossAxisSpacing.v;
                 final itemWidth = (width - 12 - spacing * (crossAxisCount - 1)) / crossAxisCount;
                 return GridView.builder(
-                  scrollCacheExtent: const ScrollCacheExtent.pixels(480),
+                  scrollCacheExtent: ScrollCacheExtent.pixels(width > 680 ? 960 : 480),
+                  addAutomaticKeepAlives: false,
+                  addRepaintBoundaries: false,
                   keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: crossAxisCount,
@@ -57,7 +60,10 @@ class _AreasRoomPageState extends State<AreasRoomPage> {
                   padding: const EdgeInsets.fromLTRB(6, 6, 6, 80),
                   controller: scrollController,
                   itemCount: list.length,
-                  itemBuilder: (context, index) => RoomCard(room: list[index], dense: true),
+                  itemBuilder: (context, index) {
+                    final room = list[index];
+                    return RoomCard(key: ValueKey('${room.platform}:${room.roomId}'), room: room, dense: true);
+                  },
                 );
               },
             );
@@ -194,10 +200,8 @@ class FavoriteAreaFloatingButton extends StatelessWidget {
                                     children: [
                                       Text(
                                         i18n("follow"),
-                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                          color: Theme.of(context).hintColor,
-                                          height: 1.1,
-                                        ),
+                                        style: Theme.of(context).textTheme.bodySmall
+                                            ?.copyWith(color: Theme.of(context).hintColor, height: 1.1),
                                       ),
                                       const SizedBox(height: 1),
                                       ConstrainedBox(

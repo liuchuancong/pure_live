@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
@@ -49,9 +50,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
 
   Future<void> initGlobalPlayer() async {
     final String savedKey = SettingsService.to.player.videoPlayerKey.v;
-    final String validKey = PlayerConsts.engines.containsKey(savedKey)
-        ? savedKey
-        : PlayerConsts.defaultKey;
+    final String validKey = PlayerConsts.engines.containsKey(savedKey) ? savedKey : PlayerConsts.defaultKey;
     final PlayerEngine targetEngine = PlayerConsts.engines[validKey]!;
     final PlayerEngine defaultEngine;
 
@@ -78,18 +77,12 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
     if (Platform.isAndroid) {
       final handler = ShareHandler.instance;
       await handler.getInitialSharedMedia();
-      _sharedMediaSubscription = handler.sharedMediaStream.listen((
-        SharedMedia media,
-      ) async {
+      _sharedMediaSubscription = handler.sharedMediaStream.listen((SharedMedia media) async {
         final path = media.content?.trim().toLowerCase() ?? '';
         if (path.isEmpty) return;
-        if (path.endsWith('.m3u') ||
-            path.endsWith('.txt') ||
-            path.contains('.m3u8')) {
+        if (path.endsWith('.m3u') || path.endsWith('.txt') || path.contains('.m3u8')) {
           await IptvImportManager().importFromSharedMedia(media);
-        } else if (path.endsWith('.xml') ||
-            path.endsWith('.gz') ||
-            path.endsWith('.json')) {
+        } else if (path.endsWith('.xml') || path.endsWith('.gz') || path.endsWith('.json')) {
           await EpgImportManager().importFromSharedMedia(media);
         } else {
           ToastUtil.show(i18n("unsupported_file_format"));
@@ -103,24 +96,16 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
     return DynamicColorBuilder(
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
         return Obx(() {
-          final themeColor = HexColor(
-            SettingsService.to.theme.themeColorSwitch.v,
-          );
+          final themeColor = HexColor(SettingsService.to.theme.themeColorSwitch.v);
           final showSplashPage = SettingsService.to.app.showSplashPage.v;
           final currentFactor = SettingsService.to.font.textScaleFactor.v;
 
           ThemeData lightTheme;
           ThemeData darkTheme;
 
-          if (SettingsService.to.theme.enableDynamicTheme.v &&
-              lightDynamic != null &&
-              darkDynamic != null) {
-            lightTheme = MyTheme(
-              colorScheme: lightDynamic.harmonized(),
-            ).lightThemeData;
-            darkTheme = MyTheme(
-              colorScheme: darkDynamic.harmonized(),
-            ).darkThemeData;
+          if (SettingsService.to.theme.enableDynamicTheme.v && lightDynamic != null && darkDynamic != null) {
+            lightTheme = MyTheme(colorScheme: lightDynamic.harmonized()).lightThemeData;
+            darkTheme = MyTheme(colorScheme: darkDynamic.harmonized()).darkThemeData;
           } else {
             lightTheme = MyTheme(primaryColor: themeColor).lightThemeData;
             darkTheme = MyTheme(primaryColor: themeColor).darkThemeData;
@@ -130,29 +115,27 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
             title: i18n('app_name'),
             scrollBehavior: MyCustomScrollBehavior(),
             debugShowCheckedModeBanner: false,
-            themeMode:
-                AppConsts.themeModes[SettingsService.to.theme.themeModeName.v]!,
+            themeMode: AppConsts.themeModes[SettingsService.to.theme.themeModeName.v]!,
             theme: lightTheme.copyWith(
-              appBarTheme: const AppBarTheme(
-                surfaceTintColor: Colors.transparent,
-              ),
+              appBarTheme: const AppBarTheme(surfaceTintColor: Colors.transparent),
               pageTransitionsTheme: const PageTransitionsTheme(
                 builders: <TargetPlatform, PageTransitionsBuilder>{
-                  TargetPlatform.android:
-                      PredictiveBackPageTransitionsBuilder(),
+                  TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+                  TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
                 },
               ),
             ),
             darkTheme: darkTheme.copyWith(
-              appBarTheme: const AppBarTheme(
-                surfaceTintColor: Colors.transparent,
+              appBarTheme: const AppBarTheme(surfaceTintColor: Colors.transparent),
+              pageTransitionsTheme: const PageTransitionsTheme(
+                builders: <TargetPlatform, PageTransitionsBuilder>{
+                  TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+                  TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
+                },
               ),
             ),
             locale: context.locale,
-            navigatorObservers: [
-              FlutterSmartDialog.observer,
-              BackButtonObserver(),
-            ],
+            navigatorObservers: [FlutterSmartDialog.observer, BackButtonObserver()],
             builder: FlutterSmartDialog.init(
               builder: (context, child) {
                 Widget resultWidget = child ?? const SizedBox.shrink();
@@ -160,18 +143,14 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
                   resultWidget = DesktopManager.buildWithTitleBar(resultWidget);
                 }
                 return MediaQuery(
-                  data: MediaQuery.of(
-                    context,
-                  ).copyWith(textScaler: TextScaler.linear(currentFactor)),
+                  data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(currentFactor)),
                   child: resultWidget,
                 );
               },
             ),
             supportedLocales: context.supportedLocales,
             localizationsDelegates: context.localizationDelegates,
-            initialRoute: showSplashPage
-                ? RoutePath.kSplash
-                : RoutePath.kInitial,
+            initialRoute: showSplashPage ? RoutePath.kSplash : RoutePath.kInitial,
             defaultTransition: Transition.native,
             routingCallback: (routing) {
               if (routing != null) {

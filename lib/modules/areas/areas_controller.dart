@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/areas/areas_list_controller.dart';
 
@@ -9,6 +11,7 @@ class AreasController extends GetxController with GetTickerProviderStateMixin {
   List<dynamic> sites = [];
 
   bool _isTabControllerInitialized = false;
+  Timer? _settledTabLoadTimer;
 
   @override
   void onInit() {
@@ -21,6 +24,7 @@ class AreasController extends GetxController with GetTickerProviderStateMixin {
 
   @override
   void onClose() {
+    _settledTabLoadTimer?.cancel();
     if (_isTabControllerInitialized) {
       tabController.removeListener(_handleTabChange);
       tabController.dispose();
@@ -54,6 +58,7 @@ class AreasController extends GetxController with GetTickerProviderStateMixin {
   }
 
   void _initTabController({required bool isFirstLoad}) {
+    _settledTabLoadTimer?.cancel();
     final newSites = Sites().availableSites();
 
     if (newSites.isEmpty) {
@@ -101,13 +106,14 @@ class AreasController extends GetxController with GetTickerProviderStateMixin {
   }
 
   void _handleTabChange() {
-    if (tabController.indexIsChanging) {
-      return;
-    }
+    if (tabController.indexIsChanging) return;
+    final animationValue = tabController.animation?.value ?? tabController.index.toDouble();
+    if ((animationValue - tabController.index).abs() > 0.001) return;
 
     if (index != tabController.index) {
       index = tabController.index;
-      _loadCurrentTabData(index);
+      _settledTabLoadTimer?.cancel();
+      _settledTabLoadTimer = Timer(const Duration(milliseconds: 80), () => _loadCurrentTabData(index));
     }
   }
 

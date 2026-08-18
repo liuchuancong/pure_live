@@ -1,6 +1,20 @@
 import 'package:pure_live/common/index.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+class ReleaseAssetUrls {
+  const ReleaseAssetUrls({required this.projectUrl, required this.version, required this.buildNumber});
+
+  final String projectUrl;
+  final String version;
+  final int buildNumber;
+
+  String get releaseBase => '$projectUrl/releases/download/v$version';
+  String get androidArm64 => '$releaseBase/PureLive-$version-$buildNumber-arm64-v8a-release.apk';
+  String get windowsSetup => '$releaseBase/PureLive-$version-windows-x64-setup.exe';
+  String get windowsPortable => '$releaseBase/PureLive-$version-$buildNumber-windows-x64-portable.zip';
+  String get macosUniversal => '$releaseBase/PureLive-$version-$buildNumber-macos-universal.zip';
+}
+
 class VersionController extends GetxController {
   final hasNewVersion = false.obs;
 
@@ -45,8 +59,6 @@ class VersionController extends GetxController {
 
     final latestVersion = VersionUtil.latestVersion;
 
-    final releaseUrl = '${VersionUtil.projectUrl}/releases/download/v$latestVersion';
-
     final localBuild = int.tryParse(packageInfo.buildNumber) ?? 0;
     final int buildNumber;
     if (hasNewVersion.value) {
@@ -54,26 +66,31 @@ class VersionController extends GetxController {
     } else {
       buildNumber = VersionUtil.latestBuildNumber ?? localBuild;
     }
+    final assets = ReleaseAssetUrls(
+      projectUrl: VersionUtil.projectUrl,
+      version: latestVersion,
+      buildNumber: buildNumber,
+    );
 
     // =====================================================
     // Android
     // =====================================================
 
-    apkUrl.value = '$releaseUrl/PureLive-$latestVersion-app-armeabi-v7a-release.apk';
-    apkUrl2.value = '$releaseUrl/PureLive-$latestVersion-app-arm64-v8a-release.apk';
-    apkUrl3.value = '$releaseUrl/PureLive-$latestVersion-app-x86_64-release.apk';
+    apkUrl.value = '';
+    apkUrl2.value = assets.androidArm64;
+    apkUrl3.value = '';
 
     // =====================================================
     // Windows
     // =====================================================
 
-    windowsUrl.value = '$releaseUrl/PureLive-$latestVersion+$buildNumber-windows-x64-setup.exe';
-    windowsUrl2.value = '$releaseUrl/PureLive-$latestVersion+$buildNumber-windows-x64.msix';
+    windowsUrl.value = assets.windowsSetup;
+    windowsUrl2.value = assets.windowsPortable;
     // =====================================================
     // macOS
     // ========================= ===========================
 
-    macosUrl.value = '$releaseUrl/PureLive-$latestVersion-macOS.dmg';
+    macosUrl.value = assets.macosUniversal;
 
     loading.value = false;
   }

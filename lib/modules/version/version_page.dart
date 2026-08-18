@@ -48,7 +48,7 @@ class VersionPage extends GetView<VersionController> {
                 children: [
                   _buildDownloadSection(context, title: i18n("exe_installer"), urls: controller.windowsUrl.value),
                   const SizedBox(height: 16),
-                  _buildDownloadSection(context, title: i18n("msix_installer"), urls: controller.windowsUrl2.value),
+                  _buildDownloadSection(context, title: i18n("portable_package"), urls: controller.windowsUrl2.value),
                 ],
               ),
               const SizedBox(height: 24),
@@ -59,7 +59,9 @@ class VersionPage extends GetView<VersionController> {
                 title: "macOS",
                 subtitle: i18n("macos_desc"),
                 icon: Remix.macbook_line,
-                children: [_buildDownloadSection(context, title: i18n("macos_dmg"), urls: controller.macosUrl.value)],
+                children: [
+                  _buildDownloadSection(context, title: i18n("macos_package"), urls: controller.macosUrl.value),
+                ],
               ),
               const SizedBox(height: 20),
             ],
