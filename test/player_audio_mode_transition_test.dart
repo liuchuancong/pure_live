@@ -164,6 +164,29 @@ void main() {
     manager.prepareRoomSessionReentry(room);
     expect(manager.consumeRoomSessionReentry(LiveRoom(roomId: 'room-2', platform: 'test')), isFalse);
   });
+
+  testWidgets('floating cleanup preserves the same-room re-entry handoff', (tester) async {
+    final player = _FakePlayer();
+    final manager = _createManager(player);
+    final room = LiveRoom(roomId: 'room-1', platform: 'test');
+    await manager.initialize(engine: PlayerEngine.mediaKit);
+    await manager.play(
+      'https://example.invalid/live.flv',
+      const ['https://example.invalid/live.flv'],
+      const {},
+      room: room,
+    );
+    manager.prepareAppFloating(onClose: () async {});
+
+    manager.prepareRoomSessionReentry(room);
+    final cleanup = manager.closeAppFloating();
+    await tester.pump(const Duration(milliseconds: 16));
+    await tester.pump(const Duration(milliseconds: 16));
+    await cleanup.timeout(const Duration(seconds: 2));
+
+    expect(manager.consumeRoomSessionReentry(room), isTrue);
+    expect(manager.currentPlayer, same(player));
+  }, timeout: const Timeout(Duration(seconds: 10)));
 }
 
 PlayerManager _createManager(_FakePlayer player, {Duration timeout = const Duration(seconds: 1)}) {
