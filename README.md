@@ -409,7 +409,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
 PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 ```
 
-当前 master 已通过 Built-in Kotlin 审计、Flutter Analyze、83 项单元/Widget 测试与 26/26 平台公开接口探测。普通提交不会自动消耗全平台 Actions 配额；Linux/macOS/iOS 使用显式阶段构建，再由校验工作流汇总正式 Release。完整流程见 [构建与发布](docs/BUILD_AND_RELEASE.md)。
+当前 master 已通过 Built-in Kotlin 审计、Flutter Analyze、92 项单元/Widget 测试与 26/26 平台公开接口探测。普通提交不会自动消耗全平台 Actions 配额；Linux/macOS/iOS 使用显式阶段构建，再由校验工作流汇总正式 Release。完整流程见 [构建与发布](docs/BUILD_AND_RELEASE.md)。
 
 ## 🤝 参与开发
 
