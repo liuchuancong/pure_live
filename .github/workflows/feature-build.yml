@@ -251,205 +251,169 @@ jobs:
 # =========================================================
 
   windows:
-    name: Windows EXE + MSIX
-    if: ${{ always() && inputs.build_windows && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
-    needs: quality
     runs-on: windows-latest
-    timeout-minutes: 35
+    permissions:
+      contents: write
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - name: 签出代码
+      uses: actions/checkout@v4
+      with:
+        ref: master
+        fetch-depth: 0
 
-      # -----------------------------------------------------
-      # MSIX certificate
-      # -----------------------------------------------------
+    - name: Decode MSIX Certificate
+      shell: pwsh
+      env:
+        CERTIFICATE: ${{ secrets.CERTIFICATE }}
+      run: |
+        $certBase64 = "$env:CERTIFICATE".Trim() -replace '\s+', ''
 
-      - name: Decode MSIX Certificate
-        shell: pwsh
-        env:
-          CERTIFICATE: ${{ secrets.CERTIFICATE }}
-        run: |
-          $certBase64 = "$env:CERTIFICATE".Trim() -replace '\s+', ''
-
-          if ([string]::IsNullOrEmpty($certBase64)) {
-            Write-Error "CERTIFICATE secret is empty!"
-            exit 1
-          }
-
-          $certBytes = [System.Convert]::FromBase64String($certBase64)
-
-          $certPath = Join-Path `
-            -Path (Get-Location) `
-            -ChildPath "certificate.pfx"
-
-          [IO.File]::WriteAllBytes($certPath, $certBytes)
-
-          "FINAL_CERT_PATH=$certPath" >> $env:GITHUB_ENV
-
-      - name: Update MSIX make_config.yaml
-        shell: pwsh
-        run: |
-          $configPath = "windows/packaging/msix/make_config.yaml"
-
-          if (!(Test-Path $configPath)) {
-            Write-Error "Config file not found: $configPath"
-            exit 1
-          }
-
-          $absolutePath = $env:FINAL_CERT_PATH -replace '\\', '/'
-
-          if ([string]::IsNullOrEmpty($absolutePath)) {
-            Write-Error "FINAL_CERT_PATH is empty!"
-            exit 1
-          }
-
-          $content = Get-Content $configPath -Raw
-
-          # 设置 certificate_path
-          if ($content -match 'certificate_path:\s*.*') {
-            $content = $content -replace `
-              'certificate_path:\s*.*',
-              "certificate_path: $absolutePath"
-          }
-          else {
-            $content += "`r`ncertificate_path: $absolutePath`r`n"
-          }
-
-          # 删除 certificate_password
-          $content = $content -replace `
-            '(?m)^\s*certificate_password:\s*.*\r?\n?', ''
-
-          Set-Content `
-            -Path $configPath `
-            -Value $content `
-            -Encoding UTF8
-
-          Write-Host "MSIX certificate path configured:"
-          Write-Host $absolutePath
-
-          Write-Host "MSIX certificate password is not configured."
-
-      # -----------------------------------------------------
-      # Flutter
-      # -----------------------------------------------------
-
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
-
-      - name: Enable Flutter Windows
-        run: flutter config --enable-windows-desktop
-
-      - name: Resolve locked packages
-        run: flutter pub get --enforce-lockfile
-
-      # -----------------------------------------------------
-      # Inno Setup
-      # -----------------------------------------------------
-
-      - name: Install fastforge (from source)
-        shell: pwsh
-        run: |
-          git clone https://github.com/SlotSun/fastforge.git
-          cd fastforge
-          dart pub global activate melos
-          melos run activate
-          choco install innosetup
-
-      - name: Copy Chinese language pack
-        shell: pwsh
-        run: |
-          $source = "windows\packaging\exe\ChineseSimplified.isl"
-          $target = "C:\Program Files (x86)\Inno Setup 6\Languages\ChineseSimplified.isl"
-
-          if (Test-Path $source) {
-            Copy-Item $source $target -Force
-          }
-
-      # -----------------------------------------------------
-      # Fastforge
-      # -----------------------------------------------------
-
-      - name: Install Fastforge
-        run: dart pub global activate fastforge
-
-      - name: Get version
-        id: version
-        shell: pwsh
-        run: |
-          $lines = Get-Content pubspec.yaml
-
-          foreach ($line in $lines) {
-            if ($line -match '^\s*version:\s*(\S+)') {
-              $v = $matches[1] -replace '[`"''`]', ''
-              $v = $v.Split('+')[0]
-
-              "version=$v" |
-                Out-File `
-                  -FilePath $env:GITHUB_OUTPUT `
-                  -Encoding utf8 `
-                  -Append
-
-              exit 0
-            }
-          }
-
-          Write-Error "Version not found"
+        if ([string]::IsNullOrEmpty($certBase64)) {
+          Write-Error "CERTIFICATE secret is empty!"
           exit 1
+        }
 
-      - name: Package Windows EXE and MSIX
-        shell: pwsh
-        run: |
-          fastforge package --platform windows --targets exe,msix
+        try {
+          $certBytes = [System.Convert]::FromBase64String($certBase64)
+        }
+        catch {
+          Write-Error "CERTIFICATE is not valid Base64!"
+          exit 1
+        }
 
-      - name: Rename Windows installers
-        shell: pwsh
-        run: |
-          $VERSION = "${{ steps.version.outputs.version }}"
-          $DIST_DIR = "dist"
+        $certPath = Join-Path -Path (Get-Location) -ChildPath "certificate.pfx"
+        [IO.File]::WriteAllBytes($certPath, $certBytes)
+        "FINAL_CERT_PATH=$certPath" >> $env:GITHUB_ENV
 
-          $EXE_FILE = Get-ChildItem `
-            $DIST_DIR `
-            -Recurse `
-            -Filter "*.exe" |
-            Select-Object -First 1
+    - name: Update make_config.yaml
+      shell: pwsh
+      run: |
+        $configPath = "windows/packaging/msix/make_config.yaml"
 
-          if (!$EXE_FILE) {
-            Write-Error "Windows EXE package not found."
-            exit 1
+        if (!(Test-Path $configPath)) {
+          Write-Error "Config file not found: $configPath"
+          exit 1
+        }
+
+        $absolutePath = $env:FINAL_CERT_PATH -replace '\\', '/'
+
+        if ([string]::IsNullOrEmpty($absolutePath)) {
+          Write-Error "FINAL_CERT_PATH is empty!"
+          exit 1
+        }
+
+        $content = Get-Content $configPath -Raw
+        $content = $content -replace '(?m)^(\s*certificate_path:\s*).*$', "`${1}$absolutePath"
+
+        Set-Content -Path $configPath -Value $content -Encoding UTF8
+
+        Write-Host "certificate_path: $absolutePath"
+
+    - name: 设置Flutter环境
+      uses: subosito/flutter-action@v2
+      with:
+        channel: stable
+        cache: true
+
+    - name: 启用 Flutter Windows
+      run: flutter config --enable-windows-desktop
+
+    - name: 更新Flutter packages
+      run: flutter pub get
+
+    - name: Install fastforge
+      shell: pwsh
+      run: |
+        git clone https://github.com/SlotSun/fastforge.git
+        cd fastforge
+        dart pub global activate melos
+        melos run activate
+        choco install innosetup --yes
+
+    - name: Copy Chinese language pack
+      shell: pwsh
+      run: |
+        $source = "windows\packaging\exe\ChineseSimplified.isl"
+        $target = "C:\Program Files (x86)\Inno Setup 6\Languages\ChineseSimplified.isl"
+
+        if (Test-Path $source) {
+          Copy-Item $source $target -Force
+        }
+
+    - name: Get version
+      id: get_version
+      shell: pwsh
+      run: |
+        $lines = Get-Content pubspec.yaml
+
+        foreach ($line in $lines) {
+          if ($line -match '^\s*version:\s*(\S+)') {
+            $v = $matches[1] -replace '[`"''`]', ''
+            $v = $v.Split('+')[0]
+
+            "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            exit 0
           }
+        }
 
-          Copy-Item `
-            $EXE_FILE.FullName `
-            "PureLive-$VERSION-windows-x64-setup.exe" `
-            -Force
+        Write-Error "Version not found"
+        exit 1
 
-          $MSIX_FILE = Get-ChildItem `
-            $DIST_DIR `
-            -Recurse `
-            -Filter "*.msix" |
-            Select-Object -First 1
+    - name: Package Windows
+      shell: pwsh
+      run: fastforge package --platform windows --targets msix,zip,exe --skip-clean
 
-          if (!$MSIX_FILE) {
-            Write-Error "Windows MSIX package not found."
-            exit 1
-          }
+    - name: Rename installers
+      shell: pwsh
+      run: |
+        $VERSION = "${{ steps.get_version.outputs.version }}"
 
-          Copy-Item `
-            $MSIX_FILE.FullName `
-            "PureLive-$VERSION-windows-x64.msix" `
-            -Force
+        $EXE_FILE = Get-ChildItem "dist" -Recurse -File -Filter "*.exe" |
+          Sort-Object LastWriteTime -Descending |
+          Select-Object -First 1
 
-      - name: Upload Windows artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: pure-live-windows
-          path: |
-            PureLive-*-windows-x64-setup.exe
-            PureLive-*-windows-x64.msix
-          if-no-files-found: error
-          retention-days: 3
+        if (!$EXE_FILE) {
+          Write-Error "Windows EXE package not found."
+          exit 1
+        }
+
+        Copy-Item $EXE_FILE.FullName "PureLive-$VERSION-windows-x64-setup.exe" -Force
+
+        $MSIX_FILE = Get-ChildItem "dist" -Recurse -File -Filter "*.msix" |
+          Sort-Object LastWriteTime -Descending |
+          Select-Object -First 1
+
+        if (!$MSIX_FILE) {
+          Write-Error "Windows MSIX package not found."
+          exit 1
+        }
+
+        Copy-Item $MSIX_FILE.FullName "PureLive-$VERSION-windows-x64.msix" -Force
+
+        $ZIP_FILE = Get-ChildItem "dist" -Recurse -File -Filter "*.zip" |
+          Sort-Object LastWriteTime -Descending |
+          Select-Object -First 1
+
+        if (!$ZIP_FILE) {
+          Write-Error "Windows ZIP package not found."
+          exit 1
+        }
+
+        Copy-Item $ZIP_FILE.FullName "PureLive-$VERSION-windows-x64.zip" -Force
+
+        Get-ChildItem "PureLive-$VERSION-windows-x64.*" | Select-Object Name, Length
+
+    - name: 上传 Windows 安装包
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-installer
+        path: |
+          PureLive-*-windows-x64-setup.exe
+          PureLive-*-windows-x64.msix
+          PureLive-*-windows-x64.zip
+        if-no-files-found: error
+        retention-days: 1
 
 
 
