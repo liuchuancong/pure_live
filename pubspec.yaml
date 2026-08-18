@@ -194,6 +194,7 @@ dependencies:
   back_button_interceptor: ^8.0.4 # 返回键拦截
   easy_localization: ^3.0.8 #多语言
   app_links: ^7.2.1
+  scroll_animator: 0.3.0
 # 依赖覆盖（强制指定版本）
 dependency_overrides:
   # 上游网页内核的 Android 子包仍引用 AGP 9 已移除的默认 ProGuard 文件；

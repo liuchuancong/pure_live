@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:pure_live/common/index.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:pure_live/common/widgets/count_button.dart';
+import 'package:pure_live/modules/live_play/danmaku_viewing_preset.dart';
 import 'package:pure_live/modules/settings/pages/pip_danmaku_settings_page.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 
@@ -15,7 +16,21 @@ class DanmakuSettingsPage extends StatefulWidget {
 }
 
 class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
+  late final ScrollController _scrollController;
+
   VideoController get controller => widget.controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = createPureLiveScrollController();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +41,7 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
 
     return Scaffold(
       body: SingleChildScrollView(
+        controller: _scrollController,
         physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Column(
@@ -33,51 +49,49 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
           children: [
             context.buildGroupTitle(i18n('danmaku_templates')),
             const SizedBox(height: 8),
-            context.buildModernCard([
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        FilledButton.tonalIcon(
-                          onPressed: () => _applyPreset('best'),
-                          icon: const Icon(Icons.auto_awesome_rounded),
-                          label: Text(i18n('danmaku_template_best')),
-                        ),
-                        OutlinedButton(
-                          onPressed: () => _applyPreset('comfort'),
-                          child: Text(i18n('danmaku_template_comfort')),
-                        ),
-                        OutlinedButton(
-                          onPressed: () => _applyPreset('dense'),
-                          child: Text(i18n('danmaku_template_dense')),
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: _saveTemplate,
-                          icon: const Icon(Icons.save_outlined),
-                          label: Text(i18n('save_current_template')),
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: _restoreTemplate,
-                          icon: const Icon(Icons.restore_rounded),
-                          label: Text(i18n('restore_saved_template')),
-                        ),
-                        TextButton(onPressed: () => _applyPreset('default'), child: Text(i18n('reset'))),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      '${i18n('danmaku_best_preset_desc')}\n${i18n('danmaku_realtime_hint')}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.45),
-                    ),
-                  ],
+            Obx(() {
+              final activePreset = _matchingPreset();
+              return context.buildModernCard([
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final preset in DanmakuViewingPreset.values)
+                            ChoiceChip(
+                              key: ValueKey('danmaku-template-${preset.id}'),
+                              selected: activePreset?.id == preset.id,
+                              showCheckmark: true,
+                              avatar: preset.id == 'best' ? const Icon(Icons.auto_awesome_rounded, size: 18) : null,
+                              label: Text(i18n(preset.labelKey)),
+                              onSelected: (_) => _applyPreset(preset),
+                            ),
+                          OutlinedButton.icon(
+                            onPressed: _saveTemplate,
+                            icon: const Icon(Icons.save_outlined),
+                            label: Text(i18n('save_current_template')),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: _restoreTemplate,
+                            icon: const Icon(Icons.restore_rounded),
+                            label: Text(i18n('restore_saved_template')),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        '${i18n('danmaku_best_preset_desc')}\n${i18n('danmaku_realtime_hint')}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.45),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ]),
+              ]);
+            }),
             const SizedBox(height: 20),
             context.buildGroupTitle(i18n("danmaku_area")),
             const SizedBox(height: 8),
@@ -248,22 +262,36 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
     );
   }
 
-  void _applyPreset(String preset) {
-    final values = switch (preset) {
-      'best' => const [0.20, 0.0, 0.0, 118.0, 16.0, 1.5, 0.92, 1.0],
-      'comfort' => const [0.35, 0.0, 0.0, 105.0, 17.0, 1.5, 0.9, 1.0],
-      'dense' => const [0.55, 0.0, 0.0, 138.0, 15.0, 1.2, 0.88, 1.0],
-      _ => const [1.0, 0.0, 0.0, 120.0, 16.0, 1.5, 1.0, 1.0],
-    };
-    controller.danmakuArea.v = values[0];
-    controller.danmakuTopArea.v = values[1];
-    controller.danmakuBottomArea.v = values[2];
-    controller.danmakuSpeed.v = values[3];
-    controller.danmakuFontSize.v = values[4];
-    controller.danmakuFontBorder.v = values[5];
-    controller.danmakuOpacity.v = values[6];
-    controller.enableDanmakuStroke.v = values[7] == 1;
+  DanmakuViewingPreset? _matchingPreset() {
+    for (final preset in DanmakuViewingPreset.values) {
+      if (preset.matches(
+        area: controller.danmakuArea.v,
+        top: controller.danmakuTopArea.v,
+        bottom: controller.danmakuBottomArea.v,
+        speed: controller.danmakuSpeed.v,
+        fontSize: controller.danmakuFontSize.v,
+        fontBorder: controller.danmakuFontBorder.v,
+        opacity: controller.danmakuOpacity.v,
+        stroke: controller.enableDanmakuStroke.v,
+        autoFps: SettingsService.to.danmaku.danmakuAutoFps.v,
+      )) {
+        return preset;
+      }
+    }
+    return null;
+  }
+
+  void _applyPreset(DanmakuViewingPreset preset) {
+    controller.danmakuArea.v = preset.area;
+    controller.danmakuTopArea.v = preset.top;
+    controller.danmakuBottomArea.v = preset.bottom;
+    controller.danmakuSpeed.v = preset.speed;
+    controller.danmakuFontSize.v = preset.fontSize;
+    controller.danmakuFontBorder.v = preset.fontBorder;
+    controller.danmakuOpacity.v = preset.opacity;
+    controller.enableDanmakuStroke.v = preset.stroke;
     SettingsService.to.danmaku.danmakuAutoFps.v = true;
+    setState(() {});
     ToastUtil.show(i18n('danmaku_template_applied'));
   }
 

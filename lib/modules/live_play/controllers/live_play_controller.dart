@@ -18,6 +18,7 @@ import 'package:pure_live/modules/live_play/states/live_play_state.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku_list_view.dart';
 import 'package:pure_live/modules/live_play/local_interaction_controller.dart';
+import 'package:pure_live/modules/live_play/local_message_delivery_queue.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/timer_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
@@ -58,17 +59,20 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
   Timer? _localGiftEffectTimer;
   Timer? _danmakuFlushTimer;
   final List<LiveMessage> _pendingDanmakuMessages = <LiveMessage>[];
+  late final LocalMessageDeliveryQueue _localMessageDeliveryQueue;
   late final String _controllerTag;
 
   static const int _maxDanmakuHistory = 500;
   static const int _maxPendingDanmakuBatch = 200;
   static const Duration _danmakuBatchWindow = Duration(milliseconds: 32);
+  static const Duration localChatDeliveryDelay = Duration(seconds: 2);
 
   @override
   void onInit() {
     super.onInit();
     _controllerTag = '${identityHashCode(this)}';
     currentSite = Sites.of(site);
+    _localMessageDeliveryQueue = LocalMessageDeliveryQueue(onDeliver: _deliverLocalMessage);
 
     final autoStartAsmr = Platform.isAndroid && SettingsService.to.app.enableAsmrSleepMode.v;
     _asmrSessionActive = autoStartAsmr;
@@ -187,12 +191,18 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
     }
   }
 
-  void addDanmakuMessage(LiveMessage msg) {
+  void addDanmakuMessage(LiveMessage msg, {bool immediate = false}) {
     if (isClosed) return;
     if (_pendingDanmakuMessages.length >= _maxPendingDanmakuBatch) {
       _pendingDanmakuMessages.removeAt(0);
     }
     _pendingDanmakuMessages.add(msg);
+    if (immediate) {
+      _danmakuFlushTimer?.cancel();
+      _danmakuFlushTimer = null;
+      _flushDanmakuMessages();
+      return;
+    }
     _danmakuFlushTimer ??= Timer(_danmakuBatchWindow, _flushDanmakuMessages);
   }
 
@@ -246,12 +256,19 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
     updateRoom(detail: candidate.withAudienceFallbackFrom(detail));
   }
 
-  void emitLocalMessage(LiveMessage msg, {required bool showAsDanmaku}) {
+  void emitLocalMessage(LiveMessage msg, {required bool showAsDanmaku, Duration delay = Duration.zero}) {
     if (!localInteractionController.enabled.v) return;
-    addDanmakuMessage(msg);
-    if (showAsDanmaku) {
-      state.value.player.videoController?.sendDanmaku(msg);
-    }
+    _localMessageDeliveryQueue.schedule(
+      LocalMessageDelivery(message: msg, showAsDanmaku: showAsDanmaku, roomEpoch: _roomLoadEpoch),
+      delay: delay,
+    );
+  }
+
+  void _deliverLocalMessage(LocalMessageDelivery delivery) {
+    if (isClosed || _ownerClosed || delivery.roomEpoch != _roomLoadEpoch) return;
+    final msg = delivery.message;
+    addDanmakuMessage(msg, immediate: true);
+    if (delivery.showAsDanmaku) state.value.player.videoController?.sendDanmaku(msg);
     if (msg.type == LiveMessageType.gift && localInteractionController.enableGiftEffects.v) {
       localGiftEffect.v = msg;
       _localGiftEffectTimer?.cancel();
@@ -462,6 +479,7 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
     // Fence any room-detail/play-quality request that was started before this
     // switch. Its late result must not restore the previous room or socket.
     invalidateRoomLoad();
+    _localMessageDeliveryQueue.cancelAll();
     final sameRoom =
         state.value.room.detail?.roomId == newRoom.roomId && state.value.room.detail?.platform == newRoom.platform;
 
@@ -636,6 +654,7 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
     _ownerClosed = true;
     _roomLoadEpoch++;
     _localGiftEffectTimer?.cancel();
+    _localMessageDeliveryQueue.dispose();
     _danmakuFlushTimer?.cancel();
     _pendingDanmakuMessages.clear();
     tabController.dispose();

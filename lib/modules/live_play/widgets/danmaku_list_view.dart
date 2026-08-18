@@ -10,6 +10,12 @@ import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku_message_actions.dart';
 
+bool isDanmakuUserScrollStart(ScrollNotification notification) {
+  return (notification is ScrollStartNotification && notification.dragDetails != null) ||
+      (notification is ScrollUpdateNotification && notification.dragDetails != null) ||
+      (notification is UserScrollNotification && notification.direction != ScrollDirection.idle);
+}
+
 class DanmakuListView extends StatefulWidget {
   final LiveRoom room;
 
@@ -20,7 +26,7 @@ class DanmakuListView extends StatefulWidget {
 }
 
 class DanmakuListViewState extends State<DanmakuListView> {
-  final ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController = createPureLiveScrollController();
   final TextEditingController _composerController = TextEditingController();
 
   static const Duration throttleDuration = Duration(milliseconds: 80);
@@ -78,6 +84,15 @@ class DanmakuListViewState extends State<DanmakuListView> {
       if (addedCount > 0) {
         _pendingMessageCount.value = (_pendingMessageCount.value + addedCount).clamp(0, 9999);
       }
+      return;
+    }
+
+    if (nextTail?.isLocal == true && addedCount > 0) {
+      throttleTimer?.cancel();
+      throttleTimer = null;
+      _scheduledSnapshot = null;
+      setState(() => _visibleMessages = snapshot);
+      WidgetsBinding.instance.addPostFrameCallback((_) => forceScrollToBottom());
       return;
     }
 
@@ -139,12 +154,20 @@ class DanmakuListViewState extends State<DanmakuListView> {
   }
 
   void onScrollNotification(ScrollNotification notification) {
-    if (notification is! UserScrollNotification || !_scrollController.hasClients) return;
+    if (!_scrollController.hasClients) return;
     final position = _scrollController.position;
     final distanceToBottom = position.pixels - position.minScrollExtent;
-    if (notification.direction != ScrollDirection.idle && distanceToBottom > 24) {
+
+    // A UserScrollNotification is emitted before the first drag has produced a
+    // useful pixel distance. Waiting for a 24 px offset let the 80 ms live
+    // update jump the list back to the bottom, so Android users had to swipe
+    // repeatedly. Claim a real drag (or mouse wheel) immediately.
+    if (isDanmakuUserScrollStart(notification)) {
       _pauseAutoScroll();
-    } else if (notification.direction == ScrollDirection.idle && distanceToBottom <= 12 && !_autoScrollEnabled) {
+    } else if ((notification is ScrollEndNotification ||
+            (notification is UserScrollNotification && notification.direction == ScrollDirection.idle)) &&
+        distanceToBottom <= 12 &&
+        !_autoScrollEnabled) {
       _resumeAutoScroll();
     }
   }
@@ -156,8 +179,10 @@ class DanmakuListViewState extends State<DanmakuListView> {
     controller.emitLocalMessage(
       local.createChat(text, platform: controller.site),
       showAsDanmaku: local.showAsDanmaku.v,
+      delay: LivePlayController.localChatDeliveryDelay,
     );
     _composerController.clear();
+    ToastUtil.show(i18n('local_message_queued'));
   }
 
   @override
@@ -183,6 +208,7 @@ class DanmakuListViewState extends State<DanmakuListView> {
                       return false;
                     },
                     child: ListView.builder(
+                      key: const ValueKey('danmaku-message-list'),
                       addAutomaticKeepAlives: false,
                       addRepaintBoundaries: true,
                       controller: _scrollController,
@@ -201,6 +227,7 @@ class DanmakuListViewState extends State<DanmakuListView> {
                       right: 12,
                       bottom: 12,
                       child: FilledButton.icon(
+                        key: const ValueKey('danmaku-resume-live'),
                         style: FilledButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           backgroundColor: Get.theme.colorScheme.primary.withValues(alpha: 0.92),

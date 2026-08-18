@@ -1087,6 +1087,7 @@
   "copy": "复制",
   "save": "保存",
   "local_send_message": "发送本地弹幕",
+  "local_message_queued": "发送成功，将在 2 秒后同步显示",
   "danmaku_new_messages": "{count} 条新弹幕，点击回到底部",
   "block_danmaku_user": "屏蔽该用户的弹幕",
   "block_danmaku_keyword": "屏蔽弹幕关键词",
