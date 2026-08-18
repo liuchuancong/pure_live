@@ -91,6 +91,8 @@ Windows x64 临时自托管 Runner，再手动运行
 
 Linux、macOS 和 iOS 通常通过 `manual-build` 手动开关补建；阶段标签也支持精确补建：`stage-linux-*` 运行 Linux，`stage-ios-*` 运行 iOS，`stage-apple-*` 在一个 macOS Runner 内连续构建 macOS 与 iOS。普通分支推送、Android 和 Windows 均保持本机优先。
 
+本机生成的 Windows EXE 安装向导始终显示安装目录页，可选择其他磁盘并记住上次目录。Windows 播放小窗默认使用普通窗口层级；“设置 → 播放设置 → Windows 小窗始终置顶”可按需切换，当前小窗会立即应用。
+
 Linux 版使用系统浏览器承接“继续网页搜索”，避免引入额外 WPE WebKit 运行时；平台原生搜索、直播详情、弹幕与播放链路仍在应用内完成。Windows/macOS/Android/iOS 使用锁定修订版 `flutter_inappwebview`。
 
 Ubuntu 24.04 构建会同时安装 `libva`、VDPAU、PulseAudio、Wayland、EGL 与 X11 开发包，以满足当前锁定 `libmpv.so` 的 glibc 2.38 / GLIBCXX 3.4.32 基线和链接依赖；Android 使用仓库内的同版本网页内核兼容副本通过 AGP 9.3.1 / R8 构建。Linux 归档携带应用与媒体库，目标系统仍需提供 GTK、托盘、显卡驱动和音频运行库。

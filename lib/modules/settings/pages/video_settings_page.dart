@@ -6,6 +6,7 @@ import 'package:pure_live/common/services/settings/app_settings_controller.dart'
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
+import 'package:pure_live/player/utils/window_helper.dart';
 import 'package:pure_live/modules/settings/pages/font_family_manager_page.dart';
 import 'package:pure_live/modules/settings/pages/pip_danmaku_settings_page.dart';
 
@@ -155,6 +156,14 @@ class VideoSettingsPage extends GetView<SettingsService> {
               value: SettingsService.to.player.floatPlay,
               icon: Remix.picture_in_picture_2_line,
             ),
+            if (Platform.isWindows)
+              context.buildSwitchTile(
+                title: i18n('windows_pip_always_on_top'),
+                subtitle: i18n('windows_pip_always_on_top_subtitle'),
+                value: SettingsService.to.player.windowsPipAlwaysOnTop,
+                icon: Remix.pushpin_line,
+                onChanged: WindowHelper.instance.setPiPAlwaysOnTop,
+              ),
             context.buildSwitchTile(
               title: i18n('enable_fullscreen_default'),
               subtitle: i18n('enable_fullscreen_default_subtitle'),

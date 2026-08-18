@@ -1,7 +1,9 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:screen_retriever/screen_retriever.dart';
+import 'package:pure_live/common/services/settings_service.dart';
 
 enum WindowLayoutMode { normal, pip }
 
@@ -66,7 +68,7 @@ class WindowHelper {
     if (x < safeOffset.dx) x = safeOffset.dx + 20;
     if (y < safeOffset.dy) y = safeOffset.dy + 20;
 
-    await windowManager.setAlwaysOnTop(true);
+    await windowManager.setAlwaysOnTop(SettingsService.to.player.windowsPipAlwaysOnTop.value);
     await windowManager.setMinimumSize(Size.zero);
 
     await windowManager.setSize(Size(w, h));
@@ -79,5 +81,10 @@ class WindowHelper {
     await windowManager.setMinimumSize(const Size(800, 600));
     await windowManager.setSize(_savedSize);
     await windowManager.setPosition(_savedPosition);
+  }
+
+  Future<void> setPiPAlwaysOnTop(bool value) async {
+    if (!Platform.isWindows || currentMode != WindowLayoutMode.pip) return;
+    await windowManager.setAlwaysOnTop(value);
   }
 }

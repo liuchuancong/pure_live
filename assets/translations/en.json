@@ -1207,5 +1207,7 @@
   "local_badge_soop": "SOOP badge",
   "local_gift_soop_star_balloon": "Star Balloon",
   "local_gift_soop_sticker": "Sticker",
-  "local_gift_soop_signature_balloon": "Signature Balloon"
+  "local_gift_soop_signature_balloon": "Signature Balloon",
+  "windows_pip_always_on_top": "Keep Windows mini player on top",
+  "windows_pip_always_on_top_subtitle": "When off, other applications can cover the mini player"
 }
