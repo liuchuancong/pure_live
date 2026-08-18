@@ -3,8 +3,11 @@ import 'package:pure_live/modules/areas/areas_list_controller.dart';
 
 class AreasController extends GetxController with GetTickerProviderStateMixin {
   late TabController tabController;
+
   int index = 0;
-  late List<dynamic> sites;
+
+  List<dynamic> sites = [];
+
   bool _isTabControllerInitialized = false;
 
   @override
@@ -13,9 +16,7 @@ class AreasController extends GetxController with GetTickerProviderStateMixin {
 
     _initTabController(isFirstLoad: true);
 
-    ever(SettingsService.to.fav.hotAreasList, (_) {
-      _initTabController(isFirstLoad: false);
-    });
+    ever(SettingsService.to.fav.hotAreasList, (_) => _refreshTabs());
   }
 
   @override
@@ -24,30 +25,60 @@ class AreasController extends GetxController with GetTickerProviderStateMixin {
       tabController.removeListener(_handleTabChange);
       tabController.dispose();
     }
+
     super.onClose();
   }
 
-  void _initTabController({required bool isFirstLoad}) {
-    if (_isTabControllerInitialized) {
-      tabController.removeListener(_handleTabChange);
-      tabController.dispose();
-    }
+  void _refreshTabs() {
+    final newSites = Sites().availableSites();
 
-    sites = Sites().availableSites();
-    if (sites.isEmpty) {
-      _isTabControllerInitialized = false;
+    final changed =
+        sites.length != newSites.length ||
+        !List.generate(sites.length, (i) => sites[i].id == newSites[i].id).every((e) => e);
+
+    if (!changed) {
       return;
     }
 
-    for (var site in sites) {
-      if (!Get.isRegistered<AreasListController>(tag: site.id)) {
-        Get.lazyPut(() => AreasListController(site), tag: site.id);
+    _initTabController(isFirstLoad: false);
+  }
+
+  AreasListController _ensureListController(dynamic site) {
+    final tag = site.id;
+
+    if (!Get.isRegistered<AreasListController>(tag: tag)) {
+      Get.lazyPut(() => AreasListController(site), tag: tag, fenix: true);
+    }
+
+    return Get.find<AreasListController>(tag: tag);
+  }
+
+  void _initTabController({required bool isFirstLoad}) {
+    final newSites = Sites().availableSites();
+
+    if (newSites.isEmpty) {
+      if (_isTabControllerInitialized) {
+        tabController.removeListener(_handleTabChange);
+        tabController.dispose();
+        _isTabControllerInitialized = false;
       }
+
+      sites = [];
+      index = 0;
+      return;
+    }
+
+    sites = newSites;
+
+    for (final site in sites) {
+      _ensureListController(site);
     }
 
     if (isFirstLoad) {
       final preferPlatform = SettingsService.to.fav.preferPlatform.v;
+
       final pIndex = sites.indexWhere((e) => e.id == preferPlatform);
+
       index = pIndex == -1 ? 0 : pIndex;
     } else {
       if (index >= sites.length) {
@@ -55,33 +86,40 @@ class AreasController extends GetxController with GetTickerProviderStateMixin {
       }
     }
 
+    if (_isTabControllerInitialized) {
+      tabController.removeListener(_handleTabChange);
+      tabController.dispose();
+    }
+
     tabController = TabController(length: sites.length, vsync: this, initialIndex: index);
+
     tabController.addListener(_handleTabChange);
+
     _isTabControllerInitialized = true;
 
-    if (isFirstLoad && index > 0) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        tabController.animateTo(index);
-        _loadCurrentTabData(index);
-      });
-    } else {
+    _loadCurrentTabData(index);
+  }
+
+  void _handleTabChange() {
+    if (tabController.indexIsChanging) {
+      return;
+    }
+
+    if (index != tabController.index) {
+      index = tabController.index;
       _loadCurrentTabData(index);
     }
   }
 
-  void _handleTabChange() {
-    if (!tabController.indexIsChanging) {
-      if (index != tabController.index) {
-        index = tabController.index;
-        _loadCurrentTabData(index);
-      }
-    }
-  }
-
   void _loadCurrentTabData(int i) {
-    if (sites.isEmpty || i >= sites.length) return;
-    var siteId = sites[i].id;
-    var listController = Get.find<AreasListController>(tag: siteId);
+    if (sites.isEmpty || i < 0 || i >= sites.length) {
+      return;
+    }
+
+    final site = sites[i];
+
+    final listController = _ensureListController(site);
+
     if (listController.list.isEmpty) {
       listController.loadData();
     }
