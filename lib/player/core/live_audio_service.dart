@@ -98,7 +98,7 @@ class LiveAudioService {
   }) {
     return MediaItem(
       id: roomId,
-      album: i18n("app_name"),
+      album: i18nOr("app_name", "PureLive"),
       title: title,
       artist: author,
       artUri: (cover != null && cover.isNotEmpty) ? Uri.tryParse(cover) : null,

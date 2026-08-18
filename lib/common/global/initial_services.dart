@@ -11,7 +11,6 @@ import 'package:pure_live/routes/route_observer_controller.dart';
 import 'package:pure_live/recorder/services/stream_resolver_service.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/core/iptv/services/channel_detail_controller.dart';
-import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
 
 class InitialServices {
@@ -66,7 +65,6 @@ class InitialServices {
 
   static void _initHeavyServicesInBackground() {
     Future.delayed(const Duration(seconds: 3), () {
-      _initializeSafely('FFmpegKitExtended', FFmpegKitExtended.initialize);
       _initializeSafely('CacheService', () {
         if (!Get.isRegistered<CacheService>()) Get.put(CacheService(), permanent: true);
       });

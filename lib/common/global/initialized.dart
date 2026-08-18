@@ -8,7 +8,6 @@ import 'package:pure_live/plugins/global.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:pure_live/plugins/cache_manager.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:screen_brightness/screen_brightness.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/global/initial_services.dart';
@@ -64,9 +63,6 @@ class AppInitializer {
 
     if (PlatformUtils.isDesktop) {
       await DesktopManager.initialize();
-      if (Platform.isWindows) {
-        _initWindowsScreenBrightness();
-      }
     } else if (PlatformUtils.isMobile) {
       await MobileManager.initialize();
     }
@@ -96,12 +92,6 @@ class AppInitializer {
     } catch (e) {
       log('WindowsSingleInstance initialization failed: $e');
     }
-  }
-
-  void _initWindowsScreenBrightness() {
-    ScreenBrightness().setAutoReset(false).catchError((e) {
-      log('ScreenBrightness error: $e');
-    });
   }
 
   Future<void> _setupLaunchAtStartupSafe() async {

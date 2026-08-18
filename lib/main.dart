@@ -51,6 +51,9 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
     super.initState();
     if (PlatformUtils.isDesktop) {
       DesktopManager.initializeListeners(this);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(DesktopManager.updateTrayWhenLocalized());
+      });
     }
     unawaited(initSharedMediaListener());
     unawaited(initGlobalPlayer());
@@ -120,7 +123,10 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
           }
 
           return GetMaterialApp(
-            title: i18n('app_name'),
+            // The localized title is rendered by CustomTitleBar. A stable
+            // application title avoids asking EasyLocalization for a key
+            // before its delegate has completed the first load.
+            title: 'PureLive',
             scrollBehavior: MyCustomScrollBehavior(),
             debugShowCheckedModeBanner: false,
             themeMode: AppConsts.themeModes[SettingsService.to.theme.themeModeName.v]!,

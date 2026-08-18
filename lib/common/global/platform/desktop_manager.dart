@@ -128,8 +128,10 @@ class DesktopManager {
       } else if (Platform.isMacOS) {
         await trayManager.setIcon('assets/icons/app_icon.ico');
       }
-
-      await updateTray();
+      // The desktop window is created before EasyLocalization has loaded its
+      // delegate. Use a stable tooltip here and build the localized context
+      // menu after the first application frame.
+      await trayManager.setToolTip('PureLive');
     } catch (e) {
       debugPrint('系统托盘初始化失败: $e');
     }
@@ -139,7 +141,8 @@ class DesktopManager {
     if (!PlatformUtils.isDesktop) return;
 
     try {
-      await trayManager.setToolTip(i18n('app_name'));
+      final useChineseFallback = PlatformDispatcher.instance.locale.languageCode == 'zh';
+      await trayManager.setToolTip(i18nOr('app_name', useChineseFallback ? '纯粹直播' : 'PureLive'));
 
       final isVisible = await windowManager.isVisible();
 
@@ -147,10 +150,12 @@ class DesktopManager {
         items: [
           MenuItem(
             key: isVisible ? 'hide_window' : 'show_window',
-            label: isVisible ? i18n('hide_window') : i18n('show_window'),
+            label: isVisible
+                ? i18nOr('hide_window', useChineseFallback ? '隐藏窗口' : 'Hide Window')
+                : i18nOr('show_window', useChineseFallback ? '显示窗口' : 'Show Window'),
           ),
           MenuItem.separator(),
-          MenuItem(key: 'exit_app', label: i18n('exit_app')),
+          MenuItem(key: 'exit_app', label: i18nOr('exit_app', useChineseFallback ? '退出应用' : 'Exit')),
         ],
       );
 
@@ -158,6 +163,16 @@ class DesktopManager {
     } catch (e) {
       debugPrint('${i18n("tray_update_failed")}: $e');
     }
+  }
+
+  static Future<void> updateTrayWhenLocalized() async {
+    // The first frame can be scheduled while the asset delegate is still
+    // decoding JSON. Wait briefly so the first visible tray menu already uses
+    // the selected application language.
+    for (var attempt = 0; attempt < 40 && !i18nExists('app_name'); attempt++) {
+      await Future<void>.delayed(const Duration(milliseconds: 25));
+    }
+    await updateTray();
   }
 
   static Future<void> handleTrayMenuClick(MenuItem menuItem) async {
@@ -297,7 +312,7 @@ class CustomTitleBar extends StatelessWidget {
                                 Image.asset('assets/icons/icon.png', width: 16, height: 16),
                                 const SizedBox(width: 6),
                                 Text(
-                                  i18n('app_name'),
+                                  i18nOr('app_name', 'PureLive'),
                                   style: AppTextStyles.t13.copyWith(
                                     fontWeight: FontWeight.w600,
                                     color: iconColor,
