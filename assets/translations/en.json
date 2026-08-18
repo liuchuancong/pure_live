@@ -1087,6 +1087,7 @@
   "copy": "Copy",
   "save": "Save",
   "local_send_message": "Send local danmaku",
+  "local_message_queued": "Sent. It will appear everywhere in 2 seconds",
   "danmaku_new_messages": "{count} new messages - tap to resume",
   "block_danmaku_user": "Block this user's danmaku",
   "block_danmaku_keyword": "Block a danmaku keyword",
