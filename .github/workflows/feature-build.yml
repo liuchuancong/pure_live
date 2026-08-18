@@ -105,10 +105,10 @@ jobs:
       - name: Configure Android signing
         shell: bash
         env:
-          KEYSTORE_BASE64: ${{ secrets.PURELIVE_KEYSTORE_BASE64 }}
-          STORE_PASSWORD: ${{ secrets.PURELIVE_STORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.PURELIVE_KEY_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.PURELIVE_KEY_ALIAS }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD  }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD  }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
           if [[ -z "$KEYSTORE_BASE64" || -z "$STORE_PASSWORD" || -z "$KEY_PASSWORD" || -z "$KEY_ALIAS" ]]; then
             echo "Release signing secrets are required for the manual Android package." >&2
