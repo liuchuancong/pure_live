@@ -69,6 +69,13 @@ class GeneralSettingsPage extends GetView<SettingsService> {
               icon: Remix.refresh_line,
             ),
             context.buildSwitchTile(
+              title: i18n('use_github_origin_for_updates'),
+              subtitle: i18n('use_github_origin_for_updates_desc'),
+              value: SettingsService.to.app.useGitHubOriginForUpdates,
+              icon: Remix.github_line,
+              isLong: true,
+            ),
+            context.buildSwitchTile(
               title: i18n('enable_countdown_close'),
               subtitle: i18n('enable_countdown_close_subtitle'),
               value: SettingsService.to.exit.enableAutoShutDownTime,

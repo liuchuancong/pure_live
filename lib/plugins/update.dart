@@ -24,10 +24,12 @@ final List<String> mirrors = [
   'https://gitproxy.click/',
 ];
 
-List<String> getMirrorUrls(String apkUrl) {
+List<String> getMirrorUrls(String apkUrl, {bool githubOriginOnly = false}) {
+  if (apkUrl.trim().isEmpty) return const [];
+  if (githubOriginOnly) return [apkUrl];
   final mirrorsUrl = mirrors.map((e) => '$e$apkUrl').toList();
   mirrorsUrl.add(apkUrl);
-  return mirrorsUrl;
+  return mirrorsUrl.toSet().toList(growable: false);
 }
 
 Future<void> downloadAndInstallApk(String apkUrl) async {

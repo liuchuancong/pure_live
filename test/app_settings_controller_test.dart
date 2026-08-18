@@ -10,6 +10,7 @@ void main() {
       expect(config['enableAsmrSleepMode'], isFalse);
       expect(config['asmrSleepMinutes'], 60);
       expect(config['realOnlinePlatforms'], AppSettingsController.defaultRealOnlinePlatforms);
+      expect(config['useGitHubOriginForUpdates'], isFalse);
     });
 
     test('preserves unrelated app fields when updating refresh mode', () {

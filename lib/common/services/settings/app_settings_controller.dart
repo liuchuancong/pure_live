@@ -20,6 +20,7 @@ class AppSettingsController extends GetxController {
   final RxBool enableScreenKeepOn = hiveBool('enableScreenKeepOn', true);
 
   final RxBool enableAutoCheckUpdate = hiveBool('enableAutoCheckUpdate', true);
+  final RxBool useGitHubOriginForUpdates = hiveBool('useGitHubOriginForUpdates', false);
   final RxBool enableFullScreenDefault = hiveBool('enableFullScreenDefault', false);
   final RxBool showSplashPage = hiveBool('showSplashPage', true);
   final RxBool enableHighRefreshRate = hiveBool('enableHighRefreshRate', true);
@@ -108,6 +109,7 @@ class AppSettingsController extends GetxController {
       'enableRotateScreen': enableRotateScreen.v,
       'enableScreenKeepOn': enableScreenKeepOn.v,
       'enableAutoCheckUpdate': enableAutoCheckUpdate.v,
+      'useGitHubOriginForUpdates': useGitHubOriginForUpdates.v,
       'enableFullScreenDefault': enableFullScreenDefault.v,
       'showSplashPage': showSplashPage.v,
       'enableHighRefreshRate': enableHighRefreshRate.v,
@@ -126,6 +128,7 @@ class AppSettingsController extends GetxController {
     enableRotateScreen.v = json['enableRotateScreen'] ?? false;
     enableScreenKeepOn.v = json['enableScreenKeepOn'] ?? true;
     enableAutoCheckUpdate.v = json['enableAutoCheckUpdate'] ?? true;
+    useGitHubOriginForUpdates.v = json['useGitHubOriginForUpdates'] ?? false;
     enableFullScreenDefault.v = json['enableFullScreenDefault'] ?? false;
     showSplashPage.v = json['showSplashPage'] ?? true;
     enableHighRefreshRate.v = json['enableHighRefreshRate'] ?? true;
@@ -146,6 +149,7 @@ class AppSettingsController extends GetxController {
       'enableRotateScreen': app['enableRotateScreen'] ?? false,
       'enableScreenKeepOn': app['enableScreenKeepOn'] ?? true,
       'enableAutoCheckUpdate': app['enableAutoCheckUpdate'] ?? true,
+      'useGitHubOriginForUpdates': app['useGitHubOriginForUpdates'] ?? false,
       'enableFullScreenDefault': app['enableFullScreenDefault'] ?? false,
       'showSplashPage': app['showSplashPage'] ?? true,
       'enableHighRefreshRate': app['enableHighRefreshRate'] ?? true,

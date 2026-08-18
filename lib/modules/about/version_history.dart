@@ -48,7 +48,10 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> with SingleTick
       historyLoading.value = true;
       historyError.value = false;
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final urls = mirror.mirrors('assets/releases.json').map((e) => '$e?ts=$timestamp').toList();
+      final sourceUrls = SettingsService.to.app.useGitHubOriginForUpdates.v
+          ? [mirror.rawUrl('assets/releases.json')]
+          : mirror.mirrors('assets/releases.json');
+      final urls = sourceUrls.map((e) => '$e?ts=$timestamp').toList();
       String? url = await RaceHttp.findFastestUrl(urls);
       if (url == null) {
         throw Exception("无法获取版本历史");

@@ -26,7 +26,9 @@ class VersionUtil {
 
   static final GitHubMirror mirror = GitHubMirror(owner: 'wzgrx', repo: 'pure_live', branch: 'master');
 
-  static List<String> get _versionUrls => mirror.mirrors('assets/version.json');
+  static List<String> get _versionUrls => SettingsService.to.app.useGitHubOriginForUpdates.v
+      ? [mirror.rawUrl('assets/version.json')]
+      : mirror.mirrors('assets/version.json');
 
   final isHasNewVersion = false.obs;
 
