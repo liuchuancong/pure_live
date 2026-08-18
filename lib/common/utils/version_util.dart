@@ -10,11 +10,13 @@ class VersionUtil {
   static PackageInfo? _packageInfo;
 
   static const String projectUrl = 'https://github.com/liuchuancong/pure_live';
-  static const String issuesUrl = 'https://github.com/liuchuancong/pure_live/issues';
+  static const String issuesUrl =
+      'https://github.com/liuchuancong/pure_live/issues';
   static const String githubUrl = 'https://github.com/liuchuancong';
 
   static const String email = '17792321552@163.com';
-  static const String emailUrl = 'mailto:17792321552@163.com?subject=PureLive Feedback';
+  static const String emailUrl =
+      'mailto:17792321552@163.com?subject=PureLive Feedback';
 
   static const String telegramGroup = 't.me/pure_live_channel';
   static const String telegramGroupUrl = 'https://t.me/pure_live_channel';
@@ -22,9 +24,14 @@ class VersionUtil {
   static const String kanbanUrl =
       'https://jackiu-notes.notion.site/50bc0d3d377445eea029c6e3d4195671?v=663125e639b047cea5e69d8264926b8b';
 
-  static const String releaseUrl = 'https://api.github.com/repos/liuchuancong/pure_live/releases?per_page=30';
+  static const String releaseUrl =
+      'https://api.github.com/repos/liuchuancong/pure_live/releases?per_page=30';
 
-  static final GitHubMirror mirror = GitHubMirror(owner: 'liuchuancong', repo: 'pure_live', branch: 'master');
+  static final GitHubMirror mirror = GitHubMirror(
+    owner: 'liuchuancong',
+    repo: 'pure_live',
+    branch: 'master',
+  );
 
   static List<String> get _versionUrls => mirror.mirrors('assets/version.json');
 
@@ -36,6 +43,7 @@ class VersionUtil {
   static String latestUpdateLog = '';
   static bool prerelease = false;
   static String downloadUrl = '';
+  static Set<String> latestAndroidAbis = const {'arm64-v8a'};
   var allReleased = [].obs;
 
   static Map<String, dynamic>? _cachedVersionJson;
@@ -93,19 +101,35 @@ class VersionUtil {
   }
 
   static void _applyVersionData(Map<String, dynamic> data) {
-    final selected = selectPlatformVersionData(data, platform: _currentPlatformKey);
+    final selected = selectPlatformVersionData(
+      data,
+      platform: _currentPlatformKey,
+    );
     latestVersion = selected['version']?.toString() ?? version;
     latestVersionNum = selected['version_num'] ?? 0;
     latestBuildNumber = selected['build_number'];
     latestUpdateLog = selected['version_desc']?.toString() ?? '';
     prerelease = selected['prerelease'] == true;
     downloadUrl = selected['download_url']?.toString() ?? '';
+    latestAndroidAbis = selectAndroidAbis(selected);
+  }
+
+  /// Keeps download buttons aligned with the APK variants that the current
+  /// release feed explicitly declares. Older feeds keep the arm64 default.
+  static Set<String> selectAndroidAbis(Map<String, dynamic> data) {
+    const supported = {'armeabi-v7a', 'arm64-v8a', 'x86_64'};
+    final raw = data['android_abis'];
+    if (raw is! List) return const {'arm64-v8a'};
+    return raw.map((item) => item.toString()).where(supported.contains).toSet();
   }
 
   /// Keeps update announcements aligned with the artifacts that were really
   /// published for each platform. The top-level object remains the fallback
   /// for older feeds and older clients.
-  static Map<String, dynamic> selectPlatformVersionData(Map<String, dynamic> data, {required String platform}) {
+  static Map<String, dynamic> selectPlatformVersionData(
+    Map<String, dynamic> data, {
+    required String platform,
+  }) {
     final platforms = data['platforms'];
     final platformData = platforms is Map ? platforms[platform] : null;
     if (platformData is! Map) return data;
@@ -123,13 +147,18 @@ class VersionUtil {
 
   static bool hasNewVersion() {
     try {
-      final latestClean = latestVersion.split('-')[0].replaceAll('v', '').trim();
+      final latestClean = latestVersion
+          .split('-')[0]
+          .replaceAll('v', '')
+          .trim();
       final currentClean = version.split('-')[0].replaceAll('v', '').trim();
 
       final latestParts = latestClean.split('.').map(int.parse).toList();
       final currentParts = currentClean.split('.').map(int.parse).toList();
 
-      final maxLength = latestParts.length > currentParts.length ? latestParts.length : currentParts.length;
+      final maxLength = latestParts.length > currentParts.length
+          ? latestParts.length
+          : currentParts.length;
 
       while (latestParts.length < maxLength) {
         latestParts.add(0);

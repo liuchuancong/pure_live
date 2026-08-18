@@ -21,18 +21,34 @@ jobs:
     timeout-minutes: 55
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Select cached local Java 25
+      - name: Select local Java 25
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $jdk = Get-ChildItem (Join-Path $env:RUNNER_TOOL_CACHE 'Java_Zulu_jdk\25*\x64') `
-            -Directory -ErrorAction SilentlyContinue |
-            Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'bin\java.exe') } |
-            Sort-Object FullName -Descending |
-            Select-Object -First 1 -ExpandProperty FullName
-          if (-not $jdk) {
-            throw 'Cached Java 25 was not found on the local runner.'
+          $candidates = @()
+          if ($env:RUNNER_TOOL_CACHE) {
+            $candidates += Get-ChildItem (Join-Path $env:RUNNER_TOOL_CACHE 'Java_Zulu_jdk\25*\x64') `
+              -Directory -ErrorAction SilentlyContinue |
+              Sort-Object FullName -Descending |
+              Select-Object -ExpandProperty FullName
           }
+          $candidates += @(
+            'C:\Program Files\Android\Android Studio\jbr',
+            $env:JAVA_HOME
+          ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+
+          $jdk = $candidates |
+            Where-Object {
+              $java = Join-Path $_ 'bin\java.exe'
+              if (-not (Test-Path -LiteralPath $java -PathType Leaf)) { return $false }
+              $versionText = (& $java -version 2>&1 | Out-String)
+              return $versionText -match 'version\s+"25(?:\.|\")'
+            } |
+            Select-Object -First 1
+          if (-not $jdk) {
+            throw 'Java 25 was not found in the runner cache, Android Studio JBR, or JAVA_HOME.'
+          }
+          $jdk = (Resolve-Path -LiteralPath $jdk).Path
           "JAVA_HOME=$jdk" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           (Join-Path $jdk 'bin') | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           & (Join-Path $jdk 'bin\java.exe') -version
