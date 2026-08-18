@@ -786,10 +786,17 @@ class PlayerManager {
             stream: onPlaying,
             initialData: isPlayingNow,
             builder: (context, snapshot) {
-              if (_currentPlayer == null) {
+              // Capture one player reference for the whole build. An async
+              // teardown may clear _currentPlayer between the outer check and
+              // the nested width/height builder; reading the mutable field
+              // again used to throw a null-check exception and replace the
+              // complete player area (including controls) with ErrorWidget.
+              final activePlayer = _currentPlayer;
+              if (activePlayer == null) {
                 return _buildPlaceholder();
               }
-              final boxFit = fitList[fitIndex];
+              final safeFitIndex = fitList.isEmpty ? 0 : fitIndex.clamp(0, fitList.length - 1);
+              final boxFit = fitList.isEmpty ? BoxFit.contain : fitList[safeFitIndex];
               final content = KeyedSubtree(
                 key: videoKey.value,
                 child: Container(
@@ -812,7 +819,7 @@ class PlayerManager {
                                 builder: (context, snapshot) {
                                   final vW = snapshot.data?[0]?.toDouble() ?? 1920.0;
                                   final vH = snapshot.data?[1]?.toDouble() ?? 1080.0;
-                                  return SizedBox(width: vW, height: vH, child: _currentPlayer!.getVideoWidget());
+                                  return SizedBox(width: vW, height: vH, child: activePlayer.getVideoWidget());
                                 },
                               ),
                             ),
