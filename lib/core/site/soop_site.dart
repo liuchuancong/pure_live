@@ -65,7 +65,7 @@ class SoopSite extends LiveSite {
   }
 
   final Map<String, dynamic> headers = {
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2049.0 Safari/537.36',
     'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
     'connection': 'keep-alive',
     'sec-ch-ua': 'Google Chrome;v=107, Chromium;v=107, Not=A?Brand;v=24',
@@ -218,13 +218,26 @@ class SoopSite extends LiveSite {
 
   @override
   Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
-    final bno = detail.userId ?? "";
-    final values = await Future.wait([
-      getCdnUrl(bno: bno, quality: quality.quality),
-      getStreamAid(roomId: detail.roomId ?? "", bno: bno, quality: quality.quality),
-    ]);
-    if (values.any((value) => value.isEmpty)) return const [];
-    return ['${values[0]}?aid=${values[1]}'];
+    final data = detail.data;
+    if (data is! Map) return const [];
+
+    final bno = data["bno"] ?? "";
+    final rmd = data["rmd"] ?? "";
+    final cdn = data["cdn"] ?? "";
+    if (bno.isEmpty || rmd.isEmpty) {
+      return const [];
+    }
+
+    try {
+      final cdnUrl = await getCdnUrl(rmd: rmd, cdn: cdn, bno: bno, quality: quality.quality);
+      final aid = await getStreamAid(roomId: detail.roomId ?? "", bno: bno, quality: quality.quality);
+
+      if (cdnUrl.isEmpty || aid.isEmpty) return const [];
+      return ['$cdnUrl?aid=$aid'];
+    } catch (e) {
+      CoreLog.error(e);
+      return const [];
+    }
   }
 
   @override
@@ -268,65 +281,11 @@ class SoopSite extends LiveSite {
   @override
   Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
     try {
-      var url = "https://api.m.sooplive.co.kr/broad/a/watch";
-      var playerLiveApiData = getPlayerLiveApiData(roomId: roomId);
-      var danmakuArgs = await geDanmakuArgs(playerLiveApiData, roomId);
-
-      var resultText = await HttpClient.instance.postJson(
-        url,
-        formUrlEncoded: true,
-        data: {
-          'bj_id': roomId,
-          'bid': roomId,
-          'broad_no': '',
-          'agent': 'web',
-          'confirm_adult': 'true',
-          'player_type': 'webm',
-          'mode': 'live',
-        },
-        header: getHeaders(),
-      );
-      var jsonObj = decode(resultText)["data"];
-
-      var bno = jsonObj["broad_no"].toString();
-      var nick = jsonObj["user_nick"];
-
-      var area = "";
-      var jsonObj2 = jsonObj["category_tags"];
-      if (jsonObj2 != null) {
-        var sList = jsonObj2 as List;
-        if (sList.isNotEmpty) {
-          area = sList[0];
-        }
-      }
-
-      var millisecondsSinceEpoch2 = DateTime.now().millisecondsSinceEpoch;
-      var cover = validImgUrl("${jsonObj['thumbnail']}?_t=$millisecondsSinceEpoch2");
-      var avatar = validImgUrl("${jsonObj['profile_thumbnail']}");
-      var isLiving = jsonObj["viewpreset"] != null;
-      final viewerCount = jsonObj["view_cnt"].toString();
-
-      return LiveRoom(
-        cover: cover,
-        watching: viewerCount,
-        onlineViewers: viewerCount,
-        audienceMetricType: AudienceMetricType.onlineViewers,
-        roomId: jsonObj["bj_id"].toString(),
-        userId: bno,
-        area: area,
-        title: jsonObj["broad_title"].toString(),
-        nick: nick,
-        avatar: avatar,
-        introduction: '',
-        notice: '',
-        status: isLiving,
-        liveStatus: isLiving ? LiveStatus.live : LiveStatus.offline,
-        platform: Sites.soopSite,
-        link: jsonObj["share"]["url"],
-        data: {"viewpreset": jsonObj["viewpreset"]},
-        danmakuData: danmakuArgs,
-      );
+      Map<dynamic, dynamic> playerLiveApiFuture = await getPlayerLiveApiData(roomId: roomId);
+      var danmakuFuture = geDanmakuArgs(playerLiveApiFuture, roomId);
+      return await getLiveRoomByApi(playerLiveApiFuture, danmakuFuture, roomId);
     } catch (e) {
+      CoreLog.error(e);
       if (Get.isRegistered<PlayerController>()) {
         final PlayerController playerController = Get.find<PlayerController>();
         final currentRoom = playerController.currentRoom;
@@ -337,15 +296,18 @@ class SoopSite extends LiveSite {
   }
 
   Future<LiveRoom> getLiveRoomByApi(
-    Future<Map> playerLiveApiData,
-    Future<SoopDanmakuArgs?> danmakuArgs,
+    Map<dynamic, dynamic> playerLiveApiData,
+    SoopDanmakuArgs? danmakuArgs,
     String roomId,
   ) async {
-    var playerLiveApi = await playerLiveApiData;
+    var playerLiveApi = playerLiveApiData;
     var jsonObj = playerLiveApi["CHANNEL"];
     CoreLog.d("playerLiveApi: ${jsonEncode(jsonObj)}");
-    if (jsonObj['RESULT'] != 1) {
-      // 离线状态
+
+    int resultCode = jsonObj['RESULT'] ?? 0;
+    // 业务码：1成功，-6需要登录，0无直播，‑2屏蔽
+    if (resultCode != 1) {
+      CoreLog.w("soop channel result code=$resultCode");
       if (Get.isRegistered<PlayerController>()) {
         final PlayerController playerController = Get.find<PlayerController>();
         final currentRoom = playerController.currentRoom;
@@ -356,6 +318,8 @@ class SoopSite extends LiveSite {
 
     var bno = jsonObj["BNO"].toString();
     var nick = jsonObj["BJNICK"];
+    var rmd = jsonObj["RMD"]?.toString() ?? "";
+    var cdn = jsonObj["CDN"]?.toString() ?? "";
 
     var jsonObj2 = jsonObj["CATEGORY_TAGS"];
     var area = "";
@@ -369,13 +333,11 @@ class SoopSite extends LiveSite {
     var millisecondsSinceEpoch2 = DateTime.now().millisecondsSinceEpoch;
     var cover = validImgUrl("https://liveimg.sooplive.co.kr/m/$bno?_t=$millisecondsSinceEpoch2");
     var avatar = validImgUrl("https://stimg.sooplive.co.kr/LOGO/${sRoomId.substring(0, 2)}/$sRoomId/$sRoomId.jpg");
-    var data = {
-      // "hls_authentication_key": jsonObj["hls_authentication_key"],
-      // "broad_bps": jsonObj["broad_bps"],
-      "viewpreset": jsonObj["VIEWPRESET"],
-    };
+
     var isLiving = jsonObj["VIEWPRESET"] != null;
     final viewerCount = (jsonObj["VIEW_CNT"] ?? jsonObj["view_cnt"] ?? 0).toString();
+
+    var data = {"viewpreset": jsonObj["VIEWPRESET"], "bno": bno, "rmd": rmd, "cdn": cdn};
     return LiveRoom(
       cover: cover,
       watching: viewerCount,
@@ -393,26 +355,35 @@ class SoopSite extends LiveSite {
       liveStatus: isLiving ? LiveStatus.live : LiveStatus.offline,
       platform: Sites.soopSite,
       data: data,
-      danmakuData: await danmakuArgs,
+      danmakuData: danmakuArgs,
     );
   }
 
-  Future<String> getCdnUrl({required String bno, String quality = "master"}) async {
-    var url = "http://livestream-manager.sooplive.co.kr/broad_stream_assign.html";
+  Future<String> getCdnUrl({
+    required String rmd,
+    required String cdn,
+    required String bno,
+    required String quality,
+  }) async {
+    String returnType;
+    if (cdn.contains("gs_cdn")) {
+      returnType = "gs_cdn_pc_web";
+    } else if (cdn.contains("lg_cdn")) {
+      returnType = "lg_cdn_pc_web";
+    } else {
+      returnType = cdn;
+    }
+
+    final assignUrl = "${rmd.replaceAll(RegExp(r'/$'), '')}/broad_stream_assign.html";
+
     var resultText = await HttpClient.instance.getJson(
-      url,
-      queryParameters: {
-        'return_type': 'gcp_cdn',
-        'use_cors': 'false',
-        'cors_origin_url': 'play.sooplive.co.kr',
-        'broad_key': '$bno-common-$quality-hls',
-        'time': '8361.086329376785',
-      },
+      assignUrl,
+      queryParameters: {'return_type': returnType, 'broad_key': '$bno-common-$quality-hls'},
       header: getHeaders(),
     );
     resultText = decode(resultText);
-    var viewUrl = resultText['view_url'];
-    return viewUrl;
+    var viewUrl = resultText['view_url'] ?? '';
+    return viewUrl.toString();
   }
 
   Future<String> getStreamAid({required String roomId, required String bno, required String quality}) async {
@@ -465,14 +436,13 @@ class SoopSite extends LiveSite {
     return resultText;
   }
 
-  Future<SoopDanmakuArgs?> geDanmakuArgs(Future<Map> resultTextFuture, String roomId) async {
+  SoopDanmakuArgs? geDanmakuArgs(Map<dynamic, dynamic> resultTextFuture, String roomId) {
     try {
-      var resultText = await resultTextFuture;
+      var resultText = resultTextFuture;
       var jsonObj = resultText['CHANNEL'];
       var chatNo = jsonObj["CHATNO"];
       var chatDomain = jsonObj["CHDOMAIN"];
       var chpt = jsonObj["CHPT"];
-      chpt = 9001;
       final wsUrl = 'wss://$chatDomain:$chpt/Websocket/$roomId';
       return SoopDanmakuArgs(url: wsUrl, chatNo: chatNo);
     } catch (e) {
