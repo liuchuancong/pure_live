@@ -94,7 +94,9 @@ class RoomGridView extends GetView<FavoriteController> {
                 return GridView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                   controller: scrollController,
-                  scrollCacheExtent: const ScrollCacheExtent.pixels(480),
+                  scrollCacheExtent: ScrollCacheExtent.pixels(width > 680 ? 960 : 480),
+                  addAutomaticKeepAlives: false,
+                  addRepaintBoundaries: false,
                   keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: crossAxisCount,
@@ -104,7 +106,8 @@ class RoomGridView extends GetView<FavoriteController> {
                   ),
                   itemCount: displayList.length,
                   itemBuilder: (context, index) {
-                    return RoomCard(room: displayList[index], dense: dense);
+                    final room = displayList[index];
+                    return RoomCard(key: ValueKey('${room.platform}:${room.roomId}'), room: room, dense: dense);
                   },
                 );
               }),

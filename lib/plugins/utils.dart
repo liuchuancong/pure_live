@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:pure_live/common/index.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/modules/account/bilibili/web_login_controller.dart';
 
 class Utils {
@@ -13,6 +14,11 @@ class Utils {
   static Future<void> exitDesktopApplication() async {
     if (!Platform.isWindows && !Platform.isLinux && !Platform.isMacOS) return;
 
+    try {
+      await HivePrefUtil.flush().timeout(const Duration(seconds: 2));
+    } catch (e) {
+      debugPrint('设置落盘超时: $e');
+    }
     await windowManager.hide();
     if (await windowManager.isPreventClose()) {
       await windowManager.setPreventClose(false);

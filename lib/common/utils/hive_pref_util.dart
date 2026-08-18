@@ -86,4 +86,9 @@ class HivePrefUtil {
     await _box.clear();
     return true;
   }
+
+  /// Waits until all queued settings writes reach disk. Desktop shutdown uses
+  /// this before destroying the native window so rapid final changes survive
+  /// an application update or immediate exit.
+  static Future<void> flush() => _box.flush();
 }

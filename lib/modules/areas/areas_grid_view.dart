@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/common/index.dart';
@@ -18,6 +20,7 @@ class AreaGridView extends StatefulWidget {
 class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMixin {
   TabController? _tabController;
   Worker? _listWorker;
+  Timer? _settledCategoryLoadTimer;
 
   @override
   void initState() {
@@ -54,12 +57,15 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
 
   void _handleInternalTabChange() {
     if (_tabController == null || _tabController!.indexIsChanging) return;
+    final animationValue = _tabController!.animation?.value ?? _tabController!.index.toDouble();
+    if ((animationValue - _tabController!.index).abs() > 0.001) return;
     if (widget.controller.tabIndex.value != _tabController!.index) {
       widget.controller.tabIndex.value = _tabController!.index;
       if (Get.width > 680) {
         widget.controller.currentPage = 1;
       }
-      widget.controller.loadData();
+      _settledCategoryLoadTimer?.cancel();
+      _settledCategoryLoadTimer = Timer(const Duration(milliseconds: 80), widget.controller.loadData);
     }
   }
 
@@ -73,6 +79,7 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
 
   @override
   void dispose() {
+    _settledCategoryLoadTimer?.cancel();
     if (!widget.isFlatten) {
       widget.controller.tabIndex.removeListener(_handleExternalIndexChange);
       _listWorker?.dispose();
@@ -193,7 +200,8 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
         return GridView.builder(
           padding: const EdgeInsets.fromLTRB(6, 6, 6, 80),
           controller: scrollController,
-          scrollCacheExtent: const ScrollCacheExtent.pixels(480),
+          scrollCacheExtent: ScrollCacheExtent.pixels(width > 680 ? 960 : 480),
+          addAutomaticKeepAlives: false,
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
@@ -202,7 +210,10 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
             mainAxisExtent: itemWidth + 72,
           ),
           itemCount: childrenList.length,
-          itemBuilder: (context, index) => AreaCard(category: childrenList[index]),
+          itemBuilder: (context, index) {
+            final area = childrenList[index];
+            return AreaCard(key: ValueKey('${area.platform}:${area.areaId}'), category: area);
+          },
         );
       },
     );

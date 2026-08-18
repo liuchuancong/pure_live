@@ -57,7 +57,7 @@ on:
         description: Release tag (e.g. v1.0.0) – required if create_release is true
         required: true
         type: string
-        default: 'v2.1.1'
+        default: 'v2.1.2'
 
 
   push:
@@ -789,7 +789,7 @@ jobs:
           |版本|下载地址|
           |---|---|
           |TV版|[pure_live_TV](https://github.com/liuchuancong/pure_live_TV/releases/latest)|
-          |Windows/macOS/Android版|[pure_live](https://github.com/liuchuancong/pure_live/releases/latest)|
+          |Windows/macOS/Android版|[pure_live](https://github.com/wzgrx/pure_live/releases/latest)|
 
           ### 🖥️ Windows 版
 

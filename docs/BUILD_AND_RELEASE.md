@@ -2,7 +2,7 @@
 
 本仓库采用“本机优先、Actions 手动兜底”的流程，固定使用 Flutter `3.47.0`。`pubspec.lock`、Git 依赖提交和 FFmpeg 产物地址均已固定，便于复现结果。
 
-最近完整核验：2026-08-18，Windows 11 + Java 25 + Flutter 3.47.0；Built-in Kotlin 审计与静态分析零问题、70 项测试、25/25 平台接口探测通过。2.1.1 的真实在线设置卡片与搜索排序新增 Widget/单元回归，Android arm64 release APK 已完成本机构建、ABI/包名/版本与 v2 签名校验；本轮 ADB 设备列表为空，安装后的首页横滑与搜索手势验收留待设备重新连入。上一轮 Android arm64 已在 OnePlus Android 16 / 120 Hz 真机覆盖安装并确认数据保留、多次冷启动、游客弹幕、横竖屏与全屏弹幕、系统画中画弹幕、实时设置预览及纯音频切换；后台媒体会话、前台服务通知、Partial WakeLock 与 Wi-Fi Lock 持续有效，崩溃缓冲区为空。Windows x64 最近一次 release 便携程序持续运行 20 秒、窗口正常响应，标准错误仅包含 Impeller 后端选择信息。
+最近完整核验：2026-08-18，Windows 11 + Java 25 + Flutter 3.47.0；Built-in Kotlin 审计与 Flutter Analyze 零问题、75 项单元/Widget 测试、25/25 平台公开接口探测通过。2.1.2 Windows x64 release 与 Inno Setup 安装器已完成本机构建；干净便携目录首启后从三个历史位置去重恢复 8 个关注和 11 条历史，数据、缓存和临时文件均写入 release 同级 `AppData`，原 Hive 文件哈希不变，系统盘旧 AppData 目录没有新写入。Windows 主页、热门页、平台切换、封面回填和纵向滚轮烟雾检查保持窗口响应。上一轮 Android arm64 已在 OnePlus Android 16 / 120 Hz 真机覆盖安装并确认数据保留、多次冷启动、游客弹幕、横竖屏/全屏/画中画弹幕、实时设置预览及纯音频后台链路。
 
 ## 前置环境
 
@@ -91,7 +91,7 @@ Windows x64 临时自托管 Runner，再手动运行
 
 Linux、macOS 和 iOS 通常通过 `manual-build` 手动开关补建；阶段标签也支持精确补建：`stage-linux-*` 运行 Linux，`stage-ios-*` 运行 iOS，`stage-apple-*` 在一个 macOS Runner 内连续构建 macOS 与 iOS。普通分支推送、Android 和 Windows 均保持本机优先。
 
-本机生成的 Windows EXE 安装向导始终显示安装目录页，可选择其他磁盘并记住上次目录。Windows 播放小窗默认使用普通窗口层级；“设置 → 播放设置 → Windows 小窗始终置顶”可按需切换，当前小窗会立即应用。
+本机生成的 Windows EXE 安装向导始终显示安装目录页，可选择其他磁盘并记住上次目录。关注、历史、IPTV、录制、图片/表情/插件缓存和应用临时文件统一位于 `{app}\AppData`；更换目录时安装器保留上一个位置索引，新版首启再备份和合并。详见 [Windows 数据目录与升级](WINDOWS_DATA_AND_UPGRADE.md)。Windows 播放小窗默认使用普通窗口层级；“设置 → 播放设置 → Windows 小窗始终置顶”可按需切换，当前小窗会立即应用。
 
 Linux 版使用系统浏览器承接“继续网页搜索”，避免引入额外 WPE WebKit 运行时；平台原生搜索、直播详情、弹幕与播放链路仍在应用内完成。Windows/macOS/Android/iOS 使用锁定修订版 `flutter_inappwebview`。
 
@@ -114,7 +114,7 @@ python .\tool\interface_probe.py
 
 ```powershell
 PowerShell -ExecutionPolicy Bypass -File .\tool\publish_local_release.ps1 `
-  -Tag v2.0.31 -CreateTag
+  -Tag v2.1.2 -CreateTag
 ```
 
 脚本要求工作树已提交，并通过 GitHub CLI 当前登录身份创建或更新 Release。
@@ -148,6 +148,6 @@ python .\tool\update_releases.py
 3. 运行 `tool/build_local_release.ps1`，核对 APK、EXE/ZIP 和 SHA-256。
 4. 运行 `tool/install_android_local.ps1` 在真机覆盖安装并启动；正式 Release 使用仓库持久签名验证升级链。
 5. 提交并推送 `master`，再运行 `tool/publish_local_release.ps1`。
-6. 在 [Releases](https://github.com/liuchuancong/pure_live/releases) 核对附件和校验文件。
+6. 在 [Releases](https://github.com/wzgrx/pure_live/releases) 核对附件和校验文件。
 
 返回 [文档索引](README.md)。

@@ -263,6 +263,8 @@
   "moving_network_quality": "Mobile Network Quality",
   "moving_network_quality_subtitle": "Preferred quality on mobile data",
   "msix_installer": "MSIX Installer",
+  "portable_package": "Portable ZIP",
+  "macos_package": "macOS Universal ZIP",
   "network": "Network",
   "network_import": "Network import",
   "network_proxy": "Proxy Settings",

@@ -12,6 +12,7 @@ import 'package:screen_brightness/screen_brightness.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/global/initial_services.dart';
+import 'package:pure_live/common/services/utils/settings_upgrade_migration.dart';
 import 'package:windows_single_instance/windows_single_instance.dart';
 import 'package:pure_live/common/global/platform/mobile_manager.dart';
 import 'package:pure_live/common/global/platform/desktop_manager.dart';
@@ -29,18 +30,28 @@ class AppInitializer {
     if (_isInitialized) return;
 
     WidgetsFlutterBinding.ensureInitialized();
-    await EasyLocalization.ensureInitialized();
-
     final String instanceId = _getInstanceIdFromArgs(args);
     await _initWindowsSingleInstance(args, instanceId);
 
     await AppPathManager().initialize(instanceId: instanceId);
+    await EasyLocalization.ensureInitialized();
     final Directory hiveDir = await AppPathManager().getDir(AppPathManager.dirHiveDB);
 
-    await Future.wait([
-      Hive.initFlutter(hiveDir.path).then((_) => HivePrefUtil.init()),
-      CustomImageCacheManager.initialize(),
-    ]);
+    await Hive.initFlutter(hiveDir.path);
+    await HivePrefUtil.init();
+    final migrationReport = await SettingsUpgradeMigration.migrate(
+      target: Hive.box('app_settings'),
+      legacyHiveFiles: AppPathManager().legacyHiveFiles,
+      workingDirectory: await AppPathManager().migrationWorkingDir,
+    );
+    if (migrationReport.changed) {
+      log(
+        'Settings upgrade imported ${migrationReport.importedSources} source(s); '
+        'favorites=${migrationReport.favoriteCount}, '
+        'history=${migrationReport.historyCount}.',
+      );
+    }
+    await CustomImageCacheManager.initialize();
 
     // Settings and controller registration is a hard startup dependency for
     // MyApp.build.  Leaving this future detached created a first-launch race:

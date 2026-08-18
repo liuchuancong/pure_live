@@ -107,7 +107,7 @@ class SearchPage extends GetView<pure_live.SearchController> {
             Expanded(
               child: CustomScrollView(
                 controller: controller.scrollController,
-                scrollCacheExtent: const ScrollCacheExtent.pixels(480),
+                scrollCacheExtent: ScrollCacheExtent.pixels(width > 680 ? 960 : 480),
                 keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                 slivers: [
                   SliverPadding(
@@ -119,10 +119,15 @@ class SearchPage extends GetView<pure_live.SearchController> {
                         mainAxisSpacing: spacing,
                         mainAxisExtent: itemWidth * 9 / 16 + 72,
                       ),
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final room = controller.results[index];
-                        return RoomCard(key: ValueKey('${room.platform}:${room.roomId}'), room: room, dense: true);
-                      }, childCount: controller.results.length),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final room = controller.results[index];
+                          return RoomCard(key: ValueKey('${room.platform}:${room.roomId}'), room: room, dense: true);
+                        },
+                        childCount: controller.results.length,
+                        addAutomaticKeepAlives: false,
+                        addRepaintBoundaries: false,
+                      ),
                     ),
                   ),
                   SliverToBoxAdapter(

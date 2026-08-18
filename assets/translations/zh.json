@@ -264,6 +264,8 @@
   "moving_network_quality": "移动网络清晰度",
   "moving_network_quality_subtitle": "使用流量时的首选播放画质",
   "msix_installer": "MSIX 安装包",
+  "portable_package": "便携 ZIP",
+  "macos_package": "macOS 通用 ZIP",
   "network": "网络",
   "network_import": "网络导入",
   "network_proxy": "网络代理设置",

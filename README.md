@@ -9,17 +9,17 @@
 <h4 align="center">基于 Flutter 的开源多平台直播聚合播放器</h4>
 
 <p align="center">
-  <a href="https://github.com/liuchuancong/pure_live/releases/latest"><img alt="Latest Release" src="https://img.shields.io/github/v/release/liuchuancong/pure_live"></a>
-  <a href="https://github.com/liuchuancong/pure_live/actions/workflows/feature-build.yml"><img alt="Manual Build" src="https://github.com/liuchuancong/pure_live/actions/workflows/feature-build.yml/badge.svg"></a>
-  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/liuchuancong/pure_live?color=blue"></a>
-  <a href="https://github.com/liuchuancong/pure_live/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/liuchuancong/pure_live/total?style=flat-square"></a>
+  <a href="https://github.com/wzgrx/pure_live/releases/latest"><img alt="Latest Release" src="https://img.shields.io/github/v/release/wzgrx/pure_live"></a>
+  <a href="https://github.com/wzgrx/pure_live/actions/workflows/feature-build.yml"><img alt="Manual Build" src="https://github.com/wzgrx/pure_live/actions/workflows/feature-build.yml/badge.svg"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/wzgrx/pure_live?color=blue"></a>
+  <a href="https://github.com/wzgrx/pure_live/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/wzgrx/pure_live/total?style=flat-square"></a>
 </p>
 
 > 本仓库基于 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live) 持续维护，新增可配置的小窗弹幕，并完善本机构建、依赖锁定、接口探测和发布流程。
 
-- **最新稳定版**：[v2.1.0](https://github.com/liuchuancong/pure_live/releases/tag/v2.1.0)
-- **当前版本**：`2.1.1+49`（搜索与首页交互修复）
-- **上游同步基线**：`liuchuancong/pure_live@24ff92b6`（2026-08-18）
+- **最新稳定版**：[v2.1.1](https://github.com/wzgrx/pure_live/releases/tag/v2.1.1)
+- **当前版本**：`2.1.2+50`（Windows 数据迁移与流畅度专项）
+- **上游同步基线**：`liuchuancong/pure_live@222b3bfb`（2026-08-18）
 - **构建平台**：Android arm64、Windows x64、Linux x64、macOS universal、iOS arm64 设备包
 
 ![Pure Live 界面预览](assets/images/banner.png)
@@ -31,7 +31,7 @@
 - **多播放器**：Android/TV 可切换 IJKPlayer、EXOPlayer 和 MPV Player。
 - **弹幕增强**：顶部约 20% 的最佳观看模板、舒适/高密度模板、过滤、用户/关键词屏蔽、描边、透明度、字号、速度、显示区域，以及动态跟随屏幕最高刷新率；直播间内调整即时作用于画面。房间会话隔离、平台消息 ID 去重和过期队列淘汰共同避免串房、重放与几分钟前的积压弹幕。
 - **小窗弹幕**：覆盖 Android 系统画中画、Windows 小窗和应用内悬浮窗。
-- **数据管理**：本地导入导出、WebDAV 同步，以及可选的 Firebase 用户同步。
+- **数据管理**：本地导入导出、WebDAV 同步，以及可选的 Firebase 用户同步；Windows 把关注、历史、IPTV、缓存与插件配置集中保存在安装目录 `AppData`，并自动合并旧版数据。
 - **播放工具**：直播录制、定时关闭、后台音频和系统媒体通知。
 - **搜索与互动**：跨平台原生直播搜索、逐平台分页状态、直播/未开播筛选，以及综合、平台顺序、观众和粉丝四种排序；快手保留网页搜索入口，离线频道按平台接口实际返回展示。另含保存在本机的昵称、头衔、弹幕输入、体验币、八平台身份徽章、礼物目录、等级风格和画面礼物效果；“设置 → 本地用户与互动”提供独立总开关。
 - **观看口径**：热度、真实在线人数、累计观看分别存储和标注；抖音、快手、网易 CC、Twitch、SOOP Live 可显示明确并发人数，虎牙/Bilibili/斗鱼按平台热度显示；“设置 → 通用 → 观看数据与排行口径”可切换排行方式并管理支持平台。
@@ -54,7 +54,7 @@
 
 ## 下载
 
-前往 [GitHub Releases](https://github.com/liuchuancong/pure_live/releases/latest) 获取安装包：
+前往 [GitHub Releases](https://github.com/wzgrx/pure_live/releases/latest) 获取安装包：
 
 - Android：当前优先发布 `arm64-v8a` APK；
 - Windows：按 Release 附件说明选择安装包或便携 ZIP；
@@ -63,6 +63,13 @@
 Linux、macOS 与 iOS 的阶段构建由“全部平台”手动工作流生成；Linux 网页搜索会交给系统浏览器，原生搜索与播放继续在应用内完成；iOS 附件是设备 `.app` 编译归档，签名与 IPA 封装在持有 Apple 证书的环境中完成。阶段更新范围见 [v2.1.0 阶段更新说明](docs/STAGE_UPDATE_2_1_0.md)。
 
 Android 始终使用正式包名 `com.mystyle.purelive`，不再生成并存 QA 包。正式 Release 使用仓库专用持久签名，可直接覆盖旧正式版；缺少发布密钥的本机测试包使用调试签名，发布脚本会阻止其进入正式 Release。
+
+## Windows 安装与数据升级
+
+- EXE 安装向导始终显示目录选择；常规安装的持久数据统一位于 `{app}\AppData`，包含 Hive 配置、关注、历史、IPTV、录制、图片/表情/插件缓存与临时文件。
+- 从 2.0.x/2.1.1 升级时，启动顺序是“发现旧安装位置 → 备份原 Hive 文件 → 兼容旧 List/新 JSON 格式 → 去重合并 → 再初始化页面”，不会用空配置直接覆盖旧关注。
+- 更换磁盘或安装目录时，安装器会写入上一个位置的迁移索引；应用仅读取旧数据，合并完成后保留回滚备份。
+- 详细目录、升级规则和故障恢复见 [Windows 数据与升级](docs/WINDOWS_DATA_AND_UPGRADE.md)。
 
 ## 本地开发
 
@@ -88,6 +95,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 | --- | --- |
 | [文档索引](docs/README.md) | 开发、发布、依赖和功能文档入口 |
 | [构建与发布](docs/BUILD_AND_RELEASE.md) | 本机质量门禁、签名、打包和 Release 流程 |
+| [Windows 数据与升级](docs/WINDOWS_DATA_AND_UPGRADE.md) | 安装目录存储、关注恢复、换盘迁移和回滚 |
 | [依赖与接口审计](docs/DEPENDENCY_AUDIT.md) | 固定工具链、升级约束和接口探测范围 |
 | [平台接口与兼容性](docs/PLATFORM_COMPATIBILITY.md) | 分区、搜索、弹幕和人数指标的当前能力 |
 | [高刷新率与性能验证](docs/PERFORMANCE.md) | Android 120 Hz 适配、渲染优化和真机帧统计 |
@@ -119,7 +127,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 ## 参与开发
 
 - 上游项目：[@liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)
-- 维护仓库：[@liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)
+- 维护仓库：[@wzgrx/pure_live](https://github.com/wzgrx/pure_live)
 - 提交改动前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)，UI 变更请附截图或录屏。
 
 代码参考：
@@ -129,8 +137,8 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 
 ## 许可与内容说明
 
-项目代码采用 [GNU Affero General Public License v3.0](LICENSE)。应用聚合第三方直播平台与用户配置的直播源；使用者应遵守对应平台条款和所在地规则。视频、音频、图像及直播内容的权利归原权利人所有。权利相关问题可通过 [GitHub Issues](https://github.com/liuchuancong/pure_live/issues) 联系维护者。
+项目代码采用 [GNU Affero General Public License v3.0](LICENSE)。应用聚合第三方直播平台与用户配置的直播源；使用者应遵守对应平台条款和所在地规则。视频、音频、图像及直播内容的权利归原权利人所有。权利相关问题可通过 [GitHub Issues](https://github.com/wzgrx/pure_live/issues) 联系维护者。
 
 ## Star 趋势
 
-[![Stargazers over time](https://starchart.cc/liuchuancong/pure_live.svg)](https://starchart.cc/liuchuancong/pure_live)
+[![Stargazers over time](https://starchart.cc/wzgrx/pure_live.svg)](https://starchart.cc/wzgrx/pure_live)

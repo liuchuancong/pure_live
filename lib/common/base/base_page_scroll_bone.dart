@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/base/base_controller.dart';
 
@@ -86,17 +87,22 @@ abstract class BasePageScrollAndStateBone<T> extends BaseController {
 
   void scrollToBottom() {
     if (!scrollController.hasClients) return;
+    final distance = (scrollController.position.maxScrollExtent - scrollController.offset).abs();
     scrollController.animateTo(
       scrollController.position.maxScrollExtent,
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.linear,
+      duration: _scrollAnimationDuration(distance),
+      curve: Curves.easeOutCubic,
     );
   }
 
   void scrollToTopOrRefresh() {
     if (!scrollController.hasClients) return;
     if (scrollController.offset > 0) {
-      scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.linear);
+      scrollController.animateTo(
+        0,
+        duration: _scrollAnimationDuration(scrollController.offset),
+        curve: Curves.easeOutCubic,
+      );
     } else {
       if (_lastIsDesktop ?? Get.width > 680) {
         refreshData();
@@ -104,6 +110,10 @@ abstract class BasePageScrollAndStateBone<T> extends BaseController {
         easyRefreshController.callRefresh();
       }
     }
+  }
+
+  Duration _scrollAnimationDuration(double distance) {
+    return Duration(milliseconds: (180 + distance / 8).round().clamp(220, 520));
   }
 
   Future<void> loadMoreData() async {
