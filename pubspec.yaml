@@ -1,7 +1,7 @@
 name: pure_live
 description: 纯粹直播,一款开源的第三方多平台直播聚合播放器.
 publish_to: none
-version: 2.1.8+56
+version: 2.2.0+57
 
 environment:
   sdk: ^3.13.0
@@ -96,7 +96,7 @@ dependencies:
   flex_color_picker: ^3.7.2 # 颜色选择器
   bordered_text: ^3.0.2 # 带边框文字
   flutter_color: ^2.1.0 # 颜色工具
-  syncfusion_flutter_sliders: ^34.2.3 # 滑块组件
+  syncfusion_flutter_sliders: ^34.2.4 # 滑块组件
   markdown_widget: ^2.3.2+8 # Markdown渲染
 
   # -------------------------- 图标/字体 --------------------------
@@ -205,7 +205,7 @@ dependency_overrides:
   share_handler_android:
     path: plugins/built_in_kotlin/share_handler_android
   # dart_quickjs 尚声明 hooks 1.x，但实现与 FFmpeg 插件使用的 2.x API 兼容。
-  hooks: ^2.1.0
+  hooks: ^2.2.0
   # webdav_client 1.2.2 uses APIs retained by xml 7.x; its hosted constraint still targets 6.x.
   xml: ^7.0.1
   # 固定的 media_kit 提交仍声明 1.3.3；应用已验证 1.4.x API。
