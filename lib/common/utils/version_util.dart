@@ -36,6 +36,7 @@ class VersionUtil {
   static String latestUpdateLog = '';
   static bool prerelease = false;
   static String downloadUrl = '';
+  static Set<String> latestAndroidAbis = const {'arm64-v8a'};
   var allReleased = [].obs;
 
   static Map<String, dynamic>? _cachedVersionJson;
@@ -100,6 +101,17 @@ class VersionUtil {
     latestUpdateLog = selected['version_desc']?.toString() ?? '';
     prerelease = selected['prerelease'] == true;
     downloadUrl = selected['download_url']?.toString() ?? '';
+    latestAndroidAbis = selectAndroidAbis(selected);
+  }
+
+  /// Only advertises APK variants that the release feed says were published.
+  /// Older feeds default to arm64, matching this maintenance branch's local
+  /// release target, rather than generating links to missing assets.
+  static Set<String> selectAndroidAbis(Map<String, dynamic> data) {
+    const supported = {'armeabi-v7a', 'arm64-v8a', 'x86_64'};
+    final raw = data['android_abis'];
+    if (raw is! List) return const {'arm64-v8a'};
+    return raw.map((item) => item.toString()).where(supported.contains).toSet();
   }
 
   /// Keeps update announcements aligned with the artifacts that were really

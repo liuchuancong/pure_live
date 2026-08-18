@@ -7,9 +7,34 @@ void main() {
     const urls = ReleaseAssetUrls(projectUrl: 'https://github.com/wzgrx/pure_live', version: '2.1.4', buildNumber: 52);
 
     expect(urls.androidArm64, endsWith('/PureLive-2.1.4-52-arm64-v8a-release.apk'));
+    expect(urls.androidArmeabiV7a, endsWith('/PureLive-2.1.4-52-armeabi-v7a-release.apk'));
+    expect(urls.androidX8664, endsWith('/PureLive-2.1.4-52-x86_64-release.apk'));
     expect(urls.windowsSetup, endsWith('/PureLive-2.1.4-windows-x64-setup.exe'));
     expect(urls.windowsPortable, endsWith('/PureLive-2.1.4-52-windows-x64-portable.zip'));
     expect(urls.macosUniversal, endsWith('/PureLive-2.1.4-52-macos-universal.zip'));
+  });
+
+  test('Android update links are limited to APK variants declared by the feed', () {
+    expect(
+      VersionUtil.selectAndroidAbis({
+        'android_abis': ['arm64-v8a'],
+      }),
+      {'arm64-v8a'},
+    );
+    expect(
+      VersionUtil.selectAndroidAbis({
+        'android_abis': ['armeabi-v7a', 'arm64-v8a', 'x86_64', 'unsupported'],
+      }),
+      {'armeabi-v7a', 'arm64-v8a', 'x86_64'},
+    );
+    expect(VersionUtil.selectAndroidAbis({}), {'arm64-v8a'});
+    expect(VersionUtil.selectAndroidAbis({'android_abis': []}), isEmpty);
+    expect(
+      VersionUtil.selectAndroidAbis({
+        'android_abis': ['unsupported'],
+      }),
+      isEmpty,
+    );
   });
 
   test('platform update feed does not announce an unpublished artifact to other platforms', () {
