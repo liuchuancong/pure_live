@@ -1,6 +1,9 @@
 import '../models/player_state.dart';
+
 import 'package:flutter/material.dart';
+
 import '../models/player_exception.dart';
+
 import 'package:pure_live/common/models/live_room.dart';
 
 abstract class UnifiedPlayer {
@@ -26,6 +29,10 @@ abstract class UnifiedPlayer {
 
   // 不销毁播放器
   Future<void> softStop();
+
+  /// Enables or disables video decoding/rendering without replacing the
+  /// player or reopening the current live stream.
+  Future<void> setAudioOnly(bool audioOnly);
 
   // 真正释放播放器
   Future<void> hardDispose();

@@ -1,10 +1,15 @@
 import 'dart:async';
+
 import 'package:rxdart/rxdart.dart';
+
 import '../models/player_state.dart';
 import '../models/player_exception.dart';
 import '../models/player_error_type.dart';
+
 import 'package:pure_live/common/index.dart';
+
 import '../interface/unified_player_interface.dart';
+
 import 'package:pure_live/player/utils/fijk_helper.dart';
 
 class FijkAdapter implements UnifiedPlayer {
@@ -199,6 +204,13 @@ class FijkAdapter implements UnifiedPlayer {
     _playingSubject.add(false);
     _loadingSubject.add(false);
     _stateSubject.add(PlayerState.idle);
+  }
+
+  @override
+  Future<void> setAudioOnly(bool audioOnly) async {
+    if (_disposed || _isAudioOnly == audioOnly) return;
+    await _player.setOption(FijkOption.playerCategory, "disable-vid", audioOnly ? "1" : "0");
+    _isAudioOnly = audioOnly;
   }
 
   Future<void> applyAudioOnlySettings() async {

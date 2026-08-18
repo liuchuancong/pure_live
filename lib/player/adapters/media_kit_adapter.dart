@@ -72,7 +72,10 @@ class MediaKitAdapter implements UnifiedPlayer {
   @override
   Future<void> init({bool audioOnly = false}) async {
     if (_initialized) return;
-    _isAudioOnly = audioOnly;
+    // Always create a normal video output. Audio-only is a reversible track
+    // selection on the same player; constructing a `vo=null` controller made
+    // returning to video depend on destroying and recreating the native player.
+    _isAudioOnly = false;
     _disposed = false;
 
     _listenerBound = false;
@@ -118,17 +121,7 @@ class MediaKitAdapter implements UnifiedPlayer {
       // =========================
       // controller
       // =========================
-      //  根据是否为纯音频，选择不同的控制器配置
-      _controller = audioOnly
-          ? VideoController(
-              _player,
-              configuration: const VideoControllerConfiguration(
-                vo: 'null',
-                hwdec: 'no',
-                enableHardwareAcceleration: false,
-              ),
-            )
-          : SettingsService.to.player.playerCompatMode.v
+      _controller = SettingsService.to.player.playerCompatMode.v
           ? VideoController(
               _player,
               configuration: const VideoControllerConfiguration(vo: 'mediacodec_embed', hwdec: 'mediacodec'),
@@ -151,9 +144,10 @@ class MediaKitAdapter implements UnifiedPlayer {
               ),
             );
 
-      // 2. 下发底层 MPV 内核配置（必须紧跟在 Controller 创建之后）
+      // Select the audio-only track after the normal output has been created,
+      // keeping the operation reversible for automatic ASMR entry as well.
       if (audioOnly) {
-        await applyAudioOnlySettings();
+        await setAudioOnly(true);
       }
 
       await _bindListeners();
@@ -462,23 +456,33 @@ class MediaKitAdapter implements UnifiedPlayer {
   }
 
   @override
+  Future<void> setAudioOnly(bool audioOnly) async {
+    if (_disposed || _isAudioOnly == audioOnly) return;
+
+    try {
+      if (_player.platform is NativePlayer) {
+        final native = _player.platform as dynamic;
+        // `vid=no/auto` is sufficient to stop and restore video decoding.
+        // Do not replace `vo` or `hwdec`: those properties own the Android
+        // surface and changing them during playback can stall MediaCodec.
+        await native.setProperty('vid', audioOnly ? 'no' : 'auto');
+      }
+      _isAudioOnly = audioOnly;
+    } catch (error, stackTrace) {
+      throw PlayerException(
+        message: 'MediaKit audio mode switch failed',
+        type: PlayerErrorType.lifecycle,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  @override
   Future<void> setVolume(double volume) async {
     final vol = (volume * 100).clamp(0.0, 100.0);
 
     await _player.setVolume(vol);
-  }
-
-  // =========================
-  // applyAudioOnlySettings
-  // =========================
-
-  Future<void> applyAudioOnlySettings() async {
-    final native = _player.platform as dynamic;
-    await native.setProperty('vid', 'no');
-    await native.setProperty('video', 'no');
-    await native.setProperty('vo', 'null');
-    await native.setProperty('hwdec', 'no');
-    await native.setProperty('audio-display', 'no');
   }
 
   // =========================

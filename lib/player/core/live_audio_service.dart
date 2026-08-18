@@ -11,7 +11,7 @@ import 'package:pure_live/common/services/settings/app_settings_controller.dart'
 
 class LiveAudioService {
   static LiveAudioHandler? _handler;
-  static bool _isInitializing = false;
+  static Future<LiveAudioHandler?>? _initializationFuture;
   static int _sleepMinutes = 60;
 
   static bool get isSleepSessionActive => BackgroundPlaybackService.sleepSessionActive;
@@ -24,32 +24,36 @@ class LiveAudioService {
 
   static Future<LiveAudioHandler?> _ensureInitialized() async {
     if (_handler != null) return _handler;
-    if (_isInitializing) {
-      while (_handler == null) {
-        await Future.delayed(const Duration(milliseconds: 100));
-      }
-      return _handler;
-    }
+    final inFlight = _initializationFuture;
+    if (inFlight != null) return inFlight;
 
-    _isInitializing = true;
+    final initialization = _initializeHandler();
+    _initializationFuture = initialization;
     try {
-      _handler = await AudioService.init(
-        builder: () => LiveAudioHandler(),
-        config: AudioServiceConfig(
-          androidNotificationChannelId: 'com.mystyle.purelive.audio',
-          androidNotificationChannelName: i18n("audio_channel_name"),
-          androidNotificationOngoing: true,
-          // Keep the media foreground service alive across short interruptions
-          // so screen-off playback can resume without recreating the process.
-          androidStopForegroundOnPause: false,
-          androidNotificationClickStartsActivity: true,
-          notificationColor: Colors.blue,
-        ),
-      );
+      return await initialization;
     } finally {
-      _isInitializing = false;
+      if (identical(_initializationFuture, initialization)) {
+        _initializationFuture = null;
+      }
     }
-    return _handler;
+  }
+
+  static Future<LiveAudioHandler?> _initializeHandler() async {
+    final handler = await AudioService.init(
+      builder: () => LiveAudioHandler(),
+      config: AudioServiceConfig(
+        androidNotificationChannelId: 'com.mystyle.purelive.audio',
+        androidNotificationChannelName: i18n("audio_channel_name"),
+        androidNotificationOngoing: true,
+        // Keep the media foreground service alive across short interruptions
+        // so screen-off playback can resume without recreating the process.
+        androidStopForegroundOnPause: false,
+        androidNotificationClickStartsActivity: true,
+        notificationColor: Colors.blue,
+      ),
+    );
+    _handler = handler;
+    return handler;
   }
 
   static Future<void> setPlayer(UnifiedPlayer player, {required bool audioOnly}) async {

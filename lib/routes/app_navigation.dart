@@ -106,12 +106,10 @@ class BackButtonObserver extends RouteObserver<PageRoute<dynamic>> {
             videoController.clearListener();
           }
 
-          // 检查是否音频模式
-          if (state.player.isCurrentRoomAudioOnly) {
-            manager.hardDispose();
-          } else {
-            manager.close();
-          }
+          // The same close path must stop AudioService and the native player.
+          // Audio-only previously bypassed LiveAudioService.stop(), leaving a
+          // stale background player attached during the next room entry.
+          unawaited(manager.close());
         }
         if (PlatformUtils.isMobile) {
           WindowService().doExitFullScreen();

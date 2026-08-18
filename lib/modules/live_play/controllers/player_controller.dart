@@ -1,12 +1,13 @@
 import 'dart:developer' as developer;
 
-import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/site/huya_site.dart';
 import 'package:pure_live/core/site/bilibili_site.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
+import 'package:pure_live/player/models/player_exception.dart';
+import 'package:pure_live/player/models/player_error_type.dart';
 import 'package:pure_live/modules/live_play/states/live_play_state.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
@@ -165,33 +166,27 @@ class PlayerController extends GetxController {
 
   Future<void> _applyCurrentRoomAudioOnly(bool value) async {
     if (_state.player.isCurrentRoomAudioOnly == value) return;
-
-    // Keep the room controller alive and remove only its widget while the native
-    // surface changes. Besides preserving barrage/gesture state, this keeps one
-    // transition lock for the entire operation; a newly-created controller can
-    // no longer accept a second tap while the previous player is still closing.
-    _main.updateRoom(isLoading: true, success: false);
     final controller = _state.player.videoController;
-    await SchedulerBinding.instance.endOfFrame;
+    final room = currentRoom;
+    final previous = _state.player.isCurrentRoomAudioOnly;
 
     try {
-      await GlobalPlayerService.instance.playerManager.hardDispose();
-      _main.updatePlayer(isCurrentRoomAudioOnly: value);
-
-      final room = currentRoom;
-      if (room != null && _state.player.playUrls.isNotEmpty) {
-        if (controller != null) {
-          await controller.changeAudioOnlyMode(value);
-        } else {
-          final replacement = await setPlayer(roomId: room.roomId!);
-          await replacement?.initialization;
-        }
-        _main.updateRoom(success: true, isLoading: false);
-        return;
+      if (controller == null) {
+        throw PlayerException(message: 'Room video controller is null', type: PlayerErrorType.lifecycle);
       }
-      await _main.onInitPlayerState();
-    } finally {
-      _main.updateRoom(isLoading: false);
+      await controller.changeAudioOnlyMode(value);
+
+      // The route may have been popped while the native call was pending.
+      if (_main.isClosed || !identical(_state.player.videoController, controller) || currentRoom != room) return;
+      _main.updatePlayer(isCurrentRoomAudioOnly: value);
+      _main.updateRoom(success: true, isLoading: false);
+    } catch (error, stackTrace) {
+      developer.log('Audio mode switch failed', name: 'PlayerController', error: error, stackTrace: stackTrace);
+      if (!_main.isClosed && identical(_state.player.videoController, controller) && currentRoom == room) {
+        _main.updatePlayer(isCurrentRoomAudioOnly: previous);
+        _main.updateRoom(success: true, isLoading: false);
+        ToastUtil.show(i18n('error_lifecycle'));
+      }
     }
   }
 

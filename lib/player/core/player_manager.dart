@@ -40,6 +40,7 @@ class PlayerManager {
   final EngineFallbackManager fallbackManager;
   final PreloadPlayerManager preloadManager;
   final LineFallbackManager lineManager;
+  final Duration audioModeSwitchTimeout;
 
   int _sessionId = 0;
   bool _isClosing = false;
@@ -49,6 +50,7 @@ class PlayerManager {
     required this.fallbackManager,
     required this.preloadManager,
     required this.lineManager,
+    this.audioModeSwitchTimeout = const Duration(seconds: 5),
   }) {
     _pipStateSubscription = isInPip.listen((value) {
       GlobalPlayerState.to.isPipMode.value = value;
@@ -115,6 +117,7 @@ class PlayerManager {
   Stream<int?> get width => _widthSubject.stream;
   Stream<int?> get height => _heightSubject.stream;
   bool get isPlayingNow => _playingSubject.value;
+  bool get isAudioOnlyMode => _runtimeAudioOnly;
   bool get shouldKeepDanmakuForAppFloating => _appFloatingPrepared || isFloating.value;
   bool get isAppFloatingActive =>
       _appFloatingPrepared || isFloating.value || _floatingCleanup != null || _floatingResourceDisposers.isNotEmpty;
@@ -218,7 +221,7 @@ class PlayerManager {
     } else if (_runtimeEngine != _defaultEngine && !_isSwitchingDueToFallback) {
       await switchEngine(_defaultEngine!, isManual: false, audioOnly: audioOnly);
     } else if (_runtimeAudioOnly != audioOnly) {
-      await _recreateForAudioMode(audioOnly);
+      await setAudioOnlyMode(audioOnly);
     }
 
     if (!_isSessionValid(mySessionId)) return;
@@ -281,20 +284,44 @@ class PlayerManager {
     await play(_currentUrl!, _currentPlayUrls, _currentHeaders, room: currentFloatRoom, audioOnly: _runtimeAudioOnly);
   }
 
-  Future<void> _recreateForAudioMode(bool audioOnly) async {
-    final engine = _runtimeEngine;
-    if (engine == null || _runtimeAudioOnly == audioOnly) return;
-    final oldPlayer = _currentPlayer;
-    await _clearSubscriptions();
-    if (oldPlayer != null) {
-      await playerPool.removeFromCache(engine);
+  /// Changes the current room between video and audio-only in place.
+  ///
+  /// Reopening the whole stream made the UI wait for native stop/dispose,
+  /// player initialization, AudioService binding and CDN setup. A stalled
+  /// native future therefore left the room on an endless loading indicator.
+  Future<void> setAudioOnlyMode(bool audioOnly) async {
+    if (_disposed || _isClosing || _runtimeAudioOnly == audioOnly) return;
+    final player = _currentPlayer;
+    if (player == null) {
+      throw PlayerException(message: 'Current player is null', type: PlayerErrorType.lifecycle);
     }
-    final newPlayer = await playerPool.getPlayer(engine, audioOnly: audioOnly);
-    _currentPlayer = newPlayer;
-    _runtimeAudioOnly = audioOnly;
-    await _bindPlayerStreams(newPlayer);
-    await LiveAudioService.setPlayer(newPlayer, audioOnly: audioOnly);
-    videoKey.value = ValueKey("video_${DateTime.now().millisecondsSinceEpoch}");
+
+    final previous = _runtimeAudioOnly;
+    try {
+      await player.setAudioOnly(audioOnly).timeout(audioModeSwitchTimeout);
+      if (!identical(_currentPlayer, player) || _disposed || _isClosing) return;
+
+      _runtimeAudioOnly = audioOnly;
+      await LiveAudioService.setPlayer(player, audioOnly: audioOnly).timeout(audioModeSwitchTimeout);
+      videoKey.value = ValueKey("video_${DateTime.now().millisecondsSinceEpoch}");
+    } catch (error, stackTrace) {
+      // Restore both the native track and the UI state. The rollback is also
+      // bounded so a broken platform call never locks the headphone button.
+      try {
+        await player.setAudioOnly(previous).timeout(audioModeSwitchTimeout);
+      } catch (_) {}
+      try {
+        await LiveAudioService.setPlayer(player, audioOnly: previous).timeout(audioModeSwitchTimeout);
+      } catch (_) {}
+      _runtimeAudioOnly = previous;
+      videoKey.value = ValueKey("video_${DateTime.now().millisecondsSinceEpoch}");
+      throw PlayerException(
+        message: error is TimeoutException ? 'Audio mode switch timed out' : 'Audio mode switch failed',
+        type: PlayerErrorType.lifecycle,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   Future<void> switchEngine(PlayerEngine engine, {bool isManual = false, bool? audioOnly}) async {

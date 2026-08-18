@@ -391,8 +391,14 @@ class VideoController with ChangeNotifier {
   /// Flutter's release-mode error widget.
   Future<void> changeAudioOnlyMode(bool value) async {
     if (_isDisposed || isAudioOnly == value) return;
-    isAudioOnly = value;
-    await _playerManager.play(datasource, playUrs, headers, room: room, audioOnly: value);
+    final previous = isAudioOnly;
+    try {
+      await _playerManager.setAudioOnlyMode(value);
+      if (!_isDisposed) isAudioOnly = value;
+    } catch (_) {
+      isAudioOnly = previous;
+      rethrow;
+    }
   }
 
   void _setupDefaultFullscreen() {
@@ -744,7 +750,6 @@ class VideoController with ChangeNotifier {
   Future<void> toggleAudioOnly() async {
     if (_audioModeSwitching) return;
     _audioModeSwitching = true;
-    clearListener();
     try {
       await onAudioOnlyChanged?.call(!isAudioOnly);
     } finally {
