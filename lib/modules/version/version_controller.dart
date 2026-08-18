@@ -10,6 +10,8 @@ class ReleaseAssetUrls {
 
   String get releaseBase => '$projectUrl/releases/download/v$version';
   String get androidArm64 => '$releaseBase/PureLive-$version-$buildNumber-arm64-v8a-release.apk';
+  String get androidArmeabiV7a => '$releaseBase/PureLive-$version-$buildNumber-armeabi-v7a-release.apk';
+  String get androidX8664 => '$releaseBase/PureLive-$version-$buildNumber-x86_64-release.apk';
   String get windowsSetup => '$releaseBase/PureLive-$version-windows-x64-setup.exe';
   String get windowsPortable => '$releaseBase/PureLive-$version-$buildNumber-windows-x64-portable.zip';
   String get macosUniversal => '$releaseBase/PureLive-$version-$buildNumber-macos-universal.zip';
@@ -76,9 +78,9 @@ class VersionController extends GetxController {
     // Android
     // =====================================================
 
-    apkUrl.value = '';
+    apkUrl.value = assets.androidArmeabiV7a;
     apkUrl2.value = assets.androidArm64;
-    apkUrl3.value = '';
+    apkUrl3.value = assets.androidX8664;
 
     // =====================================================
     // Windows
