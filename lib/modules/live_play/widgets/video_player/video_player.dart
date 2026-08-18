@@ -30,6 +30,7 @@ class _VideoPlayerState extends State<VideoPlayer> with WidgetsBindingObserver {
       () => GlobalPlayerService.instance.playerManager.getVideoWidget(
         SettingsService.to.player.videoFitIndex.v,
         fitList: SettingsService.to.player.videoFitArray,
+        trackPipSource: true,
         controls: VideoControllerPanel(controller: controller),
       ),
     );

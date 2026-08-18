@@ -1,5 +1,6 @@
-import 'dart:io';
+import 'dart:async';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/utils.dart';
@@ -32,6 +33,10 @@ class AppNavigator {
         : liveRoom.copyWith(platform: platform, roomId: roomId);
     _openingLiveRoom = true;
     try {
+      final manager = GlobalPlayerService.instance.playerManager;
+      if (manager.isAppFloatingActive) {
+        await manager.closeAppFloating();
+      }
       await Get.toNamed(RoutePath.kLivePlay, arguments: normalizedRoom, parameters: {"site": platform});
     } finally {
       _openingLiveRoom = false;
@@ -113,7 +118,7 @@ class BackButtonObserver extends RouteObserver<PageRoute<dynamic>> {
     super.didPush(route, previousRoute);
     if (route.settings.name == RoutePath.kLivePlay) {
       final manager = GlobalPlayerService.instance.playerManager;
-      manager.closeAppFloating();
+      unawaited(manager.closeAppFloating());
     }
   }
 }

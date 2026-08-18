@@ -9,8 +9,7 @@ typedef Disposer = void Function();
 // if it brings overhead the extra call,
 typedef GetStateUpdate = void Function();
 
-class ListNotifier extends Listenable
-    with ListNotifierSingleMixin, ListNotifierGroupMixin {}
+class ListNotifier extends Listenable with ListNotifierSingleMixin, ListNotifierGroupMixin {}
 
 /// A Notifier with single listeners
 class ListNotifierSingle = ListNotifier with ListNotifierSingleMixin;
@@ -30,7 +29,11 @@ mixin ListNotifierSingleMixin on Listenable {
   Disposer addListener(GetStateUpdate listener) {
     assert(_debugAssertNotDisposed());
     _updaters!.add(listener);
-    return () => _updaters!.remove(listener);
+    // Widget unmount can legitimately run after its controller has completed
+    // an asynchronous teardown. Listener cleanup must therefore be idempotent
+    // instead of turning a harmless late unsubscribe into a release-mode
+    // ErrorWidget that covers the whole subtree.
+    return () => _updaters?.remove(listener);
   }
 
   bool containsListener(GetStateUpdate listener) {
@@ -39,8 +42,7 @@ mixin ListNotifierSingleMixin on Listenable {
 
   @override
   void removeListener(VoidCallback listener) {
-    assert(_debugAssertNotDisposed());
-    _updaters!.remove(listener);
+    _updaters?.remove(listener);
   }
 
   @protected
@@ -100,8 +102,7 @@ mixin ListNotifierSingleMixin on Listenable {
 }
 
 mixin ListNotifierGroupMixin on Listenable {
-  HashMap<Object?, ListNotifierSingleMixin>? _updatersGroupIds =
-      HashMap<Object?, ListNotifierSingleMixin>();
+  HashMap<Object?, ListNotifierSingleMixin>? _updatersGroupIds = HashMap<Object?, ListNotifierSingleMixin>();
 
   void _notifyGroupUpdate(Object id) {
     if (_updatersGroupIds!.containsKey(id)) {
@@ -137,9 +138,9 @@ mixin ListNotifierGroupMixin on Listenable {
   }
 
   void removeListenerId(Object id, VoidCallback listener) {
-    assert(_debugAssertNotDisposed());
-    if (_updatersGroupIds!.containsKey(id)) {
-      _updatersGroupIds![id]!.removeListener(listener);
+    final groups = _updatersGroupIds;
+    if (groups != null && groups.containsKey(id)) {
+      groups[id]!.removeListener(listener);
     }
   }
 
@@ -159,8 +160,9 @@ mixin ListNotifierGroupMixin on Listenable {
   /// by `GetBuilder()` or similar, so is a way to unlink the state change with
   /// the Widget from the Controller.
   void disposeId(Object id) {
-    _updatersGroupIds?[id]?.dispose();
-    _updatersGroupIds!.remove(id);
+    final groups = _updatersGroupIds;
+    groups?[id]?.dispose();
+    groups?.remove(id);
   }
 }
 
@@ -196,10 +198,7 @@ class Notifier {
 }
 
 class NotifyData {
-  const NotifyData(
-      {required this.updater,
-      required this.disposers,
-      this.throwException = true});
+  const NotifyData({required this.updater, required this.disposers, this.throwException = true});
   final GetStateUpdate updater;
   final List<VoidCallback> disposers;
   final bool throwException;

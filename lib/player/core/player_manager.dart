@@ -32,7 +32,6 @@ import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/utils/pip_window_widget.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
-import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/compact_danmaku_overlay.dart';
 
@@ -100,7 +99,8 @@ class PlayerManager {
   late Floating floating;
   LiveRoom? currentFloatRoom;
   VideoController? _videoController;
-  VoidCallback? _floatingDanmakuDisposer;
+  final List<Future<void> Function()> _floatingResourceDisposers = <Future<void> Function()>[];
+  Future<void>? _floatingCleanup;
   bool _appFloatingPrepared = false;
   bool _pipTransitionInFlight = false;
   final GlobalKey _pipSourceKey = GlobalKey(debugLabel: 'pip-video-source');
@@ -116,6 +116,8 @@ class PlayerManager {
   Stream<int?> get height => _heightSubject.stream;
   bool get isPlayingNow => _playingSubject.value;
   bool get shouldKeepDanmakuForAppFloating => _appFloatingPrepared || isFloating.value;
+  bool get isAppFloatingActive =>
+      _appFloatingPrepared || isFloating.value || _floatingCleanup != null || _floatingResourceDisposers.isNotEmpty;
   bool get isCompactModeActive => isInPip.value || isPipPreparing.value || isFloating.value || _appFloatingPrepared;
 
   void attachVideoController(VideoController controller) {
@@ -128,9 +130,11 @@ class PlayerManager {
     }
   }
 
-  void prepareAppFloating({required VoidCallback onClose}) {
-    _floatingDanmakuDisposer?.call();
-    _floatingDanmakuDisposer = onClose;
+  void prepareAppFloating({required Future<void> Function() onClose}) {
+    // Keep every pending owner until the overlay and popped route have fully
+    // unmounted. Releasing a previous owner here recreated the same late-Obx
+    // unsubscribe race when navigation happened unusually quickly.
+    _floatingResourceDisposers.add(onClose);
     _appFloatingPrepared = true;
   }
 
@@ -139,11 +143,13 @@ class PlayerManager {
     return controller == null ? const SizedBox.shrink() : CompactDanmakuOverlay(controller: controller);
   }
 
-  void _releaseAppFloatingResources() {
+  Future<void> _releaseAppFloatingResources() async {
     _appFloatingPrepared = false;
-    final disposer = _floatingDanmakuDisposer;
-    _floatingDanmakuDisposer = null;
-    disposer?.call();
+    final disposers = List<Future<void> Function()>.from(_floatingResourceDisposers);
+    _floatingResourceDisposers.clear();
+    for (final disposer in disposers) {
+      await disposer();
+    }
     if (!isInPip.value && !isFloating.value) {
       _videoController?.clearPipDanmaku();
     }
@@ -362,7 +368,7 @@ class PlayerManager {
 
   Future<void> stop() async {
     await close();
-    closeAppFloating();
+    await closeAppFloating();
   }
 
   Future<void> setVolume(double volume) async {
@@ -423,7 +429,10 @@ class PlayerManager {
   }
 
   void showAppFloating() {
-    if (!_appFloatingPrepared) return;
+    // A delayed show is scheduled after the room route pops. Re-entering a
+    // room during that delay closes the prepared session and must prevent the
+    // stale callback from mounting the old player on top of the new route.
+    if (!_appFloatingPrepared || _floatingCleanup != null) return;
     floatingManager.disposeFloating(_floatTag);
     _hideTimer?.cancel();
     double maxSide = Platform.isWindows ? 350 : 220;
@@ -475,10 +484,11 @@ class PlayerManager {
                 Positioned.fill(
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
-                    onTap: () {
-                      closeAppFloating();
-                      if (currentFloatRoom != null) {
-                        AppNavigator.toLiveRoomDetail(liveRoom: currentFloatRoom!);
+                    onTap: () async {
+                      final room = currentFloatRoom;
+                      await closeAppFloating();
+                      if (room != null) {
+                        await AppNavigator.toLiveRoomDetail(liveRoom: room);
                       }
                     },
                     child: const SizedBox.expand(),
@@ -552,14 +562,50 @@ class PlayerManager {
     }
   }
 
-  void closeAppFloating() {
-    if (isFloating.value) {
-      floatingManager.disposeFloating(_floatTag);
+  Future<void> closeAppFloating() async {
+    final cleanupInFlight = _floatingCleanup;
+    if (cleanupInFlight != null) {
+      await cleanupInFlight;
+      return;
     }
-    isFloating.value = false;
-    _releaseAppFloatingResources();
-    if (!isInPip.value) {
-      _videoController?.clearPipDanmaku();
+    if (!_appFloatingPrepared &&
+        !isFloating.value &&
+        _floatingResourceDisposers.isEmpty &&
+        !floatingManager.containsFloating(_floatTag)) {
+      return;
+    }
+
+    late final Future<void> cleanup;
+    cleanup = () async {
+      final hadOverlay = floatingManager.containsFloating(_floatTag);
+      if (hadOverlay) {
+        // OverlayEntry.remove() schedules unmount for the next frame. Calling
+        // disposeFloating here would also dispose its controllers while the
+        // FloatingView is still subscribed to them.
+        floatingManager.getFloating(_floatTag).close();
+      }
+      isFloating.value = false;
+      // Cancel a delayed showAppFloating callback immediately.
+      _appFloatingPrepared = false;
+
+      // The popped live route and its overlay can both still be in Flutter's
+      // inactive element list. Let their Obx/StreamBuilder widgets unsubscribe
+      // before closing the old room's Rx values and player controllers.
+      await SchedulerBinding.instance.endOfFrame;
+
+      if (hadOverlay && floatingManager.containsFloating(_floatTag)) {
+        floatingManager.disposeFloating(_floatTag);
+      }
+      await _releaseAppFloatingResources();
+      if (!isInPip.value) {
+        _videoController?.clearPipDanmaku();
+      }
+    }();
+    _floatingCleanup = cleanup;
+    try {
+      await cleanup;
+    } finally {
+      if (identical(_floatingCleanup, cleanup)) _floatingCleanup = null;
     }
   }
 
@@ -632,7 +678,7 @@ class PlayerManager {
     );
   }
 
-  Widget buildAudioOnlyUI(BuildContext context, LivePlayController livePlayController) {
+  Widget buildAudioOnlyUI(BuildContext context, LiveRoom? detail) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxWidth = constraints.maxWidth;
@@ -646,138 +692,133 @@ class PlayerManager {
         final gapMedium = compact ? 8.0 : 16.0;
         final gapSmall = compact ? 4.0 : 8.0;
 
-        return Obx(() {
-          final state = livePlayController.state.value;
-          final detail = state.room.detail;
-          final avatar = detail?.avatar ?? '';
-          final title = detail?.title ?? '';
-          final nick = detail?.nick ?? '';
+        final avatar = detail?.avatar ?? '';
+        final title = detail?.title ?? '';
+        final nick = detail?.nick ?? '';
 
-          return Container(
-            width: maxWidth,
-            height: maxHeight,
-            alignment: Alignment.center,
-            color: Colors.transparent,
-            child: SingleChildScrollView(
-              physics: compact ? const ClampingScrollPhysics() : const NeverScrollableScrollPhysics(),
-              padding: EdgeInsets.symmetric(horizontal: compact ? 16 : 24, vertical: compact ? 4 : 24),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: compact ? maxWidth : 460),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0.95, end: 1.05),
-                      duration: const Duration(milliseconds: 1500),
-                      curve: Curves.easeInOut,
-                      builder: (context, scale, child) {
-                        return Transform.scale(scale: scale, child: child);
-                      },
-                      child: Container(
-                        width: avatarSize,
-                        height: avatarSize,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.5),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.white.withValues(alpha: 0.04),
-                              blurRadius: compact ? 10 : 20,
-                              spreadRadius: compact ? 4 : 8,
-                            ),
-                          ],
-                        ),
-                        child: ClipOval(
-                          child: avatar.isNotEmpty
-                              ? Image.network(
-                                  avatar,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      const Icon(Remix.user_3_line, color: Colors.white24),
-                                )
-                              : const Icon(Remix.user_3_line, color: Colors.white24),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: gapLarge),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 24),
-                      child: Text(
-                        title,
-                        textAlign: TextAlign.center,
-                        maxLines: compact ? 1 : 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: titleSize,
-                          fontWeight: FontWeight.w700,
-                          height: 1.25,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: gapSmall),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 14, vertical: compact ? 2 : 5),
+        return Container(
+          width: maxWidth,
+          height: maxHeight,
+          alignment: Alignment.center,
+          color: Colors.transparent,
+          child: SingleChildScrollView(
+            physics: compact ? const ClampingScrollPhysics() : const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.symmetric(horizontal: compact ? 16 : 24, vertical: compact ? 4 : 24),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: compact ? maxWidth : 460),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.95, end: 1.05),
+                    duration: const Duration(milliseconds: 1500),
+                    curve: Curves.easeInOut,
+                    builder: (context, scale, child) {
+                      return Transform.scale(scale: scale, child: child);
+                    },
+                    child: Container(
+                      width: avatarSize,
+                      height: avatarSize,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-                      ),
-                      child: Text(
-                        nick,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.75),
-                          fontSize: nickSize,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: gapMedium),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 16, vertical: compact ? 5 : 8),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(30),
-                        color: Colors.white.withValues(alpha: 0.08),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Remix.headphone_line,
-                            color: Colors.white.withValues(alpha: 0.85),
-                            size: compact ? 12 : 16,
-                          ),
-                          SizedBox(width: compact ? 4 : 8),
-                          Text(
-                            i18n("audio_only_mode"),
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: badgeTextSize,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.2,
-                            ),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.white.withValues(alpha: 0.04),
+                            blurRadius: compact ? 10 : 20,
+                            spreadRadius: compact ? 4 : 8,
                           ),
                         ],
                       ),
+                      child: ClipOval(
+                        child: avatar.isNotEmpty
+                            ? Image.network(
+                                avatar,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const Icon(Remix.user_3_line, color: Colors.white24),
+                              )
+                            : const Icon(Remix.user_3_line, color: Colors.white24),
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                  SizedBox(height: gapLarge),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 24),
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      maxLines: compact ? 1 : 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: titleSize,
+                        fontWeight: FontWeight.w700,
+                        height: 1.25,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: gapSmall),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 14, vertical: compact ? 2 : 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                    ),
+                    child: Text(
+                      nick,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.75),
+                        fontSize: nickSize,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: gapMedium),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 16, vertical: compact ? 5 : 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(30),
+                      color: Colors.white.withValues(alpha: 0.08),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Remix.headphone_line,
+                          color: Colors.white.withValues(alpha: 0.85),
+                          size: compact ? 12 : 16,
+                        ),
+                        SizedBox(width: compact ? 4 : 8),
+                        Text(
+                          i18n("audio_only_mode"),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: badgeTextSize,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-          );
-        });
+          ),
+        );
       },
     );
   }
 
-  Widget getVideoWidget(int fitIndex, {Widget? controls, required List<BoxFit> fitList}) {
-    final LivePlayController livePlayController = Get.find<LivePlayController>();
+  Widget getVideoWidget(int fitIndex, {Widget? controls, required List<BoxFit> fitList, bool trackPipSource = false}) {
     return RepaintBoundary(
-      key: _pipSourceKey,
+      key: trackPipSource ? _pipSourceKey : null,
       child: PureLivePipWidget(
         child: Container(
           color: Colors.black,
@@ -805,8 +846,8 @@ class PlayerManager {
                   height: double.infinity,
                   child: Stack(
                     children: [
-                      if (livePlayController.state.value.player.isCurrentRoomAudioOnly)
-                        buildAudioOnlyUI(context, livePlayController)
+                      if (_runtimeAudioOnly)
+                        buildAudioOnlyUI(context, currentFloatRoom)
                       else
                         Positioned.fill(
                           child: Container(
@@ -1026,7 +1067,7 @@ class PlayerManager {
     _sessionId++;
     _isClosing = true;
     _hideTimer?.cancel();
-    closeAppFloating();
+    await closeAppFloating();
     await _pipSubscription?.cancel();
     await _pipStateSubscription?.cancel();
     await _clearSubscriptions();

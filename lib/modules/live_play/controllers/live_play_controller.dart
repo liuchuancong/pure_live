@@ -618,12 +618,12 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
     _floatingResourcesReleased = false;
   }
 
-  void disposeAppFloatingResources() {
+  Future<void> disposeAppFloatingResources() async {
     if (_floatingResourcesReleased) return;
     _floatingResourcesReleased = true;
 
     final videoController = state.value.player.videoController;
-    unawaited(_disposeAppFloatingResourcesAsync(videoController));
+    await _disposeAppFloatingResourcesAsync(videoController);
   }
 
   Future<void> _disposeAppFloatingResourcesAsync(VideoController? videoController) async {
@@ -665,7 +665,7 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
 
     final keepForAppFloating = GlobalPlayerService.instance.playerManager.shouldKeepDanmakuForAppFloating;
     if (!keepForAppFloating) {
-      disposeAppFloatingResources();
+      unawaited(disposeAppFloatingResources());
       _releaseChildControllers();
       _closeReactiveState();
     }
