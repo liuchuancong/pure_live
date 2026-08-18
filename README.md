@@ -31,8 +31,8 @@
 
 > 纯粹直播（Pure Live）是一款开源的第三方多平台直播聚合播放器，使用 Flutter 构建，支持 Android、Android TV、Windows、Linux、macOS 和 iOS 等平台。
 
-- **最新稳定版**：`v2.1.0`
-- **当前开发版本**：`2.1.1+49`
+- **最新稳定版**：`v2.1.4`
+- **当前开发版本**：`2.1.1+52`
 - **构建平台**：Android arm64、Windows x64、Linux x64、macOS Universal、iOS arm64 设备包
 
 ![Pure Live 界面预览](assets/images/banner.png)
