@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/widgets/download_apk_dialog.dart';
 
@@ -11,13 +12,13 @@ Future<bool> requestStorageInstallPermission() async {
 }
 
 final List<String> mirrors = [
-  'https://gh.llkk.cc/',
-  'https://mirror.ghproxy.com/',
-  'https://ghproxy.net/',
+  'https://gh-proxy.org/',
+  'https://gh.h233.eu.org/',
+  'https://git.yylx.win/',
   'https://ghproxy.cc/',
-  'https://ghfast.top/',
+  'https://cdn.gh-proxy.org/',
   'https://wget.la/',
-  'https://gh-proxy.com/',
+  'https://github.ednovas.xyz/',
   'https://down.npee.cn/?',
   'https://slink.ltd/',
   'https://gitproxy.click/',
