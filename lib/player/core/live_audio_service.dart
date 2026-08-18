@@ -5,6 +5,7 @@ import 'package:audio_service/audio_service.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/core/live_audio_handler.dart';
 import 'package:pure_live/player/core/background_playback_service.dart';
+import 'package:pure_live/player/core/background_playback_policy.dart';
 import 'package:pure_live/player/interface/unified_player_interface.dart';
 import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 
@@ -15,8 +16,11 @@ class LiveAudioService {
 
   static bool get isSleepSessionActive => BackgroundPlaybackService.sleepSessionActive;
 
-  static bool get shouldContinueInBackground =>
-      SettingsService.to.app.enableBackgroundPlay.v || BackgroundPlaybackService.sleepSessionActive;
+  static bool get shouldContinueInBackground => BackgroundPlaybackPolicy.shouldContinue(
+    backgroundPlaybackEnabled: SettingsService.to.app.enableBackgroundPlay.v,
+    sleepSessionActive: BackgroundPlaybackService.sleepSessionActive,
+    audioOnlySessionActive: BackgroundPlaybackService.audioOnlySessionActive,
+  );
 
   static Future<LiveAudioHandler?> _ensureInitialized() async {
     if (_handler != null) return _handler;
@@ -48,11 +52,13 @@ class LiveAudioService {
     return _handler;
   }
 
-  static void setPlayer(UnifiedPlayer player) async {
+  static Future<void> setPlayer(UnifiedPlayer player, {required bool audioOnly}) async {
+    BackgroundPlaybackService.audioOnlySessionActive = audioOnly;
     if (PlatformUtils.isMobile || PlatformUtils.isMacOS) {
       final handler = await _ensureInitialized();
-      handler?.setPlayer(player);
+      await handler?.setPlayer(player);
     }
+    await syncKeepAlive();
   }
 
   static Future<void> start(String roomId, String title, String author, String? cover) async {
@@ -82,6 +88,7 @@ class LiveAudioService {
 
   static Future<void> stop() async {
     BackgroundPlaybackService.sleepSessionActive = false;
+    BackgroundPlaybackService.audioOnlySessionActive = false;
     if (_handler == null) return;
     if (!PlatformUtils.isMobile && !PlatformUtils.isMacOS) return;
     await _handler!.stop();

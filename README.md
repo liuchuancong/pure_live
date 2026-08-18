@@ -34,7 +34,7 @@
 > 本维护分支持续同步 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)，并维护本机优先构建、正式签名、接口探测、Windows 数据迁移及高刷新率优化。
 
 - **最新稳定版**：[v2.1.5](https://github.com/wzgrx/pure_live/releases/tag/v2.1.5)
-- **当前开发版本**：`2.1.5+53`
+- **当前开发版本**：`2.1.6+54`
 - **上游同步基线**：`liuchuancong/pure_live@18e2afaf`（2026-08-18）
 - **构建平台**：Android arm64、Windows x64、Linux x64、macOS Universal、iOS arm64 设备包
 
@@ -85,6 +85,7 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 | [高刷新率与性能验证](docs/PERFORMANCE.md) | Android 120 Hz 适配、渲染优化和真机帧统计 |
 | [WebDAV 配置](docs/WEBDAV.md) | 通用配置字段、坚果云示例和故障排查 |
 | [v2.1.5 阶段更新](docs/STAGE_UPDATE_2_1_5.md) | 本地弹幕同步、列表阅读、模板状态和 Windows 平滑滚动 |
+| [v2.1.6 Android 播放修复](docs/STAGE_UPDATE_2_1_6.md) | 音频/视频切换灰白画面与后台音频生命周期 |
 | [参与贡献](CONTRIBUTING.md) | 分支、提交、测试和 Pull Request 要求 |
 | [安全策略](SECURITY.md) | 私密漏洞报告和签名材料管理 |
 | [版本说明](RELEASE_NOTES.md) | 当前版本变更与历史记录 |

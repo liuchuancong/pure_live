@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 class BackgroundPlaybackService {
   static const _channel = MethodChannel('pure_live/background_playback');
   static bool sleepSessionActive = false;
+  static bool audioOnlySessionActive = false;
 
   static Future<void> setKeepAlive(bool enabled) async {
     if (!Platform.isAndroid) return;

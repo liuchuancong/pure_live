@@ -165,7 +165,7 @@ class PlayerManager {
       _currentPlayer = await playerPool.getPlayer(engine, audioOnly: audioOnly);
       _runtimeAudioOnly = audioOnly;
       await _bindPlayerStreams(_currentPlayer!);
-      LiveAudioService.setPlayer(_currentPlayer!);
+      await LiveAudioService.setPlayer(_currentPlayer!, audioOnly: audioOnly);
       if (Platform.isAndroid) {
         floating = Floating();
         _pipSubscription?.cancel();
@@ -246,8 +246,8 @@ class PlayerManager {
       }
       if (!_isSessionValid(mySessionId)) return;
 
-      LiveAudioService.setPlayer(player);
-      LiveAudioService.start(room!.roomId!, room.nick ?? "", room.title ?? "", room.avatar);
+      await LiveAudioService.setPlayer(player, audioOnly: audioOnly);
+      await LiveAudioService.start(room!.roomId!, room.nick ?? "", room.title ?? "", room.avatar);
       videoKey.value = ValueKey("video_${DateTime.now().millisecondsSinceEpoch}");
       _stateSubject.add(PlayerState.ready);
     } on PlayerException catch (e) {
@@ -272,7 +272,7 @@ class PlayerManager {
 
   Future<void> replay() async {
     if (_currentUrl == null) return;
-    await play(_currentUrl!, _currentPlayUrls, _currentHeaders, room: currentFloatRoom);
+    await play(_currentUrl!, _currentPlayUrls, _currentHeaders, room: currentFloatRoom, audioOnly: _runtimeAudioOnly);
   }
 
   Future<void> _recreateForAudioMode(bool audioOnly) async {
@@ -287,7 +287,7 @@ class PlayerManager {
     _currentPlayer = newPlayer;
     _runtimeAudioOnly = audioOnly;
     await _bindPlayerStreams(newPlayer);
-    LiveAudioService.setPlayer(newPlayer);
+    await LiveAudioService.setPlayer(newPlayer, audioOnly: audioOnly);
     videoKey.value = ValueKey("video_${DateTime.now().millisecondsSinceEpoch}");
   }
 
@@ -306,7 +306,7 @@ class PlayerManager {
       if (isManual) _defaultEngine = engine;
       log('Switch engine to $engine', name: 'PlayerManager');
       await _bindPlayerStreams(newPlayer);
-      LiveAudioService.setPlayer(_currentPlayer!);
+      await LiveAudioService.setPlayer(_currentPlayer!, audioOnly: targetAudioOnly);
       if (oldPlayer != null && oldEngine != null) {
         await _safeDestroyPlayer(oldPlayer, oldEngine);
       }
@@ -866,6 +866,7 @@ class PlayerManager {
   }
 
   Future<void> hardDispose() async {
+    _sessionId++;
     lineManager.reset();
     await _clearSubscriptions();
     if (_runtimeEngine != null) {

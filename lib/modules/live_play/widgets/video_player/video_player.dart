@@ -47,8 +47,6 @@ class _VideoPlayerState extends State<VideoPlayer> with WidgetsBindingObserver {
           _isPausedByLifecycle = true;
           player.pause();
         }
-      } else {
-        player.resume();
       }
     } else if (state == AppLifecycleState.resumed) {
       if (_isPausedByLifecycle) {

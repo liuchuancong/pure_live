@@ -285,6 +285,7 @@ class VideoController with ChangeNotifier {
   }
 
   bool get supportWindowFull => Platform.isWindows || Platform.isLinux;
+  late final Future<void> initialization;
 
   // 暴露 livePlayController 的 getter
   LivePlayController get livePlayController => _livePlayController;
@@ -338,7 +339,8 @@ class VideoController with ChangeNotifier {
 
     _playerManager.attachVideoController(this);
 
-    unawaited(initVideoController());
+    initialization = initVideoController();
+    unawaited(initialization);
     initBattery();
   }
 

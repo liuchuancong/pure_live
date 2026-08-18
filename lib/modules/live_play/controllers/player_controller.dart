@@ -1,5 +1,6 @@
 import 'dart:developer' as developer;
 
+import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/site/huya_site.dart';
 import 'package:pure_live/core/site/bilibili_site.dart';
@@ -10,11 +11,15 @@ import 'package:pure_live/modules/live_play/states/live_play_state.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
+import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 
 class PlayerController extends GetxController {
-  PlayerController(this._main);
+  PlayerController(this._main) {
+    _audioModeTransitions = LatestAsyncValueQueue<bool>(_applyCurrentRoomAudioOnly);
+  }
 
   final LivePlayController _main;
+  late final LatestAsyncValueQueue<bool> _audioModeTransitions;
   late Site currentSite;
 
   LivePlayState get _state => _main.state.value;
@@ -48,9 +53,9 @@ class PlayerController extends GetxController {
     return headers;
   }
 
-  Future<void> setPlayer({required String roomId}) async {
+  Future<VideoController?> setPlayer({required String roomId}) async {
     final room = currentRoom;
-    if (room == null) return;
+    if (room == null) return null;
 
     final headers = await getHeaders();
     final playerState = _state.player;
@@ -71,6 +76,7 @@ class PlayerController extends GetxController {
     );
 
     _main.updatePlayer(videoController: videoController);
+    return videoController;
   }
 
   Future<void> getPlayQualites() async {
@@ -154,18 +160,36 @@ class PlayerController extends GetxController {
   }
 
   Future<void> changeCurrentRoomAudioOnly(bool value) async {
-    if (_state.player.isCurrentRoomAudioOnly == value) return;
-    await GlobalPlayerService.instance.playerManager.hardDispose();
-    await destroyPlayer();
-    _main.updatePlayer(isCurrentRoomAudioOnly: value);
+    await _audioModeTransitions.submit(value);
+  }
 
-    final room = currentRoom;
-    if (room != null && _state.player.playUrls.isNotEmpty) {
-      await setPlayer(roomId: room.roomId!);
-      _main.updateRoom(success: true);
-      return;
+  Future<void> _applyCurrentRoomAudioOnly(bool value) async {
+    if (_state.player.isCurrentRoomAudioOnly == value) return;
+
+    // Remove the widget first so Flutter detaches the old native video surface
+    // before media_kit disposes it. The old order disposed MediaCodec while its
+    // widget was still building and could leave a release-mode grey ErrorWidget.
+    _main.updateRoom(isLoading: true, success: false);
+    final oldController = _state.player.videoController;
+    _main.updatePlayer(videoController: null);
+    await oldController?.destory();
+    await SchedulerBinding.instance.endOfFrame;
+
+    try {
+      await GlobalPlayerService.instance.playerManager.hardDispose();
+      _main.updatePlayer(isCurrentRoomAudioOnly: value);
+
+      final room = currentRoom;
+      if (room != null && _state.player.playUrls.isNotEmpty) {
+        final controller = await setPlayer(roomId: room.roomId!);
+        _main.updateRoom(success: true, isLoading: false);
+        await controller?.initialization;
+        return;
+      }
+      await _main.onInitPlayerState();
+    } finally {
+      _main.updateRoom(isLoading: false);
     }
-    await _main.onInitPlayerState();
   }
 
   Future<void> destroyPlayer() async {

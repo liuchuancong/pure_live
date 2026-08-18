@@ -12,6 +12,7 @@
 - [上游问题审计（2026-08-16）](ISSUE_AUDIT_2026_08_16.md)：本轮问题对应根因、代码落点和验证状态。
 - [v2.1.0 阶段更新](STAGE_UPDATE_2_1_0.md)：上游同步、Twitch、SOOP Live、依赖迁移、全平台构建矩阵与验收范围。
 - [v2.1.5 阶段更新](STAGE_UPDATE_2_1_5.md)：本地弹幕同步、列表阅读、模板状态和 Windows 平滑滚动。
+- [v2.1.6 Android 播放修复](STAGE_UPDATE_2_1_6.md)：音频/视频切换灰白画面与后台音频生命周期。
 - [参与贡献](../CONTRIBUTING.md)：分支、提交、测试和 Pull Request 约定。
 - [版本说明](../RELEASE_NOTES.md)：当前开发版本变更。
 - [安全策略](../SECURITY.md)：漏洞报告、凭据和签名材料管理。
