@@ -1,11 +1,12 @@
 import 'dart:io';
 
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 import 'package:audio_service/audio_service.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/core/live_audio_handler.dart';
-import 'package:pure_live/player/interface/unified_player_interface.dart';
 import 'package:pure_live/player/core/background_playback_service.dart';
+import 'package:pure_live/player/interface/unified_player_interface.dart';
+import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 
 class LiveAudioService {
   static LiveAudioHandler? _handler;
@@ -48,11 +49,14 @@ class LiveAudioService {
   }
 
   static void setPlayer(UnifiedPlayer player) async {
-    final handler = await _ensureInitialized();
-    handler?.setPlayer(player);
+    if (PlatformUtils.isMobile || PlatformUtils.isMacOS) {
+      final handler = await _ensureInitialized();
+      handler?.setPlayer(player);
+    }
   }
 
   static Future<void> start(String roomId, String title, String author, String? cover) async {
+    if (!PlatformUtils.isMobile && !PlatformUtils.isMacOS) return;
     final handler = await _ensureInitialized();
     if (handler == null) return;
 
@@ -79,6 +83,7 @@ class LiveAudioService {
   static Future<void> stop() async {
     BackgroundPlaybackService.sleepSessionActive = false;
     if (_handler == null) return;
+    if (!PlatformUtils.isMobile && !PlatformUtils.isMacOS) return;
     await _handler!.stop();
   }
 
