@@ -298,16 +298,36 @@ jobs:
 
           $absolutePath = $env:FINAL_CERT_PATH -replace '\\', '/'
 
+          if ([string]::IsNullOrEmpty($absolutePath)) {
+            Write-Error "FINAL_CERT_PATH is empty!"
+            exit 1
+          }
+
           $content = Get-Content $configPath -Raw
 
-          $content = $content -replace `
-            'certificate_path:\s*.*',
-            "certificate_path: $absolutePath"
+          # 设置 certificate_path
+          if ($content -match 'certificate_path:\s*.*') {
+            $content = $content -replace `
+              'certificate_path:\s*.*',
+              "certificate_path: $absolutePath"
+          }
+          else {
+            $content += "`r`ncertificate_path: $absolutePath`r`n"
+          }
 
-          Set-Content $configPath $content
+          # 删除 certificate_password
+          $content = $content -replace `
+            '(?m)^\s*certificate_password:\s*.*\r?\n?', ''
+
+          Set-Content `
+            -Path $configPath `
+            -Value $content `
+            -Encoding UTF8
 
           Write-Host "MSIX certificate path configured:"
           Write-Host $absolutePath
+
+          Write-Host "MSIX certificate password is not configured."
 
       # -----------------------------------------------------
       # Flutter
