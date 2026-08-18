@@ -13,25 +13,25 @@ on:
         description: Build Windows EXE and MSIX
         required: true
         type: boolean
-        default: false
+        default: true
 
       build_linux:
         description: Build Linux x64 portable archive
         required: true
         type: boolean
-        default: false
+        default: true
 
       build_macos:
         description: Build macOS universal application archive
         required: true
         type: boolean
-        default: false
+        default: true
 
       build_ios:
         description: Build unsigned iOS device application archive
         required: true
         type: boolean
-        default: false
+        default: true
 
       run_quality:
         description: Run analyze, tests and public interface probes first
@@ -43,12 +43,13 @@ on:
         description: Create a GitHub Release and update releases.json
         required: true
         type: boolean
-        default: false
+        default: true
 
       release_tag:
         description: Release tag (e.g. v1.0.0) – required if create_release is true
-        required: false
+        required: true
         type: string
+        default: 'v2.1.1'
 
   push:
     tags:
