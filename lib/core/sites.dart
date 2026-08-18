@@ -3,6 +3,7 @@ import 'site/soop_site.dart';
 import 'site/douyu_site.dart';
 import 'site/douyin_site.dart';
 import 'interface/live_site.dart';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/site/cc_site.dart';
 import 'package:pure_live/core/site/iptv_site.dart';
@@ -21,6 +22,19 @@ class Sites {
   static const String iptvSite = "iptv";
   static const String twitchSite = "twitch";
   static const String soopSite = 'soop';
+  static const Set<String> supportedSiteIds = {
+    bilibiliSite,
+    douyuSite,
+    huyaSite,
+    douyinSite,
+    kuaishouSite,
+    ccSite,
+    twitchSite,
+    soopSite,
+    iptvSite,
+  };
+
+  static bool isSupported(String id) => supportedSiteIds.contains(id.trim().toLowerCase());
 
   static List<Site> get supportSites => [
     Site(id: bilibiliSite, name: i18n("site_bilibili"), logo: "assets/images/bilibili_2.png", liveSite: BiliBiliSite()),
@@ -40,10 +54,10 @@ class Sites {
 
   List<Site> availableSites({bool containsAll = false}) {
     final List<String> savedIds = SettingsService.to.fav.hotAreasList.v;
-
-    List<Site> result = [];
+    final supportedById = {for (final site in supportSites) site.id: site};
+    final List<Site> result = [];
     for (String id in savedIds) {
-      final match = supportSites.firstWhereOrNull((element) => element.id == id);
+      final match = supportedById[id];
       if (match != null) {
         result.add(match);
       }

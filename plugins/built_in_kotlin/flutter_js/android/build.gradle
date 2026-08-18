@@ -1,0 +1,57 @@
+group 'io.abner.flutter_js'
+version '1.0-SNAPSHOT'
+
+rootProject.allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+}
+
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 34
+
+    namespace "io.abner.flutter_js"
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // //quickjs C build disabled for now - crashing with SEGV_MAPERR on ARM based devices
+    // externalNativeBuild {
+    //   // Encapsulates your CMake build configurations.
+    //   cmake {
+    //       // Provides a relative path to your CMake build script.
+    //       path "CMakeLists.txt"
+    //   }
+    // }
+
+
+    sourceSets {
+        main.jniLibs.srcDirs = ['jniLibs']
+    }
+    defaultConfig {
+        minSdkVersion 21
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+        }
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+    lintOptions {
+        disable 'InvalidPackage'
+    }
+}
+
+dependencies {
+    // implementation using platform-channel with oasis jsbridge
+    // implementation 'com.github.p7s1digital.oasis-jsbridge-android:oasis-jsbridge-quickjs:0.12.0'
+    // compile group: 'org.nanohttpd', name: 'nanohttpd', version: '2.3.0'
+
+    // for serve library from jitpack repository
+    implementation "com.github.fast-development.android-js-runtimes:fastdev-jsruntimes-quickjs:0.3.6"
+    // implementation "com.github.fast-development.android-js-runtimes:fastdev-jsruntimes-jsc:0.1.3"
+}

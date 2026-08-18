@@ -5,7 +5,6 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:pure_live/plugins/archethic.dart';
 import 'package:win32_registry/win32_registry.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -17,7 +16,8 @@ class FirebaseManager {
   static const String customScheme = 'purelive';
   static String? currentUserRole;
   static Set<String> managementRoles = {};
-  static const String middlePageUrl = 'https://pure-live-26c7f.web.app/auth_callback.html';
+  static const String middlePageUrl =
+      'https://pure-live-26c7f.web.app/auth_callback.html';
   static Map<String, List<String>> roleVisibilityMap = {};
   static Map<String, int> roleWeights = {};
 
@@ -35,11 +35,19 @@ class FirebaseManager {
   FirebaseAuth get auth => FirebaseAuth.instance;
 
   Future<void> initial() async {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-    registerWindowsCustomScheme(customScheme, description: 'PureLive Authentication Callback');
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    registerWindowsCustomScheme(
+      customScheme,
+      description: 'PureLive Authentication Callback',
+    );
   }
 
-  Future<void> registerWindowsCustomScheme(String scheme, {String? description}) async {
+  Future<void> registerWindowsCustomScheme(
+    String scheme, {
+    String? description,
+  }) async {
     if (!Platform.isWindows || scheme.trim().isEmpty) {
       return;
     }
@@ -57,11 +65,15 @@ class FirebaseManager {
       commandKey = CURRENT_USER.create(commandPath);
 
       final currentCommandValue = commandKey.getValue('');
-      if (currentCommandValue is StringValue && currentCommandValue.value == command) {
+      if (currentCommandValue is StringValue &&
+          currentCommandValue.value == command) {
         return;
       }
 
-      schemeKey.setValue('', RegistryValue.string(description ?? 'URL:$scheme Protocol'));
+      schemeKey.setValue(
+        '',
+        RegistryValue.string(description ?? 'URL:$scheme Protocol'),
+      );
       schemeKey.setValue('URL Protocol', const RegistryValue.string(''));
       commandKey.setValue('', RegistryValue.string(command));
 
@@ -108,7 +120,10 @@ class FirebaseManager {
         canUploadConfig = data?['canUpload'] != false;
       }
 
-      final permDoc = await firestore.collection('permissions').doc(user.uid).get();
+      final permDoc = await firestore
+          .collection('permissions')
+          .doc(user.uid)
+          .get();
       if (permDoc.exists) {
         final permData = permDoc.data();
         currentUserRole = permData?['role'] as String?;
@@ -126,7 +141,9 @@ class FirebaseManager {
         final roleData = roleDoc.data();
         final String roleId = roleDoc.id;
 
-        roleVisibilityMap[roleId] = List<String>.from(roleData['canSeeRoles'] ?? []);
+        roleVisibilityMap[roleId] = List<String>.from(
+          roleData['canSeeRoles'] ?? [],
+        );
         roleWeights[roleId] = roleData['weight'] ?? 2;
         if (roleData['isManagement'] == true) {
           managementRoles.add(roleId);
@@ -137,10 +154,10 @@ class FirebaseManager {
 
       return canUploadConfig;
     } catch (e) {
-      debugPrint('[FirebaseManager] 从 users 集合读取权限异常(已默认放行): $e');
-      canUploadConfig = true;
+      debugPrint('[FirebaseManager] 从 users 集合读取权限异常（停止上传）: $e');
+      canUploadConfig = false;
       currentUserRole = null;
-      return true;
+      return false;
     }
   }
 
@@ -165,12 +182,14 @@ class FirebaseManager {
 
     final userId = secureUser.uid;
     final BackupController backup = Get.find<BackupController>();
-    final encryptData = ArchethicUtils().encrypt(jsonEncode(backup.exportAllSettings()));
-    final formattedTime = DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+    final backupData = jsonEncode(backup.exportAllSettings());
+    final formattedTime = DateFormat(
+      'yyyy-MM-dd HH:mm:ss',
+    ).format(DateTime.now());
 
     try {
       await firestore.collection('users').doc(userId).set({
-        'config': encryptData,
+        'config': backupData,
         'email': secureUser.email ?? '',
         'version': VersionUtil.version,
         'update_at': formattedTime,
@@ -191,7 +210,8 @@ class FirebaseManager {
       return;
     }
 
-    final FavoriteController favoriteController = Get.find<FavoriteController>();
+    final FavoriteController favoriteController =
+        Get.find<FavoriteController>();
     final BackupController backup = Get.find<BackupController>();
 
     await loadUploadConfig();
@@ -201,7 +221,10 @@ class FirebaseManager {
       return;
     }
     try {
-      final document = await firestore.collection('users').doc(secureUser.uid).get();
+      final document = await firestore
+          .collection('users')
+          .doc(secureUser.uid)
+          .get();
 
       if (!document.exists) {
         ToastUtil.show(i18n('no_data'));
@@ -209,9 +232,10 @@ class FirebaseManager {
       }
 
       final data = document.data()!;
-      final jsonString = data['config'];
-      final jsonData = ArchethicUtils().decrypti(jsonString);
-      final back = jsonDecode(jsonData) as Map<String, dynamic>;
+      final storedConfig = data['config'];
+      final back = storedConfig is String
+          ? Map<String, dynamic>.from(jsonDecode(storedConfig) as Map)
+          : Map<String, dynamic>.from(storedConfig as Map);
       backup.importAllSettings(back);
       favoriteController.refreshData();
       ToastUtil.show(i18n('download_success'));
@@ -222,7 +246,10 @@ class FirebaseManager {
   }
 
   Future<void> grantUploadPermission(String uid) async {
-    await firestore.collection('permissions').doc(uid).set({'canUpload': true, 'role': 'user'});
+    await firestore.collection('permissions').doc(uid).set({
+      'canUpload': true,
+      'role': 'user',
+    });
   }
 
   Future<void> revokeUploadPermission(String uid) async {
@@ -254,7 +281,9 @@ class FirebaseManager {
       if (accessToken != null && accessToken.isNotEmpty) {
         final githubCredential = GithubAuthProvider.credential(accessToken);
         await auth.signInWithCredential(githubCredential);
-        developer.log('Successfully signed in with GitHub token cross-instance.');
+        developer.log(
+          'Successfully signed in with GitHub token cross-instance.',
+        );
       }
     } catch (e) {
       developer.log('Error handling GitHub credential cross-instance: $e');
@@ -264,9 +293,13 @@ class FirebaseManager {
   Future<void> handleIdToken(String idToken) async {
     try {
       if (idToken.isNotEmpty) {
-        final customCredential = OAuthProvider('github.com').credential(idToken: idToken);
+        final customCredential = OAuthProvider(
+          'github.com',
+        ).credential(idToken: idToken);
         await auth.signInWithCredential(customCredential);
-        developer.log('Successfully signed in with OAuth ID Token cross-instance.');
+        developer.log(
+          'Successfully signed in with OAuth ID Token cross-instance.',
+        );
       }
     } catch (e) {
       developer.log('Error handling Custom ID Token cross-instance: $e');

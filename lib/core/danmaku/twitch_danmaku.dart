@@ -1,7 +1,8 @@
 import 'dart:math';
 import 'dart:convert';
+
+import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/common/core_log.dart';
-import 'package:pure_live/common/models/live_message.dart';
 import 'package:pure_live/core/common/web_socket_util.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 
@@ -38,9 +39,7 @@ class TwitchDanmaku implements LiveDanmaku {
 
   @override
   void heartbeat() {
-    // 发送心跳包
-    var data = utf8.encode("PONG :tmi.twitch.tv");
-    webScoketUtils?.sendMessage(data);
+    webScoketUtils?.sendMessage("PING :tmi.twitch.tv");
   }
 
   @override
@@ -49,12 +48,12 @@ class TwitchDanmaku implements LiveDanmaku {
       url: serverUrl,
       heartBeatTime: heartbeatTime,
       onMessage: (e) {
-        decodeMessage(e);
+        decodeMessage(e is String ? e : utf8.decode(e as List<int>, allowMalformed: true));
       },
       onReady: () {
-        onReady?.call();
         markConnected();
-        joinRoom(args);
+        joinRoom(args.toString());
+        onReady?.call();
       },
       onHeartBeat: () {
         heartbeat();
@@ -68,55 +67,106 @@ class TwitchDanmaku implements LiveDanmaku {
         onClose?.call("服务器连接失败$e");
       },
     );
-    webScoketUtils?.connect();
+    await webScoketUtils?.connect();
   }
 
   void joinRoom(String roomId) {
-    var user = "justinfan${1000 + Random().nextInt(99999 - 1000 + 1)}";
+    final cookie = SettingsService.to.cookieManager.twitchCookie.v;
+    final cookieValues = _parseCookie(cookie);
+    final token = cookieValues['auth-token']?.trim() ?? '';
+    final login = cookieValues['login']?.trim().toLowerCase() ?? '';
+    final authenticated = token.isNotEmpty && login.isNotEmpty;
+    final user = authenticated ? login : "justinfan${1000 + Random.secure().nextInt(99000)}";
     webScoketUtils
-      ?..sendMessage("CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership")
-      ..sendMessage("PASS SCHMOOPIIE")
+      ?..sendMessage(authenticated ? "PASS oauth:$token" : "PASS SCHMOOPIIE")
       ..sendMessage("NICK $user")
-      ..sendMessage("USER $user 8 * :$user")
-      ..sendMessage("JOIN #$roomId");
+      ..sendMessage("CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership")
+      ..sendMessage("JOIN #${roomId.trim().toLowerCase()}");
+  }
+
+  static Map<String, String> _parseCookie(String cookie) {
+    final result = <String, String>{};
+    for (final part in cookie.split(';')) {
+      final separator = part.indexOf('=');
+      if (separator <= 0) continue;
+      result[part.substring(0, separator).trim()] = part.substring(separator + 1).trim();
+    }
+    return result;
   }
 
   @override
   Future stop() async {
     onMessage = null;
     onClose = null;
-    webScoketUtils?.close();
+    await webScoketUtils?.close();
+    webScoketUtils = null;
+    markDisconnected();
   }
 
   void decodeMessage(String data) {
     try {
-      var message = data;
-
-      if (message.startsWith("PING")) {
+      if (data.startsWith("PING")) {
         // respond to PING according to https://dev.twitch.tv/docs/irc/#keepalive-messages
-        webScoketUtils?.sendMessage(message.replaceFirst("PING", "PONG"));
+        webScoketUtils?.sendMessage(data.replaceFirst("PING", "PONG").trim());
       }
-
-      if (!message.contains("PRIVMSG")) {}
-
-      final lines = message.split('\n');
-      for (final d in lines) {
-        final contentMatch = RegExp(r"PRIVMSG [^:]+:(.+)").firstMatch(d);
-        final nameMatch = RegExp(r"display-name=([^;]+);").firstMatch(d);
-        final colorMatch = RegExp(r"color=#([a-zA-Z0-9]{6});").firstMatch(d);
-
-        if (contentMatch != null && nameMatch != null && colorMatch != null) {
-          final liveMsg = LiveMessage(
-            type: LiveMessageType.chat,
-            message: contentMatch.group(1) ?? "",
-            userName: nameMatch.group(1) ?? "",
-            color: LiveMessageColor.numberToColor(int.parse(colorMatch.group(1) ?? "FFFFFF", radix: 16)),
-          );
-          onMessage?.call(liveMsg);
-        }
+      for (final message in parseMessages(data)) {
+        onMessage?.call(message);
       }
     } catch (e) {
       CoreLog.error(e);
     }
   }
+
+  /// Parses complete Twitch IRC frames. Kept separate from socket delivery so
+  /// reconnect, empty-color and escaped display-name cases stay testable.
+  List<LiveMessage> parseMessages(String data) {
+    final messages = <LiveMessage>[];
+    for (final rawLine in data.split(RegExp(r'\r?\n'))) {
+      final line = rawLine.trim();
+      if (!line.contains(' PRIVMSG ')) continue;
+
+      final tags = <String, String>{};
+      if (line.startsWith('@')) {
+        final tagEnd = line.indexOf(' ');
+        if (tagEnd > 1) {
+          for (final entry in line.substring(1, tagEnd).split(';')) {
+            final separator = entry.indexOf('=');
+            if (separator < 0) continue;
+            tags[entry.substring(0, separator)] = _decodeTag(entry.substring(separator + 1));
+          }
+        }
+      }
+
+      final messageStart = line.indexOf(' :', line.indexOf(' PRIVMSG '));
+      if (messageStart < 0) continue;
+      final content = line.substring(messageStart + 2);
+      final prefixMatch = RegExp(r' :?([^! ]+)!').firstMatch(line);
+      final userName = (tags['display-name']?.trim().isNotEmpty ?? false)
+          ? tags['display-name']!.trim()
+          : (prefixMatch?.group(1) ?? 'Twitch');
+      final colorText = (tags['color'] ?? '').replaceFirst('#', '');
+      final colorValue = int.tryParse(colorText, radix: 16) ?? 0xFFFFFF;
+      final timestamp = int.tryParse(tags['tmi-sent-ts'] ?? '');
+
+      messages.add(
+        LiveMessage(
+          type: LiveMessageType.chat,
+          message: content,
+          userName: userName,
+          userId: tags['user-id'] ?? '',
+          messageId: tags['id'] ?? '',
+          sentAt: timestamp == null ? null : DateTime.fromMillisecondsSinceEpoch(timestamp),
+          color: LiveMessageColor.numberToColor(colorValue),
+        ),
+      );
+    }
+    return messages;
+  }
+
+  static String _decodeTag(String value) => value
+      .replaceAll(r'\s', ' ')
+      .replaceAll(r'\:', ';')
+      .replaceAll(r'\r', '\r')
+      .replaceAll(r'\n', '\n')
+      .replaceAll(r'\\', '\\');
 }

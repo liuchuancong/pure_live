@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:ui' as ui;
+
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -7,6 +8,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/widgets/danmaku_message_actions.dart';
 
 class DanmakuListView extends StatefulWidget {
   final LiveRoom room;
@@ -19,158 +21,143 @@ class DanmakuListView extends StatefulWidget {
 
 class DanmakuListViewState extends State<DanmakuListView> {
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _composerController = TextEditingController();
 
-  static const Duration throttleDuration = Duration(milliseconds: 120);
+  static const Duration throttleDuration = Duration(milliseconds: 80);
 
   bool userScrolling = false;
-
-  bool pendingScroll = false;
+  bool _autoScrollEnabled = true;
+  final ValueNotifier<int> _pendingMessageCount = ValueNotifier<int>(0);
+  int _lastControllerLength = 0;
+  LiveMessage? _lastControllerTail;
+  List<LiveMessage> _visibleMessages = const [];
+  List<LiveMessage>? _scheduledSnapshot;
 
   Timer? throttleTimer;
-
   Worker? fullscreenWorker;
   Worker? windowFullscreenWorker;
-
   StreamSubscription? messagesSub;
-  bool _autoScrollEnabled = true;
+
   LivePlayController get controller => Get.find<LivePlayController>();
 
   @override
   void initState() {
     super.initState();
+    _visibleMessages = List<LiveMessage>.from(controller.danmakuMessages);
+    _lastControllerLength = _visibleMessages.length;
+    _lastControllerTail = _visibleMessages.isEmpty ? null : _visibleMessages.last;
 
-    messagesSub = controller.state.listen((state) {
-      scheduleAutoScroll();
-    });
+    messagesSub = controller.danmakuMessages.listen((_) => _onMessagesChanged());
 
     fullscreenWorker = ever(GlobalPlayerState.to.isFullscreen, (value) {
-      if (value == false) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          forceScrollToBottom();
-        });
+      if (value == false && _autoScrollEnabled) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => forceScrollToBottom());
       }
     });
 
     windowFullscreenWorker = ever(GlobalPlayerState.to.isWindowFullscreen, (value) {
-      if (value == false) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          forceScrollToBottom();
-        });
+      if (value == false && _autoScrollEnabled) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => forceScrollToBottom());
       }
     });
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      forceScrollToBottom();
+    WidgetsBinding.instance.addPostFrameCallback((_) => forceScrollToBottom());
+  }
+
+  void _onMessagesChanged() {
+    if (!mounted) return;
+    final snapshot = List<LiveMessage>.from(controller.danmakuMessages);
+    final nextTail = snapshot.isEmpty ? null : snapshot.last;
+    final tailChanged = !identical(nextTail, _lastControllerTail);
+    final lengthDelta = snapshot.length - _lastControllerLength;
+    final addedCount = lengthDelta > 0 ? lengthDelta : (tailChanged ? 1 : 0);
+    _lastControllerLength = snapshot.length;
+    _lastControllerTail = nextTail;
+
+    if (!_autoScrollEnabled) {
+      if (addedCount > 0) {
+        _pendingMessageCount.value = (_pendingMessageCount.value + addedCount).clamp(0, 9999);
+      }
+      return;
+    }
+
+    _scheduledSnapshot = snapshot;
+    throttleTimer ??= Timer(throttleDuration, () {
+      throttleTimer = null;
+      if (!mounted || !_autoScrollEnabled) return;
+      final next = _scheduledSnapshot;
+      _scheduledSnapshot = null;
+      if (next != null) setState(() => _visibleMessages = next);
+      WidgetsBinding.instance.addPostFrameCallback((_) => forceScrollToBottom());
     });
   }
 
   @override
   void dispose() {
     messagesSub?.cancel();
-
     fullscreenWorker?.dispose();
     windowFullscreenWorker?.dispose();
-
     throttleTimer?.cancel();
-
+    _composerController.dispose();
+    _pendingMessageCount.dispose();
     _scrollController.dispose();
-
     super.dispose();
   }
 
   Future<void> forceScrollToBottom() async {
-    if (!mounted) return;
-
-    for (int i = 0; i < 3; i++) {
-      await SchedulerBinding.instance.endOfFrame;
-
-      if (!mounted) return;
-
-      if (!_scrollController.hasClients) {
-        continue;
-      }
-
-      final position = _scrollController.position;
-
-      if (!position.hasContentDimensions) {
-        continue;
-      }
-
-      final maxScroll = position.maxScrollExtent;
-
-      if (position.pixels != maxScroll) {
-        _scrollController.jumpTo(maxScroll);
-      }
+    if (!mounted || !_autoScrollEnabled) return;
+    await SchedulerBinding.instance.endOfFrame;
+    if (!mounted || !_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (!position.hasContentDimensions) return;
+    if ((position.pixels - position.minScrollExtent).abs() > 0.5) {
+      _scrollController.jumpTo(position.minScrollExtent);
     }
   }
 
-  void scheduleAutoScroll() {
-    if (!mounted) return;
+  void _pauseAutoScroll() {
     if (!_autoScrollEnabled) return;
-    if (!_scrollController.hasClients) return;
-    final position = _scrollController.position;
-    bool shouldAutoScroll = true;
-    if (position.hasContentDimensions) {
-      final distanceToBottom = position.maxScrollExtent - position.pixels;
-      shouldAutoScroll = distanceToBottom <= 120;
-    }
-    if (!shouldAutoScroll) {
-      return;
-    }
-    pendingScroll = true;
     throttleTimer?.cancel();
-    throttleTimer = Timer(throttleDuration, () async {
-      if (!mounted) return;
-      if (!pendingScroll) return;
-      await forceScrollToBottom();
-      pendingScroll = false;
+    throttleTimer = null;
+    _scheduledSnapshot = null;
+    setState(() {
+      _autoScrollEnabled = false;
+      userScrolling = true;
     });
+    _pendingMessageCount.value = 0;
+  }
+
+  Future<void> _resumeAutoScroll() async {
+    setState(() {
+      _visibleMessages = List<LiveMessage>.from(controller.danmakuMessages);
+      _autoScrollEnabled = true;
+      userScrolling = false;
+    });
+    _lastControllerLength = controller.danmakuMessages.length;
+    _pendingMessageCount.value = 0;
+    await forceScrollToBottom();
   }
 
   void onScrollNotification(ScrollNotification notification) {
-    if (notification is! UserScrollNotification) {
-      return;
-    }
-
-    if (!_scrollController.hasClients) {
-      return;
-    }
-
+    if (notification is! UserScrollNotification || !_scrollController.hasClients) return;
     final position = _scrollController.position;
-
-    final distanceToBottom = position.maxScrollExtent - position.pixels;
-
-    if (notification.direction == ScrollDirection.forward) {
-      if (distanceToBottom > 80) {
-        if (!userScrolling) {
-          setState(() {
-            userScrolling = true;
-            _autoScrollEnabled = false;
-          });
-        }
-      }
+    final distanceToBottom = position.pixels - position.minScrollExtent;
+    if (notification.direction != ScrollDirection.idle && distanceToBottom > 24) {
+      _pauseAutoScroll();
+    } else if (notification.direction == ScrollDirection.idle && distanceToBottom <= 12 && !_autoScrollEnabled) {
+      _resumeAutoScroll();
     }
+  }
 
-    if (notification.direction == ScrollDirection.reverse) {
-      if (distanceToBottom < 60) {
-        if (userScrolling) {
-          setState(() {
-            userScrolling = false;
-          });
-        }
-      }
-    }
-    if (notification.direction == ScrollDirection.reverse || notification.direction == ScrollDirection.idle) {
-      final distanceToBottom = position.maxScrollExtent - position.pixels;
-      if (distanceToBottom <= 20) {
-        if (!_autoScrollEnabled) {
-          setState(() {
-            _autoScrollEnabled = true;
-            userScrolling = false;
-          });
-        }
-      }
-    }
+  void _sendLocalMessage() {
+    final text = _composerController.text.trim();
+    final local = controller.localInteractionController;
+    if (!local.enabled.v || text.isEmpty) return;
+    controller.emitLocalMessage(
+      local.createChat(text, platform: controller.site),
+      showAsDanmaku: local.showAsDanmaku.v,
+    );
+    _composerController.clear();
   }
 
   @override
@@ -184,56 +171,93 @@ class DanmakuListViewState extends State<DanmakuListView> {
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4))],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: Stack(
+        borderRadius: BorderRadius.circular(10),
+        child: Column(
           children: [
-            NotificationListener<ScrollNotification>(
-              onNotification: (notification) {
-                onScrollNotification(notification);
-                return false;
-              },
-              child: Obx(() {
-                final list = controller.state.value.danmaku.messages;
-
-                return ListView.builder(
-                  addAutomaticKeepAlives: false,
-                  addRepaintBoundaries: true,
-                  controller: _scrollController,
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-                  scrollCacheExtent: const ScrollCacheExtent.pixels(800),
-                  itemCount: list.length,
-                  itemBuilder: (_, index) {
-                    final msg = list[index];
-
-                    return DanmakuItem(key: ValueKey("${msg.userName}-${msg.message}-$index"), danmaku: msg);
-                  },
-                );
-              }),
-            ),
-
-            if (userScrolling)
-              Positioned(
-                right: 12,
-                bottom: 12,
-                child: FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    backgroundColor: Get.theme.colorScheme.primary.withValues(alpha: 0.92),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            Expanded(
+              child: Stack(
+                children: [
+                  NotificationListener<ScrollNotification>(
+                    onNotification: (notification) {
+                      onScrollNotification(notification);
+                      return false;
+                    },
+                    child: ListView.builder(
+                      addAutomaticKeepAlives: false,
+                      addRepaintBoundaries: true,
+                      controller: _scrollController,
+                      reverse: true,
+                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+                      scrollCacheExtent: const ScrollCacheExtent.pixels(360),
+                      itemCount: _visibleMessages.length,
+                      itemBuilder: (_, index) {
+                        final msg = _visibleMessages[_visibleMessages.length - 1 - index];
+                        return DanmakuItem(key: ObjectKey(msg), danmaku: msg);
+                      },
+                    ),
                   ),
-                  icon: const Icon(Icons.arrow_downward_rounded, size: 18),
-                  label: Text(i18n("scroll_to_bottom"), style: const TextStyle(fontWeight: FontWeight.w600)),
-                  onPressed: () async {
-                    setState(() {
-                      userScrolling = false;
-                      _autoScrollEnabled = true;
-                    });
-
-                    await forceScrollToBottom();
-                  },
-                ),
+                  if (userScrolling)
+                    Positioned(
+                      right: 12,
+                      bottom: 12,
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          backgroundColor: Get.theme.colorScheme.primary.withValues(alpha: 0.92),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        icon: const Icon(Icons.arrow_downward_rounded, size: 18),
+                        label: ValueListenableBuilder<int>(
+                          valueListenable: _pendingMessageCount,
+                          builder: (context, count, _) => Text(
+                            count > 0
+                                ? i18n('danmaku_new_messages', args: {'count': '$count'})
+                                : i18n('scroll_to_bottom'),
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        onPressed: _resumeAutoScroll,
+                      ),
+                    ),
+                ],
               ),
+            ),
+            Obx(() {
+              if (!controller.localInteractionController.enabled.v) return const SizedBox.shrink();
+              return Material(
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
+                child: SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _composerController,
+                            textInputAction: TextInputAction.send,
+                            onSubmitted: (_) => _sendLocalMessage(),
+                            decoration: InputDecoration(
+                              isDense: true,
+                              hintText: i18n('local_message_hint'),
+                              prefixIcon: const Icon(Icons.auto_awesome_rounded, size: 19),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(22)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        IconButton.filled(
+                          tooltip: i18n('local_send_message'),
+                          onPressed: _sendLocalMessage,
+                          icon: const Icon(Icons.send_rounded),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
           ],
         ),
       ),
@@ -245,6 +269,13 @@ class DanmakuItem extends StatelessWidget {
   final LiveMessage danmaku;
 
   const DanmakuItem({super.key, required this.danmaku});
+
+  Future<void> _copyMessage() async {
+    await Clipboard.setData(ClipboardData(text: "${danmaku.userName}: ${danmaku.message}"));
+    ToastUtil.show(i18n('copied_to_clipboard'));
+  }
+
+  Future<void> _showActions(BuildContext context) => DanmakuMessageActions.show(context, danmaku);
 
   @override
   Widget build(BuildContext context) {
@@ -270,13 +301,6 @@ class DanmakuItem extends StatelessWidget {
             color: cardBgColor, // 动态背景色
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: vibrantColor.withValues(alpha: 0.08), width: 0.5),
-            boxShadow: [
-              BoxShadow(
-                color: vibrantColor.withValues(alpha: isDark ? 0.05 : 0.02),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -288,34 +312,15 @@ class DanmakuItem extends StatelessWidget {
                   width: 8,
                   height: 8,
                   margin: const EdgeInsets.only(top: 6, right: 10),
-                  decoration: BoxDecoration(
-                    color: vibrantColor,
-                    shape: BoxShape.circle,
-                    boxShadow: [BoxShadow(color: vibrantColor.withValues(alpha: 0.2), blurRadius: 6)],
-                  ),
+                  decoration: BoxDecoration(color: vibrantColor, shape: BoxShape.circle),
                 ),
 
                 Expanded(
                   child: GestureDetector(
                     behavior: HitTestBehavior.translucent,
-                    onSecondaryTap: () async {
-                      final String textToCopy = "${danmaku.userName}: ${danmaku.message}";
-                      try {
-                        await Clipboard.setData(ClipboardData(text: textToCopy));
-                        ToastUtil.show(i18n('copied_to_clipboard'));
-                      } catch (e) {
-                        debugPrint('Failed to copy to clipboard: $e');
-                      }
-                    },
-                    onDoubleTap: () async {
-                      final String textToCopy = "${danmaku.userName}: ${danmaku.message}";
-                      try {
-                        await Clipboard.setData(ClipboardData(text: textToCopy));
-                        ToastUtil.show(i18n('copied_to_clipboard'));
-                      } catch (e) {
-                        debugPrint('Failed to copy to clipboard: $e');
-                      }
-                    },
+                    onSecondaryTap: () => _showActions(context),
+                    onLongPress: () => _showActions(context),
+                    onDoubleTap: _copyMessage,
                     child: Text.rich(
                       TextSpan(
                         children: [

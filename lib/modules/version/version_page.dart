@@ -20,7 +20,7 @@ class VersionPage extends GetView<VersionController> {
         }
 
         return ListView(
-          physics: const BouncingScrollPhysics(),
+          physics: const PureLiveScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           children: [
             if (PlatformUtils.isAndroid) ...[

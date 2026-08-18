@@ -16,7 +16,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_acrylic
   flutter_inappwebview_windows
   flutter_js
-  fullscreen_window
   media_kit_libs_windows_video
   media_kit_video
   permission_handler_windows

@@ -5,6 +5,7 @@ import 'package:pure_live/modules/backup/backup_page.dart';
 import 'package:pure_live/modules/settings/pages/refresh_settings.dart';
 import 'package:pure_live/modules/settings/pages/theme_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/video_settings_page.dart';
+import 'package:pure_live/modules/settings/pages/pip_danmaku_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/local_config_preveiw.dart';
 import 'package:pure_live/modules/settings/pages/general_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/platform_settings_page.dart';
@@ -12,6 +13,7 @@ import 'package:pure_live/modules/settings/pages/navigation_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/cache_data_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/network_proxy_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/player_kernel_settings_page.dart';
+import 'package:pure_live/modules/settings/pages/local_interaction_settings_page.dart';
 
 class SettingsPage extends GetView<SettingsService> {
   const SettingsPage({super.key});
@@ -38,7 +40,7 @@ class SettingsPage extends GetView<SettingsService> {
         ],
       ),
       body: ListView(
-        physics: const BouncingScrollPhysics(),
+        physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
           context.buildGroupTitle(i18n("theme_settings")),
@@ -80,6 +82,12 @@ class SettingsPage extends GetView<SettingsService> {
               subtitle: i18n("video_desc"),
               onTap: () => Get.to(() => const VideoSettingsPage()),
             ),
+            context.buildTile(
+              icon: Remix.picture_in_picture_2_line,
+              title: i18n('pip_danmaku'),
+              subtitle: i18n('pip_danmaku_desc'),
+              onTap: () => Get.to(() => const PipDanmakuSettingsPage()),
+            ),
           ]),
 
           const SizedBox(height: 20),
@@ -100,6 +108,17 @@ class SettingsPage extends GetView<SettingsService> {
               title: i18n("custom_network_proxy"),
               subtitle: i18n("custom_network_proxy_desc"),
               onTap: () => Get.to(() => const NetworkProxySettingsPage()),
+            ),
+          ]),
+
+          const SizedBox(height: 20),
+          context.buildGroupTitle(i18n('local_interaction_settings')),
+          context.buildModernCard([
+            context.buildTile(
+              icon: Icons.auto_awesome_rounded,
+              title: i18n('local_interaction_title'),
+              subtitle: i18n('local_interaction_settings_desc'),
+              onTap: () => Get.to(() => const LocalInteractionSettingsPage()),
             ),
           ]),
 

@@ -4,6 +4,7 @@ import 'package:pure_live/modules/live_play/widgets/video_player/video_controlle
 
 @immutable
 class PlayerState {
+  static const Object _notProvided = Object();
   final VideoController? videoController;
   final List<LivePlayQuality> qualites;
   final int currentQuality;
@@ -39,7 +40,7 @@ class PlayerState {
   }
 
   PlayerState copyWith({
-    VideoController? videoController,
+    Object? videoController = _notProvided,
     List<LivePlayQuality>? qualites,
     int? currentQuality,
     List<String>? playUrls,
@@ -48,7 +49,9 @@ class PlayerState {
     bool? hasUseDefaultResolution,
   }) {
     return PlayerState(
-      videoController: videoController ?? this.videoController,
+      videoController: identical(videoController, _notProvided)
+          ? this.videoController
+          : videoController as VideoController?,
       qualites: qualites ?? this.qualites,
       currentQuality: currentQuality ?? this.currentQuality,
       playUrls: playUrls ?? this.playUrls,

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/common/index.dart';
@@ -14,7 +15,6 @@ import 'package:pure_live/plugins/share_command_handler.dart';
 import 'package:pure_live/routes/route_observer_controller.dart';
 import 'package:pure_live/common/utils/share_command_handler.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
-import 'package:pure_live/modules/account/bilibili/web_login_controller.dart';
 
 class DesktopManager {
   static State? _currentState;
@@ -173,25 +173,7 @@ class DesktopManager {
           break;
 
         case 'exit_app':
-          await windowManager.hide();
-          if (await windowManager.isPreventClose()) {
-            await windowManager.setPreventClose(false);
-          }
-          if (Get.isRegistered<BiliBiliWebLoginController>()) {
-            final controller = Get.find<BiliBiliWebLoginController>();
-            controller.showWebView.value = false;
-            await Future.delayed(const Duration(milliseconds: 300));
-          }
-          try {
-            await trayManager.destroy();
-          } catch (e) {
-            debugPrint('托盘注销失败: $e');
-          }
-          try {
-            await windowManager.destroy();
-          } catch (e) {
-            debugPrint('窗口销毁失败: $e');
-          }
+          await Utils.exitDesktopApplication();
           break;
       }
     } catch (e) {
@@ -509,6 +491,7 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
   }
 
   void _showProductSelectionDialog(LiveRoom room) {
+    final avatarUrl = normalizeNetworkImageUrl(room.avatar);
     showDialog(
       context: Get.context!,
       builder: (BuildContext context) {
@@ -524,10 +507,8 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
                   children: [
                     CircleAvatar(
                       radius: 24,
-                      backgroundImage: room.avatar != null && room.avatar!.isNotEmpty
-                          ? NetworkImage(room.avatar!)
-                          : null,
-                      child: room.avatar == null || room.avatar!.isEmpty ? const Icon(Icons.person) : null,
+                      backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                      child: avatarUrl.isEmpty ? const Icon(Icons.person) : null,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -752,6 +733,9 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
 }
 
 class MyCustomScrollBehavior extends MaterialScrollBehavior {
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) => const PureLiveScrollPhysics();
+
   @override
   Set<PointerDeviceKind> get dragDevices => {
     PointerDeviceKind.touch,

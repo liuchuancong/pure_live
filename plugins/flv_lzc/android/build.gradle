@@ -1,0 +1,48 @@
+group 'com.befovy.fijkplayer'
+version '1.0.0'
+
+group = "com.example.my_flutter_plugin"
+version = "1.0-SNAPSHOT"
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+apply plugin: "com.android.library"
+
+android {
+    namespace = "com.example.my_flutter_plugin"
+
+    compileSdk = 36
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    defaultConfig {
+        minSdk = 16
+    }
+
+    dependencies {
+        implementation 'androidx.annotation:annotation:1.2.0'
+        implementation 'io.github.flutterplayer:fplayer-core:1.0.4'
+        testImplementation("org.jetbrains.kotlin:kotlin-test")
+        testImplementation("org.mockito:mockito-core:5.0.0")
+    }
+
+    testOptions {
+        unitTests.all {
+            useJUnitPlatform()
+
+            testLogging {
+                events "passed", "skipped", "failed", "standardOut", "standardError"
+                outputs.upToDateWhen {false}
+                showStandardStreams = true
+            }
+        }
+    }
+}

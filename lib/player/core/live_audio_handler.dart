@@ -1,14 +1,18 @@
 import 'dart:async';
 import 'dart:developer' as developer;
+
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:pure_live/player/interface/unified_player_interface.dart';
+import 'package:pure_live/player/core/background_playback_service.dart';
+import 'package:pure_live/common/services/settings_service.dart';
 
 class LiveAudioHandler extends BaseAudioHandler {
   UnifiedPlayer? _currentPlayer; // 动态绑定
   late AudioSession _session;
 
   StreamSubscription? _playStateSubscription;
+  Timer? _sleepTimer;
   LiveAudioHandler() {
     _initSession();
   }
@@ -58,19 +62,30 @@ class LiveAudioHandler extends BaseAudioHandler {
     if (_currentPlayer == null) return;
     _playStateSubscription?.cancel();
     _playStateSubscription = _currentPlayer!.onPlaying.listen((playing) {
+      final keepAlive =
+          playing &&
+          (SettingsService.to.app.enableBackgroundPlay.value || BackgroundPlaybackService.sleepSessionActive);
+      unawaited(BackgroundPlaybackService.setKeepAlive(keepAlive));
       playbackState.add(
         playbackState.value.copyWith(
-          controls: [
-            MediaControl.skipToPrevious,
-            playing ? MediaControl.pause : MediaControl.play,
-            MediaControl.skipToNext, // 占位
-            MediaControl.stop,
-          ],
-          androidCompactActionIndices: const [1, 3],
+          controls: [playing ? MediaControl.pause : MediaControl.play, MediaControl.stop],
+          // 单直播流不存在上一首/下一首，保留播放与停止即可，避免生成
+          // 无实际处理器的通知栏动作，也让紧凑通知的索引始终有效。
+          androidCompactActionIndices: const [0, 1],
           playing: playing,
           processingState: AudioProcessingState.ready,
         ),
       );
+    });
+  }
+
+  void configureSleepTimer(Duration? duration) {
+    _sleepTimer?.cancel();
+    _sleepTimer = null;
+    if (duration == null || duration <= Duration.zero) return;
+    _sleepTimer = Timer(duration, () async {
+      BackgroundPlaybackService.sleepSessionActive = false;
+      await stop();
     });
   }
 
@@ -96,12 +111,17 @@ class LiveAudioHandler extends BaseAudioHandler {
   Future<void> stop() async {
     if (_currentPlayer == null) return;
 
+    BackgroundPlaybackService.sleepSessionActive = false;
+    _sleepTimer?.cancel();
+    _sleepTimer = null;
+
     try {
       await _currentPlayer!.stop();
     } catch (e) {
       developer.log("Player already disposed or failed to stop: $e");
     } finally {
       await _session.setActive(false);
+      await BackgroundPlaybackService.setKeepAlive(false);
       playbackState.add(playbackState.value.copyWith(playing: false, processingState: AudioProcessingState.idle));
     }
   }

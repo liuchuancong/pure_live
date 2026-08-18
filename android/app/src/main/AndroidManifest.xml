@@ -7,23 +7,18 @@
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
   <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
   <uses-permission android:name="android.permission.VIBRATE" />
-  <uses-permission android:name="android.permission.READ_PHONE_STATE" />
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
   <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
   <!-- Permissions options for the `storage` group -->
-  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
+  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
   <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
   <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
-  <!-- 读取手机信息权限 -->
-  <uses-permission android:name="android.permission.WRITE_SETTINGS" />
   <!-- Internet access permissions. -->
-  <uses-permission android:name="android.permission.RECORD_AUDIO" />
   <uses-permission android:name="android.permission.INTERNET" />
   <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING" />
-  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
   <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
   <!--
 	Media access permissions.
@@ -37,10 +32,10 @@
   </queries>
   <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
   <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-  <application android:label="@string/AppName" android:name="${applicationName}"
+  <application android:label="${appLabel}" android:name="${applicationName}"
     android:banner="@drawable/banner" android:largeHeap="true" android:usesCleartextTraffic="true"
     android:networkSecurityConfig="@xml/network_security_config"
-    android:allowBackup="true"
+    android:allowBackup="false"
     tools:replace="android:allowBackup"
     android:requestLegacyExternalStorage="true" android:enableOnBackInvokedCallback="false"
     android:allowNativeHeapPointerTagging="false" android:icon="@mipmap/ic_launcher">
@@ -86,7 +81,6 @@
     </activity>
     <meta-data android:name="flutterEmbedding" android:value="2" />
     <meta-data android:name="ic_notification" android:resource="@drawable/ic_launcher_foreground" />
-    <meta-data android:name="io.flutter.embedding.android.EnableImpeller" android:value="false" />
     <service android:name="flutter.overlay.window.flutter_overlay_window.OverlayService"
       android:exported="false" />
     <provider android:name="androidx.core.content.FileProvider"

@@ -1,4 +1,7 @@
+import 'package:flutter/gestures.dart';
+
 import 'popular_grid_view.dart';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/widgets/common_appbar_actions.dart';
 
@@ -24,11 +27,15 @@ class PopularPage extends GetView<PopularController> {
               title: TabBar(
                 controller: controller.tabController,
                 isScrollable: true,
+                physics: const PureLiveScrollPhysics(),
+                dragStartBehavior: DragStartBehavior.down,
                 tabs: availableSitesList.map((e) => Tab(text: e.name)).toList(),
               ),
             ),
             body: TabBarView(
               controller: controller.tabController,
+              physics: const PureLiveScrollPhysics(),
+              dragStartBehavior: DragStartBehavior.down,
               children: availableSitesList.map((e) => PopularGridView(e.id)).toList(),
             ),
           );

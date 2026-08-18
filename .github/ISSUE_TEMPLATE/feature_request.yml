@@ -1,0 +1,39 @@
+name: 功能建议
+description: 提议新功能、交互改进或平台兼容性增强
+title: "[Feature] "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 使用场景
+      description: 描述现有流程中的具体问题，以及受影响的平台或设备。
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 建议方案
+      description: 描述界面、设置项、默认值和兼容性预期。
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 已尝试的方法
+      description: 说明当前可以怎样处理，以及仍然存在的不足。
+  - type: textarea
+    id: context
+    attributes:
+      label: 补充材料
+      description: 可附界面草图、截图、参考项目或接口文档。
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 提交检查
+      options:
+        - label: 已搜索已有 Issue 和 Pull Request
+          required: true
+        - label: 补充材料中不含账号、Cookie、密钥或个人数据
+          required: true

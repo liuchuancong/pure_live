@@ -1,9 +1,12 @@
 import 'dart:developer' as developer;
+import 'dart:io';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/utils.dart';
 import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class WebSearchController extends GetxController {
   InAppWebViewController? webViewController;
@@ -25,6 +28,13 @@ class WebSearchController extends GetxController {
 
   String getDynamicUserAgent() {
     return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36";
+  }
+
+  bool get usesExternalBrowser => Platform.isLinux;
+
+  Future<void> openExternalBrowser() async {
+    final opened = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    if (!opened) ToastUtil.show(i18n('external_browser_not_opened'));
   }
 
   void onWebViewCreated(InAppWebViewController controller) {

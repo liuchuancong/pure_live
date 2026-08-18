@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'dart:math' as math;
+
 import 'package:dio/dio.dart';
+
 import 'dart:developer' as developer;
+
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/model/live_category.dart';
@@ -66,10 +69,8 @@ class KuaishowSite implements LiveSite {
   }
 
   final Map<String, dynamic> headers = {
-    'User-Agent':
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',
-    'accept':
-        'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',
+    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
     'connection': 'keep-alive',
     'sec-ch-ua': 'Google Chrome;v=107, Chromium;v=107, Not=A?Brand;v=24',
     'sec-ch-ua-platform': 'macOS',
@@ -148,6 +149,8 @@ class KuaishowSite implements LiveSite {
         cover: isImage(item['poster']) ? item['poster'].toString() : '${item['poster'].toString()}.jpg',
         nick: item["author"]["name"].toString(),
         watching: item["watchingCount"].toString(),
+        onlineViewers: item["watchingCount"].toString(),
+        audienceMetricType: AudienceMetricType.onlineViewers,
         avatar: item["author"]["avatar"],
         area: item["gameInfo"]["name"].toString(),
         liveStatus: LiveStatus.live,
@@ -200,6 +203,8 @@ class KuaishowSite implements LiveSite {
             var roomItems = LiveRoom(
               cover: gameInfo['poster'].toString(),
               watching: titem["watchingCount"].toString(),
+              onlineViewers: titem["watchingCount"].toString(),
+              audienceMetricType: AudienceMetricType.onlineViewers,
               roomId: author["id"],
               area: gameInfo["name"],
               title: author["description"] != null ? author["description"].replaceAll("\n", " ") : '',
@@ -239,13 +244,11 @@ class KuaishowSite implements LiveSite {
         'device_package': {
           'os_version': 'NT 6.1',
           'model': 'Windows',
-          'ua':
-              'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36',
+          'ua': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36',
         },
         'need_encrypt': 'false',
         'network_package': {'type': 3},
-        'h5_extra_attr':
-            '{"sdk_name":"webLogger","sdk_version":"3.9.49","sdk_bundle":"log.common.js","app_version_name":"","host_product":"","resolution":"1600x900","screen_with":1600,"screen_height":900,"device_pixel_ratio":1,"domain":"https://live.kuaishou.com"}',
+        'h5_extra_attr': '{"sdk_name":"webLogger","sdk_version":"3.9.49","sdk_bundle":"log.common.js","app_version_name":"","host_product":"","resolution":"1600x900","screen_with":1600,"screen_height":900,"device_pixel_ratio":1,"domain":"https://live.kuaishou.com"}',
         'global_attr': '{}',
       },
       'logs': [
@@ -333,8 +336,7 @@ class KuaishowSite implements LiveSite {
       mHeaders['cookie'] = SettingsService.to.cookieManager.kuaishouCookie.v;
     }
 
-    mHeaders['accept'] =
-        'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9';
+    mHeaders['accept'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9';
     await getCookie(url);
     await registerDid();
     var resultText = await HttpClient.instance.getText(url, queryParameters: {}, header: mHeaders);
@@ -354,6 +356,8 @@ class KuaishowSite implements LiveSite {
             ? liveStream['poster'].toString()
             : '${liveStream['poster'].toString()}.jpg',
         watching: jsonObj["liveroom"]["playList"][0]["isLiving"] ? gameInfo["watchingCount"].toString() : '0',
+        onlineViewers: jsonObj["liveroom"]["playList"][0]["isLiving"] ? gameInfo["watchingCount"].toString() : '0',
+        audienceMetricType: AudienceMetricType.onlineViewers,
         roomId: author["id"],
         area: gameInfo["name"] ?? '',
         title: author["description"] != null ? author["description"].replaceAll("\n", " ") : '',
@@ -370,7 +374,8 @@ class KuaishowSite implements LiveSite {
     } catch (e) {
       if (Get.isRegistered<PlayerController>()) {
         final PlayerController playerController = Get.find<PlayerController>();
-        return playerController.currentRoom!.getLiveRoomWithError();
+        final currentRoom = playerController.currentRoom;
+        if (currentRoom != null) return currentRoom.getLiveRoomWithError();
       }
       return LiveRoom(roomId: roomId, platform: platform).getLiveRoomWithError();
     }

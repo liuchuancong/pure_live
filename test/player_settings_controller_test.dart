@@ -1,0 +1,21 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:pure_live/common/services/settings/player_settings_controller.dart';
+
+void main() {
+  group('player settings migration', () {
+    test('retires the legacy global audio-only default', () {
+      final config = PlayerSettingsController.extractConfig({
+        'player': <String, dynamic>{'audioOnly': true, 'floatPlay': true},
+      });
+
+      expect(config['audioOnly'], isFalse);
+      expect(config['floatPlay'], isTrue);
+    });
+
+    test('keeps audio-only disabled for older backups without the field', () {
+      final config = PlayerSettingsController.extractConfig({'player': <String, dynamic>{}});
+
+      expect(config['audioOnly'], isFalse);
+    });
+  });
+}

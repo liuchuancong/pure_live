@@ -1,8 +1,11 @@
 import 'dart:io';
 import 'dart:async';
+
 import 'index.dart';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pure_live/common/utils/live_url_tool.dart';
@@ -15,6 +18,7 @@ import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/common/utils/share_command_handler.dart';
 import 'package:pure_live/modules/live_play/widgets/play_other.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku_tab.dart';
+import 'package:pure_live/modules/live_play/local_interaction_sheet.dart';
 import 'package:pure_live/modules/live_play/widgets/video_keyboard.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
@@ -28,7 +32,7 @@ class LivePlayPage extends GetView<LivePlayController> {
     return Obx(() {
       _updateWakelock();
       final manager = GlobalPlayerService.instance.playerManager;
-      final isInPip = manager.isInPip.value;
+      final isInPip = manager.isInPip.value || manager.isPipPreparing.value;
       final state = controller.state.value;
       final mode = state.ui.screenMode;
       final videoController = state.player.videoController;
@@ -40,17 +44,12 @@ class LivePlayPage extends GetView<LivePlayController> {
             color: Colors.black,
             width: double.infinity,
             height: double.infinity,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 50),
-              child: _buildConstrainedChild(isInPip, mode, context),
-              layoutBuilder: (currentChild, previousChildren) {
-                return Stack(
-                  alignment: Alignment.center,
-                  fit: StackFit.expand,
-                  children: <Widget>[...previousChildren, ?currentChild],
-                );
-              },
-            ),
+            // A BarrageController may attach to one Flame engine at a time.
+            // AnimatedSwitcher kept the old portrait engine alive while the
+            // landscape engine attached, then the old widget detached the
+            // shared controller and left the new overlay silent.  Replace the
+            // layout atomically so danmaku survives orientation/fullscreen.
+            child: _withLocalGiftEffect(_buildConstrainedChild(isInPip, mode, context)),
           ),
         );
       }
@@ -59,19 +58,48 @@ class LivePlayPage extends GetView<LivePlayController> {
         color: Colors.black,
         width: double.infinity,
         height: double.infinity,
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 50),
-          child: _buildConstrainedChild(isInPip, mode, context),
-          layoutBuilder: (currentChild, previousChildren) {
-            return Stack(
-              alignment: Alignment.center,
-              fit: StackFit.expand,
-              children: <Widget>[...previousChildren, ?currentChild],
-            );
-          },
-        ),
+        child: _withLocalGiftEffect(_buildConstrainedChild(isInPip, mode, context)),
       );
     });
+  }
+
+  Widget _withLocalGiftEffect(Widget child) {
+    final message = controller.localGiftEffect.value;
+    if (message == null) return child;
+    final color = Color.fromARGB(255, message.color.r, message.color.g, message.color.b);
+    final fullEffect = message.data is Map && message.data['effect'] == 'full';
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        child,
+        IgnorePointer(
+          child: Center(
+            child: TweenAnimationBuilder<double>(
+              key: ValueKey(message),
+              tween: Tween(begin: .72, end: 1),
+              duration: const Duration(milliseconds: 420),
+              curve: Curves.easeOutBack,
+              builder: (context, scale, effectChild) => Transform.scale(scale: scale, child: effectChild),
+              child: Container(
+                constraints: BoxConstraints(maxWidth: fullEffect ? 440 : 320),
+                padding: EdgeInsets.symmetric(horizontal: fullEffect ? 28 : 20, vertical: fullEffect ? 24 : 14),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: [color.withValues(alpha: .94), Colors.black.withValues(alpha: .78)]),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Colors.white.withValues(alpha: .45)),
+                  boxShadow: [BoxShadow(color: color.withValues(alpha: .55), blurRadius: fullEffect ? 42 : 24)],
+                ),
+                child: Text(
+                  message.message,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white, fontSize: fullEffect ? 20 : 16, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildConstrainedChild(bool isInPip, VideoMode mode, BuildContext context) {
@@ -100,6 +128,7 @@ class LivePlayPage extends GetView<LivePlayController> {
   }
 
   Widget buildNormalPlayerView(BuildContext context) {
+    final compactHeader = MediaQuery.sizeOf(context).width < 600;
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
@@ -114,41 +143,47 @@ class LivePlayPage extends GetView<LivePlayController> {
               );
             }),
             const SizedBox(width: 8),
-            Obx(() {
-              final detail = controller.state.value.room.detail;
-              if (detail == null) return const SizedBox.shrink();
-              final isMobile = Get.width <= 680;
-              final nickMaxW = isMobile ? 60.0 : 240.0;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: nickMaxW),
-                    child: Text(
+            Expanded(
+              child: Obx(() {
+                final detail = controller.state.value.room.detail;
+                if (detail == null) return const SizedBox.shrink();
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
                       detail.nick ?? '',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.labelSmall,
                     ),
-                  ),
-                  Text(
-                    (detail.area == null || detail.area!.isEmpty)
-                        ? (detail.platform?.toUpperCase() ?? '')
-                        : "${detail.platform?.toUpperCase()} / ${detail.area}",
-                    style: Theme.of(context).textTheme.labelSmall,
-                  ),
-                ],
-              );
-            }),
-            const SizedBox(width: 8),
-            Obx(() {
-              final detail = controller.state.value.room.detail;
-              if (detail == null) return const SizedBox.shrink();
-              return FavoriteFloatingButton(room: detail);
-            }),
+                    Text(
+                      (detail.area == null || detail.area!.isEmpty)
+                          ? (detail.platform?.toUpperCase() ?? '')
+                          : "${detail.platform?.toUpperCase()} / ${detail.area}",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                  ],
+                );
+              }),
+            ),
           ],
         ),
         actions: [
+          Obx(() {
+            final detail = controller.state.value.room.detail;
+            if (detail == null) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: FavoriteFloatingButton(
+                key: ValueKey('${detail.platform}:${detail.roomId}'),
+                room: detail,
+                compact: compactHeader,
+              ),
+            );
+          }),
           Obx(() {
             final room = controller.state.value.room.detail;
             if (room == null) return const SizedBox.shrink();
@@ -161,122 +196,129 @@ class LivePlayPage extends GetView<LivePlayController> {
                 task?.status == RecordStatus.reconnecting ||
                 task?.status == RecordStatus.preparing;
             final theme = Theme.of(Get.context!);
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOut,
-              height: 38,
-              child: FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: isRunning
-                      ? Colors.redAccent.withValues(alpha: 0.12)
-                      : exists
-                      ? theme.colorScheme.primary.withValues(alpha: 0.10)
-                      : theme.colorScheme.surfaceContainerHighest,
-                  foregroundColor: isRunning
-                      ? Colors.redAccent
-                      : exists
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.onSurfaceVariant,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      isRunning
-                          ? Remix.record_circle_fill
-                          : exists
-                          ? Remix.checkbox_circle_fill
-                          : Remix.add_circle_line,
-                      size: 14,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      isRunning
-                          ? i18n("recording")
-                          : exists
-                          ? i18n("monitored")
-                          : i18n("record"),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.1,
-                      ),
-                    ),
-                  ],
-                ),
-                onPressed: () async {
-                  if (!exists) {
-                    await controller.recorderController.addTask(room: room);
-                    ToastUtil.show(i18n("record_task_added"));
-                    return;
-                  }
-                  final action = await showDialog<String>(
-                    context: Get.context!,
-                    builder: (context) {
-                      return AlertDialog(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                        title: Row(
-                          children: [
-                            Icon(
-                              isRunning ? Remix.record_circle_fill : Remix.checkbox_circle_fill,
-                              color: isRunning ? Colors.redAccent : theme.colorScheme.primary,
-                              size: 22,
-                            ),
-                            const SizedBox(width: 10),
-                            Text(isRunning ? i18n("recording") : i18n("record_task")),
-                          ],
-                        ),
-                        content: Column(
+            final label = isRunning
+                ? i18n("recording")
+                : exists
+                ? i18n("monitored")
+                : i18n("record");
+            final icon = isRunning
+                ? Remix.record_circle_fill
+                : exists
+                ? Remix.checkbox_circle_fill
+                : Remix.record_circle_line;
+            return Tooltip(
+              message: label,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOut,
+                width: compactHeader ? 40 : null,
+                height: 38,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: isRunning
+                        ? Colors.redAccent.withValues(alpha: 0.12)
+                        : exists
+                        ? theme.colorScheme.primary.withValues(alpha: 0.10)
+                        : theme.colorScheme.surfaceContainerHighest,
+                    foregroundColor: isRunning
+                        ? Colors.redAccent
+                        : exists
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurfaceVariant,
+                    padding: compactHeader ? EdgeInsets.zero : const EdgeInsets.symmetric(horizontal: 8),
+                    minimumSize: compactHeader ? const Size(38, 38) : null,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: compactHeader
+                      ? Icon(icon, size: 18)
+                      : Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            _ActionTile(
-                              icon: Icons.video_library_rounded,
-                              title: i18n("go_record_center"),
-                              color: theme.colorScheme.primary,
-                              onTap: () => Navigator.pop(context, "page"),
-                            ),
-                            if (!isRunning)
-                              _ActionTile(
-                                icon: Icons.play_arrow_rounded,
-                                title: i18n("start_record_now"),
-                                color: Colors.green,
-                                onTap: () => Navigator.pop(context, "start"),
+                            Icon(icon, size: 14),
+                            const SizedBox(width: 4),
+                            Text(
+                              label,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.1,
                               ),
-                            if (isRunning)
-                              _ActionTile(
-                                icon: Icons.stop_circle_outlined,
-                                title: i18n("stop_record"),
-                                color: Colors.orange,
-                                onTap: () => Navigator.pop(context, "stop"),
-                              ),
-                            _ActionTile(
-                              icon: Icons.delete_outline_rounded,
-                              title: i18n("remove_monitor"),
-                              color: Colors.redAccent,
-                              onTap: () => Navigator.pop(context, "delete"),
                             ),
                           ],
                         ),
-                      );
-                    },
-                  );
-                  switch (action) {
-                    case "page":
-                      Get.toNamed(RoutePath.kRecordPage);
-                      break;
-                    case "start":
-                      controller.recorderController.forceStartTask(task);
-                      break;
-                    case "stop":
-                      controller.recorderController.stopTask(task);
-                      break;
-                    case "delete":
-                      controller.recorderController.unRecorder(task);
-                      break;
-                  }
-                },
+                  onPressed: () async {
+                    if (!exists) {
+                      await controller.recorderController.addTask(room: room);
+                      ToastUtil.show(i18n("record_task_added"));
+                      return;
+                    }
+                    final action = await showDialog<String>(
+                      context: Get.context!,
+                      builder: (context) {
+                        return AlertDialog(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                          title: Row(
+                            children: [
+                              Icon(
+                                isRunning ? Remix.record_circle_fill : Remix.checkbox_circle_fill,
+                                color: isRunning ? Colors.redAccent : theme.colorScheme.primary,
+                                size: 22,
+                              ),
+                              const SizedBox(width: 10),
+                              Text(isRunning ? i18n("recording") : i18n("record_task")),
+                            ],
+                          ),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _ActionTile(
+                                icon: Icons.video_library_rounded,
+                                title: i18n("go_record_center"),
+                                color: theme.colorScheme.primary,
+                                onTap: () => Navigator.pop(context, "page"),
+                              ),
+                              if (!isRunning)
+                                _ActionTile(
+                                  icon: Icons.play_arrow_rounded,
+                                  title: i18n("start_record_now"),
+                                  color: Colors.green,
+                                  onTap: () => Navigator.pop(context, "start"),
+                                ),
+                              if (isRunning)
+                                _ActionTile(
+                                  icon: Icons.stop_circle_outlined,
+                                  title: i18n("stop_record"),
+                                  color: Colors.orange,
+                                  onTap: () => Navigator.pop(context, "stop"),
+                                ),
+                              _ActionTile(
+                                icon: Icons.delete_outline_rounded,
+                                title: i18n("remove_monitor"),
+                                color: Colors.redAccent,
+                                onTap: () => Navigator.pop(context, "delete"),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                    switch (action) {
+                      case "page":
+                        Get.toNamed(RoutePath.kRecordPage);
+                        break;
+                      case "start":
+                        controller.recorderController.forceStartTask(task);
+                        break;
+                      case "stop":
+                        controller.recorderController.stopTask(task);
+                        break;
+                      case "delete":
+                        controller.recorderController.unRecorder(task);
+                        break;
+                    }
+                  },
+                ),
               ),
             );
           }),
@@ -313,6 +355,19 @@ class LivePlayPage extends GetView<LivePlayController> {
                 if (detail != null) {
                   ShareCommandHandler.instance.onShareRoomPressed(detail);
                 }
+              } else if (index == 7) {
+                if (!controller.localInteractionController.enabled.v) return;
+                showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  showDragHandle: true,
+                  builder: (_) => LocalInteractionSheet(
+                    controller: controller.localInteractionController,
+                    platform: controller.state.value.room.detail?.platform ?? controller.site,
+                    onMessage: (message, showAsDanmaku) =>
+                        controller.emitLocalMessage(message, showAsDanmaku: showAsDanmaku),
+                  ),
+                );
               }
               controller.updateUI(isMenuOpen: false);
             },
@@ -365,6 +420,15 @@ class LivePlayPage extends GetView<LivePlayController> {
                     text: i18n("share"),
                   ),
                 ),
+                if (controller.localInteractionController.enabled.v)
+                  PopupMenuItem(
+                    value: 7,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: MenuListTile(
+                      leading: const Icon(Icons.auto_awesome_rounded, size: 20),
+                      text: i18n('local_interaction_title'),
+                    ),
+                  ),
               ];
             },
           ),
@@ -607,34 +671,69 @@ class LivePlayPage extends GetView<LivePlayController> {
   }
 
   void showTimerDialog(BuildContext context) {
-    showDialog(
+    final durationController = TextEditingController(text: controller.state.value.ui.closeTimes.toString());
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
+        title: Text(i18n('room_playback_timer')),
         content: Obx(() {
           final uiState = controller.state.value.ui;
           return Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               SwitchListTile(
-                title: Text(i18n("sleep_timer")),
+                title: Text(i18n('room_playback_timer_enable')),
+                subtitle: Text(i18n('room_playback_timer_desc')),
                 contentPadding: EdgeInsets.zero,
                 value: uiState.closeTimeFlag,
                 activeThumbColor: Theme.of(context).colorScheme.primary,
                 onChanged: (bool value) => controller.updateTimerFlag(value),
               ),
-              Slider(
-                min: 0,
-                max: 240,
-                label: i18n("auto_refresh_time"),
-                value: uiState.closeTimes.toDouble(),
-                onChanged: (value) => controller.updateTimerTimes(value.toInt()),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: const [15, 30, 45, 60, 90, 120, 240, 480]
+                    .map(
+                      (minutes) => ActionChip(
+                        label: Text('$minutes ${i18n('minutes')}'),
+                        onPressed: () => durationController.text = minutes.toString(),
+                      ),
+                    )
+                    .toList(),
               ),
-              Text(i18n("auto_close_time", args: {"time": uiState.closeTimes.toString()})),
+              const SizedBox(height: 16),
+              TextField(
+                controller: durationController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: i18n('room_playback_timer_duration'),
+                  suffixText: i18n('minutes'),
+                  helperText: i18n('room_playback_timer_custom_hint'),
+                  border: const OutlineInputBorder(),
+                ),
+              ),
             ],
           );
         }),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n('cancel'))),
+          FilledButton(
+            onPressed: () {
+              final minutes = int.tryParse(durationController.text.trim());
+              if (minutes == null || minutes < 1 || minutes > AppSettingsController.maxSleepMinutes) {
+                ToastUtil.show(i18n('room_playback_timer_custom_hint'));
+                return;
+              }
+              controller.updateTimerTimes(minutes);
+              controller.updateTimerFlag(true);
+              Navigator.of(context).pop();
+            },
+            child: Text(i18n('start_timer')),
+          ),
+        ],
       ),
-    );
+    ).whenComplete(durationController.dispose);
   }
 }
 
@@ -649,19 +748,44 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
   LivePlayController get controller => Get.find<LivePlayController>();
 
   Widget buildInfoCount() {
-    final state = controller.state.value;
     if (controller.site == Sites.iptvSite) return const SizedBox.shrink();
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Icon(Icons.whatshot_rounded, size: 14),
-        const SizedBox(width: 4),
-        Text(
-          state.room.detail?.watching != null ? readableCount(state.room.detail!.watching!) : '0',
-          style: Get.textTheme.bodySmall,
-        ),
-      ],
-    );
+    return Obx(() {
+      final room = controller.state.value.room.detail;
+      if (room == null) return const SizedBox.shrink();
+      final app = SettingsService.to.app;
+      final type = room.audienceType(
+        preferRealOnline: app.preferRealOnlineCounts.v,
+        platformEnabled: app.isRealOnlineEnabledFor(room.platform),
+      );
+      final value = room.audienceValue(
+        preferRealOnline: app.preferRealOnlineCounts.v,
+        platformEnabled: app.isRealOnlineEnabledFor(room.platform),
+      );
+      final icon = switch (type) {
+        AudienceMetricType.onlineViewers => Icons.people_alt_rounded,
+        AudienceMetricType.totalViewers => Icons.visibility_rounded,
+        AudienceMetricType.followers => Icons.favorite_rounded,
+        _ => Icons.whatshot_rounded,
+      };
+      final label = i18n(switch (type) {
+        AudienceMetricType.onlineViewers => 'audience_online',
+        AudienceMetricType.totalViewers => 'audience_total',
+        AudienceMetricType.followers => 'audience_followers',
+        AudienceMetricType.popularity => 'audience_popularity',
+        AudienceMetricType.unknown => 'audience_count',
+      });
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14),
+          const SizedBox(width: 4),
+          Text(
+            '$label ${value.isEmpty ? i18n('audience_waiting') : readableCount(value)}',
+            style: Get.textTheme.bodySmall,
+          ),
+        ],
+      );
+    });
   }
 
   Widget _buildResolutionSelector() {
@@ -704,9 +828,8 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
               value: index,
               child: Text(
                 qualityRate.quality,
-                style: Theme.of(
-                  context,
-                ).textTheme.labelSmall?.copyWith(color: isSelected ? Get.theme.colorScheme.primary : null),
+                style: Theme.of(context).textTheme.labelSmall
+                    ?.copyWith(color: isSelected ? Get.theme.colorScheme.primary : null),
               ),
             );
           });
@@ -754,9 +877,8 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
               value: index,
               child: Text(
                 i18n("toolbox_line", args: {"index": (index + 1).toString()}),
-                style: Theme.of(
-                  context,
-                ).textTheme.labelSmall?.copyWith(color: isSelected ? Get.theme.colorScheme.primary : null),
+                style: Theme.of(context).textTheme.labelSmall
+                    ?.copyWith(color: isSelected ? Get.theme.colorScheme.primary : null),
               ),
             );
           });
@@ -788,11 +910,11 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
   }
 }
 
-// FavoriteFloatingButton, NotLivingVideoWidget, _ActionTile 保持不变
 class FavoriteFloatingButton extends StatefulWidget {
-  const FavoriteFloatingButton({super.key, required this.room});
+  const FavoriteFloatingButton({super.key, required this.room, this.compact = false});
 
   final LiveRoom room;
+  final bool compact;
 
   @override
   State<FavoriteFloatingButton> createState() => _FavoriteFloatingButtonState();
@@ -821,9 +943,48 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
     super.dispose();
   }
 
+  Future<void> _toggleFavorite(bool isFavorite) async {
+    if (!isFavorite) {
+      SettingsService.to.fav.addRoom(widget.room);
+      EventBus.instance.emit('changeFavorite', true);
+      if (mounted) setState(() {});
+      return;
+    }
+
+    final confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        title: Text(i18n("unfollow")),
+        content: Text(i18n("unfollow_message", args: {"name": widget.room.nick ?? ''})),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(Get.context!).pop(false), child: Text(i18n("cancel"))),
+          ElevatedButton(onPressed: () => Navigator.of(Get.context!).pop(true), child: Text(i18n("confirm"))),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    SettingsService.to.fav.removeRoom(widget.room);
+    EventBus.instance.emit('changeFavorite', true);
+    if (mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
-    bool isFavorite = SettingsService.to.fav.isFavorite(widget.room);
+    final isFavorite = SettingsService.to.fav.isFavorite(widget.room);
+    final label = i18n(isFavorite ? "followed" : "follow");
+    if (widget.compact) {
+      return Tooltip(
+        message: label,
+        child: IconButton.filledTonal(
+          visualDensity: VisualDensity.compact,
+          constraints: const BoxConstraints.tightFor(width: 40, height: 38),
+          padding: EdgeInsets.zero,
+          onPressed: () => _toggleFavorite(isFavorite),
+          icon: Icon(isFavorite ? Remix.heart_3_fill : Remix.heart_3_line, size: 19),
+        ),
+      );
+    }
+
     return isFavorite
         ? FilledButton(
             style: ButtonStyle(
@@ -836,25 +997,8 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
               minimumSize: WidgetStateProperty.all(Size.zero),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            onPressed: () {
-              Get.dialog(
-                AlertDialog(
-                  title: Text(i18n("unfollow")),
-                  content: Text(i18n("unfollow_message", args: {"name": widget.room.nick!})),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.of(Get.context!).pop(false), child: Text(i18n("cancel"))),
-                    ElevatedButton(onPressed: () => Navigator.of(Get.context!).pop(true), child: Text(i18n("confirm"))),
-                  ],
-                ),
-              ).then((value) {
-                if (value ?? false) {
-                  setState(() => isFavorite = !isFavorite);
-                  SettingsService.to.fav.removeRoom(widget.room);
-                  EventBus.instance.emit('changeFavorite', true);
-                }
-              });
-            },
-            child: Text(i18n("followed")),
+            onPressed: () => _toggleFavorite(isFavorite),
+            child: Text(label),
           )
         : FilledButton(
             style: ButtonStyle(
@@ -867,12 +1011,8 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
               minimumSize: WidgetStateProperty.all(Size.zero),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            onPressed: () {
-              setState(() => isFavorite = !isFavorite);
-              SettingsService.to.fav.addRoom(widget.room);
-              EventBus.instance.emit('changeFavorite', true);
-            },
-            child: Text(i18n("follow")),
+            onPressed: () => _toggleFavorite(isFavorite),
+            child: Text(label),
           );
   }
 }

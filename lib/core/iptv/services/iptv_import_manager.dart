@@ -27,14 +27,11 @@ class IptvImportManager {
       allowedExtensions: ['m3u', 'txt'],
     );
 
-    if (result == null || result.path == null) {
-      return false;
-    }
+    if (result?.path == null) return false;
 
-    final file = File(result.path!);
+    final file = File(result!.path!);
     final name = FileUtils.getBaseName(file.path);
-
-    return importIptvFile(file: file, providerName: name);
+    return await importIptvFile(file: file, providerName: name);
   }
 
   Future<bool> importFromNetworkUrl(

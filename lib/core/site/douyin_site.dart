@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math' as math;
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/model/live_category.dart';
 import 'package:pure_live/core/common/core_log.dart';
@@ -31,11 +32,9 @@ class DouyinSite implements LiveSite {
 
   static const String kDefaultAuthority = "live.douyin.com";
 
-  static const String kDefaultCookie =
-      "ttwid=1%7CB1qls3GdnZhUov9o2NxOMxxYS2ff6OSvEWbv0ytbES4%7C1680522049%7C280d802d6d478e3e78d0c807f7c487e7ffec0ae4e5fdd6a0fe74c3c6af149511";
-
   /// 用户设置的 cookie
   static String cookie = "";
+  static Future<String>? _anonymousCookieRequest;
 
   Map<String, dynamic> headers = {
     "Authority": kDefaultAuthority,
@@ -46,23 +45,41 @@ class DouyinSite implements LiveSite {
   Future<Map<String, dynamic>> getRequestHeaders() async {
     try {
       if (cookie.isNotEmpty) {
-        headers["cookie"] = cookie;
-        return headers;
+        return {...headers, "cookie": cookie};
       } else if (SettingsService.to.cookieManager.douyinCookie.v.isNotEmpty) {
         cookie = SettingsService.to.cookieManager.douyinCookie.v;
-        headers["cookie"] = cookie;
-        return headers;
+        return {...headers, "cookie": cookie};
       }
 
-      headers["cookie"] = kDefaultCookie;
-      return headers;
-    } catch (e) {
-      CoreLog.error(e);
-      if (!(headers["cookie"]?.toString().isNotEmpty ?? false)) {
-        headers["cookie"] = kDefaultCookie;
+      final anonymousCookie = await (_anonymousCookieRequest ??= _fetchAnonymousCookie());
+      _anonymousCookieRequest = null;
+      if (anonymousCookie.isNotEmpty) {
+        cookie = anonymousCookie;
+        return {...headers, "cookie": cookie};
       }
-      return headers;
+      return Map<String, dynamic>.from(headers);
+    } catch (e) {
+      _anonymousCookieRequest = null;
+      CoreLog.error(e);
+      return Map<String, dynamic>.from(headers);
     }
+  }
+
+  Future<String> _fetchAnonymousCookie() async {
+    final response = await HttpClient.instance.get(
+      'https://live.douyin.com/',
+      queryParameters: const {'from_nav': '1'},
+      header: headers,
+    );
+    final setCookieValues = response.headers.map['set-cookie'] ?? const <String>[];
+    final pairs = <String>[];
+    for (final value in setCookieValues) {
+      final pair = value.split(';').first.trim();
+      if (pair.startsWith('ttwid=') || pair.startsWith('UIFID_TEMP=')) {
+        pairs.add(pair);
+      }
+    }
+    return pairs.join('; ');
   }
 
   Future<Map<String, dynamic>> getUserInfoByCookie(String cookie) async {
@@ -203,6 +220,9 @@ class DouyinSite implements LiveSite {
         platform: Sites.douyinSite,
         area: item['tag_name'].toString(),
         watching: item["room"]?["room_view_stats"]?["display_value"].toString() ?? '',
+        totalViewers: item["room"]?["room_view_stats"]?["display_value"].toString() ?? '',
+        onlineViewers: _douyinOnlineViewers(item["room"]),
+        audienceMetricType: AudienceMetricType.totalViewers,
       );
       items.add(roomItem);
     }
@@ -251,6 +271,9 @@ class DouyinSite implements LiveSite {
           area: item["tag_name"] ?? '热门推荐',
           avatar: item["room"]["owner"]["avatar_thumb"]["url_list"][0].toString(),
           watching: item["room"]?["room_view_stats"]?["display_value"].toString() ?? '',
+          totalViewers: item["room"]?["room_view_stats"]?["display_value"].toString() ?? '',
+          onlineViewers: _douyinOnlineViewers(item["room"]),
+          audienceMetricType: AudienceMetricType.totalViewers,
           liveStatus: LiveStatus.live,
         );
         items.add(roomItem);
@@ -304,6 +327,9 @@ class DouyinSite implements LiveSite {
       nick: owner["nickname"].toString(),
       avatar: owner["avatar_thumb"]["url_list"][0].toString(),
       watching: roomStatus ? room["room_view_stats"]["display_value"].toString() : "",
+      totalViewers: roomStatus ? room["room_view_stats"]["display_value"].toString() : '',
+      onlineViewers: roomStatus ? _douyinOnlineViewers(room) : '',
+      audienceMetricType: AudienceMetricType.totalViewers,
       status: roomStatus,
       link: "https://live.douyin.com/$webRid",
       platform: Sites.douyinSite,
@@ -360,6 +386,9 @@ class DouyinSite implements LiveSite {
           ? owner["avatar_thumb"]["url_list"][0].toString()
           : userData["avatar_thumb"]["url_list"][0].toString(),
       watching: roomStatus ? roomData["room_view_stats"]["display_value"].toString() : "",
+      totalViewers: roomStatus ? roomData["room_view_stats"]["display_value"].toString() : '',
+      onlineViewers: roomStatus ? _douyinOnlineViewers(roomData) : '',
+      audienceMetricType: AudienceMetricType.totalViewers,
       status: roomStatus,
       liveStatus: roomStatus ? LiveStatus.live : LiveStatus.offline,
       link: "https://live.douyin.com/$webRid",
@@ -398,6 +427,9 @@ class DouyinSite implements LiveSite {
           ? owner["avatar_thumb"]["url_list"][0].toString()
           : anchor["avatar_thumb"]["url_list"][0].toString(),
       watching: roomInfo?["room_view_stats"]?["display_value"].toString() ?? '',
+      totalViewers: roomInfo?["room_view_stats"]?["display_value"].toString() ?? '',
+      onlineViewers: _douyinOnlineViewers(roomInfo),
+      audienceMetricType: AudienceMetricType.totalViewers,
       liveStatus: roomStatus ? LiveStatus.live : LiveStatus.offline,
       link: "https://live.douyin.com/$webRid",
       area: '',
@@ -658,6 +690,9 @@ class DouyinSite implements LiveSite {
         area: '',
         status: roomStatus,
         watching: itemData["stats"]["total_user_str"].toString(),
+        totalViewers: itemData["stats"]["total_user_str"].toString(),
+        onlineViewers: _douyinOnlineViewers(itemData),
+        audienceMetricType: AudienceMetricType.totalViewers,
       );
       items.add(roomItem);
     }
@@ -701,4 +736,23 @@ class DouyinSite implements LiveSite {
     }
     return int.tryParse(stringBuffer.toString()) ?? math.Random().nextInt(1000000000);
   }
+}
+
+String _douyinOnlineViewers(dynamic room) {
+  if (room is! Map) return '';
+  final stats = room['room_view_stats'];
+  final roomStats = room['stats'];
+  final candidates = <dynamic>[
+    if (stats is Map) stats['user_count'],
+    if (stats is Map) stats['online_user_count'],
+    if (stats is Map) stats['online_user_for_anchor'],
+    if (roomStats is Map) roomStats['user_count'],
+    if (roomStats is Map) roomStats['online_user_count'],
+    if (roomStats is Map) roomStats['online_user_for_anchor'],
+  ];
+  for (final value in candidates) {
+    final text = value?.toString().trim() ?? '';
+    if (LiveRoom.parseAudienceNumber(text) > 0) return text;
+  }
+  return '';
 }

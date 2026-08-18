@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:pure_live/common/widgets/common_avatar.dart';
@@ -31,24 +32,22 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
     var allRooms = SettingsService.to.fav.favoriteRooms.v;
 
     var liveList = allRooms.where((room) => room.liveStatus == LiveStatus.live && room.isRecord == false).toList();
-    for (var room in liveList) {
-      if (int.tryParse(room.watching!) == null) {
-        room.watching = "0";
-      }
-    }
-    liveList.sort((a, b) => int.parse(b.watching!).compareTo(int.parse(a.watching!)));
+    liveList.sort((a, b) => _audienceSortValue(b).compareTo(_audienceSortValue(a)));
     onlineRooms.value = liveList;
 
     var recordList = allRooms.where((room) => room.liveStatus == LiveStatus.live && room.isRecord == true).toList();
-    for (var room in recordList) {
-      if (int.tryParse(room.watching!) == null) {
-        room.watching = "0";
-      }
-    }
-    recordList.sort((a, b) => int.parse(b.watching!).compareTo(int.parse(a.watching!)));
+    recordList.sort((a, b) => _audienceSortValue(b).compareTo(_audienceSortValue(a)));
     recordingRooms.value = recordList;
 
     loadingFinish.value = true;
+  }
+
+  int _audienceSortValue(LiveRoom room) {
+    final app = SettingsService.to.app;
+    return room.audienceSortValue(
+      preferRealOnline: app.preferRealOnlineCounts.v,
+      platformEnabled: app.isRealOnlineEnabledFor(room.platform),
+    );
   }
 
   void listenFavorite() {

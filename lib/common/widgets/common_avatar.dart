@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:pure_live/common/utils/network_image_url.dart';
 
 class CommonAvatar extends StatelessWidget {
   final String? avatarUrl;
@@ -11,7 +12,8 @@ class CommonAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final double r = radius ?? (dense ? 17.0 : 20.0);
     final double size = r * 2;
-    final hasAvatar = avatarUrl != null && avatarUrl!.isNotEmpty;
+    final normalizedAvatarUrl = normalizeNetworkImageUrl(avatarUrl);
+    final hasAvatar = normalizedAvatarUrl.isNotEmpty;
     Widget fallback() {
       final String text = (fallbackName != null && fallbackName!.isNotEmpty)
           ? fallbackName!.characters.first.toUpperCase()
@@ -35,8 +37,13 @@ class CommonAvatar extends StatelessWidget {
       height: size,
       child: ClipOval(
         child: CachedNetworkImage(
-          imageUrl: avatarUrl!,
+          imageUrl: normalizedAvatarUrl,
           fit: BoxFit.cover,
+          filterQuality: FilterQuality.low,
+          memCacheWidth: (size * MediaQuery.devicePixelRatioOf(context)).round().clamp(48, 256).toInt(),
+          maxWidthDiskCache: 256,
+          fadeInDuration: const Duration(milliseconds: 100),
+          fadeOutDuration: Duration.zero,
           placeholder: (_, _) => Container(color: Theme.of(context).disabledColor.withValues(alpha: 0.2)),
           errorWidget: (_, _, _) => fallback(),
         ),

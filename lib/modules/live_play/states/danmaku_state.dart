@@ -3,15 +3,18 @@ import 'package:pure_live/common/index.dart';
 
 @immutable
 class DanmakuState {
+  static const Object _notProvided = Object();
   final List<LiveMessage> messages;
   final String? currentDanmakuRoomId;
 
   const DanmakuState({this.messages = const [], this.currentDanmakuRoomId});
 
-  DanmakuState copyWith({List<LiveMessage>? messages, String? currentDanmakuRoomId}) {
+  DanmakuState copyWith({List<LiveMessage>? messages, Object? currentDanmakuRoomId = _notProvided}) {
     return DanmakuState(
       messages: messages ?? this.messages,
-      currentDanmakuRoomId: currentDanmakuRoomId ?? this.currentDanmakuRoomId,
+      currentDanmakuRoomId: identical(currentDanmakuRoomId, _notProvided)
+          ? this.currentDanmakuRoomId
+          : currentDanmakuRoomId as String?,
     );
   }
 

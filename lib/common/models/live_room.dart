@@ -2,7 +2,87 @@ import 'package:pure_live/player/core/live_room_volume_manager.dart';
 
 enum LiveStatus { live, offline, replay, unknown, banned }
 
+enum AudienceMetricType { popularity, onlineViewers, totalViewers, followers, unknown }
+
+enum AudienceOnlineAvailability { unsupported, roomRealtime, roomList }
+
+class AudiencePlatformCapability {
+  const AudiencePlatformCapability({
+    required this.hasPopularity,
+    required this.hasTotalViewers,
+    required this.onlineAvailability,
+  });
+
+  final bool hasPopularity;
+  final bool hasTotalViewers;
+  final AudienceOnlineAvailability onlineAvailability;
+
+  bool get supportsConcurrentOnline => onlineAvailability != AudienceOnlineAvailability.unsupported;
+  bool get onlineAvailableInRoomLists => onlineAvailability == AudienceOnlineAvailability.roomList;
+}
+
 class LiveRoom {
+  static const Map<String, AudiencePlatformCapability> audienceCapabilities = {
+    // Bilibili's room `online` field and operation-3 heartbeat are popularity;
+    // WATCHED_CHANGE is cumulative. Neither is a concurrent head count.
+    'bilibili': AudiencePlatformCapability(
+      hasPopularity: true,
+      hasTotalViewers: true,
+      onlineAvailability: AudienceOnlineAvailability.unsupported,
+    ),
+    'douyu': AudiencePlatformCapability(
+      hasPopularity: true,
+      hasTotalViewers: false,
+      onlineAvailability: AudienceOnlineAvailability.unsupported,
+    ),
+    // Huya's current website URI 8006 calls the field iAttendeeCount, but live
+    // captures stay in the same multi-million popularity range as totalCount.
+    // Keep it as heat until the public protocol exposes a distinct head count.
+    'huya': AudiencePlatformCapability(
+      hasPopularity: true,
+      hasTotalViewers: false,
+      onlineAvailability: AudienceOnlineAvailability.unsupported,
+    ),
+    'douyin': AudiencePlatformCapability(
+      hasPopularity: false,
+      hasTotalViewers: true,
+      onlineAvailability: AudienceOnlineAvailability.roomList,
+    ),
+    'kuaishou': AudiencePlatformCapability(
+      hasPopularity: false,
+      hasTotalViewers: false,
+      onlineAvailability: AudienceOnlineAvailability.roomList,
+    ),
+    'cc': AudiencePlatformCapability(
+      hasPopularity: false,
+      hasTotalViewers: false,
+      onlineAvailability: AudienceOnlineAvailability.roomList,
+    ),
+    // Twitch GraphQL exposes viewersCount as the concurrent viewer count in
+    // directory, search and room metadata responses.
+    'twitch': AudiencePlatformCapability(
+      hasPopularity: false,
+      hasTotalViewers: false,
+      onlineAvailability: AudienceOnlineAvailability.roomList,
+    ),
+    // SOOP list/detail fields are named view_cnt/current_view_cnt and expose
+    // the current viewers rather than a separate platform heat score.
+    'soop': AudiencePlatformCapability(
+      hasPopularity: false,
+      hasTotalViewers: false,
+      onlineAvailability: AudienceOnlineAvailability.roomList,
+    ),
+  };
+
+  static const AudiencePlatformCapability _unknownAudienceCapability = AudiencePlatformCapability(
+    hasPopularity: false,
+    hasTotalViewers: false,
+    onlineAvailability: AudienceOnlineAvailability.unsupported,
+  );
+
+  static AudiencePlatformCapability audienceCapabilityFor(String? platform) =>
+      audienceCapabilities[platform?.toLowerCase()] ?? _unknownAudienceCapability;
+
   String? roomId;
   String? userId = '';
   String? link = '';
@@ -11,7 +91,19 @@ class LiveRoom {
   String? avatar = '';
   String? cover = '';
   String? area = '';
+
+  /// Legacy single audience field kept for backup compatibility.
   String? watching = '';
+  AudienceMetricType? audienceMetricType;
+
+  /// Platform popularity/heat. This is not a head count.
+  String? popularity = '';
+
+  /// Concurrent viewers when the platform exposes an explicit value.
+  String? onlineViewers = '';
+
+  /// Cumulative viewers for the current live session.
+  String? totalViewers = '';
   String? followers = '';
   String? platform = 'UNKNOWN';
   List<String> tagIds = [];
@@ -59,6 +151,10 @@ class LiveRoom {
     this.cover = '',
     this.area,
     this.watching = '0',
+    this.audienceMetricType,
+    this.popularity = '',
+    this.onlineViewers = '',
+    this.totalViewers = '',
     this.followers = '0',
     this.platform,
     this.liveStatus,
@@ -88,6 +184,13 @@ class LiveRoom {
       cover = json['cover'] ?? '',
       area = json['area'] ?? '',
       watching = json['watching']?.toString() ?? '0',
+      audienceMetricType = AudienceMetricType.values.firstWhere(
+        (value) => value.name == json['audienceMetricType'],
+        orElse: () => AudienceMetricType.unknown,
+      ),
+      popularity = json['popularity']?.toString() ?? '',
+      onlineViewers = json['onlineViewers']?.toString() ?? '',
+      totalViewers = json['totalViewers']?.toString() ?? '',
       followers = json['followers']?.toString() ?? '0',
       platform = json['platform'] ?? 'UNKNOWN',
       tagIds = List<String>.from(json['tagIds'] ?? []),
@@ -102,7 +205,18 @@ class LiveRoom {
       catchUpUrl = json['catchUpUrl'],
       isCatchUp = json['isCatchUp'] ?? false,
       catchUpStart = json['catchUpStart'],
-      catchUpEnd = json['catchUpEnd'];
+      catchUpEnd = json['catchUpEnd'] {
+    // Earlier builds stored Huya's userCount/URI 8006 popularity in the
+    // concurrent-viewer field. Current captures confirm both are popularity.
+    if (platform == 'huya' && _hasExplicitAudienceValue(onlineViewers)) {
+      if (!_hasAudienceValue(popularity)) {
+        popularity = onlineViewers;
+      }
+      onlineViewers = '';
+      audienceMetricType = AudienceMetricType.popularity;
+      watching = popularity;
+    }
+  }
 
   /// 创建一个新的LiveRoom实例，并用提供的值更新指定字段
   LiveRoom copyWith({
@@ -115,6 +229,10 @@ class LiveRoom {
     String? cover,
     String? area,
     String? watching,
+    AudienceMetricType? audienceMetricType,
+    String? popularity,
+    String? onlineViewers,
+    String? totalViewers,
     String? followers,
     String? platform,
     String? introduction,
@@ -143,11 +261,17 @@ class LiveRoom {
       cover: cover ?? this.cover,
       area: area ?? this.area,
       watching: watching ?? this.watching,
+      audienceMetricType: audienceMetricType ?? this.audienceMetricType,
+      popularity: popularity ?? this.popularity,
+      onlineViewers: onlineViewers ?? this.onlineViewers,
+      totalViewers: totalViewers ?? this.totalViewers,
       followers: followers ?? this.followers,
       platform: platform ?? this.platform,
       introduction: introduction ?? this.introduction,
       notice: notice ?? this.notice,
       status: status ?? this.status,
+      data: data ?? this.data,
+      danmakuData: danmakuData ?? this.danmakuData,
       isRecord: isRecord ?? this.isRecord,
       liveStatus: liveStatus ?? this.liveStatus,
       epgId: epgId ?? this.epgId,
@@ -190,6 +314,10 @@ class LiveRoom {
       'cover': cover,
       'area': area,
       'watching': watching,
+      'audienceMetricType': effectiveAudienceMetricType.name,
+      'popularity': popularity,
+      'onlineViewers': onlineViewers,
+      'totalViewers': totalViewers,
       'followers': followers,
       'platform': platform,
       'tagIds': tagIds,
@@ -206,6 +334,138 @@ class LiveRoom {
       'catchUpStart': catchUpStart,
       'catchUpEnd': catchUpEnd,
     };
+  }
+
+  AudienceMetricType get effectiveAudienceMetricType {
+    if (audienceMetricType != null && audienceMetricType != AudienceMetricType.unknown) {
+      return audienceMetricType!;
+    }
+    return switch (platform) {
+      'bilibili' || 'douyu' => AudienceMetricType.popularity,
+      'kuaishou' || 'twitch' || 'soop' => AudienceMetricType.onlineViewers,
+      'huya' => AudienceMetricType.popularity,
+      'douyin' => AudienceMetricType.totalViewers,
+      _ => AudienceMetricType.unknown,
+    };
+  }
+
+  String get audienceMetricI18nKey => switch (effectiveAudienceMetricType) {
+    AudienceMetricType.popularity => 'audience_popularity',
+    AudienceMetricType.onlineViewers => 'audience_online',
+    AudienceMetricType.totalViewers => 'audience_total',
+    AudienceMetricType.followers => 'audience_followers',
+    AudienceMetricType.unknown => 'audience_count',
+  };
+
+  String get effectivePopularity {
+    if (_hasAudienceValue(popularity)) return popularity!.trim();
+    return effectiveAudienceMetricType == AudienceMetricType.popularity ? (watching ?? '').trim() : '';
+  }
+
+  String get effectiveOnlineViewers {
+    if (_hasExplicitAudienceValue(onlineViewers)) return onlineViewers!.trim();
+    return effectiveAudienceMetricType == AudienceMetricType.onlineViewers && _hasExplicitAudienceValue(watching)
+        ? (watching ?? '').trim()
+        : '';
+  }
+
+  String get effectiveTotalViewers {
+    if (_hasAudienceValue(totalViewers)) return totalViewers!.trim();
+    return effectiveAudienceMetricType == AudienceMetricType.totalViewers ? (watching ?? '').trim() : '';
+  }
+
+  AudiencePlatformCapability get audienceCapability => audienceCapabilityFor(platform);
+
+  /// Platform-level capability, independent of whether this particular room
+  /// has already received its first list value or realtime heartbeat.
+  bool get supportsRealOnlineCount => audienceCapability.supportsConcurrentOnline;
+
+  bool get hasRealOnlineCount => _hasExplicitAudienceValue(effectiveOnlineViewers);
+
+  String audienceValue({required bool preferRealOnline, required bool platformEnabled}) {
+    if (preferRealOnline && platformEnabled && supportsRealOnlineCount) {
+      return hasRealOnlineCount ? effectiveOnlineViewers : '';
+    }
+    if (_hasAudienceValue(effectivePopularity)) return effectivePopularity;
+    if (_hasAudienceValue(effectiveTotalViewers)) return effectiveTotalViewers;
+    if (hasRealOnlineCount) return effectiveOnlineViewers;
+    return (watching ?? '0').trim();
+  }
+
+  AudienceMetricType audienceType({required bool preferRealOnline, required bool platformEnabled}) {
+    if (preferRealOnline && platformEnabled && supportsRealOnlineCount) return AudienceMetricType.onlineViewers;
+    if (_hasAudienceValue(effectivePopularity)) return AudienceMetricType.popularity;
+    if (_hasAudienceValue(effectiveTotalViewers)) return AudienceMetricType.totalViewers;
+    if (hasRealOnlineCount) return AudienceMetricType.onlineViewers;
+    return effectiveAudienceMetricType;
+  }
+
+  int audienceSortValue({required bool preferRealOnline, required bool platformEnabled}) {
+    // In concurrent mode, native heat/cumulative values must not outrank an
+    // actual viewer count merely because their numeric scale is much larger.
+    if (preferRealOnline && (!platformEnabled || !supportsRealOnlineCount)) return -1;
+    return parseAudienceNumber(audienceValue(preferRealOnline: preferRealOnline, platformEnabled: platformEnabled));
+  }
+
+  /// Keeps a reliable audience snapshot when a room-detail request or the
+  /// first websocket heartbeat omits a metric. Bilibili can transiently return
+  /// `1` for a busy room while its list API still has the current popularity;
+  /// accepting that value makes the room header jump from hundreds of
+  /// thousands to one. A later plausible heartbeat is still accepted.
+  LiveRoom withAudienceFallbackFrom(LiveRoom fallback) {
+    if (roomId != fallback.roomId || platform != fallback.platform) return this;
+
+    final currentPopularity = effectivePopularity;
+    final fallbackPopularity = fallback.effectivePopularity;
+    final currentPopularityCount = parseAudienceNumber(currentPopularity);
+    final fallbackPopularityCount = parseAudienceNumber(fallbackPopularity);
+    final hasTransientBilibiliDrop =
+        platform == 'bilibili' &&
+        fallbackPopularityCount >= 1000 &&
+        currentPopularityCount <= 1 &&
+        currentPopularityCount * 100 < fallbackPopularityCount;
+    final useFallbackPopularity = !_hasAudienceValue(currentPopularity) || hasTransientBilibiliDrop;
+
+    final mergedPopularity = useFallbackPopularity ? fallbackPopularity : currentPopularity;
+    final mergedOnlineViewers = _hasExplicitAudienceValue(onlineViewers) ? onlineViewers : fallback.onlineViewers;
+    final mergedTotalViewers = _hasAudienceValue(totalViewers) ? totalViewers : fallback.totalViewers;
+    final mergedMetricType = useFallbackPopularity ? fallback.effectiveAudienceMetricType : effectiveAudienceMetricType;
+    final mergedWatching = mergedMetricType == AudienceMetricType.popularity && _hasAudienceValue(mergedPopularity)
+        ? mergedPopularity
+        : watching;
+
+    return copyWith(
+      watching: mergedWatching,
+      popularity: mergedPopularity,
+      onlineViewers: mergedOnlineViewers,
+      totalViewers: mergedTotalViewers,
+      audienceMetricType: mergedMetricType,
+    );
+  }
+
+  static int parseAudienceNumber(String? value) {
+    final text = value?.trim().toLowerCase() ?? '';
+    if (text.isEmpty) return 0;
+    final match = RegExp(r'([0-9]+(?:\.[0-9]+)?)').firstMatch(text.replaceAll(',', ''));
+    final number = double.tryParse(match?.group(1) ?? '') ?? 0;
+    final multiplier = text.contains('亿')
+        ? 100000000
+        : (text.contains('万') || text.contains('w'))
+        ? 10000
+        : text.contains('k')
+        ? 1000
+        : 1;
+    return (number * multiplier).round();
+  }
+
+  static bool _hasAudienceValue(String? value) {
+    final text = value?.trim() ?? '';
+    return text.isNotEmpty && text != 'null' && parseAudienceNumber(text) > 0;
+  }
+
+  static bool _hasExplicitAudienceValue(String? value) {
+    final text = value?.trim() ?? '';
+    return text.isNotEmpty && text != 'null' && RegExp(r'[0-9]').hasMatch(text);
   }
 }
 

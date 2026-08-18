@@ -45,7 +45,7 @@ class _MinePageState extends State<MinePage> {
         ],
       ),
       body: ListView(
-        physics: const BouncingScrollPhysics(),
+        physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
           context.buildGroupTitle(i18n('firebase_mine')),

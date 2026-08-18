@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/file_utils.dart';
@@ -30,7 +31,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
       appBar: AppBar(title: Text(i18n("record_settings"))),
       body: Obx(
         () => ListView(
-          physics: const BouncingScrollPhysics(),
+          physics: const PureLiveScrollPhysics(),
           padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
           children: [
             context.buildGroupTitle(i18n("basic_config")),

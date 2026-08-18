@@ -1,73 +1,76 @@
-import java.util.Properties // 添加Properties类的导入
+import java.util.Properties
 
 plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
-    id("com.google.gms.google-services")
+    id("com.google.gms.google-services") apply false
     // END: FlutterFire Configuration
-    id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    // AGP 9 provides Built-in Kotlin; the standalone Kotlin Gradle Plugin is no longer applied.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// 加载local.properties文件
-val localProperties = Properties().apply {
-    val localPropertiesFile = rootProject.file("local.properties")
-    if (localPropertiesFile.exists()) {
-        localPropertiesFile.inputStream().use { stream ->
-            load(stream) // 现在可以正确识别load方法
-        }
-    }
-}
+apply(plugin = "com.google.gms.google-services")
 
 // 加载签名配置
-val keystoreProperties = Properties().apply { // 同样添加了导入
-    val keystorePropertiesFile = rootProject.file("key.properties")
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties = Properties().apply {
     if (keystorePropertiesFile.exists()) {
-        keystorePropertiesFile.inputStream().use { stream ->
-            load(stream) // 现在可以正确识别load方法
-        }
+        keystorePropertiesFile.inputStream().use(::load)
     }
 }
+val releaseStoreFile = keystoreProperties.getProperty("storeFile")?.let(::file)
+val hasReleaseSigning = listOf("keyAlias", "keyPassword", "storePassword").all {
+    !keystoreProperties.getProperty(it).isNullOrBlank()
+} && releaseStoreFile?.isFile == true
+val requireReleaseSigning =
+    providers.gradleProperty("pureLive.requireReleaseSigning").orNull.toBoolean() ||
+        providers.gradleProperty("pureLiveRequireReleaseSigning").orNull.toBoolean()
+if (requireReleaseSigning && !hasReleaseSigning) {
+    throw GradleException("Release signing is required but android/key.properties is incomplete.")
+}
 
-android {
+extensions.configure<com.android.build.api.dsl.ApplicationExtension> {
     namespace = "com.mystyle.purelive"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
     lint {
         disable.add("NullSafeMutableLiveData")
-        checkReleaseBuilds = false
-        abortOnError = false
+        checkReleaseBuilds = true
+        abortOnError = true
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
-    }
-
     defaultConfig {
         applicationId = "com.mystyle.purelive"
         minSdk = flutter.minSdkVersion 
         multiDexEnabled = true 
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 37
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["appLabel"] = "纯粹直播"
     }
 
     signingConfigs {
-        create("release") {
-            keyAlias = keystoreProperties["keyAlias"].toString()
-            keyPassword = keystoreProperties["keyPassword"].toString()
-            storeFile = file(keystoreProperties["storeFile"].toString())
-            storePassword = keystoreProperties["storePassword"].toString()
+        if (hasReleaseSigning) {
+            create("release") {
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = releaseStoreFile
+                storePassword = keystoreProperties.getProperty("storePassword")
+            }
         }
     }
 
     buildTypes {
        release {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (hasReleaseSigning) {
+                signingConfigs.getByName("release")
+            } else {
+                logger.warn("Release key not configured; using the local debug key for a test-only formal-package build.")
+                signingConfigs.getByName("debug")
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -76,10 +79,15 @@ android {
               )
         }
        debug {
-            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             isShrinkResources = false
         }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
 

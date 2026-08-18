@@ -1,51 +1,48 @@
-name: 每日自动更新历史发布数据
+name: 手动更新历史发布数据
 
 on:
-  # 1. 每天定时触发（此处设置为国际标准时间 UTC 00:00，即北京时间早上 08:00）
-  schedule:
-    - cron: '0 0 * * *'
-  
-  # 2. 保留手动触发按钮，方便你随时可以手动测试更新
   workflow_dispatch:
 
 jobs:
   update-json:
     runs-on: ubuntu-latest
-    
+
     permissions:
       contents: write
 
     steps:
     # 1. 检出仓库代码（获取完整 Git 历史，为后续 rebase 做准备）
     - name: Checkout repository
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
 
     # 2. 设置 Python 环境
     - name: Set up Python
-      uses: actions/setup-python@v7
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
       with:
-        python-version: '3.10'
+        python-version: '3.14'
 
     # 3. 运行更新脚本
     - name: Run update script
-      run: python update_releases.py
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: python tool/update_releases.py
 
     # 4. 检查是否有文件更新，并采用拉取重构（Pull Rebase）后安全推送
     - name: Commit and Push changes
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        
+
         # 检查是否有文件变动
         if [ -n "$(git status --porcelain)" ]; then
           git add assets/releases.json
           git commit -m "chore: 定时更新 releases.json 数据 [skip ci]"
-          
+
           # 推送前先拉取远程最新修改，防止与其他任务（如发布 Release）冲突
           git pull --rebase origin master
-          
+
           git push origin master
         else
           echo "数据未发生变化，无需更新。"

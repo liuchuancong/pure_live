@@ -1,0 +1,15 @@
+// Local-only acceleration. The official repositories remain as fallbacks.
+def addMirrors = { handler ->
+    handler.maven { url = uri('https://maven.aliyun.com/repository/google') }
+    handler.maven { url = uri('https://maven.aliyun.com/repository/central') }
+    handler.maven { url = uri('https://maven.aliyun.com/repository/gradle-plugin') }
+    handler.maven { url = uri('https://maven.aliyun.com/repository/public') }
+}
+
+beforeSettings { settings ->
+    addMirrors(settings.pluginManagement.repositories)
+}
+
+gradle.beforeProject { project ->
+    addMirrors(project.buildscript.repositories)
+}

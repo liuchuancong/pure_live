@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/common/models/live_message.dart';
 import 'package:pure_live/pkg/tars/codec/tars_struct.dart';
@@ -12,13 +13,13 @@ import 'package:pure_live/pkg/tars/codec/tars_output_stream.dart';
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
 class HuyaDanmakuArgs {
-  final dynamic ayyuid;
+  final int uid;
   final int topSid;
   final int subSid;
-  HuyaDanmakuArgs({required this.ayyuid, required this.topSid, required this.subSid});
+  HuyaDanmakuArgs({required this.uid, required this.topSid, required this.subSid});
   @override
   String toString() {
-    return json.encode({"ayyuid": ayyuid, "topSid": topSid, "subSid": subSid});
+    return json.encode({"uid": uid, "topSid": topSid, "subSid": subSid});
   }
 }
 
@@ -46,177 +47,75 @@ class HuyaDanmaku implements LiveDanmaku {
   Function(String msg)? onClose;
   @override
   Function()? onReady;
-  String serverUrl = "wss://cdnws.api.huya.com";
+  String serverUrl = "wss://wsapi.huya.com";
 
   WebScoketUtils? webScoketUtils;
 
-  final heartbeatData = [
-    0x00,
-    0x03,
-    0x1d,
-    0x00,
-    0x00,
-    0x69,
-    0x00,
-    0x00,
-    0x00,
-    0x69,
-    0x10,
-    0x03,
-    0x2c,
-    0x3c,
-    0x4c,
-    0x56,
-    0x08,
-    0x6f,
-    0x6e,
-    0x6c,
-    0x69,
-    0x6e,
-    0x65,
-    0x75,
-    0x69,
-    0x66,
-    0x0f,
-    0x4f,
-    0x6e,
-    0x55,
-    0x73,
-    0x65,
-    0x72,
-    0x48,
-    0x65,
-    0x61,
-    0x72,
-    0x74,
-    0x42,
-    0x65,
-    0x61,
-    0x74,
-    0x7d,
-    0x00,
-    0x00,
-    0x3c,
-    0x08,
-    0x00,
-    0x01,
-    0x06,
-    0x04,
-    0x74,
-    0x52,
-    0x65,
-    0x71,
-    0x1d,
-    0x00,
-    0x00,
-    0x2f,
-    0x0a,
-    0x0a,
-    0x0c,
-    0x16,
-    0x00,
-    0x26,
-    0x00,
-    0x36,
-    0x07,
-    0x61,
-    0x64,
-    0x72,
-    0x5f,
-    0x77,
-    0x61,
-    0x70,
-    0x46,
-    0x00,
-    0x0b,
-    0x12,
-    0x03,
-    0xae,
-    0xf0,
-    0x0f,
-    0x22,
-    0x03,
-    0xae,
-    0xf0,
-    0x0f,
-    0x3c,
-    0x42,
-    0x6d,
-    0x52,
-    0x02,
-    0x60,
-    0x5c,
-    0x60,
-    0x01,
-    0x7c,
-    0x82,
-    0x00,
-    0x0b,
-    0xb0,
-    0x1f,
-    0x9c,
-    0xac,
-    0x0b,
-    0x8c,
-    0x98,
-    0x0c,
-    0xa8,
-    0x0c,
-    0x20,
-  ];
+  /// Current website heartbeat: `EWSCmdC2S_HeartBeatReq` (20).
+  List<int> get heartbeatData {
+    final command = TarsOutputStream();
+    command.write(20, 0);
+    command.write(Uint8List(0), 1);
+    return command.toUint8List();
+  }
 
   late HuyaDanmakuArgs danmakuArgs;
+  int _generation = 0;
 
   @override
   Future start(dynamic args) async {
+    final generation = ++_generation;
+    await webScoketUtils?.close();
+    webScoketUtils = null;
+    if (generation != _generation) return;
     danmakuArgs = args as HuyaDanmakuArgs;
+    markDisconnected();
     webScoketUtils = WebScoketUtils(
       url: serverUrl,
       heartBeatTime: heartbeatTime,
       onMessage: (e) {
-        decodeMessage(e);
+        if (generation == _generation) decodeMessage(e);
       },
       onReady: () {
-        onReady?.call();
+        if (generation != _generation) return;
         markConnected();
+        onReady?.call();
         joinRoom();
+        // Keep the new room-group connection alive immediately.
+        heartbeat();
       },
       onHeartBeat: () {
         heartbeat();
       },
       onReconnect: () {
+        if (generation != _generation) return;
         markDisconnected();
         onClose?.call("与服务器断开连接，正在尝试重连");
       },
       onClose: (e) {
+        if (generation != _generation) return;
         markDisconnected();
         onClose?.call("服务器连接失败$e");
       },
     );
-    webScoketUtils?.connect();
+    await webScoketUtils?.connect();
   }
 
   void joinRoom() {
-    var joinData = getJoinData(danmakuArgs.ayyuid);
+    var joinData = getJoinData(danmakuArgs.uid);
     webScoketUtils?.sendMessage(joinData);
   }
 
   List<int> getJoinData(int uid) {
     try {
-      var oos = TarsOutputStream();
-      oos.write(uid, 0);
-      oos.write(false, 1);
-      oos.write("", 2);
-      oos.write("", 3);
-      oos.write(0, 4);
-      oos.write(0, 5);
-      oos.write(uid, 6);
-      oos.write(3, 7);
+      final group = TarsOutputStream();
+      group.write(<String>['live:$uid', 'chat:$uid'], 0);
+      group.write('', 1);
 
-      var wscmd = TarsOutputStream();
-      wscmd.write(1, 0);
-      wscmd.write(oos.toUint8List(), 1);
-      return wscmd.toUint8List();
+      final command = TarsOutputStream();
+      command.write(16, 0); // EWSCmdC2S_RegisterGroupReq
+      command.write(group.toUint8List(), 1);
+      return command.toUint8List();
     } catch (e) {
       CoreLog.error(e);
       return [];
@@ -230,9 +129,13 @@ class HuyaDanmaku implements LiveDanmaku {
 
   @override
   Future stop() async {
+    _generation++;
+    markDisconnected();
     onMessage = null;
     onClose = null;
-    webScoketUtils?.close();
+    onReady = null;
+    await webScoketUtils?.close();
+    webScoketUtils = null;
   }
 
   void decodeMessage(List<int> data) {
@@ -243,39 +146,48 @@ class HuyaDanmaku implements LiveDanmaku {
         stream = TarsInputStream(stream.readBytes(1, false));
         HYPushMessage wSPushMessage = HYPushMessage();
         wSPushMessage.readFrom(stream);
-        if (wSPushMessage.uri == 1400) {
-          HYMessage messageNotice = HYMessage();
-          messageNotice.readFrom(TarsInputStream(Uint8List.fromList(wSPushMessage.msg)));
-          var uname = messageNotice.userInfo.nickName;
-          var content = messageNotice.content;
-
-          var color = messageNotice.bulletFormat.fontColor;
-
-          onMessage?.call(
-            LiveMessage(
-              type: LiveMessageType.chat,
-              color: color <= 0 ? LiveMessageColor.white : LiveMessageColor.numberToColor(color),
-              message: content,
-              userName: uname,
-            ),
-          );
-        } else if (wSPushMessage.uri == 8006) {
-          int online = 0;
-          var s = TarsInputStream(Uint8List.fromList(wSPushMessage.msg));
-          online = s.read(online, 0, false);
-          onMessage?.call(
-            LiveMessage(
-              type: LiveMessageType.online,
-              data: online,
-              color: LiveMessageColor.white,
-              message: "",
-              userName: "",
-            ),
-          );
+        _decodePush(wSPushMessage.uri, wSPushMessage.msg);
+      } else if (type == 22) {
+        final push = HYPushMessageV2();
+        push.readFrom(TarsInputStream(stream.readBytes(1, false)));
+        for (final item in push.items) {
+          _decodePush(item.uri, item.msg, messageId: item.messageId);
         }
       }
     } catch (e) {
       CoreLog.error(e);
+    }
+  }
+
+  void _decodePush(int uri, List<int> payload, {int messageId = 0}) {
+    if (uri == 1400) {
+      final messageNotice = HYMessage();
+      messageNotice.readFrom(TarsInputStream(Uint8List.fromList(payload)));
+      final color = messageNotice.bulletFormat.fontColor;
+      onMessage?.call(
+        LiveMessage(
+          type: LiveMessageType.chat,
+          color: color <= 0 ? LiveMessageColor.white : LiveMessageColor.numberToColor(color),
+          message: messageNotice.content,
+          userName: messageNotice.userInfo.nickName,
+          userId: messageNotice.userInfo.uid.toString(),
+          messageId: messageId > 0 ? 'huya:$messageId' : '',
+        ),
+      );
+    } else if (uri == 8006) {
+      final attendeeCount = TarsInputStream(Uint8List.fromList(payload)).read(0, 0, false);
+      onMessage?.call(
+        LiveMessage(
+          type: LiveMessageType.online,
+          // Current website captures keep iAttendeeCount in the same
+          // multi-million popularity range as the list value.
+          data: LiveAudienceUpdate(kind: LiveAudienceMetricKind.popularity, value: attendeeCount),
+          color: LiveMessageColor.white,
+          message: '',
+          userName: '',
+          messageId: messageId > 0 ? 'huya:$messageId' : '',
+        ),
+      );
     }
   }
 }
@@ -305,6 +217,60 @@ class HYPushMessage extends TarsStruct {
       ..msg = List<int>.from(msg)
       ..protocolType = protocolType;
   }
+
+  @override
+  void displayAsString(StringBuffer sb, int level) {}
+}
+
+class HYPushMessageV2 extends TarsStruct {
+  String groupId = '';
+  List<HYMessageItem> items = <HYMessageItem>[];
+
+  @override
+  void readFrom(TarsInputStream inputStream) {
+    groupId = inputStream.read(groupId, 0, false);
+    items = inputStream.readList<HYMessageItem>(<HYMessageItem>[HYMessageItem()], 1, false);
+  }
+
+  @override
+  void writeTo(TarsOutputStream outputStream) {
+    outputStream.write(groupId, 0);
+    outputStream.write(items, 1);
+  }
+
+  @override
+  Object deepCopy() => HYPushMessageV2()
+    ..groupId = groupId
+    ..items = items.map((item) => item.deepCopy() as HYMessageItem).toList();
+
+  @override
+  void displayAsString(StringBuffer sb, int level) {}
+}
+
+class HYMessageItem extends TarsStruct {
+  int uri = 0;
+  List<int> msg = <int>[];
+  int messageId = 0;
+
+  @override
+  void readFrom(TarsInputStream inputStream) {
+    uri = inputStream.read(uri, 0, false);
+    msg = inputStream.readBytes(1, false);
+    messageId = inputStream.read(messageId, 2, false);
+  }
+
+  @override
+  void writeTo(TarsOutputStream outputStream) {
+    outputStream.write(uri, 0);
+    outputStream.write(Uint8List.fromList(msg), 1);
+    outputStream.write(messageId, 2);
+  }
+
+  @override
+  Object deepCopy() => HYMessageItem()
+    ..uri = uri
+    ..msg = List<int>.from(msg)
+    ..messageId = messageId;
 
   @override
   void displayAsString(StringBuffer sb, int level) {}

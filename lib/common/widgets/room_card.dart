@@ -12,6 +12,61 @@ class RoomCard extends StatelessWidget {
   final LiveRoom room;
   final bool dense;
 
+  Widget _buildCover(BuildContext context, bool isDark) {
+    final coverUrl = normalizeNetworkImageUrl(room.cover);
+    if (coverUrl.isEmpty) return _coverFallback(context, isDark);
+
+    return Obx(() {
+      final epoch = SettingsService.to.cache.imageCacheEpoch.value;
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final logicalWidth = constraints.maxWidth.isFinite
+              ? constraints.maxWidth
+              : MediaQuery.sizeOf(context).width / 2;
+          final cacheWidth = (logicalWidth * MediaQuery.devicePixelRatioOf(context)).round().clamp(240, 960).toInt();
+
+          return CachedNetworkImage(
+            key: ValueKey('$coverUrl#$epoch'),
+            cacheKey: '$coverUrl#$epoch',
+            imageUrl: coverUrl,
+            cacheManager: CustomImageCacheManager.instance,
+            fit: BoxFit.cover,
+            filterQuality: FilterQuality.low,
+            memCacheWidth: cacheWidth,
+            maxWidthDiskCache: 960,
+            fadeInDuration: Duration.zero,
+            fadeOutDuration: Duration.zero,
+            useOldImageOnUrlChange: false,
+            placeholder: (_, _) => _coverPlaceholder(context, isDark),
+            errorWidget: (_, _, _) => _coverFallback(context, isDark),
+          );
+        },
+      );
+    });
+  }
+
+  Widget _coverPlaceholder(BuildContext context, bool isDark) {
+    return ColoredBox(
+      color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
+      child: Center(
+        child: Icon(
+          Icons.live_tv_rounded,
+          size: dense ? 28 : 36,
+          color: Theme.of(context).disabledColor.withValues(alpha: 0.35),
+        ),
+      ),
+    );
+  }
+
+  Widget _coverFallback(BuildContext context, bool isDark) {
+    return ColoredBox(
+      color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
+      child: Center(
+        child: Icon(Icons.broken_image_rounded, size: dense ? 32 : 44, color: Theme.of(context).disabledColor),
+      ),
+    );
+  }
+
   void onTap(BuildContext context) async {
     AppNavigator.toLiveRoomDetail(liveRoom: room);
   }
@@ -421,7 +476,7 @@ class RoomCard extends StatelessWidget {
                           child: GridView.builder(
                             controller: tagScrollController,
                             shrinkWrap: true,
-                            physics: const BouncingScrollPhysics(),
+                            physics: const PureLiveScrollPhysics(),
                             itemCount: tagController.tags.length,
                             padding: const EdgeInsets.only(right: 10, top: 4, bottom: 4, left: 2),
                             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -590,161 +645,123 @@ class RoomCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Card(
-      margin: EdgeInsets.zero,
-      elevation: isDark ? 2 : 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      color: isDark ? Colors.grey[900] : Colors.white,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => onTap(context),
-        onLongPress: () => onLongPress(context),
-        onSecondaryTap: () => onLongPress(context),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
-              children: [
-                AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: Card(
-                    margin: EdgeInsets.zero,
-                    clipBehavior: Clip.antiAlias,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    color: isDark ? Colors.grey[850] : Colors.grey[100],
+    return RepaintBoundary(
+      child: Card(
+        margin: EdgeInsets.zero,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        color: isDark ? Colors.grey[900] : Colors.white,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => onTap(context),
+          onLongPress: () => onLongPress(context),
+          onSecondaryTap: () => onLongPress(context),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                children: [
+                  AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: Card(
+                      margin: EdgeInsets.zero,
+                      clipBehavior: Clip.antiAlias,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      color: isDark ? Colors.grey[850] : Colors.grey[100],
 
-                    child: room.platform == Sites.iptvSite
-                        ? CachedNetworkImage(
-                            imageUrl: room.cover!,
-                            cacheManager: CustomImageCacheManager.instance,
-                            fit: BoxFit.cover,
-                            fadeInDuration: const Duration(milliseconds: 250),
-                            fadeOutDuration: const Duration(milliseconds: 250),
-                            placeholder: (context, url) => Container(
-                              color: Theme.of(context).focusColor,
-                              child: const Center(
-                                child: SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: AppStatusView(
-                                    type: AppStatusType.loading,
-                                    title: "",
-                                    subtitle: "",
-                                    isMini: true,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            errorWidget: (context, url, error) {
-                              return Container(
-                                color: Theme.of(context).focusColor,
-                                child: Center(
-                                  child: Icon(
-                                    Icons.broken_image_rounded,
-                                    size: dense ? 36 : 60,
-                                    color: Theme.of(context).disabledColor,
-                                  ),
-                                ),
-                              );
-                            },
-                          )
-                        : Image.network(
-                            room.cover!,
-                            fit: BoxFit.cover,
-                            gaplessPlayback: false,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Container(
-                                color: isDark ? Colors.grey[850] : Colors.grey[100],
-                                child: const Center(
-                                  child: SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: AppStatusView(
-                                      type: AppStatusType.loading,
-                                      title: "",
-                                      subtitle: "",
-                                      isMini: true,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: isDark ? Colors.grey[850] : Colors.grey[100],
-                                child: AppStatusView(type: AppStatusType.error, title: "", subtitle: "", isMini: true),
-                              );
-                            },
-                          ),
-                  ),
-                ),
-                if (room.isRecord == true)
-                  Positioned(
-                    right: 8,
-                    top: 8,
-                    child: CountChip(
-                      icon: Icons.videocam_rounded,
-                      count: i18n("replay"),
-                      dense: dense,
-                      color: Get.theme.primaryColor,
+                      child: _buildCover(context, isDark),
                     ),
                   ),
-                if (room.isRecord == false && room.liveStatus == LiveStatus.live)
-                  Positioned(
-                    right: 8,
-                    bottom: 8,
-                    child: CountChip(
-                      icon: Icons.whatshot_rounded,
-                      count: readableCount(room.watching ?? "0"),
-                      dense: dense,
-                      color: Get.theme.primaryColor,
-                    ),
-                  ),
-              ],
-            ),
-            ListTile(
-              dense: dense,
-              minLeadingWidth: dense ? 34 : 40,
-              contentPadding: EdgeInsets.symmetric(horizontal: dense ? 10 : 12, vertical: dense ? 4 : 6),
-              horizontalTitleGap: dense ? 8 : 12,
-              leading: CommonAvatar(avatarUrl: room.avatar, fallbackName: room.nick, dense: dense),
-              title: Text(
-                room.title ?? '',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: (dense ? AppTextStyles.t13 : AppTextStyles.t15).copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : Colors.black87,
-                ),
-              ),
-              subtitle: Text(
-                room.nick ?? '',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: (dense ? AppTextStyles.t12 : AppTextStyles.t13).copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.grey[400] : Colors.grey[700],
-                ),
-              ),
-              trailing: dense
-                  ? null
-                  : Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.grey[800] : Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
+                  if (room.isRecord == true)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: CountChip(
+                        icon: Icons.videocam_rounded,
+                        count: i18n("replay"),
+                        dense: dense,
+                        color: Get.theme.primaryColor,
                       ),
-                      child: Text(
-                        room.platform?.toUpperCase() ?? '',
-                        style: AppTextStyles.t11.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.grey[300] : Colors.grey[800],
+                    ),
+                  if (room.isRecord == false && room.liveStatus == LiveStatus.live)
+                    Positioned(
+                      right: 8,
+                      bottom: 8,
+                      child: Obx(() {
+                        final app = SettingsService.to.app;
+                        final preferReal = app.preferRealOnlineCounts.v;
+                        final platformEnabled = app.isRealOnlineEnabledFor(room.platform);
+                        final type = room.audienceType(preferRealOnline: preferReal, platformEnabled: platformEnabled);
+                        final value = room.audienceValue(
+                          preferRealOnline: preferReal,
+                          platformEnabled: platformEnabled,
+                        );
+                        final labelKey = switch (type) {
+                          AudienceMetricType.popularity => 'audience_popularity',
+                          AudienceMetricType.onlineViewers => 'audience_online',
+                          AudienceMetricType.totalViewers => 'audience_total',
+                          AudienceMetricType.followers => 'audience_followers',
+                          AudienceMetricType.unknown => 'audience_count',
+                        };
+                        return CountChip(
+                          icon: switch (type) {
+                            AudienceMetricType.onlineViewers => Icons.people_alt_rounded,
+                            AudienceMetricType.followers => Icons.favorite_rounded,
+                            AudienceMetricType.totalViewers => Icons.visibility_rounded,
+                            _ => Icons.whatshot_rounded,
+                          },
+                          count:
+                              '${i18n(labelKey)} · ${value.isEmpty ? i18n('audience_waiting') : readableCount(value)}',
+                          dense: dense,
+                          color: Get.theme.primaryColor,
+                        );
+                      }),
+                    ),
+                ],
+              ),
+              ListTile(
+                dense: dense,
+                minLeadingWidth: dense ? 34 : 40,
+                contentPadding: EdgeInsets.symmetric(horizontal: dense ? 10 : 12, vertical: dense ? 4 : 6),
+                horizontalTitleGap: dense ? 8 : 12,
+                leading: CommonAvatar(avatarUrl: room.avatar, fallbackName: room.nick, dense: dense),
+                title: Text(
+                  room.title ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: (dense ? AppTextStyles.t13 : AppTextStyles.t15).copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+                subtitle: Text(
+                  room.nick ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: (dense ? AppTextStyles.t12 : AppTextStyles.t13).copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.grey[400] : Colors.grey[700],
+                  ),
+                ),
+                trailing: dense
+                    ? null
+                    : Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.grey[800] : Colors.grey[100],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          room.platform?.toUpperCase() ?? '',
+                          style: AppTextStyles.t11.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.grey[300] : Colors.grey[800],
+                          ),
                         ),
                       ),
-                    ),
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );

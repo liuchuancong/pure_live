@@ -1,0 +1,6 @@
+include: package:very_good_analysis/analysis_options.yaml
+
+analyzer:
+  errors:
+    # The library itself should be able to use deprecated members, for backwards support reasons.
+    deprecated_member_use_from_same_package: ignore

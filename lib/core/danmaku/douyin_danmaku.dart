@@ -1,11 +1,14 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
+
 import 'proto/douyin.pb.dart';
+
 import 'package:crypto/crypto.dart';
 import 'package:pure_live/core/danmaku/xbogus.dart';
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/common/models/live_message.dart';
+import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/core/common/web_socket_util.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/utils/douyin/douyin_request_params.dart';
@@ -51,10 +54,16 @@ class DouyinDanmaku implements LiveDanmaku {
   String serverUrl = "wss://webcast100-ws-web-lq.douyin.com/webcast/im/push/v2/";
   late DouyinDanmakuArgs danmakuArgs;
   WebScoketUtils? webScoketUtils;
+  int _generation = 0;
 
   @override
   Future start(dynamic args) async {
+    final generation = ++_generation;
+    await webScoketUtils?.close();
+    webScoketUtils = null;
+    if (generation != _generation) return;
     danmakuArgs = args as DouyinDanmakuArgs;
+    markDisconnected();
     var ts = DateTime.now().millisecondsSinceEpoch;
     var uri = Uri.parse(serverUrl).replace(
       scheme: "wss",
@@ -95,6 +104,7 @@ class DouyinDanmaku implements LiveDanmaku {
     );
 
     var sign = await getSignature(danmakuArgs.roomId, danmakuArgs.userId);
+    if (generation != _generation) return;
 
     var url = "$uri&signature=$sign";
     var backupUrl = url.replaceAll("webcast3-ws-web-lq", "webcast5-ws-web-lf");
@@ -108,6 +118,7 @@ class DouyinDanmaku implements LiveDanmaku {
       },
       heartBeatTime: heartbeatTime,
       onMessage: (e) {
+        if (generation != _generation) return;
         try {
           decodeMessage(e);
         } catch (e) {
@@ -115,23 +126,26 @@ class DouyinDanmaku implements LiveDanmaku {
         }
       },
       onReady: () {
-        onReady?.call();
+        if (generation != _generation) return;
         markConnected();
+        onReady?.call();
         joinRoom(args);
       },
       onHeartBeat: () {
         heartbeat();
       },
       onReconnect: () {
+        if (generation != _generation) return;
         markDisconnected();
         onClose?.call("与服务器断开连接，正在尝试重连");
       },
       onClose: (e) {
+        if (generation != _generation) return;
         markDisconnected();
         onClose?.call("服务器连接失败$e");
       },
     );
-    webScoketUtils?.connect();
+    await webScoketUtils?.connect();
   }
 
   @override
@@ -147,7 +161,11 @@ class DouyinDanmaku implements LiveDanmaku {
     var wssPackage = PushFrame.fromBuffer(args);
 
     var logId = wssPackage.logId;
-    var decompressed = gzip.decode(wssPackage.payload);
+    final encodedPayload = wssPackage.payload;
+    final isGzip =
+        wssPackage.payloadEncoding.toLowerCase() == 'gzip' ||
+        (encodedPayload.length >= 2 && encodedPayload[0] == 0x1f && encodedPayload[1] == 0x8b);
+    var decompressed = isGzip ? gzip.decode(encodedPayload) : encodedPayload;
     var payloadPackage = Response.fromBuffer(decompressed);
     if (payloadPackage.needAck) {
       sendAck(logId, payloadPackage.internalExt);
@@ -155,15 +173,25 @@ class DouyinDanmaku implements LiveDanmaku {
     }
     for (var msg in payloadPackage.messagesList) {
       if (msg.method == 'WebcastChatMessage') {
-        unPackWebcastChatMessage(msg.payload);
+        unPackWebcastChatMessage(msg.payload, envelopeMessageId: msg.msgId.toString());
       } else if (msg.method == 'WebcastRoomUserSeqMessage') {
         unPackWebcastRoomUserSeqMessage(msg.payload);
       }
     }
   }
 
-  void unPackWebcastChatMessage(List<int> payload) {
+  void unPackWebcastChatMessage(List<int> payload, {String envelopeMessageId = ''}) {
     var chatMessage = ChatMessage.fromBuffer(payload);
+    final commonRoomId = chatMessage.hasCommon() ? chatMessage.common.roomId.toString() : '';
+    if (commonRoomId.isNotEmpty && commonRoomId != '0' && commonRoomId != danmakuArgs.roomId) return;
+    final commonMessageId = chatMessage.hasCommon() ? chatMessage.common.msgId.toString() : '';
+    final resolvedMessageId = commonMessageId.isNotEmpty && commonMessageId != '0'
+        ? commonMessageId
+        : (envelopeMessageId == '0' ? '' : envelopeMessageId);
+    final rawCreateTime = chatMessage.hasCommon() ? chatMessage.common.createTime.toInt() : 0;
+    final sentAt = rawCreateTime <= 0
+        ? null
+        : DateTime.fromMillisecondsSinceEpoch(rawCreateTime > 100000000000 ? rawCreateTime : rawCreateTime * 1000);
     onMessage?.call(
       LiveMessage(
         type: LiveMessageType.chat,
@@ -174,17 +202,25 @@ class DouyinDanmaku implements LiveDanmaku {
         //     : LiveMessageColor.numberToColor(color),
         message: chatMessage.content,
         userName: chatMessage.user.nickName,
+        userId: chatMessage.user.id.toString(),
+        messageId: resolvedMessageId.isEmpty ? '' : 'douyin:$resolvedMessageId',
+        sentAt: sentAt,
       ),
     );
   }
 
   void unPackWebcastRoomUserSeqMessage(List<int> payload) {
     var roomUserSeqMessage = RoomUserSeqMessage.fromBuffer(payload);
+    final onlineText = roomUserSeqMessage.onlineUserForAnchor;
+    if (!RegExp(r'[0-9]').hasMatch(onlineText)) return;
+    final online = LiveRoom.parseAudienceNumber(onlineText);
 
     onMessage?.call(
       LiveMessage(
         type: LiveMessageType.online,
-        data: roomUserSeqMessage.totalUser.toInt(),
+        // totalUser is cumulative. onlineUserForAnchor is the concurrent
+        // audience field shown to the anchor and must be kept separate.
+        data: LiveAudienceUpdate(kind: LiveAudienceMetricKind.onlineViewers, value: online),
         color: LiveMessageColor.white,
         message: "",
         userName: "",
@@ -196,7 +232,7 @@ class DouyinDanmaku implements LiveDanmaku {
     var obj = PushFrame();
     obj.payloadType = 'ack';
     obj.logId = logId;
-    obj.payloadType = internalExt;
+    obj.payload = utf8.encode(internalExt);
     webScoketUtils?.sendMessage(obj.writeToBuffer());
   }
 
@@ -208,9 +244,13 @@ class DouyinDanmaku implements LiveDanmaku {
 
   @override
   Future stop() async {
+    _generation++;
+    markDisconnected();
     onMessage = null;
     onClose = null;
-    webScoketUtils?.close();
+    onReady = null;
+    await webScoketUtils?.close();
+    webScoketUtils = null;
   }
 
   /// 获取Websocket签名

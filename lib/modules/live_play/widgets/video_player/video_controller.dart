@@ -1,7 +1,11 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:developer';
+
+import 'package:flutter/scheduler.dart';
+
 import 'video_controller_panel.dart';
+
 import 'package:pure_live/common/index.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:flame_barrage/flame_barrage.dart';
@@ -19,8 +23,9 @@ import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/widgets/danmaku_message_actions.dart';
 
-typedef AudioOnlyCallback = void Function(bool value);
+typedef AudioOnlyCallback = Future<void> Function(bool value);
 
 enum PlayerStatus { idle, loading, playing, error, disposed }
 
@@ -43,6 +48,11 @@ class DanmakuManager {
   final List<Worker> workers = [];
   final SettingsService settingsService;
   final VideoController videoController;
+  final RxInt _visualSettingsRevision = 0.obs;
+  bool _configUpdateScheduled = false;
+  bool _settingsDirty = false;
+  bool _disposed = false;
+  DateTime? _lastLongPressAction;
 
   DanmakuManager({
     required this.controller,
@@ -60,9 +70,13 @@ class DanmakuManager {
     videoController.danmakuArea.value = dm.danmakuArea.v;
     videoController.danmakuTopArea.value = dm.danmakuTopArea.v;
     videoController.danmakuBottomArea.value = dm.danmakuBottomArea.v;
-    videoController.danmakuSpeed.value = dm.danmakuSpeed.v;
+    final migratedSpeed = dm.danmakuSpeed.v.clamp(20.0, 400.0).toDouble();
+    videoController.danmakuSpeed.value = migratedSpeed;
+    if (migratedSpeed != dm.danmakuSpeed.v) {
+      dm.danmakuSpeed.v = migratedSpeed;
+    }
     videoController.danmakuFontSize.value = dm.danmakuFontSize.v;
-    videoController.danmakuFontBorder.value = dm.danmakuFontBorder.v.toInt();
+    videoController.danmakuFontBorder.value = dm.danmakuFontBorder.v;
     videoController.danmakuOpacity.value = dm.danmakuOpacity.v;
     videoController.enableDanmakuStroke.value = dm.enableDanmakuStroke.v;
     videoController.danmakuFps.value = dm.danmakuFps.v;
@@ -81,42 +95,102 @@ class DanmakuManager {
       videoController.danmakuOpacity,
       videoController.enableDanmakuStroke,
       videoController.danmakuFps,
+      videoController.danmakuFontFamilyName,
       videoController.noEmojiMode,
     ];
 
-    for (final rxProperty in visualProperties) {
-      workers.add(ever(rxProperty, (_) => videoController.updateDanmaku()));
-    }
+    workers.add(
+      everAll(visualProperties, (_) {
+        _settingsDirty = true;
+        _visualSettingsRevision.value++;
+        _scheduleConfigUpdate();
+      }),
+    );
+    workers.add(
+      debounce<int>(_visualSettingsRevision, (_) => _persistVisualSettings(), time: const Duration(milliseconds: 160)),
+    );
+    workers.add(everAll([dm.danmakuAutoFps, DisplayModeService.info], (_) => _scheduleConfigUpdate()));
+  }
 
-    workers.addAll([
-      ever<double>(videoController.danmakuArea, (v) => dm.danmakuArea.v = v),
-      ever<double>(videoController.danmakuTopArea, (v) => dm.danmakuTopArea.v = v),
-      ever<double>(videoController.danmakuBottomArea, (v) => dm.danmakuBottomArea.v = v),
-      ever<double>(videoController.danmakuSpeed, (v) => dm.danmakuSpeed.v = v),
-      ever<double>(videoController.danmakuFontSize, (v) => dm.danmakuFontSize.v = v),
-      ever<int>(videoController.danmakuFontBorder, (v) => dm.danmakuFontBorder.v = v.toDouble()),
-      ever<double>(videoController.danmakuOpacity, (v) => dm.danmakuOpacity.v = v),
-      ever<bool>(videoController.enableDanmakuStroke, (v) => dm.enableDanmakuStroke.v = v),
-      ever<int>(videoController.danmakuFps, (v) => dm.danmakuFps.v = v),
-      ever<bool>(videoController.noEmojiMode, (v) => dm.noEmojiMode.v = v),
-    ]);
+  void _openMessageActions(LiveMessage message, {required bool fromLongPress}) {
+    final now = DateTime.now();
+    if (fromLongPress) {
+      _lastLongPressAction = now;
+    } else if (_lastLongPressAction != null && now.difference(_lastLongPressAction!) < const Duration(seconds: 1)) {
+      return;
+    }
+    final context = Get.context;
+    if (context == null) return;
+    controller.pause();
+    unawaited(DanmakuMessageActions.show(context, message).whenComplete(controller.resume));
+  }
+
+  void _scheduleConfigUpdate() {
+    if (_disposed || _configUpdateScheduled) return;
+    _configUpdateScheduled = true;
+    SchedulerBinding.instance.scheduleFrameCallback((_) {
+      _configUpdateScheduled = false;
+      if (!_disposed) videoController.updateDanmaku();
+    });
+    SchedulerBinding.instance.scheduleFrame();
+  }
+
+  void _persistVisualSettings() {
+    if (!_settingsDirty) return;
+    final dm = settingsService.danmaku;
+    dm.danmakuArea.v = videoController.danmakuArea.value;
+    dm.danmakuTopArea.v = videoController.danmakuTopArea.value;
+    dm.danmakuBottomArea.v = videoController.danmakuBottomArea.value;
+    dm.danmakuSpeed.v = videoController.danmakuSpeed.value;
+    dm.danmakuFontSize.v = videoController.danmakuFontSize.value;
+    dm.danmakuFontBorder.v = videoController.danmakuFontBorder.value.toDouble();
+    dm.danmakuOpacity.v = videoController.danmakuOpacity.value;
+    dm.enableDanmakuStroke.v = videoController.enableDanmakuStroke.value;
+    dm.danmakuFps.v = videoController.danmakuFps.value;
+    dm.danmakuFontFamilyName.v = videoController.danmakuFontFamilyName.value;
+    dm.noEmojiMode.v = videoController.noEmojiMode.value;
+    _settingsDirty = false;
   }
 
   void sendDanmaku(LiveMessage msg, bool isPlaying, bool isCompactMode) {
-    if (videoController.hideDanmaku.value) return;
     if (!isPlaying) return;
 
     final originalColor = Color.fromARGB(255, msg.color.r, msg.color.g, msg.color.b);
-    controller.send(BarrageItem(content: msg.message, textColor: originalColor));
-
     final settings = settingsService.danmaku;
+    if (settings.enableDanmakuDisplay.v && !videoController.hideDanmaku.value) {
+      controller.send(
+        BarrageItem(
+          content: msg.message,
+          userId: msg.userId,
+          userName: msg.userName,
+          textColor: originalColor,
+          // A single px/s value keeps portrait, landscape and desktop motion
+          // consistent. Lane collision avoidance is handled by the engine.
+          baseSpeed: videoController.danmakuSpeed.value,
+          onTapUp: settings.enableDanmakuTapInteraction.v ? () => _openMessageActions(msg, fromLongPress: false) : null,
+          onLongTapDown: settings.enableDanmakuLongPressInteraction.v
+              ? () => _openMessageActions(msg, fromLongPress: true)
+              : null,
+        ),
+      );
+    }
+
     if (settings.enablePipDanmaku.v && isCompactMode) {
       final compactColor = settings.pipDanmakuUseOriginalColor.v ? originalColor : Color(settings.pipDanmakuColor.v);
       pipController.send(BarrageItem(content: msg.message, textColor: compactColor));
     }
   }
 
+  bool handlePointer(Offset position, {required bool longPress}) {
+    final settings = settingsService.danmaku;
+    final enabled = longPress ? settings.enableDanmakuLongPressInteraction.v : settings.enableDanmakuTapInteraction.v;
+    if (!enabled) return false;
+    return controller.triggerItemAt(position.dx, position.dy, longPress: longPress);
+  }
+
   void dispose() {
+    _persistVisualSettings();
+    _disposed = true;
     for (final worker in workers) {
       worker.dispose();
     }
@@ -166,20 +240,22 @@ class VideoController with ChangeNotifier {
   final isMenuOpen = false.obs;
   final showVolume = false.obs;
   final batteryLevel = 100.obs;
+  final currentVolume = 1.0.obs;
 
   // 弹幕相关
   final hideDanmaku = false.obs;
+  final noEmojiMode = false.obs;
   final danmakuArea = 1.0.obs;
   final danmakuTopArea = 0.0.obs;
   final danmakuBottomArea = 0.0.obs;
-  final danmakuSpeed = 8.0.obs;
+  final danmakuSpeed = 120.0.obs;
   final danmakuFontSize = 16.0.obs;
-  final danmakuFontBorder = 4.obs;
+  final danmakuFontBorder = 1.5.obs;
   final danmakuOpacity = 1.0.obs;
   final enableDanmakuStroke = true.obs;
   final danmakuFps = 60.obs;
   final danmakuFontFamilyName = ''.obs;
-  final noEmojiMode = false.obs;
+
   // EPG相关
   final RxList<database.EpgProgramme> currentChannelSchedule = <database.EpgProgramme>[].obs;
   final ScrollController scheduleScrollController = ScrollController();
@@ -234,6 +310,7 @@ class VideoController with ChangeNotifier {
        _settingsService = settingsService ?? SettingsService.to,
        _dbService = dbService ?? Get.find<DbService>(),
        _livePlayController = livePlayController ?? Get.find<LivePlayController>() {
+    currentVolume.value = room.getSavedVolume();
     _initControllers();
     _initPagesConfig();
   }
@@ -406,19 +483,21 @@ class VideoController with ChangeNotifier {
   }
 
   Future<double?> volume() async {
-    if (Platform.isWindows) {
+    if (PlatformHelper.isDesktop) {
       return room.getSavedVolume();
     }
     return await _volumeController.getVolume();
   }
 
-  void setVolume(double value) async {
-    if (Platform.isWindows) {
-      _playerManager.setVolume(value);
+  Future<void> setVolume(double value) async {
+    final resolved = value.clamp(0.0, 1.0).toDouble();
+    if (PlatformHelper.isDesktop) {
+      await _playerManager.setVolume(resolved);
     } else {
-      await _volumeController.setVolume(value);
+      await _volumeController.setVolume(resolved);
     }
-    room.saveCurrentVolume(value);
+    currentVolume.value = resolved;
+    await room.saveCurrentVolume(resolved);
   }
 
   // 亮度管理
@@ -500,18 +579,22 @@ class VideoController with ChangeNotifier {
   void updateDanmaku() {
     danmakuController.updateConfig(
       BarrageConfig(
-        useUniformSpeed: false,
-        dynamicSpeedWhileFlying: true,
-        noEmojiMode: noEmojiMode.value,
+        emitInterval: 0.016,
         fontSize: danmakuFontSize.value,
         area: danmakuArea.value,
         topAreaDistance: danmakuTopArea.value,
         bottomAreaDistance: danmakuBottomArea.value,
         baseSpeed: danmakuSpeed.value,
         opacity: danmakuOpacity.value,
-        fontWeight: FontWeight.values[danmakuFontBorder.value],
+        fontWeight: FontWeight.w600,
+        strokeWidth: danmakuFontBorder.value,
         showStroke: enableDanmakuStroke.value,
-        fps: danmakuFps.value,
+        noEmojiMode: noEmojiMode.value,
+        fps: SettingsService.to.danmaku.resolvedDanmakuFps(),
+        maxPendingCount: 120,
+        maxPendingAge: const Duration(seconds: 5),
+        trackHeight: (danmakuFontSize.value * 1.55).clamp(24.0, 64.0).toDouble(),
+        emojiSize: (danmakuFontSize.value * 1.3).clamp(16.0, 48.0).toDouble(),
       ),
     );
   }
@@ -520,7 +603,27 @@ class VideoController with ChangeNotifier {
     _danmakuManager.sendDanmaku(msg, _playerManager.isPlayingNow, _playerManager.isCompactModeActive);
   }
 
+  bool handleDanmakuPointer(Offset globalPosition, {required bool longPress}) {
+    final renderObject = danmuKey.currentContext?.findRenderObject();
+    if (renderObject is! RenderBox || !renderObject.hasSize) return false;
+    final localPosition = renderObject.globalToLocal(globalPosition);
+    if (localPosition.dx < 0 ||
+        localPosition.dy < 0 ||
+        localPosition.dx > renderObject.size.width ||
+        localPosition.dy > renderObject.size.height) {
+      return false;
+    }
+    return _danmakuManager.handlePointer(localPosition, longPress: longPress);
+  }
+
   void clearPipDanmaku() => pipDanmakuController.clear();
+
+  void clearDanmaku() {
+    danmakuController.resume();
+    pipDanmakuController.resume();
+    danmakuController.clear();
+    pipDanmakuController.clear();
+  }
 
   // EPG管理
   Future<void> loadFullChannelSchedule(String? epgId) async {
@@ -618,17 +721,22 @@ class VideoController with ChangeNotifier {
   }
 
   // 播放控制
-  void toggleAudioOnly() async {
+  bool _audioModeSwitching = false;
+
+  Future<void> toggleAudioOnly() async {
+    if (_audioModeSwitching) return;
+    _audioModeSwitching = true;
     clearListener();
-    _playerManager.hardDispose();
-    await destory();
-    onAudioOnlyChanged?.call(!isAudioOnly);
+    try {
+      await onAudioOnlyChanged?.call(!isAudioOnly);
+    } finally {
+      _audioModeSwitching = false;
+    }
   }
 
   void retryRoom() async {
-    var liveRoom = await Sites.of(
-      room.platform!,
-    ).liveSite.getRoomDetail(roomId: room.roomId!, platform: room.platform!);
+    var liveRoom = await Sites.of(room.platform!).liveSite
+        .getRoomDetail(roomId: room.roomId!, platform: room.platform!);
 
     if (liveRoom.liveStatus == LiveStatus.offline) {
       _livePlayController.setNormalScreen();
@@ -638,18 +746,20 @@ class VideoController with ChangeNotifier {
     }
   }
 
-  void refresh() async {
+  Future<void> refresh() async {
+    _livePlayController.invalidateRoomLoad();
     clearListener();
-    _playerManager.close();
+    await _playerManager.close();
     await destory();
-    _livePlayController.onInitPlayerState(reloadDataType: ReloadDataType.refreash);
+    await _livePlayController.onInitPlayerState(reloadDataType: ReloadDataType.refreash);
   }
 
-  void changeLine() async {
+  Future<void> changeLine() async {
+    _livePlayController.invalidateRoomLoad();
     clearListener();
-    _playerManager.close();
+    await _playerManager.close();
     await destory();
-    _livePlayController.onInitPlayerState(reloadDataType: ReloadDataType.changeLine, line: currentLineIndex);
+    await _livePlayController.onInitPlayerState(reloadDataType: ReloadDataType.changeLine, line: currentLineIndex);
   }
 
   void clearListener() {

@@ -1,4 +1,5 @@
 import 'dart:ui';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/routes/app_navigation.dart';
@@ -67,7 +68,7 @@ class RecorderPage extends GetView<RecorderController> {
             ),
           ),
           body: TabBarView(
-            physics: const BouncingScrollPhysics(),
+            physics: const PureLiveScrollPhysics(),
             children: [
               _TaskList(filter: null),
               _TaskList(filter: (e) => e.status == RecordStatus.running),
@@ -199,6 +200,10 @@ class _TaskCard extends GetView<RecorderController> {
         return const Color.fromARGB(253, 13, 145, 233);
       case Sites.iptvSite:
         return const Color.fromARGB(255, 204, 71, 9);
+      case Sites.twitchSite:
+        return const Color(0xFF9146FF);
+      case Sites.soopSite:
+        return const Color(0xFF0675E8);
       default:
         return const Color.fromARGB(255, 11, 223, 117);
     }
@@ -243,7 +248,7 @@ class _TaskCard extends GetView<RecorderController> {
             width: 150,
             height: 90,
             decoration: BoxDecoration(
-              image: DecorationImage(image: NetworkImage(task.cover), fit: BoxFit.cover),
+              image: DecorationImage(image: NetworkImage(normalizeNetworkImageUrl(task.cover)), fit: BoxFit.cover),
             ),
           ),
           Positioned(
@@ -501,7 +506,9 @@ class _TaskCard extends GetView<RecorderController> {
                           children: [
                             CircleAvatar(
                               radius: 12,
-                              backgroundImage: task.avatar.isNotEmpty ? NetworkImage(task.avatar) : null,
+                              backgroundImage: normalizeNetworkImageUrl(task.avatar).isNotEmpty
+                                  ? NetworkImage(normalizeNetworkImageUrl(task.avatar))
+                                  : null,
                             ),
                             const SizedBox(width: 7),
                             Expanded(

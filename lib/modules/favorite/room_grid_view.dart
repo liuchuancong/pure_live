@@ -1,5 +1,5 @@
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/common/index.dart';
-import 'package:waterfall_flow/waterfall_flow.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
 
 class RoomGridView extends GetView<FavoriteController> {
@@ -42,7 +42,7 @@ class RoomGridView extends GetView<FavoriteController> {
                 color: Colors.transparent,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
+                  physics: const PureLiveScrollPhysics(),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   itemCount: controller.visibleTags.length + 1,
                   itemBuilder: (context, index) {
@@ -89,13 +89,18 @@ class RoomGridView extends GetView<FavoriteController> {
             }),
             Expanded(
               child: Obx(() {
-                return WaterfallFlow.builder(
+                final spacing = SettingsService.to.theme.crossAxisSpacing.v;
+                final itemWidth = (width - 24 - spacing * (crossAxisCount - 1)) / crossAxisCount;
+                return GridView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                   controller: scrollController,
-                  gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
+                  scrollCacheExtent: const ScrollCacheExtent.pixels(480),
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: crossAxisCount,
-                    crossAxisSpacing: SettingsService.to.theme.crossAxisSpacing.v,
+                    crossAxisSpacing: spacing,
                     mainAxisSpacing: SettingsService.to.theme.mainAxisSpacing.v,
+                    mainAxisExtent: itemWidth * 9 / 16 + (dense ? 72 : 84),
                   ),
                   itemCount: displayList.length,
                   itemBuilder: (context, index) {

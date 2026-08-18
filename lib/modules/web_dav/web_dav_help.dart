@@ -4,6 +4,7 @@ import 'package:pure_live/get/get.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:pure_live/common/widgets/pure_live_scroll_physics.dart';
 
 class WebDavHelpPage extends StatelessWidget {
   const WebDavHelpPage({super.key});
@@ -25,7 +26,7 @@ class WebDavHelpPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text("坚果云 WebDAV 绑定教程"), centerTitle: true, elevation: 0),
       body: ListView(
-        physics: const BouncingScrollPhysics(),
+        physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
           // 一、前言部分

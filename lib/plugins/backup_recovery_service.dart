@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:convert';
+
 import 'file_utils.dart';
+
 import 'package:pure_live/common/index.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:date_format/date_format.dart' hide S;
@@ -38,19 +40,15 @@ class BackupRecoveryService {
 
   Future<void> recoverSettingsFromFile() async {
     final backup = Get.find<BackupController>();
-
     final result = await FilePicker.pickFile(
       dialogTitle: i18n("select_recover_file"),
       type: FileType.custom,
       allowedExtensions: ['txt'],
     );
 
-    if (result == null || result.path == null) {
-      return;
-    }
+    if (result?.path == null) return;
 
-    final file = File(result.path!);
-
+    final file = File(result!.path!);
     if (backup.recover(file)) {
       ToastUtil.show(i18n("recover_backup_success"));
     } else {

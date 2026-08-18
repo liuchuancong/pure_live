@@ -1,4 +1,5 @@
 import 'dart:developer';
+
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
@@ -86,6 +87,11 @@ class LiveUrlTool {
       final regExp = RegExp(r'twitch\.tv/([^/?]+)');
       String id = regExp.firstMatch(url)?.group(1) ?? "";
       return [id, Sites.twitchSite];
+    }
+    if (realUrl.contains("sooplive.co.kr/")) {
+      final regExp = RegExp(r'(?:www\.|play\.)?sooplive\.co\.kr/([^/?]+)');
+      final id = regExp.firstMatch(realUrl)?.group(1) ?? "";
+      return [id, Sites.soopSite];
     }
     return [];
   }

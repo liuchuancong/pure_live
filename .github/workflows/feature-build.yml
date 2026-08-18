@@ -1,0 +1,267 @@
+name: manual-build
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_android:
+        description: Build Android arm64-v8a APK
+        required: true
+        type: boolean
+        default: true
+      build_windows:
+        description: Build Windows portable archive
+        required: true
+        type: boolean
+        default: false
+      build_linux:
+        description: Build Linux x64 portable archive
+        required: true
+        type: boolean
+        default: false
+      build_macos:
+        description: Build macOS universal application archive
+        required: true
+        type: boolean
+        default: false
+      build_ios:
+        description: Build unsigned iOS device application archive
+        required: true
+        type: boolean
+        default: false
+      run_quality:
+        description: Run analyze, tests and public interface probes first
+        required: true
+        type: boolean
+        default: true
+  push:
+    tags:
+      - "stage-build-*"
+      - "stage-linux-*"
+      - "stage-apple-*"
+      - "stage-ios-*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: manual-build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: 3.47.0
+  FLUTTER_LINUX_ARCHIVE: stable/linux/flutter_linux_3.47.0-stable.tar.xz
+  FLUTTER_LINUX_SHA256: 26cd99d3d94b1367e6b50535a18aeef0282c10a535bbe3ec493534dcdab75296
+
+jobs:
+  quality:
+    name: Analyze, test and probe
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_quality }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: zulu
+          java-version: "25"
+      - name: Install pinned Flutter SDK from the official archive
+        shell: bash
+        run: |
+          archive="$RUNNER_TEMP/flutter-linux.tar.xz"
+          curl --fail --location --retry 3 \
+            "https://storage.googleapis.com/flutter_infra_release/releases/$FLUTTER_LINUX_ARCHIVE" \
+            --output "$archive"
+          echo "$FLUTTER_LINUX_SHA256  $archive" | sha256sum --check --strict
+          tar --extract --file "$archive" --directory "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - name: Verify Flutter SDK
+        run: flutter --version
+      - name: Resolve locked packages
+        run: flutter pub get --enforce-lockfile
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Test
+        run: flutter test
+      - name: Probe public interfaces
+        run: python tool/interface_probe.py
+
+  android:
+    name: Android arm64-v8a APK
+    if: ${{ always() && inputs.build_android && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: zulu
+          java-version: "25"
+          cache: gradle
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - name: Configure Android signing
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.PURELIVE_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.PURELIVE_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.PURELIVE_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.PURELIVE_KEY_ALIAS }}
+        run: |
+          if [[ -z "$KEYSTORE_BASE64" || -z "$STORE_PASSWORD" || -z "$KEY_PASSWORD" || -z "$KEY_ALIAS" ]]; then
+            echo "Release signing secrets are required for the manual Android package." >&2
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/pure-live-release.jks"
+          cat > android/key.properties <<EOF
+          storeFile=$RUNNER_TEMP/pure-live-release.jks
+          storePassword=$STORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          EOF
+      - name: Resolve locked packages
+        run: flutter pub get --enforce-lockfile
+      - name: Build arm64-v8a release APK
+        run: flutter build apk --release --split-per-abi --target-platform android-arm64 --dart-define=PURELIVE_BUILD_SOURCE=github-manual
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pure-live-android
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          if-no-files-found: error
+          retention-days: 3
+
+  windows:
+    name: Windows portable
+    if: ${{ always() && inputs.build_windows && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    needs: quality
+    runs-on: windows-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - name: Resolve locked packages
+        run: flutter pub get --enforce-lockfile
+      - name: Build Windows release
+        run: flutter build windows --release --dart-define=PURELIVE_BUILD_SOURCE=github-manual
+      - name: Create portable archive
+        shell: pwsh
+        run: Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath PureLive-windows-x64.zip
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pure-live-windows
+          path: PureLive-windows-x64.zip
+          if-no-files-found: error
+          retention-days: 3
+
+  linux:
+    name: Linux x64 portable
+    if: ${{ always() && ((github.event_name == 'push' && (startsWith(github.ref_name, 'stage-build-') || startsWith(github.ref_name, 'stage-linux-'))) || inputs.build_linux) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    needs: quality
+    # Predidit's current verified libmpv bundle targets glibc >= 2.38 and
+    # GLIBCXX >= 3.4.32, both provided by the Ubuntu 24.04 runner image.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install Linux desktop dependencies
+        run: |
+          sudo apt-get -o Acquire::Retries=5 update
+          sudo apt-get -o Acquire::Retries=5 install -y \
+            clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libasound2-dev \
+            libayatana-appindicator3-dev libsecret-1-dev libva-dev libvdpau-dev \
+            libpulse-dev libxv-dev libunwind-dev libgnutls28-dev liblcms2-dev \
+            libarchive-dev libgbm-dev libxss-dev libxrandr-dev libegl1-mesa-dev \
+            libwayland-dev libxkbcommon-dev libfontconfig1-dev libharfbuzz-dev \
+            libfribidi-dev libfreetype6-dev zlib1g-dev libdrm-dev libx11-dev \
+            libxext-dev libxfixes-dev libxcb1-dev
+      - name: Install pinned Flutter SDK from the official archive
+        shell: bash
+        run: |
+          archive="$RUNNER_TEMP/flutter-linux.tar.xz"
+          curl --fail --location --retry 3 \
+            "https://storage.googleapis.com/flutter_infra_release/releases/$FLUTTER_LINUX_ARCHIVE" \
+            --output "$archive"
+          echo "$FLUTTER_LINUX_SHA256  $archive" | sha256sum --check --strict
+          tar --extract --file "$archive" --directory "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - name: Verify Flutter SDK
+        run: flutter --version
+      - name: Resolve locked packages
+        run: flutter pub get --enforce-lockfile
+      - name: Prefetch verified Linux native sources
+        shell: bash
+        run: |
+          archive_dir="build/linux/x64/release"
+          archive="$archive_dir/mimalloc-2.1.2.tar.gz"
+          mkdir -p "$archive_dir"
+          curl --fail --location --retry 6 --retry-all-errors \
+            https://github.com/microsoft/mimalloc/archive/refs/tags/v2.1.2.tar.gz \
+            --output "$archive.tmp"
+          echo "5179c8f5cf1237d2300e2d8559a7bc55  $archive.tmp" | md5sum --check --strict
+          mv "$archive.tmp" "$archive"
+      - name: Build Linux release
+        run: flutter build linux --release --dart-define=PURELIVE_BUILD_SOURCE=github-manual
+      - name: Create portable archive
+        run: tar -C build/linux/x64/release/bundle -czf PureLive-linux-x64.tar.gz .
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pure-live-linux-x64
+          path: PureLive-linux-x64.tar.gz
+          if-no-files-found: error
+          retention-days: 3
+
+  apple:
+    name: Apple platform packages
+    if: ${{ always() && ((github.event_name == 'push' && (startsWith(github.ref_name, 'stage-build-') || startsWith(github.ref_name, 'stage-apple-') || startsWith(github.ref_name, 'stage-ios-'))) || inputs.build_macos || inputs.build_ios) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    needs: quality
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Select an Xcode 26 toolchain
+        shell: bash
+        run: |
+          xcode_path="$(find /Applications -maxdepth 1 -type d -name 'Xcode_26*.app' -print | sort | tail -n 1)"
+          test -n "$xcode_path"
+          sudo xcode-select --switch "$xcode_path/Contents/Developer"
+          xcodebuild -version
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - name: Resolve locked packages
+        run: flutter pub get --enforce-lockfile
+      - name: Build macOS release
+        if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
+        run: flutter build macos --release --dart-define=PURELIVE_BUILD_SOURCE=github-manual
+      - name: Archive macOS application
+        if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
+        run: |
+          app_path="$(find build/macos/Build/Products/Release -maxdepth 1 -type d -name '*.app' -print -quit)"
+          test -n "$app_path"
+          ditto -c -k --sequesterRsrc --keepParent "$app_path" PureLive-macos-universal.zip
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
+        with:
+          name: pure-live-macos-universal
+          path: PureLive-macos-universal.zip
+          if-no-files-found: error
+          retention-days: 3
+      - name: Build iOS device application
+        if: ${{ github.event_name == 'push' || inputs.build_ios }}
+        run: flutter build ios --release --no-codesign --dart-define=PURELIVE_BUILD_SOURCE=github-manual
+      - name: Archive iOS application
+        if: ${{ github.event_name == 'push' || inputs.build_ios }}
+        run: ditto -c -k --sequesterRsrc --keepParent build/ios/iphoneos/Runner.app PureLive-ios-unsigned-app.zip
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ github.event_name == 'push' || inputs.build_ios }}
+        with:
+          name: pure-live-ios-unsigned-app
+          path: PureLive-ios-unsigned-app.zip
+          if-no-files-found: error
+          retention-days: 3

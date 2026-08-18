@@ -8,7 +8,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
   ffmpeg_kit_extended_flutter
   flutter_acrylic
   flutter_js
-  fullscreen_window
   gtk
   media_kit_libs_linux
   media_kit_video

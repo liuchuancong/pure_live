@@ -1,0 +1,27 @@
+group 'com.laoitdev.lib.exit.app.flutter_exit_app'
+version '1.0'
+
+rootProject.allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+apply plugin: 'com.android.library'
+
+android {
+    compileSdk 34
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    namespace 'com.laoitdev.lib.exit.app.flutter_exit_app'
+
+    defaultConfig {
+        minSdkVersion 21
+    }
+
+}

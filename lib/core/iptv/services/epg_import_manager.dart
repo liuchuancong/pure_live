@@ -17,17 +17,15 @@ import 'package:pure_live/core/iptv/local/database.dart' as database;
 class EpgImportManager {
   /// 1. 本地文件浏览器选择导入
   Future<bool> importFromLocalPicker() async {
-    PlatformFile? result = await FilePicker.pickFile(
+    final result = await FilePicker.pickFile(
       dialogTitle: i18n("select_recover_file"),
       type: FileType.custom,
       allowedExtensions: ['xml', 'gz', 'json'],
     );
 
-    if (result == null || result.path == null) {
-      return false;
-    }
+    if (result?.path == null) return false;
 
-    final file = File(result.path!);
+    final file = File(result!.path!);
     final name = FileUtils.getBaseName(file.path);
     return await importEpgFile(file: file, sourceName: name);
   }

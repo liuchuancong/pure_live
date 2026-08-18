@@ -1,10 +1,13 @@
 import 'dart:io';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/modules/settings/pages/font_family_manager_page.dart';
+import 'package:pure_live/modules/settings/pages/pip_danmaku_settings_page.dart';
 
 class VideoSettingsPage extends GetView<SettingsService> {
   const VideoSettingsPage({super.key});
@@ -16,7 +19,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
     return Scaffold(
       appBar: AppBar(title: Text(i18n("video_settings"))),
       body: ListView(
-        physics: const BouncingScrollPhysics(),
+        physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
           // 音频设置
@@ -106,8 +109,45 @@ class VideoSettingsPage extends GetView<SettingsService> {
                   if (val && Platform.isAndroid) {
                     bool hasPermission = await LiveAudioService.requestPlatformPermissions();
                     SettingsService.to.app.enableBackgroundPlay.v = hasPermission;
+                    await LiveAudioService.syncKeepAlive();
+                  } else if (!val) {
+                    if (!LiveAudioService.isSleepSessionActive) {
+                      await LiveAudioService.releaseKeepAlive();
+                    }
                   }
                 },
+              ),
+            if (Platform.isAndroid)
+              context.buildSwitchTile(
+                icon: Remix.moon_clear_line,
+                title: i18n('asmr_sleep_mode'),
+                subtitle: i18n('asmr_sleep_mode_desc'),
+                value: SettingsService.to.app.enableAsmrSleepMode,
+                onChanged: (val) async {
+                  if (val) {
+                    final hasPermission = await LiveAudioService.requestPlatformPermissions();
+                    SettingsService.to.app.enableAsmrSleepMode.v = hasPermission;
+                  } else {
+                    SettingsService.to.app.enableAsmrSleepMode.v = false;
+                    await LiveAudioService.configureSleepTimer(
+                      enabled: false,
+                      minutes: SettingsService.to.app.asmrSleepMinutes.v,
+                    );
+                  }
+                },
+              ),
+            if (Platform.isAndroid)
+              Obx(
+                () => context.buildTile(
+                  icon: Remix.timer_2_line,
+                  title: i18n('asmr_sleep_timer'),
+                  subtitle: i18n('asmr_sleep_timer_desc'),
+                  trailing: Text(
+                    _formatDuration(SettingsService.to.app.asmrSleepMinutes.v),
+                    style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
+                  ),
+                  onTap: () => _showAsmrSleepTimerDialog(context),
+                ),
               ),
             context.buildSwitchTile(
               title: i18n("exit_float_window"),
@@ -141,6 +181,13 @@ class VideoSettingsPage extends GetView<SettingsService> {
               value: SettingsService.to.danmaku.enableDanmakuDisplay,
               icon: Remix.chat_smile_2_line,
             ),
+            context.buildTile(
+              icon: Remix.picture_in_picture_2_line,
+              title: i18n('pip_danmaku'),
+              subtitle: i18n('pip_danmaku_desc'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => Get.to(() => const PipDanmakuSettingsPage()),
+            ),
             Obx(
               () => context.buildTile(
                 icon: Remix.font_size,
@@ -161,6 +208,78 @@ class VideoSettingsPage extends GetView<SettingsService> {
         ],
       ),
     );
+  }
+
+  void _showAsmrSleepTimerDialog(BuildContext context) {
+    const options = [15, 30, 45, 60, 90, 120, 240, 480, 720, 1440];
+    final customController = TextEditingController(text: SettingsService.to.app.asmrSleepMinutes.v.toString());
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(i18n('asmr_sleep_timer')),
+        content: SizedBox(
+          width: 360,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(i18n('asmr_sleep_timer_explain'), style: Theme.of(dialogContext).textTheme.bodySmall),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: options
+                      .map(
+                        (minutes) => ActionChip(
+                          label: Text(_formatDuration(minutes)),
+                          onPressed: () => customController.text = minutes.toString(),
+                        ),
+                      )
+                      .toList(),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: customController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: i18n('custom_sleep_minutes'),
+                    helperText: i18n('custom_sleep_minutes_range'),
+                    suffixText: i18n('minutes'),
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(i18n('cancel'))),
+          FilledButton(
+            onPressed: () async {
+              final minutes = int.tryParse(customController.text.trim());
+              if (minutes == null || minutes < 1 || minutes > AppSettingsController.maxSleepMinutes) {
+                ToastUtil.show(i18n('custom_sleep_minutes_range'));
+                return;
+              }
+              SettingsService.to.app.asmrSleepMinutes.v = minutes;
+              await LiveAudioService.configureSleepTimer(
+                enabled: LiveAudioService.isSleepSessionActive,
+                minutes: minutes,
+              );
+              if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+            },
+            child: Text(i18n('save')),
+          ),
+        ],
+      ),
+    ).whenComplete(customController.dispose);
+  }
+
+  String _formatDuration(int minutes) {
+    if (minutes % 1440 == 0) return '${minutes ~/ 1440} ${i18n('days')}';
+    if (minutes % 60 == 0) return '${minutes ~/ 60} ${i18n('hours')}';
+    return '$minutes ${i18n('minutes')}';
   }
 
   void showPreferResolutionSelectorDialog() {

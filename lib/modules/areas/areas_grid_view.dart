@@ -1,6 +1,6 @@
 import 'package:remixicon/remixicon.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/common/index.dart';
-import 'package:waterfall_flow/waterfall_flow.dart';
 import 'package:pure_live/modules/areas/widgets/area_card.dart';
 import 'package:pure_live/modules/areas/areas_list_controller.dart';
 
@@ -187,15 +187,19 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
       builder: (context, constraint) {
         final width = constraint.maxWidth;
         final crossAxisCount = width > 1280 ? 9 : (width > 960 ? 7 : (width > 640 ? 5 : 3));
+        final spacing = SettingsService.to.theme.crossAxisSpacing.v;
+        final itemWidth = (width - 12 - spacing * (crossAxisCount - 1)) / crossAxisCount;
 
-        return WaterfallFlow.builder(
+        return GridView.builder(
           padding: const EdgeInsets.fromLTRB(6, 6, 6, 80),
           controller: scrollController,
-          gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
-            lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
+          scrollCacheExtent: const ScrollCacheExtent.pixels(480),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
-            crossAxisSpacing: SettingsService.to.theme.crossAxisSpacing.v,
+            crossAxisSpacing: spacing,
             mainAxisSpacing: SettingsService.to.theme.mainAxisSpacing.v,
+            mainAxisExtent: itemWidth + 72,
           ),
           itemCount: childrenList.length,
           itemBuilder: (context, index) => AreaCard(category: childrenList[index]),

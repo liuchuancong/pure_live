@@ -1,10 +1,15 @@
 import 'dart:async';
+
 import 'package:rxdart/rxdart.dart';
+
 import '../models/player_state.dart';
 import '../models/player_exception.dart';
 import '../models/player_error_type.dart';
+
 import 'package:pure_live/common/index.dart';
+
 import '../interface/unified_player_interface.dart';
+
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:media_kit/media_kit.dart' hide PlayerState;
 import 'package:pure_live/common/global/platform_utils.dart';
@@ -86,11 +91,14 @@ class MediaKitAdapter implements UnifiedPlayer {
 
         await native.setProperty('protocol_whitelist', 'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto');
 
-        await native.setProperty('demuxer-lavf-probsize', '2097152');
+        await native.setProperty('demuxer-lavf-probesize', '2097152');
 
-        await native.setProperty('demuxer-lavf-analyzeduration', '10');
+        // Live FLV/HLS streams need a short probe rather than a long-file
+        // analysis pass.  This reduces the black-screen interval before the
+        // first decoded frame while retaining enough data for codec detection.
+        await native.setProperty('demuxer-lavf-analyzeduration', '2');
 
-        await native.setProperty('network-timeout', '30');
+        await native.setProperty('network-timeout', '15');
 
         if (SettingsService.to.player.customPlayerOutput.v) {
           await native.setProperty('ao', SettingsService.to.player.audioOutputDriver.v);

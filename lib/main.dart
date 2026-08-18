@@ -35,19 +35,23 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> with DesktopWindowMixin {
+  StreamSubscription<SharedMedia>? _sharedMediaSubscription;
+
   @override
   void initState() {
     super.initState();
     if (PlatformUtils.isDesktop) {
       DesktopManager.initializeListeners(this);
     }
-    initSharedMediaListener();
-    initGlopalPlayer();
+    unawaited(initSharedMediaListener());
+    unawaited(initGlobalPlayer());
   }
 
-  Future<void> initGlopalPlayer() async {
+  Future<void> initGlobalPlayer() async {
     final String savedKey = SettingsService.to.player.videoPlayerKey.v;
-    final String validKey = PlayerConsts.engines.containsKey(savedKey) ? savedKey : PlayerConsts.defaultKey;
+    final String validKey = PlayerConsts.engines.containsKey(savedKey)
+        ? savedKey
+        : PlayerConsts.defaultKey;
     final PlayerEngine targetEngine = PlayerConsts.engines[validKey]!;
     final PlayerEngine defaultEngine;
 
@@ -56,7 +60,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
     } else {
       defaultEngine = targetEngine;
     }
-    GlobalPlayerService.instance.initialize(defaultEngine: defaultEngine);
+    await GlobalPlayerService.instance.initialize(defaultEngine: defaultEngine);
   }
 
   @override
@@ -64,7 +68,9 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
     if (PlatformUtils.isDesktop) {
       DesktopManager.disposeListeners();
     }
-    GlobalPlayerService.instance.playerManager.dispose();
+    final subscription = _sharedMediaSubscription;
+    if (subscription != null) unawaited(subscription.cancel());
+    unawaited(GlobalPlayerService.instance.dispose());
     super.dispose();
   }
 
@@ -72,12 +78,18 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
     if (Platform.isAndroid) {
       final handler = ShareHandler.instance;
       await handler.getInitialSharedMedia();
-      handler.sharedMediaStream.listen((SharedMedia media) async {
+      _sharedMediaSubscription = handler.sharedMediaStream.listen((
+        SharedMedia media,
+      ) async {
         final path = media.content?.trim().toLowerCase() ?? '';
         if (path.isEmpty) return;
-        if (path.endsWith('.m3u') || path.endsWith('.txt') || path.contains('.m3u8')) {
+        if (path.endsWith('.m3u') ||
+            path.endsWith('.txt') ||
+            path.contains('.m3u8')) {
           await IptvImportManager().importFromSharedMedia(media);
-        } else if (path.endsWith('.xml') || path.endsWith('.gz') || path.endsWith('.json')) {
+        } else if (path.endsWith('.xml') ||
+            path.endsWith('.gz') ||
+            path.endsWith('.json')) {
           await EpgImportManager().importFromSharedMedia(media);
         } else {
           ToastUtil.show(i18n("unsupported_file_format"));
@@ -91,16 +103,24 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
     return DynamicColorBuilder(
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
         return Obx(() {
-          final themeColor = HexColor(SettingsService.to.theme.themeColorSwitch.v);
+          final themeColor = HexColor(
+            SettingsService.to.theme.themeColorSwitch.v,
+          );
           final showSplashPage = SettingsService.to.app.showSplashPage.v;
           final currentFactor = SettingsService.to.font.textScaleFactor.v;
 
           ThemeData lightTheme;
           ThemeData darkTheme;
 
-          if (SettingsService.to.theme.enableDynamicTheme.v && lightDynamic != null && darkDynamic != null) {
-            lightTheme = MyTheme(colorScheme: lightDynamic.harmonized()).lightThemeData;
-            darkTheme = MyTheme(colorScheme: darkDynamic.harmonized()).darkThemeData;
+          if (SettingsService.to.theme.enableDynamicTheme.v &&
+              lightDynamic != null &&
+              darkDynamic != null) {
+            lightTheme = MyTheme(
+              colorScheme: lightDynamic.harmonized(),
+            ).lightThemeData;
+            darkTheme = MyTheme(
+              colorScheme: darkDynamic.harmonized(),
+            ).darkThemeData;
           } else {
             lightTheme = MyTheme(primaryColor: themeColor).lightThemeData;
             darkTheme = MyTheme(primaryColor: themeColor).darkThemeData;
@@ -110,18 +130,29 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
             title: i18n('app_name'),
             scrollBehavior: MyCustomScrollBehavior(),
             debugShowCheckedModeBanner: false,
-            themeMode: AppConsts.themeModes[SettingsService.to.theme.themeModeName.v]!,
+            themeMode:
+                AppConsts.themeModes[SettingsService.to.theme.themeModeName.v]!,
             theme: lightTheme.copyWith(
-              appBarTheme: const AppBarTheme(surfaceTintColor: Colors.transparent),
+              appBarTheme: const AppBarTheme(
+                surfaceTintColor: Colors.transparent,
+              ),
               pageTransitionsTheme: const PageTransitionsTheme(
                 builders: <TargetPlatform, PageTransitionsBuilder>{
-                  TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+                  TargetPlatform.android:
+                      PredictiveBackPageTransitionsBuilder(),
                 },
               ),
             ),
-            darkTheme: darkTheme.copyWith(appBarTheme: const AppBarTheme(surfaceTintColor: Colors.transparent)),
+            darkTheme: darkTheme.copyWith(
+              appBarTheme: const AppBarTheme(
+                surfaceTintColor: Colors.transparent,
+              ),
+            ),
             locale: context.locale,
-            navigatorObservers: [FlutterSmartDialog.observer, BackButtonObserver()],
+            navigatorObservers: [
+              FlutterSmartDialog.observer,
+              BackButtonObserver(),
+            ],
             builder: FlutterSmartDialog.init(
               builder: (context, child) {
                 Widget resultWidget = child ?? const SizedBox.shrink();
@@ -129,14 +160,18 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
                   resultWidget = DesktopManager.buildWithTitleBar(resultWidget);
                 }
                 return MediaQuery(
-                  data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(currentFactor)),
+                  data: MediaQuery.of(
+                    context,
+                  ).copyWith(textScaler: TextScaler.linear(currentFactor)),
                   child: resultWidget,
                 );
               },
             ),
             supportedLocales: context.supportedLocales,
             localizationsDelegates: context.localizationDelegates,
-            initialRoute: showSplashPage ? RoutePath.kSplash : RoutePath.kInitial,
+            initialRoute: showSplashPage
+                ? RoutePath.kSplash
+                : RoutePath.kInitial,
             defaultTransition: Transition.native,
             routingCallback: (routing) {
               if (routing != null) {

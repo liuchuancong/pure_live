@@ -1,14 +1,18 @@
 import 'dart:io';
+import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/models/font_model.dart';
 import 'package:pure_live/plugins/font_download_manager.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
+import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/services/medels/download_status.dart';
 import 'package:pure_live/common/services/settings/danmaku_settings_controller.dart';
 
 class FontSettingsController extends GetxController {
+  Future<void>? _initialization;
   final RxDouble textScaleFactor = hiveDouble('textScaleFactor', 1.0);
   final RxDouble fontSizeBodySmall = hiveDouble('fontSizeBodySmall', 12.0);
   final RxDouble fontSizeBodyMedium = hiveDouble('fontSizeBodyMedium', 13.0);
@@ -25,7 +29,7 @@ class FontSettingsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _init();
+    unawaited(ensureInitialized());
 
     everAll([
       fontSizeBodySmall,
@@ -37,9 +41,16 @@ class FontSettingsController extends GetxController {
     ], (_) => refreshSystemTheme());
   }
 
-  Future<void> _init() async {
+  Future<void> ensureInitialized() => _initialization ??= _initializeFonts();
+
+  Future<void> _initializeFonts() async {
     await _loadInitialFontManifest();
     await initUserFontLifecycle();
+    // This also runs before runApp so the selected custom font is ready for
+    // the first ThemeData. Accessing Get.context here asks GetX for its root
+    // navigator before GetMaterialApp exists and leaves Android on the native
+    // splash screen. MyApp reads the initialized settings on its first build;
+    // interactive font changes still call refreshSystemTheme below.
   }
 
   Future<void> _loadInitialFontManifest() async {
@@ -52,38 +63,29 @@ class FontSettingsController extends GetxController {
 
   Future<void> initUserFontLifecycle() async {
     final id = fontFamilyName.v;
-
-    if (fontList.isNotEmpty) {
-      curFontModel.value = fontList.firstWhere((e) => e.id == id, orElse: () => fontList.first);
+    if (fontList.isEmpty) {
+      return;
     }
-
+    curFontModel.value = fontList.firstWhere((e) => e.id == id, orElse: () => fontList.first);
     if (id == 'Default') {
       fontState.value = DownloadState.notDownloaded;
       return;
     }
 
     final downloaded = await FontDownloadManager.instance.checkFontDownloaded(id);
-
-    if (!downloaded) {
-      fontState.value = DownloadState.notDownloaded;
-      return;
+    fontState.value = downloaded ? DownloadState.downloaded : DownloadState.notDownloaded;
+    if (downloaded) {
+      await FontDownloadManager.instance.loadFont(id);
     }
-
-    await FontDownloadManager.instance.loadFont(id);
-
-    fontState.value = DownloadState.downloaded;
-
-    Get.updateLocale(Get.locale ?? const Locale('zh', 'CN'));
-
-    refreshSystemTheme();
   }
 
   Future<void> activateFontFamily(FontModel fontModel, {String? targetFileName}) async {
+    await FontDownloadManager.instance.loadFont(fontModel.id, fileName: targetFileName ?? '');
     fontFamilyName.v = fontModel.id;
+    await HivePrefUtil.setString('fontFamilyName', fontModel.id);
     curFontModel.value = fontModel;
     fontState.value = DownloadState.downloaded;
-
-    await FontDownloadManager.instance.loadFont(fontModel.id, fileName: targetFileName ?? '');
+    refreshSystemTheme();
     Get.updateLocale(Get.locale ?? const Locale('zh', 'CN'));
     if (targetFileName != null) {
       final subName = targetFileName.split('-').last;
@@ -95,6 +97,7 @@ class FontSettingsController extends GetxController {
 
   Future<void> activateDanmakuFontFamily(FontModel font) async {
     Get.find<DanmakuSettingsController>().danmakuFontFamilyName.v = font.id;
+    await HivePrefUtil.setString('danmakuFontFamilyName', font.id);
   }
 
   Future<void> refreshFontDiskSizes() async {
@@ -117,8 +120,10 @@ class FontSettingsController extends GetxController {
     await FontDownloadManager.instance.deleteFontFamily(font, (s) {});
     if (fontFamilyName.v == font.id) {
       fontFamilyName.v = Platform.isWindows ? "Microsoft YaHei" : 'Default';
+      await HivePrefUtil.setString('fontFamilyName', fontFamilyName.v);
+      refreshSystemTheme();
     }
-    refreshFontDiskSizes();
+    await refreshFontDiskSizes();
   }
 
   void refreshSystemTheme() {

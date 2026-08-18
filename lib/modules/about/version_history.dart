@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:markdown_widget/widget/all.dart';
@@ -43,7 +44,7 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> with SingleTick
     if (historyLoading.value) return;
 
     try {
-      GitHubMirror mirror = GitHubMirror(owner: 'liuchuancong', repo: 'pure_live', branch: 'master');
+      GitHubMirror mirror = GitHubMirror(owner: 'wzgrx', repo: 'pure_live', branch: 'master');
       historyLoading.value = true;
       historyError.value = false;
       final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -55,8 +56,7 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> with SingleTick
       var result = await HttpClient.instance.getJson(
         url,
         header: {
-          'User-Agent':
-              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.51',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.51',
           'Accept': 'application/json',
         },
       );
@@ -125,7 +125,7 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> with SingleTick
                   ),
                 ),
                 child: ListView.builder(
-                  physics: const BouncingScrollPhysics(),
+                  physics: const PureLiveScrollPhysics(),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   itemCount: versions.length,
                   itemBuilder: (context, index) {
@@ -209,7 +209,7 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> with SingleTick
           );
         }
         return ListView.separated(
-          physics: const BouncingScrollPhysics(),
+          physics: const PureLiveScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           itemCount: versions.length,
           separatorBuilder: (context, index) => const SizedBox(height: 10),
@@ -293,7 +293,7 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> with SingleTick
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
+                    physics: const PureLiveScrollPhysics(),
                     child: _VersionChangelogAndFilesWidget(item: item, isDark: isDark),
                   ),
                 ),
@@ -351,7 +351,7 @@ class _DesktopChangelogDetailPanel extends StatelessWidget {
               ),
               padding: const EdgeInsets.all(20),
               child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
+                physics: const PureLiveScrollPhysics(),
                 child: _VersionChangelogAndFilesWidget(item: item, isDark: isDark),
               ),
             ),

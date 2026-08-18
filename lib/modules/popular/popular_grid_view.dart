@@ -1,6 +1,6 @@
 import 'package:remixicon/remixicon.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/common/index.dart';
-import 'package:waterfall_flow/waterfall_flow.dart';
 
 class PopularGridView extends StatefulWidget {
   final String tag;
@@ -9,12 +9,13 @@ class PopularGridView extends StatefulWidget {
   State<PopularGridView> createState() => _PopularGridViewState();
 }
 
-class _PopularGridViewState extends State<PopularGridView> {
+class _PopularGridViewState extends State<PopularGridView> with AutomaticKeepAliveClientMixin {
   BasePageScrollAndStateBone<LiveRoom> get controller =>
       Get.find<BasePageScrollAndStateBone<LiveRoom>>(tag: widget.tag);
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return LayoutBuilder(
       builder: (context, constraint) {
         final width = constraint.maxWidth;
@@ -33,21 +34,31 @@ class _PopularGridViewState extends State<PopularGridView> {
             onButtonPressed: () => controller.refreshData(),
           ),
           contentBuilder: (context, list, scrollController) {
-            return WaterfallFlow.builder(
+            final spacing = SettingsService.to.theme.crossAxisSpacing.v;
+            final itemWidth = (width - 12 - spacing * (crossAxisCount - 1)) / crossAxisCount;
+            return GridView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
               controller: scrollController,
-              gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
-                lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
+              scrollCacheExtent: const ScrollCacheExtent.pixels(480),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: crossAxisCount,
-                crossAxisSpacing: SettingsService.to.theme.crossAxisSpacing.v,
+                crossAxisSpacing: spacing,
                 mainAxisSpacing: SettingsService.to.theme.mainAxisSpacing.v,
+                mainAxisExtent: itemWidth * 9 / 16 + 72,
               ),
               itemCount: list.length,
-              itemBuilder: (context, index) => RoomCard(room: list[index], dense: true),
+              itemBuilder: (context, index) {
+                final room = list[index];
+                return RoomCard(key: ValueKey('${room.platform}:${room.roomId}'), room: room, dense: true);
+              },
             );
           },
         );
       },
     );
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }

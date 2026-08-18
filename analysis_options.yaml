@@ -1,6 +1,8 @@
 include: package:flutter_lints/flutter.yaml
-analyzer: 
-  exclude: 
+formatter:
+  page_width: 120
+analyzer:
+  exclude:
     - "**/*.g.dart"
     - "**/*_en.dart"
     - "**/*_zh_CN.dart"
@@ -12,5 +14,9 @@ analyzer:
     - windows/**
     - macos/**
     - linux/**
+    # Third-party source is pinned and patched only in its Android registrar.
+    # Keep the app quality gate focused on code maintained in this repository.
+    - plugins/flv_lzc/**
+    - plugins/built_in_kotlin/**
 linter:
   rules:

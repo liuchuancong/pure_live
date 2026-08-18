@@ -17,27 +17,32 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   // plugins.
   ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
-  flutter::DartProject project(L"data");
+  {
+    flutter::DartProject project(L"data");
 
-  std::vector<std::string> command_line_arguments =
-      GetCommandLineArguments();
+    std::vector<std::string> command_line_arguments =
+        GetCommandLineArguments();
 
-  project.set_dart_entrypoint_arguments(std::move(command_line_arguments));
-  SetCurrentProcessExplicitAppUserModelID(L"com.mystyle.purelive");
-  FlutterWindow window(project);
-  Win32Window::Point origin(10, 10);
-  Win32Window::Size size(1280, 720);
-  if (!window.Create(L"pure_live", origin, size)) {
-    return EXIT_FAILURE;
-  }
-  window.SetQuitOnClose(true);
+    project.set_dart_entrypoint_arguments(std::move(command_line_arguments));
+    SetCurrentProcessExplicitAppUserModelID(L"com.mystyle.purelive");
+    FlutterWindow window(project);
+    Win32Window::Point origin(10, 10);
+    Win32Window::Size size(1280, 720);
+    if (!window.Create(L"pure_live", origin, size)) {
+      return EXIT_FAILURE;
+    }
+    window.SetQuitOnClose(true);
 
-  ::MSG msg;
-  while (::GetMessage(&msg, nullptr, 0, 0)) {
-    ::TranslateMessage(&msg);
-    ::DispatchMessage(&msg);
+    ::MSG msg;
+    while (::GetMessage(&msg, nullptr, 0, 0)) {
+      ::TranslateMessage(&msg);
+      ::DispatchMessage(&msg);
+    }
   }
 
   ::CoUninitialize();
+  // Flutter and plugin objects are already destroyed above. Bypass process
+  // detach hooks in optional DLLs that can otherwise keep the process alive.
+  ::TerminateProcess(::GetCurrentProcess(), EXIT_SUCCESS);
   return EXIT_SUCCESS;
 }

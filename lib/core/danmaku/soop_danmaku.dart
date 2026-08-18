@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/site/soop_site.dart';
 import 'package:pure_live/core/common/core_log.dart';
@@ -12,20 +13,12 @@ class SoopDanmakuArgs {
   String url;
   String chatNo;
 
-  SoopDanmakuArgs({
-    required this.url,
-    required this.chatNo,
-  });
+  SoopDanmakuArgs({required this.url, required this.chatNo});
 
-  SoopDanmakuArgs.fromJson(Map<String, dynamic> json)
-      : url = json['url'] ?? '',
-        chatNo = json['chatNo'] ?? '';
+  SoopDanmakuArgs.fromJson(Map<String, dynamic> json) : url = json['url'] ?? '', chatNo = json['chatNo'] ?? '';
 
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{
-      'url': url,
-      'chatNo': chatNo,
-    };
+    return <String, dynamic>{'url': url, 'chatNo': chatNo};
   }
 }
 
@@ -160,12 +153,9 @@ class SoopDanmaku implements LiveDanmaku {
     if (messages.length > 5 && !['-1', '1'].contains(messages[1]) && !messages[1].contains('|')) {
       final comment = messages[1];
       final userName = messages[6];
-      onMessage?.call(LiveMessage(
-        type: LiveMessageType.chat,
-        color: LiveMessageColor.white,
-        message: comment,
-        userName: userName,
-      ));
+      onMessage?.call(
+        LiveMessage(type: LiveMessageType.chat, color: LiveMessageColor.white, message: comment, userName: userName),
+      );
     }
   }
 }

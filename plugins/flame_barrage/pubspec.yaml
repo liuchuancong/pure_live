@@ -1,0 +1,25 @@
+name: flame_barrage
+description: A high-performance barrage rendering engine powered by Flame.
+version: 0.0.4
+homepage: https://github.com/liuchuancong/flame_barrage
+repository: https://github.com/liuchuancong/flame_barrage
+issue_tracker: https://github.com/liuchuancong/flame_barrage/issues
+topics:
+  - barrage
+  - danmaku
+  - flame
+  - flutter
+  - live-stream
+environment:
+  sdk: ^3.12.0
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flame: ^1.37.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

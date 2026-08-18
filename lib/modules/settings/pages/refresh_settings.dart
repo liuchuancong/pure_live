@@ -10,7 +10,7 @@ class RefreshSettingsPage extends GetView<RefreshConfigController> {
     return Scaffold(
       appBar: AppBar(title: Text(i18n("refresh_settings"))),
       body: ListView(
-        physics: const BouncingScrollPhysics(),
+        physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
           context.buildGroupTitle(i18n("auto_refresh_settings")),
@@ -40,6 +40,21 @@ class RefreshSettingsPage extends GetView<RefreshConfigController> {
                 onTap: showMaxConcurrentDialog,
               ),
             ),
+            context.buildSwitchTile(
+              icon: Remix.image_2_line,
+              title: i18n('auto_refresh_thumbnails'),
+              subtitle: i18n('auto_refresh_thumbnails_subtitle'),
+              value: controller.autoRefreshThumbnails,
+            ),
+            Obx(() {
+              if (!controller.autoRefreshThumbnails.value) return const SizedBox.shrink();
+              return context.buildTile(
+                icon: Remix.time_line,
+                title: i18n('thumbnail_refresh_interval'),
+                subtitle: _getIntervalText(controller.thumbnailRefreshInterval.value),
+                onTap: showThumbnailRefreshIntervalDialog,
+              );
+            }),
           ]),
           const SizedBox(height: 32),
         ],
@@ -98,7 +113,7 @@ class RefreshSettingsPage extends GetView<RefreshConfigController> {
                   width: dialogWidth,
                   child: ListView(
                     shrinkWrap: true,
-                    physics: const BouncingScrollPhysics(),
+                    physics: const PureLiveScrollPhysics(),
                     children: intervals.entries.map((e) {
                       return RadioListTile<int>(
                         title: Text(e.value),
@@ -140,7 +155,7 @@ class RefreshSettingsPage extends GetView<RefreshConfigController> {
                   width: dialogWidth,
                   child: ListView.builder(
                     shrinkWrap: true,
-                    physics: const BouncingScrollPhysics(),
+                    physics: const PureLiveScrollPhysics(),
                     itemCount: 20,
                     itemBuilder: (context, index) {
                       final val = index + 1;
@@ -157,6 +172,53 @@ class RefreshSettingsPage extends GetView<RefreshConfigController> {
           ],
         );
       },
+    );
+  }
+
+  void showThumbnailRefreshIntervalDialog() {
+    final Map<int, String> intervals = {
+      5: "5 ${i18n("minute")}",
+      10: "10 ${i18n("minute")}",
+      15: "15 ${i18n("minute")}",
+      30: "30 ${i18n("minute")}",
+      60: "1 ${i18n("hour")}",
+      120: "2 ${i18n("hour")}",
+      240: "4 ${i18n("hour")}",
+      360: "6 ${i18n("hour")}",
+    };
+
+    showDialog(
+      context: Get.context!,
+      builder: (context) => SimpleDialog(
+        title: Text(i18n('thumbnail_refresh_interval')),
+        children: [
+          Obx(
+            () => RadioGroup<int>(
+              groupValue: controller.thumbnailRefreshInterval.value,
+              onChanged: (value) {
+                if (value == null) return;
+                controller.thumbnailRefreshInterval.value = value;
+                Navigator.pop(context);
+              },
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.45),
+                child: ListView(
+                  shrinkWrap: true,
+                  children: intervals.entries
+                      .map(
+                        (entry) => RadioListTile<int>(
+                          title: Text(entry.value),
+                          value: entry.key,
+                          activeColor: Theme.of(context).colorScheme.primary,
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:url_launcher/url_launcher_string.dart';
@@ -16,7 +17,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     return Scaffold(
       appBar: AppBar(title: Text(i18n("player_kernel_settings"))),
       body: ListView(
-        physics: const BouncingScrollPhysics(),
+        physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
           context.buildGroupTitle(i18n("core_kernel_settings")),
@@ -56,12 +57,6 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                 ),
               );
             }),
-            context.buildSwitchTile(
-              icon: Remix.music_2_line,
-              title: i18n('audio_only_mode'),
-              subtitle: i18n("audio_only_mode_subtitle"),
-              value: SettingsService.to.player.audioOnly,
-            ),
             context.buildSwitchTile(
               icon: Remix.speed_up_line,
               title: i18n('enable_codec'),

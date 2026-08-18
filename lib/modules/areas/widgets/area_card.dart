@@ -20,9 +20,37 @@ class _AreaCardState extends State<AreaCard> {
     return AreaPicMapper.getPic(widget.category.areaName);
   }
 
+  Widget _buildNetworkImage(String imageUrl) {
+    return Obx(() {
+      final epoch = SettingsService.to.cache.imageCacheEpoch.v;
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final logicalWidth = constraints.maxWidth.isFinite ? constraints.maxWidth : 160.0;
+          final cacheWidth = (logicalWidth * MediaQuery.devicePixelRatioOf(context)).round().clamp(160, 640).toInt();
+          return CachedNetworkImage(
+            key: ValueKey('$imageUrl#$epoch'),
+            cacheKey: '$imageUrl#$epoch',
+            imageUrl: imageUrl,
+            cacheManager: CustomImageCacheManager.instance,
+            fit: BoxFit.cover,
+            filterQuality: FilterQuality.low,
+            memCacheWidth: cacheWidth,
+            maxWidthDiskCache: 640,
+            fadeInDuration: Duration.zero,
+            fadeOutDuration: Duration.zero,
+            placeholder: (context, url) =>
+                AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", isMini: true),
+            errorWidget: (context, url, error) =>
+                AppStatusView(type: AppStatusType.error, title: "", subtitle: "", isMini: true),
+          );
+        },
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final displayImageUrl = _getFinalUrl();
+    final displayImageUrl = normalizeNetworkImageUrl(_getFinalUrl());
 
     return Card(
       margin: EdgeInsets.zero,
@@ -61,15 +89,7 @@ class _AreaCardState extends State<AreaCard> {
                 color: Colors.white,
 
                 child: displayImageUrl.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: displayImageUrl,
-                        cacheManager: CustomImageCacheManager.instance,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) =>
-                            AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", isMini: true),
-                        errorWidget: (context, url, error) =>
-                            AppStatusView(type: AppStatusType.error, title: "", subtitle: "", isMini: true),
-                      )
+                    ? _buildNetworkImage(displayImageUrl)
                     : const Icon(Icons.live_tv_rounded, color: Colors.black, size: 38),
               ),
             ),

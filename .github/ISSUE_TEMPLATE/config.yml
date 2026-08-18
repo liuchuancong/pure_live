@@ -1,18 +1,13 @@
 blank_issues_enabled: false
 
 contact_links:
-  - name: "📖 ① 先阅读项目文档"
-    url: https://github.com/liuchuancong/pure_live
-    about: "播放源、功能使用、配置方法等常见问题，请先查看项目说明。"
+  - name: 使用与构建文档
+    url: https://github.com/wzgrx/pure_live#文档
+    about: 提交问题前先核对功能说明、构建流程和常见问题。
+  - name: 搜索已有 Issue
+    url: https://github.com/wzgrx/pure_live/issues
+    about: 使用平台、播放器、设备型号和报错关键词搜索重复问题。
+  - name: 私密安全报告
+    url: https://github.com/wzgrx/pure_live/security/advisories/new
+    about: 涉及凭据、隐私或可被利用的漏洞时使用私密报告入口。
 
-  - name: "🔎 ② 搜索已有 Issue"
-    url: https://github.com/liuchuancong/pure_live/issues
-    about: "提交前先搜索关键词，看看是否已经有人遇到相同问题以及是否已有解决方案。"
-
-  - name: "🌐 ③ 确认播放源 / 网络是否正常"
-    url: https://github.com/liuchuancong/pure_live/issues
-    about: "请先确认问题不是直播源失效、网络异常、地区限制、代理或配置错误导致的。"
-
-  - name: "📦 ④ 查看历史版本"
-    url: https://github.com/liuchuancong/pure_live/releases
-    about: "请确认是否使用最新版本，并准备好 PureLive 版本、操作系统和 CPU 架构信息。"

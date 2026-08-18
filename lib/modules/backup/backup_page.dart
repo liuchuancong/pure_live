@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:path/path.dart' as path;
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
@@ -49,7 +50,7 @@ class _BackupPageState extends State<BackupPage> {
       body: Obx(() {
         final auth = Get.find<AuthController>();
         return ListView(
-          physics: const BouncingScrollPhysics(),
+          physics: const PureLiveScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           children: [
             context.buildGroupTitle(i18n("cloud_backup")),

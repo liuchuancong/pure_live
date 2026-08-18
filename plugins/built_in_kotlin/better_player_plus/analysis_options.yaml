@@ -1,0 +1,11 @@
+include: package:analysis_lints/analysis_options.yaml
+
+analyzer:
+  errors:
+    use_setters_to_change_properties: ignore
+    prefer_constructors_over_static_methods: ignore
+    comment_references: ignore
+    no_default_cases: ignore
+    discarded_futures: ignore
+    avoid_positional_boolean_parameters: ignore
+    document_ignores: ignore

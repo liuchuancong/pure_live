@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:ui' as ui;
+
 import 'package:flutter_svg/svg.dart';
 import 'package:flutter/gestures.dart';
 import 'package:remixicon/remixicon.dart';
@@ -8,6 +9,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
+import 'package:pure_live/common/utils/live_url_tool.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:pure_live/common/widgets/count_button.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
@@ -31,6 +33,7 @@ class VideoControllerPanel extends StatefulWidget {
 
 class _VideoControllerPanelState extends State<VideoControllerPanel> {
   static const barHeight = 56.0;
+  Offset? _lastTapPosition;
 
   VideoController get controller => widget.controller;
 
@@ -49,7 +52,7 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
       child: Focus(
         autofocus: true,
         child: Obx(() {
-          final double currentVolume = controller.room.getSavedVolume();
+          final double currentVolume = controller.currentVolume.value;
           final int percentage = (currentVolume * 100).round();
 
           final IconData iconData = currentVolume <= 0
@@ -106,14 +109,20 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                 Obx(
                   () => Offstage(
                     offstage: controller.hideDanmaku.value,
-                    child: DanmakuViewer(controller: controller),
+                    child: DanmakuViewer(key: controller.danmuKey, controller: controller),
                   ),
                 ),
                 GestureDetector(
+                  onTapDown: (details) => _lastTapPosition = details.globalPosition,
                   onTap: () {
+                    final position = _lastTapPosition;
+                    if (position != null && controller.handleDanmakuPointer(position, longPress: false)) return;
                     GlobalPlayerService.instance.playerManager.isPlayingNow
                         ? controller.enableController()
                         : GlobalPlayerService.instance.playerManager.togglePlayPause();
+                  },
+                  onLongPressStart: (details) {
+                    controller.handleDanmakuPointer(details.globalPosition, longPress: true);
                   },
                   onDoubleTap: () {
                     if (!controller.showLocked.value) {
@@ -224,7 +233,6 @@ class TopActionBar extends StatelessWidget {
                 ),
               ),
 
-              AudioOnlyButton(controller: controller),
               if (controller.room.platform == Sites.iptvSite)
                 IconButton(
                   icon: const Icon(Icons.assignment_outlined), // 节目单账本图标
@@ -252,6 +260,8 @@ class TopActionBar extends StatelessWidget {
                 const DatetimeInfo(),
                 BatteryInfo(controller: controller),
               ],
+              AudioOnlyButton(controller: controller),
+              if (PlatformUtils.isAndroid) CastButton(controller: controller),
               if (!GlobalPlayerState.to.fullscreenUI && PlatformUtils.isAndroid) PIPButton(controller: controller),
               if (PlatformUtils.isWindows) PIPButton(controller: controller),
             ],
@@ -350,7 +360,7 @@ class TopActionBar extends StatelessWidget {
                 child: ListView.builder(
                   controller: controller.scheduleScrollController,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  physics: const BouncingScrollPhysics(),
+                  physics: const PureLiveScrollPhysics(),
                   itemCount: controller.currentChannelSchedule.length,
                   itemBuilder: (context, index) {
                     final prog = controller.currentChannelSchedule[index];
@@ -568,15 +578,13 @@ class PIPButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
+    return IconButton(
+      tooltip: i18n('float_window_play'),
+      color: Colors.white,
+      onPressed: () {
         GlobalPlayerService.instance.playerManager.enablePip();
       },
-      child: Container(
-        alignment: Alignment.center,
-        padding: const EdgeInsets.all(12),
-        child: const Icon(CustomIcons.float_window, color: Colors.white),
-      ),
+      icon: const Icon(CustomIcons.float_window),
     );
   }
 }
@@ -589,29 +597,36 @@ class DanmakuViewer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => FlameBarrageWidget(
+    return Obx(() {
+      final settings = SettingsService.to.danmaku;
+      return FlameBarrageWidget(
         controller: controller.danmakuController,
+        // Video gestures own the full surface and forward only hits on actual
+        // barrage bounds, so volume/brightness/double-tap remain responsive.
+        enablePointerEvents: false,
         config: BarrageConfig(
-          useUniformSpeed: false,
-          dynamicSpeedWhileFlying: true,
-          noEmojiMode: controller.noEmojiMode.value,
           fontSize: controller.danmakuFontSize.value,
           topAreaDistance: controller.danmakuTopArea.value,
           area: controller.danmakuArea.value,
           bottomAreaDistance: controller.danmakuBottomArea.value,
           baseSpeed: controller.danmakuSpeed.value,
           opacity: controller.danmakuOpacity.value,
-          fontWeight: FontWeight.values[controller.danmakuFontBorder.value],
+          fontWeight: FontWeight.w600,
+          strokeWidth: controller.danmakuFontBorder.value,
           showStroke: controller.enableDanmakuStroke.value,
-          fps: controller.danmakuFps.value,
+          noEmojiMode: controller.noEmojiMode.value,
+          fps: settings.resolvedDanmakuFps(),
+          maxPendingCount: 120,
+          maxPendingAge: const Duration(seconds: 5),
           fontFamily: controller.danmakuFontFamilyName.value,
-          pictureCacheMaxSize: 9999,
+          trackHeight: (controller.danmakuFontSize.value * 1.55).clamp(24.0, 64.0).toDouble(),
+          emojiSize: (controller.danmakuFontSize.value * 1.3).clamp(16.0, 48.0).toDouble(),
+          pictureCacheMaxSize: 600,
           barragePoolMaxSize: 300,
         ),
         emojiAtlas: EmojiAtlas.instance,
-      ),
-    );
+      );
+    });
   }
 }
 
@@ -1182,7 +1197,7 @@ class BottomActionBar extends StatelessWidget {
             builder: (context, constraints) {
               return SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                physics: const PureLiveScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(minWidth: constraints.maxWidth),
                   child: Padding(
@@ -1403,17 +1418,39 @@ class AudioOnlyButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
+    return IconButton(
+      tooltip: i18n(controller.isAudioOnly ? 'restore_video_mode' : 'switch_audio_only_mode'),
+      visualDensity: VisualDensity.compact,
+      iconSize: 21,
+      color: controller.isAudioOnly ? const Color(0xFFFFD166) : Colors.white,
+      onPressed: () {
         controller.enableController();
         controller.toggleAudioOnly();
       },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 2),
-        alignment: Alignment.center,
-        height: 25,
-        child: Icon(controller.isAudioOnly ? Remix.headphone_line : Remix.tv_2_line, color: Colors.white, size: 20),
-      ),
+      // The headphone always means room-scoped audio-only. A television icon
+      // is reserved exclusively for casting so the two actions stay distinct.
+      icon: Icon(controller.isAudioOnly ? Remix.headphone_fill : Remix.headphone_line),
+    );
+  }
+}
+
+class CastButton extends StatelessWidget {
+  const CastButton({super.key, required this.controller});
+
+  final VideoController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: i18n('cast_screen'),
+      visualDensity: VisualDensity.compact,
+      iconSize: 21,
+      color: Colors.white,
+      onPressed: () {
+        controller.enableController();
+        LiveUrlTool.castPlayUrlByRoomId(roomId: controller.room.roomId ?? '', platform: controller.room.platform ?? '');
+      },
+      icon: const Icon(Remix.tv_2_line),
     );
   }
 }
@@ -1648,7 +1685,7 @@ class DanmakuSetting extends StatelessWidget {
       () => SizedBox(
         height: isWide ? 350.0 : 280.0,
         child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
+          physics: const PureLiveScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -1734,11 +1771,11 @@ class DanmakuSetting extends StatelessWidget {
                 labelText: i18n("settings_danmaku_fontBorder"),
                 valueWidget: SfSlider(
                   min: 0.0,
-                  max: 8.0,
+                  max: 4.0,
                   value: controller.danmakuFontBorder.value,
                   activeColor: primaryColor,
                   inactiveColor: Colors.white12,
-                  onChanged: (dynamic val) => controller.danmakuFontBorder.value = (val as double).toInt(),
+                  onChanged: (dynamic val) => controller.danmakuFontBorder.value = val as double,
                 ),
                 trailingWidget: Text(controller.danmakuFontBorder.value.toStringAsFixed(2), style: digitStyle),
               ),

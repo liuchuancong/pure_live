@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'dart:async';
+import 'dart:developer' as developer;
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:pure_live/plugins/emoji_manager.dart';
@@ -15,11 +17,13 @@ import 'package:back_button_interceptor/back_button_interceptor.dart';
 import 'package:pure_live/modules/live_play/states/live_play_state.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku_list_view.dart';
+import 'package:pure_live/modules/live_play/local_interaction_controller.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/timer_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
+import 'package:pure_live/player/core/live_audio_service.dart';
 
 // live_play_controller.dart
 
@@ -34,8 +38,11 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
   late final PlayerController playerController;
 
   final RecorderController recorderController = Get.find<RecorderController>();
+  final LocalInteractionController localInteractionController = Get.find<LocalInteractionController>();
 
   final Rx<LivePlayState> state = const LivePlayState().obs;
+  final RxList<LiveMessage> danmakuMessages = <LiveMessage>[].obs;
+  final Rxn<LiveMessage> localGiftEffect = Rxn<LiveMessage>();
 
   late Site currentSite;
   late TabController tabController;
@@ -43,16 +50,37 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
   final List<String> tabs = [i18n('danmaku_list'), i18n('danmaku_settings'), i18n('block_list')];
 
   bool _floatingResourcesReleased = false;
+  bool _ownerClosed = false;
+  bool _childControllersReleased = false;
+  bool _reactiveStateClosed = false;
+  int _roomLoadEpoch = 0;
+  bool _asmrSessionActive = false;
+  Timer? _localGiftEffectTimer;
+  Timer? _danmakuFlushTimer;
+  final List<LiveMessage> _pendingDanmakuMessages = <LiveMessage>[];
+  late final String _controllerTag;
+
+  static const int _maxDanmakuHistory = 500;
+  static const int _maxPendingDanmakuBatch = 200;
+  static const Duration _danmakuBatchWindow = Duration(milliseconds: 32);
 
   @override
   void onInit() {
     super.onInit();
+    _controllerTag = '${identityHashCode(this)}';
     currentSite = Sites.of(site);
 
+    final autoStartAsmr = Platform.isAndroid && SettingsService.to.app.enableAsmrSleepMode.v;
+    _asmrSessionActive = autoStartAsmr;
     state.value = LivePlayState(
       room: RoomState(detail: room),
-      player: PlayerState(isCurrentRoomAudioOnly: SettingsService.to.player.audioOnly.v),
-      ui: UIState(closeTimes: 240, closeTimeFlag: false),
+      // ASMR is the only automatic audio-only entry point. Manual headphone
+      // switching is scoped to the current room and is never persisted.
+      player: PlayerState(isCurrentRoomAudioOnly: autoStartAsmr),
+      ui: UIState(closeTimes: 60, closeTimeFlag: false),
+    );
+    unawaited(
+      LiveAudioService.configureSleepTimer(enabled: autoStartAsmr, minutes: SettingsService.to.app.asmrSleepMinutes.v),
     );
 
     _initControllers();
@@ -61,15 +89,13 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
   }
 
   void _initControllers() {
-    timerController = Get.put(TimerController());
-    danmakuController = Get.put(DanmakuController());
-    playerController = Get.put(PlayerController());
+    timerController = Get.put(TimerController(onEnded: _onRoomPlaybackTimerEnded), tag: 'timer-$_controllerTag');
+    danmakuController = Get.put(DanmakuController(this), tag: 'danmaku-$_controllerTag');
+    playerController = Get.put(PlayerController(this), tag: 'player-$_controllerTag');
 
     playerController.initSite(currentSite);
 
-    if (SettingsService.to.danmaku.enableDanmakuDisplay.v) {
-      danmakuController.initDanmaku(currentSite.liveSite.getDanmaku());
-    }
+    danmakuController.initDanmaku(currentSite.liveSite.getDanmaku());
   }
 
   void _initTab() {
@@ -155,17 +181,93 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
     );
   }
 
-  void updateDanmaku({List<LiveMessage>? messages, String? currentDanmakuRoomId}) {
-    state.value = state.value.copyWith(
-      danmaku: state.value.danmaku.copyWith(messages: messages, currentDanmakuRoomId: currentDanmakuRoomId),
-    );
+  void updateDanmaku({List<LiveMessage>? messages}) {
+    if (messages != null) {
+      danmakuMessages.assignAll(messages);
+    }
   }
 
   void addDanmakuMessage(LiveMessage msg) {
-    final currentMessages = List<LiveMessage>.from(state.value.danmaku.messages);
-    if (currentMessages.length > 100) currentMessages.removeAt(0);
-    currentMessages.add(msg);
-    updateDanmaku(messages: currentMessages);
+    if (isClosed) return;
+    if (_pendingDanmakuMessages.length >= _maxPendingDanmakuBatch) {
+      _pendingDanmakuMessages.removeAt(0);
+    }
+    _pendingDanmakuMessages.add(msg);
+    _danmakuFlushTimer ??= Timer(_danmakuBatchWindow, _flushDanmakuMessages);
+  }
+
+  void _flushDanmakuMessages() {
+    _danmakuFlushTimer = null;
+    if (_pendingDanmakuMessages.isEmpty || isClosed) return;
+    final next = <LiveMessage>[...danmakuMessages, ..._pendingDanmakuMessages];
+    _pendingDanmakuMessages.clear();
+    if (next.length > _maxDanmakuHistory) {
+      next.removeRange(0, next.length - _maxDanmakuHistory);
+    }
+    danmakuMessages.assignAll(next);
+  }
+
+  void removeDanmakuWhere(bool Function(LiveMessage message) predicate) {
+    _pendingDanmakuMessages.removeWhere(predicate);
+    final next = danmakuMessages.where((message) => !predicate(message)).toList(growable: false);
+    if (next.length != danmakuMessages.length) danmakuMessages.assignAll(next);
+  }
+
+  Future<void> _onRoomPlaybackTimerEnded() async {
+    updateUI(closeTimeFlag: false);
+    await GlobalPlayerService.instance.playerManager.pause();
+    await LiveAudioService.stop();
+    ToastUtil.show(i18n('room_playback_timer_finished'));
+  }
+
+  void updateRuntimeAudience(dynamic value) {
+    if (isClosed) return;
+    final update = value is LiveAudienceUpdate ? value : null;
+    final rawValue = (update?.value ?? value)?.toString().trim() ?? '';
+    if (!RegExp(r'[0-9]').hasMatch(rawValue)) return;
+    final count = LiveRoom.parseAudienceNumber(rawValue);
+    final detail = state.value.room.detail;
+    if (detail == null) return;
+    if (count < 0) return;
+    final text = count.toString();
+    final inferredKind = detail.platform == Sites.bilibiliSite
+        ? LiveAudienceMetricKind.popularity
+        : LiveAudienceMetricKind.onlineViewers;
+    final kind = update?.kind ?? inferredKind;
+    final candidate = switch (kind) {
+      LiveAudienceMetricKind.popularity => detail.copyWith(
+        watching: text,
+        popularity: text,
+        audienceMetricType: AudienceMetricType.popularity,
+      ),
+      LiveAudienceMetricKind.onlineViewers => detail.copyWith(onlineViewers: text),
+      LiveAudienceMetricKind.totalViewers => detail.copyWith(totalViewers: text),
+    };
+    updateRoom(detail: candidate.withAudienceFallbackFrom(detail));
+  }
+
+  void emitLocalMessage(LiveMessage msg, {required bool showAsDanmaku}) {
+    if (!localInteractionController.enabled.v) return;
+    addDanmakuMessage(msg);
+    if (showAsDanmaku) {
+      state.value.player.videoController?.sendDanmaku(msg);
+    }
+    if (msg.type == LiveMessageType.gift && localInteractionController.enableGiftEffects.v) {
+      localGiftEffect.v = msg;
+      _localGiftEffectTimer?.cancel();
+      _localGiftEffectTimer = Timer(const Duration(seconds: 3), () => localGiftEffect.v = null);
+    }
+  }
+
+  /// Applies the headphone action to this room only. Restoring video also
+  /// ends an automatically started ASMR timer, while manually entering audio
+  /// mode does not implicitly create a sleep session.
+  Future<void> setCurrentRoomAudioOnlyFromUser(bool value) async {
+    if (!value && _asmrSessionActive) {
+      _asmrSessionActive = false;
+      await LiveAudioService.configureSleepTimer(enabled: false, minutes: SettingsService.to.app.asmrSleepMinutes.v);
+    }
+    await playerController.changeCurrentRoomAudioOnly(value);
   }
 
   void addSystemMessage(String text) {
@@ -179,11 +281,20 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
   }
 
   void clearDanmakuMessages() {
-    updateDanmaku(messages: []);
+    _danmakuFlushTimer?.cancel();
+    _danmakuFlushTimer = null;
+    _pendingDanmakuMessages.clear();
+    danmakuMessages.clear();
+    clearRenderedDanmaku();
   }
 
   void updateDanmakuRoomId(String? roomId) {
-    updateDanmaku(currentDanmakuRoomId: roomId);
+    if (state.value.danmaku.currentDanmakuRoomId == roomId) return;
+    state.value = state.value.copyWith(danmaku: state.value.danmaku.copyWith(currentDanmakuRoomId: roomId));
+  }
+
+  void clearRenderedDanmaku() {
+    state.value.player.videoController?.clearDanmaku();
   }
 
   void updateTimerFlag(bool flag) {
@@ -205,14 +316,18 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
   }) async {
     final roomId = state.value.room.detail?.roomId;
     if (roomId == null) return LiveRoom();
+    final requestedPlatform = state.value.room.detail?.platform;
+    final loadEpoch = ++_roomLoadEpoch;
 
     updateRoom(isLoading: true, loadError: null);
 
     try {
-      final liveRoom = await currentSite.liveSite.getRoomDetail(
+      final fetchedRoom = await currentSite.liveSite.getRoomDetail(
         roomId: roomId,
         platform: state.value.room.detail!.platform!,
       );
+      final liveRoom = fetchedRoom.withAudienceFallbackFrom(state.value.room.detail!);
+      if (!_isRoomLoadCurrent(loadEpoch, roomId, requestedPlatform)) return liveRoom;
 
       if (currentSite.id == Sites.iptvSite) {
         updateRoom(detail: liveRoom);
@@ -230,10 +345,10 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
         return liveRoom;
       }
 
-      final liveStatus = liveRoom.status! || liveRoom.isRecord!;
+      final liveStatus = liveRoom.status == true || liveRoom.isRecord == true;
 
       if (liveStatus) {
-        await _handleLiveRoom(liveRoom);
+        await _handleLiveRoom(liveRoom, loadEpoch: loadEpoch);
       } else {
         _handleNotLiveRoom(liveRoom);
       }
@@ -241,17 +356,26 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
       updateRoom(isLoading: false);
       return liveRoom;
     } catch (e) {
+      if (!_isRoomLoadCurrent(loadEpoch, roomId, requestedPlatform)) return LiveRoom();
       updateRoom(isLoading: false, loadError: e.toString());
       ToastUtil.show(i18n('get_room_info_failed_retry'));
       return LiveRoom();
     }
   }
 
-  Future<void> _handleLiveRoom(LiveRoom liveRoom) async {
+  bool _isRoomLoadCurrent(int epoch, String roomId, String? platform) {
+    final current = state.value.room.detail;
+    return epoch == _roomLoadEpoch && current?.roomId == roomId && current?.platform == platform;
+  }
+
+  void invalidateRoomLoad() => _roomLoadEpoch++;
+
+  Future<void> _handleLiveRoom(LiveRoom liveRoom, {required int loadEpoch}) async {
     updateRoom(isLiving: true, success: false);
 
     try {
       await playerController.getPlayQualites();
+      if (loadEpoch != _roomLoadEpoch) return;
 
       if (liveRoom.platform != Sites.iptvSite) {
         SettingsService.to.history.addRoomToHistory(liveRoom);
@@ -260,21 +384,25 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
       }
 
       const except = [Sites.kuaishouSite, Sites.iptvSite, Sites.ccSite];
-      if (!except.contains(liveRoom.platform) && SettingsService.to.danmaku.enableDanmakuDisplay.v) {
-        final needReconnect = danmakuController.needReconnect(liveRoom);
-        if (needReconnect) {
-          danmakuController.stopDanmaku();
-          danmakuController.setupDanmaku();
-          danmakuController.liveDanmaku.start(liveRoom.danmakuData);
-          updateDanmakuRoomId(liveRoom.roomId);
-        }
+      final danmakuSettings = SettingsService.to.danmaku;
+      final shouldConnectDanmaku = danmakuSettings.enableDanmakuDisplay.v || danmakuSettings.enablePipDanmaku.v;
+      if (!except.contains(liveRoom.platform) && shouldConnectDanmaku) {
+        await danmakuController.connectRoom(liveRoom);
+      } else {
+        await danmakuController.stopDanmaku();
       }
-    } catch (_) {
+    } catch (error, stackTrace) {
+      developer.log(
+        'Live room initialization failed (${error.runtimeType})',
+        name: 'LivePlayController',
+        stackTrace: stackTrace,
+      );
       updateRoom(success: false);
     }
   }
 
   void _handleNotLiveRoom(LiveRoom liveRoom) {
+    unawaited(danmakuController.stopDanmaku());
     updateRoom(success: false, isLiving: false);
     setNormalScreen();
     GlobalPlayerState.to.isFullscreen.value = false;
@@ -290,6 +418,7 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
   }
 
   void _handleUnknownStatus() {
+    unawaited(danmakuController.stopDanmaku());
     if (Get.currentRoute == '/live_play') {
       ToastUtil.show(i18n('get_room_info_failed_retry'));
       setNormalScreen();
@@ -322,9 +451,7 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
     playerController.setPlayer(roomId: state.value.room.detail!.roomId!);
     updateRoom(success: true);
 
-    if (SettingsService.to.danmaku.enableDanmakuDisplay.v) {
-      danmakuController.stopDanmaku();
-    }
+    unawaited(danmakuController.stopDanmaku());
   }
 
   void _restoreQualityAndLines() {
@@ -332,15 +459,15 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
   }
 
   Future<void> switchRoom(LiveRoom newRoom) async {
+    // Fence any room-detail/play-quality request that was started before this
+    // switch. Its late result must not restore the previous room or socket.
+    invalidateRoomLoad();
     final sameRoom =
         state.value.room.detail?.roomId == newRoom.roomId && state.value.room.detail?.platform == newRoom.platform;
 
     if (!sameRoom) {
       clearDanmakuMessages();
-      if (SettingsService.to.danmaku.enableDanmakuDisplay.v) {
-        danmakuController.stopDanmaku();
-      }
-      updateDanmakuRoomId(null);
+      await danmakuController.stopDanmaku();
     }
 
     final manager = GlobalPlayerService.instance.playerManager;
@@ -352,15 +479,20 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
     updatePlayer(hasUseDefaultResolution: false);
     updateUI(refreshKey: 0);
 
-    final audioOnly = SettingsService.to.player.audioOnly.v;
-    updatePlayer(isCurrentRoomAudioOnly: audioOnly);
+    final autoStartAsmr = Platform.isAndroid && SettingsService.to.app.enableAsmrSleepMode.v;
+    _asmrSessionActive = autoStartAsmr;
+    await LiveAudioService.configureSleepTimer(
+      enabled: autoStartAsmr,
+      minutes: SettingsService.to.app.asmrSleepMinutes.v,
+    );
+    updatePlayer(isCurrentRoomAudioOnly: autoStartAsmr);
 
     updateRoom(detail: newRoom);
     currentSite = Sites.of(newRoom.platform!);
     playerController.initSite(currentSite);
 
-    if (!sameRoom && SettingsService.to.danmaku.enableDanmakuDisplay.v) {
-      danmakuController.initDanmaku(currentSite.liveSite.getDanmaku());
+    if (!sameRoom) {
+      await danmakuController.replaceDanmaku(currentSite.liveSite.getDanmaku());
     }
 
     await EmojiManager.instance.preload(newRoom.platform!);
@@ -371,6 +503,7 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
   }
 
   Future<void> setResolution(ReloadDataType reloadDataType, int qualityIndex, int lineIndex) async {
+    invalidateRoomLoad();
     await GlobalPlayerService.instance.playerManager.close();
     await playerController.destroyPlayer();
 
@@ -412,6 +545,10 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
       case Sites.twitchSite:
         nativeUrl = "https://www.twitch.tv/${detail.roomId}";
         webUrl = "https://www.twitch.tv/${detail.roomId}";
+        break;
+      case Sites.soopSite:
+        nativeUrl = "https://play.sooplive.co.kr/${detail.roomId}";
+        webUrl = nativeUrl;
         break;
       case Sites.kuaishouSite:
         nativeUrl =
@@ -467,29 +604,52 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
     if (_floatingResourcesReleased) return;
     _floatingResourcesReleased = true;
 
-    if (SettingsService.to.danmaku.enableDanmakuDisplay.v) {
-      danmakuController.stopDanmaku();
+    final videoController = state.value.player.videoController;
+    unawaited(_disposeAppFloatingResourcesAsync(videoController));
+  }
+
+  Future<void> _disposeAppFloatingResourcesAsync(VideoController? videoController) async {
+    await danmakuController.stopDanmaku();
+    videoController?.dispose();
+    if (_ownerClosed) {
+      _releaseChildControllers();
+      _closeReactiveState();
     }
-    state.value.player.videoController?.dispose();
+  }
+
+  void _releaseChildControllers() {
+    if (_childControllersReleased) return;
+    _childControllersReleased = true;
+    Get.delete<TimerController>(tag: 'timer-$_controllerTag', force: true);
+    Get.delete<DanmakuController>(tag: 'danmaku-$_controllerTag', force: true);
+    Get.delete<PlayerController>(tag: 'player-$_controllerTag', force: true);
+  }
+
+  void _closeReactiveState() {
+    if (_reactiveStateClosed) return;
+    _reactiveStateClosed = true;
+    state.close();
   }
 
   @override
   void onClose() {
+    _ownerClosed = true;
+    _roomLoadEpoch++;
+    _localGiftEffectTimer?.cancel();
+    _danmakuFlushTimer?.cancel();
+    _pendingDanmakuMessages.clear();
     tabController.dispose();
 
     if (Platform.isAndroid) {
       BackButtonInterceptor.removeByName("live_play_page");
     }
 
-    if (!GlobalPlayerService.instance.playerManager.shouldKeepDanmakuForAppFloating) {
+    final keepForAppFloating = GlobalPlayerService.instance.playerManager.shouldKeepDanmakuForAppFloating;
+    if (!keepForAppFloating) {
       disposeAppFloatingResources();
+      _releaseChildControllers();
+      _closeReactiveState();
     }
-
-    timerController.dispose();
-    danmakuController.dispose();
-    playerController.dispose();
-
-    state.close();
     super.onClose();
   }
 }

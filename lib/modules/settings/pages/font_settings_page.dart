@@ -22,7 +22,7 @@ class FontSettingsPage extends GetView<SettingsService> {
       ),
       body: Obx(
         () => ListView(
-          physics: const BouncingScrollPhysics(),
+          physics: const PureLiveScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           children: [
             context.buildGroupTitle(i18n("body_typography_group")),

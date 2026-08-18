@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/popular/popular_grid_controller.dart';
 
@@ -6,6 +8,7 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
   int index = 0;
   late List<Site> sites;
   bool _isTabControllerInitialized = false;
+  Timer? _settledTabLoadTimer;
 
   @override
   void onInit() {
@@ -52,6 +55,7 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
 
   @override
   void onClose() {
+    _settledTabLoadTimer?.cancel();
     if (_isTabControllerInitialized) {
       tabController.removeListener(_handleTabChange);
       tabController.dispose();
@@ -60,6 +64,7 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
   }
 
   void _initTabController({required bool isFirstLoad}) {
+    _settledTabLoadTimer?.cancel();
     if (_isTabControllerInitialized) {
       tabController.removeListener(_handleTabChange);
       tabController.dispose();
@@ -87,23 +92,22 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
     tabController.addListener(_handleTabChange);
     _isTabControllerInitialized = true;
 
-    if (isFirstLoad && index > 0) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        tabController.animateTo(index);
-        _loadDataAtIndex(index);
-      });
-    } else {
-      _loadDataAtIndex(index);
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadDataAtIndex(index));
   }
 
   void _handleTabChange() {
-    if (!tabController.indexIsChanging) {
-      if (index != tabController.index) {
-        index = tabController.index;
-        _loadDataAtIndex(index);
-      }
-    }
+    if (tabController.indexIsChanging) return;
+
+    // During a finger-driven TabBarView drag, TabController.index changes at
+    // the half-way point while the page is still moving. Starting network work
+    // and rebuilding the destination grid in that frame caused visible hitching.
+    final animationValue = tabController.animation?.value ?? tabController.index.toDouble();
+    if ((animationValue - tabController.index).abs() > 0.001) return;
+    if (index == tabController.index) return;
+
+    index = tabController.index;
+    _settledTabLoadTimer?.cancel();
+    _settledTabLoadTimer = Timer(const Duration(milliseconds: 80), () => _loadDataAtIndex(index));
   }
 
   void _loadDataAtIndex(int i) {

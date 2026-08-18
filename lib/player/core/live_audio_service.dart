@@ -1,12 +1,21 @@
 import 'dart:io';
+
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:pure_live/player/core/live_audio_handler.dart';
 import 'package:pure_live/player/interface/unified_player_interface.dart';
+import 'package:pure_live/player/core/background_playback_service.dart';
 
 class LiveAudioService {
   static LiveAudioHandler? _handler;
   static bool _isInitializing = false;
+  static int _sleepMinutes = 60;
+
+  static bool get isSleepSessionActive => BackgroundPlaybackService.sleepSessionActive;
+
+  static bool get shouldContinueInBackground =>
+      SettingsService.to.app.enableBackgroundPlay.v || BackgroundPlaybackService.sleepSessionActive;
 
   static Future<LiveAudioHandler?> _ensureInitialized() async {
     if (_handler != null) return _handler;
@@ -25,7 +34,9 @@ class LiveAudioService {
           androidNotificationChannelId: 'com.mystyle.purelive.audio',
           androidNotificationChannelName: i18n("audio_channel_name"),
           androidNotificationOngoing: true,
-          androidStopForegroundOnPause: true,
+          // Keep the media foreground service alive across short interruptions
+          // so screen-off playback can resume without recreating the process.
+          androidStopForegroundOnPause: false,
           androidNotificationClickStartsActivity: true,
           notificationColor: Colors.blue,
         ),
@@ -54,11 +65,28 @@ class LiveAudioService {
     );
 
     await handler.playMediaItem(item);
+    handler.configureSleepTimer(BackgroundPlaybackService.sleepSessionActive ? Duration(minutes: _sleepMinutes) : null);
+    await syncKeepAlive();
+  }
+
+  static Future<void> configureSleepTimer({required bool enabled, required int minutes}) async {
+    _sleepMinutes = minutes.clamp(1, AppSettingsController.maxSleepMinutes).toInt();
+    BackgroundPlaybackService.sleepSessionActive = enabled;
+    _handler?.configureSleepTimer(enabled ? Duration(minutes: _sleepMinutes) : null);
+    await syncKeepAlive();
   }
 
   static Future<void> stop() async {
+    BackgroundPlaybackService.sleepSessionActive = false;
     if (_handler == null) return;
     await _handler!.stop();
+  }
+
+  static Future<void> releaseKeepAlive() => BackgroundPlaybackService.setKeepAlive(false);
+
+  static Future<void> syncKeepAlive() {
+    final shouldKeepAlive = (_handler?.playbackState.value.playing ?? false) && shouldContinueInBackground;
+    return BackgroundPlaybackService.setKeepAlive(shouldKeepAlive);
   }
 
   static Future<bool> requestPlatformPermissions() async {

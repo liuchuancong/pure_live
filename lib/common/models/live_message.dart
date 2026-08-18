@@ -12,18 +12,31 @@ enum LiveMessageType {
   superChat,
 }
 
+enum LiveAudienceMetricKind { popularity, onlineViewers, totalViewers }
+
+/// Typed audience updates prevent platform heat, concurrent viewers and
+/// cumulative viewers from being silently relabelled as the same number.
+class LiveAudienceUpdate {
+  const LiveAudienceUpdate({required this.kind, required this.value});
+
+  final LiveAudienceMetricKind kind;
+  final int value;
+}
+
 class LiveMessage {
   /// 消息类型
   final LiveMessageType type;
 
   /// 用户名
   final String userName;
+  final String userId;
 
   /// 信息
   final String message;
 
   /// 数据
-  /// 单Type=Online时，Data为人气值(long)
+  /// When [type] is [LiveMessageType.online], this is normally a
+  /// [LiveAudienceUpdate]. Legacy engines may still send a numeric value.
   final dynamic data;
 
   /// 弹幕颜色
@@ -37,21 +50,36 @@ class LiveMessage {
 
   /// 粉丝牌子名
   final String fansName;
+  final bool isLocal;
+
+  /// Stable identifier supplied by the platform when available. It is used to
+  /// suppress replayed packets after a WebSocket reconnect without treating
+  /// two genuine messages with the same text as one message.
+  final String messageId;
+
+  /// Original platform timestamp. A missing timestamp means the platform did
+  /// not expose one and reception time is used for ordering instead.
+  final DateTime? sentAt;
+
   LiveMessage({
     required this.type,
     required this.userName,
+    this.userId = "",
     required this.message,
     this.data,
     required this.color,
     this.userLevel = "",
     this.fansLevel = "",
     this.fansName = "",
+    this.isLocal = false,
+    this.messageId = "",
+    this.sentAt,
   });
 }
 
 class LiveMessageColor {
   final int r, g, b;
-  LiveMessageColor(this.r, this.g, this.b);
+  const LiveMessageColor(this.r, this.g, this.b);
   static LiveMessageColor get white => LiveMessageColor(255, 255, 255);
   static LiveMessageColor numberToColor(int intColor) {
     var obj = intColor.toRadixString(16);

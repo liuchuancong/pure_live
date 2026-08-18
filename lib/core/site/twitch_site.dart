@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'dart:convert';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/model/live_category.dart';
 import 'package:pure_live/core/common/core_log.dart';
@@ -27,6 +28,7 @@ class TwitchSite implements LiveSite {
   static const baseUrl = "https://www.twitch.tv";
 
   Map<String, String> cursorMap = {};
+  late final String _deviceId = getDeviceId();
 
   Map<String, String> headers = {
     'user-agent': defaultUa,
@@ -39,7 +41,7 @@ class TwitchSite implements LiveSite {
   final playSessionIds = ["bdd22331a986c7f1073628f2fc5b19da", "064bc3ff1722b6f53b0b5b8c01e46ca5"];
 
   void getRequestHeaders() {
-    headers['device-id'] = getDeviceId();
+    headers['device-id'] = _deviceId;
     if (SettingsService.to.cookieManager.twitchCookie.v.isNotEmpty) {
       headers["Cookie"] = SettingsService.to.cookieManager.twitchCookie.v;
     }
@@ -52,21 +54,13 @@ class TwitchSite implements LiveSite {
   }
 
   String buildPersistedRequest(String operationName, String sha265Hash, Map<String, dynamic> variables) {
-    final variablesJson = jsonEncode(variables);
-    final query =
-        '''
-     {
-       "operationName": "$operationName",
-       "extensions": {
-         "persistedQuery": {
-           "version": 1,
-           "sha256Hash": "$sha265Hash"
-         }
-       },
-       "variables": $variablesJson
-     }
-     ''';
-    return query.trim();
+    return jsonEncode({
+      'operationName': operationName,
+      'extensions': {
+        'persistedQuery': {'version': 1, 'sha256Hash': sha265Hash},
+      },
+      'variables': variables,
+    });
   }
 
   Future<dynamic> getGplResponse(String liveGpl) async {
@@ -155,7 +149,7 @@ class TwitchSite implements LiveSite {
       "BrowsePage_AllDirectories",
       "2f67f71ba89f3c0ed26a141ec00da1defecb2303595f5cda4298169549783d9e",
       {
-        "limit": 30,
+        "limit": pageSize.clamp(1, 100),
         "options": {
           "recommendationsContext": {"platform": "web"},
           "requestID": "JIRA-VXP-2397",
@@ -171,7 +165,7 @@ class TwitchSite implements LiveSite {
     var edges = (directoriesWithTags['edges'] ?? []) as List;
     var pageInfo = directoriesWithTags['pageInfo'];
     var hasNextPage = pageInfo['hasNextPage'];
-    cursor = directoriesWithTags["cursor"] ?? "";
+    cursor = edges.isEmpty ? "" : (edges.last["cursor"] ?? "");
     if (!hasNextPage) cursor = "";
     saveCursor(cursorType, cursorId, page, cursor);
     List<LiveArea> subs = [];
@@ -198,7 +192,7 @@ class TwitchSite implements LiveSite {
   Future<bool> getLiveStatus({required String platform, required String roomId}) async {
     try {
       var detail = await getRoomDetail(platform: platform, roomId: roomId);
-      return detail.status!;
+      return detail.status ?? false;
     } catch (e) {
       return false;
     }
@@ -207,7 +201,7 @@ class TwitchSite implements LiveSite {
   @override
   Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
     List<LivePlayQuality> qualities = <LivePlayQuality>[];
-    if (!detail.status!) return qualities;
+    if (detail.status != true) return qualities;
 
     var liveGpl = buildPersistedRequest(
       "PlaybackAccessToken",
@@ -228,15 +222,14 @@ class TwitchSite implements LiveSite {
     var token = response['data']['streamPlaybackAccessToken']['value'];
     var sign = response['data']['streamPlaybackAccessToken']['signature'];
 
-    var random = Random();
+    var random = Random.secure();
     var playSessionId = playSessionIds[random.nextInt(playSessionIds.length)];
-    var epochSecondsStr = DateTime.timestamp().second.toString();
     var params = {
       "acmb": "e30=",
       "allow_source": "true",
       "cdm": "wv",
       "fast_bread": "true",
-      "p": epochSecondsStr,
+      "p": random.nextInt(10000000).toString(),
       "platform": "web",
       "play_session_id": playSessionId,
       "player_backend": "mediaplayer",
@@ -273,7 +266,7 @@ class TwitchSite implements LiveSite {
       final bandwidth = i < bandwidthList.length ? int.parse(bandwidthList[i]) : 0;
       urlToBandwidth[_playUrlList[i]] = bandwidth;
     }
-    _playUrlList.sort((a, b) => urlToBandwidth[b]!.compareTo(urlToBandwidth[a]!));
+    _playUrlList.sort((a, b) => (urlToBandwidth[b] ?? 0).compareTo(urlToBandwidth[a] ?? 0));
 
     qualities = _playUrlList.map((url) {
       final bandwidth = urlToBandwidth[url] ?? 0;
@@ -309,6 +302,9 @@ class TwitchSite implements LiveSite {
   Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
     try {
       var roomInfo = await _getRoomInfo(roomId);
+      if (roomInfo.length < 2) {
+        throw StateError('Twitch room metadata response is incomplete');
+      }
       var channelShell = roomInfo.first;
       var streamMetaData = roomInfo[1];
 
@@ -333,6 +329,8 @@ class TwitchSite implements LiveSite {
         nick: userOrError.displayName,
         avatar: user.profileImageUrl,
         watching: online ? user.stream!.viewersCount.toString() : "0",
+        onlineViewers: online ? user.stream!.viewersCount.toString() : "0",
+        audienceMetricType: AudienceMetricType.onlineViewers,
         area: user.stream?.game?.name ?? user.stream?.game?.displayName,
         status: online,
         liveStatus: online ? LiveStatus.live : LiveStatus.offline,
@@ -367,15 +365,13 @@ class TwitchSite implements LiveSite {
       }),
     ];
     String requestQuery = "[${queries.map((q) => q.toString()).join(',')}]";
-    CoreLog.i("twitch-queries:$requestQuery");
     getRequestHeaders();
     var response = await HttpClient.instance.postJson(gplApiUrl, header: headers, data: requestQuery);
-    CoreLog.d("twitch-response:$response");
 
-    final List<dynamic> decoded = response;
+    final decoded = response is List ? response : const <dynamic>[];
     final responses = decoded.map((item) => TwitchResponse.fromJson(item as Map<String, dynamic>)).toList();
     if (responses.length < 2) {
-      CoreLog.error('Invalid response from Twitch API');
+      throw StateError('Invalid response from Twitch API');
     }
     return responses;
   }
@@ -405,7 +401,7 @@ class TwitchSite implements LiveSite {
               "systemFilters": [],
             },
             "sortTypeIsRecency": false,
-            "limit": 30,
+            "limit": pageSize.clamp(1, 100),
             "includeCostreaming": true,
             if (cursor.isNotEmpty) "cursor": cursor,
           },
@@ -443,6 +439,8 @@ class TwitchSite implements LiveSite {
           nick: node["broadcaster"]["displayName"],
           avatar: node["broadcaster"]["profileImageURL"].replaceFirst("https://", "https://i2.wp.com/"),
           watching: (node["viewersCount"] ?? 0).toString(),
+          onlineViewers: (node["viewersCount"] ?? 0).toString(),
+          audienceMetricType: AudienceMetricType.onlineViewers,
           status: true,
           introduction: "",
           notice: "",
@@ -502,6 +500,8 @@ class TwitchSite implements LiveSite {
         nick: node["displayName"],
         avatar: node["profileImageURL"].replaceFirst("https://", "https://i2.wp.com/"),
         watching: (node["stream"]?["viewersCount"] ?? 0).toString(),
+        onlineViewers: (node["stream"]?["viewersCount"] ?? 0).toString(),
+        audienceMetricType: AudienceMetricType.onlineViewers,
         status: status,
         introduction: "",
         notice: "",
@@ -589,6 +589,8 @@ class TwitchSite implements LiveSite {
           nick: userOrError?.displayName ?? "",
           avatar: user?.profileImageUrl ?? "",
           watching: online ? user!.stream!.viewersCount.toString() : "0",
+          onlineViewers: online ? user!.stream!.viewersCount.toString() : "0",
+          audienceMetricType: AudienceMetricType.onlineViewers,
           area: "",
           status: online,
           liveStatus: online ? LiveStatus.live : LiveStatus.offline,
