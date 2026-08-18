@@ -40,10 +40,10 @@ jobs:
       - name: Configure temporary release signing
         shell: pwsh
         env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEYSTORE_BASE64: ${{ secrets.PURELIVE_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.PURELIVE_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.PURELIVE_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.PURELIVE_KEY_ALIAS }}
         run: |
           $ErrorActionPreference = 'Stop'
           foreach ($name in @('KEYSTORE_BASE64', 'STORE_PASSWORD', 'KEY_PASSWORD', 'KEY_ALIAS')) {
@@ -105,10 +105,10 @@ jobs:
       - name: Configure temporary release signing
         shell: bash
         env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEYSTORE_BASE64: ${{ secrets.PURELIVE_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.PURELIVE_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.PURELIVE_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.PURELIVE_KEY_ALIAS }}
         run: |
           set -euo pipefail
           test -n "$KEYSTORE_BASE64"
@@ -125,7 +125,7 @@ jobs:
       - name: Resolve locked packages
         run: flutter pub get --enforce-lockfile
       - name: Build signed arm64-v8a release
-        run: flutter build apk --release --split-per-abi --target-platform android-arm64 --dart-define=BUILD_SOURCE=github-hosted-fallback
+        run: flutter build apk --release --split-per-abi --target-platform android-arm64 --dart-define=PURELIVE_BUILD_SOURCE=github-hosted-fallback
       - name: Prepare verification metadata
         shell: bash
         run: |

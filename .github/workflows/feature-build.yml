@@ -288,6 +288,8 @@ jobs:
 
       - name: Update MSIX make_config.yaml
         shell: pwsh
+        env:
+          CERT_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }} 
         run: |
           $configPath = "windows/packaging/msix/make_config.yaml"
 
@@ -303,7 +305,12 @@ jobs:
           $content = $content -replace `
             'certificate_path:\s*.*',
             "certificate_path: $absolutePath"
-
+          $password = $env:CERT_PASSWORD
+          if ([string]::IsNullOrEmpty($password)) {
+            Write-Error "CERTIFICATE_PASSWORD secret is empty!"
+            exit 1
+          }
+          $content = $content -replace '(?m)^(\s*certificate_password:\s*).*$', "`${1}'$password'"
           Set-Content $configPath $content
 
           Write-Host "MSIX certificate path configured:"
@@ -789,7 +796,7 @@ jobs:
           |版本|下载地址|
           |---|---|
           |TV版|[pure_live_TV](https://github.com/liuchuancong/pure_live_TV/releases/latest)|
-          |Windows/macOS/Android版|[pure_live](https://github.com/wzgrx/pure_live/releases/latest)|
+          |Windows/macOS/Android版|[pure_live](https://github.com/liuchuancong/pure_live/releases/latest)|
 
           ### 🖥️ Windows 版
 
