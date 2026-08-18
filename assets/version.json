@@ -7,12 +7,12 @@
   "download_url": "https://github.com/wzgrx/pure_live/releases",
   "platforms": {
     "windows": {
-      "version": "2.1.2",
-      "build_number": 50,
-      "version_num": 2010250,
-      "version_desc": "Windows 专项稳定性更新\n- 安装目录可选，应用配置、关注、历史、IPTV、图片缓存与插件缓存统一保存在安装目录 AppData。\n- 升级时识别旧版 List 和新版 JSON 配置，合并多个历史安装位置的关注、历史、屏蔽与 IPTV 数据。\n- 切换磁盘或重装时保留旧安装位置索引，迁移前自动创建回滚备份。\n- 减少首页、分区、搜索与收藏页的重复滚动监听、切页中间帧请求、动画占位和重复绘制。\n- 窗口缩放事件合并为稳定帧更新，退出前强制落盘设置，并修正应用内更新附件名。\n",
+      "version": "2.1.3",
+      "build_number": 51,
+      "version_num": 2010351,
+      "version_desc": "Windows 高刷新率、热门封面与交互性能更新\n- Bilibili 热门切换到当前匿名推荐接口，旧接口触发风控时自动回退并显示准确错误。\n- 封面请求补齐站点请求头，使用稳定磁盘缓存键，减少偶发失败、重复下载与滚动时渐变重绘。\n- Windows 自动检测窗口所在显示器当前及最高刷新率，移动显示器或切换显示模式后实时更新。\n- 桌面滚动物理、次级页面转场与 Android 当前交互对齐，减少重复监听、无效刷新和跨页重建。\n- 合并上游 ca9e0d96，并继续保留可选安装目录和安装目录 AppData 数据迁移。\n",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.1.2"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.1.3"
     }
   }
 }

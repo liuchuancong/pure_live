@@ -189,7 +189,7 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
       controller: controller.easyRefreshController,
       onRefresh: () => controller.refreshData(),
       child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
+        physics: const PureLiveScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
         children: [SizedBox(height: constraint.maxHeight * 0.8, child: statusView)],
       ),
     );

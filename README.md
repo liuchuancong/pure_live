@@ -17,9 +17,9 @@
 
 > 本仓库基于 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live) 持续维护，新增可配置的小窗弹幕，并完善本机构建、依赖锁定、接口探测和发布流程。
 
-- **Windows 最新稳定版**：[v2.1.2](https://github.com/wzgrx/pure_live/releases/tag/v2.1.2)（数据迁移与流畅度专项）
+- **Windows 最新稳定版**：[v2.1.3](https://github.com/wzgrx/pure_live/releases/tag/v2.1.3)（高刷新率、热门封面与流畅度专项）
 - **Android/Linux/macOS/iOS 最新稳定版**：[v2.1.1](https://github.com/wzgrx/pure_live/releases/tag/v2.1.1)
-- **当前源码版本**：`2.1.2+50`
+- **当前源码版本**：`2.1.3+51`
 - **上游同步基线**：`liuchuancong/pure_live@222b3bfb`（2026-08-18）
 - **构建平台**：Android arm64、Windows x64、Linux x64、macOS universal、iOS arm64 设备包
 
@@ -58,7 +58,7 @@
 前往 [GitHub Releases](https://github.com/wzgrx/pure_live/releases/latest) 获取安装包：
 
 - Android：当前优先发布 `arm64-v8a` APK，本轮仍使用 v2.1.1 正式签名包；
-- Windows：v2.1.2 可选安装目录的 EXE 安装包或便携 ZIP；
+- Windows：v2.1.3 可选安装目录的 EXE 安装包或便携 ZIP；
 - 下载后使用同一 Release 中的 `SHA256SUMS.txt` 校验完整性。
 
 Linux、macOS 与 iOS 的阶段构建由“全部平台”手动工作流生成；Linux 网页搜索会交给系统浏览器，原生搜索与播放继续在应用内完成；iOS 附件是设备 `.app` 编译归档，签名与 IPA 封装在持有 Apple 证书的环境中完成。阶段更新范围见 [v2.1.0 阶段更新说明](docs/STAGE_UPDATE_2_1_0.md)。
@@ -70,6 +70,7 @@ Android 始终使用正式包名 `com.mystyle.purelive`，不再生成并存 QA 
 - EXE 安装向导始终显示目录选择；常规安装的持久数据统一位于 `{app}\AppData`，包含 Hive 配置、关注、历史、IPTV、录制、图片/表情/插件缓存与临时文件。
 - 从 2.0.x/2.1.1 升级时，启动顺序是“发现旧安装位置 → 备份原 Hive 文件 → 兼容旧 List/新 JSON 格式 → 去重合并 → 再初始化页面”，不会用空配置直接覆盖旧关注。
 - 更换磁盘或安装目录时，安装器会写入上一个位置的迁移索引；应用仅读取旧数据，合并完成后保留回滚备份。
+- Windows 自动读取当前窗口所在显示器的当前/最高刷新率；移动到另一台显示器或系统切换显示模式后会重新检测，Flutter 渲染跟随系统垂直同步，不强制修改系统显示设置。
 - 详细目录、升级规则和故障恢复见 [Windows 数据与升级](docs/WINDOWS_DATA_AND_UPGRADE.md)。
 
 ## 本地开发
@@ -97,6 +98,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 | [文档索引](docs/README.md) | 开发、发布、依赖和功能文档入口 |
 | [构建与发布](docs/BUILD_AND_RELEASE.md) | 本机质量门禁、签名、打包和 Release 流程 |
 | [Windows 数据与升级](docs/WINDOWS_DATA_AND_UPGRADE.md) | 安装目录存储、关注恢复、换盘迁移和回滚 |
+| [Windows MSIX 证书说明](docs/MSIX_INSTALL.md) | 自行构建 MSIX 时的证书指纹核对与安装步骤 |
 | [依赖与接口审计](docs/DEPENDENCY_AUDIT.md) | 固定工具链、升级约束和接口探测范围 |
 | [平台接口与兼容性](docs/PLATFORM_COMPATIBILITY.md) | 分区、搜索、弹幕和人数指标的当前能力 |
 | [高刷新率与性能验证](docs/PERFORMANCE.md) | Android 120 Hz 适配、渲染优化和真机帧统计 |

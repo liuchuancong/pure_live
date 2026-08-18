@@ -32,6 +32,23 @@ class GeneralSettingsPage extends GetView<SettingsService> {
                   isLong: true,
                 );
               }),
+            if (Platform.isWindows)
+              Obx(() {
+                final info = DisplayModeService.info.value;
+                final mode = info == null
+                    ? i18n('display_mode_detecting')
+                    : '${info.width} × ${info.height} · '
+                          '${info.currentRefreshRate.toStringAsFixed(0)} Hz '
+                          '(${i18n('display_mode_max')} ${info.maxRefreshRate.toStringAsFixed(0)} Hz)';
+                return context.buildTile(
+                  title: i18n('windows_dynamic_refresh_rate'),
+                  subtitle: '${i18n('windows_dynamic_refresh_rate_subtitle')}\n$mode',
+                  icon: Remix.speed_up_line,
+                  isLong: true,
+                  trailing: const Icon(Icons.refresh_rounded),
+                  onTap: () => DisplayModeService.refreshInfo(),
+                );
+              }),
             context.buildTile(
               title: i18n('audience_metric_settings'),
               subtitle: i18n('audience_metric_settings_desc'),

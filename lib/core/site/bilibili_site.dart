@@ -186,33 +186,81 @@ class BiliBiliSite implements LiveSite {
 
   @override
   Future<List<LiveRoom>> getRecommendRooms({int page = 1, int pageSize = 30}) async {
-    try {
-      const baseUrl = "https://api.live.bilibili.com/xlive/web-interface/v1/second/getListByArea";
-      var url = "$baseUrl?platform=web&sort=online&page_size=$pageSize&page=$page";
-      var queryParams = await getWbiSign(url);
-      var result = await HttpClient.instance.getJson(baseUrl, queryParameters: queryParams, header: await getHeader());
+    const primaryUrl = 'https://api.live.bilibili.com/xlive/web-interface/v1/webMain/getMoreRecList';
+    Object? primaryError;
 
-      var items = <LiveRoom>[];
-      for (var item in result["data"]["list"]) {
-        var roomItem = LiveRoom(
-          roomId: item["roomid"].toString(),
-          title: item["title"].toString(),
-          cover: "${item["cover"]}@400w.jpg",
-          area: item["area_name"].toString(),
-          nick: item["uname"].toString(),
-          avatar: item["face"].toString(),
-          watching: item["online"].toString(),
-          popularity: item["online"].toString(),
-          audienceMetricType: AudienceMetricType.popularity,
-          liveStatus: LiveStatus.live,
-          platform: Sites.bilibiliSite,
+    // The former signed second/getListByArea endpoint now intermittently (and
+    // for some routes consistently) returns code -352. The web homepage feed
+    // is the current anonymous recommendation source and needs no WBI key.
+    for (var attempt = 0; attempt < 2; attempt++) {
+      try {
+        final result = await HttpClient.instance.getJson(
+          primaryUrl,
+          queryParameters: {'platform': 'web', 'page': page},
+          header: await getHeader(),
         );
-        items.add(roomItem);
+        return parseRecommendRooms(result);
+      } catch (error) {
+        primaryError = error;
+        if (attempt == 0) await Future<void>.delayed(const Duration(milliseconds: 180));
       }
-      return items;
-    } catch (e) {
-      throw Exception(e.toString());
     }
+
+    // Retain a separate anonymous API as a bounded fallback. It currently
+    // accepts page sizes up to 30 and returns the same room fields.
+    try {
+      final result = await HttpClient.instance.getJson(
+        'https://api.live.bilibili.com/room/v1/Area/getListByAreaID',
+        queryParameters: {
+          'areaId': 0,
+          'parent_area_id': 0,
+          'sort': 'online',
+          'pageSize': pageSize.clamp(1, 30),
+          'page': page,
+        },
+        header: await getHeader(),
+      );
+      return parseRecommendRooms(result);
+    } catch (fallbackError) {
+      throw Exception('Bilibili recommend failed: primary=$primaryError; fallback=$fallbackError');
+    }
+  }
+
+  /// Parses both the current webMain response and the legacy anonymous
+  /// fallback. Kept pure so response-shape regressions can be unit tested.
+  static List<LiveRoom> parseRecommendRooms(dynamic response) {
+    if (response is! Map) throw const FormatException('Bilibili response is not an object');
+    if (response['code'] != 0) {
+      throw StateError('Bilibili API code=${response['code']}: ${response['message']}');
+    }
+
+    final data = response['data'];
+    final dynamic rawList = data is Map ? data['recommend_room_list'] : data;
+    if (rawList is! List) throw const FormatException('Bilibili recommendation list is missing');
+
+    return rawList
+        .whereType<Map>()
+        .map((raw) {
+          final item = Map<String, dynamic>.from(raw);
+          final roomId = (item['roomid'] ?? item['room_id'])?.toString() ?? '';
+          final cover = normalizeNetworkImageUrl((item['cover'] ?? item['user_cover'])?.toString());
+          return LiveRoom(
+            roomId: roomId,
+            title: item['title']?.toString() ?? '',
+            cover: cover.isEmpty ? '' : '$cover@400w.jpg',
+            area: (item['area_v2_name'] ?? item['area_name'] ?? item['areaName'])?.toString() ?? '',
+            nick: item['uname']?.toString() ?? '',
+            avatar: normalizeNetworkImageUrl(item['face']?.toString()),
+            watching: item['online']?.toString() ?? '',
+            popularity: item['online']?.toString() ?? '',
+            audienceMetricType: AudienceMetricType.popularity,
+            liveStatus: LiveStatus.live,
+            status: true,
+            platform: Sites.bilibiliSite,
+          );
+        })
+        .where((room) => room.roomId?.isNotEmpty == true)
+        .toList(growable: false);
   }
 
   Future<Map<String, dynamic>> getRoomInfo({required String roomId}) async {

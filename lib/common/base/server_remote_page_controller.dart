@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
 
 abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<T> {
@@ -68,13 +69,22 @@ abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<
 
       try {
         loadding.value = true;
-        while (historyPool.length < targetTotalItemsNeeded) {
+        final seen = historyPool.toSet();
+        var requestCount = 0;
+        var noProgressCount = 0;
+        while (historyPool.length < targetTotalItemsNeeded && requestCount < 20 && noProgressCount < 2) {
           final int missingCount = targetTotalItemsNeeded - historyPool.length;
           final result = await fetchNetworkData(_virtualNetworkPage, missingCount);
+          requestCount++;
 
           if (result.isEmpty) break;
 
-          historyPool.addAll(result);
+          final previousLength = historyPool.length;
+          for (final item in result) {
+            if (seen.add(item)) historyPool.add(item);
+            if (historyPool.length >= targetTotalItemsNeeded) break;
+          }
+          noProgressCount = historyPool.length == previousLength ? noProgressCount + 1 : 0;
           _virtualNetworkPage++;
         }
       } catch (e) {
@@ -131,13 +141,23 @@ abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<
       if (list.isEmpty) pageLoadding.value = true;
 
       List<T> combinedResult = [];
+      final seen = <T>{...list};
       final int sizeToFetch = pageSize.value;
+      var requestCount = 0;
+      var noProgressCount = 0;
 
-      while (combinedResult.length < sizeToFetch) {
+      while (combinedResult.length < sizeToFetch && requestCount < 20 && noProgressCount < 2) {
         final int neededCount = sizeToFetch - combinedResult.length;
         final result = await fetchNetworkData(_virtualNetworkPage, neededCount);
+        requestCount++;
         if (result.isEmpty) break;
-        combinedResult.addAll(result);
+
+        final previousLength = combinedResult.length;
+        for (final item in result) {
+          if (seen.add(item)) combinedResult.add(item);
+          if (combinedResult.length >= sizeToFetch) break;
+        }
+        noProgressCount = combinedResult.length == previousLength ? noProgressCount + 1 : 0;
         _virtualNetworkPage++;
       }
 

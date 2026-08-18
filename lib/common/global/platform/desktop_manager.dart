@@ -751,6 +751,10 @@ class MyCustomScrollBehavior extends MaterialScrollBehavior {
   ScrollPhysics getScrollPhysics(BuildContext context) => const PureLiveScrollPhysics();
 
   @override
+  ScrollViewKeyboardDismissBehavior getKeyboardDismissBehavior(BuildContext context) =>
+      ScrollViewKeyboardDismissBehavior.onDrag;
+
+  @override
   Set<PointerDeviceKind> get dragDevices => {
     PointerDeviceKind.touch,
     PointerDeviceKind.stylus,

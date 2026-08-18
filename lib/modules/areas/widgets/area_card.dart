@@ -29,8 +29,9 @@ class _AreaCardState extends State<AreaCard> {
           final cacheWidth = (logicalWidth * MediaQuery.devicePixelRatioOf(context)).round().clamp(160, 640).toInt();
           return CachedNetworkImage(
             key: ValueKey('$imageUrl#$epoch'),
-            cacheKey: '$imageUrl#$epoch',
+            cacheKey: imageUrl,
             imageUrl: imageUrl,
+            httpHeaders: networkImageHeaders(imageUrl),
             cacheManager: CustomImageCacheManager.instance,
             fit: BoxFit.cover,
             filterQuality: FilterQuality.low,
