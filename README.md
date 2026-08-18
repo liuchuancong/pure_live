@@ -413,16 +413,16 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 
 ## 🤝 参与开发
 
-- **主开发者**：[@liuchuancong](https://github.com/liuchuancong)  
+- **主开发者**：[@liuchuancong](https://github.com/liuchuancong)
 - **协助开发者**：[@wzgrx](https://github.com/wzgrx/pure_live)
 - **协助开发者**：[@RebornQ](https://github.com/RebornQ)
 
-> 📌 **欢迎贡献**！  
-> - 如发现 License 使用不当，请提交 Issue 或 Pull Request  
+> 📌 **欢迎贡献**！
+> - 如发现 License 使用不当，请提交 Issue 或 Pull Request
 > - 如有新的想法或建议，欢迎贡献合作！
 
 ### 代码参考
-- [dart_simple_live](https://github.com/xiaoyaocz/dart_simple_live)  
+- [dart_simple_live](https://github.com/xiaoyaocz/dart_simple_live)
 - [pure_live (Jackiu1997)](https://github.com/Jackiu1997/pure_live)
 
 ---
