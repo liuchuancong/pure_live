@@ -181,9 +181,7 @@ jobs:
             exit 1
           fi
 
-          echo "$KEYSTORE_BASE64" |
-            base64 --decode >
-            "$RUNNER_TEMP/pure-live-release.jks"
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/pure-live-release.jks"
 
           cat > android/key.properties <<EOF
           storeFile=$RUNNER_TEMP/pure-live-release.jks
