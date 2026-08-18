@@ -31,12 +31,46 @@ jobs:
     runs-on: [self-hosted, Windows, X64, pure-live-local]
     timeout-minutes: 75
     steps:
+      - name: Preserve compatible packages from the previous local job
+        shell: pwsh
+        run: |
+          $source = Join-Path $env:GITHUB_WORKSPACE 'local-artifacts'
+          $cache = Join-Path $env:RUNNER_TEMP 'pure-live-prebuilt-windows'
+          Remove-Item -LiteralPath $cache -Recurse -Force -ErrorAction SilentlyContinue
+          if (Test-Path -LiteralPath $source -PathType Container) {
+            Copy-Item -LiteralPath $source -Destination $cache -Recurse -Force
+          }
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Restore packages when only the publisher workflow changed
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $cache = Join-Path $env:RUNNER_TEMP 'pure-live-prebuilt-windows'
+          $metadataPath = Get-ChildItem $cache -Filter BUILD_METADATA.json `
+            -File -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $metadataPath) { exit 0 }
+          $metadata = Get-Content -LiteralPath $metadataPath.FullName -Raw | ConvertFrom-Json
+          if ($metadata.tracked_files_dirty -or -not $metadata.source_commit) { exit 0 }
+          git cat-file -e "$($metadata.source_commit)^{commit}"
+          if ($LASTEXITCODE -ne 0) { exit 0 }
+          $changed = @(git diff --name-only $metadata.source_commit $env:GITHUB_SHA -- . `
+            ':(exclude).github/workflows/publish-staged-release.yml')
+          if ($LASTEXITCODE -ne 0 -or $changed.Count -ne 0) { exit 0 }
+          $destination = Join-Path $env:GITHUB_WORKSPACE 'local-artifacts'
+          New-Item -ItemType Directory -Path $destination -Force | Out-Null
+          Copy-Item -Path (Join-Path $cache '*') -Destination $destination -Recurse -Force
+          "PURELIVE_WINDOWS_REUSED=true" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Build Windows portable archive and installer
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
+          if ($env:PURELIVE_WINDOWS_REUSED -eq 'true') {
+            Write-Host 'Reusing Windows packages because only the publisher workflow changed.'
+            exit 0
+          }
           PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
             -SkipQuality -SkipAndroid
 
@@ -45,7 +79,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $version = (Select-String pubspec.yaml '^version:\s*(\S+)' |
+          $version = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(\S+)' |
             Select-Object -First 1).Matches[0].Groups[1].Value
           $artifactVersion = $version.Replace('+', '-')
           $directory = Join-Path 'local-artifacts' $artifactVersion
@@ -64,6 +98,10 @@ jobs:
           $signing = if ($signature.Status -eq 'Valid') { 'authenticode' } else { 'unsigned' }
           Set-Content -LiteralPath (Join-Path $directory 'WINDOWS_SIGNING.txt') `
             -Value $signing -Encoding ascii
+          $metadata = Get-Content -LiteralPath (Join-Path $directory 'BUILD_METADATA.json') `
+            -Raw | ConvertFrom-Json
+          Set-Content -LiteralPath (Join-Path $directory 'WINDOWS_SOURCE_COMMIT.txt') `
+            -Value $metadata.source_commit -Encoding ascii
 
       - name: Upload Windows packages
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -73,6 +111,7 @@ jobs:
             local-artifacts/*/PureLive-*-windows-x64-portable.zip
             local-artifacts/*/PureLive-*-windows-x64-setup.exe
             local-artifacts/*/WINDOWS_SIGNING.txt
+            local-artifacts/*/WINDOWS_SOURCE_COMMIT.txt
           if-no-files-found: error
           retention-days: 3
 
@@ -212,6 +251,12 @@ jobs:
           windows_signing = signing_files[0].read_text(encoding="ascii").strip()
           if windows_signing not in {"unsigned", "authenticode"}:
               raise SystemExit("Windows signing metadata is invalid")
+          source_files = list((downloads / "windows").rglob("WINDOWS_SOURCE_COMMIT.txt"))
+          if len(source_files) != 1:
+              raise SystemExit("Windows source metadata is missing")
+          windows_source = source_files[0].read_text(encoding="ascii").strip()
+          if not re.fullmatch(r"[0-9a-f]{40}", windows_source):
+              raise SystemExit("Windows source commit is invalid")
 
           metadata = {
               "version": full_version,
@@ -224,7 +269,7 @@ jobs:
               "build_source": "local-windows-android-plus-staged-linux-apple",
               "platform_source_commits": {
                   "android": os.environ["ANDROID_SHA"],
-                  "windows": os.environ["GITHUB_SHA"],
+                  "windows": windows_source,
                   "linux": os.environ["STAGE_SHA"],
                   "macos": os.environ["STAGE_SHA"],
                   "ios": os.environ["STAGE_SHA"],
