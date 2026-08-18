@@ -418,9 +418,11 @@ iOS 附件为设备 `.app` 编译归档。
 
 ---
 
-## 🌟 Star 趋势
+## 🌟 Star
 
-[![Stargazers over time](https://starchart.cc/liuchuancong/pure_live.svg)](https://starchart.cc/liuchuancong/pure_live)
+如果 Pure Live 对你有帮助，欢迎给项目一个 ⭐ Star：
+
+[![GitHub Stars](https://img.shields.io/github/stars/liuchuancong/pure_live?style=for-the-badge&logo=github)](https://github.com/liuchuancong/pure_live/stargazers)
 
 ---
 
