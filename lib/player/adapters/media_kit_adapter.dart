@@ -148,12 +148,6 @@ class MediaKitAdapter implements UnifiedPlayer {
               ),
             );
 
-      // Select the audio-only track after the normal output has been created,
-      // keeping the operation reversible for automatic ASMR entry as well.
-      if (audioOnly) {
-        await setAudioOnly(true);
-      }
-
       await _bindListeners();
 
       _initialized = true;
@@ -190,7 +184,6 @@ class MediaKitAdapter implements UnifiedPlayer {
     if (_currentUrl == url && isPlayingNow) {
       return;
     }
-    _isAudioOnly = audioOnly;
     _currentUrl = url;
 
     try {
@@ -205,6 +198,12 @@ class MediaKitAdapter implements UnifiedPlayer {
       _heightSubject.add(null);
 
       await _player.open(Media(url, httpHeaders: headers), play: true);
+
+      // mpv may reset its selected track when a new live source opens. Apply
+      // the requested mode only after `open`, when track selection is valid.
+      // This also avoids waiting for a not-yet-mounted Android video surface
+      // during automatic ASMR startup.
+      await _setAudioOnly(audioOnly, force: true);
 
       _stateSubject.add(PlayerState.ready);
 
@@ -460,12 +459,14 @@ class MediaKitAdapter implements UnifiedPlayer {
   }
 
   @override
-  Future<void> setAudioOnly(bool audioOnly) async {
+  Future<void> setAudioOnly(bool audioOnly) => _setAudioOnly(audioOnly);
+
+  Future<void> _setAudioOnly(bool audioOnly, {bool force = false}) async {
     if (_disposed) return;
     // A timed-out native Future keeps running. The rollback must still be sent
     // while an opposite transition is in flight, even when the last completed
     // state already equals the rollback target.
-    if (_audioModeTarget == null && _isAudioOnly == audioOnly) return;
+    if (!force && _audioModeTarget == null && _isAudioOnly == audioOnly) return;
 
     final epoch = ++_audioModeEpoch;
     _audioModeTarget = audioOnly;
@@ -474,7 +475,16 @@ class MediaKitAdapter implements UnifiedPlayer {
       // Use media_kit's public track API so its PlayerState stays in sync with
       // mpv. Keep the Video widget/controller mounted; only the decoded track
       // changes, avoiding an Android Surface detach/reattach cycle.
-      await _player.setVideoTrack(audioOnly ? VideoTrack.no() : VideoTrack.auto());
+      final track = audioOnly ? VideoTrack.no() : VideoTrack.auto();
+      final platform = _player.platform;
+      if (platform is NativePlayer) {
+        // Track selection is independent from open/seek. Keeping it outside
+        // media_kit's global command lock prevents one delayed mpv command
+        // from blocking the opposite rollback command behind it.
+        await platform.setVideoTrack(track, synchronized: false);
+      } else {
+        await _player.setVideoTrack(track);
+      }
       if (_disposed || epoch != _audioModeEpoch) return;
       _isAudioOnly = audioOnly;
     } catch (error, stackTrace) {
