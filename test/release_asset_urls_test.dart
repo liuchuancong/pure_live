@@ -10,10 +10,41 @@ void main() {
       buildNumber: 52,
     );
 
-    expect(urls.androidArm64, endsWith('/PureLive-2.1.4-52-arm64-v8a-release.apk'));
-    expect(urls.windowsSetup, endsWith('/PureLive-2.1.4-windows-x64-setup.exe'));
-    expect(urls.windowsPortable, endsWith('/PureLive-2.1.4-52-windows-x64-portable.zip'));
-    expect(urls.macosUniversal, endsWith('/PureLive-2.1.4-52-macos-universal.zip'));
+    expect(
+      urls.androidArm64,
+      endsWith('/PureLive-2.1.4-52-arm64-v8a-release.apk'),
+    );
+    expect(
+      urls.androidArmeabiV7a,
+      endsWith('/PureLive-2.1.4-52-armeabi-v7a-release.apk'),
+    );
+    expect(
+      urls.androidX8664,
+      endsWith('/PureLive-2.1.4-52-x86_64-release.apk'),
+    );
+    expect(
+      urls.windowsSetup,
+      endsWith('/PureLive-2.1.4-windows-x64-setup.exe'),
+    );
+    expect(
+      urls.windowsPortable,
+      endsWith('/PureLive-2.1.4-52-windows-x64-portable.zip'),
+    );
+    expect(
+      urls.macosUniversal,
+      endsWith('/PureLive-2.1.4-52-macos-universal.zip'),
+    );
+  });
+
+  test('Android update links follow the APK variants declared by the feed', () {
+    expect(
+      VersionUtil.selectAndroidAbis({
+        'android_abis': ['armeabi-v7a', 'arm64-v8a', 'x86_64', 'unsupported'],
+      }),
+      {'armeabi-v7a', 'arm64-v8a', 'x86_64'},
+    );
+    expect(VersionUtil.selectAndroidAbis({}), {'arm64-v8a'});
+    expect(VersionUtil.selectAndroidAbis({'android_abis': []}), isEmpty);
   });
 
   test('platform update feed does not announce an unpublished artifact to other platforms', () {
@@ -25,7 +56,19 @@ void main() {
       },
     };
 
-    expect(VersionUtil.selectPlatformVersionData(feed, platform: 'windows')['version'], '2.1.2');
-    expect(VersionUtil.selectPlatformVersionData(feed, platform: 'android')['version'], '2.1.1');
+    expect(
+      VersionUtil.selectPlatformVersionData(
+        feed,
+        platform: 'windows',
+      )['version'],
+      '2.1.2',
+    );
+    expect(
+      VersionUtil.selectPlatformVersionData(
+        feed,
+        platform: 'android',
+      )['version'],
+      '2.1.1',
+    );
   });
 }

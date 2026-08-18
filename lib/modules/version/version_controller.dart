@@ -2,19 +2,29 @@ import 'package:pure_live/common/index.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class ReleaseAssetUrls {
-  const ReleaseAssetUrls({required this.projectUrl, required this.version, required this.buildNumber});
+  const ReleaseAssetUrls({
+    required this.projectUrl,
+    required this.version,
+    required this.buildNumber,
+  });
 
   final String projectUrl;
   final String version;
   final int buildNumber;
 
   String get releaseBase => '$projectUrl/releases/download/v$version';
-  String get androidArm64 => '$releaseBase/PureLive-$version-$buildNumber-arm64-v8a-release.apk';
-  String get androidArmeabiV7a => '$releaseBase/PureLive-$version-$buildNumber-armeabi-v7a-release.apk';
-  String get androidX8664 => '$releaseBase/PureLive-$version-$buildNumber-x86_64-release.apk';
-  String get windowsSetup => '$releaseBase/PureLive-$version-windows-x64-setup.exe';
-  String get windowsPortable => '$releaseBase/PureLive-$version-$buildNumber-windows-x64-portable.zip';
-  String get macosUniversal => '$releaseBase/PureLive-$version-$buildNumber-macos-universal.zip';
+  String get androidArm64 =>
+      '$releaseBase/PureLive-$version-$buildNumber-arm64-v8a-release.apk';
+  String get androidArmeabiV7a =>
+      '$releaseBase/PureLive-$version-$buildNumber-armeabi-v7a-release.apk';
+  String get androidX8664 =>
+      '$releaseBase/PureLive-$version-$buildNumber-x86_64-release.apk';
+  String get windowsSetup =>
+      '$releaseBase/PureLive-$version-windows-x64-setup.exe';
+  String get windowsPortable =>
+      '$releaseBase/PureLive-$version-$buildNumber-windows-x64-portable.zip';
+  String get macosUniversal =>
+      '$releaseBase/PureLive-$version-$buildNumber-macos-universal.zip';
 }
 
 class VersionController extends GetxController {
@@ -78,9 +88,14 @@ class VersionController extends GetxController {
     // Android
     // =====================================================
 
-    apkUrl.value = assets.androidArmeabiV7a;
-    apkUrl2.value = assets.androidArm64;
-    apkUrl3.value = assets.androidX8664;
+    final androidAbis = VersionUtil.latestAndroidAbis;
+    apkUrl.value = androidAbis.contains('armeabi-v7a')
+        ? assets.androidArmeabiV7a
+        : '';
+    apkUrl2.value = androidAbis.contains('arm64-v8a')
+        ? assets.androidArm64
+        : '';
+    apkUrl3.value = androidAbis.contains('x86_64') ? assets.androidX8664 : '';
 
     // =====================================================
     // Windows
