@@ -69,6 +69,22 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 
 ---
 
+
+## 文档
+
+| 文档 | 内容 |
+| --- | --- |
+| [文档索引](docs/README.md) | 开发、发布、依赖和功能文档入口 |
+| [构建与发布](docs/BUILD_AND_RELEASE.md) | 本机质量门禁、签名、打包和 Release 流程 |
+| [依赖与接口审计](docs/DEPENDENCY_AUDIT.md) | 固定工具链、升级约束和接口探测范围 |
+| [平台接口与兼容性](docs/PLATFORM_COMPATIBILITY.md) | 分区、搜索、弹幕和人数指标的当前能力 |
+| [高刷新率与性能验证](docs/PERFORMANCE.md) | Android 120 Hz 适配、渲染优化和真机帧统计 |
+| [WebDAV 配置](docs/WEBDAV.md) | 通用配置字段、坚果云示例和故障排查 |
+| [MSIX 安装证书修复](docs/MXIS_OPEN.md) | Windows11 自定义 MSIX 证书不受信任安装解决方案 |
+| [参与贡献](CONTRIBUTING.md) | 分支、提交、测试和 Pull Request 要求 |
+| [安全策略](SECURITY.md) | 私密漏洞报告和签名材料管理 |
+| [版本说明](RELEASE_NOTES.md) | 当前版本变更与历史记录 |
+
 ## ✨ 核心功能
 
 ### 🎬 多平台直播
