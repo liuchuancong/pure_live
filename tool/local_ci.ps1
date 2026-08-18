@@ -17,7 +17,10 @@ try {
     # This file vendors a large JavaScript implementation in raw Dart strings;
     # dart format rewrites the embedded source and makes upstream comparison noisy.
     $formatExclusions = @('lib/core/scripts/douyin_sign.dart')
-    $dartFiles = @(
+    # Keep the result strongly typed as an array. When exactly one Dart file
+    # changed, PowerShell otherwise unwraps it to a scalar and argument
+    # splatting passes each character to `dart format` as a separate path.
+    [string[]] $dartFiles = @(
         git diff --name-only --diff-filter=ACMR HEAD -- '*.dart'
         git ls-files --others --exclude-standard -- '*.dart'
     ) | Where-Object {

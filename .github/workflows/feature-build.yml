@@ -57,7 +57,7 @@ on:
         description: Release tag (e.g. v1.0.0) – required if create_release is true
         required: true
         type: string
-        default: 'v2.1.2'
+        default: 'v2.1.4'
 
 
   push:
@@ -204,17 +204,15 @@ jobs:
         id: version
         shell: bash
         run: |
-          VERSION=$(grep '^version:' pubspec.yaml |
+          FULL_VERSION=$(grep '^version:' pubspec.yaml |
             sed 's/version: //; s/[`"'"'"']//g')
-
-          VERSION="${VERSION%%+*}"
-
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "version=${FULL_VERSION%%+*}" >> "$GITHUB_OUTPUT"
+          echo "artifact_version=${FULL_VERSION/+/-}" >> "$GITHUB_OUTPUT"
 
       - name: Rename Android APKs
         shell: bash
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
+          VERSION="${{ steps.version.outputs.artifact_version }}"
           APK_DIR="build/app/outputs/flutter-apk"
 
           test -f "$APK_DIR/app-arm64-v8a-release.apk"
@@ -223,24 +221,24 @@ jobs:
 
           cp \
             "$APK_DIR/app-arm64-v8a-release.apk" \
-            "PureLive-${VERSION}-android-arm64.apk"
+            "PureLive-${VERSION}-arm64-v8a-release.apk"
 
           cp \
             "$APK_DIR/app-armeabi-v7a-release.apk" \
-            "PureLive-${VERSION}-android-armeabi-v7a.apk"
+            "PureLive-${VERSION}-armeabi-v7a-release.apk"
 
           cp \
             "$APK_DIR/app-x86_64-release.apk" \
-            "PureLive-${VERSION}-android-x86_64.apk"
+            "PureLive-${VERSION}-x86_64-release.apk"
 
       - name: Upload Android artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pure-live-android
           path: |
-            PureLive-*-android-arm64.apk
-            PureLive-*-android-armeabi-v7a.apk
-            PureLive-*-android-x86_64.apk
+            PureLive-*-arm64-v8a-release.apk
+            PureLive-*-armeabi-v7a-release.apk
+            PureLive-*-x86_64-release.apk
           if-no-files-found: error
           retention-days: 3
 
@@ -498,13 +496,13 @@ jobs:
         id: version
         shell: bash
         run: |
-          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //; s/[`"'"'"']//g')
-          VERSION="${VERSION%%+*}"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          FULL_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //; s/[`"'"'"']//g')
+          echo "version=${FULL_VERSION%%+*}" >> "$GITHUB_OUTPUT"
+          echo "artifact_version=${FULL_VERSION/+/-}" >> "$GITHUB_OUTPUT"
 
       - name: Create portable archive
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
+          VERSION="${{ steps.version.outputs.artifact_version }}"
           tar \
             -C build/linux/x64/release/bundle \
             -czf PureLive-${VERSION}-linux-x64.tar.gz \
@@ -563,9 +561,9 @@ jobs:
         id: version
         shell: bash
         run: |
-          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //; s/[`"'"'"']//g')
-          VERSION="${VERSION%%+*}"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          FULL_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //; s/[`"'"'"']//g')
+          echo "version=${FULL_VERSION%%+*}" >> "$GITHUB_OUTPUT"
+          echo "artifact_version=${FULL_VERSION/+/-}" >> "$GITHUB_OUTPUT"
 
 # -----------------------------------------------------
 # macOS
@@ -622,7 +620,7 @@ jobs:
         if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
         shell: bash
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
+          VERSION="${{ steps.version.outputs.artifact_version }}"
           app_path="${{ steps.macos_app.outputs.app_path }}"
 
           ditto \
@@ -631,13 +629,13 @@ jobs:
             --sequesterRsrc \
             --keepParent \
             "$app_path" \
-            "PureLive-${VERSION}-macOS.zip"
+            "PureLive-${VERSION}-macos-universal.zip"
 
       - name: Build macOS DMG
         if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
         shell: bash
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
+          VERSION="${{ steps.version.outputs.artifact_version }}"
           app_path="${{ steps.macos_app.outputs.app_path }}"
 
           hdiutil create \
@@ -645,29 +643,29 @@ jobs:
             -srcfolder "$app_path" \
             -ov \
             -format UDZO \
-            "PureLive-${VERSION}-macOS.dmg"
+            "PureLive-${VERSION}-macos-universal.dmg"
 
       - name: Verify macOS packages
         if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
         shell: bash
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
+          VERSION="${{ steps.version.outputs.artifact_version }}"
 
-          test -f "PureLive-${VERSION}-macOS.zip"
-          test -f "PureLive-${VERSION}-macOS.dmg"
+          test -f "PureLive-${VERSION}-macos-universal.zip"
+          test -f "PureLive-${VERSION}-macos-universal.dmg"
 
           echo "=== macOS packages ==="
           ls -lh \
-            "PureLive-${VERSION}-macOS.zip" \
-            "PureLive-${VERSION}-macOS.dmg"
+            "PureLive-${VERSION}-macos-universal.zip" \
+            "PureLive-${VERSION}-macos-universal.dmg"
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
         with:
           name: pure-live-macos
           path: |
-            PureLive-*-macOS.zip
-            PureLive-*-macOS.dmg
+            PureLive-*-macos-universal.zip
+            PureLive-*-macos-universal.dmg
           if-no-files-found: error
           retention-days: 3
 
@@ -687,20 +685,20 @@ jobs:
       - name: Archive iOS application
         if: ${{ github.event_name == 'push' || inputs.build_ios }}
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
+          VERSION="${{ steps.version.outputs.artifact_version }}"
           ditto \
             -c \
             -k \
             --sequesterRsrc \
             --keepParent \
             build/ios/iphoneos/Runner.app \
-            "PureLive-${VERSION}-ios-unsigned-app.zip"
+            "PureLive-${VERSION}-ios-arm64-unsigned-app.zip"
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ github.event_name == 'push' || inputs.build_ios }}
         with:
           name: pure-live-ios-unsigned-app
-          path: PureLive-*-ios-unsigned-app.zip
+          path: PureLive-*-ios-arm64-unsigned-app.zip
           if-no-files-found: error
           retention-days: 3
 
