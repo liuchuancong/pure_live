@@ -23,6 +23,7 @@ import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/danmaku_settings_binding.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku_message_actions.dart';
 
 typedef AudioOnlyCallback = Future<void> Function(bool value);
@@ -203,7 +204,7 @@ class DanmakuManager {
   }
 }
 
-class VideoController with ChangeNotifier {
+class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   // 常量定义
   static const _controllerHideDelay = Duration(seconds: 2);
   static const _fullscreenDelay = Duration(milliseconds: 1000);
@@ -247,15 +248,25 @@ class VideoController with ChangeNotifier {
 
   // 弹幕相关
   final hideDanmaku = false.obs;
+  @override
   final noEmojiMode = false.obs;
+  @override
   final danmakuArea = 1.0.obs;
+  @override
   final danmakuTopArea = 0.0.obs;
+  @override
   final danmakuBottomArea = 0.0.obs;
+  @override
   final danmakuSpeed = 120.0.obs;
+  @override
   final danmakuFontSize = 16.0.obs;
+  @override
   final danmakuFontBorder = 1.5.obs;
+  @override
   final danmakuOpacity = 1.0.obs;
+  @override
   final enableDanmakuStroke = true.obs;
+  @override
   final danmakuFps = 60.obs;
   final danmakuFontFamilyName = ''.obs;
 
@@ -540,12 +551,13 @@ class VideoController with ChangeNotifier {
 
   // 控制器显示管理
   void enableController() {
+    if (_isDisposed) return;
     showControllerTimer?.cancel();
     showController.value = true;
 
     if (!_isMouseOverController && !_isMouseOverPlayer) {
       showControllerTimer = Timer(const Duration(seconds: 2), () {
-        if (!_isMouseOverController && !_isMouseOverPlayer) {
+        if (!_isDisposed && !_isMouseOverController && !_isMouseOverPlayer) {
           showController.value = false;
         }
       });
