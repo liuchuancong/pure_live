@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/race_http.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -7,9 +8,9 @@ import 'package:pure_live/common/utils/githup_mirror.dart';
 class VersionUtil {
   static PackageInfo? _packageInfo;
 
-  static const String projectUrl = 'https://github.com/wzgrx/pure_live';
-  static const String issuesUrl = 'https://github.com/wzgrx/pure_live/issues';
-  static const String githubUrl = 'https://github.com/wzgrx';
+  static const String projectUrl = 'https://github.com/liuchuancong/pure_live';
+  static const String issuesUrl = 'https://github.com/liuchuancong/pure_live/issues';
+  static const String githubUrl = 'https://github.com/liuchuancong';
 
   static const String email = '17792321552@163.com';
   static const String emailUrl = 'mailto:17792321552@163.com?subject=PureLive Feedback';
@@ -20,9 +21,9 @@ class VersionUtil {
   static const String kanbanUrl =
       'https://jackiu-notes.notion.site/50bc0d3d377445eea029c6e3d4195671?v=663125e639b047cea5e69d8264926b8b';
 
-  static const String releaseUrl = 'https://api.github.com/repos/wzgrx/pure_live/releases?per_page=30';
+  static const String releaseUrl = 'https://api.github.com/repos/liuchuancong/pure_live/releases?per_page=30';
 
-  static final GitHubMirror mirror = GitHubMirror(owner: 'wzgrx', repo: 'pure_live', branch: 'master');
+  static final GitHubMirror mirror = GitHubMirror(owner: 'liuchuancong', repo: 'pure_live', branch: 'master');
 
   static List<String> get _versionUrls => mirror.mirrors('assets/version.json');
 
@@ -69,8 +70,7 @@ class VersionUtil {
       final data = await RaceHttp.fetchJson(
         urls,
         headers: {
-          'User-Agent':
-              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Accept': 'application/json',
         },
       ).timeout(const Duration(seconds: 10));

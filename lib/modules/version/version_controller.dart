@@ -73,7 +73,7 @@ class VersionController extends GetxController {
     // macOS
     // ========================= ===========================
 
-    macosUrl.value = '$releaseUrl/PureLive-$latestVersion-macOS.dmg';
+    macosUrl.value = '$releaseUrl/PureLive-$latestVersion+$buildNumber-macOS.dmg';
 
     loading.value = false;
   }

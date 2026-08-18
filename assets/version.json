@@ -2,7 +2,7 @@
   "version": "2.1.1",
   "build_number": 49,
   "version_num": 2010149,
-  "version_desc": "合并来自于 @wzgrx 的更改，包含以及不限于\n- 修复真实在线平台设置卡片空白，明确展示各平台数据来源与支持状态。\n- 优化首页平台横滑，页面停稳后再加载目标平台并保留已构建网格。\n- 搜索增加平台覆盖说明、直播与未开播筛选、四种排序及逐平台分页终止。\n- 优化部分UI\n",
+  "version_desc": "合并来自于 @liuchuancong 的更改，包含以及不限于\n- 修复真实在线平台设置卡片空白，明确展示各平台数据来源与支持状态。\n- 优化首页平台横滑，页面停稳后再加载目标平台并保留已构建网格。\n- 搜索增加平台覆盖说明、直播与未开播筛选、四种排序及逐平台分页终止。\n- 优化部分UI\n",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases"
+  "download_url": "https://github.com/liuchuancong/pure_live/releases"
 }
