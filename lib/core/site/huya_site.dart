@@ -37,6 +37,9 @@ class HuyaSite implements LiveSite {
 
   // ignore: constant_identifier_names
   static const String HYSDK_UA = "HYSDK(Windows,30000002)_APP(pc_exe&7090000&official)_SDK(trans&2.35.0.5996)";
+  static const String fallbackPlayUserAgent =
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+      "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
   static Map<String, String> requestHeaders = {'Origin': baseUrl, 'Referer': baseUrl, 'User-Agent': HYSDK_UA};
   final BaseTarsHttp tupClient = BaseTarsHttp("http://wup.huya.com", "liveui", headers: requestHeaders);
 
@@ -162,17 +165,6 @@ class HuyaSite implements LiveSite {
     return ls;
   }
 
-  List<String> uaList = [
-    'https://raw.kkgithub.com/liuchuancong/pure_live/master/assets/play_config.json',
-    'https://wget.la/https://raw.githubusercontent.com/liuchuancong/pure_live/master/assets/play_config.json',
-    'https://hk.gh-proxy.org/https:/raw.githubusercontent.com/liuchuancong/pure_live/master/assets/play_config.json',
-    'https://ghfast.top/https://raw.githubusercontent.com/liuchuancong/pure_live/master/assets/play_config.json',
-    'https://gh.catmak.name/https://raw.githubusercontent.com/liuchuancong/pure_live/master/assets/play_config.json',
-    'https://ghproxy.net/https://raw.githubusercontent.com/liuchuancong/pure_live/master/assets/play_config.json',
-    'https://fastly.jsdelivr.net/gh/liuchuancong/pure_live@master/assets/play_config.json',
-    'https://g.blfrp.cn/https://raw.githubusercontent.com/liuchuancong/pure_live/master/assets/play_config.json',
-    'https://cdn.jsdelivr.net/gh/liuchuancong/pure_live@master/assets/play_config.json',
-  ];
   Future<String> getHuYaUA() async {
     if (playUserAgent != null) {
       return playUserAgent!;
@@ -180,11 +172,9 @@ class HuyaSite implements LiveSite {
     final mirror = GitHubMirror(owner: 'liuchuancong', repo: 'pure_live', branch: 'master');
     final urls = mirror.mirrors('assets/play_config.json');
     final data = await RaceHttp.fetchJson(urls);
-    final String? ua = data?['huya']?['user_agent'];
-    if (ua != null) {
-      playUserAgent = ua;
-    }
-    Log.d("HuyaSite: getHuYaUA: $ua");
+    final ua = data?['huya']?['user_agent']?.toString().trim();
+    playUserAgent = ua == null || ua.isEmpty ? fallbackPlayUserAgent : ua;
+    Log.d("HuyaSite: getHuYaUA: $playUserAgent");
     return playUserAgent!;
   }
 

@@ -295,7 +295,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     return _brightnessController;
   }
 
-  bool get supportWindowFull => Platform.isWindows || Platform.isLinux;
+  bool get supportWindowFull => Platform.isWindows || Platform.isLinux || Platform.isMacOS;
   late final Future<void> initialization;
 
   // 暴露 livePlayController 的 getter

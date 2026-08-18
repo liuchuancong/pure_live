@@ -707,17 +707,18 @@ class RoomCard extends StatelessWidget {
                           AudienceMetricType.followers => 'audience_followers',
                           AudienceMetricType.unknown => 'audience_count',
                         };
-                        return CountChip(
+                        final displayValue = value.isEmpty ? i18n('audience_waiting') : readableCount(value);
+                        return CoverMetricBadge(
+                          key: const ValueKey('cover-audience-metric'),
                           icon: switch (type) {
                             AudienceMetricType.onlineViewers => Icons.people_alt_rounded,
                             AudienceMetricType.followers => Icons.favorite_rounded,
                             AudienceMetricType.totalViewers => Icons.visibility_rounded,
                             _ => Icons.whatshot_rounded,
                           },
-                          count:
-                              '${i18n(labelKey)} · ${value.isEmpty ? i18n('audience_waiting') : readableCount(value)}',
+                          value: displayValue,
+                          semanticLabel: '${i18n(labelKey)} $displayValue',
                           dense: dense,
-                          color: Get.theme.primaryColor,
                         );
                       }),
                     ),
@@ -831,6 +832,57 @@ class CountChip extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A cover metric stays compact and readable without obscuring thumbnails.
+/// The full metric name remains available to accessibility and hover users.
+class CoverMetricBadge extends StatelessWidget {
+  const CoverMetricBadge({
+    super.key,
+    required this.icon,
+    required this.value,
+    required this.semanticLabel,
+    this.dense = false,
+  });
+
+  final IconData icon;
+  final String value;
+  final String semanticLabel;
+  final bool dense;
+
+  @override
+  Widget build(BuildContext context) {
+    const shadow = Shadow(color: Color(0xCC000000), blurRadius: 4, offset: Offset(0, 1));
+    return Tooltip(
+      message: semanticLabel,
+      child: Semantics(
+        label: semanticLabel,
+        container: true,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: dense ? 2 : 3, vertical: 2),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: Colors.white, size: dense ? 16 : 18, shadows: const [shadow]),
+              const SizedBox(width: 4),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.fade,
+                softWrap: false,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  fontSize: dense ? 12 : 13,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  shadows: const [shadow],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

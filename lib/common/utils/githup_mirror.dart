@@ -23,21 +23,19 @@ class GitHubMirror {
   /// 生成所有镜像
   List<String> mirrors(String filePath) {
     final raw = rawUrl(filePath);
-    return [
+    return List.unmodifiable({
       raw,
       'https://hub.glowp.xyz/$raw',
       'https://hk.gh-proxy.org/$raw',
-      'https://hub.glowp.xyz/$raw',
       'https://raw.kkgithub.com/$owner/$repo/$branch/$filePath',
       'https://wget.la/$raw',
       'https://ghproxy.net/$raw',
       'https://ghfast.top/$raw',
       'https://gh.catmak.name/$raw',
       'https://g.blfrp.cn/$raw',
-      'https://g.blfrp.cn/$raw',
       // CDN
       jsdelivr(filePath),
       jsdelivrFastly(filePath),
-    ];
+    });
   }
 }
