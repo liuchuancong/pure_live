@@ -1,0 +1,324 @@
+name: Publish staged all-platform release
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage_run_id:
+        description: Completed feature-build run containing Linux, macOS and iOS artifacts
+        required: true
+        type: string
+      android_run_id:
+        description: Completed local-signed-android run containing the signed arm64 APK
+        required: true
+        type: string
+      release_tag:
+        description: Release tag matching the version in pubspec.yaml
+        required: true
+        type: string
+        default: v2.1.4
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: publish-staged-${{ inputs.release_tag }}
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    name: Build Windows x64 on local runner
+    runs-on: [self-hosted, Windows, X64, pure-live-local]
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build Windows portable archive and installer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
+            -SkipQuality -SkipAndroid
+
+      - name: Verify Windows packages
+        id: verify
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = (Select-String pubspec.yaml '^version:\s*(\S+)' |
+            Select-Object -First 1).Matches[0].Groups[1].Value
+          $artifactVersion = $version.Replace('+', '-')
+          $directory = Join-Path 'local-artifacts' $artifactVersion
+          $portable = Join-Path $directory "PureLive-$artifactVersion-windows-x64-portable.zip"
+          $installer = Join-Path $directory "PureLive-$($version.Split('+')[0])-windows-x64-setup.exe"
+          foreach ($file in @($portable, $installer)) {
+            if (-not (Test-Path -LiteralPath $file -PathType Leaf)) {
+              throw "Expected Windows package is missing: $file"
+            }
+          }
+          $entries = tar -tf $portable
+          if ($entries | Where-Object { $_ -match '(^|/)(AppData|IPTV_CACHE)(/|$)' }) {
+            throw 'Runtime state was found in the Windows portable package.'
+          }
+          $signature = Get-AuthenticodeSignature -LiteralPath $installer
+          $signing = if ($signature.Status -eq 'Valid') { 'authenticode' } else { 'unsigned' }
+          Set-Content -LiteralPath (Join-Path $directory 'WINDOWS_SIGNING.txt') `
+            -Value $signing -Encoding ascii
+
+      - name: Upload Windows packages
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pure-live-windows-release
+          path: |
+            local-artifacts/*/PureLive-*-windows-x64-portable.zip
+            local-artifacts/*/PureLive-*-windows-x64-setup.exe
+            local-artifacts/*/WINDOWS_SIGNING.txt
+          if-no-files-found: error
+          retention-days: 3
+
+  publish:
+    name: Verify and publish all platforms
+    needs: windows
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ inputs.release_tag }}
+      STAGE_RUN_ID: ${{ inputs.stage_run_id }}
+      ANDROID_RUN_ID: ${{ inputs.android_run_id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Validate source runs
+        id: sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          stage_json="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$STAGE_RUN_ID")"
+          android_json="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ANDROID_RUN_ID")"
+          test "$(jq -r .status <<<"$stage_json")" = completed
+          test "$(jq -r .conclusion <<<"$stage_json")" = success
+          test "$(jq -r .status <<<"$android_json")" = completed
+          test "$(jq -r .conclusion <<<"$android_json")" = success
+          echo "stage_sha=$(jq -r .head_sha <<<"$stage_json")" >> "$GITHUB_OUTPUT"
+          echo "android_sha=$(jq -r .head_sha <<<"$android_json")" >> "$GITHUB_OUTPUT"
+
+      - name: Download local Windows packages
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v7.0.1
+        with:
+          name: pure-live-windows-release
+          path: downloads/windows
+
+      - name: Download signed Android package
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v7.0.1
+        with:
+          name: pure-live-android
+          path: downloads/android
+          run-id: ${{ inputs.android_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Download staged Linux package
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v7.0.1
+        with:
+          name: pure-live-linux-x64
+          path: downloads/linux
+          run-id: ${{ inputs.stage_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Download staged macOS packages
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v7.0.1
+        with:
+          name: pure-live-macos
+          path: downloads/macos
+          run-id: ${{ inputs.stage_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Download staged iOS package
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v7.0.1
+        with:
+          name: pure-live-ios-unsigned-app
+          path: downloads/ios
+          run-id: ${{ inputs.stage_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Assemble and verify canonical release assets
+        env:
+          STAGE_SHA: ${{ steps.sources.outputs.stage_sha }}
+          ANDROID_SHA: ${{ steps.sources.outputs.android_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python <<'PY'
+          import datetime
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import re
+          import shutil
+
+          root = pathlib.Path.cwd()
+          downloads = root / "downloads"
+          output = root / "release-assets"
+          output.mkdir()
+
+          version_match = re.search(
+              r"^version:\s*(\S+)",
+              (root / "pubspec.yaml").read_text(encoding="utf-8"),
+              re.MULTILINE,
+          )
+          if not version_match:
+              raise SystemExit("pubspec version is missing")
+          full_version = version_match.group(1)
+          display_version = full_version.split("+", 1)[0]
+          artifact_version = full_version.replace("+", "-")
+          if os.environ["RELEASE_TAG"] != f"v{display_version}":
+              raise SystemExit("release tag does not match pubspec version")
+
+          expected = [
+              f"PureLive-{artifact_version}-arm64-v8a-release.apk",
+              f"PureLive-{artifact_version}-windows-x64-portable.zip",
+              f"PureLive-{display_version}-windows-x64-setup.exe",
+              f"PureLive-{artifact_version}-linux-x64.tar.gz",
+              f"PureLive-{artifact_version}-macos-universal.zip",
+              f"PureLive-{artifact_version}-macos-universal.dmg",
+              f"PureLive-{artifact_version}-ios-arm64-unsigned-app.zip",
+          ]
+          for name in expected:
+              matches = [path for path in downloads.rglob(name) if path.is_file()]
+              if len(matches) != 1:
+                  raise SystemExit(f"expected exactly one {name}, found {len(matches)}")
+              shutil.copy2(matches[0], output / name)
+
+          android_metadata = []
+          for path in (downloads / "android").rglob("BUILD_METADATA.json"):
+              try:
+                  android_metadata.append(json.loads(path.read_text(encoding="utf-8-sig")))
+              except (OSError, json.JSONDecodeError):
+                  pass
+          if not any(
+              item.get("android_signing") == "release"
+              and item.get("source_commit") == os.environ["ANDROID_SHA"]
+              and item.get("version") == full_version
+              for item in android_metadata
+          ):
+              raise SystemExit("signed Android verification metadata did not match the source run")
+
+          signing_files = list((downloads / "windows").rglob("WINDOWS_SIGNING.txt"))
+          if len(signing_files) != 1:
+              raise SystemExit("Windows signing metadata is missing")
+          windows_signing = signing_files[0].read_text(encoding="ascii").strip()
+          if windows_signing not in {"unsigned", "authenticode"}:
+              raise SystemExit("Windows signing metadata is invalid")
+
+          metadata = {
+              "version": full_version,
+              "built_at_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              "release_commit": os.environ["GITHUB_SHA"],
+              "tracked_files_dirty": False,
+              "android_package": "com.mystyle.purelive",
+              "android_signing": "release",
+              "windows_signing": windows_signing,
+              "build_source": "local-windows-android-plus-staged-linux-apple",
+              "platform_source_commits": {
+                  "android": os.environ["ANDROID_SHA"],
+                  "windows": os.environ["GITHUB_SHA"],
+                  "linux": os.environ["STAGE_SHA"],
+                  "macos": os.environ["STAGE_SHA"],
+                  "ios": os.environ["STAGE_SHA"],
+              },
+              "source_runs": {
+                  "android": int(os.environ["ANDROID_RUN_ID"]),
+                  "stage": int(os.environ["STAGE_RUN_ID"]),
+                  "publisher": int(os.environ["GITHUB_RUN_ID"]),
+              },
+          }
+          metadata_path = output / "BUILD_METADATA.json"
+          metadata_path.write_text(
+              json.dumps(metadata, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+
+          checksum_path = output / "SHA256SUMS.txt"
+          lines = []
+          for path in sorted(output.iterdir(), key=lambda item: item.name):
+              if path.name == checksum_path.name:
+                  continue
+              digest = hashlib.sha256(path.read_bytes()).hexdigest()
+              lines.append(f"{digest} *{path.name}")
+          checksum_path.write_text("\n".join(lines) + "\n", encoding="ascii")
+
+          actual = {path.name for path in output.iterdir() if path.is_file()}
+          wanted = set(expected) | {"BUILD_METADATA.json", "SHA256SUMS.txt"}
+          if actual != wanted:
+              raise SystemExit(f"release asset mismatch: {sorted(actual ^ wanted)}")
+          for path in sorted(output.iterdir(), key=lambda item: item.name):
+              print(f"{path.name}\t{path.stat().st_size}")
+          PY
+
+      - name: Extract current release notes
+        shell: bash
+        run: |
+          python <<'PY'
+          import pathlib
+          import re
+          import os
+
+          notes = pathlib.Path("RELEASE_NOTES.md").read_text(encoding="utf-8")
+          tag = os.environ["RELEASE_TAG"]
+          match = re.search(
+              rf"(?ms)^# Pure Live\s+{re.escape(tag)}\s*$.*?(?=^---\s*$|\Z)",
+              notes,
+          )
+          if not match:
+              raise SystemExit(f"release notes were not found for {tag}")
+          pathlib.Path("current-release-notes.md").write_text(
+              match.group(0).strip() + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Create or update GitHub Release
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" release-assets/* \
+              --clobber --repo "$GITHUB_REPOSITORY"
+            gh release edit "$RELEASE_TAG" \
+              --title "Pure Live $RELEASE_TAG" \
+              --notes-file current-release-notes.md \
+              --latest --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$RELEASE_TAG" release-assets/* \
+              --target "$GITHUB_SHA" \
+              --title "Pure Live $RELEASE_TAG" \
+              --notes-file current-release-notes.md \
+              --latest --repo "$GITHUB_REPOSITORY"
+          fi
+
+      - name: Verify published asset set
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="$(find release-assets -maxdepth 1 -type f -printf '%f\n' | sort)"
+          actual="$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --json assets --jq '.assets[].name' | sort)"
+          diff -u <(printf '%s\n' "$expected") <(printf '%s\n' "$actual")
+
+      - name: Refresh release catalog
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tool/update_releases.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- assets/releases.json; then
+            exit 0
+          fi
+          git add assets/releases.json
+          git commit -m "chore: index $RELEASE_TAG release assets [skip ci]"
+          git pull --rebase origin master
+          git push origin HEAD:master

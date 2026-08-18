@@ -85,11 +85,13 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 -Require
 签名材料只保存在 GitHub Secrets、Actions 托管额度紧张时，可在本机注册
 Windows x64 临时自托管 Runner，再手动运行
 `local-signed-android` 工作流。编译仍在本机完成，工作流仅把签名 Secrets
-注入临时进程；工作流直接复用 Runner 工具缓存中的 Java 25，任务结束后会清理 JKS 和 `android/key.properties`。
+注入临时进程；工作流依次检测 Runner 工具缓存、Android Studio JBR 与 `JAVA_HOME`，且只接受真实 Java 25，任务结束后会清理 JKS 和 `android/key.properties`。
 
 临时 Runner 注册服务异常时，可显式推送 `signed-build-*` 标签，使用同一工作流的一次性 GitHub 托管回退作业生成正式签名 arm64 APK；普通提交不触发该作业，本机门禁与 Windows 构建仍保持优先。
 
 Linux、macOS 和 iOS 通常通过 `manual-build` 手动开关补建；阶段标签也支持精确补建：`stage-linux-*` 运行 Linux，`stage-ios-*` 运行 iOS，`stage-apple-*` 在一个 macOS Runner 内连续构建 macOS 与 iOS。普通分支推送、Android 和 Windows 均保持本机优先。
+
+全平台阶段包就绪后，`publish-staged-release` 工作流可输入阶段构建 Run ID 与本机正式签名 Android Run ID：Windows x64 会在临时自托管 Runner 上重新构建，托管发布作业只负责汇总 Linux/macOS/iOS 阶段包、校验来源提交与正式签名元数据、生成统一 SHA-256，并创建 Release。这样不会为已经通过的 Linux/Apple 平台重复消耗完整构建额度。
 
 本机生成的 Windows EXE 安装向导始终显示安装目录页，可选择其他磁盘并记住上次目录。关注、历史、IPTV、录制、图片/表情/插件缓存和应用临时文件统一位于 `{app}\AppData`；更换目录时安装器保留上一个位置索引，新版首启再备份和合并。详见 [Windows 数据目录与升级](WINDOWS_DATA_AND_UPGRADE.md)。Windows 播放小窗默认使用普通窗口层级；“设置 → 播放设置 → Windows 小窗始终置顶”可按需切换，当前小窗会立即应用。
 
