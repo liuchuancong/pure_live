@@ -1207,5 +1207,7 @@
   "local_badge_soop": "SOOP 徽章",
   "local_gift_soop_star_balloon": "星气球",
   "local_gift_soop_sticker": "贴纸",
-  "local_gift_soop_signature_balloon": "签名气球"
+  "local_gift_soop_signature_balloon": "签名气球",
+  "windows_pip_always_on_top": "Windows 小窗始终置顶",
+  "windows_pip_always_on_top_subtitle": "关闭后切换到其他应用时，小窗会按普通窗口层级被遮挡"
 }

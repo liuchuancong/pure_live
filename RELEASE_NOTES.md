@@ -17,11 +17,16 @@
 - 搜索页动态显示当前平台覆盖范围：Bilibili、斗鱼、网易 CC、Twitch 可返回部分未开播结果；虎牙、抖音、SOOP 主要返回当前直播；快手使用网页搜索；IPTV 搜索本机导入频道。
 - Bilibili 与网易 CC 搜索结果补充可用粉丝字段；平台响应缺少粉丝数时保持稳定次序，不以热度冒充粉丝。
 
+## Windows 安装与小窗
+
+- Windows 安装向导固定显示安装目录页，首次安装和覆盖更新都可以浏览并选择其他磁盘，同时保留用户上次选择的目录。
+- Windows 小窗改为默认普通窗口层级，切换到其他应用后可以被其覆盖；播放行为设置增加“小窗始终置顶”开关，需要时可恢复置顶并立即生效。
+
 ## 构建与验证
 
-- Built-in Kotlin 审计与 Flutter Analyze 零问题，70 项单元/Widget 测试通过。
+- Built-in Kotlin 审计与 Flutter Analyze 零问题，71 项单元/Widget 测试通过。
 - 25/25 平台公开接口探测通过，覆盖分类、推荐、搜索、弹幕节点、房间元数据和播放令牌。
-- Android 继续使用正式包名 `com.mystyle.purelive`，优先生成 `arm64-v8a` release；Windows 生成 x64 便携 ZIP 与安装程序。
+- Android 继续使用正式包名 `com.mystyle.purelive`，优先生成 `arm64-v8a` release；Windows 生成 x64 便携 ZIP 与可选择安装目录的安装程序；Linux、macOS 与 iOS 补齐对应平台归档。
 
 ---
 
