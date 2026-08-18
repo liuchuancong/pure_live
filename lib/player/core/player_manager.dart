@@ -257,7 +257,7 @@ class PlayerManager {
       if (!_isSessionValid(mySessionId)) return;
 
       await LiveAudioService.setPlayer(player, audioOnly: audioOnly);
-      await LiveAudioService.start(room!.roomId!, room.nick ?? "", room.title ?? "", room.avatar);
+      await LiveAudioService.start(room!.roomId!, room.title ?? "", room.nick ?? "", room.avatar);
       videoKey.value = ValueKey("video_${DateTime.now().millisecondsSinceEpoch}");
       _stateSubject.add(PlayerState.ready);
     } on PlayerException catch (e) {

@@ -817,12 +817,16 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   }
 
   // 全屏管理
-  void exitFullScreen() async {
-    WindowService().doExitFullScreen();
+  Future<void> exitFullScreen() async {
+    await WindowService().doExitFullScreen();
     GlobalPlayerState.to.isFullscreen.value = false;
   }
 
-  void toggleFullScreen() async {
+  bool _fullscreenTransitioning = false;
+
+  Future<void> toggleFullScreen() async {
+    if (_fullscreenTransitioning) return;
+    _fullscreenTransitioning = true;
     showLocked.value = false;
     stopHideController();
 
@@ -833,26 +837,34 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
 
     GlobalPlayerState.to.isWindowFullscreen.value = false;
 
-    if (GlobalPlayerState.to.isFullscreen.value) {
-      _livePlayController.setNormalScreen();
-      WindowService().doExitFullScreen();
-      GlobalPlayerState.to.isFullscreen.value = false;
-    } else {
-      _livePlayController.setFullScreen();
-      enterFullScreen();
-      GlobalPlayerState.to.isFullscreen.value = true;
+    try {
+      if (GlobalPlayerState.to.isFullscreen.value) {
+        _livePlayController.setNormalScreen();
+        await exitFullScreen();
+      } else {
+        _livePlayController.setFullScreen();
+        await enterFullScreen();
+      }
+      enableController();
+    } finally {
+      _fullscreenTransitioning = false;
     }
-    enableController();
   }
 
-  void enterFullScreen() {
-    WindowService().doEnterFullScreen();
+  Future<void> enterFullScreen() async {
+    await WindowService().doEnterFullScreen();
     GlobalPlayerState.to.isFullscreen.value = true;
 
-    if (_playerManager.isVerticalVideo.value) {
-      WindowService().verticalScreen();
-    } else {
-      WindowService().landScape();
+    // Desktop full screen is already handled by window_manager above. Calling
+    // landScape there issued a second setFullScreen(true) while the first
+    // native transition was still running, producing inconsistent work-area
+    // bounds on Windows systems with a side taskbar.
+    if (Platform.isAndroid || Platform.isIOS) {
+      if (_playerManager.isVerticalVideo.value) {
+        await WindowService().verticalScreen();
+      } else {
+        await WindowService().landScape();
+      }
     }
   }
 

@@ -101,11 +101,18 @@ class LiveAudioHandler extends BaseAudioHandler {
     this.mediaItem.add(mediaItem);
   }
 
+  /// Claims media audio focus as soon as playback starts in the room. Waiting
+  /// until the notification play action is pressed makes Android pause the
+  /// already-running stream when the app first goes to the background.
+  Future<void> activateSession() async {
+    await _sessionReady;
+    await _session.setActive(true);
+  }
+
   @override
   Future<void> play() async {
     if (_currentPlayer == null) return;
-    await _sessionReady;
-    await _session.setActive(true);
+    await activateSession();
     await _currentPlayer!.play();
   }
 

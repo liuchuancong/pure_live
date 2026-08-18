@@ -74,17 +74,35 @@ class LiveAudioService {
     final handler = await _ensureInitialized();
     if (handler == null) return;
 
-    final item = MediaItem(
+    final item = buildMediaItem(roomId: roomId, title: title, author: author, cover: cover);
+
+    try {
+      await handler.activateSession();
+    } catch (error, stackTrace) {
+      // Audio focus improves background continuity, but a vendor-specific
+      // session failure must not turn an otherwise playable room into an
+      // application-level playback failure.
+      debugPrint('Audio session activation failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
+    await handler.playMediaItem(item);
+    handler.configureSleepTimer(BackgroundPlaybackService.sleepSessionActive ? Duration(minutes: _sleepMinutes) : null);
+    await syncKeepAlive();
+  }
+
+  static MediaItem buildMediaItem({
+    required String roomId,
+    required String title,
+    required String author,
+    String? cover,
+  }) {
+    return MediaItem(
       id: roomId,
       album: i18n("app_name"),
       title: title,
       artist: author,
       artUri: (cover != null && cover.isNotEmpty) ? Uri.tryParse(cover) : null,
     );
-
-    await handler.playMediaItem(item);
-    handler.configureSleepTimer(BackgroundPlaybackService.sleepSessionActive ? Duration(minutes: _sleepMinutes) : null);
-    await syncKeepAlive();
   }
 
   static Future<void> configureSleepTimer({required bool enabled, required int minutes}) async {
