@@ -1,21 +1,21 @@
 {
-  "version": "2.1.4",
-  "build_number": 52,
-  "version_num": 2010452,
+  "version": "2.1.5",
+  "build_number": 53,
+  "version_num": 2010553,
   "android_abis": [
     "arm64-v8a"
   ],
-  "version_desc": "v2.1.4 阶段性全平台更新\n- Bilibili 热门迁移到当前匿名推荐接口，增加回退、结构校验和封面缓存修复。\n- Windows 动态识别窗口所在显示器当前及最高刷新率，优化滚动、转场、缓存和重复监听。\n- 同步上游 5d3e526a，兼容 sooplive.com / sooplive.co.kr 与当前 SOOP 播放链路。\n- 补齐 Android arm64、Windows x64、Linux x64、macOS universal 和 iOS arm64 设备归档。\n",
+  "version_desc": "v2.1.5 弹幕交互与 Windows 滚动修复\n- 本地弹幕发送后延迟 2 秒，同步进入列表和直播画面。\n- Android 首次上滑立即暂停自动跟随，阅读期间累计新消息。\n- 弹幕模板选中状态与实际参数实时一致。\n- Windows 主要列表使用 Chromium Impulse 动画滚动。\n",
   "prerelease": false,
   "download_url": "https://github.com/wzgrx/pure_live/releases",
   "platforms": {
     "windows": {
-      "version": "2.1.4",
-      "build_number": 52,
-      "version_num": 2010452,
-      "version_desc": "v2.1.4 阶段性全平台更新\n- Bilibili 热门迁移到当前匿名推荐接口，增加回退、结构校验和封面缓存修复。\n- Windows 动态识别窗口所在显示器当前及最高刷新率，优化滚动、转场、缓存和重复监听。\n- 同步上游 5d3e526a，兼容 sooplive.com / sooplive.co.kr 与当前 SOOP 播放链路。\n- 继续保留可选安装目录和安装目录 AppData 数据迁移。\n",
+      "version": "2.1.5",
+      "build_number": 53,
+      "version_num": 2010553,
+      "version_desc": "v2.1.5 弹幕交互与 Windows 滚动修复\n- 本地弹幕延迟 2 秒后同步进入列表与画面。\n- 弹幕列表首次滚动立即暂停自动跟随，模板状态实时一致。\n- 首页、热门、分区、收藏、搜索和弹幕设置使用平滑滚轮轨迹。\n- 保留可选安装目录和安装目录 AppData 数据迁移。\n",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.1.4"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.1.5"
     }
   }
 }

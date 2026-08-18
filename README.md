@@ -33,8 +33,8 @@
 
 > 本维护分支持续同步 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)，并维护本机优先构建、正式签名、接口探测、Windows 数据迁移及高刷新率优化。
 
-- **最新稳定版**：[v2.1.4](https://github.com/wzgrx/pure_live/releases/tag/v2.1.4)
-- **当前开发版本**：`2.1.4+52`
+- **最新稳定版**：[v2.1.5](https://github.com/wzgrx/pure_live/releases/tag/v2.1.5)
+- **当前开发版本**：`2.1.5+53`
 - **上游同步基线**：`liuchuancong/pure_live@18e2afaf`（2026-08-18）
 - **构建平台**：Android arm64、Windows x64、Linux x64、macOS Universal、iOS arm64 设备包
 
@@ -84,7 +84,7 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 | [平台接口与兼容性](docs/PLATFORM_COMPATIBILITY.md) | 分区、搜索、弹幕和人数指标的当前能力 |
 | [高刷新率与性能验证](docs/PERFORMANCE.md) | Android 120 Hz 适配、渲染优化和真机帧统计 |
 | [WebDAV 配置](docs/WEBDAV.md) | 通用配置字段、坚果云示例和故障排查 |
-| [v2.1.4 阶段更新](docs/STAGE_UPDATE_2_1_4.md) | Bilibili/SOOP 接口、Windows 200 Hz 与全平台产物 |
+| [v2.1.5 阶段更新](docs/STAGE_UPDATE_2_1_5.md) | 本地弹幕同步、列表阅读、模板状态和 Windows 平滑滚动 |
 | [参与贡献](CONTRIBUTING.md) | 分支、提交、测试和 Pull Request 要求 |
 | [安全策略](SECURITY.md) | 私密漏洞报告和签名材料管理 |
 | [版本说明](RELEASE_NOTES.md) | 当前版本变更与历史记录 |
@@ -343,7 +343,7 @@ Firebase 不是 Pure Live 使用的必要条件。
 
 ### Android
 
-v2.1.4 正式 Release 优先提供 `arm64-v8a`，适用于当前主流 64 位 ARM 手机和平板。更新页读取版本清单中的实际 ABI 列表，不会显示本轮没有发布的 32 位 ARM 或 x86_64 下载链接。
+v2.1.5 正式 Release 优先提供 `arm64-v8a`，适用于当前主流 64 位 ARM 手机和平板。更新页读取版本清单中的实际 ABI 列表，不会显示本轮没有发布的 32 位 ARM 或 x86_64 下载链接。
 
 Android 始终使用正式包名：
 
