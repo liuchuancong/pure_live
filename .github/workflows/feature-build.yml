@@ -43,7 +43,7 @@ on:
         description: Run analyze, tests and public interface probes first
         required: true
         type: boolean
-        default: true
+        default: false
 
 
       create_release:
