@@ -418,7 +418,7 @@ iOS 附件为设备 `.app` 编译归档。
 
 ---
 
-## 🌟 Star
+## 🌟 Star 趋势
 
 如果 Pure Live 对你有帮助，欢迎给项目一个 ⭐ Star：
 
