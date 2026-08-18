@@ -1,18 +1,18 @@
 {
-  "version": "2.1.1",
-  "build_number": 49,
-  "version_num": 2010149,
-  "version_desc": "- 修复真实在线平台设置卡片空白，明确展示各平台数据来源与支持状态。\n- 优化首页平台横滑，页面停稳后再加载目标平台并保留已构建网格。\n- 搜索增加平台覆盖说明、直播与未开播筛选、四种排序及逐平台分页终止。\n",
+  "version": "2.1.4",
+  "build_number": 52,
+  "version_num": 2010452,
+  "version_desc": "v2.1.4 阶段性全平台更新\n- Bilibili 热门迁移到当前匿名推荐接口，增加回退、结构校验和封面缓存修复。\n- Windows 动态识别窗口所在显示器当前及最高刷新率，优化滚动、转场、缓存和重复监听。\n- 同步上游 5d3e526a，兼容 sooplive.com / sooplive.co.kr 与当前 SOOP 播放链路。\n- 补齐 Android arm64、Windows x64、Linux x64、macOS universal 和 iOS arm64 设备归档。\n",
   "prerelease": false,
   "download_url": "https://github.com/liuchuancong/pure_live/releases",
   "platforms": {
     "windows": {
-      "version": "2.1.3",
-      "build_number": 51,
-      "version_num": 2010351,
-      "version_desc": "Windows 高刷新率、热门封面与交互性能更新\n- Bilibili 热门切换到当前匿名推荐接口，旧接口触发风控时自动回退并显示准确错误。\n- 封面请求补齐站点请求头，使用稳定磁盘缓存键，减少偶发失败、重复下载与滚动时渐变重绘。\n- Windows 自动检测窗口所在显示器当前及最高刷新率，移动显示器或切换显示模式后实时更新。\n- 桌面滚动物理、次级页面转场与 Android 当前交互对齐，减少重复监听、无效刷新和跨页重建。\n- 合并上游 ca9e0d96，并继续保留可选安装目录和安装目录 AppData 数据迁移。\n",
+      "version": "2.1.4",
+      "build_number": 52,
+      "version_num": 2010452,
+      "version_desc": "v2.1.4 阶段性全平台更新\n- Bilibili 热门迁移到当前匿名推荐接口，增加回退、结构校验和封面缓存修复。\n- Windows 动态识别窗口所在显示器当前及最高刷新率，优化滚动、转场、缓存和重复监听。\n- 同步上游 5d3e526a，兼容 sooplive.com / sooplive.co.kr 与当前 SOOP 播放链路。\n- 继续保留可选安装目录和安装目录 AppData 数据迁移。\n",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.1.3"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.1.4"
     }
   }
 }

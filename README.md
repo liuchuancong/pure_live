@@ -17,10 +17,9 @@
 
 > 本仓库基于 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live) 持续维护，新增可配置的小窗弹幕，并完善本机构建、依赖锁定、接口探测和发布流程。
 
-- **Windows 最新稳定版**：[v2.1.3](https://github.com/liuchuancong/pure_live/releases/tag/v2.1.3)（高刷新率、热门封面与流畅度专项）
-- **Android/Linux/macOS/iOS 最新稳定版**：[v2.1.1](https://github.com/liuchuancong/pure_live/releases/tag/v2.1.1)
-- **当前源码版本**：`2.1.3+51`
-- **上游同步基线**：`liuchuancong/pure_live@222b3bfb`（2026-08-18）
+- **全平台最新稳定版**：[v2.1.4](https://github.com/liuchuancong/pure_live/releases/tag/v2.1.4)（阶段性高刷新率、接口与流畅度更新）
+- **当前源码版本**：`2.1.4+52`
+- **上游同步基线**：`liuchuancong/pure_live@5d3e526a`（2026-08-18）
 - **构建平台**：Android arm64、Windows x64、Linux x64、macOS universal、iOS arm64 设备包
 
 ![Pure Live 界面预览](assets/images/banner.png)
@@ -57,11 +56,12 @@
 
 前往 [GitHub Releases](https://github.com/liuchuancong/pure_live/releases/latest) 获取安装包：
 
-- Android：当前优先发布 `arm64-v8a` APK，本轮仍使用 v2.1.1 正式签名包；
-- Windows：v2.1.3 可选安装目录的 EXE 安装包或便携 ZIP；
+- Android：`arm64-v8a` 正式签名 APK，可直接覆盖旧正式版；
+- Windows：v2.1.4 可选安装目录的 EXE 安装包或便携 ZIP；
+- Linux：x64 便携压缩包；macOS：universal 应用归档与 DMG；iOS：未签名 arm64 设备应用归档；
 - 下载后使用同一 Release 中的 `SHA256SUMS.txt` 校验完整性。
 
-Linux、macOS 与 iOS 的阶段构建由“全部平台”手动工作流生成；Linux 网页搜索会交给系统浏览器，原生搜索与播放继续在应用内完成；iOS 附件是设备 `.app` 编译归档，签名与 IPA 封装在持有 Apple 证书的环境中完成。阶段更新范围见 [v2.1.0 阶段更新说明](docs/STAGE_UPDATE_2_1_0.md)。
+Linux、macOS 与 iOS 的阶段构建由显式阶段标签生成；Linux 网页搜索会交给系统浏览器，原生搜索与播放继续在应用内完成；iOS 附件是设备 `.app` 编译归档，签名与 IPA 封装在持有 Apple 证书的环境中完成。阶段更新范围见 [v2.1.4 阶段更新说明](docs/STAGE_UPDATE_2_1_4.md)。
 
 Android 始终使用正式包名 `com.mystyle.purelive`，不再生成并存 QA 包。正式 Release 使用仓库专用持久签名，可直接覆盖旧正式版；缺少发布密钥的本机测试包使用调试签名，发布脚本会阻止其进入正式 Release。
 
@@ -102,6 +102,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 | [依赖与接口审计](docs/DEPENDENCY_AUDIT.md) | 固定工具链、升级约束和接口探测范围 |
 | [平台接口与兼容性](docs/PLATFORM_COMPATIBILITY.md) | 分区、搜索、弹幕和人数指标的当前能力 |
 | [高刷新率与性能验证](docs/PERFORMANCE.md) | Android 120 Hz 适配、渲染优化和真机帧统计 |
+| [v2.1.4 阶段更新](docs/STAGE_UPDATE_2_1_4.md) | 上游同步、Bilibili/SOOP、Windows 200 Hz 与全平台产物 |
 | [WebDAV 配置](docs/WEBDAV.md) | 通用配置字段、坚果云示例和故障排查 |
 | [参与贡献](CONTRIBUTING.md) | 分支、提交、测试和 Pull Request 要求 |
 | [安全策略](SECURITY.md) | 私密漏洞报告和签名材料管理 |

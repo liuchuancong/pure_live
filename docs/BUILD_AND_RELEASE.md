@@ -2,7 +2,7 @@
 
 本仓库采用“本机优先、Actions 手动兜底”的流程，固定使用 Flutter `3.47.0`。`pubspec.lock`、Git 依赖提交和 FFmpeg 产物地址均已固定，便于复现结果。
 
-最近完整核验：2026-08-18，Windows 11 + Java 25 + Flutter 3.47.0；Built-in Kotlin 审计与 Flutter Analyze 零问题、81 项单元/Widget 测试及 26/26 平台公开接口探测通过。2.1.3 Windows x64 release 与 Inno Setup 安装器已完成本机构建；3840 × 2400 / 200 Hz 屏幕可正确显示当前与最高刷新率，Bilibili 热门推荐、封面回填、平台切换和纵向滚动烟雾检查正常。干净便携目录继续把数据、缓存和临时文件写入 release 同级 `AppData`。上一轮 Android arm64 已在 OnePlus Android 16 / 120 Hz 真机覆盖安装并确认数据保留、多次冷启动、游客弹幕、横竖屏/全屏/画中画弹幕、实时设置预览及纯音频后台链路。
+最近完整核验：2026-08-18，Windows 11 + Java 25 + Flutter 3.47.0；Built-in Kotlin 审计与 Flutter Analyze 零问题、82 项单元/Widget 测试及 26/26 平台公开接口探测通过。2.1.4 以本机优先方式构建 Android arm64 与 Windows x64，并由显式阶段标签补齐 Linux x64、macOS universal 和 iOS arm64 设备归档；3840 × 2400 / 200 Hz 屏幕可正确显示当前与最高刷新率，Bilibili 热门推荐、封面回填、平台切换和纵向滚动烟雾检查正常。干净便携目录继续把数据、缓存和临时文件写入 release 同级 `AppData`。
 
 ## 前置环境
 
@@ -114,7 +114,7 @@ python .\tool\interface_probe.py
 
 ```powershell
 PowerShell -ExecutionPolicy Bypass -File .\tool\publish_local_release.ps1 `
-  -Tag v2.1.3 -CreateTag
+  -Tag v2.1.4 -CreateTag
 ```
 
 脚本要求工作树已提交，并通过 GitHub CLI 当前登录身份创建或更新 Release。
