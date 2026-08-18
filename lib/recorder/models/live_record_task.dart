@@ -188,6 +188,20 @@ class LiveRecordTask {
     return DateTime.now().difference(lastUpdate!).inSeconds > 30;
   }
 
+  void beginNewRecording({DateTime? now}) {
+    createTime = now ?? DateTime.now();
+    recordedSeconds = 0;
+    fileSize = 0;
+    recordSpeed = 0;
+    bitrate = 0;
+    fps = 0;
+    lastFrame = 0;
+    lastUpdate = null;
+    currentUrl = null;
+    selectedLine = null;
+    selectedQuality = null;
+  }
+
   /// =========================
   /// json
   /// =========================

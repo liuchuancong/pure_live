@@ -20,6 +20,7 @@ import 'package:pure_live/recorder/ffmpeg/ffmpeg_command_builder.dart';
 import 'package:pure_live/recorder/services/ffmpeg_header_factory.dart';
 import 'package:pure_live/recorder/services/stream_resolver_service.dart';
 import 'package:pure_live/recorder/services/video_processor_service.dart';
+import 'package:pure_live/recorder/services/recorder_continuation_policy.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
 
 class RecorderController extends GetxService {
@@ -139,7 +140,7 @@ class RecorderController extends GetxService {
         break;
 
       case FFmpegEventType.complete:
-        _onComplete(task);
+        _onComplete(task, manuallyStopped: event.data['manualStop'] == true);
         break;
 
       default:
@@ -230,6 +231,8 @@ class RecorderController extends GetxService {
 
   Future<void> startTask(LiveRecordTask task) async {
     task.retryCount = 0;
+    task.wasStoppedByUser = false;
+    task.autoReconnect = settings.autoReconnect.value;
 
     await _startTask(task);
   }
@@ -275,6 +278,7 @@ class RecorderController extends GetxService {
   }
 
   Future<void> _runTask(LiveRecordTask task, TaskCancelToken token) async {
+    task.beginNewRecording();
     task.status = RecordStatus.preparing;
     updateTask(task);
     final completer = Completer<void>();
@@ -337,10 +341,13 @@ class RecorderController extends GetxService {
   }
 
   Future<void> stopTask(LiveRecordTask task) async {
+    task.wasStoppedByUser = true;
     _stopPolling(task.taskId);
     _retryTimers[task.taskId]?.cancel();
     _retryTimers.remove(task.taskId);
     await scheduler.cancel(task.taskId);
+    task.status = RecordStatus.stopped;
+    updateTask(task);
     if (task.status == RecordStatus.running || task.status == RecordStatus.preparing) {
       log('Stopping task: ${task.taskId}');
     }
@@ -350,13 +357,13 @@ class RecorderController extends GetxService {
     }
   }
 
-  Future<void> _onComplete(LiveRecordTask task) async {
+  Future<void> _onComplete(LiveRecordTask task, {required bool manuallyStopped}) async {
     log('FFmpeg complete => ${task.taskId}');
-    if (task.status == RecordStatus.stopped ||
-        task.status == RecordStatus.failed ||
-        task.status == RecordStatus.processing) {
+    if (task.status == RecordStatus.failed || task.status == RecordStatus.processing) {
       return;
     }
+
+    final stoppedByUser = manuallyStopped || task.wasStoppedByUser;
 
     if (task.outputDir != null && task.recordedSeconds > 0) {
       task.status = RecordStatus.processing;
@@ -368,12 +375,25 @@ class RecorderController extends GetxService {
         updateTask(task);
       }
     } else {
-      task.status = RecordStatus.stopped;
-      updateTask(task);
       final completer = _lifecycleCompleters[task.taskId];
       if (completer != null && !completer.isCompleted) {
         completer.complete();
       }
+    }
+
+    if (stoppedByUser) {
+      task.status = RecordStatus.stopped;
+      updateTask(task);
+      return;
+    }
+
+    if (RecorderContinuationPolicy.shouldMonitorAfterExit(
+      manuallyStopped: stoppedByUser,
+      autoReconnect: task.autoReconnect,
+    )) {
+      task.status = RecordStatus.waitingLive;
+      updateTask(task);
+      _scheduleStatusRefresh(task);
     }
   }
 
@@ -383,6 +403,11 @@ class RecorderController extends GetxService {
       completer.complete();
     }
     if (task.status == RecordStatus.stopped) {
+      return;
+    }
+    if (!task.autoReconnect) {
+      task.status = RecordStatus.failed;
+      updateTask(task);
       return;
     }
     if (!shouldRetry) {
@@ -466,6 +491,15 @@ class RecorderController extends GetxService {
           await startTask(task);
         }
       } catch (_) {}
+    });
+  }
+
+  void _scheduleStatusRefresh(LiveRecordTask task) {
+    _retryTimers[task.taskId]?.cancel();
+    _retryTimers[task.taskId] = Timer(const Duration(seconds: 1), () async {
+      _retryTimers.remove(task.taskId);
+      if (!tasks.any((candidate) => candidate.taskId == task.taskId) || task.wasStoppedByUser) return;
+      await refreshTaskStatus(task);
     });
   }
 

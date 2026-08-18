@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
+
 import 'package:flutter/services.dart';
 import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
@@ -122,7 +123,7 @@ class FFmpegService {
         FFmpegEvent(
           taskId: taskId,
           type: isNormalExit ? FFmpegEventType.complete : FFmpegEventType.error,
-          data: errorData,
+          data: {...errorData, "manualStop": session.manualStop},
         ),
       );
 
