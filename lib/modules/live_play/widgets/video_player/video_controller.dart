@@ -153,7 +153,10 @@ class DanmakuManager {
   }
 
   void sendDanmaku(LiveMessage msg, bool isPlaying, bool isCompactMode) {
-    if (!isPlaying) return;
+    // A locally composed message is a UI interaction rather than a packet from
+    // the live transport. Do not silently discard it while playback is still
+    // starting or briefly buffering.
+    if (!isPlaying && !msg.isLocal) return;
 
     final originalColor = Color.fromARGB(255, msg.color.r, msg.color.g, msg.color.b);
     final settings = settingsService.danmaku;
@@ -258,7 +261,7 @@ class VideoController with ChangeNotifier {
 
   // EPG相关
   final RxList<database.EpgProgramme> currentChannelSchedule = <database.EpgProgramme>[].obs;
-  final ScrollController scheduleScrollController = ScrollController();
+  final ScrollController scheduleScrollController = createPureLiveScrollController();
   late ListObserverController scheduleObserverController;
   bool hasScrolledToLive = false;
 

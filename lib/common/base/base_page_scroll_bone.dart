@@ -4,7 +4,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/base/base_controller.dart';
 
 abstract class BasePageScrollAndStateBone<T> extends BaseController {
-  final ScrollController scrollController = ScrollController();
+  final ScrollController scrollController = createPureLiveScrollController();
   final EasyRefreshController easyRefreshController = EasyRefreshController(
     controlFinishRefresh: true,
     controlFinishLoad: true,

@@ -16,7 +16,7 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
   final errorMessage = ''.obs;
   final includeOffline = true.obs;
   final sortMode = LiveSearchSortMode.smart.obs;
-  final ScrollController scrollController = ScrollController();
+  final ScrollController scrollController = createPureLiveScrollController();
   bool _isWebView2Available = true;
   int _searchGeneration = 0;
   int _settledTabIndex = 0;
