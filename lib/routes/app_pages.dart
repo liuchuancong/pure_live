@@ -61,23 +61,27 @@ import 'package:pure_live/recorder/pages/record_settings/record_settings_binding
 class AppPages {
   AppPages._();
 
+  static Widget Function() _smoothPage(Widget Function() builder) {
+    return () => PureLiveRouteScrollScope(child: builder());
+  }
+
   static final routes = [
     GetPage(name: RoutePath.kInitial, page: HomePage.new, participatesInRootNavigator: true, preventDuplicates: true),
-    GetPage(name: RoutePath.kSignIn, page: SignInPage.new),
-    GetPage(name: RoutePath.kMine, page: MinePage.new),
-    GetPage(name: RoutePath.kUserManage, page: () => UserManager()),
-    GetPage(name: RoutePath.kFavorite, page: FavoritePage.new),
-    GetPage(name: RoutePath.kPopular, page: PopularPage.new),
-    GetPage(name: RoutePath.kAreas, page: AreasPage.new),
-    GetPage(name: RoutePath.kSettings, page: SettingsPage.new, bindings: [SettingsBinding()]),
-    GetPage(name: RoutePath.kHistory, page: HistoryPage.new),
-    GetPage(name: RoutePath.kSearch, page: SearchPage.new, bindings: [SearchBinding()]),
-    GetPage(name: RoutePath.kBackup, page: BackupPage.new),
-    GetPage(name: RoutePath.kIptv, page: IptvPage.new),
-    GetPage(name: RoutePath.kAbout, page: AboutPage.new),
+    GetPage(name: RoutePath.kSignIn, page: _smoothPage(SignInPage.new)),
+    GetPage(name: RoutePath.kMine, page: _smoothPage(MinePage.new)),
+    GetPage(name: RoutePath.kUserManage, page: _smoothPage(UserManager.new)),
+    GetPage(name: RoutePath.kFavorite, page: _smoothPage(FavoritePage.new)),
+    GetPage(name: RoutePath.kPopular, page: _smoothPage(PopularPage.new)),
+    GetPage(name: RoutePath.kAreas, page: _smoothPage(AreasPage.new)),
+    GetPage(name: RoutePath.kSettings, page: _smoothPage(SettingsPage.new), bindings: [SettingsBinding()]),
+    GetPage(name: RoutePath.kHistory, page: _smoothPage(HistoryPage.new)),
+    GetPage(name: RoutePath.kSearch, page: _smoothPage(SearchPage.new), bindings: [SearchBinding()]),
+    GetPage(name: RoutePath.kBackup, page: _smoothPage(BackupPage.new)),
+    GetPage(name: RoutePath.kIptv, page: _smoothPage(IptvPage.new)),
+    GetPage(name: RoutePath.kAbout, page: _smoothPage(AboutPage.new)),
     GetPage(
       name: RoutePath.kAreaRooms,
-      page: () => AreasRoomPage(site: Get.arguments[0], subCategory: Get.arguments[1]),
+      page: _smoothPage(() => AreasRoomPage(site: Get.arguments[0], subCategory: Get.arguments[1])),
       bindings: [AreaRoomsBinding()],
     ),
     GetPage(
@@ -87,47 +91,71 @@ class AppPages {
       bindings: [LivePlayBinding()],
     ),
     //账号设置
-    GetPage(name: RoutePath.kSettingsAccount, page: () => const AccountPage(), bindings: [AccountBinding()]),
+    GetPage(
+      name: RoutePath.kSettingsAccount,
+      page: _smoothPage(() => const AccountPage()),
+      bindings: [AccountBinding()],
+    ),
     //哔哩哔哩Web登录
     GetPage(
       name: RoutePath.kBiliBiliWebLogin,
-      page: () => const BiliBiliWebLoginPage(),
+      page: _smoothPage(() => const BiliBiliWebLoginPage()),
       bindings: [BilibiliWebLoginBinding()],
     ),
     //哔哩哔哩二维码登录
     GetPage(
       name: RoutePath.kBiliBiliQRLogin,
-      page: () => const BiliBiliQRLoginPage(),
+      page: _smoothPage(() => const BiliBiliQRLoginPage()),
       bindings: [BilibiliQrLoginBinding()],
     ),
     GetPage(
       name: RoutePath.kSettingsDanmuShield,
-      page: () => const DanmuShieldPage(),
+      page: _smoothPage(() => const DanmuShieldPage()),
       bindings: [DanmuShieldBinding()],
     ),
-    GetPage(name: RoutePath.kSettingsHotAreas, page: () => const HotAreasPage(), bindings: [HotAreasBinding()]),
+    GetPage(
+      name: RoutePath.kSettingsHotAreas,
+      page: _smoothPage(() => const HotAreasPage()),
+      bindings: [HotAreasBinding()],
+    ),
 
-    GetPage(name: RoutePath.kVersionHistory, page: () => const VersionHistoryPage()),
+    GetPage(name: RoutePath.kVersionHistory, page: _smoothPage(() => const VersionHistoryPage())),
 
-    GetPage(name: RoutePath.kToolbox, page: () => const ToolBoxPage(), bindings: [ToolBoxBinding()]),
+    GetPage(name: RoutePath.kToolbox, page: _smoothPage(() => const ToolBoxPage()), bindings: [ToolBoxBinding()]),
 
-    GetPage(name: RoutePath.kFavoriteAreas, page: () => const FavoriteAreasPage(), bindings: [FavoriteAreasBinding()]),
+    GetPage(
+      name: RoutePath.kFavoriteAreas,
+      page: _smoothPage(() => const FavoriteAreasPage()),
+      bindings: [FavoriteAreasBinding()],
+    ),
 
-    GetPage(name: RoutePath.kHuyaCookie, page: () => const HuyaCookiePage(), bindings: [HuyaCookieBinding()]),
+    GetPage(
+      name: RoutePath.kHuyaCookie,
+      page: _smoothPage(() => const HuyaCookiePage()),
+      bindings: [HuyaCookieBinding()],
+    ),
 
-    GetPage(name: RoutePath.kDouyuCookie, page: () => const DouyinCookiePage(), bindings: [DouyinCookieBinding()]),
+    GetPage(
+      name: RoutePath.kDouyuCookie,
+      page: _smoothPage(() => const DouyinCookiePage()),
+      bindings: [DouyinCookieBinding()],
+    ),
 
-    GetPage(name: RoutePath.kTwitchCookie, page: () => const TwitchCookiePage(), bindings: [TwitchCookieBinding()]),
+    GetPage(
+      name: RoutePath.kTwitchCookie,
+      page: _smoothPage(() => const TwitchCookiePage()),
+      bindings: [TwitchCookieBinding()],
+    ),
 
-    GetPage(name: RoutePath.kSoop, page: () => const SoopCookiePage(), bindings: [SoopCookieBinding()]),
+    GetPage(name: RoutePath.kSoop, page: _smoothPage(() => const SoopCookiePage()), bindings: [SoopCookieBinding()]),
 
     GetPage(
       name: RoutePath.kKuaishouCookie,
-      page: () => const KuaishouCookiePage(),
+      page: _smoothPage(() => const KuaishouCookiePage()),
       bindings: [KuaishouCookieBinding()],
     ),
 
-    GetPage(name: RoutePath.kWebDavPage, page: () => WebDavPage(), bindings: [WebDavBinding()]),
+    GetPage(name: RoutePath.kWebDavPage, page: _smoothPage(WebDavPage.new), bindings: [WebDavBinding()]),
 
     GetPage(
       name: RoutePath.kSplash,
@@ -166,15 +194,19 @@ class AppPages {
       },
     ),
     // VersionPage
-    GetPage(name: RoutePath.kVersionPage, page: () => const VersionPage(), bindings: [VersionBinding()]),
-    GetPage(name: RoutePath.kRecordPage, page: () => const RecorderPage(), bindings: [RecorderBinding()]),
+    GetPage(name: RoutePath.kVersionPage, page: _smoothPage(() => const VersionPage()), bindings: [VersionBinding()]),
+    GetPage(name: RoutePath.kRecordPage, page: _smoothPage(() => const RecorderPage()), bindings: [RecorderBinding()]),
     GetPage(
       name: RoutePath.kRecordSettings,
-      page: () => const RecordSettingsPage(),
+      page: _smoothPage(() => const RecordSettingsPage()),
       bindings: [RecordSettingsBinding()],
     ),
-    GetPage(name: RoutePath.kWebSearch, page: () => const WebSearchPage(), bindings: [WebSearchBinding()]),
+    GetPage(name: RoutePath.kWebSearch, page: _smoothPage(() => const WebSearchPage()), bindings: [WebSearchBinding()]),
 
-    GetPage(name: RoutePath.kSettingsTags, page: () => const TagManagementPage(), bindings: [TagManagementBinding()]),
+    GetPage(
+      name: RoutePath.kSettingsTags,
+      page: _smoothPage(() => const TagManagementPage()),
+      bindings: [TagManagementBinding()],
+    ),
   ];
 }
