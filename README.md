@@ -9,15 +9,15 @@
 <h4 align="center">基于 Flutter 的开源多平台直播聚合播放器</h4>
 
 <p align="center">
-  <a href="https://github.com/wzgrx/pure_live/releases/latest"><img alt="Latest Release" src="https://img.shields.io/github/v/release/wzgrx/pure_live"></a>
-  <a href="https://github.com/wzgrx/pure_live/actions/workflows/feature-build.yml"><img alt="Manual Build" src="https://github.com/wzgrx/pure_live/actions/workflows/feature-build.yml/badge.svg"></a>
-  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/wzgrx/pure_live?color=blue"></a>
-  <a href="https://github.com/wzgrx/pure_live/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/wzgrx/pure_live/total?style=flat-square"></a>
+  <a href="https://github.com/liuchuancong/pure_live/releases/latest"><img alt="Latest Release" src="https://img.shields.io/github/v/release/liuchuancong/pure_live"></a>
+  <a href="https://github.com/liuchuancong/pure_live/actions/workflows/feature-build.yml"><img alt="Manual Build" src="https://github.com/liuchuancong/pure_live/actions/workflows/feature-build.yml/badge.svg"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/liuchuancong/pure_live?color=blue"></a>
+  <a href="https://github.com/liuchuancong/pure_live/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/liuchuancong/pure_live/total?style=flat-square"></a>
 </p>
 
 > 本仓库基于 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live) 持续维护，新增可配置的小窗弹幕，并完善本机构建、依赖锁定、接口探测和发布流程。
 
-- **最新稳定版**：[v2.1.0](https://github.com/wzgrx/pure_live/releases/tag/v2.1.0)
+- **最新稳定版**：[v2.1.0](https://github.com/liuchuancong/pure_live/releases/tag/v2.1.0)
 - **当前版本**：`2.1.1+49`（搜索与首页交互修复）
 - **上游同步基线**：`liuchuancong/pure_live@24ff92b6`（2026-08-18）
 - **构建平台**：Android arm64、Windows x64、Linux x64、macOS universal、iOS arm64 设备包
@@ -54,7 +54,7 @@
 
 ## 下载
 
-前往 [GitHub Releases](https://github.com/wzgrx/pure_live/releases/latest) 获取安装包：
+前往 [GitHub Releases](https://github.com/liuchuancong/pure_live/releases/latest) 获取安装包：
 
 - Android：当前优先发布 `arm64-v8a` APK；
 - Windows：按 Release 附件说明选择安装包或便携 ZIP；
@@ -119,7 +119,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 ## 参与开发
 
 - 上游项目：[@liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)
-- 维护仓库：[@wzgrx/pure_live](https://github.com/wzgrx/pure_live)
+- 维护仓库：[@liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)
 - 提交改动前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)，UI 变更请附截图或录屏。
 
 代码参考：
@@ -129,8 +129,8 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 
 ## 许可与内容说明
 
-项目代码采用 [GNU Affero General Public License v3.0](LICENSE)。应用聚合第三方直播平台与用户配置的直播源；使用者应遵守对应平台条款和所在地规则。视频、音频、图像及直播内容的权利归原权利人所有。权利相关问题可通过 [GitHub Issues](https://github.com/wzgrx/pure_live/issues) 联系维护者。
+项目代码采用 [GNU Affero General Public License v3.0](LICENSE)。应用聚合第三方直播平台与用户配置的直播源；使用者应遵守对应平台条款和所在地规则。视频、音频、图像及直播内容的权利归原权利人所有。权利相关问题可通过 [GitHub Issues](https://github.com/liuchuancong/pure_live/issues) 联系维护者。
 
 ## Star 趋势
 
-[![Stargazers over time](https://starchart.cc/wzgrx/pure_live.svg)](https://starchart.cc/wzgrx/pure_live)
+[![Stargazers over time](https://starchart.cc/liuchuancong/pure_live.svg)](https://starchart.cc/liuchuancong/pure_live)

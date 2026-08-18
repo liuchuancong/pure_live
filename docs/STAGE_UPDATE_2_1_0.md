@@ -52,10 +52,10 @@ Android 与 Windows 优先使用本机 5090 环境，Apple 平台仅使用一次
 
 ## 最终构建验收
 
-- Android arm64 正式签名：[run 32051382539](https://github.com/wzgrx/pure_live/actions/runs/32051382539) 通过；包名 `com.mystyle.purelive`、版本 `2.1.0 (2048)`、单一 `arm64-v8a`，v2 签名证书与 v2.0.36 正式包一致。
+- Android arm64 正式签名：[run 32051382539](https://github.com/liuchuancong/pure_live/actions/runs/32051382539) 通过；包名 `com.mystyle.purelive`、版本 `2.1.0 (2048)`、单一 `arm64-v8a`，v2 签名证书与 v2.0.36 正式包一致。
 - Windows x64 在本机完成便携 ZIP 与 EXE 安装器；程序持续启动 20 秒后进程存活、窗口句柄有效且 UI 线程响应。
-- Linux x64：[run 32053307686](https://github.com/wzgrx/pure_live/actions/runs/32053307686) 通过；归档含 1320 项，主程序为 x86-64 PIE ELF。
-- macOS universal 与 iOS arm64：[run 32051400058](https://github.com/wzgrx/pure_live/actions/runs/32051400058) 通过；macOS 主程序含 x86_64/arm64，iOS 主程序为 arm64，iOS 归档保持无签名状态。
+- Linux x64：[run 32053307686](https://github.com/liuchuancong/pure_live/actions/runs/32053307686) 通过；归档含 1320 项，主程序为 x86-64 PIE ELF。
+- macOS universal 与 iOS arm64：[run 32051400058](https://github.com/liuchuancong/pure_live/actions/runs/32051400058) 通过；macOS 主程序含 x86_64/arm64，iOS 主程序为 arm64，iOS 归档保持无签名状态。
 - 所有正式附件均在本机重新计算 SHA-256；Android、Linux 与 Apple Actions 外层归档摘要和 GitHub Artifact 摘要一致。
 
 返回 [文档索引](README.md)。
