@@ -5,6 +5,12 @@ add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
 set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON)
 project(pure_live LANGUAGES CXX)
 if(MSVC)
+    # Flutter's Windows plugins can contain dozens of C++ translation units.
+    # MSBuild otherwise invokes cl.exe once for the whole source list and the
+    # expensive WebView plugin compiles on a single core. Let MSVC schedule the
+    # files across the local workstation's cores; /FS below keeps shared PDB
+    # writes serialized safely.
+    add_compile_options(/MP)
     # 合并添加忽略协程警告宏，并强制开启 /FS 解决 PDB 锁死问题
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /FS")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS /FS")
