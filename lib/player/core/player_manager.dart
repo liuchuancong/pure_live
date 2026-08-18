@@ -80,6 +80,7 @@ class PlayerManager {
   final RxBool isHovered = false.obs;
   final RxInt videoFitIndex = 0.obs;
   Rx<ValueKey> videoKey = Rx<ValueKey>(const ValueKey("video_0"));
+  final RxInt videoPresentationRevision = 0.obs;
 
   final _stateSubject = BehaviorSubject<PlayerState>.seeded(PlayerState.idle);
   final _playingSubject = BehaviorSubject<bool>.seeded(false);
@@ -303,7 +304,9 @@ class PlayerManager {
 
       _runtimeAudioOnly = audioOnly;
       await LiveAudioService.setPlayer(player, audioOnly: audioOnly).timeout(audioModeSwitchTimeout);
-      videoKey.value = ValueKey("video_${DateTime.now().millisecondsSinceEpoch}");
+      // Rebuild the overlay without changing the subtree key. Replacing the
+      // key unmounted media_kit's Video and detached the Android Surface.
+      videoPresentationRevision.value++;
     } catch (error, stackTrace) {
       // Restore both the native track and the UI state. The rollback is also
       // bounded so a broken platform call never locks the headphone button.
@@ -314,7 +317,7 @@ class PlayerManager {
         await LiveAudioService.setPlayer(player, audioOnly: previous).timeout(audioModeSwitchTimeout);
       } catch (_) {}
       _runtimeAudioOnly = previous;
-      videoKey.value = ValueKey("video_${DateTime.now().millisecondsSinceEpoch}");
+      videoPresentationRevision.value++;
       throw PlayerException(
         message: error is TimeoutException ? 'Audio mode switch timed out' : 'Audio mode switch failed',
         type: PlayerErrorType.lifecycle,
@@ -844,6 +847,9 @@ class PlayerManager {
   }
 
   Widget getVideoWidget(int fitIndex, {Widget? controls, required List<BoxFit> fitList, bool trackPipSource = false}) {
+    // Read by the room's outer Obx. Audio/video presentation changes rebuild
+    // this surface without changing [videoKey] and remounting the native view.
+    videoPresentationRevision.value;
     return RepaintBoundary(
       key: trackPipSource ? _pipSourceKey : null,
       child: PureLivePipWidget(
@@ -873,26 +879,30 @@ class PlayerManager {
                   height: double.infinity,
                   child: Stack(
                     children: [
-                      if (_runtimeAudioOnly)
-                        buildAudioOnlyUI(context, currentFloatRoom)
-                      else
-                        Positioned.fill(
-                          child: Container(
-                            color: Colors.black,
-                            child: FittedBox(
-                              fit: boxFit,
-                              clipBehavior: Clip.hardEdge,
-                              child: StreamBuilder<List<int?>>(
-                                stream: CombineLatestStream.list([width, height]),
-                                builder: (context, snapshot) {
-                                  final vW = snapshot.data?[0]?.toDouble() ?? 1920.0;
-                                  final vH = snapshot.data?[1]?.toDouble() ?? 1080.0;
-                                  return SizedBox(width: vW, height: vH, child: activePlayer.getVideoWidget());
-                                },
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          ignoring: _runtimeAudioOnly,
+                          child: Opacity(
+                            opacity: _runtimeAudioOnly ? 0 : 1,
+                            child: Container(
+                              color: Colors.black,
+                              child: FittedBox(
+                                fit: boxFit,
+                                clipBehavior: Clip.hardEdge,
+                                child: StreamBuilder<List<int?>>(
+                                  stream: CombineLatestStream.list([width, height]),
+                                  builder: (context, snapshot) {
+                                    final vW = snapshot.data?[0]?.toDouble() ?? 1920.0;
+                                    final vH = snapshot.data?[1]?.toDouble() ?? 1080.0;
+                                    return SizedBox(width: vW, height: vH, child: activePlayer.getVideoWidget());
+                                  },
+                                ),
                               ),
                             ),
                           ),
                         ),
+                      ),
+                      if (_runtimeAudioOnly) Positioned.fill(child: buildAudioOnlyUI(context, currentFloatRoom)),
                       if (controls != null) Positioned.fill(child: controls),
                     ],
                   ),

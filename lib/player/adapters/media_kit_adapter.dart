@@ -29,6 +29,10 @@ class MediaKitAdapter implements UnifiedPlayer {
 
   bool _isAudioOnly = false;
 
+  int _audioModeEpoch = 0;
+
+  bool? _audioModeTarget;
+
   // =========================
   // subjects
   // =========================
@@ -412,15 +416,15 @@ class MediaKitAdapter implements UnifiedPlayer {
 
   @override
   Widget getVideoWidget() {
-    if (_isAudioOnly) {
-      return const SizedBox.shrink();
-    }
     return RepaintBoundary(
       child: Video(
         controller: _controller,
         controls: NoVideoControls,
-        pauseUponEnteringBackgroundMode: !SettingsService.to.app.enableBackgroundPlay.v,
-        resumeUponEnteringForegroundMode: !SettingsService.to.app.enableBackgroundPlay.v,
+        // LivePlay's WidgetsBindingObserver is the single lifecycle authority.
+        // Letting Video apply a second, settings-only policy paused audio-only
+        // rooms on Home/lock even though the background policy kept them alive.
+        pauseUponEnteringBackgroundMode: false,
+        resumeUponEnteringForegroundMode: false,
       ),
     );
   }
@@ -457,24 +461,32 @@ class MediaKitAdapter implements UnifiedPlayer {
 
   @override
   Future<void> setAudioOnly(bool audioOnly) async {
-    if (_disposed || _isAudioOnly == audioOnly) return;
+    if (_disposed) return;
+    // A timed-out native Future keeps running. The rollback must still be sent
+    // while an opposite transition is in flight, even when the last completed
+    // state already equals the rollback target.
+    if (_audioModeTarget == null && _isAudioOnly == audioOnly) return;
+
+    final epoch = ++_audioModeEpoch;
+    _audioModeTarget = audioOnly;
 
     try {
-      if (_player.platform is NativePlayer) {
-        final native = _player.platform as dynamic;
-        // `vid=no/auto` is sufficient to stop and restore video decoding.
-        // Do not replace `vo` or `hwdec`: those properties own the Android
-        // surface and changing them during playback can stall MediaCodec.
-        await native.setProperty('vid', audioOnly ? 'no' : 'auto');
-      }
+      // Use media_kit's public track API so its PlayerState stays in sync with
+      // mpv. Keep the Video widget/controller mounted; only the decoded track
+      // changes, avoiding an Android Surface detach/reattach cycle.
+      await _player.setVideoTrack(audioOnly ? VideoTrack.no() : VideoTrack.auto());
+      if (_disposed || epoch != _audioModeEpoch) return;
       _isAudioOnly = audioOnly;
     } catch (error, stackTrace) {
+      if (epoch != _audioModeEpoch) return;
       throw PlayerException(
         message: 'MediaKit audio mode switch failed',
         type: PlayerErrorType.lifecycle,
         error: error,
         stackTrace: stackTrace,
       );
+    } finally {
+      if (epoch == _audioModeEpoch) _audioModeTarget = null;
     }
   }
 

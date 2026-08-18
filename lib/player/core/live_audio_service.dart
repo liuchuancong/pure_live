@@ -11,6 +11,7 @@ import 'package:pure_live/common/services/settings/app_settings_controller.dart'
 
 class LiveAudioService {
   static LiveAudioHandler? _handler;
+  static UnifiedPlayer? _boundPlayer;
   static Future<LiveAudioHandler?>? _initializationFuture;
   static int _sleepMinutes = 60;
 
@@ -60,7 +61,10 @@ class LiveAudioService {
     BackgroundPlaybackService.audioOnlySessionActive = audioOnly;
     if (PlatformUtils.isMobile || PlatformUtils.isMacOS) {
       final handler = await _ensureInitialized();
-      await handler?.setPlayer(player);
+      if (handler != null && !identical(_boundPlayer, player)) {
+        await handler.setPlayer(player);
+        _boundPlayer = player;
+      }
     }
     await syncKeepAlive();
   }

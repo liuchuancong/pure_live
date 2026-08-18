@@ -29,6 +29,7 @@ void main() {
     final player = _FakePlayer();
     final manager = _createManager(player);
     await manager.initialize(engine: PlayerEngine.mediaKit);
+    final surfaceKey = manager.videoKey.value;
 
     await manager.setAudioOnlyMode(true);
 
@@ -37,12 +38,14 @@ void main() {
     expect(player.audioOnlyChanges, <bool>[true]);
     expect(player.setDataSourceCalls, 0);
     expect(player.hardDisposeCalls, 0);
+    expect(manager.videoKey.value, same(surfaceKey));
 
     await manager.setAudioOnlyMode(false);
     expect(manager.currentPlayer, same(player));
     expect(manager.isAudioOnlyMode, isFalse);
     expect(player.audioOnlyChanges, <bool>[true, false]);
     expect(player.setDataSourceCalls, 0);
+    expect(manager.videoKey.value, same(surfaceKey));
 
     await manager.dispose();
   });
@@ -59,6 +62,27 @@ void main() {
     expect(player.audioOnlyChanges, <bool>[true, false]);
     expect(player.setDataSourceCalls, 0);
     expect(player.hardDisposeCalls, 0);
+
+    await manager.dispose();
+  });
+
+  test('repeated audio and video toggles keep one player and one surface', () async {
+    final player = _FakePlayer();
+    final manager = _createManager(player);
+    await manager.initialize(engine: PlayerEngine.mediaKit);
+    final surfaceKey = manager.videoKey.value;
+
+    for (var index = 0; index < 20; index++) {
+      await manager.setAudioOnlyMode(true);
+      await manager.setAudioOnlyMode(false);
+    }
+
+    expect(manager.currentPlayer, same(player));
+    expect(manager.isAudioOnlyMode, isFalse);
+    expect(manager.videoKey.value, same(surfaceKey));
+    expect(player.setDataSourceCalls, 0);
+    expect(player.hardDisposeCalls, 0);
+    expect(player.audioOnlyChanges, hasLength(40));
 
     await manager.dispose();
   });
