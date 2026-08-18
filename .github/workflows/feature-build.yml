@@ -200,6 +200,8 @@ jobs:
 
       - name: Update MSIX config
         shell: pwsh
+        env:
+          CERT_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}   # 注入密码
         run: |
           $configPath = "windows/packaging/msix/make_config.yaml"
           if (!(Test-Path $configPath)) {
@@ -213,6 +215,12 @@ jobs:
           }
           $content = Get-Content $configPath -Raw
           $content = $content -replace '(?m)^(\s*certificate_path:\s*).*$', "`${1}$absolutePath"
+          $password = $env:CERT_PASSWORD
+          if ([string]::IsNullOrEmpty($password)) {
+            Write-Error "CERTIFICATE_PASSWORD secret is empty!"
+            exit 1
+          }
+          $content = $content -replace '(?m)^(\s*certificate_password:\s*).*$', "`${1}'$password'"
           Set-Content -Path $configPath -Value $content -Encoding UTF8
 
       - name: Setup Flutter
