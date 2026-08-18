@@ -313,22 +313,14 @@ jobs:
       # Inno Setup
       # -----------------------------------------------------
 
-      - name: Install Inno Setup
+      - name: Install fastforge (from source)
         shell: pwsh
         run: |
-          $url = "https://jrsoftware.org/download.php/is.exe"
-          $output = "${{ runner.temp }}\innosetup.exe"
-
-          Invoke-WebRequest `
-            -Uri $url `
-            -OutFile $output
-
-          Start-Process `
-            -FilePath $output `
-            -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART" `
-            -Wait
-
-          echo "C:\Program Files (x86)\Inno Setup 6" >> $env:GITHUB_PATH
+          git clone https://github.com/SlotSun/fastforge.git
+          cd fastforge
+          dart pub global activate melos
+          melos run activate
+          choco install innosetup
 
       - name: Copy Chinese language pack
         shell: pwsh
