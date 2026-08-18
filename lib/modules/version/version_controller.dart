@@ -59,9 +59,9 @@ class VersionController extends GetxController {
     // Android
     // =====================================================
 
-    apkUrl.value = '$releaseUrl/app-armeabi-v7a-release.apk';
-    apkUrl2.value = '$releaseUrl/app-arm64-v8a-release.apk';
-    apkUrl3.value = '$releaseUrl/app-x86_64-release.apk';
+    apkUrl.value = '$releaseUrl/PureLive-$latestVersion-app-armeabi-v7a-release.apk';
+    apkUrl2.value = '$releaseUrl/PureLive-$latestVersion-app-arm64-v8a-release.apk';
+    apkUrl3.value = '$releaseUrl/PureLive-$latestVersion-app-x86_64-release.apk';
 
     // =====================================================
     // Windows
