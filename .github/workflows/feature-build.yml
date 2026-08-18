@@ -1,6 +1,5 @@
 name: PureLive Release Build
 
-
 on:
   workflow_dispatch:
     inputs:
@@ -9,57 +8,41 @@ on:
         required: true
         type: boolean
         default: true
-
-
       build_windows:
         description: Build Windows EXE and MSIX
         required: true
         type: boolean
         default: true
-
-
       build_linux:
         description: Build Linux x64 portable archive
         required: true
         type: boolean
         default: true
-
-
       build_macos:
         description: Build macOS universal application archive
         required: true
         type: boolean
         default: true
-
-
       build_ios:
         description: Build unsigned iOS device application archive
         required: true
         type: boolean
         default: true
-
-
       run_quality:
         description: Run analyze, tests and public interface probes first
         required: true
         type: boolean
         default: false
-
-
       create_release:
         description: Create a GitHub Release and update releases.json
         required: true
         type: boolean
         default: true
-
-
       release_tag:
-        description: Release tag (e.g. v1.0.0) – required if create_release is true
+        description: Release tag (e.g. v1.0.0)
         required: true
         type: string
-        default: 'v2.1.1'
-
-
+        default: v2.1.1
   push:
     tags:
       - "stage-build-*"
@@ -67,81 +50,48 @@ on:
       - "stage-apple-*"
       - "stage-ios-*"
 
-
 permissions:
   contents: read
-
 
 concurrency:
   group: manual-build-${{ github.ref }}
   cancel-in-progress: true
-
 
 env:
   FLUTTER_VERSION: 3.47.0
   FLUTTER_LINUX_ARCHIVE: stable/linux/flutter_linux_3.47.0-stable.tar.xz
   FLUTTER_LINUX_SHA256: 26cd99d3d94b1367e6b50535a18aeef0282c10a535bbe3ec493534dcdab75296
 
-
-# =========================================================
-# QUALITY
-# =========================================================
-
-
 jobs:
-
   quality:
     name: Analyze, test and probe
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_quality }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
-
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
         with:
           distribution: zulu
           java-version: "25"
-
-      - name: Install pinned Flutter SDK from the official archive
+      - name: Install Flutter
         shell: bash
         run: |
           archive="$RUNNER_TEMP/flutter-linux.tar.xz"
-
-          curl --fail --location --retry 3 \
-            "https://storage.googleapis.com/flutter_infra_release/releases/$FLUTTER_LINUX_ARCHIVE" \
-            --output "$archive"
-
-          echo "$FLUTTER_LINUX_SHA256  $archive" |
-            sha256sum --check --strict
-
-          tar --extract \
-            --file "$archive" \
-            --directory "$RUNNER_TEMP"
-
+          curl --fail --location --retry 3 "https://storage.googleapis.com/flutter_infra_release/releases/$FLUTTER_LINUX_ARCHIVE" --output "$archive"
+          echo "$FLUTTER_LINUX_SHA256  $archive" | sha256sum --check --strict
+          tar --extract --file "$archive" --directory "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
-
-      - name: Verify Flutter SDK
+      - name: Verify Flutter
         run: flutter --version
-
-      - name: Resolve locked packages
+      - name: Resolve packages
         run: flutter pub get --enforce-lockfile
-
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
-
       - name: Test
         run: flutter test
-
       - name: Probe public interfaces
         run: python tool/interface_probe.py
-
-
-
-# =========================================================
-# ANDROID
-# =========================================================
 
   android:
     name: Android all ABIs
@@ -149,21 +99,17 @@ jobs:
     needs: quality
     runs-on: ubuntu-latest
     timeout-minutes: 55
-
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
         with:
           distribution: zulu
           java-version: "25"
           cache: gradle
-
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
-
       - name: Configure Android signing
         shell: bash
         env:
@@ -172,69 +118,41 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
-          if [[ -z "$KEYSTORE_BASE64" ||
-                -z "$STORE_PASSWORD" ||
-                -z "$KEY_PASSWORD" ||
-                -z "$KEY_ALIAS" ]]; then
-
+          if [[ -z "$KEYSTORE_BASE64" || -z "$STORE_PASSWORD" || -z "$KEY_PASSWORD" || -z "$KEY_ALIAS" ]]; then
             echo "Release signing secrets are required for the manual Android package." >&2
             exit 1
           fi
-
           echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/pure-live-release.jks"
-
           cat > android/key.properties <<EOF
           storeFile=$RUNNER_TEMP/pure-live-release.jks
           storePassword=$STORE_PASSWORD
           keyPassword=$KEY_PASSWORD
           keyAlias=$KEY_ALIAS
           EOF
-
-      - name: Resolve locked packages
+      - name: Resolve packages
         run: flutter pub get --enforce-lockfile
-
-      - name: Build Android release APKs
-        run: |
-          flutter build apk \
-            --release \
-            --split-per-abi \
-            --dart-define=PURELIVE_BUILD_SOURCE=github-manual
-
+      - name: Build Android release
+        run: flutter build apk --release --split-per-abi --dart-define=PURELIVE_BUILD_SOURCE=github-manual
       - name: Get version
         id: version
         shell: bash
         run: |
-          VERSION=$(grep '^version:' pubspec.yaml |
-            sed 's/version: //; s/[`"'"'"']//g')
-
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //; s/[`"'"'"']//g')
           VERSION="${VERSION%%+*}"
-
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
       - name: Rename Android APKs
         shell: bash
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           APK_DIR="build/app/outputs/flutter-apk"
-
           test -f "$APK_DIR/app-arm64-v8a-release.apk"
           test -f "$APK_DIR/app-armeabi-v7a-release.apk"
           test -f "$APK_DIR/app-x86_64-release.apk"
-
-          cp \
-            "$APK_DIR/app-arm64-v8a-release.apk" \
-            "PureLive-${VERSION}-android-arm64.apk"
-
-          cp \
-            "$APK_DIR/app-armeabi-v7a-release.apk" \
-            "PureLive-${VERSION}-android-armeabi-v7a.apk"
-
-          cp \
-            "$APK_DIR/app-x86_64-release.apk" \
-            "PureLive-${VERSION}-android-x86_64.apk"
-
+          cp "$APK_DIR/app-arm64-v8a-release.apk" "PureLive-${VERSION}-android-arm64.apk"
+          cp "$APK_DIR/app-armeabi-v7a-release.apk" "PureLive-${VERSION}-android-armeabi-v7a.apk"
+          cp "$APK_DIR/app-x86_64-release.apk" "PureLive-${VERSION}-android-x86_64.apk"
       - name: Upload Android artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: pure-live-android
           path: |
@@ -244,182 +162,146 @@ jobs:
           if-no-files-found: error
           retention-days: 3
 
-
-
-# =========================================================
-# WINDOWS
-# =========================================================
-
   windows:
+    name: Windows EXE MSIX ZIP
+    if: ${{ always() && inputs.build_windows && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    needs: quality
     runs-on: windows-latest
+    timeout-minutes: 35
     permissions:
       contents: write
-
     steps:
-    - name: 签出代码
-      uses: actions/checkout@v4
-      with:
-        ref: master
-        fetch-depth: 0
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
 
-    - name: Decode MSIX Certificate
-      shell: pwsh
-      env:
-        CERTIFICATE: ${{ secrets.CERTIFICATE }}
-      run: |
-        $certBase64 = "$env:CERTIFICATE".Trim() -replace '\s+', ''
-
-        if ([string]::IsNullOrEmpty($certBase64)) {
-          Write-Error "CERTIFICATE secret is empty!"
-          exit 1
-        }
-
-        try {
-          $certBytes = [System.Convert]::FromBase64String($certBase64)
-        }
-        catch {
-          Write-Error "CERTIFICATE is not valid Base64!"
-          exit 1
-        }
-
-        $certPath = Join-Path -Path (Get-Location) -ChildPath "certificate.pfx"
-        [IO.File]::WriteAllBytes($certPath, $certBytes)
-        "FINAL_CERT_PATH=$certPath" >> $env:GITHUB_ENV
-
-    - name: Update make_config.yaml
-      shell: pwsh
-      run: |
-        $configPath = "windows/packaging/msix/make_config.yaml"
-
-        if (!(Test-Path $configPath)) {
-          Write-Error "Config file not found: $configPath"
-          exit 1
-        }
-
-        $absolutePath = $env:FINAL_CERT_PATH -replace '\\', '/'
-
-        if ([string]::IsNullOrEmpty($absolutePath)) {
-          Write-Error "FINAL_CERT_PATH is empty!"
-          exit 1
-        }
-
-        $content = Get-Content $configPath -Raw
-        $content = $content -replace '(?m)^(\s*certificate_path:\s*).*$', "`${1}$absolutePath"
-
-        Set-Content -Path $configPath -Value $content -Encoding UTF8
-
-        Write-Host "certificate_path: $absolutePath"
-
-    - name: 设置Flutter环境
-      uses: subosito/flutter-action@v2
-      with:
-        channel: stable
-        cache: true
-
-    - name: 启用 Flutter Windows
-      run: flutter config --enable-windows-desktop
-
-    - name: 更新Flutter packages
-      run: flutter pub get
-
-    - name: Install fastforge
-      shell: pwsh
-      run: |
-        git clone https://github.com/SlotSun/fastforge.git
-        cd fastforge
-        dart pub global activate melos
-        melos run activate
-        choco install innosetup --yes
-
-    - name: Copy Chinese language pack
-      shell: pwsh
-      run: |
-        $source = "windows\packaging\exe\ChineseSimplified.isl"
-        $target = "C:\Program Files (x86)\Inno Setup 6\Languages\ChineseSimplified.isl"
-
-        if (Test-Path $source) {
-          Copy-Item $source $target -Force
-        }
-
-    - name: Get version
-      id: get_version
-      shell: pwsh
-      run: |
-        $lines = Get-Content pubspec.yaml
-
-        foreach ($line in $lines) {
-          if ($line -match '^\s*version:\s*(\S+)') {
-            $v = $matches[1] -replace '[`"''`]', ''
-            $v = $v.Split('+')[0]
-
-            "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-            exit 0
+      - name: Decode MSIX certificate
+        shell: pwsh
+        env:
+          CERTIFICATE: ${{ secrets.CERTIFICATE }}
+        run: |
+          $certBase64 = "$env:CERTIFICATE".Trim() -replace '\s+', ''
+          if ([string]::IsNullOrEmpty($certBase64)) {
+            Write-Error "CERTIFICATE secret is empty!"
+            exit 1
           }
-        }
+          try {
+            $certBytes = [System.Convert]::FromBase64String($certBase64)
+          }
+          catch {
+            Write-Error "CERTIFICATE is not valid Base64!"
+            exit 1
+          }
+          $certPath = Join-Path -Path (Get-Location) -ChildPath "certificate.pfx"
+          [IO.File]::WriteAllBytes($certPath, $certBytes)
+          "FINAL_CERT_PATH=$certPath" >> $env:GITHUB_ENV
 
-        Write-Error "Version not found"
-        exit 1
+      - name: Update MSIX config
+        shell: pwsh
+        run: |
+          $configPath = "windows/packaging/msix/make_config.yaml"
+          if (!(Test-Path $configPath)) {
+            Write-Error "Config file not found: $configPath"
+            exit 1
+          }
+          $absolutePath = $env:FINAL_CERT_PATH -replace '\\', '/'
+          if ([string]::IsNullOrEmpty($absolutePath)) {
+            Write-Error "FINAL_CERT_PATH is empty!"
+            exit 1
+          }
+          $content = Get-Content $configPath -Raw
+          $content = $content -replace '(?m)^(\s*certificate_path:\s*).*$', "`${1}$absolutePath"
+          Set-Content -Path $configPath -Value $content -Encoding UTF8
 
-    - name: Package Windows
-      shell: pwsh
-      run: fastforge package --platform windows --targets msix,zip,exe --skip-clean
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
 
-    - name: Rename installers
-      shell: pwsh
-      run: |
-        $VERSION = "${{ steps.get_version.outputs.version }}"
+      - name: Enable Flutter Windows
+        run: flutter config --enable-windows-desktop
 
-        $EXE_FILE = Get-ChildItem "dist" -Recurse -File -Filter "*.exe" |
-          Sort-Object LastWriteTime -Descending |
-          Select-Object -First 1
+      - name: Resolve packages
+        run: flutter pub get
 
-        if (!$EXE_FILE) {
-          Write-Error "Windows EXE package not found."
+      - name: Install Fastforge
+        shell: pwsh
+        run: |
+          git clone https://github.com/SlotSun/fastforge.git
+          cd fastforge
+          dart pub global activate melos
+          melos run activate
+          choco install innosetup --yes
+
+      - name: Copy Chinese language pack
+        shell: pwsh
+        run: |
+          $source = "windows\packaging\exe\ChineseSimplified.isl"
+          $target = "C:\Program Files (x86)\Inno Setup 6\Languages\ChineseSimplified.isl"
+          if (Test-Path $source) {
+            Copy-Item $source $target -Force
+          }
+
+      - name: Get version
+        id: version
+        shell: pwsh
+        run: |
+          $lines = Get-Content pubspec.yaml
+          foreach ($line in $lines) {
+            if ($line -match '^\s*version:\s*(\S+)') {
+              $version = ($matches[1] -replace '[`"''`]', '').Split('+')[0]
+              "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+              exit 0
+            }
+          }
+          Write-Error "Version not found"
           exit 1
-        }
 
-        Copy-Item $EXE_FILE.FullName "PureLive-$VERSION-windows-x64-setup.exe" -Force
+      - name: Package Windows
+        shell: pwsh
+        run: fastforge package --platform windows --targets msix,zip,exe --skip-clean
 
-        $MSIX_FILE = Get-ChildItem "dist" -Recurse -File -Filter "*.msix" |
-          Sort-Object LastWriteTime -Descending |
-          Select-Object -First 1
+      - name: Rename Windows packages
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
 
-        if (!$MSIX_FILE) {
-          Write-Error "Windows MSIX package not found."
-          exit 1
-        }
+          $exe = Get-ChildItem "dist" -Recurse -File -Filter "*.exe" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (!$exe) {
+            Write-Error "Windows EXE package not found."
+            exit 1
+          }
+          Copy-Item $exe.FullName "PureLive-$version-windows-x64-setup.exe" -Force
 
-        Copy-Item $MSIX_FILE.FullName "PureLive-$VERSION-windows-x64.msix" -Force
+          $msix = Get-ChildItem "dist" -Recurse -File -Filter "*.msix" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (!$msix) {
+            Write-Error "Windows MSIX package not found."
+            exit 1
+          }
+          Copy-Item $msix.FullName "PureLive-$version-windows-x64.msix" -Force
 
-        $ZIP_FILE = Get-ChildItem "dist" -Recurse -File -Filter "*.zip" |
-          Sort-Object LastWriteTime -Descending |
-          Select-Object -First 1
+          $zip = Get-ChildItem "dist" -Recurse -File -Filter "*.zip" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (!$zip) {
+            Write-Error "Windows ZIP package not found."
+            exit 1
+          }
+          Copy-Item $zip.FullName "PureLive-$version-windows-x64.zip" -Force
 
-        if (!$ZIP_FILE) {
-          Write-Error "Windows ZIP package not found."
-          exit 1
-        }
+          Get-ChildItem "PureLive-$version-windows-x64*"
 
-        Copy-Item $ZIP_FILE.FullName "PureLive-$VERSION-windows-x64.zip" -Force
-
-        Get-ChildItem "PureLive-$VERSION-windows-x64.*" | Select-Object Name, Length
-
-    - name: 上传 Windows 安装包
-      uses: actions/upload-artifact@v4
-      with:
-        name: windows-installer
-        path: |
-          PureLive-*-windows-x64-setup.exe
-          PureLive-*-windows-x64.msix
-          PureLive-*-windows-x64.zip
-        if-no-files-found: error
-        retention-days: 1
-
-
-
-# =========================================================
-# LINUX
-# =========================================================
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pure-live-windows
+          path: |
+            PureLive-*-windows-x64-setup.exe
+            PureLive-*-windows-x64.msix
+            PureLive-*-windows-x64.zip
+          if-no-files-found: error
+          retention-days: 3
 
   linux:
     name: Linux x64 portable
@@ -427,57 +309,35 @@ jobs:
     needs: quality
     runs-on: ubuntu-24.04
     timeout-minutes: 35
-
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Install Linux desktop dependencies
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Install Linux dependencies
         run: |
           sudo apt-get -o Acquire::Retries=5 update
-          sudo apt-get -o Acquire::Retries=5 install -y \
-            clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libasound2-dev \
-            libayatana-appindicator3-dev libsecret-1-dev libva-dev libvdpau-dev \
-            libpulse-dev libxv-dev libunwind-dev libgnutls28-dev liblcms2-dev \
-            libarchive-dev libgbm-dev libxss-dev libxrandr-dev libegl1-mesa-dev \
-            libwayland-dev libxkbcommon-dev libfontconfig1-dev libharfbuzz-dev \
-            libfribidi-dev libfreetype6-dev zlib1g-dev libdrm-dev libx11-dev \
-            libxext-dev libxfixes-dev libxcb1-dev
-
-      - name: Install pinned Flutter SDK from the official archive
+          sudo apt-get -o Acquire::Retries=5 install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libasound2-dev libayatana-appindicator3-dev libsecret-1-dev libva-dev libvdpau-dev libpulse-dev libxv-dev libunwind-dev libgnutls28-dev liblcms2-dev libarchive-dev libgbm-dev libxss-dev libxrandr-dev libegl1-mesa-dev libwayland-dev libxkbcommon-dev libfontconfig1-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev zlib1g-dev libdrm-dev libx11-dev libxext-dev libxfixes-dev libxcb1-dev
+      - name: Install Flutter
         shell: bash
         run: |
           archive="$RUNNER_TEMP/flutter-linux.tar.xz"
-          curl --fail --location --retry 3 \
-            "https://storage.googleapis.com/flutter_infra_release/releases/$FLUTTER_LINUX_ARCHIVE" \
-            --output "$archive"
+          curl --fail --location --retry 3 "https://storage.googleapis.com/flutter_infra_release/releases/$FLUTTER_LINUX_ARCHIVE" --output "$archive"
           echo "$FLUTTER_LINUX_SHA256  $archive" | sha256sum --check --strict
           tar --extract --file "$archive" --directory "$RUNNER_TEMP"
           echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
-
-      - name: Verify Flutter SDK
+      - name: Verify Flutter
         run: flutter --version
-
-      - name: Resolve locked packages
+      - name: Resolve packages
         run: flutter pub get --enforce-lockfile
-
-      - name: Prefetch verified Linux native sources
+      - name: Prefetch mimalloc
         shell: bash
         run: |
           archive_dir="build/linux/x64/release"
           archive="$archive_dir/mimalloc-2.1.2.tar.gz"
           mkdir -p "$archive_dir"
-          curl --fail --location --retry 6 --retry-all-errors \
-            https://github.com/microsoft/mimalloc/archive/refs/tags/v2.1.2.tar.gz \
-            --output "$archive.tmp"
+          curl --fail --location --retry 6 --retry-all-errors https://github.com/microsoft/mimalloc/archive/refs/tags/v2.1.2.tar.gz --output "$archive.tmp"
           echo "5179c8f5cf1237d2300e2d8559a7bc55  $archive.tmp" | md5sum --check --strict
           mv "$archive.tmp" "$archive"
-
-      - name: Build Linux release
-        run: |
-          flutter build linux \
-            --release \
-            --dart-define=PURELIVE_BUILD_SOURCE=github-manual
-
+      - name: Build Linux
+        run: flutter build linux --release --dart-define=PURELIVE_BUILD_SOURCE=github-manual
       - name: Get version
         id: version
         shell: bash
@@ -485,27 +345,16 @@ jobs:
           VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //; s/[`"'"'"']//g')
           VERSION="${VERSION%%+*}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Create portable archive
+      - name: Create Linux archive
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          tar \
-            -C build/linux/x64/release/bundle \
-            -czf PureLive-${VERSION}-linux-x64.tar.gz \
-            .
-
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+          tar -C build/linux/x64/release/bundle -czf "PureLive-${VERSION}-linux-x64.tar.gz" .
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: pure-live-linux-x64
           path: PureLive-*-linux-x64.tar.gz
           if-no-files-found: error
           retention-days: 3
-
-
-
-# =========================================================
-# APPLE
-# =========================================================
 
   apple:
     name: Apple platform packages
@@ -513,36 +362,21 @@ jobs:
     needs: quality
     runs-on: macos-15
     timeout-minutes: 60
-
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Select an Xcode 26 toolchain
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Select Xcode
         shell: bash
         run: |
-          xcode_path="$(find /Applications \
-            -maxdepth 1 \
-            -type d \
-            -name 'Xcode_26*.app' \
-            -print |
-            sort |
-            tail -n 1)"
-
+          xcode_path="$(find /Applications -maxdepth 1 -type d -name 'Xcode_26*.app' -print | sort | tail -n 1)"
           test -n "$xcode_path"
-
-          sudo xcode-select \
-            --switch "$xcode_path/Contents/Developer"
-
+          sudo xcode-select --switch "$xcode_path/Contents/Developer"
           xcodebuild -version
-
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
-
-      - name: Resolve locked packages
+      - name: Resolve packages
         run: flutter pub get --enforce-lockfile
-
       - name: Get version
         id: version
         shell: bash
@@ -550,101 +384,50 @@ jobs:
           VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //; s/[`"'"'"']//g')
           VERSION="${VERSION%%+*}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
-# -----------------------------------------------------
-# macOS
-# -----------------------------------------------------
-
-      - name: Build macOS release
+      - name: Build macOS
         if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
-        run: |
-          flutter build macos \
-            --release \
-            --dart-define=PURELIVE_BUILD_SOURCE=github-manual
-
+        run: flutter build macos --release --dart-define=PURELIVE_BUILD_SOURCE=github-manual
       - name: Get macOS application
         id: macos_app
         if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
         shell: bash
         run: |
-          app_path="$(find \
-            build/macos/Build/Products/Release \
-            -maxdepth 1 \
-            -type d \
-            -name '*.app' \
-            -print \
-            -quit)"
-
+          app_path="$(find build/macos/Build/Products/Release -maxdepth 1 -type d -name '*.app' -print -quit)"
           if [[ -z "$app_path" ]]; then
             echo "macOS .app not found."
             exit 1
           fi
-
           echo "app_path=$app_path" >> "$GITHUB_OUTPUT"
-
-          echo "Found macOS application:"
-          echo "$app_path"
-
       - name: Verify macOS application
         if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
         shell: bash
         run: |
           app_path="${{ steps.macos_app.outputs.app_path }}"
-
           executable="$app_path/Contents/MacOS/$(basename "$app_path" .app)"
-
-          if [[ ! -f "$executable" ]]; then
-            echo "Executable not found:"
-            echo "$executable"
-            exit 1
-          fi
-
-          echo "=== macOS architecture ==="
+          test -f "$executable"
           lipo -info "$executable"
-
       - name: Archive macOS application
         if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
         shell: bash
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           app_path="${{ steps.macos_app.outputs.app_path }}"
-
-          ditto \
-            -c \
-            -k \
-            --sequesterRsrc \
-            --keepParent \
-            "$app_path" \
-            "PureLive-${VERSION}-macOS.zip"
-
+          ditto -c -k --sequesterRsrc --keepParent "$app_path" "PureLive-${VERSION}-macOS.zip"
       - name: Build macOS DMG
         if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
         shell: bash
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           app_path="${{ steps.macos_app.outputs.app_path }}"
-
-          hdiutil create \
-            -volname "PureLive" \
-            -srcfolder "$app_path" \
-            -ov \
-            -format UDZO \
-            "PureLive-${VERSION}-macOS.dmg"
-
+          hdiutil create -volname "PureLive" -srcfolder "$app_path" -ov -format UDZO "PureLive-${VERSION}-macOS.dmg"
       - name: Verify macOS packages
         if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
         shell: bash
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-
           test -f "PureLive-${VERSION}-macOS.zip"
           test -f "PureLive-${VERSION}-macOS.dmg"
-
-          echo "=== macOS packages ==="
-          ls -lh \
-            "PureLive-${VERSION}-macOS.zip" \
-            "PureLive-${VERSION}-macOS.dmg"
-
+          ls -lh "PureLive-${VERSION}-macOS.zip" "PureLive-${VERSION}-macOS.dmg"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
         with:
@@ -654,33 +437,15 @@ jobs:
             PureLive-*-macOS.dmg
           if-no-files-found: error
           retention-days: 3
-
-
-      # -------------------------------------------------------
-      # iOS
-      # -----------------------------------------------------
-
-      - name: Build iOS device application
+      - name: Build iOS
         if: ${{ github.event_name == 'push' || inputs.build_ios }}
-        run: |
-          flutter build ios \
-            --release \
-            --no-codesign \
-            --dart-define=PURELIVE_BUILD_SOURCE=github-manual
-
+        run: flutter build ios --release --no-codesign --dart-define=PURELIVE_BUILD_SOURCE=github-manual
       - name: Archive iOS application
         if: ${{ github.event_name == 'push' || inputs.build_ios }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          ditto \
-            -c \
-            -k \
-            --sequesterRsrc \
-            --keepParent \
-            build/ios/iphoneos/Runner.app \
-            "PureLive-${VERSION}-ios-unsigned-app.zip"
-
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+          ditto -c -k --sequesterRsrc --keepParent build/ios/iphoneos/Runner.app "PureLive-${VERSION}-ios-unsigned-app.zip"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: ${{ github.event_name == 'push' || inputs.build_ios }}
         with:
           name: pure-live-ios-unsigned-app
@@ -688,187 +453,105 @@ jobs:
           if-no-files-found: error
           retention-days: 3
 
-
-
-# =========================================================
-# RELEASE
-# =========================================================
-
   publish-release:
     name: Publish GitHub Release
-
     if: ${{ always() && inputs.create_release && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
-
     needs:
       - quality
       - android
       - windows
       - linux
       - apple
-
     runs-on: ubuntu-latest
-
     permissions:
       contents: write
-
     steps:
-
       - name: Validate release tag
         shell: bash
         run: |
           TAG="${{ inputs.release_tag }}"
-
           if [[ -z "$TAG" ]]; then
             echo "release_tag is required when create_release=true."
             exit 1
           fi
-
           if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Invalid release tag: $TAG"
-            echo "Expected format: v1.2.3"
             exit 1
           fi
-
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: master
           fetch-depth: 0
-
-      - name: Download all build artifacts
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v7.0.1
+      - name: Download artifacts
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16
         with:
           path: artifacts
-
-      - name: Show release artifacts
-        shell: bash
-        run: |
-          echo "========================================"
-          echo "Release artifacts"
-          echo "========================================"
-
-          find artifacts \
-            -type f \
-            -print \
-            | sort
-
-      # -----------------------------------------------------
-      # assets/version.json
-      # -----------------------------------------------------
-
       - name: Read version description
         id: version
         uses: juliangruber/read-file-action@v1
         with:
           path: assets/version.json
-
       - name: Build Release Body
         id: release_body
         shell: bash
         run: |
           cat << 'EOF' > release_body.txt
-
           # 纯粹直播 ${{ inputs.release_tag }}
-
           |版本|下载地址|
           |---|---|
           |TV版|[pure_live_TV](https://github.com/liuchuancong/pure_live_TV/releases/latest)|
           |Windows/macOS/Android版|[pure_live](https://github.com/liuchuancong/pure_live/releases/latest)|
-
           ### 🖥️ Windows 版
-
           - **EXE 安装包**：适合所有用户
           - **MSIX 包**：现代应用格式，支持干净卸载
           - 适配：Windows 10/11 x64
-
           ### 🍎 macOS 版
-
           - macOS 桌面版
-
           ### 📱 Android 版
-
           - Android 6.0+
           - ARM64-v8a
           - armeabi-v7a
           - x86_64
-
           ### 🐧 Linux 版
-
           - Linux x64
-
           ### 🍎 iOS 版
-
           - unsigned iOS device application
-
           ### 📝 本次更新
-
           ${{ fromJson(steps.version.outputs.content).version_desc }}
-
           EOF
-
           echo "body_path=$(pwd)/release_body.txt" >> "$GITHUB_OUTPUT"
-
-      # -----------------------------------------------------
-      # Create Release
-      # -----------------------------------------------------
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.release_tag }}
           name: ${{ inputs.release_tag }}
-
           body_path: ${{ steps.release_body.outputs.body_path }}
-
           prerelease: false
           generate_release_notes: false
           append_body: false
           make_latest: true
-
           fail_on_unmatched_files: false
-
-          files: |
-            artifacts/**/*
-
-
-
-# =========================================================
-# UPDATE releases.json
-# =========================================================
+          files: artifacts/**/*
 
   update-json:
     name: Update releases.json
-
     if: ${{ always() && inputs.create_release && needs.publish-release.result == 'success' }}
-
-    needs:
-      - publish-release
-
+    needs: publish-release
     runs-on: ubuntu-latest
-
     permissions:
       contents: write
-
     steps:
-
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: master
           fetch-depth: 0
-
       - name: Setup Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v6.1.0
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: "3.10"
-
-      # -----------------------------------------------------
-      # 直接读取 GitHub Release
-      #
-      # 不执行 update_releases.py
-      # -----------------------------------------------------
-
-      - name: Update assets/releases.json
+      - name: Update releases.json
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.release_tag }}
@@ -881,8 +564,6 @@ jobs:
           from pathlib import Path
 
           tag = os.environ["RELEASE_TAG"]
-
-          print(f"Updating releases.json for {tag}")
 
           result = subprocess.run(
               [
@@ -899,68 +580,38 @@ jobs:
           )
 
           release = json.loads(result.stdout)
-
           path = Path("assets/releases.json")
 
           if path.exists():
-              try:
-                  data = json.loads(
-                      path.read_text(encoding="utf-8")
-                  )
-              except json.JSONDecodeError:
-                  print("Existing releases.json is invalid JSON.")
-                  raise
+              data = json.loads(path.read_text(encoding="utf-8"))
           else:
               data = {}
 
-          if isinstance(data, dict) and isinstance(
-              data.get("releases"),
-              list
-          ):
+          if isinstance(data, dict) and isinstance(data.get("releases"), list):
               releases = data["releases"]
-
           elif isinstance(data, list):
               releases = data
-              data = {
-                  "releases": releases
-              }
-
+              data = {"releases": releases}
           else:
               releases = []
-              data = {
-                  "releases": releases
-              }
+              data = {"releases": releases}
 
-          # Remove old entry with the same tag.
           releases[:] = [
-              item
-              for item in releases
+              item for item in releases
               if not (
                   isinstance(item, dict)
                   and item.get("tagName") == tag
               )
           ]
 
-          # Add the newest release to the beginning.
           releases.insert(0, release)
 
           path.write_text(
-              json.dumps(
-                  data,
-                  ensure_ascii=False,
-                  indent=2
-              ) + "\n",
-              encoding="utf-8"
+              json.dumps(data, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
           )
-
-          print(f"Updated {path}")
           PY
-
-      # -----------------------------------------------------
-      # Commit + Push
-      # -----------------------------------------------------
-
-      - name: Commit and Push releases.json
+      - name: Commit and Push
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
@@ -972,10 +623,6 @@ jobs:
           fi
 
           git add assets/releases.json
-
-          git commit \
-            -m "chore: update releases.json for ${{ inputs.release_tag }} [skip ci]"
-
+          git commit -m "chore: update releases.json for ${{ inputs.release_tag }} [skip ci]"
           git pull --rebase origin master
-
           git push origin master
