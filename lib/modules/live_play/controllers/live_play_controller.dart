@@ -23,12 +23,15 @@ import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/timer_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_controller.dart';
+import 'package:pure_live/modules/live_play/controllers/danmaku_session_host.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
 
 // live_play_controller.dart
 
-class LivePlayController extends GetxController with GetSingleTickerProviderStateMixin {
+class LivePlayController extends GetxController
+    with GetSingleTickerProviderStateMixin
+    implements DanmakuSessionHost, PlayerSessionHost {
   LivePlayController({required this.room, required this.site});
 
   final String site;
@@ -41,6 +44,7 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
   final RecorderController recorderController = Get.find<RecorderController>();
   final LocalInteractionController localInteractionController = Get.find<LocalInteractionController>();
 
+  @override
   final Rx<LivePlayState> state = const LivePlayState().obs;
   final RxList<LiveMessage> danmakuMessages = <LiveMessage>[].obs;
   final Rxn<LiveMessage> localGiftEffect = Rxn<LiveMessage>();
@@ -139,6 +143,7 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
     return false;
   }
 
+  @override
   void updateRoom({LiveRoom? detail, bool? isLiving, bool? success, bool? isLoading, String? loadError}) {
     state.value = state.value.copyWith(
       room: state.value.room.copyWith(
@@ -151,6 +156,7 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
     );
   }
 
+  @override
   void updatePlayer({
     VideoController? videoController,
     List<LivePlayQuality>? qualites,
@@ -191,6 +197,7 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
     }
   }
 
+  @override
   void addDanmakuMessage(LiveMessage msg, {bool immediate = false}) {
     if (isClosed) return;
     if (_pendingDanmakuMessages.length >= _maxPendingDanmakuBatch) {
@@ -230,6 +237,7 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
     ToastUtil.show(i18n('room_playback_timer_finished'));
   }
 
+  @override
   void updateRuntimeAudience(dynamic value) {
     if (isClosed) return;
     final update = value is LiveAudienceUpdate ? value : null;
@@ -279,6 +287,7 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
   /// Applies the headphone action to this room only. Restoring video also
   /// ends an automatically started ASMR timer, while manually entering audio
   /// mode does not implicitly create a sleep session.
+  @override
   Future<void> setCurrentRoomAudioOnlyFromUser(bool value) async {
     if (!value && _asmrSessionActive) {
       _asmrSessionActive = false;
@@ -287,6 +296,7 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
     await playerController.changeCurrentRoomAudioOnly(value);
   }
 
+  @override
   void addSystemMessage(String text) {
     final msg = LiveMessage(
       type: LiveMessageType.chat,
@@ -305,11 +315,13 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
     clearRenderedDanmaku();
   }
 
+  @override
   void updateDanmakuRoomId(String? roomId) {
     if (state.value.danmaku.currentDanmakuRoomId == roomId) return;
     state.value = state.value.copyWith(danmaku: state.value.danmaku.copyWith(currentDanmakuRoomId: roomId));
   }
 
+  @override
   void clearRenderedDanmaku() {
     state.value.player.videoController?.clearDanmaku();
   }
@@ -479,6 +491,7 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
     // Fence any room-detail/play-quality request that was started before this
     // switch. Its late result must not restore the previous room or socket.
     invalidateRoomLoad();
+    playerController.invalidateLoad();
     _localMessageDeliveryQueue.cancelAll();
     final sameRoom =
         state.value.room.detail?.roomId == newRoom.roomId && state.value.room.detail?.platform == newRoom.platform;
@@ -522,6 +535,7 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
 
   Future<void> setResolution(ReloadDataType reloadDataType, int qualityIndex, int lineIndex) async {
     invalidateRoomLoad();
+    playerController.invalidateLoad();
     await GlobalPlayerService.instance.playerManager.close();
     await playerController.destroyPlayer();
 
@@ -660,6 +674,7 @@ class LivePlayController extends GetxController with GetSingleTickerProviderStat
   void onClose() {
     _ownerClosed = true;
     _roomLoadEpoch++;
+    playerController.invalidateLoad();
     _localGiftEffectTimer?.cancel();
     _localMessageDeliveryQueue.dispose();
     _danmakuFlushTimer?.cancel();

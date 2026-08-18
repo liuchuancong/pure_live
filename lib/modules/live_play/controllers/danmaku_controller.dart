@@ -4,7 +4,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_message_gate.dart';
-import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/controllers/danmaku_session_host.dart';
 import 'package:pure_live/modules/live_play/states/live_play_state.dart';
 
 /// Owns exactly one room-bound danmaku session.
@@ -14,9 +14,15 @@ import 'package:pure_live/modules/live_play/states/live_play_state.dart';
 /// every callback carries a session token, so an old socket can never append a
 /// packet to the newly opened room.
 class DanmakuController extends GetxController {
-  DanmakuController(this._main);
+  DanmakuController(
+    this._main, {
+    this.startTimeout = const Duration(seconds: 20),
+    this.stopTimeout = const Duration(seconds: 5),
+  });
 
-  final LivePlayController _main;
+  final DanmakuSessionHost _main;
+  final Duration startTimeout;
+  final Duration stopTimeout;
   final DanmakuMessageGate _messageGate = DanmakuMessageGate();
 
   LiveDanmaku? _liveDanmaku;
@@ -105,7 +111,7 @@ class DanmakuController extends GetxController {
       _addStatusMessage(i18n('connect_danmaku_server'));
 
       try {
-        await engine.start(room.danmakuData);
+        await engine.start(room.danmakuData).timeout(startTimeout);
       } catch (error, stackTrace) {
         CoreLog.e(error.toString(), stackTrace);
         if (_acceptsCallback(engine, key, token)) {
@@ -113,11 +119,15 @@ class DanmakuController extends GetxController {
           _sessionKey = null;
           _main.updateDanmakuRoomId(null);
         }
+        _detachCallbacks(engine);
+        await _stopEngine(engine);
+        if (error is TimeoutException) _addStatusMessage(i18n('danmaku_connection_timeout'));
+        return;
       }
 
       if (request != _requestEpoch || !_acceptsCallback(engine, key, token)) {
         _detachCallbacks(engine);
-        await engine.stop();
+        await _stopEngine(engine);
       }
     });
   }
@@ -214,8 +224,12 @@ class DanmakuController extends GetxController {
     if (clearRenderer) _main.clearRenderedDanmaku();
     if (engine == null) return;
     _detachCallbacks(engine);
+    await _stopEngine(engine);
+  }
+
+  Future<void> _stopEngine(LiveDanmaku engine) async {
     try {
-      await engine.stop();
+      await engine.stop().timeout(stopTimeout);
     } catch (error, stackTrace) {
       CoreLog.e(error.toString(), stackTrace);
     }
@@ -263,7 +277,7 @@ class DanmakuController extends GetxController {
     final engine = _liveDanmaku;
     if (engine != null) {
       _detachCallbacks(engine);
-      unawaited(engine.stop());
+      unawaited(_stopEngine(engine));
     }
     _main.updateDanmakuRoomId(null);
     _main.clearRenderedDanmaku();

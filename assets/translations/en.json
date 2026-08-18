@@ -84,6 +84,7 @@
   "danmaku": "Danmaku",
   "danmaku_area": "Top-screen height used",
   "danmaku_connected": "Danmaku server connected",
+  "danmaku_connection_timeout": "Danmaku connection timed out; the stalled session was released for reconnection",
   "danmaku_filter": "Danmaku Filter",
   "danmaku_keyword_block": "Danmaku Keyword Block",
   "danmaku_list": "Danmaku List",

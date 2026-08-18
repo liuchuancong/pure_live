@@ -9,19 +9,38 @@ import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/player/models/player_exception.dart';
 import 'package:pure_live/player/models/player_error_type.dart';
 import 'package:pure_live/modules/live_play/states/live_play_state.dart';
-import 'package:pure_live/modules/live_play/controllers/player_state.dart';
-import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
+
+abstract interface class PlayerSessionHost {
+  Rx<LivePlayState> get state;
+
+  bool get isClosed;
+
+  void updateRoom({LiveRoom? detail, bool? isLiving, bool? success, bool? isLoading, String? loadError});
+
+  void updatePlayer({
+    VideoController? videoController,
+    List<LivePlayQuality>? qualites,
+    int? currentQuality,
+    List<String>? playUrls,
+    int? currentLineIndex,
+    bool? isCurrentRoomAudioOnly,
+    bool? hasUseDefaultResolution,
+  });
+
+  Future<void> setCurrentRoomAudioOnlyFromUser(bool value);
+}
 
 class PlayerController extends GetxController {
   PlayerController(this._main) {
     _audioModeTransitions = LatestAsyncValueQueue<bool>(_applyCurrentRoomAudioOnly);
   }
 
-  final LivePlayController _main;
+  final PlayerSessionHost _main;
   late final LatestAsyncValueQueue<bool> _audioModeTransitions;
   late Site currentSite;
+  int _loadEpoch = 0;
 
   LivePlayState get _state => _main.state.value;
   LiveRoom? get currentRoom => _state.room.detail;
@@ -30,22 +49,35 @@ class PlayerController extends GetxController {
     currentSite = site;
   }
 
-  Future<Map<String, String>> getHeaders() async {
-    Map<String, String> headers = {};
+  void invalidateLoad() => _loadEpoch++;
 
-    if (currentSite.id == Sites.bilibiliSite) {
+  bool _isLoadCurrent(int epoch, LiveRoom room, Site site) {
+    final current = currentRoom;
+    return !_main.isClosed &&
+        epoch == _loadEpoch &&
+        currentSite.id == site.id &&
+        current?.roomId == room.roomId &&
+        current?.platform == room.platform;
+  }
+
+  Future<Map<String, String>> getHeaders({Site? expectedSite, LiveRoom? expectedRoom}) async {
+    Map<String, String> headers = {};
+    final site = expectedSite ?? currentSite;
+    final room = expectedRoom ?? currentRoom;
+
+    if (site.id == Sites.bilibiliSite) {
       final cookie = SettingsService.to.cookieManager.bilibiliCookie.v.trim();
-      final roomId = currentRoom?.roomId ?? '';
+      final roomId = room?.roomId ?? '';
       headers = {
         'user-agent': BiliBiliSite.kDefaultUserAgent,
         'origin': 'https://live.bilibili.com',
         'referer': 'https://live.bilibili.com/$roomId',
         if (cookie.isNotEmpty) 'cookie': cookie,
       };
-    } else if (currentSite.id == Sites.huyaSite) {
+    } else if (site.id == Sites.huyaSite) {
       final ua = await HuyaSite().getHuYaUA();
       headers = {"user-agent": ua, "origin": "https://www.huya.com"};
-    } else if (currentSite.id == Sites.iptvSite) {
+    } else if (site.id == Sites.iptvSite) {
       if (SettingsService.to.iptv.customIptvUserAgent.v.isNotEmpty) {
         headers = {"user-agent": SettingsService.to.iptv.customIptvUserAgent.v};
       }
@@ -54,14 +86,19 @@ class PlayerController extends GetxController {
     return headers;
   }
 
-  Future<VideoController?> setPlayer({required String roomId}) async {
-    final room = currentRoom;
+  Future<VideoController?> setPlayer({
+    required String roomId,
+    LiveRoom? expectedRoom,
+    Site? expectedSite,
+    int? loadEpoch,
+  }) async {
+    final room = expectedRoom ?? currentRoom;
     if (room == null) return null;
+    final site = expectedSite ?? currentSite;
 
-    final headers = await getHeaders();
+    final headers = await getHeaders(expectedSite: site, expectedRoom: room);
+    if (loadEpoch != null && !_isLoadCurrent(loadEpoch, room, site)) return null;
     final playerState = _state.player;
-
-    GlobalPlayerState().setCurrentRoom(roomId);
 
     final videoController = VideoController(
       room: room,
@@ -81,11 +118,14 @@ class PlayerController extends GetxController {
   }
 
   Future<void> getPlayQualites() async {
-    try {
-      final room = currentRoom;
-      if (room == null) return;
+    final loadEpoch = ++_loadEpoch;
+    final room = currentRoom;
+    final site = currentSite;
+    if (room == null) return;
 
-      final playQualites = await currentSite.liveSite.getPlayQualites(detail: room);
+    try {
+      final playQualites = await site.liveSite.getPlayQualites(detail: room);
+      if (!_isLoadCurrent(loadEpoch, room, site)) return;
 
       if (playQualites.isEmpty) {
         ToastUtil.show(i18n('cannot_read_video_info'));
@@ -96,11 +136,13 @@ class PlayerController extends GetxController {
       _main.updatePlayer(qualites: playQualites);
 
       if (!_state.player.hasUseDefaultResolution) {
-        await _setDefaultResolution(playQualites);
+        await _setDefaultResolution(playQualites, isCurrent: () => _isLoadCurrent(loadEpoch, room, site));
       }
+      if (!_isLoadCurrent(loadEpoch, room, site)) return;
 
-      await getPlayUrl();
+      await _getPlayUrl(loadEpoch: loadEpoch, room: room, site: site);
     } catch (error, stackTrace) {
+      if (!_isLoadCurrent(loadEpoch, room, site)) return;
       developer.log(
         'Play quality loading failed (${error.runtimeType})',
         name: 'PlayerController',
@@ -111,9 +153,10 @@ class PlayerController extends GetxController {
     }
   }
 
-  Future<void> _setDefaultResolution(List<LivePlayQuality> playQualites) async {
+  Future<void> _setDefaultResolution(List<LivePlayQuality> playQualites, {required bool Function() isCurrent}) async {
     String userPrefer;
     final List<ConnectivityResult> connectivityResult = await (Connectivity().checkConnectivity());
+    if (!isCurrent()) return;
 
     if (connectivityResult.contains(ConnectivityResult.mobile)) {
       userPrefer = SettingsService.to.player.preferResolutionCellular.v;
@@ -137,17 +180,16 @@ class PlayerController extends GetxController {
     _main.updatePlayer(currentQuality: targetIndex, hasUseDefaultResolution: true);
   }
 
-  Future<void> getPlayUrl() async {
-    final room = currentRoom;
-    if (room == null) return;
-
+  Future<void> _getPlayUrl({required int loadEpoch, required LiveRoom room, required Site site}) async {
+    if (!_isLoadCurrent(loadEpoch, room, site)) return;
     final playerState = _state.player;
     if (playerState.qualites.isEmpty || playerState.currentQuality >= playerState.qualites.length) return;
 
-    final playUrl = await currentSite.liveSite.getPlayUrls(
+    final playUrl = await site.liveSite.getPlayUrls(
       detail: room,
       quality: playerState.qualites[playerState.currentQuality],
     );
+    if (!_isLoadCurrent(loadEpoch, room, site)) return;
 
     if (playUrl.isEmpty) {
       ToastUtil.show(i18n('cannot_read_play_url'));
@@ -156,7 +198,13 @@ class PlayerController extends GetxController {
     }
 
     _main.updatePlayer(playUrls: playUrl);
-    await setPlayer(roomId: room.roomId!);
+    final controller = await setPlayer(
+      roomId: room.roomId!,
+      expectedRoom: room,
+      expectedSite: site,
+      loadEpoch: loadEpoch,
+    );
+    if (controller == null || !_isLoadCurrent(loadEpoch, room, site)) return;
     _main.updateRoom(success: true);
   }
 
@@ -191,7 +239,14 @@ class PlayerController extends GetxController {
   }
 
   Future<void> destroyPlayer() async {
+    invalidateLoad();
     await _state.player.videoController?.destory();
     _main.updatePlayer(videoController: null);
+  }
+
+  @override
+  void onClose() {
+    invalidateLoad();
+    super.onClose();
   }
 }

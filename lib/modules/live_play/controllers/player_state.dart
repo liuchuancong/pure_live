@@ -15,12 +15,4 @@ class GlobalPlayerState extends GetxController {
     isWindowFullscreen.value = false;
     isPipMode.value = false;
   }
-
-  String? _currentRoomId;
-
-  void setCurrentRoom(String roomId) {
-    if (_currentRoomId != roomId) {
-      _currentRoomId = roomId;
-    }
-  }
 }

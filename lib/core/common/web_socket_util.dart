@@ -1,6 +1,23 @@
 import 'dart:async';
 
 import 'package:web_socket_channel/io.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+
+typedef WebSocketConnector = WebSocketChannel Function(
+  String endpoint, {
+  Duration? connectTimeout,
+  Iterable<String>? protocols,
+  Map<String, dynamic>? headers,
+});
+
+WebSocketChannel _connectIoWebSocket(
+  String endpoint, {
+  Duration? connectTimeout,
+  Iterable<String>? protocols,
+  Map<String, dynamic>? headers,
+}) {
+  return IOWebSocketChannel.connect(endpoint, connectTimeout: connectTimeout, protocols: protocols, headers: headers);
+}
 
 enum SocketStatus { connected, failed, closed }
 
@@ -30,6 +47,9 @@ class WebScoketUtils {
   final Function()? onHeartBeat;
   final Map<String, dynamic>? headers;
   final Iterable<String>? protocols;
+  final Duration? inactivityTimeout;
+  final Duration reconnectBaseDelay;
+  final WebSocketConnector connector;
 
   WebScoketUtils({
     required this.url,
@@ -42,10 +62,13 @@ class WebScoketUtils {
     this.headers,
     this.backupUrl,
     this.protocols,
+    this.inactivityTimeout,
+    this.reconnectBaseDelay = const Duration(seconds: 1),
+    this.connector = _connectIoWebSocket,
     List<String>? serverUrls,
   }) : serverUrls = _uniqueEndpoints(url, backupUrl, serverUrls);
 
-  IOWebSocketChannel? webSocket;
+  WebSocketChannel? webSocket;
   Timer? heartBeatTimer;
   Timer? reconnectTimer;
   StreamSubscription<dynamic>? streamSubscription;
@@ -56,6 +79,7 @@ class WebScoketUtils {
   int _generation = 0;
   bool _manualClose = false;
   bool _connecting = false;
+  DateTime? _lastMessageAt;
 
   static List<String> _uniqueEndpoints(String primary, String? backup, List<String>? candidates) {
     final endpoints = <String>[];
@@ -82,7 +106,7 @@ class WebScoketUtils {
 
     try {
       final endpoint = serverUrls[_endpointIndex % serverUrls.length];
-      final channel = IOWebSocketChannel.connect(
+      final channel = connector(
         endpoint,
         connectTimeout: const Duration(seconds: 10),
         protocols: protocols,
@@ -107,10 +131,11 @@ class WebScoketUtils {
     }
   }
 
-  void _ready(IOWebSocketChannel channel, int generation) {
+  void _ready(WebSocketChannel channel, int generation) {
     status = SocketStatus.connected;
     reconnectTimer?.cancel();
     reconnectTimer = null;
+    _lastMessageAt = DateTime.now();
 
     streamSubscription = channel.stream.listen(
       (data) {
@@ -133,12 +158,27 @@ class WebScoketUtils {
     heartBeatTimer?.cancel();
     if (heartBeatTime <= 0) return;
     heartBeatTimer = Timer.periodic(Duration(milliseconds: heartBeatTime), (_) {
-      if (status == SocketStatus.connected) onHeartBeat?.call();
+      if (status != SocketStatus.connected) return;
+      final lastMessageAt = _lastMessageAt;
+      if (lastMessageAt != null && DateTime.now().difference(lastMessageAt) >= _resolvedInactivityTimeout) {
+        _scheduleReconnect('WebSocket heartbeat timed out');
+        return;
+      }
+      onHeartBeat?.call();
     });
+  }
+
+  Duration get _resolvedInactivityTimeout {
+    final configured = inactivityTimeout;
+    if (configured != null) return configured;
+    final heartbeatWindow = Duration(milliseconds: heartBeatTime * 3);
+    const minimumWindow = Duration(seconds: 90);
+    return heartbeatWindow > minimumWindow ? heartbeatWindow : minimumWindow;
   }
 
   void receiveMessage(dynamic data) {
     reconnectTime = 0;
+    _lastMessageAt = DateTime.now();
     onMessage?.call(data);
   }
 
@@ -160,15 +200,21 @@ class WebScoketUtils {
     _endpointIndex = (_endpointIndex + 1) % serverUrls.length;
     // Try the next server quickly; use a short backoff after every full round.
     final completedRounds = reconnectTime ~/ serverUrls.length;
-    final delaySeconds = completedRounds.clamp(0, 5) + 1;
-    reconnectTimer = Timer(Duration(seconds: delaySeconds), () {
+    final delayMultiplier = completedRounds.clamp(0, 5) + 1;
+    final delay = Duration(microseconds: reconnectBaseDelay.inMicroseconds * delayMultiplier);
+    reconnectTimer = Timer(delay, () {
       reconnectTimer = null;
       connect();
     });
   }
 
   void sendMessage(dynamic message) {
-    if (status == SocketStatus.connected) webSocket?.sink.add(message);
+    if (status != SocketStatus.connected) return;
+    try {
+      webSocket?.sink.add(message);
+    } catch (error) {
+      _scheduleReconnect(error.toString());
+    }
   }
 
   Future<void> _disposeSocket() async {
@@ -178,6 +224,7 @@ class WebScoketUtils {
     heartBeatTimer = null;
     final socket = webSocket;
     webSocket = null;
+    _lastMessageAt = null;
     try {
       await socket?.sink.close();
     } catch (_) {}

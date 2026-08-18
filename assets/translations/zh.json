@@ -86,6 +86,7 @@
   "danmaku": "弹幕",
   "danmaku_area": "画面顶部占用高度",
   "danmaku_connected": "弹幕服务器连接正常",
+  "danmaku_connection_timeout": "弹幕服务器连接超时，已自动释放并可重新连接",
   "danmaku_filter": "弹幕关键词过滤",
   "danmaku_keyword_block": "弹幕关键词屏蔽",
   "danmaku_list": "弹幕列表",
