@@ -313,4 +313,3 @@ ffmpeg_kit_extended_config:
   type: base
   gpl: false
   small: false
-
