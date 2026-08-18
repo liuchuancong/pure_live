@@ -1,13 +1,13 @@
 {
-  "version": "2.1.5",
-  "build_number": 53,
-  "version_num": 2010553,
+  "version": "2.1.6",
+  "build_number": 54,
+  "version_num": 2010654,
   "android_abis": [
     "arm64-v8a"
   ],
-  "version_desc": "v2.1.5 弹幕交互与 Windows 滚动修复\n- 本地弹幕发送后延迟 2 秒，同步进入列表和直播画面。\n- Android 首次上滑立即暂停自动跟随，阅读期间累计新消息。\n- 弹幕模板选中状态与实际参数实时一致。\n- Windows 主要列表使用 Chromium Impulse 动画滚动。\n",
+  "version_desc": "v2.1.6 Android 播放状态修复\n- 修复反复切换纯音频与视频模式后播放器灰白、画面不再响应。\n- 模式切换串行执行并合并连续操作，播放器销毁与初始化不再交叉。\n- 纯音频模式即使关闭通用后台播放，退到桌面或锁屏仍继续播放。\n- 修复通知栏音频会话初始化和播放器重绑定的竞态。\n",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.1.6",
   "platforms": {
     "windows": {
       "version": "2.1.5",

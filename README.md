@@ -33,7 +33,7 @@
 
 > 本维护分支持续同步 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)，并维护本机优先构建、正式签名、接口探测、Windows 数据迁移及高刷新率优化。
 
-- **最新稳定版**：[v2.1.5](https://github.com/wzgrx/pure_live/releases/tag/v2.1.5)
+- **最新稳定版**：[v2.1.6](https://github.com/wzgrx/pure_live/releases/tag/v2.1.6)
 - **当前开发版本**：`2.1.6+54`
 - **上游同步基线**：`liuchuancong/pure_live@18e2afaf`（2026-08-18）
 - **构建平台**：Android arm64、Windows x64、Linux x64、macOS Universal、iOS arm64 设备包
@@ -344,7 +344,7 @@ Firebase 不是 Pure Live 使用的必要条件。
 
 ### Android
 
-v2.1.5 正式 Release 优先提供 `arm64-v8a`，适用于当前主流 64 位 ARM 手机和平板。更新页读取版本清单中的实际 ABI 列表，不会显示本轮没有发布的 32 位 ARM 或 x86_64 下载链接。
+v2.1.6 正式 Release 优先提供 `arm64-v8a`，适用于当前主流 64 位 ARM 手机和平板。更新页读取版本清单中的实际 ABI 列表，不会显示本轮没有发布的 32 位 ARM 或 x86_64 下载链接。Windows 等桌面平台继续使用 v2.1.5 阶段安装包。
 
 Android 始终使用正式包名：
 
