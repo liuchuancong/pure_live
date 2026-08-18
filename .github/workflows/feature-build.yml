@@ -255,7 +255,7 @@ jobs:
     if: ${{ always() && inputs.build_windows && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
     needs: quality
     runs-on: windows-latest
-    timeout-minutes: 70
+    timeout-minutes: 35
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -442,7 +442,7 @@ jobs:
     if: ${{ always() && ((github.event_name == 'push' && (startsWith(github.ref_name, 'stage-build-') || startsWith(github.ref_name, 'stage-linux-'))) || inputs.build_linux) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
     needs: quality
     runs-on: ubuntu-24.04
-    timeout-minutes: 70
+    timeout-minutes: 35
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -528,7 +528,7 @@ jobs:
     if: ${{ always() && ((github.event_name == 'push' && (startsWith(github.ref_name, 'stage-build-') || startsWith(github.ref_name, 'stage-apple-') || startsWith(github.ref_name, 'stage-ios-'))) || inputs.build_macos || inputs.build_ios) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
     needs: quality
     runs-on: macos-15
-    timeout-minutes: 90
+    timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
