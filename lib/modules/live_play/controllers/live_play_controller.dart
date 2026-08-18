@@ -78,18 +78,29 @@ class LivePlayController extends GetxController
     currentSite = Sites.of(site);
     _localMessageDeliveryQueue = LocalMessageDeliveryQueue(onDeliver: _deliverLocalMessage);
 
+    final manager = GlobalPlayerService.instance.playerManager;
+    final resumesCurrentSession = manager.consumeRoomSessionReentry(room);
     final autoStartAsmr = Platform.isAndroid && SettingsService.to.app.enableAsmrSleepMode.v;
-    _asmrSessionActive = autoStartAsmr;
+    final initialAudioOnly = resumesCurrentSession ? manager.desiredAudioOnlyMode : autoStartAsmr;
+    _asmrSessionActive = resumesCurrentSession ? LiveAudioService.isSleepSessionActive : autoStartAsmr;
     state.value = LivePlayState(
       room: RoomState(detail: room),
       // ASMR is the only automatic audio-only entry point. Manual headphone
       // switching is scoped to the current room and is never persisted.
-      player: PlayerState(isCurrentRoomAudioOnly: autoStartAsmr),
+      player: PlayerState(isCurrentRoomAudioOnly: initialAudioOnly),
       ui: UIState(closeTimes: 60, closeTimeFlag: false),
     );
-    unawaited(
-      LiveAudioService.configureSleepTimer(enabled: autoStartAsmr, minutes: SettingsService.to.app.asmrSleepMinutes.v),
-    );
+    // Re-entering from the app floating window continues the same room session.
+    // Resetting the timer here extended an existing sleep session and also
+    // forced a second audio-mode transition during route construction.
+    if (!resumesCurrentSession) {
+      unawaited(
+        LiveAudioService.configureSleepTimer(
+          enabled: autoStartAsmr,
+          minutes: SettingsService.to.app.asmrSleepMinutes.v,
+        ),
+      );
+    }
 
     _initControllers();
     _initTab();

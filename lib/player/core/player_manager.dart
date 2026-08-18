@@ -21,6 +21,7 @@ import '../models/player_error_type.dart';
 
 import 'package:rxdart/rxdart.dart' hide Rx;
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 
 import '../interface/unified_player_interface.dart';
 
@@ -41,9 +42,11 @@ class PlayerManager {
   final PreloadPlayerManager preloadManager;
   final LineFallbackManager lineManager;
   final Duration audioModeSwitchTimeout;
+  final bool Function() _useHardStopOnExit;
 
   int _sessionId = 0;
   bool _isClosing = false;
+  Future<void>? _closeFuture;
 
   PlayerManager({
     required this.playerPool,
@@ -51,7 +54,9 @@ class PlayerManager {
     required this.preloadManager,
     required this.lineManager,
     this.audioModeSwitchTimeout = const Duration(seconds: 5),
-  }) {
+    bool Function()? useHardStopOnExit,
+  }) : _useHardStopOnExit = useHardStopOnExit ?? (() => SettingsService.to.player.useHardStopOnExit.v) {
+    _audioModeTransitions = LatestAsyncValueQueue<bool>(_applyAudioOnlyMode);
     _pipStateSubscription = isInPip.listen((value) {
       GlobalPlayerState.to.isPipMode.value = value;
       if (!value && !isFloating.value && !_appFloatingPrepared) {
@@ -66,6 +71,9 @@ class PlayerManager {
   PlayerEngine? _runtimeEngine;
   PlayerEngine? _defaultEngine;
   bool _runtimeAudioOnly = false;
+  bool _requestedAudioOnly = false;
+  late final LatestAsyncValueQueue<bool> _audioModeTransitions;
+  LiveRoom? _pendingRoomReentry;
 
   String? _currentUrl;
   List<String> _currentPlayUrls = [];
@@ -119,6 +127,19 @@ class PlayerManager {
   Stream<int?> get height => _heightSubject.stream;
   bool get isPlayingNow => _playingSubject.value;
   bool get isAudioOnlyMode => _runtimeAudioOnly;
+  bool get desiredAudioOnlyMode => _requestedAudioOnly;
+  void prepareRoomSessionReentry(LiveRoom room) {
+    _pendingRoomReentry = isAppFloatingActive && currentFloatRoom == room ? room : null;
+  }
+
+  bool consumeRoomSessionReentry(LiveRoom room) {
+    final resumes =
+        _pendingRoomReentry == room && _currentPlayer != null && currentFloatRoom == room && !_isClosing && !_disposed;
+    _pendingRoomReentry = null;
+    return resumes;
+  }
+
+  void cancelRoomSessionReentry() => _pendingRoomReentry = null;
   bool get shouldKeepDanmakuForAppFloating => _appFloatingPrepared || isFloating.value;
   bool get isAppFloatingActive =>
       _appFloatingPrepared || isFloating.value || _floatingCleanup != null || _floatingResourceDisposers.isNotEmpty;
@@ -174,6 +195,7 @@ class PlayerManager {
       _runtimeEngine = engine;
       _currentPlayer = await playerPool.getPlayer(engine, audioOnly: audioOnly);
       _runtimeAudioOnly = audioOnly;
+      _requestedAudioOnly = audioOnly;
       await _bindPlayerStreams(_currentPlayer!);
       await LiveAudioService.setPlayer(_currentPlayer!, audioOnly: audioOnly);
       if (Platform.isAndroid) {
@@ -206,7 +228,12 @@ class PlayerManager {
     LiveRoom? room,
     bool audioOnly = false,
   }) async {
-    if (_disposed || _isClosing) return;
+    if (_disposed) return;
+    final closing = _closeFuture;
+    if (closing != null) {
+      await closing;
+    }
+    if (_disposed) return;
     final mySessionId = ++_sessionId;
 
     if (room?.roomId != currentFloatRoom?.roomId) {
@@ -221,7 +248,7 @@ class PlayerManager {
       await initialize(engine: _defaultEngine!, audioOnly: audioOnly);
     } else if (_runtimeEngine != _defaultEngine && !_isSwitchingDueToFallback) {
       await switchEngine(_defaultEngine!, isManual: false, audioOnly: audioOnly);
-    } else if (_runtimeAudioOnly != audioOnly) {
+    } else if (_runtimeAudioOnly != audioOnly || _requestedAudioOnly != audioOnly) {
       await setAudioOnlyMode(audioOnly);
     }
 
@@ -291,30 +318,45 @@ class PlayerManager {
   /// player initialization, AudioService binding and CDN setup. A stalled
   /// native future therefore left the room on an endless loading indicator.
   Future<void> setAudioOnlyMode(bool audioOnly) async {
-    if (_disposed || _isClosing || _runtimeAudioOnly == audioOnly) return;
+    if (_disposed || _isClosing) return;
+    _requestedAudioOnly = audioOnly;
+    await _audioModeTransitions.submit(audioOnly);
+  }
+
+  Future<void> _applyAudioOnlyMode(bool audioOnly) async {
+    if (_disposed || _isClosing) return;
     final player = _currentPlayer;
     if (player == null) {
       throw PlayerException(message: 'Current player is null', type: PlayerErrorType.lifecycle);
     }
 
     final previous = _runtimeAudioOnly;
+    final transitionSessionId = _sessionId;
     try {
       await player.setAudioOnly(audioOnly).timeout(audioModeSwitchTimeout);
-      if (!identical(_currentPlayer, player) || _disposed || _isClosing) return;
+      if (!identical(_currentPlayer, player) || _disposed || _isClosing || transitionSessionId != _sessionId) return;
 
       _runtimeAudioOnly = audioOnly;
+      // The request may have been superseded by a floating-window re-entry or
+      // another room while the native command was pending. Let the queue apply
+      // the latest value without publishing this stale intermediate state.
+      if (_requestedAudioOnly != audioOnly) return;
       await LiveAudioService.setPlayer(player, audioOnly: audioOnly).timeout(audioModeSwitchTimeout);
       // Rebuild the overlay without changing the subtree key. Replacing the
       // key unmounted media_kit's Video and detached the Android Surface.
       videoPresentationRevision.value++;
     } catch (error, stackTrace) {
-      // Restore both the native track and the UI state. The rollback is also
-      // bounded so a broken platform call never locks the headphone button.
+      if (!identical(_currentPlayer, player) || _disposed || _isClosing || transitionSessionId != _sessionId) return;
+      // Future.timeout does not stop the native command. Do not launch an
+      // opposite command concurrently here. Record the desired rollback; the
+      // adapter's serialized latest-value queue will apply it after the timed
+      // out command returns.
+      if (_requestedAudioOnly == audioOnly) {
+        _requestedAudioOnly = previous;
+      }
+      unawaited(player.setAudioOnly(_requestedAudioOnly).catchError((_) {}));
       try {
-        await player.setAudioOnly(previous).timeout(audioModeSwitchTimeout);
-      } catch (_) {}
-      try {
-        await LiveAudioService.setPlayer(player, audioOnly: previous).timeout(audioModeSwitchTimeout);
+        await LiveAudioService.setPlayer(player, audioOnly: _requestedAudioOnly).timeout(audioModeSwitchTimeout);
       } catch (_) {}
       _runtimeAudioOnly = previous;
       videoPresentationRevision.value++;
@@ -339,6 +381,7 @@ class PlayerManager {
       _currentPlayer = newPlayer;
       _runtimeEngine = engine;
       _runtimeAudioOnly = targetAudioOnly;
+      _requestedAudioOnly = targetAudioOnly;
       if (isManual) _defaultEngine = engine;
       log('Switch engine to $engine', name: 'PlayerManager');
       await _bindPlayerStreams(newPlayer);
@@ -516,7 +559,6 @@ class PlayerManager {
                     behavior: HitTestBehavior.opaque,
                     onTap: () async {
                       final room = currentFloatRoom;
-                      await closeAppFloating();
                       if (room != null) {
                         await AppNavigator.toLiveRoomDetail(liveRoom: room);
                       }
@@ -928,11 +970,31 @@ class PlayerManager {
   }
 
   Future<void> close() async {
+    final inFlight = _closeFuture;
+    if (inFlight != null) {
+      await inFlight;
+      return;
+    }
+
+    final operation = _closeInternal();
+    _closeFuture = operation;
+    try {
+      await operation;
+    } finally {
+      if (identical(_closeFuture, operation)) _closeFuture = null;
+    }
+  }
+
+  Future<void> _closeInternal() async {
+    _pendingRoomReentry = null;
     _sessionId++;
     _isClosing = true;
-    await LiveAudioService.stop();
-    SettingsService.to.player.useHardStopOnExit.v ? await hardDispose() : await softStop();
-    _isClosing = false;
+    try {
+      await LiveAudioService.stop();
+      _useHardStopOnExit() ? await hardDispose() : await softStop();
+    } finally {
+      _isClosing = false;
+    }
   }
 
   Future<void> softStop() async {
@@ -960,6 +1022,8 @@ class PlayerManager {
     _currentPlayer = null;
     _runtimeEngine = null;
     _runtimeAudioOnly = false;
+    _requestedAudioOnly = false;
+    _pendingRoomReentry = null;
     isInitialized.value = false;
   }
 

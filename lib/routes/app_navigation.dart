@@ -36,7 +36,14 @@ class AppNavigator {
     try {
       final manager = GlobalPlayerService.instance.playerManager;
       if (manager.isAppFloatingActive) {
+        if (manager.currentFloatRoom == normalizedRoom) {
+          manager.prepareRoomSessionReentry(normalizedRoom);
+        } else {
+          manager.cancelRoomSessionReentry();
+        }
         await manager.closeAppFloating();
+      } else {
+        manager.cancelRoomSessionReentry();
       }
       await Get.toNamed(RoutePath.kLivePlay, arguments: normalizedRoom, parameters: {"site": platform});
     } finally {

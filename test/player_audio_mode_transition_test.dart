@@ -86,6 +86,84 @@ void main() {
 
     await manager.dispose();
   });
+
+  test('a room re-entry request supersedes an in-flight audio-only request', () async {
+    final firstStarted = Completer<void>();
+    final releaseFirst = Completer<void>();
+    final player = _FakePlayer(
+      onAudioOnlyChange: (value) async {
+        if (value) {
+          firstStarted.complete();
+          await releaseFirst.future;
+        }
+      },
+    );
+    final manager = _createManager(player);
+    await manager.initialize(engine: PlayerEngine.mediaKit);
+
+    final oldRoomRequest = manager.setAudioOnlyMode(true);
+    await firstStarted.future;
+    final reentryRequest = manager.setAudioOnlyMode(false);
+    releaseFirst.complete();
+
+    await Future.wait([oldRoomRequest, reentryRequest]);
+    expect(player.audioOnlyChanges, <bool>[true, false]);
+    expect(manager.isAudioOnlyMode, isFalse);
+    expect(manager.desiredAudioOnlyMode, isFalse);
+
+    await manager.dispose();
+  });
+
+  test('play waits for an in-flight close instead of silently returning', () async {
+    final stopStarted = Completer<void>();
+    final releaseStop = Completer<void>();
+    final player = _FakePlayer(
+      onStop: () async {
+        stopStarted.complete();
+        await releaseStop.future;
+      },
+    );
+    final manager = _createManager(player);
+    await manager.initialize(engine: PlayerEngine.mediaKit);
+
+    final closing = manager.close();
+    await stopStarted.future;
+    final replaying = manager.play(
+      'https://example.invalid/live.flv',
+      const ['https://example.invalid/live.flv'],
+      const {},
+      room: LiveRoom(roomId: 'room-1', platform: 'test'),
+    );
+    await Future<void>.delayed(Duration.zero);
+    expect(player.setDataSourceCalls, 0);
+
+    releaseStop.complete();
+    await Future.wait([closing, replaying]);
+    expect(player.setDataSourceCalls, 1);
+
+    await manager.dispose();
+  });
+
+  test('floating re-entry handoff is explicit, room-scoped and single-use', () async {
+    final player = _FakePlayer();
+    final manager = _createManager(player);
+    final room = LiveRoom(roomId: 'room-1', platform: 'test');
+    await manager.initialize(engine: PlayerEngine.mediaKit);
+    await manager.play(
+      'https://example.invalid/live.flv',
+      const ['https://example.invalid/live.flv'],
+      const {},
+      room: room,
+    );
+    manager.prepareAppFloating(onClose: () async {});
+
+    manager.prepareRoomSessionReentry(room);
+    expect(manager.consumeRoomSessionReentry(room), isTrue);
+    expect(manager.consumeRoomSessionReentry(room), isFalse);
+
+    manager.prepareRoomSessionReentry(room);
+    expect(manager.consumeRoomSessionReentry(LiveRoom(roomId: 'room-2', platform: 'test')), isFalse);
+  });
 }
 
 PlayerManager _createManager(_FakePlayer player, {Duration timeout = const Duration(seconds: 1)}) {
@@ -98,13 +176,16 @@ PlayerManager _createManager(_FakePlayer player, {Duration timeout = const Durat
     preloadManager: PreloadPlayerManager(),
     lineManager: LineFallbackManager(),
     audioModeSwitchTimeout: timeout,
+    useHardStopOnExit: () => false,
   );
 }
 
 class _FakePlayer implements UnifiedPlayer {
-  _FakePlayer({this.hangWhenEnablingAudioOnly = false});
+  _FakePlayer({this.hangWhenEnablingAudioOnly = false, this.onAudioOnlyChange, this.onStop});
 
   final bool hangWhenEnablingAudioOnly;
+  final Future<void> Function(bool value)? onAudioOnlyChange;
+  final Future<void> Function()? onStop;
   final List<bool> audioOnlyChanges = <bool>[];
   int setDataSourceCalls = 0;
   int hardDisposeCalls = 0;
@@ -118,6 +199,7 @@ class _FakePlayer implements UnifiedPlayer {
   @override
   Future<void> setAudioOnly(bool audioOnly) async {
     audioOnlyChanges.add(audioOnly);
+    await onAudioOnlyChange?.call(audioOnly);
     if (audioOnly && hangWhenEnablingAudioOnly) {
       await Completer<void>().future;
     }
@@ -150,7 +232,9 @@ class _FakePlayer implements UnifiedPlayer {
   Future<void> setVolume(double volume) async {}
 
   @override
-  Future<void> softStop() async {}
+  Future<void> softStop() async {
+    await onStop?.call();
+  }
 
   @override
   Future<void> stop() async {}

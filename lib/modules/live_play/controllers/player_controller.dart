@@ -226,7 +226,7 @@ class PlayerController extends GetxController {
 
       // The route may have been popped while the native call was pending.
       if (_main.isClosed || !identical(_state.player.videoController, controller) || currentRoom != room) return;
-      _main.updatePlayer(isCurrentRoomAudioOnly: value);
+      _main.updatePlayer(isCurrentRoomAudioOnly: controller.isAudioOnly);
       _main.updateRoom(success: true, isLoading: false);
     } catch (error, stackTrace) {
       developer.log('Audio mode switch failed', name: 'PlayerController', error: error, stackTrace: stackTrace);

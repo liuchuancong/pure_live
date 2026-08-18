@@ -405,7 +405,9 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     final previous = isAudioOnly;
     try {
       await _playerManager.setAudioOnlyMode(value);
-      if (!_isDisposed) isAudioOnly = value;
+      // A newer request may have superseded this one while the native command
+      // was pending (for example, returning through the floating window).
+      if (!_isDisposed) isAudioOnly = _playerManager.isAudioOnlyMode;
     } catch (_) {
       isAudioOnly = previous;
       rethrow;

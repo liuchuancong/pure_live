@@ -7,6 +7,7 @@ import '../models/player_exception.dart';
 import '../models/player_error_type.dart';
 
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 
 import '../interface/unified_player_interface.dart';
 
@@ -15,6 +16,10 @@ import 'package:media_kit/media_kit.dart' hide PlayerState;
 import 'package:pure_live/common/global/platform_utils.dart';
 
 class MediaKitAdapter implements UnifiedPlayer {
+  MediaKitAdapter() {
+    _audioModeTransitions = LatestAsyncValueQueue<bool>(_applyAudioOnly);
+  }
+
   late final Player _player;
 
   late final VideoController _controller;
@@ -27,11 +32,7 @@ class MediaKitAdapter implements UnifiedPlayer {
 
   String? _currentUrl;
 
-  bool _isAudioOnly = false;
-
-  int _audioModeEpoch = 0;
-
-  bool? _audioModeTarget;
+  late final LatestAsyncValueQueue<bool> _audioModeTransitions;
 
   // =========================
   // subjects
@@ -79,7 +80,6 @@ class MediaKitAdapter implements UnifiedPlayer {
     // Always create a normal video output. Audio-only is a reversible track
     // selection on the same player; constructing a `vo=null` controller made
     // returning to video depend on destroying and recreating the native player.
-    _isAudioOnly = false;
     _disposed = false;
 
     _listenerBound = false;
@@ -203,7 +203,7 @@ class MediaKitAdapter implements UnifiedPlayer {
       // the requested mode only after `open`, when track selection is valid.
       // This also avoids waiting for a not-yet-mounted Android video surface
       // during automatic ASMR startup.
-      await _setAudioOnly(audioOnly, force: true);
+      await _audioModeTransitions.submit(audioOnly);
 
       _stateSubject.add(PlayerState.ready);
 
@@ -459,44 +459,30 @@ class MediaKitAdapter implements UnifiedPlayer {
   }
 
   @override
-  Future<void> setAudioOnly(bool audioOnly) => _setAudioOnly(audioOnly);
+  Future<void> setAudioOnly(bool audioOnly) => _audioModeTransitions.submit(audioOnly);
 
-  Future<void> _setAudioOnly(bool audioOnly, {bool force = false}) async {
+  Future<void> _applyAudioOnly(bool audioOnly) async {
     if (_disposed) return;
-    // A timed-out native Future keeps running. The rollback must still be sent
-    // while an opposite transition is in flight, even when the last completed
-    // state already equals the rollback target.
-    if (!force && _audioModeTarget == null && _isAudioOnly == audioOnly) return;
-
-    final epoch = ++_audioModeEpoch;
-    _audioModeTarget = audioOnly;
 
     try {
       // Use media_kit's public track API so its PlayerState stays in sync with
       // mpv. Keep the Video widget/controller mounted; only the decoded track
       // changes, avoiding an Android Surface detach/reattach cycle.
       final track = audioOnly ? VideoTrack.no() : VideoTrack.auto();
-      final platform = _player.platform;
-      if (platform is NativePlayer) {
-        // Track selection is independent from open/seek. Keeping it outside
-        // media_kit's global command lock prevents one delayed mpv command
-        // from blocking the opposite rollback command behind it.
-        await platform.setVideoTrack(track, synchronized: false);
-      } else {
-        await _player.setVideoTrack(track);
-      }
-      if (_disposed || epoch != _audioModeEpoch) return;
-      _isAudioOnly = audioOnly;
+      // Keep media_kit's native command lock enabled. A Future.timeout does not
+      // cancel the underlying mpv command; issuing an unlocked opposite command
+      // could otherwise complete out of order and leave the actual track at the
+      // stale value. This adapter-level latest-value queue serializes even the
+      // work that continues after an outer timeout.
+      await _player.setVideoTrack(track);
+      if (_disposed) return;
     } catch (error, stackTrace) {
-      if (epoch != _audioModeEpoch) return;
       throw PlayerException(
         message: 'MediaKit audio mode switch failed',
         type: PlayerErrorType.lifecycle,
         error: error,
         stackTrace: stackTrace,
       );
-    } finally {
-      if (epoch == _audioModeEpoch) _audioModeTarget = null;
     }
   }
 
