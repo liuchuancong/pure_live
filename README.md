@@ -35,7 +35,7 @@
 
 - **最新稳定版**：[v2.1.4](https://github.com/wzgrx/pure_live/releases/tag/v2.1.4)
 - **当前开发版本**：`2.1.4+52`
-- **上游同步基线**：`liuchuancong/pure_live@95ae8120`（2026-08-18）
+- **上游同步基线**：`liuchuancong/pure_live@18e2afaf`（2026-08-18）
 - **构建平台**：Android arm64、Windows x64、Linux x64、macOS Universal、iOS arm64 设备包
 
 ![Pure Live 界面预览](assets/images/banner.png)

@@ -3,8 +3,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:developer' as developer;
-import 'package:open_filex/open_filex.dart';
+
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/plugins/file_utils.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
@@ -569,16 +570,7 @@ class RecorderController extends GetxService {
 
   void openFileDir() async {
     final path = settings.recordSavePath.value;
-
-    if (Platform.isWindows) {
-      await Process.run('explorer', [path]);
-    } else if (Platform.isMacOS) {
-      await Process.run('open', [path]);
-    } else if (Platform.isLinux) {
-      await Process.run('xdg-open', [path]);
-    } else if (Platform.isAndroid) {
-      await OpenFilex.open(path);
-    }
+    await FileUtils.openFileOrUrl(path);
   }
 
   @override
