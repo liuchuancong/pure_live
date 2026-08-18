@@ -1,5 +1,6 @@
 name: manual-build
 
+
 on:
   workflow_dispatch:
     inputs:
@@ -9,11 +10,13 @@ on:
         type: boolean
         default: true
 
+
       build_windows:
         description: Build Windows EXE and MSIX
         required: true
         type: boolean
         default: true
+
 
       build_linux:
         description: Build Linux x64 portable archive
@@ -21,11 +24,13 @@ on:
         type: boolean
         default: true
 
+
       build_macos:
         description: Build macOS universal application archive
         required: true
         type: boolean
         default: true
+
 
       build_ios:
         description: Build unsigned iOS device application archive
@@ -33,11 +38,13 @@ on:
         type: boolean
         default: true
 
+
       run_quality:
         description: Run analyze, tests and public interface probes first
         required: true
         type: boolean
         default: true
+
 
       create_release:
         description: Create a GitHub Release and update releases.json
@@ -45,11 +52,13 @@ on:
         type: boolean
         default: true
 
+
       release_tag:
         description: Release tag (e.g. v1.0.0) – required if create_release is true
         required: true
         type: string
         default: 'v2.1.1'
+
 
   push:
     tags:
@@ -58,21 +67,26 @@ on:
       - "stage-apple-*"
       - "stage-ios-*"
 
+
 permissions:
   contents: read
+
 
 concurrency:
   group: manual-build-${{ github.ref }}
   cancel-in-progress: true
+
 
 env:
   FLUTTER_VERSION: 3.47.0
   FLUTTER_LINUX_ARCHIVE: stable/linux/flutter_linux_3.47.0-stable.tar.xz
   FLUTTER_LINUX_SHA256: 26cd99d3d94b1367e6b50535a18aeef0282c10a535bbe3ec493534dcdab75296
 
+
 # =========================================================
 # QUALITY
 # =========================================================
+
 
 jobs:
 
@@ -122,6 +136,7 @@ jobs:
 
       - name: Probe public interfaces
         run: python tool/interface_probe.py
+
 
 
 # =========================================================
@@ -230,6 +245,7 @@ jobs:
             PureLive-*-android-x86_64.apk
           if-no-files-found: error
           retention-days: 3
+
 
 
 # =========================================================
@@ -419,6 +435,7 @@ jobs:
           retention-days: 3
 
 
+
 # =========================================================
 # LINUX
 # =========================================================
@@ -519,19 +536,29 @@ jobs:
             --release \
             --dart-define=PURELIVE_BUILD_SOURCE=github-manual
 
+      - name: Get version
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //; s/[`"'"'"']//g')
+          VERSION="${VERSION%%+*}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Create portable archive
         run: |
+          VERSION="${{ steps.version.outputs.version }}"
           tar \
             -C build/linux/x64/release/bundle \
-            -czf PureLive-linux-x64.tar.gz \
+            -czf PureLive-${VERSION}-linux-x64.tar.gz \
             .
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pure-live-linux-x64
-          path: PureLive-linux-x64.tar.gz
+          path: PureLive-*-linux-x64.tar.gz
           if-no-files-found: error
           retention-days: 3
+
 
 
 # =========================================================
@@ -574,9 +601,17 @@ jobs:
       - name: Resolve locked packages
         run: flutter pub get --enforce-lockfile
 
-      # -----------------------------------------------------
-      # macOS
-      # -----------------------------------------------------
+      - name: Get version
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //; s/[`"'"'"']//g')
+          VERSION="${VERSION%%+*}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+# -----------------------------------------------------
+# macOS
+# -----------------------------------------------------
 
       - name: Build macOS release
         if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
@@ -585,7 +620,8 @@ jobs:
             --release \
             --dart-define=PURELIVE_BUILD_SOURCE=github-manual
 
-      - name: Archive macOS application
+      - name: Get macOS application
+        id: macos_app
         if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
         shell: bash
         run: |
@@ -597,7 +633,39 @@ jobs:
             -print \
             -quit)"
 
-          test -n "$app_path"
+          if [[ -z "$app_path" ]]; then
+            echo "macOS .app not found."
+            exit 1
+          fi
+
+          echo "app_path=$app_path" >> "$GITHUB_OUTPUT"
+
+          echo "Found macOS application:"
+          echo "$app_path"
+
+      - name: Verify macOS application
+        if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
+        shell: bash
+        run: |
+          app_path="${{ steps.macos_app.outputs.app_path }}"
+
+          executable="$app_path/Contents/MacOS/$(basename "$app_path" .app)"
+
+          if [[ ! -f "$executable" ]]; then
+            echo "Executable not found:"
+            echo "$executable"
+            exit 1
+          fi
+
+          echo "=== macOS architecture ==="
+          lipo -info "$executable"
+
+      - name: Archive macOS application
+        if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
+        shell: bash
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          app_path="${{ steps.macos_app.outputs.app_path }}"
 
           ditto \
             -c \
@@ -605,17 +673,48 @@ jobs:
             --sequesterRsrc \
             --keepParent \
             "$app_path" \
-            PureLive-macos-universal.zip
+            "PureLive-${VERSION}-macOS.zip"
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - name: Build macOS DMG
+        if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
+        shell: bash
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          app_path="${{ steps.macos_app.outputs.app_path }}"
+
+          hdiutil create \
+            -volname "PureLive" \
+            -srcfolder "$app_path" \
+            -ov \
+            -format UDZO \
+            "PureLive-${VERSION}-macOS.dmg"
+
+      - name: Verify macOS packages
+        if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
+        shell: bash
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          test -f "PureLive-${VERSION}-macOS.zip"
+          test -f "PureLive-${VERSION}-macOS.dmg"
+
+          echo "=== macOS packages ==="
+          ls -lh \
+            "PureLive-${VERSION}-macOS.zip" \
+            "PureLive-${VERSION}-macOS.dmg"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
         with:
-          name: pure-live-macos-universal
-          path: PureLive-macos-universal.zip
+          name: pure-live-macos
+          path: |
+            PureLive-*-macOS.zip
+            PureLive-*-macOS.dmg
           if-no-files-found: error
           retention-days: 3
 
-      # -----------------------------------------------------
+
+      # -------------------------------------------------------
       # iOS
       # -----------------------------------------------------
 
@@ -630,21 +729,23 @@ jobs:
       - name: Archive iOS application
         if: ${{ github.event_name == 'push' || inputs.build_ios }}
         run: |
+          VERSION="${{ steps.version.outputs.version }}"
           ditto \
             -c \
             -k \
             --sequesterRsrc \
             --keepParent \
             build/ios/iphoneos/Runner.app \
-            PureLive-ios-unsigned-app.zip
+            "PureLive-${VERSION}-ios-unsigned-app.zip"
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ github.event_name == 'push' || inputs.build_ios }}
         with:
           name: pure-live-ios-unsigned-app
-          path: PureLive-ios-unsigned-app.zip
+          path: PureLive-*-ios-unsigned-app.zip
           if-no-files-found: error
           retention-days: 3
+
 
 
 # =========================================================
@@ -788,6 +889,7 @@ jobs:
             artifacts/**/*
 
 
+
 # =========================================================
 # UPDATE releases.json
 # =========================================================
@@ -868,22 +970,6 @@ jobs:
                   raise
           else:
               data = {}
-
-          # =================================================
-          # 默认结构
-          #
-          # {
-          #   "releases": [
-          #     {
-          #       "tagName": "...",
-          #       ...
-          #     }
-          #   ]
-          # }
-          #
-          # 如果你的 releases.json 已经使用这个结构，
-          # 可以直接使用。
-          # =================================================
 
           if isinstance(data, dict) and isinstance(
               data.get("releases"),
