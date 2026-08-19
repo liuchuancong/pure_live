@@ -126,7 +126,7 @@ jobs:
         run: flutter --version
 
       - name: Resolve locked packages
-        run: flutter pub get --enforce-lockfile
+        run: flutter pub get
 
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
@@ -191,7 +191,7 @@ jobs:
           EOF
 
       - name: Resolve locked packages
-        run: flutter pub get --enforce-lockfile
+        run: flutter pub get
 
       - name: Build Android release APKs
         run: |
@@ -327,7 +327,7 @@ jobs:
         run: flutter config --enable-windows-desktop
 
       - name: Resolve locked packages
-        run: flutter pub get --enforce-lockfile
+        run: flutter pub get
 
       # -----------------------------------------------------
       # Inno Setup
@@ -479,7 +479,7 @@ jobs:
         run: flutter --version
 
       - name: Resolve locked packages
-        run: flutter pub get --enforce-lockfile
+        run: flutter pub get
 
       - name: Prefetch verified Linux native sources
         shell: bash
@@ -562,7 +562,7 @@ jobs:
           cache: true
 
       - name: Resolve locked packages
-        run: flutter pub get --enforce-lockfile
+        run: flutter pub get
 
       - name: Get version
         id: version
