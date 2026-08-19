@@ -18,5 +18,8 @@ analyzer:
     # Keep the app quality gate focused on code maintained in this repository.
     - plugins/flv_lzc/**
     - plugins/built_in_kotlin/**
+    # Pinned upstream package; patched files are compiled by Android/desktop
+    # builds and its pure state policy is covered by the app regression suite.
+    - third_party/media_kit_video/**
 linter:
   rules:

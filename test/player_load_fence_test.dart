@@ -69,6 +69,7 @@ class _TestPlayerHost implements PlayerSessionHost {
   @override
   void updatePlayer({
     VideoController? videoController,
+    bool clearVideoController = false,
     List<LivePlayQuality>? qualites,
     int? currentQuality,
     List<String>? playUrls,

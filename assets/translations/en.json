@@ -914,7 +914,8 @@
   "player_exo": "Exo Player",
   "player_fvp": "Fvp Player",
   "audio_only_mode": "Audio Only Mode",
-  "audio_only_mode_subtitle": "Play audio stream only and disable video loading",
+  "restoring_live_video": "Restoring live video",
+  "audio_only_mode_subtitle": "A manual foreground switch keeps video decode warm for instant restore; background and automatic sleep sessions disable it to save power. The original stream remains connected, so data usage usually changes little",
   "change_danmaku_font_family": "Change Danmaku Font",
   "window_size": "Startup Window Size",
   "preset_options": "Quick Presets",
@@ -1220,5 +1221,12 @@
   "local_gift_soop_sticker": "Sticker",
   "local_gift_soop_signature_balloon": "Signature Balloon",
   "windows_pip_always_on_top": "Keep Windows mini player on top",
-  "windows_pip_always_on_top_subtitle": "When off, other applications can cover the mini player"
+  "windows_pip_always_on_top_subtitle": "When off, other applications can cover the mini player",
+  "open_new_window": "Open an independent player window",
+  "open_room_in_new_window": "Play this room in a new window",
+  "open_new_window_failed": "The new window did not start. Try again.",
+  "danmaku_repeat_filter": "Repeated danmaku filter",
+  "collapse_repeated_danmaku": "Collapse identical danmaku bursts",
+  "collapse_repeated_danmaku_desc": "Keep the first copy when different users send the same text. Local and system messages are unaffected.",
+  "repeated_danmaku_window": "Identical-text window (seconds)"
 }

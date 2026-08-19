@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/auth/auth_controller.dart';
+import 'package:pure_live/common/utils/windows_multi_instance_launcher.dart';
 
 class MenuButton extends GetView<AuthController> {
   const MenuButton({super.key});
@@ -15,7 +18,15 @@ class MenuButton extends GetView<AuthController> {
       offset: const Offset(12, 0),
       position: PopupMenuPosition.under,
       icon: const Icon(Icons.menu_rounded),
-      onSelected: (int index) {
+      onSelected: (int index) async {
+        if (index == 3) {
+          try {
+            await WindowsMultiInstanceLauncher.launch();
+          } catch (_) {
+            ToastUtil.show(i18n('open_new_window_failed'));
+          }
+          return;
+        }
         Get.toNamed(menuRoutes[index]);
       },
       itemBuilder: (context) => [
@@ -34,6 +45,12 @@ class MenuButton extends GetView<AuthController> {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: MenuListTile(leading: const Icon(Remix.history_line), text: i18n("history")),
         ),
+        if (Platform.isWindows)
+          PopupMenuItem(
+            value: 3,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: MenuListTile(leading: const Icon(Icons.add_to_photos_outlined), text: i18n('open_new_window')),
+          ),
       ],
     );
   }

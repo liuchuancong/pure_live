@@ -75,6 +75,46 @@ void main() {
     expect(panelRect.width, inInclusiveRange(480, 640));
     expect(panelRect.right, greaterThan(950));
   });
+
+  testWidgets('portrait and compact landscape keep one preset state without overflow', (tester) async {
+    final shared = _TestDanmakuSettingsBinding();
+    final showLandscapePanel = ValueNotifier<bool>(false);
+    addTearDown(showLandscapePanel.dispose);
+    await tester.pumpWidget(
+      _testApp(
+        ValueListenableBuilder<bool>(
+          valueListenable: showLandscapePanel,
+          builder: (context, landscape, _) =>
+              landscape ? SettingsPanel(controller: shared) : DanmakuSettingsPage(controller: shared),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final densityBefore = tester.getRect(find.byKey(const ValueKey('danmaku-template-dense')));
+    await tester.tap(find.byKey(const ValueKey('danmaku-template-comfort')));
+    await tester.pump();
+    final densityAfter = tester.getRect(find.byKey(const ValueKey('danmaku-template-dense')));
+    final comfort = DanmakuViewingPreset.values.firstWhere((preset) => preset.id == 'comfort');
+    expect(shared.danmakuArea.value, comfort.area);
+    expect(densityAfter, densityBefore, reason: 'selecting a preset must not reflow the fullscreen controls');
+
+    tester.view.physicalSize = const Size(800, 360);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    showLandscapePanel.value = true;
+    await tester.pumpAndSettle();
+
+    final selected = tester.widget<ChoiceChip>(find.byKey(const ValueKey('danmaku-template-comfort')));
+    expect(selected.selected, isTrue);
+    expect(tester.takeException(), isNull);
+
+    await tester.drag(find.byKey(const ValueKey('danmaku-settings-content-embedded')), const Offset(0, -500));
+    await tester.pumpAndSettle();
+    expect(find.text('PiP danmaku'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }
 
 Widget _testApp(Widget child) {
@@ -151,6 +191,10 @@ class _TestAssetLoader extends AssetLoader {
     'position': 'Position',
     'style': 'Style',
     'danmaku_screen_interaction': 'Interaction',
+    'danmaku_repeat_filter': 'Repeated danmaku filter',
+    'collapse_repeated_danmaku': 'Merge repeated text',
+    'collapse_repeated_danmaku_desc': 'Hide the same audience text inside the time window',
+    'repeated_danmaku_window': 'Merge window',
     'danmaku_no_emoji': 'Pure text',
     'margin_top': 'Top margin',
     'margin_bottom': 'Bottom margin',

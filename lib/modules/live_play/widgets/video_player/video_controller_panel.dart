@@ -116,9 +116,14 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                   onTap: () {
                     final position = _lastTapPosition;
                     if (position != null && controller.handleDanmakuPointer(position, longPress: false)) return;
-                    GlobalPlayerService.instance.playerManager.isPlayingNow
-                        ? controller.enableController()
-                        : GlobalPlayerService.instance.playerManager.togglePlayPause();
+                    // A buffering/paused player must not swallow the only way
+                    // to reveal its controls. Always expose the action bar; a
+                    // tap on a paused surface keeps the historical resume
+                    // behavior as well.
+                    controller.enableController();
+                    if (!GlobalPlayerService.instance.playerManager.isPlayingNow) {
+                      GlobalPlayerService.instance.playerManager.togglePlayPause();
+                    }
                   },
                   onLongPressStart: (details) {
                     controller.handleDanmakuPointer(details.globalPosition, longPress: true);
@@ -1428,15 +1433,18 @@ class AudioOnlyButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final switching = controller.audioModeSwitching.value;
     return IconButton(
       tooltip: i18n(controller.isAudioOnly ? 'restore_video_mode' : 'switch_audio_only_mode'),
       visualDensity: VisualDensity.compact,
       iconSize: 21,
       color: controller.isAudioOnly ? const Color(0xFFFFD166) : Colors.white,
-      onPressed: () {
-        controller.enableController();
-        controller.toggleAudioOnly();
-      },
+      onPressed: switching
+          ? null
+          : () {
+              controller.enableController();
+              controller.toggleAudioOnly();
+            },
       // The headphone always means room-scoped audio-only. A television icon
       // is reserved exclusively for casting so the two actions stay distinct.
       icon: Icon(controller.isAudioOnly ? Remix.headphone_fill : Remix.headphone_line),

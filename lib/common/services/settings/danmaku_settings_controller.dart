@@ -32,6 +32,8 @@ class DanmakuSettingsController extends GetxController {
   final RxBool danmakuAutoFps = hiveBool('danmakuAutoFps', true);
   final RxBool enableDanmakuTapInteraction = hiveBool('enableDanmakuTapInteraction', true);
   final RxBool enableDanmakuLongPressInteraction = hiveBool('enableDanmakuLongPressInteraction', true);
+  final RxBool collapseRepeatedDanmaku = hiveBool('collapseRepeatedDanmaku', false);
+  final RxInt repeatedDanmakuWindowSeconds = hiveInt('repeatedDanmakuWindowSeconds', 5);
   final RxInt danmakuInteractionMigration = hiveInt('danmakuInteractionMigration', 0);
   final RxString savedDanmakuTemplate = hiveString('savedDanmakuTemplate', '');
   final RxString danmakuFontFamilyName = hiveString('danmakuFontFamilyName', 'Default');
@@ -106,6 +108,8 @@ class DanmakuSettingsController extends GetxController {
       'danmakuAutoFps': danmakuAutoFps.v,
       'enableDanmakuTapInteraction': enableDanmakuTapInteraction.v,
       'enableDanmakuLongPressInteraction': enableDanmakuLongPressInteraction.v,
+      'collapseRepeatedDanmaku': collapseRepeatedDanmaku.v,
+      'repeatedDanmakuWindowSeconds': repeatedDanmakuWindowSeconds.v,
       'savedDanmakuTemplate': savedDanmakuTemplate.v,
       'enablePipDanmaku': enablePipDanmaku.v,
       'pipDanmakuAutoScale': pipDanmakuAutoScale.v,
@@ -140,6 +144,8 @@ class DanmakuSettingsController extends GetxController {
     danmakuAutoFps.v = json['danmakuAutoFps'] ?? true;
     enableDanmakuTapInteraction.v = json['enableDanmakuTapInteraction'] ?? true;
     enableDanmakuLongPressInteraction.v = json['enableDanmakuLongPressInteraction'] ?? true;
+    collapseRepeatedDanmaku.v = json['collapseRepeatedDanmaku'] ?? false;
+    repeatedDanmakuWindowSeconds.v = (json['repeatedDanmakuWindowSeconds'] ?? 5).toInt().clamp(1, 30).toInt();
     savedDanmakuTemplate.v = json['savedDanmakuTemplate']?.toString() ?? '';
     enablePipDanmaku.v = json['enablePipDanmaku'] ?? defaultEnablePipDanmaku;
     pipDanmakuAutoScale.v = json['pipDanmakuAutoScale'] ?? defaultPipDanmakuAutoScale;
@@ -185,6 +191,8 @@ class DanmakuSettingsController extends GetxController {
       'danmakuAutoFps': danmaku['danmakuAutoFps'] ?? true,
       'enableDanmakuTapInteraction': danmaku['enableDanmakuTapInteraction'] ?? true,
       'enableDanmakuLongPressInteraction': danmaku['enableDanmakuLongPressInteraction'] ?? true,
+      'collapseRepeatedDanmaku': danmaku['collapseRepeatedDanmaku'] ?? false,
+      'repeatedDanmakuWindowSeconds': (danmaku['repeatedDanmakuWindowSeconds'] ?? 5).toInt().clamp(1, 30).toInt(),
       'savedDanmakuTemplate': danmaku['savedDanmakuTemplate']?.toString() ?? '',
       'enablePipDanmaku': danmaku['enablePipDanmaku'] ?? defaultEnablePipDanmaku,
       'pipDanmakuAutoScale': danmaku['pipDanmakuAutoScale'] ?? defaultPipDanmakuAutoScale,

@@ -26,6 +26,7 @@ import 'package:pure_live/modules/live_play/controllers/danmaku_controller.dart'
 import 'package:pure_live/modules/live_play/controllers/danmaku_session_host.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
+import 'package:pure_live/player/core/player_manager.dart';
 
 // live_play_controller.dart
 
@@ -65,6 +66,7 @@ class LivePlayController extends GetxController
   final List<LiveMessage> _pendingDanmakuMessages = <LiveMessage>[];
   late final LocalMessageDeliveryQueue _localMessageDeliveryQueue;
   late final String _controllerTag;
+  RoomSessionSnapshot? _reentrySession;
 
   static const int _maxDanmakuHistory = 500;
   static const int _maxPendingDanmakuBatch = 200;
@@ -79,15 +81,28 @@ class LivePlayController extends GetxController
     _localMessageDeliveryQueue = LocalMessageDeliveryQueue(onDeliver: _deliverLocalMessage);
 
     final manager = GlobalPlayerService.instance.playerManager;
-    final resumesCurrentSession = manager.consumeRoomSessionReentry(room);
+    _reentrySession = manager.consumeRoomSessionReentry(room);
+    final resumesCurrentSession = _reentrySession != null;
     final autoStartAsmr = Platform.isAndroid && SettingsService.to.app.enableAsmrSleepMode.v;
     final initialAudioOnly = resumesCurrentSession ? manager.desiredAudioOnlyMode : autoStartAsmr;
     _asmrSessionActive = resumesCurrentSession ? LiveAudioService.isSleepSessionActive : autoStartAsmr;
+    final restored = _reentrySession;
     state.value = LivePlayState(
-      room: RoomState(detail: room),
+      room: RoomState(
+        detail: restored?.room ?? room,
+        isLiving: restored?.isLiving ?? true,
+        success: resumesCurrentSession,
+      ),
       // ASMR is the only automatic audio-only entry point. Manual headphone
       // switching is scoped to the current room and is never persisted.
-      player: PlayerState(isCurrentRoomAudioOnly: initialAudioOnly),
+      player: PlayerState(
+        qualites: restored?.qualities ?? const <LivePlayQuality>[],
+        currentQuality: restored?.currentQuality ?? 0,
+        playUrls: restored?.playUrls ?? const <String>[],
+        currentLineIndex: restored?.currentLineIndex ?? 0,
+        isCurrentRoomAudioOnly: initialAudioOnly,
+        hasUseDefaultResolution: restored?.hasUseDefaultResolution ?? false,
+      ),
       ui: UIState(closeTimes: 60, closeTimeFlag: false),
     );
     // Re-entering from the app floating window continues the same room session.
@@ -123,8 +138,27 @@ class LivePlayController extends GetxController
 
   Future<void> _initCore() async {
     _initBackInterceptor();
-    await _preloadEmoji();
+    final restored = _reentrySession;
+    if (restored != null) {
+      _reentrySession = null;
+      await _resumeCurrentRoomSession(restored);
+      _preloadEmojiInBackground();
+      return;
+    }
+
+    // Emoji resources are presentation data. Keeping their disk/network work
+    // off the playback critical path makes a cold room start as soon as its
+    // detail and play URL are available.
+    _preloadEmojiInBackground();
     await onInitPlayerState();
+  }
+
+  void _preloadEmojiInBackground() {
+    unawaited(
+      _preloadEmoji().catchError((Object error, StackTrace stackTrace) {
+        developer.log('Emoji preload failed', name: 'LivePlayController', error: error, stackTrace: stackTrace);
+      }),
+    );
   }
 
   void _initBackInterceptor() {
@@ -136,6 +170,43 @@ class LivePlayController extends GetxController
   Future<void> _preloadEmoji() async {
     emojiCache.clear();
     await EmojiManager().preload(site);
+  }
+
+  Future<void> _resumeCurrentRoomSession(RoomSessionSnapshot session) async {
+    final controller = await playerController.attachCurrentSession(session);
+    if (controller == null || isClosed) {
+      // The native player disappeared between the floating-window tap and route
+      // construction. Fall back to the normal bounded room initialization.
+      await onInitPlayerState();
+      return;
+    }
+
+    updateRoom(detail: session.room, isLiving: session.isLiving, success: true, isLoading: false, loadError: null);
+    await _syncDanmakuConnection(session.room);
+    unawaited(_refreshResumedRoomMetadata(session.room));
+  }
+
+  Future<void> _refreshResumedRoomMetadata(LiveRoom previous) async {
+    final roomId = previous.roomId;
+    final platform = previous.platform;
+    if (roomId == null || platform == null) return;
+    try {
+      final fetched = await currentSite.liveSite.getRoomDetail(roomId: roomId, platform: platform);
+      if (isClosed) return;
+      final current = state.value.room.detail;
+      if (current?.roomId != roomId || current?.platform != platform) return;
+      final refreshed = fetched.withAudienceFallbackFrom(current!);
+      final isLiving = refreshed.status == true || refreshed.isRecord == true;
+      updateRoom(detail: refreshed, isLiving: isLiving, success: true, isLoading: false);
+    } catch (error, stackTrace) {
+      // The already-playing session stays usable when a metadata refresh fails.
+      developer.log(
+        'Re-entered room metadata refresh failed',
+        name: 'LivePlayController',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   bool myInterceptor(bool stopDefaultButtonEvent, RouteInfo info) {
@@ -170,6 +241,7 @@ class LivePlayController extends GetxController
   @override
   void updatePlayer({
     VideoController? videoController,
+    bool clearVideoController = false,
     List<LivePlayQuality>? qualites,
     int? currentQuality,
     List<String>? playUrls,
@@ -179,7 +251,15 @@ class LivePlayController extends GetxController
   }) {
     state.value = state.value.copyWith(
       player: state.value.player.copyWith(
-        videoController: videoController,
+        // Nullable optional parameters cannot distinguish "not supplied" from
+        // "clear this field". Passing the default null on every unrelated
+        // player-state update used to remove the live VideoController; toggling
+        // audio mode therefore replaced the room with a permanent loading page.
+        videoController: resolveVideoControllerUpdate(
+          current: state.value.player.videoController,
+          next: videoController,
+          clear: clearVideoController,
+        ),
         qualites: qualites,
         currentQuality: currentQuality,
         playUrls: playUrls,
@@ -302,7 +382,23 @@ class LivePlayController extends GetxController
   Future<void> setCurrentRoomAudioOnlyFromUser(bool value) async {
     if (!value && _asmrSessionActive) {
       _asmrSessionActive = false;
-      await LiveAudioService.configureSleepTimer(enabled: false, minutes: SettingsService.to.app.asmrSleepMinutes.v);
+      // Stopping the sleep timer updates its in-memory state synchronously, but
+      // the Android keep-alive channel may answer slowly on a busy vendor ROM.
+      // Keep that platform cleanup out of the native video-track transition so
+      // restoring video never waits behind the foreground service.
+      unawaited(
+        LiveAudioService.configureSleepTimer(
+          enabled: false,
+          minutes: SettingsService.to.app.asmrSleepMinutes.v,
+        ).catchError((Object error, StackTrace stackTrace) {
+          developer.log(
+            'Sleep timer cleanup failed during video restore',
+            name: 'LivePlayController',
+            error: error,
+            stackTrace: stackTrace,
+          );
+        }),
+      );
     }
     await playerController.changeCurrentRoomAudioOnly(value);
   }
@@ -423,14 +519,7 @@ class LivePlayController extends GetxController
         EventBus.instance.emit('refresh_room_changed', true);
       }
 
-      const except = [Sites.kuaishouSite, Sites.iptvSite, Sites.ccSite];
-      final danmakuSettings = SettingsService.to.danmaku;
-      final shouldConnectDanmaku = danmakuSettings.enableDanmakuDisplay.v || danmakuSettings.enablePipDanmaku.v;
-      if (!except.contains(liveRoom.platform) && shouldConnectDanmaku) {
-        await danmakuController.connectRoom(liveRoom);
-      } else {
-        await danmakuController.stopDanmaku();
-      }
+      await _syncDanmakuConnection(liveRoom);
     } catch (error, stackTrace) {
       developer.log(
         'Live room initialization failed (${error.runtimeType})',
@@ -438,6 +527,17 @@ class LivePlayController extends GetxController
         stackTrace: stackTrace,
       );
       updateRoom(success: false);
+    }
+  }
+
+  Future<void> _syncDanmakuConnection(LiveRoom liveRoom) async {
+    const except = [Sites.kuaishouSite, Sites.iptvSite, Sites.ccSite];
+    final danmakuSettings = SettingsService.to.danmaku;
+    final shouldConnectDanmaku = danmakuSettings.enableDanmakuDisplay.v || danmakuSettings.enablePipDanmaku.v;
+    if (!except.contains(liveRoom.platform) && shouldConnectDanmaku) {
+      await danmakuController.connectRoom(liveRoom);
+    } else {
+      await danmakuController.stopDanmaku();
     }
   }
 
@@ -640,13 +740,30 @@ class LivePlayController extends GetxController
 
   void prepareAppFloating({Future<void>? routeUnmounted}) {
     _floatingResourcesReleased = false;
-    GlobalPlayerService.instance.playerManager.prepareAppFloating(
+    final manager = GlobalPlayerService.instance.playerManager;
+    final current = state.value;
+    final detail = current.room.detail;
+    manager.prepareAppFloating(
       onClose: () async {
         // A popped route may remain mounted for its reverse transition. Its
         // Obx widgets must unsubscribe before this controller closes Rx state.
         if (routeUnmounted != null) await routeUnmounted;
         await disposeAppFloatingResources();
       },
+      session: detail == null
+          ? null
+          : RoomSessionSnapshot(
+              room: detail,
+              qualities: List<LivePlayQuality>.unmodifiable(current.player.qualites),
+              currentQuality: current.player.currentQuality,
+              playUrls: List<String>.unmodifiable(current.player.playUrls),
+              currentLineIndex: current.player.currentLineIndex,
+              headers: Map<String, String>.unmodifiable(current.player.videoController?.headers ?? const {}),
+              isAudioOnly: manager.desiredAudioOnlyMode,
+              isLiving: current.room.isLiving,
+              dataSource: current.player.playUrlSafe,
+              hasUseDefaultResolution: current.player.hasUseDefaultResolution,
+            ),
     );
   }
 

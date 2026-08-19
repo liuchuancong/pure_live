@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller_panel.dart';
@@ -26,14 +28,20 @@ class _VideoPlayerState extends State<VideoPlayer> with WidgetsBindingObserver {
 
   VideoController get controller => widget.controller;
   Widget _buildVideo() {
-    return Obx(
-      () => GlobalPlayerService.instance.playerManager.getVideoWidget(
+    return Obx(() {
+      final audioOnly = controller.audioOnlyState.value;
+      return GlobalPlayerService.instance.playerManager.getVideoWidget(
         SettingsService.to.player.videoFitIndex.v,
         fitList: SettingsService.to.player.videoFitArray,
         trackPipSource: true,
+        // The route controller updates this optimistically before Android's
+        // background-service synchronization. Driving presentation from the
+        // route state prevents a transient native/player state from leaving a
+        // black surface on top of the audio-mode UI.
+        audioOnlyOverride: audioOnly,
         controls: VideoControllerPanel(controller: controller),
-      ),
-    );
+      );
+    });
   }
 
   bool _isPausedByLifecycle = false;
@@ -43,6 +51,12 @@ class _VideoPlayerState extends State<VideoPlayer> with WidgetsBindingObserver {
     final player = GlobalPlayerService.instance.playerManager;
 
     if (state == AppLifecycleState.paused) {
+      // A short foreground-only warm window makes a manual audio/video toggle
+      // instant. Once the app backgrounds, prefer the real low-power path so
+      // overnight listening never keeps the video decoder running.
+      if (player.isAudioOnlyMode) {
+        unawaited(player.commitAudioOnlyPowerSaving());
+      }
       if (!LiveAudioService.shouldContinueInBackground) {
         if (player.isPlayingNow) {
           _isPausedByLifecycle = true;
@@ -50,6 +64,9 @@ class _VideoPlayerState extends State<VideoPlayer> with WidgetsBindingObserver {
         }
       }
     } else if (state == AppLifecycleState.resumed) {
+      if (player.isAudioOnlyMode && !LiveAudioService.isSleepSessionActive) {
+        unawaited(player.prepareAudioOnlyVideoRestore());
+      }
       if (_isPausedByLifecycle) {
         player.resume();
         _isPausedByLifecycle = false;

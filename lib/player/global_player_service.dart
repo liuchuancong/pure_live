@@ -1,14 +1,18 @@
 import 'dart:developer';
+
 import 'core/player_pool.dart';
 import 'core/player_manager.dart';
 import 'models/player_engine.dart';
 import 'adapters/fijk_adapter.dart';
 import 'adapters/media_kit_adapter.dart';
 import 'core/line_fallback_manager.dart';
+
 import 'package:media_kit/media_kit.dart';
+
 import 'core/preload_player_manager.dart';
 import 'core/engine_fallback_manager.dart';
 import 'adapters/video_player_adapter.dart';
+
 import 'package:pure_live/common/global/platform_utils.dart';
 
 class GlobalPlayerService {
@@ -19,12 +23,28 @@ class GlobalPlayerService {
   late final PlayerManager playerManager;
 
   bool _initialized = false;
+  Future<void>? _initializationFuture;
 
   bool get initialized => _initialized;
 
   Future<void> initialize({PlayerEngine defaultEngine = PlayerEngine.mediaKit}) async {
     if (_initialized) return;
+    final inFlight = _initializationFuture;
+    if (inFlight != null) {
+      await inFlight;
+      return;
+    }
 
+    final operation = _initialize(defaultEngine);
+    _initializationFuture = operation;
+    try {
+      await operation;
+    } finally {
+      if (identical(_initializationFuture, operation)) _initializationFuture = null;
+    }
+  }
+
+  Future<void> _initialize(PlayerEngine defaultEngine) async {
     MediaKit.ensureInitialized();
     // 1. Setup the Pool with a factory that knows how to create each Adapter
     final playerPool = PlayerPool(

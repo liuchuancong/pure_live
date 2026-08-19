@@ -63,10 +63,9 @@ dependencies:
       ref: 994465d9bfca3f39d0b41199d16e7fd93fe97881
       path: ./media_kit
   media_kit_video:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: 994465d9bfca3f39d0b41199d16e7fd93fe97881
-      path: ./media_kit_video
+    # Local patch gives Android Surface lifecycle and audio-only track
+    # selection one state owner, preventing rotation/PiP vid races.
+    path: ./third_party/media_kit_video
   media_kit_libs_video:
     git:
       url: https://github.com/Predidit/media-kit.git

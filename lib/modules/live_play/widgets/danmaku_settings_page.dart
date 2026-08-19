@@ -88,8 +88,19 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
                           ChoiceChip(
                             key: ValueKey('danmaku-template-${preset.id}'),
                             selected: activePreset?.id == preset.id,
-                            showCheckmark: true,
-                            avatar: preset.id == 'best' ? const Icon(Icons.auto_awesome_rounded, size: 18) : null,
+                            // Reserve the same avatar width in every state. The
+                            // default ChoiceChip checkmark changes its width
+                            // only after selection and used to reflow the next
+                            // preset/button in the narrow fullscreen panel.
+                            showCheckmark: false,
+                            avatar: SizedBox(
+                              width: 18,
+                              child: activePreset?.id == preset.id
+                                  ? const Icon(Icons.check_rounded, size: 18)
+                                  : preset.id == 'best'
+                                  ? const Icon(Icons.auto_awesome_rounded, size: 18)
+                                  : const Opacity(opacity: 0, child: Icon(Icons.check_rounded, size: 18)),
+                            ),
                             label: Text(i18n(preset.labelKey)),
                             onSelected: (_) => _applyPreset(preset),
                           ),
@@ -251,6 +262,32 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
                     '${SettingsService.to.danmaku.resolvedDanmakuFps()} FPS',
                     style: TextStyle(color: digitColor, fontWeight: FontWeight.w600),
                   ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          context.buildGroupTitle(i18n('danmaku_repeat_filter')),
+          const SizedBox(height: 8),
+          reactiveCard(
+            () => [
+              _switch(
+                theme,
+                title: i18n('collapse_repeated_danmaku'),
+                subtitle: i18n('collapse_repeated_danmaku_desc'),
+                value: SettingsService.to.danmaku.collapseRepeatedDanmaku.v,
+                onChanged: (v) => SettingsService.to.danmaku.collapseRepeatedDanmaku.v = v,
+                labelColor: labelColor,
+              ),
+              if (SettingsService.to.danmaku.collapseRepeatedDanmaku.v)
+                _counter(
+                  theme,
+                  title: i18n('repeated_danmaku_window'),
+                  value: SettingsService.to.danmaku.repeatedDanmakuWindowSeconds.v,
+                  min: 1,
+                  max: 30,
+                  onChanged: (v) => SettingsService.to.danmaku.repeatedDanmakuWindowSeconds.v = v,
+                  labelColor: labelColor,
+                  digitColor: digitColor,
                 ),
             ],
           ),
@@ -456,6 +493,7 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
   Widget _switch(
     ThemeData theme, {
     required String title,
+    String? subtitle,
     required bool value,
     required ValueChanged<bool> onChanged,
     required Color labelColor,
@@ -466,9 +504,18 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
-            child: Text(
-              title,
-              style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600, color: labelColor),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600, color: labelColor),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 3),
+                  Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+                ],
+              ],
             ),
           ),
           const SizedBox(width: 8),

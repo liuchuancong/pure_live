@@ -15,21 +15,31 @@ import 'package:pure_live/common/services/utils/settings_upgrade_migration.dart'
 import 'package:windows_single_instance/windows_single_instance.dart';
 import 'package:pure_live/common/global/platform/mobile_manager.dart';
 import 'package:pure_live/common/global/platform/desktop_manager.dart';
+import 'package:pure_live/common/utils/windows_multi_instance_launcher.dart';
 
 class AppInitializer {
   static final AppInitializer _instance = AppInitializer._internal();
   bool _isInitialized = false;
+  LiveRoom? _initialRoom;
 
   factory AppInitializer() => _instance;
   AppInitializer._internal();
 
   bool get isInitialized => _isInitialized;
 
+  /// Returns a command-line room once, after the home navigator is mounted.
+  LiveRoom? takeInitialRoom() {
+    final room = _initialRoom;
+    _initialRoom = null;
+    return room;
+  }
+
   Future<void> initialize(List<String> args) async {
     if (_isInitialized) return;
 
     WidgetsFlutterBinding.ensureInitialized();
-    final String instanceId = _getInstanceIdFromArgs(args);
+    final String instanceId = WindowsMultiInstanceLauncher.instanceIdFromArgs(args);
+    _initialRoom = WindowsMultiInstanceLauncher.roomFromArgs(args);
     await _initWindowsSingleInstance(args, instanceId);
 
     await AppPathManager().initialize(instanceId: instanceId);
@@ -72,16 +82,6 @@ class AppInitializer {
     }
 
     _isInitialized = true;
-  }
-
-  String _getInstanceIdFromArgs(List<String> args) {
-    for (final arg in args) {
-      if (arg.startsWith('--instance=')) {
-        final parts = arg.split('=');
-        return parts.length > 1 ? parts[1] : '';
-      }
-    }
-    return '';
   }
 
   Future<void> _initWindowsSingleInstance(List<String> args, String instanceId) async {

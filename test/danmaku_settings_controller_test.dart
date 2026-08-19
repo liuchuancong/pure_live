@@ -21,6 +21,21 @@ void main() {
       expect(config['enableDanmakuLongPressInteraction'], isTrue);
       expect(config['noEmojiMode'], isFalse);
       expect(config['pipDanmakuNoEmojiMode'], isFalse);
+      expect(config['collapseRepeatedDanmaku'], isFalse);
+      expect(config['repeatedDanmakuWindowSeconds'], 5);
+    });
+
+    test('clamps the repeated-text merge window from imported settings', () {
+      final short = DanmakuSettingsController.extractConfig({
+        'danmaku': {'collapseRepeatedDanmaku': true, 'repeatedDanmakuWindowSeconds': 0},
+      });
+      final long = DanmakuSettingsController.extractConfig({
+        'danmaku': {'repeatedDanmakuWindowSeconds': 99},
+      });
+
+      expect(short['collapseRepeatedDanmaku'], isTrue);
+      expect(short['repeatedDanmakuWindowSeconds'], 1);
+      expect(long['repeatedDanmakuWindowSeconds'], 30);
     });
 
     test('migrates the upstream compact pure-text backup key', () {

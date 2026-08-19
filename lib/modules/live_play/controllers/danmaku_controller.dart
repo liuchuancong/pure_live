@@ -4,6 +4,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_message_gate.dart';
+import 'package:pure_live/modules/live_play/controllers/repeated_danmaku_filter.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_session_host.dart';
 import 'package:pure_live/modules/live_play/states/live_play_state.dart';
 
@@ -24,6 +25,7 @@ class DanmakuController extends GetxController {
   final Duration startTimeout;
   final Duration stopTimeout;
   final DanmakuMessageGate _messageGate = DanmakuMessageGate();
+  final RepeatedDanmakuFilter _repeatedMessageFilter = RepeatedDanmakuFilter();
 
   LiveDanmaku? _liveDanmaku;
   Future<void> _operationTail = Future<void>.value();
@@ -75,6 +77,7 @@ class DanmakuController extends GetxController {
       if (request != _requestEpoch) return;
       _liveDanmaku = danmaku;
       _messageGate.clear();
+      _repeatedMessageFilter.clear();
       _gateRoomKey = null;
     });
   }
@@ -98,6 +101,7 @@ class DanmakuController extends GetxController {
 
       if (_gateRoomKey != key) {
         _messageGate.clear();
+        _repeatedMessageFilter.clear();
         _gateRoomKey = key;
       }
 
@@ -145,6 +149,14 @@ class DanmakuController extends GetxController {
       if (!_acceptsCallback(engine, key, token)) return;
       if (msg.type == LiveMessageType.chat) {
         if (!_messageGate.accepts(msg) || _isBlocked(msg)) return;
+        final danmakuSettings = SettingsService.to.danmaku;
+        if (!_repeatedMessageFilter.accepts(
+          msg,
+          enabled: danmakuSettings.collapseRepeatedDanmaku.v,
+          window: Duration(seconds: danmakuSettings.repeatedDanmakuWindowSeconds.v.clamp(1, 30)),
+        )) {
+          return;
+        }
         if (!_maskedNameNoticeShown &&
             room.platform == Sites.bilibiliSite &&
             RegExp(r'\*{2,}|＊{2,}').hasMatch(msg.userName)) {

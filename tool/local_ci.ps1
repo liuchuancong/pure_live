@@ -8,6 +8,9 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $flutterw = Join-Path $PSScriptRoot 'flutterw.ps1'
 Push-Location $repoRoot
 try {
+    python (Join-Path $PSScriptRoot 'validate_device_ui_map.py')
+    if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
     & $flutterw pub get --enforce-lockfile
     if ($LASTEXITCODE) { exit $LASTEXITCODE }
 
@@ -28,6 +31,7 @@ try {
         $_ -notin $formatExclusions -and
         -not $_.StartsWith('plugins/built_in_kotlin/', [StringComparison]::OrdinalIgnoreCase) -and
         -not $_.StartsWith('plugins/flv_lzc/', [StringComparison]::OrdinalIgnoreCase) -and
+        -not $_.StartsWith('third_party/media_kit_video/', [StringComparison]::OrdinalIgnoreCase) -and
         (Test-Path -LiteralPath $_)
     } | Sort-Object -Unique
     if ($dartFiles.Count -gt 0) {

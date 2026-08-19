@@ -456,7 +456,7 @@ jobs:
         run: |
           sudo apt-get -o Acquire::Retries=5 update
           sudo apt-get -o Acquire::Retries=5 install -y \
-            clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libasound2-dev \
+            clang g++ make cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libasound2-dev \
             libayatana-appindicator3-dev libsecret-1-dev libva-dev libvdpau-dev \
             libpulse-dev libxv-dev libunwind-dev libgnutls28-dev liblcms2-dev \
             libarchive-dev libgbm-dev libxss-dev libxrandr-dev libegl1-mesa-dev \

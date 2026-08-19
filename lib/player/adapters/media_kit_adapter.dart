@@ -32,6 +32,8 @@ class MediaKitAdapter implements UnifiedPlayer {
 
   String? _currentUrl;
 
+  bool _isAudioOnly = false;
+
   late final LatestAsyncValueQueue<bool> _audioModeTransitions;
 
   // =========================
@@ -81,6 +83,10 @@ class MediaKitAdapter implements UnifiedPlayer {
     // selection on the same player; constructing a `vo=null` controller made
     // returning to video depend on destroying and recreating the native player.
     _disposed = false;
+
+    // This is application presentation state. On Android the attached
+    // media_kit VideoController is the sole owner of mpv's `vid` property.
+    _isAudioOnly = false;
 
     _listenerBound = false;
 
@@ -199,11 +205,17 @@ class MediaKitAdapter implements UnifiedPlayer {
 
       await _player.open(Media(url, httpHeaders: headers), play: true);
 
-      // mpv may reset its selected track when a new live source opens. Apply
-      // the requested mode only after `open`, when track selection is valid.
-      // This also avoids waiting for a not-yet-mounted Android video surface
-      // during automatic ASMR startup.
-      await _audioModeTransitions.submit(audioOnly);
+      // mpv opens a normal Android source with `vid=auto`, and the Surface
+      // controller already owns that same initial state. Reissuing an async
+      // `vid=auto` command here can stay pending after the first frame is
+      // visible; the room controller's initialization Future then never
+      // completes and the first headphone tap waits on a stream that is already
+      // playing. Audio-only still needs an explicit post-open selection.
+      if (PlatformUtils.isAndroid && !audioOnly) {
+        _isAudioOnly = false;
+      } else {
+        await _applyAudioOnly(audioOnly, force: true);
+      }
 
       _stateSubject.add(PlayerState.ready);
 
@@ -459,22 +471,35 @@ class MediaKitAdapter implements UnifiedPlayer {
   }
 
   @override
-  Future<void> setAudioOnly(bool audioOnly) => _audioModeTransitions.submit(audioOnly);
+  Future<void> setAudioOnly(bool audioOnly) {
+    if (!_audioModeTransitions.isRunning && _isAudioOnly == audioOnly) {
+      return Future<void>.value();
+    }
+    return _audioModeTransitions.submit(audioOnly);
+  }
 
-  Future<void> _applyAudioOnly(bool audioOnly) async {
+  Future<void> _applyAudioOnly(bool audioOnly, {bool force = false}) async {
     if (_disposed) return;
+    if (!force && _isAudioOnly == audioOnly) return;
 
     try {
-      // Use media_kit's public track API so its PlayerState stays in sync with
-      // mpv. Keep the Video widget/controller mounted; only the decoded track
-      // changes, avoiding an Android Surface detach/reattach cycle.
-      final track = audioOnly ? VideoTrack.no() : VideoTrack.auto();
-      // Keep media_kit's native command lock enabled. A Future.timeout does not
-      // cancel the underlying mpv command; issuing an unlocked opposite command
-      // could otherwise complete out of order and leave the actual track at the
-      // stale value. This adapter-level latest-value queue serializes even the
-      // work that continues after an outer timeout.
-      await _player.setVideoTrack(track);
+      if (PlatformUtils.isAndroid) {
+        // Android's patched video controller serializes `vid` with WID/Surface
+        // updates. Disabling decode here saves battery during long ASMR sessions
+        // while retaining the same player, demuxer and network connection.
+        if (audioOnly) {
+          await _controller.setVideoOutputEnabled(false);
+        } else {
+          await _restoreAndroidVideoOutput();
+        }
+      } else {
+        // Desktop video outputs do not rewrite `vid` while their surface is
+        // resized, so changing the decoded track is safe and saves resources.
+        final track = audioOnly ? VideoTrack.no() : VideoTrack.auto();
+        await _player.setVideoTrack(track);
+      }
+
+      _isAudioOnly = audioOnly;
       if (_disposed) return;
     } catch (error, stackTrace) {
       throw PlayerException(
@@ -483,6 +508,53 @@ class MediaKitAdapter implements UnifiedPlayer {
         error: error,
         stackTrace: stackTrace,
       );
+    }
+  }
+
+  /// Enables Android video and waits for mpv to publish fresh decoded-video
+  /// parameters before the room removes its audio presentation. This is an
+  /// adaptive keyframe fence rather than an arbitrary fixed delay: fast streams
+  /// reveal immediately, while a slow GOP remains covered by the room artwork
+  /// instead of showing a black texture.
+  Future<void> _restoreAndroidVideoOutput() async {
+    final frameReady = Completer<void>();
+    var armed = false;
+    final stopwatch = Stopwatch()..start();
+    final subscription = _player.stream.videoParams.listen((params) {
+      final width = params.dw ?? params.w ?? 0;
+      final height = params.dh ?? params.h ?? 0;
+      if (armed && width > 0 && height > 0 && !frameReady.isCompleted) {
+        frameReady.complete();
+      }
+    });
+
+    try {
+      // The stream is broadcast, but arm after attaching the listener so a
+      // stale cached state can never be mistaken for the next decoded frame.
+      armed = true;
+      await _controller.setVideoOutputEnabled(true);
+
+      var observedFreshFrame = true;
+      await frameReady.future.timeout(
+        const Duration(milliseconds: 2800),
+        onTimeout: () {
+          observedFreshFrame = false;
+        },
+      );
+      if (observedFreshFrame) {
+        // video-params precedes texture composition by a very small interval.
+        // Two display frames keep the cover in place until the GPU texture has
+        // had a chance to present without adding a user-visible fixed pause.
+        await Future<void>.delayed(const Duration(milliseconds: 34));
+      } else {
+        debugPrint(
+          'MediaKitAdapter: video restore readiness timed out after '
+          '${stopwatch.elapsedMilliseconds} ms; revealing the live texture',
+        );
+      }
+    } finally {
+      stopwatch.stop();
+      await subscription.cancel();
     }
   }
 

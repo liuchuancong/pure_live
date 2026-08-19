@@ -914,7 +914,8 @@
   "player_exo": "Exo播放器",
   "player_fvp": "Fvp播放器",
   "audio_only_mode": "纯音频模式",
-  "audio_only_mode_subtitle": "进入直播间时关闭画面，仅播放声音",
+  "restoring_live_video": "正在恢复实时画面",
+  "audio_only_mode_subtitle": "前台手动切换持续保留视频解码，切回时即时恢复；进入后台或自动助眠时关闭视频解码省电。原直播源不变，通常不会明显减少流量",
   "change_danmaku_font_family": "更换弹幕字体",
   "window_size": "开机窗口尺寸",
   "preset_options": "快捷预设选择",
@@ -1220,5 +1221,12 @@
   "local_gift_soop_sticker": "贴纸",
   "local_gift_soop_signature_balloon": "签名气球",
   "windows_pip_always_on_top": "Windows 小窗始终置顶",
-  "windows_pip_always_on_top_subtitle": "关闭后切换到其他应用时，小窗会按普通窗口层级被遮挡"
+  "windows_pip_always_on_top_subtitle": "关闭后切换到其他应用时，小窗会按普通窗口层级被遮挡",
+  "open_new_window": "新建独立播放窗口",
+  "open_room_in_new_window": "在新窗口播放此直播间",
+  "open_new_window_failed": "新窗口启动失败，请重试",
+  "danmaku_repeat_filter": "重复弹幕过滤",
+  "collapse_repeated_danmaku": "合并短时间内的相同弹幕",
+  "collapse_repeated_danmaku_desc": "不同用户发送相同内容时只保留第一条；本地弹幕和系统消息不受影响。",
+  "repeated_danmaku_window": "相同内容合并时间（秒）"
 }

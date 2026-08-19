@@ -222,8 +222,10 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   final String qualiteName;
   final int currentLineIndex;
   final int currentQuality;
-  bool isAudioOnly;
+  final RxBool audioOnlyState;
+  bool get isAudioOnly => audioOnlyState.value;
   final AudioOnlyCallback? onAudioOnlyChanged;
+  final bool reuseCurrentSession;
 
   final Battery _battery;
   final SettingsService _settingsService;
@@ -243,6 +245,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   final showLocked = false.obs;
   final isMenuOpen = false.obs;
   final showVolume = false.obs;
+  final audioModeSwitching = false.obs;
   final batteryLevel = 100.obs;
   final currentVolume = 1.0.obs;
 
@@ -310,7 +313,8 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     required this.qualiteName,
     required this.currentLineIndex,
     required this.currentQuality,
-    required this.isAudioOnly,
+    required bool isAudioOnly,
+    this.reuseCurrentSession = false,
     this.allowScreenKeepOn = false,
     this.allowFullScreen = true,
     this.onAudioOnlyChanged,
@@ -320,7 +324,8 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     SettingsService? settingsService,
     DbService? dbService,
     LivePlayController? livePlayController,
-  }) : _battery = battery ?? Battery(),
+  }) : audioOnlyState = isAudioOnly.obs,
+       _battery = battery ?? Battery(),
        _playerManager = playerManager ?? GlobalPlayerService.instance.playerManager,
        _settingsService = settingsService ?? SettingsService.to,
        _dbService = dbService ?? Get.find<DbService>(),
@@ -362,7 +367,14 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     await _initVolumeController();
     if (_isDisposed) return;
 
-    await _playVideo();
+    if (reuseCurrentSession) {
+      if (_playerManager.currentPlayer == null || _playerManager.currentFloatRoom != room) {
+        throw PlayerException(message: 'Retained room session is no longer available', type: PlayerErrorType.lifecycle);
+      }
+      audioOnlyState.value = _playerManager.desiredAudioOnlyMode;
+    } else {
+      await _playVideo();
+    }
     if (_isDisposed) return;
 
     initPlayerListener();
@@ -403,13 +415,21 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   Future<void> changeAudioOnlyMode(bool value) async {
     if (_isDisposed || isAudioOnly == value) return;
     final previous = isAudioOnly;
+    final enteringAudioMode = value && !previous;
+    if (enteringAudioMode) {
+      // Present the stable room-level audio UI before the Android native track
+      // command completes. mpv reports buffering while it drops the video
+      // decoder; leaving the old video presentation visible during that window
+      // looked like an endless spinner even though audio kept playing.
+      audioOnlyState.value = true;
+    }
     try {
       await _playerManager.setAudioOnlyMode(value);
       // A newer request may have superseded this one while the native command
       // was pending (for example, returning through the floating window).
-      if (!_isDisposed) isAudioOnly = _playerManager.isAudioOnlyMode;
+      if (!_isDisposed) audioOnlyState.value = _playerManager.isAudioOnlyMode;
     } catch (_) {
-      isAudioOnly = previous;
+      if (!_isDisposed) audioOnlyState.value = previous;
       rethrow;
     }
   }
@@ -759,15 +779,26 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   }
 
   // 播放控制
-  bool _audioModeSwitching = false;
-
   Future<void> toggleAudioOnly() async {
-    if (_audioModeSwitching) return;
-    _audioModeSwitching = true;
+    if (audioModeSwitching.value) return;
+    audioModeSwitching.value = true;
     try {
+      // The controls can become visible while the room's native open Future is
+      // still finishing. Let that initial source/track selection settle first,
+      // otherwise its stale `audioOnly` argument can overwrite this tap.
+      final activeSession = _playerManager.hasActivePlaybackSession(room);
+      if (!activeSession) {
+        await initialization.timeout(_playerManager.audioModeSwitchTimeout);
+      }
+      if (_isDisposed) return;
       await onAudioOnlyChanged?.call(!isAudioOnly);
+    } catch (error, stackTrace) {
+      log('Audio mode action failed: $error', name: 'VideoController', error: error, stackTrace: stackTrace);
+      if (!_isDisposed) {
+        ToastUtil.show(i18n('error_lifecycle'));
+      }
     } finally {
-      _audioModeSwitching = false;
+      audioModeSwitching.value = false;
     }
   }
 

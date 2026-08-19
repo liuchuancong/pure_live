@@ -2,6 +2,16 @@ import 'package:flutter/foundation.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 
+/// Resolves the route-scoped video controller for a partial player-state update.
+///
+/// Most updates only change quality, line or audio presentation and must retain
+/// the active controller. Clearing it is deliberately explicit so a nullable
+/// optional argument can never turn an unrelated update into a loading screen.
+T? resolveVideoControllerUpdate<T>({required T? current, T? next, bool clear = false}) {
+  if (clear) return null;
+  return next ?? current;
+}
+
 @immutable
 class PlayerState {
   static const Object _notProvided = Object();

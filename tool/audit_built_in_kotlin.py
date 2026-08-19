@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+import os
 import re
+import shutil
 import subprocess
 import sys
 
@@ -38,6 +40,27 @@ FORBIDDEN = {
 }
 
 
+def find_java() -> str | None:
+    executable = "java.exe" if os.name == "nt" else "java"
+    candidates: list[Path] = []
+    for variable in ("PURE_LIVE_JAVA_HOME", "JAVA_HOME"):
+        value = os.environ.get(variable, "").strip()
+        if value:
+            candidates.append(Path(value) / "bin" / executable)
+
+    if os.name == "nt":
+        program_files = Path(os.environ.get("ProgramFiles", r"C:\Program Files"))
+        local_app_data = os.environ.get("LOCALAPPDATA", "").strip()
+        candidates.append(program_files / "Android" / "Android Studio" / "jbr" / "bin" / executable)
+        if local_app_data:
+            candidates.append(Path(local_app_data) / "Programs" / "Android Studio" / "jbr" / "bin" / executable)
+
+    resolved = shutil.which("java")
+    if resolved:
+        candidates.append(Path(resolved))
+    return next((str(candidate) for candidate in candidates if candidate.is_file()), None)
+
+
 def without_comments(text: str) -> str:
     text = re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
     return re.sub(r"(?m)^\s*//.*$", "", text)
@@ -60,15 +83,20 @@ def main() -> int:
     if not re.search(r"(?m)^skipDependencyChecks\s*=\s*true\s*$", properties):
         errors.append("Flutter 3.47 requires the documented built-in KGP validation workaround")
 
-    java = subprocess.run(
-        ["java", "-version"],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    java_output = f"{java.stdout}\n{java.stderr}"
+    java_path = find_java()
+    java_output = ""
+    java_returncode = 1
+    if java_path is not None:
+        java = subprocess.run(
+            [java_path, "-version"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        java_output = f"{java.stdout}\n{java.stderr}"
+        java_returncode = java.returncode
     java_match = re.search(r'version\s+"(\d+)', java_output)
-    if java.returncode or not java_match or int(java_match.group(1)) < 21:
+    if java_returncode or not java_match or int(java_match.group(1)) < 21:
         errors.append("Java 21 or newer is required to run the AGP 9.3 lint toolchain")
 
     settings = SETTINGS.read_text(encoding="utf-8")

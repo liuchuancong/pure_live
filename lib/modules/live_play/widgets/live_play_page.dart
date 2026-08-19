@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'index.dart';
 
@@ -16,6 +17,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/modules/live_play/states/ui_state.dart';
 import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/common/utils/share_command_handler.dart';
+import 'package:pure_live/common/utils/windows_multi_instance_launcher.dart';
 import 'package:pure_live/modules/live_play/widgets/play_other.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku_tab.dart';
 import 'package:pure_live/modules/live_play/local_interaction_sheet.dart';
@@ -368,6 +370,19 @@ class LivePlayPage extends GetView<LivePlayController> {
                         controller.emitLocalMessage(message, showAsDanmaku: showAsDanmaku),
                   ),
                 );
+              } else if (index == 8) {
+                final detail = controller.state.value.room.detail;
+                if (detail != null) {
+                  WindowsMultiInstanceLauncher.launch(room: detail).catchError((Object error, StackTrace stackTrace) {
+                    developer.log(
+                      'Open live room in a new Windows instance failed',
+                      name: 'LivePlayPage',
+                      error: error,
+                      stackTrace: stackTrace,
+                    );
+                    ToastUtil.show(i18n('open_new_window_failed'));
+                  });
+                }
               }
               controller.updateUI(isMenuOpen: false);
             },
@@ -427,6 +442,15 @@ class LivePlayPage extends GetView<LivePlayController> {
                     child: MenuListTile(
                       leading: const Icon(Icons.auto_awesome_rounded, size: 20),
                       text: i18n('local_interaction_title'),
+                    ),
+                  ),
+                if (Platform.isWindows)
+                  PopupMenuItem(
+                    value: 8,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: MenuListTile(
+                      leading: const Icon(Icons.open_in_new_rounded, size: 20),
+                      text: i18n('open_room_in_new_window'),
                     ),
                   ),
               ];
@@ -516,11 +540,26 @@ class LivePlayPage extends GetView<LivePlayController> {
         color: Colors.black,
         child: Obx(() {
           final state = controller.state.value;
+          if (state.room.success && state.player.videoController != null) {
+            // Metadata/quality/danmaku refreshes must not remove an already
+            // usable native surface or its controls. Replacing the whole player
+            // with a loading page here was the visible "black screen" after an
+            // audio-mode action raced a room refresh.
+            return Stack(
+              children: [
+                Positioned.fill(child: VideoPlayer(controller: state.player.videoController!)),
+                if (state.room.isLoading)
+                  const Positioned(
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    child: IgnorePointer(child: LinearProgressIndicator(minHeight: 2)),
+                  ),
+              ],
+            );
+          }
           if (state.room.isLoading) {
             return buildLoading();
-          }
-          if (state.room.success && state.player.videoController != null) {
-            return VideoPlayer(controller: state.player.videoController!);
           }
           if (state.room.isLiving) {
             return buildLoading();

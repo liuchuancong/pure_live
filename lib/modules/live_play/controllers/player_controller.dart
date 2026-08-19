@@ -11,6 +11,7 @@ import 'package:pure_live/player/models/player_error_type.dart';
 import 'package:pure_live/modules/live_play/states/live_play_state.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
+import 'package:pure_live/player/core/player_manager.dart';
 
 abstract interface class PlayerSessionHost {
   Rx<LivePlayState> get state;
@@ -21,6 +22,7 @@ abstract interface class PlayerSessionHost {
 
   void updatePlayer({
     VideoController? videoController,
+    bool clearVideoController = false,
     List<LivePlayQuality>? qualites,
     int? currentQuality,
     List<String>? playUrls,
@@ -113,6 +115,53 @@ class PlayerController extends GetxController {
       onAudioOnlyChanged: _main.setCurrentRoomAudioOnlyFromUser,
     );
 
+    _main.updatePlayer(videoController: videoController);
+    return videoController;
+  }
+
+  /// Attaches a new route-scoped UI controller to the native player retained by
+  /// [PlayerManager] while the app floating window was visible.
+  ///
+  /// No room endpoint or media source is opened here. The previous page's
+  /// controller has already been disposed; only the global native player and
+  /// immutable session metadata cross the route boundary.
+  Future<VideoController?> attachCurrentSession(RoomSessionSnapshot session) async {
+    final manager = GlobalPlayerService.instance.playerManager;
+    if (_main.isClosed || manager.currentPlayer == null || manager.currentFloatRoom != session.room) return null;
+
+    final qualities = session.qualities.isEmpty
+        ? <LivePlayQuality>[LivePlayQuality(quality: '原画')]
+        : List<LivePlayQuality>.unmodifiable(session.qualities);
+    final playUrls = session.playUrls.isEmpty && session.dataSource.isNotEmpty
+        ? <String>[session.dataSource]
+        : List<String>.unmodifiable(session.playUrls);
+    final currentQuality = session.currentQuality.clamp(0, qualities.length - 1);
+    final currentLineIndex = playUrls.isEmpty ? 0 : session.currentLineIndex.clamp(0, playUrls.length - 1);
+
+    _main.updatePlayer(
+      qualites: qualities,
+      currentQuality: currentQuality,
+      playUrls: playUrls,
+      currentLineIndex: currentLineIndex,
+      isCurrentRoomAudioOnly: manager.desiredAudioOnlyMode,
+      hasUseDefaultResolution: session.hasUseDefaultResolution,
+    );
+
+    final videoController = VideoController(
+      room: session.room,
+      playUrs: playUrls,
+      datasource: session.dataSource.isNotEmpty
+          ? session.dataSource
+          : (playUrls.isEmpty ? '' : playUrls[currentLineIndex]),
+      allowScreenKeepOn: SettingsService.to.app.enableScreenKeepOn.v,
+      headers: session.headers,
+      qualiteName: qualities[currentQuality].quality,
+      currentLineIndex: currentLineIndex,
+      currentQuality: currentQuality,
+      isAudioOnly: manager.desiredAudioOnlyMode,
+      reuseCurrentSession: true,
+      onAudioOnlyChanged: _main.setCurrentRoomAudioOnlyFromUser,
+    );
     _main.updatePlayer(videoController: videoController);
     return videoController;
   }
@@ -241,7 +290,7 @@ class PlayerController extends GetxController {
   Future<void> destroyPlayer() async {
     invalidateLoad();
     await _state.player.videoController?.destory();
-    _main.updatePlayer(videoController: null);
+    _main.updatePlayer(clearVideoController: true);
   }
 
   @override

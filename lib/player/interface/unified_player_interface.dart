@@ -31,7 +31,8 @@ abstract class UnifiedPlayer {
   Future<void> softStop();
 
   /// Enables or disables video decoding/rendering without replacing the
-  /// player or reopening the current live stream.
+  /// player or reopening the current live stream. Surface-backed adapters must
+  /// serialize this with their surface lifecycle.
   Future<void> setAudioOnly(bool audioOnly);
 
   // 真正释放播放器

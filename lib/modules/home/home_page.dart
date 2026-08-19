@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:move_to_desktop/move_to_desktop.dart';
@@ -11,6 +12,9 @@ import 'package:pure_live/modules/popular/popular_page.dart';
 import 'package:pure_live/modules/favorite/favorite_page.dart';
 import 'package:pure_live/modules/about/widgets/version_dialog.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_page.dart';
+import 'package:pure_live/common/global/initialized.dart';
+import 'package:pure_live/routes/app_navigation.dart';
+import 'package:pure_live/player/models/player_engine.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -46,6 +50,16 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
           ),
         );
         SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      }
+
+      final initialRoom = AppInitializer().takeInitialRoom();
+      if (initialRoom != null && mounted) {
+        // MyApp prewarms the global player asynchronously. Reusing that same
+        // initialization Future prevents a command-line room from racing a
+        // second PlayerManager into existence on fast desktop startup.
+        await GlobalPlayerService.instance.initialize(defaultEngine: PlayerEngine.mediaKit);
+        if (!mounted) return;
+        await AppNavigator.toLiveRoomDetail(liveRoom: initialRoom);
       }
     });
 

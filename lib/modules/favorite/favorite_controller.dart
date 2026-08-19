@@ -7,7 +7,8 @@ import 'package:pure_live/modules/tags/live_tag.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
 import 'package:pure_live/common/services/settings/refresh_config_controller.dart';
 
-class FavoriteController extends LocalReactivePageController<LiveRoom> with GetTickerProviderStateMixin {
+class FavoriteController extends LocalReactivePageController<LiveRoom>
+    with GetTickerProviderStateMixin, WidgetsBindingObserver {
   final TagManagementController tagController = Get.find<TagManagementController>();
   final RefreshConfigController refreshConfigController = Get.find<RefreshConfigController>();
 
@@ -21,9 +22,12 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
 
   StreamSubscription<dynamic>? _configSubscription;
   Timer? _autoRefreshTimer;
-  Stopwatch? _refreshStopwatch;
   Timer? _debounceTimer;
   final List<Worker> _audienceWorkers = [];
+  int _refreshEpoch = 0;
+  DateTime? _lastFullRefreshAt;
+
+  static const Duration _resumeRefreshStaleAfter = Duration(minutes: 2);
 
   final onlineRooms = <LiveRoom>[].obs;
   final offlineRooms = <LiveRoom>[].obs;
@@ -38,6 +42,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
     super.onInit();
 
     tabController = TabController(length: 3, vsync: this);
+    WidgetsBinding.instance.addObserver(this);
 
     debounce(SettingsService.to.fav.favoriteRooms, (_) => applyLocalFilter(), time: const Duration(milliseconds: 1000));
 
@@ -51,6 +56,11 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       applyLocalFilter();
+      // Paint the persisted list immediately, then verify every room in the
+      // background. A previous process may have been killed before it could
+      // write an offline transition, so cached live/offline state is never
+      // treated as authoritative after a fresh app start.
+      unawaited(_fullRefreshRooms(showLoading: false, emitFinish: false));
     });
 
     tabController.addListener(() {
@@ -77,19 +87,33 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
     final bool isEnabled = refreshConfigController.autoRefreshFavorite.value;
     final int interval = refreshConfigController.autoRefreshInterval.value;
     if (isEnabled && interval > 0) {
-      _autoRefreshTimer = Timer.periodic(Duration(minutes: interval), (timer) => refreshData());
+      _autoRefreshTimer = Timer.periodic(
+        Duration(minutes: interval),
+        (_) => unawaited(_fullRefreshRooms(showLoading: false)),
+      );
     }
   }
 
   void debounceRefresh() {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
-      _fullRefreshRooms();
+      unawaited(_fullRefreshRooms(showLoading: false));
     });
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    final last = _lastFullRefreshAt;
+    if (last == null || DateTime.now().difference(last) >= _resumeRefreshStaleAfter) {
+      unawaited(_fullRefreshRooms(showLoading: false, emitFinish: false));
+    }
+  }
+
+  @override
   void onClose() {
+    _refreshEpoch++;
+    WidgetsBinding.instance.removeObserver(this);
     tabController.dispose();
     subscription?.cancel();
     roomChangedSubscription?.cancel();
@@ -307,69 +331,97 @@ class FavoriteController extends LocalReactivePageController<LiveRoom> with GetT
   @override
   Future<void> refreshData() async {
     currentPage = 1;
-    await _fullRefreshFilterRooms();
+    await _fullRefreshFilterRooms(showLoading: true);
   }
 
-  Future<void> _fullRefreshFilterRooms() async {
-    loadding.value = true;
-    List<LiveRoom> roomsToRefresh = getFilteredRoomsIgnoringLiveStatus();
-    await _refreshRoomDetails(roomsToRefresh);
-    applyLocalFilter();
-    loadding.value = false;
-    EventBus.instance.emit('refresh_favorite_finish', true);
+  Future<void> _fullRefreshFilterRooms({required bool showLoading}) async {
+    final roomsToRefresh = getFilteredRoomsIgnoringLiveStatus();
+    await _runRoomRefresh(roomsToRefresh, showLoading: showLoading);
   }
 
-  Future<void> _fullRefreshRooms() async {
-    loadding.value = true;
-    List<LiveRoom> roomsToRefresh = getAllRooms();
-    await _refreshRoomDetails(roomsToRefresh);
-    applyLocalFilter();
-    loadding.value = false;
-    EventBus.instance.emit('refresh_favorite_finish', true);
+  Future<void> _fullRefreshRooms({required bool showLoading, bool emitFinish = true}) async {
+    final roomsToRefresh = getAllRooms();
+    await _runRoomRefresh(roomsToRefresh, showLoading: showLoading, emitFinish: emitFinish, markFullRefresh: true);
   }
 
-  Future<void> _refreshRoomDetails(List<LiveRoom> rooms) async {
-    final valid = rooms.where((r) => r.platform?.isNotEmpty ?? false).toList();
+  Future<void> _runRoomRefresh(
+    List<LiveRoom> rooms, {
+    required bool showLoading,
+    bool emitFinish = true,
+    bool markFullRefresh = false,
+  }) async {
+    final refreshEpoch = ++_refreshEpoch;
+    if (showLoading) loadding.value = true;
+    try {
+      await _refreshRoomDetails(rooms, refreshEpoch: refreshEpoch);
+      if (refreshEpoch != _refreshEpoch || isClosed) return;
+      if (markFullRefresh) _lastFullRefreshAt = DateTime.now();
+      applyLocalFilter();
+      if (emitFinish) EventBus.instance.emit('refresh_favorite_finish', true);
+    } finally {
+      if (showLoading && refreshEpoch == _refreshEpoch && !isClosed) {
+        loadding.value = false;
+      }
+    }
+  }
+
+  Future<void> _refreshRoomDetails(List<LiveRoom> rooms, {required int refreshEpoch}) async {
+    final valid = rooms
+        .where((r) => (r.platform?.isNotEmpty ?? false) && (r.roomId?.isNotEmpty ?? false))
+        .toList(growable: false);
     if (valid.isEmpty) return;
-
-    _refreshStopwatch = Stopwatch()..start();
 
     final int batch = refreshConfigController.maxConcurrentRefresh.value > 0
         ? refreshConfigController.maxConcurrentRefresh.value
         : 5;
-    final persistedRooms = List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
-    var changed = false;
+    final updates = <String, LiveRoom>{};
 
     for (int i = 0; i < valid.length; i += batch) {
       final end = i + batch > valid.length ? valid.length : i + batch;
       final batchRooms = valid.sublist(i, end);
 
-      try {
-        final futures = batchRooms
-            .map(
-              (room) => Sites.of(room.platform!).liveSite.getRoomDetail(roomId: room.roomId!, platform: room.platform!),
-            )
-            .toList();
-
-        final results = await Future.wait(futures);
-        for (var updated in results) {
-          final idx = persistedRooms.indexWhere((e) => e.roomId == updated.roomId && e.platform == updated.platform);
-          if (idx != -1) {
-            // 平台详情接口不认识本地标签；刷新时保留它们。整个刷新周期
-            // 只提交一次 Hive，避免每个房间各写一份完整收藏列表。
-            updated.tagIds = List<String>.from(persistedRooms[idx].tagIds);
-            persistedRooms[idx] = updated;
-            changed = true;
-          }
-        }
-      } catch (e) {
-        developer.log('Error refreshing room details: $e');
+      final results = await Future.wait(batchRooms.map(_refreshOneRoom));
+      if (refreshEpoch != _refreshEpoch || isClosed) return;
+      for (final updated in results.whereType<LiveRoom>()) {
+        updates[_roomKey(updated)] = updated;
       }
     }
 
-    if (changed) SettingsService.to.fav.favoriteRooms.v = persistedRooms;
+    if (refreshEpoch != _refreshEpoch || isClosed || updates.isEmpty) return;
 
-    _refreshStopwatch?.stop();
-    _refreshStopwatch = null;
+    // Merge into the latest persisted list at commit time. A favorite removed
+    // while requests were pending stays removed, and a newly-added room is not
+    // overwritten by the stale snapshot captured at refresh start.
+    final latestRooms = List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
+    var changed = false;
+    for (var index = 0; index < latestRooms.length; index++) {
+      final previous = latestRooms[index];
+      final updated = updates[_roomKey(previous)];
+      if (updated == null) continue;
+      updated.tagIds = List<String>.from(previous.tagIds);
+      latestRooms[index] = updated.withAudienceFallbackFrom(previous);
+      changed = true;
+    }
+    if (changed && refreshEpoch == _refreshEpoch && !isClosed) {
+      SettingsService.to.fav.favoriteRooms.v = latestRooms;
+    }
   }
+
+  Future<LiveRoom?> _refreshOneRoom(LiveRoom room) async {
+    try {
+      return await Sites.of(room.platform!).liveSite.getRoomDetail(roomId: room.roomId!, platform: room.platform!);
+    } catch (error, stackTrace) {
+      // One platform/room failure must not discard successful updates from the
+      // rest of the batch.
+      developer.log(
+        'Favorite room refresh failed: ${_roomKey(room)}',
+        name: 'FavoriteController',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
+  }
+
+  String _roomKey(LiveRoom room) => '${room.platform?.toLowerCase() ?? ''}:${room.roomId ?? ''}';
 }

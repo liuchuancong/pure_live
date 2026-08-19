@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
+import 'package:pure_live/common/utils/windows_multi_instance_launcher.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:win32_registry/win32_registry.dart';
@@ -37,7 +38,10 @@ class AppPathManager {
   List<String> get legacyHiveFiles => List.unmodifiable(_legacyHiveFiles);
 
   Future<void> initialize({String instanceId = ''}) async {
-    final sanitizedInstanceId = instanceId.replaceAll(RegExp(r'[^a-zA-Z0-9_.-]'), '');
+    // Treat the command line as untrusted even if it normally comes from our
+    // launcher. A path segment such as `..` must never escape the portable
+    // AppData root.
+    final sanitizedInstanceId = WindowsMultiInstanceLauncher.sanitizeInstanceId(instanceId);
 
     final originalPathProvider = PathProviderPlatform.instance;
     final appDir = await getApplicationDocumentsDirectory();
