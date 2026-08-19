@@ -34,8 +34,8 @@
 > 本维护分支持续同步 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)，并维护本机优先构建、正式签名、接口探测、Windows 数据迁移及高刷新率优化。
 
 - **最新稳定版**：[v2.1.6](https://github.com/wzgrx/pure_live/releases/tag/v2.1.6)
-- **当前开发版本**：`2.1.6+54`
-- **上游同步基线**：`liuchuancong/pure_live@18e2afaf`（2026-08-18）
+- **当前开发版本**：`2.2.0+4068`
+- **上游同步基线**：`liuchuancong/pure_live@2f553c8b`（2026-08-19）
 - **构建平台**：Android arm64、Windows x64、Linux x64、macOS Universal、iOS arm64 设备包
 
 ![Pure Live 界面预览](assets/images/banner.png)
@@ -86,6 +86,7 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 | [WebDAV 配置](docs/WEBDAV.md) | 通用配置字段、坚果云示例和故障排查 |
 | [v2.1.5 阶段更新](docs/STAGE_UPDATE_2_1_5.md) | 本地弹幕同步、列表阅读、模板状态和 Windows 平滑滚动 |
 | [v2.1.6 Android 播放修复](docs/STAGE_UPDATE_2_1_6.md) | 音频/视频切换灰白画面与后台音频生命周期 |
+| [v2.2.0 阶段更新](docs/STAGE_UPDATE_2_2_0.md) | 播放恢复、音频模式、弹幕设置、Windows 多开与最终验证 |
 | [参与贡献](CONTRIBUTING.md) | 分支、提交、测试和 Pull Request 要求 |
 | [安全策略](SECURITY.md) | 私密漏洞报告和签名材料管理 |
 | [版本说明](RELEASE_NOTES.md) | 当前版本变更与历史记录 |
@@ -134,6 +135,8 @@ Windows、Linux、macOS 等桌面平台使用对应平台的播放器实现。
 - 统一弹幕颜色
 - 动态最高刷新率适配
 - 弹幕点击与长按操作
+- 字体粗细与观看模板联动
+- 精确重复和相似文本两级过滤
 
 弹幕系统采用房间会话隔离、平台消息 ID 去重以及过期队列淘汰机制，减少切换直播间后出现：
 
@@ -272,6 +275,10 @@ Android 支持 ASMR 助眠模式。
 
 电视图标用于投屏。
 
+前台手动进入音频模式时保留同一播放器的视频解码热状态，切回画面通常可直接复用当前纹理；应用进入后台后立即停用视频轨以降低解码和电量开销，回到前台再静默预热。深度恢复期间显示低开销音频卡片和明确进度，不再以黑屏或整页转圈阻塞操作。
+
+当前各平台通常返回音视频复用直播流；关闭视频轨主要节省解码、GPU 与电量，并不等同于只下载音频。只有平台明确提供独立音频地址时，才可能同时实现网络流量显著下降和无等待画面恢复。
+
 ---
 
 ## ⏺️ 直播录制
@@ -344,7 +351,7 @@ Firebase 不是 Pure Live 使用的必要条件。
 
 ### Android
 
-v2.1.6 正式 Release 优先提供 `arm64-v8a`，适用于当前主流 64 位 ARM 手机和平板。更新页读取版本清单中的实际 ABI 列表，不会显示本轮没有发布的 32 位 ARM 或 x86_64 下载链接。Windows 等桌面平台继续使用 v2.1.5 阶段安装包。
+v2.2.0 优先提供 `arm64-v8a`，适用于当前主流 64 位 ARM 手机和平板。更新页读取版本清单中的实际 ABI 列表，不会显示本轮没有发布的下载链接。
 
 Android 始终使用正式包名：
 
@@ -410,7 +417,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
 PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 ```
 
-当前 master 已通过 Built-in Kotlin 审计、Flutter Analyze、92 项单元/Widget 测试与 26/26 平台公开接口探测。普通提交不会自动消耗全平台 Actions 配额；Linux/macOS/iOS 使用显式阶段构建，再由校验工作流汇总正式 Release。完整流程见 [构建与发布](docs/BUILD_AND_RELEASE.md)。
+当前 v2.2.0 源码已通过设备 UI 映射校验、Built-in Kotlin 审计、Flutter Analyze、151 项单元/Widget 测试与 26/26 平台公开接口探测。普通提交不会自动消耗全平台 Actions 配额；Linux/macOS/iOS 使用显式阶段构建，再由校验工作流汇总正式 Release。完整流程见 [构建与发布](docs/BUILD_AND_RELEASE.md)。
 
 ## 🤝 参与开发
 

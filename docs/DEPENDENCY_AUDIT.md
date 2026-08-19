@@ -1,6 +1,6 @@
 # 依赖与接口审计
 
-最近核验日期：2026-08-18
+最近核验日期：2026-08-19
 
 ## 固定工具链
 
@@ -11,7 +11,7 @@
 
 Android 已启用 AGP 9 Built-in Kotlin。主应用、`flv_lzc` 以及六个仍使用独立 KGP 的插件已完成本地迁移，根设置不再声明或应用 `org.jetbrains.kotlin.android`。当前 Flutter 3.47 的通用依赖检查会把 AGP 自带编译器套用到独立 KGP 最低版本规则，因此 Gradle 属性跳过该项误判，同时由 `tool/audit_built_in_kotlin.py` 固定检查 AGP/Gradle 下限、开关和全部本地模块；实际 release 编译继续作为最终门禁。
 
-`flutter pub outdated` 已于 2026-08-18 再次复核。所有直接运行时依赖处于当前上游最新版、项目固定 Git 提交或本地兼容补丁；报告中的 8 项更新均属于 Flutter SDK 或当前上游约束锁定的传递依赖，当前锁定版本未受已知 pub 安全公告影响。完整 Android release 日志中已无第三方插件应用 KGP 的迁移警告。
+`flutter pub outdated` 已于 2026-08-19 再次复核。所有直接运行时依赖处于当前上游最新版、项目固定 Git 提交或本地兼容补丁；报告中的 9 项更新均属于 Flutter SDK 或当前上游约束锁定的传递依赖，未用强制 override 破坏播放器组合兼容性。完整 Android release 日志中已无第三方插件应用 KGP 的迁移警告。
 
 播放器依赖在 v2.0.33 再次单独核验：`video_player` 锁定到 2.14.0，`better_player_plus` 为 1.3.5；项目使用的 `Predidit/media-kit` 修订分支 HEAD 仍为 `994465d9bfca3f39d0b41199d16e7fd93fe97881`。`pub outdated` 中其余较新版本均为当前 Flutter SDK 或上游依赖约束锁定的传递包，未用强制 override 破坏播放器组合兼容性。
 
@@ -37,7 +37,7 @@ Android 已启用 AGP 9 Built-in Kotlin。主应用、`flv_lzc` 以及六个仍�
 python .\tool\interface_probe.py
 ```
 
-当前脚本共检查 25 项：Bilibili、Douyu、Huya、Kuaishou、Douyin、网易 CC、Twitch、SOOP Live 的公开分类/推荐入口、搜索、Bilibili 弹幕节点、Huya 弹幕注册身份、Twitch 房间元数据与播放令牌，以及 SOOP 房间元数据和播放令牌。弹幕认证回应、登录态清晰度和实际 CDN 播放仍需在应用内用真实直播间验证。
+当前脚本共检查 26 项：Bilibili、Douyu、Huya、Kuaishou、Douyin、网易 CC、Twitch、SOOP Live 的公开分类/推荐入口、搜索、Bilibili 弹幕节点、Huya 弹幕注册身份、Twitch 房间元数据与播放令牌，以及 SOOP 房间元数据和播放令牌。2026-08-19 本机结果为 26/26；弹幕认证回应、登录态清晰度和实际 CDN 播放仍需在应用内用真实直播间验证。
 
 虎牙另提供 `python .\tool\huya_danmaku_probe.py` 实时 WebSocket 回归；2026-08-16 已验证注册、新版心跳和真实推送接收。该项依赖当前直播间与平台网关状态，保留为发布前手动检查。
 

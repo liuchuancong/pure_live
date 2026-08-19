@@ -2,7 +2,7 @@
 
 本仓库采用“本机优先、Actions 手动兜底”的流程，固定使用 Flutter `3.47.0`。`pubspec.lock`、Git 依赖提交和 FFmpeg 产物地址均已固定，便于复现结果。
 
-最近完整核验：2026-08-18，Windows 11 + Java 25 + Flutter 3.47.0；Built-in Kotlin 审计与 Flutter Analyze 零问题、92 项单元/Widget 测试及 26/26 平台公开接口探测通过。2.1.5 以本机优先方式构建 Android arm64 与 Windows x64，并由显式阶段标签补齐 Linux x64、macOS universal 和 iOS arm64 设备归档；3840 × 2400 / 200 Hz 屏幕可正确显示当前与最高刷新率，Windows 主要列表使用 Chromium Impulse 动画滚动，本地弹幕和模板状态完成回归。干净便携目录继续把数据、缓存和临时文件写入 release 同级 `AppData`。
+最近完整核验：2026-08-19，Windows 11 + Java 25 + Flutter 3.47.0；设备 UI 映射、Built-in Kotlin 审计、Flutter Analyze、151 项单元/Widget 测试及 26/26 平台公开接口探测全部通过。v2.2.0 继续以本机优先方式构建 Android arm64 与 Windows x64，再由显式阶段任务补齐 Linux x64、macOS universal 和 iOS arm64 设备归档；Windows 多实例、音频/视频恢复、重复弹幕过滤和长屏蔽列表均进入回归范围。干净便携目录继续把数据、缓存和临时文件写入 release 同级 `AppData`。
 
 ## 前置环境
 
