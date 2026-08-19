@@ -143,6 +143,7 @@ void _expectBestPreset(_TestDanmakuSettingsBinding binding) {
   expect(binding.danmakuBottomArea.value, best.bottom);
   expect(binding.danmakuSpeed.value, best.speed);
   expect(binding.danmakuFontSize.value, best.fontSize);
+  expect(binding.danmakuFontWeight.value, best.fontWeight);
   expect(binding.danmakuFontBorder.value, best.fontBorder);
   expect(binding.danmakuOpacity.value, best.opacity);
   expect(binding.enableDanmakuStroke.value, best.stroke);
@@ -161,6 +162,8 @@ class _TestDanmakuSettingsBinding implements DanmakuSettingsBinding {
   final danmakuSpeed = 120.0.obs;
   @override
   final danmakuFontSize = 16.0.obs;
+  @override
+  final danmakuFontWeight = 500.obs;
   @override
   final danmakuFontBorder = 1.5.obs;
   @override
@@ -201,6 +204,8 @@ class _TestAssetLoader extends AssetLoader {
     'opacity': 'Opacity',
     'speed': 'Speed',
     'font_size': 'Font size',
+    'font_weight': 'Font weight',
+    'font_weight_medium': 'Medium',
     'danmaku_stroke': 'Stroke',
     'stroke': 'Stroke width',
     'danmaku_fps': 'FPS',

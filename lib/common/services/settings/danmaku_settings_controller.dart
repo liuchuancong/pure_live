@@ -8,6 +8,7 @@ class DanmakuSettingsController extends GetxController {
   static const bool defaultPipDanmakuUseOriginalColor = true;
   static const int defaultPipDanmakuColor = 0xFFFFFFFF;
   static const double defaultPipDanmakuFontSize = 12.0;
+  static const int defaultPipDanmakuFontWeight = 500;
   static const double defaultPipDanmakuSpeed = 90.0;
   static const double defaultPipDanmakuOpacity = 0.9;
   static const double defaultPipDanmakuArea = 0.5;
@@ -17,6 +18,11 @@ class DanmakuSettingsController extends GetxController {
   static const bool defaultNoEmojiMode = false;
   static const bool defaultPipDanmakuNoEmojiMode = false;
 
+  static int normalizeFontWeight(Object? value, {int fallback = 500}) {
+    final raw = value is num ? value.toInt() : fallback;
+    return ((raw.clamp(100, 900) / 100).round() * 100).clamp(100, 900).toInt();
+  }
+
   final RxBool hideDanmaku = hiveBool('hideDanmaku', false);
   final RxBool noEmojiMode = hiveBool('noEmojiMode', defaultNoEmojiMode);
   final RxDouble danmakuTopArea = hiveDouble('danmakuTopArea', 0.0);
@@ -24,6 +30,7 @@ class DanmakuSettingsController extends GetxController {
   final RxDouble danmakuBottomArea = hiveDouble('danmakuBottomArea', 0.5);
   final RxDouble danmakuSpeed = hiveDouble('danmakuSpeed', 120.0);
   final RxDouble danmakuFontSize = hiveDouble('danmakuFontSize', 16.0);
+  final RxInt danmakuFontWeight = hiveInt('danmakuFontWeight', 500);
   final RxDouble danmakuFontBorder = hiveDouble('danmakuFontBorder', 1.5);
   final RxDouble danmakuOpacity = hiveDouble('danmakuOpacity', 1.0);
   final RxBool enableDanmakuDisplay = hiveBool('enableDanmakuDisplay', true);
@@ -45,6 +52,7 @@ class DanmakuSettingsController extends GetxController {
   final RxBool pipDanmakuUseOriginalColor = hiveBool('pipDanmakuUseOriginalColor', defaultPipDanmakuUseOriginalColor);
   final RxInt pipDanmakuColor = hiveInt('pipDanmakuColor', defaultPipDanmakuColor);
   final RxDouble pipDanmakuFontSize = hiveDouble('pipDanmakuFontSize', defaultPipDanmakuFontSize);
+  final RxInt pipDanmakuFontWeight = hiveInt('pipDanmakuFontWeight', 500);
   final RxDouble pipDanmakuSpeed = hiveDouble('pipDanmakuSpeed', defaultPipDanmakuSpeed);
   final RxDouble pipDanmakuOpacity = hiveDouble('pipDanmakuOpacity', defaultPipDanmakuOpacity);
   final RxDouble pipDanmakuArea = hiveDouble('pipDanmakuArea', defaultPipDanmakuArea);
@@ -53,9 +61,19 @@ class DanmakuSettingsController extends GetxController {
   final RxInt pipDanmakuFps = hiveInt('pipDanmakuFps', defaultPipDanmakuFps);
   final RxBool pipDanmakuAutoFps = hiveBool('pipDanmakuAutoFps', true);
 
+  //   Enable danmaku Similarity Filter
+  final RxBool enableDanmakuSimilarityFilter = hiveBool('enableDanmakuSimilarityFilter', true);
+  final RxInt danmakuSimilarityThreshold = hiveInt('danmakuSimilarityThreshold', 85);
+  final RxInt danmakuSimilarityCacheDuration = hiveInt('danmakuSimilarityCacheDuration', 3);
+  final RxInt danmakuSimilarityMaxCacheSize = hiveInt('danmakuSimilarityMaxCacheSize', 100);
   @override
   void onInit() {
     super.onInit();
+    danmakuFontWeight.v = normalizeFontWeight(danmakuFontWeight.v);
+    pipDanmakuFontWeight.v = normalizeFontWeight(pipDanmakuFontWeight.v);
+    danmakuSimilarityThreshold.v = danmakuSimilarityThreshold.v.clamp(50, 100).toInt();
+    danmakuSimilarityCacheDuration.v = danmakuSimilarityCacheDuration.v.clamp(1, 60).toInt();
+    danmakuSimilarityMaxCacheSize.v = danmakuSimilarityMaxCacheSize.v.clamp(20, 1000).toInt();
     if (danmakuInteractionMigration.v < 1) {
       enableDanmakuTapInteraction.v = true;
       enableDanmakuLongPressInteraction.v = true;
@@ -81,6 +99,7 @@ class DanmakuSettingsController extends GetxController {
     pipDanmakuUseOriginalColor.v = defaultPipDanmakuUseOriginalColor;
     pipDanmakuColor.v = defaultPipDanmakuColor;
     pipDanmakuFontSize.v = defaultPipDanmakuFontSize;
+    pipDanmakuFontWeight.v = defaultPipDanmakuFontWeight;
     pipDanmakuSpeed.v = defaultPipDanmakuSpeed;
     pipDanmakuOpacity.v = defaultPipDanmakuOpacity;
     pipDanmakuArea.v = defaultPipDanmakuArea;
@@ -99,6 +118,7 @@ class DanmakuSettingsController extends GetxController {
       'danmakuBottomArea': danmakuBottomArea.v,
       'danmakuSpeed': danmakuSpeed.v,
       'danmakuFontSize': danmakuFontSize.v,
+      'danmakuFontWeight': danmakuFontWeight.v,
       'danmakuFontBorder': danmakuFontBorder.v,
       'danmakuOpacity': danmakuOpacity.v,
       'enableDanmakuDisplay': enableDanmakuDisplay.v,
@@ -117,6 +137,7 @@ class DanmakuSettingsController extends GetxController {
       'pipDanmakuUseOriginalColor': pipDanmakuUseOriginalColor.v,
       'pipDanmakuColor': pipDanmakuColor.v,
       'pipDanmakuFontSize': pipDanmakuFontSize.v,
+      'pipDanmakuFontWeight': pipDanmakuFontWeight.v,
       'pipDanmakuSpeed': pipDanmakuSpeed.v,
       'pipDanmakuOpacity': pipDanmakuOpacity.v,
       'pipDanmakuArea': pipDanmakuArea.v,
@@ -124,6 +145,10 @@ class DanmakuSettingsController extends GetxController {
       'pipDanmakuEmitInterval': pipDanmakuEmitInterval.v,
       'pipDanmakuFps': pipDanmakuFps.v,
       'pipDanmakuAutoFps': pipDanmakuAutoFps.v,
+      'enableDanmakuSimilarityFilter': enableDanmakuSimilarityFilter.v,
+      'danmakuSimilarityThreshold': danmakuSimilarityThreshold.v,
+      'danmakuSimilarityCacheDuration': danmakuSimilarityCacheDuration.v,
+      'danmakuSimilarityMaxCacheSize': danmakuSimilarityMaxCacheSize.v,
     };
   }
 
@@ -135,6 +160,7 @@ class DanmakuSettingsController extends GetxController {
     danmakuBottomArea.v = json['danmakuBottomArea']?.toDouble() ?? 0.5;
     danmakuSpeed.v = (json['danmakuSpeed'] ?? 120.0).toDouble().clamp(20.0, 400.0).toDouble();
     danmakuFontSize.v = json['danmakuFontSize']?.toDouble() ?? 16.0;
+    danmakuFontWeight.v = normalizeFontWeight(json['danmakuFontWeight']);
     danmakuFontBorder.v = (json['danmakuFontBorder']?.toDouble() ?? 1.5).clamp(0.0, 4.0).toDouble();
     danmakuOpacity.v = json['danmakuOpacity']?.toDouble() ?? 1.0;
     enableDanmakuDisplay.v = json['enableDanmakuDisplay'] ?? true;
@@ -157,6 +183,7 @@ class DanmakuSettingsController extends GetxController {
         .toDouble()
         .clamp(8.0, 24.0)
         .toDouble();
+    pipDanmakuFontWeight.v = normalizeFontWeight(json['pipDanmakuFontWeight']);
     pipDanmakuSpeed.v = (json['pipDanmakuSpeed'] ?? defaultPipDanmakuSpeed).toDouble().clamp(20.0, 400.0).toDouble();
     pipDanmakuOpacity.v = (json['pipDanmakuOpacity'] ?? defaultPipDanmakuOpacity).toDouble().clamp(0.1, 1.0).toDouble();
     pipDanmakuArea.v = (json['pipDanmakuArea'] ?? defaultPipDanmakuArea).toDouble().clamp(0.1, 1.0).toDouble();
@@ -170,6 +197,10 @@ class DanmakuSettingsController extends GetxController {
         .toDouble();
     pipDanmakuFps.v = (json['pipDanmakuFps'] ?? defaultPipDanmakuFps).toInt().clamp(15, 240).toInt();
     pipDanmakuAutoFps.v = json['pipDanmakuAutoFps'] ?? true;
+    enableDanmakuSimilarityFilter.v = json['enableDanmakuSimilarityFilter'] ?? true;
+    danmakuSimilarityThreshold.v = (json['danmakuSimilarityThreshold'] ?? 85).toInt().clamp(50, 100).toInt();
+    danmakuSimilarityCacheDuration.v = (json['danmakuSimilarityCacheDuration'] ?? 3).toInt().clamp(1, 60).toInt();
+    danmakuSimilarityMaxCacheSize.v = (json['danmakuSimilarityMaxCacheSize'] ?? 100).toInt().clamp(20, 1000).toInt();
   }
 
   static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
@@ -182,6 +213,7 @@ class DanmakuSettingsController extends GetxController {
       'danmakuBottomArea': (danmaku['danmakuBottomArea'] ?? 0.5).toDouble(),
       'danmakuSpeed': (danmaku['danmakuSpeed'] ?? 120.0).toDouble().clamp(20.0, 400.0).toDouble(),
       'danmakuFontSize': (danmaku['danmakuFontSize'] ?? 16.0).toDouble(),
+      'danmakuFontWeight': normalizeFontWeight(danmaku['danmakuFontWeight']),
       'danmakuFontBorder': (danmaku['danmakuFontBorder'] ?? 1.5).toDouble().clamp(0.0, 4.0).toDouble(),
       'danmakuOpacity': (danmaku['danmakuOpacity'] ?? 1.0).toDouble(),
       'enableDanmakuDisplay': danmaku['enableDanmakuDisplay'] ?? true,
@@ -204,6 +236,10 @@ class DanmakuSettingsController extends GetxController {
           .toDouble()
           .clamp(8.0, 24.0)
           .toDouble(),
+      'pipDanmakuFontWeight': normalizeFontWeight(
+        danmaku['pipDanmakuFontWeight'],
+        fallback: defaultPipDanmakuFontWeight,
+      ),
       'pipDanmakuSpeed': (danmaku['pipDanmakuSpeed'] ?? defaultPipDanmakuSpeed)
           .toDouble()
           .clamp(20.0, 400.0)
@@ -223,6 +259,13 @@ class DanmakuSettingsController extends GetxController {
           .toDouble(),
       'pipDanmakuFps': (danmaku['pipDanmakuFps'] ?? defaultPipDanmakuFps).toInt().clamp(15, 240).toInt(),
       'pipDanmakuAutoFps': danmaku['pipDanmakuAutoFps'] ?? true,
+      'enableDanmakuSimilarityFilter': danmaku['enableDanmakuSimilarityFilter'] ?? true,
+      'danmakuSimilarityThreshold': (danmaku['danmakuSimilarityThreshold'] ?? 85).toInt().clamp(50, 100).toInt(),
+      'danmakuSimilarityCacheDuration': (danmaku['danmakuSimilarityCacheDuration'] ?? 3).toInt().clamp(1, 60).toInt(),
+      'danmakuSimilarityMaxCacheSize': (danmaku['danmakuSimilarityMaxCacheSize'] ?? 100)
+          .toInt()
+          .clamp(20, 1000)
+          .toInt(),
     };
   }
 

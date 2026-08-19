@@ -7,6 +7,7 @@ class DanmakuViewingPreset {
     required this.bottom,
     required this.speed,
     required this.fontSize,
+    required this.fontWeight,
     required this.fontBorder,
     required this.opacity,
     required this.stroke,
@@ -19,6 +20,7 @@ class DanmakuViewingPreset {
   final double bottom;
   final double speed;
   final double fontSize;
+  final int fontWeight;
   final double fontBorder;
   final double opacity;
   final bool stroke;
@@ -32,6 +34,7 @@ class DanmakuViewingPreset {
       bottom: 0,
       speed: 118,
       fontSize: 16,
+      fontWeight: 500,
       fontBorder: 1.5,
       opacity: 0.92,
       stroke: true,
@@ -44,6 +47,7 @@ class DanmakuViewingPreset {
       bottom: 0,
       speed: 105,
       fontSize: 17,
+      fontWeight: 500,
       fontBorder: 1.5,
       opacity: 0.90,
       stroke: true,
@@ -56,6 +60,7 @@ class DanmakuViewingPreset {
       bottom: 0,
       speed: 138,
       fontSize: 15,
+      fontWeight: 500,
       fontBorder: 1.2,
       opacity: 0.88,
       stroke: true,
@@ -67,6 +72,7 @@ class DanmakuViewingPreset {
       top: 0,
       bottom: 0,
       speed: 120,
+      fontWeight: 500,
       fontSize: 16,
       fontBorder: 1.5,
       opacity: 1,
@@ -80,6 +86,7 @@ class DanmakuViewingPreset {
     required double bottom,
     required double speed,
     required double fontSize,
+    required int fontWeight,
     required double fontBorder,
     required double opacity,
     required bool stroke,
@@ -88,6 +95,7 @@ class DanmakuViewingPreset {
     bool close(double left, double right) => (left - right).abs() < 0.001;
     return autoFps &&
         stroke == this.stroke &&
+        fontWeight == this.fontWeight &&
         close(area, this.area) &&
         close(top, this.top) &&
         close(bottom, this.bottom) &&

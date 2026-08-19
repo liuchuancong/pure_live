@@ -21,6 +21,9 @@ class MyTheme {
       return selectedName;
     }
     if (PlatformUtils.isWindows) {
+      // PingFang is not bundled and is normally absent on Windows. Falling
+      // back to it makes every glyph perform another font lookup, which is
+      // especially visible while scrolling long danmaku/settings lists.
       return 'Microsoft YaHei';
     }
     if (PlatformUtils.isAndroid) {

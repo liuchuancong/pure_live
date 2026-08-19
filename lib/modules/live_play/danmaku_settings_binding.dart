@@ -18,6 +18,8 @@ abstract interface class DanmakuSettingsBinding {
 
   RxDouble get danmakuFontSize;
 
+  RxInt get danmakuFontWeight;
+
   RxDouble get danmakuFontBorder;
 
   RxDouble get danmakuOpacity;

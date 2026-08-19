@@ -23,6 +23,28 @@ void main() {
       expect(config['pipDanmakuNoEmojiMode'], isFalse);
       expect(config['collapseRepeatedDanmaku'], isFalse);
       expect(config['repeatedDanmakuWindowSeconds'], 5);
+      expect(config['danmakuFontWeight'], 500);
+      expect(config['pipDanmakuFontWeight'], 500);
+      expect(config['enableDanmakuSimilarityFilter'], isTrue);
+      expect(config['danmakuSimilarityThreshold'], 85);
+    });
+
+    test('normalizes imported font weights and similarity bounds', () {
+      final config = DanmakuSettingsController.extractConfig({
+        'danmaku': {
+          'danmakuFontWeight': 549,
+          'pipDanmakuFontWeight': 9999,
+          'danmakuSimilarityThreshold': 12,
+          'danmakuSimilarityCacheDuration': 99,
+          'danmakuSimilarityMaxCacheSize': 5,
+        },
+      });
+
+      expect(config['danmakuFontWeight'], 500);
+      expect(config['pipDanmakuFontWeight'], 900);
+      expect(config['danmakuSimilarityThreshold'], 50);
+      expect(config['danmakuSimilarityCacheDuration'], 60);
+      expect(config['danmakuSimilarityMaxCacheSize'], 20);
     });
 
     test('clamps the repeated-text merge window from imported settings', () {
