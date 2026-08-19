@@ -1,11 +1,12 @@
 import 'dart:async';
-
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
+import 'package:pure_live/modules/live_play/states/live_play_state.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_message_gate.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
-import 'package:pure_live/modules/live_play/states/live_play_state.dart';
+import 'package:pure_live/modules/live_play/controllers/danmaku_similarity_filter.dart';
+
 
 /// Owns exactly one room-bound danmaku session.
 ///
@@ -18,12 +19,16 @@ class DanmakuController extends GetxController {
 
   final LivePlayController _main;
   final DanmakuMessageGate _messageGate = DanmakuMessageGate();
-
+  final DanmakuSimilarityFilter _similarityFilter = DanmakuSimilarityFilter(
+    similarityThreshold: 85,
+    cacheDuration: const Duration(seconds: 3),
+    maxCacheSize: 100,
+  );
   LiveDanmaku? _liveDanmaku;
   Future<void> _operationTail = Future<void>.value();
   Worker? _settingsWorker;
   Worker? _filterWorker;
-
+  Worker? _similarityFilterWorker;
   int _requestEpoch = 0;
   int _sessionToken = 0;
   String? _sessionKey;
@@ -43,11 +48,21 @@ class DanmakuController extends GetxController {
   void onInit() {
     super.onInit();
     final settings = SettingsService.to;
+    final dm = settings.danmaku;
     _settingsWorker = everAll([
       settings.danmaku.enableDanmakuDisplay,
       settings.danmaku.enablePipDanmaku,
     ], (_) => unawaited(_syncConnectionForSettings()));
     _filterWorker = everAll([settings.fav.blockedDanmakuUsers, settings.fav.shieldList], (_) => _refreshFilters());
+    _similarityFilterWorker = everAll(
+      [dm.danmakuSimilarityThreshold, dm.danmakuSimilarityCacheDuration, dm.danmakuSimilarityMaxCacheSize],
+      (_) {
+        updateDanmakuSimilarityFilterConfig();
+      },
+    );
+
+    // Apply the initial configuration.
+    updateDanmakuSimilarityFilterConfig();
     _refreshFilters();
   }
 
@@ -70,7 +85,18 @@ class DanmakuController extends GetxController {
       _liveDanmaku = danmaku;
       _messageGate.clear();
       _gateRoomKey = null;
+      _similarityFilter.clear();
     });
+  }
+
+  void updateDanmakuSimilarityFilterConfig() {
+    final dm = SettingsService.to.danmaku;
+
+    _similarityFilter.updateConfig(
+      similarityThreshold: dm.danmakuSimilarityThreshold.value,
+      cacheDuration: Duration(seconds: dm.danmakuSimilarityCacheDuration.value),
+      maxCacheSize: dm.danmakuSimilarityMaxCacheSize.value,
+    );
   }
 
   bool needReconnect(LiveRoom room) {
@@ -92,6 +118,7 @@ class DanmakuController extends GetxController {
 
       if (_gateRoomKey != key) {
         _messageGate.clear();
+        _similarityFilter.clear();
         _gateRoomKey = key;
       }
 
@@ -135,6 +162,11 @@ class DanmakuController extends GetxController {
       if (!_acceptsCallback(engine, key, token)) return;
       if (msg.type == LiveMessageType.chat) {
         if (!_messageGate.accepts(msg) || _isBlocked(msg)) return;
+        final dm = SettingsService.to.danmaku;
+
+        if (dm.enableDanmakuSimilarityFilter.value && !_similarityFilter.shouldDisplay(msg.message)) {
+          return;
+        }
         if (!_maskedNameNoticeShown &&
             room.platform == Sites.bilibiliSite &&
             RegExp(r'\*{2,}|＊{2,}').hasMatch(msg.userName)) {
@@ -258,6 +290,7 @@ class DanmakuController extends GetxController {
   void onClose() {
     _settingsWorker?.dispose();
     _filterWorker?.dispose();
+    _similarityFilterWorker?.dispose();
     _requestEpoch++;
     _sessionToken++;
     final engine = _liveDanmaku;

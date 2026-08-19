@@ -54,6 +54,11 @@ class DanmakuSettingsController extends GetxController {
   final RxInt pipDanmakuFps = hiveInt('pipDanmakuFps', defaultPipDanmakuFps);
   final RxBool pipDanmakuAutoFps = hiveBool('pipDanmakuAutoFps', true);
 
+  //   Enable danmaku Similarity Filter
+  final RxBool enableDanmakuSimilarityFilter = hiveBool('enableDanmakuSimilarityFilter', true);
+  final RxInt danmakuSimilarityThreshold = hiveInt('danmakuSimilarityThreshold', 85);
+  final RxInt danmakuSimilarityCacheDuration = hiveInt('danmakuSimilarityCacheDuration', 3);
+  final RxInt danmakuSimilarityMaxCacheSize = hiveInt('danmakuSimilarityMaxCacheSize', 100);
   @override
   void onInit() {
     super.onInit();
@@ -90,6 +95,10 @@ class DanmakuSettingsController extends GetxController {
     pipDanmakuEmitInterval.v = defaultPipDanmakuEmitInterval;
     pipDanmakuFps.v = defaultPipDanmakuFps;
     pipDanmakuAutoFps.v = true;
+    enableDanmakuSimilarityFilter.v = true;
+    danmakuSimilarityThreshold.v = 85;
+    danmakuSimilarityCacheDuration.v = 3;
+    danmakuSimilarityMaxCacheSize.v = 100;
   }
 
   Map<String, dynamic> toJson() {
@@ -126,6 +135,10 @@ class DanmakuSettingsController extends GetxController {
       'pipDanmakuEmitInterval': pipDanmakuEmitInterval.v,
       'pipDanmakuFps': pipDanmakuFps.v,
       'pipDanmakuAutoFps': pipDanmakuAutoFps.v,
+      'enableDanmakuSimilarityFilter': enableDanmakuSimilarityFilter.v,
+      'danmakuSimilarityThreshold': danmakuSimilarityThreshold.v,
+      'danmakuSimilarityCacheDuration': danmakuSimilarityCacheDuration.v,
+      'danmakuSimilarityMaxCacheSize': danmakuSimilarityMaxCacheSize.v,
     };
   }
 
@@ -172,6 +185,10 @@ class DanmakuSettingsController extends GetxController {
         .toDouble();
     pipDanmakuFps.v = (json['pipDanmakuFps'] ?? defaultPipDanmakuFps).toInt().clamp(15, 240).toInt();
     pipDanmakuAutoFps.v = json['pipDanmakuAutoFps'] ?? true;
+    enableDanmakuSimilarityFilter.v = json['enableDanmakuSimilarityFilter'] ?? true;
+    danmakuSimilarityThreshold.v = json['danmakuSimilarityThreshold']?.toInt() ?? 85;
+    danmakuSimilarityCacheDuration.v = json['danmakuSimilarityCacheDuration']?.toInt() ?? 3;
+    danmakuSimilarityMaxCacheSize.v = json['danmakuSimilarityMaxCacheSize']?.toInt() ?? 100;
   }
 
   static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
@@ -225,6 +242,10 @@ class DanmakuSettingsController extends GetxController {
           .toDouble(),
       'pipDanmakuFps': (danmaku['pipDanmakuFps'] ?? defaultPipDanmakuFps).toInt().clamp(15, 240).toInt(),
       'pipDanmakuAutoFps': danmaku['pipDanmakuAutoFps'] ?? true,
+      'enableDanmakuSimilarityFilter': danmaku['enableDanmakuSimilarityFilter'] ?? true,
+      'danmakuSimilarityThreshold': (danmaku['danmakuSimilarityThreshold'] ?? 85).toInt(),
+      'danmakuSimilarityCacheDuration': (danmaku['danmakuSimilarityCacheDuration'] ?? 3).toInt(),
+      'danmakuSimilarityMaxCacheSize': (danmaku['danmakuSimilarityMaxCacheSize'] ?? 100).toInt(),
     };
   }
 
