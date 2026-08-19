@@ -33,7 +33,7 @@
 
 > 本维护分支持续同步 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)，并维护本机优先构建、正式签名、接口探测、Windows 数据迁移及高刷新率优化。
 
-- **最新稳定版**：[v2.1.6](https://github.com/wzgrx/pure_live/releases/tag/v2.1.6)
+- **最新稳定版**：[v2.2.0](https://github.com/wzgrx/pure_live/releases/tag/v2.2.0)
 - **当前开发版本**：`2.2.0+4068`
 - **上游同步基线**：`liuchuancong/pure_live@2f553c8b`（2026-08-19）
 - **构建平台**：Android arm64、Windows x64、Linux x64、macOS Universal、iOS arm64 设备包
