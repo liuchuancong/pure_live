@@ -2,10 +2,9 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:developer';
 
-import 'package:flutter/scheduler.dart';
-
 import 'video_controller_panel.dart';
 
+import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:flame_barrage/flame_barrage.dart';
@@ -22,8 +21,8 @@ import 'package:pure_live/player/models/player_error_type.dart';
 import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
-import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku_message_actions.dart';
+import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 
 typedef AudioOnlyCallback = Future<void> Function(bool value);
 
@@ -76,6 +75,7 @@ class DanmakuManager {
       dm.danmakuSpeed.v = migratedSpeed;
     }
     videoController.danmakuFontSize.value = dm.danmakuFontSize.v;
+    videoController.danmakuFontWeight.value = dm.danmakuFontWeight.v;
     videoController.danmakuFontBorder.value = dm.danmakuFontBorder.v;
     videoController.danmakuOpacity.value = dm.danmakuOpacity.v;
     videoController.enableDanmakuStroke.value = dm.enableDanmakuStroke.v;
@@ -91,6 +91,7 @@ class DanmakuManager {
       videoController.danmakuBottomArea,
       videoController.danmakuSpeed,
       videoController.danmakuFontSize,
+      videoController.danmakuFontWeight,
       videoController.danmakuFontBorder,
       videoController.danmakuOpacity,
       videoController.enableDanmakuStroke,
@@ -143,6 +144,7 @@ class DanmakuManager {
     dm.danmakuBottomArea.v = videoController.danmakuBottomArea.value;
     dm.danmakuSpeed.v = videoController.danmakuSpeed.value;
     dm.danmakuFontSize.v = videoController.danmakuFontSize.value;
+    dm.danmakuFontWeight.v = videoController.danmakuFontWeight.value;
     dm.danmakuFontBorder.v = videoController.danmakuFontBorder.value.toDouble();
     dm.danmakuOpacity.v = videoController.danmakuOpacity.value;
     dm.enableDanmakuStroke.v = videoController.enableDanmakuStroke.value;
@@ -253,6 +255,7 @@ class VideoController with ChangeNotifier {
   final danmakuBottomArea = 0.0.obs;
   final danmakuSpeed = 120.0.obs;
   final danmakuFontSize = 16.0.obs;
+  final danmakuFontWeight = FontWeight.w500.value.obs;
   final danmakuFontBorder = 1.5.obs;
   final danmakuOpacity = 1.0.obs;
   final enableDanmakuStroke = true.obs;
@@ -589,7 +592,7 @@ class VideoController with ChangeNotifier {
         bottomAreaDistance: danmakuBottomArea.value,
         baseSpeed: danmakuSpeed.value,
         opacity: danmakuOpacity.value,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight(danmakuFontWeight.value),
         strokeWidth: danmakuFontBorder.value,
         showStroke: enableDanmakuStroke.value,
         noEmojiMode: noEmojiMode.value,

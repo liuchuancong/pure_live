@@ -5,9 +5,7 @@ import 'index.dart';
 
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 import 'package:pure_live/plugins/event_bus.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pure_live/common/utils/live_url_tool.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/index.dart' hide BackButton;
@@ -18,9 +16,10 @@ import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/common/utils/share_command_handler.dart';
 import 'package:pure_live/modules/live_play/widgets/play_other.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku_tab.dart';
-import 'package:pure_live/modules/live_play/local_interaction_sheet.dart';
 import 'package:pure_live/modules/live_play/widgets/video_keyboard.dart';
+import 'package:pure_live/modules/live_play/local_interaction_sheet.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
+import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller_panel.dart';
 
@@ -29,38 +28,26 @@ class LivePlayPage extends GetView<LivePlayController> {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      _updateWakelock();
-      final manager = GlobalPlayerService.instance.playerManager;
-      final isInPip = manager.isInPip.value || manager.isPipPreparing.value;
-      final state = controller.state.value;
-      final mode = state.ui.screenMode;
-      final videoController = state.player.videoController;
+    return Container(
+      color: Colors.black,
+      width: double.infinity,
+      height: double.infinity,
+      child: Obx(() {
+        final manager = GlobalPlayerService.instance.playerManager;
+        final isInPip = manager.isInPip.value || manager.isPipPreparing.value;
+        final state = controller.state.value;
+        final mode = state.ui.screenMode;
+        final videoController = state.player.videoController;
 
-      if (videoController != null) {
-        return VideoKeyboardShortcuts(
-          controller: videoController,
-          child: Container(
-            color: Colors.black,
-            width: double.infinity,
-            height: double.infinity,
-            // A BarrageController may attach to one Flame engine at a time.
-            // AnimatedSwitcher kept the old portrait engine alive while the
-            // landscape engine attached, then the old widget detached the
-            // shared controller and left the new overlay silent.  Replace the
-            // layout atomically so danmaku survives orientation/fullscreen.
-            child: _withLocalGiftEffect(_buildConstrainedChild(isInPip, mode, context)),
-          ),
-        );
-      }
+        final child = _withLocalGiftEffect(_buildConstrainedChild(isInPip, mode, context));
 
-      return Container(
-        color: Colors.black,
-        width: double.infinity,
-        height: double.infinity,
-        child: _withLocalGiftEffect(_buildConstrainedChild(isInPip, mode, context)),
-      );
-    });
+        if (videoController == null) {
+          return child;
+        }
+
+        return VideoKeyboardShortcuts(controller: videoController, child: child);
+      }),
+    );
   }
 
   Widget _withLocalGiftEffect(Widget child) {
@@ -116,15 +103,6 @@ class LivePlayPage extends GetView<LivePlayController> {
     }
 
     return Container(key: const ValueKey('widescreen'), color: Colors.black, child: buildVideoPlayer());
-  }
-
-  void _updateWakelock() {
-    final shouldKeepOn = SettingsService.to.app.enableScreenKeepOn.v;
-    WakelockPlus.enabled.then((isEnabled) {
-      if (isEnabled != shouldKeepOn) {
-        WakelockPlus.toggle(enable: shouldKeepOn);
-      }
-    });
   }
 
   Widget buildNormalPlayerView(BuildContext context) {
@@ -512,34 +490,30 @@ class LivePlayPage extends GetView<LivePlayController> {
   Widget buildVideoPlayer() {
     return AspectRatio(
       aspectRatio: 16 / 9,
-      child: Container(
+      child: ColoredBox(
         color: Colors.black,
         child: Obx(() {
           final state = controller.state.value;
-          if (state.room.isLoading) {
+          final videoController = state.player.videoController;
+          if (state.room.success && videoController != null) {
+            return VideoPlayer(controller: videoController);
+          }
+          if (state.room.isLoading || state.room.isLiving) {
             return buildLoading();
           }
-          if (state.room.success && state.player.videoController != null) {
-            return VideoPlayer(controller: state.player.videoController!);
-          }
-          if (state.room.isLiving) {
-            return buildLoading();
-          }
-          return NotLivingVideoWidget(controller: controller, key: UniqueKey());
+          return NotLivingVideoWidget(controller: controller);
         }),
       ),
     );
   }
 
   Widget buildLoading() {
-    return const Material(
-      child: Stack(
-        fit: StackFit.passthrough,
-        children: [
-          ColoredBox(color: Colors.black),
-          AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", iconColor: Colors.white, isMini: true),
-        ],
-      ),
+    return const Stack(
+      fit: StackFit.expand,
+      children: [
+        ColoredBox(color: Colors.black),
+        AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", iconColor: Colors.white, isMini: true),
+      ],
     );
   }
 

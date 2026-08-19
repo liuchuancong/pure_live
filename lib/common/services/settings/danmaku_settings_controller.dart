@@ -8,6 +8,7 @@ class DanmakuSettingsController extends GetxController {
   static const bool defaultPipDanmakuUseOriginalColor = true;
   static const int defaultPipDanmakuColor = 0xFFFFFFFF;
   static const double defaultPipDanmakuFontSize = 12.0;
+  static const int defaultPipDanmakuFontWeight = 500;
   static const double defaultPipDanmakuSpeed = 90.0;
   static const double defaultPipDanmakuOpacity = 0.9;
   static const double defaultPipDanmakuArea = 0.5;
@@ -24,6 +25,7 @@ class DanmakuSettingsController extends GetxController {
   final RxDouble danmakuBottomArea = hiveDouble('danmakuBottomArea', 0.5);
   final RxDouble danmakuSpeed = hiveDouble('danmakuSpeed', 120.0);
   final RxDouble danmakuFontSize = hiveDouble('danmakuFontSize', 16.0);
+  final RxInt danmakuFontWeight = hiveInt('danmakuFontWeight', 500);
   final RxDouble danmakuFontBorder = hiveDouble('danmakuFontBorder', 1.5);
   final RxDouble danmakuOpacity = hiveDouble('danmakuOpacity', 1.0);
   final RxBool enableDanmakuDisplay = hiveBool('enableDanmakuDisplay', true);
@@ -43,6 +45,7 @@ class DanmakuSettingsController extends GetxController {
   final RxBool pipDanmakuUseOriginalColor = hiveBool('pipDanmakuUseOriginalColor', defaultPipDanmakuUseOriginalColor);
   final RxInt pipDanmakuColor = hiveInt('pipDanmakuColor', defaultPipDanmakuColor);
   final RxDouble pipDanmakuFontSize = hiveDouble('pipDanmakuFontSize', defaultPipDanmakuFontSize);
+  final RxInt pipDanmakuFontWeight = hiveInt('pipDanmakuFontWeight', 500);
   final RxDouble pipDanmakuSpeed = hiveDouble('pipDanmakuSpeed', defaultPipDanmakuSpeed);
   final RxDouble pipDanmakuOpacity = hiveDouble('pipDanmakuOpacity', defaultPipDanmakuOpacity);
   final RxDouble pipDanmakuArea = hiveDouble('pipDanmakuArea', defaultPipDanmakuArea);
@@ -79,6 +82,7 @@ class DanmakuSettingsController extends GetxController {
     pipDanmakuUseOriginalColor.v = defaultPipDanmakuUseOriginalColor;
     pipDanmakuColor.v = defaultPipDanmakuColor;
     pipDanmakuFontSize.v = defaultPipDanmakuFontSize;
+    pipDanmakuFontWeight.v = defaultPipDanmakuFontWeight;
     pipDanmakuSpeed.v = defaultPipDanmakuSpeed;
     pipDanmakuOpacity.v = defaultPipDanmakuOpacity;
     pipDanmakuArea.v = defaultPipDanmakuArea;
@@ -97,6 +101,7 @@ class DanmakuSettingsController extends GetxController {
       'danmakuBottomArea': danmakuBottomArea.v,
       'danmakuSpeed': danmakuSpeed.v,
       'danmakuFontSize': danmakuFontSize.v,
+      'danmakuFontWeight': danmakuFontWeight.v,
       'danmakuFontBorder': danmakuFontBorder.v,
       'danmakuOpacity': danmakuOpacity.v,
       'enableDanmakuDisplay': enableDanmakuDisplay.v,
@@ -113,6 +118,7 @@ class DanmakuSettingsController extends GetxController {
       'pipDanmakuUseOriginalColor': pipDanmakuUseOriginalColor.v,
       'pipDanmakuColor': pipDanmakuColor.v,
       'pipDanmakuFontSize': pipDanmakuFontSize.v,
+      'pipDanmakuFontWeight': pipDanmakuFontWeight.v,
       'pipDanmakuSpeed': pipDanmakuSpeed.v,
       'pipDanmakuOpacity': pipDanmakuOpacity.v,
       'pipDanmakuArea': pipDanmakuArea.v,
@@ -131,6 +137,7 @@ class DanmakuSettingsController extends GetxController {
     danmakuBottomArea.v = json['danmakuBottomArea']?.toDouble() ?? 0.5;
     danmakuSpeed.v = (json['danmakuSpeed'] ?? 120.0).toDouble().clamp(20.0, 400.0).toDouble();
     danmakuFontSize.v = json['danmakuFontSize']?.toDouble() ?? 16.0;
+    danmakuFontWeight.v = json['danmakuFontWeight']?.toInt() ?? 500;
     danmakuFontBorder.v = (json['danmakuFontBorder']?.toDouble() ?? 1.5).clamp(0.0, 4.0).toDouble();
     danmakuOpacity.v = json['danmakuOpacity']?.toDouble() ?? 1.0;
     enableDanmakuDisplay.v = json['enableDanmakuDisplay'] ?? true;
@@ -151,6 +158,7 @@ class DanmakuSettingsController extends GetxController {
         .toDouble()
         .clamp(8.0, 24.0)
         .toDouble();
+    pipDanmakuFontWeight.v = json['pipDanmakuFontWeight']?.toInt() ?? 500;
     pipDanmakuSpeed.v = (json['pipDanmakuSpeed'] ?? defaultPipDanmakuSpeed).toDouble().clamp(20.0, 400.0).toDouble();
     pipDanmakuOpacity.v = (json['pipDanmakuOpacity'] ?? defaultPipDanmakuOpacity).toDouble().clamp(0.1, 1.0).toDouble();
     pipDanmakuArea.v = (json['pipDanmakuArea'] ?? defaultPipDanmakuArea).toDouble().clamp(0.1, 1.0).toDouble();
@@ -176,6 +184,7 @@ class DanmakuSettingsController extends GetxController {
       'danmakuBottomArea': (danmaku['danmakuBottomArea'] ?? 0.5).toDouble(),
       'danmakuSpeed': (danmaku['danmakuSpeed'] ?? 120.0).toDouble().clamp(20.0, 400.0).toDouble(),
       'danmakuFontSize': (danmaku['danmakuFontSize'] ?? 16.0).toDouble(),
+      'danmakuFontWeight': (danmaku['danmakuFontWeight'] ?? 500).toInt(),
       'danmakuFontBorder': (danmaku['danmakuFontBorder'] ?? 1.5).toDouble().clamp(0.0, 4.0).toDouble(),
       'danmakuOpacity': (danmaku['danmakuOpacity'] ?? 1.0).toDouble(),
       'enableDanmakuDisplay': danmaku['enableDanmakuDisplay'] ?? true,
@@ -196,6 +205,7 @@ class DanmakuSettingsController extends GetxController {
           .toDouble()
           .clamp(8.0, 24.0)
           .toDouble(),
+      'pipDanmakuFontWeight': danmaku['pipDanmakuFontWeight'] ?? defaultPipDanmakuFontWeight,
       'pipDanmakuSpeed': (danmaku['pipDanmakuSpeed'] ?? defaultPipDanmakuSpeed)
           .toDouble()
           .clamp(20.0, 400.0)

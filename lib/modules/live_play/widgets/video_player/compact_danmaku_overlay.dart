@@ -24,6 +24,7 @@ class CompactDanmakuOverlay extends StatelessWidget {
       final autoScale = settings.pipDanmakuAutoScale.v;
       final noEmojiMode = settings.pipDanmakuNoEmojiMode.v;
       final configuredFontSize = settings.pipDanmakuFontSize.v;
+      final configuredFontWeight = FontWeight(settings.pipDanmakuFontWeight.value);
       final area = settings.pipDanmakuArea.v;
       final speed = settings.pipDanmakuSpeed.v;
       final opacity = settings.pipDanmakuOpacity.v;
@@ -45,6 +46,7 @@ class CompactDanmakuOverlay extends StatelessWidget {
                 controller: controller.pipDanmakuController,
                 config: BarrageConfig(
                   fontSize: fontSize,
+                  fontWeight: configuredFontWeight,
                   fontFamily: fontFamily,
                   area: area,
                   baseSpeed: speed * scale,

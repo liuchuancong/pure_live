@@ -1,9 +1,10 @@
 import 'dart:math' as math;
 
-import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/widgets/count_button.dart';
+import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
+import 'package:flex_color_picker/flex_color_picker.dart';
+import 'package:pure_live/common/widgets/count_button.dart';
 
 class PipDanmakuSettingsPage extends StatelessWidget {
   const PipDanmakuSettingsPage({super.key});
@@ -207,6 +208,20 @@ class PipDanmakuSettingsSection extends StatelessWidget {
               ),
               _slider(
                 theme,
+                title: i18n("font_weight"),
+                value: settings.pipDanmakuFontWeight.value.toDouble(),
+                min: 100,
+                max: 900,
+                stepSize: 100,
+                display: i18n(AppConsts.fontWeightLabels[settings.pipDanmakuFontWeight.value] ?? 'font_weight_normal'),
+                onChanged: (v) {
+                  settings.pipDanmakuFontWeight.value = v.round();
+                },
+                labelColor: labelColor,
+                digitColor: digitColor,
+              ),
+              _slider(
+                theme,
                 title: i18n('speed'),
                 value: settings.pipDanmakuSpeed.v,
                 min: 20,
@@ -303,6 +318,7 @@ class PipDanmakuSettingsSection extends StatelessWidget {
     required ValueChanged<double> onChanged,
     required Color labelColor,
     required Color digitColor,
+    double? stepSize,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -340,6 +356,7 @@ class PipDanmakuSettingsSection extends StatelessWidget {
               child: SfSlider(
                 min: min,
                 max: max,
+                stepSize: stepSize,
                 value: value,
                 activeColor: theme.colorScheme.primary,
                 inactiveColor: theme.colorScheme.primary.withValues(alpha: 0.15),
@@ -504,6 +521,7 @@ class _PipDanmakuPreviewState extends State<PipDanmakuPreview> with SingleTicker
       final useOriginalColor = settings.pipDanmakuUseOriginalColor.v;
       final unifiedColor = Color(settings.pipDanmakuColor.v);
       final configuredFontSize = settings.pipDanmakuFontSize.v;
+      final fontWeight = settings.pipDanmakuFontWeight.v;
       final speed = settings.pipDanmakuSpeed.v;
       final opacity = enabled ? settings.pipDanmakuOpacity.v : 0.25;
       final area = settings.pipDanmakuArea.v;
@@ -541,7 +559,7 @@ class _PipDanmakuPreviewState extends State<PipDanmakuPreview> with SingleTicker
                         style: TextStyle(
                           color: colors[index % colors.length].withValues(alpha: opacity),
                           fontSize: fontSize,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight(fontWeight),
                           shadows: const [Shadow(color: Colors.black, blurRadius: 2, offset: Offset(0.5, 0.5))],
                         ),
                       ),
@@ -569,6 +587,7 @@ class _PipDanmakuPreviewState extends State<PipDanmakuPreview> with SingleTicker
                                   progress: quantizedProgress,
                                   painters: painters,
                                   fontSize: fontSize,
+                                  fontWeight: fontWeight,
                                   speed: speed,
                                   emitInterval: emitInterval,
                                 ),
@@ -604,6 +623,7 @@ class _PipDanmakuPreviewPainter extends CustomPainter {
     required this.progress,
     required this.painters,
     required this.fontSize,
+    required this.fontWeight,
     required this.speed,
     required this.emitInterval,
   });
@@ -611,6 +631,7 @@ class _PipDanmakuPreviewPainter extends CustomPainter {
   final double progress;
   final List<TextPainter> painters;
   final double fontSize;
+  final int fontWeight;
   final double speed;
   final double emitInterval;
 

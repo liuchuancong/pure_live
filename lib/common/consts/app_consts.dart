@@ -75,7 +75,17 @@ class AppConsts {
   static Map<ColorSwatch<Object>, String> colorsNameMap = AppConsts.themeColors.map(
     (key, value) => MapEntry(ColorTools.createPrimarySwatch(value), key),
   );
-
+  static const Map<int, String> fontWeightLabels = {
+    100: 'font_weight_thin',
+    200: 'font_weight_extra_light',
+    300: 'font_weight_light',
+    400: 'font_weight_normal',
+    500: 'font_weight_medium',
+    600: 'font_weight_semi_bold',
+    700: 'font_weight_bold',
+    800: 'font_weight_extra_bold',
+    900: 'font_weight_black',
+  };
   static const List<Map<String, String>> allStyles = [
     {'key': 'default', 'nameEn': 'Default Ring', 'nameZh': '默认圆环'},
     {'key': 'rotatingPlain', 'nameEn': 'Rotating Plain', 'nameZh': '旋转方块'},

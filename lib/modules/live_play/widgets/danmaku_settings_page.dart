@@ -1,11 +1,12 @@
 import 'dart:convert';
-
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:pure_live/common/widgets/count_button.dart';
 import 'package:pure_live/modules/live_play/danmaku_viewing_preset.dart';
 import 'package:pure_live/modules/settings/pages/pip_danmaku_settings_page.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
+
 
 class DanmakuSettingsPage extends StatefulWidget {
   const DanmakuSettingsPage({super.key, required this.controller});
@@ -184,6 +185,20 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
                   labelColor: labelColor,
                   digitColor: digitColor,
                 ),
+                _slider(
+                  theme,
+                  title: i18n("font_weight"),
+                  value: controller.danmakuFontWeight.value.toDouble(),
+                  min: 100,
+                  max: 900,
+                  stepSize: 100,
+                  display: i18n(AppConsts.fontWeightLabels[controller.danmakuFontWeight.value] ?? 'font_weight_normal'),
+                  onChanged: (v) {
+                    controller.danmakuFontWeight.value = v.round();
+                  },
+                  labelColor: labelColor,
+                  digitColor: digitColor,
+                ),
                 _switch(
                   theme,
                   title: i18n("danmaku_stroke"),
@@ -270,6 +285,7 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
         bottom: controller.danmakuBottomArea.v,
         speed: controller.danmakuSpeed.v,
         fontSize: controller.danmakuFontSize.v,
+        fontWeight: preset.fontWeight,
         fontBorder: controller.danmakuFontBorder.v,
         opacity: controller.danmakuOpacity.v,
         stroke: controller.enableDanmakuStroke.v,
@@ -287,6 +303,7 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
     controller.danmakuBottomArea.v = preset.bottom;
     controller.danmakuSpeed.v = preset.speed;
     controller.danmakuFontSize.v = preset.fontSize;
+    controller.danmakuFontWeight.v = preset.fontWeight;
     controller.danmakuFontBorder.v = preset.fontBorder;
     controller.danmakuOpacity.v = preset.opacity;
     controller.enableDanmakuStroke.v = preset.stroke;
@@ -302,6 +319,7 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
       'bottom': controller.danmakuBottomArea.v,
       'speed': controller.danmakuSpeed.v,
       'fontSize': controller.danmakuFontSize.v,
+      'fontWeight': controller.danmakuFontWeight.v,
       'fontBorder': controller.danmakuFontBorder.v,
       'opacity': controller.danmakuOpacity.v,
       'stroke': controller.enableDanmakuStroke.v,
@@ -324,6 +342,7 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
       controller.danmakuBottomArea.v = (value['bottom'] as num).toDouble();
       controller.danmakuSpeed.v = (value['speed'] as num).toDouble();
       controller.danmakuFontSize.v = (value['fontSize'] as num).toDouble();
+      controller.danmakuFontWeight.v = (value['fontWeight'] as num).toInt();
       controller.danmakuFontBorder.v = (value['fontBorder'] as num).toDouble();
       controller.danmakuOpacity.v = (value['opacity'] as num).toDouble();
       controller.enableDanmakuStroke.v = value['stroke'] == true;
@@ -345,6 +364,7 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
     required ValueChanged<double> onChanged,
     required Color labelColor,
     required Color digitColor,
+    double? stepSize,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -380,6 +400,7 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
                 min: min,
                 max: max,
                 value: value,
+                stepSize: stepSize,
                 activeColor: theme.colorScheme.primary,
                 inactiveColor: theme.colorScheme.primary.withValues(alpha: 0.15),
                 onChanged: (dynamic v) => onChanged(v as double),

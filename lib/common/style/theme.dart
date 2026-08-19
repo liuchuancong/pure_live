@@ -21,7 +21,7 @@ class MyTheme {
       return selectedName;
     }
     if (PlatformUtils.isWindows) {
-      return 'Microsoft YaHei';
+      return 'PingFang';
     }
     if (PlatformUtils.isAndroid) {
       return GoogleFonts.roboto().fontFamily;

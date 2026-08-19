@@ -611,7 +611,7 @@ class DanmakuViewer extends StatelessWidget {
           bottomAreaDistance: controller.danmakuBottomArea.value,
           baseSpeed: controller.danmakuSpeed.value,
           opacity: controller.danmakuOpacity.value,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight(controller.danmakuFontWeight.value),
           strokeWidth: controller.danmakuFontBorder.value,
           showStroke: controller.enableDanmakuStroke.value,
           noEmojiMode: controller.noEmojiMode.value,
