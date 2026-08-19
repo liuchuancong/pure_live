@@ -1,21 +1,23 @@
 {
-  "version": "2.1.6",
-  "build_number": 54,
-  "version_num": 2010654,
+  "version": "2.2.0",
+  "build_number": 58,
+  "version_num": 2020058,
   "android_abis": [
-    "arm64-v8a"
+    "arm64-v8a",
+    "armeabi-v7a",
+    "x86_64"
   ],
-  "version_desc": "v2.1.6 Android 播放状态修复\n- 修复反复切换纯音频与视频模式后播放器灰白、画面不再响应。\n- 模式切换串行执行并合并连续操作，播放器销毁与初始化不再交叉。\n- 纯音频模式即使关闭通用后台播放，退到桌面或锁屏仍继续播放。\n- 修复通知栏音频会话初始化和播放器重绑定的竞态。\n",
+  "version_desc": "- 音频/视频切换复用同一播放器与纹理，前台保留视频热状态，后台停用视频轨并在恢复前静默预热。\n- 增加有界深度恢复、最新目标栅栏和恢复态音频卡片，修复连续切换、悬浮窗重进、横竖屏及后台恢复中的白屏/黑屏/永久加载。\n- 统一竖屏与全屏弹幕设置，保留上游字体粗细和相似弹幕过滤；增加精确重复文本合并，并限制每条消息的模糊比较预算。\n- Windows 支持隔离数据目录的多实例启动，改进鼠标滚轮、启动与 Release 构建；安装包剔除原生链接中间文件。\n- 增加网络/房间代次、WebSocket 半开恢复、录制续接、更新源和设置迁移回归测试。\n",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.1.6",
+  "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.2.0",
   "platforms": {
     "windows": {
-      "version": "2.1.5",
-      "build_number": 53,
-      "version_num": 2010553,
-      "version_desc": "v2.1.5 弹幕交互与 Windows 滚动修复\n- 本地弹幕延迟 2 秒后同步进入列表与画面。\n- 弹幕列表首次滚动立即暂停自动跟随，模板状态实时一致。\n- 首页、热门、分区、收藏、搜索和弹幕设置使用平滑滚轮轨迹。\n- 保留可选安装目录和安装目录 AppData 数据迁移。\n",
+      "version": "2.2.0",
+      "build_number": 58,
+      "version_num": 2020058,
+      "version_desc": "- 音频/视频切换复用同一播放器与纹理，前台保留视频热状态，后台停用视频轨并在恢复前静默预热。\n- 增加有界深度恢复、最新目标栅栏和恢复态音频卡片，修复连续切换、悬浮窗重进、横竖屏及后台恢复中的白屏/黑屏/永久加载。\n- 统一竖屏与全屏弹幕设置，保留上游字体粗细和相似弹幕过滤；增加精确重复文本合并，并限制每条消息的模糊比较预算。\n- Windows 支持隔离数据目录的多实例启动，改进鼠标滚轮、启动与 Release 构建；安装包剔除原生链接中间文件。\n- 增加网络/房间代次、WebSocket 半开恢复、录制续接、更新源和设置迁移回归测试。\n",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.1.5"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.2.0"
     }
   }
 }

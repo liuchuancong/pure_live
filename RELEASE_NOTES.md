@@ -168,7 +168,7 @@
 
 ## 更新链路与构建
 
-- 应用内版本检查、历史记录、Issue 和 Release 链接恢复到 `wzgrx/pure_live`。
+- 应用内版本检查、历史记录、Issue 和 Release 链接恢复到 `liuchuancong/pure_live`。
 - 修正 Android arm64、Windows EXE/便携 ZIP 和 macOS universal ZIP 的实际附件名，不再展示本轮没有生成的 arm32/x86_64 APK 与 MSIX。
 - 更新源按平台发布状态选择版本，Windows 专项版不会让 Android/macOS 客户端获取到尚未发布的附件。
 - 本机质量门禁通过：Built-in Kotlin 审计、Flutter Analyze 零问题、76 项单元/Widget 测试、25/25 平台接口探测通过。

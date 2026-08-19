@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -87,12 +86,22 @@
         />
       </div>
 
+      <!-- Android ABIs -->
+      <div>
+        <label class="block mb-2 text-sm text-zinc-400">Android ABIs（逗号分隔）</label>
+        <input
+          id="android_abis"
+          class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="arm64-v8a, armeabi-v7a, x86_64"
+        />
+      </div>
+
       <div>
         <label class="block mb-2 text-sm text-zinc-400">Version Desc</label>
 
         <textarea
           id="version_desc"
-          class="w-full h-64 bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          class="w-full h-40 bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 resize-none"
         ></textarea>
       </div>
 
@@ -104,6 +113,22 @@
         />
 
         <label class="text-zinc-300">Prerelease</label>
+      </div>
+
+      <!-- Platforms 区域 -->
+      <div class="border-t border-zinc-800 pt-4 mt-2">
+        <h3 class="text-lg font-semibold text-zinc-300 mb-4">平台特定配置 (Platforms)</h3>
+
+        <div id="platformsContainer" class="space-y-4">
+          <!-- 由 JavaScript 动态渲染 -->
+        </div>
+
+        <button
+          onclick="addPlatform()"
+          class="mt-2 px-4 py-2 rounded-xl bg-zinc-700 hover:bg-zinc-600 transition text-sm font-semibold"
+        >
+          + 添加平台
+        </button>
       </div>
 
       <div class="flex gap-4 pt-4">
@@ -129,41 +154,42 @@
   </div>
 
 <script>
+// ===================== 数据管理 =====================
+
+let currentFileName = 'version.json';
+
+// 存储当前 platforms 数据
+let platformsData = {};
+
+// ===================== 核心函数 =====================
+
 async function loadJson() {
-
   try {
-
     const response = await fetch('./version.json');
-
     const data = await response.json();
-
     fillForm(data);
-
   } catch (e) {
-
     alert('读取 version.json 失败');
     console.error(e);
   }
 }
-let currentFileName = 'version.json';
 
 function generateVersionNum(version, build) {
+  if (!version) return '0';
   const parts = version.split('.');
-
   const major = (parts[0] || '0').padStart(1, '0');
   const minor = (parts[1] || '0').padStart(2, '0');
   const patch = (parts[2] || '0').padStart(2, '0');
-
-  return `${major}${minor}${patch}${build}`;
+  return `${major}${minor}${patch}${build || 0}`;
 }
 
 function updateVersionNum() {
   const version = document.getElementById('version').value;
   const build = document.getElementById('build_number').value;
-
-  document.getElementById('version_num').value =
-    generateVersionNum(version, build);
+  document.getElementById('version_num').value = generateVersionNum(version, build);
 }
+
+// ===================== 填表 =====================
 
 function fillForm(data) {
   document.getElementById('version').value = data.version || '';
@@ -172,22 +198,230 @@ function fillForm(data) {
   document.getElementById('version_desc').value = data.version_desc || '';
   document.getElementById('prerelease').checked = data.prerelease || false;
 
+  // Android ABIs
+  const abis = data.android_abis || [];
+  document.getElementById('android_abis').value = abis.join(', ');
+
+  // Platforms
+  platformsData = JSON.parse(JSON.stringify(data.platforms || {}));
+  
+  // 确保每个平台的 version_num 正确
+  Object.keys(platformsData).forEach(key => {
+    const p = platformsData[key];
+    if (p.version && p.build_number !== undefined) {
+      p.version_num = Number(generateVersionNum(p.version, p.build_number));
+    }
+  });
+  
+  renderPlatforms();
   updateVersionNum();
 }
 
+// ===================== Platforms 渲染 =====================
+
+function renderPlatforms() {
+  const container = document.getElementById('platformsContainer');
+  container.innerHTML = '';
+
+  const keys = Object.keys(platformsData);
+
+  if (keys.length === 0) {
+    container.innerHTML = '<p class="text-zinc-500 text-sm">暂无平台配置，点击下方添加</p>';
+    return;
+  }
+
+  keys.forEach((key) => {
+    const p = platformsData[key];
+    const div = document.createElement('div');
+    div.className = 'bg-zinc-800/50 border border-zinc-700 rounded-2xl p-4 relative';
+
+    // 计算该平台的 version_num
+    const vn = p.version && p.build_number !== undefined 
+      ? generateVersionNum(p.version, p.build_number) 
+      : '0';
+
+    div.innerHTML = `
+      <button
+        onclick="removePlatform('${key}')"
+        class="absolute top-2 right-3 text-zinc-500 hover:text-red-400 text-sm"
+        title="删除此平台"
+      >✕</button>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs text-zinc-400">平台标识</label>
+          <input
+            data-platform-key="${key}"
+            class="platform-key w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            value="${key}"
+            onchange="updatePlatformKey(this)"
+          />
+        </div>
+        <div>
+          <label class="block text-xs text-zinc-400">Version</label>
+          <input
+            data-platform-key="${key}"
+            class="platform-version w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            value="${p.version || ''}"
+            oninput="updatePlatformField('${key}', 'version', this.value)"
+          />
+        </div>
+        <div>
+          <label class="block text-xs text-zinc-400">Build Number</label>
+          <input
+            data-platform-key="${key}"
+            type="number"
+            class="platform-build w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            value="${p.build_number || 0}"
+            oninput="updatePlatformField('${key}', 'build_number', Number(this.value))"
+          />
+        </div>
+        <div>
+          <label class="block text-xs text-zinc-400">Version Num（自动生成）</label>
+          <input
+            data-platform-key="${key}"
+            class="platform-version-num w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-zinc-400"
+            value="${vn}"
+            readonly
+          />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-xs text-zinc-400">Version Desc</label>
+          <textarea
+            data-platform-key="${key}"
+            class="platform-desc w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-none h-16"
+            oninput="updatePlatformField('${key}', 'version_desc', this.value)"
+          >${p.version_desc || ''}</textarea>
+        </div>
+        <div>
+          <label class="block text-xs text-zinc-400">Download URL</label>
+          <input
+            data-platform-key="${key}"
+            class="platform-url w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            value="${p.download_url || ''}"
+            oninput="updatePlatformField('${key}', 'download_url', this.value)"
+          />
+        </div>
+        <div class="flex items-center gap-3 pt-1">
+          <input
+            data-platform-key="${key}"
+            type="checkbox"
+            class="platform-prerelease w-4 h-4 rounded bg-zinc-800 border-zinc-700"
+            ${p.prerelease ? 'checked' : ''}
+            onchange="updatePlatformField('${key}', 'prerelease', this.checked)"
+          />
+          <label class="text-xs text-zinc-400">Prerelease</label>
+        </div>
+      </div>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+// ===================== Platforms 操作 =====================
+
+function addPlatform() {
+  const key = prompt('请输入平台标识 (例如: windows, macOS, linux)');
+  if (!key) return;
+  if (platformsData[key]) {
+    alert('平台已存在');
+    return;
+  }
+
+  platformsData[key] = {
+    version: '',
+    build_number: 0,
+    version_num: 0,
+    version_desc: '',
+    prerelease: false,
+    download_url: ''
+  };
+
+  renderPlatforms();
+}
+
+function removePlatform(key) {
+  if (!confirm(`确定要删除平台 "${key}" 吗？`)) return;
+  delete platformsData[key];
+  renderPlatforms();
+}
+
+function updatePlatformKey(input) {
+  const oldKey = input.dataset.platformKey;
+  const newKey = input.value.trim();
+  if (!newKey) {
+    alert('平台标识不能为空');
+    input.value = oldKey;
+    return;
+  }
+  if (newKey !== oldKey && platformsData[newKey]) {
+    alert('平台标识已存在');
+    input.value = oldKey;
+    return;
+  }
+
+  platformsData[newKey] = platformsData[oldKey];
+  delete platformsData[oldKey];
+
+  // 更新所有 data-platform-key
+  document.querySelectorAll(`[data-platform-key="${oldKey}"]`).forEach(el => {
+    el.dataset.platformKey = newKey;
+  });
+
+  renderPlatforms();
+}
+
+function updatePlatformField(key, field, value) {
+  if (!platformsData[key]) return;
+  platformsData[key][field] = value;
+
+  // 如果 version 或 build_number 变化，重新计算 version_num 并更新界面
+  if (field === 'version' || field === 'build_number') {
+    const p = platformsData[key];
+    if (p.version && p.build_number !== undefined) {
+      const vn = generateVersionNum(p.version, p.build_number);
+      p.version_num = Number(vn);
+      // 更新界面上的 version_num 输入框
+      const vnInput = document.querySelector(`.platform-version-num[data-platform-key="${key}"]`);
+      if (vnInput) vnInput.value = vn;
+    }
+  }
+}
+
+// ===================== 获取 JSON 数据 =====================
+
 function getJsonData() {
+  // 收集 platforms 数据
+  const platforms = {};
+  Object.keys(platformsData).forEach(key => {
+    const p = platformsData[key];
+    // 确保 version_num 是最新的
+    if (p.version && p.build_number !== undefined) {
+      p.version_num = Number(generateVersionNum(p.version, p.build_number));
+    }
+    platforms[key] = { ...p };
+  });
+
+  // 处理 android_abis
+  const abisInput = document.getElementById('android_abis').value;
+  const androidAbis = abisInput.split(',').map(s => s.trim()).filter(Boolean);
+
   return {
     version: document.getElementById('version').value,
     build_number: Number(document.getElementById('build_number').value),
     version_num: Number(document.getElementById('version_num').value),
+    android_abis: androidAbis,
     version_desc: document.getElementById('version_desc').value,
     prerelease: document.getElementById('prerelease').checked,
     download_url: document.getElementById('download_url').value,
+    platforms: platforms
   };
 }
 
-async function saveJson() {
+// ===================== 保存 & 下载 =====================
 
+async function saveJson() {
   const data = getJsonData();
 
   const response = await fetch('/save', {
@@ -215,27 +449,22 @@ function downloadJson() {
   });
 
   const url = URL.createObjectURL(blob);
-
   const a = document.createElement('a');
   a.href = url;
   a.download = currentFileName;
   a.click();
-
   URL.revokeObjectURL(url);
 }
+
+// ===================== 文件加载 =====================
 
 const fileInput = document.getElementById('fileInput');
 
 fileInput.addEventListener('change', async (e) => {
-
   const file = e.target.files[0];
-
   if (!file) return;
-
   currentFileName = file.name;
-
   const text = await file.text();
-
   try {
     const data = JSON.parse(text);
     fillForm(data);
@@ -244,27 +473,17 @@ fileInput.addEventListener('change', async (e) => {
   }
 });
 
+// ===================== 事件绑定 =====================
 
-document.getElementById('version')
-  .addEventListener('input', updateVersionNum);
+document.getElementById('version').addEventListener('input', updateVersionNum);
+document.getElementById('build_number').addEventListener('input', updateVersionNum);
 
-
-document.getElementById('build_number')
-  .addEventListener('input', updateVersionNum);
 window.onload = () => {
-
   loadJson();
-
-  document
-    .getElementById('version')
-    .addEventListener('input', updateVersionNum);
-
-  document
-    .getElementById('build_number')
-    .addEventListener('input', updateVersionNum);
+  document.getElementById('version').addEventListener('input', updateVersionNum);
+  document.getElementById('build_number').addEventListener('input', updateVersionNum);
 };
 </script>
 
 </body>
 </html>
-

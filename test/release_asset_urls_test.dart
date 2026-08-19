@@ -4,7 +4,11 @@ import 'package:pure_live/modules/version/version_controller.dart';
 
 void main() {
   test('release URLs match locally produced artifact names', () {
-    const urls = ReleaseAssetUrls(projectUrl: 'https://github.com/wzgrx/pure_live', version: '2.1.4', buildNumber: 52);
+    const urls = ReleaseAssetUrls(
+      projectUrl: 'https://github.com/liuchuancong/pure_live',
+      version: '2.1.4',
+      buildNumber: 52,
+    );
 
     expect(urls.androidArm64, endsWith('/PureLive-2.1.4-52-arm64-v8a-release.apk'));
     expect(urls.androidArmeabiV7a, endsWith('/PureLive-2.1.4-52-armeabi-v7a-release.apk'));
