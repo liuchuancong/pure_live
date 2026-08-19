@@ -105,8 +105,32 @@ try {
         if ($runtimeState) {
             throw "Runtime state appeared in the clean Windows bundle: $($runtimeState -join ', ')"
         }
+        # Flutter/CMake may leave import libraries and linker metadata beside
+        # the runtime DLLs. They are useful only for native development and
+        # previously added tens of megabytes to every portable/setup package.
+        $windowsPackage = Join-Path $repoRoot '.local-build\windows-package'
+        $windowsPackageFull = [IO.Path]::GetFullPath($windowsPackage)
+        if (-not $windowsPackageFull.StartsWith($expectedPrefix, [StringComparison]::OrdinalIgnoreCase)) {
+            throw "Windows package staging escaped the repository: $windowsPackageFull"
+        }
+        if (Test-Path -LiteralPath $windowsPackageFull) {
+            Remove-Item -LiteralPath $windowsPackageFull -Recurse -Force
+        }
+        New-Item -ItemType Directory -Force -Path $windowsPackageFull | Out-Null
+        $developmentExtensions = @('.exp', '.ilk', '.lib', '.pdb')
+        Get-ChildItem -LiteralPath $windowsSourceFull -Force |
+            Where-Object { $_.PSIsContainer -or $_.Extension.ToLowerInvariant() -notin $developmentExtensions } |
+            Copy-Item -Destination $windowsPackageFull -Recurse -Force
+        if (-not (Test-Path -LiteralPath (Join-Path $windowsPackageFull 'pure_live.exe') -PathType Leaf)) {
+            throw 'The staged Windows package does not contain pure_live.exe.'
+        }
+        $developmentFiles = Get-ChildItem -LiteralPath $windowsPackageFull -Recurse -File |
+            Where-Object Extension -In $developmentExtensions
+        if ($developmentFiles) {
+            throw "Development-only files appeared in the Windows package: $($developmentFiles.FullName -join ', ')"
+        }
         $zipPath = Join-Path $output "PureLive-$artifactVersion-windows-x64-portable.zip"
-        Compress-Archive -Path (Join-Path $windowsSource '*') -DestinationPath $zipPath -Force
+        Compress-Archive -Path (Join-Path $windowsPackageFull '*') -DestinationPath $zipPath -Force
 
         if (-not $SkipInstaller) {
             $iscc = @(
@@ -115,7 +139,7 @@ try {
             ) | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
             if ($iscc) {
                 $iss = Join-Path $repoRoot 'windows\packaging\exe\local_release.iss'
-                & $iscc "/DSourceDir=$windowsSource" "/DAppVersion=$displayVersion" "/DOutputDir=$output" $iss
+                & $iscc "/DSourceDir=$windowsPackageFull" "/DAppVersion=$displayVersion" "/DOutputDir=$output" $iss
                 if ($LASTEXITCODE) { exit $LASTEXITCODE }
             } else {
                 Write-Warning 'Inno Setup 6 was not found; portable ZIP was still created.'

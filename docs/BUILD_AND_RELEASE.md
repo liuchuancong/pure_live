@@ -51,7 +51,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 
 产物位于 `local-artifacts/<version-build>/`，该目录不会提交到 Git。
 
-Windows 打包前会先清理 `build/windows/x64/runner/Release`，并检查 `AppData`、缓存数据库等运行时状态未进入便携包或安装器；请勿直接把运行过的 Release 目录手工压缩发布。
+Windows 打包前会先清理 `build/windows/x64/runner/Release`，并检查 `AppData`、缓存数据库等运行时状态未进入便携包或安装器；打包暂存区还会剔除 `.lib`、`.exp`、`.pdb`、`.ilk` 等仅供原生开发/链接使用的文件。请勿直接把运行过的 Release 目录手工压缩发布。
 
 可选参数：`-SkipQuality`、`-SkipAndroid`、`-SkipWindows`、`-SkipInstaller`、`-UseOfficialRepositories`。
 
