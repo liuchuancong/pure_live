@@ -1,12 +1,9 @@
 import 'dart:io';
 import 'dart:async';
-import 'dart:developer' as developer;
-
 import 'index.dart';
-
+import 'dart:developer' as developer;
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pure_live/common/utils/live_url_tool.dart';
@@ -17,12 +14,13 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/modules/live_play/states/ui_state.dart';
 import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/common/utils/share_command_handler.dart';
-import 'package:pure_live/common/utils/windows_multi_instance_launcher.dart';
 import 'package:pure_live/modules/live_play/widgets/play_other.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku_tab.dart';
-import 'package:pure_live/modules/live_play/local_interaction_sheet.dart';
 import 'package:pure_live/modules/live_play/widgets/video_keyboard.dart';
+import 'package:pure_live/modules/live_play/local_interaction_sheet.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
+import 'package:pure_live/common/utils/windows_multi_instance_launcher.dart';
+import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller_panel.dart';
 
@@ -278,7 +276,10 @@ class LivePlayPage extends GetView<LivePlayController> {
                                 icon: Icons.video_library_rounded,
                                 title: i18n("go_record_center"),
                                 color: theme.colorScheme.primary,
-                                onTap: () => Navigator.pop(context, "page"),
+                                onTap: () async {
+                                  // 只要使用Navigator.pop 关闭弹窗在kRecordPage返回就会闪退 先不关闭试试
+                                  Get.toNamed(RoutePath.kRecordPage);
+                                },
                               ),
                               if (!isRunning)
                                 _ActionTile(
@@ -307,6 +308,7 @@ class LivePlayPage extends GetView<LivePlayController> {
                     );
                     switch (action) {
                       case "page":
+                        await Future.delayed(const Duration(milliseconds: 100));
                         Get.toNamed(RoutePath.kRecordPage);
                         break;
                       case "start":
@@ -867,8 +869,9 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
               value: index,
               child: Text(
                 qualityRate.quality,
-                style: Theme.of(context).textTheme.labelSmall
-                    ?.copyWith(color: isSelected ? Get.theme.colorScheme.primary : null),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelSmall?.copyWith(color: isSelected ? Get.theme.colorScheme.primary : null),
               ),
             );
           });
@@ -916,8 +919,9 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
               value: index,
               child: Text(
                 i18n("toolbox_line", args: {"index": (index + 1).toString()}),
-                style: Theme.of(context).textTheme.labelSmall
-                    ?.copyWith(color: isSelected ? Get.theme.colorScheme.primary : null),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelSmall?.copyWith(color: isSelected ? Get.theme.colorScheme.primary : null),
               ),
             );
           });

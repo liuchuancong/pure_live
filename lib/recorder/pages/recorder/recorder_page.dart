@@ -1,5 +1,4 @@
 import 'dart:ui';
-
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/routes/app_navigation.dart';
@@ -27,14 +26,14 @@ class RecorderPage extends GetView<RecorderController> {
     return Obx(() {
       bool showAction = Get.width <= 680;
       final int menuCount = SettingsService.to.app.savedMenuIds.v.length;
-
+      final bool canGoBack = Navigator.of(context).canPop();
       return DefaultTabController(
         length: tabs.length,
         child: Scaffold(
           appBar: AppBar(
             title: Text(i18n("recorder_title")),
             centerTitle: true,
-            leading: (showAction || menuCount <= 1) ? const MenuButton() : null,
+            leading: canGoBack ? const BackButton() : ((showAction || menuCount <= 1) ? const MenuButton() : null),
 
             actions: [
               IconButton(
