@@ -1,16 +1,16 @@
 import 'dart:developer' as developer;
-
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/plugins/db_service.dart';
+import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/modules/auth/auth_controller.dart';
-import 'package:pure_live/modules/live_play/controllers/player_state.dart';
-import 'package:pure_live/modules/live_play/local_interaction_controller.dart';
 import 'package:pure_live/recorder/services/cache_service.dart';
 import 'package:pure_live/routes/route_observer_controller.dart';
 import 'package:pure_live/recorder/services/stream_resolver_service.dart';
+import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/core/iptv/services/channel_detail_controller.dart';
+import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart';
+import 'package:pure_live/modules/live_play/local_interaction_controller.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
 
 class InitialServices {
@@ -64,22 +64,48 @@ class InitialServices {
   }
 
   static void _initHeavyServicesInBackground() {
-    Future.delayed(const Duration(seconds: 3), () {
+    Future<void>(() async {
+      try {
+        await FFmpegKitExtended.initialize();
+        developer.log('FFmpegKitExtended initialized', name: 'InitialServices');
+      } catch (error, stackTrace) {
+        developer.log(
+          'FFmpegKitExtended initialization failed: $error',
+          name: 'InitialServices',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+
+      await Future.delayed(const Duration(seconds: 3));
+
       _initializeSafely('CacheService', () {
-        if (!Get.isRegistered<CacheService>()) Get.put(CacheService(), permanent: true);
+        Get.find<CacheService>();
       });
+
       _initializeSafely('RecordSettingsController', () {
-        if (!Get.isRegistered<RecordSettingsController>()) {
-          Get.put(RecordSettingsController(), permanent: true);
+        Get.find<RecordSettingsController>();
+      });
+
+      _initializeSafely('RecorderController', () {
+        Get.find<RecorderController>();
+      });
+
+      _initializeSafely('StreamResolverService', () {
+        if (!Get.isRegistered<StreamResolverService>()) {
+          Get.lazyPut(() => StreamResolverService(), fenix: true);
+        }
+
+        Get.find<StreamResolverService>();
+      });
+
+      _initializeSafely('AuthController', () {
+        if (!Get.isRegistered<AuthController>()) {
+          Get.put(AuthController(), permanent: true);
         }
       });
-      _initializeSafely('RecorderController', () {
-        if (!Get.isRegistered<RecorderController>()) Get.put(RecorderController(), permanent: true);
-      });
-      _initializeSafely('StreamResolverService', () => Get.lazyPut(() => StreamResolverService(), fenix: true));
-      _initializeSafely('AuthController', () {
-        Get.put(AuthController(), permanent: true);
-      });
+
+      developer.log('All heavy services initialized', name: 'InitialServices');
     });
   }
 

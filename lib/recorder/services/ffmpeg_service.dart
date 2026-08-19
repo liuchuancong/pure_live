@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:developer';
-
 import 'package:flutter/services.dart';
 import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
@@ -37,11 +36,6 @@ class FFmpegService {
     required String command,
     required void Function(FFmpegEvent event) onEvent,
   }) async {
-    // Loading the native FFmpeg DLL during the fixed three-second startup
-    // warm-up paused the Windows UI exactly while users began scrolling. The
-    // package initializer is concurrency-safe and idempotent, so initialize at
-    // the first real recording/processing request instead.
-    await FFmpegKitExtended.initialize();
     onEvent(FFmpegEvent(taskId: taskId, type: FFmpegEventType.started));
 
     final ffempgSession = FFmpegKit.createSession(command);
