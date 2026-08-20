@@ -165,7 +165,6 @@ class KuaishowSite implements LiveSite {
   @override
   Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) {
     List<LivePlayQuality> qualities = <LivePlayQuality>[];
-    developer.log(detail.data.toString(), name: 'detail.data');
     var qulityList = detail.data["h264"]["adaptationSet"]["representation"];
 
     for (var quality in qulityList) {
