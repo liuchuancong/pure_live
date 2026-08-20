@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/modules/live_play/widgets/danmaku_list_view.dart';
+import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_list_view.dart';
 
 void main() {
   final metrics = FixedScrollMetrics(

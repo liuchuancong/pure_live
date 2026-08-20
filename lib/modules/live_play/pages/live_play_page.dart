@@ -1,6 +1,6 @@
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/modules/live_play/widgets/video_keyboard.dart';
-import 'package:pure_live/modules/live_play/widgets/live_play_content.dart';
+import 'package:pure_live/modules/live_play/widgets/keyboard/video_keyboard.dart';
+import 'package:pure_live/modules/live_play/widgets/layout/live_play_content.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 
 class LivePlayPage extends GetView<LivePlayController> {

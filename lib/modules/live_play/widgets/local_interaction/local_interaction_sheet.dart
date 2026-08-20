@@ -1,5 +1,5 @@
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/modules/live_play/local_interaction_controller.dart';
+import 'package:pure_live/modules/live_play/widgets/local_interaction/local_interaction_controller.dart';
 
 class LocalInteractionSheet extends StatefulWidget {
   const LocalInteractionSheet({super.key, required this.controller, required this.platform, required this.onMessage});

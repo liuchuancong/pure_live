@@ -2,10 +2,9 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:developer';
 
-import 'package:flutter/scheduler.dart';
-
 import 'video_controller_panel.dart';
 
+import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:flame_barrage/flame_barrage.dart';
@@ -23,8 +22,8 @@ import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
-import 'package:pure_live/modules/live_play/danmaku_settings_binding.dart';
-import 'package:pure_live/modules/live_play/widgets/danmaku_message_actions.dart';
+import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_message_actions.dart';
+import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_settings_binding.dart';
 
 typedef AudioOnlyCallback = Future<void> Function(bool value);
 

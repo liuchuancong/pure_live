@@ -1,19 +1,19 @@
 import 'dart:io';
 
-import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
-import 'package:pure_live/common/services/settings/danmaku_settings_controller.dart';
-import 'package:pure_live/common/services/settings/font_settings_controller.dart';
-import 'package:pure_live/common/services/settings_service.dart';
-import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
-import 'package:pure_live/modules/live_play/danmaku_settings_binding.dart';
-import 'package:pure_live/modules/live_play/danmaku_viewing_preset.dart';
-import 'package:pure_live/modules/live_play/widgets/danmaku_settings_page.dart';
-import 'package:pure_live/modules/live_play/widgets/video_player/video_controller_panel.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pure_live/common/services/settings_service.dart';
+import 'package:pure_live/modules/live_play/pages/danmaku_settings_page.dart';
+import 'package:pure_live/common/services/settings/font_settings_controller.dart';
+import 'package:pure_live/common/services/settings/danmaku_settings_controller.dart';
+import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_viewing_preset.dart';
+import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_settings_binding.dart';
+import 'package:pure_live/modules/live_play/widgets/video_player/video_controller_panel.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

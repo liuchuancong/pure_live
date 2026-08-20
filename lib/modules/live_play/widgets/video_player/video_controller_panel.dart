@@ -12,14 +12,14 @@ import 'package:pure_live/common/utils/live_url_tool.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:scrollview_observer/scrollview_observer.dart';
 import 'package:pure_live/modules/live_play/states/load_type.dart';
-import 'package:pure_live/modules/live_play/widgets/play_other.dart';
-import 'package:pure_live/modules/live_play/danmaku_settings_binding.dart';
-import 'package:pure_live/modules/live_play/widgets/danmaku_settings_page.dart';
+import 'package:pure_live/modules/live_play/dialogs/play_other.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
+import 'package:pure_live/modules/live_play/pages/danmaku_settings_page.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/volume_control.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
+import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_settings_binding.dart';
 
 class VideoControllerPanel extends StatefulWidget {
   final VideoController controller;

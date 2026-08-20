@@ -1,7 +1,7 @@
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/modules/live_play/widgets/not_living_video_widget.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_player.dart';
+import 'package:pure_live/modules/live_play/widgets/placeholder/not_living_video_widget.dart';
 
 class LivePlayVideo extends StatelessWidget {
   const LivePlayVideo({super.key, required this.controller, this.widescreen = false});

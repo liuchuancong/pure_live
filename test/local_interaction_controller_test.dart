@@ -1,6 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/core/sites.dart';
-import 'package:pure_live/modules/live_play/local_interaction_controller.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:pure_live/modules/live_play/widgets/local_interaction/local_interaction_controller.dart';
 
 void main() {
   group('local interaction profile', () {

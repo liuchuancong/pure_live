@@ -1,9 +1,9 @@
 import 'package:pure_live/common/index.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:pure_live/modules/live_play/widgets/record_action_button.dart';
-import 'package:pure_live/modules/live_play/widgets/live_play_menu_button.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
-import 'package:pure_live/modules/live_play/widgets/favorite_floating_button.dart';
+import 'package:pure_live/modules/live_play/widgets/button/record_action_button.dart';
+import 'package:pure_live/modules/live_play/widgets/button/live_play_menu_button.dart';
+import 'package:pure_live/modules/live_play/widgets/button/favorite_floating_button.dart';
 
 class LivePlayHeader extends StatelessWidget implements PreferredSizeWidget {
   const LivePlayHeader({super.key, required this.controller, this.compactHeader = false});

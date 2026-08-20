@@ -19,15 +19,15 @@ import 'package:pure_live/modules/live_play/states/player_state.dart';
 import 'package:back_button_interceptor/back_button_interceptor.dart';
 import 'package:pure_live/modules/live_play/states/live_play_state.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
-import 'package:pure_live/modules/live_play/widgets/danmaku_list_view.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
-import 'package:pure_live/modules/live_play/local_interaction_controller.dart';
-import 'package:pure_live/modules/live_play/local_message_delivery_queue.dart';
 import 'package:pure_live/modules/live_play/controllers/timer_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_session_host.dart';
+import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_list_view.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
+import 'package:pure_live/modules/live_play/widgets/local_interaction/local_interaction_controller.dart';
+import 'package:pure_live/modules/live_play/widgets/local_interaction/local_message_delivery_queue.dart';
 
 // live_play_controller.dart
 

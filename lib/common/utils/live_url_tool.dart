@@ -3,7 +3,7 @@ import 'dart:developer';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/modules/live_play/widgets/live_dlna_dialog.dart';
+import 'package:pure_live/modules/live_play/dialogs/live_dlna_dialog.dart';
 
 class LiveUrlTool {
   static Future<List<String>> parseLiveUrl(String url) async {

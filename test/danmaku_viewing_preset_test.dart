@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/modules/live_play/danmaku_viewing_preset.dart';
+import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_viewing_preset.dart';
 
 void main() {
   test('each viewing preset only matches its actual rendered values', () {

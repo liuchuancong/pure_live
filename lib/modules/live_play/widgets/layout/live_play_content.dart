@@ -1,11 +1,11 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/live_play/states/ui_state.dart';
-import 'package:pure_live/modules/live_play/widgets/danmaku_tab.dart';
-import 'package:pure_live/modules/live_play/widgets/live_play_video.dart';
-import 'package:pure_live/modules/live_play/widgets/resolutions_row.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
-import 'package:pure_live/modules/live_play/widgets/live_play_header.dart';
+import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_tab.dart';
+import 'package:pure_live/modules/live_play/widgets/layout/live_play_video.dart';
+import 'package:pure_live/modules/live_play/widgets/layout/live_play_header.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/widgets/resolution_selector/resolutions_row.dart';
 
 class LivePlayContent extends StatelessWidget {
   const LivePlayContent({super.key, required this.controller, required this.isInPip, required this.mode});

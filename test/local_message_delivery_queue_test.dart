@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/common/models/live_message.dart';
-import 'package:pure_live/modules/live_play/local_message_delivery_queue.dart';
+import 'package:pure_live/modules/live_play/widgets/local_interaction/local_message_delivery_queue.dart';
 
 void main() {
   LiveMessage message(String text) => LiveMessage(

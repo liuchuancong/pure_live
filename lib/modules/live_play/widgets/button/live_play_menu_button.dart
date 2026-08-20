@@ -5,12 +5,12 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/utils/live_url_tool.dart';
 import 'package:pure_live/common/utils/share_command_handler.dart';
-import 'package:pure_live/modules/live_play/widgets/play_other.dart';
-import 'package:pure_live/modules/live_play/local_interaction_sheet.dart';
+import 'package:pure_live/modules/live_play/dialogs/play_other.dart';
 import 'package:pure_live/modules/live_play/dialogs/room_timer_dialog.dart';
 import 'package:pure_live/common/utils/windows_multi_instance_launcher.dart';
 import 'package:pure_live/modules/live_play/dialogs/room_volume_dialog.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/widgets/local_interaction/local_interaction_sheet.dart';
 
 class LivePlayMenuButton extends StatelessWidget {
   const LivePlayMenuButton({super.key, required this.controller});
