@@ -473,6 +473,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     _hideVolumeTimer?.cancel();
     _debounceTimer?.cancel();
     showControllerTimer?.cancel();
+    _controllerHideDeadlineMs = null;
     _defaultFullscreenTimer = null;
     _controllerTransitionTimer = null;
     _hideVolumeTimer = null;
@@ -580,22 +581,33 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   // 控制器显示管理
   void enableController() {
     if (_isDisposed) return;
-    showControllerTimer?.cancel();
     showController.value = true;
 
     if (!_isMouseOverController && !_isMouseOverPlayer) {
-      showControllerTimer = Timer(const Duration(seconds: 2), () {
-        showControllerTimer = null;
-        if (!_isDisposed && !_isMouseOverController && !_isMouseOverPlayer) {
-          showController.value = false;
-        }
-      });
+      _controllerIdleClock.start();
+      _controllerHideDeadlineMs = _controllerIdleClock.elapsedMilliseconds + _controllerHideDelay.inMilliseconds;
+      showControllerTimer ??= Timer(_controllerHideDelay, _handleControllerHideDeadline);
     }
+  }
+
+  void _handleControllerHideDeadline() {
+    showControllerTimer = null;
+    if (_isDisposed || _isMouseOverController || _isMouseOverPlayer) return;
+    final deadline = _controllerHideDeadlineMs;
+    if (deadline == null) return;
+    final remainingMs = deadline - _controllerIdleClock.elapsedMilliseconds;
+    if (remainingMs > 0) {
+      showControllerTimer = Timer(Duration(milliseconds: remainingMs), _handleControllerHideDeadline);
+      return;
+    }
+    _controllerHideDeadlineMs = null;
+    showController.value = false;
   }
 
   void stopHideController() {
     showControllerTimer?.cancel();
     showControllerTimer = null;
+    _controllerHideDeadlineMs = null;
   }
 
   // 鼠标进入控制器区域
@@ -620,8 +632,10 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
 
   void onMouseHoverPlayer() {
     _isMouseOverPlayer = false;
-    _isMouseOverPlayer = false;
-    enableController(); // 重新开始计时
+    // Pointer hover can fire hundreds of times per second on high polling-rate
+    // mice. Extend one monotonic deadline instead of cancelling and allocating
+    // a Timer for every event.
+    enableController();
   }
 
   // 鼠标离开播放器区域
@@ -978,6 +992,8 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
 
   // 兼容性属性
   Timer? showControllerTimer;
+  final Stopwatch _controllerIdleClock = Stopwatch();
+  int? _controllerHideDeadlineMs;
   // 添加鼠标状态跟踪
   bool _isMouseOverController = false;
   bool _isMouseOverPlayer = false;

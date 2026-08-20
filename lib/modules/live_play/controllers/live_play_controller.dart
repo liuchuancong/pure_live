@@ -23,6 +23,7 @@ import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/timer_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_controller.dart';
+import 'package:pure_live/modules/live_play/controllers/danmaku_presentation_recovery.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_session_host.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_list_view.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
@@ -49,6 +50,7 @@ class LivePlayController extends GetxController
   @override
   final Rx<LivePlayState> state = const LivePlayState().obs;
   final RxList<LiveMessage> danmakuMessages = <LiveMessage>[].obs;
+  final RxInt danmakuPresentationRevision = 0.obs;
   final Rxn<LiveMessage> localGiftEffect = Rxn<LiveMessage>();
 
   late Site currentSite;
@@ -60,13 +62,13 @@ class LivePlayController extends GetxController
   bool _ownerClosed = false;
   bool _childControllersReleased = false;
   bool _reactiveStateClosed = false;
+  bool _suppressAppFloatingOnNextPop = false;
   int _roomLoadEpoch = 0;
   bool _asmrSessionActive = false;
   Timer? _localGiftEffectTimer;
   Timer? _danmakuFlushTimer;
-  Timer? _danmakuRecoveryTimer;
   Worker? _pipStateWorker;
-  Future<void>? _danmakuRecovery;
+  late final DanmakuPresentationRecovery _danmakuPresentationRecovery;
   bool _wasInSystemPip = false;
   bool _wasBackgrounded = false;
   final List<LiveMessage> _pendingDanmakuMessages = <LiveMessage>[];
@@ -76,7 +78,12 @@ class LivePlayController extends GetxController
 
   static const int _maxDanmakuHistory = 500;
   static const int _maxPendingDanmakuBatch = 200;
-  static const Duration _danmakuBatchWindow = Duration(milliseconds: 32);
+  // The on-video barrage receives messages directly from DanmakuController.
+  // This buffer only feeds the virtualized history list, whose own visual
+  // cadence is 80 ms. A 64 ms batch halves full 500-item RxList copies in busy
+  // rooms without slowing the moving barrage or local messages (which flush
+  // immediately).
+  static const Duration _danmakuBatchWindow = Duration(milliseconds: 64);
   static const Duration localChatDeliveryDelay = Duration(seconds: 2);
 
   @override
@@ -87,13 +94,6 @@ class LivePlayController extends GetxController
     _localMessageDeliveryQueue = LocalMessageDeliveryQueue(onDeliver: _deliverLocalMessage);
 
     final manager = GlobalPlayerService.instance.player;
-    WidgetsBinding.instance.addObserver(this);
-    _wasInSystemPip = manager.isInPip.value;
-    _pipStateWorker = ever<bool>(manager.isInPip, (isInPip) {
-      final returnedFromPip = _wasInSystemPip && !isInPip;
-      _wasInSystemPip = isInPip;
-      if (returnedFromPip) _scheduleDanmakuRecovery();
-    });
     _reentrySession = manager.consumeRoomSessionReentry(room);
     final resumesCurrentSession = _reentrySession != null;
     final autoStartAsmr = Platform.isAndroid && SettingsService.to.app.enableAsmrSleepMode.v;
@@ -131,6 +131,21 @@ class LivePlayController extends GetxController
     }
 
     _initControllers();
+    _danmakuPresentationRecovery = DanmakuPresentationRecovery(
+      isBlocked: () => GlobalPlayerService.instance.player.isCompactModeActive,
+      canRecover: () {
+        if (isClosed || _ownerClosed) return false;
+        return state.value.room.success && state.value.room.detail != null;
+      },
+      recover: _recoverDanmakuAfterPresentation,
+    );
+    WidgetsBinding.instance.addObserver(this);
+    _wasInSystemPip = manager.isInPip.value;
+    _pipStateWorker = ever<bool>(manager.isInPip, (isInPip) {
+      final returnedFromPip = _wasInSystemPip && !isInPip;
+      _wasInSystemPip = isInPip;
+      if (returnedFromPip) _restoreDanmakuPresentation();
+    });
     _initTab();
     Future.microtask(_initCore);
 
@@ -148,36 +163,35 @@ class LivePlayController extends GetxController
     if (state != AppLifecycleState.resumed || !_wasBackgrounded) return;
     _wasBackgrounded = false;
     if (!GlobalPlayerService.instance.player.isInPip.value) {
-      _scheduleDanmakuRecovery();
+      _restoreDanmakuPresentation();
     }
   }
 
-  void _scheduleDanmakuRecovery() {
-    _danmakuRecoveryTimer?.cancel();
-    _danmakuRecoveryTimer = Timer(const Duration(milliseconds: 180), () {
-      _danmakuRecoveryTimer = null;
-      if (isClosed || _ownerClosed || GlobalPlayerService.instance.player.isCompactModeActive) return;
-      final detail = state.value.room.detail;
-      if (detail == null || !state.value.room.success) return;
-      final inFlight = _danmakuRecovery;
-      if (inFlight != null) return;
-      late final Future<void> recovery;
-      recovery = danmakuController
-          .recoverRoomConnection(detail)
-          .catchError((Object error, StackTrace stackTrace) {
-            developer.log(
-              'Danmaku recovery after PiP/foreground failed',
-              name: 'LivePlayController',
-              error: error,
-              stackTrace: stackTrace,
-            );
-          })
-          .whenComplete(() {
-            if (identical(_danmakuRecovery, recovery)) _danmakuRecovery = null;
-          });
-      _danmakuRecovery = recovery;
-      unawaited(recovery);
-    });
+  void _restoreDanmakuPresentation() {
+    if (isClosed || _ownerClosed) return;
+    // The portrait list is removed from the tree while LivePlayContent renders
+    // the native PiP surface, so a list-local PiP worker never observes the
+    // complete true -> false transition. Publish the restore from this
+    // persistent controller and flush any batch that was waiting when the
+    // Activity changed presentation.
+    _flushDanmakuMessages();
+    danmakuPresentationRevision.value++;
+    _danmakuPresentationRecovery.request();
+  }
+
+  Future<void> _recoverDanmakuAfterPresentation() async {
+    final detail = state.value.room.detail;
+    if (detail == null || !state.value.room.success || isClosed || _ownerClosed) return;
+    try {
+      await danmakuController.recoverRoomConnection(detail);
+    } catch (error, stackTrace) {
+      developer.log(
+        'Danmaku recovery after PiP/foreground failed',
+        name: 'LivePlayController',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   void _initControllers() {
@@ -373,6 +387,7 @@ class LivePlayController extends GetxController
   }
 
   void _flushDanmakuMessages() {
+    _danmakuFlushTimer?.cancel();
     _danmakuFlushTimer = null;
     if (_pendingDanmakuMessages.isEmpty || isClosed) return;
     final next = <LiveMessage>[...danmakuMessages, ..._pendingDanmakuMessages];
@@ -806,6 +821,23 @@ class LivePlayController extends GetxController
   void setWidescreen() => updateUI(screenMode: VideoMode.widescreen);
   void setFullScreen() => updateUI(screenMode: VideoMode.fullscreen);
 
+  /// Leaves the native video route before opening another app page. Pushing a
+  /// page over media_kit's Windows surface can leave the old video surface
+  /// above the new Flutter route, so detach it and replace the live route.
+  Future<void> openRecordCenter() async {
+    final manager = GlobalPlayerService.instance.player;
+    state.value.player.videoController?.clearListener();
+    await manager.close();
+    _suppressAppFloatingOnNextPop = true;
+    Get.offAndToNamed(RoutePath.kRecordPage);
+  }
+
+  bool takeSuppressAppFloatingOnNextPop() {
+    final suppress = _suppressAppFloatingOnNextPop;
+    _suppressAppFloatingOnNextPop = false;
+    return suppress;
+  }
+
   void prepareAppFloating({Future<void>? routeUnmounted}) {
     _floatingResourcesReleased = false;
     final manager = GlobalPlayerService.instance.player;
@@ -872,7 +904,7 @@ class LivePlayController extends GetxController
     _roomLoadEpoch++;
     WidgetsBinding.instance.removeObserver(this);
     _pipStateWorker?.dispose();
-    _danmakuRecoveryTimer?.cancel();
+    _danmakuPresentationRecovery.dispose();
     playerController.invalidateLoad();
     _localGiftEffectTimer?.cancel();
     _localMessageDeliveryQueue.dispose();

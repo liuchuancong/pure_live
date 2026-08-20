@@ -2,12 +2,12 @@
 
 本仓库采用“本机优先、Actions 手动兜底”的流程，固定使用 Flutter `3.47.0`。`pubspec.lock`、Git 依赖提交和 FFmpeg 产物地址均已固定，便于复现结果。
 
-最近完整核验：2026-08-20，Windows 11 + Java 25 + Flutter 3.47.0；设备 UI 映射、Built-in Kotlin 审计、Flutter Analyze、154 项单元/Widget 测试及 26/26 平台公开接口探测全部通过。v2.3.0 继续以本机优先方式构建 Android arm64 与 Windows x64，再由显式阶段任务补齐 Linux x64、macOS universal 和 iOS arm64 设备归档；PiP 返回弹幕恢复、启动逐批刷新、横屏本地输入、播放器控制器释放和有界弹幕缓存均进入回归范围。干净便携目录继续把数据、缓存和临时文件写入 release 同级 `AppData`。
+最近完整核验：2026-08-21，Windows 11 + Java 25 + Flutter 3.47.0；Built-in Kotlin 审计、Flutter Analyze、170 项单元/Widget 测试及 26/26 平台公开接口探测全部通过。v2.3.0 继续以本机优先方式构建 Android arm64 与 Windows x64，再由显式阶段任务补齐 Linux x64、macOS universal 和 iOS arm64 设备归档；PiP 返回弹幕恢复、启动逐批刷新、横屏本地输入、播放器控制器释放和有界弹幕缓存均进入自动化回归范围。干净便携目录继续把数据、缓存和临时文件写入 release 同级 `AppData`。
 
 ## 前置环境
 
 - Windows 11 x64，已启用 Flutter Windows 桌面开发所需的 Visual Studio C++ 工具；
-- Android SDK 及可用的 Android 设备或模拟器；
+- Android SDK；设备或模拟器仅用于显式安排的安装验收；
 - Java 25 构建运行时（Android 应用和插件字节码目标仍为 17）；
 - Python 3，用于直播接口探测和发布历史更新；
 - 可选：Inno Setup 6，用于生成 Windows EXE 安装包；
@@ -20,6 +20,19 @@
 ```powershell
 PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
 ```
+
+### 默认无设备修复流程
+
+代码问题的默认闭环不依赖手机连接：
+
+1. 从控制器、生命周期、通知与数据订阅中还原可重复的事件顺序。
+2. 用单元或 Widget 测试固化故障序列和期望状态，优先覆盖修复前失败、修复后通过的路径。
+3. 执行 `flutter analyze`、受影响测试；合并或发布前再执行 `tool/local_ci.ps1`。
+4. 需要安装包时在本机完成 Android arm64 或 Windows x64 构建，并独立记录签名与构建结果。
+
+手机连接、ADB、APK 安装和设备 UI 自动化是单独的可选验收层，仅在当前任务明确要求设备操作时启用。以前连接过设备不构成持续授权。没有设备采样时，文档分别报告“代码审查 / 自动化测试 / 本地构建”的实际证据，不把设备状态当作代码修复的阻塞项。
+
+设备权限以用户当前任务的最新指令为准，并在每条设备命令前重新检查。明确采用无设备流程后，设备发现、状态读取、`dumpsys`、日志、截图、安装和 UI 控制全部关闭；连接状态本身不触发任何设备操作。
 
 `tool/flutterw.ps1` 按以下顺序寻找 Flutter：
 

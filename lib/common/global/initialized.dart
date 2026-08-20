@@ -17,6 +17,17 @@ import 'package:pure_live/common/global/platform/mobile_manager.dart';
 import 'package:pure_live/common/global/platform/desktop_manager.dart';
 import 'package:pure_live/common/utils/windows_multi_instance_launcher.dart';
 
+/// Keep decoded cover/avatar memory bounded independently from the encoded
+/// HTTP/disk cache. A 960x540 RGBA cover is roughly 2 MiB after decoding, so
+/// Flutter's default entry count can otherwise retain far more memory than a
+/// live-room grid needs.
+@visibleForTesting
+void configureDecodedImageCache({required bool desktop}) {
+  final cache = PaintingBinding.instance.imageCache;
+  cache.maximumSize = desktop ? 384 : 256;
+  cache.maximumSizeBytes = (desktop ? 96 : 64) * 1024 * 1024;
+}
+
 class AppInitializer {
   static final AppInitializer _instance = AppInitializer._internal();
   bool _isInitialized = false;
@@ -38,6 +49,7 @@ class AppInitializer {
     if (_isInitialized) return;
 
     WidgetsFlutterBinding.ensureInitialized();
+    configureDecodedImageCache(desktop: PlatformUtils.isDesktop);
     final String instanceId = WindowsMultiInstanceLauncher.instanceIdFromArgs(args);
     _initialRoom = WindowsMultiInstanceLauncher.roomFromArgs(args);
     await _initWindowsSingleInstance(args, instanceId);

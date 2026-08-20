@@ -33,7 +33,11 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
 PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 ```
 
-Android UI、播放器、画中画或弹幕改动应在真机验证；Windows 小窗、安装器或运行时资源改动应完成便携包和安装包启动验证。具体流程见 [构建与发布](docs/BUILD_AND_RELEASE.md)。
+Android UI、播放器、画中画或弹幕改动默认采用无设备流程：先定位状态机与事件顺序，补充可重复的单元/Widget 回归测试，再执行静态分析、本地测试和目标产物构建。连接手机、启动 ADB、安装 APK 或自动操作设备仅在当前任务明确提出设备验收时执行；以前连接过设备不代表后续任务持续开放设备操作。
+
+执行任何设备命令前必须重新核对用户最新指令。当前任务要求不操作手机时，连 `adb devices`、`dumpsys`、日志、截图和包信息等只读查询也不执行，直接使用源码状态机分析与确定性测试完成修复。
+
+验证结论按层次分别记录：代码审查、自动化测试、本地构建、可选设备采样。设备采样用于补充发布证据，不作为开始分析或提交代码修复的前置条件；尚未采样的设备场景单独标记，不影响已经通过自动化门禁的代码结论。Windows 小窗、安装器或运行时资源改动继续通过本机便携包和安装包启动验证。具体流程见 [构建与发布](docs/BUILD_AND_RELEASE.md)。
 
 ## 提交规范
 

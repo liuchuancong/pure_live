@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:pure_live/get/get.dart';
 
@@ -47,6 +48,33 @@ class DisplayModeInfo {
       height: (map['height'] as num?)?.toInt(),
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    return other is DisplayModeInfo &&
+        other.enabled == enabled &&
+        other.currentRefreshRate == currentRefreshRate &&
+        other.maxRefreshRate == maxRefreshRate &&
+        other.preferredRefreshRate == preferredRefreshRate &&
+        other.requestedRefreshRate == requestedRefreshRate &&
+        other.displayId == displayId &&
+        other.width == width &&
+        other.height == height &&
+        listEquals(other.supportedRefreshRates, supportedRefreshRates);
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    enabled,
+    currentRefreshRate,
+    maxRefreshRate,
+    preferredRefreshRate,
+    requestedRefreshRate,
+    displayId,
+    width,
+    height,
+    Object.hashAll(supportedRefreshRates),
+  );
 }
 
 class DisplayModeService {
@@ -61,8 +89,13 @@ class DisplayModeService {
     _handlerInstalled = true;
     _channel.setMethodCallHandler((call) async {
       if (call.method != 'displayModeChanged' || call.arguments is! Map) return;
-      info.value = DisplayModeInfo.fromMap(Map<dynamic, dynamic>.from(call.arguments as Map));
+      _publish(DisplayModeInfo.fromMap(Map<dynamic, dynamic>.from(call.arguments as Map)));
     });
+  }
+
+  static void _publish(DisplayModeInfo next) {
+    if (info.value == next) return;
+    info.value = next;
   }
 
   static Future<DisplayModeInfo?> setHighRefreshRate(bool enabled) async {
@@ -71,7 +104,7 @@ class DisplayModeService {
       final result = await _channel.invokeMapMethod<dynamic, dynamic>('setHighRefreshRate', {'enabled': enabled});
       if (result == null) return null;
       final parsed = DisplayModeInfo.fromMap(result);
-      info.value = parsed;
+      _publish(parsed);
       return parsed;
     } on MissingPluginException {
       return null;
@@ -86,7 +119,7 @@ class DisplayModeService {
       final result = await _channel.invokeMapMethod<dynamic, dynamic>('getDisplayModeInfo');
       if (result == null) return null;
       final parsed = DisplayModeInfo.fromMap(result);
-      info.value = parsed;
+      _publish(parsed);
       return parsed;
     } on MissingPluginException {
       return null;

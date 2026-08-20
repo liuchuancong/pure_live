@@ -179,13 +179,34 @@ class HuyaSite implements LiveSite {
   }
 
   Future<String> getPlayUrl(HuyaLineModel line, int bitRate) async {
-    var antiCode = await getCndTokenInfoEx(line.streamName);
-    antiCode = buildAntiCode(line.streamName, line.presenterUid, antiCode);
-    var url = '${line.line}/${line.streamName}.flv?$antiCode&codec=264';
-    if (bitRate > 0) {
-      url += "&ratio=$bitRate";
+    var antiCode = line.lineType == HuyaLineType.hls ? line.hlsAntiCode.trim() : line.flvAntiCode.trim();
+    if (antiCode.isEmpty && line.lineType == HuyaLineType.flv) {
+      antiCode = await getCndTokenInfoEx(line.streamName);
+      antiCode = buildAntiCode(line.streamName, line.presenterUid, antiCode);
+    }
+    if (antiCode.isEmpty) {
+      final protocol = line.lineType == HuyaLineType.hls ? 'HLS' : 'FLV';
+      throw StateError('Huya $protocol token is unavailable');
+    }
+
+    final extension = line.lineType == HuyaLineType.hls ? 'm3u8' : 'flv';
+    final cdnBase = secureHuyaCdnBase(line.line);
+    var url = '$cdnBase/${line.streamName}.$extension?$antiCode';
+    if (!RegExp(r'(^|&)codec=').hasMatch(antiCode)) {
+      url += '&codec=264';
+    }
+    if (bitRate > 0 && !RegExp(r'(^|&)ratio=').hasMatch(antiCode)) {
+      url += '&ratio=$bitRate';
     }
     return url;
+  }
+
+  static String secureHuyaCdnBase(String base) {
+    final uri = Uri.tryParse(base);
+    if (uri == null || uri.scheme != 'http' || !(uri.host == 'huya.com' || uri.host.endsWith('.huya.com'))) {
+      return base;
+    }
+    return uri.replace(scheme: 'https').toString();
   }
 
   @override

@@ -489,6 +489,24 @@ void main() {
     expect(manager.currentPlayer, same(player));
     expect(player.setDataSourceCalls, 1);
   }, timeout: const Timeout(Duration(seconds: 10)));
+
+  test('floating cleanup releases route resources without waiting forever for a frame', () async {
+    final player = _FakePlayer();
+    final manager = _createManager(player);
+    var released = false;
+    await manager.initialize(engine: PlayerEngine.mediaKit);
+    manager.prepareAppFloating(
+      onClose: () async {
+        released = true;
+      },
+    );
+
+    await manager.closeAppFloating().timeout(const Duration(milliseconds: 500));
+
+    expect(released, isTrue);
+    expect(manager.isAppFloatingActive, isFalse);
+    await manager.dispose();
+  });
 }
 
 PlayerManager _createManager(

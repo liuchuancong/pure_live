@@ -23,10 +23,14 @@ class MainActivity : AudioServiceActivity() {
     private var highRefreshRateEnabled = true
     private var displayModeChannel: MethodChannel? = null
     private var displayListenerRegistered = false
+    private var lastPublishedDisplayModeInfo: Map<String, Any>? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private val displayModeRefresh = Runnable {
         val info = applyPreferredDisplayMode(highRefreshRateEnabled)
-        displayModeChannel?.invokeMethod("displayModeChanged", info)
+        if (info != lastPublishedDisplayModeInfo) {
+            lastPublishedDisplayModeInfo = info
+            displayModeChannel?.invokeMethod("displayModeChanged", info)
+        }
     }
     private val displayListener = object : DisplayManager.DisplayListener {
         override fun onDisplayAdded(displayId: Int) = scheduleDisplayModeRefresh()
@@ -51,7 +55,9 @@ class MainActivity : AudioServiceActivity() {
                 when (call.method) {
                     "setHighRefreshRate" -> {
                         highRefreshRateEnabled = call.argument<Boolean>("enabled") ?: true
-                        result.success(applyPreferredDisplayMode(highRefreshRateEnabled))
+                        val info = applyPreferredDisplayMode(highRefreshRateEnabled)
+                        lastPublishedDisplayModeInfo = info
+                        result.success(info)
                     }
 
                     "getDisplayModeInfo" -> result.success(displayModeInfo())
@@ -163,7 +169,11 @@ class MainActivity : AudioServiceActivity() {
         ) ?: currentMode
 
         val attributes = window.attributes
-        val targetModeId = if (enabled) preferredMode.modeId else 0
+        // Android recommends preferredRefreshRate when only the refresh rate
+        // should change. Pinning preferredDisplayModeId as well can force a
+        // heavy vendor mode transition and leaves less room for the scheduler
+        // to reconcile Flutter, video and PiP surfaces.
+        val targetModeId = 0
         val targetRefreshRate = if (enabled) preferredMode.refreshRate else 0f
         if (
             attributes.preferredDisplayModeId != targetModeId ||

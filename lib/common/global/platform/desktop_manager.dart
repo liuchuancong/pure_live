@@ -732,7 +732,15 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
   void didChangeViewFocus(ViewFocusEvent event) {}
 
   @override
-  void didHaveMemoryPressure() {}
+  void didHaveMemoryPressure() {
+    // Android/iOS emit this callback before the process reaches a hard memory
+    // limit. Windows may also deliver it through the engine. Decoded images
+    // are reproducible resources, so release both pending and live entries;
+    // visible widgets resolve them again on demand.
+    PaintingBinding.instance.imageCache
+      ..clear()
+      ..clearLiveImages();
+  }
 
   @override
   void handleCancelBackGesture() {}

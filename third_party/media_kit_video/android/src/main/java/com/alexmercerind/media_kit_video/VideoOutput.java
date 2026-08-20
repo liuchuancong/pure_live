@@ -138,7 +138,13 @@ public class VideoOutput implements TextureRegistry.SurfaceProducer.Callback {
         synchronized (lock) {
             Log.i(TAG, "onSurfaceAvailable");
             id = surfaceProducer.id();
-            wid = newGlobalObjectRef(surfaceProducer.getSurface());
+            // setSize may call this method directly and SurfaceProducer may
+            // then deliver its own availability callback for the same Surface.
+            // Reuse the existing JNI global reference until cleanup instead of
+            // leaking one reference per resize/PiP transition.
+            if (wid == 0) {
+                wid = newGlobalObjectRef(surfaceProducer.getSurface());
+            }
             textureUpdateCallback.onTextureUpdate(id, wid, surfaceProducer.getWidth(), surfaceProducer.getHeight());
         }
     }
@@ -150,6 +156,7 @@ public class VideoOutput implements TextureRegistry.SurfaceProducer.Callback {
             textureUpdateCallback.onTextureUpdate(id, 0, surfaceProducer.getWidth(), surfaceProducer.getHeight());
             if (wid != 0) {
                 final long widReference = wid;
+                wid = 0;
                 handler.postDelayed(() -> deleteGlobalObjectRef(widReference), 5000);
             }
         }

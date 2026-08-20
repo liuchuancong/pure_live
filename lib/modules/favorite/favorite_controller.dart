@@ -5,6 +5,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:pure_live/modules/tags/live_tag.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
+import 'package:pure_live/modules/favorite/favorite_startup_policy.dart';
 import 'package:pure_live/common/services/settings/refresh_config_controller.dart';
 
 class FavoriteController extends LocalReactivePageController<LiveRoom>
@@ -26,6 +27,8 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   final List<Worker> _audienceWorkers = [];
   int _refreshEpoch = 0;
   DateTime? _lastFullRefreshAt;
+  bool _startupVerificationInProgress = false;
+  Future<void>? _startupRefresh;
 
   // Treat returning to the app as a fresh launch after a short debounce.  A
   // two-minute window left just-ended rooms visibly "live" when users reopened
@@ -49,7 +52,9 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     tabController = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addObserver(this);
 
-    debounce(SettingsService.to.fav.favoriteRooms, (_) => applyLocalFilter(), time: const Duration(milliseconds: 1000));
+    debounce(SettingsService.to.fav.favoriteRooms, (_) {
+      if (!_startupVerificationInProgress) applyLocalFilter();
+    }, time: const Duration(milliseconds: 1000));
 
     ever(selectedTagId, (_) => applyLocalFilter());
     ever(tabSiteIndex, (_) => applyLocalFilter());
@@ -59,11 +64,10 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     _audienceWorkers.add(ever(SettingsService.to.app.preferRealOnlineCounts, (_) => applyLocalFilter()));
     _audienceWorkers.add(ever(SettingsService.to.app.realOnlinePlatforms, (_) => applyLocalFilter()));
 
-    applyLocalFilter();
     // Begin verification during controller startup instead of waiting for the
-    // first rendered frame. A previous process may have been killed before it
-    // wrote an offline transition, so persisted live/offline state is only a
-    // paint-while-loading snapshot, never the startup result.
+    // first rendered frame. Persisted metadata remains useful, but its old
+    // live/offline bit is invalidated synchronously so an ended stream is not
+    // painted as live while requests are still in flight (or if one fails).
     unawaited(refreshPersistedRoomsOnStartup());
 
     tabController.addListener(() {
@@ -185,9 +189,13 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     }).toList();
   }
 
-  List<LiveRoom> getFilteredRooms() {
-    syncRooms();
+  List<LiveRoom> getFilteredRooms({Iterable<LiveRoom>? roomSnapshot}) {
+    syncRooms(roomSnapshot: roomSnapshot);
 
+    return _filterSyncedRooms();
+  }
+
+  List<LiveRoom> _filterSyncedRooms() {
     List<LiveRoom> source;
 
     switch (tabOnlineIndex.value) {
@@ -231,20 +239,14 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     }).toList();
   }
 
-  void syncRooms() {
-    onlineRooms.clear();
-    replayRooms.clear();
-    offlineRooms.clear();
-
-    final List<LiveRoom> roomsBase = List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
-    onlineRooms.addAll(roomsBase.where((r) => r.liveStatus == LiveStatus.live && r.isRecord == false));
-
-    offlineRooms.addAll(roomsBase.where((r) => r.liveStatus != LiveStatus.live));
-
-    replayRooms.addAll(roomsBase.where((r) => r.liveStatus == LiveStatus.live && r.isRecord == true));
+  void syncRooms({Iterable<LiveRoom>? roomSnapshot}) {
+    final List<LiveRoom> roomsBase = List<LiveRoom>.from(roomSnapshot ?? SettingsService.to.fav.favoriteRooms.v);
+    final nextOnline = roomsBase.where((r) => r.liveStatus == LiveStatus.live && r.isRecord == false).toList();
+    final nextOffline = roomsBase.where((r) => r.liveStatus != LiveStatus.live).toList();
+    final nextReplay = roomsBase.where((r) => r.liveStatus == LiveStatus.live && r.isRecord == true).toList();
 
     final currentAvailableSites = Sites().availableSites(containsAll: true);
-    visibleTags.clear();
+    var nextVisibleTags = <LiveTag>[];
 
     if (tabSiteIndex.value >= 0 && tabSiteIndex.value < currentAvailableSites.length) {
       final activeSite = currentAvailableSites[tabSiteIndex.value];
@@ -252,19 +254,19 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
 
       switch (tabOnlineIndex.value) {
         case 0:
-          target = onlineRooms;
+          target = nextOnline;
           break;
 
         case 1:
-          target = replayRooms;
+          target = nextReplay;
           break;
 
         case 2:
-          target = offlineRooms;
+          target = nextOffline;
           break;
 
         default:
-          target = onlineRooms;
+          target = nextOnline;
       }
       final Set<String> tagIds = {};
 
@@ -275,12 +277,11 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
         }
       }
 
-      final tags = tagController.tags.where((t) => tagIds.contains(t.id)).toList();
-      tags.sort((a, b) => a.order.compareTo(b.order));
-      visibleTags.assignAll(tags);
+      nextVisibleTags = tagController.tags.where((t) => tagIds.contains(t.id)).toList()
+        ..sort((a, b) => a.order.compareTo(b.order));
     }
 
-    onlineRooms.sort((a, b) {
+    nextOnline.sort((a, b) {
       if (selectedTagId.value == TagManagementController.allTagKey) {
         return _audienceSortValue(b).compareTo(_audienceSortValue(a));
       }
@@ -289,7 +290,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
       if (sa != sb) return sb.compareTo(sa);
       return _audienceSortValue(b).compareTo(_audienceSortValue(a));
     });
-    replayRooms.sort((a, b) {
+    nextReplay.sort((a, b) {
       if (selectedTagId.value == TagManagementController.allTagKey) {
         return _audienceSortValue(b).compareTo(_audienceSortValue(a));
       }
@@ -298,6 +299,28 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
       if (sa != sb) return sb.compareTo(sa);
       return _audienceSortValue(b).compareTo(_audienceSortValue(a));
     });
+
+    // Build and sort plain lists first, then publish each result once. The old
+    // clear/addAll/sort sequence notified every Obx grid several times for one
+    // background refresh, causing visible hitches with many favourites.
+    _assignIfSnapshotChanged(onlineRooms, nextOnline);
+    _assignIfSnapshotChanged(offlineRooms, nextOffline);
+    _assignIfSnapshotChanged(replayRooms, nextReplay);
+    _assignIfSnapshotChanged(visibleTags, nextVisibleTags);
+  }
+
+  void _assignIfSnapshotChanged<T>(RxList<T> target, List<T> next) {
+    if (target.length == next.length) {
+      var identicalSnapshot = true;
+      for (var index = 0; index < next.length; index++) {
+        if (!identical(target[index], next[index])) {
+          identicalSnapshot = false;
+          break;
+        }
+      }
+      if (identicalSnapshot) return;
+    }
+    target.assignAll(next);
   }
 
   int _audienceSortValue(LiveRoom room) {
@@ -331,8 +354,21 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     updateLocalReactivePool(filtered);
   }
 
+  void _publishTransientRoomSnapshot(List<LiveRoom> rooms) {
+    final filtered = getFilteredRooms(roomSnapshot: rooms);
+    updateLocalReactivePool(filtered);
+  }
+
   @override
   Future<void> refreshData() async {
+    final startup = _startupRefresh;
+    if (startup != null) {
+      // BasePageView performs a one-time mobile/desktop layout notification.
+      // Coalesce that request with the cold-start verification instead of
+      // incrementing _refreshEpoch and cancelling the authoritative refresh.
+      await startup;
+      return;
+    }
     currentPage = 1;
     await _fullRefreshFilterRooms(showLoading: true);
   }
@@ -349,7 +385,36 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
 
   @visibleForTesting
   Future<void> refreshPersistedRoomsOnStartup() {
-    return _fullRefreshRooms(showLoading: false, emitFinish: false);
+    final current = _startupRefresh;
+    if (current != null) return current;
+
+    late final Future<void> operation;
+    operation = _refreshPersistedRoomsOnStartupInternal().whenComplete(() {
+      if (identical(_startupRefresh, operation)) _startupRefresh = null;
+    });
+    _startupRefresh = operation;
+    return operation;
+  }
+
+  Future<void> _refreshPersistedRoomsOnStartupInternal() async {
+    _startupVerificationInProgress = true;
+    final persisted = List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
+    if (persisted.isNotEmpty) {
+      SettingsService.to.fav.favoriteRooms.v = markFavoriteRoomsPendingVerification(persisted);
+      updateLocalReactivePool(const <LiveRoom>[]);
+      // An empty startup pool means "checking", not "there are no follows".
+      pageEmpty.value = false;
+    } else {
+      applyLocalFilter();
+    }
+    try {
+      await _fullRefreshRooms(showLoading: true, emitFinish: false);
+    } finally {
+      _startupVerificationInProgress = false;
+      // Also restores a useful offline/unknown view if a controller-level
+      // exception interrupted the refresh before its normal final publish.
+      applyLocalFilter();
+    }
   }
 
   Future<void> _runRoomRefresh(
@@ -382,18 +447,33 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     final int batch = refreshConfigController.maxConcurrentRefresh.value > 0
         ? refreshConfigController.maxConcurrentRefresh.value
         : 5;
+    final commitThreshold = batch * 4 > 20 ? batch * 4 : 20;
+    final pendingUpdates = <String, LiveRoom>{};
+    var processedSinceCommit = 0;
     for (int i = 0; i < valid.length; i += batch) {
       final end = i + batch > valid.length ? valid.length : i + batch;
       final batchRooms = valid.sublist(i, end);
 
       final results = await Future.wait(batchRooms.map(_refreshOneRoom));
       if (refreshEpoch != _refreshEpoch || isClosed) return;
-      final updates = <String, LiveRoom>{};
       for (final updated in results.whereType<LiveRoom>()) {
-        updates[_roomKey(updated)] = updated;
+        pendingUpdates[_roomKey(updated)] = updated;
       }
-      if (updates.isNotEmpty) {
-        _commitRoomUpdates(updates, refreshEpoch: refreshEpoch);
+      processedSinceCommit += batchRooms.length;
+      if (pendingUpdates.isNotEmpty) {
+        // Publish each completed request batch without serializing Hive. Users
+        // see rooms transition online/offline during startup, while disk writes
+        // and the full favourites JSON rebuild remain coalesced below.
+        final preview = mergeFavoriteRoomUpdates(SettingsService.to.fav.favoriteRooms.v, pendingUpdates);
+        if (preview.changed) _publishTransientRoomSnapshot(preview.rooms);
+      }
+      // Persist and rebuild progressively, but in chunks large enough to avoid
+      // serializing the whole favourites list after every small request batch.
+      final isLastBatch = end == valid.length;
+      if (pendingUpdates.isNotEmpty && (processedSinceCommit >= commitThreshold || isLastBatch)) {
+        _commitRoomUpdates(Map<String, LiveRoom>.of(pendingUpdates), refreshEpoch: refreshEpoch);
+        pendingUpdates.clear();
+        processedSinceCommit = 0;
       }
     }
   }
@@ -401,23 +481,14 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   void _commitRoomUpdates(Map<String, LiveRoom> updates, {required int refreshEpoch}) {
     if (refreshEpoch != _refreshEpoch || isClosed || updates.isEmpty) return;
 
-    // Commit each bounded request batch so rooms that went offline disappear
-    // from the live tab during startup instead of waiting for every platform
-    // request to finish. Merge into the latest persisted list at commit time:
+    // Commit bounded chunks so rooms that went offline disappear progressively
+    // during startup without rebuilding/persisting after every request batch.
+    // Merge into the latest persisted list at commit time:
     // a favorite removed while requests were pending stays removed, and a new
     // room is never overwritten by the startup snapshot.
-    final latestRooms = List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
-    var changed = false;
-    for (var index = 0; index < latestRooms.length; index++) {
-      final previous = latestRooms[index];
-      final updated = updates[_roomKey(previous)];
-      if (updated == null) continue;
-      updated.tagIds = List<String>.from(previous.tagIds);
-      latestRooms[index] = updated.withAudienceFallbackFrom(previous);
-      changed = true;
-    }
-    if (changed && refreshEpoch == _refreshEpoch && !isClosed) {
-      SettingsService.to.fav.favoriteRooms.v = latestRooms;
+    final merged = mergeFavoriteRoomUpdates(SettingsService.to.fav.favoriteRooms.v, updates);
+    if (merged.changed && refreshEpoch == _refreshEpoch && !isClosed) {
+      SettingsService.to.fav.favoriteRooms.v = merged.rooms;
       applyLocalFilter();
     }
   }
@@ -440,5 +511,5 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     }
   }
 
-  String _roomKey(LiveRoom room) => '${room.platform?.toLowerCase() ?? ''}:${room.roomId ?? ''}';
+  String _roomKey(LiveRoom room) => favoriteRoomIdentity(room);
 }

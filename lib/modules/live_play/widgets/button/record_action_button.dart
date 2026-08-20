@@ -8,11 +8,13 @@ class RecordActionButton extends StatelessWidget {
     super.key,
     required this.room,
     required this.recorderController,
+    required this.onOpenRecordCenter,
     this.compactHeader = false,
   });
 
   final dynamic room;
   final RecorderController recorderController;
+  final Future<void> Function() onOpenRecordCenter;
   final bool compactHeader;
 
   @override
@@ -148,7 +150,11 @@ class RecordActionButton extends StatelessWidget {
         break;
 
       case "page":
-        Get.toNamed(RoutePath.kRecordPage);
+        // Let the dialog reverse transition finish before the native video
+        // route starts another transition. Starting both animations in the
+        // same frame can race the platform video surface on Windows/Android.
+        await Future<void>.delayed(const Duration(milliseconds: 220));
+        await onOpenRecordCenter();
         break;
     }
   }

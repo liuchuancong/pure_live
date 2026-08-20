@@ -44,4 +44,32 @@ void main() {
     expect(info.width, 3840);
     expect(info.height, 2400);
   });
+
+  test('equivalent display reports compare equal', () {
+    final first = DisplayModeInfo.fromMap({
+      'enabled': true,
+      'currentRefreshRate': 120,
+      'maxRefreshRate': 120,
+      'preferredRefreshRate': 120,
+      'supportedRefreshRates': [60, 90, 120],
+      'requestedRefreshRate': 120,
+      'displayId': 0,
+      'width': 1440,
+      'height': 3168,
+    });
+    final second = DisplayModeInfo.fromMap({
+      'enabled': true,
+      'currentRefreshRate': 120.0,
+      'maxRefreshRate': 120.0,
+      'preferredRefreshRate': 120.0,
+      'supportedRefreshRates': [60.0, 90.0, 120.0],
+      'requestedRefreshRate': 120.0,
+      'displayId': 0,
+      'width': 1440,
+      'height': 3168,
+    });
+
+    expect(first, second);
+    expect(first.hashCode, second.hashCode);
+  });
 }

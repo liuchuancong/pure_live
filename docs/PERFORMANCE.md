@@ -12,18 +12,19 @@ Pure Live 在 Android 上默认启用高刷新率模式：应用会在当前屏�
 - 首页平台页保持已构建网格状态；手势横滑期间只推进页面动画，待页面完全停稳后再启动目标平台请求，避免 TabController 在半程切换时触发网络与网格重建。平台目录一次构建索引，不再为每个已启用 ID 重复实例化全部适配器。
 - 封面按实际设备像素宽度解码，上限从 1440 降到 960，并关闭列表图片淡入淡出动画。
 - 主播放器与小窗弹幕使用独立重绘边界，并限制表情图片缓存，降低视频、控制栏和弹幕之间的无关重绘及内存压力。
+- 弹幕透明度直接写入缓存的文字段落、静态表情和精灵绘制参数；渲染阶段不再为每条可见弹幕、每一显示帧创建 `saveLayer`。高密度 120 Hz 场景由最多 48 个离屏层/帧降为直接重放缓存 `Picture`。
 - 弹幕列表使用 80 ms 批量更新和独立可见快照；只有批次真正落地时才复制最多 500 条列表，本地消息仍立即显示。用户上滑后冻结当前视图并只刷新轻量新消息计数，回到底部时一次同步。
 - Android/Linux 使用平台夹持滚动物理模型，iOS/macOS 保留弹性模型；Windows 的离散鼠标滚轮增量使用 Chromium Impulse 动画合并，触控拖动仍保留原生手势，应用全局页面不再强制套用 iOS 弹簧阻尼。
 - 主播放器与小窗弹幕 FPS 可动态采用设备最高刷新率，`flame_barrage` 引擎使用逻辑帧时钟按配置间隔推进；所有轨道严格采用同一 px/s 速度，横竖屏和 Windows 端表现一致。
 - 画面弹幕等待队列限制数量和 3–5 秒存活时间；热门房间轨道占满、应用退到后台或小窗重建后直接淘汰过期内容，不再依次补放旧弹幕。
 - 主画面把新弹幕入场频率限制为每 50 ms 一条、最多同时 48 条；文本解析、段落布局、绘制图片和表情 Token 使用有界 LRU。小窗按少量轨道把对象池、图片和文本缓存分别限制为 32、48 和 160。
-- 直播页不再为每条消息复制 500 条历史并重建完整页面；消息先做 32 ms 批处理，弹幕设置拆成分区响应式重建，屏蔽管理改为虚拟化 Sliver 列表。
+- 直播页不再为每条消息复制 500 条历史并重建完整页面；画面弹幕保持实时直达，历史列表按 64 ms 合并通知，弹幕列表自身再按 80 ms 生成可见快照，本地消息仍立即显示；弹幕设置拆成分区响应式重建，屏蔽管理改为虚拟化 Sliver 列表。
 - 播放器内弹幕样式变化按渲染帧合并更新，持久化写入使用 160 ms 尾端去抖并在退出前补写最终值，减少拖动滑块时的配置重建和磁盘写入。
 - 前台音频模式保留同一视频纹理和解码热状态；后台才停用视频轨，回到前台静默预热。深度恢复保留低成本音频卡片，不创建模糊滤镜或第二播放器。
 - 相似弹幕过滤将可配置缓存容量和每条消息的模糊比较预算分离，最多执行 96 次模糊比较；精确匹配继续使用哈希查找。
 - 数据库、设置、自定义字体和直播页必需控制器在首屏前完成注册；FFmpeg、解析和账号服务继续延迟预热，消除更新后首次启动与快速点击搜索结果的初始化竞态。
 - 缓存目录统计与清理使用异步文件 I/O，缩略图自动刷新带有并发保护，减少大缓存目录阻塞界面的概率。
-- 收藏直播间详情刷新在内存中批量合并，整个周期只写入一次 Hive，并保留本地标签，降低定时刷新时的序列化、磁盘写入和响应式重建次数。
+- 收藏直播间详情刷新在内存中批量合并，每处理至少 20 个房间才渐进写入一次 Hive；状态仍可在整个周期结束前更新，同时避免默认并发为 5 时每批都序列化完整收藏。在线、录播、离线和标签列表先在普通列表中完成筛选/排序，再各发布一次响应式快照。
 - Android 系统画中画先在原窗口预渲染紧凑视频层，再带当前视频物理边界 `sourceRectHint` 进入系统动画；Android 12+ 开启视频无缝缩放，并移除同一播放器上的重复 `AnimatedSwitcher`。
 - 画中画状态探测从每 10 ms 一次降为 100 ms 一次，减少非小窗状态下长期存在的平台通道调用，同时保持进入/退出状态更新及时。
 - Windows 首页、分区、收藏和搜索的网格使用桌面端自适应预加载范围，避免超大 `cacheExtent` 一次解码过多封面。
@@ -32,10 +33,19 @@ Pure Live 在 Android 上默认启用高刷新率模式：应用会在当前屏�
 - 首页、热门、分区、收藏、搜索、直播弹幕列表及弹幕设置页统一使用 Windows 动画滚动控制器，把连续滚轮脉冲合并为单一目标轨迹，减少每格滚轮都立即跳变造成的顿挫。
 - 分区 Tab 横滑只在动画停稳后启动加载；窗口拖动/缩放尺寸通知以 80 ms 尾端去抖合并，避免一次手势中反复跨平台查询和全页布局。
 - 分区封面的加载/错误状态使用静态占位，网格项使用稳定 Key 且不再重复叠加 keep-alive 和 repaint 层。
+- Flutter 解码图片缓存按桌面 96 MiB/384 项、移动端 64 MiB/256 项设定硬边界；系统发出内存压力通知时同时释放 pending 与 live 解码图片，磁盘/网络资源按需重新解析。
+- Windows 播放器鼠标移动只延长一个单调时钟截止时间，不再按高轮询率鼠标的每个 `onHover` 事件取消并新建控制栏定时器。
+- Android `SurfaceProducer` 重复可用回调复用同一个 JNI global reference；Surface 清理时立即清空当前引用并延迟释放旧引用，避免旋转、缩放和 PiP 往返累积原生引用。
+- Android PiP 会替换并重建整个竖屏列表，因此恢复状态由持续存活的直播控制器发布，而不是依赖会被销毁的列表 worker。返回时立即落地待处理批次，新列表首帧重新快照并恢复到底部；系统转场尚未结束时保留恢复请求，已有重连时继续串行排队。无 `DragDetails` 的方向通知不再误判为手指上滑，真实触摸和桌面滚轮行为保持独立。
+- 显示模式回调在 Kotlin 与 Dart 两层按内容去重；只提交 `preferredRefreshRate`，不再同时锁定具体显示模式 ID，避免厂商模式切换和重复响应式重建与弹幕配置刷新。
+- 后台播放 CPU/Wi-Fi 保活状态使用 latest-wins 串行队列并按最终值去重，播放/缓冲状态抖动不再重复跨 MethodChannel 获取和释放系统锁。
+- 从直播页退出时卸载实时媒体而不是仅暂停：保留播放器对象供下次快速打开，但关闭网络、解复用、解码与直播缓存；路由/小窗资源释放等待使用 50 ms 有界帧栅栏且及时取消兜底定时器。
 
 高刷新率会增加 GPU、CPU 和电量消耗。设备处于省电模式、过热、低电量或厂商应用级刷新率限制时，系统仍可能降低实际刷新率。
 
-## 真机检查
+## 可选设备性能采样
+
+以下命令只在当前任务明确要求设备性能验收时使用。日常卡顿、PiP、弹幕或生命周期问题先通过代码路径分析、时间线回归测试、Flutter Analyze 和本地构建完成修复闭环；设备连接不是代码诊断的前置条件，也不会由历史连接状态自动触发。
 
 安装本地 APK 后，可先确认系统给应用分配的显示模式：
 
@@ -61,7 +71,7 @@ adb shell dumpsys gfxinfo com.mystyle.purelive framestats > .\local-artifacts\gf
 
 发布性能结论时记录设备型号、Android 版本、屏幕 Hz、应用版本、播放器、直播清晰度、弹幕 FPS，以及测试是否处于充电/省电/高温状态。
 
-v2.2.0 的 Android 16 / 120 Hz 设备实测记录为：`mActiveRenderFrameRate=120.00001`，系统记录 `AppRequestRefreshRates=120 Hz`；覆盖安装后的 5 次冷启动 `TotalTime` 为 239–274 ms。v2.3.0 本轮未连接 ADB 设备，系统 PiP 返回弹幕恢复需按 [v2.3.0 设备验收清单](STAGE_UPDATE_2_3_0.md#android-设备验收清单)重新记录，旧版本设备结果不替代当前验收。
+v2.2.0 的 Android 16 / 120 Hz 设备实测记录为：`mActiveRenderFrameRate=120.00001`，系统记录 `AppRequestRefreshRates=120 Hz`；覆盖安装后的 5 次冷启动 `TotalTime` 为 239–274 ms。v2.3.0 的系统 PiP 返回弹幕修复以确定性的滚动通知策略测试、控制器恢复测试、静态分析和 Android arm64 本地构建为代码证据；设备性能采样仅在显式安排的验收任务中另行记录，旧版本设备结果不替代当前版本数据。
 
 ## Windows 检查
 
@@ -73,8 +83,10 @@ Windows release 构建后从干净的 `build\windows\x64\runner\Release` 启动�
 4. 封面网络回填、热度标签与翻页栏重建；
 5. Alt+F4 正常退出与 Hive 落盘。
 
-2026-08-20 的 v2.3.0 Windows x64 release 从干净便携目录启动，完成 Bilibili/Douyu 平台切换、20 张封面回填、滚轮、Douyu 2K60 播放和实时弹幕接收，窗口持续 `Responding=true`。长时间采样的实际起止值与持续时间记录在 [v2.3.0 阶段文档](STAGE_UPDATE_2_3_0.md)；本轮重点核对内存是否形成高水位而非按分钟单调上涨，具体 GPU/CPU 帧时仍应使用 Flutter DevTools Performance 重复采样。
+2026-08-20 的 v2.3.0 Windows x64 release 从干净便携目录启动，完成 Bilibili/Douyu 平台切换、20 张封面回填、滚轮、Douyu 2K60 播放和实时弹幕接收，窗口持续 `Responding=true`。第二轮本地构建又完成虎牙直播、画面弹幕和列表弹幕的约 4.5 分钟连续采样：工作集 382.9→484.7 MiB，private bytes 662.7→758.9 MiB，handles 1776→1765、threads 251→246；预热后的最后 90 秒 private bytes 750.5→758.9 MiB，中间回落到 751.5 MiB。合入上游虎牙 HTTPS/令牌修复并重建后，再完成约 2 分钟虎牙蓝光 30M 播放：工作集 414.6→479.2 MiB，private bytes 715.2→801.5 MiB（期间曾升至 944.8 MiB 后回落到 738.6 MiB），handles 1764→1755、threads 249→245，画面与列表弹幕持续更新。现有样本没有出现句柄或线程随消息单调增长；private bytes 存在播放器/解码器高水位波动，是否长期稳定仍以更长的 DevTools Memory 与 Windows Performance Recorder 采样为准，具体 UI/Raster 帧时使用 Flutter DevTools Performance 复测。
 
-参考：[Flutter Impeller 官方说明](https://docs.flutter.dev/perf/impeller)、[Android 帧率优化说明](https://developer.android.com/media/optimize/performance/frame-rate)。
+本轮修复后的未提交工作树又以独立 Windows release 实例直达 Bilibili 房间采样 125 秒，进程全程响应。预热后 35–125 秒：工作集 291.2→403.7 MiB，private bytes 932.5→911.3 MiB（区间 848.2–932.5 MiB），handles 1940→1733，threads 252→245；最后 70 秒 handles 稳定在 1733–1741、threads 稳定在 245–250，CPU 每 10 秒窗口为 5.78–8.84 秒，没有呈随时间递增的资源计数。原始记录位于本地忽略目录 local-artifacts/2.3.0-4069/windows-runtime-sample.csv。
+
+参考：[Flutter 性能最佳实践](https://docs.flutter.dev/perf/best-practices)、[Flutter Performance View](https://docs.flutter.dev/tools/devtools/performance)、[Flutter Memory View](https://docs.flutter.dev/tools/devtools/memory)、[Flutter Impeller 官方说明](https://docs.flutter.dev/perf/impeller)、[Android 帧率优化说明](https://developer.android.com/media/optimize/performance/frame-rate)、[mpv demuxer 缓存参数](https://mpv.io/manual/master/)、[media_kit 多实例释放问题 #266](https://github.com/media-kit/media-kit/issues/266)、[media_kit 旋转/缩放主线程阻塞 #1395](https://github.com/media-kit/media-kit/issues/1395)。
 
 返回 [文档索引](README.md)。

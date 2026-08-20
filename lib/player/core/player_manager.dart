@@ -265,6 +265,25 @@ class PlayerManager {
     }
   }
 
+  Future<void> _awaitBoundedWidgetUnmount() async {
+    // Route and overlay teardown normally completes on the next frame. During
+    // backgrounding, shutdown and headless tests there may be no vsync, so an
+    // unbounded endOfFrame wait would retain controllers, subscriptions and a
+    // native player indefinitely.
+    final completer = Completer<void>();
+    late final Timer fallbackTimer;
+    fallbackTimer = Timer(const Duration(milliseconds: 50), () {
+      if (!completer.isCompleted) completer.complete();
+    });
+    SchedulerBinding.instance.scheduleFrame();
+    SchedulerBinding.instance.endOfFrame.whenComplete(() {
+      fallbackTimer.cancel();
+      if (!completer.isCompleted) completer.complete();
+    });
+    await completer.future;
+    fallbackTimer.cancel();
+  }
+
   double get currentVideoRatio {
     final w = _widthSubject.value?.toDouble() ?? 1920;
     final h = _heightSubject.value?.toDouble() ?? 1080;
@@ -762,8 +781,10 @@ class PlayerManager {
     final context = _pipSourceKey.currentContext;
     final renderObject = context?.findRenderObject();
     if (renderObject is! RenderBox || !renderObject.hasSize) return null;
+    final view = View.maybeOf(context!);
+    if (view == null) return null;
     final origin = renderObject.localToGlobal(Offset.zero);
-    final ratio = View.of(context!).devicePixelRatio;
+    final ratio = View.of(context).devicePixelRatio;
     final left = (origin.dx * ratio).round();
     final top = (origin.dy * ratio).round();
     final width = (renderObject.size.width * ratio).round();
@@ -905,7 +926,19 @@ class PlayerManager {
         params: FloatingParams(isSnapToEdge: false, snapToEdgeSpace: 10, dragOpacity: 0.8),
       ),
     );
-    floatingManager.getFloating(_floatTag).open(Get.context!);
+    final overlay = floatingManager.getFloating(_floatTag);
+    final overlayContext = Get.overlayContext ?? Get.context;
+    if (overlayContext != null) {
+      overlay.open(overlayContext);
+    }
+    if (overlayContext == null || !overlay.isShowing) {
+      // Never keep decoding an invisible floating session. This also releases
+      // the popped route's controllers when the target Overlay disappeared
+      // during navigation.
+      isFloating.value = false;
+      unawaited(closeAppFloating().then((_) => close()));
+      return;
+    }
     isFloating.value = true;
     if (Platform.isAndroid || Platform.isIOS) {
       isHovered.value = true;
@@ -942,8 +975,7 @@ class PlayerManager {
       // The popped live route and its overlay can both still be in Flutter's
       // inactive element list. Let their Obx/StreamBuilder widgets unsubscribe
       // before closing the old room's Rx values and player controllers.
-      SchedulerBinding.instance.scheduleFrame();
-      await SchedulerBinding.instance.endOfFrame;
+      await _awaitBoundedWidgetUnmount();
 
       if (hadOverlay && floatingManager.containsFloating(_floatTag)) {
         floatingManager.disposeFloating(_floatTag);
@@ -1231,6 +1263,10 @@ class PlayerManager {
     // this surface without changing [videoKey] and remounting the native view.
     videoPresentationRevision.value;
     final showAudioOnly = audioOnlyOverride ?? _runtimeAudioOnly;
+    final player = _currentPlayer;
+    if (_disposed || _isClosing || player == null) {
+      return _buildPlaceholder();
+    }
     return RepaintBoundary(
       key: trackPipSource ? _pipSourceKey : null,
       child: PureLivePipWidget(
@@ -1241,15 +1277,6 @@ class PlayerManager {
             stream: onPlaying,
             initialData: isPlayingNow,
             builder: (context, snapshot) {
-              // Capture one player reference for the whole build. An async
-              // teardown may clear _currentPlayer between the outer check and
-              // the nested width/height builder; reading the mutable field
-              // again used to throw a null-check exception and replace the
-              // complete player area (including controls) with ErrorWidget.
-              final activePlayer = _currentPlayer;
-              if (activePlayer == null) {
-                return _buildPlaceholder();
-              }
               final safeFitIndex = fitList.isEmpty ? 0 : fitIndex.clamp(0, fitList.length - 1);
               final boxFit = fitList.isEmpty ? BoxFit.contain : fitList[safeFitIndex];
               final content = KeyedSubtree(
@@ -1271,21 +1298,18 @@ class PlayerManager {
                       Positioned.fill(
                         child: Offstage(
                           offstage: showAudioOnly,
-                          child: IgnorePointer(
-                            ignoring: showAudioOnly,
-                            child: Container(
-                              color: Colors.black,
-                              child: FittedBox(
-                                fit: boxFit,
-                                clipBehavior: Clip.hardEdge,
-                                child: StreamBuilder<List<int?>>(
-                                  stream: CombineLatestStream.list([width, height]),
-                                  builder: (context, snapshot) {
-                                    final vW = snapshot.data?[0]?.toDouble() ?? 1920.0;
-                                    final vH = snapshot.data?[1]?.toDouble() ?? 1080.0;
-                                    return SizedBox(width: vW, height: vH, child: activePlayer.getVideoWidget());
-                                  },
-                                ),
+                          child: Container(
+                            color: Colors.black,
+                            child: FittedBox(
+                              fit: boxFit,
+                              clipBehavior: Clip.hardEdge,
+                              child: StreamBuilder<List<int?>>(
+                                stream: CombineLatestStream.list([width, height]),
+                                builder: (context, snapshot) {
+                                  final vW = snapshot.data?[0]?.toDouble() ?? 1920.0;
+                                  final vH = snapshot.data?[1]?.toDouble() ?? 1080.0;
+                                  return SizedBox(width: vW, height: vH, child: player.getVideoWidget());
+                                },
                               ),
                             ),
                           ),
@@ -1340,6 +1364,11 @@ class PlayerManager {
     _sessionId++;
     _isClosing = true;
     isVideoRestorePending.value = false;
+    // Let route/overlay widgets release their listeners before native teardown,
+    // but keep the fence bounded. endOfFrame stays pending when close is called
+    // while no frame is scheduled (background, tests, shutdown), which would
+    // otherwise leave close/play serialized behind a Future that never ends.
+    await _awaitBoundedWidgetUnmount();
     try {
       await LiveAudioService.stop();
       _useHardStopOnExit() ? await hardDispose() : await softStop();

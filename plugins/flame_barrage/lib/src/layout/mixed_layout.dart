@@ -54,7 +54,10 @@ class MixedLayout {
     double currentX = 0.0;
     double maxHeight = 0.0;
 
-    final int colorValue = config.textColor.toARGB32();
+    final opacity = config.opacity.clamp(0.0, 1.0).toDouble();
+    final effectiveTextColor = config.textColor.withValues(alpha: config.textColor.a * opacity);
+    final effectiveStrokeColor = config.strokeColor.withValues(alpha: config.strokeColor.a * opacity);
+    final int colorValue = effectiveTextColor.toARGB32();
     final double fontSize = config.fontSize;
     final bool showStroke = config.showStroke;
     final List<BarrageEffectInterceptor> interceptors = config.effectInterceptors;
@@ -66,8 +69,10 @@ class MixedLayout {
 
       if (fragment is TextFragment) {
         final textCacheKey =
-            '${fragment.text}|${config.fontSize}|$colorValue|$showStroke|${config.fontWeight.toString()}';
-        final strokeCacheKey = '${fragment.text}|$fontSize|${config.strokeColor.toARGB32()}|$showStroke';
+            '${fragment.text}|${config.fontSize}|$colorValue|$showStroke|${config.fontWeight}|${config.fontFamily}';
+        final strokeCacheKey =
+            '${fragment.text}|$fontSize|${effectiveStrokeColor.toARGB32()}|${config.strokeWidth}|'
+            '${config.fontWeight}|${config.fontFamily}';
 
         final paragraph = _buildParagraph(fragment.text, config, textCacheKey, isStroke: false);
         final strokeParagraph = config.showStroke
@@ -132,7 +137,15 @@ class MixedLayout {
         final player = animation != null ? SpriteAnimationPlayer(animation: animation) : null;
 
         _reusableSpans.add(
-          SpriteLayoutSpan(x: currentX, y: 0.0, width: finalWidth, height: finalHeight, sprite: sprite, player: player),
+          SpriteLayoutSpan(
+            x: currentX,
+            y: 0.0,
+            width: finalWidth,
+            height: finalHeight,
+            sprite: sprite,
+            player: player,
+            opacity: opacity,
+          ),
         );
         currentX += finalWidth;
       } else if (fragment is EmojiFragment) {
@@ -147,7 +160,9 @@ class MixedLayout {
 
         if (height > maxHeight) maxHeight = height;
 
-        _reusableSpans.add(EmojiLayoutSpan(x: currentX, y: 0.0, width: width, height: height, image: image));
+        _reusableSpans.add(
+          EmojiLayoutSpan(x: currentX, y: 0.0, width: width, height: height, image: image, opacity: opacity),
+        );
         currentX += width;
       }
     }
@@ -181,6 +196,7 @@ class MixedLayout {
           height: span.height,
           sprite: span.sprite,
           player: span.player,
+          opacity: span.opacity,
         );
       } else {
         final emojiSpan = span as EmojiLayoutSpan;
@@ -190,6 +206,7 @@ class MixedLayout {
           width: emojiSpan.width,
           height: emojiSpan.height,
           image: emojiSpan.image,
+          opacity: emojiSpan.opacity,
         );
       }
     });
@@ -212,7 +229,7 @@ class MixedLayout {
       final strokePaint = ui.Paint()
         ..style = ui.PaintingStyle.stroke
         ..strokeWidth = config.strokeWidth
-        ..color = config.strokeColor
+        ..color = config.strokeColor.withValues(alpha: config.strokeColor.a * config.opacity.clamp(0.0, 1.0).toDouble())
         ..isAntiAlias = true;
 
       builder.pushStyle(
@@ -225,7 +242,7 @@ class MixedLayout {
       );
     } else {
       final textPaint = ui.Paint()
-        ..color = config.textColor
+        ..color = config.textColor.withValues(alpha: config.textColor.a * config.opacity.clamp(0.0, 1.0).toDouble())
         ..isAntiAlias = true;
 
       builder.pushStyle(
@@ -253,10 +270,13 @@ class MixedLayout {
     hash = 37 * hash + config.fontSize.hashCode;
     hash = 37 * hash + config.fontWeight.hashCode;
     hash = 37 * hash + config.textColor.toARGB32().hashCode;
+    hash = 37 * hash + config.opacity.hashCode;
     hash = 37 * hash + config.emojiSize.hashCode;
+    hash = 37 * hash + config.noEmojiMode.hashCode;
     hash = 37 * hash + priority.hashCode;
     hash = 37 * hash + config.showStroke.hashCode;
     hash = 37 * hash + config.strokeColor.toARGB32().hashCode;
+    hash = 37 * hash + config.strokeWidth.hashCode;
     hash = 37 * hash + config.fontFamily.hashCode;
 
     final len = fragments.length;

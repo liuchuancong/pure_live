@@ -418,7 +418,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
 PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 ```
 
-当前 v2.3.0 源码已通过设备 UI 映射校验、Built-in Kotlin 审计、Flutter Analyze、154 项单元/Widget 测试与 26/26 平台公开接口探测；Windows x64 release 已完成真实热门页、封面、2K60 播放、实时弹幕和资源采样。Android arm64 使用持久发布证书正式签名，包名、版本、ABI 与校验和均已核对；Linux x64、macOS universal、iOS arm64 也已从同一提交构建并汇总到 [v2.3.0 Release](https://github.com/wzgrx/pure_live/releases/tag/v2.3.0)。系统画中画返回场景仍需在连接真机后按阶段文档复核。完整流程见 [构建与发布](docs/BUILD_AND_RELEASE.md)。
+当前 v2.3.0 源码已通过 Built-in Kotlin 审计、Flutter Analyze、170 项单元/Widget 测试与 26/26 平台公开接口探测；Windows x64 release 已完成真实热门页、封面、2K60 播放、实时弹幕和资源采样。Android arm64 使用持久发布证书正式签名，包名、版本、ABI 与校验和均已核对；Linux x64、macOS universal、iOS arm64 也已从同一提交构建并汇总到 [v2.3.0 Release](https://github.com/wzgrx/pure_live/releases/tag/v2.3.0)。系统画中画返回弹幕由持续存活的直播控制器统一恢复，覆盖列表重建、待处理批次、系统转场重试和串行连接替换；手机连接和设备采样只在明确安排的验收任务中执行。完整流程见 [构建与发布](docs/BUILD_AND_RELEASE.md)。
 
 ## 🤝 参与开发
 

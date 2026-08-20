@@ -7,14 +7,17 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:flame_barrage/flame_barrage.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_message_actions.dart';
 
-bool isDanmakuUserScrollStart(ScrollNotification notification) {
+bool isDanmakuUserScrollStart(ScrollNotification notification, {bool acceptDirectionOnlyUserScroll = false}) {
   return (notification is ScrollStartNotification && notification.dragDetails != null) ||
       (notification is ScrollUpdateNotification && notification.dragDetails != null) ||
-      (notification is UserScrollNotification && notification.direction != ScrollDirection.idle);
+      (acceptDirectionOnlyUserScroll &&
+          notification is UserScrollNotification &&
+          notification.direction != ScrollDirection.idle);
 }
 
 class DanmakuListView extends StatefulWidget {
@@ -42,9 +45,8 @@ class DanmakuListViewState extends State<DanmakuListView> {
   Timer? throttleTimer;
   Worker? fullscreenWorker;
   Worker? windowFullscreenWorker;
-  Worker? pipWorker;
+  Worker? presentationWorker;
   StreamSubscription? messagesSub;
-  bool _wasInSystemPip = false;
 
   LivePlayController get controller => Get.find<LivePlayController>();
 
@@ -69,25 +71,15 @@ class DanmakuListViewState extends State<DanmakuListView> {
       }
     });
 
-    // Android keeps this list state alive while the route is represented by a
-    // native PiP surface. A scroll notification emitted while its viewport is
-    // being detached can otherwise leave live-follow paused even though the
-    // user never dragged the list. Re-snapshot and resume when PiP hands the
-    // room back to the portrait/fullscreen route; the transport recovery in
-    // LivePlayController runs independently.
-    final pipState = GlobalPlayerService.instance.player.isInPip;
-    _wasInSystemPip = pipState.value;
-    pipWorker = ever<bool>(pipState, (isInPip) {
-      final returnedFromPip = _wasInSystemPip && !isInPip;
-      _wasInSystemPip = isInPip;
-      if (returnedFromPip && mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) unawaited(_resumeAutoScroll());
-        });
-      }
-    });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) => forceScrollToBottom());
+    // LivePlayContent replaces the complete portrait subtree with the PiP
+    // surface, so this State is normally disposed before isInPip becomes true
+    // and recreated only after it is false. Listen to the persistent room
+    // controller's presentation revision instead of trying to infer a
+    // transition from this short-lived widget. The initial post-frame restore
+    // also wins over synthetic viewport notifications emitted while Android
+    // lays the portrait list out again.
+    presentationWorker = ever<int>(controller.danmakuPresentationRevision, (_) => _scheduleLiveTailRestore());
+    _scheduleLiveTailRestore();
   }
 
   void _onMessagesChanged() {
@@ -129,7 +121,7 @@ class DanmakuListViewState extends State<DanmakuListView> {
     messagesSub?.cancel();
     fullscreenWorker?.dispose();
     windowFullscreenWorker?.dispose();
-    pipWorker?.dispose();
+    presentationWorker?.dispose();
     throttleTimer?.cancel();
     _composerController.dispose();
     _pendingMessageCount.dispose();
@@ -159,13 +151,24 @@ class DanmakuListViewState extends State<DanmakuListView> {
     _pendingMessageCount.value = 0;
   }
 
+  void _scheduleLiveTailRestore() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_resumeAutoScroll());
+    });
+  }
+
   Future<void> _resumeAutoScroll() async {
+    if (!mounted) return;
+    throttleTimer?.cancel();
+    throttleTimer = null;
+    final messages = controller.danmakuMessages;
     setState(() {
-      _visibleMessages = List<LiveMessage>.from(controller.danmakuMessages);
+      _visibleMessages = List<LiveMessage>.from(messages);
       _autoScrollEnabled = true;
       userScrolling = false;
     });
-    _lastControllerLength = controller.danmakuMessages.length;
+    _lastControllerLength = messages.length;
+    _lastControllerTail = messages.isEmpty ? null : messages.last;
     _pendingMessageCount.value = 0;
     await forceScrollToBottom();
   }
@@ -179,7 +182,13 @@ class DanmakuListViewState extends State<DanmakuListView> {
     // useful pixel distance. Waiting for a 24 px offset let the 80 ms live
     // update jump the list back to the bottom, so Android users had to swipe
     // repeatedly. Claim a real drag (or mouse wheel) immediately.
-    if (isDanmakuUserScrollStart(notification)) {
+    // On Android the viewport detach/attach performed by system PiP emits a
+    // direction-only UserScrollNotification even when there was no finger
+    // gesture. Treating it as a drag immediately paused live-follow again,
+    // after the presentation restore above had already resumed it. Desktop mouse-wheel
+    // input has no DragDetails, so it deliberately keeps the direction-only
+    // path.
+    if (isDanmakuUserScrollStart(notification, acceptDirectionOnlyUserScroll: PlatformUtils.isDesktop)) {
       _pauseAutoScroll();
     } else if ((notification is ScrollEndNotification ||
             (notification is UserScrollNotification && notification.direction == ScrollDirection.idle)) &&

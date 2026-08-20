@@ -43,4 +43,37 @@ void main() {
     expect(parser.cacheCount, 32);
     expect(layout.cacheCount, 32);
   });
+
+  test('opacity is part of barrage picture and layout cache identity', () {
+    final engine = BarrageEngine(config: const BarrageConfig(), emojiAtlas: EmojiAtlas.instance);
+    const item = BarrageItem(content: 'same message');
+    final opaqueKey = engine.buildCacheKey(item);
+    engine.updateConfig(const BarrageConfig(opacity: 0.45));
+    final translucentKey = engine.buildCacheKey(item);
+
+    final parser = RichParser(atlas: EmojiAtlas.instance, maxCacheSize: 8);
+    final layout = MixedLayout(atlas: EmojiAtlas.instance, maxTextCacheSize: 8);
+    final fragments = parser.parse(item.content);
+    layout.layout(fragments, item: item, config: const BarrageConfig());
+    layout.layout(fragments, item: item, config: const BarrageConfig(opacity: 0.45));
+
+    expect(translucentKey, isNot(opaqueKey));
+    expect(layout.cacheCount, 2);
+  });
+
+  test('pure-text mode invalidates barrage picture and layout caches', () {
+    final engine = BarrageEngine(config: const BarrageConfig(), emojiAtlas: EmojiAtlas.instance);
+    const item = BarrageItem(content: 'message [emoji]');
+    final emojiKey = engine.buildCacheKey(item);
+    engine.updateConfig(const BarrageConfig(noEmojiMode: true));
+    final textOnlyKey = engine.buildCacheKey(item);
+
+    final layout = MixedLayout(atlas: EmojiAtlas.instance, maxTextCacheSize: 8);
+    const fragments = <Fragment>[TextFragment('message')];
+    layout.layout(fragments, item: item, config: const BarrageConfig());
+    layout.layout(fragments, item: item, config: const BarrageConfig(noEmojiMode: true));
+
+    expect(textOnlyKey, isNot(emojiKey));
+    expect(layout.cacheCount, 2);
+  });
 }

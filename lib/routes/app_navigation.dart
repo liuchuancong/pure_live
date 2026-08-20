@@ -88,12 +88,13 @@ class BackButtonObserver extends RouteObserver<PageRoute<dynamic>> {
       try {
         final livePlayController = Get.find<LivePlayController>();
         final state = livePlayController.state.value;
+        final suppressAppFloating = livePlayController.takeSuppressAppFloatingOnNextPop();
 
         // 更新房间状态
         livePlayController.updateRoom(success: false);
 
         final manager = GlobalPlayerService.instance.player;
-        if (SettingsService.to.player.floatPlay.v) {
+        if (SettingsService.to.player.floatPlay.v && !suppressAppFloating) {
           // Route.completed fires after the reverse transition and overlay
           // entries are removed. A fixed delay raced on high-refresh devices
           // and briefly mounted the room and floating player at the same time.

@@ -38,7 +38,10 @@ Package locally with `tool/build_local_release.ps1`; see `docs/BUILD_AND_RELEASE
 - Follow `flutter_lints` and standard Dart naming: `lower_snake_case.dart`, `UpperCamelCase` types and `lowerCamelCase` members.
 - Keep GetX module naming consistent: `*_page.dart`, `*_controller.dart`, `*_binding.dart`.
 - Add focused tests for parser, adapter, settings migration and non-trivial service changes.
-- Playback, PiP, floating-window and danmaku UI changes require platform smoke checks in addition to unit tests.
+- Playback, PiP, floating-window and danmaku fixes default to a device-independent workflow: trace the state/event ordering, add a deterministic regression test, run static analysis and the affected local test suite, then build the target artifact when requested.
+- Never connect to or operate a user's phone, start ADB, install an APK, or automate device UI unless the user explicitly requests device work in the current task. A connection mentioned in an earlier message is not standing permission.
+- Before every device command, re-check the user's latest instruction. If the current task says to avoid phone operations, do not run even read-only ADB discovery, `dumpsys`, log collection, screenshots or package queries; continue from source and deterministic tests instead.
+- Device smoke checks are optional release evidence rather than a prerequisite for diagnosing or repairing code. When a physical scenario has not been sampled, report that evidence layer separately without blocking the code fix or overstating runtime coverage.
 - External interface probes are readiness checks; they do not replace authenticated stream, WebSocket danmaku or CDN playback regression.
 
 ## Commits and Pull Requests

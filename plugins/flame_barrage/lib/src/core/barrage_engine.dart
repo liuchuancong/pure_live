@@ -446,32 +446,17 @@ class BarrageEngine extends FlameGame with TapCallbacks {
   void render(Canvas canvas) {
     super.render(canvas);
     if (!_initialized) return;
-    final double globalOpacity = _config.opacity.clamp(0.0, 1.0);
     final int len = _activeEntries.length;
-    if (globalOpacity >= 1.0) {
-      for (int i = 0; i < len; i++) {
-        final entry = _activeEntries[i];
-        if (!entry.active || entry.picture == null) continue;
-        canvas.save();
-        canvas.translate(entry.x, entry.y);
-        canvas.drawPicture(entry.picture!);
-        canvas.restore();
-      }
-    } else {
-      final opacityPaint = Paint()
-        ..color = const Color(0xFFFFFFFF).withValues(alpha: globalOpacity)
-        ..isAntiAlias = true;
-      for (int i = 0; i < len; i++) {
-        final entry = _activeEntries[i];
-        if (!entry.active || entry.picture == null) continue;
-        canvas.save();
-        canvas.translate(entry.x, entry.y);
-        final bounds = Rect.fromLTWH(0, 0, entry.width, entry.height);
-        canvas.saveLayer(bounds, opacityPaint);
-        canvas.drawPicture(entry.picture!);
-        canvas.restore();
-        canvas.restore();
-      }
+    // Text/emoji/sprite alpha is baked into each cached Picture by
+    // MixedLayout. The previous implementation created one offscreen
+    // saveLayer per visible item, per display frame: up to 48 * 120 layers/s.
+    for (int i = 0; i < len; i++) {
+      final entry = _activeEntries[i];
+      if (!entry.active || entry.picture == null) continue;
+      canvas.save();
+      canvas.translate(entry.x, entry.y);
+      canvas.drawPicture(entry.picture!);
+      canvas.restore();
     }
   }
 
@@ -512,6 +497,8 @@ class BarrageEngine extends FlameGame with TapCallbacks {
       item.showStroke ?? _config.showStroke,
       item.strokeWidth ?? _config.strokeWidth,
       (item.strokeColor ?? _config.strokeColor).toARGB32(),
+      _config.opacity,
+      _config.noEmojiMode,
     ].join('|');
   }
 

@@ -27,7 +27,7 @@ void main() {
     expect(isDanmakuUserScrollStart(notification), isFalse);
   });
 
-  testWidgets('mouse wheel user direction pauses live following immediately', (tester) async {
+  testWidgets('Android PiP viewport direction event does not pause live following', (tester) async {
     const targetKey = ValueKey('target');
     await tester.pumpWidget(const MaterialApp(home: SizedBox(key: targetKey)));
     final notification = UserScrollNotification(
@@ -35,7 +35,49 @@ void main() {
       context: tester.element(find.byKey(targetKey)),
       direction: ScrollDirection.forward,
     );
-    expect(isDanmakuUserScrollStart(notification), isTrue);
+    expect(isDanmakuUserScrollStart(notification), isFalse);
+  });
+
+  testWidgets('desktop mouse wheel user direction pauses live following immediately', (tester) async {
+    const targetKey = ValueKey('desktop-target');
+    await tester.pumpWidget(const MaterialApp(home: SizedBox(key: targetKey)));
+    final notification = UserScrollNotification(
+      metrics: metrics,
+      context: tester.element(find.byKey(targetKey)),
+      direction: ScrollDirection.forward,
+    );
+    expect(isDanmakuUserScrollStart(notification, acceptDirectionOnlyUserScroll: true), isTrue);
+  });
+
+  testWidgets('PiP return follow state survives the Android viewport notification', (tester) async {
+    const targetKey = ValueKey('pip-return-target');
+    await tester.pumpWidget(const MaterialApp(home: SizedBox(key: targetKey)));
+
+    // The PiP worker re-enables following before Android reattaches the list
+    // viewport. The following direction notification is framework-generated,
+    // not a finger drag, and must not cancel the restored state.
+    var autoScrollEnabled = true;
+    final viewportNotification = UserScrollNotification(
+      metrics: metrics,
+      context: tester.element(find.byKey(targetKey)),
+      direction: ScrollDirection.forward,
+    );
+    if (isDanmakuUserScrollStart(viewportNotification)) {
+      autoScrollEnabled = false;
+    }
+
+    expect(autoScrollEnabled, isTrue);
+
+    // A subsequent real drag still lets the user pause the live list.
+    final fingerDrag = ScrollStartNotification(
+      metrics: metrics,
+      context: tester.element(find.byKey(targetKey)),
+      dragDetails: DragStartDetails(globalPosition: Offset.zero),
+    );
+    if (isDanmakuUserScrollStart(fingerDrag)) {
+      autoScrollEnabled = false;
+    }
+    expect(autoScrollEnabled, isFalse);
   });
 
   test('emoji token cache remains bounded during long unique chat sessions', () {

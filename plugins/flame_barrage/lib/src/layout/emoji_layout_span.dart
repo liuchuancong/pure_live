@@ -8,15 +8,18 @@ class EmojiLayoutSpan extends LayoutSpan {
     required super.width,
     required super.height,
     required this.image,
+    this.opacity = 1.0,
   });
 
   final ui.Image image;
+  final double opacity;
 
   @override
   void paint(ui.Canvas canvas) {
     final paint = ui.Paint()
       ..isAntiAlias = true
-      ..filterQuality = ui.FilterQuality.medium;
+      ..filterQuality = ui.FilterQuality.medium
+      ..color = const ui.Color(0xFFFFFFFF).withValues(alpha: opacity.clamp(0.0, 1.0).toDouble());
 
     final dstRect = ui.Rect.fromLTWH(x, y, width, height);
 
