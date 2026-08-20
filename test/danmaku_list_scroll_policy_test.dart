@@ -37,4 +37,16 @@ void main() {
     );
     expect(isDanmakuUserScrollStart(notification), isTrue);
   });
+
+  test('emoji token cache remains bounded during long unique chat sessions', () {
+    emojiCache.clear();
+
+    for (var i = 0; i < emojiTokenCacheCapacity + 200; i++) {
+      parseEmojis('unique live message $i', 14, Colors.white);
+    }
+
+    expect(emojiCache.length, emojiTokenCacheCapacity);
+    expect(emojiCache.containsKey('unique live message 0'), isFalse);
+    expect(emojiCache.containsKey('unique live message ${emojiTokenCacheCapacity + 199}'), isTrue);
+  });
 }

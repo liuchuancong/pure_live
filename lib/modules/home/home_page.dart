@@ -23,9 +23,12 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin {
+class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   Timer? _debounceTimer;
   final FavoriteController favoriteController = Get.find<FavoriteController>();
+  late final VoidCallback _favoriteTabListener;
+  Worker? _savedMenuWorker;
+  DateTime? _backgroundedAt;
 
   int _selectedIndex = 0;
 
@@ -39,6 +42,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _syncInitialIndex();
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
@@ -65,13 +69,14 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
 
     addToOverlay();
 
-    favoriteController.tabBottomIndex.addListener(() {
+    _favoriteTabListener = () {
       if (mounted) {
         setState(() => _selectedIndex = favoriteController.tabBottomIndex.value);
       }
-    });
+    };
+    favoriteController.tabBottomIndex.addListener(_favoriteTabListener);
 
-    ever(SettingsService.to.app.savedMenuIds, (v) {
+    _savedMenuWorker = ever(SettingsService.to.app.savedMenuIds, (v) {
       if (mounted) {
         final List<String> value = List<String>.from(v as List);
         if (value.isNotEmpty) {
@@ -85,6 +90,25 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
         }
       }
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
+      _backgroundedAt ??= DateTime.now();
+      return;
+    }
+    if (state != AppLifecycleState.resumed) return;
+    final backgroundedAt = _backgroundedAt;
+    _backgroundedAt = null;
+    if (backgroundedAt == null || DateTime.now().difference(backgroundedAt) < const Duration(seconds: 15)) return;
+
+    final menu = HomeMenu.values[_selectedIndex];
+    if (menu == HomeMenu.popular) {
+      unawaited(Get.find<PopularController>().refreshCurrentData());
+    } else if (menu == HomeMenu.areas) {
+      unawaited(Get.find<AreasController>().refreshCurrentData());
+    }
   }
 
   void _syncInitialIndex() {
@@ -199,4 +223,13 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
 
   @override
   bool get wantKeepAlive => true;
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    favoriteController.tabBottomIndex.removeListener(_favoriteTabListener);
+    _savedMenuWorker?.dispose();
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
 }

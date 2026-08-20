@@ -118,4 +118,14 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
       gridController.loadData();
     }
   }
+
+  /// Refreshes only the visible platform after a real app foreground return.
+  /// This avoids both stale live cards and a simultaneous request storm across
+  /// every configured platform.
+  Future<void> refreshCurrentData() async {
+    if (sites.isEmpty || index < 0 || index >= sites.length) return;
+    final siteId = sites[index].id;
+    final gridController = Get.find<BasePageScrollAndStateBone<LiveRoom>>(tag: siteId);
+    await gridController.refreshData();
+  }
 }
