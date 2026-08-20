@@ -378,6 +378,7 @@
   "record_stopped": "已停止",
   "record_task": "录制任务",
   "record_task_added": "已添加录制任务",
+    "add_monitor": "添加监控",
   "record_waiting_live": "等待开播",
   "recorder_auto": "自动",
   "recorder_cancel_monitor": "取消监控",

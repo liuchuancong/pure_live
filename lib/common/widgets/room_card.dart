@@ -887,7 +887,6 @@ class CoverMetricBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     // Keep the background mostly neutral so the badge works on both bright
     // and dark cover images. The theme primary color is used as the accent.

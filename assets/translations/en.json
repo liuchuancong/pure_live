@@ -377,6 +377,7 @@
   "record_stopped": "Stopped",
   "record_task": "Recording task",
   "record_task_added": "Recording task added",
+   "add_monitor": "Add to Monitoring",
   "record_waiting_live": "Waiting Live",
   "recorder_auto": "Auto",
   "recorder_cancel_monitor": "Remove Monitor",

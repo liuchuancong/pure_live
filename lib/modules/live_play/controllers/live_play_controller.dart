@@ -4,11 +4,14 @@ import 'dart:developer' as developer;
 
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pure_live/plugins/emoji_manager.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/core/danmaku/huya_danmaku.dart';
+import 'package:pure_live/player/core/player_manager.dart';
 import 'package:pure_live/core/danmaku/douyin_danmaku.dart';
+import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/modules/live_play/states/ui_state.dart';
 import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/modules/live_play/states/room_state.dart';
@@ -17,16 +20,14 @@ import 'package:back_button_interceptor/back_button_interceptor.dart';
 import 'package:pure_live/modules/live_play/states/live_play_state.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku_list_view.dart';
+import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/modules/live_play/local_interaction_controller.dart';
 import 'package:pure_live/modules/live_play/local_message_delivery_queue.dart';
-import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/timer_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_session_host.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
-import 'package:pure_live/player/core/live_audio_service.dart';
-import 'package:pure_live/player/core/player_manager.dart';
 
 // live_play_controller.dart
 
@@ -120,6 +121,10 @@ class LivePlayController extends GetxController
     _initControllers();
     _initTab();
     Future.microtask(_initCore);
+
+    ever(SettingsService.to.app.enableScreenKeepOn, (_) => _updateWakelock());
+
+    _updateWakelock();
   }
 
   void _initControllers() {
@@ -151,6 +156,16 @@ class LivePlayController extends GetxController
     // detail and play URL are available.
     _preloadEmojiInBackground();
     await onInitPlayerState();
+  }
+
+  Future<void> _updateWakelock() async {
+    final shouldKeepOn = SettingsService.to.app.enableScreenKeepOn.v;
+
+    WakelockPlus.enabled.then((isEnabled) {
+      if (isEnabled != shouldKeepOn) {
+        WakelockPlus.toggle(enable: shouldKeepOn);
+      }
+    });
   }
 
   void _preloadEmojiInBackground() {
