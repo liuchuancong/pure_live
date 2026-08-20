@@ -2,7 +2,7 @@
     {
         "id": "pingfang",
         "name": "苹方",
-        "files": ["ping-fang/PingFang.ttf"],
+        "files": ["ping-fang/PingFangSC.ttf"],
         "desc": "苹方（PingFang）是苹果平台使用的系统字体，主要用于简体中文、繁体中文及其他东亚文字的界面显示。",
         "official": "https://developer.apple.com/fonts/",
         "license": {
