@@ -1,9 +1,11 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:developer';
-import 'dart:math' as math;
 
 import 'player_pool.dart';
+
+import 'dart:math' as math;
+
 import 'line_fallback_manager.dart';
 import '../models/player_state.dart';
 import 'preload_player_manager.dart';
@@ -21,18 +23,18 @@ import '../models/player_error_type.dart';
 
 import 'package:rxdart/rxdart.dart' hide Rx;
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/utils/latest_async_value_queue.dart';
-import 'package:pure_live/model/live_play_quality.dart';
 
 import '../interface/unified_player_interface.dart';
 
 import 'package:pure_live/routes/app_navigation.dart';
+import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:flutter_floating/flutter_floating.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/utils/pip_window_widget.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
+import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/compact_danmaku_overlay.dart';
