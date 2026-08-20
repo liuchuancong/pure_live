@@ -7,13 +7,13 @@ import '../models/player_exception.dart';
 import '../models/player_error_type.dart';
 
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 
 import '../interface/unified_player_interface.dart';
 
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:media_kit/media_kit.dart' hide PlayerState;
 import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 
 class MediaKitAdapter implements UnifiedPlayer {
   MediaKitAdapter() {
@@ -439,16 +439,14 @@ class MediaKitAdapter implements UnifiedPlayer {
 
   @override
   Widget getVideoWidget() {
-    return RepaintBoundary(
-      child: Video(
-        controller: _controller,
-        controls: NoVideoControls,
-        // LivePlay's WidgetsBindingObserver is the single lifecycle authority.
-        // Letting Video apply a second, settings-only policy paused audio-only
-        // rooms on Home/lock even though the background policy kept them alive.
-        pauseUponEnteringBackgroundMode: false,
-        resumeUponEnteringForegroundMode: false,
-      ),
+    return Video(
+      controller: _controller,
+      controls: NoVideoControls,
+      // LivePlay's WidgetsBindingObserver is the single lifecycle authority.
+      // Letting Video apply a second, settings-only policy paused audio-only
+      // rooms on Home/lock even though the background policy kept them alive.
+      pauseUponEnteringBackgroundMode: false,
+      resumeUponEnteringForegroundMode: false,
     );
   }
 
