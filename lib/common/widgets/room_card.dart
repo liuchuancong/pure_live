@@ -1,9 +1,7 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/plugins/cache_manager.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/common/widgets/common_avatar.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/common/utils/share_command_handler.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
 
