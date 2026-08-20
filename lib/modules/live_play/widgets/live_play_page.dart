@@ -1,7 +1,10 @@
 import 'dart:io';
 import 'dart:async';
+
 import 'index.dart';
+
 import 'dart:developer' as developer;
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
@@ -176,7 +179,7 @@ class LivePlayPage extends GetView<LivePlayController> {
             final detail = controller.state.value.room.detail;
             if (detail == null) return const SizedBox.shrink();
             return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
+              padding: const EdgeInsets.only(left: 2, right: 5),
               child: FavoriteFloatingButton(
                 key: ValueKey('${detail.platform}:${detail.roomId}'),
                 room: detail,
@@ -550,20 +553,11 @@ class LivePlayPage extends GetView<LivePlayController> {
             return Stack(
               children: [
                 Positioned.fill(child: VideoPlayer(controller: state.player.videoController!)),
-                if (state.room.isLoading)
-                  const Positioned(
-                    left: 0,
-                    right: 0,
-                    top: 0,
-                    child: IgnorePointer(child: LinearProgressIndicator(minHeight: 2)),
-                  ),
+                if (state.room.isLoading) buildLoading(),
               ],
             );
           }
-          if (state.room.isLoading) {
-            return buildLoading();
-          }
-          if (state.room.isLiving) {
+          if (state.room.isLoading || state.room.isLiving) {
             return buildLoading();
           }
           return NotLivingVideoWidget(controller: controller, key: UniqueKey());
@@ -869,9 +863,8 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
               value: index,
               child: Text(
                 qualityRate.quality,
-                style: Theme.of(
-                  context,
-                ).textTheme.labelSmall?.copyWith(color: isSelected ? Get.theme.colorScheme.primary : null),
+                style: Theme.of(context).textTheme.labelSmall
+                    ?.copyWith(color: isSelected ? Get.theme.colorScheme.primary : null),
               ),
             );
           });
@@ -919,9 +912,8 @@ class _ResolutionsRowState extends State<ResolutionsRow> {
               value: index,
               child: Text(
                 i18n("toolbox_line", args: {"index": (index + 1).toString()}),
-                style: Theme.of(
-                  context,
-                ).textTheme.labelSmall?.copyWith(color: isSelected ? Get.theme.colorScheme.primary : null),
+                style: Theme.of(context).textTheme.labelSmall
+                    ?.copyWith(color: isSelected ? Get.theme.colorScheme.primary : null),
               ),
             );
           });
