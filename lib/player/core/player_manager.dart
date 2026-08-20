@@ -762,8 +762,10 @@ class PlayerManager {
     final context = _pipSourceKey.currentContext;
     final renderObject = context?.findRenderObject();
     if (renderObject is! RenderBox || !renderObject.hasSize) return null;
+    final view = View.maybeOf(context!);
+    if (view == null) return null;
     final origin = renderObject.localToGlobal(Offset.zero);
-    final ratio = View.of(context!).devicePixelRatio;
+    final ratio = View.of(context).devicePixelRatio;
     final left = (origin.dx * ratio).round();
     final top = (origin.dy * ratio).round();
     final width = (renderObject.size.width * ratio).round();
@@ -1229,8 +1231,11 @@ class PlayerManager {
   }) {
     // Read by the room's outer Obx. Audio/video presentation changes rebuild
     // this surface without changing [videoKey] and remounting the native view.
-    videoPresentationRevision.value;
     final showAudioOnly = audioOnlyOverride ?? _runtimeAudioOnly;
+    final player = _currentPlayer;
+    if (_disposed || _isClosing || player == null) {
+      return _buildPlaceholder();
+    }
     return RepaintBoundary(
       key: trackPipSource ? _pipSourceKey : null,
       child: PureLivePipWidget(
@@ -1241,15 +1246,6 @@ class PlayerManager {
             stream: onPlaying,
             initialData: isPlayingNow,
             builder: (context, snapshot) {
-              // Capture one player reference for the whole build. An async
-              // teardown may clear _currentPlayer between the outer check and
-              // the nested width/height builder; reading the mutable field
-              // again used to throw a null-check exception and replace the
-              // complete player area (including controls) with ErrorWidget.
-              final activePlayer = _currentPlayer;
-              if (activePlayer == null) {
-                return _buildPlaceholder();
-              }
               final safeFitIndex = fitList.isEmpty ? 0 : fitIndex.clamp(0, fitList.length - 1);
               final boxFit = fitList.isEmpty ? BoxFit.contain : fitList[safeFitIndex];
               final content = KeyedSubtree(
@@ -1271,21 +1267,18 @@ class PlayerManager {
                       Positioned.fill(
                         child: Offstage(
                           offstage: showAudioOnly,
-                          child: IgnorePointer(
-                            ignoring: showAudioOnly,
-                            child: Container(
-                              color: Colors.black,
-                              child: FittedBox(
-                                fit: boxFit,
-                                clipBehavior: Clip.hardEdge,
-                                child: StreamBuilder<List<int?>>(
-                                  stream: CombineLatestStream.list([width, height]),
-                                  builder: (context, snapshot) {
-                                    final vW = snapshot.data?[0]?.toDouble() ?? 1920.0;
-                                    final vH = snapshot.data?[1]?.toDouble() ?? 1080.0;
-                                    return SizedBox(width: vW, height: vH, child: activePlayer.getVideoWidget());
-                                  },
-                                ),
+                          child: Container(
+                            color: Colors.black,
+                            child: FittedBox(
+                              fit: boxFit,
+                              clipBehavior: Clip.hardEdge,
+                              child: StreamBuilder<List<int?>>(
+                                stream: CombineLatestStream.list([width, height]),
+                                builder: (context, snapshot) {
+                                  final vW = snapshot.data?[0]?.toDouble() ?? 1920.0;
+                                  final vH = snapshot.data?[1]?.toDouble() ?? 1080.0;
+                                  return SizedBox(width: vW, height: vH, child: player.getVideoWidget());
+                                },
                               ),
                             ),
                           ),
@@ -1340,6 +1333,7 @@ class PlayerManager {
     _sessionId++;
     _isClosing = true;
     isVideoRestorePending.value = false;
+    await SchedulerBinding.instance.endOfFrame;
     try {
       await LiveAudioService.stop();
       _useHardStopOnExit() ? await hardDispose() : await softStop();
