@@ -14,35 +14,69 @@ class RoomCard extends StatelessWidget {
 
   Widget _buildCover(BuildContext context, bool isDark) {
     final coverUrl = normalizeNetworkImageUrl(room.cover);
-    if (coverUrl.isEmpty) return _coverFallback(context, isDark);
+
+    if (coverUrl.isEmpty) {
+      return _coverFallback(context, isDark);
+    }
 
     return Obx(() {
+      // The cover URL may remain unchanged for a long time, while the actual
+      // image content returned by the server can change frequently.
+      //
+      // CachedNetworkImage is intentionally not used here because:
+      // 1. It persists images to the disk cache based on the URL/cache key.
+      // 2. When the URL stays unchanged, a refreshed cover may still return
+      //    the previously cached image.
+      // 3. Changing the cache key on every refresh would create a new disk
+      //    cache entry for the same room on every update.
+      // 4. Live room covers can refresh frequently, so continuously reading,
+      //    writing, and invalidating disk cache entries is unnecessary.
+      //
+      // Image.network is used instead. This avoids the persistent disk cache
+      // while still allowing Flutter to manage its normal in-memory ImageCache.
       final epoch = SettingsService.to.cache.imageCacheEpoch.value;
+
       return LayoutBuilder(
         builder: (context, constraints) {
           final logicalWidth = constraints.maxWidth.isFinite
               ? constraints.maxWidth
               : MediaQuery.sizeOf(context).width / 2;
+
           final cacheWidth = (logicalWidth * MediaQuery.devicePixelRatioOf(context)).round().clamp(240, 960).toInt();
 
-          return CachedNetworkImage(
+          return Image.network(
+            coverUrl,
+
+            // Recreate the Image widget whenever the image cache epoch changes.
+            // imageCacheEpoch is incremented when the covers need to be refreshed.
             key: ValueKey('$coverUrl#$epoch'),
-            // The cache is already emptied before imageCacheEpoch changes.
-            // Keeping the on-disk key stable avoids a new duplicate file for
-            // the same room cover on every scheduled thumbnail refresh.
-            cacheKey: coverUrl,
-            imageUrl: coverUrl,
-            httpHeaders: networkImageHeaders(coverUrl),
-            cacheManager: CustomImageCacheManager.instance,
+
+            headers: networkImageHeaders(coverUrl),
+
             fit: BoxFit.cover,
             filterQuality: FilterQuality.low,
-            memCacheWidth: cacheWidth,
-            maxWidthDiskCache: 960,
-            fadeInDuration: Duration.zero,
-            fadeOutDuration: Duration.zero,
-            useOldImageOnUrlChange: false,
-            placeholder: (_, _) => _coverPlaceholder(context, isDark),
-            errorWidget: (_, _, _) => _coverFallback(context, isDark),
+
+            // Decode the image at approximately the displayed width instead of
+            // decoding the original full-resolution image into memory.
+            // This helps reduce memory usage when many room covers are visible.
+            cacheWidth: cacheWidth,
+
+            // Do not keep displaying the previous image while the new image
+            // is being loaded.
+            gaplessPlayback: false,
+
+            // Show the placeholder while the image is loading.
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) {
+                return child;
+              }
+              return _coverPlaceholder(context, isDark);
+            },
+
+            // Show the fallback widget when the image fails to load.
+            errorBuilder: (context, error, stackTrace) {
+              return _coverFallback(context, isDark);
+            },
           );
         },
       );
@@ -50,24 +84,22 @@ class RoomCard extends StatelessWidget {
   }
 
   Widget _coverPlaceholder(BuildContext context, bool isDark) {
-    return ColoredBox(
+    return Container(
       color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
-      child: Center(
-        child: Icon(
-          Icons.live_tv_rounded,
-          size: dense ? 28 : 36,
-          color: Theme.of(context).disabledColor.withValues(alpha: 0.35),
+      child: const Center(
+        child: SizedBox(
+          width: 24,
+          height: 24,
+          child: AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", isMini: true),
         ),
       ),
     );
   }
 
   Widget _coverFallback(BuildContext context, bool isDark) {
-    return ColoredBox(
+    return Container(
       color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
-      child: Center(
-        child: Icon(Icons.broken_image_rounded, size: dense ? 32 : 44, color: Theme.of(context).disabledColor),
-      ),
+      child: AppStatusView(type: AppStatusType.error, title: "", subtitle: "", isMini: true),
     );
   }
 
