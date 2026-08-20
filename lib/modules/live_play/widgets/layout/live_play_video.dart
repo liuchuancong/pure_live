@@ -4,40 +4,38 @@ import 'package:pure_live/modules/live_play/widgets/video_player/video_player.da
 import 'package:pure_live/modules/live_play/widgets/placeholder/not_living_video_widget.dart';
 
 class LivePlayVideo extends StatelessWidget {
-  const LivePlayVideo({super.key, required this.controller, this.widescreen = false});
+  const LivePlayVideo({super.key, required this.controller});
 
   final LivePlayController controller;
-  final bool widescreen;
 
   @override
   Widget build(BuildContext context) {
-    final player = AspectRatio(
+    return AspectRatio(
       aspectRatio: 16 / 9,
-      child: Container(
+      child: ColoredBox(
         color: Colors.black,
         child: Obx(() {
           final state = controller.state.value;
-
-          if (state.room.success && state.player.videoController != null) {
-            return Stack(
-              children: [
-                Positioned.fill(child: VideoPlayer(controller: state.player.videoController!)),
-
-                if (state.room.isLoading) const _VideoLoading(),
-              ],
-            );
+          final videoController = state.player.videoController;
+          if (videoController == null) {
+            if (state.room.isLoading || state.room.isLiving) {
+              return const _VideoLoading();
+            }
+            return NotLivingVideoWidget(controller: controller);
           }
-
-          if (state.room.isLoading || state.room.isLiving) {
-            return const _VideoLoading();
-          }
-
-          return NotLivingVideoWidget(controller: controller, key: UniqueKey());
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              ColoredBox(
+                color: Colors.black,
+                child: VideoPlayer(controller: videoController),
+              ),
+              if (state.room.isLoading) const _VideoLoading(),
+            ],
+          );
         }),
       ),
     );
-
-    return player;
   }
 }
 

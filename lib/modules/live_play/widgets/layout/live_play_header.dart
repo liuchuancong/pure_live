@@ -7,13 +7,10 @@ import 'package:pure_live/modules/live_play/widgets/button/favorite_floating_but
 
 class LivePlayHeader extends StatelessWidget implements PreferredSizeWidget {
   const LivePlayHeader({super.key, required this.controller, this.compactHeader = false});
-
   final LivePlayController controller;
   final bool compactHeader;
-
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
-
   @override
   Widget build(BuildContext context) {
     return AppBar(
@@ -22,10 +19,7 @@ class LivePlayHeader extends StatelessWidget implements PreferredSizeWidget {
       actions: [
         _buildFavoriteButton(),
         _buildRecordButton(),
-
-        // 菜单按钮
         LivePlayMenuButton(controller: controller),
-
         const SizedBox(width: 4),
       ],
     );
@@ -36,28 +30,21 @@ class LivePlayHeader extends StatelessWidget implements PreferredSizeWidget {
       children: [
         Obx(() {
           final avatar = controller.state.value.room.detail?.avatar;
-
           return CircleAvatar(
             radius: 16,
             foregroundImage: avatar != null && avatar.isNotEmpty ? CachedNetworkImageProvider(avatar) : null,
             backgroundColor: Theme.of(context).disabledColor,
           );
         }),
-
         const SizedBox(width: 8),
-
         Expanded(
           child: Obx(() {
             final detail = controller.state.value.room.detail;
-
             if (detail == null) {
               return const SizedBox.shrink();
             }
-
             final platform = detail.platform?.toUpperCase() ?? '';
-
             final area = detail.area;
-
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,11 +72,9 @@ class LivePlayHeader extends StatelessWidget implements PreferredSizeWidget {
   Widget _buildFavoriteButton() {
     return Obx(() {
       final detail = controller.state.value.room.detail;
-
       if (detail == null) {
         return const SizedBox.shrink();
       }
-
       return Padding(
         padding: const EdgeInsets.only(left: 2, right: 5),
         child: FavoriteFloatingButton(
@@ -104,7 +89,6 @@ class LivePlayHeader extends StatelessWidget implements PreferredSizeWidget {
   Widget _buildRecordButton() {
     return Obx(() {
       final room = controller.state.value.room.detail;
-
       return RecordActionButton(
         room: room,
         recorderController: controller.recorderController,
