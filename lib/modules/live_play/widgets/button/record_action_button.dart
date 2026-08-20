@@ -27,12 +27,7 @@ class RecordActionButton extends StatelessWidget {
       );
 
       final exists = task != null;
-
-      final isRunning =
-          task?.status == RecordStatus.running ||
-          task?.status == RecordStatus.reconnecting ||
-          task?.status == RecordStatus.preparing;
-
+      final isRunning = _isTaskRunning(task);
       final theme = Theme.of(context);
 
       final label = isRunning
@@ -47,52 +42,80 @@ class RecordActionButton extends StatelessWidget {
           ? Remix.checkbox_circle_fill
           : Remix.record_circle_line;
 
+      final foregroundColor = isRunning
+          ? Colors.redAccent
+          : exists
+          ? theme.colorScheme.primary
+          : theme.colorScheme.onSurfaceVariant;
+
+      final backgroundColor = isRunning
+          ? Colors.redAccent.withValues(alpha: 0.12)
+          : exists
+          ? theme.colorScheme.primary.withValues(alpha: 0.10)
+          : theme.colorScheme.surfaceContainerHighest;
+
       return Tooltip(
         message: label,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOut,
+        child: SizedBox(
           width: compactHeader ? 40 : null,
           height: 38,
           child: FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: isRunning
-                  ? Colors.redAccent.withValues(alpha: 0.12)
-                  : exists
-                  ? theme.colorScheme.primary.withValues(alpha: 0.10)
-                  : theme.colorScheme.surfaceContainerHighest,
-              foregroundColor: isRunning
-                  ? Colors.redAccent
-                  : exists
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurfaceVariant,
+              backgroundColor: backgroundColor,
+              foregroundColor: foregroundColor,
               padding: compactHeader ? EdgeInsets.zero : const EdgeInsets.symmetric(horizontal: 8),
-              minimumSize: compactHeader ? const Size(38, 38) : null,
+              minimumSize: compactHeader ? const Size(38, 38) : const Size(0, 38),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 0,
             ),
-            onPressed: () => _handlePressed(context, task: task, exists: exists, isRunning: isRunning),
+            onPressed: () {
+              _handlePressed(context, task: task, exists: exists, isRunning: isRunning);
+            },
             child: compactHeader
-                ? Icon(icon, size: 18)
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(icon, size: 14),
-                      const SizedBox(width: 4),
-                      Text(
-                        label,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.1,
+                ? AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    transitionBuilder: (child, animation) {
+                      return ScaleTransition(scale: animation, child: child);
+                    },
+                    child: Icon(icon, key: ValueKey(icon), size: 18),
+                  )
+                : AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    transitionBuilder: (child, animation) {
+                      return FadeTransition(opacity: animation, child: child);
+                    },
+                    child: Row(
+                      key: ValueKey(label),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(icon, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          label,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.1,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
           ),
         ),
       );
     });
+  }
+
+  bool _isTaskRunning(dynamic task) {
+    if (task == null) {
+      return false;
+    }
+
+    return task.status == RecordStatus.running ||
+        task.status == RecordStatus.reconnecting ||
+        task.status == RecordStatus.preparing;
   }
 
   Future<void> _handlePressed(
@@ -103,44 +126,78 @@ class RecordActionButton extends StatelessWidget {
   }) async {
     final action = await _showActionDialog(context, exists: exists, isRunning: isRunning);
 
+    if (action == null) {
+      return;
+    }
+
     switch (action) {
       case "start":
-        if (exists) {
-          recorderController.forceStartTask(task);
-        } else {
-          await recorderController.addTask(room: room);
-          final newTask = recorderController.tasks.firstWhereOrNull(
-            (t) => t.platform == room.platform && t.roomId == room.roomId,
-          );
-          if (newTask != null) {
-            recorderController.forceStartTask(newTask);
-          }
-        }
+        await _startRecording(task: task, exists: exists, isRunning: isRunning);
         break;
 
       case "monitor":
-        if (!exists) {
-          await recorderController.addTask(room: room);
-          ToastUtil.show(i18n("record_task_added"));
-        }
+        await _addMonitor(exists: exists);
         break;
 
       case "stop":
-        if (task != null) {
-          recorderController.stopTask(task);
-        }
+        _stopRecording(task: task, exists: exists, isRunning: isRunning);
         break;
 
       case "delete":
-        if (task != null) {
-          recorderController.unRecorder(task);
-        }
+        _removeMonitor(task: task, exists: exists, isRunning: isRunning);
         break;
 
       case "page":
         Get.toNamed(RoutePath.kRecordPage);
         break;
     }
+  }
+
+  Future<void> _startRecording({required dynamic task, required bool exists, required bool isRunning}) async {
+    if (isRunning) {
+      return;
+    }
+
+    if (exists && task != null) {
+      recorderController.forceStartTask(task);
+      return;
+    }
+
+    await recorderController.addTask(room: room);
+
+    final newTask = recorderController.tasks.firstWhereOrNull(
+      (t) => t.platform == room.platform && t.roomId == room.roomId,
+    );
+
+    if (newTask != null) {
+      recorderController.forceStartTask(newTask);
+    }
+  }
+
+  Future<void> _addMonitor({required bool exists}) async {
+    if (exists) {
+      return;
+    }
+
+    await recorderController.addTask(room: room);
+
+    ToastUtil.show(i18n("record_task_added"));
+  }
+
+  void _stopRecording({required dynamic task, required bool exists, required bool isRunning}) {
+    if (!exists || task == null || !isRunning) {
+      return;
+    }
+
+    recorderController.stopTask(task);
+  }
+
+  void _removeMonitor({required dynamic task, required bool exists, required bool isRunning}) {
+    if (!exists || task == null || isRunning) {
+      return;
+    }
+
+    recorderController.unRecorder(task);
   }
 
   Future<String?> _showActionDialog(BuildContext context, {required bool exists, required bool isRunning}) {
@@ -151,83 +208,94 @@ class RecordActionButton extends StatelessWidget {
       builder: (dialogContext) {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          titlePadding: const EdgeInsets.fromLTRB(24, 22, 24, 12),
+          contentPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
           title: Row(
             children: [
-              Icon(
-                isRunning
-                    ? Remix.record_circle_fill
-                    : exists
-                    ? Remix.checkbox_circle_fill
-                    : Remix.record_circle_line,
-                color: isRunning ? Colors.redAccent : theme.colorScheme.primary,
-                size: 22,
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                transitionBuilder: (child, animation) {
+                  return ScaleTransition(scale: animation, child: child);
+                },
+                child: Icon(
+                  isRunning
+                      ? Remix.record_circle_fill
+                      : exists
+                      ? Remix.checkbox_circle_fill
+                      : Remix.record_circle_line,
+                  key: ValueKey(
+                    isRunning
+                        ? "running"
+                        : exists
+                        ? "exists"
+                        : "empty",
+                  ),
+                  color: isRunning ? Colors.redAccent : theme.colorScheme.primary,
+                  size: 22,
+                ),
               ),
               const SizedBox(width: 10),
-              Text(
-                isRunning
-                    ? i18n("recording")
-                    : exists
-                    ? i18n("record_task")
-                    : i18n("record"),
+              Expanded(
+                child: Text(
+                  isRunning
+                      ? i18n("recording")
+                      : exists
+                      ? i18n("record_task")
+                      : i18n("record"),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 未录制时：开始录制放最顶部
-              if (!isRunning)
-                _ActionTile(
-                  icon: Icons.play_arrow_rounded,
-                  title: i18n("start_record_now"),
-                  color: Colors.green,
-                  onTap: () {
-                    Navigator.pop(dialogContext, "start");
-                  },
-                ),
-
-              // 进入录制中心
+              _ActionTile(
+                icon: Icons.play_arrow_rounded,
+                title: i18n("start_record_now"),
+                color: Colors.green,
+                enabled: !isRunning,
+                onTap: () {
+                  Navigator.pop(dialogContext, "start");
+                },
+              ),
               _ActionTile(
                 icon: Icons.video_library_rounded,
                 title: i18n("go_record_center"),
                 color: theme.colorScheme.primary,
+                enabled: true,
                 onTap: () {
                   Navigator.pop(dialogContext, "page");
                 },
               ),
-
-              // 没有任务时：添加监控
-              if (!exists)
-                _ActionTile(
-                  icon: Remix.checkbox_circle_line,
-                  title: i18n("add_monitor"),
-                  color: theme.colorScheme.primary,
-                  onTap: () {
-                    Navigator.pop(dialogContext, "monitor");
-                  },
-                ),
-
-              // 正在录制时：停止录制
-              if (isRunning)
-                _ActionTile(
-                  icon: Icons.stop_circle_outlined,
-                  title: i18n("stop_record"),
-                  color: Colors.orange,
-                  onTap: () {
-                    Navigator.pop(dialogContext, "stop");
-                  },
-                ),
-
-              // 已存在任务时：移除监控
-              if (exists)
-                _ActionTile(
-                  icon: Icons.delete_outline_rounded,
-                  title: i18n("remove_monitor"),
-                  color: Colors.redAccent,
-                  onTap: () {
-                    Navigator.pop(dialogContext, "delete");
-                  },
-                ),
+              _ActionTile(
+                icon: Remix.checkbox_circle_line,
+                title: i18n("add_monitor"),
+                color: theme.colorScheme.primary,
+                enabled: !exists,
+                onTap: () {
+                  Navigator.pop(dialogContext, "monitor");
+                },
+              ),
+              _ActionTile(
+                icon: Icons.stop_circle_outlined,
+                title: i18n("stop_record"),
+                color: Colors.orange,
+                enabled: isRunning,
+                onTap: () {
+                  Navigator.pop(dialogContext, "stop");
+                },
+              ),
+              _ActionTile(
+                icon: Icons.delete_outline_rounded,
+                title: i18n("remove_monitor"),
+                color: Colors.redAccent,
+                enabled: exists && !isRunning,
+                onTap: () {
+                  Navigator.pop(dialogContext, "delete");
+                },
+              ),
             ],
           ),
         );
@@ -237,26 +305,51 @@ class RecordActionButton extends StatelessWidget {
 }
 
 class _ActionTile extends StatelessWidget {
-  const _ActionTile({required this.icon, required this.title, required this.color, required this.onTap});
+  const _ActionTile({
+    required this.icon,
+    required this.title,
+    required this.color,
+    required this.onTap,
+    this.enabled = true,
+  });
 
   final IconData icon;
   final String title;
   final Color color;
   final VoidCallback onTap;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-      leading: Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(color: color.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(11)),
-        child: Icon(icon, color: color, size: 20),
+    final theme = Theme.of(context);
+
+    final disabledColor = theme.colorScheme.onSurface.withValues(alpha: 0.32);
+
+    final actualColor = enabled ? color : disabledColor;
+
+    final backgroundAlpha = enabled ? 0.10 : 0.045;
+
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 160),
+      opacity: enabled ? 1.0 : 0.72,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        leading: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          curve: Curves.easeOut,
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: actualColor.withValues(alpha: backgroundAlpha),
+            borderRadius: BorderRadius.circular(11),
+          ),
+          child: Icon(icon, color: actualColor, size: 20),
+        ),
+        title: Text(title, style: theme.textTheme.bodyLarge?.copyWith(color: actualColor)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        enabled: enabled,
+        onTap: enabled ? onTap : null,
       ),
-      title: Text(title),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      onTap: onTap,
     );
   }
 }
