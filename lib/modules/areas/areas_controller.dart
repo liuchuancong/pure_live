@@ -130,4 +130,11 @@ class AreasController extends GetxController with GetTickerProviderStateMixin {
       listController.loadData();
     }
   }
+
+  /// Revalidates the currently visible site's category catalogue when the app
+  /// returns after being backgrounded, without fetching hidden platforms.
+  Future<void> refreshCurrentData() async {
+    if (sites.isEmpty || index < 0 || index >= sites.length) return;
+    await _ensureListController(sites[index]).refreshData();
+  }
 }

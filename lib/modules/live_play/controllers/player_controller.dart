@@ -102,6 +102,17 @@ class PlayerController extends GetxController {
     if (loadEpoch != null && !_isLoadCurrent(loadEpoch, room, site)) return null;
     final playerState = _state.player;
 
+    // Refresh/line changes replace the route-scoped controller.  The previous
+    // implementation only overwrote the Rx field, leaving its barrage engine,
+    // paragraph/picture caches, timers and subscriptions alive for the rest of
+    // the room session.  Tear it down before attaching the replacement.
+    final previousController = playerState.videoController;
+    if (previousController != null) {
+      await previousController.destory();
+      previousController.dispose();
+      if (loadEpoch != null && !_isLoadCurrent(loadEpoch, room, site)) return null;
+    }
+
     final videoController = VideoController(
       room: room,
       playUrs: playerState.playUrls,
@@ -289,7 +300,9 @@ class PlayerController extends GetxController {
 
   Future<void> destroyPlayer() async {
     invalidateLoad();
-    await _state.player.videoController?.destory();
+    final controller = _state.player.videoController;
+    await controller?.destory();
+    controller?.dispose();
     _main.updatePlayer(clearVideoController: true);
   }
 

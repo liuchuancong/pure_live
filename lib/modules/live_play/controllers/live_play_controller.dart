@@ -32,7 +32,7 @@ import 'package:pure_live/modules/live_play/widgets/local_interaction/local_mess
 // live_play_controller.dart
 
 class LivePlayController extends GetxController
-    with GetSingleTickerProviderStateMixin
+    with GetSingleTickerProviderStateMixin, WidgetsBindingObserver
     implements DanmakuSessionHost, PlayerSessionHost {
   LivePlayController({required this.room, required this.site});
 
@@ -64,6 +64,11 @@ class LivePlayController extends GetxController
   bool _asmrSessionActive = false;
   Timer? _localGiftEffectTimer;
   Timer? _danmakuFlushTimer;
+  Timer? _danmakuRecoveryTimer;
+  Worker? _pipStateWorker;
+  Future<void>? _danmakuRecovery;
+  bool _wasInSystemPip = false;
+  bool _wasBackgrounded = false;
   final List<LiveMessage> _pendingDanmakuMessages = <LiveMessage>[];
   late final LocalMessageDeliveryQueue _localMessageDeliveryQueue;
   late final String _controllerTag;
@@ -82,6 +87,13 @@ class LivePlayController extends GetxController
     _localMessageDeliveryQueue = LocalMessageDeliveryQueue(onDeliver: _deliverLocalMessage);
 
     final manager = GlobalPlayerService.instance.player;
+    WidgetsBinding.instance.addObserver(this);
+    _wasInSystemPip = manager.isInPip.value;
+    _pipStateWorker = ever<bool>(manager.isInPip, (isInPip) {
+      final returnedFromPip = _wasInSystemPip && !isInPip;
+      _wasInSystemPip = isInPip;
+      if (returnedFromPip) _scheduleDanmakuRecovery();
+    });
     _reentrySession = manager.consumeRoomSessionReentry(room);
     final resumesCurrentSession = _reentrySession != null;
     final autoStartAsmr = Platform.isAndroid && SettingsService.to.app.enableAsmrSleepMode.v;
@@ -125,6 +137,47 @@ class LivePlayController extends GetxController
     ever(SettingsService.to.app.enableScreenKeepOn, (_) => _updateWakelock());
 
     _updateWakelock();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden || state == AppLifecycleState.detached) {
+      _wasBackgrounded = true;
+      return;
+    }
+    if (state != AppLifecycleState.resumed || !_wasBackgrounded) return;
+    _wasBackgrounded = false;
+    if (!GlobalPlayerService.instance.player.isInPip.value) {
+      _scheduleDanmakuRecovery();
+    }
+  }
+
+  void _scheduleDanmakuRecovery() {
+    _danmakuRecoveryTimer?.cancel();
+    _danmakuRecoveryTimer = Timer(const Duration(milliseconds: 180), () {
+      _danmakuRecoveryTimer = null;
+      if (isClosed || _ownerClosed || GlobalPlayerService.instance.player.isCompactModeActive) return;
+      final detail = state.value.room.detail;
+      if (detail == null || !state.value.room.success) return;
+      final inFlight = _danmakuRecovery;
+      if (inFlight != null) return;
+      late final Future<void> recovery;
+      recovery = danmakuController
+          .recoverRoomConnection(detail)
+          .catchError((Object error, StackTrace stackTrace) {
+            developer.log(
+              'Danmaku recovery after PiP/foreground failed',
+              name: 'LivePlayController',
+              error: error,
+              stackTrace: stackTrace,
+            );
+          })
+          .whenComplete(() {
+            if (identical(_danmakuRecovery, recovery)) _danmakuRecovery = null;
+          });
+      _danmakuRecovery = recovery;
+      unawaited(recovery);
+    });
   }
 
   void _initControllers() {
@@ -817,6 +870,9 @@ class LivePlayController extends GetxController
   void onClose() {
     _ownerClosed = true;
     _roomLoadEpoch++;
+    WidgetsBinding.instance.removeObserver(this);
+    _pipStateWorker?.dispose();
+    _danmakuRecoveryTimer?.cancel();
     playerController.invalidateLoad();
     _localGiftEffectTimer?.cancel();
     _localMessageDeliveryQueue.dispose();

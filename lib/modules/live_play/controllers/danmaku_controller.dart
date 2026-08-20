@@ -100,12 +100,19 @@ class DanmakuController extends GetxController {
     return _sessionKey != key && _connectingKey != key;
   }
 
-  Future<void> connectRoom(LiveRoom room) {
+  /// Connects the room, optionally rebuilding an apparently-owned transport.
+  ///
+  /// Android may keep the Dart/controller session alive while its websocket is
+  /// suspended during the PiP -> foreground transition.  In that case the
+  /// room key still matches even though no more packets can arrive.  [force]
+  /// deliberately tears down that transport without clearing the on-screen
+  /// barrage and installs fresh callbacks before reconnecting.
+  Future<void> connectRoom(LiveRoom room, {bool force = false}) {
     final request = ++_requestEpoch;
     final key = _roomKey(room);
     return _serialize(() async {
       if (request != _requestEpoch || !_initialized) return;
-      if (_sessionKey == key || _connectingKey == key) return;
+      if (!force && (_sessionKey == key || _connectingKey == key)) return;
 
       final previousKey = _sessionKey ?? _connectingKey;
       await _disconnectInternal(clearRenderer: previousKey != null && previousKey != key);
@@ -299,6 +306,20 @@ class DanmakuController extends GetxController {
     } catch (error, stackTrace) {
       CoreLog.e(error.toString(), stackTrace);
     }
+  }
+
+  /// Repairs a room connection after a native presentation/lifecycle change.
+  /// Settings and platform exclusions remain authoritative, so this cannot
+  /// accidentally open a socket when danmaku is disabled.
+  Future<void> recoverRoomConnection(LiveRoom room) async {
+    if (!_initialized) return;
+    const except = [Sites.kuaishouSite, Sites.iptvSite, Sites.ccSite];
+    final settings = SettingsService.to.danmaku;
+    if (except.contains(room.platform) || (!settings.enableDanmakuDisplay.v && !settings.enablePipDanmaku.v)) {
+      await stopDanmaku();
+      return;
+    }
+    await connectRoom(room, force: true);
   }
 
   String _roomKey(LiveRoom room) => '${room.platform ?? ''}:${room.roomId ?? ''}';

@@ -24,4 +24,23 @@ void main() {
     engine.resume();
     expect(engine.pendingMessageCount, 2);
   });
+
+  test('parser and layout caches remain bounded for unique long-running chat', () {
+    final parser = RichParser(atlas: EmojiAtlas.instance, maxCacheSize: 32);
+    final layout = MixedLayout(atlas: EmojiAtlas.instance, maxTextCacheSize: 32);
+    const config = BarrageConfig(textCacheMaxSize: 32);
+
+    for (var index = 0; index < 200; index++) {
+      final content = 'unique barrage $index';
+      final fragments = parser.parse(content);
+      layout.layout(
+        fragments,
+        item: BarrageItem(content: content),
+        config: config,
+      );
+    }
+
+    expect(parser.cacheCount, 32);
+    expect(layout.cacheCount, 32);
+  });
 }

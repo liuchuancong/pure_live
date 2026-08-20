@@ -48,6 +48,22 @@ void main() {
     expect(host.currentRoomId, isNull);
     expect(host.rendererClearCount, 1);
   });
+
+  test('PiP recovery rebuilds a matching room transport without clearing rendered messages', () async {
+    final host = _TestDanmakuHost();
+    final engine = _CountingDanmaku();
+    final controller = DanmakuController(host);
+    final room = LiveRoom(roomId: 'room-pip', platform: 'test', danmakuData: const <String, dynamic>{});
+    controller.initDanmaku(engine);
+
+    await controller.connectRoom(room);
+    await controller.connectRoom(room, force: true);
+
+    expect(engine.startCalls, 2);
+    expect(engine.stopCalls, 2, reason: 'initial cleanup plus same-room PiP transport replacement');
+    expect(host.currentRoomId, 'room-pip');
+    expect(host.rendererClearCount, 0, reason: 'same-room recovery keeps the visible barrage intact');
+  });
 }
 
 class _TestDanmakuHost implements DanmakuSessionHost {
@@ -105,5 +121,22 @@ class _StalledStopDanmaku extends LiveDanmaku {
   Future<void> stop() {
     stopCalls++;
     return _stop.future;
+  }
+}
+
+class _CountingDanmaku extends LiveDanmaku {
+  int startCalls = 0;
+  int stopCalls = 0;
+
+  @override
+  Future<void> start(dynamic args) async {
+    startCalls++;
+    markConnected();
+    onReady?.call();
+  }
+
+  @override
+  Future<void> stop() async {
+    stopCalls++;
   }
 }

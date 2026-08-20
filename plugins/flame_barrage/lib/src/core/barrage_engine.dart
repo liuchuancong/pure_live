@@ -19,7 +19,7 @@ class BarrageEngine extends FlameGame with TapCallbacks {
     : _config = config,
       _pictureCache = PictureCache(maxSize: config.pictureCacheMaxSize),
       _pool = BarragePool(maxSize: config.barragePoolMaxSize) {
-    _parser = RichParser(atlas: emojiAtlas);
+    _parser = RichParser(atlas: emojiAtlas, maxCacheSize: config.textCacheMaxSize);
     _layout = MixedLayout(atlas: emojiAtlas, maxTextCacheSize: config.textCacheMaxSize);
     _renderer = const MixedRenderer();
   }
@@ -203,6 +203,7 @@ class BarrageEngine extends FlameGame with TapCallbacks {
 
   void updateConfig(BarrageConfig newConfig) {
     _config = newConfig;
+    _parser.updateMaxCacheSize(newConfig.textCacheMaxSize);
     _layout.updateMaxTextCacheSize(newConfig.textCacheMaxSize);
     _pictureCache.updateMaxSize(newConfig.pictureCacheMaxSize);
     _pool.updateMaxSize(newConfig.barragePoolMaxSize);

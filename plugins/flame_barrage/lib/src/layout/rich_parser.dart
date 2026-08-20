@@ -1,11 +1,13 @@
+import 'dart:collection';
+
 import 'package:flame_barrage/flame_barrage.dart';
 
 class RichParser {
-  RichParser({required this.atlas, this.maxCacheSize = 2000});
+  RichParser({required this.atlas, int maxCacheSize = 1000}) : _maxCacheSize = maxCacheSize.clamp(1, 10000).toInt();
 
   final EmojiAtlas atlas;
-  final Map<String, List<Fragment>> _cache = {};
-  final int maxCacheSize;
+  final LinkedHashMap<String, List<Fragment>> _cache = LinkedHashMap<String, List<Fragment>>();
+  int _maxCacheSize;
 
   int get cacheCount => _cache.length;
 
@@ -15,6 +17,13 @@ class RichParser {
 
   void clearCache() {
     _cache.clear();
+  }
+
+  void updateMaxCacheSize(int value) {
+    _maxCacheSize = value.clamp(1, 10000).toInt();
+    while (_cache.length > _maxCacheSize) {
+      _cache.remove(_cache.keys.first);
+    }
   }
 
   void removeCache(String content) {
@@ -28,12 +37,14 @@ class RichParser {
 
     final cached = _cache[content];
     if (cached != null) {
+      _cache.remove(content);
+      _cache[content] = cached;
       return List<Fragment>.from(cached);
     }
 
     final fragments = _parseInternal(content);
 
-    if (_cache.length >= maxCacheSize) {
+    if (_cache.length >= _maxCacheSize) {
       _cache.remove(_cache.keys.first);
     }
 

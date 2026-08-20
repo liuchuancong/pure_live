@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:ui' as ui;
 
 import 'package:flutter/services.dart';
@@ -37,12 +38,13 @@ class DanmakuListViewState extends State<DanmakuListView> {
   int _lastControllerLength = 0;
   LiveMessage? _lastControllerTail;
   List<LiveMessage> _visibleMessages = const [];
-  List<LiveMessage>? _scheduledSnapshot;
 
   Timer? throttleTimer;
   Worker? fullscreenWorker;
   Worker? windowFullscreenWorker;
+  Worker? pipWorker;
   StreamSubscription? messagesSub;
+  bool _wasInSystemPip = false;
 
   LivePlayController get controller => Get.find<LivePlayController>();
 
@@ -67,17 +69,36 @@ class DanmakuListViewState extends State<DanmakuListView> {
       }
     });
 
+    // Android keeps this list state alive while the route is represented by a
+    // native PiP surface. A scroll notification emitted while its viewport is
+    // being detached can otherwise leave live-follow paused even though the
+    // user never dragged the list. Re-snapshot and resume when PiP hands the
+    // room back to the portrait/fullscreen route; the transport recovery in
+    // LivePlayController runs independently.
+    final pipState = GlobalPlayerService.instance.player.isInPip;
+    _wasInSystemPip = pipState.value;
+    pipWorker = ever<bool>(pipState, (isInPip) {
+      final returnedFromPip = _wasInSystemPip && !isInPip;
+      _wasInSystemPip = isInPip;
+      if (returnedFromPip && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) unawaited(_resumeAutoScroll());
+        });
+      }
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) => forceScrollToBottom());
   }
 
   void _onMessagesChanged() {
     if (!mounted) return;
-    final snapshot = List<LiveMessage>.from(controller.danmakuMessages);
-    final nextTail = snapshot.isEmpty ? null : snapshot.last;
+    final currentMessages = controller.danmakuMessages;
+    final nextLength = currentMessages.length;
+    final nextTail = currentMessages.isEmpty ? null : currentMessages.last;
     final tailChanged = !identical(nextTail, _lastControllerTail);
-    final lengthDelta = snapshot.length - _lastControllerLength;
+    final lengthDelta = nextLength - _lastControllerLength;
     final addedCount = lengthDelta > 0 ? lengthDelta : (tailChanged ? 1 : 0);
-    _lastControllerLength = snapshot.length;
+    _lastControllerLength = nextLength;
     _lastControllerTail = nextTail;
 
     if (!_autoScrollEnabled) {
@@ -90,19 +111,15 @@ class DanmakuListViewState extends State<DanmakuListView> {
     if (nextTail?.isLocal == true && addedCount > 0) {
       throttleTimer?.cancel();
       throttleTimer = null;
-      _scheduledSnapshot = null;
-      setState(() => _visibleMessages = snapshot);
+      setState(() => _visibleMessages = List<LiveMessage>.of(currentMessages, growable: false));
       WidgetsBinding.instance.addPostFrameCallback((_) => forceScrollToBottom());
       return;
     }
 
-    _scheduledSnapshot = snapshot;
     throttleTimer ??= Timer(throttleDuration, () {
       throttleTimer = null;
       if (!mounted || !_autoScrollEnabled) return;
-      final next = _scheduledSnapshot;
-      _scheduledSnapshot = null;
-      if (next != null) setState(() => _visibleMessages = next);
+      setState(() => _visibleMessages = List<LiveMessage>.of(controller.danmakuMessages, growable: false));
       WidgetsBinding.instance.addPostFrameCallback((_) => forceScrollToBottom());
     });
   }
@@ -112,6 +129,7 @@ class DanmakuListViewState extends State<DanmakuListView> {
     messagesSub?.cancel();
     fullscreenWorker?.dispose();
     windowFullscreenWorker?.dispose();
+    pipWorker?.dispose();
     throttleTimer?.cancel();
     _composerController.dispose();
     _pendingMessageCount.dispose();
@@ -134,7 +152,6 @@ class DanmakuListViewState extends State<DanmakuListView> {
     if (!_autoScrollEnabled) return;
     throttleTimer?.cancel();
     throttleTimer = null;
-    _scheduledSnapshot = null;
     setState(() {
       _autoScrollEnabled = false;
       userScrolling = true;
@@ -377,7 +394,11 @@ class DanmakuItem extends StatelessWidget {
   }
 }
 
-final Map<String, List<EmojiToken>> emojiCache = {};
+/// A bounded LRU avoids retaining every unique chat line seen during an
+/// overnight stream.  The old unbounded map was one of the main causes of the
+/// steadily rising desktop heap.
+const int emojiTokenCacheCapacity = 512;
+final LinkedHashMap<String, List<EmojiToken>> emojiCache = LinkedHashMap<String, List<EmojiToken>>();
 
 class EmojiToken {
   final bool isEmoji;
@@ -389,13 +410,19 @@ class EmojiToken {
 List<EmojiToken> _parseEmojiTokens(String text) {
   final cached = emojiCache[text];
   if (cached != null) {
+    // LinkedHashMap does not reorder entries on lookup; reinsert to make this
+    // a true least-recently-used cache.
+    emojiCache.remove(text);
+    emojiCache[text] = cached;
     return cached;
   }
 
   final regex = EmojiAtlas.instance.regex;
 
   if (regex == null) {
-    return [EmojiToken(isEmoji: false, value: text)];
+    final tokens = [EmojiToken(isEmoji: false, value: text)];
+    _storeEmojiTokens(text, tokens);
+    return tokens;
   }
 
   final tokens = <EmojiToken>[];
@@ -416,9 +443,16 @@ List<EmojiToken> _parseEmojiTokens(String text) {
     tokens.add(EmojiToken(isEmoji: false, value: text.substring(last)));
   }
 
-  emojiCache[text] = tokens;
+  _storeEmojiTokens(text, tokens);
 
   return tokens;
+}
+
+void _storeEmojiTokens(String text, List<EmojiToken> tokens) {
+  while (emojiCache.length >= emojiTokenCacheCapacity) {
+    emojiCache.remove(emojiCache.keys.first);
+  }
+  emojiCache[text] = tokens;
 }
 
 List<InlineSpan> parseEmojis(String text, double size, Color color) {

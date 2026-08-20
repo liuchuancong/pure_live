@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/common/index.dart';
@@ -15,7 +16,6 @@ import 'package:pure_live/plugins/share_command_handler.dart';
 import 'package:pure_live/routes/route_observer_controller.dart';
 import 'package:pure_live/common/utils/share_command_handler.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
-
 
 class DesktopManager {
   static State? _currentState;
@@ -774,7 +774,8 @@ class MyCustomScrollBehavior extends MaterialScrollBehavior {
     PointerDeviceKind.touch,
     PointerDeviceKind.stylus,
     PointerDeviceKind.invertedStylus,
+    PointerDeviceKind.mouse,
     PointerDeviceKind.trackpad,
-    PointerDeviceKind.unknown
+    PointerDeviceKind.unknown,
   };
 }

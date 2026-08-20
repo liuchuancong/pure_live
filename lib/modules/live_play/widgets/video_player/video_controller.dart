@@ -237,7 +237,6 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
 
   // 资源管理
   final List<StreamSubscription> _subscriptions = [];
-  final List<Timer> _timers = [];
 
   // 状态
   PlayerStatus _status = PlayerStatus.idle;
@@ -439,13 +438,14 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   }
 
   void _setupDefaultFullscreen() {
-    final timer = Timer(_fullscreenDelay, () {
+    _defaultFullscreenTimer?.cancel();
+    _defaultFullscreenTimer = Timer(_fullscreenDelay, () {
+      _defaultFullscreenTimer = null;
       if (_isDisposed) return;
       if (_settingsService.app.enableFullScreenDefault.v) {
         _enterFullscreenMode();
       }
     });
-    _addTimer(timer);
   }
 
   void _enterFullscreenMode() {
@@ -460,10 +460,6 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     _subscriptions.add(subscription);
   }
 
-  void _addTimer(Timer timer) {
-    _timers.add(timer);
-  }
-
   Future<void> _cancelAllSubscriptions() async {
     for (final sub in _subscriptions) {
       await sub.cancel();
@@ -472,10 +468,16 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   }
 
   void _cancelAllTimers() {
-    for (final timer in _timers) {
-      timer.cancel();
-    }
-    _timers.clear();
+    _defaultFullscreenTimer?.cancel();
+    _controllerTransitionTimer?.cancel();
+    _hideVolumeTimer?.cancel();
+    _debounceTimer?.cancel();
+    showControllerTimer?.cancel();
+    _defaultFullscreenTimer = null;
+    _controllerTransitionTimer = null;
+    _hideVolumeTimer = null;
+    _debounceTimer = null;
+    showControllerTimer = null;
   }
 
   bool get _isDisposed => _status == PlayerStatus.disposed;
@@ -537,10 +539,10 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   void updateVolumn(double volume) {
     _hideVolumeTimer?.cancel();
     showVolume.value = true;
-    final timer = Timer(_volumeHideDelay, () {
-      showVolume.value = false;
+    _hideVolumeTimer = Timer(_volumeHideDelay, () {
+      _hideVolumeTimer = null;
+      if (!_isDisposed) showVolume.value = false;
     });
-    _addTimer(timer);
   }
 
   Future<double?> volume() async {
@@ -583,6 +585,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
 
     if (!_isMouseOverController && !_isMouseOverPlayer) {
       showControllerTimer = Timer(const Duration(seconds: 2), () {
+        showControllerTimer = null;
         if (!_isDisposed && !_isMouseOverController && !_isMouseOverPlayer) {
           showController.value = false;
         }
@@ -639,9 +642,13 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
 
   // 弹幕管理
   void updateDanmaku() {
+    final resolvedFps = SettingsService.to.danmaku.resolvedDanmakuFps();
     danmakuController.updateConfig(
       BarrageConfig(
-        emitInterval: 0.016,
+        // Dispatching at 16 ms allowed up to 60 new paragraphs per second on
+        // busy rooms.  Motion still follows the display refresh rate, while a
+        // 50 ms admission interval bounds layout/paint pressure and heat.
+        emitInterval: 0.05,
         fontSize: danmakuFontSize.value,
         area: danmakuArea.value,
         topAreaDistance: danmakuTopArea.value,
@@ -652,9 +659,13 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
         strokeWidth: danmakuFontBorder.value,
         showStroke: enableDanmakuStroke.value,
         noEmojiMode: noEmojiMode.value,
-        fps: SettingsService.to.danmaku.resolvedDanmakuFps(),
+        fps: resolvedFps,
+        maxVisibleCount: 48,
         maxPendingCount: 120,
         maxPendingAge: const Duration(seconds: 5),
+        barragePoolMaxSize: 72,
+        pictureCacheMaxSize: 96,
+        textCacheMaxSize: 320,
         trackHeight: (danmakuFontSize.value * 1.55).clamp(24.0, 64.0).toDouble(),
         emojiSize: (danmakuFontSize.value * 1.3).clamp(16.0, 48.0).toDouble(),
       ),
@@ -847,10 +858,10 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
 
   void debounceListen(Function? func, [int delay = 1000]) {
     _debounceTimer?.cancel();
-    final timer = Timer(Duration(milliseconds: delay), () {
+    _debounceTimer = Timer(Duration(milliseconds: delay), () {
+      _debounceTimer = null;
       func?.call();
     });
-    _addTimer(timer);
   }
 
   // 全屏管理
@@ -867,10 +878,11 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     showLocked.value = false;
     stopHideController();
 
-    final timer = Timer(_controllerHideDelay, () {
+    _controllerTransitionTimer?.cancel();
+    _controllerTransitionTimer = Timer(_controllerHideDelay, () {
+      _controllerTransitionTimer = null;
       enableController();
     });
-    _addTimer(timer);
 
     GlobalPlayerState.to.isWindowFullscreen.value = false;
 
@@ -909,10 +921,11 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     showLocked.value = false;
     stopHideController();
 
-    final timer = Timer(_controllerHideDelay, () {
+    _controllerTransitionTimer?.cancel();
+    _controllerTransitionTimer = Timer(_controllerHideDelay, () {
+      _controllerTransitionTimer = null;
       enableController();
     });
-    _addTimer(timer);
 
     if (GlobalPlayerState.to.isWindowFullscreen.value) {
       _livePlayController.setNormalScreen();
@@ -968,6 +981,8 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   // 添加鼠标状态跟踪
   bool _isMouseOverController = false;
   bool _isMouseOverPlayer = false;
+  Timer? _defaultFullscreenTimer;
+  Timer? _controllerTransitionTimer;
   Timer? _debounceTimer;
   Timer? _hideVolumeTimer;
 }

@@ -1199,6 +1199,34 @@ class BottomActionBar extends StatelessWidget {
           ),
           child: LayoutBuilder(
             builder: (context, constraints) {
+              final fullscreen = GlobalPlayerState.to.fullscreenUI;
+              final compact = constraints.maxWidth < 760;
+              final left = _buildLeftActions(compact: fullscreen && compact);
+              final right = _buildRightActions(compact: fullscreen && compact);
+
+              if (fullscreen) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Row(
+                    children: [
+                      left,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.center,
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 420),
+                            child: FullscreenLocalDanmakuComposer(controller: controller),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      right,
+                    ],
+                  ),
+                );
+              }
+
               return SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 physics: const PureLiveScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
@@ -1206,57 +1234,157 @@ class BottomActionBar extends StatelessWidget {
                   constraints: BoxConstraints(minWidth: constraints.maxWidth),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        // 左侧组
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            PlayPauseButton(controller: controller),
-                            RefreshButton(controller: controller),
-                            FavoriteButton(controller: controller),
-                            if (SettingsService.to.danmaku.enableDanmakuDisplay.v) ...[
-                              DanmakuButton(controller: controller),
-                              SettingsButton(controller: controller),
-                            ],
-                          ],
-                        ),
-
-                        Obx(
-                          () => Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (GlobalPlayerState.to.isWindowFullscreen.value ||
-                                  GlobalPlayerState.to.isFullscreen.value) ...[
-                                if (!GlobalPlayerService.instance.player.isVerticalVideo.value)
-                                  ResolutionSelectorButton(controller: controller),
-                                if (!GlobalPlayerService.instance.player.isVerticalVideo.value)
-                                  LineSelectorButton(controller: controller),
-                              ],
-                              VideoFitSetting(controller: controller),
-                              if (Platform.isWindows) OverlayVolumeControl(controller: controller),
-                              if (Platform.isWindows)
-                                Obx(() {
-                                  return Row(
-                                    children: [
-                                      if (controller.supportWindowFull && !GlobalPlayerState.to.isFullscreen.value) ...[
-                                        ExpandWindowButton(controller: controller),
-                                      ],
-                                    ],
-                                  );
-                                }),
-                              if (!GlobalPlayerState.to.isWindowFullscreen.value) ExpandButton(controller: controller),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [left, right]),
                   ),
                 ),
               );
             },
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildLeftActions({required bool compact}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        PlayPauseButton(controller: controller),
+        if (!compact) RefreshButton(controller: controller),
+        if (!compact) FavoriteButton(controller: controller),
+        if (SettingsService.to.danmaku.enableDanmakuDisplay.v) ...[
+          DanmakuButton(controller: controller),
+          SettingsButton(controller: controller),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildRightActions({required bool compact}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (GlobalPlayerState.to.isWindowFullscreen.value || GlobalPlayerState.to.isFullscreen.value) ...[
+          if (!GlobalPlayerService.instance.player.isVerticalVideo.value)
+            ResolutionSelectorButton(controller: controller),
+          if (!compact && !GlobalPlayerService.instance.player.isVerticalVideo.value)
+            LineSelectorButton(controller: controller),
+        ],
+        if (!compact) VideoFitSetting(controller: controller),
+        if (Platform.isWindows) OverlayVolumeControl(controller: controller),
+        if (Platform.isWindows && controller.supportWindowFull && !GlobalPlayerState.to.isFullscreen.value)
+          ExpandWindowButton(controller: controller),
+        if (!GlobalPlayerState.to.isWindowFullscreen.value) ExpandButton(controller: controller),
+      ],
+    );
+  }
+}
+
+/// Room-local composer placed between the two fullscreen control groups.
+/// Pure Live does not impersonate a platform account here: the submitted line
+/// enters the local list and video barrage through the same ordered delivery
+/// queue used by portrait mode.
+class FullscreenLocalDanmakuComposer extends StatefulWidget {
+  const FullscreenLocalDanmakuComposer({super.key, required this.controller});
+
+  final VideoController controller;
+
+  @override
+  State<FullscreenLocalDanmakuComposer> createState() => _FullscreenLocalDanmakuComposerState();
+}
+
+class _FullscreenLocalDanmakuComposerState extends State<FullscreenLocalDanmakuComposer> {
+  final TextEditingController _textController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+
+  VideoController get controller => widget.controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() {
+      if (_focusNode.hasFocus) {
+        controller.stopHideController();
+      } else {
+        controller.enableController();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    _textController.dispose();
+    super.dispose();
+  }
+
+  void _send() {
+    final text = _textController.text.trim();
+    final live = controller.livePlayController;
+    final local = live.localInteractionController;
+    if (!local.enabled.v || text.isEmpty) return;
+    live.emitLocalMessage(
+      local.createChat(text, platform: live.site),
+      showAsDanmaku: local.showAsDanmaku.v,
+      delay: LivePlayController.localChatDeliveryDelay,
+    );
+    _textController.clear();
+    ToastUtil.show(i18n('local_message_queued'));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final local = controller.livePlayController.localInteractionController;
+      if (!local.enabled.v) {
+        return Center(
+          child: FilledButton.tonalIcon(
+            key: const ValueKey('fullscreen-local-danmaku-enable'),
+            style: FilledButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+              backgroundColor: Colors.black45,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => local.enabled.v = true,
+            icon: const Icon(Icons.auto_awesome_rounded, size: 17),
+            label: Text(i18n('local_interaction_enable'), maxLines: 1, overflow: TextOverflow.ellipsis),
+          ),
+        );
+      }
+
+      return SizedBox(
+        key: const ValueKey('fullscreen-local-danmaku-composer'),
+        height: 38,
+        child: TextField(
+          controller: _textController,
+          focusNode: _focusNode,
+          style: const TextStyle(color: Colors.white, fontSize: 13),
+          textInputAction: TextInputAction.send,
+          onSubmitted: (_) => _send(),
+          decoration: InputDecoration(
+            isDense: true,
+            filled: true,
+            fillColor: Colors.black54,
+            hintText: i18n('local_message_hint'),
+            hintStyle: const TextStyle(color: Colors.white60, fontSize: 13),
+            prefixIcon: const Icon(Icons.auto_awesome_rounded, color: Colors.white70, size: 18),
+            prefixIconConstraints: const BoxConstraints(minWidth: 36),
+            suffixIcon: IconButton(
+              key: const ValueKey('fullscreen-local-danmaku-send'),
+              tooltip: i18n('local_send_message'),
+              visualDensity: VisualDensity.compact,
+              onPressed: _send,
+              icon: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20),
+              borderSide: const BorderSide(color: Colors.white24),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(20),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.3),
+            ),
           ),
         ),
       );
@@ -1576,10 +1704,11 @@ class SettingsPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final isLandscape = size.width > size.height;
+    final compactLandscape = isLandscape && size.height < 620;
     final targetWidth = isLandscape
-        ? (size.width * 0.5).clamp(480.0, 640.0).toDouble()
+        ? (size.width * (compactLandscape ? 0.44 : 0.38)).clamp(340.0, compactLandscape ? 460.0 : 540.0).toDouble()
         : (size.width * 0.92).clamp(300.0, 560.0).toDouble();
-    final targetHeight = size.height * (isLandscape ? 0.9 : 0.84);
+    final targetHeight = isLandscape ? size.height - (compactLandscape ? 12 : 24) : size.height * 0.84;
     const panelColor = Color(0xFF1E1E1E);
 
     return Dialog(
@@ -1587,7 +1716,7 @@ class SettingsPanel extends StatelessWidget {
       backgroundColor: Colors.transparent,
       shadowColor: Colors.black54,
       elevation: 24,
-      insetPadding: EdgeInsets.symmetric(horizontal: isLandscape ? 24 : 12, vertical: 12),
+      insetPadding: EdgeInsets.symmetric(horizontal: isLandscape ? 6 : 12, vertical: isLandscape ? 6 : 12),
       child: Container(
         key: const ValueKey('fullscreen-danmaku-settings-panel'),
         width: targetWidth,
@@ -1595,14 +1724,16 @@ class SettingsPanel extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: panelColor.withValues(alpha: 0.98),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: isLandscape
+              ? const BorderRadius.horizontal(left: Radius.circular(18), right: Radius.circular(8))
+              : BorderRadius.circular(16),
           border: Border.all(color: Colors.white10, width: 0.8),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 10, 8, 10),
+              padding: EdgeInsets.fromLTRB(16, compactLandscape ? 6 : 10, 6, compactLandscape ? 6 : 10),
               child: Row(
                 children: [
                   Container(
@@ -1649,7 +1780,10 @@ class SettingsPanel extends StatelessWidget {
                   colorScheme: Theme.of(context).colorScheme
                       .copyWith(surface: panelColor, onSurface: Colors.white, onSurfaceVariant: Colors.white70),
                 ),
-                child: DanmakuSettingsContent(controller: controller, embedded: true),
+                // PiP has a dedicated settings/preview page. Keeping those
+                // controls out of the short landscape sheet leaves the live
+                // picture visible and avoids a confusing nested long form.
+                child: DanmakuSettingsContent(controller: controller, embedded: true, includePipSettings: false),
               ),
             ),
           ],

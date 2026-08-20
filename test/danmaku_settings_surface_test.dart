@@ -66,14 +66,14 @@ void main() {
     expect(find.byKey(const ValueKey('fullscreen-danmaku-settings-panel')), findsOneWidget);
     expect(find.byKey(const ValueKey('danmaku-settings-content-embedded')), findsOneWidget);
     expect(find.byKey(const ValueKey('danmaku-template-best')), findsOneWidget);
-    expect(find.text('PiP danmaku'), findsOneWidget);
+    expect(find.text('PiP danmaku'), findsNothing, reason: 'fullscreen keeps PiP controls on their dedicated page');
     await tester.tap(find.byKey(const ValueKey('danmaku-template-best')));
     await tester.pump();
     _expectBestPreset(fullscreen);
 
     final panelRect = tester.getRect(find.byKey(const ValueKey('fullscreen-danmaku-settings-panel')));
-    expect(panelRect.width, inInclusiveRange(480, 640));
-    expect(panelRect.right, greaterThan(950));
+    expect(panelRect.width, inInclusiveRange(340, 460));
+    expect(panelRect.right, greaterThan(990));
   });
 
   testWidgets('portrait and compact landscape keep one preset state without overflow', (tester) async {
@@ -112,7 +112,7 @@ void main() {
 
     await tester.drag(find.byKey(const ValueKey('danmaku-settings-content-embedded')), const Offset(0, -500));
     await tester.pumpAndSettle();
-    expect(find.text('PiP danmaku'), findsOneWidget);
+    expect(find.text('PiP danmaku'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }
