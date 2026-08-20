@@ -12,17 +12,17 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/liuchuancong/pure_live/releases/latest">
-    <img alt="Latest Release" src="https://img.shields.io/github/v/release/liuchuancong/pure_live">
+  <a href="https://github.com/wzgrx/pure_live/releases/latest">
+    <img alt="Latest Release" src="https://img.shields.io/github/v/release/wzgrx/pure_live">
   </a>
-  <a href="https://github.com/liuchuancong/pure_live/actions/workflows/feature-build.yml">
-    <img alt="Manual Build" src="https://github.com/liuchuancong/pure_live/actions/workflows/feature-build.yml/badge.svg">
+  <a href="https://github.com/wzgrx/pure_live/actions/workflows/feature-build.yml">
+    <img alt="Manual Build" src="https://github.com/wzgrx/pure_live/actions/workflows/feature-build.yml/badge.svg">
   </a>
   <a href="https://github.com/liuchuancong/pure_live">
     <img alt="Stars" src="https://img.shields.io/github/stars/liuchuancong/pure_live?color=yellow">
   </a>
-  <a href="https://github.com/liuchuancong/pure_live/releases">
-    <img alt="Downloads" src="https://img.shields.io/github/downloads/liuchuancong/pure_live/total?style=flat-square">
+  <a href="https://github.com/wzgrx/pure_live/releases">
+    <img alt="Downloads" src="https://img.shields.io/github/downloads/wzgrx/pure_live/total?style=flat-square">
   </a>
   <a href="LICENSE">
     <img alt="License" src="https://img.shields.io/github/license/liuchuancong/pure_live?color=blue">
@@ -33,9 +33,9 @@
 
 > 本维护分支持续同步 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)，并维护本机优先构建、正式签名、接口探测、Windows 数据迁移及高刷新率优化。
 
-- **最新稳定版**：[v2.2.0](https://github.com/liuchuancong/pure_live/releases/tag/v2.2.0)
-- **当前开发版本**：`2.2.0+4068`
-- **上游同步基线**：`liuchuancong/pure_live@2f553c8b`（2026-08-19）
+- **最新稳定版**：[v2.3.0](https://github.com/wzgrx/pure_live/releases/tag/v2.3.0)
+- **当前版本**：`2.3.0+4069`
+- **上游同步基线**：`liuchuancong/pure_live@be8fbab8`（2026-08-20）
 - **构建平台**：Android arm64、Windows x64、Linux x64、macOS Universal、iOS arm64 设备包
 
 ![Pure Live 界面预览](assets/images/banner.png)
@@ -87,6 +87,7 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 | [v2.1.5 阶段更新](docs/STAGE_UPDATE_2_1_5.md) | 本地弹幕同步、列表阅读、模板状态和 Windows 平滑滚动 |
 | [v2.1.6 Android 播放修复](docs/STAGE_UPDATE_2_1_6.md) | 音频/视频切换灰白画面与后台音频生命周期 |
 | [v2.2.0 阶段更新](docs/STAGE_UPDATE_2_2_0.md) | 播放恢复、音频模式、弹幕设置、Windows 多开与最终验证 |
+| [v2.3.0 稳定性更新](docs/STAGE_UPDATE_2_3_0.md) | PiP 返回弹幕恢复、启动刷新、横屏输入、长时间资源边界与验收状态 |
 | [参与贡献](CONTRIBUTING.md) | 分支、提交、测试和 Pull Request 要求 |
 | [安全策略](SECURITY.md) | 私密漏洞报告和签名材料管理 |
 | [版本说明](RELEASE_NOTES.md) | 当前版本变更与历史记录 |
@@ -347,11 +348,11 @@ Firebase 不是 Pure Live 使用的必要条件。
 
 ## 📥 下载
 
-前往 [GitHub Releases](https://github.com/liuchuancong/pure_live/releases/latest) 获取最新安装包，并使用同一 Release 的 `SHA256SUMS.txt` 校验完整性。
+前往 [维护分支 GitHub Releases](https://github.com/wzgrx/pure_live/releases/latest) 获取最新安装包，并使用同一 Release 的 `SHA256SUMS.txt` 校验完整性。
 
 ### Android
 
-v2.2.0 优先提供 `arm64-v8a`，适用于当前主流 64 位 ARM 手机和平板。更新页读取版本清单中的实际 ABI 列表，不会显示本轮没有发布的下载链接。
+v2.3.0 优先提供 `arm64-v8a`，适用于当前主流 64 位 ARM 手机和平板。更新页读取版本清单中的实际 ABI 列表，不会显示本轮没有发布的下载链接。
 
 Android 始终使用正式包名：
 
@@ -417,7 +418,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
 PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 ```
 
-当前 v2.2.0 源码已通过设备 UI 映射校验、Built-in Kotlin 审计、Flutter Analyze、151 项单元/Widget 测试与 26/26 平台公开接口探测。普通提交不会自动消耗全平台 Actions 配额；Linux/macOS/iOS 使用显式阶段构建，再由校验工作流汇总正式 Release。完整流程见 [构建与发布](docs/BUILD_AND_RELEASE.md)。
+当前 v2.3.0 源码已通过设备 UI 映射校验、Built-in Kotlin 审计、Flutter Analyze、154 项单元/Widget 测试与 26/26 平台公开接口探测；Windows x64 release 已完成真实热门页、封面、播放和弹幕烟雾回归。Android arm64 本地包已编译，系统画中画返回场景需在连接真机后按阶段文档的清单复核。普通提交不会自动消耗全平台 Actions 配额；Linux/macOS/iOS 使用显式阶段构建，再由校验工作流汇总正式 Release。完整流程见 [构建与发布](docs/BUILD_AND_RELEASE.md)。
 
 ## 🤝 参与开发
 
