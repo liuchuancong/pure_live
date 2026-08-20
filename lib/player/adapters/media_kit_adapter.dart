@@ -111,6 +111,18 @@ class MediaKitAdapter implements UnifiedPlayer {
         // first decoded frame while retaining enough data for codec detection.
         await native.setProperty('demuxer-lavf-analyzeduration', '2');
 
+        // mpv's generic defaults keep a large seek-oriented forward/backward
+        // cache. Live rooms are not meaningfully seekable, so retaining that
+        // much compressed data only makes long Windows/Android sessions appear
+        // to grow indefinitely. 64 MiB still covers a generous burst on a
+        // high-bitrate stream while the small back-cache preserves decoder
+        // continuity across short track/output transitions.
+        await native.setProperty('demuxer-max-bytes', '67108864');
+
+        await native.setProperty('demuxer-max-back-bytes', '8388608');
+
+        await native.setProperty('demuxer-readahead-secs', '3');
+
         await native.setProperty('network-timeout', '15');
 
         if (SettingsService.to.player.customPlayerOutput.v) {

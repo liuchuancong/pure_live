@@ -1,21 +1,27 @@
 import 'dart:ui' as ui;
+import 'dart:collection';
 import 'package:flame_barrage/flame_barrage.dart';
 
 class MixedLayout {
-  MixedLayout({required this.atlas, int maxTextCacheSize = 1000}) : _textCache = TextCache(maxSize: maxTextCacheSize);
+  MixedLayout({required this.atlas, int maxTextCacheSize = 1000})
+    : _maxLayoutCacheSize = maxTextCacheSize.clamp(1, 10000).toInt(),
+      _textCache = TextCache(maxSize: maxTextCacheSize);
 
   final EmojiAtlas atlas;
   TextCache _textCache;
-  final Map<int, LayoutResult> _cache = {};
+  final LinkedHashMap<int, LayoutResult> _cache = LinkedHashMap<int, LayoutResult>();
+  int _maxLayoutCacheSize;
   final List<LayoutSpan> _reusableSpans = [];
 
   int get cacheCount => _cache.length;
 
   void updateMaxTextCacheSize(int newSize) {
-    if (_textCache.maxSize == newSize) return;
-    final newCache = TextCache(maxSize: newSize);
+    final normalizedSize = newSize.clamp(1, 10000).toInt();
+    if (_textCache.maxSize == normalizedSize && _maxLayoutCacheSize == normalizedSize) return;
+    final newCache = TextCache(maxSize: normalizedSize);
     _textCache.clear();
     _textCache = newCache;
+    _maxLayoutCacheSize = normalizedSize;
     _cache.clear();
   }
 
@@ -29,10 +35,15 @@ class MixedLayout {
 
     final cached = _cache[combinedHash];
     if (cached != null) {
+      _cache.remove(combinedHash);
+      _cache[combinedHash] = cached;
       return cached;
     }
 
     final result = _layoutInternal(fragments, item, config, combinedHash);
+    while (_cache.length >= _maxLayoutCacheSize) {
+      _cache.remove(_cache.keys.first);
+    }
     _cache[combinedHash] = result;
 
     return result;

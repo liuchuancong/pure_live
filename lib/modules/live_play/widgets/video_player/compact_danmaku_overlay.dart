@@ -63,8 +63,13 @@ class CompactDanmakuOverlay extends StatelessWidget {
                   maxPendingAge: const Duration(seconds: 3),
                   emitInterval: emitInterval,
                   overlapSafeGap: (fontSize * 1.5).clamp(16.0, 40.0).toDouble(),
-                  barragePoolMaxSize: 1000,
-                  pictureCacheMaxSize: 300,
+                  // PiP only exposes a handful of tracks. Keeping desktop-size
+                  // pools here retained hundreds of paragraphs/pictures after
+                  // an overnight compact session and made repeated PiP cycles
+                  // look like a leak on both Windows and Android.
+                  barragePoolMaxSize: 32,
+                  pictureCacheMaxSize: 48,
+                  textCacheMaxSize: 160,
                 ),
                 emojiAtlas: EmojiAtlas.instance,
               ),
