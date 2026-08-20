@@ -225,7 +225,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                 onChanged: (String? key) {
                   if (key != null && PlayerConsts.engines.containsKey(key)) {
                     SettingsService.to.player.videoPlayerKey.v = key;
-                    GlobalPlayerService.instance.playerManager.switchEngine(PlayerConsts.engines[key]!, isManual: true);
+                    GlobalPlayerService.instance.player.switchEngine(PlayerConsts.engines[key]!, isManual: true);
                     Navigator.of(context).pop();
                   }
                 },
@@ -240,7 +240,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                       onTap: () {
                         if (PlayerConsts.engines.containsKey(itemKey)) {
                           SettingsService.to.player.videoPlayerKey.v = itemKey;
-                          GlobalPlayerService.instance.playerManager.switchEngine(
+                          GlobalPlayerService.instance.player.switchEngine(
                             PlayerConsts.engines[itemKey]!,
                             isManual: true,
                           );

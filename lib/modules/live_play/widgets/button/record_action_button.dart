@@ -106,19 +106,12 @@ class RecordActionButton extends StatelessWidget {
     switch (action) {
       case "start":
         if (exists) {
-          // 已经有任务，直接开始
           recorderController.forceStartTask(task);
         } else {
-          // 没有任务：
-          // 1. 先创建任务
-          // 2. 创建完成后找到任务
-          // 3. 立即开始录制
           await recorderController.addTask(room: room);
-
           final newTask = recorderController.tasks.firstWhereOrNull(
             (t) => t.platform == room.platform && t.roomId == room.roomId,
           );
-
           if (newTask != null) {
             recorderController.forceStartTask(newTask);
           }
@@ -199,7 +192,7 @@ class RecordActionButton extends StatelessWidget {
                 title: i18n("go_record_center"),
                 color: theme.colorScheme.primary,
                 onTap: () {
-                  Get.toNamed(RoutePath.kRecordPage);
+                  Navigator.pop(dialogContext, "page");
                 },
               ),
 

@@ -9,7 +9,7 @@ class LivePlayPage extends GetView<LivePlayController> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final manager = GlobalPlayerService.instance.playerManager;
+      final manager = GlobalPlayerService.instance.player;
       final isInPip = manager.isInPip.value || manager.isPipPreparing.value;
 
       final state = controller.state.value;

@@ -121,8 +121,8 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                     // tap on a paused surface keeps the historical resume
                     // behavior as well.
                     controller.enableController();
-                    if (!GlobalPlayerService.instance.playerManager.isPlayingNow) {
-                      GlobalPlayerService.instance.playerManager.togglePlayPause();
+                    if (!GlobalPlayerService.instance.player.isPlayingNow) {
+                      GlobalPlayerService.instance.player.togglePlayPause();
                     }
                   },
                   onLongPressStart: (details) {
@@ -586,7 +586,7 @@ class PIPButton extends StatelessWidget {
       tooltip: i18n('float_window_play'),
       color: Colors.white,
       onPressed: () {
-        GlobalPlayerService.instance.playerManager.enablePip();
+        GlobalPlayerService.instance.player.enablePip();
       },
       icon: const Icon(CustomIcons.float_window),
     );
@@ -1230,9 +1230,9 @@ class BottomActionBar extends StatelessWidget {
                             children: [
                               if (GlobalPlayerState.to.isWindowFullscreen.value ||
                                   GlobalPlayerState.to.isFullscreen.value) ...[
-                                if (!GlobalPlayerService.instance.playerManager.isVerticalVideo.value)
+                                if (!GlobalPlayerService.instance.player.isVerticalVideo.value)
                                   ResolutionSelectorButton(controller: controller),
-                                if (!GlobalPlayerService.instance.playerManager.isVerticalVideo.value)
+                                if (!GlobalPlayerService.instance.player.isVerticalVideo.value)
                                   LineSelectorButton(controller: controller),
                               ],
                               VideoFitSetting(controller: controller),
@@ -1271,7 +1271,7 @@ class PlayPauseButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final playerManager = GlobalPlayerService.instance.playerManager;
+    final playerManager = GlobalPlayerService.instance.player;
 
     return GestureDetector(
       onTap: () => playerManager.togglePlayPause(),

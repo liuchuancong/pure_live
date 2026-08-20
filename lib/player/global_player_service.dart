@@ -21,7 +21,7 @@ class GlobalPlayerService {
   static final GlobalPlayerService instance = GlobalPlayerService._();
 
   late final PlayerManager playerManager;
-
+  PlayerManager get player => playerManager;
   bool _initialized = false;
   Future<void>? _initializationFuture;
 

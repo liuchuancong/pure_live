@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller_panel.dart';
-import 'package:pure_live/player/core/live_audio_service.dart';
 
 class VideoPlayer extends StatefulWidget {
   final VideoController controller;
@@ -30,7 +30,7 @@ class _VideoPlayerState extends State<VideoPlayer> with WidgetsBindingObserver {
   Widget _buildVideo() {
     return Obx(() {
       final audioOnly = controller.audioOnlyState.value;
-      return GlobalPlayerService.instance.playerManager.getVideoWidget(
+      return GlobalPlayerService.instance.player.getVideoWidget(
         SettingsService.to.player.videoFitIndex.v,
         fitList: SettingsService.to.player.videoFitArray,
         trackPipSource: true,
@@ -48,7 +48,7 @@ class _VideoPlayerState extends State<VideoPlayer> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    final player = GlobalPlayerService.instance.playerManager;
+    final player = GlobalPlayerService.instance.player;
 
     if (state == AppLifecycleState.paused) {
       // A short foreground-only warm window makes a manual audio/video toggle

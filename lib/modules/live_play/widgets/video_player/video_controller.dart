@@ -330,7 +330,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     LivePlayController? livePlayController,
   }) : audioOnlyState = isAudioOnly.obs,
        _battery = battery ?? Battery(),
-       _playerManager = playerManager ?? GlobalPlayerService.instance.playerManager,
+       _playerManager = playerManager ?? GlobalPlayerService.instance.player,
        _settingsService = settingsService ?? SettingsService.to,
        _dbService = dbService ?? Get.find<DbService>(),
        _livePlayController = livePlayController ?? Get.find<LivePlayController>() {

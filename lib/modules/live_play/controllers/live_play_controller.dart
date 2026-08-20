@@ -81,7 +81,7 @@ class LivePlayController extends GetxController
     currentSite = Sites.of(site);
     _localMessageDeliveryQueue = LocalMessageDeliveryQueue(onDeliver: _deliverLocalMessage);
 
-    final manager = GlobalPlayerService.instance.playerManager;
+    final manager = GlobalPlayerService.instance.player;
     _reentrySession = manager.consumeRoomSessionReentry(room);
     final resumesCurrentSession = _reentrySession != null;
     final autoStartAsmr = Platform.isAndroid && SettingsService.to.app.enableAsmrSleepMode.v;
@@ -338,7 +338,7 @@ class LivePlayController extends GetxController
 
   Future<void> _onRoomPlaybackTimerEnded() async {
     updateUI(closeTimeFlag: false);
-    await GlobalPlayerService.instance.playerManager.pause();
+    await GlobalPlayerService.instance.player.pause();
     await LiveAudioService.stop();
     ToastUtil.show(i18n('room_playback_timer_finished'));
   }
@@ -627,7 +627,7 @@ class LivePlayController extends GetxController
       await danmakuController.stopDanmaku();
     }
 
-    final manager = GlobalPlayerService.instance.playerManager;
+    final manager = GlobalPlayerService.instance.player;
     await manager.close();
 
     updateRoom(success: false, isLiving: true);
@@ -662,7 +662,7 @@ class LivePlayController extends GetxController
   Future<void> setResolution(ReloadDataType reloadDataType, int qualityIndex, int lineIndex) async {
     invalidateRoomLoad();
     playerController.invalidateLoad();
-    await GlobalPlayerService.instance.playerManager.close();
+    await GlobalPlayerService.instance.player.close();
     await playerController.destroyPlayer();
 
     updatePlayer(currentQuality: qualityIndex, currentLineIndex: lineIndex);
@@ -755,7 +755,7 @@ class LivePlayController extends GetxController
 
   void prepareAppFloating({Future<void>? routeUnmounted}) {
     _floatingResourcesReleased = false;
-    final manager = GlobalPlayerService.instance.playerManager;
+    final manager = GlobalPlayerService.instance.player;
     final current = state.value;
     final detail = current.room.detail;
     manager.prepareAppFloating(
@@ -828,7 +828,7 @@ class LivePlayController extends GetxController
       BackButtonInterceptor.removeByName("live_play_page");
     }
 
-    final keepForAppFloating = GlobalPlayerService.instance.playerManager.shouldKeepDanmakuForAppFloating;
+    final keepForAppFloating = GlobalPlayerService.instance.player.shouldKeepDanmakuForAppFloating;
     if (!keepForAppFloating) {
       unawaited(disposeAppFloatingResources());
       _releaseChildControllers();

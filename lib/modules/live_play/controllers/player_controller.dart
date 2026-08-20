@@ -6,12 +6,12 @@ import 'package:pure_live/core/site/bilibili_site.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
+import 'package:pure_live/player/core/player_manager.dart';
 import 'package:pure_live/player/models/player_exception.dart';
 import 'package:pure_live/player/models/player_error_type.dart';
+import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/modules/live_play/states/live_play_state.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
-import 'package:pure_live/common/utils/latest_async_value_queue.dart';
-import 'package:pure_live/player/core/player_manager.dart';
 
 abstract interface class PlayerSessionHost {
   Rx<LivePlayState> get state;
@@ -126,7 +126,7 @@ class PlayerController extends GetxController {
   /// controller has already been disposed; only the global native player and
   /// immutable session metadata cross the route boundary.
   Future<VideoController?> attachCurrentSession(RoomSessionSnapshot session) async {
-    final manager = GlobalPlayerService.instance.playerManager;
+    final manager = GlobalPlayerService.instance.player;
     if (_main.isClosed || manager.currentPlayer == null || manager.currentFloatRoom != session.room) return null;
 
     final qualities = session.qualities.isEmpty

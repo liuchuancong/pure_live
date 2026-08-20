@@ -16,7 +16,7 @@ class LivePlayContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final manager = GlobalPlayerService.instance.playerManager;
+    final manager = GlobalPlayerService.instance.player;
 
     if (isInPip) {
       return Theme(

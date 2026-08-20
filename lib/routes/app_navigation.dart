@@ -1,6 +1,6 @@
+import 'dart:io';
 import 'dart:async';
 import 'dart:developer';
-import 'dart:io';
 
 import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
@@ -34,7 +34,7 @@ class AppNavigator {
         : liveRoom.copyWith(platform: platform, roomId: roomId);
     _openingLiveRoom = true;
     try {
-      final manager = GlobalPlayerService.instance.playerManager;
+      final manager = GlobalPlayerService.instance.player;
       if (manager.isAppFloatingActive) {
         if (manager.currentFloatRoom == normalizedRoom) {
           manager.prepareRoomSessionReentry(normalizedRoom);
@@ -92,7 +92,7 @@ class BackButtonObserver extends RouteObserver<PageRoute<dynamic>> {
         // 更新房间状态
         livePlayController.updateRoom(success: false);
 
-        final manager = GlobalPlayerService.instance.playerManager;
+        final manager = GlobalPlayerService.instance.player;
         if (SettingsService.to.player.floatPlay.v) {
           // Route.completed fires after the reverse transition and overlay
           // entries are removed. A fixed delay raced on high-refresh devices
@@ -131,7 +131,7 @@ class BackButtonObserver extends RouteObserver<PageRoute<dynamic>> {
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     super.didPush(route, previousRoute);
     if (route.settings.name == RoutePath.kLivePlay) {
-      final manager = GlobalPlayerService.instance.playerManager;
+      final manager = GlobalPlayerService.instance.player;
       unawaited(manager.closeAppFloating());
     }
   }
