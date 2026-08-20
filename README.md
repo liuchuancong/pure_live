@@ -35,7 +35,7 @@
 
 - **最新稳定版**：[v2.3.0](https://github.com/wzgrx/pure_live/releases/tag/v2.3.0)
 - **当前版本**：`2.3.0+4069`
-- **上游同步基线**：`liuchuancong/pure_live@be8fbab8`（2026-08-20）
+- **v2.3.0 上游源码基线**：`liuchuancong/pure_live@6c95339b`；功能提交已由上游 [PR #762](https://github.com/liuchuancong/pure_live/pull/762) 合并
 - **构建平台**：Android arm64、Windows x64、Linux x64、macOS Universal、iOS arm64 设备包
 
 ![Pure Live 界面预览](assets/images/banner.png)
@@ -418,7 +418,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
 PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 ```
 
-当前 v2.3.0 源码已通过设备 UI 映射校验、Built-in Kotlin 审计、Flutter Analyze、154 项单元/Widget 测试与 26/26 平台公开接口探测；Windows x64 release 已完成真实热门页、封面、播放和弹幕烟雾回归。Android arm64 本地包已编译，系统画中画返回场景需在连接真机后按阶段文档的清单复核。普通提交不会自动消耗全平台 Actions 配额；Linux/macOS/iOS 使用显式阶段构建，再由校验工作流汇总正式 Release。完整流程见 [构建与发布](docs/BUILD_AND_RELEASE.md)。
+当前 v2.3.0 源码已通过设备 UI 映射校验、Built-in Kotlin 审计、Flutter Analyze、154 项单元/Widget 测试与 26/26 平台公开接口探测；Windows x64 release 已完成真实热门页、封面、2K60 播放、实时弹幕和资源采样。Android arm64 使用持久发布证书正式签名，包名、版本、ABI 与校验和均已核对；Linux x64、macOS universal、iOS arm64 也已从同一提交构建并汇总到 [v2.3.0 Release](https://github.com/wzgrx/pure_live/releases/tag/v2.3.0)。系统画中画返回场景仍需在连接真机后按阶段文档复核。完整流程见 [构建与发布](docs/BUILD_AND_RELEASE.md)。
 
 ## 🤝 参与开发
 

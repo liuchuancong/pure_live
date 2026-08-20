@@ -1,6 +1,6 @@
 # Pure Live v2.3.0
 
-v2.3.0 聚焦系统画中画返回后的弹幕会话、启动数据新鲜度、横屏操作完整性，以及 Windows/Android 长时间播放的资源边界；源码同步至上游 `be8fbab8`。
+v2.3.0 聚焦系统画中画返回后的弹幕会话、启动数据新鲜度、横屏操作完整性，以及 Windows/Android 长时间播放的资源边界；发布源码基于上游 `6c95339b`，功能提交已由上游 PR #762 合并。
 
 ## 弹幕生命周期
 
@@ -27,7 +27,8 @@ v2.3.0 聚焦系统画中画返回后的弹幕会话、启动数据新鲜度、�
 
 - Flutter 3.47.0 / Dart 3.13.0；Built-in Kotlin 审计和 Flutter Analyze 零问题。
 - 154 项单元/Widget 测试及 26/26 平台公开接口探测通过。
-- Windows x64 release 已完成热门平台切换、封面回填、2K60 播放与实时弹幕烟雾验证；Android arm64 已本机构建，PiP 返回验收等待连接真机。
+- Windows x64 release 已完成热门平台切换、封面回填、2K60 播放、实时弹幕与资源采样；Android arm64 使用持久发布证书正式签名并核对包名、ABI、版本和校验和。
+- Linux x64、macOS universal、iOS arm64 与 Windows/Android 均来自提交 `5166a9c2`，已汇总发布完整校验文件；PiP 返回验收等待连接真机。
 
 ---
 

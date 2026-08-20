@@ -1,6 +1,6 @@
 # Pure Live v2.3.0 稳定性更新
 
-v2.3.0 同步上游 `liuchuancong/pure_live@be8fbab8`，重点处理 Android 系统画中画返回后弹幕列表停住、启动仍展示上次开播状态、横屏弹幕设置/输入缺口，以及 Windows 和 Android 长时间播放的资源增长。正式版本号为 `2.3.0+4069`，Android 正式包名保持 `com.mystyle.purelive`。
+v2.3.0 发布源码基于上游 `liuchuancong/pure_live@6c95339b`，重点处理 Android 系统画中画返回后弹幕列表停住、启动仍展示上次开播状态、横屏弹幕设置/输入缺口，以及 Windows 和 Android 长时间播放的资源增长。正式版本号为 `2.3.0+4069`，Android 正式包名保持 `com.mystyle.purelive`；功能提交已由上游 PR #762 合并。
 
 ## 问题与修复落点
 
@@ -32,9 +32,11 @@ v2.3.0 同步上游 `liuchuancong/pure_live@be8fbab8`，重点处理 Android 系
 | Built-in Kotlin 审计 | 10 个 Gradle 文件通过 |
 | 设备 UI 映射 | 2 个设备档案、82 个坐标、17 个序列通过结构校验 |
 | 平台接口探测 | 26/26；覆盖 Bilibili、Douyu、Huya、Kuaishou、Douyin、CC、Twitch、SOOP |
-| Android 构建 | arm64-v8a release 编译通过；本机缺少外部发布密钥时产物明确标记 `debug-signed` |
+| Android 构建 | arm64-v8a 正式签名包通过；`com.mystyle.purelive`、`versionName=2.3.0`、`versionCode=6069`、仅 `arm64-v8a`，APK Signature Scheme v2 校验通过 |
 | Windows 构建 | x64 portable ZIP 与可选目录 EXE 安装器编译通过 |
 | Windows 运行烟雾 | 热门页平台切换、封面回填、2K60 直播、画面弹幕与列表弹幕持续更新，窗口保持响应 |
+| Windows 资源采样 | 5 分钟连续播放始终 `Responding=true`；工作集 438.1→519.8 MiB，private bytes 峰值后回落至 996.0 MiB，handles 1774→1756、threads 250→245；最终提交另做 60 秒播放复核 |
+| 全平台阶段构建 | Linux x64、macOS universal、iOS arm64 unsigned app 成功；与 Android/Windows 一并由发布工作流核对同一源码提交 `5166a9c2` 和 SHA-256 |
 
 本轮未连接 ADB 设备，因此 Android 的“进入系统画中画 → 播放 → 返回应用 → 全屏/竖屏列表继续刷新”仍属于发布前设备验收项；自动化测试已经覆盖同房间强制重连、缓存边界和紧凑横屏设置布局。
 
