@@ -2,9 +2,6 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:dio/dio.dart';
-
-import 'dart:developer' as developer;
-
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/model/live_category.dart';
