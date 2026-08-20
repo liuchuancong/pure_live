@@ -148,6 +148,7 @@ class RecordActionButton extends StatelessWidget {
         break;
 
       case "page":
+        // to 会崩溃 但是注释掉就可以 待解决
         Get.toNamed(RoutePath.kRecordPage);
         break;
     }
@@ -266,8 +267,7 @@ class RecordActionButton extends StatelessWidget {
                 color: theme.colorScheme.primary,
                 enabled: true,
                 onTap: () {
-                  // 貌似Video有问题无法进行页面跳转 否则会崩溃 但是注释掉就可以 待解决
-                  Get.toNamed(RoutePath.kRecordPage);
+                  Navigator.pop(dialogContext, "page");
                 },
               ),
               _ActionTile(
