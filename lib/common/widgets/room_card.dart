@@ -886,29 +886,47 @@ class CoverMetricBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const shadow = Shadow(color: Color(0xCC000000), blurRadius: 4, offset: Offset(0, 1));
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    // Keep the background mostly neutral so the badge works on both bright
+    // and dark cover images. The theme primary color is used as the accent.
+    final backgroundColor = theme.brightness == Brightness.dark
+        ? Colors.black.withValues(alpha: 0.58)
+        : Colors.black.withValues(alpha: 0.48);
+
+    final foregroundColor = Colors.white;
+
     return Tooltip(
       message: semanticLabel,
       child: Semantics(
         label: semanticLabel,
         container: true,
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: dense ? 2 : 3, vertical: 2),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: dense ? 6 : 8, vertical: dense ? 4 : 5),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(dense ? 10 : 12),
+            border: Border.all(color: theme.primaryColor.withValues(alpha: 0.1), width: 0.6),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.28), blurRadius: 5, offset: const Offset(0, 2)),
+            ],
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: Colors.white, size: dense ? 16 : 18, shadows: const [shadow]),
-              const SizedBox(width: 4),
+              Icon(icon, color: foregroundColor, size: dense ? 14 : 16),
+              SizedBox(width: dense ? 4 : 5),
               Text(
                 value,
                 maxLines: 1,
                 overflow: TextOverflow.fade,
                 softWrap: false,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  fontSize: dense ? 12 : 13,
-                  color: Colors.white,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontSize: dense ? 11 : 12,
+                  color: foregroundColor,
                   fontWeight: FontWeight.w700,
-                  shadows: const [shadow],
+                  letterSpacing: 0.1,
                 ),
               ),
             ],
