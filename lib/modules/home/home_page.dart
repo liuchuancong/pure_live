@@ -1,20 +1,20 @@
 import 'dart:io';
 import 'dart:async';
-
 import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:move_to_desktop/move_to_desktop.dart';
+import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:pure_live/modules/areas/areas_page.dart';
 import 'package:pure_live/modules/home/mobile_view.dart';
 import 'package:pure_live/modules/home/tablet_view.dart';
+import 'package:pure_live/common/global/initialized.dart';
+import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/modules/popular/popular_page.dart';
 import 'package:pure_live/modules/favorite/favorite_page.dart';
 import 'package:pure_live/modules/about/widgets/version_dialog.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_page.dart';
-import 'package:pure_live/common/global/initialized.dart';
-import 'package:pure_live/routes/app_navigation.dart';
-import 'package:pure_live/player/models/player_engine.dart';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -61,7 +61,9 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
         // MyApp prewarms the global player asynchronously. Reusing that same
         // initialization Future prevents a command-line room from racing a
         // second PlayerManager into existence on fast desktop startup.
-        await GlobalPlayerService.instance.initialize(defaultEngine: PlayerEngine.mediaKit);
+        if (!GlobalPlayerService.instance.initialized) {
+          await GlobalPlayerService.instance.initialize(defaultEngine: PlayerEngine.mediaKit);
+        }
         if (!mounted) return;
         await AppNavigator.toLiveRoomDetail(liveRoom: initialRoom);
       }
@@ -77,16 +79,28 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
     favoriteController.tabBottomIndex.addListener(_favoriteTabListener);
 
     _savedMenuWorker = ever(SettingsService.to.app.savedMenuIds, (v) {
-      if (mounted) {
-        final List<String> value = List<String>.from(v as List);
-        if (value.isNotEmpty) {
-          final currentMenuId = HomeMenu.values[_selectedIndex].id;
-          if (!value.contains(currentMenuId)) {
-            final firstMenu = HomeMenu.fromId(value.first);
-            if (firstMenu != null) {
-              onDestinationSelected(firstMenu.index);
-            }
-          }
+      if (!mounted) {
+        return;
+      }
+      List<String> value = List<String>.from(v as List);
+      final bool isTablet = Get.width > 680;
+      if (isTablet) {
+        value = value.where((id) => id != HomeMenu.record.id).toList();
+      }
+      if (value.isEmpty) {
+        setState(() {
+          _selectedIndex = -1;
+        });
+        favoriteController.tabBottomIndex.value = -1;
+        return;
+      }
+      final currentMenuId = _selectedIndex >= 0 && _selectedIndex < HomeMenu.values.length
+          ? HomeMenu.values[_selectedIndex].id
+          : null;
+      if (currentMenuId == null || !value.contains(currentMenuId)) {
+        final firstMenu = HomeMenu.fromId(value.first);
+        if (firstMenu != null) {
+          onDestinationSelected(firstMenu.index);
         }
       }
     });
@@ -112,7 +126,11 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
   }
 
   void _syncInitialIndex() {
-    final activeIds = SettingsService.to.app.savedMenuIds.v;
+    List<String> activeIds = SettingsService.to.app.savedMenuIds.v;
+    final bool isTablet = Get.width > 680;
+    if (isTablet) {
+      activeIds = activeIds.where((id) => id != HomeMenu.record.id).toList();
+    }
     if (activeIds.isNotEmpty) {
       final firstMenu = HomeMenu.fromId(activeIds.first);
       if (firstMenu != null) {
@@ -185,22 +203,30 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
 
           return Obx(() {
             final activeMenuIds = List<String>.from(SettingsService.to.app.savedMenuIds.v);
+            List<String> tabletActiveMenuIds = List.from(activeMenuIds);
             if (isTablet) {
-              activeMenuIds.remove(HomeMenu.record.id);
+              tabletActiveMenuIds.remove(HomeMenu.record.id);
             }
-            if (activeMenuIds.isEmpty) return const Scaffold();
 
             int adjustedIndex = _selectedIndex;
-            if (adjustedIndex >= HomeMenu.values.length ||
-                (isTablet && HomeMenu.values[adjustedIndex] == HomeMenu.record)) {
-              final fallbackMenu = HomeMenu.fromId(activeMenuIds.first);
-              if (fallbackMenu != null) {
-                adjustedIndex = fallbackMenu.index;
-              }
-            }
+            Widget currentWidget = const SizedBox.shrink();
 
-            final currentMenu = HomeMenu.values[adjustedIndex];
-            final currentWidget = _pageMap[currentMenu] ?? const SizedBox.shrink();
+            if (tabletActiveMenuIds.isNotEmpty) {
+              if (adjustedIndex < 0 ||
+                  adjustedIndex >= HomeMenu.values.length ||
+                  (isTablet && HomeMenu.values[adjustedIndex] == HomeMenu.record)) {
+                final fallbackMenu = HomeMenu.fromId(tabletActiveMenuIds.first);
+                if (fallbackMenu != null) {
+                  adjustedIndex = fallbackMenu.index;
+                }
+              }
+              if (adjustedIndex >= 0 && adjustedIndex < HomeMenu.values.length) {
+                final currentMenu = HomeMenu.values[adjustedIndex];
+                currentWidget = _pageMap[currentMenu] ?? const SizedBox.shrink();
+              }
+            } else {
+              adjustedIndex = -1;
+            }
 
             return !isTablet
                 ? HomeMobileView(
@@ -212,7 +238,8 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
                 : HomeTabletView(
                     body: currentWidget,
                     index: adjustedIndex,
-                    activeMenuIds: activeMenuIds,
+                    activeMenuIds: tabletActiveMenuIds,
+                    showRecord: activeMenuIds.contains(HomeMenu.record.id),
                     onDestinationSelected: onDestinationSelected,
                   );
           });

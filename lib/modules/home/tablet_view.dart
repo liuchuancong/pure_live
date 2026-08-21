@@ -6,6 +6,7 @@ class HomeTabletView extends StatelessWidget {
   final Widget body;
   final int index;
   final List<String> activeMenuIds;
+  final bool showRecord;
   final void Function(int) onDestinationSelected;
 
   const HomeTabletView({
@@ -13,6 +14,7 @@ class HomeTabletView extends StatelessWidget {
     required this.body,
     required this.index,
     required this.activeMenuIds,
+    required this.showRecord,
     required this.onDestinationSelected,
   });
 
@@ -71,37 +73,38 @@ class HomeTabletView extends StatelessWidget {
               }
             }
 
-            int activeSelectedIndex = virtualToRealMap.indexOf(index);
-            if (activeSelectedIndex == -1) {
-              activeSelectedIndex = 0;
+            int? activeSelectedIndex;
+            final pos = virtualToRealMap.indexOf(index);
+            if (pos >= 0 && pos < destinations.length) {
+              activeSelectedIndex = pos;
+            } else {
+              activeSelectedIndex = null;
             }
-
-            final bool isRailVisible = destinations.length > 1;
 
             return Row(
               children: [
-                if (isRailVisible) ...[
-                  NavigationRail(
-                    groupAlignment: 0.9,
-                    labelType: NavigationRailLabelType.all,
-                    leading: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Padding(padding: EdgeInsets.all(12), child: MenuButton()),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 0, bottom: 12, left: 12, right: 12),
-                          child: IconButton(
-                            onPressed: () => Get.toNamed(RoutePath.kToolbox),
-                            icon: const Icon(Remix.link),
-                          ),
+                NavigationRail(
+                  groupAlignment: 0.9,
+                  labelType: NavigationRailLabelType.all,
+                  leading: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Padding(padding: EdgeInsets.all(12), child: MenuButton()),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 0, bottom: 12, left: 12, right: 12),
+                        child: IconButton(
+                          onPressed: () => Get.toNamed(RoutePath.kToolbox),
+                          icon: const Icon(Remix.link),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 0, bottom: 12, left: 12, right: 12),
-                          child: IconButton(
-                            onPressed: () => Get.toNamed(RoutePath.kSearch),
-                            icon: const Icon(CustomIcons.search),
-                          ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 0, bottom: 12, left: 12, right: 12),
+                        child: IconButton(
+                          onPressed: () => Get.toNamed(RoutePath.kSearch),
+                          icon: const Icon(CustomIcons.search),
                         ),
+                      ),
+                      if (showRecord)
                         Padding(
                           padding: const EdgeInsets.only(top: 0, bottom: 12, left: 12, right: 12),
                           child: IconButton(
@@ -109,19 +112,27 @@ class HomeTabletView extends StatelessWidget {
                             icon: const Icon(Remix.download_2_line),
                           ),
                         ),
-                      ],
-                    ),
-                    destinations: destinations,
-                    selectedIndex: activeSelectedIndex,
-                    onDestinationSelected: (int virtualIndex) {
-                      if (virtualIndex < virtualToRealMap.length) {
-                        onDestinationSelected(virtualToRealMap[virtualIndex]);
-                      }
-                    },
+                    ],
                   ),
-                  const VerticalDivider(width: 1),
-                ],
-                Expanded(child: body),
+                  destinations: destinations,
+                  selectedIndex: activeSelectedIndex,
+                  onDestinationSelected: (int virtualIndex) {
+                    if (virtualIndex >= 0 && virtualIndex < virtualToRealMap.length) {
+                      onDestinationSelected(virtualToRealMap[virtualIndex]);
+                    }
+                  },
+                ),
+                const VerticalDivider(width: 1),
+                Expanded(
+                  child: destinations.isEmpty
+                      ? AppStatusView(
+                          type: AppStatusType.empty,
+                          icon: Remix.menu_2_fill,
+                          title: i18n("no_menu_title"),
+                          subtitle: i18n("no_menu_subtitle"),
+                        )
+                      : body,
+                ),
               ],
             );
           },
