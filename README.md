@@ -35,7 +35,7 @@
 
 - **最新稳定版**：[v2.3.0](https://github.com/wzgrx/pure_live/releases/tag/v2.3.0)
 - **当前版本**：`2.3.0+4069`
-- **v2.3.0 上游源码基线**：已同步至 `liuchuancong/pure_live@ee9d15d0`，包含 [PR #762](https://github.com/liuchuancong/pure_live/pull/762)、虎牙播放地址 [PR #766](https://github.com/liuchuancong/pure_live/pull/766)、播放器引擎访问接口与 [issue #768](https://github.com/liuchuancong/pure_live/issues/768) 导航保底修复
+- **v2.3.0 上游源码基线**：已同步至 `liuchuancong/pure_live@67a24a24`，包含 [PR #762](https://github.com/liuchuancong/pure_live/pull/762)、虎牙播放地址 [PR #766](https://github.com/liuchuancong/pure_live/pull/766)、播放器引擎访问接口、[issue #768](https://github.com/liuchuancong/pure_live/issues/768) 导航保底修复与 media_kit 路由跳转崩溃修复
 - **构建平台**：Android arm64、Windows x64、Linux x64、macOS Universal、iOS arm64 设备包
 
 ![Pure Live 界面预览](assets/images/banner.png)

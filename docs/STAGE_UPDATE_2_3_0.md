@@ -1,6 +1,6 @@
 # Pure Live v2.3.0 稳定性更新
 
-v2.3.0 维护源码已同步至上游 `liuchuancong/pure_live@ee9d15d0`，重点处理 Android 系统画中画返回后弹幕列表停住、启动仍展示上次开播状态、横屏弹幕设置/输入缺口，以及 Windows 和 Android 长时间播放的资源增长。正式版本号为 `2.3.0+4069`，Android 正式包名保持 `com.mystyle.purelive`；同步范围包含上游已合并的 PR #762、虎牙播放地址 PR #766、小窗弹幕目录整理、播放器引擎访问接口与 issue #768 导航保底修复。
+v2.3.0 维护源码已同步至上游 `liuchuancong/pure_live@67a24a24`，重点处理 Android 系统画中画返回后弹幕列表停住、启动仍展示上次开播状态、横屏弹幕设置/输入缺口，以及 Windows 和 Android 长时间播放的资源增长。正式版本号为 `2.3.0+4069`，Android 正式包名保持 `com.mystyle.purelive`；同步范围包含上游已合并的 PR #762、虎牙播放地址 PR #766、小窗弹幕目录整理、播放器引擎访问接口、issue #768 导航保底修复与 media_kit 路由跳转崩溃修复。
 
 ## 问题与修复落点
 
