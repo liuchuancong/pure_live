@@ -116,6 +116,7 @@ def main():
 
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
+        f.write("\n")
 
     print("生成完成:", OUTPUT_FILE)
 
