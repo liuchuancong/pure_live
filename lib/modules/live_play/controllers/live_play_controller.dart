@@ -88,7 +88,7 @@ class LivePlayController extends GetxController
   static const Duration _danmakuBatchWindow = Duration(milliseconds: 64);
   static const Duration localChatDeliveryDelay = Duration(seconds: 2);
 
-  Timer? supperChatsTimer;
+  Timer? _superChatExpiryTimer;
   @override
   void onInit() {
     super.onInit();
@@ -159,7 +159,6 @@ class LivePlayController extends GetxController
     _screenKeepOnWorker = ever(SettingsService.to.app.enableScreenKeepOn, (_) => _updateWakelock());
 
     _updateWakelock();
-    _initSuperChatsTimer();
   }
 
   @override
@@ -200,13 +199,6 @@ class LivePlayController extends GetxController
         stackTrace: stackTrace,
       );
     }
-  }
-
-  void _initSuperChatsTimer() async {
-    supperChatsTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      superChats.refresh();
-      removeSuperChats();
-    });
   }
 
   void _initControllers() {
@@ -306,14 +298,14 @@ class LivePlayController extends GetxController
     }
   }
 
-  void getSuperChatMessage(String roomId) async {
+  Future<void> getSuperChatMessage(String roomId) async {
     try {
       clearSuperChats();
-      var sc = await currentSite.liveSite.getSuperChatMessage(roomId: roomId);
+      final sc = await currentSite.liveSite.getSuperChatMessage(roomId: roomId);
+      if (isClosed || _ownerClosed) return;
       addBatchSuperChat(sc);
-      developer.log(superChats[0].message);
     } catch (e) {
-      addSystemMessage("SC读取失败");
+      if (!isClosed && !_ownerClosed) addSystemMessage("SC读取失败");
     }
   }
 
@@ -322,27 +314,54 @@ class LivePlayController extends GetxController
     addSingleSuperChat(msg.data as LiveSuperChatMessage);
   }
 
-  void removeSuperChats() async {
+  void _removeExpiredSuperChats() {
     final now = DateTime.now().millisecondsSinceEpoch;
-    if (superChats.isNotEmpty) {
-      final filtered = superChats.where((x) => x.endTime.millisecondsSinceEpoch > now).toList();
+    final filtered = superChats.where((x) => x.endTime.millisecondsSinceEpoch > now).toList(growable: false);
+    if (filtered.length != superChats.length) {
       superChats.assignAll(filtered);
     }
+    _scheduleSuperChatExpiry();
   }
 
-  void addSingleSuperChat(dynamic msgData) {
-    final item = msgData as LiveSuperChatMessage;
-    final temp = <LiveSuperChatMessage>[...superChats, item];
-    superChats.assignAll(temp);
+  void _scheduleSuperChatExpiry() {
+    _superChatExpiryTimer?.cancel();
+    _superChatExpiryTimer = null;
+    if (isClosed || _ownerClosed) return;
+    final delay = nextSuperChatExpiryDelay(superChats, DateTime.now());
+    if (delay == null) return;
+    _superChatExpiryTimer = Timer(delay, _removeExpiredSuperChats);
+  }
+
+  @visibleForTesting
+  static Duration? nextSuperChatExpiryDelay(Iterable<LiveSuperChatMessage> messages, DateTime now) {
+    final iterator = messages.iterator;
+    if (!iterator.moveNext()) return null;
+    var nextExpiry = iterator.current.endTime;
+    while (iterator.moveNext()) {
+      final candidate = iterator.current.endTime;
+      if (candidate.isBefore(nextExpiry)) nextExpiry = candidate;
+    }
+    final remaining = nextExpiry.difference(now);
+    return remaining.isNegative || remaining == Duration.zero ? const Duration(milliseconds: 1) : remaining;
+  }
+
+  void addSingleSuperChat(LiveSuperChatMessage item) {
+    final next = <LiveSuperChatMessage>{...superChats, item}.toList(growable: false);
+    superChats.assignAll(next);
+    _scheduleSuperChatExpiry();
   }
 
   void addBatchSuperChat(List<LiveSuperChatMessage> sc) {
-    final temp = <LiveSuperChatMessage>[...superChats, ...sc];
-    superChats.assignAll(temp);
+    if (sc.isEmpty) return;
+    final next = <LiveSuperChatMessage>{...superChats, ...sc}.toList(growable: false);
+    superChats.assignAll(next);
+    _scheduleSuperChatExpiry();
   }
 
   void clearSuperChats() {
-    superChats.assignAll([]);
+    _superChatExpiryTimer?.cancel();
+    _superChatExpiryTimer = null;
+    if (superChats.isNotEmpty) superChats.clear();
   }
 
   bool myInterceptor(bool stopDefaultButtonEvent, RouteInfo info) {
@@ -608,7 +627,7 @@ class LivePlayController extends GetxController
         platform: state.value.room.detail!.platform!,
       );
 
-      getSuperChatMessage(roomId);
+      unawaited(getSuperChatMessage(roomId));
       final liveRoom = fetchedRoom.withAudienceFallbackFrom(state.value.room.detail!);
       if (!_isRoomLoadCurrent(loadEpoch, roomId, requestedPlatform)) return liveRoom;
 
@@ -978,7 +997,6 @@ class LivePlayController extends GetxController
     _screenKeepOnWorker?.dispose();
     _danmakuPresentationRecovery.dispose();
     clearSuperChats();
-    supperChatsTimer?.cancel();
     playerController.invalidateLoad();
     _localGiftEffectTimer?.cancel();
     _localMessageDeliveryQueue.dispose();

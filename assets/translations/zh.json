@@ -1127,7 +1127,7 @@
     "danmaku_user_blocked": "该用户的弹幕已屏蔽",
     "danmaku_keyword_blocked": "关键词已加入弹幕屏蔽列表",
     "blocked_danmaku_users": "已屏蔽用户（{count}）",
-    "dynamic_follow_display": "动态跟随屏幕刷新率",
+    "dynamic_follow_display": "智能省电适配",
     "danmaku_templates": "弹幕观看模板",
     "danmaku_template_best": "顶部 20% · 均衡",
     "danmaku_template_comfort": "顶部 35% · 舒适",

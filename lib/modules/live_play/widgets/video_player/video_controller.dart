@@ -660,8 +660,8 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     danmakuController.updateConfig(
       BarrageConfig(
         // Dispatching at 16 ms allowed up to 60 new paragraphs per second on
-        // busy rooms.  Motion still follows the display refresh rate, while a
-        // 50 ms admission interval bounds layout/paint pressure and heat.
+        // busy rooms. A 50 ms admission interval plus the adaptive renderer
+        // cap bounds paragraph layout, paint pressure and heat.
         emitInterval: 0.05,
         fontSize: danmakuFontSize.value,
         area: danmakuArea.value,
