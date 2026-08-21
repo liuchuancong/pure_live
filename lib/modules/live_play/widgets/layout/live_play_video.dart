@@ -1,6 +1,7 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_player.dart';
+import 'package:pure_live/modules/live_play/widgets/video_player/video_loading.dart';
 import 'package:pure_live/modules/live_play/widgets/placeholder/not_living_video_widget.dart';
 
 class LivePlayVideo extends StatelessWidget {
@@ -19,7 +20,7 @@ class LivePlayVideo extends StatelessWidget {
           final videoController = state.player.videoController;
           if (videoController == null) {
             if (state.room.isLoading || state.room.isLiving) {
-              return const _VideoLoading();
+              return const VideoLoading();
             }
             return NotLivingVideoWidget(controller: controller);
           }
@@ -30,27 +31,10 @@ class LivePlayVideo extends StatelessWidget {
                 color: Colors.black,
                 child: VideoPlayer(controller: videoController),
               ),
-              if (state.room.isLoading) const _VideoLoading(),
+              if (state.room.isLoading) const VideoLoading(),
             ],
           );
         }),
-      ),
-    );
-  }
-}
-
-class _VideoLoading extends StatelessWidget {
-  const _VideoLoading();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Material(
-      child: Stack(
-        fit: StackFit.passthrough,
-        children: [
-          ColoredBox(color: Colors.black),
-          AppStatusView(type: AppStatusType.loading, title: '', subtitle: '', iconColor: Colors.white, isMini: true),
-        ],
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:developer' as developer;
 
+import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -352,7 +353,14 @@ class LivePlayController extends GetxController
     );
   }
 
-  void updateUI({VideoMode? screenMode, int? refreshKey, bool? isMenuOpen, int? closeTimes, bool? closeTimeFlag}) {
+  void updateUI({
+    VideoMode? screenMode,
+    int? refreshKey,
+    bool? isMenuOpen,
+    int? closeTimes,
+    bool? closeTimeFlag,
+    bool? displayVideoLayer,
+  }) {
     state.value = state.value.copyWith(
       ui: state.value.ui.copyWith(
         screenMode: screenMode,
@@ -360,6 +368,7 @@ class LivePlayController extends GetxController
         isMenuOpen: isMenuOpen,
         closeTimes: closeTimes,
         closeTimeFlag: closeTimeFlag,
+        displayVideoLayer: displayVideoLayer,
       ),
     );
   }
@@ -821,15 +830,22 @@ class LivePlayController extends GetxController
   void setWidescreen() => updateUI(screenMode: VideoMode.widescreen);
   void setFullScreen() => updateUI(screenMode: VideoMode.fullscreen);
 
-  /// Leaves the native video route before opening another app page. Pushing a
-  /// page over media_kit's Windows surface can leave the old video surface
-  /// above the new Flutter route, so detach it and replace the live route.
+  /// Detaches media_kit's native surface before opening the recorder route.
+  ///
+  /// Keeping the live route mounted preserves playback and room state, while
+  /// removing the platform video layer for one frame avoids the native-surface
+  /// crash/overlay race during the route transition. The route observer also
+  /// restores the layer on pop; the finally block is a deterministic fallback.
   Future<void> openRecordCenter() async {
-    final manager = GlobalPlayerService.instance.player;
-    state.value.player.videoController?.clearListener();
-    await manager.close();
-    _suppressAppFloatingOnNextPop = true;
-    Get.offAndToNamed(RoutePath.kRecordPage);
+    updateUI(displayVideoLayer: false);
+    await SchedulerBinding.instance.endOfFrame;
+    try {
+      await Get.toNamed(RoutePath.kRecordPage);
+    } finally {
+      if (!isClosed) {
+        updateUI(displayVideoLayer: true);
+      }
+    }
   }
 
   bool takeSuppressAppFloatingOnNextPop() {
