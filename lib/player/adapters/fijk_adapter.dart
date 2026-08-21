@@ -1,18 +1,20 @@
 import 'dart:async';
-
 import 'package:rxdart/rxdart.dart';
-
 import '../models/player_state.dart';
 import '../models/player_exception.dart';
 import '../models/player_error_type.dart';
-
 import 'package:pure_live/common/index.dart';
-
 import '../interface/unified_player_interface.dart';
-
 import 'package:pure_live/player/utils/fijk_helper.dart';
+import 'package:pure_live/player/models/player_engine.dart';
+import 'package:pure_live/player/interface/fijk_player_accessor.dart';
 
-class FijkAdapter implements UnifiedPlayer {
+
+
+
+
+
+class FijkAdapter implements UnifiedPlayer,FijkPlayerAccessor {
   late final FijkPlayer _player;
 
   bool _initialized = false;
@@ -270,4 +272,10 @@ class FijkAdapter implements UnifiedPlayer {
   Stream<int?> get width => _widthSubject.stream;
   @override
   Stream<int?> get height => _heightSubject.stream;
+
+  @override
+  PlayerEngine get engine => PlayerEngine.fijk;
+
+  @override
+  FijkPlayer get fijkPlayer => _player;
 }

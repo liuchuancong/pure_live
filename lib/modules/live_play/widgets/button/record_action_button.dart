@@ -272,7 +272,9 @@ class RecordActionButton extends StatelessWidget {
                 color: theme.colorScheme.primary,
                 enabled: true,
                 onTap: () {
-                  Navigator.pop(dialogContext, "page");
+                  // 貌似Video有问题无法进行页面跳转 否则会崩溃 但是注释掉就可以 待解决
+                  // Navigator.pop(dialogContext, "page");
+                  Get.toNamed(RoutePath.kRecordPage);
                 },
               ),
               _ActionTile(

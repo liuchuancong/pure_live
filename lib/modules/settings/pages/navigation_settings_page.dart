@@ -97,7 +97,14 @@ class NavigationSettingsPage extends StatelessWidget {
                           Switch(
                             value: isVisible,
                             activeThumbColor: theme.colorScheme.primary,
-                            onChanged: (value) => SettingsService.to.app.toggleMenuVisibility(menu, value),
+                            onChanged: (value) {
+                              final savedMenus = SettingsService.to.app.savedMenuIds.v;
+                              if (!value && savedMenus.length <= 1) {
+                                ToastUtil.show(i18n("at_least_one_menu_required"));
+                                return;
+                              }
+                              SettingsService.to.app.toggleMenuVisibility(menu, value);
+                            },
                           ),
                           const SizedBox(width: 8),
                           ReorderableDragStartListener(

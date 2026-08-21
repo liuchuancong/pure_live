@@ -1,4 +1,5 @@
 import 'dart:ui';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/routes/app_navigation.dart';
@@ -23,66 +24,64 @@ class RecorderPage extends GetView<RecorderController> {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      bool showAction = Get.width <= 680;
-      final int menuCount = SettingsService.to.app.savedMenuIds.v.length;
-      final bool canGoBack = Navigator.of(context).canPop();
-      return DefaultTabController(
-        length: tabs.length,
-        child: Scaffold(
-          appBar: AppBar(
-            title: Text(i18n("recorder_title")),
-            centerTitle: true,
-            leading: canGoBack ? const BackButton() : ((showAction || menuCount <= 1) ? const MenuButton() : null),
+    bool showAction = Get.width <= 680;
 
-            actions: [
-              IconButton(
-                tooltip: i18n("recorder_open_folder"),
-                icon: const Icon(Remix.folder_video_line, size: 22),
-                onPressed: controller.openFileDir,
-              ),
-              IconButton(
-                tooltip: i18n("settings_title"),
-                icon: const Icon(Remix.settings_5_line, size: 22),
-                onPressed: () => Get.toNamed(RoutePath.kRecordSettings),
-              ),
-              const SizedBox(width: 8),
-            ],
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(54),
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: TabBar(
-                  isScrollable: true,
-                  tabs: tabs
-                      .map(
-                        (e) => Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Tab(text: i18n(e)),
-                        ),
-                      )
-                      .toList(),
-                ),
+    final bool canGoBack = Navigator.of(context).canPop();
+    return DefaultTabController(
+      length: tabs.length,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(i18n("recorder_title")),
+          centerTitle: true,
+          leading: canGoBack ? const BackButton() : (showAction ? const MenuButton() : null),
+
+          actions: [
+            IconButton(
+              tooltip: i18n("recorder_open_folder"),
+              icon: const Icon(Remix.folder_video_line, size: 22),
+              onPressed: controller.openFileDir,
+            ),
+            IconButton(
+              tooltip: i18n("settings_title"),
+              icon: const Icon(Remix.settings_5_line, size: 22),
+              onPressed: () => Get.toNamed(RoutePath.kRecordSettings),
+            ),
+            const SizedBox(width: 8),
+          ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(54),
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: TabBar(
+                isScrollable: true,
+                tabs: tabs
+                    .map(
+                      (e) => Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Tab(text: i18n(e)),
+                      ),
+                    )
+                    .toList(),
               ),
             ),
           ),
-          body: TabBarView(
-            physics: const PureLiveScrollPhysics(),
-            children: [
-              _TaskList(filter: null),
-              _TaskList(filter: (e) => e.status == RecordStatus.running),
-              _TaskList(filter: (e) => e.status == RecordStatus.waitingLive),
-              _TaskList(filter: (e) => e.status == RecordStatus.queued),
-              _TaskList(filter: (e) => e.status == RecordStatus.reconnecting),
-              _TaskList(filter: (e) => e.status == RecordStatus.processing),
-              _TaskList(filter: (e) => e.status == RecordStatus.completed),
-              _TaskList(filter: (e) => e.status == RecordStatus.failed),
-              _TaskList(filter: (e) => e.status == RecordStatus.stopped),
-            ],
-          ),
         ),
-      );
-    });
+        body: TabBarView(
+          physics: const PureLiveScrollPhysics(),
+          children: [
+            _TaskList(filter: null),
+            _TaskList(filter: (e) => e.status == RecordStatus.running),
+            _TaskList(filter: (e) => e.status == RecordStatus.waitingLive),
+            _TaskList(filter: (e) => e.status == RecordStatus.queued),
+            _TaskList(filter: (e) => e.status == RecordStatus.reconnecting),
+            _TaskList(filter: (e) => e.status == RecordStatus.processing),
+            _TaskList(filter: (e) => e.status == RecordStatus.completed),
+            _TaskList(filter: (e) => e.status == RecordStatus.failed),
+            _TaskList(filter: (e) => e.status == RecordStatus.stopped),
+          ],
+        ),
+      ),
+    );
   }
 }
 
