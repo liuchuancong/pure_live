@@ -14,17 +14,24 @@ class UserServerRemoteController extends ServerRemotePageController<UserItem> {
   final adminCount = 0.obs;
   final managerCount = 0.obs;
   final userCount = 0.obs;
+  Worker? _searchWorker;
 
   @override
   void onInit() {
     super.onInit();
     isSuperAdmin = FirebaseManager.getInstance().isAdmin();
     _fetchGlobalStats();
-    debounce(rxSearchKeyword, (String keyword) {
+    _searchWorker = debounce(rxSearchKeyword, (String keyword) {
       searchKeyword = keyword;
       lastDocument = null;
       refreshData();
     }, time: const Duration(milliseconds: 500));
+  }
+
+  @override
+  void onClose() {
+    _searchWorker?.dispose();
+    super.onClose();
   }
 
   Future<void> _fetchGlobalStats() async {

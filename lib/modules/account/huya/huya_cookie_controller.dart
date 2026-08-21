@@ -13,4 +13,10 @@ class HuyaCookieController extends GetxController {
     cookieController.text = cookie;
     SettingsService.to.cookieManager.huyaCookie.v = cookie;
   }
+
+  @override
+  void onClose() {
+    cookieController.dispose();
+    super.onClose();
+  }
 }

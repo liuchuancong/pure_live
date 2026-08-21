@@ -5,6 +5,7 @@ import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:pure_live/common/services/settings/font_settings_controller.dart';
 
 class ThemeSettingsController extends GetxController {
+  Worker? _spacingWorker;
   final RxString themeModeName = hiveString('themeMode', "System");
   final RxBool enableDynamicTheme = hiveBool('enableDynamicTheme', false);
   final RxString themeColorSwitch = hiveString('themeColorSwitch', Colors.blue.hex);
@@ -24,9 +25,15 @@ class ThemeSettingsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    everAll([crossAxisSpacing, mainAxisSpacing], (_) {
+    _spacingWorker = everAll([crossAxisSpacing, mainAxisSpacing], (_) {
       Get.find<FontSettingsController>().refreshSystemTheme();
     });
+  }
+
+  @override
+  void onClose() {
+    _spacingWorker?.dispose();
+    super.onClose();
   }
 
   void changeThemeMode(String mode) {

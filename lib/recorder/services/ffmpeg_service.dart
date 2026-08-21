@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
+
 import 'package:flutter/services.dart';
 import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
@@ -26,6 +27,8 @@ class FFmpegService {
   static FFmpegService get to => _instance;
 
   final Map<String, FFmpegRecordSession> _sessions = {};
+  Future<void>? _initializing;
+  bool _initialized = false;
 
   static void initInIsolate(RootIsolateToken token) {
     BackgroundIsolateBinaryMessenger.ensureInitialized(token);
@@ -36,6 +39,7 @@ class FFmpegService {
     required String command,
     required void Function(FFmpegEvent event) onEvent,
   }) async {
+    await _ensureInitialized();
     onEvent(FFmpegEvent(taskId: taskId, type: FFmpegEventType.started));
 
     final ffempgSession = FFmpegKit.createSession(command);
@@ -130,6 +134,21 @@ class FFmpegService {
     });
 
     await ffempgSession.executeAsync();
+  }
+
+  Future<void> _ensureInitialized() async {
+    if (_initialized) return;
+    final inFlight = _initializing;
+    if (inFlight != null) return inFlight;
+
+    final future = FFmpegKitExtended.initialize();
+    _initializing = future;
+    try {
+      await future;
+      _initialized = true;
+    } finally {
+      if (identical(_initializing, future)) _initializing = null;
+    }
   }
 
   Future<void> stop(String taskId) async {

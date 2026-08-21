@@ -2,12 +2,16 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:scroll_animator/scroll_animator.dart';
 
-/// Uses Chromium's Windows scrolling personality for discrete wheel deltas.
+/// Uses Chromium's continuous ease-in/out curve for discrete wheel deltas.
+///
+/// The impulse curve restarts a short velocity burst for every wheel notch;
+/// under load those bursts are perceived as separate steps. The retargetable
+/// ease-in/out curve merges successive notches into one continuous trajectory.
 /// Touch scrolling keeps Flutter's native position implementation.
 ScrollController createPureLiveScrollController({double initialScrollOffset = 0}) {
   if (defaultTargetPlatform == TargetPlatform.windows) {
     return AnimatedScrollController(
-      animationFactory: const ChromiumImpulse(),
+      animationFactory: const ChromiumEaseInOut(),
       initialScrollOffset: initialScrollOffset,
     );
   }
@@ -30,7 +34,7 @@ class PureLiveRouteScrollScope extends StatelessWidget {
     if (defaultTargetPlatform != TargetPlatform.windows) return child;
     return AnimatedPrimaryScrollController(
       automaticallyInheritForPlatforms: const {TargetPlatform.windows},
-      animationFactory: const ChromiumImpulse(),
+      animationFactory: const ChromiumEaseInOut(),
       child: child,
     );
   }

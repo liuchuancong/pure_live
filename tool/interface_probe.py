@@ -427,30 +427,49 @@ def soop_live_channel() -> dict[str, object]:
         {"selectType": "action", "selectValue": "all", "orderType": "view_cnt", "pageNo": 1, "lang": "ko_KR"},
     )
     rooms = recommendation.get("broad", []) if isinstance(recommendation, dict) else []
-    if not rooms or not isinstance(rooms[0], dict):
+    if not rooms:
         raise ValueError("SOOP recommendation returned no live rooms")
-    room_id = str(rooms[0].get("user_id", "")).strip()
-    response = post_form_json(
-        "https://live.sooplive.co.kr/afreeca/player_live_api.php",
-        {
-            "bid": room_id,
-            "bno": "",
-            "type": "live",
-            "pwd": "",
-            "player_type": "html5",
-            "stream_type": "common",
-            "quality": "HD",
-            "mode": "landing",
-            "from_api": "0",
-            "is_revive": "false",
-        },
-        {"bjid": room_id},
-    )
-    channel = response.get("CHANNEL", {}) if isinstance(response, dict) else {}
-    if not isinstance(channel, dict) or channel.get("RESULT") != 1:
-        raise ValueError("SOOP player channel is not live")
-    _soop_channel_cache = channel
-    return channel
+
+    # The popularity feed may put an age-restricted or password-protected room
+    # first.  Such a room is live, but the anonymous player endpoint rejects it
+    # and used to make all SOOP probes fail spuriously.  Probe a bounded slice
+    # of current, public recommendations and cache the first playable channel.
+    attempted = 0
+    for room in rooms[:20]:
+        if not isinstance(room, dict):
+            continue
+        if str(room.get("is_password", "N")).upper() == "Y":
+            continue
+        if str(room.get("broad_grade", "0")) not in ("", "0"):
+            continue
+        room_id = str(room.get("user_id", "")).strip()
+        if not room_id:
+            continue
+        attempted += 1
+        try:
+            response = post_form_json(
+                "https://live.sooplive.co.kr/afreeca/player_live_api.php",
+                {
+                    "bid": room_id,
+                    "bno": str(room.get("broad_no", "")).strip(),
+                    "type": "live",
+                    "pwd": "",
+                    "player_type": "html5",
+                    "stream_type": "common",
+                    "quality": "HD",
+                    "mode": "landing",
+                    "from_api": "0",
+                    "is_revive": "false",
+                },
+                {"bjid": room_id},
+            )
+        except Exception:  # noqa: BLE001 - try another current recommendation
+            continue
+        channel = response.get("CHANNEL", {}) if isinstance(response, dict) else {}
+        if isinstance(channel, dict) and channel.get("RESULT") == 1:
+            _soop_channel_cache = channel
+            return channel
+    raise ValueError(f"SOOP found no anonymous playable channel in {attempted} candidates")
 
 
 def soop_search_probe() -> None:

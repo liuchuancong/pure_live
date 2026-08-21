@@ -1127,7 +1127,7 @@
     "danmaku_user_blocked": "该用户的弹幕已屏蔽",
     "danmaku_keyword_blocked": "关键词已加入弹幕屏蔽列表",
     "blocked_danmaku_users": "已屏蔽用户（{count}）",
-    "dynamic_follow_display": "动态跟随屏幕刷新率",
+    "dynamic_follow_display": "智能省电适配",
     "danmaku_templates": "弹幕观看模板",
     "danmaku_template_best": "顶部 20% · 均衡",
     "danmaku_template_comfort": "顶部 35% · 舒适",
@@ -1256,5 +1256,6 @@
     "danmaku_repeat_filter": "重复弹幕过滤",
     "collapse_repeated_danmaku": "合并短时间内的相同弹幕",
     "collapse_repeated_danmaku_desc": "不同用户发送相同内容时只保留第一条；本地弹幕和系统消息不受影响。",
-    "repeated_danmaku_window": "相同内容合并时间（秒）"
+    "repeated_danmaku_window": "相同内容合并时间（秒）",
+    "super_chat": "醒目留言"
 }

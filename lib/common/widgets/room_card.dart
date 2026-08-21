@@ -84,12 +84,11 @@ class RoomCard extends StatelessWidget {
   Widget _coverPlaceholder(BuildContext context, bool isDark) {
     return Container(
       color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
-      child: const Center(
-        child: SizedBox(
-          width: 24,
-          height: 24,
-          child: AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", isMini: true),
-        ),
+      child: Center(
+        // Do not create one infinite AnimationController per loading card. A
+        // page of failed/slow covers used to repaint the complete grid at the
+        // monitor refresh rate and could saturate Android CPU during startup.
+        child: Icon(Icons.live_tv_rounded, size: 24, color: isDark ? Colors.white24 : Colors.black12),
       ),
     );
   }
@@ -672,7 +671,11 @@ class RoomCard extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ).whenComplete(() {
+      nameController.dispose();
+      descController.dispose();
+      tagScrollController.dispose();
+    });
   }
 
   @override

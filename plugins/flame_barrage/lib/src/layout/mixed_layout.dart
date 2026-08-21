@@ -18,16 +18,55 @@ class MixedLayout {
   void updateMaxTextCacheSize(int newSize) {
     final normalizedSize = newSize.clamp(1, 10000).toInt();
     if (_textCache.maxSize == normalizedSize && _maxLayoutCacheSize == normalizedSize) return;
+    _disposeCachedParagraphs();
     final newCache = TextCache(maxSize: normalizedSize);
-    _textCache.clear();
     _textCache = newCache;
     _maxLayoutCacheSize = normalizedSize;
-    _cache.clear();
   }
 
   void clearCache() {
+    _disposeCachedParagraphs();
+  }
+
+  void _disposeCachedParagraphs() {
+    final paragraphs = HashSet<ui.Paragraph>.identity();
+    for (final result in _cache.values) {
+      _collectParagraphs(result, paragraphs);
+    }
+    paragraphs.addAll(_textCache.takeAll());
     _cache.clear();
-    _textCache.clear();
+    for (final paragraph in paragraphs) {
+      paragraph.dispose();
+    }
+  }
+
+  void _collectParagraphs(LayoutResult result, Set<ui.Paragraph> target) {
+    for (final span in result.spans) {
+      if (span is! TextLayoutSpan) continue;
+      target.add(span.paragraph);
+      final stroke = span.strokeParagraph;
+      if (stroke != null) target.add(stroke);
+    }
+  }
+
+  void _disposeParagraphsReleasedBy(LayoutResult result) {
+    final candidates = HashSet<ui.Paragraph>.identity();
+    _collectParagraphs(result, candidates);
+    if (candidates.isEmpty) return;
+
+    for (final retained in _cache.values) {
+      for (final span in retained.spans) {
+        if (span is! TextLayoutSpan) continue;
+        candidates.remove(span.paragraph);
+        final stroke = span.strokeParagraph;
+        if (stroke != null) candidates.remove(stroke);
+        if (candidates.isEmpty) return;
+      }
+    }
+    for (final paragraph in candidates) {
+      _textCache.removeParagraph(paragraph);
+      paragraph.dispose();
+    }
   }
 
   LayoutResult layout(List<Fragment> fragments, {required BarrageItem item, required BarrageConfig config}) {
@@ -41,10 +80,11 @@ class MixedLayout {
     }
 
     final result = _layoutInternal(fragments, item, config, combinedHash);
-    while (_cache.length >= _maxLayoutCacheSize) {
-      _cache.remove(_cache.keys.first);
-    }
     _cache[combinedHash] = result;
+    while (_cache.length > _maxLayoutCacheSize) {
+      final evicted = _cache.remove(_cache.keys.first);
+      if (evicted != null) _disposeParagraphsReleasedBy(evicted);
+    }
 
     return result;
   }

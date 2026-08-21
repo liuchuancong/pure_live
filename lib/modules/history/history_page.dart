@@ -1,10 +1,21 @@
 import 'package:pure_live/common/index.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
-class HistoryPage extends GetView {
-  HistoryPage({super.key});
+class HistoryPage extends StatefulWidget {
+  const HistoryPage({super.key});
 
+  @override
+  State<HistoryPage> createState() => _HistoryPageState();
+}
+
+class _HistoryPageState extends State<HistoryPage> {
   final refreshController = EasyRefreshController(controlFinishRefresh: true, controlFinishLoad: true);
+
+  @override
+  void dispose() {
+    refreshController.dispose();
+    super.dispose();
+  }
 
   Future onRefresh() async {
     bool result = true;
@@ -13,9 +24,8 @@ class HistoryPage extends GetView {
     for (int i = 0; i < list.length; i++) {
       final room = list[i];
       try {
-        var newRoom = await Sites.of(
-          room.platform!,
-        ).liveSite.getRoomDetail(roomId: room.roomId!, platform: room.platform!);
+        var newRoom = await Sites.of(room.platform!).liveSite
+            .getRoomDetail(roomId: room.roomId!, platform: room.platform!);
         list[i] = newRoom;
       } catch (e) {
         result = false;
@@ -67,7 +77,6 @@ class HistoryPage extends GetView {
                   ? EmptyView(icon: Icons.history_rounded, title: i18n("empty_history"), subtitle: '')
                   : WaterfallFlow.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-                      controller: ScrollController(),
                       gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
                         lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                         crossAxisCount: crossAxisCount,

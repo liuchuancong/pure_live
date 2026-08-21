@@ -10,22 +10,35 @@ class WindowSizeController extends GetxController {
 
   final windowSize = const Size(1280, 720).obs;
   final isTracking = false.obs;
+  final List<Worker> _workers = [];
 
   @override
   void onInit() {
     super.onInit();
     windowSize.value = Size(storedWidth.v, storedHeight.v);
 
-    debounce(windowSize, (Size size) {
-      storedWidth.v = size.width;
-      storedHeight.v = size.height;
-    }, time: const Duration(milliseconds: 500));
+    _workers.add(
+      debounce(windowSize, (Size size) {
+        storedWidth.v = size.width;
+        storedHeight.v = size.height;
+      }, time: const Duration(milliseconds: 500)),
+    );
 
-    debounce(isTracking, (bool tracking) {
-      if (tracking) {
-        isTracking.value = false;
-      }
-    }, time: const Duration(seconds: 2));
+    _workers.add(
+      debounce(isTracking, (bool tracking) {
+        if (tracking) {
+          isTracking.value = false;
+        }
+      }, time: const Duration(seconds: 2)),
+    );
+  }
+
+  @override
+  void onClose() {
+    for (final worker in _workers) {
+      worker.dispose();
+    }
+    super.onClose();
   }
 
   void updateSize(Size size) {

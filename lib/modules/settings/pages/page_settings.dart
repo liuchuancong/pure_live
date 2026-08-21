@@ -161,6 +161,6 @@ class PageSettingsPage extends GetView<SettingsService> {
           ],
         );
       },
-    );
+    ).whenComplete(customController.dispose);
   }
 }

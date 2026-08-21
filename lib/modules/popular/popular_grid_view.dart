@@ -39,9 +39,9 @@ class _PopularGridViewState extends State<PopularGridView> with AutomaticKeepAli
             return GridView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
               controller: scrollController,
-              scrollCacheExtent: ScrollCacheExtent.pixels(width > 680 ? 960 : 480),
+              scrollCacheExtent: ScrollCacheExtent.pixels(width > 680 ? 480 : 320),
               addAutomaticKeepAlives: false,
-              addRepaintBoundaries: false,
+              addRepaintBoundaries: true,
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: crossAxisCount,

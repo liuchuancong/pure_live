@@ -419,7 +419,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
           );
         },
       ),
-    );
+    ).whenComplete(textController.dispose);
   }
 
   void _showQualityDialog() {
@@ -494,6 +494,6 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
           ),
         ],
       ),
-    );
+    ).whenComplete(textController.dispose);
   }
 }

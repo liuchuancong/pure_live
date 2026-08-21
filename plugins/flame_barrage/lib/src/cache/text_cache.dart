@@ -33,6 +33,16 @@ class TextCache {
     _cache.remove(key);
   }
 
+  void removeParagraph(ui.Paragraph paragraph) {
+    _cache.removeWhere((_, value) => identical(value, paragraph));
+  }
+
+  List<ui.Paragraph> takeAll() {
+    final paragraphs = _cache.values.toList(growable: false);
+    _cache.clear();
+    return paragraphs;
+  }
+
   void clear() {
     _cache.clear();
   }

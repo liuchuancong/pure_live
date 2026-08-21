@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/core/site/bilibili_site.dart';
+import 'package:pure_live/core/site/bilibili/bilibili_site.dart';
 
 void main() {
   group('Bilibili recommendation parsing', () {

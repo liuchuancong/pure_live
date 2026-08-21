@@ -43,27 +43,23 @@ class FavoriteAreasPage extends GetView<FavoriteAreasController> {
   }
 
   Widget buildTabView(BuildContext context, int crossAxisCount, String siteId) {
-    return Obx(
-      () => controller.favoriteAreas.isNotEmpty
+    return Obx(() {
+      final areas = siteId == Sites.allSite
+          ? controller.favoriteAreas.toList(growable: false)
+          : controller.favoriteAreas.where((area) => area.platform == siteId).toList(growable: false);
+      return areas.isNotEmpty
           ? WaterfallFlow.builder(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-              controller: ScrollController(),
               gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
                 lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                 crossAxisCount: crossAxisCount,
                 crossAxisSpacing: SettingsService.to.theme.crossAxisSpacing.v,
                 mainAxisSpacing: SettingsService.to.theme.mainAxisSpacing.v,
               ),
-              itemCount: siteId == Sites.allSite
-                  ? controller.favoriteAreas.length
-                  : controller.favoriteAreas.where((e) => e.platform == siteId).toList().length,
-              itemBuilder: (context, index) => AreaCard(
-                category: siteId == Sites.allSite
-                    ? controller.favoriteAreas[index]
-                    : controller.favoriteAreas.where((e) => e.platform == siteId).toList()[index],
-              ),
+              itemCount: areas.length,
+              itemBuilder: (context, index) => AreaCard(category: areas[index]),
             )
-          : EmptyView(icon: Remix.apps_2_line, title: i18n("empty_areas_title"), subtitle: ''),
-    );
+          : EmptyView(icon: Remix.apps_2_line, title: i18n("empty_areas_title"), subtitle: '');
+    });
   }
 }

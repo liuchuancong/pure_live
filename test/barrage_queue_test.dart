@@ -1,7 +1,73 @@
 import 'package:flame_barrage/flame_barrage.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('bulk emoji registration preserves every alias with one final regex', () {
+    final atlas = EmojiAtlas.instance;
+    atlas.clear();
+    addTearDown(atlas.clear);
+
+    const first = EmojiInfo(id: 'one.png', asset: 'one.png', keys: ['[one]', ':one:']);
+    const second = EmojiInfo(id: 'two.png', asset: 'two.png', keys: ['[two]']);
+    atlas.registerAll(const [first, second]);
+
+    expect(atlas.count, 3);
+    expect(atlas.find('[one]'), same(first));
+    expect(atlas.find(':one:'), same(first));
+    expect(atlas.find('[two]'), same(second));
+    expect(atlas.regex?.allMatches('x [one] :one: [two]').length, 3);
+  });
+
+  test('barrage keeps the display ticker asleep while detached', () {
+    final engine = BarrageEngine(config: const BarrageConfig(), emojiAtlas: EmojiAtlas.instance);
+
+    expect(engine.paused, isTrue);
+
+    engine.pushMessage(const BarrageItem(content: 'wake'));
+    expect(engine.paused, isTrue);
+    expect(engine.pendingMessageCount, 1);
+
+    engine.clear();
+    expect(engine.paused, isTrue);
+    expect(engine.pendingMessageCount, 0);
+  });
+
+  testWidgets('barrage paints at configured fps and stops its pulse when cleared', (tester) async {
+    final controller = BarrageController();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SizedBox(
+          width: 400,
+          height: 200,
+          child: FlameBarrageWidget(
+            config: const BarrageConfig(fps: 30),
+            emojiAtlas: EmojiAtlas.instance,
+            controller: controller,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    final engine = controller.engine as BarrageEngine;
+    addTearDown(engine.clear);
+
+    controller.send(const BarrageItem(content: 'paced'));
+    expect(engine.framePulseActive, isTrue);
+    final before = engine.frameStepCount;
+    await tester.pump(const Duration(milliseconds: 500));
+    final frames = engine.frameStepCount - before;
+
+    // Timer granularity may place one pulse at either boundary, but this must
+    // stay near 15 rather than repainting at a 120/144 Hz display rate.
+    expect(frames, inInclusiveRange(14, 16));
+
+    engine.clear();
+    expect(engine.framePulseActive, isFalse);
+    expect(engine.paused, isTrue);
+  });
+
   test('barrage waiting queue drops oldest burst entries at its hard cap', () {
     final engine = BarrageEngine(config: const BarrageConfig(maxPendingCount: 2), emojiAtlas: EmojiAtlas.instance);
 
@@ -42,6 +108,32 @@ void main() {
 
     expect(parser.cacheCount, 32);
     expect(layout.cacheCount, 32);
+  });
+
+  test('layout cache disposes native paragraphs after eviction and clear', () {
+    final parser = RichParser(atlas: EmojiAtlas.instance, maxCacheSize: 2);
+    final layout = MixedLayout(atlas: EmojiAtlas.instance, maxTextCacheSize: 1);
+    const config = BarrageConfig(textCacheMaxSize: 1);
+
+    final first = layout.layout(
+      parser.parse('first native paragraph'),
+      item: const BarrageItem(content: 'first native paragraph'),
+      config: config,
+    );
+    final firstParagraph = (first.spans.single as TextLayoutSpan).paragraph;
+    expect(firstParagraph.debugDisposed, isFalse);
+
+    final second = layout.layout(
+      parser.parse('second native paragraph'),
+      item: const BarrageItem(content: 'second native paragraph'),
+      config: config,
+    );
+    final secondParagraph = (second.spans.single as TextLayoutSpan).paragraph;
+    expect(firstParagraph.debugDisposed, isTrue);
+    expect(secondParagraph.debugDisposed, isFalse);
+
+    layout.clearCache();
+    expect(secondParagraph.debugDisposed, isTrue);
   });
 
   test('opacity is part of barrage picture and layout cache identity', () {

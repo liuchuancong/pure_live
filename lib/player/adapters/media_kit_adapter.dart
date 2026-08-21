@@ -16,6 +16,7 @@ import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/player/interface/media_kit_player_accessor.dart';
+import 'package:pure_live/player/utils/live_buffer_policy.dart';
 
 class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
   MediaKitAdapter() {
@@ -97,6 +98,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     try {
       _stateSubject.add(PlayerState.initializing);
 
+      MediaKit.ensureInitialized();
       _player = Player();
 
       if (_player.platform is NativePlayer) {
@@ -116,14 +118,13 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
         // mpv's generic defaults keep a large seek-oriented forward/backward
         // cache. Live rooms are not meaningfully seekable, so retaining that
         // much compressed data only makes long Windows/Android sessions appear
-        // to grow indefinitely. 64 MiB still covers a generous burst on a
-        // high-bitrate stream while the small back-cache preserves decoder
-        // continuity across short track/output transitions.
-        await native.setProperty('demuxer-max-bytes', '67108864');
+        // to grow indefinitely. Keep this shared with the tested policy rather
+        // than scattering raw byte strings through the adapter.
+        await native.setProperty('demuxer-max-bytes', LiveBufferPolicy.forwardBytes.toString());
 
-        await native.setProperty('demuxer-max-back-bytes', '8388608');
+        await native.setProperty('demuxer-max-back-bytes', LiveBufferPolicy.backBytes.toString());
 
-        await native.setProperty('demuxer-readahead-secs', '3');
+        await native.setProperty('demuxer-readahead-secs', LiveBufferPolicy.readaheadSeconds.toString());
 
         await native.setProperty('network-timeout', '15');
 

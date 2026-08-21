@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
@@ -13,6 +14,7 @@ class PageSettingsController extends GetxController {
 
   final RxString _pageSizeOptionsRaw = hiveString('page_size_options_raw', '');
   final pageSizeOptions = <int>[].obs;
+  final List<Worker> _workers = [];
 
   static int _getInitPageSize() {
     try {
@@ -47,21 +49,33 @@ class PageSettingsController extends GetxController {
     super.onInit();
     _loadPageSizeOptions();
 
-    ever(pageSizeOptions, (List<int> options) {
-      if (options.isNotEmpty && !options.contains(defaultPageSize.v)) {
-        defaultPageSize.v = options.first;
-      }
-    });
-
-    debounce(defaultPageSize, (int size) {
-      if (size <= 0 || !pageSizeOptions.contains(size)) {
-        if (pageSizeOptions.isNotEmpty) {
-          defaultPageSize.v = pageSizeOptions.first;
-        } else {
-          defaultPageSize.v = _getInitPageSize();
+    _workers.add(
+      ever(pageSizeOptions, (List<int> options) {
+        if (options.isNotEmpty && !options.contains(defaultPageSize.v)) {
+          defaultPageSize.v = options.first;
         }
-      }
-    }, time: const Duration(milliseconds: 300));
+      }),
+    );
+
+    _workers.add(
+      debounce(defaultPageSize, (int size) {
+        if (size <= 0 || !pageSizeOptions.contains(size)) {
+          if (pageSizeOptions.isNotEmpty) {
+            defaultPageSize.v = pageSizeOptions.first;
+          } else {
+            defaultPageSize.v = _getInitPageSize();
+          }
+        }
+      }, time: const Duration(milliseconds: 300)),
+    );
+  }
+
+  @override
+  void onClose() {
+    for (final worker in _workers) {
+      worker.dispose();
+    }
+    super.onClose();
   }
 
   void _loadPageSizeOptions() {

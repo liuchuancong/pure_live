@@ -34,8 +34,8 @@
 > 本维护分支持续同步 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)，并维护本机优先构建、正式签名、接口探测、Windows 数据迁移及高刷新率优化。
 
 - **最新稳定版**：[v2.3.0](https://github.com/wzgrx/pure_live/releases/tag/v2.3.0)
-- **当前版本**：`2.3.0+4069`
-- **v2.3.0 上游源码基线**：已同步至 `liuchuancong/pure_live@67a24a24`，包含 [PR #762](https://github.com/liuchuancong/pure_live/pull/762)、虎牙播放地址 [PR #766](https://github.com/liuchuancong/pure_live/pull/766)、播放器引擎访问接口、[issue #768](https://github.com/liuchuancong/pure_live/issues/768) 导航保底修复与 media_kit 路由跳转崩溃修复
+- **当前版本**：`2.3.0+4070`
+- **v2.3.0 上游源码基线**：已同步至 `liuchuancong/pure_live@e51df666`，包含 SC、平台目录整理、虎牙增强、SOOP/Twitch 与播放器/导航修复；维护分支同时保留高刷新率、PiP 弹幕、后台播放和本地互动增强
 - **构建平台**：Android arm64、Windows x64、Linux x64、macOS Universal、iOS arm64 设备包
 
 ![Pure Live 界面预览](assets/images/banner.png)
@@ -134,7 +134,7 @@ Windows、Linux、macOS 等桌面平台使用对应平台的播放器实现。
 - 刷新 FPS
 - 平台原始颜色
 - 统一弹幕颜色
-- 动态最高刷新率适配
+- 应用界面动态最高刷新率，弹幕渲染智能省电适配
 - 弹幕点击与长按操作
 - 字体粗细与观看模板联动
 - 精确重复和相似文本两级过滤
@@ -194,7 +194,7 @@ Android 支持根据设备显示模式动态适配刷新率：
 - 优化封面图片解码
 - 优化图片缓存
 - 优化弹幕重绘
-- 弹幕 FPS 可以跟随设备最高刷新率
+- 应用界面跟随设备最高刷新率；自动弹幕主画面 60 FPS、小窗 30 FPS，手动模式最高 240 FPS
 
 ---
 
@@ -418,7 +418,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
 PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 ```
 
-当前 v2.3.0 源码已通过 Built-in Kotlin 审计、Flutter Analyze、170 项单元/Widget 测试与 26/26 平台公开接口探测；Windows x64 release 已完成真实热门页、封面、2K60 播放、实时弹幕和资源采样。Android arm64 热修包从当前维护提交重新构建并使用持久发布证书签名，包名、版本、ABI 与校验和均已核对；Windows、Linux、macOS 与 iOS 保留本阶段已发布归档，各平台来源提交记录在 Release 的 `BUILD_METADATA.json`。系统画中画返回弹幕由持续存活的直播控制器统一恢复，覆盖列表重建、待处理批次、系统转场重试和串行连接替换；手机连接和设备采样只在明确安排的验收任务中执行。完整流程见 [构建与发布](docs/BUILD_AND_RELEASE.md)。
+当前 v2.3.0 build 4070 源码已通过 Built-in Kotlin 审计、Flutter Analyze、189 项单元/Widget 测试与 26/26 平台公开接口探测。系统画中画返回弹幕的底层流桥接已经按监听者生命周期修正，并由取消后重订阅回归测试覆盖；应用 UI 保持设备最高刷新率，自动弹幕主画面限制 60 FPS、小窗限制 30 FPS，空闲时停止调度。播放器、FFmpeg、录制/解析服务按需创建，页面 Worker、订阅、段落与图片缓存均确定释放并设置容量上限；Windows 连续滚轮输入合并到单一 EaseInOut 目标轨迹。手机连接和设备采样只在明确安排的验收任务中执行。完整流程见 [构建与发布](docs/BUILD_AND_RELEASE.md)。
 
 ## 🤝 参与开发
 

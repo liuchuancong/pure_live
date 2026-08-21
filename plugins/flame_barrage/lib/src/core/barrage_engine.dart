@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'dart:collection';
 import 'package:flame/game.dart';
@@ -22,6 +23,12 @@ class BarrageEngine extends FlameGame with TapCallbacks {
     _parser = RichParser(atlas: emojiAtlas, maxCacheSize: config.textCacheMaxSize);
     _layout = MixedLayout(atlas: emojiAtlas, maxTextCacheSize: config.textCacheMaxSize);
     _renderer = const MixedRenderer();
+    // A mounted Flame game otherwise owns a display-rate ticker even when the
+    // room is silent. It also repaints at the display refresh rate even when
+    // BarrageConfig.fps is lower, because skipping update() does not stop
+    // GameRenderBox from painting. Keep Flame's ticker stopped and pulse the
+    // engine only at the configured rate while there is visible work.
+    pauseEngine();
   }
 
   BarrageConfig _config;
@@ -49,8 +56,12 @@ class BarrageEngine extends FlameGame with TapCallbacks {
   double _emitTimer = 0.0;
   double _metricTimer = 0.0;
   double _cleanupTimer = 0.0;
-  double _frameAccumulator = 0.0;
   bool _initialized = false;
+  bool _appActive = true;
+  Timer? _frameTimer;
+  Stopwatch? _frameClock;
+  int? _scheduledFps;
+  int _frameStepCount = 0;
 
   EngineState _state = EngineState.running;
   bool get isPaused => _state == EngineState.paused;
@@ -94,6 +105,7 @@ class BarrageEngine extends FlameGame with TapCallbacks {
     if (isPaused) return;
     _state = EngineState.paused;
     clock.pause();
+    _stopFramePulses();
   }
 
   void resume() {
@@ -101,6 +113,56 @@ class BarrageEngine extends FlameGame with TapCallbacks {
     clock.resume();
     _flushPausedBuffer();
     _state = EngineState.running;
+    _resumeLoopIfNeeded();
+  }
+
+  void _resumeLoopIfNeeded() {
+    if (!isPaused && _appActive && _initialized && isAttached && (_waiting.isNotEmpty || _currentAliveCount > 0)) {
+      _startFramePulses();
+    }
+  }
+
+  void _suspendLoopIfIdle() {
+    if (_waiting.isEmpty && _currentAliveCount == 0) {
+      _stopFramePulses();
+    }
+  }
+
+  void _startFramePulses() {
+    final targetFps = _config.fps.clamp(1, 240).toInt();
+    if (_frameTimer?.isActive == true && _scheduledFps == targetFps) return;
+
+    _stopFramePulses();
+    // Flame must stay paused for stepEngine() to advance exactly one frame.
+    pauseEngine();
+    _scheduledFps = targetFps;
+    final interval = Duration(microseconds: (Duration.microsecondsPerSecond / targetFps).round());
+    _frameClock = Stopwatch()..start();
+    _frameTimer = Timer.periodic(interval, (_) => _stepFrame(interval));
+  }
+
+  void _stepFrame(Duration interval) {
+    if (isPaused || !_appActive || !_initialized || !isAttached || (_waiting.isEmpty && _currentAliveCount == 0)) {
+      _stopFramePulses();
+      return;
+    }
+
+    final stopwatch = _frameClock;
+    final elapsedMicros = stopwatch?.elapsedMicroseconds ?? interval.inMicroseconds;
+    stopwatch?.reset();
+    final maxStepMicros = interval.inMicroseconds * 3;
+    final stepMicros = elapsedMicros.clamp(1, maxStepMicros).toInt();
+    _frameStepCount++;
+    stepEngine(stepTime: stepMicros / Duration.microsecondsPerSecond);
+  }
+
+  void _stopFramePulses() {
+    _frameTimer?.cancel();
+    _frameTimer = null;
+    _frameClock?.stop();
+    _frameClock = null;
+    _scheduledFps = null;
+    pauseEngine();
   }
 
   void _flushPausedBuffer() {
@@ -202,6 +264,7 @@ class BarrageEngine extends FlameGame with TapCallbacks {
   Color backgroundColor() => Colors.transparent;
 
   void updateConfig(BarrageConfig newConfig) {
+    final fpsChanged = _config.fps != newConfig.fps;
     _config = newConfig;
     _parser.updateMaxCacheSize(newConfig.textCacheMaxSize);
     _layout.updateMaxTextCacheSize(newConfig.textCacheMaxSize);
@@ -210,6 +273,9 @@ class BarrageEngine extends FlameGame with TapCallbacks {
     if (_initialized) {
       _trackManager.initialize(_config, _calculateAllowedHeight(size.y));
     }
+    if (fpsChanged && _frameTimer?.isActive == true) {
+      _startFramePulses();
+    }
   }
 
   @override
@@ -217,6 +283,7 @@ class BarrageEngine extends FlameGame with TapCallbacks {
     await super.onLoad();
     _trackManager.initialize(_config, _calculateAllowedHeight(size.y));
     _initialized = true;
+    _resumeLoopIfNeeded();
   }
 
   @override
@@ -224,6 +291,7 @@ class BarrageEngine extends FlameGame with TapCallbacks {
     super.onGameResize(size);
     _trackManager.initialize(_config, _calculateAllowedHeight(size.y));
     _initialized = true;
+    _resumeLoopIfNeeded();
   }
 
   void pushMessage(BarrageItem item) {
@@ -240,6 +308,7 @@ class BarrageEngine extends FlameGame with TapCallbacks {
       _pausedBuffer.add(pending);
     } else {
       _waiting.add(pending);
+      _resumeLoopIfNeeded();
     }
   }
 
@@ -249,14 +318,7 @@ class BarrageEngine extends FlameGame with TapCallbacks {
 
     final targetFps = _config.fps.clamp(1, 240);
     final frameInterval = 1.0 / targetFps;
-    _frameAccumulator += dt;
-    if (_frameAccumulator + 0.000001 < frameInterval) return;
-    final elapsed = _frameAccumulator.clamp(0.0, frameInterval * 3).toDouble();
-    // Consume the accumulated frame time exactly once. Subtracting only one
-    // target interval while advancing by the whole accumulator counted the
-    // remainder again on the next frame and accelerated danmaku during frame
-    // drops. Excessive resume gaps are deliberately discarded by the cap.
-    _frameAccumulator = 0.0;
+    final elapsed = dt.clamp(0.0, frameInterval * 3).toDouble();
     super.update(elapsed);
 
     clock.tick(elapsed);
@@ -315,6 +377,8 @@ class BarrageEngine extends FlameGame with TapCallbacks {
       _metricTimer = 0.0;
       _updateTrackMetrics(nowMs);
     }
+
+    _suspendLoopIfIdle();
   }
 
   void _dispatchWaiting(int now) {
@@ -461,10 +525,13 @@ class BarrageEngine extends FlameGame with TapCallbacks {
   }
 
   void clear() {
+    _stopFramePulses();
     _waiting.clear();
     // 清空暂停缓存
     _pausedBuffer.clear();
     _pictureCache.clear();
+    _parser.clearCache();
+    _layout.clearCache();
     for (var e in _activeEntries) {
       _pool.recycle(e);
     }
@@ -475,7 +542,6 @@ class BarrageEngine extends FlameGame with TapCallbacks {
     _emitTimer = 0.0;
     _metricTimer = 0.0;
     _cleanupTimer = 0.0;
-    _frameAccumulator = 0.0;
     clock.reset();
     for (final track in _trackManager.tracks) {
       track.lastRight = 0.0;
@@ -508,7 +574,25 @@ class BarrageEngine extends FlameGame with TapCallbacks {
     super.onRemove();
   }
 
+  @override
+  void lifecycleStateChange(AppLifecycleState state) {
+    // The custom pulse driver owns scheduling, so do not let Flame restart its
+    // display-rate ticker when the app resumes.
+    super.lifecycleStateChange(state);
+    pauseEngine();
+    _appActive = state == AppLifecycleState.resumed || state == AppLifecycleState.inactive;
+    if (_appActive) {
+      _resumeLoopIfNeeded();
+    } else {
+      _stopFramePulses();
+    }
+  }
+
   int get activeCacheSize => _pictureCache.size;
   int get activePoolSize => _pool.currentSize;
   int get pendingMessageCount => _waiting.length + _pausedBuffer.length;
+  int get parserCacheSize => _parser.cacheCount;
+  int get layoutCacheSize => _layout.cacheCount;
+  bool get framePulseActive => _frameTimer?.isActive == true;
+  int get frameStepCount => _frameStepCount;
 }

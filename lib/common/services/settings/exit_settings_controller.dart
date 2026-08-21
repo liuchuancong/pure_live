@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:pure_live/get/get.dart';
 import 'package:flutter_exit_app/flutter_exit_app.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
@@ -11,26 +13,32 @@ class ExitSettingsController extends GetxController {
 
   final StopWatchTimer _stopWatchTimer = StopWatchTimer(mode: StopWatchMode.countDown);
   StopWatchTimer get stopWatchTimer => _stopWatchTimer;
+  final List<Worker> _workers = <Worker>[];
+  StreamSubscription<dynamic>? _timerEndedSubscription;
 
   @override
   void onInit() {
     super.onInit();
 
-    debounce(enableAutoShutDownTime, (_) {
-      if (enableAutoShutDownTime.v) {
-        restartShutdownTimer();
-      } else {
-        stopShutdownTimer();
-      }
-    }, time: const Duration(milliseconds: 500));
+    _workers.add(
+      debounce(enableAutoShutDownTime, (_) {
+        if (enableAutoShutDownTime.v) {
+          restartShutdownTimer();
+        } else {
+          stopShutdownTimer();
+        }
+      }, time: const Duration(milliseconds: 500)),
+    );
 
-    debounce(autoShutDownTime, (_) {
-      if (enableAutoShutDownTime.v) {
-        restartShutdownTimer();
-      }
-    }, time: const Duration(milliseconds: 500));
+    _workers.add(
+      debounce(autoShutDownTime, (_) {
+        if (enableAutoShutDownTime.v) {
+          restartShutdownTimer();
+        }
+      }, time: const Duration(milliseconds: 500)),
+    );
 
-    _stopWatchTimer.fetchEnded.listen((value) {
+    _timerEndedSubscription = _stopWatchTimer.fetchEnded.listen((value) {
       _stopWatchTimer.onStopTimer();
       FlutterExitApp.exitApp();
     });
@@ -112,6 +120,12 @@ class ExitSettingsController extends GetxController {
 
   @override
   void onClose() {
+    for (final worker in _workers) {
+      worker.dispose();
+    }
+    _workers.clear();
+    unawaited(_timerEndedSubscription?.cancel());
+    _timerEndedSubscription = null;
     _stopWatchTimer.dispose();
     super.onClose();
   }

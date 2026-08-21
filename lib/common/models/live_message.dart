@@ -121,6 +121,7 @@ class LiveSuperChatMessage {
   final DateTime endTime;
   final String backgroundColor;
   final String backgroundBottomColor;
+
   LiveSuperChatMessage({
     required this.backgroundBottomColor,
     required this.backgroundColor,
@@ -131,4 +132,15 @@ class LiveSuperChatMessage {
     required this.startTime,
     required this.userName,
   });
+
+  @override
+  bool operator ==(Object other) {
+    return other is LiveSuperChatMessage &&
+        other.userName == userName &&
+        other.message == message &&
+        other.price == price;
+  }
+
+  @override
+  int get hashCode => Object.hash(userName, message, price);
 }

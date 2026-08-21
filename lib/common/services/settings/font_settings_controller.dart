@@ -13,6 +13,7 @@ import 'package:pure_live/common/services/settings/danmaku_settings_controller.d
 
 class FontSettingsController extends GetxController {
   Future<void>? _initialization;
+  Worker? _themeWorker;
   final RxDouble textScaleFactor = hiveDouble('textScaleFactor', 1.0);
   final RxDouble fontSizeBodySmall = hiveDouble('fontSizeBodySmall', 12.0);
   final RxDouble fontSizeBodyMedium = hiveDouble('fontSizeBodyMedium', 13.0);
@@ -31,7 +32,7 @@ class FontSettingsController extends GetxController {
     super.onInit();
     unawaited(ensureInitialized());
 
-    everAll([
+    _themeWorker = everAll([
       fontSizeBodySmall,
       fontSizeBodyMedium,
       fontSizeBodyLarge,
@@ -39,6 +40,12 @@ class FontSettingsController extends GetxController {
       fontSizeTitleLarge,
       fontFamilyName,
     ], (_) => refreshSystemTheme());
+  }
+
+  @override
+  void onClose() {
+    _themeWorker?.dispose();
+    super.onClose();
   }
 
   Future<void> ensureInitialized() => _initialization ??= _initializeFonts();

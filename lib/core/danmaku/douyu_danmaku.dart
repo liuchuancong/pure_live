@@ -1,14 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
-
+import 'package:meta/meta.dart';
 import '../common/binary_writer.dart';
-
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/common/models/live_message.dart';
 import 'package:pure_live/core/common/web_socket_util.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
-import 'package:meta/meta.dart';
+
+
+
 
 class DouyuDanmaku implements LiveDanmaku {
   @override
@@ -37,6 +38,7 @@ class DouyuDanmaku implements LiveDanmaku {
   String serverUrl = "wss://danmuproxy.douyu.com:8506";
 
   WebScoketUtils? webScoketUtils;
+  // ignore: unused_field
   String _roomId = '';
   int _generation = 0;
 
@@ -103,40 +105,101 @@ class DouyuDanmaku implements LiveDanmaku {
   }
 
   void decodeMessage(List<int> data) {
-    try {
-      for (final result in deserializeDouyuPackets(data)) {
+    for (final result in deserializeDouyuPackets(data)) {
+      try {
         final jsonData = sttToJObject(result);
         if (jsonData is! Map) continue;
 
-        var type = jsonData["type"]?.toString();
-        //斗鱼好像不会返回人气值
+        final type = jsonData["type"]?.toString();
+        LiveMessage? liveMsg;
         if (type == "chatmsg") {
-          // 屏蔽阴间弹幕
-          if (jsonData["dms"] == null) continue;
+          // Current packets mark visible chat with `dms`; older packets can
+          // instead carry the fan flag. Rejecting every packet without `if=1`
+          // dropped ordinary audience chat after the super-chat merge.
+          if (jsonData["dms"] == null && jsonData["if"]?.toString() != '1') continue;
           final packetRoomId = jsonData['rid']?.toString() ?? '';
           if (packetRoomId.isNotEmpty && _roomId.isNotEmpty && packetRoomId != _roomId) continue;
-          var col = int.tryParse(jsonData["col"].toString()) ?? 0;
+          final col = int.tryParse(jsonData["col"]?.toString() ?? '') ?? 0;
           final rawTimestamp = int.tryParse(jsonData['cst']?.toString() ?? '');
           final sentAt = rawTimestamp == null
               ? null
               : DateTime.fromMillisecondsSinceEpoch(rawTimestamp > 100000000000 ? rawTimestamp : rawTimestamp * 1000);
           final messageId = jsonData['cid']?.toString() ?? '';
-          var liveMsg = LiveMessage(
+          liveMsg = LiveMessage(
             type: LiveMessageType.chat,
-            userName: jsonData["nn"].toString(),
+            userName: jsonData["nn"]?.toString() ?? '',
             userId: jsonData['uid']?.toString() ?? '',
-            message: jsonData["txt"].toString(),
+            message: jsonData["txt"]?.toString() ?? '',
             color: getColor(col),
             messageId: messageId.isEmpty ? '' : 'douyu:$messageId',
             sentAt: sentAt,
           );
-
-          onMessage?.call(liveMsg);
+        } else if (type == "comm_chatmsg") {
+          liveMsg = _parseCommonSuperChat(jsonData);
+        } else if (type == "voice_trlt") {
+          liveMsg = _parseVoiceSuperChat(jsonData);
         }
+        if (liveMsg != null) onMessage?.call(liveMsg);
+      } catch (e) {
+        // One malformed packet must not discard the valid packets coalesced
+        // after it in the same WebSocket frame.
+        CoreLog.error("Douyu packet parse failed: $e");
       }
-    } catch (e) {
-      CoreLog.error(e);
     }
+  }
+
+  LiveMessage? _parseCommonSuperChat(Map jsonData) {
+    final chat = jsonData["chatmsg"];
+    final now = int.tryParse(jsonData["now"]?.toString() ?? '');
+    final duration = int.tryParse(jsonData["cet"]?.toString() ?? '');
+    final rawPrice = int.tryParse(jsonData["cprice"]?.toString() ?? '');
+    if (chat is! Map || now == null || duration == null || rawPrice == null) return null;
+    final face = chat["ic"]?.toString() ?? '';
+    final startTime = DateTime.fromMillisecondsSinceEpoch(now);
+    final superChat = LiveSuperChatMessage(
+      backgroundBottomColor: "#292a60",
+      backgroundColor: "#c1c1ff",
+      endTime: startTime.add(Duration(seconds: duration)),
+      face: face.isEmpty ? '' : "https://apic.douyucdn.cn/upload/${face}_small.jpg",
+      message: chat["txt"]?.toString() ?? '',
+      price: rawPrice ~/ 100,
+      startTime: startTime,
+      userName: chat["nn"]?.toString() ?? '',
+    );
+    return _superChatMessage(superChat);
+  }
+
+  LiveMessage? _parseVoiceSuperChat(Map jsonData) {
+    final list = jsonData["list"];
+    if (list is! List || list.isEmpty || list.first is! Map) return null;
+    final scData = list.first as Map;
+    final endSeconds = int.tryParse(scData["etime"]?.toString() ?? '');
+    final startSeconds = int.tryParse(scData["acptime"]?.toString() ?? '');
+    final rawPrice = int.tryParse(scData["realPrice"]?.toString() ?? '');
+    if (endSeconds == null || startSeconds == null || rawPrice == null) return null;
+    final avatars = scData["uat"];
+    final avatar = avatars is List && avatars.length > 1 ? avatars[1].toString() : '';
+    final superChat = LiveSuperChatMessage(
+      backgroundBottomColor: "#246488",
+      backgroundColor: "#ffffff",
+      endTime: DateTime.fromMillisecondsSinceEpoch(endSeconds * 1000),
+      face: avatar.isEmpty ? '' : "https://$avatar",
+      message: scData["content"]?.toString() ?? '',
+      price: rawPrice ~/ 100,
+      startTime: DateTime.fromMillisecondsSinceEpoch(startSeconds * 1000),
+      userName: scData["un"]?.toString() ?? '',
+    );
+    return _superChatMessage(superChat);
+  }
+
+  LiveMessage _superChatMessage(LiveSuperChatMessage data) {
+    return LiveMessage(
+      type: LiveMessageType.superChat,
+      userName: "SUPER_CHAT_MESSAGE",
+      message: "SUPER_CHAT_MESSAGE",
+      color: LiveMessageColor.white,
+      data: data,
+    );
   }
 
   List<int> serializeDouyu(String body) {
@@ -167,22 +230,23 @@ class DouyuDanmaku implements LiveDanmaku {
     return packets.isEmpty ? null : packets.first;
   }
 
-  /// A single WebSocket frame often contains several Douyu protocol packets.
-  /// Parsing only the first packet silently loses chat messages and can leave
-  /// the UI looking frozen during busy rooms.
+  /// One WebSocket frame commonly carries several complete Douyu packets.
+  /// Iterate by each packet's own length instead of silently dropping every
+  /// packet after the first.
   List<String> deserializeDouyuPackets(List<int> buffer) {
     final packets = <String>[];
     try {
+      final bytes = Uint8List.fromList(buffer);
       var offset = 0;
-      while (offset + 12 <= buffer.length) {
-        final header = ByteData.sublistView(Uint8List.fromList(buffer), offset, offset + 4);
+      while (offset + 12 <= bytes.length) {
+        final header = ByteData.sublistView(bytes, offset, offset + 4);
         final fullMsgLength = header.getUint32(0, Endian.little);
         final frameLength = fullMsgLength + 4;
         final bodyLength = fullMsgLength - 9;
-        if (fullMsgLength < 9 || bodyLength < 0 || offset + frameLength > buffer.length) break;
+        if (fullMsgLength < 9 || bodyLength < 0 || offset + frameLength > bytes.length) break;
         final bodyStart = offset + 12;
         final bodyEnd = bodyStart + bodyLength;
-        packets.add(utf8.decode(buffer.sublist(bodyStart, bodyEnd), allowMalformed: true));
+        packets.add(utf8.decode(bytes.sublist(bodyStart, bodyEnd), allowMalformed: true));
         offset += frameLength;
       }
     } catch (e) {

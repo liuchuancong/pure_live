@@ -309,6 +309,9 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
         ),
         actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n("confirm")))],
       ),
-    );
+    ).whenComplete(() {
+      hostController.dispose();
+      portController.dispose();
+    });
   }
 }

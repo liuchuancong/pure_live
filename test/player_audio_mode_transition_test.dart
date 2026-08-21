@@ -99,6 +99,27 @@ void main() {
     await manager.dispose();
   });
 
+  test('configuring the default engine keeps native player allocation lazy', () async {
+    final player = _FakePlayer();
+    final manager = _createManager(player);
+
+    manager.configureDefaultEngine(PlayerEngine.mediaKit);
+    expect(player.initCalls, 0);
+    expect(manager.currentPlayer, isNull);
+    expect(manager.currentEngine, PlayerEngine.mediaKit);
+
+    await manager.play(
+      'https://example.invalid/live.flv',
+      const <String>['https://example.invalid/live.flv'],
+      const <String, String>{},
+      room: LiveRoom(roomId: 'lazy-room', platform: 'test'),
+    );
+
+    expect(player.initCalls, 1);
+    expect(manager.currentPlayer, same(player));
+    await manager.dispose();
+  });
+
   test('a delayed media-service sync never blocks or rolls back the native mode change', () async {
     final player = _FakePlayer();
     final syncStarted = Completer<void>();
@@ -548,12 +569,14 @@ class _FakePlayer implements UnifiedPlayer {
   final bool dedupeAudioMode;
   final List<bool> audioOnlyChanges = <bool>[];
   int setDataSourceCalls = 0;
+  int initCalls = 0;
   int hardDisposeCalls = 0;
   bool _initialized = false;
   bool _audioOnly = false;
 
   @override
   Future<void> init({bool audioOnly = false}) async {
+    initCalls++;
     _initialized = true;
     _audioOnly = audioOnly;
   }

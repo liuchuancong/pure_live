@@ -89,6 +89,7 @@ class BackButtonObserver extends RouteObserver<PageRoute<dynamic>> {
         final livePlayController = Get.find<LivePlayController>();
         final state = livePlayController.state.value;
         final suppressAppFloating = livePlayController.takeSuppressAppFloatingOnNextPop();
+        livePlayController.updateUI(displayVideoLayer: false);
 
         // 更新房间状态
         livePlayController.updateRoom(success: false);

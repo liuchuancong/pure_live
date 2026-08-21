@@ -1,8 +1,35 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pure_live/common/services/display_mode_service.dart';
 import 'package:pure_live/common/services/settings/danmaku_settings_controller.dart';
 
 void main() {
   group('danmaku settings', () {
+    test('adaptive FPS bounds barrage work without lowering the app display mode', () {
+      const display = DisplayModeInfo(
+        enabled: true,
+        currentRefreshRate: 120,
+        maxRefreshRate: 144,
+        preferredRefreshRate: 144,
+        supportedRefreshRates: [60, 120, 144],
+      );
+
+      expect(DanmakuSettingsController.resolveAdaptiveDanmakuFps(display), 60);
+      expect(DanmakuSettingsController.resolveAdaptiveDanmakuFps(display, pip: true), 30);
+    });
+
+    test('adaptive FPS still follows a display below its renderer ceiling', () {
+      const display = DisplayModeInfo(
+        enabled: true,
+        currentRefreshRate: 50,
+        maxRefreshRate: 50,
+        preferredRefreshRate: 50,
+        supportedRefreshRates: [50],
+      );
+
+      expect(DanmakuSettingsController.resolveAdaptiveDanmakuFps(display), 50);
+      expect(DanmakuSettingsController.resolveAdaptiveDanmakuFps(display, pip: true), 30);
+    });
+
     test('uses compact defaults for an older backup', () {
       final config = DanmakuSettingsController.extractConfig({'danmaku': <String, dynamic>{}});
 

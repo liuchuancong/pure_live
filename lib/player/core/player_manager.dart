@@ -109,6 +109,7 @@ class PlayerManager {
   final RxBool isPipPreparing = false.obs;
   final RxBool isFloating = false.obs;
   final RxBool isHovered = false.obs;
+  final RxBool isFloatingVideoVisible = true.obs;
 
   /// True only while a deep power-saving audio session is reacquiring video.
   /// The audio presentation remains interactive during this interval, avoiding
@@ -156,6 +157,15 @@ class PlayerManager {
   bool get isPlayingNow => _playingSubject.value;
   bool get isAudioOnlyMode => _runtimeAudioOnly;
   bool get desiredAudioOnlyMode => _requestedAudioOnly;
+
+  /// Selects the first engine without allocating a native player yet.
+  /// Browsing the home/settings pages does not need a decoder, demuxer,
+  /// texture or their worker threads; [play] performs the one-time warm-up on
+  /// the first real room request.
+  void configureDefaultEngine(PlayerEngine engine) {
+    if (_disposed || _currentPlayer != null) return;
+    _defaultEngine = engine;
+  }
 
   /// Whether the room already owns a live native source that can accept an
   /// in-place audio/video track change.
@@ -348,9 +358,11 @@ class PlayerManager {
       lineManager.reset();
     }
     if (_currentPlayer == null || _runtimeEngine == null) {
-      final String savedKey = SettingsService.to.player.videoPlayerKey.v;
-      final String validKey = PlayerConsts.engines.containsKey(savedKey) ? savedKey : PlayerConsts.defaultKey;
-      _defaultEngine = PlayerConsts.engines[validKey]!;
+      if (_defaultEngine == null) {
+        final String savedKey = SettingsService.to.player.videoPlayerKey.v;
+        final String validKey = PlayerConsts.engines.containsKey(savedKey) ? savedKey : PlayerConsts.defaultKey;
+        _defaultEngine = PlayerConsts.engines[validKey]!;
+      }
       _runtimeEngine = _defaultEngine;
       log('No current player, initializing with default engine: $_defaultEngine', name: 'PlayerManager');
       await initialize(engine: _defaultEngine!, audioOnly: audioOnly);
@@ -806,6 +818,7 @@ class PlayerManager {
     // room during that delay closes the prepared session and must prevent the
     // stale callback from mounting the old player on top of the new route.
     if (!_appFloatingPrepared || _floatingCleanup != null) return;
+    isFloatingVideoVisible.value = true;
     floatingManager.disposeFloating(_floatTag);
     _hideTimer?.cancel();
     double maxSide = Platform.isWindows ? 350 : 220;
@@ -833,6 +846,7 @@ class PlayerManager {
       }
     }
 
+    isFloatingVideoVisible.value = true;
     floatingManager.createFloating(
       _floatTag,
       FloatingOverlay(
@@ -850,8 +864,12 @@ class PlayerManager {
             decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Colors.black),
             child: Stack(
               children: [
-                Positioned.fill(
-                  child: getVideoWidget(videoFitIndex.value, fitList: SettingsService.to.player.videoFitArray),
+                Obx(
+                  () => Positioned.fill(
+                    child: isFloatingVideoVisible.value
+                        ? getVideoWidget(videoFitIndex.value, fitList: SettingsService.to.player.videoFitArray)
+                        : const SizedBox.shrink(),
+                  ),
                 ),
                 Positioned.fill(child: _buildCompactDanmaku()),
                 Positioned.fill(
@@ -963,6 +981,9 @@ class PlayerManager {
     cleanup = () async {
       final hadOverlay = floatingManager.containsFloating(_floatTag);
       if (hadOverlay) {
+        isFloatingVideoVisible.value = false;
+        SchedulerBinding.instance.scheduleFrame();
+        await SchedulerBinding.instance.endOfFrame;
         // OverlayEntry.remove() schedules unmount for the next frame. Calling
         // disposeFloating here would also dispose its controllers while the
         // FloatingView is still subscribed to them.

@@ -382,7 +382,10 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
           },
         );
       },
-    );
+    ).whenComplete(() {
+      controller.dispose();
+      customInputHeight.close();
+    });
   }
 
   void _showIntervalSelectionMenu(BuildContext context) {
@@ -558,8 +561,9 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
     final TextEditingController urlEditingController = TextEditingController();
     final TextEditingController textEditingController = TextEditingController();
 
-    var result = await Get.dialog(
-      AlertDialog(
+    try {
+      return await Get.dialog<String?>(
+        AlertDialog(
         title: Text(i18n("enter_download_url")),
         content: SizedBox(
           width: 400.0,
@@ -626,10 +630,12 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
             child: Text(i18n("confirm")),
           ),
         ],
-      ),
-      barrierDismissible: false,
-    );
-
-    return result;
+        ),
+        barrierDismissible: false,
+      );
+    } finally {
+      urlEditingController.dispose();
+      textEditingController.dispose();
+    }
   }
 }

@@ -117,14 +117,32 @@ class GetListenable<T> extends ListNotifierSingle implements RxInterface<T> {
   GetListenable(T val) : _value = val;
 
   StreamController<T>? _controller;
+  bool _streamListenerAttached = false;
 
   StreamController<T> get subject {
     if (_controller == null) {
-      _controller =
-          StreamController<T>.broadcast(onCancel: addListener(_streamListener));
-      _controller?.add(_value);
+      _controller = StreamController<T>.broadcast(
+        // A broadcast controller may go from zero listeners back to one.
+        // PiP disposes the portrait list and later creates a new listener, so
+        // the Rx-to-stream bridge must be reattached on every such cycle.
+        onListen: _attachStreamListener,
+        onCancel: _detachStreamListener,
+      );
     }
     return _controller!;
+  }
+
+  void _attachStreamListener() {
+    if (_streamListenerAttached || isDisposed) return;
+    addListener(_streamListener);
+    _streamListenerAttached = true;
+  }
+
+  void _detachStreamListener() {
+    final controller = _controller;
+    if (!_streamListenerAttached || (controller?.hasListener ?? false)) return;
+    removeListener(_streamListener);
+    _streamListenerAttached = false;
   }
 
   void _streamListener() {
@@ -134,7 +152,10 @@ class GetListenable<T> extends ListNotifierSingle implements RxInterface<T> {
   @override
   @mustCallSuper
   void close() {
-    removeListener(_streamListener);
+    if (_streamListenerAttached) {
+      removeListener(_streamListener);
+      _streamListenerAttached = false;
+    }
     _controller?.close();
     dispose();
   }

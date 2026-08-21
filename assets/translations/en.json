@@ -1127,7 +1127,7 @@
     "danmaku_user_blocked": "This user's danmaku is now blocked",
     "danmaku_keyword_blocked": "Keyword added to the danmaku block list",
     "blocked_danmaku_users": "Blocked users ({count})",
-    "dynamic_follow_display": "Follow the display refresh rate",
+    "dynamic_follow_display": "Adaptive power mode",
     "danmaku_templates": "Danmaku viewing templates",
     "danmaku_template_best": "Top 20% · Balanced",
     "danmaku_template_comfort": "Top 35% · Comfort",
@@ -1256,5 +1256,6 @@
     "danmaku_repeat_filter": "Repeated danmaku filter",
     "collapse_repeated_danmaku": "Collapse identical danmaku bursts",
     "collapse_repeated_danmaku_desc": "Keep the first copy when different users send the same text. Local and system messages are unaffected.",
-    "repeated_danmaku_window": "Identical-text window (seconds)"
+    "repeated_danmaku_window": "Identical-text window (seconds)",
+    "super_chat": "Super Chat"
 }

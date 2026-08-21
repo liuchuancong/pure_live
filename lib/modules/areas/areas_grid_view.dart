@@ -200,7 +200,7 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
         return GridView.builder(
           padding: const EdgeInsets.fromLTRB(6, 6, 6, 80),
           controller: scrollController,
-          scrollCacheExtent: ScrollCacheExtent.pixels(width > 680 ? 960 : 480),
+          scrollCacheExtent: ScrollCacheExtent.pixels(width > 680 ? 480 : 320),
           addAutomaticKeepAlives: false,
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(

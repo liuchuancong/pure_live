@@ -24,7 +24,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   StreamSubscription<dynamic>? _configSubscription;
   Timer? _autoRefreshTimer;
   Timer? _debounceTimer;
-  final List<Worker> _audienceWorkers = [];
+  final List<Worker> _workers = [];
   int _refreshEpoch = 0;
   DateTime? _lastFullRefreshAt;
   bool _startupVerificationInProgress = false;
@@ -52,17 +52,19 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     tabController = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addObserver(this);
 
-    debounce(SettingsService.to.fav.favoriteRooms, (_) {
-      if (!_startupVerificationInProgress) applyLocalFilter();
-    }, time: const Duration(milliseconds: 1000));
+    _workers.add(
+      debounce(SettingsService.to.fav.favoriteRooms, (_) {
+        if (!_startupVerificationInProgress) applyLocalFilter();
+      }, time: const Duration(milliseconds: 1000)),
+    );
 
-    ever(selectedTagId, (_) => applyLocalFilter());
-    ever(tabSiteIndex, (_) => applyLocalFilter());
-    ever(tabOnlineIndex, (_) => applyLocalFilter());
-    ever(tagController.tags, (_) => applyLocalFilter());
-    ever(tagController.roomTagsMap, (_) => applyLocalFilter());
-    _audienceWorkers.add(ever(SettingsService.to.app.preferRealOnlineCounts, (_) => applyLocalFilter()));
-    _audienceWorkers.add(ever(SettingsService.to.app.realOnlinePlatforms, (_) => applyLocalFilter()));
+    _workers.add(ever(selectedTagId, (_) => applyLocalFilter()));
+    _workers.add(ever(tabSiteIndex, (_) => applyLocalFilter()));
+    _workers.add(ever(tabOnlineIndex, (_) => applyLocalFilter()));
+    _workers.add(ever(tagController.tags, (_) => applyLocalFilter()));
+    _workers.add(ever(tagController.roomTagsMap, (_) => applyLocalFilter()));
+    _workers.add(ever(SettingsService.to.app.preferRealOnlineCounts, (_) => applyLocalFilter()));
+    _workers.add(ever(SettingsService.to.app.realOnlinePlatforms, (_) => applyLocalFilter()));
 
     // Begin verification during controller startup instead of waiting for the
     // first rendered frame. Persisted metadata remains useful, but its old
@@ -127,7 +129,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     _configSubscription?.cancel();
     _autoRefreshTimer?.cancel();
     _debounceTimer?.cancel();
-    for (final worker in _audienceWorkers) {
+    for (final worker in _workers) {
       worker.dispose();
     }
     super.onClose();

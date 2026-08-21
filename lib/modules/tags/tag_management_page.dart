@@ -429,7 +429,10 @@ class TagManagementPage extends GetView<TagManagementController> {
           ),
         ],
       ),
-    );
+    ).whenComplete(() {
+      nameController.dispose();
+      descController.dispose();
+    });
   }
 
   void _confirmDelete(BuildContext context, int index, String tagName) {

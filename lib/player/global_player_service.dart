@@ -7,8 +7,6 @@ import 'adapters/fijk_adapter.dart';
 import 'adapters/media_kit_adapter.dart';
 import 'core/line_fallback_manager.dart';
 
-import 'package:media_kit/media_kit.dart';
-
 import 'core/preload_player_manager.dart';
 import 'core/engine_fallback_manager.dart';
 import 'adapters/video_player_adapter.dart';
@@ -45,7 +43,6 @@ class GlobalPlayerService {
   }
 
   Future<void> _initialize(PlayerEngine defaultEngine) async {
-    MediaKit.ensureInitialized();
     // 1. Setup the Pool with a factory that knows how to create each Adapter
     final playerPool = PlayerPool(
       factory: (engine) async {
@@ -71,14 +68,12 @@ class GlobalPlayerService {
       lineManager: LineFallbackManager(),
     );
 
-    // 3. Perform basic initialization (Pre-warms the default engine)
-    try {
-      await playerManager.initialize(engine: defaultEngine);
-      _initialized = true;
-      log("GlobalPlayerService: Initialized successfully.", name: "GlobalPlayerService");
-    } catch (e) {
-      log("GlobalPlayerService: Failed to initialize: $e", name: "GlobalPlayerService", error: e);
-    }
+    // 3. Keep native decoders, network workers and textures cold until the
+    // first room is opened. This avoids paying hundreds of MiB and background
+    // CPU merely for browsing the home/settings UI.
+    playerManager.configureDefaultEngine(defaultEngine);
+    _initialized = true;
+    log("GlobalPlayerService: Ready for lazy player initialization.", name: "GlobalPlayerService");
   }
 
   /// Global dispose - Call this only when the app is being destroyed

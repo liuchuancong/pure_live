@@ -1,13 +1,13 @@
 import 'dart:async';
-
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
+import 'package:pure_live/modules/live_play/states/live_play_state.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_message_gate.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_session_host.dart';
-import 'package:pure_live/modules/live_play/controllers/danmaku_similarity_filter.dart';
 import 'package:pure_live/modules/live_play/controllers/repeated_danmaku_filter.dart';
-import 'package:pure_live/modules/live_play/states/live_play_state.dart';
+import 'package:pure_live/modules/live_play/controllers/danmaku_similarity_filter.dart';
+
 
 /// Owns exactly one room-bound danmaku session.
 ///
@@ -20,11 +20,13 @@ class DanmakuController extends GetxController {
     this._main, {
     this.startTimeout = const Duration(seconds: 20),
     this.stopTimeout = const Duration(seconds: 5),
+    this.recoveryAllowed,
   });
 
   final DanmakuSessionHost _main;
   final Duration startTimeout;
   final Duration stopTimeout;
+  final bool Function(LiveRoom room)? recoveryAllowed;
   final DanmakuMessageGate _messageGate = DanmakuMessageGate();
   final RepeatedDanmakuFilter _repeatedMessageFilter = RepeatedDanmakuFilter();
   final DanmakuSimilarityFilter _similarityFilter = DanmakuSimilarityFilter();
@@ -97,22 +99,32 @@ class DanmakuController extends GetxController {
   bool needReconnect(LiveRoom room) {
     if (!_initialized) return true;
     final key = _roomKey(room);
-    return _sessionKey != key && _connectingKey != key;
+    if (_connectingKey == key) return false;
+    return _sessionKey != key || !liveDanmaku.isConnected;
   }
 
-  /// Connects the room, optionally rebuilding an apparently-owned transport.
+  /// Connects the room, optionally rebuilding its transport.
   ///
-  /// Android may keep the Dart/controller session alive while its websocket is
-  /// suspended during the PiP -> foreground transition.  In that case the
-  /// room key still matches even though no more packets can arrive.  [force]
-  /// deliberately tears down that transport without clearing the on-screen
-  /// barrage and installs fresh callbacks before reconnecting.
+  /// A matching, connected session survives presentation-only changes such as
+  /// Android PiP. A matching but disconnected session is rebuilt without
+  /// clearing the already-rendered history. This avoids creating a guaranteed
+  /// packet gap by tearing down a healthy websocket on every PiP return.
   Future<void> connectRoom(LiveRoom room, {bool force = false}) {
-    final request = ++_requestEpoch;
     final key = _roomKey(room);
+    if (!_initialized) return Future<void>.value();
+    final healthyMatchingSession = _sessionKey == key && liveDanmaku.isConnected;
+    // This fast path is deliberately before the request epoch increment. A
+    // duplicate lifecycle/PiP request must not invalidate an already-running
+    // handshake merely to discover the same key again in the serialized body.
+    if (!force && (healthyMatchingSession || _connectingKey == key)) {
+      return Future<void>.value();
+    }
+
+    final request = ++_requestEpoch;
     return _serialize(() async {
       if (request != _requestEpoch || !_initialized) return;
-      if (!force && (_sessionKey == key || _connectingKey == key)) return;
+      final stillHealthy = _sessionKey == key && liveDanmaku.isConnected;
+      if (!force && (stillHealthy || _connectingKey == key)) return;
 
       final previousKey = _sessionKey ?? _connectingKey;
       await _disconnectInternal(clearRenderer: previousKey != null && previousKey != key);
@@ -192,6 +204,8 @@ class DanmakuController extends GetxController {
         _state.player.videoController?.sendDanmaku(msg);
       } else if (msg.type == LiveMessageType.online) {
         _main.updateRuntimeAudience(msg.data);
+      }else if (msg.type == LiveMessageType.superChat) {
+        _main.addAddSuperChat(msg);
       }
     };
 
@@ -313,13 +327,19 @@ class DanmakuController extends GetxController {
   /// accidentally open a socket when danmaku is disabled.
   Future<void> recoverRoomConnection(LiveRoom room) async {
     if (!_initialized) return;
-    const except = [Sites.kuaishouSite, Sites.iptvSite, Sites.ccSite];
-    final settings = SettingsService.to.danmaku;
-    if (except.contains(room.platform) || (!settings.enableDanmakuDisplay.v && !settings.enablePipDanmaku.v)) {
+    if (!_isRecoveryAllowed(room)) {
       await stopDanmaku();
       return;
     }
-    await connectRoom(room, force: true);
+    await connectRoom(room);
+  }
+
+  bool _isRecoveryAllowed(LiveRoom room) {
+    final override = recoveryAllowed;
+    if (override != null) return override(room);
+    const except = [Sites.kuaishouSite, Sites.iptvSite, Sites.ccSite];
+    final settings = SettingsService.to.danmaku;
+    return !except.contains(room.platform) && (settings.enableDanmakuDisplay.v || settings.enablePipDanmaku.v);
   }
 
   String _roomKey(LiveRoom room) => '${room.platform ?? ''}:${room.roomId ?? ''}';

@@ -1,13 +1,13 @@
 import 'dart:async';
 
-import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/common/models/live_message.dart';
-import 'package:pure_live/common/models/live_room.dart';
-import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/get/get.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:pure_live/common/models/live_room.dart';
+import 'package:pure_live/common/models/live_message.dart';
+import 'package:pure_live/core/interface/live_danmaku.dart';
+import 'package:pure_live/modules/live_play/states/live_play_state.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_session_host.dart';
-import 'package:pure_live/modules/live_play/states/live_play_state.dart';
 
 void main() {
   test('a stalled transport start is bounded, stopped and available for reconnect', () async {
@@ -49,20 +49,60 @@ void main() {
     expect(host.rendererClearCount, 1);
   });
 
-  test('PiP recovery rebuilds a matching room transport without clearing rendered messages', () async {
+  test('PiP recovery preserves a healthy matching transport and rendered messages', () async {
     final host = _TestDanmakuHost();
     final engine = _CountingDanmaku();
-    final controller = DanmakuController(host);
+    final controller = DanmakuController(host, recoveryAllowed: (_) => true);
     final room = LiveRoom(roomId: 'room-pip', platform: 'test', danmakuData: const <String, dynamic>{});
     controller.initDanmaku(engine);
 
     await controller.connectRoom(room);
-    await controller.connectRoom(room, force: true);
+    await controller.recoverRoomConnection(room);
+
+    expect(engine.startCalls, 1);
+    expect(engine.stopCalls, 1, reason: 'only the initial pre-connect cleanup is needed');
+    expect(host.currentRoomId, 'room-pip');
+    expect(host.rendererClearCount, 0);
+    expect(controller.needReconnect(room), isFalse);
+  });
+
+  test('PiP recovery rebuilds only a disconnected matching transport', () async {
+    final host = _TestDanmakuHost();
+    final engine = _CountingDanmaku();
+    final controller = DanmakuController(host, recoveryAllowed: (_) => true);
+    final room = LiveRoom(roomId: 'room-pip-dead', platform: 'test', danmakuData: const <String, dynamic>{});
+    controller.initDanmaku(engine);
+
+    await controller.connectRoom(room);
+    engine.simulateDisconnect();
+    expect(controller.needReconnect(room), isTrue);
+
+    await controller.recoverRoomConnection(room);
 
     expect(engine.startCalls, 2);
-    expect(engine.stopCalls, 2, reason: 'initial cleanup plus same-room PiP transport replacement');
-    expect(host.currentRoomId, 'room-pip');
-    expect(host.rendererClearCount, 0, reason: 'same-room recovery keeps the visible barrage intact');
+    expect(engine.stopCalls, 2, reason: 'initial cleanup plus replacement of the dead socket');
+    expect(host.currentRoomId, 'room-pip-dead');
+    expect(host.rendererClearCount, 0, reason: 'same-room recovery keeps the visible history intact');
+    expect(controller.needReconnect(room), isFalse);
+  });
+
+  test('PiP recovery does not interrupt a matching connection attempt', () async {
+    final host = _TestDanmakuHost();
+    final engine = _ConnectingDanmaku();
+    final controller = DanmakuController(host, recoveryAllowed: (_) => true);
+    final room = LiveRoom(roomId: 'room-pip-connecting', platform: 'test', danmakuData: const <String, dynamic>{});
+    controller.initDanmaku(engine);
+
+    final connection = controller.connectRoom(room);
+    await engine.started.future;
+    await controller.recoverRoomConnection(room);
+    engine.release.complete();
+    await connection;
+
+    expect(engine.startCalls, 1);
+    expect(engine.stopCalls, 1);
+    expect(host.currentRoomId, 'room-pip-connecting');
+    expect(controller.needReconnect(room), isFalse);
   });
 }
 
@@ -88,6 +128,9 @@ class _TestDanmakuHost implements DanmakuSessionHost {
 
   @override
   void clearRenderedDanmaku() => rendererClearCount++;
+
+  @override
+  void addAddSuperChat(LiveMessage msg) {}
 }
 
 class _StalledStartDanmaku extends LiveDanmaku {
@@ -138,5 +181,30 @@ class _CountingDanmaku extends LiveDanmaku {
   @override
   Future<void> stop() async {
     stopCalls++;
+    markDisconnected();
+  }
+
+  void simulateDisconnect() => markDisconnected();
+}
+
+class _ConnectingDanmaku extends LiveDanmaku {
+  int startCalls = 0;
+  int stopCalls = 0;
+  final Completer<void> started = Completer<void>();
+  final Completer<void> release = Completer<void>();
+
+  @override
+  Future<void> start(dynamic args) async {
+    startCalls++;
+    started.complete();
+    await release.future;
+    markConnected();
+    onReady?.call();
+  }
+
+  @override
+  Future<void> stop() async {
+    stopCalls++;
+    markDisconnected();
   }
 }
