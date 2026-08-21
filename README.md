@@ -35,7 +35,7 @@
 
 - **最新稳定版**：[v2.3.0](https://github.com/wzgrx/pure_live/releases/tag/v2.3.0)
 - **当前版本**：`2.3.0+4069`
-- **v2.3.0 上游源码基线**：已同步至 `liuchuancong/pure_live@494035fe`，包含 [PR #762](https://github.com/liuchuancong/pure_live/pull/762)、虎牙播放地址 [PR #766](https://github.com/liuchuancong/pure_live/pull/766) 与上游小窗弹幕目录整理
+- **v2.3.0 上游源码基线**：已同步至 `liuchuancong/pure_live@ee9d15d0`，包含 [PR #762](https://github.com/liuchuancong/pure_live/pull/762)、虎牙播放地址 [PR #766](https://github.com/liuchuancong/pure_live/pull/766)、播放器引擎访问接口与 [issue #768](https://github.com/liuchuancong/pure_live/issues/768) 导航保底修复
 - **构建平台**：Android arm64、Windows x64、Linux x64、macOS Universal、iOS arm64 设备包
 
 ![Pure Live 界面预览](assets/images/banner.png)
@@ -418,7 +418,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
 PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 ```
 
-当前 v2.3.0 源码已通过 Built-in Kotlin 审计、Flutter Analyze、170 项单元/Widget 测试与 26/26 平台公开接口探测；Windows x64 release 已完成真实热门页、封面、2K60 播放、实时弹幕和资源采样。Android arm64 使用持久发布证书正式签名，包名、版本、ABI 与校验和均已核对；Linux x64、macOS universal、iOS arm64 也已从同一提交构建并汇总到 [v2.3.0 Release](https://github.com/wzgrx/pure_live/releases/tag/v2.3.0)。系统画中画返回弹幕由持续存活的直播控制器统一恢复，覆盖列表重建、待处理批次、系统转场重试和串行连接替换；手机连接和设备采样只在明确安排的验收任务中执行。完整流程见 [构建与发布](docs/BUILD_AND_RELEASE.md)。
+当前 v2.3.0 源码已通过 Built-in Kotlin 审计、Flutter Analyze、170 项单元/Widget 测试与 26/26 平台公开接口探测；Windows x64 release 已完成真实热门页、封面、2K60 播放、实时弹幕和资源采样。Android arm64 热修包从当前维护提交重新构建并使用持久发布证书签名，包名、版本、ABI 与校验和均已核对；Windows、Linux、macOS 与 iOS 保留本阶段已发布归档，各平台来源提交记录在 Release 的 `BUILD_METADATA.json`。系统画中画返回弹幕由持续存活的直播控制器统一恢复，覆盖列表重建、待处理批次、系统转场重试和串行连接替换；手机连接和设备采样只在明确安排的验收任务中执行。完整流程见 [构建与发布](docs/BUILD_AND_RELEASE.md)。
 
 ## 🤝 参与开发
 
