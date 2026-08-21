@@ -235,7 +235,7 @@
     "force_destroy_player_subtitle": "Completely stop playback process",
     "general": "General",
     "high_refresh_rate": "High Refresh Rate",
-    "high_refresh_rate_subtitle": "Select the highest refresh rate available at the current resolution for smoother scrolling and animations",
+    "high_refresh_rate_subtitle": "Use the highest compatible rate for touch, scrolling and transitions, then return idle frames to the system's dynamic policy",
     "windows_dynamic_refresh_rate": "Windows Dynamic Refresh Rate",
     "windows_dynamic_refresh_rate_subtitle": "Follows the system refresh rate of the monitor containing the window and updates after monitor or mode changes",
     "display_mode_detecting": "Detecting display mode",

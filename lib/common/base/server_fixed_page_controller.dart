@@ -1,10 +1,13 @@
 import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
 
 abstract class ServerFixedPageController<T> extends BasePageScrollAndStateBone<T> {
   final int fixedServerPageSize;
   final Map<int, List<T>> _bigPageCache = {};
   final Map<int, List<T>> _slicedSmallCache = {};
+  Future<void>? _activeLoad;
+  bool _refreshPending = false;
 
   ServerFixedPageController({required this.fixedServerPageSize}) : super();
 
@@ -12,19 +15,21 @@ abstract class ServerFixedPageController<T> extends BasePageScrollAndStateBone<T
 
   @override
   Future<void> refreshData() async {
+    _refreshPending = true;
+    final active = _activeLoad;
+    if (active != null) await active;
+    if (!_refreshPending || isClosed) return;
+    _refreshPending = false;
     _bigPageCache.clear();
     _slicedSmallCache.clear();
     currentPage = 1;
-    if (Get.width <= 680) {
-      list.clear();
-    }
-    await loadData();
+    await _startLoad(replaceMobileSnapshot: true);
   }
 
   @override
   Future<void> goToPage(int page) async {
-    if (loadding.value || page < 1) return;
-    if (Get.width <= 680) return;
+    if (_activeLoad != null || page < 1) return;
+    if (!usesDesktopPagination) return;
     currentPage = page;
     await loadData();
   }
@@ -32,7 +37,7 @@ abstract class ServerFixedPageController<T> extends BasePageScrollAndStateBone<T
   @override
   void setPageSize(int? newSize) {
     if (newSize == null || pageSize.value == newSize) return;
-    if (Get.width <= 680) {
+    if (!usesDesktopPagination) {
       pageSize.value = newSize;
       return;
     }
@@ -45,10 +50,26 @@ abstract class ServerFixedPageController<T> extends BasePageScrollAndStateBone<T
 
   @override
   Future<void> loadData() async {
-    if (loadding.value) return;
+    final active = _activeLoad;
+    if (active != null) return active;
+    return _startLoad();
+  }
+
+  Future<void> _startLoad({bool replaceMobileSnapshot = false}) {
+    final active = _activeLoad;
+    if (active != null) return active;
+    late final Future<void> operation;
+    operation = _performLoad(replaceMobileSnapshot: replaceMobileSnapshot).whenComplete(() {
+      if (identical(_activeLoad, operation)) _activeLoad = null;
+    });
+    _activeLoad = operation;
+    return operation;
+  }
+
+  Future<void> _performLoad({required bool replaceMobileSnapshot}) async {
     totalCount.value = null;
 
-    if (Get.width > 680 && _slicedSmallCache.containsKey(currentPage)) {
+    if (usesDesktopPagination && _slicedSmallCache.containsKey(currentPage)) {
       final cachedData = _slicedSmallCache[currentPage]!;
       list.assignAll(cachedData);
       canLoadMore.value = cachedData.length >= pageSize.value;
@@ -111,7 +132,7 @@ abstract class ServerFixedPageController<T> extends BasePageScrollAndStateBone<T
         return;
       }
 
-      if (Get.width > 680) {
+      if (usesDesktopPagination) {
         canLoadMore.value = combinedData.length >= pageSize.value;
         _slicedSmallCache[currentPage] = combinedData;
         list.assignAll(combinedData);
@@ -120,7 +141,11 @@ abstract class ServerFixedPageController<T> extends BasePageScrollAndStateBone<T
         scrollToTopImmediate();
       } else {
         canLoadMore.value = combinedData.length >= pageSize.value;
-        list.addAll(combinedData);
+        if (replaceMobileSnapshot) {
+          list.assignAll(combinedData);
+        } else {
+          list.addAll(combinedData);
+        }
         pageEmpty.value = list.isEmpty;
         finishRefreshControllers(canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore);
       }

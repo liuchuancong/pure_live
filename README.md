@@ -34,7 +34,7 @@
 > 本维护分支持续同步 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)，并维护本机优先构建、正式签名、接口探测、Windows 数据迁移及高刷新率优化。
 
 - **最新稳定版**：[v2.3.0](https://github.com/wzgrx/pure_live/releases/tag/v2.3.0)
-- **当前版本**：`2.3.0+4070`
+- **当前版本**：`2.3.0+4071`
 - **v2.3.0 上游源码基线**：已同步至 `liuchuancong/pure_live@e51df666`，包含 SC、平台目录整理、虎牙增强、SOOP/Twitch 与播放器/导航修复；维护分支同时保留高刷新率、PiP 弹幕、后台播放和本地互动增强
 - **构建平台**：Android arm64、Windows x64、Linux x64、macOS Universal、iOS arm64 设备包
 
@@ -418,7 +418,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
 PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 ```
 
-当前 v2.3.0 build 4070 源码已通过 Built-in Kotlin 审计、Flutter Analyze、189 项单元/Widget 测试与 26/26 平台公开接口探测。系统画中画返回弹幕的底层流桥接已经按监听者生命周期修正，并由取消后重订阅回归测试覆盖；应用 UI 保持设备最高刷新率，自动弹幕主画面限制 60 FPS、小窗限制 30 FPS，空闲时停止调度。播放器、FFmpeg、录制/解析服务按需创建，页面 Worker、订阅、段落与图片缓存均确定释放并设置容量上限；Windows 连续滚轮输入合并到单一 EaseInOut 目标轨迹。手机连接和设备采样只在明确安排的验收任务中执行。完整流程见 [构建与发布](docs/BUILD_AND_RELEASE.md)。
+当前 v2.3.0 build 4071 源码已通过 Flutter Analyze（0 issue）与 196 项单元/Widget 测试。首页首刷、手动刷新和前台恢复现在串行化，同一批卡片保留旧快照并在请求完成后一次性替换；收藏启动核验也只发布一个完整结果，不再清空、分批插入和反复排序。平台页签与分区页签各自持有独立纵向滚动控制器，横向手势完全结束后才提交筛选结果。封面使用有容量上限的磁盘/解码缓存并保留旧像素，缓存统计移到后台 isolate；Android 仅在触摸、滚动和转场期间请求设备最高刷新率，空闲后交还系统动态策略。手机连接和设备采样只在明确安排的验收任务中执行。完整流程见 [构建与发布](docs/BUILD_AND_RELEASE.md)。
 
 ## 🤝 参与开发
 

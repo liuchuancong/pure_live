@@ -90,6 +90,7 @@ class RoomGridView extends GetView<FavoriteController> {
             Expanded(
               child: Obx(() {
                 final spacing = SettingsService.to.theme.crossAxisSpacing.v;
+                final isVerifyingFavorites = controller.isVerifyingFavorites.value;
                 final itemWidth = (width - 24 - spacing * (crossAxisCount - 1)) / crossAxisCount;
                 return GridView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -107,7 +108,12 @@ class RoomGridView extends GetView<FavoriteController> {
                   itemCount: displayList.length,
                   itemBuilder: (context, index) {
                     final room = displayList[index];
-                    return RoomCard(key: ValueKey('${room.platform}:${room.roomId}'), room: room, dense: dense);
+                    return RoomCard(
+                      key: ValueKey('${room.platform}:${room.roomId}'),
+                      room: room,
+                      dense: dense,
+                      audiencePending: isVerifyingFavorites,
+                    );
                   },
                 );
               }),

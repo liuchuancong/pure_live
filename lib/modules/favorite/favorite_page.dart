@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/favorite/room_grid_view.dart';
@@ -58,6 +60,11 @@ class _FavoriteSiteTabs extends StatefulWidget {
 
 class _FavoriteSiteTabsState extends State<_FavoriteSiteTabs> {
   TabController? _tabController;
+  Timer? _settledSiteTabTimer;
+  final Map<String, ScrollController> _siteScrollControllers = {};
+
+  ScrollController _scrollControllerFor(String siteId) =>
+      _siteScrollControllers.putIfAbsent(siteId, () => createPureLiveScrollController());
 
   @override
   void didChangeDependencies() {
@@ -66,22 +73,40 @@ class _FavoriteSiteTabsState extends State<_FavoriteSiteTabs> {
     if (identical(nextController, _tabController)) return;
     _tabController?.removeListener(_handleTabChanged);
     _tabController = nextController..addListener(_handleTabChanged);
+    if (widget.availableSitesList.isNotEmpty) {
+      final initialIndex = widget.controller.tabSiteIndex.value.clamp(0, widget.availableSitesList.length - 1).toInt();
+      widget.controller.bindActiveScrollController(_scrollControllerFor(widget.availableSitesList[initialIndex].id));
+    }
   }
 
   void _handleTabChanged() {
     final tabController = _tabController;
     if (tabController == null || tabController.indexIsChanging) return;
+    final animationValue = tabController.animation?.value ?? tabController.index.toDouble();
+    if ((animationValue - tabController.index).abs() > 0.001) return;
     final controller = widget.controller;
     if (controller.tabSiteIndex.value == tabController.index) return;
-
-    controller.selectedTagId.value = TagManagementController.allTagKey;
-    controller.tabSiteIndex.value = tabController.index;
-    controller.currentPage = 1;
+    _settledSiteTabTimer?.cancel();
+    _settledSiteTabTimer = Timer(const Duration(milliseconds: 80), () {
+      if (!mounted || controller.tabSiteIndex.value == tabController.index) return;
+      if (tabController.index >= 0 && tabController.index < widget.availableSitesList.length) {
+        controller.bindActiveScrollController(_scrollControllerFor(widget.availableSitesList[tabController.index].id));
+      }
+      controller.selectedTagId.value = TagManagementController.allTagKey;
+      controller.tabSiteIndex.value = tabController.index;
+      controller.currentPage = 1;
+    });
   }
 
   @override
   void dispose() {
+    _settledSiteTabTimer?.cancel();
     _tabController?.removeListener(_handleTabChanged);
+    widget.controller.bindActiveScrollController(null);
+    for (final controller in _siteScrollControllers.values) {
+      controller.dispose();
+    }
+    _siteScrollControllers.clear();
     super.dispose();
   }
 
@@ -106,14 +131,27 @@ class _FavoriteSiteTabsState extends State<_FavoriteSiteTabs> {
             showScrollToTopBtn: SettingsService.to.page.showScrollToTopBtn.v,
             showPageSizeSelector: SettingsService.to.page.showPageSizeSelector.v,
             pageSizeOptions: SettingsService.to.page.pageSizeOptions,
-            contentBuilder: (context, list, scrollController) {
+            contentBuilder: (context, list, _) {
+              final activeSiteIndex = controller.tabSiteIndex.value;
               return TabBarView(
-                children: availableSitesList.map((e) {
-                  return RoomGridView(
-                    site: e.id,
-                    isOnline: controller.tabOnlineIndex.value != 1,
-                    scrollController: scrollController,
-                    displayList: list,
+                children: availableSitesList.asMap().entries.map((entry) {
+                  final site = entry.value;
+                  return Builder(
+                    key: ValueKey('favorite_site_${site.id}'),
+                    builder: (context) {
+                      // PageView mounts only the active/nearby pages. Defer
+                      // platform filtering and ScrollController allocation to
+                      // that point rather than doing both for every platform
+                      // on each reactive rebuild.
+                      final isCurrentSite = entry.key == activeSiteIndex;
+                      final pageList = isCurrentSite ? list : controller.filteredSyncedRoomsForSite(site.id);
+                      return RoomGridView(
+                        site: site.id,
+                        isOnline: controller.tabOnlineIndex.value != 1,
+                        scrollController: _scrollControllerFor(site.id),
+                        displayList: pageList,
+                      );
+                    },
                   );
                 }).toList(),
               );

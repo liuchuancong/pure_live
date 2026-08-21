@@ -1,7 +1,7 @@
-import 'dart:ui';
-
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/plugins/cache_manager.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/recorder/models/record_status.dart';
 import 'package:pure_live/recorder/models/live_record_task.dart';
@@ -238,29 +238,40 @@ class _TaskCard extends GetView<RecorderController> {
   }
 
   Widget _buildCoverImage(Color statusColor) {
+    final coverUrl = normalizeNetworkImageUrl(task.cover);
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
       child: Stack(
         children: [
-          Container(
+          SizedBox(
             width: 150,
             height: 90,
-            decoration: BoxDecoration(
-              image: DecorationImage(image: NetworkImage(normalizeNetworkImageUrl(task.cover)), fit: BoxFit.cover),
-            ),
+            child: coverUrl.isEmpty
+                ? const ColoredBox(color: Colors.black12)
+                : CachedNetworkImage(
+                    imageUrl: coverUrl,
+                    cacheKey: coverUrl,
+                    cacheManager: CustomImageCacheManager.instance,
+                    httpHeaders: networkImageHeaders(coverUrl),
+                    fit: BoxFit.cover,
+                    memCacheWidth: 300,
+                    maxWidthDiskCache: 480,
+                    fadeInDuration: Duration.zero,
+                    fadeOutDuration: Duration.zero,
+                    errorWidget: (_, _, _) => const ColoredBox(color: Colors.black12),
+                  ),
           ),
           Positioned(
             left: 8,
             top: 8,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), // 模糊背景
+              child: ColoredBox(
+                color: Colors.transparent,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    // 背景色稍深，增加对比度
-                    color: statusColor.withValues(alpha: 0.7),
+                    color: statusColor.withValues(alpha: 0.82),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 0.5),
                   ),

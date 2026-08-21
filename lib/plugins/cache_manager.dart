@@ -1,14 +1,20 @@
 import 'dart:io';
+
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 class CustomImageCacheManager {
-  static CacheManager get instance => DefaultCacheManager();
+  static const String key = 'pureLiveImagesV2';
 
-  /// Covers and avatars intentionally share Flutter's proven default cache.
-  /// This also gives the refresh action one cache to invalidate atomically.
+  static final CacheManager instance = CacheManager(
+    Config(key, stalePeriod: const Duration(minutes: 30), maxNrOfCacheObjects: 320),
+  );
+
+  /// Covers and avatars share one bounded cache. A short stale period lets a
+  /// later widget resolve revalidate a reused platform URL without globally
+  /// tearing down every visible image at the same instant.
   static Future<void> initialize() async {
-    DefaultCacheManager();
+    instance;
   }
 
-  static Future<Directory> cacheDirectory() => IOFileSystem.createDirectory(DefaultCacheManager.key);
+  static Future<Directory> cacheDirectory() => IOFileSystem.createDirectory(key);
 }

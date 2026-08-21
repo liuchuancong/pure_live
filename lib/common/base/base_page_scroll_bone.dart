@@ -4,7 +4,15 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/base/base_controller.dart';
 
 abstract class BasePageScrollAndStateBone<T> extends BaseController {
-  final ScrollController scrollController = createPureLiveScrollController();
+  final ScrollController _ownedScrollController = createPureLiveScrollController();
+  ScrollController? _boundScrollController;
+
+  /// Scroll position used by paging buttons and visibility flags.
+  ///
+  /// A tabbed view can bind one dedicated controller for its active tab. This
+  /// keeps every PageView child on a unique ScrollController while preserving
+  /// the shared paging actions.
+  ScrollController get scrollController => _boundScrollController ?? _ownedScrollController;
   final EasyRefreshController easyRefreshController = EasyRefreshController(
     controlFinishRefresh: true,
     controlFinishLoad: true,
@@ -20,28 +28,68 @@ abstract class BasePageScrollAndStateBone<T> extends BaseController {
   final showBackToBottom = true.obs;
 
   bool? _lastIsDesktop;
+  Timer? _layoutRefreshTimer;
 
   BasePageScrollAndStateBone() {
-    scrollController.addListener(_scrollListener);
+    // Controllers are created from an already mounted route, so Get.width is
+    // available here.  Establishing the initial paging mode before the first
+    // frame prevents BasePageView from starting a second network refresh from
+    // inside build while the controller's initial request is still running.
+    final initialIsDesktop = Get.width > 680;
+    _lastIsDesktop = initialIsDesktop;
+    pageSize.value = initialIsDesktop && Get.isRegistered<SettingsService>()
+        ? SettingsService.to.page.defaultPageSize.v
+        : 20;
+    _ownedScrollController.addListener(_scrollListener);
   }
+
+  void bindActiveScrollController(ScrollController? externalController) {
+    if (isClosed) return;
+    final previous = scrollController;
+    if (identical(previous, externalController) ||
+        (externalController == null && identical(previous, _ownedScrollController))) {
+      return;
+    }
+    previous.removeListener(_scrollListener);
+    _boundScrollController = externalController;
+    scrollController.addListener(_scrollListener);
+    _syncScrollFlags();
+  }
+
   void checkAndNotifyLayoutChange(bool isDesktop) {
     if (_lastIsDesktop == isDesktop) return;
+    final previousIsDesktop = _lastIsDesktop;
     _lastIsDesktop = isDesktop;
 
     if (isDesktop) {
       pageSize.value = SettingsService.to.page.defaultPageSize.v;
       final int currentFirstItemIndex = (currentPage - 1) * 20;
       currentPage = (currentFirstItemIndex ~/ pageSize.value) + 1;
-      scheduleMicrotask(() => refreshData());
     } else {
       pageSize.value = 20;
       currentPage = 1;
-      scheduleMicrotask(() => refreshData());
     }
+
+    // The first layout observation only configures paging.  A real breakpoint
+    // transition is coalesced and refreshed after layout settles, rather than
+    // mutating the data source during a widget build.
+    if (previousIsDesktop == null) return;
+    _layoutRefreshTimer?.cancel();
+    _layoutRefreshTimer = Timer(const Duration(milliseconds: 120), () => unawaited(refreshData()));
   }
 
+  bool get usesDesktopPagination => _lastIsDesktop ?? Get.width > 680;
+
   void _scrollListener() {
-    if (!scrollController.hasClients) return;
+    _syncScrollFlags();
+  }
+
+  void _syncScrollFlags() {
+    if (!scrollController.hasClients) {
+      if (showBackToTop.value) showBackToTop.value = false;
+      if (!showBackToBottom.value) showBackToBottom.value = true;
+      return;
+    }
     final offset = scrollController.offset;
     final position = scrollController.position;
     final maxScroll = position.maxScrollExtent;
@@ -65,8 +113,10 @@ abstract class BasePageScrollAndStateBone<T> extends BaseController {
 
   @override
   void onClose() {
+    _layoutRefreshTimer?.cancel();
     scrollController.removeListener(_scrollListener);
-    scrollController.dispose();
+    _boundScrollController = null;
+    _ownedScrollController.dispose();
     easyRefreshController.dispose();
     super.onClose();
   }
@@ -78,7 +128,7 @@ abstract class BasePageScrollAndStateBone<T> extends BaseController {
   }
 
   void finishRefreshControllers(IndicatorResult result) {
-    if (_lastIsDesktop ?? Get.width > 680) return;
+    if (usesDesktopPagination) return;
     easyRefreshController.finishRefresh(
       result == IndicatorResult.fail ? IndicatorResult.fail : IndicatorResult.success,
     );
@@ -117,7 +167,8 @@ abstract class BasePageScrollAndStateBone<T> extends BaseController {
   }
 
   Future<void> loadMoreData() async {
-    if (_lastIsDesktop ?? Get.width > 680) {
+    if (loadding.value) return;
+    if (usesDesktopPagination) {
       await goToPage(currentPage + 1);
     } else {
       currentPage++;

@@ -64,4 +64,31 @@ void main() {
     expect(result.changed, isFalse);
     expect(result.rooms.single, same(current));
   });
+
+  test('startup verification publishes one complete success and failure snapshot', () {
+    final first = LiveRoom(
+      roomId: '100',
+      platform: 'bilibili',
+      title: 'old first',
+      liveStatus: LiveStatus.live,
+      tagIds: const ['sleep'],
+    );
+    final second = LiveRoom(roomId: '200', platform: 'huya', title: 'old second', liveStatus: LiveStatus.live);
+    final firstUpdate = LiveRoom(
+      roomId: '100',
+      platform: 'bilibili',
+      title: 'fresh first',
+      liveStatus: LiveStatus.live,
+    );
+
+    final verified = buildVerifiedFavoriteSnapshot([first, second], {favoriteRoomIdentity(firstUpdate): firstUpdate});
+
+    expect(verified, hasLength(2));
+    expect(verified[0].title, 'fresh first');
+    expect(verified[0].liveStatus, LiveStatus.live);
+    expect(verified[0].tagIds, ['sleep']);
+    expect(verified[1].title, 'old second');
+    expect(verified[1].liveStatus, LiveStatus.unknown);
+    expect(verified[1].status, isFalse);
+  });
 }

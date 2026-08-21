@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
 
 abstract class LocalReactivePageController<T> extends BasePageScrollAndStateBone<T> {
@@ -7,6 +8,16 @@ abstract class LocalReactivePageController<T> extends BasePageScrollAndStateBone
   void Function()? onExternalRefresh;
 
   void updateLocalReactivePool(List<T> freshData) {
+    if (_localRawPool.length == freshData.length) {
+      var unchanged = true;
+      for (var index = 0; index < freshData.length; index++) {
+        if (!identical(_localRawPool[index], freshData[index])) {
+          unchanged = false;
+          break;
+        }
+      }
+      if (unchanged) return;
+    }
     _localRawPool.clear();
     _localRawPool.addAll(freshData);
     currentPage = 1;

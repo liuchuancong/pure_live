@@ -1,8 +1,21 @@
+import 'dart:async';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 
-class CacheDataSettingsPage extends StatelessWidget {
+class CacheDataSettingsPage extends StatefulWidget {
   const CacheDataSettingsPage({super.key});
+
+  @override
+  State<CacheDataSettingsPage> createState() => _CacheDataSettingsPageState();
+}
+
+class _CacheDataSettingsPageState extends State<CacheDataSettingsPage> {
+  @override
+  void initState() {
+    super.initState();
+    unawaited(SettingsService.to.cache.getCacheSize());
+  }
 
   @override
   Widget build(BuildContext context) {

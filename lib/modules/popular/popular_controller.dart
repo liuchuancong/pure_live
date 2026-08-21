@@ -9,6 +9,7 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
   late List<Site> sites;
   bool _isTabControllerInitialized = false;
   Timer? _settledTabLoadTimer;
+  Timer? _adjacentWarmTimer;
   Worker? _hotAreasWorker;
 
   @override
@@ -57,6 +58,7 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
   @override
   void onClose() {
     _settledTabLoadTimer?.cancel();
+    _adjacentWarmTimer?.cancel();
     _hotAreasWorker?.dispose();
     if (_isTabControllerInitialized) {
       tabController.removeListener(_handleTabChange);
@@ -67,6 +69,7 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
 
   void _initTabController({required bool isFirstLoad}) {
     _settledTabLoadTimer?.cancel();
+    _adjacentWarmTimer?.cancel();
     if (_isTabControllerInitialized) {
       tabController.removeListener(_handleTabChange);
       tabController.dispose();
@@ -94,7 +97,7 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
     tabController.addListener(_handleTabChange);
     _isTabControllerInitialized = true;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadDataAtIndex(index));
+    WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_loadDataAtIndex(index)));
   }
 
   void _handleTabChange() {
@@ -109,16 +112,37 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
 
     index = tabController.index;
     _settledTabLoadTimer?.cancel();
-    _settledTabLoadTimer = Timer(const Duration(milliseconds: 80), () => _loadDataAtIndex(index));
+    _settledTabLoadTimer = Timer(const Duration(milliseconds: 80), () => unawaited(_loadDataAtIndex(index)));
   }
 
-  void _loadDataAtIndex(int i) {
+  Future<void> _loadDataAtIndex(int i) async {
     if (sites.isEmpty || i >= sites.length) return;
     var siteId = sites[i].id;
     var gridController = Get.find<BasePageScrollAndStateBone<LiveRoom>>(tag: siteId);
     if (gridController.list.isEmpty) {
-      gridController.loadData();
+      await gridController.loadData();
     }
+    if (i != index || gridController.list.isEmpty) return;
+
+    // Warm one neighbouring platform only after the visible grid is complete
+    // and idle. This avoids a startup request storm while making the next
+    // horizontal swipe land on an already stable snapshot.
+    _adjacentWarmTimer?.cancel();
+    _adjacentWarmTimer = Timer(const Duration(milliseconds: 700), () => _warmNextPlatform(i, gridController));
+  }
+
+  void _warmNextPlatform(int currentIndex, BasePageScrollAndStateBone<LiveRoom> current) {
+    if (currentIndex != index || sites.length < 2) return;
+    if (current.scrollController.hasClients && current.scrollController.position.isScrollingNotifier.value) {
+      _adjacentWarmTimer?.cancel();
+      _adjacentWarmTimer = Timer(const Duration(milliseconds: 450), () => _warmNextPlatform(currentIndex, current));
+      return;
+    }
+
+    final nextIndex = currentIndex + 1 < sites.length ? currentIndex + 1 : currentIndex - 1;
+    if (nextIndex < 0) return;
+    final next = Get.find<BasePageScrollAndStateBone<LiveRoom>>(tag: sites[nextIndex].id);
+    if (next.list.isEmpty) unawaited(next.loadData());
   }
 
   /// Refreshes only the visible platform after a real app foreground return.

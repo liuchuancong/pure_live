@@ -1,22 +1,30 @@
 import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
 
 abstract class ServerAllPageController<T> extends BasePageScrollAndStateBone<T> {
   List<T>? _rawAllData;
+  Future<void>? _activeLoad;
+  bool _refreshPending = false;
 
   Future<List<T>> fetchAllServerData();
 
   @override
   Future<void> refreshData() async {
+    _refreshPending = true;
+    final active = _activeLoad;
+    if (active != null) await active;
+    if (!_refreshPending || isClosed) return;
+    _refreshPending = false;
     _rawAllData = null;
     currentPage = 1;
-    await loadData();
+    await _startLoad();
   }
 
   @override
   Future<void> goToPage(int page) async {
-    if (loadding.value || page < 1 || _rawAllData == null) return;
-    if (Get.width <= 680) return;
+    if (_activeLoad != null || page < 1 || _rawAllData == null) return;
+    if (!usesDesktopPagination) return;
     final maxPage = (_rawAllData!.length / pageSize.value).ceil();
     if (page > maxPage) return;
     currentPage = page;
@@ -26,7 +34,7 @@ abstract class ServerAllPageController<T> extends BasePageScrollAndStateBone<T> 
   @override
   void setPageSize(int? newSize) {
     if (newSize == null || pageSize.value == newSize || _rawAllData == null) return;
-    if (Get.width <= 680) {
+    if (!usesDesktopPagination) {
       pageSize.value = newSize;
       return;
     }
@@ -38,8 +46,23 @@ abstract class ServerAllPageController<T> extends BasePageScrollAndStateBone<T> 
 
   @override
   Future<void> loadData() async {
-    if (loadding.value) return;
+    final active = _activeLoad;
+    if (active != null) return active;
+    return _startLoad();
+  }
 
+  Future<void> _startLoad() {
+    final active = _activeLoad;
+    if (active != null) return active;
+    late final Future<void> operation;
+    operation = _performLoad().whenComplete(() {
+      if (identical(_activeLoad, operation)) _activeLoad = null;
+    });
+    _activeLoad = operation;
+    return operation;
+  }
+
+  Future<void> _performLoad() async {
     if (_rawAllData != null) {
       processLocalPaging();
       return;
@@ -82,7 +105,7 @@ abstract class ServerAllPageController<T> extends BasePageScrollAndStateBone<T> 
       return;
     }
 
-    if (Get.width > 680) {
+    if (usesDesktopPagination) {
       int startIndex = (currentPage - 1) * pageSize.value;
       if (startIndex >= allItems.length) {
         currentPage = 1;

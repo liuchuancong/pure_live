@@ -30,3 +30,12 @@ String favoriteRoomIdentity(LiveRoom room) => '${room.platform?.toLowerCase() ??
       .toList(growable: false);
   return (rooms: rooms, changed: changed);
 }
+
+/// Builds the single snapshot published after a startup verification pass.
+/// Failed rooms become unknown, successful rooms use fresh server data, and
+/// local tags/audience fallbacks continue to come from the latest user-owned
+/// favourites list.
+List<LiveRoom> buildVerifiedFavoriteSnapshot(Iterable<LiveRoom> currentRooms, Map<String, LiveRoom> successfulUpdates) {
+  final pending = markFavoriteRoomsPendingVerification(currentRooms);
+  return mergeFavoriteRoomUpdates(pending, successfulUpdates).rooms;
+}

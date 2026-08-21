@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
-
 
 class AppSettingsController extends GetxController {
   static const int maxSleepMinutes = 525600;
@@ -39,11 +39,8 @@ class AppSettingsController extends GetxController {
     }
     _removeUnsupportedOnlinePlatforms();
     if (Platform.isAndroid) {
-      unawaited(DisplayModeService.setHighRefreshRate(enableHighRefreshRate.v));
-      _highRefreshRateWorker = ever<bool>(
-        enableHighRefreshRate,
-        (enabled) => unawaited(DisplayModeService.setHighRefreshRate(enabled)),
-      );
+      AdaptiveRefreshRateController.setEnabled(enableHighRefreshRate.v);
+      _highRefreshRateWorker = ever<bool>(enableHighRefreshRate, AdaptiveRefreshRateController.setEnabled);
     } else if (Platform.isWindows) {
       // Flutter follows the active Windows monitor's vsync. The native runner
       // reports that monitor's current/supported modes and pushes updates when

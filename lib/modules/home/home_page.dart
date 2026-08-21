@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:move_to_desktop/move_to_desktop.dart';
@@ -15,7 +16,6 @@ import 'package:pure_live/modules/favorite/favorite_page.dart';
 import 'package:pure_live/modules/about/widgets/version_dialog.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_page.dart';
 
-
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -25,6 +25,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   Timer? _debounceTimer;
+  Timer? _resumeRefreshTimer;
   final FavoriteController favoriteController = Get.find<FavoriteController>();
   late final VoidCallback _favoriteTabListener;
   Worker? _savedMenuWorker;
@@ -109,6 +110,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
+      _resumeRefreshTimer?.cancel();
       _backgroundedAt ??= DateTime.now();
       return;
     }
@@ -117,12 +119,17 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
     _backgroundedAt = null;
     if (backgroundedAt == null || DateTime.now().difference(backgroundedAt) < const Duration(seconds: 15)) return;
 
+    if (_selectedIndex < 0 || _selectedIndex >= HomeMenu.values.length) return;
     final menu = HomeMenu.values[_selectedIndex];
-    if (menu == HomeMenu.popular) {
-      unawaited(Get.find<PopularController>().refreshCurrentData());
-    } else if (menu == HomeMenu.areas) {
-      unawaited(Get.find<AreasController>().refreshCurrentData());
-    }
+    _resumeRefreshTimer?.cancel();
+    _resumeRefreshTimer = Timer(const Duration(milliseconds: 450), () {
+      if (!mounted) return;
+      if (menu == HomeMenu.popular && Get.isRegistered<PopularController>()) {
+        unawaited(Get.find<PopularController>().refreshCurrentData());
+      } else if (menu == HomeMenu.areas && Get.isRegistered<AreasController>()) {
+        unawaited(Get.find<AreasController>().refreshCurrentData());
+      }
+    });
   }
 
   void _syncInitialIndex() {
@@ -257,6 +264,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
     favoriteController.tabBottomIndex.removeListener(_favoriteTabListener);
     _savedMenuWorker?.dispose();
     _debounceTimer?.cancel();
+    _resumeRefreshTimer?.cancel();
     super.dispose();
   }
 }

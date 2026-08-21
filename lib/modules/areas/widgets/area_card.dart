@@ -22,23 +22,23 @@ class _AreaCardState extends State<AreaCard> {
 
   Widget _buildNetworkImage(String imageUrl) {
     return Obx(() {
-      final epoch = SettingsService.to.cache.imageCacheEpoch.v;
+      final epoch = SettingsService.to.cache.imageCacheEpoch.value;
       return LayoutBuilder(
         builder: (context, constraints) {
           final logicalWidth = constraints.maxWidth.isFinite ? constraints.maxWidth : 160.0;
-          final cacheWidth = (logicalWidth * MediaQuery.devicePixelRatioOf(context)).round().clamp(160, 640).toInt();
+          final cacheWidth = (logicalWidth * MediaQuery.devicePixelRatioOf(context)).round().clamp(160, 512).toInt();
           return CachedNetworkImage(
-            key: ValueKey('$imageUrl#$epoch'),
-            cacheKey: imageUrl,
+            cacheKey: epoch == 0 ? imageUrl : '$imageUrl#$epoch',
             imageUrl: imageUrl,
             httpHeaders: networkImageHeaders(imageUrl),
             cacheManager: CustomImageCacheManager.instance,
             fit: BoxFit.cover,
             filterQuality: FilterQuality.low,
             memCacheWidth: cacheWidth,
-            maxWidthDiskCache: 640,
+            maxWidthDiskCache: 512,
             fadeInDuration: Duration.zero,
             fadeOutDuration: Duration.zero,
+            useOldImageOnUrlChange: true,
             placeholder: (context, url) => ColoredBox(
               color: Theme.of(context).colorScheme.surfaceContainerLow,
               child: Center(
@@ -88,15 +88,14 @@ class _AreaCardState extends State<AreaCard> {
           children: [
             AspectRatio(
               aspectRatio: 1,
-              child: Card(
-                margin: const EdgeInsets.all(0),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
-                clipBehavior: Clip.antiAlias,
-                color: Colors.white,
-
-                child: displayImageUrl.isNotEmpty
-                    ? _buildNetworkImage(displayImageUrl)
-                    : const Icon(Icons.live_tv_rounded, color: Colors.black, size: 38),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(15),
+                child: ColoredBox(
+                  color: Colors.white,
+                  child: displayImageUrl.isNotEmpty
+                      ? _buildNetworkImage(displayImageUrl)
+                      : const Icon(Icons.live_tv_rounded, color: Colors.black, size: 38),
+                ),
               ),
             ),
             ListTile(

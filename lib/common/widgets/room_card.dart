@@ -1,14 +1,17 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/plugins/cache_manager.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/common/widgets/common_avatar.dart';
 import 'package:pure_live/common/utils/share_command_handler.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class RoomCard extends StatelessWidget {
-  const RoomCard({super.key, required this.room, this.dense = false});
+  const RoomCard({super.key, required this.room, this.dense = false, this.audiencePending = false});
   final LiveRoom room;
   final bool dense;
+  final bool audiencePending;
 
   Widget _buildCover(BuildContext context, bool isDark) {
     final coverUrl = normalizeNetworkImageUrl(room.cover);
@@ -17,64 +20,34 @@ class RoomCard extends StatelessWidget {
       return _coverFallback(context, isDark);
     }
 
+    // Keep a stable image element and an encoded disk entry. The previous
+    // global epoch rebuilt every visible Image.network at once, discarded the
+    // old pixels and forced independent network/decode progress callbacks for
+    // the full grid. That was the main source of mixed placeholders, flashes
+    // and CPU spikes during refresh and tab switching.
     return Obx(() {
-      // The cover URL may remain unchanged for a long time, while the actual
-      // image content returned by the server can change frequently.
-      //
-      // CachedNetworkImage is intentionally not used here because:
-      // 1. It persists images to the disk cache based on the URL/cache key.
-      // 2. When the URL stays unchanged, a refreshed cover may still return
-      //    the previously cached image.
-      // 3. Changing the cache key on every refresh would create a new disk
-      //    cache entry for the same room on every update.
-      // 4. Live room covers can refresh frequently, so continuously reading,
-      //    writing, and invalidating disk cache entries is unnecessary.
-      //
-      // Image.network is used instead. This avoids the persistent disk cache
-      // while still allowing Flutter to manage its normal in-memory ImageCache.
       final epoch = SettingsService.to.cache.imageCacheEpoch.value;
-
       return LayoutBuilder(
         builder: (context, constraints) {
           final logicalWidth = constraints.maxWidth.isFinite
               ? constraints.maxWidth
               : MediaQuery.sizeOf(context).width / 2;
+          final cacheWidth = (logicalWidth * MediaQuery.devicePixelRatioOf(context)).round().clamp(240, 720).toInt();
 
-          final cacheWidth = (logicalWidth * MediaQuery.devicePixelRatioOf(context)).round().clamp(240, 960).toInt();
-
-          return Image.network(
-            coverUrl,
-
-            // Recreate the Image widget whenever the image cache epoch changes.
-            // imageCacheEpoch is incremented when the covers need to be refreshed.
-            key: ValueKey('$coverUrl#$epoch'),
-
-            headers: networkImageHeaders(coverUrl),
-
+          return CachedNetworkImage(
+            imageUrl: coverUrl,
+            cacheKey: epoch == 0 ? coverUrl : '$coverUrl#$epoch',
+            httpHeaders: networkImageHeaders(coverUrl),
+            cacheManager: CustomImageCacheManager.instance,
             fit: BoxFit.cover,
             filterQuality: FilterQuality.low,
-
-            // Decode the image at approximately the displayed width instead of
-            // decoding the original full-resolution image into memory.
-            // This helps reduce memory usage when many room covers are visible.
-            cacheWidth: cacheWidth,
-
-            // Do not keep displaying the previous image while the new image
-            // is being loaded.
-            gaplessPlayback: false,
-
-            // Show the placeholder while the image is loading.
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) {
-                return child;
-              }
-              return _coverPlaceholder(context, isDark);
-            },
-
-            // Show the fallback widget when the image fails to load.
-            errorBuilder: (context, error, stackTrace) {
-              return _coverFallback(context, isDark);
-            },
+            memCacheWidth: cacheWidth,
+            maxWidthDiskCache: 720,
+            fadeInDuration: Duration.zero,
+            fadeOutDuration: Duration.zero,
+            useOldImageOnUrlChange: true,
+            placeholder: (context, _) => _coverPlaceholder(context, isDark),
+            errorWidget: (context, _, _) => _coverFallback(context, isDark),
           );
         },
       );
@@ -682,124 +655,131 @@ class RoomCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return RepaintBoundary(
-      child: Card(
-        margin: EdgeInsets.zero,
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        color: isDark ? Colors.grey[900] : Colors.white,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () => onTap(context),
-          onLongPress: () => onLongPress(context),
-          onSecondaryTap: () => onLongPress(context),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Stack(
-                children: [
-                  AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: Card(
-                      margin: EdgeInsets.zero,
-                      clipBehavior: Clip.antiAlias,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      color: isDark ? Colors.grey[850] : Colors.grey[100],
-
+    // GridView already inserts a RepaintBoundary around every child. Avoid a
+    // second composited layer per card and keep the cover clip lightweight.
+    return Card(
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      color: isDark ? Colors.grey[900] : Colors.white,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => onTap(context),
+        onLongPress: () => onLongPress(context),
+        onSecondaryTap: () => onLongPress(context),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
+              children: [
+                AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: ColoredBox(
+                      color: isDark ? Colors.grey[850]! : Colors.grey.shade100,
                       child: _buildCover(context, isDark),
                     ),
                   ),
-                  if (room.isRecord == true)
-                    Positioned(
-                      right: 8,
-                      top: 8,
-                      child: CountChip(
-                        icon: Icons.videocam_rounded,
-                        count: i18n("replay"),
+                ),
+                if (room.isRecord == true)
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: CountChip(
+                      icon: Icons.videocam_rounded,
+                      count: i18n("replay"),
+                      dense: dense,
+                      color: Get.theme.primaryColor,
+                    ),
+                  ),
+                if (audiencePending)
+                  Positioned(
+                    right: 8,
+                    bottom: 8,
+                    child: CoverMetricBadge(
+                      icon: Icons.sync_rounded,
+                      value: i18n('audience_waiting'),
+                      semanticLabel: i18n('audience_waiting'),
+                      dense: dense,
+                    ),
+                  )
+                else if (room.isRecord == false && room.liveStatus == LiveStatus.live)
+                  Positioned(
+                    right: 8,
+                    bottom: 8,
+                    child: Obx(() {
+                      final app = SettingsService.to.app;
+                      final preferReal = app.preferRealOnlineCounts.v;
+                      final platformEnabled = app.isRealOnlineEnabledFor(room.platform);
+                      final type = room.audienceType(preferRealOnline: preferReal, platformEnabled: platformEnabled);
+                      final value = room.audienceValue(preferRealOnline: preferReal, platformEnabled: platformEnabled);
+                      final labelKey = switch (type) {
+                        AudienceMetricType.popularity => 'audience_popularity',
+                        AudienceMetricType.onlineViewers => 'audience_online',
+                        AudienceMetricType.totalViewers => 'audience_total',
+                        AudienceMetricType.followers => 'audience_followers',
+                        AudienceMetricType.unknown => 'audience_count',
+                      };
+                      final displayValue = value.isEmpty ? i18n('audience_waiting') : readableCount(value);
+                      return CoverMetricBadge(
+                        key: const ValueKey('cover-audience-metric'),
+                        icon: switch (type) {
+                          AudienceMetricType.onlineViewers => Icons.people_alt_rounded,
+                          AudienceMetricType.followers => Icons.favorite_rounded,
+                          AudienceMetricType.totalViewers => Icons.visibility_rounded,
+                          _ => Icons.whatshot_rounded,
+                        },
+                        value: displayValue,
+                        semanticLabel: '${i18n(labelKey)} $displayValue',
                         dense: dense,
-                        color: Get.theme.primaryColor,
-                      ),
-                    ),
-                  if (room.isRecord == false && room.liveStatus == LiveStatus.live)
-                    Positioned(
-                      right: 8,
-                      bottom: 8,
-                      child: Obx(() {
-                        final app = SettingsService.to.app;
-                        final preferReal = app.preferRealOnlineCounts.v;
-                        final platformEnabled = app.isRealOnlineEnabledFor(room.platform);
-                        final type = room.audienceType(preferRealOnline: preferReal, platformEnabled: platformEnabled);
-                        final value = room.audienceValue(
-                          preferRealOnline: preferReal,
-                          platformEnabled: platformEnabled,
-                        );
-                        final labelKey = switch (type) {
-                          AudienceMetricType.popularity => 'audience_popularity',
-                          AudienceMetricType.onlineViewers => 'audience_online',
-                          AudienceMetricType.totalViewers => 'audience_total',
-                          AudienceMetricType.followers => 'audience_followers',
-                          AudienceMetricType.unknown => 'audience_count',
-                        };
-                        final displayValue = value.isEmpty ? i18n('audience_waiting') : readableCount(value);
-                        return CoverMetricBadge(
-                          key: const ValueKey('cover-audience-metric'),
-                          icon: switch (type) {
-                            AudienceMetricType.onlineViewers => Icons.people_alt_rounded,
-                            AudienceMetricType.followers => Icons.favorite_rounded,
-                            AudienceMetricType.totalViewers => Icons.visibility_rounded,
-                            _ => Icons.whatshot_rounded,
-                          },
-                          value: displayValue,
-                          semanticLabel: '${i18n(labelKey)} $displayValue',
-                          dense: dense,
-                        );
-                      }),
-                    ),
-                ],
+                      );
+                    }),
+                  ),
+              ],
+            ),
+            ListTile(
+              dense: dense,
+              minLeadingWidth: dense ? 34 : 40,
+              contentPadding: EdgeInsets.symmetric(horizontal: dense ? 10 : 12, vertical: dense ? 4 : 6),
+              horizontalTitleGap: dense ? 8 : 12,
+              leading: CommonAvatar(avatarUrl: room.avatar, fallbackName: room.nick, dense: dense),
+              title: Text(
+                room.title ?? '',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: (dense ? AppTextStyles.t13 : AppTextStyles.t15).copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
               ),
-              ListTile(
-                dense: dense,
-                minLeadingWidth: dense ? 34 : 40,
-                contentPadding: EdgeInsets.symmetric(horizontal: dense ? 10 : 12, vertical: dense ? 4 : 6),
-                horizontalTitleGap: dense ? 8 : 12,
-                leading: CommonAvatar(avatarUrl: room.avatar, fallbackName: room.nick, dense: dense),
-                title: Text(
-                  room.title ?? '',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: (dense ? AppTextStyles.t13 : AppTextStyles.t15).copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : Colors.black87,
-                  ),
+              subtitle: Text(
+                room.nick ?? '',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: (dense ? AppTextStyles.t12 : AppTextStyles.t13).copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.grey[400] : Colors.grey[700],
                 ),
-                subtitle: Text(
-                  room.nick ?? '',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: (dense ? AppTextStyles.t12 : AppTextStyles.t13).copyWith(
-                    fontWeight: FontWeight.w500,
-                    color: isDark ? Colors.grey[400] : Colors.grey[700],
-                  ),
-                ),
-                trailing: dense
-                    ? null
-                    : Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isDark ? Colors.grey[800] : Colors.grey[100],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          room.platform?.toUpperCase() ?? '',
-                          style: AppTextStyles.t11.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.grey[300] : Colors.grey[800],
-                          ),
+              ),
+              trailing: dense
+                  ? null
+                  : Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.grey[800] : Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        room.platform?.toUpperCase() ?? '',
+                        style: AppTextStyles.t11.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.grey[300] : Colors.grey[800],
                         ),
                       ),
-              ),
-            ],
-          ),
+                    ),
+            ),
+          ],
         ),
       ),
     );
@@ -909,10 +889,7 @@ class CoverMetricBadge extends StatelessWidget {
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: BorderRadius.circular(dense ? 10 : 12),
-            border: Border.all(color: theme.primaryColor.withValues(alpha: 0.1), width: 0.6),
-            boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.28), blurRadius: 5, offset: const Offset(0, 2)),
-            ],
+            border: Border.all(color: theme.primaryColor.withValues(alpha: 0.12), width: 0.6),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,

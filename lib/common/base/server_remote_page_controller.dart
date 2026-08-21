@@ -5,6 +5,8 @@ import 'package:pure_live/common/index.dart';
 abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<T> {
   final Map<int, List<T>> _pageCache = {};
   int _virtualNetworkPage = 1;
+  Future<void>? _activeLoad;
+  bool _refreshPending = false;
 
   ServerRemotePageController() : super();
 
@@ -12,19 +14,21 @@ abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<
 
   @override
   Future<void> refreshData() async {
+    _refreshPending = true;
+    final active = _activeLoad;
+    if (active != null) await active;
+    if (!_refreshPending || isClosed) return;
+    _refreshPending = false;
     currentPage = 1;
     _virtualNetworkPage = 1;
     _pageCache.clear();
-    if (Get.width <= 680) {
-      list.clear();
-    }
-    await loadData();
+    await _startLoad(replaceMobileSnapshot: true);
   }
 
   @override
   Future<void> goToPage(int page) async {
-    if (loadding.value || page < 1) return;
-    if (Get.width <= 680) return;
+    if (_activeLoad != null || page < 1) return;
+    if (!usesDesktopPagination) return;
     if (page > currentPage && !canLoadMore.value && !_pageCache.containsKey(page)) return;
     currentPage = page;
     await loadData();
@@ -33,7 +37,7 @@ abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<
   @override
   void setPageSize(int? newSize) {
     if (newSize == null || pageSize.value == newSize) return;
-    if (Get.width <= 680) {
+    if (!usesDesktopPagination) {
       pageSize.value = newSize;
       return;
     }
@@ -113,10 +117,26 @@ abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<
 
   @override
   Future<void> loadData() async {
-    if (loadding.value) return;
+    final active = _activeLoad;
+    if (active != null) return active;
+    return _startLoad();
+  }
+
+  Future<void> _startLoad({bool replaceMobileSnapshot = false}) {
+    final active = _activeLoad;
+    if (active != null) return active;
+    late final Future<void> operation;
+    operation = _performLoad(replaceMobileSnapshot: replaceMobileSnapshot).whenComplete(() {
+      if (identical(_activeLoad, operation)) _activeLoad = null;
+    });
+    _activeLoad = operation;
+    return operation;
+  }
+
+  Future<void> _performLoad({required bool replaceMobileSnapshot}) async {
     totalCount.value = null;
 
-    if (Get.width > 680 && _pageCache.containsKey(currentPage)) {
+    if (usesDesktopPagination && _pageCache.containsKey(currentPage)) {
       final cachedData = _pageCache[currentPage]!;
       list.assignAll(cachedData);
       canLoadMore.value = cachedData.length >= pageSize.value;
@@ -141,7 +161,7 @@ abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<
       if (list.isEmpty) pageLoadding.value = true;
 
       List<T> combinedResult = [];
-      final seen = <T>{...list};
+      final seen = replaceMobileSnapshot ? <T>{} : <T>{...list};
       final int sizeToFetch = pageSize.value;
       var requestCount = 0;
       var noProgressCount = 0;
@@ -167,7 +187,7 @@ abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<
         return;
       }
 
-      if (Get.width > 680) {
+      if (usesDesktopPagination) {
         canLoadMore.value = combinedResult.length >= pageSize.value;
         _pageCache[currentPage] = combinedResult;
         list.assignAll(combinedResult);
@@ -176,7 +196,11 @@ abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<
         scrollToTopImmediate();
       } else {
         canLoadMore.value = combinedResult.length >= pageSize.value;
-        list.addAll(combinedResult);
+        if (replaceMobileSnapshot) {
+          list.assignAll(combinedResult);
+        } else {
+          list.addAll(combinedResult);
+        }
         pageEmpty.value = list.isEmpty;
         finishRefreshControllers(canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore);
       }

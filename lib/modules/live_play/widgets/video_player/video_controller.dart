@@ -111,7 +111,15 @@ class DanmakuManager {
     workers.add(
       debounce<int>(_visualSettingsRevision, (_) => _persistVisualSettings(), time: const Duration(milliseconds: 160)),
     );
-    workers.add(everAll([dm.danmakuAutoFps, DisplayModeService.info], (_) => _scheduleConfigUpdate()));
+    var resolvedAutoFps = dm.resolvedDanmakuFps();
+    workers.add(
+      everAll([dm.danmakuAutoFps, DisplayModeService.info], (_) {
+        final nextFps = dm.resolvedDanmakuFps();
+        if (nextFps == resolvedAutoFps) return;
+        resolvedAutoFps = nextFps;
+        _scheduleConfigUpdate();
+      }),
+    );
   }
 
   void _openMessageActions(LiveMessage message, {required bool fromLongPress}) {

@@ -236,7 +236,7 @@
     "force_destroy_player_subtitle": "彻底关闭播放进程以节省资源",
     "general": "通用",
     "high_refresh_rate": "高刷新率显示",
-    "high_refresh_rate_subtitle": "自动选择当前分辨率支持的最高刷新率，提升滑动和动画流畅度",
+    "high_refresh_rate_subtitle": "触摸、滑动和转场时自动使用当前分辨率支持的最高刷新率，空闲时交还系统动态调度以降低功耗",
     "windows_dynamic_refresh_rate": "Windows 动态刷新率",
     "windows_dynamic_refresh_rate_subtitle": "跟随窗口所在显示器的系统刷新率；移动到其他显示器或系统切换模式后自动更新",
     "display_mode_detecting": "正在检测显示模式",

@@ -114,9 +114,8 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraint) {
+                  controller.checkAndNotifyLayoutChange(isDesktop);
                   return Obx(() {
-                    controller.checkAndNotifyLayoutChange(isDesktop);
-
                     if (controller.list.isEmpty) {
                       if (controller.notLogin.value) {
                         final view = notLoginBuilder != null
@@ -165,7 +164,7 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
           left: 0,
           right: 0,
           child: Obx(() {
-            if (controller.list.isNotEmpty && controller.loadding.value && isDesktop) {
+            if (controller.list.isNotEmpty && controller.loadding.value) {
               return SizedBox(
                 height: 2.5,
                 child: LinearProgressIndicator(

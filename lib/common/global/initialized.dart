@@ -24,8 +24,8 @@ import 'package:pure_live/common/utils/windows_multi_instance_launcher.dart';
 @visibleForTesting
 void configureDecodedImageCache({required bool desktop}) {
   final cache = PaintingBinding.instance.imageCache;
-  cache.maximumSize = desktop ? 384 : 256;
-  cache.maximumSizeBytes = (desktop ? 96 : 64) * 1024 * 1024;
+  cache.maximumSize = desktop ? 240 : 160;
+  cache.maximumSizeBytes = (desktop ? 72 : 48) * 1024 * 1024;
 }
 
 class AppInitializer {

@@ -2,20 +2,14 @@ import 'package:remixicon/remixicon.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/common/index.dart';
 
-class PopularGridView extends StatefulWidget {
+class PopularGridView extends StatelessWidget {
   final String tag;
   const PopularGridView(this.tag, {super.key});
-  @override
-  State<PopularGridView> createState() => _PopularGridViewState();
-}
 
-class _PopularGridViewState extends State<PopularGridView> with AutomaticKeepAliveClientMixin {
-  BasePageScrollAndStateBone<LiveRoom> get controller =>
-      Get.find<BasePageScrollAndStateBone<LiveRoom>>(tag: widget.tag);
+  BasePageScrollAndStateBone<LiveRoom> get controller => Get.find<BasePageScrollAndStateBone<LiveRoom>>(tag: tag);
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
     return LayoutBuilder(
       builder: (context, constraint) {
         final width = constraint.maxWidth;
@@ -60,7 +54,4 @@ class _PopularGridViewState extends State<PopularGridView> with AutomaticKeepAli
       },
     );
   }
-
-  @override
-  bool get wantKeepAlive => true;
 }

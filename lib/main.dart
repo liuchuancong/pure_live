@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
@@ -154,6 +155,11 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
                 Widget resultWidget = child ?? const SizedBox.shrink();
                 if (PlatformUtils.isDesktopNotMac) {
                   resultWidget = DesktopManager.buildWithTitleBar(resultWidget);
+                } else if (Platform.isAndroid) {
+                  resultWidget = AdaptiveRefreshRateScope(
+                    enabled: SettingsService.to.app.enableHighRefreshRate.v,
+                    child: resultWidget,
+                  );
                 }
                 return MediaQuery(
                   data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(currentFactor)),

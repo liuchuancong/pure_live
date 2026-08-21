@@ -12,6 +12,7 @@ class AreasController extends GetxController with GetTickerProviderStateMixin {
 
   bool _isTabControllerInitialized = false;
   Timer? _settledTabLoadTimer;
+  Timer? _adjacentWarmTimer;
   Worker? _hotAreasWorker;
 
   @override
@@ -26,6 +27,7 @@ class AreasController extends GetxController with GetTickerProviderStateMixin {
   @override
   void onClose() {
     _settledTabLoadTimer?.cancel();
+    _adjacentWarmTimer?.cancel();
     _hotAreasWorker?.dispose();
     if (_isTabControllerInitialized) {
       tabController.removeListener(_handleTabChange);
@@ -49,18 +51,21 @@ class AreasController extends GetxController with GetTickerProviderStateMixin {
     _initTabController(isFirstLoad: false);
   }
 
-  AreasListController _ensureListController(dynamic site) {
+  void _registerListController(dynamic site) {
     final tag = site.id;
-
     if (!Get.isRegistered<AreasListController>(tag: tag)) {
       Get.lazyPut(() => AreasListController(site), tag: tag, fenix: true);
     }
+  }
 
-    return Get.find<AreasListController>(tag: tag);
+  AreasListController _ensureListController(dynamic site) {
+    _registerListController(site);
+    return Get.find<AreasListController>(tag: site.id);
   }
 
   void _initTabController({required bool isFirstLoad}) {
     _settledTabLoadTimer?.cancel();
+    _adjacentWarmTimer?.cancel();
     final newSites = Sites().availableSites();
 
     if (newSites.isEmpty) {
@@ -78,7 +83,10 @@ class AreasController extends GetxController with GetTickerProviderStateMixin {
     sites = newSites;
 
     for (final site in sites) {
-      _ensureListController(site);
+      // Register all platforms without constructing their paging, refresh and
+      // scroll controllers. Only the visible page and one idle neighbour are
+      // materialized, keeping startup memory and listener count bounded.
+      _registerListController(site);
     }
 
     if (isFirstLoad) {
@@ -104,7 +112,7 @@ class AreasController extends GetxController with GetTickerProviderStateMixin {
 
     _isTabControllerInitialized = true;
 
-    _loadCurrentTabData(index);
+    unawaited(_loadCurrentTabData(index));
   }
 
   void _handleTabChange() {
@@ -115,11 +123,11 @@ class AreasController extends GetxController with GetTickerProviderStateMixin {
     if (index != tabController.index) {
       index = tabController.index;
       _settledTabLoadTimer?.cancel();
-      _settledTabLoadTimer = Timer(const Duration(milliseconds: 80), () => _loadCurrentTabData(index));
+      _settledTabLoadTimer = Timer(const Duration(milliseconds: 80), () => unawaited(_loadCurrentTabData(index)));
     }
   }
 
-  void _loadCurrentTabData(int i) {
+  Future<void> _loadCurrentTabData(int i) async {
     if (sites.isEmpty || i < 0 || i >= sites.length) {
       return;
     }
@@ -129,8 +137,24 @@ class AreasController extends GetxController with GetTickerProviderStateMixin {
     final listController = _ensureListController(site);
 
     if (listController.list.isEmpty) {
-      listController.loadData();
+      await listController.loadData();
     }
+    if (i != index || listController.list.isEmpty) return;
+    _adjacentWarmTimer?.cancel();
+    _adjacentWarmTimer = Timer(const Duration(milliseconds: 800), () => _warmNextPlatform(i, listController));
+  }
+
+  void _warmNextPlatform(int currentIndex, AreasListController current) {
+    if (currentIndex != index || sites.length < 2) return;
+    if (current.scrollController.hasClients && current.scrollController.position.isScrollingNotifier.value) {
+      _adjacentWarmTimer?.cancel();
+      _adjacentWarmTimer = Timer(const Duration(milliseconds: 450), () => _warmNextPlatform(currentIndex, current));
+      return;
+    }
+    final nextIndex = currentIndex + 1 < sites.length ? currentIndex + 1 : currentIndex - 1;
+    if (nextIndex < 0) return;
+    final next = _ensureListController(sites[nextIndex]);
+    if (next.list.isEmpty) unawaited(next.loadData());
   }
 
   /// Revalidates the currently visible site's category catalogue when the app

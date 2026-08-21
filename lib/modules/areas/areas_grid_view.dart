@@ -20,7 +20,10 @@ class AreaGridView extends StatefulWidget {
 class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMixin {
   TabController? _tabController;
   Worker? _listWorker;
-  Timer? _settledCategoryLoadTimer;
+  final Map<String, ScrollController> _categoryScrollControllers = {};
+
+  ScrollController _scrollControllerFor(String categoryId) =>
+      _categoryScrollControllers.putIfAbsent(categoryId, () => createPureLiveScrollController());
 
   @override
   void initState() {
@@ -51,6 +54,7 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
 
     _tabController = TabController(length: list.length, vsync: this, initialIndex: initialIndex);
     _tabController!.addListener(_handleInternalTabChange);
+    widget.controller.bindActiveScrollController(_scrollControllerFor(list[initialIndex].id));
 
     if (mounted) setState(() {});
   }
@@ -60,12 +64,17 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
     final animationValue = _tabController!.animation?.value ?? _tabController!.index.toDouble();
     if ((animationValue - _tabController!.index).abs() > 0.001) return;
     if (widget.controller.tabIndex.value != _tabController!.index) {
-      widget.controller.tabIndex.value = _tabController!.index;
-      if (Get.width > 680) {
-        widget.controller.currentPage = 1;
+      // Category data is already local. Commit only after the horizontal
+      // gesture settles, and bind the destination's dedicated controller so
+      // offsets never leak between PageView children.
+      final target = _tabController!.index;
+      final categories = widget.controller.categories;
+      if (target >= 0 && target < categories.length) {
+        widget.controller.bindActiveScrollController(_scrollControllerFor(categories[target].id));
       }
-      _settledCategoryLoadTimer?.cancel();
-      _settledCategoryLoadTimer = Timer(const Duration(milliseconds: 80), widget.controller.loadData);
+      widget.controller.tabIndex.value = _tabController!.index;
+      widget.controller.currentPage = 1;
+      unawaited(widget.controller.loadData());
     }
   }
 
@@ -79,8 +88,8 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
 
   @override
   void dispose() {
-    _settledCategoryLoadTimer?.cancel();
     if (!widget.isFlatten) {
+      widget.controller.bindActiveScrollController(null);
       widget.controller.tabIndex.removeListener(_handleExternalIndexChange);
       _listWorker?.dispose();
       if (_tabController != null) {
@@ -88,6 +97,10 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
         _tabController!.dispose();
       }
     }
+    for (final controller in _categoryScrollControllers.values) {
+      controller.dispose();
+    }
+    _categoryScrollControllers.clear();
     super.dispose();
   }
 
@@ -145,43 +158,46 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
             tabs: categoriesList.map((e) => Tab(text: e.name)).toList(),
           ),
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: categoriesList.asMap().entries.map((entry) {
-                final index = entry.key;
-                final category = entry.value;
-
-                return BasePageView<AreasListController, LiveArea>(
-                  key: ValueKey("area_page_${category.name}"),
-                  controller: widget.controller,
-                  enableRefresh: true,
-                  enableLoadMore: true,
-                  customMobileBottomPadding: 85,
-                  customDesktopBottomPadding: 135,
-                  showScrollToTopBtn: SettingsService.to.page.showScrollToTopBtn.v,
-                  showPageSizeSelector: SettingsService.to.page.showPageSizeSelector.v,
-                  pageSizeOptions: SettingsService.to.page.pageSizeOptions,
-                  emptyBuilder: (context) => EmptyView(
-                    icon: Remix.apps_2_line,
-                    title: i18n("empty_areas_title"),
-                    subtitle: i18n("empty_areas_subtitle"),
-                  ),
-                  contentBuilder: (context, displayList, scrollController) {
-                    final bool isCurrentTab = widget.controller.tabIndex.value == index;
-                    final List<LiveArea> finalData = isCurrentTab ? displayList : category.children;
-
-                    if (finalData.isEmpty) {
-                      return EmptyView(
-                        icon: Remix.apps_2_line,
-                        title: i18n("empty_areas_title"),
-                        subtitle: i18n("empty_areas_subtitle"),
-                      );
-                    }
-
-                    return buildFlattenAreasView(finalData, scrollController);
-                  },
+            child: BasePageView<AreasListController, LiveArea>(
+              controller: widget.controller,
+              enableRefresh: true,
+              enableLoadMore: true,
+              customMobileBottomPadding: 85,
+              customDesktopBottomPadding: 135,
+              showScrollToTopBtn: SettingsService.to.page.showScrollToTopBtn.v,
+              showPageSizeSelector: SettingsService.to.page.showPageSizeSelector.v,
+              pageSizeOptions: SettingsService.to.page.pageSizeOptions,
+              emptyBuilder: (context) => EmptyView(
+                icon: Remix.apps_2_line,
+                title: i18n("empty_areas_title"),
+                subtitle: i18n("empty_areas_subtitle"),
+              ),
+              contentBuilder: (context, displayList, _) {
+                final activeIndex = widget.controller.tabIndex.value;
+                return TabBarView(
+                  controller: _tabController,
+                  children: categoriesList.asMap().entries.map((entry) {
+                    final category = entry.value;
+                    return Builder(
+                      key: ValueKey('area_page_${category.id}'),
+                      builder: (context) {
+                        final isCurrentTab = activeIndex == entry.key;
+                        final finalData = widget.controller.usesDesktopPagination && isCurrentTab
+                            ? displayList
+                            : category.children;
+                        if (finalData.isEmpty) {
+                          return EmptyView(
+                            icon: Remix.apps_2_line,
+                            title: i18n("empty_areas_title"),
+                            subtitle: i18n("empty_areas_subtitle"),
+                          );
+                        }
+                        return buildFlattenAreasView(finalData, _scrollControllerFor(category.id));
+                      },
+                    );
+                  }).toList(),
                 );
-              }).toList(),
+              },
             ),
           ),
         ],

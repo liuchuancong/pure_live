@@ -20,7 +20,9 @@ class MainActivity : AudioServiceActivity() {
         private var playbackWifiLock: WifiManager.WifiLock? = null
     }
 
-    private var highRefreshRateEnabled = true
+    // Start in Android's dynamic policy. Dart raises the request only around
+    // active touch/scroll/transition bursts when the user setting is enabled.
+    private var highRefreshRateEnabled = false
     private var displayModeChannel: MethodChannel? = null
     private var displayListenerRegistered = false
     private var lastPublishedDisplayModeInfo: Map<String, Any>? = null
