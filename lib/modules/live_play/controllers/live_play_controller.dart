@@ -291,7 +291,6 @@ class LivePlayController extends GetxController
       clearSuperChats();
       var sc = await currentSite.liveSite.getSuperChatMessage(roomId: roomId);
       addBatchSuperChat(sc);
-      developer.log(superChats[0].message);
     } catch (e) {
       addSystemMessage("SC读取失败");
     }
