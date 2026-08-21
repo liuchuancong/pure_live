@@ -88,7 +88,7 @@ class BackButtonObserver extends RouteObserver<PageRoute<dynamic>> {
       try {
         final livePlayController = Get.find<LivePlayController>();
         final state = livePlayController.state.value;
-
+        livePlayController.updateUI(displayVideoLayer: false);
         // 更新房间状态
         livePlayController.updateRoom(success: false);
 
