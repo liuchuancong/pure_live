@@ -72,10 +72,34 @@ try {
     }
 
     if (-not $SkipAndroid) {
-        $env:GRADLE_OPTS = $previousGradleOpts
+        # Flutter does not expose Gradle's daemon/worker switches.  Pass their
+        # system-property equivalents through the wrapper so local/self-hosted
+        # release builds cannot inherit a stale composite-build daemon.  Four
+        # workers is faster than the single-worker fallback while avoiding the
+        # included-build controller deadlock seen on high-core-count machines.
+        $stableGradleOpts = @(
+            '-Dorg.gradle.daemon=false',
+            '-Dorg.gradle.parallel=false',
+            '-Dorg.gradle.workers.max=4',
+            '-Dorg.gradle.vfs.watch=false'
+        )
+        $env:GRADLE_OPTS = (@($previousGradleOpts) + $stableGradleOpts |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) }) -join ' '
         if ($RequireReleaseSigning) {
             $env:GRADLE_OPTS = (@($env:GRADLE_OPTS, '-Dorg.gradle.project.pureLiveRequireReleaseSigning=true') |
                 Where-Object { $_ }) -join ' '
+        }
+        $java = if ($env:JAVA_HOME) {
+            Join-Path $env:JAVA_HOME 'bin\java.exe'
+        } else {
+            (Get-Command java.exe -ErrorAction SilentlyContinue).Source
+        }
+        if ($java -and (Test-Path -LiteralPath $java -PathType Leaf)) {
+            Write-Host "Stopping stale Gradle daemons before the deterministic Android build..."
+            & (Join-Path $repoRoot 'android\gradlew.bat') --stop
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+        } else {
+            Write-Host 'Java is resolved by flutterw after this point; no reusable daemon is permitted by GRADLE_OPTS.'
         }
         & (Join-Path $PSScriptRoot 'prefetch_android_native.ps1')
         if ($LASTEXITCODE) { exit $LASTEXITCODE }
