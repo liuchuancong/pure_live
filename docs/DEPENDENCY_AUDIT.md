@@ -37,7 +37,7 @@ Android 已启用 AGP 9 Built-in Kotlin。主应用、`flv_lzc` 以及六个仍�
 python .\tool\interface_probe.py
 ```
 
-当前脚本共检查 26 项：Bilibili、Douyu、Huya、Kuaishou、Douyin、网易 CC、Twitch、SOOP Live 的公开分类/推荐入口、搜索、Bilibili 弹幕节点、Huya 弹幕注册身份、Twitch 房间元数据与播放令牌，以及 SOOP 房间元数据和播放令牌。2026-08-20 本机结果为 26/26；另外已在 Windows release 内打开 Douyu 2K60 直播并确认实时弹幕持续接收。Android 弹幕恢复默认由协议、生命周期和通知顺序自动化回归覆盖；设备复核只在当前任务明确安排时追加。
+当前脚本共检查 26 项：Bilibili、Douyu、Huya、Kuaishou、Douyin、网易 CC、Twitch、SOOP Live 的公开分类/推荐入口、搜索、Bilibili 弹幕节点、Huya 弹幕注册身份、Twitch 房间元数据与播放令牌，以及 SOOP 房间元数据和播放令牌。2026-08-21 本机结果为 26/26；另外已在 Windows release 内打开 Douyu 2K60 直播并确认实时弹幕持续接收。Android 弹幕恢复默认由协议、生命周期和通知顺序自动化回归覆盖；设备复核只在当前任务明确安排时追加。
 
 虎牙另提供 `python .\tool\huya_danmaku_probe.py` 实时 WebSocket 回归；2026-08-16 已验证注册、新版心跳和真实推送接收。该项依赖当前直播间与平台网关状态，保留为发布前手动检查。
 

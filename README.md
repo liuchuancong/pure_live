@@ -35,7 +35,7 @@
 
 - **最新稳定版**：[v2.3.0](https://github.com/wzgrx/pure_live/releases/tag/v2.3.0)
 - **当前版本**：`2.3.0+4069`
-- **v2.3.0 上游源码基线**：`liuchuancong/pure_live@6c95339b`；功能提交已由上游 [PR #762](https://github.com/liuchuancong/pure_live/pull/762) 合并
+- **v2.3.0 上游源码基线**：已同步至 `liuchuancong/pure_live@494035fe`，包含 [PR #762](https://github.com/liuchuancong/pure_live/pull/762)、虎牙播放地址 [PR #766](https://github.com/liuchuancong/pure_live/pull/766) 与上游小窗弹幕目录整理
 - **构建平台**：Android arm64、Windows x64、Linux x64、macOS Universal、iOS arm64 设备包
 
 ![Pure Live 界面预览](assets/images/banner.png)

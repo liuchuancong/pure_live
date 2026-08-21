@@ -1,6 +1,6 @@
 # Pure Live v2.3.0 稳定性更新
 
-v2.3.0 发布源码基于上游 `liuchuancong/pure_live@6c95339b`，重点处理 Android 系统画中画返回后弹幕列表停住、启动仍展示上次开播状态、横屏弹幕设置/输入缺口，以及 Windows 和 Android 长时间播放的资源增长。正式版本号为 `2.3.0+4069`，Android 正式包名保持 `com.mystyle.purelive`；功能提交已由上游 PR #762 合并。
+v2.3.0 维护源码已同步至上游 `liuchuancong/pure_live@494035fe`，重点处理 Android 系统画中画返回后弹幕列表停住、启动仍展示上次开播状态、横屏弹幕设置/输入缺口，以及 Windows 和 Android 长时间播放的资源增长。正式版本号为 `2.3.0+4069`，Android 正式包名保持 `com.mystyle.purelive`；同步范围包含上游已合并的 PR #762、虎牙播放地址 PR #766 与小窗弹幕目录整理。
 
 ## 问题与修复落点
 
@@ -36,7 +36,7 @@ v2.3.0 发布源码基于上游 `liuchuancong/pure_live@6c95339b`，重点处理
 | Windows 构建 | x64 portable ZIP 与可选目录 EXE 安装器编译通过 |
 | Windows 运行烟雾 | 热门页平台切换、封面回填、2K60 直播、画面弹幕与列表弹幕持续更新，窗口保持响应 |
 | Windows 资源采样 | 5 分钟连续播放始终 `Responding=true`；工作集 438.1→519.8 MiB，private bytes 峰值后回落至 996.0 MiB，handles 1774→1756、threads 250→245；最终提交另做 60 秒播放复核 |
-| 全平台阶段构建 | Linux x64、macOS universal、iOS arm64 unsigned app 成功；与 Android/Windows 一并由发布工作流核对同一源码提交 `5166a9c2` 和 SHA-256 |
+| 全平台阶段构建 | Linux x64、macOS universal、iOS arm64 unsigned app 与 Windows 阶段归档已经发布；Android arm64 热修包从当前 `master` 的干净提交重新构建、签名并单独更新校验值 |
 
 本轮按无设备修复流程执行，Android 的“进入系统画中画 → 播放 → 返回应用 → 全屏/竖屏列表继续刷新”由列表销毁/重建顺序、持久恢复 revision、转场阻塞重试、恢复中请求排队、同房间连接替换和滚动通知策略自动化测试覆盖。设备采样是明确安排时追加的独立证据层，不影响代码修复、静态分析和本地构建闭环。
 
