@@ -150,6 +150,6 @@ python .\tool\update_releases.py
 3. 运行 `tool/build_local_release.ps1`，核对 APK、EXE/ZIP 和 SHA-256。
 4. 运行 `tool/install_android_local.ps1` 在真机覆盖安装并启动；正式 Release 使用仓库持久签名验证升级链。
 5. 提交并推送 `master`，再运行 `tool/publish_local_release.ps1`。
-6. 在 [维护分支 Releases](https://github.com/wzgrx/pure_live/releases) 核对附件和校验文件。
+6. 在 [维护分支 Releases](https://github.com/liuchuancong/pure_live/releases) 核对附件和校验文件。
 
 返回 [文档索引](README.md)。
