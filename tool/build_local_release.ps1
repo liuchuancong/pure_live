@@ -94,12 +94,15 @@ try {
         } else {
             (Get-Command java.exe -ErrorAction SilentlyContinue).Source
         }
-        if ($java -and (Test-Path -LiteralPath $java -PathType Leaf)) {
+        $gradleWrapper = Join-Path $repoRoot 'android\gradlew.bat'
+        if ($java -and
+            (Test-Path -LiteralPath $java -PathType Leaf) -and
+            (Test-Path -LiteralPath $gradleWrapper -PathType Leaf)) {
             Write-Host "Stopping stale Gradle daemons before the deterministic Android build..."
-            & (Join-Path $repoRoot 'android\gradlew.bat') --stop
+            & $gradleWrapper --stop
             if ($LASTEXITCODE) { exit $LASTEXITCODE }
         } else {
-            Write-Host 'Java is resolved by flutterw after this point; no reusable daemon is permitted by GRADLE_OPTS.'
+            Write-Host 'No reusable Gradle daemon is permitted; flutterw will resolve any missing Java/wrapper bootstrap.'
         }
         & (Join-Path $PSScriptRoot 'prefetch_android_native.ps1')
         if ($LASTEXITCODE) { exit $LASTEXITCODE }
