@@ -30,5 +30,24 @@ void main() {
 
       expect(received, isEmpty);
     });
+
+    test('keeps ordinary chat and a super-chat coalesced in one frame', () {
+      final danmaku = DouyuDanmaku()..debugSetRoomId('100');
+      final received = <LiveMessage>[];
+      danmaku.onMessage = received.add;
+      final chat = danmaku.serializeDouyu('type@=chatmsg/rid@=100/dms@=1/uid@=7/nn@=A/txt@=hello/cid@=c1/');
+      final superChat = danmaku.serializeDouyu(
+        'type@=comm_chatmsg/now@=1700000000000/cet@=60/cprice@=500/'
+        'chatmsg@=nn@A=Supporter@Stxt@A=Great@Sic@A=avatar/',
+      );
+
+      danmaku.decodeMessage(<int>[...chat, ...superChat]);
+
+      expect(received.map((message) => message.type), [LiveMessageType.chat, LiveMessageType.superChat]);
+      final data = received.last.data as LiveSuperChatMessage;
+      expect(data.userName, 'Supporter');
+      expect(data.message, 'Great');
+      expect(data.price, 5);
+    });
   });
 }
