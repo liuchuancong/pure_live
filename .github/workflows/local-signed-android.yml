@@ -18,9 +18,14 @@ jobs:
     name: Signed Android arm64-v8a on local runner
     if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: [self-hosted, Windows, X64]
-    timeout-minutes: 55
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # This trusted ephemeral runner is dedicated to this repository.
+          # Preserve Gradle/Flutter intermediates between manual release jobs;
+          # the build script deletes final APKs and Git resets tracked files.
+          clean: false
       - name: Select local Java 25
         shell: pwsh
         run: |

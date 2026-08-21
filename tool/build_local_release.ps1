@@ -79,7 +79,6 @@ try {
         # included-build controller deadlock seen on high-core-count machines.
         $stableGradleOpts = @(
             '-Dorg.gradle.daemon=false',
-            '-Dorg.gradle.parallel=false',
             '-Dorg.gradle.workers.max=4',
             '-Dorg.gradle.vfs.watch=false'
         )
