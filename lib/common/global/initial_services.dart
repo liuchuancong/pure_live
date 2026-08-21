@@ -5,12 +5,13 @@ import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/modules/auth/auth_controller.dart';
 import 'package:pure_live/recorder/services/cache_service.dart';
+import 'package:pure_live/recorder/consts/recorder_config.dart';
+import 'package:pure_live/recorder/consts/recorder_keys.dart';
 import 'package:pure_live/routes/route_observer_controller.dart';
 import 'package:pure_live/recorder/services/stream_resolver_service.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/core/iptv/services/channel_detail_controller.dart';
-import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/local_interaction/local_interaction_controller.dart';
 
@@ -35,6 +36,8 @@ class InitialServices {
     Get.lazyPut(() => CacheService(), fenix: true);
     Get.lazyPut(() => RecordSettingsController(), fenix: true);
     Get.lazyPut(() => RecorderController(), fenix: true);
+    Get.lazyPut(() => StreamResolverService(), fenix: true);
+    Get.lazyPut(() => AuthController(), fenix: true);
   }
 
   static Future<void> initDb() async {
@@ -66,48 +69,26 @@ class InitialServices {
 
   static void _initHeavyServicesInBackground() {
     Future<void>(() async {
-      try {
-        await FFmpegKitExtended.initialize();
-        developer.log('FFmpegKitExtended initialized', name: 'InitialServices');
-      } catch (error, stackTrace) {
-        developer.log(
-          'FFmpegKitExtended initialization failed: $error',
-          name: 'InitialServices',
-          error: error,
-          stackTrace: stackTrace,
-        );
-      }
-
       await Future.delayed(const Duration(seconds: 3));
 
-      _initializeSafely('CacheService', () {
-        Get.find<CacheService>();
-      });
-
-      _initializeSafely('RecordSettingsController', () {
-        Get.find<RecordSettingsController>();
-      });
-
-      _initializeSafely('RecorderController', () {
-        Get.find<RecorderController>();
-      });
-
-      _initializeSafely('StreamResolverService', () {
-        if (!Get.isRegistered<StreamResolverService>()) {
-          Get.lazyPut(() => StreamResolverService(), fenix: true);
-        }
-
-        Get.find<StreamResolverService>();
-      });
-
-      _initializeSafely('AuthController', () {
-        if (!Get.isRegistered<AuthController>()) {
-          Get.put(AuthController(), permanent: true);
-        }
-      });
-
-      developer.log('All heavy services initialized', name: 'InitialServices');
+      // Keep heavyweight native/network services cold during ordinary browsing.
+      // A recorder explicitly configured to resume persisted tasks remains the
+      // only startup exception; FFmpeg itself is initialized when a task starts.
+      final serializedTasks = HivePrefUtil.getString(RecorderKeys.recorderTasks);
+      if (shouldWarmRecorderOnStartup(
+        autoStartOnBoot: RecorderConfig.autoStartOnBoot,
+        serializedTasks: serializedTasks,
+      )) {
+        _initializeSafely('RecorderController', () => Get.find<RecorderController>());
+      }
     });
+  }
+
+  @visibleForTesting
+  static bool shouldWarmRecorderOnStartup({required bool autoStartOnBoot, required String? serializedTasks}) {
+    if (!autoStartOnBoot) return false;
+    final value = serializedTasks?.trim();
+    return value != null && value.isNotEmpty && value != '[]';
   }
 
   static void _initializeSafely(String name, void Function() initialize) {

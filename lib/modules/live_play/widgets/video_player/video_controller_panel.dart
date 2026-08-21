@@ -1632,6 +1632,12 @@ class _FavoriteButtonState extends State<FavoriteButton> {
   }
 
   @override
+  void dispose() {
+    subscription?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {

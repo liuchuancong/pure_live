@@ -266,6 +266,7 @@ class Utils {
         ],
       ),
     );
+    textEditingController.dispose();
     return res;
   }
 

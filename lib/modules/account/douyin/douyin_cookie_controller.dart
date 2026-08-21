@@ -13,4 +13,10 @@ class DouyinCookieController extends GetxController {
     cookieController.text = cookie;
     SettingsService.to.cookieManager.douyinCookie.v = cookie;
   }
+
+  @override
+  void onClose() {
+    cookieController.dispose();
+    super.onClose();
+  }
 }

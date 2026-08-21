@@ -13,4 +13,10 @@ class TwitchCookieBindingCookieController extends GetxController {
     cookieController.text = cookie;
     SettingsService.to.cookieManager.twitchCookie.v = cookie;
   }
+
+  @override
+  void onClose() {
+    cookieController.dispose();
+    super.onClose();
+  }
 }

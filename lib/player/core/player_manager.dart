@@ -157,6 +157,15 @@ class PlayerManager {
   bool get isAudioOnlyMode => _runtimeAudioOnly;
   bool get desiredAudioOnlyMode => _requestedAudioOnly;
 
+  /// Selects the first engine without allocating a native player yet.
+  /// Browsing the home/settings pages does not need a decoder, demuxer,
+  /// texture or their worker threads; [play] performs the one-time warm-up on
+  /// the first real room request.
+  void configureDefaultEngine(PlayerEngine engine) {
+    if (_disposed || _currentPlayer != null) return;
+    _defaultEngine = engine;
+  }
+
   /// Whether the room already owns a live native source that can accept an
   /// in-place audio/video track change.
   ///
@@ -348,9 +357,11 @@ class PlayerManager {
       lineManager.reset();
     }
     if (_currentPlayer == null || _runtimeEngine == null) {
-      final String savedKey = SettingsService.to.player.videoPlayerKey.v;
-      final String validKey = PlayerConsts.engines.containsKey(savedKey) ? savedKey : PlayerConsts.defaultKey;
-      _defaultEngine = PlayerConsts.engines[validKey]!;
+      if (_defaultEngine == null) {
+        final String savedKey = SettingsService.to.player.videoPlayerKey.v;
+        final String validKey = PlayerConsts.engines.containsKey(savedKey) ? savedKey : PlayerConsts.defaultKey;
+        _defaultEngine = PlayerConsts.engines[validKey]!;
+      }
       _runtimeEngine = _defaultEngine;
       log('No current player, initializing with default engine: $_defaultEngine', name: 'PlayerManager');
       await initialize(engine: _defaultEngine!, audioOnly: audioOnly);

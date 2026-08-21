@@ -13,4 +13,10 @@ class SoopCookieBindingCookieController extends GetxController {
     cookieController.text = cookie;
     SettingsService.to.cookieManager.soopCookie.v = cookie;
   }
+
+  @override
+  void onClose() {
+    cookieController.dispose();
+    super.onClose();
+  }
 }

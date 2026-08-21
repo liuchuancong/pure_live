@@ -19,4 +19,10 @@ class DanmuShieldController extends GetxController {
   void remove(int itemIndex) {
     SettingsService.to.fav.removeShieldList(itemIndex);
   }
+
+  @override
+  void onClose() {
+    textEditingController.dispose();
+    super.onClose();
+  }
 }

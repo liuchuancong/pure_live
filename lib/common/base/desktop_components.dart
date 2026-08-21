@@ -1,13 +1,29 @@
 import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
 
-class DesktopPaginationBar extends StatelessWidget {
+class DesktopPaginationBar extends StatefulWidget {
   final BasePageScrollAndStateBone controller;
   final bool showSelector;
   final List<int> options;
+
+  const DesktopPaginationBar({super.key, required this.controller, required this.showSelector, required this.options});
+
+  @override
+  State<DesktopPaginationBar> createState() => _DesktopPaginationBarState();
+}
+
+class _DesktopPaginationBarState extends State<DesktopPaginationBar> {
   final _inputController = TextEditingController();
 
-  DesktopPaginationBar({super.key, required this.controller, required this.showSelector, required this.options});
+  BasePageScrollAndStateBone get controller => widget.controller;
+  bool get showSelector => widget.showSelector;
+  List<int> get options => widget.options;
+
+  @override
+  void dispose() {
+    _inputController.dispose();
+    super.dispose();
+  }
 
   void _executeJump(BuildContext context, int maxPage, bool isFixedMode) {
     final text = _inputController.text.trim();

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:pure_live/common/index.dart';
 import 'package:date_format/date_format.dart';
@@ -22,6 +23,8 @@ class WebDavPageController extends GetxController {
 
   final WebDavController _webDavController = Get.find<WebDavController>();
   final BackupController _backupController = Get.find<BackupController>();
+  StreamSubscription<List<WebDAVConfig>>? _configsSubscription;
+  StreamSubscription<WebDAVConfig?>? _currentConfigSubscription;
 
   @override
   void onInit() {
@@ -34,18 +37,25 @@ class WebDavPageController extends GetxController {
     }
 
     // 监听同步到全局
-    configs.listen((_) {
+    _configsSubscription = configs.listen((_) {
       _webDavController.webDavConfigs.v = List.from(configs);
       _webDavController.webDavConfigs.refresh();
     });
 
-    currentConfig.listen((config) {
+    _currentConfigSubscription = currentConfig.listen((config) {
       if (config != null) {
         _webDavController.currentWebDavConfig.v = jsonEncode(config.toJson());
       } else {
         _webDavController.currentWebDavConfig.v = '';
       }
     });
+  }
+
+  @override
+  void onClose() {
+    _configsSubscription?.cancel();
+    _currentConfigSubscription?.cancel();
+    super.onClose();
   }
 
   void initializeWebDAV() {

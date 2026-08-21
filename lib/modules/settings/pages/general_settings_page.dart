@@ -249,7 +249,10 @@ class GeneralSettingsPage extends GetView<SettingsService> {
           ],
         );
       },
-    );
+    ).whenComplete(() {
+      widthController.dispose();
+      heightController.dispose();
+    });
   }
 
   void _showCountdownDurationDialog(BuildContext context) {
@@ -335,7 +338,7 @@ class GeneralSettingsPage extends GetView<SettingsService> {
           ],
         );
       },
-    );
+    ).whenComplete(inputController.dispose);
   }
 }
 

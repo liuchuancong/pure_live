@@ -51,6 +51,13 @@ class _CountButtonState extends State<CountButton> {
   Timer? decrementTimer;
 
   @override
+  void dispose() {
+    incrementTimer?.cancel();
+    decrementTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final backgroundColor = widget.backgroundColor ?? Theme.of(context).colorScheme.primary;
     final foregroundColor = widget.foregroundColor ?? Colors.white;

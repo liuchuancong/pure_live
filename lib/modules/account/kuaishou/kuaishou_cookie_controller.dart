@@ -13,4 +13,10 @@ class KuaishouCookieController extends GetxController {
     cookieController.text = cookie;
     SettingsService.to.cookieManager.kuaishouCookie.v = cookie;
   }
+
+  @override
+  void onClose() {
+    cookieController.dispose();
+    super.onClose();
+  }
 }

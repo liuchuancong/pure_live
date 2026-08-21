@@ -97,6 +97,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     try {
       _stateSubject.add(PlayerState.initializing);
 
+      MediaKit.ensureInitialized();
       _player = Player();
 
       if (_player.platform is NativePlayer) {

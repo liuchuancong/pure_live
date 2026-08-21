@@ -671,7 +671,11 @@ class RoomCard extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ).whenComplete(() {
+      nameController.dispose();
+      descController.dispose();
+      tagScrollController.dispose();
+    });
   }
 
   @override

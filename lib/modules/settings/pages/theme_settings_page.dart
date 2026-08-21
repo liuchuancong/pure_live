@@ -445,6 +445,6 @@ class ThemeSettingsPage extends GetView<SettingsService> {
           ),
         ),
       ),
-    );
+    ).whenComplete(textController.dispose);
   }
 }

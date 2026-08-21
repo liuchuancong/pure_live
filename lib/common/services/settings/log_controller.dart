@@ -9,6 +9,7 @@ class LogController extends GetxController {
   final RxInt serverPort = hiveInt('user_log_port', 0);
 
   final RxBool storedEnableLog = false.obs;
+  Worker? _logStatusWorker;
 
   static Function(Level, String)? onPrintLog;
 
@@ -16,13 +17,15 @@ class LogController extends GetxController {
   Future<void> onInit() async {
     super.onInit();
 
-    storedEnableLog.listen((value) {
+    _logStatusWorker = ever<bool>(storedEnableLog, (value) {
       Log.updateLogStatus();
     });
   }
 
   @override
   void onClose() {
+    _logStatusWorker?.dispose();
+    _logStatusWorker = null;
     Log.dispose();
     super.onClose();
   }

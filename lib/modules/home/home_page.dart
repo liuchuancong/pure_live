@@ -58,9 +58,9 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
 
       final initialRoom = AppInitializer().takeInitialRoom();
       if (initialRoom != null && mounted) {
-        // MyApp prewarms the global player asynchronously. Reusing that same
-        // initialization Future prevents a command-line room from racing a
-        // second PlayerManager into existence on fast desktop startup.
+        // MyApp prepares the global manager asynchronously while leaving the
+        // native decoder cold. Reusing that same initialization Future keeps a
+        // command-line room from racing a second manager into existence.
         if (!GlobalPlayerService.instance.initialized) {
           await GlobalPlayerService.instance.initialize(defaultEngine: PlayerEngine.mediaKit);
         }

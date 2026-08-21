@@ -6,8 +6,15 @@ import 'package:pure_live/modules/web_dav/web_dav_help.dart';
 import 'package:pure_live/modules/web_dav/webdav_config.dart';
 import 'package:pure_live/modules/web_dav/web_dav_controller.dart';
 
-class WebDavPage extends GetView<WebDavPageController> {
-  WebDavPage({super.key});
+class WebDavPage extends StatefulWidget {
+  const WebDavPage({super.key});
+
+  @override
+  State<WebDavPage> createState() => _WebDavPageState();
+}
+
+class _WebDavPageState extends State<WebDavPage> {
+  WebDavPageController get controller => Get.find<WebDavPageController>();
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ScrollController _breadcrumbScrollController = ScrollController();
@@ -157,7 +164,18 @@ class WebDavPage extends GetView<WebDavPageController> {
           ),
         ],
       ),
-    );
+    ).whenComplete(() {
+      nameController.dispose();
+      addressController.dispose();
+      userController.dispose();
+      pwdController.dispose();
+    });
+  }
+
+  @override
+  void dispose() {
+    _breadcrumbScrollController.dispose();
+    super.dispose();
   }
 
   @override
