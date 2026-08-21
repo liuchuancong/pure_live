@@ -12,10 +12,12 @@ import '../interface/unified_player_interface.dart';
 
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:media_kit/media_kit.dart' hide PlayerState;
+import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
+import 'package:pure_live/player/interface/media_kit_player_accessor.dart';
 
-class MediaKitAdapter implements UnifiedPlayer {
+class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
   MediaKitAdapter() {
     _audioModeTransitions = LatestAsyncValueQueue<bool>(_applyAudioOnly);
   }
@@ -645,4 +647,13 @@ class MediaKitAdapter implements UnifiedPlayer {
 
   @override
   Stream<int?> get height => _heightSubject.stream;
+
+  @override
+  PlayerEngine get engine => PlayerEngine.mediaKit;
+
+  @override
+  Player get mediaKitPlayer => _player;
+
+  @override
+  VideoController get mediaKitVideoController => _controller;
 }
