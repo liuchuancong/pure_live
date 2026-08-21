@@ -47,9 +47,9 @@ class _AreasRoomPageState extends State<AreasRoomPage> {
                 final spacing = SettingsService.to.theme.crossAxisSpacing.v;
                 final itemWidth = (width - 12 - spacing * (crossAxisCount - 1)) / crossAxisCount;
                 return GridView.builder(
-                  scrollCacheExtent: ScrollCacheExtent.pixels(width > 680 ? 960 : 480),
+                  scrollCacheExtent: ScrollCacheExtent.pixels(width > 680 ? 480 : 320),
                   addAutomaticKeepAlives: false,
-                  addRepaintBoundaries: false,
+                  addRepaintBoundaries: true,
                   keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: crossAxisCount,

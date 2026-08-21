@@ -12,9 +12,13 @@ import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_message_actions.dart';
 
-bool isDanmakuUserScrollStart(ScrollNotification notification, {bool acceptDirectionOnlyUserScroll = false}) {
-  return (notification is ScrollStartNotification && notification.dragDetails != null) ||
-      (notification is ScrollUpdateNotification && notification.dragDetails != null) ||
+bool isDanmakuUserScrollStart(
+  ScrollNotification notification, {
+  bool acceptDirectionOnlyUserScroll = false,
+  bool hasActivePointer = true,
+}) {
+  return (hasActivePointer && notification is ScrollStartNotification && notification.dragDetails != null) ||
+      (hasActivePointer && notification is ScrollUpdateNotification && notification.dragDetails != null) ||
       (acceptDirectionOnlyUserScroll &&
           notification is UserScrollNotification &&
           notification.direction != ScrollDirection.idle);
@@ -41,6 +45,7 @@ class DanmakuListViewState extends State<DanmakuListView> {
   int _lastControllerLength = 0;
   LiveMessage? _lastControllerTail;
   List<LiveMessage> _visibleMessages = const [];
+  int _activeScrollPointers = 0;
 
   Timer? throttleTimer;
   Worker? fullscreenWorker;
@@ -188,7 +193,11 @@ class DanmakuListViewState extends State<DanmakuListView> {
     // after the presentation restore above had already resumed it. Desktop mouse-wheel
     // input has no DragDetails, so it deliberately keeps the direction-only
     // path.
-    if (isDanmakuUserScrollStart(notification, acceptDirectionOnlyUserScroll: PlatformUtils.isDesktop)) {
+    if (isDanmakuUserScrollStart(
+      notification,
+      acceptDirectionOnlyUserScroll: PlatformUtils.isDesktop,
+      hasActivePointer: _activeScrollPointers > 0,
+    )) {
       _pauseAutoScroll();
     } else if ((notification is ScrollEndNotification ||
             (notification is UserScrollNotification && notification.direction == ScrollDirection.idle)) &&
@@ -211,6 +220,10 @@ class DanmakuListViewState extends State<DanmakuListView> {
     ToastUtil.show(i18n('local_message_queued'));
   }
 
+  void _removeActiveScrollPointer() {
+    if (_activeScrollPointers > 0) _activeScrollPointers--;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -228,24 +241,29 @@ class DanmakuListViewState extends State<DanmakuListView> {
             Expanded(
               child: Stack(
                 children: [
-                  NotificationListener<ScrollNotification>(
-                    onNotification: (notification) {
-                      onScrollNotification(notification);
-                      return false;
-                    },
-                    child: ListView.builder(
-                      key: const ValueKey('danmaku-message-list'),
-                      addAutomaticKeepAlives: false,
-                      addRepaintBoundaries: true,
-                      controller: _scrollController,
-                      reverse: true,
-                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-                      scrollCacheExtent: const ScrollCacheExtent.pixels(360),
-                      itemCount: _visibleMessages.length,
-                      itemBuilder: (_, index) {
-                        final msg = _visibleMessages[_visibleMessages.length - 1 - index];
-                        return DanmakuItem(key: ObjectKey(msg), danmaku: msg);
+                  Listener(
+                    onPointerDown: (_) => _activeScrollPointers++,
+                    onPointerUp: (_) => _removeActiveScrollPointer(),
+                    onPointerCancel: (_) => _removeActiveScrollPointer(),
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: (notification) {
+                        onScrollNotification(notification);
+                        return false;
                       },
+                      child: ListView.builder(
+                        key: const ValueKey('danmaku-message-list'),
+                        addAutomaticKeepAlives: false,
+                        addRepaintBoundaries: true,
+                        controller: _scrollController,
+                        reverse: true,
+                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+                        scrollCacheExtent: const ScrollCacheExtent.pixels(360),
+                        itemCount: _visibleMessages.length,
+                        itemBuilder: (_, index) {
+                          final msg = _visibleMessages[_visibleMessages.length - 1 - index];
+                          return DanmakuItem(key: ObjectKey(msg), danmaku: msg);
+                        },
+                      ),
                     ),
                   ),
                   if (userScrolling)

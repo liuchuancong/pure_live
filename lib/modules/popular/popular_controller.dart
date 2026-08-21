@@ -9,6 +9,7 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
   late List<Site> sites;
   bool _isTabControllerInitialized = false;
   Timer? _settledTabLoadTimer;
+  Worker? _hotAreasWorker;
 
   @override
   void onInit() {
@@ -16,7 +17,7 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
 
     _initTabController(isFirstLoad: true);
 
-    ever(SettingsService.to.fav.hotAreasList, (_) {
+    _hotAreasWorker = ever(SettingsService.to.fav.hotAreasList, (_) {
       _initTabController(isFirstLoad: false);
     });
   }
@@ -56,6 +57,7 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
   @override
   void onClose() {
     _settledTabLoadTimer?.cancel();
+    _hotAreasWorker?.dispose();
     if (_isTabControllerInitialized) {
       tabController.removeListener(_handleTabChange);
       tabController.dispose();

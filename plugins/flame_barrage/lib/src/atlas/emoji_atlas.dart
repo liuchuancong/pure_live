@@ -35,10 +35,14 @@ class EmojiAtlas {
   }
 
   void registerAll(List<EmojiInfo> list) {
-    final len = list.length;
-    for (int i = 0; i < len; i++) {
-      register(list[i]);
+    for (final info in list) {
+      for (final key in info.keys) {
+        _emojiMap[key] = info;
+      }
     }
+    // Compiling a progressively larger alternation regexp once per emoji was
+    // quadratic and caused a visible CPU spike when entering rich platforms.
+    _rebuildRegex();
   }
 
   void updateAtlasRects(Map<String, ui.Rect> rects) {

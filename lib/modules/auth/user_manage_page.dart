@@ -7,12 +7,35 @@ import 'package:pure_live/modules/auth/utils/firebase_manager.dart';
 import 'package:pure_live/modules/auth/user_server_remote_controller.dart';
 import 'package:pure_live/modules/auth/components/user_detail_main_page.dart';
 
-class UserManager extends GetView<UserServerRemoteController> {
-  UserManager({super.key}) {
-    Get.put(UserServerRemoteController());
-  }
+class UserManager extends StatefulWidget {
+  const UserManager({super.key});
+
+  @override
+  State<UserManager> createState() => _UserManagerState();
+}
+
+class _UserManagerState extends State<UserManager> {
+  late final bool _ownsController;
+
+  UserServerRemoteController get controller => Get.find<UserServerRemoteController>();
 
   final TextEditingController searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _ownsController = !Get.isRegistered<UserServerRemoteController>();
+    if (_ownsController) Get.put(UserServerRemoteController());
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    if (_ownsController) {
+      Get.delete<UserServerRemoteController>(force: true);
+    }
+    super.dispose();
+  }
 
   Future<void> deleteUserComplete(UserItem user) async {
     if (!controller.isSuperAdmin) {

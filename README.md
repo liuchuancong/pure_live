@@ -418,7 +418,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
 PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 ```
 
-当前 v2.3.0 源码已通过 Built-in Kotlin 审计、Flutter Analyze、170 项单元/Widget 测试与 26/26 平台公开接口探测；Windows x64 release 已完成真实热门页、封面、2K60 播放、实时弹幕和资源采样。Android arm64 热修包从当前维护提交重新构建并使用持久发布证书签名，包名、版本、ABI 与校验和均已核对；Windows、Linux、macOS 与 iOS 保留本阶段已发布归档，各平台来源提交记录在 Release 的 `BUILD_METADATA.json`。系统画中画返回弹幕由持续存活的直播控制器统一恢复，覆盖列表重建、待处理批次、系统转场重试和串行连接替换；手机连接和设备采样只在明确安排的验收任务中执行。完整流程见 [构建与发布](docs/BUILD_AND_RELEASE.md)。
+当前 v2.3.0 源码已通过 Built-in Kotlin 审计、Flutter Analyze、175 项单元/Widget 测试与 26/26 平台公开接口探测；Windows x64 release 已完成真实热门页、封面、2K60 播放、实时弹幕和资源采样。Android arm64 热修包从当前维护提交重新构建并使用持久发布证书签名，包名、版本、ABI 与校验和均已核对；Windows、Linux、macOS 与 iOS 保留本阶段已发布归档，各平台来源提交记录在 Release 的 `BUILD_METADATA.json`。系统画中画返回弹幕由持续存活的直播控制器统一恢复，同房间健康连接不再被强制拆除，列表只响应真实触摸拖动；空闲弹幕渲染循环会休眠，页面级 Worker 和原生解码资源在退出时确定释放。手机连接和设备采样只在明确安排的验收任务中执行。完整流程见 [构建与发布](docs/BUILD_AND_RELEASE.md)。
 
 ## 🤝 参与开发
 

@@ -22,6 +22,12 @@ class BarrageEngine extends FlameGame with TapCallbacks {
     _parser = RichParser(atlas: emojiAtlas, maxCacheSize: config.textCacheMaxSize);
     _layout = MixedLayout(atlas: emojiAtlas, maxTextCacheSize: config.textCacheMaxSize);
     _renderer = const MixedRenderer();
+    // A mounted Flame game otherwise owns a display-rate ticker even when the
+    // room is silent. On a 120/144 Hz device that empty loop alone can keep a
+    // CPU core busy and steal frame budget from every Flutter scrollable.
+    // Messages resume the loop on demand; it is suspended again once all work
+    // has drained.
+    pauseEngine();
   }
 
   BarrageConfig _config;
@@ -94,6 +100,7 @@ class BarrageEngine extends FlameGame with TapCallbacks {
     if (isPaused) return;
     _state = EngineState.paused;
     clock.pause();
+    pauseEngine();
   }
 
   void resume() {
@@ -101,6 +108,19 @@ class BarrageEngine extends FlameGame with TapCallbacks {
     clock.resume();
     _flushPausedBuffer();
     _state = EngineState.running;
+    _resumeLoopIfNeeded();
+  }
+
+  void _resumeLoopIfNeeded() {
+    if (!isPaused && (_waiting.isNotEmpty || _currentAliveCount > 0)) {
+      resumeEngine();
+    }
+  }
+
+  void _suspendLoopIfIdle() {
+    if (_waiting.isEmpty && _currentAliveCount == 0) {
+      pauseEngine();
+    }
   }
 
   void _flushPausedBuffer() {
@@ -240,6 +260,7 @@ class BarrageEngine extends FlameGame with TapCallbacks {
       _pausedBuffer.add(pending);
     } else {
       _waiting.add(pending);
+      _resumeLoopIfNeeded();
     }
   }
 
@@ -315,6 +336,8 @@ class BarrageEngine extends FlameGame with TapCallbacks {
       _metricTimer = 0.0;
       _updateTrackMetrics(nowMs);
     }
+
+    _suspendLoopIfIdle();
   }
 
   void _dispatchWaiting(int now) {
@@ -461,10 +484,13 @@ class BarrageEngine extends FlameGame with TapCallbacks {
   }
 
   void clear() {
+    pauseEngine();
     _waiting.clear();
     // 清空暂停缓存
     _pausedBuffer.clear();
     _pictureCache.clear();
+    _parser.clearCache();
+    _layout.clearCache();
     for (var e in _activeEntries) {
       _pool.recycle(e);
     }
@@ -511,4 +537,6 @@ class BarrageEngine extends FlameGame with TapCallbacks {
   int get activeCacheSize => _pictureCache.size;
   int get activePoolSize => _pool.currentSize;
   int get pendingMessageCount => _waiting.length + _pausedBuffer.length;
+  int get parserCacheSize => _parser.cacheCount;
+  int get layoutCacheSize => _layout.cacheCount;
 }

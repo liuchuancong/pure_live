@@ -12,6 +12,7 @@ class AreasController extends GetxController with GetTickerProviderStateMixin {
 
   bool _isTabControllerInitialized = false;
   Timer? _settledTabLoadTimer;
+  Worker? _hotAreasWorker;
 
   @override
   void onInit() {
@@ -19,12 +20,13 @@ class AreasController extends GetxController with GetTickerProviderStateMixin {
 
     _initTabController(isFirstLoad: true);
 
-    ever(SettingsService.to.fav.hotAreasList, (_) => _refreshTabs());
+    _hotAreasWorker = ever(SettingsService.to.fav.hotAreasList, (_) => _refreshTabs());
   }
 
   @override
   void onClose() {
     _settledTabLoadTimer?.cancel();
+    _hotAreasWorker?.dispose();
     if (_isTabControllerInitialized) {
       tabController.removeListener(_handleTabChange);
       tabController.dispose();

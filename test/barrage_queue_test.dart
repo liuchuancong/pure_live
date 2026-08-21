@@ -2,6 +2,35 @@ import 'package:flame_barrage/flame_barrage.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('bulk emoji registration preserves every alias with one final regex', () {
+    final atlas = EmojiAtlas.instance;
+    atlas.clear();
+    addTearDown(atlas.clear);
+
+    const first = EmojiInfo(id: 'one.png', asset: 'one.png', keys: ['[one]', ':one:']);
+    const second = EmojiInfo(id: 'two.png', asset: 'two.png', keys: ['[two]']);
+    atlas.registerAll(const [first, second]);
+
+    expect(atlas.count, 3);
+    expect(atlas.find('[one]'), same(first));
+    expect(atlas.find(':one:'), same(first));
+    expect(atlas.find('[two]'), same(second));
+    expect(atlas.regex?.allMatches('x [one] :one: [two]').length, 3);
+  });
+
+  test('barrage render loop sleeps while idle and wakes only for work', () {
+    final engine = BarrageEngine(config: const BarrageConfig(), emojiAtlas: EmojiAtlas.instance);
+
+    expect(engine.paused, isTrue);
+
+    engine.pushMessage(const BarrageItem(content: 'wake'));
+    expect(engine.paused, isFalse);
+
+    engine.clear();
+    expect(engine.paused, isTrue);
+    expect(engine.pendingMessageCount, 0);
+  });
+
   test('barrage waiting queue drops oldest burst entries at its hard cap', () {
     final engine = BarrageEngine(config: const BarrageConfig(maxPendingCount: 2), emojiAtlas: EmojiAtlas.instance);
 

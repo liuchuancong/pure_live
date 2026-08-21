@@ -27,6 +27,17 @@ void main() {
     expect(isDanmakuUserScrollStart(notification), isFalse);
   });
 
+  test('a stale PiP drag notification without a live pointer is ignored', () {
+    final notification = ScrollStartNotification(
+      metrics: metrics,
+      context: null,
+      dragDetails: DragStartDetails(globalPosition: Offset.zero),
+    );
+
+    expect(isDanmakuUserScrollStart(notification, hasActivePointer: false), isFalse);
+    expect(isDanmakuUserScrollStart(notification, hasActivePointer: true), isTrue);
+  });
+
   testWidgets('Android PiP viewport direction event does not pause live following', (tester) async {
     const targetKey = ValueKey('target');
     await tester.pumpWidget(const MaterialApp(home: SizedBox(key: targetKey)));

@@ -11,12 +11,13 @@ class RefreshConfigController extends GetxController {
 
   final _configStream = BehaviorSubject<RefreshConfig>();
   Stream<RefreshConfig> get configChanges => _configStream.stream;
+  Worker? _configWorker;
 
   @override
   void onInit() {
     super.onInit();
     _emitConfig();
-    everAll([
+    _configWorker = everAll([
       autoRefreshFavorite,
       autoRefreshInterval,
       maxConcurrentRefresh,
@@ -57,6 +58,7 @@ class RefreshConfigController extends GetxController {
 
   @override
   void onClose() {
+    _configWorker?.dispose();
     _configStream.close();
     super.onClose();
   }

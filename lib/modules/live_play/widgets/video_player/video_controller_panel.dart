@@ -609,6 +609,7 @@ class DanmakuViewer extends StatelessWidget {
         // barrage bounds, so volume/brightness/double-tap remain responsive.
         enablePointerEvents: false,
         config: BarrageConfig(
+          emitInterval: 0.05,
           fontSize: controller.danmakuFontSize.value,
           topAreaDistance: controller.danmakuTopArea.value,
           area: controller.danmakuArea.value,
@@ -620,13 +621,15 @@ class DanmakuViewer extends StatelessWidget {
           showStroke: controller.enableDanmakuStroke.value,
           noEmojiMode: controller.noEmojiMode.value,
           fps: settings.resolvedDanmakuFps(),
+          maxVisibleCount: 48,
           maxPendingCount: 120,
           maxPendingAge: const Duration(seconds: 5),
           fontFamily: controller.danmakuFontFamilyName.value,
           trackHeight: (controller.danmakuFontSize.value * 1.55).clamp(24.0, 64.0).toDouble(),
           emojiSize: (controller.danmakuFontSize.value * 1.3).clamp(16.0, 48.0).toDouble(),
-          pictureCacheMaxSize: 600,
-          barragePoolMaxSize: 1000,
+          pictureCacheMaxSize: 96,
+          barragePoolMaxSize: 72,
+          textCacheMaxSize: 320,
         ),
         emojiAtlas: EmojiAtlas.instance,
       );

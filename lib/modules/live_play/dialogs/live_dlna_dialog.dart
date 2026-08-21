@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:dlna_dart/dlna.dart';
 import 'package:pure_live/common/index.dart';
 
@@ -15,6 +16,7 @@ class _LiveDlnaPageState extends State<LiveDlnaPage> {
   final Map<String, DLNADevice> _deviceList = {};
   final DLNAManager searcher = DLNAManager();
   late final Timer stopSearchTimer;
+  StreamSubscription? _devicesSubscription;
   String selectDeviceKey = '';
   bool isSearching = true;
 
@@ -32,9 +34,10 @@ class _LiveDlnaPageState extends State<LiveDlnaPage> {
 
   @override
   void dispose() {
-    super.dispose();
+    _devicesSubscription?.cancel();
     searcher.stop();
     stopSearchTimer.cancel();
+    super.dispose();
   }
 
   void startSearch() async {
@@ -45,7 +48,13 @@ class _LiveDlnaPageState extends State<LiveDlnaPage> {
     setState(() {});
     // start search server
     final m = await searcher.start();
-    m.devices.stream.listen((deviceList) {
+    if (!mounted) {
+      searcher.stop();
+      return;
+    }
+    await _devicesSubscription?.cancel();
+    _devicesSubscription = m.devices.stream.listen((deviceList) {
+      if (!mounted) return;
       deviceList.forEach((key, value) {
         _deviceList[key] = value;
       });

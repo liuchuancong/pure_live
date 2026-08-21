@@ -14,4 +14,10 @@ class FavoriteAreasController extends GetxController with GetTickerProviderState
     favoriteAreas.value = SettingsService.to.fav.favoriteAreas.v;
     super.onInit();
   }
+
+  @override
+  void onClose() {
+    tabSiteController.dispose();
+    super.onClose();
+  }
 }

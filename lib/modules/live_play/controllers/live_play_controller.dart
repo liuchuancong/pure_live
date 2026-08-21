@@ -69,6 +69,7 @@ class LivePlayController extends GetxController
   Timer? _localGiftEffectTimer;
   Timer? _danmakuFlushTimer;
   Worker? _pipStateWorker;
+  Worker? _screenKeepOnWorker;
   late final DanmakuPresentationRecovery _danmakuPresentationRecovery;
   bool _wasInSystemPip = false;
   bool _wasBackgrounded = false;
@@ -150,7 +151,11 @@ class LivePlayController extends GetxController
     _initTab();
     Future.microtask(_initCore);
 
-    ever(SettingsService.to.app.enableScreenKeepOn, (_) => _updateWakelock());
+    // This observable is owned by the application-wide SettingsService. Keep
+    // and dispose its Worker explicitly; otherwise every closed room remains
+    // reachable through the global Rx callback together with its 500-message
+    // history, player controller and render caches.
+    _screenKeepOnWorker = ever(SettingsService.to.app.enableScreenKeepOn, (_) => _updateWakelock());
 
     _updateWakelock();
   }
@@ -920,6 +925,7 @@ class LivePlayController extends GetxController
     _roomLoadEpoch++;
     WidgetsBinding.instance.removeObserver(this);
     _pipStateWorker?.dispose();
+    _screenKeepOnWorker?.dispose();
     _danmakuPresentationRecovery.dispose();
     playerController.invalidateLoad();
     _localGiftEffectTimer?.cancel();

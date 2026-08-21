@@ -80,6 +80,10 @@ class _FlameBarrageWidgetState extends State<FlameBarrageWidget> {
 
   @override
   void dispose() {
+    // Stop the display ticker and release native Pictures/Paragraphs before the
+    // surrounding route finishes its transition. Waiting for GC/onRemove made
+    // repeated room and PiP transitions look like an ever-growing Windows heap.
+    _engine.clear();
     widget.controller.detach(_engine);
     super.dispose();
   }
