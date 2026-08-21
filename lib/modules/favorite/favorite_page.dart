@@ -13,13 +13,12 @@ class FavoritePage extends GetView<FavoriteController> {
       builder: (context, constraint) {
         return Obx(() {
           bool showAction = Get.width <= 680;
-          final menuCount = SettingsService.to.app.savedMenuIds.v.length;
           final availableSitesList = Sites().availableSites(containsAll: true);
 
           return Scaffold(
             appBar: AppBar(
               centerTitle: true,
-              leading: (showAction || menuCount <= 1) ? const MenuButton() : null,
+              leading: showAction ? const MenuButton() : null,
               actions: showAction ? [CommonAppBarActions()] : null,
               title: TabBar(
                 controller: controller.tabController,

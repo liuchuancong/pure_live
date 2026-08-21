@@ -1,7 +1,6 @@
-import 'package:flutter/gestures.dart';
-
 import 'popular_grid_view.dart';
 
+import 'package:flutter/gestures.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/widgets/common_appbar_actions.dart';
 
@@ -14,7 +13,7 @@ class PopularPage extends GetView<PopularController> {
       builder: (context, constraint) {
         return Obx(() {
           bool showAction = Get.width <= 680;
-          final int menuCount = SettingsService.to.app.savedMenuIds.v.length;
+
           final availableSitesList = Sites().availableSites();
 
           if (availableSitesList.isEmpty) return const Scaffold();
@@ -22,7 +21,7 @@ class PopularPage extends GetView<PopularController> {
           return Scaffold(
             appBar: AppBar(
               centerTitle: true,
-              leading: (showAction || menuCount <= 1) ? const MenuButton() : null,
+              leading: showAction ? const MenuButton() : null,
               actions: showAction ? [CommonAppBarActions()] : null,
               title: TabBar(
                 controller: controller.tabController,

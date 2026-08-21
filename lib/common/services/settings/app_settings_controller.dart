@@ -1,8 +1,8 @@
-import 'dart:async';
 import 'dart:io';
-
+import 'dart:async';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
+
 
 class AppSettingsController extends GetxController {
   static const int maxSleepMinutes = 525600;
@@ -74,13 +74,16 @@ class AppSettingsController extends GetxController {
   }
 
   void toggleMenuVisibility(HomeMenu menu, bool visible) {
-    final ids = List<String>.from(savedMenuIds.v);
+    final current = List<String>.from(savedMenuIds.v);
     if (visible) {
-      if (!ids.contains(menu.id)) ids.add(menu.id);
+      if (!current.contains(menu.id)) current.add(menu.id);
     } else {
-      ids.removeWhere((id) => id == menu.id);
+      if (current.length <= 1 && current.contains(menu.id)) {
+        return;
+      }
+      current.removeWhere((id) => id == menu.id);
     }
-    savedMenuIds.v = ids;
+    savedMenuIds.v = current;
   }
 
   bool isRealOnlineEnabledFor(String? platform) => realOnlinePlatforms.contains(platform);

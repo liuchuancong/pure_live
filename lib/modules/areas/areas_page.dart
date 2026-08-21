@@ -4,6 +4,8 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/widgets/common_appbar_actions.dart';
 
+
+
 class AreasPage extends GetView<AreasController> {
   const AreasPage({super.key});
 
@@ -14,13 +16,13 @@ class AreasPage extends GetView<AreasController> {
         return Obx(() {
           final availableSitesList = Sites().availableSites();
           if (availableSitesList.isEmpty) return const Scaffold();
-          final int menuCount = SettingsService.to.app.savedMenuIds.v.length;
+
           bool showAction = Get.width <= 680;
 
           return Scaffold(
             appBar: AppBar(
               centerTitle: true,
-              leading: (showAction || menuCount <= 1) ? const MenuButton() : null,
+              leading: showAction ? const MenuButton() : null,
               actions: showAction ? [CommonAppBarActions()] : null,
               title: TabBar(
                 controller: controller.tabController,
