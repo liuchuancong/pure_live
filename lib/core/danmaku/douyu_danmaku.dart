@@ -1,14 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
-
+import 'package:meta/meta.dart';
 import '../common/binary_writer.dart';
-
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/common/models/live_message.dart';
 import 'package:pure_live/core/common/web_socket_util.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
-import 'package:meta/meta.dart';
+
+
+
 
 class DouyuDanmaku implements LiveDanmaku {
   @override
@@ -37,6 +38,7 @@ class DouyuDanmaku implements LiveDanmaku {
   String serverUrl = "wss://danmuproxy.douyu.com:8506";
 
   WebScoketUtils? webScoketUtils;
+  // ignore: unused_field
   String _roomId = '';
   int _generation = 0;
 
@@ -104,38 +106,79 @@ class DouyuDanmaku implements LiveDanmaku {
 
   void decodeMessage(List<int> data) {
     try {
-      for (final result in deserializeDouyuPackets(data)) {
-        final jsonData = sttToJObject(result);
-        if (jsonData is! Map) continue;
+      String? result = deserializeDouyu(data);
+      if (result == null) {
+        return;
+      }
+      var jsonData = sttToJObject(result);
 
-        var type = jsonData["type"]?.toString();
-        //斗鱼好像不会返回人气值
-        if (type == "chatmsg") {
-          // 屏蔽阴间弹幕
-          if (jsonData["dms"] == null) continue;
-          final packetRoomId = jsonData['rid']?.toString() ?? '';
-          if (packetRoomId.isNotEmpty && _roomId.isNotEmpty && packetRoomId != _roomId) continue;
-          var col = int.tryParse(jsonData["col"].toString()) ?? 0;
-          final rawTimestamp = int.tryParse(jsonData['cst']?.toString() ?? '');
-          final sentAt = rawTimestamp == null
-              ? null
-              : DateTime.fromMillisecondsSinceEpoch(rawTimestamp > 100000000000 ? rawTimestamp : rawTimestamp * 1000);
-          final messageId = jsonData['cid']?.toString() ?? '';
-          var liveMsg = LiveMessage(
-            type: LiveMessageType.chat,
-            userName: jsonData["nn"].toString(),
-            userId: jsonData['uid']?.toString() ?? '',
-            message: jsonData["txt"].toString(),
-            color: getColor(col),
-            messageId: messageId.isEmpty ? '' : 'douyu:$messageId',
-            sentAt: sentAt,
-          );
-
-          onMessage?.call(liveMsg);
+      var type = jsonData["type"]?.toString();
+      var fans = jsonData["if"] ?? '0'.toString();
+      //斗鱼好像不会返回人气值
+      //有些直播间存在阴间弹幕，不知道什么情况
+      //只显示粉丝发言
+      LiveMessage? liveMsg;
+      if (type == "chatmsg" && fans == '1') {
+        var col = int.tryParse(jsonData["col"].toString()) ?? 0;
+        liveMsg = LiveMessage(
+          type: LiveMessageType.chat,
+          userName: jsonData["nn"].toString(),
+          message: jsonData["txt"].toString(),
+          color: getColor(col),
+        );
+      } else if (type == "comm_chatmsg") {
+        DateTime curTimestamp = DateTime.fromMillisecondsSinceEpoch(int.parse(jsonData["now"]));
+        var face = "";
+        try {
+          // 疑似换接口了
+          face = jsonData["chatmsg"]["ic"];
+        } catch (e) {
+          CoreLog.error("DouyuSuperChat-face:$e");
         }
+        LiveSuperChatMessage sc = LiveSuperChatMessage(
+          // 斗鱼没有颜色 调整配色方案-偏紫色系
+          backgroundBottomColor: "#292a60",
+          backgroundColor: "#c1c1ff",
+          endTime: curTimestamp.add(Duration(seconds: int.parse(jsonData["cet"]))),
+          face: "https://apic.douyucdn.cn/upload/${face}_small.jpg",
+          message: jsonData["chatmsg"]["txt"].toString(),
+          price: int.parse(jsonData["cprice"]) ~/ 100,
+          startTime: curTimestamp,
+          userName: jsonData["chatmsg"]["nn"].toString(),
+        );
+        liveMsg = LiveMessage(
+          type: LiveMessageType.superChat,
+          userName: "SUPER_CHAT_MESSAGE",
+          message: "SUPER_CHAT_MESSAGE",
+          color: LiveMessageColor.white,
+          data: sc,
+        );
+      } else if (type == "voice_trlt") {
+        // 高能弹幕2
+        var scData = jsonData["list"][0];
+        LiveSuperChatMessage sc2 = LiveSuperChatMessage(
+          backgroundBottomColor: "#246488",
+          backgroundColor: "#ffffff",
+          endTime: DateTime.fromMillisecondsSinceEpoch(int.parse(scData["etime"]) * 1000),
+          face: "https://${scData["uat"][1]}",
+          message: scData["content"].toString(),
+          price: int.parse(scData["realPrice"]) ~/ 100,
+          startTime: DateTime.fromMillisecondsSinceEpoch(int.parse(scData["acptime"]) * 1000),
+          userName: scData["un"].toString(),
+        );
+        liveMsg = LiveMessage(
+          type: LiveMessageType.superChat,
+          userName: "SUPER_CHAT_MESSAGE",
+          message: "SUPER_CHAT_MESSAGE",
+          color: LiveMessageColor.white,
+          data: sc2,
+        );
+      } else if (type != "uenter") {}
+      if (liveMsg != null) {
+        onMessage?.call(liveMsg);
       }
     } catch (e) {
-      CoreLog.error(e);
+      CoreLog.error("DouyuSuperChat:$e");
     }
   }
 
@@ -163,32 +206,23 @@ class DouyuDanmaku implements LiveDanmaku {
   }
 
   String? deserializeDouyu(List<int> buffer) {
-    final packets = deserializeDouyuPackets(buffer);
-    return packets.isEmpty ? null : packets.first;
-  }
-
-  /// A single WebSocket frame often contains several Douyu protocol packets.
-  /// Parsing only the first packet silently loses chat messages and can leave
-  /// the UI looking frozen during busy rooms.
-  List<String> deserializeDouyuPackets(List<int> buffer) {
-    final packets = <String>[];
     try {
-      var offset = 0;
-      while (offset + 12 <= buffer.length) {
-        final header = ByteData.sublistView(Uint8List.fromList(buffer), offset, offset + 4);
-        final fullMsgLength = header.getUint32(0, Endian.little);
-        final frameLength = fullMsgLength + 4;
-        final bodyLength = fullMsgLength - 9;
-        if (fullMsgLength < 9 || bodyLength < 0 || offset + frameLength > buffer.length) break;
-        final bodyStart = offset + 12;
-        final bodyEnd = bodyStart + bodyLength;
-        packets.add(utf8.decode(buffer.sublist(bodyStart, bodyEnd), allowMalformed: true));
-        offset += frameLength;
-      }
+      var reader = BinaryReader(Uint8List.fromList(buffer));
+      int fullMsgLength = reader.readInt32(endian: Endian.little); //fullMsgLength
+      reader.readInt32(endian: Endian.little); //fullMsgLength2
+      int bodyLength = fullMsgLength - 9;
+      reader.readShort(endian: Endian.little); //packType
+      reader.readByte(endian: Endian.little); //encrypted
+      reader.readByte(endian: Endian.little); //reserved
+
+      var bytes = reader.readBytes(bodyLength);
+
+      reader.readByte(endian: Endian.little); //固定为0
+      return utf8.decode(bytes);
     } catch (e) {
       CoreLog.error(e);
+      return null;
     }
-    return packets;
   }
 
   //辣鸡STT
@@ -209,10 +243,9 @@ class DouyuDanmaku implements LiveDanmaku {
         if (field.isEmpty) {
           continue;
         }
-        final separator = field.indexOf("@=");
-        if (separator <= 0) continue;
-        var k = field.substring(0, separator);
-        var v = unscapeSlashAt(field.substring(separator + 2));
+        var tokens = field.split("@=");
+        var k = tokens[0];
+        var v = unscapeSlashAt(tokens[1]);
         result[k] = sttToJObject(v);
       }
       return result;

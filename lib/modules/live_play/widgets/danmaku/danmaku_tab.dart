@@ -1,4 +1,5 @@
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/modules/live_play/pages/super_chat_page.dart';
 import 'package:pure_live/modules/live_play/pages/keyword_block_page.dart';
 import 'package:pure_live/modules/live_play/pages/danmaku_settings_page.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
@@ -36,6 +37,7 @@ class DanmakuTabView extends GetView<LivePlayController> {
                           child: Text(i18n('danmaku_display_disabled_hint'), textAlign: TextAlign.center),
                         ),
                       ),
+                SuperChatPage(messages: controller.superChats),
                 DanmakuSettingsPage(controller: state.player.videoController!),
                 const KeywordBlockPage(),
               ],

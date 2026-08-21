@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:developer' as developer;
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -28,7 +29,6 @@ import 'package:pure_live/modules/live_play/widgets/video_player/video_controlle
 import 'package:pure_live/modules/live_play/widgets/local_interaction/local_interaction_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/local_interaction/local_message_delivery_queue.dart';
 
-
 // live_play_controller.dart
 
 class LivePlayController extends GetxController
@@ -50,11 +50,11 @@ class LivePlayController extends GetxController
   final Rx<LivePlayState> state = const LivePlayState().obs;
   final RxList<LiveMessage> danmakuMessages = <LiveMessage>[].obs;
   final Rxn<LiveMessage> localGiftEffect = Rxn<LiveMessage>();
-
+  final RxList<LiveSuperChatMessage> superChats = <LiveSuperChatMessage>[].obs;
   late Site currentSite;
   late TabController tabController;
 
-  final List<String> tabs = [i18n('danmaku_list'), i18n('danmaku_settings'), i18n('block_list')];
+  final List<String> tabs = [i18n('danmaku_list'), i18n('super_chat'), i18n('danmaku_settings'), i18n('block_list')];
 
   bool _floatingResourcesReleased = false;
   bool _ownerClosed = false;
@@ -79,6 +79,7 @@ class LivePlayController extends GetxController
   static const Duration _danmakuBatchWindow = Duration(milliseconds: 32);
   static const Duration localChatDeliveryDelay = Duration(seconds: 2);
 
+  Timer? supperChatsTimer;
   @override
   void onInit() {
     super.onInit();
@@ -137,6 +138,7 @@ class LivePlayController extends GetxController
     ever(SettingsService.to.app.enableScreenKeepOn, (_) => _updateWakelock());
 
     _updateWakelock();
+    _initSuperChatsTimer();
   }
 
   @override
@@ -177,6 +179,13 @@ class LivePlayController extends GetxController
           });
       _danmakuRecovery = recovery;
       unawaited(recovery);
+    });
+  }
+
+  void _initSuperChatsTimer() async {
+    supperChatsTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      superChats.refresh();
+      removeSuperChats();
     });
   }
 
@@ -277,6 +286,45 @@ class LivePlayController extends GetxController
     }
   }
 
+  void getSuperChatMessage(String roomId) async {
+    try {
+      clearSuperChats();
+      var sc = await currentSite.liveSite.getSuperChatMessage(roomId: roomId);
+      addBatchSuperChat(sc);
+      developer.log(superChats[0].message);
+    } catch (e) {
+      addSystemMessage("SC读取失败");
+    }
+  }
+
+  @override
+  void addAddSuperChat(LiveMessage msg) {
+    addSingleSuperChat(msg.data as LiveSuperChatMessage);
+  }
+
+  void removeSuperChats() async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (superChats.isNotEmpty) {
+      final filtered = superChats.where((x) => x.endTime.millisecondsSinceEpoch > now).toList();
+      superChats.assignAll(filtered);
+    }
+  }
+
+  void addSingleSuperChat(dynamic msgData) {
+    final item = msgData as LiveSuperChatMessage;
+    final temp = <LiveSuperChatMessage>[...superChats, item];
+    superChats.assignAll(temp);
+  }
+
+  void addBatchSuperChat(List<LiveSuperChatMessage> sc) {
+    final temp = <LiveSuperChatMessage>[...superChats, ...sc];
+    superChats.assignAll(temp);
+  }
+
+  void clearSuperChats() {
+    superChats.assignAll([]);
+  }
+
   bool myInterceptor(bool stopDefaultButtonEvent, RouteInfo info) {
     if (state.value.ui.isMenuOpen) {
       Navigator.of(Get.context!).pop();
@@ -338,7 +386,14 @@ class LivePlayController extends GetxController
     );
   }
 
-  void updateUI({VideoMode? screenMode, int? refreshKey, bool? isMenuOpen, int? closeTimes, bool? closeTimeFlag,bool? displayVideoLayer }) {
+  void updateUI({
+    VideoMode? screenMode,
+    int? refreshKey,
+    bool? isMenuOpen,
+    int? closeTimes,
+    bool? closeTimeFlag,
+    bool? displayVideoLayer,
+  }) {
     state.value = state.value.copyWith(
       ui: state.value.ui.copyWith(
         screenMode: screenMode,
@@ -531,6 +586,8 @@ class LivePlayController extends GetxController
         roomId: roomId,
         platform: state.value.room.detail!.platform!,
       );
+
+      getSuperChatMessage(roomId);
       final liveRoom = fetchedRoom.withAudienceFallbackFrom(state.value.room.detail!);
       if (!_isRoomLoadCurrent(loadEpoch, roomId, requestedPlatform)) return liveRoom;
 
@@ -874,6 +931,8 @@ class LivePlayController extends GetxController
     WidgetsBinding.instance.removeObserver(this);
     _pipStateWorker?.dispose();
     _danmakuRecoveryTimer?.cancel();
+    clearSuperChats();
+    supperChatsTimer?.cancel();
     playerController.invalidateLoad();
     _localGiftEffectTimer?.cancel();
     _localMessageDeliveryQueue.dispose();

@@ -1256,5 +1256,6 @@
     "danmaku_repeat_filter": "Repeated danmaku filter",
     "collapse_repeated_danmaku": "Collapse identical danmaku bursts",
     "collapse_repeated_danmaku_desc": "Keep the first copy when different users send the same text. Local and system messages are unaffected.",
-    "repeated_danmaku_window": "Identical-text window (seconds)"
+    "repeated_danmaku_window": "Identical-text window (seconds)",
+    "super_chat": "Super Chat"
 }

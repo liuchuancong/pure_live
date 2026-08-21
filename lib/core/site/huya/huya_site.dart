@@ -603,7 +603,6 @@ class HuyaSite implements LiveSite {
   @override
   Future<List<LiveSuperChatMessage>> getSuperChatMessage({required String roomId}) async {
     List<LiveSuperChatMessage> ls = [];
-    // 兼容tv接口 二次请求detail
     LiveRoom detail = await getRoomDetail(roomId: roomId, platform: Sites.huyaSite);
     HuyaDanmakuArgs args = detail.danmakuData as HuyaDanmakuArgs;
     if (args.topSid != 0) {
