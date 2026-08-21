@@ -418,7 +418,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
 PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 ```
 
-当前 v2.3.0 build 4070 源码已通过 Built-in Kotlin 审计、Flutter Analyze、190 项单元/Widget 测试与 26/26 平台公开接口探测。系统画中画返回弹幕的底层流桥接已经按监听者生命周期修正，并由取消后重订阅回归测试覆盖；应用 UI 保持设备最高刷新率，自动弹幕主画面限制 60 FPS、小窗限制 30 FPS，空闲时停止调度。播放器、FFmpeg、录制/解析服务按需创建，页面 Worker、订阅、段落与图片缓存均确定释放并设置容量上限；Windows 连续滚轮输入合并到单一 EaseInOut 目标轨迹。手机连接和设备采样只在明确安排的验收任务中执行。完整流程见 [构建与发布](docs/BUILD_AND_RELEASE.md)。
+当前 v2.3.0 build 4070 源码已通过 Built-in Kotlin 审计、Flutter Analyze、189 项单元/Widget 测试与 26/26 平台公开接口探测。系统画中画返回弹幕的底层流桥接已经按监听者生命周期修正，并由取消后重订阅回归测试覆盖；应用 UI 保持设备最高刷新率，自动弹幕主画面限制 60 FPS、小窗限制 30 FPS，空闲时停止调度。播放器、FFmpeg、录制/解析服务按需创建，页面 Worker、订阅、段落与图片缓存均确定释放并设置容量上限；Windows 连续滚轮输入合并到单一 EaseInOut 目标轨迹。手机连接和设备采样只在明确安排的验收任务中执行。完整流程见 [构建与发布](docs/BUILD_AND_RELEASE.md)。
 
 ## 🤝 参与开发
 

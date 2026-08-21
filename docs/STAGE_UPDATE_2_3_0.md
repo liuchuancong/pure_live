@@ -28,7 +28,7 @@ v2.3.0 维护源码已同步至上游 `liuchuancong/pure_live@e51df666`，重点
 | --- | --- |
 | Dart 格式与 `git diff --check` | 通过 |
 | Flutter Analyze | 0 issue |
-| Flutter Test | 190 项通过 |
+| Flutter Test | 189 项通过 |
 | Built-in Kotlin 审计 | 10 个 Gradle 文件通过 |
 | 设备 UI 映射 | 2 个设备档案、82 个坐标、17 个序列通过结构校验 |
 | 平台接口探测 | 26/26；覆盖 Bilibili、Douyu、Huya、Kuaishou、Douyin、CC、Twitch、SOOP |

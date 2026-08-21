@@ -34,7 +34,7 @@ v2.3.0 build 4070 聚焦系统画中画返回后的弹幕会话、高刷设备 C
 ## 构建与核验
 
 - Flutter 3.47.0 / Dart 3.13.0；Built-in Kotlin 审计和 Flutter Analyze 零问题。
-- 190 项单元/Widget 测试及 26/26 平台公开接口探测通过。
+- 189 项单元/Widget 测试及 26/26 平台公开接口探测通过。
 - Android arm64 与 Windows x64 由本机构建；每个产物的提交、签名类型、ABI、版本与 SHA-256 记录在 `BUILD_METADATA.json` 和 `SHA256SUMS.txt`。
 
 ---
