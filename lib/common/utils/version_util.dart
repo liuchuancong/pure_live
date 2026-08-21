@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/race_http.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -8,8 +9,19 @@ import 'package:pure_live/common/global/platform_utils.dart';
 class VersionUtil {
   static PackageInfo? _packageInfo;
 
-  static const String projectUrl = 'https://github.com/liuchuancong/pure_live';
-  static const String issuesUrl = 'https://github.com/liuchuancong/pure_live/issues';
+  /// Release/update repository for this maintained distribution.
+  ///
+  /// Keeping the owner configurable lets downstream builders select their own
+  /// release feed without editing runtime code. This repository defaults to
+  /// the wzgrx release channel so its bundled version.json and generated asset
+  /// URLs always describe the same published artifacts.
+  static const String updateOwner = String.fromEnvironment('PURELIVE_UPDATE_OWNER', defaultValue: 'wzgrx');
+  static const String updateRepository = String.fromEnvironment(
+    'PURELIVE_UPDATE_REPOSITORY',
+    defaultValue: 'pure_live',
+  );
+  static const String projectUrl = 'https://github.com/$updateOwner/$updateRepository';
+  static const String issuesUrl = '$projectUrl/issues';
   static const String githubUrl = 'https://github.com/liuchuancong';
 
   static const String email = '17792321552@163.com';
@@ -18,9 +30,9 @@ class VersionUtil {
   static const String telegramGroup = 't.me/pure_live_channel';
   static const String telegramGroupUrl = 'https://t.me/pure_live_channel';
 
-  static const String releaseUrl = 'https://api.github.com/repos/liuchuancong/pure_live/releases?per_page=30';
+  static const String releaseUrl = 'https://api.github.com/repos/$updateOwner/$updateRepository/releases?per_page=30';
 
-  static final GitHubMirror mirror = GitHubMirror(owner: 'liuchuancong', repo: 'pure_live', branch: 'master');
+  static final GitHubMirror mirror = GitHubMirror(owner: updateOwner, repo: updateRepository, branch: 'master');
 
   static List<String> get _versionUrls => SettingsService.to.app.useGitHubOriginForUpdates.v
       ? [mirror.rawUrl('assets/version.json')]
@@ -70,8 +82,7 @@ class VersionUtil {
       final data = await RaceHttp.fetchJson(
         urls,
         headers: {
-          'User-Agent':
-              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Accept': 'application/json',
         },
       ).timeout(const Duration(seconds: 10));

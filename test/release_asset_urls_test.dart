@@ -3,6 +3,12 @@ import 'package:pure_live/common/utils/version_util.dart';
 import 'package:pure_live/modules/version/version_controller.dart';
 
 void main() {
+  test('maintained build reads updates and release assets from the same repository', () {
+    expect(VersionUtil.projectUrl, 'https://github.com/wzgrx/pure_live');
+    expect(VersionUtil.issuesUrl, '${VersionUtil.projectUrl}/issues');
+    expect(VersionUtil.releaseUrl, contains('/repos/wzgrx/pure_live/releases'));
+  });
+
   test('release URLs match locally produced artifact names', () {
     const urls = ReleaseAssetUrls(
       projectUrl: 'https://github.com/liuchuancong/pure_live',
