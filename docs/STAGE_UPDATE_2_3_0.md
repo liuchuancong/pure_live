@@ -35,7 +35,7 @@ v2.3.0 维护源码已同步至上游 `liuchuancong/pure_live@e51df666`，重点
 | Android 构建 | build 4070 仅构建 arm64-v8a；包名、版本码、ABI、签名类型与 SHA-256 由本轮 `BUILD_METADATA.json` 记录 |
 | Windows 构建 | build 4070 构建 x64 portable ZIP 与可选目录 EXE 安装器，产物来源与 SHA-256 写入本轮元数据 |
 | Windows 运行烟雾 | 热门页平台切换、封面回填、2K60 直播、画面弹幕与列表弹幕持续更新，窗口保持响应 |
-| Windows 资源采样 | build 4069 的 5 分钟播放样本保留为历史基线；build 4070 另做干净目录空闲趋势采样，结果随本轮产物记录，不把短时预热增长等同于长期泄漏 |
+| Windows 资源采样 | build 4070 干净目录空闲 6.3 分钟：private bytes 583.5→488.8 MiB，最后约 3 分钟斜率 +0.013 MiB/分钟。相同 Bilibili 实时房间对照：64/8 MiB 缓存峰值 951.5 MiB，32/4 MiB 缓存峰值 738.2 MiB；优化样本 6.5 分钟结束时 private bytes/工作集少 30.3/35.4 MiB，最后一分钟 private bytes 回落 5.1 MiB，handles 1645→1636、threads 245→242，全程响应 |
 | 全平台阶段构建 | Linux x64、macOS universal 与 iOS arm64 继续保留 v2.3.0 阶段归档；build 4070 优先重建 Android arm64 与 Windows x64 |
 
 本轮按无设备修复流程执行，Android 的“进入系统画中画 → 播放 → 返回应用 → 全屏/竖屏列表继续刷新”由列表销毁/重建顺序、持久恢复 revision、转场阻塞重试、恢复中请求排队、同房间连接替换和滚动通知策略自动化测试覆盖。设备采样是明确安排时追加的独立证据层，不影响代码修复、静态分析和本地构建闭环。

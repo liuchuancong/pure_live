@@ -87,6 +87,8 @@ Windows release 构建后从干净的 `build\windows\x64\runner\Release` 启动�
 
 本轮修复后的未提交工作树又以独立 Windows release 实例直达 Bilibili 房间采样 125 秒，进程全程响应。预热后 35–125 秒：工作集 291.2→403.7 MiB，private bytes 932.5→911.3 MiB（区间 848.2–932.5 MiB），handles 1940→1733，threads 252→245；最后 70 秒 handles 稳定在 1733–1741、threads 稳定在 245–250，CPU 每 10 秒窗口为 5.78–8.84 秒，没有呈随时间递增的资源计数。原始记录位于本地忽略目录 local-artifacts/2.3.0-4069/windows-runtime-sample.csv。
 
+2026-08-21 的 build 4070 从干净便携目录完成两组可重复采样。空闲 6.3 分钟时 private bytes 583.5→488.8 MiB，最后约 3 分钟线性斜率仅 +0.013 MiB/分钟，归一化 CPU 中位数 0.026%，窗口全程响应。随后用同一 Bilibili 实时房间、相同启动参数比较播放器缓存：64/8 MiB 基线的 private bytes 峰值/结束值为 951.5/763.3 MiB，32/4 MiB 优化后的峰值/结束值为 738.2/733.0 MiB；优化样本运行 6.5 分钟，结束时工作集也少 35.4 MiB，最后一分钟 private bytes 回落 5.1 MiB，handles 1645→1636、threads 245→242。视频画面和画面弹幕已通过后台窗口直接渲染截图核对，两个网络连接持续建立；原始 CSV 与比较摘要保存在本机构建产物的 `evidence` 子目录。
+
 参考：[Flutter 性能最佳实践](https://docs.flutter.dev/perf/best-practices)、[Flutter Performance View](https://docs.flutter.dev/tools/devtools/performance)、[Flutter Memory View](https://docs.flutter.dev/tools/devtools/memory)、[Flutter Impeller 官方说明](https://docs.flutter.dev/perf/impeller)、[Android 帧率优化说明](https://developer.android.com/media/optimize/performance/frame-rate)、[mpv demuxer 缓存参数](https://mpv.io/manual/master/)、[media_kit 多实例释放问题 #266](https://github.com/media-kit/media-kit/issues/266)、[media_kit 旋转/缩放主线程阻塞 #1395](https://github.com/media-kit/media-kit/issues/1395)。
 
 返回 [文档索引](README.md)。
