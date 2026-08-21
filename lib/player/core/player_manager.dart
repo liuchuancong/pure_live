@@ -37,7 +37,7 @@ import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
-import 'package:pure_live/modules/live_play/widgets/video_player/compact_danmaku_overlay.dart';
+import 'package:pure_live/modules/live_play/widgets/danmaku/compact_danmaku_overlay.dart';
 
 class PlayerManager {
   final PlayerPool playerPool;
