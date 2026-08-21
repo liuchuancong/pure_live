@@ -124,6 +124,13 @@ class BackButtonObserver extends RouteObserver<PageRoute<dynamic>> {
       } catch (e) {
         log("BackButtonObserver Error: ${e.toString()}");
       }
+    } else if (route.settings.name == RoutePath.kRecordPage) {
+      if (Get.isRegistered<LivePlayController>()) {
+        final livePlayController = Get.find<LivePlayController>();
+        Future.delayed(Duration(milliseconds: 10)).then((_) {
+          livePlayController.updateUI(displayVideoLayer: true);
+        });
+      }
     }
   }
 
@@ -133,6 +140,13 @@ class BackButtonObserver extends RouteObserver<PageRoute<dynamic>> {
     if (route.settings.name == RoutePath.kLivePlay) {
       final manager = GlobalPlayerService.instance.player;
       unawaited(manager.closeAppFloating());
+    } else if (route.settings.name == RoutePath.kRecordPage) {
+      if (Get.isRegistered<LivePlayController>()) {
+        final livePlayController = Get.find<LivePlayController>();
+        Future.delayed(Duration.zero).then((_) {
+          livePlayController.updateUI(displayVideoLayer: false);
+        });
+      }
     }
   }
 }

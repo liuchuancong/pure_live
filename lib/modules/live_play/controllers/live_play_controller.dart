@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:developer' as developer;
-
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -28,6 +27,7 @@ import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_list_view.da
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/local_interaction/local_interaction_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/local_interaction/local_message_delivery_queue.dart';
+
 
 // live_play_controller.dart
 
@@ -338,7 +338,7 @@ class LivePlayController extends GetxController
     );
   }
 
-  void updateUI({VideoMode? screenMode, int? refreshKey, bool? isMenuOpen, int? closeTimes, bool? closeTimeFlag}) {
+  void updateUI({VideoMode? screenMode, int? refreshKey, bool? isMenuOpen, int? closeTimes, bool? closeTimeFlag,bool? displayVideoLayer }) {
     state.value = state.value.copyWith(
       ui: state.value.ui.copyWith(
         screenMode: screenMode,
@@ -346,6 +346,7 @@ class LivePlayController extends GetxController
         isMenuOpen: isMenuOpen,
         closeTimes: closeTimes,
         closeTimeFlag: closeTimeFlag,
+        displayVideoLayer: displayVideoLayer,
       ),
     );
   }

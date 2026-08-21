@@ -2,6 +2,7 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/recorder/models/record_status.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
+import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 
 class RecordActionButton extends StatelessWidget {
   const RecordActionButton({
@@ -148,7 +149,11 @@ class RecordActionButton extends StatelessWidget {
         break;
 
       case "page":
-        // to 会崩溃 但是注释掉就可以 待解决
+        if (Get.isRegistered<LivePlayController>()) {
+          final livePlayController = Get.find<LivePlayController>();
+          livePlayController.updateUI(displayVideoLayer: false);
+        }
+        await Future.delayed(Duration.zero);
         Get.toNamed(RoutePath.kRecordPage);
         break;
     }
@@ -268,8 +273,8 @@ class RecordActionButton extends StatelessWidget {
                 enabled: true,
                 onTap: () {
                   // 貌似Video有问题无法进行页面跳转 否则会崩溃 但是注释掉就可以 待解决
-                  // Navigator.pop(dialogContext, "page");
-                  Get.toNamed(RoutePath.kRecordPage);
+                  Navigator.pop(dialogContext, "page");
+                  // Get.toNamed(RoutePath.kRecordPage);
                 },
               ),
               _ActionTile(
