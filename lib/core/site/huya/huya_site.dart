@@ -5,12 +5,12 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:pure_live/core/tars/types.dart';
 import 'package:pure_live/core/common/log.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:pure_live/plugins/race_http.dart';
 import 'package:pure_live/model/live_category.dart';
 import 'package:pure_live/core/common/core_log.dart';
-import 'package:pure_live/core/tars/huya_user_id.dart';
 import 'package:pure_live/model/live_anchor_item.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/model/live_play_quality.dart';
@@ -22,12 +22,15 @@ import 'package:pure_live/pkg/tars/net/base_tars_http.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/tars/get_cdn_token_ex_req.dart';
 import 'package:pure_live/core/tars/get_cdn_token_ex_resp.dart';
+import 'package:pure_live/core/site/huya/huya_request_params.dart';
+import 'package:pure_live/core/tars/get_game_event_message_board_req.dart';
+import 'package:pure_live/core/tars/get_game_event_message_board_rsp.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 
 class HuyaSite implements LiveSite {
   @override
   String id = Sites.huyaSite;
-  static const baseUrl = "https://m.huya.com/";
+  static const baseUrl = HuyaRequestParams.baseUrl;
   @override
   String name = "虎牙直播";
   @override
@@ -36,10 +39,8 @@ class HuyaSite implements LiveSite {
   static String? playUserAgent;
 
   // ignore: constant_identifier_names
-  static const String HYSDK_UA = "HYSDK(Windows,30000002)_APP(pc_exe&7090000&official)_SDK(trans&2.35.0.5996)";
-  static const String fallbackPlayUserAgent =
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-      "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+  static const String HYSDK_UA = HuyaRequestParams.hysdkUa;
+  static const String fallbackPlayUserAgent = HuyaRequestParams.kUserAgent;
   static Map<String, String> requestHeaders = {'Origin': baseUrl, 'Referer': baseUrl, 'User-Agent': HYSDK_UA};
   final BaseTarsHttp tupClient = BaseTarsHttp("http://wup.huya.com", "liveui", headers: requestHeaders);
 
@@ -600,9 +601,14 @@ class HuyaSite implements LiveSite {
   }
 
   @override
-  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required String roomId}) {
-    //尚不支持
-    return Future.value([]);
+  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required String roomId}) async {
+    List<LiveSuperChatMessage> ls = [];
+    LiveRoom detail = await getRoomDetail(roomId: roomId, platform: Sites.huyaSite);
+    HuyaDanmakuArgs args = detail.danmakuData as HuyaDanmakuArgs;
+    if (args.topSid != 0) {
+      ls = await getHuyaSuperChatMessageList(lPid: args.topSid, first: true);
+    }
+    return ls;
   }
 
   // 构造 anticode, python转写
@@ -676,6 +682,62 @@ class HuyaSite implements LiveSite {
     final rotatedLow = ((low << 8) | (low >> 24)) & 0xFFFFFFFF;
     final high = t & ~0xFFFFFFFF;
     return high | rotatedLow;
+  }
+
+  Future<List<LiveSuperChatMessage>> getHuyaSuperChatMessageList({required int lPid, bool first = false}) async {
+    final BaseTarsHttp messageBoardClient = BaseTarsHttp(
+      "http://wup.huya.com",
+      "wupui",
+      headers: HuyaRequestParams.requestHeaders,
+    );
+    var userId = HuyaUserId()..sHuYaUA = HuyaRequestParams.hysdkUa;
+    var req = GetGameEventMessageBoardReq()
+      ..lPid = lPid
+      ..tId = userId
+      ..iMessageBoardScope = 0
+      ..iPageSize = 10;
+    var rsp = await messageBoardClient.tupRequest("getHeadLineMessageBoard", req, GetGameEventMessageBoardRsp());
+    final now = DateTime.now();
+    final List<LiveSuperChatMessage> messages = [];
+    for (final item in rsp.tMessageBoardPanel.vGameEventMessageBoardInfo) {
+      final content = item.sContent.trim();
+      if (content.isEmpty) {
+        continue;
+      }
+      // start_time---cur--->end_time
+      final remainSec = item.iCountDown > 0 ? item.iCountDown : item.iTotalSec;
+      if (remainSec <= 0) {
+        continue;
+      }
+
+      final totalSeconds = item.iTotalSec > 0 ? item.iTotalSec : remainSec;
+
+      var price = item.iCost;
+      if (price <= 0 && item.iCostPay > 0) {
+        price = max(1, (item.iCostPay / 100).round());
+      }
+
+      final endTime = now.add(Duration(seconds: remainSec));
+      final startTime = endTime.subtract(Duration(seconds: totalSeconds));
+
+      final message = LiveSuperChatMessage(
+        backgroundBottomColor: "#246488",
+        backgroundColor: "#ffffff",
+        endTime: endTime,
+        face: item.tMessageUser.sAvatar,
+        message: content,
+        price: price,
+        startTime: startTime,
+        userName: item.tMessageUser.sNick.trim(),
+      );
+
+      messages.add(message);
+    }
+    if (first) {
+      return messages;
+    } else {
+      return [messages.last];
+    }
   }
 }
 

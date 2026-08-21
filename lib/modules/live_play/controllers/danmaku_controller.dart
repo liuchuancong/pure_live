@@ -1,13 +1,13 @@
 import 'dart:async';
-
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
+import 'package:pure_live/modules/live_play/states/live_play_state.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_message_gate.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_session_host.dart';
-import 'package:pure_live/modules/live_play/controllers/danmaku_similarity_filter.dart';
 import 'package:pure_live/modules/live_play/controllers/repeated_danmaku_filter.dart';
-import 'package:pure_live/modules/live_play/states/live_play_state.dart';
+import 'package:pure_live/modules/live_play/controllers/danmaku_similarity_filter.dart';
+
 
 /// Owns exactly one room-bound danmaku session.
 ///
@@ -204,6 +204,8 @@ class DanmakuController extends GetxController {
         _state.player.videoController?.sendDanmaku(msg);
       } else if (msg.type == LiveMessageType.online) {
         _main.updateRuntimeAudience(msg.data);
+      }else if (msg.type == LiveMessageType.superChat) {
+        _main.addAddSuperChat(msg);
       }
     };
 

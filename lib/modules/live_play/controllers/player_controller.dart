@@ -1,17 +1,17 @@
 import 'dart:developer' as developer;
-
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/core/site/huya_site.dart';
-import 'package:pure_live/core/site/bilibili_site.dart';
 import 'package:pure_live/model/live_play_quality.dart';
+import 'package:pure_live/core/site/huya/huya_site.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/player/core/player_manager.dart';
 import 'package:pure_live/player/models/player_exception.dart';
 import 'package:pure_live/player/models/player_error_type.dart';
+import 'package:pure_live/core/site/bilibili/bilibili_site.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/modules/live_play/states/live_play_state.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
+
 
 abstract interface class PlayerSessionHost {
   Rx<LivePlayState> get state;

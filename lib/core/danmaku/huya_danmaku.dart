@@ -1,14 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
-
 import 'package:pure_live/core/common/core_log.dart';
+import 'package:pure_live/core/site/huya/huya_utils.dart';
 import 'package:pure_live/common/models/live_message.dart';
 import 'package:pure_live/pkg/tars/codec/tars_struct.dart';
 import 'package:pure_live/core/common/web_socket_util.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/pkg/tars/codec/tars_input_stream.dart';
 import 'package:pure_live/pkg/tars/codec/tars_output_stream.dart';
+
 
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
@@ -138,7 +139,7 @@ class HuyaDanmaku implements LiveDanmaku {
     webScoketUtils = null;
   }
 
-  void decodeMessage(List<int> data) {
+  Future<void> decodeMessage(List<int> data) async {
     try {
       var stream = TarsInputStream(Uint8List.fromList(data));
       var type = stream.read(0, 0, false);
@@ -146,12 +147,12 @@ class HuyaDanmaku implements LiveDanmaku {
         stream = TarsInputStream(stream.readBytes(1, false));
         HYPushMessage wSPushMessage = HYPushMessage();
         wSPushMessage.readFrom(stream);
-        _decodePush(wSPushMessage.uri, wSPushMessage.msg);
+        await _decodePush(wSPushMessage.uri, wSPushMessage.msg);
       } else if (type == 22) {
         final push = HYPushMessageV2();
         push.readFrom(TarsInputStream(stream.readBytes(1, false)));
         for (final item in push.items) {
-          _decodePush(item.uri, item.msg, messageId: item.messageId);
+          await _decodePush(item.uri, item.msg, messageId: item.messageId);
         }
       }
     } catch (e) {
@@ -159,7 +160,7 @@ class HuyaDanmaku implements LiveDanmaku {
     }
   }
 
-  void _decodePush(int uri, List<int> payload, {int messageId = 0}) {
+  Future<void> _decodePush(int uri, List<int> payload, {int messageId = 0}) async {
     if (uri == 1400) {
       final messageNotice = HYMessage();
       messageNotice.readFrom(TarsInputStream(Uint8List.fromList(payload)));
@@ -188,6 +189,19 @@ class HuyaDanmaku implements LiveDanmaku {
           messageId: messageId > 0 ? 'huya:$messageId' : '',
         ),
       );
+    } else if (uri == 2001314) {
+      var sc = await getHuyaSuperChatMessageList(lPid: danmakuArgs.topSid);
+      if (sc.isNotEmpty) {
+        onMessage?.call(
+          LiveMessage(
+            type: LiveMessageType.superChat,
+            userName: "SUPER_CHAT_MESSAGE",
+            message: "SUPER_CHAT_MESSAGE",
+            color: LiveMessageColor.white,
+            data: sc.first,
+          ),
+        );
+      }
     }
   }
 }

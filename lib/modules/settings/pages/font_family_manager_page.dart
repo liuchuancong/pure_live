@@ -251,7 +251,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
             ),
           ),
           title: Text(
-            PlatformUtils.isWindows ? "PingFang" : "System Default",
+            PlatformUtils.isWindows ? "Microsoft YaHei" : "System Default",
             style: isDefaultActive
                 ? AppTextStyles.t14Bold.copyWith(color: theme.colorScheme.primary)
                 : AppTextStyles.t14SemiBold,

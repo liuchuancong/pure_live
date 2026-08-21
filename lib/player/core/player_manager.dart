@@ -109,6 +109,7 @@ class PlayerManager {
   final RxBool isPipPreparing = false.obs;
   final RxBool isFloating = false.obs;
   final RxBool isHovered = false.obs;
+  final RxBool isFloatingVideoVisible = true.obs;
 
   /// True only while a deep power-saving audio session is reacquiring video.
   /// The audio presentation remains interactive during this interval, avoiding
@@ -817,6 +818,7 @@ class PlayerManager {
     // room during that delay closes the prepared session and must prevent the
     // stale callback from mounting the old player on top of the new route.
     if (!_appFloatingPrepared || _floatingCleanup != null) return;
+    isFloatingVideoVisible.value = true;
     floatingManager.disposeFloating(_floatTag);
     _hideTimer?.cancel();
     double maxSide = Platform.isWindows ? 350 : 220;
@@ -844,6 +846,7 @@ class PlayerManager {
       }
     }
 
+    isFloatingVideoVisible.value = true;
     floatingManager.createFloating(
       _floatTag,
       FloatingOverlay(
@@ -861,8 +864,12 @@ class PlayerManager {
             decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Colors.black),
             child: Stack(
               children: [
-                Positioned.fill(
-                  child: getVideoWidget(videoFitIndex.value, fitList: SettingsService.to.player.videoFitArray),
+                Obx(
+                  () => Positioned.fill(
+                    child: isFloatingVideoVisible.value
+                        ? getVideoWidget(videoFitIndex.value, fitList: SettingsService.to.player.videoFitArray)
+                        : const SizedBox.shrink(),
+                  ),
                 ),
                 Positioned.fill(child: _buildCompactDanmaku()),
                 Positioned.fill(
@@ -974,6 +981,9 @@ class PlayerManager {
     cleanup = () async {
       final hadOverlay = floatingManager.containsFloating(_floatTag);
       if (hadOverlay) {
+        isFloatingVideoVisible.value = false;
+        SchedulerBinding.instance.scheduleFrame();
+        await SchedulerBinding.instance.endOfFrame;
         // OverlayEntry.remove() schedules unmount for the next frame. Calling
         // disposeFloating here would also dispose its controllers while the
         // FloatingView is still subscribed to them.

@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:dart_quickjs/dart_quickjs.dart';
-import 'package:pure_live/core/site/douyin_site.dart';
+import 'package:pure_live/core/site/douyin/douyin_site.dart';
 
 class DouyinSign {
   static const kABogus = r'''

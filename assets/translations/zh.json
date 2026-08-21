@@ -1256,5 +1256,6 @@
     "danmaku_repeat_filter": "重复弹幕过滤",
     "collapse_repeated_danmaku": "合并短时间内的相同弹幕",
     "collapse_repeated_danmaku_desc": "不同用户发送相同内容时只保留第一条；本地弹幕和系统消息不受影响。",
-    "repeated_danmaku_window": "相同内容合并时间（秒）"
+    "repeated_danmaku_window": "相同内容合并时间（秒）",
+    "super_chat": "醒目留言"
 }

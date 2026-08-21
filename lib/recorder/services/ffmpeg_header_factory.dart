@@ -1,5 +1,5 @@
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/core/site/huya_site.dart';
+import 'package:pure_live/core/site/huya/huya_site.dart';
 
 class FFmpegHeaderFactory {
   static Future<Map<String, String>> build({required String platform}) async {

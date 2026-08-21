@@ -1,5 +1,5 @@
-import 'package:pure_live/common/models/live_message.dart';
 import 'package:pure_live/get/get.dart';
+import 'package:pure_live/common/models/live_message.dart';
 import 'package:pure_live/modules/live_play/states/live_play_state.dart';
 
 /// Minimal room surface required by [DanmakuController].
@@ -18,4 +18,6 @@ abstract interface class DanmakuSessionHost {
   void updateDanmakuRoomId(String? roomId);
 
   void clearRenderedDanmaku();
+
+  void addAddSuperChat(LiveMessage msg) {}
 }

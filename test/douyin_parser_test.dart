@@ -1,7 +1,7 @@
 import 'dart:convert';
-
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/core/site/douyin_site.dart';
+import 'package:pure_live/core/site/douyin/douyin_site.dart';
+
 
 void main() {
   test('extracts escaped categoryData from the Douyin page payload', () {

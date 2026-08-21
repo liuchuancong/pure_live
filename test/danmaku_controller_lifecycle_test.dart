@@ -1,13 +1,13 @@
 import 'dart:async';
 
-import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/common/models/live_message.dart';
-import 'package:pure_live/common/models/live_room.dart';
-import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/get/get.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:pure_live/common/models/live_room.dart';
+import 'package:pure_live/common/models/live_message.dart';
+import 'package:pure_live/core/interface/live_danmaku.dart';
+import 'package:pure_live/modules/live_play/states/live_play_state.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_session_host.dart';
-import 'package:pure_live/modules/live_play/states/live_play_state.dart';
 
 void main() {
   test('a stalled transport start is bounded, stopped and available for reconnect', () async {
@@ -128,6 +128,9 @@ class _TestDanmakuHost implements DanmakuSessionHost {
 
   @override
   void clearRenderedDanmaku() => rendererClearCount++;
+
+  @override
+  void addAddSuperChat(LiveMessage msg) {}
 }
 
 class _StalledStartDanmaku extends LiveDanmaku {
