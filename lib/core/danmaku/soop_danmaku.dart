@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
-
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/core/site/soop_site.dart';
 import 'package:pure_live/core/common/core_log.dart';
+import 'package:pure_live/core/site/soop/soop_site.dart';
 import 'package:pure_live/core/common/utils/list_util.dart';
 import 'package:pure_live/core/common/web_socket_util.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
+
 
 class SoopDanmakuArgs {
   String url;

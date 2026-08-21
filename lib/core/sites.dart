@@ -1,15 +1,15 @@
-import 'site/huya_site.dart';
-import 'site/soop_site.dart';
-import 'site/douyu_site.dart';
-import 'site/douyin_site.dart';
+import 'site/soop/soop_site.dart';
+import 'site/huya/huya_site.dart';
 import 'interface/live_site.dart';
-
+import 'site/douyu/douyu_site.dart';
+import 'site/douyin/douyin_site.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/core/site/cc_site.dart';
-import 'package:pure_live/core/site/iptv_site.dart';
-import 'package:pure_live/core/site/twitch_site.dart';
-import 'package:pure_live/core/site/bilibili_site.dart';
-import 'package:pure_live/core/site/kuaishou_site.dart';
+import 'package:pure_live/core/site/cc/cc_site.dart';
+import 'package:pure_live/core/site/iptv/iptv_site.dart';
+import 'package:pure_live/core/site/twitch/twitch_site.dart';
+import 'package:pure_live/core/site/kuaishou/kuaishou_site.dart';
+import 'package:pure_live/core/site/bilibili/bilibili_site.dart';
+
 
 class Sites {
   static const String allSite = "all";

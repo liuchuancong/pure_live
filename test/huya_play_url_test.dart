@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/core/site/huya_site.dart';
+import 'package:pure_live/core/site/huya/huya_site.dart';
 
 void main() {
   HuyaLineModel line(
