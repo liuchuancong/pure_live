@@ -27,7 +27,7 @@ import 'package:pure_live/core/tars/get_game_event_message_board_req.dart';
 import 'package:pure_live/core/tars/get_game_event_message_board_rsp.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 
-class HuyaSite implements LiveSite {
+class HuyaSite implements LiveSite, LiveSiteRoomRefresher {
   @override
   String id = Sites.huyaSite;
   static const baseUrl = HuyaRequestParams.baseUrl;
@@ -388,6 +388,50 @@ class HuyaSite implements LiveSite {
       }
       return LiveRoom(roomId: roomId, platform: platform).getLiveRoomWithError();
     }
+  }
+
+  @override
+  Future<LiveRoom> getRoomDetailForRefresh({required String platform, required String roomId}) async {
+    final resultText = await HttpClient.instance.getText(
+      'https://mp.huya.com/cache.php?m=Live&do=profileRoom&roomid=$roomId&showSecret=1',
+      header: {
+        'Accept': '*/*',
+        'Origin': 'https://www.huya.com',
+        'Referer': 'https://www.huya.com/',
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'same-site',
+        'user-agent': kUserAgent,
+        'Cookie': SettingsService.to.cookieManager.huyaCookie.v,
+      },
+    );
+    final decoded = json.decode(resultText);
+    if (decoded is! Map || decoded['status'] != 200 || decoded['data'] is! Map) {
+      throw const FormatException('Huya room metadata is unavailable');
+    }
+    final data = decoded['data'] as Map;
+    final liveData = data['liveData'] is Map ? Map<String, dynamic>.from(data['liveData'] as Map) : <String, dynamic>{};
+    final profile = data['profileInfo'] is Map ? data['profileInfo'] as Map : const <dynamic, dynamic>{};
+    final audience = parseRoomAudience(liveData);
+    final live = data['liveStatus'] == 'ON' || data['liveStatus'] == 'REPLAY';
+    return LiveRoom(
+      cover: liveData['screenshot']?.toString() ?? '',
+      watching: audience.popularity,
+      popularity: audience.popularity,
+      onlineViewers: audience.onlineViewers,
+      audienceMetricType: AudienceMetricType.popularity,
+      roomId: roomId,
+      area: liveData['gameFullName']?.toString() ?? '',
+      title: liveData['introduction']?.toString() ?? '',
+      nick: profile['nick']?.toString() ?? '',
+      avatar: profile['avatar180']?.toString() ?? '',
+      introduction: liveData['introduction']?.toString() ?? '',
+      notice: data['welcomeText']?.toString() ?? '',
+      status: live,
+      liveStatus: live ? LiveStatus.live : LiveStatus.offline,
+      platform: Sites.huyaSite,
+      link: 'https://www.huya.com/$roomId',
+    );
   }
 
   String? findRoomId(List list, int targetUid, int targetYyid) {

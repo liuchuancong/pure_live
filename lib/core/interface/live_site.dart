@@ -68,3 +68,13 @@ class LiveSite {
     return Future.value([]);
   }
 }
+
+/// Optional fast metadata path used by favourites/background verification.
+///
+/// Entering a room needs playback URLs, signing material and chat credentials;
+/// refreshing a card needs only status/title/cover/audience metadata. Keeping
+/// this as a separate capability lets platforms skip those extra calls without
+/// changing the full room-entry contract for every site implementation.
+abstract interface class LiveSiteRoomRefresher {
+  Future<LiveRoom> getRoomDetailForRefresh({required String roomId, required String platform});
+}

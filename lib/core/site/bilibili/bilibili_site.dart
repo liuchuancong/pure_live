@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+
 import 'package:crypto/crypto.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/model/live_category.dart';
@@ -11,8 +13,7 @@ import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/danmaku/bilibili_danmaku.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 
-
-class BiliBiliSite implements LiveSite {
+class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher {
   @override
   String id = Sites.bilibiliSite;
 
@@ -27,19 +28,33 @@ class BiliBiliSite implements LiveSite {
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36";
   static const String kDefaultReferer = "https://live.bilibili.com/";
 
-  String buvid3 = "";
-  String buvid4 = "";
+  static String buvid3 = "";
+  static String buvid4 = "";
+  static Future<Map>? _buvidRequest;
   String accessId = "";
+
   Future<Map<String, String>> getHeader() async {
-    if (buvid3.isEmpty) {
-      var buvidInfo = await getBuvid();
-      buvid3 = buvidInfo["b_3"] ?? "";
-      buvid4 = buvidInfo["b_4"] ?? "";
+    final storedCookie = cookie;
+    final cookieBuvid3 = RegExp(r'(?:^|;)\s*buvid3=([^;]+)').firstMatch(storedCookie)?.group(1) ?? '';
+    final cookieBuvid4 = RegExp(r'(?:^|;)\s*buvid4=([^;]+)').firstMatch(storedCookie)?.group(1) ?? '';
+    if (cookieBuvid3.isNotEmpty) {
+      buvid3 = cookieBuvid3;
+      buvid4 = cookieBuvid4;
     }
-    return cookie.isEmpty
+    if (buvid3.isEmpty) {
+      final request = _buvidRequest ??= getBuvid();
+      try {
+        final buvidInfo = await request;
+        buvid3 = buvidInfo["b_3"]?.toString() ?? "";
+        buvid4 = buvidInfo["b_4"]?.toString() ?? "";
+      } finally {
+        if (identical(_buvidRequest, request)) _buvidRequest = null;
+      }
+    }
+    return storedCookie.isEmpty
         ? {"user-agent": kDefaultUserAgent, "referer": kDefaultReferer, "cookie": 'buvid3=$buvid3;buvid4=$buvid4;'}
         : {
-            "cookie": cookie.contains("buvid3") ? cookie : "$cookie;buvid3=$buvid3;buvid4=$buvid4;",
+            "cookie": storedCookie.contains("buvid3") ? storedCookie : "$storedCookie;buvid3=$buvid3;buvid4=$buvid4;",
             "user-agent": kDefaultUserAgent,
             "referer": kDefaultReferer,
           };
@@ -264,12 +279,15 @@ class BiliBiliSite implements LiveSite {
   }
 
   Future<Map<String, dynamic>> getRoomInfo({required String roomId}) async {
-    var url = "https://api.live.bilibili.com/xlive/web-room/v1/index/getInfoByRoom?room_id=$roomId";
-    var queryParams = await getWbiSign(url);
+    final url = "https://api.live.bilibili.com/xlive/web-room/v1/index/getInfoByRoom?room_id=$roomId";
+    // WBI key discovery and anonymous-device cookie discovery are independent.
+    // Starting both before the first await removes one full network round trip
+    // from the first Bilibili card refresh after a cold launch.
+    final (queryParams, header) = await (getWbiSign(url), getHeader()).wait;
     var result = await HttpClient.instance.getJson(
       "https://api.live.bilibili.com/xlive/web-room/v1/index/getInfoByRoom",
       queryParameters: queryParams,
-      header: await getHeader(),
+      header: header,
     );
     return result["data"];
   }
@@ -277,6 +295,7 @@ class BiliBiliSite implements LiveSite {
   static String kImgKey = '';
   static String kSubKey = '';
   static DateTime? _wbiKeysUpdatedAt;
+  static Future<(String, String)>? _wbiKeysRequest;
   static const List<int> mixinKeyEncTab = [
     46,
     47,
@@ -352,6 +371,19 @@ class BiliBiliSite implements LiveSite {
         cacheAge < const Duration(hours: 6)) {
       return (kImgKey, kSubKey);
     }
+
+    final pending = _wbiKeysRequest;
+    if (pending != null) return pending;
+
+    late final Future<(String, String)> operation;
+    operation = _fetchWbiKeys().whenComplete(() {
+      if (identical(_wbiKeysRequest, operation)) _wbiKeysRequest = null;
+    });
+    _wbiKeysRequest = operation;
+    return operation;
+  }
+
+  Future<(String, String)> _fetchWbiKeys() async {
     // 获取最新的 img_key 和 sub_key
     var resp = await HttpClient.instance.getJson(
       'https://api.bilibili.com/x/web-interface/nav',
@@ -487,24 +519,7 @@ class BiliBiliSite implements LiveSite {
           refresh: () => _discoverDanmaku(int.tryParse(realRoomId) ?? 0),
         );
       }
-      return LiveRoom(
-        roomId: roomId,
-        title: roomInfo["room_info"]["title"].toString(),
-        cover: roomInfo["room_info"]["cover"].toString(),
-        nick: roomInfo["anchor_info"]["base_info"]["uname"].toString(),
-        avatar: "${roomInfo["anchor_info"]["base_info"]["face"]}@100w.jpg",
-        watching: roomInfo["room_info"]["online"].toString(),
-        popularity: roomInfo["room_info"]["online"].toString(),
-        audienceMetricType: AudienceMetricType.popularity,
-        area: roomInfo['room_info']?['area_name'] ?? '',
-        status: (asT<int?>(roomInfo["room_info"]["live_status"]) ?? 0) == 1,
-        liveStatus: (asT<int?>(roomInfo["room_info"]["live_status"]) ?? 0) == 1 ? LiveStatus.live : LiveStatus.offline,
-        link: "https://live.bilibili.com/$roomId",
-        introduction: roomInfo["room_info"]["description"].toString(),
-        notice: "",
-        platform: Sites.bilibiliSite,
-        danmakuData: danmakuArgs,
-      );
+      return _buildRoom(roomInfo, roomId: roomId, danmakuData: danmakuArgs);
     } catch (e) {
       if (Get.isRegistered<PlayerController>()) {
         final PlayerController playerController = Get.find<PlayerController>();
@@ -513,6 +528,36 @@ class BiliBiliSite implements LiveSite {
       }
       return LiveRoom(roomId: roomId, platform: platform).getLiveRoomWithError();
     }
+  }
+
+  @override
+  Future<LiveRoom> getRoomDetailForRefresh({required String platform, required String roomId}) async {
+    final roomInfo = await getRoomInfo(roomId: roomId);
+    // Card verification deliberately skips getDanmuInfo. Chat credentials are
+    // short-lived and useful only after the user enters this room.
+    return _buildRoom(roomInfo, roomId: roomId);
+  }
+
+  LiveRoom _buildRoom(Map<String, dynamic> roomInfo, {required String roomId, Object? danmakuData}) {
+    final live = (asT<int?>(roomInfo["room_info"]["live_status"]) ?? 0) == 1;
+    return LiveRoom(
+      roomId: roomId,
+      title: roomInfo["room_info"]["title"].toString(),
+      cover: roomInfo["room_info"]["cover"].toString(),
+      nick: roomInfo["anchor_info"]["base_info"]["uname"].toString(),
+      avatar: "${roomInfo["anchor_info"]["base_info"]["face"]}@100w.jpg",
+      watching: roomInfo["room_info"]["online"].toString(),
+      popularity: roomInfo["room_info"]["online"].toString(),
+      audienceMetricType: AudienceMetricType.popularity,
+      area: roomInfo['room_info']?['area_name'] ?? '',
+      status: live,
+      liveStatus: live ? LiveStatus.live : LiveStatus.offline,
+      link: "https://live.bilibili.com/$roomId",
+      introduction: roomInfo["room_info"]["description"].toString(),
+      notice: "",
+      platform: Sites.bilibiliSite,
+      danmakuData: danmakuData,
+    );
   }
 
   @override

@@ -1,9 +1,9 @@
-import 'dart:async';
 import 'dart:ui';
 import 'dart:collection';
 import 'package:flame/game.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:flame_barrage/src/core/engine_clock.dart';
 import 'package:flame_barrage/src/model/barrage/engine_state.dart';
@@ -58,8 +58,10 @@ class BarrageEngine extends FlameGame with TapCallbacks {
   double _cleanupTimer = 0.0;
   bool _initialized = false;
   bool _appActive = true;
-  Timer? _frameTimer;
-  Stopwatch? _frameClock;
+  Ticker? _frameTicker;
+  Duration? _lastVsyncElapsed;
+  int _framePhaseMicros = 0;
+  int _elapsedSinceStepMicros = 0;
   int? _scheduledFps;
   int _frameStepCount = 0;
 
@@ -130,37 +132,59 @@ class BarrageEngine extends FlameGame with TapCallbacks {
 
   void _startFramePulses() {
     final targetFps = _config.fps.clamp(1, 240).toInt();
-    if (_frameTimer?.isActive == true && _scheduledFps == targetFps) return;
+    if (_frameTicker?.isActive == true && _scheduledFps == targetFps) return;
 
     _stopFramePulses();
     // Flame must stay paused for stepEngine() to advance exactly one frame.
+    // Timer.periodic is unrelated to display vsync and its wakeups drift or
+    // coalesce under load. Ticker aligns every opportunity with Flutter's
+    // frame scheduler; the accumulator below still honors lower configured
+    // rates and naturally caps impossible values to the physical display.
     pauseEngine();
     _scheduledFps = targetFps;
-    final interval = Duration(microseconds: (Duration.microsecondsPerSecond / targetFps).round());
-    _frameClock = Stopwatch()..start();
-    _frameTimer = Timer.periodic(interval, (_) => _stepFrame(interval));
+    _lastVsyncElapsed = null;
+    _framePhaseMicros = 0;
+    _elapsedSinceStepMicros = 0;
+    _frameTicker ??= Ticker(_onFrameTick, debugLabel: 'BarrageEngine.vsync');
+    _frameTicker!.start();
   }
 
-  void _stepFrame(Duration interval) {
+  void _onFrameTick(Duration elapsed) {
     if (isPaused || !_appActive || !_initialized || !isAttached || (_waiting.isEmpty && _currentAliveCount == 0)) {
       _stopFramePulses();
       return;
     }
 
-    final stopwatch = _frameClock;
-    final elapsedMicros = stopwatch?.elapsedMicroseconds ?? interval.inMicroseconds;
-    stopwatch?.reset();
-    final maxStepMicros = interval.inMicroseconds * 3;
-    final stepMicros = elapsedMicros.clamp(1, maxStepMicros).toInt();
+    final previous = _lastVsyncElapsed;
+    _lastVsyncElapsed = elapsed;
+    if (previous == null) return;
+
+    final targetFps = _scheduledFps ?? _config.fps.clamp(1, 240).toInt();
+    final intervalMicros = (Duration.microsecondsPerSecond / targetFps).round();
+    final rawDeltaMicros = (elapsed - previous).inMicroseconds;
+    final deltaMicros = rawDeltaMicros.clamp(1, intervalMicros * 3).toInt();
+    _framePhaseMicros += deltaMicros;
+    _elapsedSinceStepMicros += deltaMicros;
+    // A small tolerance avoids losing every other frame to integer rounding
+    // at rates such as 59.94/119.88 Hz.
+    if (_framePhaseMicros + 250 < intervalMicros) return;
+
+    if (_framePhaseMicros < intervalMicros) {
+      _framePhaseMicros = 0;
+    } else {
+      _framePhaseMicros %= intervalMicros;
+    }
+    final stepMicros = _elapsedSinceStepMicros.clamp(1, intervalMicros * 3).toInt();
+    _elapsedSinceStepMicros = 0;
     _frameStepCount++;
     stepEngine(stepTime: stepMicros / Duration.microsecondsPerSecond);
   }
 
   void _stopFramePulses() {
-    _frameTimer?.cancel();
-    _frameTimer = null;
-    _frameClock?.stop();
-    _frameClock = null;
+    _frameTicker?.stop();
+    _lastVsyncElapsed = null;
+    _framePhaseMicros = 0;
+    _elapsedSinceStepMicros = 0;
     _scheduledFps = null;
     pauseEngine();
   }
@@ -273,7 +297,7 @@ class BarrageEngine extends FlameGame with TapCallbacks {
     if (_initialized) {
       _trackManager.initialize(_config, _calculateAllowedHeight(size.y));
     }
-    if (fpsChanged && _frameTimer?.isActive == true) {
+    if (fpsChanged && _frameTicker?.isActive == true) {
       _startFramePulses();
     }
   }
@@ -571,6 +595,8 @@ class BarrageEngine extends FlameGame with TapCallbacks {
   @override
   void onRemove() {
     clear();
+    _frameTicker?.dispose();
+    _frameTicker = null;
     super.onRemove();
   }
 
@@ -593,6 +619,6 @@ class BarrageEngine extends FlameGame with TapCallbacks {
   int get pendingMessageCount => _waiting.length + _pausedBuffer.length;
   int get parserCacheSize => _parser.cacheCount;
   int get layoutCacheSize => _layout.cacheCount;
-  bool get framePulseActive => _frameTimer?.isActive == true;
+  bool get framePulseActive => _frameTicker?.isActive == true;
   int get frameStepCount => _frameStepCount;
 }

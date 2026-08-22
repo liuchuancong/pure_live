@@ -49,6 +49,17 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
   @override
   void initState() {
     super.initState();
+    // Start favourite verification after the first Flutter frame instead of
+    // waiting until HomePage is created. When the splash page is enabled this
+    // overlaps its one-second animation; when it is disabled the first frame
+    // still wins over network/JSON work. The controller already publishes the
+    // settled room snapshot as one transaction, so cards do not reshuffle as
+    // individual requests finish.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && Get.isRegistered<FavoriteController>()) {
+        Get.find<FavoriteController>();
+      }
+    });
     if (PlatformUtils.isDesktop) {
       DesktopManager.initializeListeners(this);
       WidgetsBinding.instance.addPostFrameCallback((_) {

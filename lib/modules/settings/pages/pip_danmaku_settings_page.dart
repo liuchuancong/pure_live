@@ -277,6 +277,7 @@ class PipDanmakuSettingsSection extends StatelessWidget {
               _switch(
                 theme,
                 title: '${i18n('danmaku_fps')} · ${i18n('dynamic_follow_display')}',
+                subtitle: i18n('pip_danmaku_fps_policy_desc'),
                 value: settings.pipDanmakuAutoFps.v,
                 onChanged: (value) => settings.pipDanmakuAutoFps.v = value,
                 labelColor: labelColor,
@@ -297,7 +298,7 @@ class PipDanmakuSettingsSection extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                   child: Text(
-                    '${settings.resolvedDanmakuFps(pip: true)} FPS',
+                    '${settings.resolvedDanmakuFps(pip: true, refreshRateMode: SettingsService.to.app.refreshRateMode)} FPS',
                     style: TextStyle(color: digitColor, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -406,6 +407,7 @@ class PipDanmakuSettingsSection extends StatelessWidget {
   Widget _switch(
     ThemeData theme, {
     required String title,
+    String? subtitle,
     required bool value,
     required ValueChanged<bool> onChanged,
     required Color labelColor,
@@ -415,10 +417,16 @@ class PipDanmakuSettingsSection extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Flexible(
-            child: Text(
-              title,
-              style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600, color: labelColor),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600, color: labelColor),
+                ),
+                if (subtitle != null) ...[const SizedBox(height: 3), Text(subtitle, style: theme.textTheme.bodySmall)],
+              ],
             ),
           ),
           const SizedBox(width: 12),
@@ -527,7 +535,7 @@ class _PipDanmakuPreviewState extends State<PipDanmakuPreview> with SingleTicker
       final area = settings.pipDanmakuArea.v;
       final maxVisibleCount = settings.pipDanmakuMaxVisibleCount.v;
       final emitInterval = settings.pipDanmakuEmitInterval.v;
-      final fps = settings.resolvedDanmakuFps(pip: true);
+      final fps = settings.resolvedDanmakuFps(pip: true, refreshRateMode: SettingsService.to.app.refreshRateMode);
       final colors = useOriginalColor
           ? const [Color(0xFFFFFFFF), Color(0xFF64B5F6), Color(0xFFFFD54F), Color(0xFF81C784)]
           : [unifiedColor];
