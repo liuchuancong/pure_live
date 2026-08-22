@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:pure_live/common/services/settings/danmaku_settings_controller.dart';
+import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 import 'package:pure_live/common/services/settings/font_settings_controller.dart';
 import 'package:pure_live/common/services/settings_service.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
@@ -155,6 +156,8 @@ class _TestAssetLoader extends AssetLoader {
     'danmaku_no_emoji': 'Pure text',
     'pip_danmaku_original_color': 'Original color',
     'font_size': 'Font size',
+    'font_weight': 'Font weight',
+    'font_weight_medium': 'Medium',
     'speed': 'Speed',
     'opacity': 'Opacity',
     'danmaku_area': 'Area',
@@ -162,14 +165,19 @@ class _TestAssetLoader extends AssetLoader {
     'pip_danmaku_interval': 'Interval',
     'danmaku_fps': 'FPS',
     'dynamic_follow_display': 'Dynamic',
+    'pip_danmaku_fps_policy_desc': 'Follow the global interface refresh policy',
   };
 }
 
 class _TestSettingsService extends SettingsService {
-  _TestSettingsService(this._danmaku) : _font = FontSettingsController();
+  _TestSettingsService(this._danmaku) : _app = AppSettingsController(), _font = FontSettingsController();
 
   final DanmakuSettingsController _danmaku;
+  final AppSettingsController _app;
   final FontSettingsController _font;
+
+  @override
+  AppSettingsController get app => _app;
 
   @override
   DanmakuSettingsController get danmaku => _danmaku;

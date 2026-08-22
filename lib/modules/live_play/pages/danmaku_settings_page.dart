@@ -252,6 +252,7 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
               _switch(
                 theme,
                 title: '${i18n("danmaku_fps")} · ${i18n("dynamic_follow_display")}',
+                subtitle: i18n('danmaku_fps_policy_desc'),
                 value: SettingsService.to.danmaku.danmakuAutoFps.v,
                 onChanged: (v) => SettingsService.to.danmaku.danmakuAutoFps.v = v,
                 labelColor: labelColor,
@@ -272,7 +273,7 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                   child: Text(
-                    '${SettingsService.to.danmaku.resolvedDanmakuFps()} FPS',
+                    '${SettingsService.to.danmaku.resolvedDanmakuFps(refreshRateMode: SettingsService.to.app.refreshRateMode)} FPS',
                     style: TextStyle(color: digitColor, fontWeight: FontWeight.w600),
                   ),
                 ),

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:ui' as ui;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -22,6 +23,23 @@ bool isDanmakuUserScrollStart(
       (acceptDirectionOnlyUserScroll &&
           notification is UserScrollNotification &&
           notification.direction != ScrollDirection.idle);
+}
+
+/// Invalidates tail-follow work that was queued before a user gesture.
+///
+/// `ScrollController.jumpTo` cancels an active drag. Message delivery used to
+/// queue a jump for the next frame, then execute it even if the finger had
+/// already started moving. A generation token makes that stale callback a
+/// no-op before it reaches the controller.
+@visibleForTesting
+class DanmakuTailFollowGuard {
+  int _revision = 0;
+
+  int capture() => _revision;
+
+  int invalidate() => ++_revision;
+
+  bool isCurrent(int revision) => revision == _revision;
 }
 
 class DanmakuListView extends StatefulWidget {
@@ -46,6 +64,7 @@ class DanmakuListViewState extends State<DanmakuListView> {
   LiveMessage? _lastControllerTail;
   List<LiveMessage> _visibleMessages = const [];
   final LinkedHashMap<LiveMessage, DanmakuItem> _itemCache = LinkedHashMap<LiveMessage, DanmakuItem>.identity();
+  final DanmakuTailFollowGuard _tailFollowGuard = DanmakuTailFollowGuard();
   int _activeScrollPointers = 0;
 
   static const int _itemCacheCapacity = 160;
@@ -126,6 +145,7 @@ class DanmakuListViewState extends State<DanmakuListView> {
 
   @override
   void dispose() {
+    _tailFollowGuard.invalidate();
     messagesSub?.cancel();
     fullscreenWorker?.dispose();
     windowFullscreenWorker?.dispose();
@@ -140,16 +160,24 @@ class DanmakuListViewState extends State<DanmakuListView> {
 
   Future<void> forceScrollToBottom() async {
     if (!mounted || !_autoScrollEnabled) return;
+    final revision = _tailFollowGuard.capture();
     await SchedulerBinding.instance.endOfFrame;
-    if (!mounted || !_scrollController.hasClients) return;
+    if (!mounted ||
+        !_autoScrollEnabled ||
+        !_tailFollowGuard.isCurrent(revision) ||
+        _activeScrollPointers > 0 ||
+        !_scrollController.hasClients) {
+      return;
+    }
     final position = _scrollController.position;
-    if (!position.hasContentDimensions) return;
+    if (!position.hasContentDimensions || position.isScrollingNotifier.value) return;
     if ((position.pixels - position.minScrollExtent).abs() > 0.5) {
       _scrollController.jumpTo(position.minScrollExtent);
     }
   }
 
   void _pauseAutoScroll() {
+    _tailFollowGuard.invalidate();
     if (!_autoScrollEnabled) return;
     throttleTimer?.cancel();
     throttleTimer = null;
@@ -161,13 +189,17 @@ class DanmakuListViewState extends State<DanmakuListView> {
   }
 
   void _scheduleLiveTailRestore() {
+    final revision = _tailFollowGuard.invalidate();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(_resumeAutoScroll());
+      if (mounted && _activeScrollPointers == 0 && _tailFollowGuard.isCurrent(revision)) {
+        unawaited(_resumeAutoScroll());
+      }
     });
   }
 
   Future<void> _resumeAutoScroll() async {
-    if (!mounted) return;
+    if (!mounted || _activeScrollPointers > 0) return;
+    _tailFollowGuard.invalidate();
     throttleTimer?.cancel();
     throttleTimer = null;
     final messages = controller.danmakuMessages;
@@ -260,7 +292,12 @@ class DanmakuListViewState extends State<DanmakuListView> {
               child: Stack(
                 children: [
                   Listener(
-                    onPointerDown: (_) => _activeScrollPointers++,
+                    onPointerDown: (_) {
+                      _activeScrollPointers++;
+                      // Cancel a queued live-tail jump at pointer-down, before
+                      // touch slop delays the first ScrollStartNotification.
+                      _tailFollowGuard.invalidate();
+                    },
                     onPointerUp: (_) => _removeActiveScrollPointer(),
                     onPointerCancel: (_) => _removeActiveScrollPointer(),
                     child: NotificationListener<ScrollNotification>(
@@ -271,9 +308,14 @@ class DanmakuListViewState extends State<DanmakuListView> {
                       child: ListView.builder(
                         key: const ValueKey('danmaku-message-list'),
                         addAutomaticKeepAlives: false,
-                        addRepaintBoundaries: true,
+                        // DanmakuItem already owns a boundary. Avoid nesting a
+                        // second automatic layer around every visible row.
+                        addRepaintBoundaries: false,
                         controller: _scrollController,
                         reverse: true,
+                        dragStartBehavior: DragStartBehavior.down,
+                        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                        physics: const PureLiveScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
                         scrollCacheExtent: const ScrollCacheExtent.pixels(360),
                         itemCount: _visibleMessages.length,

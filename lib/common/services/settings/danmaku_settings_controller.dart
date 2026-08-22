@@ -1,6 +1,7 @@
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
 import 'package:pure_live/common/services/display_mode_service.dart';
+import 'package:pure_live/common/models/app_refresh_rate_mode.dart';
 
 class DanmakuSettingsController extends GetxController {
   static const bool defaultEnablePipDanmaku = true;
@@ -81,22 +82,33 @@ class DanmakuSettingsController extends GetxController {
     }
   }
 
-  int resolvedDanmakuFps({bool pip = false}) {
+  int resolvedDanmakuFps({bool pip = false, AppRefreshRateMode refreshRateMode = AppRefreshRateMode.powerSaving}) {
     final auto = pip ? pipDanmakuAutoFps.v : danmakuAutoFps.v;
     final configured = pip ? pipDanmakuFps.v : danmakuFps.v;
     if (!auto) return configured.clamp(pip ? 15 : 30, 240).toInt();
-    return resolveAdaptiveDanmakuFps(DisplayModeService.info.value, pip: pip);
+    return resolveAdaptiveDanmakuFps(DisplayModeService.info.value, pip: pip, refreshRateMode: refreshRateMode);
   }
 
-  /// Keeps the Flutter UI at the device/monitor refresh rate while bounding
-  /// the substantially more expensive paragraph layout and barrage repaint
-  /// loop. Manual mode remains available for users who deliberately prefer a
-  /// higher renderer rate.
-  static int resolveAdaptiveDanmakuFps(DisplayModeInfo? display, {bool pip = false}) {
+  /// Resolves both room and PiP renderers from the single interface policy.
+  ///
+  /// Power saving keeps the existing 60/30 caps, balanced gives both surfaces
+  /// a stable 60 FPS budget while touch-driven UI can temporarily use the
+  /// display maximum, and Highest follows the detected device maximum for all
+  /// UI/danmaku surfaces. A local manual value remains an explicit override.
+  static int resolveAdaptiveDanmakuFps(
+    DisplayModeInfo? display, {
+    bool pip = false,
+    AppRefreshRateMode refreshRateMode = AppRefreshRateMode.powerSaving,
+  }) {
     final current = display?.currentRefreshRate ?? 0;
     final maximum = display?.maxRefreshRate ?? 0;
     final detected = maximum > 0 ? maximum : (current > 0 ? current : 60);
-    return detected.round().clamp(pip ? 15 : 30, pip ? 30 : 60).toInt();
+    final deviceMaximum = detected.round().clamp(pip ? 15 : 30, 240).toInt();
+    return switch (refreshRateMode) {
+      AppRefreshRateMode.powerSaving => deviceMaximum.clamp(pip ? 15 : 30, pip ? 30 : 60).toInt(),
+      AppRefreshRateMode.balanced => deviceMaximum.clamp(pip ? 15 : 30, 60).toInt(),
+      AppRefreshRateMode.performance => deviceMaximum,
+    };
   }
 
   void resetPipDanmaku() {

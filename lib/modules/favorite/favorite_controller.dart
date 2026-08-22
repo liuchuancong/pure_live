@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer' as developer;
 
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:pure_live/modules/tags/live_tag.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
@@ -519,7 +520,6 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     await _runRoomRefresh(roomsToRefresh, showLoading: showLoading, emitFinish: emitFinish, markFullRefresh: true);
   }
 
-  @visibleForTesting
   Future<void> refreshPersistedRoomsOnStartup() {
     final current = _startupRefresh;
     if (current != null) return current;
@@ -601,11 +601,15 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     final concurrency = RefreshConfigController.normalizeMaxConcurrentRefresh(
       refreshConfigController.maxConcurrentRefresh.value,
     );
+    // Reuse one adapter per platform inside a refresh pass. Besides reducing
+    // allocation, this lets cookie/device/bootstrap requests use single-flight
+    // state while the bounded I/O workers refresh several cards concurrently.
+    final siteCache = <String, LiveSite>{};
     final pendingUpdates = <String, LiveRoom>{};
     final results = await boundedAsyncMap<LiveRoom, LiveRoom>(
       valid,
       maxConcurrent: concurrency,
-      task: _refreshOneRoom,
+      task: (room) => _refreshOneRoom(room, siteCache),
       shouldCancel: () => refreshEpoch != _refreshEpoch || isClosed,
     );
     if (refreshEpoch != _refreshEpoch || isClosed) return const <String, LiveRoom>{};
@@ -615,13 +619,15 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     return pendingUpdates;
   }
 
-  Future<LiveRoom?> _refreshOneRoom(LiveRoom room) async {
+  Future<LiveRoom?> _refreshOneRoom(LiveRoom room, Map<String, LiveSite> siteCache) async {
     try {
       final platform = room.normalizedPlatformId;
       final roomId = room.normalizedRoomId;
-      return await Sites.of(platform).liveSite
-          .getRoomDetail(roomId: roomId, platform: platform)
-          .timeout(_roomRefreshTimeout);
+      final liveSite = siteCache.putIfAbsent(platform, () => Sites.of(platform).liveSite);
+      final operation = liveSite is LiveSiteRoomRefresher
+          ? (liveSite as LiveSiteRoomRefresher).getRoomDetailForRefresh(roomId: roomId, platform: platform)
+          : liveSite.getRoomDetail(roomId: roomId, platform: platform);
+      return await operation.timeout(_roomRefreshTimeout);
     } catch (error, stackTrace) {
       // One platform/room failure must not discard successful updates from the
       // rest of the batch.

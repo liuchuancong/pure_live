@@ -78,6 +78,10 @@ void main() {
     await tester.pump();
     expect(AdaptiveRefreshRateController.requestedHigh, isTrue);
 
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+    expect(AdaptiveRefreshRateController.requestedHigh, isTrue, reason: 'PiP remains visible while inactive');
+
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
     await tester.pump();
     expect(AdaptiveRefreshRateController.requestedHigh, isFalse);

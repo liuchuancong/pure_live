@@ -186,7 +186,19 @@ class AppPages {
           logoText: i18n("welcome_use"),
           textStyle: AppTextStyles.t20.copyWith(fontWeight: FontWeight.bold, color: textColor),
           loaderType: LoaderType.progressBar,
-          onNextPressed: () {
+          onNextPressed: () async {
+            // Spend a small, bounded part of the existing launch transition on
+            // the already-running favourite verification. Fast networks enter
+            // Home with a settled grid; slow platforms never hold the splash
+            // beyond this budget and finish in the background.
+            if (Get.isRegistered<FavoriteController>()) {
+              try {
+                await Future.any<void>([
+                  Get.find<FavoriteController>().refreshPersistedRoomsOnStartup(),
+                  Future<void>.delayed(const Duration(milliseconds: 350)),
+                ]);
+              } catch (_) {}
+            }
             Get.offAllNamed(RoutePath.kInitial);
           },
           duration: const Duration(seconds: 1),

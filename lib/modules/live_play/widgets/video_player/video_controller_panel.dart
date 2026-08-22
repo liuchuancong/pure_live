@@ -620,7 +620,9 @@ class DanmakuViewer extends StatelessWidget {
           strokeWidth: controller.danmakuFontBorder.value,
           showStroke: controller.enableDanmakuStroke.value,
           noEmojiMode: controller.noEmojiMode.value,
-          fps: settings.resolvedDanmakuFps(),
+          fps: settings.danmakuAutoFps.v
+              ? settings.resolvedDanmakuFps(refreshRateMode: SettingsService.to.app.refreshRateMode)
+              : controller.danmakuFps.value.clamp(30, 240).toInt(),
           maxVisibleCount: 48,
           maxPendingCount: 120,
           maxPendingAge: const Duration(seconds: 5),

@@ -13,7 +13,7 @@ import 'package:pure_live/core/danmaku/douyu_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 
-class DouyuSite implements LiveSite {
+class DouyuSite implements LiveSite, LiveSiteRoomRefresher {
   @override
   String id = Sites.douyuSite;
 
@@ -205,20 +205,7 @@ class DouyuSite implements LiveSite {
   @override
   Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
     try {
-      var result = await HttpClient.instance.getJson(
-        "https://www.douyu.com/betard/$roomId",
-        queryParameters: {},
-        header: {
-          'referer': 'https://www.douyu.com/$roomId',
-          'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43',
-        },
-      );
-      Map roomInfo;
-      if (result is String) {
-        roomInfo = json.decode(result)["room"];
-      } else {
-        roomInfo = result["room"];
-      }
+      final roomInfo = await _fetchRoomInfo(roomId);
 
       var jsEncResult = await HttpClient.instance.getText(
         "https://www.douyu.com/swf_api/homeH5Enc?rids=$roomId",
@@ -229,26 +216,10 @@ class DouyuSite implements LiveSite {
         },
       );
       var crptext = json.decode(jsEncResult)["data"]["room$roomId"].toString();
-
-      return LiveRoom(
-        cover: roomInfo["room_pic"].toString(),
-        watching: roomInfo["room_biz_all"]["hot"].toString(),
-        popularity: roomInfo["room_biz_all"]["hot"].toString(),
-        audienceMetricType: AudienceMetricType.popularity,
+      return _buildRoom(
+        roomInfo,
         roomId: roomId,
-        title: roomInfo["room_name"].toString(),
-        nick: roomInfo["owner_name"].toString(),
-        avatar: roomInfo["owner_avatar"].toString(),
-        introduction: roomInfo["show_details"].toString(),
-        area: roomInfo["second_lvl_name"]?.toString() ?? '',
-        notice: "",
-        liveStatus: roomInfo["show_status"] == 1 ? LiveStatus.live : LiveStatus.offline,
-        status: roomInfo["show_status"] == 1,
-        danmakuData: roomInfo["room_id"].toString(),
-        data: DouyuSign.getSign(crptext, roomInfo["room_id"].toString()),
-        platform: Sites.douyuSite,
-        link: "https://www.douyu.com/$roomId",
-        isRecord: roomInfo["videoLoop"] == 1,
+        playbackData: DouyuSign.getSign(crptext, roomInfo["room_id"].toString()),
       );
     } catch (e) {
       if (Get.isRegistered<PlayerController>()) {
@@ -258,6 +229,53 @@ class DouyuSite implements LiveSite {
       }
       return LiveRoom(roomId: roomId, platform: platform).getLiveRoomWithError();
     }
+  }
+
+  @override
+  Future<LiveRoom> getRoomDetailForRefresh({required String platform, required String roomId}) async {
+    final roomInfo = await _fetchRoomInfo(roomId);
+    // homeH5Enc and JavaScript signing prepare playback. A favourite card does
+    // not consume either value, so its cold-start request stays metadata-only.
+    return _buildRoom(roomInfo, roomId: roomId);
+  }
+
+  Future<Map<dynamic, dynamic>> _fetchRoomInfo(String roomId) async {
+    final result = await HttpClient.instance.getJson(
+      "https://www.douyu.com/betard/$roomId",
+      queryParameters: {},
+      header: {
+        'referer': 'https://www.douyu.com/$roomId',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43',
+      },
+    );
+    final dynamic decoded = result is String ? json.decode(result) : result;
+    final room = decoded["room"];
+    if (room is! Map) throw const FormatException('Douyu room metadata is missing');
+    return room;
+  }
+
+  LiveRoom _buildRoom(Map<dynamic, dynamic> roomInfo, {required String roomId, Object? playbackData}) {
+    final live = roomInfo["show_status"] == 1;
+    return LiveRoom(
+      cover: roomInfo["room_pic"].toString(),
+      watching: roomInfo["room_biz_all"]["hot"].toString(),
+      popularity: roomInfo["room_biz_all"]["hot"].toString(),
+      audienceMetricType: AudienceMetricType.popularity,
+      roomId: roomId,
+      title: roomInfo["room_name"].toString(),
+      nick: roomInfo["owner_name"].toString(),
+      avatar: roomInfo["owner_avatar"].toString(),
+      introduction: roomInfo["show_details"].toString(),
+      area: roomInfo["second_lvl_name"]?.toString() ?? '',
+      notice: "",
+      liveStatus: live ? LiveStatus.live : LiveStatus.offline,
+      status: live,
+      danmakuData: roomInfo["room_id"].toString(),
+      data: playbackData,
+      platform: Sites.douyuSite,
+      link: "https://www.douyu.com/$roomId",
+      isRecord: roomInfo["videoLoop"] == 1,
+    );
   }
 
   @override

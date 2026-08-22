@@ -56,11 +56,13 @@ void main() {
     controller.send(const BarrageItem(content: 'paced'));
     expect(engine.framePulseActive, isTrue);
     final before = engine.frameStepCount;
-    await tester.pump(const Duration(milliseconds: 500));
+    for (var frame = 0; frame < 31; frame++) {
+      await tester.pump(const Duration(microseconds: 16667));
+    }
     final frames = engine.frameStepCount - before;
 
-    // Timer granularity may place one pulse at either boundary, but this must
-    // stay near 15 rather than repainting at a 120/144 Hz display rate.
+    // The vsync ticker receives about 60 opportunities per second but the
+    // accumulator keeps a 30 FPS renderer near 15 steps in half a second.
     expect(frames, inInclusiveRange(14, 16));
 
     engine.clear();

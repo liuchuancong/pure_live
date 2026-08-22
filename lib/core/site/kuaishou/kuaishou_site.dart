@@ -15,7 +15,7 @@ import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 
-class KuaishowSite implements LiveSite {
+class KuaishowSite implements LiveSite, LiveSiteRoomRefresher {
   @override
   String id = Sites.kuaishouSite;
 
@@ -24,6 +24,9 @@ class KuaishowSite implements LiveSite {
 
   String cookie = '';
   Map<String, String> cookieObj = {};
+  Future<void>? _sessionBootstrap;
+  DateTime? _sessionUpdatedAt;
+  static const Duration _sessionLifetime = Duration(minutes: 30);
   List<String> imageExtensions = [
     'svgz',
     'pjp',
@@ -223,11 +226,13 @@ class KuaishowSite implements LiveSite {
     }
   }
 
-  Future registerDid() async {
+  Future registerDid({Map<String, dynamic>? requestHeaders}) async {
+    final did = cookieObj['did'];
+    if (did == null || did.isEmpty) return null;
     var res = await HttpClient.instance.postJson(
       'https://log-sdk.ksapisrv.com/rest/wd/common/log/collect/misc2?v=3.9.49&kpn=KS_GAME_LIVE_PC',
-      header: headers,
-      data: misc2dic(cookieObj['did']!),
+      header: requestHeaders ?? headers,
+      data: misc2dic(did),
     );
     return res;
   }
@@ -293,6 +298,7 @@ class KuaishowSite implements LiveSite {
     await dio.get(url);
     List<Cookie> cookies = await cookieJar.loadForRequest(Uri.parse(url));
     cookie = '';
+    cookieObj.clear();
     for (var i = 0; i < cookies.length; i++) {
       if (i != cookies.length - 1) {
         cookie += "${cookies[i].name}=${cookies[i].value};";
@@ -317,56 +323,8 @@ class KuaishowSite implements LiveSite {
 
   @override
   Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
-    headers['cookie'] = cookie;
-    var url = "https://live.kuaishou.com/u/$roomId";
-    var mHeaders = headers;
-    var fakeUseragent = FakeUserAgent.getRandomUserAgent();
-    mHeaders['User-Agent'] = fakeUseragent['userAgent'];
-    mHeaders['sec-ch-ua'] = 'Google Chrome;v=${fakeUseragent['v']}, Chromium;v=${fakeUseragent['v']}, Not=A?Brand;v=24';
-    mHeaders['sec-ch-ua-platform'] = fakeUseragent['device'];
-    mHeaders['sec-fetch-dest'] = 'document';
-    mHeaders['sec-fetch-mode'] = 'navigate';
-    mHeaders['sec-fetch-site'] = 'same-origin';
-    mHeaders['sec-fetch-user'] = '?1';
-    if (SettingsService.to.cookieManager.kuaishouCookie.v.isNotEmpty) {
-      mHeaders['cookie'] = SettingsService.to.cookieManager.kuaishouCookie.v;
-    }
-
-    mHeaders['accept'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9';
-    await getCookie(url);
-    await registerDid();
-    var resultText = await HttpClient.instance.getText(url, queryParameters: {}, header: mHeaders);
-
     try {
-      var text = RegExp(r"window\.__INITIAL_STATE__=(.*?);", multiLine: false).firstMatch(resultText)?.group(1);
-
-      var transferData = text!.replaceAll("undefined", "null");
-
-      var jsonObj = jsonDecode(transferData);
-      var liveStream = jsonObj["liveroom"]["playList"][0]["liveStream"];
-      var author = jsonObj["liveroom"]["playList"][0]["author"];
-      var gameInfo = jsonObj["liveroom"]["playList"][0]["gameInfo"];
-      var liveStreamId = liveStream["id"];
-      return LiveRoom(
-        cover: isImage(liveStream['poster'])
-            ? liveStream['poster'].toString()
-            : '${liveStream['poster'].toString()}.jpg',
-        watching: jsonObj["liveroom"]["playList"][0]["isLiving"] ? gameInfo["watchingCount"].toString() : '0',
-        onlineViewers: jsonObj["liveroom"]["playList"][0]["isLiving"] ? gameInfo["watchingCount"].toString() : '0',
-        audienceMetricType: AudienceMetricType.onlineViewers,
-        roomId: author["id"],
-        area: gameInfo["name"] ?? '',
-        title: author["description"] != null ? author["description"].replaceAll("\n", " ") : '',
-        nick: author["name"].toString(),
-        avatar: author["avatar"].toString(),
-        introduction: author["description"].toString(),
-        notice: author["description"].toString(),
-        status: jsonObj["liveroom"]["playList"][0]["isLiving"],
-        liveStatus: jsonObj["liveroom"]["playList"][0]["isLiving"] ? LiveStatus.live : LiveStatus.offline,
-        platform: Sites.kuaishouSite,
-        link: liveStreamId,
-        data: liveStream["playUrls"],
-      );
+      return await _loadRoom(roomId, includePlaybackData: true, ensureSession: true);
     } catch (e) {
       if (Get.isRegistered<PlayerController>()) {
         final PlayerController playerController = Get.find<PlayerController>();
@@ -375,6 +333,94 @@ class KuaishowSite implements LiveSite {
       }
       return LiveRoom(roomId: roomId, platform: platform).getLiveRoomWithError();
     }
+  }
+
+  @override
+  Future<LiveRoom> getRoomDetailForRefresh({required String platform, required String roomId}) async {
+    try {
+      // The room page is normally available anonymously. Start with that one
+      // request; bootstrap/register a device once and retry only when the site
+      // actually requires a session for this network.
+      return await _loadRoom(roomId, includePlaybackData: false, ensureSession: false);
+    } catch (_) {
+      return _loadRoom(roomId, includePlaybackData: false, ensureSession: true);
+    }
+  }
+
+  Future<LiveRoom> _loadRoom(String roomId, {required bool includePlaybackData, required bool ensureSession}) async {
+    final url = "https://live.kuaishou.com/u/$roomId";
+    if (ensureSession) await _ensureSession(url);
+    final resultText = await HttpClient.instance.getText(url, queryParameters: const {}, header: _roomHeaders());
+    final text = RegExp(r"window\.__INITIAL_STATE__=(.*?);", multiLine: false).firstMatch(resultText)?.group(1);
+    if (text == null || text.isEmpty) throw const FormatException('Kuaishou initial state is missing');
+    final jsonObj = jsonDecode(text.replaceAll("undefined", "null"));
+    final playList = jsonObj["liveroom"]?["playList"];
+    if (playList is! List || playList.isEmpty) throw const FormatException('Kuaishou room metadata is missing');
+    final room = playList.first;
+    final liveStream = room["liveStream"];
+    final author = room["author"];
+    final gameInfo = room["gameInfo"];
+    final live = room["isLiving"] == true;
+    final description = author["description"]?.toString() ?? '';
+    return LiveRoom(
+      cover: isImage(liveStream['poster']) ? liveStream['poster'].toString() : '${liveStream['poster'].toString()}.jpg',
+      watching: live ? gameInfo["watchingCount"].toString() : '0',
+      onlineViewers: live ? gameInfo["watchingCount"].toString() : '0',
+      audienceMetricType: AudienceMetricType.onlineViewers,
+      roomId: author["id"]?.toString() ?? roomId,
+      area: gameInfo["name"]?.toString() ?? '',
+      title: description.replaceAll("\n", " "),
+      nick: author["name"]?.toString() ?? '',
+      avatar: author["avatar"]?.toString() ?? '',
+      introduction: description,
+      notice: description,
+      status: live,
+      liveStatus: live ? LiveStatus.live : LiveStatus.offline,
+      platform: Sites.kuaishouSite,
+      link: liveStream["id"]?.toString() ?? '',
+      data: includePlaybackData ? liveStream["playUrls"] : null,
+    );
+  }
+
+  Map<String, dynamic> _roomHeaders() {
+    final result = Map<String, dynamic>.from(headers);
+    final fakeUseragent = FakeUserAgent.getRandomUserAgent();
+    result['User-Agent'] = fakeUseragent['userAgent'];
+    result['sec-ch-ua'] = 'Google Chrome;v=${fakeUseragent['v']}, Chromium;v=${fakeUseragent['v']}, Not=A?Brand;v=24';
+    result['sec-ch-ua-platform'] = fakeUseragent['device'];
+    result['sec-fetch-dest'] = 'document';
+    result['sec-fetch-mode'] = 'navigate';
+    result['sec-fetch-site'] = 'same-origin';
+    result['sec-fetch-user'] = '?1';
+    result['accept'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9';
+    final configuredCookie = SettingsService.to.cookieManager.kuaishouCookie.v.trim();
+    final effectiveCookie = configuredCookie.isNotEmpty ? configuredCookie : cookie;
+    if (effectiveCookie.isNotEmpty) result['cookie'] = effectiveCookie;
+    return result;
+  }
+
+  Future<void> _ensureSession(String url) async {
+    if (SettingsService.to.cookieManager.kuaishouCookie.v.trim().isNotEmpty) return;
+    final updatedAt = _sessionUpdatedAt;
+    if (cookie.isNotEmpty && updatedAt != null && DateTime.now().difference(updatedAt) < _sessionLifetime) return;
+    final pending = _sessionBootstrap;
+    if (pending != null) return pending;
+
+    late final Future<void> operation;
+    operation =
+        (() async {
+          await getCookie(url);
+          _sessionUpdatedAt = DateTime.now();
+          try {
+            await registerDid(requestHeaders: _roomHeaders());
+          } catch (_) {
+            // Device telemetry is best-effort and must not hold up room metadata.
+          }
+        })().whenComplete(() {
+          if (identical(_sessionBootstrap, operation)) _sessionBootstrap = null;
+        });
+    _sessionBootstrap = operation;
+    return operation;
   }
 
   @override
