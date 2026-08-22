@@ -92,6 +92,7 @@ foreach ($marker in @(
     '$gradleWorkers = if ($DedicatedBuild) { 20 } else { 16 }',
     'Enter-PureLiveHeavyTaskSlot',
     'Invoke-PureLiveLoggedFlutter',
+    '[Parameter(Mandatory = $true)][int] $ExitCode',
     'PSNativeCommandUseErrorActionPreference',
     'automatic_follow_up = $false'
 )) {

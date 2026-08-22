@@ -60,7 +60,10 @@ $incrementalStateBefore = if ($Target -eq 'AndroidArm64') {
 }
 
 function Assert-PureLiveCommandSucceeded {
-    param([Parameter(Mandatory = $true)][string] $Label, [int] $ExitCode = $LASTEXITCODE)
+    param(
+        [Parameter(Mandatory = $true)][string] $Label,
+        [Parameter(Mandatory = $true)][int] $ExitCode
+    )
     if ($ExitCode -ne 0) { throw "$Label exited with code $ExitCode." }
 }
 
@@ -161,7 +164,6 @@ try {
         }
 
         & (Join-Path $PSScriptRoot 'prefetch_android_native.ps1')
-        Assert-PureLiveCommandSucceeded 'Android native dependency prefetch'
 
         $androidArgs = @(
             'build', 'apk', "--$configurationLower", '--split-per-abi',
@@ -247,7 +249,8 @@ try {
             if ($iscc) {
                 $iss = Join-Path $repoRoot 'windows\packaging\exe\local_release.iss'
                 & $iscc "/DSourceDir=$windowsPackageFull" "/DAppVersion=$displayVersion" "/DOutputDir=$output" $iss
-                Assert-PureLiveCommandSucceeded 'Windows installer packaging'
+                $installerExitCode = $LASTEXITCODE
+                Assert-PureLiveCommandSucceeded 'Windows installer packaging' -ExitCode $installerExitCode
                 $setup = Get-ChildItem $output -File -Filter '*windows-x64-setup.exe' | Select-Object -First 1
                 if ($setup) { $artifactPaths += $setup.FullName }
             } else {
