@@ -782,8 +782,18 @@ class MyCustomScrollBehavior extends MaterialScrollBehavior {
     PointerDeviceKind.touch,
     PointerDeviceKind.stylus,
     PointerDeviceKind.invertedStylus,
-    PointerDeviceKind.mouse,
     PointerDeviceKind.trackpad,
     PointerDeviceKind.unknown,
+
+    // Do not include mouse here.
+    // Enabling mouse drag makes left-button dragging participate in the
+    // Scrollable's drag gesture system. This conflicts with
+    // PureLiveScrollPhysics at the scroll boundaries and prevents the
+    // expected overscroll/bounce-back behavior on desktop.
+    //
+    // Mouse wheel scrolling is not affected by this setting because
+    // wheel events are handled separately from dragDevices.
+    //
+    // PointerDeviceKind.mouse,
   };
 }
