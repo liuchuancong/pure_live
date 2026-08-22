@@ -1,12 +1,63 @@
 import 'dart:io';
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:screen_retriever/screen_retriever.dart';
 import 'package:pure_live/common/services/settings_service.dart';
 
+
 enum WindowLayoutMode { normal, pip }
+
+@visibleForTesting
+Rect resolveWindowsPipBounds({
+  required Size defaultSize,
+  required Rect primaryWorkArea,
+  required List<Rect> workAreas,
+  Rect? savedBounds,
+}) {
+  final availableAreas = workAreas.where((area) => !area.isEmpty && area.isFinite).toList(growable: false);
+
+  final fallbackArea = primaryWorkArea.isEmpty ? const Rect.fromLTWH(0, 0, 1280, 720) : primaryWorkArea;
+
+  final areas = availableAreas.isEmpty ? <Rect>[fallbackArea] : availableAreas;
+
+  final validSavedBounds = savedBounds != null && savedBounds.isFinite && !savedBounds.isEmpty ? savedBounds : null;
+
+  Rect? targetArea;
+
+  if (validSavedBounds != null) {
+    for (final area in areas) {
+      final overlap = validSavedBounds.intersect(area);
+
+      if (overlap.width >= 48 && overlap.height >= 48) {
+        targetArea = area;
+        break;
+      }
+    }
+  }
+
+  targetArea ??= areas.firstWhere(
+    (area) => area.overlaps(fallbackArea) || area.contains(fallbackArea.center),
+    orElse: () => areas.first,
+  );
+
+  final requested = validSavedBounds?.size ?? defaultSize;
+
+  final minWidth = targetArea.width < 140 ? targetArea.width : 140.0;
+  final minHeight = targetArea.height < 90 ? targetArea.height : 90.0;
+
+  final width = requested.width.clamp(minWidth, targetArea.width).toDouble();
+
+  final height = requested.height.clamp(minHeight, targetArea.height).toDouble();
+
+  final defaultLeft = targetArea.right - width - 20;
+  final defaultTop = targetArea.bottom - height - 20;
+
+  final left = (validSavedBounds?.left ?? defaultLeft).clamp(targetArea.left, targetArea.right - width).toDouble();
+
+  final top = (validSavedBounds?.top ?? defaultTop).clamp(targetArea.top, targetArea.bottom - height).toDouble();
+
+  return Rect.fromLTWH(left, top, width, height);
+}
 
 class WindowHelper {
   static final WindowHelper instance = WindowHelper._internal();
@@ -20,12 +71,8 @@ class WindowHelper {
   Size _savedSize = const Size(1280, 720);
   Offset _savedPosition = Offset.zero;
 
-  String? _currentDisplayId;
-
   Future<void> togglePiP(double videoRatio) async {
-    if (!Platform.isWindows) {
-      return;
-    }
+    if (!Platform.isWindows) return;
 
     if (currentMode == WindowLayoutMode.normal) {
       await enterPiP(videoRatio);
@@ -41,94 +88,102 @@ class WindowHelper {
     _savedPosition = await windowManager.getPosition();
 
     final displays = await screenRetriever.getAllDisplays();
-    final currentPosition = _savedPosition;
 
-    final display = _findDisplayForPosition(displays, currentPosition) ?? await screenRetriever.getPrimaryDisplay();
+    final primaryDisplay = await screenRetriever.getPrimaryDisplay();
 
-    _currentDisplayId = display.id;
+    final currentDisplay = _findDisplayForPosition(displays, _savedPosition) ?? primaryDisplay;
 
-    final safeSize = display.visibleSize ?? display.size;
-    final safeOffset = display.visiblePosition ?? Offset.zero;
+    final safeSize = currentDisplay.visibleSize ?? currentDisplay.size;
+
+    final safeOffset = currentDisplay.visiblePosition ?? Offset.zero;
+
+    final ratio = videoRatio.isFinite && videoRatio > 0 ? videoRatio : 16 / 9;
 
     double w;
     double h;
 
-    if (videoRatio > 1.05) {
+    if (ratio > 1.05) {
       const maxSide = 360.0;
+
       w = maxSide;
-      h = maxSide / videoRatio;
-    } else if (videoRatio < 0.95) {
+      h = maxSide / ratio;
+    } else if (ratio < 0.95) {
       const maxSide = 380.0;
+
       h = maxSide;
-      w = h * videoRatio;
+      w = h * ratio;
 
       if (w < 140) {
         w = 140;
-        h = w / videoRatio;
+        h = w / ratio;
       }
     } else {
       const maxSide = 280.0;
 
-      if (videoRatio >= 1.0) {
+      if (ratio >= 1.0) {
         w = maxSide;
-        h = maxSide / videoRatio;
+        h = maxSide / ratio;
       } else {
         h = maxSide;
-        w = h * videoRatio;
+        w = h * ratio;
       }
     }
 
-    Offset position;
+    final windowSettings = SettingsService.to.window;
 
-    final settings = SettingsService.to.player;
+    final pip = windowSettings.windowsPip;
 
-    if (settings.rememberPipPosition.value) {
-      final savedPosition = settings.getPipWindowPosition(display.id);
+    final rememberPosition = windowSettings.rememberPipPosition.value;
 
-      if (savedPosition != null && _isPositionValid(savedPosition, Size(w, h), safeOffset, safeSize)) {
-        position = savedPosition;
-      } else {
-        position = _calculateDefaultPosition(safeOffset, safeSize, Size(w, h));
-      }
-    } else {
-      position = _calculateDefaultPosition(safeOffset, safeSize, Size(w, h));
+    Rect? savedBounds;
+
+    if (rememberPosition && pip.isValid && pip.displayId.value == currentDisplay.id) {
+      savedBounds = Rect.fromLTWH(
+        pip.windowsPipX.value,
+        pip.windowsPipY.value,
+        pip.windowsPipWidth.value,
+        pip.windowsPipHeight.value,
+      );
     }
 
-    await windowManager.setAlwaysOnTop(settings.windowsPipAlwaysOnTop.value);
+    final workAreas = displays
+        .map((display) {
+          final size = display.visibleSize ?? display.size;
+
+          final position = display.visiblePosition ?? Offset.zero;
+
+          return Rect.fromLTWH(position.dx, position.dy, size.width, size.height);
+        })
+        .toList(growable: false);
+
+    final bounds = resolveWindowsPipBounds(
+      defaultSize: Size(w, h),
+      primaryWorkArea: Rect.fromLTWH(safeOffset.dx, safeOffset.dy, safeSize.width, safeSize.height),
+      workAreas: workAreas,
+      savedBounds: savedBounds,
+    );
+
+    await windowManager.setAlwaysOnTop(SettingsService.to.player.windowsPipAlwaysOnTop.value);
 
     await windowManager.setMinimumSize(Size.zero);
 
-    await windowManager.setSize(Size(w, h));
-    await windowManager.setPosition(position);
+    await windowManager.setSize(bounds.size);
+    await windowManager.setPosition(bounds.topLeft);
+
+    if (rememberPosition) {
+      pip.update(bounds.size, bounds.topLeft, currentDisplay.id);
+    }
   }
 
   Future<void> exitPiP() async {
     currentMode = WindowLayoutMode.normal;
 
     await windowManager.setAlwaysOnTop(false);
+
     await windowManager.setMinimumSize(const Size(800, 600));
+
     await windowManager.setSize(_savedSize);
     await windowManager.setPosition(_savedPosition);
-
-    _currentDisplayId = null;
-  }
-
-  Future<void> saveCurrentPipPosition() async {
-    if (!Platform.isWindows ||
-        currentMode != WindowLayoutMode.pip ||
-        !SettingsService.to.player.rememberPipPosition.value) {
-      return;
-    }
-
-    final displayId = _currentDisplayId;
-
-    if (displayId == null) {
-      return;
-    }
-
-    final position = await windowManager.getPosition();
-
-    await SettingsService.to.player.savePipWindowPosition(displayId, position);
   }
 
   Future<void> setPiPAlwaysOnTop(bool value) async {
@@ -139,9 +194,31 @@ class WindowHelper {
     await windowManager.setAlwaysOnTop(value);
   }
 
+  Future<void> capturePiPGeometry() async {
+    if (!Platform.isWindows || currentMode != WindowLayoutMode.pip) {
+      return;
+    }
+
+    final windowSettings = SettingsService.to.window;
+
+    if (!windowSettings.rememberPipPosition.value) {
+      return;
+    }
+
+    final size = await windowManager.getSize();
+    final position = await windowManager.getPosition();
+
+    final displays = await screenRetriever.getAllDisplays();
+
+    final display = _findDisplayForPosition(displays, position) ?? await screenRetriever.getPrimaryDisplay();
+
+    windowSettings.windowsPip.update(size, position, display.id);
+  }
+
   Display? _findDisplayForPosition(List<Display> displays, Offset position) {
     for (final display in displays) {
       final offset = display.visiblePosition ?? Offset.zero;
+
       final size = display.visibleSize ?? display.size;
 
       final right = offset.dx + size.width;
@@ -154,6 +231,7 @@ class WindowHelper {
 
     for (final display in displays) {
       final offset = display.visiblePosition ?? Offset.zero;
+
       final size = display.visibleSize ?? display.size;
 
       final right = offset.dx + size.width;
@@ -165,38 +243,5 @@ class WindowHelper {
     }
 
     return null;
-  }
-
-  Offset _calculateDefaultPosition(Offset safeOffset, Size safeSize, Size windowSize) {
-    double x = safeOffset.dx + safeSize.width - windowSize.width - 20;
-    double y = safeOffset.dy + safeSize.height - windowSize.height - 20;
-
-    if (x < safeOffset.dx) {
-      x = safeOffset.dx + 20;
-    }
-
-    if (y < safeOffset.dy) {
-      y = safeOffset.dy + 20;
-    }
-
-    return Offset(x, y);
-  }
-
-  bool _isPositionValid(Offset position, Size windowSize, Offset safeOffset, Size safeSize) {
-    final left = safeOffset.dx;
-    final top = safeOffset.dy;
-    final right = safeOffset.dx + safeSize.width;
-    final bottom = safeOffset.dy + safeSize.height;
-
-    final windowRight = position.dx + windowSize.width;
-    final windowBottom = position.dy + windowSize.height;
-
-    const minVisible = 50.0;
-
-    final visibleWidth = min(windowRight, right) - max(position.dx, left);
-
-    final visibleHeight = min(windowBottom, bottom) - max(position.dy, top);
-
-    return visibleWidth >= minVisible && visibleHeight >= minVisible;
   }
 }

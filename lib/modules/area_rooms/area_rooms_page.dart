@@ -1,8 +1,8 @@
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/widgets/keep_alive_wrapper.dart';
 import 'package:pure_live/plugins/cache_manager.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:pure_live/common/widgets/keep_alive_wrapper.dart';
 
 class AreasRoomPage extends StatefulWidget {
   final Site site;

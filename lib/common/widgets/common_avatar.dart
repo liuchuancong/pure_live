@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/get/get.dart';
-import 'package:pure_live/common/utils/network_image_url.dart';
 import 'package:pure_live/plugins/cache_manager.dart';
+import 'package:pure_live/common/utils/network_image_url.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/common/services/settings_service.dart';
 
 class CommonAvatar extends StatelessWidget {
@@ -51,7 +51,7 @@ class CommonAvatar extends StatelessWidget {
             fit: BoxFit.cover,
             filterQuality: FilterQuality.low,
             memCacheWidth: (size * MediaQuery.devicePixelRatioOf(context)).round().clamp(48, 256).toInt(),
-            maxWidthDiskCache: 256,
+            // maxWidthDiskCache: 256,
             fadeInDuration: Duration.zero,
             fadeOutDuration: Duration.zero,
             useOldImageOnUrlChange: true,

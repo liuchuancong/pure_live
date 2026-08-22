@@ -168,10 +168,10 @@ class VideoSettingsPage extends GetView<SettingsService> {
               context.buildSwitchTile(
                 title: i18n('windows_pip_remember_position'),
                 subtitle: i18n('windows_pip_remember_position_subtitle'),
-                value: SettingsService.to.player.rememberPipPosition,
+                value: SettingsService.to.window.rememberPipPosition,
                 icon: Remix.terminal_window_fill,
                 onChanged: (value) {
-                  SettingsService.to.player.rememberPipPosition.v = value;
+                  SettingsService.to.window.rememberPipPosition.v = value;
                 },
               ),
             if (Platform.isWindows)
@@ -195,7 +195,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
                   );
 
                   if (result == true) {
-                    SettingsService.to.player.pipWindowPositions.v = '{}';
+                    SettingsService.to.window.windowsPip.clear();
                   }
                 },
               ),
