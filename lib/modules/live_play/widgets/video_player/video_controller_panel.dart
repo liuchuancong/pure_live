@@ -21,6 +21,17 @@ import 'package:pure_live/modules/live_play/widgets/video_player/volume_control.
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_settings_binding.dart';
 
+@visibleForTesting
+enum TopActionLeadingSlot { back, pip }
+
+/// Resolves the fixed order of the fullscreen leading actions. Android keeps
+/// the same PiP shortcut as portrait, placed beside Back in the top-left group.
+@visibleForTesting
+List<TopActionLeadingSlot> resolveTopActionLeadingSlots({required bool fullscreen, required bool android}) {
+  if (!fullscreen) return const <TopActionLeadingSlot>[];
+  return <TopActionLeadingSlot>[TopActionLeadingSlot.back, if (android) TopActionLeadingSlot.pip];
+}
+
 class VideoControllerPanel extends StatefulWidget {
   final VideoController controller;
 
@@ -204,7 +215,17 @@ class TopActionBar extends StatelessWidget {
           ),
           child: Row(
             children: [
-              if (GlobalPlayerState.to.fullscreenUI) BackButton(controller: controller),
+              for (final slot in resolveTopActionLeadingSlots(
+                fullscreen: GlobalPlayerState.to.fullscreenUI,
+                android: PlatformUtils.isAndroid,
+              ))
+                switch (slot) {
+                  TopActionLeadingSlot.back => BackButton(controller: controller),
+                  TopActionLeadingSlot.pip => PIPButton(
+                    key: const ValueKey('fullscreen-pip-shortcut'),
+                    controller: controller,
+                  ),
+                },
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
