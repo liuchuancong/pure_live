@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/favorite/room_grid_view.dart';
@@ -32,10 +30,7 @@ class FavoritePage extends GetView<FavoriteController> {
                 ],
               ),
             ),
-            body: DefaultTabController(
-              length: availableSitesList.length,
-              child: _FavoriteSiteTabs(controller: controller, availableSitesList: availableSitesList),
-            ),
+            body: _FavoriteSiteTabs(controller: controller, availableSitesList: availableSitesList),
           );
         });
       },
@@ -43,11 +38,11 @@ class FavoritePage extends GetView<FavoriteController> {
   }
 }
 
-/// Keeps the inherited site [TabController] listener stable across Obx rebuilds.
+/// Owns one stable site [TabController] across reactive data publications.
 ///
-/// Registering the listener inside `build` accumulated callbacks whenever a
-/// room status changed, which made tab swipes and later refreshes progressively
-/// more expensive on desktop.
+/// It also preserves the selected site by id when the configured platform
+/// order changes, instead of resetting the visual controller to index zero
+/// while the data controller still points at an older numeric index.
 class _FavoriteSiteTabs extends StatefulWidget {
   const _FavoriteSiteTabs({required this.controller, required this.availableSitesList});
 
@@ -58,50 +53,80 @@ class _FavoriteSiteTabs extends StatefulWidget {
   State<_FavoriteSiteTabs> createState() => _FavoriteSiteTabsState();
 }
 
-class _FavoriteSiteTabsState extends State<_FavoriteSiteTabs> {
-  TabController? _tabController;
-  Timer? _settledSiteTabTimer;
+class _FavoriteSiteTabsState extends State<_FavoriteSiteTabs> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   final Map<String, ScrollController> _siteScrollControllers = {};
 
   ScrollController _scrollControllerFor(String siteId) =>
       _siteScrollControllers.putIfAbsent(siteId, () => createPureLiveScrollController());
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final nextController = DefaultTabController.of(context);
-    if (identical(nextController, _tabController)) return;
-    _tabController?.removeListener(_handleTabChanged);
-    _tabController = nextController..addListener(_handleTabChanged);
-    if (widget.availableSitesList.isNotEmpty) {
-      final initialIndex = widget.controller.tabSiteIndex.value.clamp(0, widget.availableSitesList.length - 1).toInt();
-      widget.controller.bindActiveScrollController(_scrollControllerFor(widget.availableSitesList[initialIndex].id));
+  void initState() {
+    super.initState();
+    final initialIndex = _clampSiteIndex(widget.controller.tabSiteIndex.value, widget.availableSitesList);
+    _tabController = TabController(length: widget.availableSitesList.length, initialIndex: initialIndex, vsync: this)
+      ..addListener(_handleTabChanged);
+    widget.controller.bindActiveScrollController(_scrollControllerFor(widget.availableSitesList[initialIndex].id));
+  }
+
+  @override
+  void didUpdateWidget(covariant _FavoriteSiteTabs oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldIds = oldWidget.availableSitesList.map((site) => site.id).toList(growable: false);
+    final newIds = widget.availableSitesList.map((site) => site.id).toList(growable: false);
+    if (_sameSiteOrder(oldIds, newIds)) return;
+
+    final oldIndex = _clampSiteIndex(_tabController.index, oldWidget.availableSitesList);
+    final selectedSiteId = oldWidget.availableSitesList[oldIndex].id;
+    final preservedIndex = newIds.indexOf(selectedSiteId);
+    final nextIndex = preservedIndex >= 0
+        ? preservedIndex
+        : _clampSiteIndex(widget.controller.tabSiteIndex.value, widget.availableSitesList);
+
+    _tabController.removeListener(_handleTabChanged);
+    _tabController.dispose();
+    _tabController = TabController(length: widget.availableSitesList.length, initialIndex: nextIndex, vsync: this)
+      ..addListener(_handleTabChanged);
+
+    // Rebind before disposing a removed platform's controller. The base page
+    // detaches its listener from the previous controller while rebinding.
+    final nextScrollController = _scrollControllerFor(widget.availableSitesList[nextIndex].id);
+    widget.controller.bindActiveScrollController(nextScrollController);
+    final retainedIds = newIds.toSet();
+    final removedIds = _siteScrollControllers.keys.where((id) => !retainedIds.contains(id)).toList(growable: false);
+    for (final id in removedIds) {
+      _siteScrollControllers.remove(id)?.dispose();
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.controller.selectSiteIndex(nextIndex);
+    });
+  }
+
+  int _clampSiteIndex(int index, List<Site> sites) => index.clamp(0, sites.length - 1).toInt();
+
+  bool _sameSiteOrder(List<String> left, List<String> right) {
+    if (left.length != right.length) return false;
+    for (var index = 0; index < left.length; index++) {
+      if (left[index] != right[index]) return false;
+    }
+    return true;
   }
 
   void _handleTabChanged() {
     final tabController = _tabController;
-    if (tabController == null || tabController.indexIsChanging) return;
+    if (tabController.indexIsChanging) return;
     final animationValue = tabController.animation?.value ?? tabController.index.toDouble();
     if ((animationValue - tabController.index).abs() > 0.001) return;
     final controller = widget.controller;
-    if (controller.tabSiteIndex.value == tabController.index) return;
-    _settledSiteTabTimer?.cancel();
-    _settledSiteTabTimer = Timer(const Duration(milliseconds: 80), () {
-      if (!mounted || controller.tabSiteIndex.value == tabController.index) return;
-      if (tabController.index >= 0 && tabController.index < widget.availableSitesList.length) {
-        controller.bindActiveScrollController(_scrollControllerFor(widget.availableSitesList[tabController.index].id));
-      }
-      controller.selectedTagId.value = TagManagementController.allTagKey;
-      controller.tabSiteIndex.value = tabController.index;
-      controller.currentPage = 1;
-    });
+    if (tabController.index < 0 || tabController.index >= widget.availableSitesList.length) return;
+    controller.bindActiveScrollController(_scrollControllerFor(widget.availableSitesList[tabController.index].id));
+    controller.selectSiteIndex(tabController.index);
   }
 
   @override
   void dispose() {
-    _settledSiteTabTimer?.cancel();
-    _tabController?.removeListener(_handleTabChanged);
+    _tabController.removeListener(_handleTabChanged);
+    _tabController.dispose();
     widget.controller.bindActiveScrollController(null);
     for (final controller in _siteScrollControllers.values) {
       controller.dispose();
@@ -116,24 +141,26 @@ class _FavoriteSiteTabsState extends State<_FavoriteSiteTabs> {
     final availableSitesList = widget.availableSitesList;
     return Column(
       children: [
-        TabBar(isScrollable: true, tabs: availableSitesList.map((e) => Tab(text: e.name)).toList()),
+        TabBar(
+          controller: _tabController,
+          isScrollable: true,
+          physics: const PureLiveScrollPhysics(),
+          tabs: availableSitesList.map((e) => Tab(text: e.name)).toList(),
+        ),
+        _FavoriteTagStrip(controller: controller),
         Expanded(
           child: BasePageView<FavoriteController, LiveRoom>(
             controller: controller,
             enableRefresh: true,
             enableLoadMore: true,
-            emptyBuilder: (context) => AppStatusView(
-              type: AppStatusType.empty,
-              icon: Remix.heart_3_fill,
-              title: i18n("empty_favorite_online_title"),
-              subtitle: i18n("empty_favorite_online_subtitle"),
-            ),
+            preserveContentWhenEmpty: true,
             showScrollToTopBtn: SettingsService.to.page.showScrollToTopBtn.v,
             showPageSizeSelector: SettingsService.to.page.showPageSizeSelector.v,
             pageSizeOptions: SettingsService.to.page.pageSizeOptions,
             contentBuilder: (context, list, _) {
               final activeSiteIndex = controller.tabSiteIndex.value;
               return TabBarView(
+                controller: _tabController,
                 children: availableSitesList.asMap().entries.map((entry) {
                   final site = entry.value;
                   return Builder(
@@ -146,10 +173,9 @@ class _FavoriteSiteTabsState extends State<_FavoriteSiteTabs> {
                       final isCurrentSite = entry.key == activeSiteIndex;
                       final pageList = isCurrentSite ? list : controller.filteredSyncedRoomsForSite(site.id);
                       return RoomGridView(
-                        site: site.id,
-                        isOnline: controller.tabOnlineIndex.value != 1,
                         scrollController: _scrollControllerFor(site.id),
                         displayList: pageList,
+                        emptyBuilder: (context) => _FavoriteEmptyState(controller: controller, siteId: site.id),
                       );
                     },
                   );
@@ -160,5 +186,109 @@ class _FavoriteSiteTabsState extends State<_FavoriteSiteTabs> {
         ),
       ],
     );
+  }
+}
+
+class _FavoriteTagStrip extends StatelessWidget {
+  const _FavoriteTagStrip({required this.controller});
+
+  final FavoriteController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Obx(() {
+      final tags = controller.visibleTags.toList(growable: false);
+      if (tags.isEmpty) return const SizedBox.shrink();
+      return SizedBox(
+        key: const ValueKey('favorite_tag_strip'),
+        height: 44,
+        width: double.infinity,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          physics: const PureLiveScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          itemCount: tags.length + 1,
+          itemBuilder: (context, index) {
+            final isAll = index == 0;
+            final tag = isAll ? null : tags[index - 1];
+            final tagId = tag?.id ?? TagManagementController.allTagKey;
+            final isSelected = controller.selectedTagId.value == tagId;
+            return Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: ChoiceChip(
+                showCheckmark: false,
+                label: Text(
+                  tag?.name ?? i18n('recorder_tab_all'),
+                  style: AppTextStyles.t12.copyWith(
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    color: isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                selected: isSelected,
+                selectedColor: theme.colorScheme.primary,
+                backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  side: BorderSide(
+                    color: isSelected ? Colors.transparent : theme.dividerColor.withValues(alpha: 0.04),
+                    width: 0.5,
+                  ),
+                ),
+                onSelected: (selected) {
+                  if (selected) controller.changeSelectedTag(tagId);
+                },
+              ),
+            );
+          },
+        ),
+      );
+    });
+  }
+}
+
+class _FavoriteEmptyState extends StatelessWidget {
+  const _FavoriteEmptyState({required this.controller, required this.siteId});
+
+  final FavoriteController controller;
+  final String siteId;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final statusIndex = controller.tabOnlineIndex.value;
+      final totalForSite = controller.favoriteCountForSite(siteId);
+      final globalTotal = SettingsService.to.fav.favoriteRooms.v.length;
+      final offlineForSite = controller.favoriteCountForSite(siteId, statusIndex: 2);
+
+      if (globalTotal == 0) {
+        return AppStatusView(
+          type: AppStatusType.empty,
+          icon: Remix.heart_3_fill,
+          title: i18n('empty_favorite_online_title'),
+          subtitle: i18n('empty_favorite_online_subtitle'),
+          buttonText: i18n('retry'),
+          onButtonPressed: controller.refreshData,
+        );
+      }
+
+      final title = switch (statusIndex) {
+        1 => i18n('favorite_empty_recording_title'),
+        2 => i18n('favorite_empty_offline_title'),
+        _ => i18n('favorite_empty_online_title'),
+      };
+      final subtitleKey = totalForSite == 0 ? 'favorite_empty_platform_subtitle' : 'favorite_empty_filter_subtitle';
+      final subtitle = i18n(subtitleKey).replaceAll('{count}', totalForSite.toString());
+      final canShowOffline = statusIndex != 2 && offlineForSite > 0;
+
+      return AppStatusView(
+        type: AppStatusType.empty,
+        icon: Remix.heart_3_fill,
+        title: title,
+        subtitle: subtitle,
+        buttonText: canShowOffline ? i18n('favorite_show_offline') : i18n('retry'),
+        onButtonPressed: canShowOffline ? () => controller.animateToStatusIndex(2) : controller.refreshData,
+      );
+    });
   }
 }

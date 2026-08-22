@@ -133,9 +133,7 @@ class RoomCard extends StatelessWidget {
         : Get.put(FavoriteController());
     final TagManagementController tagController = Get.find<TagManagementController>();
     final theme = Theme.of(context);
-    final bool isFollowed = SettingsService.to.fav.favoriteRooms.v.any(
-      (r) => r.platform == room.platform && r.roomId == room.roomId,
-    );
+    final bool isFollowed = SettingsService.to.fav.isFavorite(room);
 
     Get.dialog(
       AlertDialog(

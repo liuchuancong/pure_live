@@ -3,6 +3,18 @@ import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/modules/favorite/favorite_startup_policy.dart';
 
 void main() {
+  test('favourite identity is platform scoped and normalizes imported values', () {
+    final bilibili = LiveRoom(roomId: ' 100 ', platform: ' BILIBILI ');
+    final canonicalBilibili = LiveRoom(roomId: '100', platform: 'bilibili');
+    final huya = LiveRoom(roomId: '100', platform: 'huya');
+
+    expect(favoriteRoomIdentity(bilibili), 'bilibili:100');
+    expect(bilibili, canonicalBilibili);
+    expect(bilibili.hashCode, canonicalBilibili.hashCode);
+    expect(favoriteRoomIdentity(huya), 'huya:100');
+    expect(bilibili, isNot(huya), reason: 'room numbers are only unique inside one platform');
+  });
+
   test('startup snapshot never carries a stale live state', () {
     final original = LiveRoom(
       roomId: '100',

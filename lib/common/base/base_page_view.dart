@@ -6,6 +6,11 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
   final Widget Function(BuildContext context, List<T> list, ScrollController scrollController) contentBuilder;
   final bool enableRefresh;
   final bool enableLoadMore;
+
+  /// Keeps [contentBuilder] mounted after an empty snapshot has been
+  /// published. Tabbed pages use this so landing on one empty tab does not
+  /// dispose the surrounding TabBarView and strand the horizontal gesture.
+  final bool preserveContentWhenEmpty;
   final bool? showScrollToTopBtn;
   final bool showPageSizeSelector;
   final List<int> pageSizeOptions;
@@ -22,6 +27,7 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
     required this.contentBuilder,
     this.enableRefresh = true,
     this.enableLoadMore = true,
+    this.preserveContentWhenEmpty = false,
     this.showScrollToTopBtn,
     this.showPageSizeSelector = false,
     this.pageSizeOptions = const [],
@@ -143,11 +149,14 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
                               );
                         return _buildScrollableStatus(isDesktop, constraint, controller, view);
                       }
-                      if (controller.pageEmpty.value) {
+                      if (controller.pageEmpty.value && !preserveContentWhenEmpty) {
                         final view = emptyBuilder != null
                             ? emptyBuilder!(context)
                             : AppStatusView(type: AppStatusType.empty, title: i18n('no_data'), subtitle: '');
                         return _buildScrollableStatus(isDesktop, constraint, controller, view);
+                      }
+                      if (preserveContentWhenEmpty && controller.totalCount.value != null) {
+                        return buildActualContent(context, isDesktop);
                       }
                       return AppStatusView(type: AppStatusType.loading, title: i18n('refresh_loading'), subtitle: '');
                     }
