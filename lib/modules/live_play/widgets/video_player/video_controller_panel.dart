@@ -1638,7 +1638,6 @@ class FavoriteButton extends StatefulWidget {
 
 class _FavoriteButtonState extends State<FavoriteButton> {
   StreamSubscription<dynamic>? subscription;
-  late bool isFavorite = SettingsService.to.fav.isFavorite(widget.controller.room);
 
   @override
   void initState() {
@@ -1662,6 +1661,7 @@ class _FavoriteButtonState extends State<FavoriteButton> {
 
   @override
   Widget build(BuildContext context) {
+    bool isFavorite = SettingsService.to.fav.isFavorite(widget.controller.room);
     return GestureDetector(
       onTap: () {
         widget.controller.enableController();
