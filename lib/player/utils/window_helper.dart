@@ -73,8 +73,17 @@ class WindowHelper {
     _savedSize = await windowManager.getSize();
     _savedPosition = await windowManager.getPosition();
 
-    final display = await screenRetriever.getPrimaryDisplay();
+    final primaryDisplay = await screenRetriever.getPrimaryDisplay();
     final displays = await screenRetriever.getAllDisplays();
+    final normalWindowCenter = Offset(
+      _savedPosition.dx + _savedSize.width / 2,
+      _savedPosition.dy + _savedSize.height / 2,
+    );
+    final display = displays.firstWhere((candidate) {
+      final size = candidate.visibleSize ?? candidate.size;
+      final position = candidate.visiblePosition ?? Offset.zero;
+      return Rect.fromLTWH(position.dx, position.dy, size.width, size.height).contains(normalWindowCenter);
+    }, orElse: () => primaryDisplay);
     final safeSize = display.visibleSize ?? display.size;
     final safeOffset = display.visiblePosition ?? Offset.zero;
 
@@ -105,6 +114,7 @@ class WindowHelper {
     }
     final windowSettings = SettingsService.to.window;
     final hasSavedBounds =
+        SettingsService.to.player.rememberPipPosition.v &&
         windowSettings.windowsPipWidth.v > 0 &&
         windowSettings.windowsPipHeight.v > 0 &&
         windowSettings.windowsPipX.v.isFinite &&
@@ -135,7 +145,9 @@ class WindowHelper {
 
     await windowManager.setSize(bounds.size);
     await windowManager.setPosition(bounds.topLeft);
-    windowSettings.updateWindowsPipGeometry(bounds.size, bounds.topLeft);
+    if (SettingsService.to.player.rememberPipPosition.v) {
+      windowSettings.updateWindowsPipGeometry(bounds.size, bounds.topLeft);
+    }
   }
 
   Future<void> exitPiP() async {
@@ -152,7 +164,11 @@ class WindowHelper {
   }
 
   Future<void> capturePiPGeometry() async {
-    if (!Platform.isWindows || currentMode != WindowLayoutMode.pip) return;
+    if (!Platform.isWindows ||
+        currentMode != WindowLayoutMode.pip ||
+        !SettingsService.to.player.rememberPipPosition.v) {
+      return;
+    }
     final size = await windowManager.getSize();
     final position = await windowManager.getPosition();
     SettingsService.to.window.updateWindowsPipGeometry(size, position);

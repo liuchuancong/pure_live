@@ -24,6 +24,7 @@ class PlayerSettingsController extends GetxController {
 
   final RxBool floatPlay = hiveBool('floatPlay', false);
   final RxBool windowsPipAlwaysOnTop = hiveBool('windowsPipAlwaysOnTop', false);
+  final RxBool rememberPipPosition = hiveBool('rememberPipPosition', true);
   // Kept as an inert compatibility field for old backups. Audio-only is now
   // room-scoped and controlled by the headphone action or ASMR auto-start.
   final RxBool audioOnly = false.obs;
@@ -69,6 +70,7 @@ class PlayerSettingsController extends GetxController {
       'videoHardwareDecoder': videoHardwareDecoder.v,
       'floatPlay': floatPlay.v,
       'windowsPipAlwaysOnTop': windowsPipAlwaysOnTop.v,
+      'rememberPipPosition': rememberPipPosition.v,
       'audioOnly': false,
       'useHardStopOnExit': useHardStopOnExit.v,
     };
@@ -87,6 +89,7 @@ class PlayerSettingsController extends GetxController {
     videoHardwareDecoder.v = json['videoHardwareDecoder'] ?? 'auto';
     floatPlay.v = json['floatPlay'] ?? false;
     windowsPipAlwaysOnTop.v = json['windowsPipAlwaysOnTop'] ?? false;
+    rememberPipPosition.v = json['rememberPipPosition'] ?? true;
     audioOnly.v = false;
     useHardStopOnExit.v = json['useHardStopOnExit'] ?? false;
   }
@@ -106,6 +109,7 @@ class PlayerSettingsController extends GetxController {
       'videoHardwareDecoder': player['videoHardwareDecoder'] ?? 'auto',
       'floatPlay': player['floatPlay'] ?? false,
       'windowsPipAlwaysOnTop': player['windowsPipAlwaysOnTop'] ?? false,
+      'rememberPipPosition': player['rememberPipPosition'] ?? true,
       'audioOnly': false,
       'useHardStopOnExit': player['useHardStopOnExit'] ?? false,
     };

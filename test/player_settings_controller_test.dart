@@ -33,5 +33,15 @@ void main() {
 
       expect(config['windowsPipAlwaysOnTop'], isTrue);
     });
+
+    test('enables Windows mini-player geometry restore for old settings', () {
+      final oldConfig = PlayerSettingsController.extractConfig({'player': <String, dynamic>{}});
+      final optedOutConfig = PlayerSettingsController.extractConfig({
+        'player': <String, dynamic>{'rememberPipPosition': false},
+      });
+
+      expect(oldConfig['rememberPipPosition'], isTrue);
+      expect(optedOutConfig['rememberPipPosition'], isFalse);
+    });
   });
 }

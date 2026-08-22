@@ -61,6 +61,13 @@ class WindowSizeController extends GetxController {
     windowsPipY.v = position.dy;
   }
 
+  void clearWindowsPipGeometry() {
+    windowsPipWidth.v = 0;
+    windowsPipHeight.v = 0;
+    windowsPipX.v = 0;
+    windowsPipY.v = 0;
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'storedWidth': storedWidth.v,
