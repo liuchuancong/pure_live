@@ -16,5 +16,14 @@ class CustomImageCacheManager {
     instance;
   }
 
+  static Future<void> remove(String url) async {
+    if (url.isEmpty) return;
+    await instance.removeFile(url);
+  }
+
+  static Future<void> clear() async {
+    await instance.emptyCache();
+  }
+
   static Future<Directory> cacheDirectory() => IOFileSystem.createDirectory(key);
 }
