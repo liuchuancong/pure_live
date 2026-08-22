@@ -1,7 +1,7 @@
 name: pure_live
 description: 纯粹直播,一款开源的第三方多平台直播聚合播放器.
 publish_to: none
-version: 2.5.3+4075
+version: 2.6.0+4076
 
 environment:
   sdk: ^3.13.0
@@ -25,7 +25,7 @@ dependencies:
   archive: ^4.0.4
   string_similarity: ^2.0.0
   fuzzywuzzy: ^1.1.6
-  scrollview_observer: ^1.26.3
+  scrollview_observer: ^1.27.1
   flutter_reorderable_grid_view: ^5.6.0
   pro_mpack: ^3.2.0
   share_plus: ^13.1.0
@@ -71,7 +71,6 @@ dependencies:
       url: https://github.com/Predidit/media-kit.git
       ref: 994465d9bfca3f39d0b41199d16e7fd93fe97881
       path: ./libs/universal/media_kit_libs_video
-  video_player: ^2.14.0
   # Local AGP 9 Built-in Kotlin patch; source version 1.3.5.
   better_player_plus:
     path: plugins/built_in_kotlin/better_player_plus
@@ -192,7 +191,7 @@ dependencies:
     path: plugins/built_in_kotlin/floating
   flutter_floating: ^2.0.1 # 悬浮窗
   qr_flutter: ^4.1.0 # 二维码生成
-  back_button_interceptor: ^8.0.4 # 返回键拦截
+  back_button_interceptor_plus: ^8.1.1
   easy_localization: ^3.0.8 #多语言
   app_links: ^7.2.1
   scroll_animator: 0.3.0
@@ -258,6 +257,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0 # 代码规范检查
   dmg: ^0.1.7 # macOS安装包打包
   drift_dev: ^2.33.0
+  enven: ^1.3.0
 
 # 应用图标配置
 flutter_icons:

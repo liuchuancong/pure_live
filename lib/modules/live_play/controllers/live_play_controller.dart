@@ -17,17 +17,17 @@ import 'package:pure_live/modules/live_play/states/ui_state.dart';
 import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/modules/live_play/states/room_state.dart';
 import 'package:pure_live/modules/live_play/states/player_state.dart';
-import 'package:back_button_interceptor/back_button_interceptor.dart';
 import 'package:pure_live/modules/live_play/states/live_play_state.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/timer_controller.dart';
+import 'package:back_button_interceptor_plus/back_button_interceptor_plus.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_controller.dart';
-import 'package:pure_live/modules/live_play/controllers/danmaku_presentation_recovery.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_session_host.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_list_view.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
+import 'package:pure_live/modules/live_play/controllers/danmaku_presentation_recovery.dart';
 import 'package:pure_live/modules/live_play/widgets/local_interaction/local_interaction_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/local_interaction/local_message_delivery_queue.dart';
 
@@ -298,14 +298,17 @@ class LivePlayController extends GetxController
     }
   }
 
-  Future<void> getSuperChatMessage(String roomId) async {
+  Future<void> getSuperChatMessage(String roomId, {required String? platform, required int loadEpoch}) async {
+    if (!_isRoomLoadCurrent(loadEpoch, roomId, platform)) return;
+    final liveSite = currentSite.liveSite;
     try {
-      clearSuperChats();
-      final sc = await currentSite.liveSite.getSuperChatMessage(roomId: roomId);
-      if (isClosed || _ownerClosed) return;
+      final sc = await liveSite.getSuperChatMessage(roomId: roomId);
+      if (isClosed || _ownerClosed || !_isRoomLoadCurrent(loadEpoch, roomId, platform)) return;
       addBatchSuperChat(sc);
     } catch (e) {
-      if (!isClosed && !_ownerClosed) addSystemMessage("SC读取失败");
+      if (!isClosed && !_ownerClosed && _isRoomLoadCurrent(loadEpoch, roomId, platform)) {
+        addSystemMessage("SC读取失败");
+      }
     }
   }
 
@@ -619,6 +622,7 @@ class LivePlayController extends GetxController
     final requestedPlatform = state.value.room.detail?.platform;
     final loadEpoch = ++_roomLoadEpoch;
 
+    clearSuperChats();
     updateRoom(isLoading: true, loadError: null);
 
     try {
@@ -627,9 +631,10 @@ class LivePlayController extends GetxController
         platform: state.value.room.detail!.platform!,
       );
 
-      unawaited(getSuperChatMessage(roomId));
-      final liveRoom = fetchedRoom.withAudienceFallbackFrom(state.value.room.detail!);
+      var liveRoom = fetchedRoom.withAudienceFallbackFrom(state.value.room.detail!);
+      liveRoom = liveRoom.fillFromDetail(state.value.room.detail);
       if (!_isRoomLoadCurrent(loadEpoch, roomId, requestedPlatform)) return liveRoom;
+      unawaited(getSuperChatMessage(roomId, platform: requestedPlatform, loadEpoch: loadEpoch));
 
       if (currentSite.id == Sites.iptvSite) {
         updateRoom(detail: liveRoom);

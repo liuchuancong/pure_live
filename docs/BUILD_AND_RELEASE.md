@@ -2,7 +2,7 @@
 
 本仓库采用“本机优先、Actions 手动兜底”的流程，固定使用 Flutter `3.47.0`。`pubspec.lock`、Git 依赖提交和 FFmpeg 产物地址均已固定，便于复现结果。平台范围、CPU/RAM 配额、缓存、互斥和记录格式以 [`BUILD_POLICY.md`](../BUILD_POLICY.md) 为准。
 
-最近完整源码核验：2026-08-22，v2.5.0 build 4072，Windows 11 + Java 25 + Flutter 3.47.0；Built-in Kotlin 审计、Flutter Analyze 0 issue、208 项单元/Widget 测试和 26/26 平台公开接口探测通过。本机优先构建 Android arm64 与 Windows x64，再由显式阶段任务补齐 Linux x64、macOS universal 和 iOS arm64 设备归档。首页有界并发、首次空快照终态、三档刷新率、PiP 流重订阅、横屏本地输入、空闲弹幕调度、播放器控制器释放和有界弹幕缓存均进入自动化回归范围。干净便携目录继续把数据、缓存和临时文件写入 release 同级 `AppData`。
+当前发布候选：2026-08-23，v2.6.0 build 4076，Windows 11 + Java 25 + Flutter 3.47.0。完整门禁在源码冻结后只执行一次，并把 Analyze、测试、26 项平台接口探测及各平台产物结果写入 `STAGE_UPDATE_2_6_0.md`。本机优先构建 Android arm64 与 Windows x64，再由显式阶段任务补齐 Linux x64、macOS universal 和 iOS arm64 设备归档。干净便携目录继续把数据、缓存和临时文件写入 release 同级 `AppData`。
 
 ## 前置环境
 
@@ -140,7 +140,7 @@ python .\tool\interface_probe.py
 
 ```powershell
 PowerShell -ExecutionPolicy Bypass -File .\tool\publish_local_release.ps1 `
-  -Tag v2.5.0 -CreateTag
+  -Tag v2.6.0 -CreateTag
 ```
 
 脚本要求工作树已提交，并通过 GitHub CLI 当前登录身份创建或更新 Release。
@@ -172,7 +172,7 @@ python .\tool\update_releases.py
 1. 更新 `pubspec.yaml`、`assets/version.json` 与 `RELEASE_NOTES.md`。
 2. 运行 `tool/local_ci.ps1 -Scope Full` 一次。
 3. 按本轮发布范围串行运行 `tool/build_local_release.ps1 -Target <目标> -Configuration Release -SkipQuality`，逐个平台核对产物、构建记录和 SHA-256。
-4. 运行 `tool/install_android_local.ps1` 在真机覆盖安装并启动；正式 Release 使用仓库持久签名验证升级链。
+4. 当前任务明确安排设备验收时，再运行 `tool/install_android_local.ps1` 覆盖安装并启动；正式 Release 使用仓库持久签名验证升级链。
 5. 提交并推送 `master`，再运行 `tool/publish_local_release.ps1`。
 6. 在 [维护分支 Releases](https://github.com/wzgrx/pure_live/releases) 核对附件和校验文件。
 

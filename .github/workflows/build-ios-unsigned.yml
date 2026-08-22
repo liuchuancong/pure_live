@@ -1,0 +1,212 @@
+name: Build iOS IPA (TrollStore / ad-hoc)
+
+on:
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: Create a GitHub Release with the unsigned IPA artifacts
+        required: true
+        type: boolean
+        default: false
+      release_tag:
+        description: Release tag (e.g. v2.3.0) – required if create_release is true
+        required: false
+        type: string
+        default: ''
+
+  push:
+    tags:
+      - "stage-ios-*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-unsigned-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: 3.47.0
+
+jobs:
+  build-ios-unsigned:
+    name: Build iOS IPA for TrollStore
+    runs-on: macos-15
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Select Xcode 26 toolchain
+        shell: bash
+        run: |
+          xcode_path="$(find /Applications \
+            -maxdepth 1 \
+            -type d \
+            -name 'Xcode_26*.app' \
+            -print |
+            sort |
+            tail -n 1)"
+
+          test -n "$xcode_path"
+
+          sudo xcode-select \
+            --switch "$xcode_path/Contents/Developer"
+
+          xcodebuild -version
+
+      - name: Install Flutter SDK
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Resolve locked packages
+        run: flutter pub get --enforce-lockfile
+
+      - name: Get version
+        id: version
+        shell: bash
+        run: |
+          FULL_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //; s/[`"'"'"']//g')
+          echo "version=${FULL_VERSION%%+*}" >> "$GITHUB_OUTPUT"
+          echo "artifact_version=${FULL_VERSION/+/-}" >> "$GITHUB_OUTPUT"
+
+      - name: Build unsigned iOS device application
+        run: |
+          flutter build ios \
+            --release \
+            --no-codesign \
+            --dart-define=PURELIVE_BUILD_SOURCE=github-manual
+
+      - name: Locate built Runner.app
+        id: app
+        shell: bash
+        run: |
+          app_path="$(find \
+            build/ios/iphoneos \
+            -maxdepth 1 \
+            -type d \
+            -name 'Runner.app' \
+            -print \
+            -quit)"
+
+          if [[ -z "$app_path" ]]; then
+            echo "Runner.app not found under build/ios/iphoneos"
+            exit 1
+          fi
+
+          echo "app_path=$app_path" >> "$GITHUB_OUTPUT"
+          echo "Found: $app_path"
+
+      # ---------------------------------------------------------------
+      # Ad-hoc 签名（TrollStore / 巨魔 安装必需）
+      # --no-codesign 产出的 app 完全无签名，巨魔会拒装。
+      # 用 codesign -s -（ad-hoc，无需证书）对 app 及其嵌套
+      # 框架/动态库递归签名，使 IPA 可被 TrollStore 安装。
+      # ---------------------------------------------------------------
+      - name: Ad-hoc sign app for TrollStore
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="${{ steps.app.outputs.app_path }}"
+          echo "Ad-hoc signing: $APP"
+
+          # 最小 entitlement：get-task-allow=false（巨魔/自签均无害）
+          ENT="$RUNNER_TEMP/trollstore-entitlements.plist"
+          cat > "$ENT" <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>get-task-allow</key>
+            <false/>
+          </dict>
+          </plist>
+          PLIST
+
+          # 1) 先签所有嵌套可执行体（dylib / framework / appex）
+          #    用显式循环，不依赖 --deep（Xcode 26 已弃用 --deep）
+          find "$APP" -type d \( -name '*.framework' -o -name '*.appex' \) | while read -r item; do
+            base="$item/$(basename "$item" | sed -E 's/\.(framework|appex)$//')"
+            if [ -e "$base" ] && file "$base" 2>/dev/null | grep -q "Mach-O"; then
+              echo "sign nested: $base"
+              codesign -f -s - --entitlements "$ENT" "$base"
+            fi
+          done
+          find "$APP" -type f -name '*.dylib' | while read -r dylib; do
+            echo "sign dylib: $dylib"
+            codesign -f -s - --entitlements "$ENT" "$dylib"
+          done
+
+          # 2) 再签主 app（嵌套体已签好，主 app 直接签即可）
+          codesign -f -s - --entitlements "$ENT" "$APP"
+
+          echo "=== 主 app 签名校验 ==="
+          codesign -dvv "$APP" 2>&1 | head -20
+          echo "=== 整体校验（含嵌套，必须全部 valid） ==="
+          codesign --verify --deep --strict "$APP" && echo "VERIFY OK"
+
+      # ---------------------------------------------------------------
+      # 产物：标准 .ipa 结构（Payload/Runner.app），已 ad-hoc 签名
+      # 可供 TrollStore（巨魔）/ 自签安装器安装。
+      # ---------------------------------------------------------------
+      - name: Package IPA (Payload/Runner.app)
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.version.outputs.artifact_version }}"
+          work_dir="$RUNNER_TEMP/ios-ipa-build"
+          rm -rf "$work_dir"
+          mkdir -p "$work_dir/Payload"
+          cp -R "${{ steps.app.outputs.app_path }}" "$work_dir/Payload/Runner.app"
+          # 关键：IPA 顶层必须是 Payload/ 目录，不能直接是 Runner.app/
+          # 因此进入 work_dir 内部再压缩 Payload 目录。
+          cd "$work_dir"
+          zip -r -q "$OLDPWD/PureLive-${VERSION}-ios-arm64-trollstore.ipa" Payload
+
+      - name: Verify IPA structure & signature
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.version.outputs.artifact_version }}"
+          IPA="PureLive-${VERSION}-ios-arm64-trollstore.ipa"
+          test -f "$IPA"
+          echo "=== IPA 顶层条目 ==="
+          unzip -l "$IPA" | head -10
+          echo "=== 校验 Payload/Runner.app 必须在顶层 ==="
+          unzip -l "$IPA" | grep -qE '^ +[0-9]+ +[0-9-]+ +[0-9:]+ +Payload/Runner.app/$' || {
+            echo "ERROR: IPA 顶层必须是 Payload/Runner.app"
+            exit 1
+          }
+          echo "OK: Payload/Runner.app 结构正确"
+          echo "=== 校验 Runner.app 签名有效（解压后） ==="
+          TMPD="$RUNNER_TEMP/ipa-verify"
+          rm -rf "$TMPD"; mkdir -p "$TMPD"
+          unzip -q "$IPA" -d "$TMPD"
+          codesign --verify --deep --strict "$TMPD/Payload/Runner.app" && echo "SIGNATURE OK"
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pure-live-ios-trollstore-ipa
+          path: |
+            PureLive-*-ios-arm64-trollstore.ipa
+          if-no-files-found: error
+          retention-days: 7
+
+      # ---------------------------------------------------------------
+      # 可选：创建 GitHub Release
+      # ---------------------------------------------------------------
+      - name: Create GitHub Release
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.create_release }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.release_tag }}
+          name: ${{ inputs.release_tag }}
+          prerelease: false
+          generate_release_notes: false
+          fail_on_unmatched_files: false
+          files: |
+            PureLive-*-ios-arm64-trollstore.ipa

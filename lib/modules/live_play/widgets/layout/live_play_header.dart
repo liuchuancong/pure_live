@@ -43,7 +43,7 @@ class LivePlayHeader extends StatelessWidget implements PreferredSizeWidget {
             if (detail == null) {
               return const SizedBox.shrink();
             }
-            final platform = detail.platform?.toUpperCase() ?? '';
+            final platform = detail.platform ?? '';
             final area = detail.area;
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -56,7 +56,7 @@ class LivePlayHeader extends StatelessWidget implements PreferredSizeWidget {
                   style: Theme.of(context).textTheme.labelSmall,
                 ),
                 Text(
-                  area == null || area.isEmpty ? platform : '$platform / $area',
+                  area == null || area.isEmpty ? i18n('site_$platform') : '${i18n("site_$platform")} / $area',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelSmall,
@@ -71,9 +71,18 @@ class LivePlayHeader extends StatelessWidget implements PreferredSizeWidget {
 
   Widget _buildFavoriteButton() {
     return Obx(() {
-      final detail = controller.state.value.room.detail;
+      final roomState = controller.state.value.room;
+      final detail = roomState.detail;
       if (detail == null) {
         return const SizedBox.shrink();
+      }
+      final awaitingCanonicalIdentity =
+          roomState.isLoading && (detail.nick?.trim().isEmpty ?? true) && (detail.title?.trim().isEmpty ?? true);
+      if (awaitingCanonicalIdentity) {
+        return const SizedBox(
+          width: 47,
+          child: Center(child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))),
+        );
       }
       return Padding(
         padding: const EdgeInsets.only(left: 2, right: 5),

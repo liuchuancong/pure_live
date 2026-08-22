@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'dart:io' hide HttpClient;
+
 import 'package:flutter/services.dart';
 import 'package:pure_live/plugins/race_http.dart';
 import 'package:pure_live/core/common/http_client.dart';
@@ -14,7 +15,7 @@ class FontDownloadManager {
 
   Future<String> get _fontRootPath async {
     final directory = await AppPathManager().getDir(AppPathManager.dirDownload);
-    final fontRoot = Directory("${directory.path}/fonts");
+    final fontRoot = Directory("${directory.path}${Platform.pathSeparator}${AppPathManager.fontDirectoryName}");
     if (!await fontRoot.exists()) {
       await fontRoot.create(recursive: true);
     }
@@ -28,44 +29,55 @@ class FontDownloadManager {
 
     int validFileCount = 0;
     await for (final entity in fontDir.list()) {
-      if (entity is File && (entity.path.endsWith('.ttf') || entity.path.endsWith('.otf'))) {
+      final lowerPath = entity.path.toLowerCase();
+      if (entity is File && (lowerPath.endsWith('.ttf') || lowerPath.endsWith('.otf')) && await entity.length() > 0) {
         validFileCount++;
       }
     }
     return validFileCount >= 1;
   }
 
-  Future<void> loadFont(String fontId, {String fileName = ''}) async {
+  Future<bool> loadFont(String fontId, {String fileName = ''}) async {
     try {
       final root = await _fontRootPath;
       final fontDir = Directory("$root/$fontId");
-      if (!await fontDir.exists()) return;
+      if (!await fontDir.exists()) return false;
 
       final loader = FontLoader(fontId);
       bool containsValidFonts = false;
-
+      final files = <File>[];
       await for (final entity in fontDir.list()) {
-        if (entity is File && (entity.path.endsWith('.ttf') || entity.path.endsWith('.otf'))) {
-          if (fileName.isNotEmpty) {
-            final currentName = entity.path.split(Platform.pathSeparator).last;
-            if (currentName == fileName) {
-              loader.addFont(entity.readAsBytes().then(ByteData.sublistView));
-              containsValidFonts = true;
-              break;
-            }
-          } else {
+        if (entity is File) {
+          final lowerPath = entity.path.toLowerCase();
+          if ((lowerPath.endsWith('.ttf') || lowerPath.endsWith('.otf')) && await entity.length() > 0) {
+            files.add(entity);
+          }
+        }
+      }
+      files.sort((left, right) => left.path.compareTo(right.path));
+      for (final entity in files) {
+        if (fileName.isNotEmpty) {
+          final currentName = entity.path.split(Platform.pathSeparator).last;
+          if (currentName == fileName) {
             loader.addFont(entity.readAsBytes().then(ByteData.sublistView));
             containsValidFonts = true;
+            break;
           }
+        } else {
+          loader.addFont(entity.readAsBytes().then(ByteData.sublistView));
+          containsValidFonts = true;
         }
       }
 
       if (containsValidFonts) {
         await loader.load();
         log('FontLoader registered family: $fontId');
+        return true;
       }
+      return false;
     } catch (e) {
       log("Font registration sequence failed: $e");
+      return false;
     }
   }
 
@@ -111,8 +123,7 @@ class FontDownloadManager {
               fastestUrl!,
               file.path,
               header: {
-                'User-Agent':
-                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
               },
             );
 
@@ -136,7 +147,6 @@ class FontDownloadManager {
       }
 
       onStateChanged(DownloadState.downloaded);
-      await loadFont(fontId);
       return true;
     } catch (e, s) {
       log("Font bundle sync sequence aborted: $e, retry count exceeded $s");

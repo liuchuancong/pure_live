@@ -1,21 +1,45 @@
 {
-  "version": "2.5.3",
-  "build_number": 4075,
-  "version_num": 2054375,
+  "version": "2.6.0",
+  "build_number": 4076,
+  "version_num": 2064076,
   "android_abis": [
     "arm64-v8a"
   ],
-  "version_desc": "v2.5.3 直播间导航与横屏小窗快捷更新 build 4075\n- 竖屏直播间的弹幕列表、醒目留言、弹幕设置、屏蔽管理改为固定等宽标签，不再整行左右漂移。\n- 标签内容仍可在首尾边界内左右切换，保留原有页面滑动操作。\n- Android 横屏全屏左上角加入小窗快捷图标，与竖屏复用同一 PiP 入口和生命周期。\n- 新增导航约束与横屏入口回归测试，217 项单元与 Widget 测试全部通过。\n",
+  "version_desc": "- 同步上游至 db3460f8，修复关注、房间详情补全与弹幕模板状态。\n- 修复多文件字体/弹幕字体重启失效、醒目留言实时刷新及切换房间越界。\n- 修复播放器强制销毁后的黑屏转圈，优化 Windows 高 DPI 视频纹理、首页图片缓存与长时间资源占用。\n- iOS 默认使用可显示画面的 IJK 内核并补齐设备刷新率检测；更新 scrollview_observer 1.27.1。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.5.3",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.6.0",
   "platforms": {
     "windows": {
-      "version": "2.5.0",
-      "build_number": 4072,
-      "version_num": 2054072,
-      "version_desc": "v2.5.0 首页刷新与高刷策略稳定版 build 4072\n- 首页收藏核验改为 4 路有界异步工作池，慢请求不再阻塞同批后续房间；结果完整后一次性发布，减少首屏等待和卡片跳动。\n- Android 新增省电、均衡、高性能三档刷新率；默认省电，均衡仅在交互期间请求设备最高刷新率，高性能在前台持续请求最高刷新率。\n- Windows 视频纹理按可见物理尺寸有界输出，避免高分辨率源在小窗口持续分配超大纹理；分区卡片和滚动行为同步上游修复。\n- 更新 ffmpeg_kit_extended_flutter、flutter_color，复核 dynamic_color 1.9.0 兼容边界，并同步上游至 b84a847d；本地门禁与全平台构建状态以 Release 清单为准。\n",
+      "version": "2.6.0",
+      "build_number": 4076,
+      "version_num": 2064076,
+      "version_desc": "- 同步上游至 db3460f8，修复关注、房间详情补全与弹幕模板状态。\n- 修复多文件字体/弹幕字体重启失效、醒目留言实时刷新及切换房间越界。\n- 修复播放器强制销毁后的黑屏转圈，优化 Windows 高 DPI 视频纹理、首页图片缓存与长时间资源占用。\n- iOS 默认使用可显示画面的 IJK 内核并补齐设备刷新率检测；更新 scrollview_observer 1.27.1。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.5.0"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.6.0"
+    },
+    "linux": {
+      "version": "2.6.0",
+      "build_number": 4076,
+      "version_num": 2064076,
+      "version_desc": "- 同步上游至 db3460f8，修复关注、房间详情补全与弹幕模板状态。\n- 修复多文件字体/弹幕字体重启失效、醒目留言实时刷新及切换房间越界。\n- 修复播放器强制销毁后的黑屏转圈，优化 Windows 高 DPI 视频纹理、首页图片缓存与长时间资源占用。\n- iOS 默认使用可显示画面的 IJK 内核并补齐设备刷新率检测；更新 scrollview_observer 1.27.1。",
+      "prerelease": false,
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.6.0"
+    },
+    "macos": {
+      "version": "2.6.0",
+      "build_number": 4076,
+      "version_num": 2064076,
+      "version_desc": "- 同步上游至 db3460f8，修复关注、房间详情补全与弹幕模板状态。\n- 修复多文件字体/弹幕字体重启失效、醒目留言实时刷新及切换房间越界。\n- 修复播放器强制销毁后的黑屏转圈，优化 Windows 高 DPI 视频纹理、首页图片缓存与长时间资源占用。\n- iOS 默认使用可显示画面的 IJK 内核并补齐设备刷新率检测；更新 scrollview_observer 1.27.1。",
+      "prerelease": false,
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.6.0"
+    },
+    "ios": {
+      "version": "2.6.0",
+      "build_number": 4076,
+      "version_num": 2064076,
+      "version_desc": "- 同步上游至 db3460f8，修复关注、房间详情补全与弹幕模板状态。\n- 修复多文件字体/弹幕字体重启失效、醒目留言实时刷新及切换房间越界。\n- 修复播放器强制销毁后的黑屏转圈，优化 Windows 高 DPI 视频纹理、首页图片缓存与长时间资源占用。\n- iOS 默认使用可显示画面的 IJK 内核并补齐设备刷新率检测；更新 scrollview_observer 1.27.1。",
+      "prerelease": false,
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.6.0"
     }
   }
 }

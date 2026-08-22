@@ -153,7 +153,6 @@ class RecordActionButton extends StatelessWidget {
         // Let the dialog reverse transition finish before the native video
         // route starts another transition. Starting both animations in the
         // same frame can race the platform video surface on Windows/Android.
-        await Future<void>.delayed(const Duration(milliseconds: 220));
         await onOpenRecordCenter();
         break;
     }

@@ -2,11 +2,11 @@ import 'dart:io';
 import 'dart:async';
 
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/common/global/initialized.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
+import 'package:pure_live/routes/navigation_observer.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/routes/route_observer_controller.dart';
@@ -137,7 +137,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
             // The localized title is rendered by CustomTitleBar. A stable
             // application title avoids asking EasyLocalization for a key
             // before its delegate has completed the first load.
-            title: 'PureLive',
+            title: i18n('app_name'),
             scrollBehavior: MyCustomScrollBehavior(),
             debugShowCheckedModeBanner: false,
             themeMode: AppConsts.themeModes[SettingsService.to.theme.themeModeName.v]!,
@@ -160,7 +160,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
               ),
             ),
             locale: context.locale,
-            navigatorObservers: [FlutterSmartDialog.observer, BackButtonObserver()],
+            navigatorObservers: [FlutterSmartDialog.observer, LiveRouteObserver()],
             builder: FlutterSmartDialog.init(
               builder: (context, child) {
                 Widget resultWidget = child ?? const SizedBox.shrink();

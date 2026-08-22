@@ -1,13 +1,8 @@
 import 'dart:io';
 import 'dart:async';
-import 'dart:developer';
 
-import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/utils.dart';
-import 'package:pure_live/player/utils/fullscreen.dart';
-import 'package:pure_live/common/global/platform_utils.dart';
-import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 
 /// APP页面跳转封装
 /// * 需要参数的页面都应使用此类
@@ -76,79 +71,6 @@ class AppNavigator {
       }
     } else {
       await Get.toNamed(RoutePath.kBiliBiliQRLogin);
-    }
-  }
-}
-
-class BackButtonObserver extends RouteObserver<PageRoute<dynamic>> {
-  @override
-  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
-    super.didPop(route, previousRoute);
-    if (route.settings.name == RoutePath.kLivePlay) {
-      try {
-        final livePlayController = Get.find<LivePlayController>();
-        final state = livePlayController.state.value;
-        final suppressAppFloating = livePlayController.takeSuppressAppFloatingOnNextPop();
-        livePlayController.updateUI(displayVideoLayer: false);
-
-        // 更新房间状态
-        livePlayController.updateRoom(success: false);
-
-        final manager = GlobalPlayerService.instance.player;
-        if (SettingsService.to.player.floatPlay.v && !suppressAppFloating) {
-          // Route.completed fires after the reverse transition and overlay
-          // entries are removed. A fixed delay raced on high-refresh devices
-          // and briefly mounted the room and floating player at the same time.
-          final routeUnmounted = route is TransitionRoute<dynamic>
-              ? route.completed.then<void>((_) {})
-              : SchedulerBinding.instance.endOfFrame;
-          livePlayController.prepareAppFloating(routeUnmounted: routeUnmounted);
-          unawaited(
-            routeUnmounted.then((_) {
-              manager.showAppFloating();
-            }),
-          );
-        } else {
-          // 清理播放器
-          final videoController = state.player.videoController;
-          if (videoController != null) {
-            videoController.clearListener();
-          }
-
-          // The same close path must stop AudioService and the native player.
-          // Audio-only previously bypassed LiveAudioService.stop(), leaving a
-          // stale background player attached during the next room entry.
-          unawaited(manager.close());
-        }
-        if (PlatformUtils.isMobile) {
-          WindowService().doExitFullScreen();
-        }
-      } catch (e) {
-        log("BackButtonObserver Error: ${e.toString()}");
-      }
-    } else if (route.settings.name == RoutePath.kRecordPage) {
-      if (Get.isRegistered<LivePlayController>()) {
-        final livePlayController = Get.find<LivePlayController>();
-        Future.delayed(Duration(milliseconds: 10)).then((_) {
-          livePlayController.updateUI(displayVideoLayer: true);
-        });
-      }
-    }
-  }
-
-  @override
-  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
-    super.didPush(route, previousRoute);
-    if (route.settings.name == RoutePath.kLivePlay) {
-      final manager = GlobalPlayerService.instance.player;
-      unawaited(manager.closeAppFloating());
-    } else if (route.settings.name == RoutePath.kRecordPage) {
-      if (Get.isRegistered<LivePlayController>()) {
-        final livePlayController = Get.find<LivePlayController>();
-        Future.delayed(Duration.zero).then((_) {
-          livePlayController.updateUI(displayVideoLayer: false);
-        });
-      }
     }
   }
 }

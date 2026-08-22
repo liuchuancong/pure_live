@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:markdown_widget/widget/all.dart';
@@ -41,9 +42,8 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> with SingleTick
   Future<void> loadReleaseHistory({bool forceRefresh = false}) async {
     if (allReleased.isNotEmpty && !forceRefresh) return;
     if (historyLoading.value) return;
-
     try {
-      GitHubMirror mirror = GitHubMirror(owner: 'liuchuancong', repo: 'pure_live', branch: 'master');
+      final mirror = GitHubMirror(owner: 'liuchuancong', repo: 'pure_live', branch: 'master');
       historyLoading.value = true;
       historyError.value = false;
       final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -51,24 +51,29 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> with SingleTick
           ? [mirror.rawUrl('assets/releases.json')]
           : mirror.mirrors('assets/releases.json');
       final urls = sourceUrls.map((e) => '$e?ts=$timestamp').toList();
-      String? url = await RaceHttp.findFastestUrl(urls);
+      final url = await RaceHttp.findFastestUrl(urls);
       if (url == null) {
-        throw Exception("无法获取版本历史");
+        throw Exception('无法获取版本历史');
       }
-      var result = await HttpClient.instance.getJson(
+      final result = await HttpClient.instance.getJson(
         url,
         header: {
-          'User-Agent':
-              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.51',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.51',
           'Accept': 'application/json',
         },
       );
-      final List rawList = result is String ? json.decode(result) : (result ?? []);
-
-      allReleased.value = rawList.map((e) => ReleaseModel.fromJson(e)).toList();
-      allReleased.value.sort((a, b) => b.date.compareTo(a.date));
-    } catch (e, s) {
-      debugPrintStack(stackTrace: s);
+      final decoded = result is String ? json.decode(result) : result;
+      if (decoded is! Map<String, dynamic>) {
+        throw const FormatException('版本历史数据格式错误');
+      }
+      final releases = decoded['releases'];
+      if (releases is! List) {
+        throw const FormatException('版本历史数据缺少 releases');
+      }
+      final releaseList = releases.map((e) => ReleaseModel.fromJson(e)).toList();
+      releaseList.sort((a, b) => b.date.compareTo(a.date));
+      allReleased.value = releaseList;
+    } catch (e) {
       historyError.value = true;
     } finally {
       historyLoading.value = false;

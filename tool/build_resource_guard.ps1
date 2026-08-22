@@ -39,14 +39,25 @@ function Get-PureLiveActiveHeavyProcess {
         if (-not $before.ContainsKey($id)) { continue }
         $current = $after[$id]
         $cpuDelta = [Math]::Max(0.0, $current.CpuSeconds - $before[$id].CpuSeconds)
-        if ($cpuDelta -lt $CpuSecondsThreshold -and $current.Name -ne 'rg') { continue }
-
         $commandLine = $null
         try {
             $commandLine = (Get-CimInstance Win32_Process -Filter "ProcessId = $id" -ErrorAction Stop).CommandLine
         } catch {
             $commandLine = $null
         }
+        $isLongLivedDaemon = $commandLine -match
+            '(org\.gradle\.launcher\.daemon\.bootstrap\.GradleDaemon|org\.jetbrains\.kotlin\.daemon\.KotlinCompileDaemon|analysis_server\.dart\.snapshot)'
+        $isBuildClient = $commandLine -match
+            '(GradleWrapperMain|org\.gradle\.launcher\.GradleMain|GradleWorkerMain|flutter_tools\.snapshot.+\b(build|test|analyze|pub)\b|\bdart(?:\.exe)?.+\b(test|analyze|compile|run)\b)'
+
+        # Gradle, Kotlin and Dart analysis daemons intentionally remain alive
+        # between incremental builds. Their health checks and housekeeping can
+        # cross the generic CPU threshold even when no build owns them. Keep
+        # the cache-warm daemons, but only classify them as heavy when they are
+        # doing sustained work; explicit build clients are active immediately.
+        if ($isLongLivedDaemon -and $cpuDelta -lt 1.25) { continue }
+        if ($cpuDelta -lt $CpuSecondsThreshold -and $current.Name -ne 'rg' -and -not $isBuildClient) { continue }
+
         $active += [pscustomobject]@{
             Id = $id
             Name = $current.Name

@@ -6,12 +6,12 @@ import 'package:pure_live/common/widgets/pure_live_scroll_controller.dart';
 import 'package:scroll_animator/scroll_animator.dart';
 
 void main() {
-  test('MyCustomScrollBehavior supports trackpad and mouse drag scrolling', () {
+  test('MyCustomScrollBehavior keeps wheel scrolling separate from mouse drag', () {
     final behavior = MyCustomScrollBehavior();
 
     expect(behavior.dragDevices, contains(PointerDeviceKind.trackpad));
     expect(behavior.dragDevices, contains(PointerDeviceKind.invertedStylus));
-    expect(behavior.dragDevices, contains(PointerDeviceKind.mouse));
+    expect(behavior.dragDevices, isNot(contains(PointerDeviceKind.mouse)));
     expect(behavior.dragDevices, contains(PointerDeviceKind.touch));
   });
 

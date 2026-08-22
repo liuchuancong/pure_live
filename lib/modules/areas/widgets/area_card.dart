@@ -87,7 +87,7 @@ class _AreaCardState extends State<AreaCard> {
           mainAxisSize: MainAxisSize.min,
           children: [
             AspectRatio(
-              aspectRatio: 0.9,
+              aspectRatio: 1.0,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(15),
                 child: ColoredBox(

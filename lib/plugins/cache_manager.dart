@@ -16,5 +16,33 @@ class CustomImageCacheManager {
     instance;
   }
 
+  static Future<void> remove(String url) async {
+    final fileInfo = await instance.getFileFromCache(url);
+    if (fileInfo == null) {
+      return;
+    }
+    final file = fileInfo.file;
+    for (var i = 0; i < 5; i++) {
+      try {
+        if (!await file.exists()) {
+          return;
+        }
+        await file.delete();
+        return;
+      } on PathAccessException catch (_) {
+        if (i == 4) {
+          return;
+        }
+        await Future.delayed(Duration(milliseconds: 100 * (i + 1)));
+      } catch (e) {
+        return;
+      }
+    }
+  }
+
+  static Future<void> clear() async {
+    await instance.emptyCache();
+  }
+
   static Future<Directory> cacheDirectory() => IOFileSystem.createDirectory(key);
 }

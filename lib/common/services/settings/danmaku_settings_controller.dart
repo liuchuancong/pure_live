@@ -1,7 +1,7 @@
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
-import 'package:pure_live/common/services/display_mode_service.dart';
 import 'package:pure_live/common/models/app_refresh_rate_mode.dart';
+import 'package:pure_live/common/services/display_mode_service.dart';
 
 class DanmakuSettingsController extends GetxController {
   static const bool defaultEnablePipDanmaku = true;

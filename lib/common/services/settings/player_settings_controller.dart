@@ -1,10 +1,16 @@
+import 'package:flutter/foundation.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 
+@visibleForTesting
+String defaultVideoPlayerKeyForPlatform(TargetPlatform platform) => platform == TargetPlatform.iOS ? 'ijk' : 'mpv';
+
+String get _defaultVideoPlayerKey => defaultVideoPlayerKeyForPlatform(defaultTargetPlatform);
+
 class PlayerSettingsController extends GetxController {
   final RxInt videoFitIndex = hiveInt('videoFitIndex', 0);
-  final RxString videoPlayerKey = hiveString('videoPlayerKey', 'mpv');
+  final RxString videoPlayerKey = hiveString('videoPlayerKey', _defaultVideoPlayerKey);
 
   final RxString preferResolution = hiveString('preferResolution', PlayerConsts.resolutions.first);
   final RxString preferResolutionCellular = hiveString('preferResolutionCellular', PlayerConsts.resolutions.first);
@@ -70,7 +76,7 @@ class PlayerSettingsController extends GetxController {
 
   void fromJson(Map<String, dynamic> json) {
     videoFitIndex.v = json['videoFitIndex'] ?? 0;
-    videoPlayerKey.v = json['videoPlayerKey'] ?? 'mpv';
+    videoPlayerKey.v = json['videoPlayerKey'] ?? _defaultVideoPlayerKey;
     preferResolution.v = json['preferResolution'] ?? PlayerConsts.resolutions.first;
     preferResolutionCellular.v = json['preferResolutionCellular'] ?? PlayerConsts.resolutions.first;
     enableCodec.v = json['enableCodec'] ?? true;
@@ -89,7 +95,7 @@ class PlayerSettingsController extends GetxController {
     final player = rootConfig?['player'] as Map<String, dynamic>? ?? {};
     return {
       'videoFitIndex': player['videoFitIndex'] ?? 0,
-      'videoPlayerKey': player['videoPlayerKey'] ?? 'mpv',
+      'videoPlayerKey': player['videoPlayerKey'] ?? _defaultVideoPlayerKey,
       'preferResolution': player['preferResolution'] ?? PlayerConsts.resolutions.first,
       'preferResolutionCellular': player['preferResolutionCellular'] ?? PlayerConsts.resolutions.first,
       'enableCodec': player['enableCodec'] ?? true,

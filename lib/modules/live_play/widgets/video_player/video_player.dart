@@ -33,15 +33,12 @@ class _VideoPlayerState extends State<VideoPlayer> with WidgetsBindingObserver {
       final audioOnly = controller.audioOnlyState.value;
       final state = controller.livePlayController.state.value;
       final displayVideo = state.ui.displayVideoLayer;
+
       return displayVideo
           ? GlobalPlayerService.instance.player.getVideoWidget(
               SettingsService.to.player.videoFitIndex.v,
               fitList: SettingsService.to.player.videoFitArray,
               trackPipSource: true,
-              // The route controller updates this optimistically before Android's
-              // background-service synchronization. Driving presentation from the
-              // route state prevents a transient native/player state from leaving a
-              // black surface on top of the audio-mode UI.
               audioOnlyOverride: audioOnly,
               controls: VideoControllerPanel(controller: controller),
             )
