@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
+
 
 class PlayerSettingsController extends GetxController {
   final RxInt videoFitIndex = hiveInt('videoFitIndex', 0);
@@ -18,6 +20,11 @@ class PlayerSettingsController extends GetxController {
 
   final RxBool floatPlay = hiveBool('floatPlay', false);
   final RxBool windowsPipAlwaysOnTop = hiveBool('windowsPipAlwaysOnTop', false);
+  // PiP position is display-specific and should not be synced across devices or displays.
+  // PiP positions are stored separately by display ID because multi-monitor setups may use different screen coordinates.
+  // PiP position is display-specific and should not be synced across devices or displays.
+  final RxBool rememberPipPosition = hiveBool('rememberPipPosition', true);
+  final RxString pipWindowPositions = hiveString('pipWindowPositions', '{}');
   // Kept as an inert compatibility field for old backups. Audio-only is now
   // room-scoped and controlled by the headphone action or ASMR auto-start.
   final RxBool audioOnly = false.obs;
@@ -35,6 +42,60 @@ class PlayerSettingsController extends GetxController {
     if (PlayerConsts.resolutions.contains(resolution)) {
       preferResolutionCellular.v = resolution;
     }
+  }
+
+  Future<void> savePipWindowPosition(String displayId, Offset position) async {
+    if (!rememberPipPosition.value) {
+      return;
+    }
+
+    Map<String, dynamic> data;
+
+    try {
+      final decoded = jsonDecode(pipWindowPositions.value);
+      data = decoded is Map ? Map<String, dynamic>.from(decoded) : {};
+    } catch (_) {
+      data = {};
+    }
+
+    data[displayId] = {'x': position.dx, 'y': position.dy};
+
+    pipWindowPositions.v = jsonEncode(data);
+  }
+
+  Offset? getPipWindowPosition(String displayId) {
+    if (!rememberPipPosition.value) {
+      return null;
+    }
+
+    try {
+      final decoded = jsonDecode(pipWindowPositions.value);
+
+      if (decoded is! Map) {
+        return null;
+      }
+
+      final value = decoded[displayId];
+
+      if (value is! Map) {
+        return null;
+      }
+
+      final x = value['x'];
+      final y = value['y'];
+
+      if (x is! num || y is! num) {
+        return null;
+      }
+
+      return Offset(x.toDouble(), y.toDouble());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void clearPipWindowPositions() {
+    pipWindowPositions.v = '{}';
   }
 
   void resetMpvPlayerSettings() {
