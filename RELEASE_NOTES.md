@@ -35,7 +35,7 @@ v2.5.0 build 4072 聚焦首页首刷速度、设备刷新率分档、Windows 视
 - Android `arm64-v8a` 正式安装包。
 - Windows x64 便携包与可选安装程序。
 - Linux x64、macOS Universal、iOS arm64 设备归档由对应系统的阶段构建补齐。
-- 同一 Release 提供 `SHA256SUMS.txt` 与 `build-metadata.json`，记录源码提交、签名状态和平台来源。
+- 同一 Release 提供 `SHA256SUMS.txt` 与 `BUILD_METADATA.json`，记录源码提交、签名状态和平台来源。
 
 完整设计和验收边界见 [v2.5.0 阶段稳定版](docs/STAGE_UPDATE_2_5_0.md)。
 
