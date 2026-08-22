@@ -17,14 +17,14 @@ class FavoriteFloatingButton extends StatelessWidget {
       }
       return;
     }
-
+    // Get.back() not only closes the dialog but may also pop the current page.
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
         title: Text(i18n('unfollow')),
         content: Text(i18n('unfollow_message', args: {'name': room.nick ?? ''})),
         actions: [
-          TextButton(onPressed: () => Get.back(result: false), child: Text(i18n('cancel'))),
-          ElevatedButton(onPressed: () => Get.back(result: true), child: Text(i18n('confirm'))),
+          TextButton(onPressed: () => Navigator.of(Get.context!).pop(false), child: Text(i18n('cancel'))),
+          TextButton(onPressed: () => Navigator.of(Get.context!).pop(true), child: Text(i18n('confirm'))),
         ],
       ),
     );
