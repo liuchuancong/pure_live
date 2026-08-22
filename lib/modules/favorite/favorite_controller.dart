@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:developer' as developer;
-
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:pure_live/modules/tags/live_tag.dart';
+import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
 import 'package:pure_live/modules/favorite/favorite_startup_policy.dart';
 import 'package:pure_live/common/services/settings/refresh_config_controller.dart';
+
 
 class FavoriteController extends LocalReactivePageController<LiveRoom>
     with GetTickerProviderStateMixin, WidgetsBindingObserver {
@@ -33,7 +33,8 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   DateTime? _lastFullRefreshAt;
   final isVerifyingFavorites = false.obs;
   Future<void>? _startupRefresh;
-
+  final Map<String, DateTime> _refreshFailureCooldown = {};
+  static const Duration _refreshFailureRetryAfter = Duration(minutes: 5);
   // Treat returning to the app as a fresh launch after a short debounce.  A
   // two-minute window left just-ended rooms visibly "live" when users reopened
   // the app from Recents; 15 seconds still suppresses duplicate lifecycle
@@ -620,6 +621,12 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   }
 
   Future<LiveRoom?> _refreshOneRoom(LiveRoom room, Map<String, LiveSite> siteCache) async {
+    final key = _roomKey(room);
+    final failedAt = _refreshFailureCooldown[key];
+    if (failedAt != null && DateTime.now().difference(failedAt) < _refreshFailureRetryAfter) {
+      return null;
+    }
+
     try {
       final platform = room.normalizedPlatformId;
       final roomId = room.normalizedRoomId;
@@ -627,16 +634,24 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
       final operation = liveSite is LiveSiteRoomRefresher
           ? (liveSite as LiveSiteRoomRefresher).getRoomDetailForRefresh(roomId: roomId, platform: platform)
           : liveSite.getRoomDetail(roomId: roomId, platform: platform);
-      return await operation.timeout(_roomRefreshTimeout);
+      final result = await operation.timeout(_roomRefreshTimeout);
+      _refreshFailureCooldown.remove(key);
+      return result;
     } catch (error, stackTrace) {
-      // One platform/room failure must not discard successful updates from the
-      // rest of the batch.
-      developer.log(
-        'Favorite room refresh failed: ${_roomKey(room)}',
-        name: 'FavoriteController',
-        error: error,
-        stackTrace: stackTrace,
-      );
+      final key = _roomKey(room);
+      _refreshFailureCooldown[key] = DateTime.now();
+
+      if (error is FormatException && error.message == 'Huya room metadata is unavailable') {
+        developer.log('Favorite room unavailable: $key', name: 'FavoriteController');
+      } else {
+        developer.log(
+          'Favorite room refresh failed: $key',
+          name: 'FavoriteController',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+
       return null;
     }
   }
