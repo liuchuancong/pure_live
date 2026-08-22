@@ -34,6 +34,7 @@ import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/utils/pip_window_widget.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
+import 'package:pure_live/player/adapters/video_player_adapter.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
@@ -759,7 +760,15 @@ class PlayerManager {
     await _currentPlayer?.setVolume(volume.clamp(0.0, 1.0));
   }
 
-  void changeVideoFit(int index) => videoFitIndex.value = index;
+  void changeVideoFit(int index) {
+    videoFitIndex.value = index;
+    if (_currentPlayer is BetterPlayerAdapter) {
+      var player = _currentPlayer as BetterPlayerAdapter;
+      var fitList = SettingsService.to.player.videoFitArray;
+      player.betterPlayerController.setOverriddenFit(fitList[index]);
+      player.betterPlayerController.retryDataSource();
+    }
+  }
 
   Future<void> enablePip() async {
     if (PlatformUtils.isAndroid) {
@@ -1323,21 +1332,7 @@ class PlayerManager {
                         Positioned.fill(
                           child: Offstage(
                             offstage: showAudioOnly,
-                            child: Container(
-                              color: Colors.black,
-                              child: FittedBox(
-                                fit: boxFit,
-                                clipBehavior: Clip.hardEdge,
-                                child: StreamBuilder<List<int?>>(
-                                  stream: CombineLatestStream.list([width, height]),
-                                  builder: (context, snapshot) {
-                                    final vW = snapshot.data?[0]?.toDouble() ?? 1920.0;
-                                    final vH = snapshot.data?[1]?.toDouble() ?? 1080.0;
-                                    return SizedBox(width: vW, height: vH, child: player.getVideoWidget());
-                                  },
-                                ),
-                              ),
-                            ),
+                            child: Container(color: Colors.black, child: _buildVideoWidget(player, boxFit)),
                           ),
                         ),
                         if (showAudioOnly) Positioned.fill(child: buildAudioOnlyUI(context, currentFloatRoom)),
@@ -1357,6 +1352,35 @@ class PlayerManager {
         ),
       );
     });
+  }
+
+  Widget _buildVideoWidget(UnifiedPlayer player, boxFit) {
+    if (player.engine == PlayerEngine.exo) {
+      return player.getVideoWidget();
+    }
+
+    return FittedBox(
+      fit: boxFit,
+      clipBehavior: Clip.hardEdge,
+      child: StreamBuilder<List<int?>>(
+        stream: CombineLatestStream.list([width, height]),
+        builder: (context, snapshot) {
+          final data = snapshot.data;
+
+          if (data == null || data.length < 2 || data[0] == null || data[1] == null || data[0]! <= 0 || data[1]! <= 0) {
+            return const SizedBox.shrink();
+          }
+
+          final videoWidth = data[0]!.toDouble();
+          final videoHeight = data[1]!.toDouble();
+
+          const baseHeight = 1080.0;
+          final baseWidth = baseHeight * videoWidth / videoHeight;
+
+          return SizedBox(width: baseWidth, height: baseHeight, child: player.getVideoWidget());
+        },
+      ),
+    );
   }
 
   Widget _buildPlaceholder() {
