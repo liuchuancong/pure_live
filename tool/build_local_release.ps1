@@ -64,6 +64,35 @@ function Assert-PureLiveCommandSucceeded {
     if ($ExitCode -ne 0) { throw "$Label exited with code $ExitCode." }
 }
 
+function Invoke-PureLiveLoggedFlutter {
+    param(
+        [Parameter(Mandatory = $true)][string[]] $Arguments,
+        [Parameter(Mandatory = $true)][string] $LogPath
+    )
+
+    # A native warning written to stderr is diagnostic output, not a PowerShell
+    # failure. Keep it visible and logged, then decide success from LASTEXITCODE.
+    $previousErrorActionPreference = $ErrorActionPreference
+    $nativePreferenceVariable = Get-Variable PSNativeCommandUseErrorActionPreference -ErrorAction SilentlyContinue
+    $previousNativeCommandPreference = if ($nativePreferenceVariable) {
+        $PSNativeCommandUseErrorActionPreference
+    } else {
+        $null
+    }
+    try {
+        $ErrorActionPreference = 'Continue'
+        if ($nativePreferenceVariable) { $PSNativeCommandUseErrorActionPreference = $false }
+        & $flutterw @Arguments 2>&1 | Tee-Object -FilePath $LogPath | Out-Host
+        $exitCode = $LASTEXITCODE
+    } finally {
+        if ($nativePreferenceVariable) {
+            $PSNativeCommandUseErrorActionPreference = $previousNativeCommandPreference
+        }
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+    return $exitCode
+}
+
 function Test-AndroidReleaseSigning {
     $propertiesPath = Join-Path $repoRoot 'android\key.properties'
     if (-not (Test-Path -LiteralPath $propertiesPath)) { return $false }
@@ -139,8 +168,7 @@ try {
             '--target-platform', 'android-arm64',
             '--dart-define=PURELIVE_BUILD_SOURCE=local'
         )
-        & $flutterw @androidArgs 2>&1 | Tee-Object -FilePath $commandLog
-        $buildExitCode = $LASTEXITCODE
+        $buildExitCode = Invoke-PureLiveLoggedFlutter -Arguments $androidArgs -LogPath $commandLog
         Assert-PureLiveCommandSucceeded 'Android arm64 build' -ExitCode $buildExitCode
 
         $apkSource = Join-Path $repoRoot "build\app\outputs\flutter-apk\app-arm64-v8a-$configurationLower.apk"
@@ -162,8 +190,7 @@ try {
             'build', 'windows', "--$configurationLower",
             '--dart-define=PURELIVE_BUILD_SOURCE=local'
         )
-        & $flutterw @windowsArgs 2>&1 | Tee-Object -FilePath $commandLog
-        $buildExitCode = $LASTEXITCODE
+        $buildExitCode = Invoke-PureLiveLoggedFlutter -Arguments $windowsArgs -LogPath $commandLog
         Assert-PureLiveCommandSucceeded 'Windows x64 build' -ExitCode $buildExitCode
 
         $windowsSource = Join-Path $repoRoot "build\windows\x64\runner\$configurationDirectory"
@@ -231,6 +258,9 @@ try {
     $status = 'succeeded'
 } catch {
     $failureMessage = $_.Exception.Message
+    if ([string]::IsNullOrWhiteSpace($failureMessage)) {
+        $failureMessage = ($_ | Out-String).Trim()
+    }
     throw
 } finally {
     $stopwatch.Stop()

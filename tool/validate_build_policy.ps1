@@ -79,9 +79,22 @@ foreach ($marker in @(
     "[ValidateSet('Debug', 'Release')]",
     '$gradleWorkers = if ($DedicatedBuild) { 20 } else { 16 }',
     'Enter-PureLiveHeavyTaskSlot',
+    'Invoke-PureLiveLoggedFlutter',
+    'PSNativeCommandUseErrorActionPreference',
     'automatic_follow_up = $false'
 )) {
     if (-not $buildScript.Contains($marker)) { throw "Build script policy marker is missing: $marker" }
+}
+
+$flutterWrapper = Get-Content -LiteralPath (Join-Path $repoRoot 'tool\flutterw.ps1') -Raw
+foreach ($marker in @(
+    'PSNativeCommandUseErrorActionPreference',
+    '$ErrorActionPreference = ''Continue''',
+    '$flutterExitCode = $LASTEXITCODE'
+)) {
+    if (-not $flutterWrapper.Contains($marker)) {
+        throw "Flutter wrapper native-process guard is missing: $marker"
+    }
 }
 if ($buildScript -match '--no-daemon' -or
     $buildScript -match 'org\.gradle\.daemon=false' -or
