@@ -1,4 +1,4 @@
-name: PureLive Release Build
+name: Build PureLive Release 
 
 on:
   workflow_dispatch:
