@@ -10,6 +10,7 @@ v2.6.0 build 4076 是上游同步、近期 Issue 修复、播放器与长时间�
 - Windows 小窗记住用户调整后的位置和大小，跨显示器恢复时保持可见，并与主窗口尺寸持久化分离。
 - 醒目留言列表实时观察消息集合，切换直播间时用房间代次隔离异步结果；列表边界改为有界滚动物理效果。
 - iOS 新安装默认使用已有画面的 IJK 内核，并通过原生通道回报设备最高刷新率；已有用户的播放器选择保持不变。
+- 修复 Xcode 26 下隐式 Flutter 引擎插件 registrar 为可选值时的 iOS 编译错误，重新完成 unsigned app 与 TrollStore IPA 构建。
 
 ## 播放、画面与资源
 
@@ -25,6 +26,7 @@ v2.6.0 build 4076 是上游同步、近期 Issue 修复、播放器与长时间�
 - Android 保持官方 AGP 9.3.1 推荐的 Gradle 9.5.0、Google Services 4.5.0、compile/target SDK 37 与 Built-in Kotlin。
 - Android 本轮只构建正式签名 `arm64-v8a`；Windows x64、Linux x64、macOS Universal 与 iOS arm64 按平台串行构建。
 - Flutter Analyze 0 issue、223 项单元/Widget 测试与 26/26 项公开接口探测通过；各平台产物结果写入 `docs/STAGE_UPDATE_2_6_0.md` 与 Release 元数据。
+- Windows Release 完成 6 分钟隔离实例烟雾采样，工作集保持平稳；全部平台产物均复核 SHA-256 与归档结构。
 
 ---
 

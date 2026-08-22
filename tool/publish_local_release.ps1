@@ -2,6 +2,7 @@
 param(
     [Parameter(Mandatory = $true)] [string] $Tag,
     [string] $ArtifactDirectory,
+    [string] $Repository = 'wzgrx/pure_live',
     [switch] $CreateTag,
     [switch] $AllowQaArtifacts
 )
@@ -71,15 +72,15 @@ try {
 
     $files = Get-ChildItem $ArtifactDirectory -File | ForEach-Object FullName
     if ($PSCmdlet.ShouldProcess($Tag, 'Publish GitHub release from local artifacts')) {
-        $releaseList = gh release list --repo liuchuancong/pure_live --limit 100 --json tagName | ConvertFrom-Json
+        $releaseList = gh release list --repo $Repository --limit 100 --json tagName | ConvertFrom-Json
         if ($LASTEXITCODE) { throw 'Failed to query existing GitHub Releases.' }
         $releaseExists = @($releaseList).tagName -contains $Tag
         if ($releaseExists) {
-            gh release upload $Tag @files --clobber --repo liuchuancong/pure_live
+            gh release upload $Tag @files --clobber --repo $Repository
             if ($LASTEXITCODE) { throw 'Failed to upload GitHub Release assets.' }
-            gh release edit $Tag --title "Pure Live $Tag" --notes-file $releaseNotesPath --repo liuchuancong/pure_live
+            gh release edit $Tag --title "Pure Live $Tag" --notes-file $releaseNotesPath --repo $Repository
         } else {
-            gh release create $Tag @files --verify-tag --title "Pure Live $Tag" --notes-file $releaseNotesPath --repo liuchuancong/pure_live
+            gh release create $Tag @files --verify-tag --title "Pure Live $Tag" --notes-file $releaseNotesPath --repo $Repository
         }
         if ($LASTEXITCODE) { throw 'Failed to create or update the GitHub Release.' }
     }

@@ -40,7 +40,22 @@
 - 完整门禁耗时 560.057 秒，重型进程峰值内存 7.44 GiB、峰值 CPU 18.21%、结束后活跃重型进程为 0；
 - 记录：`local-artifacts/build-records/20260822T180054267Z-quality-full.json`。
 
-Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 的产物、SHA-256 和来源提交在平台串行构建结束后补入本节。
+## 串行构建与产物
+
+各平台严格按 Android → Windows → Linux → macOS → iOS 串行执行；Android、Linux、macOS 与 iOS 的工作流均只启用当轮目标平台，Windows 使用本机 Release 构建。iOS 首轮暴露 Xcode 26 下隐式引擎 registrar 的可选值编译错误，提交 `609e8345` 完成解包后单独重跑 iOS，其他平台不重复消耗构建额度。
+
+| 平台 | 产物 | SHA-256 | 来源/记录 |
+|---|---|---|---|
+| Android arm64-v8a | `PureLive-2.6.0-4076-arm64-v8a-release.apk` | `aafae079f69a93eb49d16e39b071e44c2d117f4b95c9580d8655cebc56329dc3` | `9179b20b`；[Actions 32589607768](https://github.com/wzgrx/pure_live/actions/runs/32589607768)；正式 RSA-4096 签名，包名 `com.mystyle.purelive`，仅含 `arm64-v8a` |
+| Windows x64 | `PureLive-2.6.0-windows-x64-setup.exe` | `27aa5a29c0e6f661a12ae3ae96a1950026c27d5429edf5dc1ac9eebb0676de9b` | `9179b20b`；本机 Inno Setup 可选安装目录 |
+| Windows x64 | `PureLive-2.6.0-4076-windows-x64-portable.zip` | `6b50724e878e6e816c0413c1f56ec2ce13894f8744dea3a0595367c6aac43d7f` | `9179b20b`；`20260822T182518161Z-build-windowsx64-release.json` |
+| Linux x64 | `PureLive-2.6.0-4076-linux-x64.tar.gz` | `25c831ea282df13c1d5d7621e1c2fd7d993f34ab935bc24839d8e187da39e3de` | `9179b20b`；[Actions 32590709872](https://github.com/wzgrx/pure_live/actions/runs/32590709872) |
+| macOS Universal | `PureLive-2.6.0-4076-macos-universal.dmg` | `3836c67fdd63839117d81b36948aaabd8335540fe2332c4b5ca06e2de258f217` | `9179b20b`；[Actions 32590971761](https://github.com/wzgrx/pure_live/actions/runs/32590971761) |
+| macOS Universal | `PureLive-2.6.0-4076-macos-universal.zip` | `4a7bb48bd6c8ced971a699d24586e0db1ba31c49e8037dc4a8dd8f5d1565ebe7` | 同上 |
+| iOS arm64 | `PureLive-2.6.0-4076-ios-arm64-unsigned-app.zip` | `32a5767407c4efc79145c4d48d5f505d86cf4ef18da92bd4ac198d0f7cdbd853` | `609e8345`；[Actions 32592259972](https://github.com/wzgrx/pure_live/actions/runs/32592259972) |
+| iOS TrollStore | `PureLive-2.6.0-4076-ios-arm64-trollstore.ipa` | `eb64c1900c3ae1642eacfbc446757170d78c6e5b845e8a348817c4685849f27d` | 同上；工作流完成临时签名与 IPA 结构验证 |
+
+Android 使用 `apksigner` 复核 v2 签名、版本名和 ABI；全部远端产物侧车校验通过，Linux 归档包含主程序，macOS/iOS 归档包含完整 `.app` 结构。Windows Release 冷启动后进行了 360.988 秒、37 个采样点的隔离实例烟雾测试：工作集从 309,096,448 B 到 308,764,672 B，私有字节减少 27,693,056 B，CPU 累计仅增加 1.938 秒，未出现随时间持续增长；记录为 `20260822T191326684Z-windows-release-smoke.json`。
 
 ## 已知平台边界
 
