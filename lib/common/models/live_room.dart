@@ -493,4 +493,18 @@ extension LiveRoomExtension on LiveRoom {
     liveRoom.isRecord = false;
     return liveRoom;
   }
+
+  LiveRoom fillFromDetail(LiveRoom? detail) {
+    if (detail == null) return this;
+
+    return copyWith(
+      area: _getValueIfEmpty(area, detail.area),
+      nick: _getValueIfEmpty(nick, detail.nick),
+      avatar: _getValueIfEmpty(avatar, detail.avatar),
+    );
+  }
+
+  String? _getValueIfEmpty(String? current, String? newValue) {
+    return (current == null || current.isEmpty) ? newValue : current;
+  }
 }
