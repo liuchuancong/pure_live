@@ -46,7 +46,7 @@
 - Windows 视频尺寸：物理像素换算、比例保持、不放大源视频、无元数据时的临时上限。
 - 平台公开接口探测：分类、推荐、搜索、房间信息、播放令牌和弹幕节点。
 
-2026-08-22 本机门禁结果：Flutter Analyze 0 issue、208 项单元/Widget 测试全部通过，平台公开接口探测 26/26 通过。安装包哈希和平台来源以 v2.5.0 Release 中的 `build-metadata.json` 与 `SHA256SUMS.txt` 为准。
+2026-08-22 本机门禁结果：Flutter Analyze 0 issue、208 项单元/Widget 测试全部通过，平台公开接口探测 26/26 通过。安装包哈希和平台来源以 v2.5.0 Release 中的 `BUILD_METADATA.json` 与 `SHA256SUMS.txt` 为准。
 
 ## 已知边界
 
