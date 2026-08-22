@@ -15,7 +15,7 @@ on:
         description: Release tag matching the version in pubspec.yaml
         required: true
         type: string
-        default: v2.3.0
+        default: v2.5.0
 
 permissions:
   actions: read

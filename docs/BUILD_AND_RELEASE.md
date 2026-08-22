@@ -2,7 +2,7 @@
 
 本仓库采用“本机优先、Actions 手动兜底”的流程，固定使用 Flutter `3.47.0`。`pubspec.lock`、Git 依赖提交和 FFmpeg 产物地址均已固定，便于复现结果。
 
-最近完整核验：2026-08-21，Windows 11 + Java 25 + Flutter 3.47.0；Built-in Kotlin 审计、Flutter Analyze、189 项单元/Widget 测试及 26/26 平台公开接口探测全部通过。v2.3.0 build 4070 继续以本机优先方式构建 Android arm64 与 Windows x64，再由显式阶段任务补齐 Linux x64、macOS universal 和 iOS arm64 设备归档；PiP 流取消后重订阅、启动逐批刷新、横屏本地输入、空闲弹幕调度、播放器控制器释放和有界弹幕缓存均进入自动化回归范围。干净便携目录继续把数据、缓存和临时文件写入 release 同级 `AppData`。
+最近完整源码核验：2026-08-22，v2.5.0 build 4072，Windows 11 + Java 25 + Flutter 3.47.0；Built-in Kotlin 审计、Flutter Analyze 0 issue、207 项单元/Widget 测试和 26/26 平台公开接口探测通过。本机优先构建 Android arm64 与 Windows x64，再由显式阶段任务补齐 Linux x64、macOS universal 和 iOS arm64 设备归档。首页有界并发、三档刷新率、PiP 流重订阅、横屏本地输入、空闲弹幕调度、播放器控制器释放和有界弹幕缓存均进入自动化回归范围。干净便携目录继续把数据、缓存和临时文件写入 release 同级 `AppData`。
 
 ## 前置环境
 
@@ -45,7 +45,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
 
 Android 构建使用 Java 25 运行 Gradle 与 lint，应用和插件的 Java/Kotlin 字节码目标保持 17。脚本优先读取 `PURE_LIVE_JAVA_HOME`，随后检测 Android Studio JBR，最后回退到本机 Temurin；当前工具链为 compileSdk/targetSdk 37、Gradle 9.5.0、AGP 9.3.1 和 AGP Built-in Kotlin。`tool/audit_built_in_kotlin.py` 会在本地 CI 中阻止独立 KGP、模块私有 AGP classpath 和旧 Kotlin DSL 回归。
 
-Android 打包前会由 `tool/prefetch_android_native.ps1` 下载并逐一校验 media_kit 的四个 libmpv JAR，避免 Gradle 直接访问 GitHub Release 时因连接中断生成损坏缓存。
+Android 打包前会由 `tool/prefetch_android_native.ps1` 下载并逐一校验 media_kit 的四个 libmpv JAR及 FFmpeg builders v0.11.0 AAR；质量门禁以 `-SkipAndroidMedia` 只准备 Windows FFmpeg ZIP。原生文件写入持久缓存和 Native Assets 共享缓存，减少重复下载并拦截损坏文件。
 
 Windows 的 `flutter_inappwebview_windows` 需要 `nuget.exe`。脚本会自动发现 `%LOCALAPPDATA%\Codex\nuget\nuget.exe` 或 `PATH` 中的 NuGet；建议从 `https://dist.nuget.org/` 下载并核验 Microsoft Authenticode 签名。
 
@@ -116,8 +116,8 @@ Ubuntu 24.04 构建会同时安装 `libva`、VDPAU、PulseAudio、Wayland、EGL 
 
 ```powershell
 .\tool\flutterw.ps1 pub get --enforce-lockfile
-.\tool\flutterw.ps1 analyze --no-fatal-infos --no-fatal-warnings
-.\tool\flutterw.ps1 test
+.\tool\flutterw.ps1 analyze --no-pub --no-fatal-infos --no-fatal-warnings
+.\tool\flutterw.ps1 test --no-pub
 python .\tool\interface_probe.py
 .\tool\flutterw.ps1 build apk --release --split-per-abi --target-platform android-arm64
 .\tool\flutterw.ps1 build windows --release
@@ -129,7 +129,7 @@ python .\tool\interface_probe.py
 
 ```powershell
 PowerShell -ExecutionPolicy Bypass -File .\tool\publish_local_release.ps1 `
-  -Tag v2.3.0 -CreateTag
+  -Tag v2.5.0 -CreateTag
 ```
 
 脚本要求工作树已提交，并通过 GitHub CLI 当前登录身份创建或更新 Release。
