@@ -1,16 +1,15 @@
-import 'dart:io';
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 
-import 'package:path/path.dart' as p;
 import 'package:flutter/foundation.dart';
+import 'package:path/path.dart' as p;
+import 'package:pure_live/common/utils/windows_multi_instance_launcher.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
+import 'package:win32_registry/win32_registry.dart';
 
 import 'windows_portable_path_provider.dart';
-
-import 'package:path_provider/path_provider.dart';
-import 'package:win32_registry/win32_registry.dart';
-import 'package:pure_live/common/utils/windows_multi_instance_launcher.dart';
-import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 class AppPathManager {
   static final AppPathManager _instance = AppPathManager._internal();
@@ -28,7 +27,14 @@ class AppPathManager {
   static const String dirRecords = 'RECORDS';
   static const String dirEmojiCache = 'EMOJI_CACHE';
   static const String dirMigrationBackup = 'MIGRATION_BACKUP';
-  static const String fontCacheDir = 'fonts';
+
+  /// Canonical directory used by [FontDownloadManager] for downloaded fonts.
+  /// Keep this in one place so the manager page and downloader never drift to
+  /// different folders (the old `fontsDir` value broke multi-file font packs).
+  static const String fontDirectoryName = 'fonts';
+  // Compatibility alias retained for upstream call sites introduced in
+  // 5aa1a40a. Both names intentionally resolve to the same canonical folder.
+  static const String fontCacheDir = fontDirectoryName;
   static const String iptvCategoryFile = 'categories.json';
   static const String iptvHotFile = 'hot.m3u';
   static const String iptvHotRemoteFile = 'https://raw.githubusercontent.com/YueChan/Live/main/GNTV.m3u';
@@ -364,7 +370,11 @@ class AppPathManager {
 
   Future<String> getFontFamilyFolderPath(String id) async {
     final downloadDir = await getDir(dirDownload);
-    final basePath = p.join(downloadDir.path, fontCacheDir);
-    return p.join(basePath, id);
+    return fontFamilyFolderPath(downloadDir.path, id);
+  }
+
+  @visibleForTesting
+  static String fontFamilyFolderPath(String downloadPath, String id) {
+    return p.join(downloadPath, fontDirectoryName, id);
   }
 }

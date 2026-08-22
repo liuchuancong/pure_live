@@ -16,7 +16,7 @@ class SuperChatPage extends StatelessWidget {
     final uniqueMessages = <String, LiveSuperChatMessage>{};
 
     for (final message in messages) {
-      final key = '${message.userName}|${message.message}|${message.price}';
+      final key = '${message.userName}|${message.message}|${message.price}|${message.startTime.microsecondsSinceEpoch}';
 
       uniqueMessages.putIfAbsent(key, () => message);
     }
@@ -24,6 +24,8 @@ class SuperChatPage extends StatelessWidget {
     final list = uniqueMessages.values.toList();
 
     return ListView.builder(
+      primary: false,
+      physics: const ClampingScrollPhysics(),
       padding: const EdgeInsets.all(8),
       itemCount: list.length,
       itemBuilder: (context, index) {

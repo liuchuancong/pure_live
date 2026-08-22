@@ -298,14 +298,17 @@ class LivePlayController extends GetxController
     }
   }
 
-  Future<void> getSuperChatMessage(String roomId) async {
+  Future<void> getSuperChatMessage(String roomId, {required String? platform, required int loadEpoch}) async {
+    if (!_isRoomLoadCurrent(loadEpoch, roomId, platform)) return;
+    final liveSite = currentSite.liveSite;
     try {
-      clearSuperChats();
-      final sc = await currentSite.liveSite.getSuperChatMessage(roomId: roomId);
-      if (isClosed || _ownerClosed) return;
+      final sc = await liveSite.getSuperChatMessage(roomId: roomId);
+      if (isClosed || _ownerClosed || !_isRoomLoadCurrent(loadEpoch, roomId, platform)) return;
       addBatchSuperChat(sc);
     } catch (e) {
-      if (!isClosed && !_ownerClosed) addSystemMessage("SC读取失败");
+      if (!isClosed && !_ownerClosed && _isRoomLoadCurrent(loadEpoch, roomId, platform)) {
+        addSystemMessage("SC读取失败");
+      }
     }
   }
 
@@ -619,6 +622,7 @@ class LivePlayController extends GetxController
     final requestedPlatform = state.value.room.detail?.platform;
     final loadEpoch = ++_roomLoadEpoch;
 
+    clearSuperChats();
     updateRoom(isLoading: true, loadError: null);
 
     try {
@@ -627,14 +631,10 @@ class LivePlayController extends GetxController
         platform: state.value.room.detail!.platform!,
       );
 
-      unawaited(getSuperChatMessage(roomId));
-      LiveRoom liveRoom = fetchedRoom.withAudienceFallbackFrom(state.value.room.detail!);
-      final detail = state.value.room.detail;
-      if (detail != null) {
-        liveRoom = liveRoom.fillFromDetail(detail);
-      }
-
+      var liveRoom = fetchedRoom.withAudienceFallbackFrom(state.value.room.detail!);
+      liveRoom = liveRoom.fillFromDetail(state.value.room.detail);
       if (!_isRoomLoadCurrent(loadEpoch, roomId, requestedPlatform)) return liveRoom;
+      unawaited(getSuperChatMessage(roomId, platform: requestedPlatform, loadEpoch: loadEpoch));
 
       if (currentSite.id == Sites.iptvSite) {
         updateRoom(detail: liveRoom);

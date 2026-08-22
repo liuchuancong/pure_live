@@ -24,11 +24,13 @@ void main() {
   });
 
   group('network image headers', () {
-    test('adds browser headers only for Bilibili CDN hosts', () {
+    test('scopes the Bilibili referer while retaining a browser user agent', () {
       final headers = networkImageHeaders('https://i0.hdslb.com/bfs/live/example.jpg');
       expect(headers?['Referer'], 'https://live.bilibili.com/');
       expect(headers?['User-Agent'], contains('Mozilla/5.0'));
-      expect(networkImageHeaders('https://example.com/live.png'), isNull);
+      final genericHeaders = networkImageHeaders('https://example.com/live.png');
+      expect(genericHeaders?['Referer'], isNull);
+      expect(genericHeaders?['User-Agent'], contains('Mozilla/5.0'));
     });
   });
 }

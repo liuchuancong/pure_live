@@ -760,6 +760,8 @@ class PlayerManager {
   }
 
   void changeVideoFit(int index) {
+    final fitList = SettingsService.to.player.videoFitArray;
+    if (fitList.isEmpty || index < 0 || index >= fitList.length) return;
     videoFitIndex.value = index;
   }
 
@@ -1285,6 +1287,7 @@ class PlayerManager {
   }) {
     // Read by the room's outer Obx. Audio/video presentation changes rebuild
     // this surface without changing [videoKey] and remounting the native view.
+    videoPresentationRevision.value;
 
     return Obx(() {
       final initialized = isInitialized.value;

@@ -7,7 +7,7 @@ class ToolBoxController extends GetxController {
   final TextEditingController roomJumpToController = TextEditingController();
   final TextEditingController getUrlController = TextEditingController();
 
-  void jumpToRoom(String e) async {
+  Future<void> jumpToRoom(String e) async {
     if (e.isEmpty) {
       ToastUtil.show(i18n("toolbox_empty_link"));
       return;
@@ -19,25 +19,23 @@ class ToolBoxController extends GetxController {
     }
     FocusManager.instance.primaryFocus?.unfocus();
 
-    Future.delayed(const Duration(milliseconds: 200), () {
-      String platform = parseResult[1];
-      AppNavigator.toLiveRoomDetail(
-        liveRoom: LiveRoom(
-          roomId: parseResult.first,
-          platform: platform,
-          title: "",
-          cover: '',
-          nick: "",
-          watching: '',
-          avatar: "",
-          area: '',
-          liveStatus: LiveStatus.live,
-          status: true,
-          data: '',
-          danmakuData: '',
-        ),
-      );
-    });
+    final platform = parseResult[1];
+    await AppNavigator.toLiveRoomDetail(
+      liveRoom: LiveRoom(
+        roomId: parseResult.first,
+        platform: platform,
+        title: "",
+        cover: '',
+        nick: "",
+        watching: '',
+        avatar: "",
+        area: '',
+        liveStatus: LiveStatus.live,
+        status: true,
+        data: '',
+        danmakuData: '',
+      ),
+    );
   }
 
   void getPlayUrl(String e) async {

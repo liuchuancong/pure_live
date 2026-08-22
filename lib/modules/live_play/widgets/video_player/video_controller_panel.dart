@@ -1627,66 +1627,38 @@ class CastButton extends StatelessWidget {
   }
 }
 
-class FavoriteButton extends StatefulWidget {
+class FavoriteButton extends StatelessWidget {
   const FavoriteButton({super.key, required this.controller});
 
   final VideoController controller;
 
   @override
-  State<FavoriteButton> createState() => _FavoriteButtonState();
-}
-
-class _FavoriteButtonState extends State<FavoriteButton> {
-  StreamSubscription<dynamic>? subscription;
-
-  @override
-  void initState() {
-    super.initState();
-    listenFavorite();
-  }
-
-  void listenFavorite() {
-    subscription = EventBus.instance.listen('changeFavorite', (data) {
-      if (mounted) {
-        setState(() {});
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    subscription?.cancel();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    bool isFavorite = SettingsService.to.fav.isFavorite(widget.controller.room);
-    return GestureDetector(
-      onTap: () {
-        widget.controller.enableController();
-        if (isFavorite) {
-          SettingsService.to.fav.removeRoom(widget.controller.room);
-        } else {
-          SettingsService.to.fav.addRoom(widget.controller.room);
-        }
-        setState(() => isFavorite = !isFavorite);
-        EventBus.instance.emit('changeFavorite', true);
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 2),
-        alignment: Alignment.center,
-        height: 25,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Icon(isFavorite ? Icons.check_rounded : Icons.close, color: Colors.white, size: 15),
-            Text(isFavorite ? i18n('followed') : i18n('follow'), style: TextStyle(color: Colors.white)),
-          ],
+    return Obx(() {
+      final room = controller.room;
+      final favoriteRooms = SettingsService.to.fav.favoriteRooms.value;
+      final isFavorite = favoriteRooms.any((candidate) => candidate.hasSameIdentity(room));
+      return GestureDetector(
+        onTap: () {
+          controller.enableController();
+          final changed = isFavorite ? SettingsService.to.fav.removeRoom(room) : SettingsService.to.fav.addRoom(room);
+          if (changed) EventBus.instance.emit('changeFavorite', true);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 2),
+          alignment: Alignment.center,
+          height: 25,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(isFavorite ? Icons.check_rounded : Icons.close, color: Colors.white, size: 15),
+              Text(isFavorite ? i18n('followed') : i18n('follow'), style: const TextStyle(color: Colors.white)),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 }
 

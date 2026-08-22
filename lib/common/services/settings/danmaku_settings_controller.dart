@@ -45,7 +45,6 @@ class DanmakuSettingsController extends GetxController {
   final RxInt danmakuInteractionMigration = hiveInt('danmakuInteractionMigration', 0);
   final RxString savedDanmakuTemplate = hiveString('savedDanmakuTemplate', '');
   final RxString danmakuFontFamilyName = hiveString('danmakuFontFamilyName', 'Default');
-  final RxString danmakuFontFamilyFileName = hiveString('danmakuFontFamilyFileName', 'Default');
   final RxBool enablePipDanmaku = hiveBool('enablePipDanmaku', defaultEnablePipDanmaku);
   final RxBool pipDanmakuAutoScale = hiveBool('pipDanmakuAutoScale', defaultPipDanmakuAutoScale);
   // Keep the upstream storage key for existing users while exposing a

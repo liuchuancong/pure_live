@@ -34,7 +34,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
   Future<void> _setDefaultFont() async {
     if (isDanmakuSettings) {
       SettingsService.to.danmaku.danmakuFontFamilyName.v = 'Default';
-      SettingsService.to.danmaku.danmakuFontFamilyFileName.v = '';
+      SettingsService.to.font.danmakuFontFamilyFileName.v = '';
       await HivePrefUtil.setString('danmakuFontFamilyName', 'Default');
       await HivePrefUtil.setString('danmakuFontFamilyFileName', '');
       ToastUtil.show(i18n('font_reset_default'));
@@ -66,7 +66,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
             child: TextButton.icon(
               onPressed: () async {
                 final downloadDir = await AppPathManager().downloadDir;
-                FileUtils.openFileOrUrl(p.join(downloadDir.path, AppPathManager.fontCacheDir));
+                FileUtils.openFileOrUrl(p.join(downloadDir.path, AppPathManager.fontDirectoryName));
               },
               style: TextButton.styleFrom(
                 padding: EdgeInsets.zero,
@@ -368,9 +368,9 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
 
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: theme.colorScheme.primaryContainer,
-              foregroundColor: theme.colorScheme.onPrimaryContainer,
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
             ),
             onPressed: () async {
@@ -401,9 +401,12 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
               );
 
               if (success) {
-                await SettingsService.to.font.refreshFontDiskSizes();
-
-                await _activateFont(fontModel);
+                await SettingsService.to.font.refreshFontDiskSizes(force: true);
+                if (fontModel.files.length <= 1) {
+                  await _activateFont(fontModel);
+                } else if (context.mounted) {
+                  await _showFontWeightSelector(context, fontModel);
+                }
               } else {
                 ToastUtil.show(i18n("font_load_failed"));
               }
@@ -431,6 +434,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
         }
       }
     }
+    downloadedFiles.sort((left, right) => left.path.compareTo(right.path));
 
     if (downloadedFiles.isEmpty) {
       ToastUtil.show(i18n('font_not_downloaded_or_corrupted'));

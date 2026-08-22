@@ -71,9 +71,18 @@ class LivePlayHeader extends StatelessWidget implements PreferredSizeWidget {
 
   Widget _buildFavoriteButton() {
     return Obx(() {
-      final detail = controller.state.value.room.detail;
+      final roomState = controller.state.value.room;
+      final detail = roomState.detail;
       if (detail == null) {
         return const SizedBox.shrink();
+      }
+      final awaitingCanonicalIdentity =
+          roomState.isLoading && (detail.nick?.trim().isEmpty ?? true) && (detail.title?.trim().isEmpty ?? true);
+      if (awaitingCanonicalIdentity) {
+        return const SizedBox(
+          width: 47,
+          child: Center(child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))),
+        );
       }
       return Padding(
         padding: const EdgeInsets.only(left: 2, right: 5),

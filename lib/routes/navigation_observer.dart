@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/player/core/player_manager.dart';
 import 'package:pure_live/player/utils/fullscreen.dart' show WindowService;
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 
@@ -79,7 +80,7 @@ class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
   void _showFloatingAfterExit({
     required Route<dynamic> route,
     required LivePlayController controller,
-    required dynamic playerManager,
+    required PlayerManager playerManager,
   }) {
     final routeExitCompleted = _waitForRouteExit(route);
     controller.prepareAppFloating(routeUnmounted: routeExitCompleted);

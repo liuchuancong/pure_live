@@ -49,7 +49,7 @@ on:
         description: Release tag (e.g. v1.0.0) – required if create_release is true
         required: true
         type: string
-        default: 'v2.5.0'
+        default: 'v2.6.0'
 
   push:
     tags:
@@ -121,7 +121,7 @@ jobs:
         run: flutter --version
 
       - name: Resolve locked packages
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
 
       - name: Generate production AppConfig
         run: |
@@ -144,7 +144,7 @@ jobs:
 # =========================================================
 
   android:
-    name: Android all ABIs
+    name: Android arm64-v8a
 
     if: ${{ always() && inputs.build_android && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
 
@@ -176,10 +176,10 @@ jobs:
       - name: Configure Android signing
         shell: bash
         env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEYSTORE_BASE64: ${{ secrets.PURELIVE_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.PURELIVE_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.PURELIVE_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.PURELIVE_KEY_ALIAS }}
         run: |
           set -euo pipefail
 
@@ -204,7 +204,7 @@ jobs:
           EOF
 
       - name: Resolve locked packages
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
 
       - name: Generate production AppConfig
         run: |
@@ -216,7 +216,7 @@ jobs:
       # Build
       # -----------------------------------------------------
 
-      - name: Build Android release APKs
+      - name: Build Android arm64-v8a release APK
         run: |
           flutter build apk \
             --release \
@@ -260,13 +260,6 @@ jobs:
             "$APK_DIR/app-arm64-v8a-release.apk" \
             "PureLive-${VERSION}-arm64-v8a-release.apk"
 
-          cp \
-            "$APK_DIR/app-armeabi-v7a-release.apk" \
-            "PureLive-${VERSION}-armeabi-v7a-release.apk"
-
-          cp \
-            "$APK_DIR/app-x86_64-release.apk" \
-            "PureLive-${VERSION}-x86_64-release.apk"
 
       # -----------------------------------------------------
       # SHA256
@@ -277,20 +270,14 @@ jobs:
         run: |
           set -euo pipefail
 
-          for file in \
-            PureLive-*-arm64-v8a-release.apk \
-            PureLive-*-armeabi-v7a-release.apk \
-            PureLive-*-x86_64-release.apk
+          for file in PureLive-*-arm64-v8a-release.apk
           do
             sha256sum "$file" > "$file.sha256"
           done
 
           echo "=== Android checksums ==="
 
-          cat \
-            PureLive-*-arm64-v8a-release.apk.sha256 \
-            PureLive-*-armeabi-v7a-release.apk.sha256 \
-            PureLive-*-x86_64-release.apk.sha256
+          cat PureLive-*-arm64-v8a-release.apk.sha256
 
       # -----------------------------------------------------
       # Upload
@@ -303,10 +290,6 @@ jobs:
           path: |
             PureLive-*-arm64-v8a-release.apk
             PureLive-*-arm64-v8a-release.apk.sha256
-            PureLive-*-armeabi-v7a-release.apk
-            PureLive-*-armeabi-v7a-release.apk.sha256
-            PureLive-*-x86_64-release.apk
-            PureLive-*-x86_64-release.apk.sha256
           if-no-files-found: error
           retention-days: 3
 
@@ -318,9 +301,9 @@ jobs:
   windows:
     name: Windows EXE + MSIX
 
-    if: ${{ always() && inputs.build_windows && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    if: ${{ always() && inputs.build_windows && (needs.quality.result == 'success' || needs.quality.result == 'skipped') && (needs.android.result == 'success' || needs.android.result == 'skipped') }}
 
-    needs: quality
+    needs: [quality, android]
 
     runs-on: windows-latest
 
@@ -403,7 +386,7 @@ jobs:
         run: flutter config --enable-windows-desktop
 
       - name: Resolve locked packages
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
 
       - name: Generate production AppConfig
         run: |
@@ -568,9 +551,9 @@ jobs:
   linux:
     name: Linux x64 portable
 
-    if: ${{ always() && ((github.event_name == 'push' && (startsWith(github.ref_name, 'stage-build-') || startsWith(github.ref_name, 'stage-linux-'))) || inputs.build_linux) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    if: ${{ always() && ((github.event_name == 'push' && startsWith(github.ref_name, 'stage-linux-')) || inputs.build_linux) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') && (needs.windows.result == 'success' || needs.windows.result == 'skipped') }}
 
-    needs: quality
+    needs: [quality, windows]
 
     runs-on: ubuntu-24.04
 
@@ -649,7 +632,7 @@ jobs:
         run: flutter --version
 
       - name: Resolve locked packages
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
 
       - name: Generate production AppConfig
         run: |
@@ -766,9 +749,9 @@ jobs:
   apple:
     name: Apple platform packages
 
-    if: ${{ always() && ((github.event_name == 'push' && (startsWith(github.ref_name, 'stage-build-') || startsWith(github.ref_name, 'stage-apple-') || startsWith(github.ref_name, 'stage-ios-'))) || inputs.build_macos || inputs.build_ios) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    if: ${{ always() && ((github.event_name == 'push' && (startsWith(github.ref_name, 'stage-macos-') || startsWith(github.ref_name, 'stage-ios-'))) || inputs.build_macos || inputs.build_ios) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') && (needs.linux.result == 'success' || needs.linux.result == 'skipped') }}
 
-    needs: quality
+    needs: [quality, linux]
 
     runs-on: macos-15
 
@@ -814,7 +797,7 @@ jobs:
           cache: true
 
       - name: Resolve locked packages
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
 
       - name: Generate production AppConfig
         run: |
@@ -1460,7 +1443,7 @@ jobs:
           |版本|下载地址|
           |---|---|
           |TV版|[pure_live_TV](https://github.com/liuchuancong/pure_live_TV/releases/latest)|
-          |Windows/macOS/Android/iOS版|[pure_live](https://github.com/liuchuancong/pure_live/releases/latest)|
+          |Windows/macOS/Android/iOS版|[pure_live](https://github.com/wzgrx/pure_live/releases/latest)|
 
           ### 🖥️ Windows 版
 
@@ -1480,8 +1463,6 @@ jobs:
 
           - Android 6.0+
           - ARM64-v8a
-          - armeabi-v7a
-          - x86_64
           - 提供 SHA256 校验文件
 
           ### 🐧 Linux 版

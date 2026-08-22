@@ -1,8 +1,8 @@
 import 'dart:convert';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
-
 
 class PlayerSettingsController extends GetxController {
   final RxInt videoFitIndex = hiveInt('videoFitIndex', 0);
