@@ -33,7 +33,7 @@ try {
 
     $metadataPath = Join-Path $ArtifactDirectory 'BUILD_METADATA.json'
     if (-not (Test-Path -LiteralPath $metadataPath)) { throw 'BUILD_METADATA.json is missing.' }
-    $metadata = Get-Content -LiteralPath $metadataPath -Raw | ConvertFrom-Json
+    $metadata = Get-Content -LiteralPath $metadataPath -Raw -Encoding utf8 | ConvertFrom-Json
     $headCommit = (git rev-parse HEAD).Trim()
     $releaseCommit = if ($metadata.release_commit) {
         $metadata.release_commit
@@ -63,12 +63,19 @@ try {
             git push origin $Tag
         }
     }
-    $releaseNotes = Get-Content -LiteralPath 'RELEASE_NOTES.md' -Raw
+    # Windows PowerShell 5.1 defaults Get-Content to the active ANSI code page.
+    # Reading UTF-8 Markdown without an explicit encoding corrupts Chinese text
+    # before gh uploads it, even though the temporary file itself is UTF-8.
+    $releaseNotes = Get-Content -LiteralPath 'RELEASE_NOTES.md' -Raw -Encoding utf8
     $releasePattern = '(?ms)^# Pure Live\s+' + [regex]::Escape($Tag) + '\s*$.*?(?=^---\s*$|\z)'
     $releaseMatch = [regex]::Match($releaseNotes, $releasePattern)
     if (-not $releaseMatch.Success) { throw "Release notes section was not found for $Tag." }
     $releaseNotesPath = Join-Path $env:TEMP "pure-live-$($Tag.TrimStart('v'))-release-notes-$PID.md"
-    Set-Content -LiteralPath $releaseNotesPath -Value $releaseMatch.Value.Trim() -Encoding utf8
+    [IO.File]::WriteAllText(
+        $releaseNotesPath,
+        $releaseMatch.Value.Trim(),
+        [Text.UTF8Encoding]::new($false)
+    )
 
     $files = Get-ChildItem $ArtifactDirectory -File | ForEach-Object FullName
     if ($PSCmdlet.ShouldProcess($Tag, 'Publish GitHub release from local artifacts')) {

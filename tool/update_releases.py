@@ -6,10 +6,9 @@ import os
 
 # GitHub Actions 中自动使用当前仓库，本地运行时默认使用维护分支仓库。
 REPOSITORY = os.environ.get("GITHUB_REPOSITORY", "wzgrx/pure_live")
-API_URL = f"https://api.github.com/repos/{REPOSITORY}/releases?per_page=100"
 UPSTREAM_REPOSITORY = "liuchuancong/pure_live"
-UPSTREAM_API_URL = f"https://api.github.com/repos/{UPSTREAM_REPOSITORY}/releases?per_page=100"
 OUTPUT_FILE = "assets/releases.json"
+PAGE_SIZE = 100
 
 def format_size(size):
     return f"{round(size / 1024 / 1024, 2)}mb"
@@ -21,7 +20,7 @@ def clean_name(name):
         .replace("-release", "")
     )
 
-def fetch_data(url):
+def fetch_data(url, *, allow_empty=False):
     """获取网络数据并进行严格的前置检查"""
     headers = {
         "User-Agent": "PureLive-Release-Updater",
@@ -51,7 +50,7 @@ def fetch_data(url):
             data = json.loads(raw_data.decode('utf-8'))
 
             # 3. 验证数据结构是否符合预期
-            if not data:
+            if not data and not allow_empty:
                 print("❌ 错误：获取到的 JSON 数据内容为空列表或空字典", file=sys.stderr)
                 sys.exit(1)
 
@@ -71,13 +70,33 @@ def fetch_data(url):
         print(f"❌ 未知错误: {str(e)}", file=sys.stderr)
         sys.exit(1)
 
+
+def fetch_all_releases(repository):
+    """Fetch every release page instead of silently dropping old versions."""
+    releases = []
+    page = 1
+    while True:
+        url = (
+            f"https://api.github.com/repos/{repository}/releases"
+            f"?per_page={PAGE_SIZE}&page={page}"
+        )
+        batch = fetch_data(url, allow_empty=page > 1)
+        if not isinstance(batch, list):
+            print("❌ 错误：发布历史接口返回了非列表数据", file=sys.stderr)
+            sys.exit(1)
+        releases.extend(batch)
+        if len(batch) < PAGE_SIZE:
+            break
+        page += 1
+    return releases
+
 def main():
     # 核心修改：网络获取与严格校验
-    data = fetch_data(API_URL)
+    data = fetch_all_releases(REPOSITORY)
 
     # 维护分支保留上游旧版本记录；同名标签优先使用当前仓库的 Release。
     if REPOSITORY != UPSTREAM_REPOSITORY:
-        upstream_data = fetch_data(UPSTREAM_API_URL)
+        upstream_data = fetch_all_releases(UPSTREAM_REPOSITORY)
         current_tags = {release.get("tag_name") for release in data}
         data.extend(release for release in upstream_data if release.get("tag_name") not in current_tags)
         data.sort(key=lambda release: release.get("published_at") or "", reverse=True)

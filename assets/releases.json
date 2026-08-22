@@ -1,5 +1,79 @@
 [
   {
+    "version": "2.6.0",
+    "title": "Pure Live v2.6.0",
+    "date": "2026-08-22",
+    "github": "https://github.com/wzgrx/pure_live/releases/tag/v2.6.0",
+    "author": {
+      "name": "wzgrx",
+      "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
+      "profile": "https://github.com/wzgrx"
+    },
+    "changelog": "# Pure Live v2.6.0\n\nv2.6.0 build 4076 是上游同步、近期 Issue 修复、播放器与长时间资源治理的阶段稳定版；仅发布到 `wzgrx/pure_live`。\n\n## 上游与近期问题\n\n- 真实合并上游 `liuchuancong/pure_live@c3ae29bb`，保留其关注刷新、房间详情补全、版本历史容错和弹幕模板状态修复。\n- 吸收上游 BetterPlayer 尺寸修复和 Windows 小窗记忆入口；合并时保留非 Exo 首帧防死锁、iOS 新配置 IJK 默认值、维护仓库更新源及完整位置/大小越界校正。\n- 修复链接解析或普通入口进入直播间后关注状态不更新：关注按钮直接观察持久化收藏列表，并统一使用“平台 + 房间号”身份。\n- 修复多文件字体目录不一致、重启后选择丢失、弹幕字体未即时注册；下载完成后多字重字体进入明确选择页。\n- Windows 小窗增加记忆开关与重置入口，保存用户调整后的位置和大小；默认在应用所在显示器打开，跨显示器恢复时保持可见，并与主窗口尺寸持久化分离。\n- 醒目留言列表实时观察消息集合，切换直播间时用房间代次隔离异步结果；列表边界改为有界滚动物理效果。\n- iOS 新安装默认使用已有画面的 IJK 内核，并通过原生通道回报设备最高刷新率；已有用户的播放器选择保持不变。\n- 修复 Xcode 26 下隐式 Flutter 引擎插件 registrar 为可选值时的 iOS 编译错误，重新完成 unsigned app 与 TrollStore IPA 构建。\n\n## 播放、画面与资源\n\n- 非 Exo 播放器原生纹理先挂载再等待真实视频尺寸，消除强制销毁、换核或重新进入后的初始化死锁和持续转圈。\n- 画面适配只更新呈现尺寸，不再通过重新请求数据源实现缩放；Windows 高 DPI 下按可见视口约束纹理合成面积。\n- 首页封面、头像和分区图片恢复有界解码缓存，取消每张卡片首次挂载时主动删除磁盘缓存，减少重复网络、解码、CPU 与卡片跳动。\n- 直播间、弹幕、醒目留言、PiP 和播放器继续使用房间/加载代次、队列上限及显式订阅释放，阻止旧房间异步结果回写当前会话。\n\n## 依赖与构建\n\n- `scrollview_observer` 更新至 1.27.1；其余 Dart 直接依赖已处于解析器可升级的最新兼容组合。\n- `dynamic_color` 保持 1.9.0：2.x 的 `material_ui.ColorScheme` 与当前 Flutter Material 类型边界不同，待完整主题迁移后单独升级。\n- Android 保持官方 AGP 9.3.1 推荐的 Gradle 9.5.0、Google Services 4.5.0、compile/target SDK 37 与 Built-in Kotlin。\n- Android 本轮只构建正式签名 `arm64-v8a`；Windows x64、Linux x64、macOS Universal 与 iOS arm64 按平台串行构建。\n- Flutter Analyze 0 issue、224 项单元/Widget 测试与 26/26 项公开接口探测通过；各平台产物结果写入 `docs/STAGE_UPDATE_2_6_0.md` 与 Release 元数据。\n- Windows Release 完成 6 分钟隔离实例烟雾采样，工作集保持平稳；全部平台产物均复核 SHA-256 与归档结构。",
+    "files": [
+      {
+        "name": "BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.6.0/BUILD_METADATA.json"
+      },
+      {
+        "name": "PureLive-2.6.0-4076-arm64-v8a",
+        "size": "114.29mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.6.0/PureLive-2.6.0-4076-arm64-v8a-release.apk"
+      },
+      {
+        "name": "PureLive-2.6.0-4076-ios-arm64-trollstore.ipa",
+        "size": "56.05mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.6.0/PureLive-2.6.0-4076-ios-arm64-trollstore.ipa"
+      },
+      {
+        "name": "PureLive-2.6.0-4076-ios-arm64-unsigned-app.zip",
+        "size": "55.25mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.6.0/PureLive-2.6.0-4076-ios-arm64-unsigned-app.zip"
+      },
+      {
+        "name": "PureLive-2.6.0-4076-linux-x64.tar.gz",
+        "size": "35.72mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.6.0/PureLive-2.6.0-4076-linux-x64.tar.gz"
+      },
+      {
+        "name": "PureLive-2.6.0-4076-macos-universal.dmg",
+        "size": "108.87mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.6.0/PureLive-2.6.0-4076-macos-universal.dmg"
+      },
+      {
+        "name": "PureLive-2.6.0-4076-macos-universal.zip",
+        "size": "96.54mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.6.0/PureLive-2.6.0-4076-macos-universal.zip"
+      },
+      {
+        "name": "PureLive-2.6.0-4076-windows-x64-portable.zip",
+        "size": "69.46mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.6.0/PureLive-2.6.0-4076-windows-x64-portable.zip"
+      },
+      {
+        "name": "PureLive-2.6.0-windows-x64-setup.exe",
+        "size": "53.79mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.6.0/PureLive-2.6.0-windows-x64-setup.exe"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.6.0/SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
     "version": "2.5.3",
     "title": "Pure Live v2.5.3",
     "date": "2026-08-22",
@@ -14,25 +88,25 @@
       {
         "name": "ANDROID_SHA256SUM.txt",
         "size": "0.0mb",
-        "downloads": 0,
+        "downloads": 5,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.5.3/ANDROID_SHA256SUM.txt"
       },
       {
         "name": "BUILD_METADATA.json",
         "size": "0.0mb",
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.5.3/BUILD_METADATA.json"
       },
       {
         "name": "PureLive-2.5.3-4075-arm64-v8a",
         "size": "114.35mb",
-        "downloads": 0,
+        "downloads": 141,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.5.3/PureLive-2.5.3-4075-arm64-v8a-release.apk"
       },
       {
         "name": "SHA256SUMS.txt",
         "size": "0.0mb",
-        "downloads": 0,
+        "downloads": 2,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.5.3/SHA256SUMS.txt"
       }
     ]
@@ -52,7 +126,7 @@
       {
         "name": "ANDROID_SHA256SUM.txt",
         "size": "0.0mb",
-        "downloads": 5,
+        "downloads": 6,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.5.2/ANDROID_SHA256SUM.txt"
       },
       {
@@ -64,7 +138,7 @@
       {
         "name": "PureLive-2.5.2-4074-arm64-v8a",
         "size": "114.35mb",
-        "downloads": 156,
+        "downloads": 172,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.5.2/PureLive-2.5.2-4074-arm64-v8a-release.apk"
       },
       {
@@ -102,7 +176,7 @@
       {
         "name": "PureLive-2.5.1-4073-arm64-v8a",
         "size": "114.35mb",
-        "downloads": 90,
+        "downloads": 93,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.5.1/PureLive-2.5.1-4073-arm64-v8a-release.apk"
       },
       {
@@ -128,19 +202,19 @@
       {
         "name": "BUILD_METADATA.json",
         "size": "0.0mb",
-        "downloads": 11,
+        "downloads": 12,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.5.0/BUILD_METADATA.json"
       },
       {
         "name": "PureLive-2.5.0-4072-arm64-v8a",
         "size": "114.22mb",
-        "downloads": 273,
+        "downloads": 316,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.5.0/PureLive-2.5.0-4072-arm64-v8a-release.apk"
       },
       {
         "name": "PureLive-2.5.0-4072-ios-arm64-unsigned-app.zip",
         "size": "55.29mb",
-        "downloads": 21,
+        "downloads": 26,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.5.0/PureLive-2.5.0-4072-ios-arm64-unsigned-app.zip"
       },
       {
@@ -152,25 +226,25 @@
       {
         "name": "PureLive-2.5.0-4072-macos-universal.dmg",
         "size": "108.57mb",
-        "downloads": 9,
+        "downloads": 10,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.5.0/PureLive-2.5.0-4072-macos-universal.dmg"
       },
       {
         "name": "PureLive-2.5.0-4072-macos-universal.zip",
         "size": "96.63mb",
-        "downloads": 6,
+        "downloads": 7,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.5.0/PureLive-2.5.0-4072-macos-universal.zip"
       },
       {
         "name": "PureLive-2.5.0-4072-windows-x64-portable.zip",
         "size": "70.85mb",
-        "downloads": 32,
+        "downloads": 44,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.5.0/PureLive-2.5.0-4072-windows-x64-portable.zip"
       },
       {
         "name": "PureLive-2.5.0-windows-x64-setup.exe",
         "size": "53.77mb",
-        "downloads": 80,
+        "downloads": 89,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.5.0/PureLive-2.5.0-windows-x64-setup.exe"
       },
       {
@@ -196,7 +270,7 @@
       {
         "name": "ANDROID_SHA256SUM.txt",
         "size": "0.0mb",
-        "downloads": 4,
+        "downloads": 7,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.3.0/ANDROID_SHA256SUM.txt"
       },
       {
@@ -220,7 +294,7 @@
       {
         "name": "PureLive-2.3.0-4069-arm64-v8a",
         "size": "114.06mb",
-        "downloads": 100,
+        "downloads": 103,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.3.0/PureLive-2.3.0-4069-arm64-v8a-release.apk"
       },
       {
@@ -262,7 +336,7 @@
       {
         "name": "PureLive-2.3.0-4071-arm64-v8a",
         "size": "114.07mb",
-        "downloads": 26,
+        "downloads": 32,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.3.0/PureLive-2.3.0-4071-arm64-v8a-release.apk"
       },
       {
@@ -300,7 +374,7 @@
       {
         "name": "PureLive-2.2.0-4068-arm64-v8a",
         "size": "122.37mb",
-        "downloads": 54,
+        "downloads": 55,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.2.0/PureLive-2.2.0-4068-arm64-v8a-release.apk"
       },
       {
@@ -1258,7 +1332,7 @@
       {
         "name": "arm64-v8a",
         "size": "120.69mb",
-        "downloads": 3985,
+        "downloads": 3989,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.20/app-arm64-v8a-release.apk"
       },
       {
@@ -3554,6 +3628,149 @@
       "profile": "https://github.com/liuchuancong"
     },
     "changelog": "如果知道TV版CPU架构可以选择安装v8a,v7a,x86, tv版是拥有三个架构的全部。\r\n修复头像不显示\r\n修复主播直播状态错误\r\n添加退出弹窗",
+    "files": []
+  },
+  {
+    "version": "1.2.5",
+    "title": "Version: 1.2.5",
+    "date": "2023-10-25",
+    "github": "https://github.com/liuchuancong/pure_live/releases/tag/1.2.5",
+    "author": {
+      "name": "liuchuancong",
+      "avatar": "https://avatars.githubusercontent.com/u/36957912?v=4",
+      "profile": "https://github.com/liuchuancong"
+    },
+    "changelog": "-Fix: 修复分页显示不全\r\n-Fix: 添加消息通知\r\n-Fix:优化线路\r\n-Feature: 线路自动切换\r\n-Feature: 弹幕可在设置页面配置\r\n-Feature: 添加播放页面双击返回",
+    "files": []
+  },
+  {
+    "version": "1.2.4",
+    "title": "Version: 1.2.4",
+    "date": "2023-10-22",
+    "github": "https://github.com/liuchuancong/pure_live/releases/tag/1.2.4",
+    "author": {
+      "name": "liuchuancong",
+      "avatar": "https://avatars.githubusercontent.com/u/36957912?v=4",
+      "profile": "https://github.com/liuchuancong"
+    },
+    "changelog": "android-还原为exoPlayer\r\n修复弹幕卡顿，tv关闭弹幕\r\n抖音自适应",
+    "files": []
+  },
+  {
+    "version": "1.2.3",
+    "title": "Version: 1.2.3",
+    "date": "2023-10-20",
+    "github": "https://github.com/liuchuancong/pure_live/releases/tag/1.2.3",
+    "author": {
+      "name": "liuchuancong",
+      "avatar": "https://avatars.githubusercontent.com/u/36957912?v=4",
+      "profile": "https://github.com/liuchuancong"
+    },
+    "changelog": "-Fix: 移动端添加全屏下，横竖屏切换",
+    "files": []
+  },
+  {
+    "version": "1.2.2",
+    "title": "Version:1.2.2",
+    "date": "2023-10-18",
+    "github": "https://github.com/liuchuancong/pure_live/releases/tag/1.2.2",
+    "author": {
+      "name": "liuchuancong",
+      "avatar": "https://avatars.githubusercontent.com/u/36957912?v=4",
+      "profile": "https://github.com/liuchuancong"
+    },
+    "changelog": "-Fix:优化Android播放器，采用新的播放器\r\n-Fix:关注以及取消关注直播登陆后可自动同步，无需手动上传\r\n-Fix:修复直播间卡顿\r\n-Feature:后续采用分包下载",
+    "files": []
+  },
+  {
+    "version": "1.2.1",
+    "title": "Version:1.2.1",
+    "date": "2023-10-16",
+    "github": "https://github.com/liuchuancong/pure_live/releases/tag/1.2.1",
+    "author": {
+      "name": "liuchuancong",
+      "avatar": "https://avatars.githubusercontent.com/u/36957912?v=4",
+      "profile": "https://github.com/liuchuancong"
+    },
+    "changelog": "-修复抖音弹幕显示\r\n-修复弹幕bug\r\n-优化项目\r\n\r\n\r\n添加Q群交流：73592135",
+    "files": []
+  },
+  {
+    "version": "1.2.0",
+    "title": "Version:1.2.0",
+    "date": "2023-10-13",
+    "github": "https://github.com/liuchuancong/pure_live/releases/tag/1.2.0",
+    "author": {
+      "name": "liuchuancong",
+      "avatar": "https://avatars.githubusercontent.com/u/36957912?v=4",
+      "profile": "https://github.com/liuchuancong"
+    },
+    "changelog": "-Feature: 添加抖音直播\r\n-Fix: 蓝奏云对免费用户apk文件无法下载，需要开通会员9元一月，目前使用zip压缩下载，对您带来不便，敬请谅解",
+    "files": []
+  },
+  {
+    "version": "1.1.9",
+    "title": "version: 1.1.9",
+    "date": "2023-09-07",
+    "github": "https://github.com/liuchuancong/pure_live/releases/tag/1.1.9",
+    "author": {
+      "name": "liuchuancong",
+      "avatar": "https://avatars.githubusercontent.com/u/36957912?v=4",
+      "profile": "https://github.com/liuchuancong"
+    },
+    "changelog": "-Fix: 修复查看许可证后语言变成英语",
+    "files": []
+  },
+  {
+    "version": "1.1.8",
+    "title": "version: 1.1.8",
+    "date": "2023-09-06",
+    "github": "https://github.com/liuchuancong/pure_live/releases/tag/1.1.8",
+    "author": {
+      "name": "liuchuancong",
+      "avatar": "https://avatars.githubusercontent.com/u/36957912?v=4",
+      "profile": "https://github.com/liuchuancong"
+    },
+    "changelog": "Fix: 播放器bug\r\nFix: 视频内容布局",
+    "files": []
+  },
+  {
+    "version": "1.1.7",
+    "title": "version: 1.1.7",
+    "date": "2023-09-05",
+    "github": "https://github.com/liuchuancong/pure_live/releases/tag/1.1.7",
+    "author": {
+      "name": "liuchuancong",
+      "avatar": "https://avatars.githubusercontent.com/u/36957912?v=4",
+      "profile": "https://github.com/liuchuancong"
+    },
+    "changelog": "Fix: 使用新的mpv-player实现播放器\r\nFix: android端mpv-player蓝屏以及bug多还原使用原始播放器\r\nFix: 弹幕显示",
+    "files": []
+  },
+  {
+    "version": "1.1.4",
+    "title": "version: 1.1.4",
+    "date": "2023-08-16",
+    "github": "https://github.com/liuchuancong/pure_live/releases/tag/1.1.4",
+    "author": {
+      "name": "liuchuancong",
+      "avatar": "https://avatars.githubusercontent.com/u/36957912?v=4",
+      "profile": "https://github.com/liuchuancong"
+    },
+    "changelog": "Fix: 修复登录登陆页面国际化\r\nFix: 更新下载链接\r\nFix: 修复下载弹窗不显示",
+    "files": []
+  },
+  {
+    "version": "1.1.3",
+    "title": "Version:1.1.3",
+    "date": "2023-08-13",
+    "github": "https://github.com/liuchuancong/pure_live/releases/tag/1.1.3",
+    "author": {
+      "name": "liuchuancong",
+      "avatar": "https://avatars.githubusercontent.com/u/36957912?v=4",
+      "profile": "https://github.com/liuchuancong"
+    },
+    "changelog": "Feat: 添加登录注册功能\r\nFeat: 新增服务器同步设置\r\nFeat: 添加App自动关闭功能\r\nFix: 修复虎牙直播卡顿以及无法播放问题\r\nFix: 修复视频播放器画中画\r\nFix: 优化视频播放",
     "files": []
   }
 ]
