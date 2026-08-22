@@ -1,13 +1,13 @@
 {
-  "version": "2.5.2",
-  "build_number": 4074,
-  "version_num": 2054274,
+  "version": "2.5.3",
+  "build_number": 4075,
+  "version_num": 2054375,
   "android_abis": [
     "arm64-v8a"
   ],
-  "version_desc": "v2.5.2 启动刷新、动态高刷与弹幕帧同步更新 build 4074\n- 关注核验从首帧开始并与启动页动画重叠，进入首页仅保留 350 ms 有界等待。\n- 哔哩哔哩、斗鱼、虎牙、快手使用轻量房间元数据刷新，复用平台会话并减少播放与弹幕凭据请求。\n- 通用界面、主画面弹幕和小窗弹幕统一省电、均衡、设备最高三档策略，切换立即生效。\n- 弹幕引擎改用 vsync 对齐的 Ticker；竖屏弹幕列表阻止自动追尾抢占手指快速上滑。\n- Flutter Analyze 0 issue，215 项单元与 Widget 测试全部通过。\n",
+  "version_desc": "v2.5.3 直播间导航与横屏小窗快捷更新 build 4075\n- 竖屏直播间的弹幕列表、醒目留言、弹幕设置、屏蔽管理改为固定等宽标签，不再整行左右漂移。\n- 标签内容仍可在首尾边界内左右切换，保留原有页面滑动操作。\n- Android 横屏全屏左上角加入小窗快捷图标，与竖屏复用同一 PiP 入口和生命周期。\n- 新增导航约束与横屏入口回归测试，217 项单元与 Widget 测试全部通过。\n",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.5.2",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.5.3",
   "platforms": {
     "windows": {
       "version": "2.5.0",
