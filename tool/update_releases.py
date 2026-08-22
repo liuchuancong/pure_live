@@ -5,7 +5,7 @@ import sys
 import os
 
 # GitHub Actions 中自动使用当前仓库，本地运行时默认使用维护分支仓库。
-REPOSITORY = os.environ.get("GITHUB_REPOSITORY", "liuchuancong/pure_live")
+REPOSITORY = os.environ.get("GITHUB_REPOSITORY", "wzgrx/pure_live")
 API_URL = f"https://api.github.com/repos/{REPOSITORY}/releases?per_page=100"
 UPSTREAM_REPOSITORY = "liuchuancong/pure_live"
 UPSTREAM_API_URL = f"https://api.github.com/repos/{UPSTREAM_REPOSITORY}/releases?per_page=100"
