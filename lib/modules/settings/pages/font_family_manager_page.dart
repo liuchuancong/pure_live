@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/file_utils.dart';
@@ -23,7 +24,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
 
   Future<void> _activateFont(FontModel model, {String? targetFileName}) async {
     if (isDanmakuSettings) {
-      await SettingsService.to.font.activateDanmakuFontFamily(model);
+      await SettingsService.to.font.activateDanmakuFontFamily(model, targetFileName: targetFileName);
       Get.updateLocale(Get.locale ?? const Locale('zh', 'CN'));
     } else {
       await SettingsService.to.font.activateFontFamily(model, targetFileName: targetFileName);
@@ -33,12 +34,16 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
   Future<void> _setDefaultFont() async {
     if (isDanmakuSettings) {
       SettingsService.to.danmaku.danmakuFontFamilyName.v = 'Default';
+      SettingsService.to.danmaku.danmakuFontFamilyFileName.v = '';
       await HivePrefUtil.setString('danmakuFontFamilyName', 'Default');
+      await HivePrefUtil.setString('danmakuFontFamilyFileName', '');
       ToastUtil.show(i18n('font_reset_default'));
       return;
     }
     SettingsService.to.font.fontFamilyName.v = 'Default';
+    SettingsService.to.font.fontFamilyFileName.v = '';
     await HivePrefUtil.setString('fontFamilyName', 'Default');
+    await HivePrefUtil.setString('fontFamilyFileName', '');
     Get.updateLocale(Get.locale ?? const Locale('zh', 'CN'));
     ToastUtil.show(i18n('font_reset_default'));
   }
@@ -55,6 +60,25 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
           isDanmakuSettings ? i18n("change_danmaku_font_family") : i18n("font_family_settings"),
           style: const TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0.3),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: TextButton.icon(
+              onPressed: () async {
+                final downloadDir = await AppPathManager().downloadDir;
+                FileUtils.openFileOrUrl(p.join(downloadDir.path, AppPathManager.fontCacheDir));
+              },
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                foregroundColor: theme.colorScheme.primary,
+              ),
+              icon: const Icon(Remix.folder_open_line, size: 18),
+              label: Text(i18n("recorder_open_folder"), style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w600)),
+            ),
+          ),
+        ],
       ),
       body: Obx(() {
         final fontModels = SettingsService.to.font.fontList;
@@ -344,9 +368,9 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
 
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: theme.colorScheme.primary,
-              foregroundColor: theme.colorScheme.onPrimary,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              backgroundColor: theme.colorScheme.primaryContainer,
+              foregroundColor: theme.colorScheme.onPrimaryContainer,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
             ),
             onPressed: () async {

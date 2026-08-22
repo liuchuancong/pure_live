@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'dart:io' hide HttpClient;
+
 import 'package:flutter/services.dart';
 import 'package:pure_live/plugins/race_http.dart';
 import 'package:pure_live/core/common/http_client.dart';
@@ -14,7 +15,7 @@ class FontDownloadManager {
 
   Future<String> get _fontRootPath async {
     final directory = await AppPathManager().getDir(AppPathManager.dirDownload);
-    final fontRoot = Directory("${directory.path}/fonts");
+    final fontRoot = Directory("${directory.path}${Platform.pathSeparator}${AppPathManager.fontCacheDir}");
     if (!await fontRoot.exists()) {
       await fontRoot.create(recursive: true);
     }
@@ -111,8 +112,7 @@ class FontDownloadManager {
               fastestUrl!,
               file.path,
               header: {
-                'User-Agent':
-                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
               },
             );
 

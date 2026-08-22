@@ -1,15 +1,16 @@
+import 'dart:io';
 import 'dart:convert';
 import 'dart:developer';
-import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
-import 'package:pure_live/common/utils/windows_multi_instance_launcher.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
-import 'package:win32_registry/win32_registry.dart';
+import 'package:flutter/foundation.dart';
 
 import 'windows_portable_path_provider.dart';
+
+import 'package:path_provider/path_provider.dart';
+import 'package:win32_registry/win32_registry.dart';
+import 'package:pure_live/common/utils/windows_multi_instance_launcher.dart';
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 class AppPathManager {
   static final AppPathManager _instance = AppPathManager._internal();
@@ -27,7 +28,7 @@ class AppPathManager {
   static const String dirRecords = 'RECORDS';
   static const String dirEmojiCache = 'EMOJI_CACHE';
   static const String dirMigrationBackup = 'MIGRATION_BACKUP';
-  static const String fontCacheDir = 'fontsDir';
+  static const String fontCacheDir = 'fonts';
   static const String iptvCategoryFile = 'categories.json';
   static const String iptvHotFile = 'hot.m3u';
   static const String iptvHotRemoteFile = 'https://raw.githubusercontent.com/YueChan/Live/main/GNTV.m3u';

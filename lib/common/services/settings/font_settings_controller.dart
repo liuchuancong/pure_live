@@ -5,9 +5,9 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/models/font_model.dart';
+import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/plugins/font_download_manager.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
-import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/services/medels/download_status.dart';
 import 'package:pure_live/common/services/settings/danmaku_settings_controller.dart';
 
@@ -21,7 +21,7 @@ class FontSettingsController extends GetxController {
   final RxDouble fontSizeTitleMedium = hiveDouble('fontSizeTitleMedium', 15.0);
   final RxDouble fontSizeTitleLarge = hiveDouble('fontSizeTitleLarge', 20.0);
   final RxString fontFamilyName = hiveString('fontFamilyName', 'Default');
-
+  final RxString fontFamilyFileName = hiveString('fontFamilyFileName', '');
   final Rx<FontModel?> curFontModel = Rx<FontModel?>(null);
   final RxList<FontModel> fontList = <FontModel>[].obs;
   final Rx<DownloadState> fontState = DownloadState.notDownloaded.obs;
@@ -70,30 +70,45 @@ class FontSettingsController extends GetxController {
 
   Future<void> initUserFontLifecycle() async {
     final id = fontFamilyName.v;
+    final fileName = fontFamilyFileName.v;
+
     if (fontList.isEmpty) {
       return;
     }
+
     curFontModel.value = fontList.firstWhere((e) => e.id == id, orElse: () => fontList.first);
+
     if (id == 'Default') {
       fontState.value = DownloadState.notDownloaded;
       return;
     }
 
     final downloaded = await FontDownloadManager.instance.checkFontDownloaded(id);
+
     fontState.value = downloaded ? DownloadState.downloaded : DownloadState.notDownloaded;
+
     if (downloaded) {
-      await FontDownloadManager.instance.loadFont(id);
+      await FontDownloadManager.instance.loadFont(id, fileName: fileName);
     }
   }
 
   Future<void> activateFontFamily(FontModel fontModel, {String? targetFileName}) async {
-    await FontDownloadManager.instance.loadFont(fontModel.id, fileName: targetFileName ?? '');
+    final fileName = targetFileName ?? '';
+
+    await FontDownloadManager.instance.loadFont(fontModel.id, fileName: fileName);
+
     fontFamilyName.v = fontModel.id;
+    fontFamilyFileName.v = fileName;
+
     await HivePrefUtil.setString('fontFamilyName', fontModel.id);
+    await HivePrefUtil.setString('fontFamilyFileName', fileName);
+
     curFontModel.value = fontModel;
     fontState.value = DownloadState.downloaded;
+
     refreshSystemTheme();
     Get.updateLocale(Get.locale ?? const Locale('zh', 'CN'));
+
     if (targetFileName != null) {
       final subName = targetFileName.split('-').last;
       ToastUtil.show(i18n('font_toast_exclusive', args: {"name": fontModel.name, "subName": subName}));
@@ -102,9 +117,15 @@ class FontSettingsController extends GetxController {
     }
   }
 
-  Future<void> activateDanmakuFontFamily(FontModel font) async {
-    Get.find<DanmakuSettingsController>().danmakuFontFamilyName.v = font.id;
+  Future<void> activateDanmakuFontFamily(FontModel font, {String? targetFileName}) async {
+    final controller = Get.find<DanmakuSettingsController>();
+    final fileName = targetFileName ?? '';
+
+    controller.danmakuFontFamilyName.v = font.id;
+    controller.danmakuFontFamilyFileName.v = fileName;
+
     await HivePrefUtil.setString('danmakuFontFamilyName', font.id);
+    await HivePrefUtil.setString('danmakuFontFamilyFileName', fileName);
   }
 
   Future<void> refreshFontDiskSizes() async {
@@ -126,8 +147,12 @@ class FontSettingsController extends GetxController {
   Future<void> uninstallFontFamily(FontModel font) async {
     await FontDownloadManager.instance.deleteFontFamily(font, (s) {});
     if (fontFamilyName.v == font.id) {
-      fontFamilyName.v = Platform.isWindows ? "Microsoft YaHei" : 'Default';
-      await HivePrefUtil.setString('fontFamilyName', fontFamilyName.v);
+      fontFamilyName.v = 'Default';
+      fontFamilyFileName.v = '';
+
+      await HivePrefUtil.setString('fontFamilyName', 'Default');
+      await HivePrefUtil.setString('fontFamilyFileName', '');
+
       refreshSystemTheme();
     }
     await refreshFontDiskSizes();
@@ -147,6 +172,7 @@ class FontSettingsController extends GetxController {
       'fontSizeTitleMedium': fontSizeTitleMedium.v,
       'fontSizeTitleLarge': fontSizeTitleLarge.v,
       'fontFamilyName': fontFamilyName.v,
+      'fontFamilyFileName': fontFamilyFileName.v,
     };
   }
 
@@ -158,6 +184,7 @@ class FontSettingsController extends GetxController {
     fontSizeTitleMedium.v = json['fontSizeTitleMedium'] ?? 15.0;
     fontSizeTitleLarge.v = json['fontSizeTitleLarge'] ?? 20.0;
     fontFamilyName.v = json['fontFamilyName'] ?? 'Default';
+    fontFamilyFileName.v = json["fontFamilyFileName"] ?? '';
   }
 
   static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
@@ -170,6 +197,7 @@ class FontSettingsController extends GetxController {
       'fontSizeTitleMedium': (font['fontSizeTitleMedium'] ?? 15.0).toDouble(),
       'fontSizeTitleLarge': (font['fontSizeTitleLarge'] ?? 20.0).toDouble(),
       'fontFamilyName': font['fontFamilyName'] ?? 'Default',
+      'fontFamilyFileName': font['fontFamilyFileName'] ?? '',
     };
   }
 
