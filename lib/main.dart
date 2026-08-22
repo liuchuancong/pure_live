@@ -126,7 +126,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
             // The localized title is rendered by CustomTitleBar. A stable
             // application title avoids asking EasyLocalization for a key
             // before its delegate has completed the first load.
-            title: 'PureLive',
+            title: i18n('app_name'),
             scrollBehavior: MyCustomScrollBehavior(),
             debugShowCheckedModeBanner: false,
             themeMode: AppConsts.themeModes[SettingsService.to.theme.themeModeName.v]!,
