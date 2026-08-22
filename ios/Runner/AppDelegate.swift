@@ -15,7 +15,11 @@ import UIKit
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
-    let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "PureLiveDisplayMode")
+    guard let registrar = engineBridge.pluginRegistry.registrar(
+      forPlugin: "PureLiveDisplayMode"
+    ) else {
+      return
+    }
     let channel = FlutterMethodChannel(
       name: "pure_live/display_mode",
       binaryMessenger: registrar.messenger()
