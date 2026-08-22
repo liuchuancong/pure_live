@@ -78,7 +78,7 @@ dependencies:
   audio_service: ^0.18.18 # 后台音频服务
   audio_service_win: ^0.0.3
   audio_session: ^0.2.3 # 音频会话管理
-  ffmpeg_kit_extended_flutter: ^0.5.13
+  ffmpeg_kit_extended_flutter: ^0.6.0
   # Vendored from liuchuancong/flv_lzc@030d611 so the Android attach-time
   # SurfaceTexture crash fix is reproducible in local/offline release builds.
   flv_lzc:
@@ -88,13 +88,13 @@ dependencies:
   flutter_svg: ^2.2.1 # SVG图片渲染
   lottie: ^3.3.3 #动画
   cached_network_image: ^3.3.0 # 网络图片缓存
-  dynamic_color: ^1.8.1 # 动态主题色
+  dynamic_color: ^2.1.0 # 动态主题色
   waterfall_flow: ^3.1.1 # 瀑布流布局
   easy_refresh: ^3.5.0 # 下拉刷新/上拉加载
   flutter_smart_dialog: ^5.1.0 # 自定义弹窗
   flex_color_picker: ^3.7.2 # 颜色选择器
   bordered_text: ^3.0.2 # 带边框文字
-  flutter_color: ^2.1.0 # 颜色工具
+  flutter_color: ^2.1.1 # 颜色工具
   syncfusion_flutter_sliders: ^34.2.4 # 滑块组件
   markdown_widget: ^2.3.2+8 # Markdown渲染
 
