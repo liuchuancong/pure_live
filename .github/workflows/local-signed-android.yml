@@ -63,10 +63,10 @@ jobs:
       - name: Configure temporary release signing
         shell: pwsh
         env:
-          KEYSTORE_BASE64: ${{ secrets.PURELIVE_KEYSTORE_BASE64 }}
-          STORE_PASSWORD: ${{ secrets.PURELIVE_STORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.PURELIVE_KEY_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.PURELIVE_KEY_ALIAS }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
           $ErrorActionPreference = 'Stop'
           foreach ($name in @('KEYSTORE_BASE64', 'STORE_PASSWORD', 'KEY_PASSWORD', 'KEY_ALIAS')) {

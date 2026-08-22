@@ -3,55 +3,86 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/cache_manager.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/common/widgets/common_avatar.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/common/utils/share_command_handler.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
-class RoomCard extends StatelessWidget {
+class RoomCard extends StatefulWidget {
   const RoomCard({super.key, required this.room, this.dense = false, this.audiencePending = false});
   final LiveRoom room;
   final bool dense;
   final bool audiencePending;
 
-  Widget _buildCover(BuildContext context, bool isDark) {
-    final coverUrl = normalizeNetworkImageUrl(room.cover);
+  @override
+  State<RoomCard> createState() => _RoomCardState();
+}
 
+class _RoomCardState extends State<RoomCard> {
+  String? _processedCoverUrl;
+  int? _processedEpoch;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _scheduleCacheCheck();
+  }
+
+  @override
+  void didUpdateWidget(covariant RoomCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final oldCoverUrl = normalizeNetworkImageUrl(oldWidget.room.cover);
+    final newCoverUrl = normalizeNetworkImageUrl(widget.room.cover);
+
+    if (oldCoverUrl != newCoverUrl) {
+      _processedCoverUrl = null;
+    }
+
+    _scheduleCacheCheck();
+  }
+
+  void _scheduleCacheCheck() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _checkImageCache();
+    });
+  }
+
+  Future<void> _checkImageCache() async {
+    final coverUrl = widget.room.cover;
+    if (coverUrl!.isEmpty) return;
+    final epoch = SettingsService.to.cache.imageCacheEpoch.value;
+    if (_processedCoverUrl == coverUrl && _processedEpoch == epoch) {
+      return;
+    }
+    _processedCoverUrl = coverUrl;
+    _processedEpoch = epoch;
+    await CustomImageCacheManager.remove(coverUrl);
+  }
+
+  Widget _buildCover(BuildContext context, bool isDark) {
+    final coverUrl = normalizeNetworkImageUrl(widget.room.cover);
     if (coverUrl.isEmpty) {
       return _coverFallback(context, isDark);
     }
-
     // Keep a stable image element and an encoded disk entry. The previous
     // global epoch rebuilt every visible Image.network at once, discarded the
     // old pixels and forced independent network/decode progress callbacks for
     // the full grid. That was the main source of mixed placeholders, flashes
     // and CPU spikes during refresh and tab switching.
-    return Obx(() {
-      final epoch = SettingsService.to.cache.imageCacheEpoch.value;
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          final logicalWidth = constraints.maxWidth.isFinite
-              ? constraints.maxWidth
-              : MediaQuery.sizeOf(context).width / 2;
-          final cacheWidth = (logicalWidth * MediaQuery.devicePixelRatioOf(context)).round().clamp(240, 720).toInt();
-
-          return CachedNetworkImage(
-            imageUrl: coverUrl,
-            cacheKey: epoch == 0 ? coverUrl : '$coverUrl#$epoch',
-            httpHeaders: networkImageHeaders(coverUrl),
-            cacheManager: CustomImageCacheManager.instance,
-            fit: BoxFit.cover,
-            filterQuality: FilterQuality.low,
-            memCacheWidth: cacheWidth,
-            maxWidthDiskCache: 720,
-            fadeInDuration: Duration.zero,
-            fadeOutDuration: Duration.zero,
-            useOldImageOnUrlChange: true,
-            placeholder: (context, _) => _coverPlaceholder(context, isDark),
-            errorWidget: (context, _, _) => _coverFallback(context, isDark),
-          );
-        },
-      );
-    });
+    return CachedNetworkImage(
+      imageUrl: coverUrl,
+      httpHeaders: networkImageHeaders(coverUrl),
+      cacheManager: CustomImageCacheManager.instance,
+      fit: BoxFit.cover,
+      filterQuality: FilterQuality.low,
+      fadeInDuration: Duration.zero,
+      fadeOutDuration: Duration.zero,
+      useOldImageOnUrlChange: true,
+      placeholder: (context, _) => _coverPlaceholder(context, isDark),
+      errorWidget: (context, _, _) => _coverFallback(context, isDark),
+    );
   }
 
   Widget _coverPlaceholder(BuildContext context, bool isDark) {
@@ -74,7 +105,7 @@ class RoomCard extends StatelessWidget {
   }
 
   void onTap(BuildContext context) async {
-    AppNavigator.toLiveRoomDetail(liveRoom: room);
+    AppNavigator.toLiveRoomDetail(liveRoom: widget.room);
   }
 
   void showFollowDialog(
@@ -133,7 +164,7 @@ class RoomCard extends StatelessWidget {
         : Get.put(FavoriteController());
     final TagManagementController tagController = Get.find<TagManagementController>();
     final theme = Theme.of(context);
-    final bool isFollowed = SettingsService.to.fav.isFavorite(room);
+    final bool isFollowed = SettingsService.to.fav.isFavorite(widget.room);
 
     Get.dialog(
       AlertDialog(
@@ -152,12 +183,12 @@ class RoomCard extends StatelessWidget {
                 color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
-              child: Image.asset(Sites.of(room.platform!).logo, width: 28, height: 28),
+              child: Image.asset(Sites.of(widget.room.platform!).logo, width: 28, height: 28),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                room.nick ?? '',
+                widget.room.nick ?? '',
                 style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.3),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -170,7 +201,7 @@ class RoomCard extends StatelessWidget {
               icon: Icon(RemixIcons.share_forward_line, size: 20, color: theme.colorScheme.primary),
               onPressed: () {
                 Navigator.pop(context);
-                ShareCommandHandler.instance.onShareRoomPressed(room);
+                ShareCommandHandler.instance.onShareRoomPressed(widget.room);
               },
             ),
             SizedBox(width: 6),
@@ -191,9 +222,9 @@ class RoomCard extends StatelessWidget {
                   showFollowDialog(
                     context,
                     theme,
-                    anchorName: room.nick ?? '',
+                    anchorName: widget.room.nick ?? '',
                     onConfirm: () {
-                      SettingsService.to.fav.addRoom(room);
+                      SettingsService.to.fav.addRoom(widget.room);
                       _showTagSelectionGridModal(context, theme, favoriteController, tagController);
                     },
                   );
@@ -218,7 +249,7 @@ class RoomCard extends StatelessWidget {
                   border: Border.all(color: theme.dividerColor.withValues(alpha: 0.04), width: 0.8),
                 ),
                 child: Text(
-                  room.title ?? '',
+                  widget.room.title ?? '',
                   style: AppTextStyles.t14.copyWith(
                     color: theme.colorScheme.onSurface,
                     fontWeight: FontWeight.w500,
@@ -230,7 +261,7 @@ class RoomCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(left: 4),
                 child: Text(
-                  i18n('room_id_label', args: {"id": ?room.roomId}),
+                  i18n('room_id_label', args: {"id": ?widget.room.roomId}),
                   style: AppTextStyles.t11.copyWith(
                     color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                     fontWeight: FontWeight.bold,
@@ -247,7 +278,7 @@ class RoomCard extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                FollowButton(room: room),
+                FollowButton(room: widget.room),
                 TextButton(
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -273,7 +304,7 @@ class RoomCard extends StatelessWidget {
     FavoriteController favoriteController,
     TagManagementController tagController,
   ) {
-    List<String> tempSelectedIds = List<String>.from(room.tagIds);
+    List<String> tempSelectedIds = List<String>.from(widget.room.tagIds);
     final nameController = TextEditingController();
     final descController = TextEditingController();
 
@@ -633,7 +664,7 @@ class RoomCard extends StatelessWidget {
                     SmartDialog.showToast(i18n('tag_invalid_or_duplicate'));
                   }
                 } else {
-                  favoriteController.updateRoomTags(room, tempSelectedIds);
+                  favoriteController.updateRoomTags(widget.room, tempSelectedIds);
                   Navigator.pop(context);
                 }
               },
@@ -657,9 +688,14 @@ class RoomCard extends StatelessWidget {
     // second composited layer per card and keep the cover clip lightweight.
     return Card(
       margin: EdgeInsets.zero,
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      color: isDark ? Colors.grey[900] : Colors.white,
+      elevation: 2,
+      shadowColor: Colors.black.withValues(alpha: 0.10),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: Colors.black.withValues(alpha: 0.04)),
+      ),
+      color: isDark ? Colors.grey[900] : const Color(0xFFFAFAFA),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
         onTap: () => onTap(context),
@@ -680,18 +716,18 @@ class RoomCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (room.isRecord == true)
+                if (widget.room.isRecord == true)
                   Positioned(
                     right: 8,
                     top: 8,
                     child: CountChip(
                       icon: Icons.videocam_rounded,
                       count: i18n("replay"),
-                      dense: dense,
+                      dense: widget.dense,
                       color: Get.theme.primaryColor,
                     ),
                   ),
-                if (audiencePending)
+                if (widget.audiencePending)
                   Positioned(
                     right: 8,
                     bottom: 8,
@@ -699,19 +735,25 @@ class RoomCard extends StatelessWidget {
                       icon: Icons.sync_rounded,
                       value: i18n('audience_waiting'),
                       semanticLabel: i18n('audience_waiting'),
-                      dense: dense,
+                      dense: widget.dense,
                     ),
                   )
-                else if (room.isRecord == false && room.liveStatus == LiveStatus.live)
+                else if (widget.room.isRecord == false && widget.room.liveStatus == LiveStatus.live)
                   Positioned(
                     right: 8,
                     bottom: 8,
                     child: Obx(() {
                       final app = SettingsService.to.app;
                       final preferReal = app.preferRealOnlineCounts.v;
-                      final platformEnabled = app.isRealOnlineEnabledFor(room.platform);
-                      final type = room.audienceType(preferRealOnline: preferReal, platformEnabled: platformEnabled);
-                      final value = room.audienceValue(preferRealOnline: preferReal, platformEnabled: platformEnabled);
+                      final platformEnabled = app.isRealOnlineEnabledFor(widget.room.platform);
+                      final type = widget.room.audienceType(
+                        preferRealOnline: preferReal,
+                        platformEnabled: platformEnabled,
+                      );
+                      final value = widget.room.audienceValue(
+                        preferRealOnline: preferReal,
+                        platformEnabled: platformEnabled,
+                      );
                       final labelKey = switch (type) {
                         AudienceMetricType.popularity => 'audience_popularity',
                         AudienceMetricType.onlineViewers => 'audience_online',
@@ -730,37 +772,37 @@ class RoomCard extends StatelessWidget {
                         },
                         value: displayValue,
                         semanticLabel: '${i18n(labelKey)} $displayValue',
-                        dense: dense,
+                        dense: widget.dense,
                       );
                     }),
                   ),
               ],
             ),
             ListTile(
-              dense: dense,
-              minLeadingWidth: dense ? 34 : 40,
-              contentPadding: EdgeInsets.symmetric(horizontal: dense ? 10 : 12, vertical: dense ? 4 : 6),
-              horizontalTitleGap: dense ? 8 : 12,
-              leading: CommonAvatar(avatarUrl: room.avatar, fallbackName: room.nick, dense: dense),
+              dense: widget.dense,
+              minLeadingWidth: widget.dense ? 34 : 40,
+              contentPadding: EdgeInsets.symmetric(horizontal: widget.dense ? 10 : 12, vertical: widget.dense ? 4 : 6),
+              horizontalTitleGap: widget.dense ? 8 : 12,
+              leading: CommonAvatar(avatarUrl: widget.room.avatar, fallbackName: widget.room.nick, dense: widget.dense),
               title: Text(
-                room.title ?? '',
+                widget.room.title ?? '',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: (dense ? AppTextStyles.t13 : AppTextStyles.t15).copyWith(
+                style: (widget.dense ? AppTextStyles.t13 : AppTextStyles.t15).copyWith(
                   fontWeight: FontWeight.w600,
                   color: isDark ? Colors.white : Colors.black87,
                 ),
               ),
               subtitle: Text(
-                room.nick ?? '',
+                widget.room.nick ?? '',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: (dense ? AppTextStyles.t12 : AppTextStyles.t13).copyWith(
+                style: (widget.dense ? AppTextStyles.t12 : AppTextStyles.t13).copyWith(
                   fontWeight: FontWeight.w500,
                   color: isDark ? Colors.grey[400] : Colors.grey[700],
                 ),
               ),
-              trailing: dense
+              trailing: widget.dense
                   ? null
                   : Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -769,7 +811,7 @@ class RoomCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        room.platform?.toUpperCase() ?? '',
+                        widget.room.platform?.toUpperCase() ?? '',
                         style: AppTextStyles.t11.copyWith(
                           fontWeight: FontWeight.w600,
                           color: isDark ? Colors.grey[300] : Colors.grey[800],
