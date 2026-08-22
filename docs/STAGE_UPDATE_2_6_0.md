@@ -1,8 +1,8 @@
 # v2.6.0 阶段稳定版
 
-版本：`2.6.0+4076`  
-维护仓库：`wzgrx/pure_live`  
-上游基线：`liuchuancong/pure_live@aeac68ca`  
+版本：`2.6.0+4076`
+维护仓库：`wzgrx/pure_live`
+上游基线：`liuchuancong/pure_live@db3460f8`
 发布日期：2026-08-23
 
 ## 本阶段范围

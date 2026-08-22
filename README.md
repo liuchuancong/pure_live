@@ -35,7 +35,7 @@
 
 - **最新稳定版**：[v2.6.0](https://github.com/wzgrx/pure_live/releases/tag/v2.6.0)
 - **当前版本**：`2.6.0+4076`
-- **v2.6.0 上游源码基线**：已同步至 `liuchuancong/pure_live@aeac68ca`；维护分支同时保留三档刷新率、PiP 弹幕、后台播放、本地互动、Windows 数据迁移与稳定性增强
+- **v2.6.0 上游源码基线**：已同步至 `liuchuancong/pure_live@db3460f8`；维护分支同时保留三档刷新率、PiP 弹幕、后台播放、本地互动、Windows 数据迁移与稳定性增强
 - **构建平台**：Android arm64、Windows x64、Linux x64、macOS Universal、iOS arm64 设备包
 - **质量门禁**：Flutter Analyze 0 issue、223/223 项自动化测试、26/26 项发布时点公开接口探测通过
 
