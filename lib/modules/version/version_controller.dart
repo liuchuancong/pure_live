@@ -24,18 +24,19 @@ class VersionController extends GetxController {
   // Android
   // =========================
 
-  final apkUrl = ''.obs;
-  final apkUrl2 = ''.obs;
-  final apkUrl3 = ''.obs;
+  final androidArmeabiV7aUrl = ''.obs;
+  final androidArm64Url = ''.obs;
+  final androidX8664Url = ''.obs;
+
   // =========================
   // Windows
   // =========================
-  final windowsUrl = ''.obs;
-  final windowsUrl2 = ''.obs;
+  final windowsSetupUrl = ''.obs;
+  final windowsPortableUrl = ''.obs;
+
   // =========================
   // macOS
   // =========================
-
   final macosUrl = ''.obs;
 
   late PackageInfo packageInfo;
@@ -79,19 +80,20 @@ class VersionController extends GetxController {
     // =====================================================
 
     final androidAbis = VersionUtil.latestAndroidAbis;
-    apkUrl.value = androidAbis.contains('armeabi-v7a') ? assets.androidArmeabiV7a : '';
-    apkUrl2.value = androidAbis.contains('arm64-v8a') ? assets.androidArm64 : '';
-    apkUrl3.value = androidAbis.contains('x86_64') ? assets.androidX8664 : '';
+    androidArmeabiV7aUrl.value = androidAbis.contains('armeabi-v7a') ? assets.androidArmeabiV7a : '';
+    androidArm64Url.value = androidAbis.contains('arm64-v8a') ? assets.androidArm64 : '';
+    androidX8664Url.value = androidAbis.contains('x86_64') ? assets.androidX8664 : '';
 
     // =====================================================
     // Windows
     // =====================================================
 
-    windowsUrl.value = assets.windowsSetup;
-    windowsUrl2.value = assets.windowsPortable;
+    windowsSetupUrl.value = assets.windowsSetup;
+    windowsPortableUrl.value = assets.windowsPortable;
+
     // =====================================================
     // macOS
-    // ========================= ===========================
+    // =====================================================
 
     macosUrl.value = assets.macosUniversal;
 
