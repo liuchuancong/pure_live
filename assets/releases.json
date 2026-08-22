@@ -1,5 +1,73 @@
 [
   {
+    "version": "2.5.0",
+    "title": "Pure Live v2.5.0",
+    "date": "2026-08-22",
+    "github": "https://github.com/wzgrx/pure_live/releases/tag/v2.5.0",
+    "author": {
+      "name": "wzgrx",
+      "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
+      "profile": "https://github.com/wzgrx"
+    },
+    "changelog": "# Pure Live v2.5.0\n\nv2.5.0 build 4072 聚焦首页首刷速度、设备刷新率分档、Windows 视频纹理资源边界和可复现本机构建，并以真实 merge 同步上游至 `b84a847d`。\n\n## 首页与列表\n\n- 收藏核验从“固定批次整批等待”改为 4 路有界异步工作池；完成一个网络任务后立即领取下一个，慢平台不再阻塞同批后续房间。\n- 房间超时从 12 秒收紧为 10 秒；后台版本检查延后到首帧后 2 秒，降低启动时的带宽与调度竞争。\n- 刷新结果完整后一次性发布，保留旧卡片、稳定排序和滚动位置，避免加载期间卡片分批插入和跳动。\n- 修复首次收藏快照为空时被“相同空列表”短路的问题；空收藏现在立即进入空状态，不再让隐藏的无限加载动画持续占用 Windows CPU/GPU。\n- 热门接口短时失败时保留上一份可用快照；分区卡片尺寸和切换房间滚动物理效果同步上游修复。\n\n## 刷新率与功耗\n\n- 新增省电、均衡、高性能三档刷新率模式；设置页展示当前刷新率、设备最高刷新率和各档耗电提示。\n- 新安装默认省电，由系统动态选择刷新率；均衡在触摸、滚动和转场时请求最高刷新率，稳定 1.5 秒后释放；高性能在应用前台持续请求最高刷新率。\n- 旧版高刷开关自动迁移为均衡档；播放器视频帧率与界面刷新率保持独立，避免低帧率直播重复渲染。\n\n## Windows 与播放器\n\n- Windows MediaKit 原生视频输出按可见控件的物理像素尺寸设置，保持源视频比例且不超过源分辨率。\n- 窗口尺寸变化使用 180 ms 去抖，降低拖动、缩放和小窗场景的纹理重建频率。\n- 保留既有播放器/弹幕会话代次、PiP 返回重订阅、长时间队列上限与资源释放回归。\n\n## 依赖、构建与上游\n\n- 更新 `ffmpeg_kit_extended_flutter` 0.6.0、`flutter_color` 2.1.1；`dynamic_color` 使用 Flutter 3.47 可直接兼容的 1.9.0。\n- FFmpeg builders v0.11.0 的 Android AAR 和 Windows Native Assets ZIP 在构建前执行 SHA-256 校验并复用持久缓存。\n- `tool/local_ci.ps1` 在一次锁文件解析后使用 `--no-pub` 完成 Analyze/测试，减少重复网络和原生资产准备。\n- 同步上游 `b84a847d`，同时保留维护仓库发布地址、Windows 数据目录和升级迁移逻辑。\n\n## 构建目标\n\n- Flutter Analyze 0 issue、208 项单元/Widget 测试、26/26 平台公开接口探测通过。\n- Android `arm64-v8a` 正式安装包。\n- Windows x64 便携包与可选安装程序。\n- Linux x64、macOS Universal、iOS arm64 设备归档由对应系统的阶段构建补齐。\n- 同一 Release 提供 `SHA256SUMS.txt` 与 `build-metadata.json`，记录源码提交、签名状态和平台来源。\n\n完整设计和验收边界见 [v2.5.0 阶段稳定版](docs/STAGE_UPDATE_2_5_0.md)。",
+    "files": [
+      {
+        "name": "BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.5.0/BUILD_METADATA.json"
+      },
+      {
+        "name": "PureLive-2.5.0-4072-arm64-v8a",
+        "size": "114.22mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.5.0/PureLive-2.5.0-4072-arm64-v8a-release.apk"
+      },
+      {
+        "name": "PureLive-2.5.0-4072-ios-arm64-unsigned-app.zip",
+        "size": "55.29mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.5.0/PureLive-2.5.0-4072-ios-arm64-unsigned-app.zip"
+      },
+      {
+        "name": "PureLive-2.5.0-4072-linux-x64.tar.gz",
+        "size": "35.69mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.5.0/PureLive-2.5.0-4072-linux-x64.tar.gz"
+      },
+      {
+        "name": "PureLive-2.5.0-4072-macos-universal.dmg",
+        "size": "108.57mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.5.0/PureLive-2.5.0-4072-macos-universal.dmg"
+      },
+      {
+        "name": "PureLive-2.5.0-4072-macos-universal.zip",
+        "size": "96.63mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.5.0/PureLive-2.5.0-4072-macos-universal.zip"
+      },
+      {
+        "name": "PureLive-2.5.0-4072-windows-x64-portable.zip",
+        "size": "70.85mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.5.0/PureLive-2.5.0-4072-windows-x64-portable.zip"
+      },
+      {
+        "name": "PureLive-2.5.0-windows-x64-setup.exe",
+        "size": "53.77mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.5.0/PureLive-2.5.0-windows-x64-setup.exe"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.5.0/SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
     "version": "2.3.0",
     "title": "Pure Live v2.3.0",
     "date": "2026-08-20",
@@ -9,30 +77,42 @@
       "avatar": "https://avatars.githubusercontent.com/in/15368?v=4",
       "profile": "https://github.com/apps/github-actions"
     },
-    "changelog": "# Pure Live v2.3.0\n\nv2.3.0 聚焦系统画中画返回后的弹幕会话、启动数据新鲜度、横屏操作完整性，以及 Windows/Android 长时间播放的资源边界；维护分支已同步至上游 `67a24a24`，包含已合并的 PR #762、虎牙播放地址 PR #766、播放器引擎访问接口、issue #768 导航保底修复与 media_kit 路由跳转崩溃修复。\n\n## 弹幕生命周期\n\n- Android 从系统画中画返回全屏或竖屏时，由持续存活的直播控制器发布恢复 revision；恢复先检查同房间传输健康度，健康连接不再被强制拆除，只有已断开的连接才原位重建。\n- 弹幕列表重建后在首帧重新获取当前 500 条快照、提交待处理批次并恢复实时跟随；Android 只有存在真实触摸指针时才把拖动通知视为用户上滑，转场遗留通知不再暂停列表。\n- 弹幕列表仅在 80 ms UI 批次落地时复制可见快照；本地消息仍立即同步到列表与画面。\n- 弹幕文本解析、段落布局、图片和表情 Token 缓存全部改为有界 LRU；主画面和小窗分别使用符合轨道规模的缓存/对象池上限。\n\n## 启动刷新与横屏交互\n\n- 收藏房间在控制器初始化阶段先清除上一进程遗留的开播位，再立即核验；每个有界批次先更新内存状态，至少 20 个房间再合并持久化，兼顾新鲜度与滑动流畅度。\n- 应用在后台停留超过 15 秒后返回，刷新当前热门/分区平台；单房间请求设置 12 秒上限，单个平台异常不会阻塞其余收藏。\n- 横屏弹幕设置改为靠右紧凑侧栏，不再把小窗的长设置表单重复塞入直播设置；模板和数值继续实时作用于画面。\n- 全屏底部左右控制组之间增加本地弹幕输入，沿用当前房间代次和 2 秒投递队列，防止延迟消息串入下一直播间。\n\n## 性能与稳定性\n\n- 切换清晰度、线路或刷新播放器前完整释放旧 `VideoController` 的弹幕引擎、计时器和订阅，修复 Windows 多次换线后的资源累积。\n- 修复音量隐藏和配置去抖计时器未保存引用的问题；所有播放器计时器在销毁时统一取消。\n- media_kit/mpv 直播前向缓存限制为 64 MiB、回看缓存限制为 8 MiB，保留 3 秒预读，减少长时间直播的原生内存高水位。\n- Windows 恢复鼠标拖动滚动，并保留滚轮脉冲合并动画；主画面弹幕限制高峰入场频率、可见数量和过期队列。\n- Flame 弹幕引擎在没有排队或活动弹幕时停止显示刷新循环，收到新消息再唤醒；加载封面使用静态占位，网格恢复独立重绘边界。\n- 直播页和二、三级控制器显式释放全局 Worker、滚动/刷新控制器、DLNA/FFmpeg 订阅与表情解码 Codec。\n- 播放器适配器公开类型安全的引擎/原生播放器访问接口；导航设置至少保留一个主页入口，修复全部隐藏后主页空白且无法返回设置的问题。\n- 进入录制中心前先等待弹窗退场并卸载一帧原生视频层，返回后恢复同一直播会话，修复 media_kit 在路由叠加时的崩溃与画面遮挡竞态。\n\n## 构建与核验\n\n- Flutter 3.47.0 / Dart 3.13.0；Built-in Kotlin 审计和 Flutter Analyze 零问题。\n- 175 项单元/Widget 测试及 26/26 平台公开接口探测通过。\n- Windows x64 release 已完成热门平台切换、封面回填、2K60 播放、实时弹幕与资源采样；Android arm64 使用持久发布证书正式签名并核对包名、ABI、版本和校验和。\n- Android arm64 热修包从当前 `master` 的干净提交重新构建并使用持久发布证书签名；Windows、Linux、macOS 与 iOS 继续保留本阶段已发布归档，后续全平台周期再统一重建。",
+    "changelog": "# Pure Live v2.3.0\n\n> 当前 Android 正式包：`2.3.0+4071`，arm64-v8a，来源提交 `4191c5b6a185f40f90da07c67877b1f615decf73`。\n\n## Android build 4071：流畅度与资源热修\n\n- 首页、热门、收藏及分区刷新采用保留旧快照、后台请求、完成后一次性替换的事务模型，消除清空列表、分批插入和重复首刷引起的卡片跳动。\n- 平台页签与分区页签使用独立纵向滚动控制器；横向动画落位后再提交筛选结果，减少串页、旧偏移和滑动中重建。\n- 封面改用有容量上限的磁盘/解码缓存，按显示尺寸解码并保留旧像素；自动缩略图刷新不再同时驱逐可见图片。\n- 已访问平台离屏后释放渲染树；缓存目录统计在打开缓存设置页时于后台 isolate 执行。\n- Android 只在触摸、滚动和转场期间请求设备最高刷新率，稳定 1.5 秒后交还系统动态策略；实际弹幕帧率未变化时跳过弹幕配置重建。\n- 保留 v2.3.0 的画中画弹幕恢复、后台播放、本地互动、横屏输入、弹幕缓存边界及播放器资源释放增强。\n\n## 构建与核验\n\n- Flutter Analyze：0 issue。\n- Flutter Test：196 项全部通过。\n- Android：`com.mystyle.purelive`，versionCode `6071`，minSdk 24，targetSdk 37，仅 `arm64-v8a`。\n- APK Signature Scheme v2 验证通过；证书与 build 4070 相同：`CN=Pure Live Community Release, O=wzgrx`。\n- APK SHA-256：`e777a6cd7ad1f312c566f66dcc9b74dab55e3947ad3d5562e5d4f7e3c10bdd69`。\n- Windows、Linux、macOS 与 iOS 继续保留当前已发布归档，本轮优先更新 Android arm64。\n\n## 下载\n\n- [PureLive-2.3.0-4071-arm64-v8a-release.apk](https://github.com/wzgrx/pure_live/releases/download/v2.3.0/PureLive-2.3.0-4071-arm64-v8a-release.apk)\n- [Android SHA-256](https://github.com/wzgrx/pure_live/releases/download/v2.3.0/ANDROID_SHA256SUM.txt)\n- [Android build 4071 metadata](https://github.com/wzgrx/pure_live/releases/download/v2.3.0/BUILD_METADATA-android-4071.json)",
     "files": [
       {
         "name": "ANDROID_SHA256SUM.txt",
         "size": "0.0mb",
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.3.0/ANDROID_SHA256SUM.txt"
+      },
+      {
+        "name": "BUILD_METADATA-android-4070.json",
+        "size": "0.0mb",
+        "downloads": 1,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.3.0/BUILD_METADATA-android-4070.json"
+      },
+      {
+        "name": "BUILD_METADATA-android-4071.json",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.3.0/BUILD_METADATA-android-4071.json"
       },
       {
         "name": "BUILD_METADATA.json",
         "size": "0.0mb",
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.3.0/BUILD_METADATA.json"
       },
       {
         "name": "PureLive-2.3.0-4069-arm64-v8a",
         "size": "114.06mb",
-        "downloads": 0,
+        "downloads": 89,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.3.0/PureLive-2.3.0-4069-arm64-v8a-release.apk"
       },
       {
         "name": "PureLive-2.3.0-4069-ios-arm64-unsigned-app.zip",
         "size": "55.2mb",
-        "downloads": 40,
+        "downloads": 45,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.3.0/PureLive-2.3.0-4069-ios-arm64-unsigned-app.zip"
       },
       {
@@ -44,25 +124,37 @@
       {
         "name": "PureLive-2.3.0-4069-macos-universal.dmg",
         "size": "108.37mb",
-        "downloads": 5,
+        "downloads": 7,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.3.0/PureLive-2.3.0-4069-macos-universal.dmg"
       },
       {
         "name": "PureLive-2.3.0-4069-macos-universal.zip",
         "size": "96.44mb",
-        "downloads": 2,
+        "downloads": 3,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.3.0/PureLive-2.3.0-4069-macos-universal.zip"
       },
       {
         "name": "PureLive-2.3.0-4069-windows-x64-portable.zip",
         "size": "69.39mb",
-        "downloads": 39,
+        "downloads": 52,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.3.0/PureLive-2.3.0-4069-windows-x64-portable.zip"
+      },
+      {
+        "name": "PureLive-2.3.0-4070-arm64-v8a",
+        "size": "114.06mb",
+        "downloads": 10,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.3.0/PureLive-2.3.0-4070-arm64-v8a-release.apk"
+      },
+      {
+        "name": "PureLive-2.3.0-4071-arm64-v8a",
+        "size": "114.07mb",
+        "downloads": 8,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.3.0/PureLive-2.3.0-4071-arm64-v8a-release.apk"
       },
       {
         "name": "PureLive-2.3.0-windows-x64-setup.exe",
         "size": "53.74mb",
-        "downloads": 105,
+        "downloads": 139,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.3.0/PureLive-2.3.0-windows-x64-setup.exe"
       },
       {
@@ -94,7 +186,7 @@
       {
         "name": "PureLive-2.2.0-4068-arm64-v8a",
         "size": "122.37mb",
-        "downloads": 52,
+        "downloads": 53,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.2.0/PureLive-2.2.0-4068-arm64-v8a-release.apk"
       },
       {
@@ -130,7 +222,7 @@
       {
         "name": "PureLive-2.2.0-windows-x64-setup.exe",
         "size": "60.39mb",
-        "downloads": 36,
+        "downloads": 37,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.2.0/PureLive-2.2.0-windows-x64-setup.exe"
       },
       {
@@ -486,7 +578,7 @@
       {
         "name": "arm64-v8a",
         "size": "122.55mb",
-        "downloads": 946,
+        "downloads": 947,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.24/app-arm64-v8a-release.apk"
       },
       {
@@ -952,7 +1044,7 @@
       {
         "name": "arm64-v8a",
         "size": "122.25mb",
-        "downloads": 14214,
+        "downloads": 14225,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.22/app-arm64-v8a-release.apk"
       },
       {
@@ -976,7 +1068,7 @@
       {
         "name": "PureLive-2.0.22+33-windows-x64-setup.exe",
         "size": "65.76mb",
-        "downloads": 6297,
+        "downloads": 6307,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.22/PureLive-2.0.22%2B33-windows-x64-setup.exe"
       },
       {
@@ -1002,7 +1094,7 @@
       {
         "name": "arm64-v8a",
         "size": "126.58mb",
-        "downloads": 6475,
+        "downloads": 6477,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.21/app-arm64-v8a-release.apk"
       },
       {
@@ -1026,7 +1118,7 @@
       {
         "name": "PureLive-2.0.21+32-windows-x64-setup.exe",
         "size": "61.45mb",
-        "downloads": 2389,
+        "downloads": 2393,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.21/PureLive-2.0.21%2B32-windows-x64-setup.exe"
       },
       {
@@ -1102,7 +1194,7 @@
       {
         "name": "arm64-v8a",
         "size": "126.31mb",
-        "downloads": 510,
+        "downloads": 512,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.19/app-arm64-v8a-release.apk"
       },
       {
@@ -1126,7 +1218,7 @@
       {
         "name": "PureLive-2.0.19+30-windows-x64-setup.exe",
         "size": "59.35mb",
-        "downloads": 145,
+        "downloads": 146,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.19/PureLive-2.0.19%2B30-windows-x64-setup.exe"
       },
       {
@@ -1424,7 +1516,7 @@
       {
         "name": "arm64-v8a",
         "size": "67.95mb",
-        "downloads": 867,
+        "downloads": 869,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.13/app-arm64-v8a-release.apk"
       },
       {
@@ -1820,7 +1912,7 @@
       {
         "name": "PureLive-2.0.4+15-windows-x64-setup.exe",
         "size": "38.1mb",
-        "downloads": 522,
+        "downloads": 525,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.4/PureLive-2.0.4%2B15-windows-x64-setup.exe"
       }
     ]
@@ -3348,19 +3440,6 @@
       "profile": "https://github.com/liuchuancong"
     },
     "changelog": "如果知道TV版CPU架构可以选择安装v8a,v7a,x86, tv版是拥有三个架构的全部。\r\n修复头像不显示\r\n修复主播直播状态错误\r\n添加退出弹窗",
-    "files": []
-  },
-  {
-    "version": "1.2.5",
-    "title": "Version: 1.2.5",
-    "date": "2023-10-25",
-    "github": "https://github.com/liuchuancong/pure_live/releases/tag/1.2.5",
-    "author": {
-      "name": "liuchuancong",
-      "avatar": "https://avatars.githubusercontent.com/u/36957912?v=4",
-      "profile": "https://github.com/liuchuancong"
-    },
-    "changelog": "-Fix: 修复分页显示不全\r\n-Fix: 添加消息通知\r\n-Fix:优化线路\r\n-Feature: 线路自动切换\r\n-Feature: 弹幕可在设置页面配置\r\n-Feature: 添加播放页面双击返回",
     "files": []
   }
 ]
