@@ -3,13 +3,13 @@ import 'site/huya/huya_site.dart';
 import 'interface/live_site.dart';
 import 'site/douyu/douyu_site.dart';
 import 'site/douyin/douyin_site.dart';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/site/cc/cc_site.dart';
 import 'package:pure_live/core/site/iptv/iptv_site.dart';
 import 'package:pure_live/core/site/twitch/twitch_site.dart';
 import 'package:pure_live/core/site/kuaishou/kuaishou_site.dart';
 import 'package:pure_live/core/site/bilibili/bilibili_site.dart';
-
 
 class Sites {
   static const String allSite = "all";
@@ -49,14 +49,18 @@ class Sites {
   ];
 
   static Site of(String id) {
-    return supportSites.firstWhere((e) => id == e.id);
+    final normalizedId = id.trim().toLowerCase();
+    return supportSites.firstWhere((e) => normalizedId == e.id);
   }
 
   List<Site> availableSites({bool containsAll = false}) {
     final List<String> savedIds = SettingsService.to.fav.hotAreasList.v;
     final supportedById = {for (final site in supportSites) site.id: site};
     final List<Site> result = [];
-    for (String id in savedIds) {
+    final seen = <String>{};
+    for (String rawId in savedIds) {
+      final id = rawId.trim().toLowerCase();
+      if (!seen.add(id)) continue;
       final match = supportedById[id];
       if (match != null) {
         result.add(match);

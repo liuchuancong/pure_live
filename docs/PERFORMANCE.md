@@ -26,6 +26,8 @@ Pure Live 在 Android 上提供省电、均衡、高性能三档刷新率。新�
 - 缓存目录统计与清理使用异步文件 I/O，缩略图自动刷新带有并发保护，减少大缓存目录阻塞界面的概率。
 - 收藏直播间详情刷新在内存中批量合并，每处理至少 20 个房间才渐进写入一次 Hive；状态仍可在整个周期结束前更新，同时避免默认并发为 5 时每批都序列化完整收藏。在线、录播、离线和标签列表先在普通列表中完成筛选/排序，再各发布一次响应式快照。
 - v2.5.0 的收藏核验使用 4 路有界异步工作池，完成一个网络请求后立即领取下一个，取代固定分批 `Future.wait` 的整批屏障；房间结果仍按输入顺序汇总并一次性发布。并发量是 I/O 工作单元，不增加同等数量的 CPU isolate。
+- 关注页的平台 `TabBarView` 在当前平台为空时继续保留，不再被基础空状态替换；因此滑到零结果平台后仍可横滑返回。平台控制器按平台 ID 保持选中项，平台开关或顺序变化时同步视觉页与数据页；标签条移到分页外层，避免两个同方向横向列表争抢手势。
+- 平台/开播状态切换作为一次筛选事务发布，只重算当前可见标签和目标列表；收藏快照未变化时跳过延迟的第二次全量排序。收藏、标签和刷新合并统一使用“平台 + 房间号”身份，避免不同平台相同房间号互相覆盖或出现已关注但列表缺项。
 - Android 系统画中画先在原窗口预渲染紧凑视频层，再带当前视频物理边界 `sourceRectHint` 进入系统动画；Android 12+ 开启视频无缝缩放，并移除同一播放器上的重复 `AnimatedSwitcher`。
 - 画中画状态探测从每 10 ms 一次降为 100 ms 一次，减少非小窗状态下长期存在的平台通道调用，同时保持进入/退出状态更新及时。
 - Windows 首页、分区、收藏和搜索的网格使用桌面端自适应预加载范围，避免超大 `cacheExtent` 一次解码过多封面。
@@ -94,6 +96,8 @@ Windows release 构建后从干净的 `build\windows\x64\runner\Release` 启动�
 2026-08-22 的 build 4071 将首页刷新改为保留快照的串行事务，并移除平台网格长期 KeepAlive、跨页共享纵向控制器、封面全量 epoch 重建和启动主 isolate 缓存递归扫描。Android 刷新率提示改为交互期间最高、稳定 1.5 秒后释放；这也遵循 Android 对帧率提示不应每帧或每秒多次切换的建议。本轮源码门禁为 Flutter Analyze 0 issue、196 项单元/Widget 测试全通过；按无设备流程执行，帧时、CPU、温度和 PSS 的 build 4071 真机对照保留为独立设备验收层。
 
 2026-08-22 的 build 4072 空收藏独立实例首次采样暴露了一个状态短路：初始空列表没有触发分页分发，页面一直保留无限加载动画，Windows 因持续渲染而出现空闲 CPU 偏高、原生提交内存预热上升。修复后首次空快照明确发布 `pageEmpty=true`，相同快照优化只在首轮发布之后生效；该路径新增确定性回归测试。更新检查和启动页延迟任务也绑定页面生命周期并在销毁时取消。
+
+2026-08-22 的关注页专项回归覆盖“非空平台 → 空平台 → 横滑返回”、平台 ID 大小写/空白迁移，以及跨平台相同房间号三条故障序列。空结果后分页组件保持挂载并可继续完成横滑；完整 Flutter Analyze 为 0 issue，211 项单元/Widget 测试全部通过。该结论来自代码路径与确定性自动化测试，不包含设备操作。
 
 参考：[Flutter 性能最佳实践](https://docs.flutter.dev/perf/best-practices)、[Flutter Performance View](https://docs.flutter.dev/tools/devtools/performance)、[Flutter Memory View](https://docs.flutter.dev/tools/devtools/memory)、[Flutter Impeller 官方说明](https://docs.flutter.dev/perf/impeller)、[Android 帧率优化说明](https://developer.android.com/media/optimize/performance/frame-rate)、[mpv demuxer 缓存参数](https://mpv.io/manual/master/)、[media_kit 多实例释放问题 #266](https://github.com/media-kit/media-kit/issues/266)、[media_kit 旋转/缩放主线程阻塞 #1395](https://github.com/media-kit/media-kit/issues/1395)。
 

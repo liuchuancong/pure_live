@@ -36,13 +36,37 @@ class TagManagementController extends GetxController {
     await HivePrefUtil.setAnyPref(_roomTagsMappingKey, roomTagsMap);
   }
 
-  void setRoomTags(String roomId, List<String> newTagIds) {
+  void setRoomTags(LiveRoom room, List<String> newTagIds) {
+    final roomKey = room.identityKey;
     if (newTagIds.isEmpty) {
-      roomTagsMap.remove(roomId);
+      roomTagsMap.remove(roomKey);
     } else {
-      roomTagsMap[roomId] = newTagIds;
+      roomTagsMap[roomKey] = List<String>.from(newTagIds);
     }
 
+    roomTagsMap.refresh();
+    saveRoomTagsMapping();
+  }
+
+  /// Moves the legacy room-number-only mapping to platform-scoped identities.
+  /// A legacy tag is copied to every matching platform room before the old key
+  /// is removed, preserving data while allowing future edits to diverge.
+  void migrateLegacyRoomTagKeys(Iterable<LiveRoom> rooms) {
+    var changed = false;
+    final migratedLegacyKeys = <String>{};
+    for (final room in rooms) {
+      final legacyKey = room.normalizedRoomId;
+      if (legacyKey.isEmpty || room.normalizedPlatformId.isEmpty) continue;
+      final legacyTags = roomTagsMap[legacyKey];
+      if (legacyTags == null) continue;
+      roomTagsMap.putIfAbsent(room.identityKey, () => List<String>.from(legacyTags));
+      migratedLegacyKeys.add(legacyKey);
+      changed = true;
+    }
+    for (final key in migratedLegacyKeys) {
+      roomTagsMap.remove(key);
+    }
+    if (!changed) return;
     roomTagsMap.refresh();
     saveRoomTagsMapping();
   }
@@ -59,8 +83,7 @@ class TagManagementController extends GetxController {
   }
 
   List<String> getTagsForRoom(LiveRoom room) {
-    final String roomId = room.roomId.toString();
-    return roomTagsMap[roomId] ?? [];
+    return roomTagsMap[room.identityKey] ?? roomTagsMap[room.normalizedRoomId] ?? [];
   }
 
   bool addTag(String name, String description) {
