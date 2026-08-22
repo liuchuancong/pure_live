@@ -56,12 +56,140 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
     super.dispose();
   }
 
+  bool get isEmbedded => widget.embedded;
+
+  ThemeData get theme => Theme.of(context);
+
+  Color get labelColor => isEmbedded ? theme.colorScheme.onSurface : theme.colorScheme.onSurface;
+
+  Color get secondaryColor => isEmbedded ? theme.colorScheme.onSurfaceVariant : theme.colorScheme.onSurfaceVariant;
+
+  Color get primaryColor => theme.colorScheme.primary;
+
+  Color get cardColor =>
+      isEmbedded ? theme.colorScheme.surfaceContainerLowest : theme.colorScheme.surfaceContainerHighest;
+  Widget reactiveCard(List<Widget> Function() builder) {
+    return Obx(() {
+      final children = builder();
+
+      if (isEmbedded) {
+        return Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Column(children: children),
+        );
+      }
+
+      return context.buildModernCard(children);
+    });
+  }
+
+  Widget _buildTemplateSection(ThemeData theme) {
+    return Obx(() {
+      final activePreset = _matchingPreset();
+
+      final content = Padding(
+        padding: EdgeInsets.all(isEmbedded ? 10 : 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Wrap(
+              spacing: isEmbedded ? 6 : 8,
+              runSpacing: isEmbedded ? 6 : 8,
+              children: [
+                for (final preset in DanmakuViewingPreset.values)
+                  ChoiceChip(
+                    key: ValueKey('danmaku-template-${preset.id}'),
+                    selected: activePreset?.id == preset.id,
+                    showCheckmark: false,
+                    backgroundColor: isEmbedded ? theme.colorScheme.surface : theme.colorScheme.surfaceContainerHighest,
+                    selectedColor: theme.colorScheme.primary,
+                    side: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.35)),
+                    labelStyle: TextStyle(
+                      color: activePreset?.id == preset.id ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                      fontSize: isEmbedded ? 12 : null,
+                    ),
+                    visualDensity: isEmbedded ? VisualDensity.compact : VisualDensity.standard,
+                    materialTapTargetSize: isEmbedded ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                    avatar: SizedBox(
+                      width: isEmbedded ? 16 : 18,
+                      child: activePreset?.id == preset.id
+                          ? Icon(Icons.check_rounded, size: isEmbedded ? 16 : 18, color: theme.colorScheme.onPrimary)
+                          : preset.id == 'best'
+                          ? Icon(
+                              Icons.auto_awesome_rounded,
+                              size: isEmbedded ? 16 : 18,
+                              color: theme.colorScheme.primary,
+                            )
+                          : const Opacity(opacity: 0, child: Icon(Icons.check_rounded, size: 18)),
+                    ),
+                    label: Text(i18n(preset.labelKey)),
+                    onSelected: (_) => _applyPreset(preset),
+                  ),
+                OutlinedButton.icon(
+                  onPressed: _saveTemplate,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: theme.colorScheme.primary,
+                    side: BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.45)),
+                    visualDensity: isEmbedded ? VisualDensity.compact : VisualDensity.standard,
+                    tapTargetSize: isEmbedded ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                    padding: EdgeInsets.symmetric(horizontal: isEmbedded ? 10 : 12),
+                  ),
+                  icon: Icon(Icons.save_outlined, size: isEmbedded ? 16 : 18),
+                  label: Text(i18n('save_current_template'), style: TextStyle(fontSize: isEmbedded ? 12 : null)),
+                ),
+                if (!isEmbedded)
+                  OutlinedButton.icon(
+                    onPressed: _restoreTemplate,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: theme.colorScheme.primary,
+                      side: BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.45)),
+                      visualDensity: VisualDensity.standard,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                    icon: const Icon(Icons.restore_rounded, size: 18),
+                    label: Text(i18n('restore_saved_template')),
+                  ),
+              ],
+            ),
+            SizedBox(height: isEmbedded ? 8 : 10),
+            Text(
+              '${i18n('danmaku_best_preset_desc')}\n'
+              '${i18n('danmaku_realtime_hint')}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                height: 1.45,
+                fontSize: isEmbedded ? 11 : null,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      if (isEmbedded) {
+        return Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: content,
+        );
+      }
+
+      return context.buildModernCard([content]);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final Color labelColor = theme.colorScheme.onSurface;
     final Color digitColor = theme.colorScheme.primary;
-    Widget reactiveCard(List<Widget> Function() builder) => Obx(() => context.buildModernCard(builder()));
 
     return SingleChildScrollView(
       key: ValueKey(widget.embedded ? 'danmaku-settings-content-embedded' : 'danmaku-settings-content-page'),
@@ -73,60 +201,7 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
         children: [
           context.buildGroupTitle(i18n('danmaku_templates')),
           const SizedBox(height: 8),
-          Obx(() {
-            final activePreset = _matchingPreset();
-            return context.buildModernCard([
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        for (final preset in DanmakuViewingPreset.values)
-                          ChoiceChip(
-                            key: ValueKey('danmaku-template-${preset.id}'),
-                            selected: activePreset?.id == preset.id,
-                            // Reserve the same avatar width in every state. The
-                            // default ChoiceChip checkmark changes its width
-                            // only after selection and used to reflow the next
-                            // preset/button in the narrow fullscreen panel.
-                            showCheckmark: false,
-                            avatar: SizedBox(
-                              width: 18,
-                              child: activePreset?.id == preset.id
-                                  ? const Icon(Icons.check_rounded, size: 18)
-                                  : preset.id == 'best'
-                                  ? const Icon(Icons.auto_awesome_rounded, size: 18)
-                                  : const Opacity(opacity: 0, child: Icon(Icons.check_rounded, size: 18)),
-                            ),
-                            label: Text(i18n(preset.labelKey)),
-                            onSelected: (_) => _applyPreset(preset),
-                          ),
-                        OutlinedButton.icon(
-                          onPressed: _saveTemplate,
-                          icon: const Icon(Icons.save_outlined),
-                          label: Text(i18n('save_current_template')),
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: _restoreTemplate,
-                          icon: const Icon(Icons.restore_rounded),
-                          label: Text(i18n('restore_saved_template')),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      '${i18n('danmaku_best_preset_desc')}\n${i18n('danmaku_realtime_hint')}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.45),
-                    ),
-                  ],
-                ),
-              ),
-            ]);
-          }),
+          _buildTemplateSection(theme),
           const SizedBox(height: 20),
           context.buildGroupTitle(i18n("danmaku_area")),
           const SizedBox(height: 8),
@@ -256,6 +331,7 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
                 value: SettingsService.to.danmaku.danmakuAutoFps.v,
                 onChanged: (v) => SettingsService.to.danmaku.danmakuAutoFps.v = v,
                 labelColor: labelColor,
+                subtitleColor: labelColor,
               ),
               if (!SettingsService.to.danmaku.danmakuAutoFps.v)
                 _slider(
@@ -271,15 +347,15 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
                 )
               else
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  padding: EdgeInsets.fromLTRB(isEmbedded ? 14 : 16, 0, isEmbedded ? 14 : 16, isEmbedded ? 10 : 12),
                   child: Text(
                     '${SettingsService.to.danmaku.resolvedDanmakuFps(refreshRateMode: SettingsService.to.app.refreshRateMode)} FPS',
-                    style: TextStyle(color: digitColor, fontWeight: FontWeight.w600),
+                    style: TextStyle(color: digitColor, fontWeight: FontWeight.w600, fontSize: isEmbedded ? 13 : null),
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: widget.embedded ? 16 : 20),
           context.buildGroupTitle(i18n('danmaku_repeat_filter')),
           const SizedBox(height: 8),
           reactiveCard(
@@ -291,6 +367,7 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
                 value: SettingsService.to.danmaku.collapseRepeatedDanmaku.v,
                 onChanged: (v) => SettingsService.to.danmaku.collapseRepeatedDanmaku.v = v,
                 labelColor: labelColor,
+                subtitleColor: labelColor,
               ),
               if (SettingsService.to.danmaku.collapseRepeatedDanmaku.v)
                 _counter(
@@ -519,6 +596,7 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
     required bool value,
     required ValueChanged<bool> onChanged,
     required Color labelColor,
+    Color? subtitleColor,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -535,7 +613,12 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
                 ),
                 if (subtitle != null) ...[
                   const SizedBox(height: 3),
-                  Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+                  Text(
+                    subtitle,
+                    style: subtitleColor != null
+                        ? Theme.of(context).textTheme.bodySmall?.copyWith(color: subtitleColor)
+                        : Theme.of(context).textTheme.bodySmall,
+                  ),
                 ],
               ],
             ),

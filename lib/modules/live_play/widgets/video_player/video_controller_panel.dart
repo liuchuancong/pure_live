@@ -1787,7 +1787,7 @@ class SettingsPanel extends StatelessWidget {
                         ),
                         Text(
                           i18n('danmaku_realtime_hint'),
-                          maxLines: 1,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: AppTextStyles.t12.copyWith(color: Colors.white60),
                         ),
