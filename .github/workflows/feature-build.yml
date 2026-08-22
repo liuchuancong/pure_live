@@ -4,34 +4,34 @@ on:
   workflow_dispatch:
     inputs:
       build_android:
-        description: Build Android APKs for all ABIs
+        description: Build Android arm64-v8a Release APK
         required: true
         type: boolean
-        default: true
+        default: false
 
       build_windows:
         description: Build Windows EXE and MSIX
         required: true
         type: boolean
-        default: true
+        default: false
 
       build_linux:
         description: Build Linux x64 portable archive
         required: true
         type: boolean
-        default: true
+        default: false
 
       build_macos:
         description: Build macOS universal application archive
         required: true
         type: boolean
-        default: true
+        default: false
 
       build_ios:
         description: Build unsigned iOS app and TrollStore IPA
         required: true
         type: boolean
-        default: true
+        default: false
 
       run_quality:
         description: Run analyze, tests and public interface probes first
@@ -43,7 +43,7 @@ on:
         description: Create a GitHub Release and update releases.json
         required: true
         type: boolean
-        default: true
+        default: false
 
       release_tag:
         description: Release tag (e.g. v1.0.0) – required if create_release is true
@@ -53,9 +53,8 @@ on:
 
   push:
     tags:
-      - "stage-build-*"
       - "stage-linux-*"
-      - "stage-apple-*"
+      - "stage-macos-*"
       - "stage-ios-*"
 
 permissions:
@@ -63,7 +62,7 @@ permissions:
 
 concurrency:
   group: manual-build-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   FLUTTER_VERSION: 3.47.0
@@ -134,7 +133,7 @@ jobs:
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Test
-        run: flutter test
+        run: flutter test --concurrency=12
 
       - name: Probe public interfaces
         run: python tool/interface_probe.py
@@ -222,6 +221,7 @@ jobs:
           flutter build apk \
             --release \
             --split-per-abi \
+            --target-platform android-arm64 \
             --dart-define=PURELIVE_BUILD_SOURCE=github-manual
 
       # -----------------------------------------------------
@@ -255,8 +255,6 @@ jobs:
           APK_DIR="build/app/outputs/flutter-apk"
 
           test -f "$APK_DIR/app-arm64-v8a-release.apk"
-          test -f "$APK_DIR/app-armeabi-v7a-release.apk"
-          test -f "$APK_DIR/app-x86_64-release.apk"
 
           cp \
             "$APK_DIR/app-arm64-v8a-release.apk" \
@@ -848,7 +846,7 @@ jobs:
 # =========================================================
 
       - name: Build macOS release
-        if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
+        if: ${{ (github.event_name == 'push' && startsWith(github.ref_name, 'stage-macos-')) || inputs.build_macos }}
         run: |
           flutter build macos \
             --release \
@@ -856,7 +854,7 @@ jobs:
 
       - name: Locate macOS application
         id: macos_app
-        if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
+        if: ${{ (github.event_name == 'push' && startsWith(github.ref_name, 'stage-macos-')) || inputs.build_macos }}
         shell: bash
         run: |
           set -euo pipefail
@@ -882,7 +880,7 @@ jobs:
           echo "$app_path"
 
       - name: Verify macOS application
-        if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
+        if: ${{ (github.event_name == 'push' && startsWith(github.ref_name, 'stage-macos-')) || inputs.build_macos }}
         shell: bash
         run: |
           set -euo pipefail
@@ -902,7 +900,7 @@ jobs:
           lipo -info "$executable"
 
       - name: Archive macOS application
-        if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
+        if: ${{ (github.event_name == 'push' && startsWith(github.ref_name, 'stage-macos-')) || inputs.build_macos }}
         shell: bash
         run: |
           set -euo pipefail
@@ -919,7 +917,7 @@ jobs:
             "PureLive-${VERSION}-macos-universal.zip"
 
       - name: Build macOS DMG
-        if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
+        if: ${{ (github.event_name == 'push' && startsWith(github.ref_name, 'stage-macos-')) || inputs.build_macos }}
         shell: bash
         run: |
           set -euo pipefail
@@ -935,7 +933,7 @@ jobs:
             "PureLive-${VERSION}-macos-universal.dmg"
 
       - name: Verify macOS packages
-        if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
+        if: ${{ (github.event_name == 'push' && startsWith(github.ref_name, 'stage-macos-')) || inputs.build_macos }}
         shell: bash
         run: |
           set -euo pipefail
@@ -994,7 +992,7 @@ jobs:
 # =========================================================
 
       - name: Build iOS device application
-        if: ${{ github.event_name == 'push' || inputs.build_ios }}
+        if: ${{ (github.event_name == 'push' && startsWith(github.ref_name, 'stage-ios-')) || inputs.build_ios }}
         run: |
           flutter build ios \
             --release \

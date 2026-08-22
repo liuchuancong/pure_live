@@ -3,13 +3,13 @@ import 'site/huya/huya_site.dart';
 import 'interface/live_site.dart';
 import 'site/douyu/douyu_site.dart';
 import 'site/douyin/douyin_site.dart';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/site/cc/cc_site.dart';
 import 'package:pure_live/core/site/iptv/iptv_site.dart';
 import 'package:pure_live/core/site/twitch/twitch_site.dart';
 import 'package:pure_live/core/site/kuaishou/kuaishou_site.dart';
 import 'package:pure_live/core/site/bilibili/bilibili_site.dart';
-
 
 class Sites {
   static const String allSite = "all";
@@ -49,14 +49,58 @@ class Sites {
   ];
 
   static Site of(String id) {
-    return supportSites.firstWhere((e) => id == e.id);
+    final normalizedId = id.trim().toLowerCase();
+    // Do not construct every platform adapter for a single lookup. Favourite
+    // verification performs this operation for every saved room; the previous
+    // list scan allocated nine adapters per card and also discarded platform
+    // session caches immediately afterwards.
+    return switch (normalizedId) {
+      bilibiliSite => Site(
+        id: bilibiliSite,
+        name: i18n("site_bilibili"),
+        logo: "assets/images/bilibili_2.png",
+        liveSite: BiliBiliSite(),
+      ),
+      douyuSite => Site(
+        id: douyuSite,
+        name: i18n("site_douyu"),
+        logo: "assets/images/douyu.png",
+        liveSite: DouyuSite(),
+      ),
+      huyaSite => Site(id: huyaSite, name: i18n("site_huya"), logo: "assets/images/huya.png", liveSite: HuyaSite()),
+      douyinSite => Site(
+        id: douyinSite,
+        name: i18n("site_douyin"),
+        logo: "assets/images/douyin.png",
+        liveSite: DouyinSite(),
+      ),
+      kuaishouSite => Site(
+        id: kuaishouSite,
+        name: i18n("site_kuaishou"),
+        logo: "assets/images/kuaishou.png",
+        liveSite: KuaishowSite(),
+      ),
+      ccSite => Site(id: ccSite, name: i18n("site_cc"), logo: "assets/images/cc.png", liveSite: CCSite()),
+      twitchSite => Site(
+        id: twitchSite,
+        name: i18n("site_twitch"),
+        logo: "assets/images/twitch.png",
+        liveSite: TwitchSite(),
+      ),
+      soopSite => Site(id: soopSite, name: i18n("site_soop"), logo: "assets/images/soop.png", liveSite: SoopSite()),
+      iptvSite => Site(id: iptvSite, name: i18n("site_iptv"), logo: "assets/images/logo.png", liveSite: IptvSite()),
+      _ => throw StateError('Unsupported live site: $normalizedId'),
+    };
   }
 
   List<Site> availableSites({bool containsAll = false}) {
     final List<String> savedIds = SettingsService.to.fav.hotAreasList.v;
     final supportedById = {for (final site in supportSites) site.id: site};
     final List<Site> result = [];
-    for (String id in savedIds) {
+    final seen = <String>{};
+    for (String rawId in savedIds) {
+      final id = rawId.trim().toLowerCase();
+      if (!seen.add(id)) continue;
       final match = supportedById[id];
       if (match != null) {
         result.add(match);

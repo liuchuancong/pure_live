@@ -1,0 +1,94 @@
+# Pure Live 构建资源策略
+
+本文件是本仓库开发、验证、构建、打包和发布的默认资源规则。当前任务中的用户明确要求优先级最高；上一轮构建过的平台不自动进入下一轮范围。
+
+## 1. 范围与阶段
+
+- 每次命令只处理用户本轮明确指定的一个平台与一个变体。
+- Android、Windows、Linux、macOS、iOS 按独立阶段串行执行；同一次并发全平台打包列为禁止项。
+- 日常开发使用受影响模块、目标测试文件和目标平台 `Debug`。
+- 对外正式交付才执行该目标平台的 `Release`、一次完整静态分析、完整测试及所需接口核验。
+- 构建、打包、签名、上传和发布是独立证据层。完成其中一层后不自动追加下一层，除非用户本轮已经明确要求。
+
+## 2. 本机资源档位
+
+目标机器：Core Ultra 9 275HX（24 核）、192 GB RAM、RTX 5090 Laptop（24 GB）。任何档位都为 Codex 桌面、编辑器和系统交互保留资源。
+
+| 场景 | Gradle workers | Flutter test concurrency | 用途 |
+|---|---:|---:|---|
+| 交互开发（默认） | 16 | 12 起步 | 用户仍在使用桌面时的定向检查与 Debug |
+| 专门构建 | 20 | 12 起步 | 用户明确安排的独占构建窗口 |
+
+- Gradle workers 上限为 20，不使用全部 24 核。
+- Flutter 测试从 `--concurrency=12` 开始；只有记录表明资源仍充足且任务确有收益时才单独调整。
+- 构建中的 GPU 主要留给桌面和播放器验证，不以占满 GPU 为优化目标。
+
+## 3. Gradle 与增量缓存
+
+`android/gradle.properties` 固化以下基线：
+
+- daemon、parallel、build cache、configuration cache、VFS watch 均启用；
+- Configuration Cache 保持严格失败模式；已确认不兼容的 Flutter 聚合任务必须用
+  `notCompatibleWithConfigurationCache` 精确标注，使 Gradle 丢弃该条目，禁止用全局
+  warning 模式保存不完整状态；
+- 交互构建默认 `org.gradle.workers.max=16`，专门构建由脚本覆盖为 20；
+- Gradle JVM Heap 为 6 GiB、Metaspace 为 1 GiB、使用 Parallel GC；
+- Kotlin daemon Heap 为 4 GiB；
+- Kotlin 与 Android 增量状态保持启用。
+
+构建脚本不传 `--no-daemon`，也不在每轮开始停止 Gradle daemon。保留 `.gradle`、`.dart_tool`、`build` 和原生依赖缓存；仅在缓存损坏、生成物与源码明显不一致或工具链迁移确有需要时执行针对性清理。`flutter clean` 与递归删除整个构建目录不属于常规步骤。
+
+## 4. 验证策略
+
+- 修改过程中优先运行直接相关的单元/Widget 测试或模块检查。
+- `flutter analyze` 在本轮代码修改完成后执行一次，避免每个小改动后重复启动分析服务器。
+- 定向测试使用一个 Flutter 命令承载全部目标文件，并从 `--concurrency=12` 开始。
+- 完整回归由 `tool/local_ci.ps1 -Scope Full` 显式触发；日常定向检查使用 `-Scope Focused -TestPath ...`。
+- 打包脚本要求显式传入 `-Target` 与 `-Configuration`，每次调用只生成该目标产物。
+- 同一应用源码提交已通过完整回归后，如果失败阶段只涉及构建脚本、Gradle 兼容配置或
+  发布流程，打包重试可使用 `-SkipQuality`；构建记录与交付报告必须引用此前通过的完整
+  回归运行。业务源码、依赖或生成逻辑有变化时仍执行完整回归。
+
+## 5. 重型任务互斥
+
+启动 Gradle、Java、Dart、Flutter 或大范围搜索之前，先通过 `tool/build_resource_guard.ps1`：
+
+1. 获取当前 Windows 会话共享的重型任务互斥锁；
+2. 检查其他 Codex 工作区中仍活跃的 Gradle、Java、Dart、Flutter、`rg` 进程；
+3. 检测到活跃任务时排队，连续安静后再开始；
+4. 同一时间只保留一个重型验证或构建任务。
+
+禁止绕过互斥脚本并行启动另一套全量测试或构建。
+
+## 6. 记录与收尾
+
+每次重型任务在 `local-artifacts/build-records/` 写入 JSON 记录，至少包含：
+
+- 实际命令、源码提交、目标平台与变体；
+- 开始时间、耗时和结果；
+- Gradle/配置缓存启用状态、日志中可观察到的命中与 `UP-TO-DATE` 数量；
+- 重型进程峰值 CPU、峰值内存与进程数；
+- 产物绝对路径或验证范围；
+- 任务结束后的活跃重型进程数。
+
+监控任务、临时脚本与互斥锁在 `finally` 中释放。构建结束后确认后台 CPU 回落，只报告本轮结果，不自动启动下一轮完整回归、其他平台打包或发布。
+
+## 7. 推荐调用
+
+```powershell
+# 日常定向验证：同一命令运行受影响测试，修改完成后附加一次 Analyze
+PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1 `
+  -Scope Focused -TestPath test/example_test.dart -Analyze
+
+# Android 交互 Debug（一次只构建这一目标）
+PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
+  -Target AndroidArm64 -Configuration Debug -SkipQuality
+
+# Android 正式交付：一次完整回归后构建正式目标
+PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
+  -Target AndroidArm64 -Configuration Release -FullRegression -RequireReleaseSigning
+
+# 同一提交已由上一阶段完成完整回归时，Windows 正式阶段复用该证据
+PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
+  -Target WindowsX64 -Configuration Release -SkipQuality
+```

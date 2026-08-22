@@ -43,14 +43,38 @@ jobs:
         shell: bash
         env:
           TAG: ${{ inputs.tag }}
+          TARGET_SHA: ${{ inputs.target_sha }}
         run: |
           set -euo pipefail
           full_version="$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1)"
           version_name="${full_version%%+*}"
           artifact_version="${full_version/+/-}"
           test "$TAG" = "v$version_name"
-          apk="$(find signed -type f -name '*.apk' -print -quit)"
-          test -n "$apk"
+          mapfile -t apks < <(find signed -type f -name "PureLive-$artifact_version-arm64-v8a-release.apk" -print)
+          test "${#apks[@]}" -eq 1
+          apk="${apks[0]}"
+          artifact_dir="$(dirname "$apk")"
+          metadata="$artifact_dir/BUILD_METADATA.json"
+          checksums="$artifact_dir/SHA256SUMS.txt"
+          test -f "$metadata"
+          test -f "$checksums"
+          (
+            cd "$artifact_dir"
+            sha256sum --check SHA256SUMS.txt
+          )
+          python3 - "$metadata" "$full_version" "$TARGET_SHA" <<'PY'
+          import json
+          import sys
+
+          metadata_path, expected_version, expected_sha = sys.argv[1:]
+          with open(metadata_path, encoding="utf-8-sig") as handle:
+              metadata = json.load(handle)
+          assert metadata["version"] == expected_version
+          assert metadata["source_commit"] == expected_sha
+          assert metadata["tracked_files_dirty"] is False
+          assert metadata["android_package"] == "com.mystyle.purelive"
+          assert metadata["android_signing"] == "release"
+          PY
           build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
           badging="$($build_tools/aapt dump badging "$apk")"
           grep -F "package: name='com.mystyle.purelive'" <<<"$badging"

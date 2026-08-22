@@ -111,10 +111,10 @@ class DanmakuManager {
     workers.add(
       debounce<int>(_visualSettingsRevision, (_) => _persistVisualSettings(), time: const Duration(milliseconds: 160)),
     );
-    var resolvedAutoFps = dm.resolvedDanmakuFps();
+    var resolvedAutoFps = dm.resolvedDanmakuFps(refreshRateMode: SettingsService.to.app.refreshRateMode);
     workers.add(
-      everAll([dm.danmakuAutoFps, DisplayModeService.info], (_) {
-        final nextFps = dm.resolvedDanmakuFps();
+      everAll([dm.danmakuAutoFps, DisplayModeService.info, SettingsService.to.app.refreshRateModeName], (_) {
+        final nextFps = dm.resolvedDanmakuFps(refreshRateMode: SettingsService.to.app.refreshRateMode);
         if (nextFps == resolvedAutoFps) return;
         resolvedAutoFps = nextFps;
         _scheduleConfigUpdate();
@@ -664,7 +664,10 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
 
   // 弹幕管理
   void updateDanmaku() {
-    final resolvedFps = SettingsService.to.danmaku.resolvedDanmakuFps();
+    final settings = SettingsService.to.danmaku;
+    final resolvedFps = settings.danmakuAutoFps.v
+        ? settings.resolvedDanmakuFps(refreshRateMode: SettingsService.to.app.refreshRateMode)
+        : danmakuFps.value.clamp(30, 240).toInt();
     danmakuController.updateConfig(
       BarrageConfig(
         // Dispatching at 16 ms allowed up to 60 new paragraphs per second on

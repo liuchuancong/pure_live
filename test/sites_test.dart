@@ -9,4 +9,9 @@ void main() {
     expect(Sites.isSupported(' SOOP '), isTrue);
     expect(Sites.isSupported('unknown-platform'), isFalse);
   });
+
+  test('resolves imported platform ids after trimming and case normalization', () {
+    expect(Sites.of(' BILIBILI ').id, Sites.bilibiliSite);
+    expect(Sites.of(' HuYa ').id, Sites.huyaSite);
+  });
 }

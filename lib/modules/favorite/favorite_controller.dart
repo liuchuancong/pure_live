@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer' as developer;
 
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:pure_live/modules/tags/live_tag.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
@@ -25,8 +26,9 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   Timer? _autoRefreshTimer;
   Timer? _debounceTimer;
   Timer? _resumeRefreshTimer;
-  Timer? _settledStatusTabTimer;
   final List<Worker> _workers = [];
+  bool _selectionTransaction = false;
+  int? _lastSyncedFavoriteSnapshot;
   int _refreshEpoch = 0;
   DateTime? _lastFullRefreshAt;
   final isVerifyingFavorites = false.obs;
@@ -53,16 +55,31 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
 
     tabController = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addObserver(this);
+    tagController.migrateLegacyRoomTagKeys(SettingsService.to.fav.favoriteRooms.v);
 
     _workers.add(
       debounce(SettingsService.to.fav.favoriteRooms, (_) {
-        if (!isVerifyingFavorites.value) applyLocalFilter();
+        if (!isVerifyingFavorites.value && !_isCurrentFavoriteSnapshotSynced()) {
+          applyLocalFilter();
+        }
       }, time: const Duration(milliseconds: 1000)),
     );
 
-    _workers.add(ever(selectedTagId, (_) => applyLocalFilter()));
-    _workers.add(ever(tabSiteIndex, (_) => applyLocalFilter()));
-    _workers.add(ever(tabOnlineIndex, (_) => applyLocalFilter()));
+    _workers.add(
+      ever(selectedTagId, (_) {
+        if (!_selectionTransaction) applyLocalFilter();
+      }),
+    );
+    _workers.add(
+      ever(tabSiteIndex, (_) {
+        if (!_selectionTransaction) applyLocalFilter(resyncSource: false);
+      }),
+    );
+    _workers.add(
+      ever(tabOnlineIndex, (_) {
+        if (!_selectionTransaction) applyLocalFilter(resyncSource: false);
+      }),
+    );
     _workers.add(ever(tagController.tags, (_) => applyLocalFilter()));
     _workers.add(ever(tagController.roomTagsMap, (_) => applyLocalFilter()));
     _workers.add(ever(SettingsService.to.app.preferRealOnlineCounts, (_) => applyLocalFilter()));
@@ -89,14 +106,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     if (tabController.indexIsChanging) return;
     final animationValue = tabController.animation?.value ?? tabController.index.toDouble();
     if ((animationValue - tabController.index).abs() > 0.001) return;
-    if (tabOnlineIndex.value == tabController.index) return;
-
-    _settledStatusTabTimer?.cancel();
-    _settledStatusTabTimer = Timer(const Duration(milliseconds: 80), () {
-      if (isClosed || tabOnlineIndex.value == tabController.index) return;
-      tabOnlineIndex.value = tabController.index;
-      if (usesDesktopPagination) currentPage = 1;
-    });
+    selectStatusIndex(tabController.index);
   }
 
   void _setupRefreshStrategy() {
@@ -149,7 +159,6 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     _autoRefreshTimer?.cancel();
     _debounceTimer?.cancel();
     _resumeRefreshTimer?.cancel();
-    _settledStatusTabTimer?.cancel();
     for (final worker in _workers) {
       worker.dispose();
     }
@@ -164,21 +173,59 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
 
   void listenRoomChanged() {
     roomChangedSubscription = EventBus.instance.listen('refresh_room_changed', (data) {
-      syncRooms();
+      applyLocalFilter();
     });
   }
 
-  void changeSelectedTag(String tagId) {
-    selectedTagId.value = tagId;
-    if (Get.width > 680) {
-      currentPage = 1;
+  /// Commits a settled platform page as one local filter transaction.
+  ///
+  /// The previous listener reset the tag and then changed the site in two Rx
+  /// writes. Each write rebuilt and sorted the full favourites snapshot, so a
+  /// single horizontal swipe could publish two different grids.
+  void selectSiteIndex(int index) {
+    final availableSites = Sites().availableSites(containsAll: true);
+    if (index < 0 || index >= availableSites.length) return;
+    final resetTag = selectedTagId.value != TagManagementController.allTagKey;
+    if (tabSiteIndex.value == index && !resetTag) return;
+
+    _selectionTransaction = true;
+    tabSiteIndex.value = index;
+    if (resetTag) selectedTagId.value = TagManagementController.allTagKey;
+    _selectionTransaction = false;
+    currentPage = 1;
+    applyLocalFilter(resyncSource: false);
+  }
+
+  void selectStatusIndex(int index) {
+    if (index < 0 || index >= tabController.length) return;
+    final resetTag = selectedTagId.value != TagManagementController.allTagKey;
+    if (tabOnlineIndex.value == index && !resetTag) return;
+
+    _selectionTransaction = true;
+    tabOnlineIndex.value = index;
+    if (resetTag) selectedTagId.value = TagManagementController.allTagKey;
+    _selectionTransaction = false;
+    currentPage = 1;
+    applyLocalFilter(resyncSource: false);
+  }
+
+  void animateToStatusIndex(int index) {
+    if (index < 0 || index >= tabController.length) return;
+    if (tabController.index == index) {
+      selectStatusIndex(index);
+      return;
     }
-    applyLocalFilter();
+    tabController.animateTo(index, duration: const Duration(milliseconds: 220), curve: Curves.easeOutCubic);
+  }
+
+  void changeSelectedTag(String tagId) {
+    if (selectedTagId.value == tagId) return;
+    currentPage = 1;
+    selectedTagId.value = tagId;
   }
 
   void updateRoomTags(LiveRoom room, List<String> newTagIds) {
-    tagController.setRoomTags(room.roomId.toString(), newTagIds);
-    applyLocalFilter();
+    tagController.setRoomTags(room, newTagIds);
   }
 
   List<LiveRoom> getAllRooms() {
@@ -197,8 +244,9 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     List<LiveRoom> siteFiltered = source;
 
     if (activeSite.id != Sites.allSite) {
+      final siteId = activeSite.id.trim().toLowerCase();
       siteFiltered = source.where((room) {
-        return room.platform?.toUpperCase() == activeSite.id.toUpperCase();
+        return room.normalizedPlatformId == siteId;
       }).toList();
     }
 
@@ -212,8 +260,8 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     }).toList();
   }
 
-  List<LiveRoom> getFilteredRooms({Iterable<LiveRoom>? roomSnapshot}) {
-    syncRooms(roomSnapshot: roomSnapshot);
+  List<LiveRoom> getFilteredRooms({Iterable<LiveRoom>? roomSnapshot, bool resyncSource = true}) {
+    if (resyncSource) syncRooms(roomSnapshot: roomSnapshot);
 
     return _filterSyncedRooms();
   }
@@ -249,8 +297,9 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     List<LiveRoom> siteFiltered = source;
 
     if (siteId != Sites.allSite) {
+      final normalizedSiteId = siteId.trim().toLowerCase();
       siteFiltered = source.where((room) {
-        return room.platform?.toUpperCase() == siteId.toUpperCase();
+        return room.normalizedPlatformId == normalizedSiteId;
       }).toList();
     }
 
@@ -264,8 +313,23 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     }).toList();
   }
 
+  int favoriteCountForSite(String siteId, {int? statusIndex}) {
+    final Iterable<LiveRoom> source = statusIndex == null
+        ? SettingsService.to.fav.favoriteRooms.v
+        : switch (statusIndex) {
+            0 => onlineRooms,
+            1 => replayRooms,
+            2 => offlineRooms,
+            _ => const <LiveRoom>[],
+          };
+    if (siteId == Sites.allSite) return source.length;
+    final normalizedSite = siteId.trim().toLowerCase();
+    return source.where((room) => room.platform?.trim().toLowerCase() == normalizedSite).length;
+  }
+
   void syncRooms({Iterable<LiveRoom>? roomSnapshot}) {
     final List<LiveRoom> roomsBase = List<LiveRoom>.from(roomSnapshot ?? SettingsService.to.fav.favoriteRooms.v);
+    _lastSyncedFavoriteSnapshot = _favoriteSnapshotSignature(roomsBase);
     final nextOnline = roomsBase.where((r) => r.liveStatus == LiveStatus.live && r.isRecord == false).toList();
     final nextOffline = roomsBase.where((r) => r.liveStatus != LiveStatus.live).toList();
     final nextReplay = roomsBase.where((r) => r.liveStatus == LiveStatus.live && r.isRecord == true).toList();
@@ -294,9 +358,10 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
           target = nextOnline;
       }
       final Set<String> tagIds = {};
+      final normalizedSiteId = activeSite.id.trim().toLowerCase();
 
       for (var room in target) {
-        if (activeSite.id == Sites.allSite || room.platform?.toUpperCase() == activeSite.id.toUpperCase()) {
+        if (activeSite.id == Sites.allSite || room.normalizedPlatformId == normalizedSiteId) {
           final ids = tagController.getTagsForRoom(room);
           tagIds.addAll(ids);
         }
@@ -332,6 +397,57 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     _assignIfSnapshotChanged(offlineRooms, nextOffline);
     _assignIfSnapshotChanged(replayRooms, nextReplay);
     _assignIfSnapshotChanged(visibleTags, nextVisibleTags);
+  }
+
+  bool _isCurrentFavoriteSnapshotSynced() {
+    return _lastSyncedFavoriteSnapshot == _favoriteSnapshotSignature(SettingsService.to.fav.favoriteRooms.v);
+  }
+
+  int _favoriteSnapshotSignature(Iterable<LiveRoom> rooms) {
+    return Object.hashAll(
+      rooms.map(
+        (room) => Object.hash(
+          room.identityKey,
+          room.liveStatus,
+          room.isRecord,
+          room.title,
+          room.nick,
+          room.avatar,
+          room.cover,
+          room.area,
+          room.watching,
+          room.popularity,
+          room.onlineViewers,
+          room.totalViewers,
+          room.followers,
+          Object.hashAll(room.tagIds),
+        ),
+      ),
+    );
+  }
+
+  void _refreshVisibleTagsFromSyncedRooms() {
+    final sites = Sites().availableSites(containsAll: true);
+    if (tabSiteIndex.value < 0 || tabSiteIndex.value >= sites.length) {
+      _assignIfSnapshotChanged(visibleTags, const <LiveTag>[]);
+      return;
+    }
+    final source = switch (tabOnlineIndex.value) {
+      0 => onlineRooms,
+      1 => replayRooms,
+      2 => offlineRooms,
+      _ => onlineRooms,
+    };
+    final siteId = sites[tabSiteIndex.value].id;
+    final tagIds = <String>{};
+    for (final room in source) {
+      if (siteId == Sites.allSite || room.normalizedPlatformId == siteId) {
+        tagIds.addAll(tagController.getTagsForRoom(room));
+      }
+    }
+    final next = tagController.tags.where((tag) => tagIds.contains(tag.id)).toList(growable: false)
+      ..sort((left, right) => left.order.compareTo(right.order));
+    _assignIfSnapshotChanged(visibleTags, next);
   }
 
   void _assignIfSnapshotChanged<T>(RxList<T> target, List<T> next) {
@@ -374,8 +490,9 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     return highest;
   }
 
-  void applyLocalFilter() {
-    final filtered = getFilteredRooms();
+  void applyLocalFilter({bool resyncSource = true}) {
+    if (!resyncSource) _refreshVisibleTagsFromSyncedRooms();
+    final filtered = getFilteredRooms(resyncSource: resyncSource);
     updateLocalReactivePool(filtered);
   }
 
@@ -403,7 +520,6 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     await _runRoomRefresh(roomsToRefresh, showLoading: showLoading, emitFinish: emitFinish, markFullRefresh: true);
   }
 
-  @visibleForTesting
   Future<void> refreshPersistedRoomsOnStartup() {
     final current = _startupRefresh;
     if (current != null) return current;
@@ -485,11 +601,15 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     final concurrency = RefreshConfigController.normalizeMaxConcurrentRefresh(
       refreshConfigController.maxConcurrentRefresh.value,
     );
+    // Reuse one adapter per platform inside a refresh pass. Besides reducing
+    // allocation, this lets cookie/device/bootstrap requests use single-flight
+    // state while the bounded I/O workers refresh several cards concurrently.
+    final siteCache = <String, LiveSite>{};
     final pendingUpdates = <String, LiveRoom>{};
     final results = await boundedAsyncMap<LiveRoom, LiveRoom>(
       valid,
       maxConcurrent: concurrency,
-      task: _refreshOneRoom,
+      task: (room) => _refreshOneRoom(room, siteCache),
       shouldCancel: () => refreshEpoch != _refreshEpoch || isClosed,
     );
     if (refreshEpoch != _refreshEpoch || isClosed) return const <String, LiveRoom>{};
@@ -499,11 +619,15 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     return pendingUpdates;
   }
 
-  Future<LiveRoom?> _refreshOneRoom(LiveRoom room) async {
+  Future<LiveRoom?> _refreshOneRoom(LiveRoom room, Map<String, LiveSite> siteCache) async {
     try {
-      return await Sites.of(room.platform!).liveSite
-          .getRoomDetail(roomId: room.roomId!, platform: room.platform!)
-          .timeout(_roomRefreshTimeout);
+      final platform = room.normalizedPlatformId;
+      final roomId = room.normalizedRoomId;
+      final liveSite = siteCache.putIfAbsent(platform, () => Sites.of(platform).liveSite);
+      final operation = liveSite is LiveSiteRoomRefresher
+          ? (liveSite as LiveSiteRoomRefresher).getRoomDetailForRefresh(roomId: roomId, platform: platform)
+          : liveSite.getRoomDetail(roomId: roomId, platform: platform);
+      return await operation.timeout(_roomRefreshTimeout);
     } catch (error, stackTrace) {
       // One platform/room failure must not discard successful updates from the
       // rest of the batch.

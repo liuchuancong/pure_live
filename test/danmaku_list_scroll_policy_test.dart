@@ -27,6 +27,16 @@ void main() {
     expect(isDanmakuUserScrollStart(notification), isFalse);
   });
 
+  test('pointer-down invalidates a tail jump queued by the previous frame', () {
+    final guard = DanmakuTailFollowGuard();
+    final queuedRevision = guard.capture();
+
+    guard.invalidate();
+
+    expect(guard.isCurrent(queuedRevision), isFalse);
+    expect(guard.isCurrent(guard.capture()), isTrue);
+  });
+
   test('a stale PiP drag notification without a live pointer is ignored', () {
     final notification = ScrollStartNotification(
       metrics: metrics,

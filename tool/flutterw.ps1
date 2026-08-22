@@ -57,8 +57,29 @@ if ($FlutterArgs.Count -gt 0 -and $FlutterArgs[0] -eq 'dart') {
     $FlutterArgs = @($FlutterArgs | Select-Object -Skip 1)
 }
 if ($executable -eq $flutter -and $env:JAVA_HOME -and $FlutterArgs[0] -notin @('config', 'upgrade')) {
-    & $flutter config --jdk-dir=$env:JAVA_HOME *> $null
-    if ($LASTEXITCODE -ne 0) { throw 'Flutter JDK configuration failed.' }
+    # Windows PowerShell converts a native process' stderr into non-terminating
+    # ErrorRecord objects. With the wrapper-wide Stop preference, an ordinary
+    # Gradle warning would otherwise terminate the wrapper before its exit code
+    # can be inspected.
+    $previousErrorActionPreference = $ErrorActionPreference
+    $nativePreferenceVariable = Get-Variable PSNativeCommandUseErrorActionPreference -ErrorAction SilentlyContinue
+    $previousNativeCommandPreference = if ($nativePreferenceVariable) {
+        $PSNativeCommandUseErrorActionPreference
+    } else {
+        $null
+    }
+    try {
+        $ErrorActionPreference = 'Continue'
+        if ($nativePreferenceVariable) { $PSNativeCommandUseErrorActionPreference = $false }
+        & $flutter config --jdk-dir=$env:JAVA_HOME *> $null
+        $configExitCode = $LASTEXITCODE
+    } finally {
+        if ($nativePreferenceVariable) {
+            $PSNativeCommandUseErrorActionPreference = $previousNativeCommandPreference
+        }
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+    if ($configExitCode -ne 0) { throw 'Flutter JDK configuration failed.' }
 }
 
 $workDir = $repoRoot
@@ -99,10 +120,25 @@ if ($repoRoot.Length -gt 80) {
 
 Push-Location $workDir
 $flutterExitCode = 0
+$previousErrorActionPreference = $ErrorActionPreference
+$nativePreferenceVariable = Get-Variable PSNativeCommandUseErrorActionPreference -ErrorAction SilentlyContinue
+$previousNativeCommandPreference = if ($nativePreferenceVariable) {
+    $PSNativeCommandUseErrorActionPreference
+} else {
+    $null
+}
 try {
+    # Preserve native stderr in the caller's log and use the process exit code
+    # as the single source of truth for command success.
+    $ErrorActionPreference = 'Continue'
+    if ($nativePreferenceVariable) { $PSNativeCommandUseErrorActionPreference = $false }
     & $executable @FlutterArgs
     $flutterExitCode = $LASTEXITCODE
 } finally {
+    if ($nativePreferenceVariable) {
+        $PSNativeCommandUseErrorActionPreference = $previousNativeCommandPreference
+    }
+    $ErrorActionPreference = $previousErrorActionPreference
     Pop-Location
 }
 $global:LASTEXITCODE = $flutterExitCode

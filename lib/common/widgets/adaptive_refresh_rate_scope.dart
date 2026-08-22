@@ -114,7 +114,10 @@ class _AdaptiveRefreshRateScopeState extends State<AdaptiveRefreshRateScope> wit
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
+    // Android PiP is visible while Flutter reports `inactive`. Keep the
+    // selected window policy there so PiP danmaku and the native surface agree;
+    // hidden/paused/detached states still release the high-rate request.
+    if (state == AppLifecycleState.resumed || state == AppLifecycleState.inactive) {
       AdaptiveRefreshRateController.resume();
     } else {
       AdaptiveRefreshRateController.pause();

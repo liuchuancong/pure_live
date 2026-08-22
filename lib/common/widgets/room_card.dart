@@ -164,9 +164,7 @@ class _RoomCardState extends State<RoomCard> {
         : Get.put(FavoriteController());
     final TagManagementController tagController = Get.find<TagManagementController>();
     final theme = Theme.of(context);
-    final bool isFollowed = SettingsService.to.fav.favoriteRooms.v.any(
-      (r) => r.platform == widget.room.platform && r.roomId == widget.room.roomId,
-    );
+    final bool isFollowed = SettingsService.to.fav.isFavorite(widget.room);
 
     Get.dialog(
       AlertDialog(

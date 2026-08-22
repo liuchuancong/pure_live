@@ -285,11 +285,26 @@ class LiveRoom {
     );
   }
 
-  @override
-  bool operator ==(covariant LiveRoom other) => platform == other.platform && roomId == other.roomId;
+  String get normalizedPlatformId => platform?.trim().toLowerCase() ?? '';
+
+  String get normalizedRoomId => roomId?.trim() ?? '';
+
+  /// Stable room identity used by favourites, tags and refresh merges.
+  /// Room numbers are only unique inside one platform.
+  String get identityKey => '$normalizedPlatformId:$normalizedRoomId';
+
+  bool hasSameIdentity(LiveRoom other) => identityKey == other.identityKey;
+
+  LiveRoom normalizedIdentityCopy() {
+    if (platform == normalizedPlatformId && roomId == normalizedRoomId) return this;
+    return copyWith(platform: normalizedPlatformId, roomId: normalizedRoomId);
+  }
 
   @override
-  int get hashCode => Object.hash(platform, roomId);
+  bool operator ==(covariant LiveRoom other) => hasSameIdentity(other);
+
+  @override
+  int get hashCode => identityKey.hashCode;
 
   @override
   String toString() {

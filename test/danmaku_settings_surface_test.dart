@@ -8,6 +8,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pure_live/common/services/settings_service.dart';
+import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 import 'package:pure_live/modules/live_play/pages/danmaku_settings_page.dart';
 import 'package:pure_live/common/services/settings/font_settings_controller.dart';
 import 'package:pure_live/common/services/settings/danmaku_settings_controller.dart';
@@ -210,6 +211,8 @@ class _TestAssetLoader extends AssetLoader {
     'stroke': 'Stroke width',
     'danmaku_fps': 'FPS',
     'dynamic_follow_display': 'Dynamic',
+    'danmaku_fps_policy_desc': 'Follow the global interface refresh policy',
+    'pip_danmaku_fps_policy_desc': 'Follow the global interface refresh policy',
     'danmaku_tap_action': 'Tap action',
     'danmaku_long_press_action': 'Long press action',
     'pip_danmaku': 'PiP danmaku',
@@ -223,10 +226,14 @@ class _TestAssetLoader extends AssetLoader {
 }
 
 class _TestSettingsService extends SettingsService {
-  _TestSettingsService(this._danmaku) : _font = FontSettingsController();
+  _TestSettingsService(this._danmaku) : _app = AppSettingsController(), _font = FontSettingsController();
 
   final DanmakuSettingsController _danmaku;
+  final AppSettingsController _app;
   final FontSettingsController _font;
+
+  @override
+  AppSettingsController get app => _app;
 
   @override
   DanmakuSettingsController get danmaku => _danmaku;

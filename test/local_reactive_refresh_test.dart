@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pure_live/common/base/base_page_view.dart';
 import 'package:pure_live/common/base/local_reactive_page_controller.dart';
 
 class _TestLocalController extends LocalReactivePageController<int> {}
@@ -36,5 +38,46 @@ void main() {
     await operation;
     expect(finished, isTrue);
     expect(controller.list, [1, 2, 3]);
+  });
+
+  testWidgets('tabbed content remains mounted after an empty filtered snapshot', (tester) async {
+    final controller = _TestLocalController();
+    final pageController = PageController();
+    controller.updateLocalReactivePool(const <int>[1]);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: BasePageView<_TestLocalController, int>(
+            controller: controller,
+            enableRefresh: false,
+            enableLoadMore: false,
+            preserveContentWhenEmpty: true,
+            showScrollToTopBtn: false,
+            contentBuilder: (context, list, scrollController) => PageView(
+              key: const ValueKey('persistent-empty-tab-view'),
+              controller: pageController,
+              children: const [
+                SizedBox.expand(key: ValueKey('first-tab')),
+                SizedBox.expand(key: ValueKey('second-tab')),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    controller.updateLocalReactivePool(const <int>[]);
+    await tester.pump();
+    expect(find.byKey(const ValueKey('persistent-empty-tab-view')), findsOneWidget);
+
+    await tester.drag(find.byKey(const ValueKey('persistent-empty-tab-view')), const Offset(-600, 0));
+    await tester.pumpAndSettle();
+    expect(pageController.page, closeTo(1, 0.001));
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    pageController.dispose();
+    controller.onClose();
   });
 }

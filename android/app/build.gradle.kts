@@ -93,4 +93,17 @@ kotlin {
 
 flutter {
     source = "../.."
-}    
+}
+
+// Flutter's build tasks currently use Project at execution time, while the
+// aggregate assemble task captures live AGP Built-in Kotlin variant state.
+// Keep Configuration Cache enabled for compatible Android tasks, but make
+// every Flutter-owned task plus its aggregate entry explicit so Gradle discards
+// them instead of failing or reusing incomplete state.
+tasks.matching {
+    it.name.contains("flutter", ignoreCase = true) || it.name.startsWith("assemble")
+}.configureEach {
+    notCompatibleWithConfigurationCache(
+        "Flutter Gradle tasks are not yet compatible with AGP Built-in Kotlin state",
+    )
+}

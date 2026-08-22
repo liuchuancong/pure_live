@@ -10,7 +10,7 @@ List<LiveRoom> markFavoriteRoomsPendingVerification(Iterable<LiveRoom> rooms) {
   return rooms.map((room) => room.copyWith(status: false, liveStatus: LiveStatus.unknown)).toList(growable: false);
 }
 
-String favoriteRoomIdentity(LiveRoom room) => '${room.platform?.toLowerCase() ?? ''}:${room.roomId ?? ''}';
+String favoriteRoomIdentity(LiveRoom room) => room.identityKey;
 
 /// Merges room-detail responses into the latest user-owned favourites
 /// snapshot. Tags and reliable audience fields come from the latest snapshot,

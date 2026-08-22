@@ -1,6 +1,6 @@
 # 本地构建、测试与发布
 
-本仓库采用“本机优先、Actions 手动兜底”的流程，固定使用 Flutter `3.47.0`。`pubspec.lock`、Git 依赖提交和 FFmpeg 产物地址均已固定，便于复现结果。
+本仓库采用“本机优先、Actions 手动兜底”的流程，固定使用 Flutter `3.47.0`。`pubspec.lock`、Git 依赖提交和 FFmpeg 产物地址均已固定，便于复现结果。平台范围、CPU/RAM 配额、缓存、互斥和记录格式以 [`BUILD_POLICY.md`](../BUILD_POLICY.md) 为准。
 
 最近完整源码核验：2026-08-22，v2.5.0 build 4072，Windows 11 + Java 25 + Flutter 3.47.0；Built-in Kotlin 审计、Flutter Analyze 0 issue、208 项单元/Widget 测试和 26/26 平台公开接口探测通过。本机优先构建 Android arm64 与 Windows x64，再由显式阶段任务补齐 Linux x64、macOS universal 和 iOS arm64 设备归档。首页有界并发、首次空快照终态、三档刷新率、PiP 流重订阅、横屏本地输入、空闲弹幕调度、播放器控制器释放和有界弹幕缓存均进入自动化回归范围。干净便携目录继续把数据、缓存和临时文件写入 release 同级 `AppData`。
 
@@ -13,13 +13,22 @@
 - 可选：Inno Setup 6，用于生成 Windows EXE 安装包；
 - 可选：GitHub CLI，用于从本机创建并上传 Release。
 
-## Windows 11 一键质量门禁
+## Windows 11 验证门禁
 
-仓库脚本依次执行锁定依赖解析、变更 Dart 文件格式检查、静态分析、完整测试和直播接口探测：
+日常开发把受影响测试放在同一个有界并发命令中，并在修改完成后执行一次 Analyze：
 
 ```powershell
-PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
+PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1 `
+  -Scope Focused -TestPath test/example_test.dart -Analyze
 ```
+
+正式交付才运行完整回归：
+
+```powershell
+PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1 -Scope Full
+```
+
+两种模式的 Flutter 测试都从 `--concurrency=12` 起步；脚本通过共享重型任务互斥锁排队，并在 `local-artifacts/build-records/` 记录耗时和资源峰值。
 
 ### 默认无设备修复流程
 
@@ -27,7 +36,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
 
 1. 从控制器、生命周期、通知与数据订阅中还原可重复的事件顺序。
 2. 用单元或 Widget 测试固化故障序列和期望状态，优先覆盖修复前失败、修复后通过的路径。
-3. 执行 `flutter analyze`、受影响测试；合并或发布前再执行 `tool/local_ci.ps1`。
+3. 执行受影响测试；本轮修改完成后执行一次 `flutter analyze`，正式交付前再执行 `tool/local_ci.ps1 -Scope Full`。
 4. 需要安装包时在本机完成 Android arm64 或 Windows x64 构建，并独立记录签名与构建结果。
 
 手机连接、ADB、APK 安装和设备 UI 自动化是单独的可选验收层，仅在当前任务明确要求设备操作时启用。以前连接过设备不构成持续授权。没有设备采样时，文档分别报告“代码审查 / 自动化测试 / 本地构建”的实际证据，不把设备状态当作代码修复的阻塞项。
@@ -49,24 +58,24 @@ Android 打包前会由 `tool/prefetch_android_native.ps1` 下载并逐一校验
 
 Windows 的 `flutter_inappwebview_windows` 需要 `nuget.exe`。脚本会自动发现 `%LOCALAPPDATA%\Codex\nuget\nuget.exe` 或 `PATH` 中的 NuGet；建议从 `https://dist.nuget.org/` 下载并核验 Microsoft Authenticode 签名。
 
-## 一键生成安装包
+## 单目标生成安装包
 
 ```powershell
-PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
+PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
+  -Target AndroidArm64 -Configuration Debug -SkipQuality
 ```
 
-默认生成：
+`-Target` 与 `-Configuration` 都是必填项，一次调用只生成一个明确目标：
 
-- Android `arm64-v8a` APK（默认优先且仅构建这一架构）；
-- Windows x64 便携 ZIP；
-- 安装了 Inno Setup 6 时，额外生成 Windows EXE 安装包；
+- `AndroidArm64`：`arm64-v8a` Debug 或 Release APK；
+- `WindowsX64`：x64 Debug 或 Release 便携 ZIP；Release 且安装 Inno Setup 6 时可生成 EXE 安装包；
 - 所有文件的 `SHA256SUMS.txt`。
 
 产物位于 `local-artifacts/<version-build>/`，该目录不会提交到 Git。
 
-Windows 打包前会先清理 `build/windows/x64/runner/Release`，并检查 `AppData`、缓存数据库等运行时状态未进入便携包或安装器；打包暂存区还会剔除 `.lib`、`.exp`、`.pdb`、`.ilk` 等仅供原生开发/链接使用的文件。请勿直接把运行过的 Release 目录手工压缩发布。
+Windows 保留 Flutter/CMake 的增量构建目录，只清理可丢弃的打包暂存区；脚本检查 `AppData`、缓存数据库等运行时状态未进入便携包或安装器，并剔除 `.lib`、`.exp`、`.pdb`、`.ilk` 等仅供原生开发/链接使用的文件。请勿直接把运行过的 Release 目录手工压缩发布。
 
-可选参数：`-SkipQuality`、`-SkipAndroid`、`-SkipWindows`、`-SkipInstaller`、`-UseOfficialRepositories`。
+质量模式也必须明确二选一：正式交付使用 `-FullRegression`；已经完成本轮定向验证或同提交完整门禁时使用 `-SkipQuality`。其他参数：`-SkipInstaller`、`-UseOfficialRepositories`、`-RequireReleaseSigning`、`-DedicatedBuild`。交互模式 Gradle workers 为 16；专门构建传 `-DedicatedBuild` 后为 20。
 
 本地打包默认通过临时 Gradle init script 优先使用阿里云 Maven 镜像，并保留 Google/Maven Central 回退，解决国内网络的 TLS 中断；`-UseOfficialRepositories` 会只使用项目声明的官方仓库。该设置仅对当前脚本进程生效，不改全局 Gradle 配置。
 
@@ -92,7 +101,9 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\install_android_local.ps1
 正式发布时使用 `-RequireReleaseSigning`，缺少或不完整的外部签名配置会在构建前终止：
 
 ```powershell
-PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 -RequireReleaseSigning
+PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
+  -Target AndroidArm64 -Configuration Release -FullRegression `
+  -RequireReleaseSigning -DedicatedBuild
 ```
 
 签名材料只保存在 GitHub Secrets、Actions 托管额度紧张时，可在本机注册
@@ -100,9 +111,9 @@ Windows x64 临时自托管 Runner，再手动运行
 `local-signed-android` 工作流。编译仍在本机完成，工作流仅把签名 Secrets
 注入临时进程；工作流依次检测 Runner 工具缓存、Android Studio JBR 与 `JAVA_HOME`，且只接受真实 Java 25，任务结束后会清理 JKS 和 `android/key.properties`。
 
-临时 Runner 注册服务异常时，可显式推送 `signed-build-*` 标签，使用同一工作流的一次性 GitHub 托管回退作业生成正式签名 arm64 APK；普通提交不触发该作业，本机门禁与 Windows 构建仍保持优先。
+临时 Runner 仅通过手动工作流构建当前指定的 Android arm64 Release；普通提交与标签不自动追加托管构建。
 
-Linux、macOS 和 iOS 通常通过 `manual-build` 手动开关补建；阶段标签也支持精确补建：`stage-linux-*` 运行 Linux，`stage-ios-*` 运行 iOS，`stage-apple-*` 在一个 macOS Runner 内连续构建 macOS 与 iOS。普通分支推送、Android 和 Windows 均保持本机优先。
+Linux、macOS 和 iOS 通过 `feature-build` 手动选择补建；所有平台默认关闭，勾选多个目标时由依赖链按 Android → Windows → Linux → Apple 串行执行。普通分支推送不触发平台构建，Android 和 Windows 保持本机优先。
 
 全平台阶段包就绪后，`publish-staged-release` 工作流可输入阶段构建 Run ID 与本机正式签名 Android Run ID：Windows x64 会在临时自托管 Runner 上重新构建，托管发布作业只负责汇总 Linux/macOS/iOS 阶段包、校验来源提交与正式签名元数据、生成统一 SHA-256，并创建 Release。这样不会为已经通过的 Linux/Apple 平台重复消耗完整构建额度。
 
@@ -136,7 +147,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\publish_local_release.ps1 `
 
 ## GitHub Actions
 
-`.github/workflows/feature-build.yml` 支持手动触发，可分别选择 Android arm64、Windows x64、Linux x64、macOS universal 和 iOS arm64 设备编译；默认先运行完整静态分析、测试与接口探测。`stage-linux-*`、`stage-ios-*` 与 `stage-apple-*` 标签仅用于精确阶段补建，产物保留 3 天。
+`.github/workflows/feature-build.yml` 支持手动触发，可分别选择 Android arm64、Windows x64、Linux x64、macOS universal 和 iOS arm64 设备编译；所有平台、质量门禁和发布开关默认关闭，只有本轮明确选择的阶段进入队列。选择多个平台时按依赖链串行。`stage-linux-*`、`stage-macos-*` 与 `stage-ios-*` 标签仅用于精确单平台补建，产物保留 3 天。
 
 代码未变化且当前提交已经在本机通过完整门禁时，可关闭手动工作流的
 `run_quality`，仅调用托管 Runner 完成 Secrets 正式签名；默认仍会执行完整门禁。
@@ -159,8 +170,8 @@ python .\tool\update_releases.py
 ## 发布检查清单
 
 1. 更新 `pubspec.yaml`、`assets/version.json` 与 `RELEASE_NOTES.md`。
-2. 运行 `tool/local_ci.ps1`。
-3. 运行 `tool/build_local_release.ps1`，核对 APK、EXE/ZIP 和 SHA-256。
+2. 运行 `tool/local_ci.ps1 -Scope Full` 一次。
+3. 按本轮发布范围串行运行 `tool/build_local_release.ps1 -Target <目标> -Configuration Release -SkipQuality`，逐个平台核对产物、构建记录和 SHA-256。
 4. 运行 `tool/install_android_local.ps1` 在真机覆盖安装并启动；正式 Release 使用仓库持久签名验证升级链。
 5. 提交并推送 `master`，再运行 `tool/publish_local_release.ps1`。
 6. 在 [维护分支 Releases](https://github.com/wzgrx/pure_live/releases) 核对附件和校验文件。
