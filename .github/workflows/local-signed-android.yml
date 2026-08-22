@@ -2,6 +2,12 @@ name: local-signed-android
 
 on:
   workflow_dispatch:
+    inputs:
+      run_full_regression:
+        description: Run full quality regression before packaging
+        required: true
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -81,9 +87,24 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
-            -Target AndroidArm64 -Configuration Release -FullRegression `
-            -RequireReleaseSigning -DedicatedBuild
+          $qualityMode = if ('${{ inputs.run_full_regression }}' -eq 'true') {
+            '-FullRegression'
+          } else {
+            '-SkipQuality'
+          }
+          $arguments = @(
+            '-ExecutionPolicy', 'Bypass',
+            '-File', '.\tool\build_local_release.ps1',
+            '-Target', 'AndroidArm64',
+            '-Configuration', 'Release',
+            $qualityMode,
+            '-RequireReleaseSigning',
+            '-DedicatedBuild'
+          )
+          & PowerShell @arguments
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
 
       - name: Stage only the current Android release
         shell: pwsh
