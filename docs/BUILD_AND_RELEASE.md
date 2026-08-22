@@ -174,6 +174,6 @@ python .\tool\update_releases.py
 3. 按本轮发布范围串行运行 `tool/build_local_release.ps1 -Target <目标> -Configuration Release -SkipQuality`，逐个平台核对产物、构建记录和 SHA-256。
 4. 当前任务明确安排设备验收时，再运行 `tool/install_android_local.ps1` 覆盖安装并启动；正式 Release 使用仓库持久签名验证升级链。
 5. 提交并推送 `master`，再运行 `tool/publish_local_release.ps1`。
-6. 在 [维护分支 Releases](https://github.com/wzgrx/pure_live/releases) 核对附件和校验文件。
+6. 在 [维护分支 Releases](https://github.com/liuchuancong/pure_live/releases) 核对附件和校验文件。
 
 返回 [文档索引](README.md)。

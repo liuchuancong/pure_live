@@ -1,6 +1,6 @@
 # Pure Live v2.6.0
 
-v2.6.0 build 4076 是上游同步、近期 Issue 修复、播放器与长时间资源治理的阶段稳定版；仅发布到 `wzgrx/pure_live`。
+v2.6.0 build 4076 是上游同步、近期 Issue 修复、播放器与长时间资源治理的阶段稳定版；仅发布到 `liuchuancong/pure_live`。
 
 ## 上游与近期问题
 
