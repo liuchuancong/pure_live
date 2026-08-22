@@ -43,7 +43,7 @@ class LivePlayHeader extends StatelessWidget implements PreferredSizeWidget {
             if (detail == null) {
               return const SizedBox.shrink();
             }
-            final platform = detail.platform?.toUpperCase() ?? '';
+            final platform = detail.platform ?? '';
             final area = detail.area;
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -56,7 +56,7 @@ class LivePlayHeader extends StatelessWidget implements PreferredSizeWidget {
                   style: Theme.of(context).textTheme.labelSmall,
                 ),
                 Text(
-                  area == null || area.isEmpty ? platform : '$platform / $area',
+                  area == null || area.isEmpty ? i18n('site_$platform') : '${i18n("site_$platform")} / $area',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelSmall,
