@@ -26,7 +26,7 @@ v2.6.0 build 4076 是上游同步、近期 Issue 修复、播放器与长时间�
 - `dynamic_color` 保持 1.9.0：2.x 的 `material_ui.ColorScheme` 与当前 Flutter Material 类型边界不同，待完整主题迁移后单独升级。
 - Android 保持官方 AGP 9.3.1 推荐的 Gradle 9.5.0、Google Services 4.5.0、compile/target SDK 37 与 Built-in Kotlin。
 - Android 本轮只构建正式签名 `arm64-v8a`；Windows x64、Linux x64、macOS Universal 与 iOS arm64 按平台串行构建。
-- Flutter Analyze 0 issue、223 项单元/Widget 测试与 26/26 项公开接口探测通过；各平台产物结果写入 `docs/STAGE_UPDATE_2_6_0.md` 与 Release 元数据。
+- Flutter Analyze 0 issue、224 项单元/Widget 测试与 26/26 项公开接口探测通过；各平台产物结果写入 `docs/STAGE_UPDATE_2_6_0.md` 与 Release 元数据。
 - Windows Release 完成 6 分钟隔离实例烟雾采样，工作集保持平稳；全部平台产物均复核 SHA-256 与归档结构。
 
 ---

@@ -31,14 +31,14 @@
 
 ## 质量门禁
 
-同一源码冻结点已完成本地完整门禁：
+最终上游整合源码 `b1d61b27` 已完成本地完整门禁：
 
-- Flutter Analyze：0 issue（295.7 秒）；
-- 单元与 Widget 测试：223/223 通过；
+- Flutter Analyze：0 issue（323.8 秒）；
+- 单元与 Widget 测试：224/224 通过；
 - 公开接口探测：26/26 通过，覆盖 Bilibili、Douyu、Huya、Kuaishou、Douyin、网易 CC、Twitch 与 SOOP Live；
 - Built-in Kotlin、构建策略、设备 UI 地图、锁文件与变更文件格式检查全部通过；
-- 完整门禁耗时 560.057 秒，重型进程峰值内存 7.44 GiB、峰值 CPU 18.21%、结束后活跃重型进程为 0；
-- 记录：`local-artifacts/build-records/20260822T180054267Z-quality-full.json`。
+- 完整门禁耗时 557.633 秒，重型进程峰值内存 5.97 GiB、峰值 CPU 17.27%、结束后活跃重型进程为 0；
+- 记录：`local-artifacts/build-records/20260822T193705756Z-quality-full.json`。
 
 ## 串行构建与产物
 
