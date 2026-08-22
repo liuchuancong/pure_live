@@ -1,16 +1,36 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pure_live/common/models/app_refresh_rate_mode.dart';
 import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 
 void main() {
   group('app settings migration', () {
-    test('enables high refresh rate for an older backup', () {
+    test('uses power saving for a backup without a refresh preference', () {
       final config = AppSettingsController.extractConfig({'app': <String, dynamic>{}});
 
-      expect(config['enableHighRefreshRate'], isTrue);
+      expect(config['refreshRateMode'], AppRefreshRateMode.powerSaving.storageValue);
+      expect(config['enableHighRefreshRate'], isFalse);
       expect(config['enableAsmrSleepMode'], isFalse);
       expect(config['asmrSleepMinutes'], 60);
       expect(config['realOnlinePlatforms'], AppSettingsController.defaultRealOnlinePlatforms);
       expect(config['useGitHubOriginForUpdates'], isFalse);
+    });
+
+    test('migrates the legacy high refresh switch to balanced', () {
+      final config = AppSettingsController.extractConfig({
+        'app': {'enableHighRefreshRate': true},
+      });
+
+      expect(config['refreshRateMode'], AppRefreshRateMode.balanced.storageValue);
+      expect(config['enableHighRefreshRate'], isTrue);
+    });
+
+    test('prefers an explicit refresh-rate mode over the legacy switch', () {
+      final config = AppSettingsController.extractConfig({
+        'app': {'refreshRateMode': AppRefreshRateMode.performance.storageValue, 'enableHighRefreshRate': false},
+      });
+
+      expect(config['refreshRateMode'], AppRefreshRateMode.performance.storageValue);
+      expect(config['enableHighRefreshRate'], isTrue);
     });
 
     test('preserves unrelated app fields when updating refresh mode', () {

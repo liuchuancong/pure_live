@@ -26,6 +26,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   Timer? _debounceTimer;
   Timer? _resumeRefreshTimer;
+  Timer? _updateCheckTimer;
   final FavoriteController favoriteController = Get.find<FavoriteController>();
   late final VoidCallback _favoriteTabListener;
   Worker? _savedMenuWorker;
@@ -70,7 +71,12 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
       }
     });
 
-    addToOverlay();
+    // Give the visible room snapshot first use of the network and build
+    // isolate. The update check is low-priority background work and previously
+    // competed with the cold-start room verification and image requests.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateCheckTimer = Timer(const Duration(seconds: 2), () => unawaited(addToOverlay()));
+    });
 
     _favoriteTabListener = () {
       if (mounted) {
@@ -122,6 +128,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
     if (_selectedIndex < 0 || _selectedIndex >= HomeMenu.values.length) return;
     final menu = HomeMenu.values[_selectedIndex];
     _resumeRefreshTimer?.cancel();
+    _updateCheckTimer?.cancel();
     _resumeRefreshTimer = Timer(const Duration(milliseconds: 450), () {
       if (!mounted) return;
       if (menu == HomeMenu.popular && Get.isRegistered<PopularController>()) {

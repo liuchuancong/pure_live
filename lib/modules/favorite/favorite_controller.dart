@@ -37,7 +37,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   // the app from Recents; 15 seconds still suppresses duplicate lifecycle
   // events from rotation/PiP while keeping room state current.
   static const Duration _resumeRefreshStaleAfter = Duration(seconds: 15);
-  static const Duration _roomRefreshTimeout = Duration(seconds: 12);
+  static const Duration _roomRefreshTimeout = Duration(seconds: 10);
 
   final onlineRooms = <LiveRoom>[].obs;
   final offlineRooms = <LiveRoom>[].obs;
@@ -482,19 +482,19 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
         .toList(growable: false);
     if (valid.isEmpty) return const <String, LiveRoom>{};
 
-    final int batch = refreshConfigController.maxConcurrentRefresh.value > 0
-        ? refreshConfigController.maxConcurrentRefresh.value
-        : 5;
+    final concurrency = RefreshConfigController.normalizeMaxConcurrentRefresh(
+      refreshConfigController.maxConcurrentRefresh.value,
+    );
     final pendingUpdates = <String, LiveRoom>{};
-    for (int i = 0; i < valid.length; i += batch) {
-      final end = i + batch > valid.length ? valid.length : i + batch;
-      final batchRooms = valid.sublist(i, end);
-
-      final results = await Future.wait(batchRooms.map(_refreshOneRoom));
-      if (refreshEpoch != _refreshEpoch || isClosed) return const <String, LiveRoom>{};
-      for (final updated in results.whereType<LiveRoom>()) {
-        pendingUpdates[_roomKey(updated)] = updated;
-      }
+    final results = await boundedAsyncMap<LiveRoom, LiveRoom>(
+      valid,
+      maxConcurrent: concurrency,
+      task: _refreshOneRoom,
+      shouldCancel: () => refreshEpoch != _refreshEpoch || isClosed,
+    );
+    if (refreshEpoch != _refreshEpoch || isClosed) return const <String, LiveRoom>{};
+    for (final updated in results.whereType<LiveRoom>()) {
+      pendingUpdates[_roomKey(updated)] = updated;
     }
     return pendingUpdates;
   }
