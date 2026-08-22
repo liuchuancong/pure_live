@@ -15,6 +15,9 @@ Before selecting or running a validation/build command, read [`../../../BUILD_PO
 4. Use full regression and target-platform Release only for formal delivery.
 5. Enter the repository heavy-task guard before Gradle, Java, Dart, Flutter, or broad-search work. Default to 16 Gradle workers; use 20 only for an explicitly dedicated build. Start Flutter tests at concurrency 12.
 6. Preserve incremental outputs and caches. Do not add a clean step unless evidence identifies damaged or incompatible generated state.
+   Keep Configuration Cache in strict failure mode. Mark a confirmed incompatible
+   Flutter aggregate task with `notCompatibleWithConfigurationCache` so Gradle
+   discards only that entry instead of persisting incomplete state in warning mode.
 7. Report the generated build record and artifacts, then stop. Do not append another platform, full regression, package, upload, or release stage unless it was included in the current request.
 
 Use `tool/local_ci.ps1` for focused/full validation and `tool/build_local_release.ps1` for the single explicitly selected local target.

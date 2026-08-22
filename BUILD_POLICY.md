@@ -28,6 +28,9 @@
 `android/gradle.properties` 固化以下基线：
 
 - daemon、parallel、build cache、configuration cache、VFS watch 均启用；
+- Configuration Cache 保持严格失败模式；已确认不兼容的 Flutter 聚合任务必须用
+  `notCompatibleWithConfigurationCache` 精确标注，使 Gradle 丢弃该条目，禁止用全局
+  warning 模式保存不完整状态；
 - 交互构建默认 `org.gradle.workers.max=16`，专门构建由脚本覆盖为 20；
 - Gradle JVM Heap 为 6 GiB、Metaspace 为 1 GiB、使用 Parallel GC；
 - Kotlin daemon Heap 为 4 GiB；
