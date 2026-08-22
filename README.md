@@ -419,7 +419,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
 PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 ```
 
-当前 v2.5.0 build 4072 将首页收藏核验改为 4 路有界网络工作池：单个慢房间不再卡住整个固定批次，同时继续保留旧快照并在本轮完成后一次性替换，避免卡片跳动。Android 提供省电、均衡、高性能三档刷新率，新安装默认省电；均衡仅在触摸、滚动和转场期间请求设备最高刷新率，高性能在前台持续请求最高刷新率。Windows 视频纹理按实际可见物理尺寸设置，减少小窗口播放高分辨率源时的原生内存和拷贝压力。源码已通过 Flutter Analyze（0 issue）、207 项单元/Widget 测试与 26/26 平台接口探测；设备连接和采样按当前验收安排执行。完整门禁和构建结果见 [v2.5.0 阶段稳定版](docs/STAGE_UPDATE_2_5_0.md) 与 [构建与发布](docs/BUILD_AND_RELEASE.md)。
+当前 v2.5.0 build 4072 将首页收藏核验改为 4 路有界网络工作池：单个慢房间不再卡住整个固定批次，同时继续保留旧快照并在本轮完成后一次性替换，避免卡片跳动；首次空快照也会进入明确空状态，不再保留无限加载动画。Android 提供省电、均衡、高性能三档刷新率，新安装默认省电；均衡仅在触摸、滚动和转场期间请求设备最高刷新率，高性能在前台持续请求最高刷新率。Windows 视频纹理按实际可见物理尺寸设置，减少小窗口播放高分辨率源时的原生内存和拷贝压力。源码已通过 Flutter Analyze（0 issue）、208 项单元/Widget 测试与 26/26 平台接口探测；设备连接和采样按当前验收安排执行。完整门禁和构建结果见 [v2.5.0 阶段稳定版](docs/STAGE_UPDATE_2_5_0.md) 与 [构建与发布](docs/BUILD_AND_RELEASE.md)。
 
 ## 🤝 参与开发
 

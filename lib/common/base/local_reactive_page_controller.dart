@@ -4,11 +4,17 @@ import 'package:pure_live/common/index.dart';
 
 abstract class LocalReactivePageController<T> extends BasePageScrollAndStateBone<T> {
   final List<T> _localRawPool = [];
+  bool _hasPublishedSnapshot = false;
 
   Future<void> Function()? onExternalRefresh;
 
   void updateLocalReactivePool(List<T> freshData) {
-    if (_localRawPool.length == freshData.length) {
+    // The first empty snapshot is still meaningful: it moves BasePageView
+    // from its indeterminate loading state to the terminal empty state. The
+    // old identity fast path returned before _processDataDistribution when
+    // both lists started empty, leaving an infinite loading animation active
+    // on fresh installs and consuming CPU/GPU frames while the app was idle.
+    if (_hasPublishedSnapshot && _localRawPool.length == freshData.length) {
       var unchanged = true;
       for (var index = 0; index < freshData.length; index++) {
         if (!identical(_localRawPool[index], freshData[index])) {
@@ -20,6 +26,7 @@ abstract class LocalReactivePageController<T> extends BasePageScrollAndStateBone
     }
     _localRawPool.clear();
     _localRawPool.addAll(freshData);
+    _hasPublishedSnapshot = true;
     currentPage = 1;
     _processDataDistribution();
   }

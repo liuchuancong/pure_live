@@ -41,6 +41,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
+  Timer? _navigationTimer;
 
   @override
   void initState() {
@@ -59,14 +60,15 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     _controller.forward();
 
     if (widget.onNextPressed != null) {
-      Timer(widget.duration, () {
-        widget.onNextPressed!();
+      _navigationTimer = Timer(widget.duration, () {
+        if (mounted) widget.onNextPressed!();
       });
     }
   }
 
   @override
   void dispose() {
+    _navigationTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }

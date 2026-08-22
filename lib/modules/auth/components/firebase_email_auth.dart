@@ -50,7 +50,6 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   late final Map<MetaDataField, TextEditingController> _metadataControllers;
-  late final StreamSubscription<Uri> linkSubscription;
   bool _isLoading = false;
   bool _forgotPassword = false;
   bool _isSigningIn = true;

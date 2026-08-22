@@ -5,7 +5,7 @@ Pure Live 在 Android 上提供省电、均衡、高性能三档刷新率。新�
 ## 本次性能路径
 
 - 恢复 Flutter 在 Android API 29+ 的默认 Impeller 渲染路径；不支持 Vulkan 的设备由 Flutter 回退到兼容渲染器。
-- Android 原生层按当前物理分辨率选择最高刷新率显示模式，同时设置首选模式 ID 和首选刷新率；显示变化事件使用 160 ms 去抖，避免系统切换模式时反复提交窗口参数。
+- Android 原生层按当前物理分辨率检测最高兼容刷新率，并只提交窗口首选刷新率提示；显示变化事件使用 160 ms 去抖，避免锁定模式 ID 或系统切换模式时反复提交窗口参数。
 - 直播卡片封面统一使用磁盘/内存缓存，并按控件像素宽度下采样，减少大图解码和滚动时重复下载。
 - 网格封面加载占位改为静态绘制，减少大量卡片同时创建动画控制器。
 - 首页、分区、收藏与搜索结果使用固定高度懒加载网格，移除固定高度卡片上的瀑布流布局计算。
@@ -34,7 +34,7 @@ Pure Live 在 Android 上提供省电、均衡、高性能三档刷新率。新�
 - 首页、热门、分区、收藏、搜索、直播弹幕列表及弹幕设置页统一使用 Windows 动画滚动控制器，把连续滚轮脉冲合并为单一目标轨迹，减少每格滚轮都立即跳变造成的顿挫。
 - 分区 Tab 横滑只在动画停稳后启动加载；窗口拖动/缩放尺寸通知以 80 ms 尾端去抖合并，避免一次手势中反复跨平台查询和全页布局。
 - 分区封面的加载/错误状态使用静态占位，网格项使用稳定 Key 且不再重复叠加 keep-alive 和 repaint 层。
-- Flutter 解码图片缓存按桌面 96 MiB/384 项、移动端 64 MiB/256 项设定硬边界；系统发出内存压力通知时同时释放 pending 与 live 解码图片，磁盘/网络资源按需重新解析。
+- Flutter 解码图片缓存按桌面 72 MiB/240 项、移动端 48 MiB/160 项设定硬边界；系统发出内存压力通知时同时释放 pending 与 live 解码图片，磁盘/网络资源按需重新解析。
 - Windows 播放器鼠标移动只延长一个单调时钟截止时间，不再按高轮询率鼠标的每个 `onHover` 事件取消并新建控制栏定时器。
 - Windows MediaKit 视频纹理根据控件可见尺寸、设备像素比和源分辨率计算输出尺寸，保持比例且不放大源；窗口调整使用 180 ms 去抖，降低小窗和窗口拖动时的超大纹理分配及重建压力。
 - Android `SurfaceProducer` 重复可用回调复用同一个 JNI global reference；Surface 清理时立即清空当前引用并延迟释放旧引用，避免旋转、缩放和 PiP 往返累积原生引用。
@@ -92,6 +92,8 @@ Windows release 构建后从干净的 `build\windows\x64\runner\Release` 启动�
 2026-08-21 的 build 4070 从干净便携目录完成两组可重复采样。空闲 6.3 分钟时 private bytes 583.5→488.8 MiB，最后约 3 分钟线性斜率仅 +0.013 MiB/分钟，归一化 CPU 中位数 0.026%，窗口全程响应。随后用同一 Bilibili 实时房间、相同启动参数比较播放器缓存：64/8 MiB 基线的 private bytes 峰值/结束值为 951.5/763.3 MiB，32/4 MiB 优化后的峰值/结束值为 738.2/733.0 MiB；优化样本运行 6.5 分钟，结束时工作集也少 35.4 MiB，最后一分钟 private bytes 回落 5.1 MiB，handles 1645→1636、threads 245→242。视频画面和画面弹幕已通过后台窗口直接渲染截图核对，两个网络连接持续建立；原始 CSV 与比较摘要保存在本机构建产物的 `evidence` 子目录。
 
 2026-08-22 的 build 4071 将首页刷新改为保留快照的串行事务，并移除平台网格长期 KeepAlive、跨页共享纵向控制器、封面全量 epoch 重建和启动主 isolate 缓存递归扫描。Android 刷新率提示改为交互期间最高、稳定 1.5 秒后释放；这也遵循 Android 对帧率提示不应每帧或每秒多次切换的建议。本轮源码门禁为 Flutter Analyze 0 issue、196 项单元/Widget 测试全通过；按无设备流程执行，帧时、CPU、温度和 PSS 的 build 4071 真机对照保留为独立设备验收层。
+
+2026-08-22 的 build 4072 空收藏独立实例首次采样暴露了一个状态短路：初始空列表没有触发分页分发，页面一直保留无限加载动画，Windows 因持续渲染而出现空闲 CPU 偏高、原生提交内存预热上升。修复后首次空快照明确发布 `pageEmpty=true`，相同快照优化只在首轮发布之后生效；该路径新增确定性回归测试。更新检查和启动页延迟任务也绑定页面生命周期并在销毁时取消。
 
 参考：[Flutter 性能最佳实践](https://docs.flutter.dev/perf/best-practices)、[Flutter Performance View](https://docs.flutter.dev/tools/devtools/performance)、[Flutter Memory View](https://docs.flutter.dev/tools/devtools/memory)、[Flutter Impeller 官方说明](https://docs.flutter.dev/perf/impeller)、[Android 帧率优化说明](https://developer.android.com/media/optimize/performance/frame-rate)、[mpv demuxer 缓存参数](https://mpv.io/manual/master/)、[media_kit 多实例释放问题 #266](https://github.com/media-kit/media-kit/issues/266)、[media_kit 旋转/缩放主线程阻塞 #1395](https://github.com/media-kit/media-kit/issues/1395)。
 

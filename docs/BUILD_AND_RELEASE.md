@@ -2,7 +2,7 @@
 
 本仓库采用“本机优先、Actions 手动兜底”的流程，固定使用 Flutter `3.47.0`。`pubspec.lock`、Git 依赖提交和 FFmpeg 产物地址均已固定，便于复现结果。
 
-最近完整源码核验：2026-08-22，v2.5.0 build 4072，Windows 11 + Java 25 + Flutter 3.47.0；Built-in Kotlin 审计、Flutter Analyze 0 issue、207 项单元/Widget 测试和 26/26 平台公开接口探测通过。本机优先构建 Android arm64 与 Windows x64，再由显式阶段任务补齐 Linux x64、macOS universal 和 iOS arm64 设备归档。首页有界并发、三档刷新率、PiP 流重订阅、横屏本地输入、空闲弹幕调度、播放器控制器释放和有界弹幕缓存均进入自动化回归范围。干净便携目录继续把数据、缓存和临时文件写入 release 同级 `AppData`。
+最近完整源码核验：2026-08-22，v2.5.0 build 4072，Windows 11 + Java 25 + Flutter 3.47.0；Built-in Kotlin 审计、Flutter Analyze 0 issue、208 项单元/Widget 测试和 26/26 平台公开接口探测通过。本机优先构建 Android arm64 与 Windows x64，再由显式阶段任务补齐 Linux x64、macOS universal 和 iOS arm64 设备归档。首页有界并发、首次空快照终态、三档刷新率、PiP 流重订阅、横屏本地输入、空闲弹幕调度、播放器控制器释放和有界弹幕缓存均进入自动化回归范围。干净便携目录继续把数据、缓存和临时文件写入 release 同级 `AppData`。
 
 ## 前置环境
 

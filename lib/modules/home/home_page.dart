@@ -75,7 +75,10 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
     // isolate. The update check is low-priority background work and previously
     // competed with the cold-start room verification and image requests.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _updateCheckTimer = Timer(const Duration(seconds: 2), () => unawaited(addToOverlay()));
+      if (!mounted) return;
+      _updateCheckTimer = Timer(const Duration(seconds: 2), () {
+        if (mounted) unawaited(addToOverlay());
+      });
     });
 
     _favoriteTabListener = () {
@@ -272,6 +275,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
     _savedMenuWorker?.dispose();
     _debounceTimer?.cancel();
     _resumeRefreshTimer?.cancel();
+    _updateCheckTimer?.cancel();
     super.dispose();
   }
 }
