@@ -128,7 +128,8 @@ class ThemeSettingsPage extends GetView<SettingsService> {
               () => context.buildTile(
                 icon: Remix.font_color,
                 title: i18n("change_font_family"),
-                subtitle: "${i18n("current_font_prefix")}: ${SettingsService.to.font.fontFamilyName.v}",
+                subtitle:
+                    "${i18n("current_font_prefix")}: ${SettingsService.to.font.fontFamilyFileName.v.isNotEmpty ? SettingsService.to.font.fontFamilyFileName.v : SettingsService.to.font.fontFamilyName.v}",
                 onTap: () => Get.to(() => const FontFamilyManagerPage()),
               ),
             ),

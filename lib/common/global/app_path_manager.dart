@@ -32,6 +32,9 @@ class AppPathManager {
   /// Keep this in one place so the manager page and downloader never drift to
   /// different folders (the old `fontsDir` value broke multi-file font packs).
   static const String fontDirectoryName = 'fonts';
+  // Compatibility alias retained for upstream call sites introduced in
+  // 5aa1a40a. Both names intentionally resolve to the same canonical folder.
+  static const String fontCacheDir = fontDirectoryName;
   static const String iptvCategoryFile = 'categories.json';
   static const String iptvHotFile = 'hot.m3u';
   static const String iptvHotRemoteFile = 'https://raw.githubusercontent.com/YueChan/Live/main/GNTV.m3u';

@@ -1,9 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/cache_manager.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/recorder/models/record_status.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/recorder/models/live_record_task.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 
@@ -254,8 +254,7 @@ class _TaskCard extends GetView<RecorderController> {
                     cacheManager: CustomImageCacheManager.instance,
                     httpHeaders: networkImageHeaders(coverUrl),
                     fit: BoxFit.cover,
-                    memCacheWidth: 300,
-                    maxWidthDiskCache: 480,
+
                     fadeInDuration: Duration.zero,
                     fadeOutDuration: Duration.zero,
                     errorWidget: (_, _, _) => const ColoredBox(color: Colors.black12),

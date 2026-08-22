@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/file_utils.dart';
@@ -59,6 +60,25 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
           isDanmakuSettings ? i18n("change_danmaku_font_family") : i18n("font_family_settings"),
           style: const TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0.3),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: TextButton.icon(
+              onPressed: () async {
+                final downloadDir = await AppPathManager().downloadDir;
+                FileUtils.openFileOrUrl(p.join(downloadDir.path, AppPathManager.fontDirectoryName));
+              },
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                foregroundColor: theme.colorScheme.primary,
+              ),
+              icon: const Icon(Remix.folder_open_line, size: 18),
+              label: Text(i18n("recorder_open_folder"), style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w600)),
+            ),
+          ),
+        ],
       ),
       body: Obx(() {
         final fontModels = SettingsService.to.font.fontList;

@@ -164,7 +164,7 @@ class FontSettingsController extends GetxController {
 
   Future<void> _refreshFontDiskSizes() async {
     final dir = await AppPathManager().getDir(AppPathManager.dirDownload);
-    final fontDir = Directory('${dir.path}/${AppPathManager.fontDirectoryName}');
+    final fontDir = Directory('${dir.path}${Platform.pathSeparator}${AppPathManager.fontDirectoryName}');
     if (!await fontDir.exists()) {
       fontFolderSizes.clear();
       _lastFontDiskSizeRefresh = DateTime.now();

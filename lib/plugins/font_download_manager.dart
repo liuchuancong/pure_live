@@ -15,7 +15,7 @@ class FontDownloadManager {
 
   Future<String> get _fontRootPath async {
     final directory = await AppPathManager().getDir(AppPathManager.dirDownload);
-    final fontRoot = Directory("${directory.path}/${AppPathManager.fontDirectoryName}");
+    final fontRoot = Directory("${directory.path}${Platform.pathSeparator}${AppPathManager.fontDirectoryName}");
     if (!await fontRoot.exists()) {
       await fontRoot.create(recursive: true);
     }
