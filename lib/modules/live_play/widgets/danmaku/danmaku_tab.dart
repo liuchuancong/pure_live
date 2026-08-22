@@ -17,14 +17,7 @@ class DanmakuTabView extends GetView<LivePlayController> {
       }
       return Column(
         children: [
-          Container(
-            color: Get.theme.colorScheme.surface,
-            child: TabBar(
-              isScrollable: true,
-              controller: controller.tabController,
-              tabs: controller.tabs.map((name) => Tab(text: name)).toList(),
-            ),
-          ),
+          DanmakuSectionTabBar(controller: controller.tabController, tabs: controller.tabs),
           Expanded(
             child: TabBarView(
               controller: controller.tabController,
@@ -46,5 +39,30 @@ class DanmakuTabView extends GetView<LivePlayController> {
         ],
       );
     });
+  }
+}
+
+/// The four portrait room sections are navigation, not a free-scrolling chip
+/// strip. Giving them equal bounded widths keeps the row fixed while the
+/// associated [TabBarView] remains swipeable between its first and last page.
+class DanmakuSectionTabBar extends StatelessWidget {
+  const DanmakuSectionTabBar({super.key, required this.tabs, this.controller});
+
+  final List<String> tabs;
+  final TabController? controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Theme.of(context).colorScheme.surface,
+      child: TabBar(
+        key: const ValueKey('live-danmaku-section-tabs'),
+        isScrollable: false,
+        tabAlignment: TabAlignment.fill,
+        labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+        controller: controller,
+        tabs: tabs.map((name) => Tab(text: name)).toList(growable: false),
+      ),
+    );
   }
 }
