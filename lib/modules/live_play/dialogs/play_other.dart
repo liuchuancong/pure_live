@@ -131,6 +131,7 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
       return AppStatusView(type: AppStatusType.empty, title: "", subtitle: "");
     }
     return ListView.builder(
+      physics: const PureLiveScrollPhysics(),
       itemCount: rooms.length,
       itemBuilder: (context, index) {
         return EnhancedListTile(room: rooms[index], dense: true, onTap: widget.controller.switchRoom);

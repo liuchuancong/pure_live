@@ -17,6 +17,7 @@ import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/player/interface/media_kit_player_accessor.dart';
 import 'package:pure_live/player/utils/live_buffer_policy.dart';
+import 'package:pure_live/player/utils/video_output_size_policy.dart';
 
 class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
   MediaKitAdapter() {
@@ -442,7 +443,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
 
   @override
   Widget getVideoWidget() {
-    return Video(
+    final video = Video(
       controller: _controller,
       controls: NoVideoControls,
       // LivePlay's WidgetsBindingObserver is the single lifecycle authority.
@@ -450,6 +451,13 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
       // rooms on Home/lock even though the background policy kept them alive.
       pauseUponEnteringBackgroundMode: false,
       resumeUponEnteringForegroundMode: false,
+    );
+    if (!PlatformUtils.isWindows) return video;
+    return _WindowsViewportSizedVideo(
+      controller: _controller,
+      sourceWidth: _widthSubject,
+      sourceHeight: _heightSubject,
+      child: video,
     );
   }
 
@@ -667,4 +675,122 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
 
   @override
   VideoController get mediaKitVideoController => _controller;
+}
+
+/// Keeps the Windows BGRA texture close to the visible physical viewport.
+/// Resizing is debounced so dragging a window does not recreate the texture on
+/// every pointer event.
+class _WindowsViewportSizedVideo extends StatefulWidget {
+  const _WindowsViewportSizedVideo({
+    required this.controller,
+    required this.sourceWidth,
+    required this.sourceHeight,
+    required this.child,
+  });
+
+  final VideoController controller;
+  final Stream<int?> sourceWidth;
+  final Stream<int?> sourceHeight;
+  final Widget child;
+
+  @override
+  State<_WindowsViewportSizedVideo> createState() => _WindowsViewportSizedVideoState();
+}
+
+class _WindowsViewportSizedVideoState extends State<_WindowsViewportSizedVideo> {
+  static const _resizeDebounce = Duration(milliseconds: 180);
+
+  StreamSubscription<int?>? _widthSubscription;
+  StreamSubscription<int?>? _heightSubscription;
+  Timer? _resizeTimer;
+  int? _sourceWidth;
+  int? _sourceHeight;
+  Size? _logicalViewport;
+  double _devicePixelRatio = 1;
+  Size? _requestedSize;
+
+  @override
+  void initState() {
+    super.initState();
+    _bindSourceDimensions();
+  }
+
+  @override
+  void didUpdateWidget(covariant _WindowsViewportSizedVideo oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.sourceWidth, widget.sourceWidth) ||
+        !identical(oldWidget.sourceHeight, widget.sourceHeight)) {
+      unawaited(_cancelSourceSubscriptions());
+      _bindSourceDimensions();
+    }
+    if (!identical(oldWidget.controller, widget.controller)) {
+      _requestedSize = null;
+      _scheduleResize();
+    }
+  }
+
+  void _bindSourceDimensions() {
+    _widthSubscription = widget.sourceWidth.distinct().listen((value) {
+      _sourceWidth = value;
+      _scheduleResize();
+    });
+    _heightSubscription = widget.sourceHeight.distinct().listen((value) {
+      _sourceHeight = value;
+      _scheduleResize();
+    });
+  }
+
+  Future<void> _cancelSourceSubscriptions() async {
+    await _widthSubscription?.cancel();
+    await _heightSubscription?.cancel();
+    _widthSubscription = null;
+    _heightSubscription = null;
+  }
+
+  void _scheduleResize() {
+    final viewport = _logicalViewport;
+    if (viewport == null) return;
+    final target = calculateVideoOutputSize(
+      logicalViewport: viewport,
+      devicePixelRatio: _devicePixelRatio,
+      sourceWidth: _sourceWidth,
+      sourceHeight: _sourceHeight,
+    );
+    if (target.isEmpty || target == _requestedSize) return;
+
+    _resizeTimer?.cancel();
+    _resizeTimer = Timer(_resizeDebounce, () async {
+      if (!mounted) return;
+      _requestedSize = target;
+      try {
+        await widget.controller.setSize(width: target.width.toInt(), height: target.height.toInt());
+      } catch (_) {
+        // The controller can be disposed while a room/window transition is
+        // completing. The next mounted video session will publish its size.
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _resizeTimer?.cancel();
+    unawaited(_cancelSourceSubscriptions());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final viewport = Size(constraints.maxWidth, constraints.maxHeight);
+        final pixelRatio = MediaQuery.devicePixelRatioOf(context);
+        if (_logicalViewport != viewport || _devicePixelRatio != pixelRatio) {
+          _logicalViewport = viewport;
+          _devicePixelRatio = pixelRatio;
+          _scheduleResize();
+        }
+        return widget.child;
+      },
+    );
+  }
 }
