@@ -661,10 +661,10 @@ packages:
     dependency: "direct main"
     description:
       name: ffmpeg_kit_extended_flutter
-      sha256: d4c9262b28bff3810184a2845b69b0b32fd052b1785589f5ff3dcfe2f9ed9eab
+      sha256: "6c1b28d61cdd7598eba02794913462154f7eb04417069d2a0c244fc338c15d82"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.13"
+    version: "0.6.0"
   file:
     dependency: "direct main"
     description:
@@ -832,10 +832,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_color
-      sha256: e8cf938a475560a9eb8175f4219a59ff651bc5bafcdc01f089c56e44249342a8
+      sha256: d1ac0b50e0149691104fed07ae49508ea2d5121ae4a9c7aa1e479d6d1dd9c2ed
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.0"
+    version: "2.1.1"
   flutter_exit_app:
     dependency: "direct main"
     description:

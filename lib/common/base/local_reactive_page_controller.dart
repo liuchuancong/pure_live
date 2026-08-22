@@ -5,7 +5,7 @@ import 'package:pure_live/common/index.dart';
 abstract class LocalReactivePageController<T> extends BasePageScrollAndStateBone<T> {
   final List<T> _localRawPool = [];
 
-  void Function()? onExternalRefresh;
+  Future<void> Function()? onExternalRefresh;
 
   void updateLocalReactivePool(List<T> freshData) {
     if (_localRawPool.length == freshData.length) {
@@ -26,7 +26,7 @@ abstract class LocalReactivePageController<T> extends BasePageScrollAndStateBone
 
   @override
   Future<void> refreshData() async {
-    onExternalRefresh?.call();
+    await onExternalRefresh?.call();
     currentPage = 1;
     _processDataDistribution();
   }

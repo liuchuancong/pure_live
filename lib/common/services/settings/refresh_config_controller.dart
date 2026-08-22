@@ -3,9 +3,17 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/services/medels/refresh_config_model.dart';
 
 class RefreshConfigController extends GetxController {
+  static const int defaultMaxConcurrentRefresh = 4;
+  static const int maxAllowedConcurrentRefresh = 20;
+
+  static int normalizeMaxConcurrentRefresh(Object? value) {
+    final parsed = value is num ? value.toInt() : int.tryParse(value?.toString() ?? '');
+    return (parsed ?? defaultMaxConcurrentRefresh).clamp(1, maxAllowedConcurrentRefresh);
+  }
+
   final RxBool autoRefreshFavorite = hiveBool('autoRefreshFavorite', false);
   final RxInt autoRefreshInterval = hiveInt('autoRefreshInterval', 30);
-  final RxInt maxConcurrentRefresh = hiveInt('maxConcurrentRefresh', 2);
+  final RxInt maxConcurrentRefresh = hiveInt('maxConcurrentRefresh', defaultMaxConcurrentRefresh);
   final RxBool autoRefreshThumbnails = hiveBool('autoRefreshThumbnails', false);
   final RxInt thumbnailRefreshInterval = hiveInt('thumbnailRefreshInterval', 30);
 
@@ -16,6 +24,7 @@ class RefreshConfigController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    maxConcurrentRefresh.value = normalizeMaxConcurrentRefresh(maxConcurrentRefresh.value);
     _emitConfig();
     _configWorker = everAll([
       autoRefreshFavorite,
@@ -51,7 +60,7 @@ class RefreshConfigController extends GetxController {
   void fromJson(Map<String, dynamic> json) {
     autoRefreshFavorite.v = json['autoRefreshFavorite'] ?? false;
     autoRefreshInterval.v = json['autoRefreshInterval'] ?? 30;
-    maxConcurrentRefresh.v = json['maxConcurrentRefresh'] ?? 2;
+    maxConcurrentRefresh.v = normalizeMaxConcurrentRefresh(json['maxConcurrentRefresh']);
     autoRefreshThumbnails.v = json['autoRefreshThumbnails'] ?? false;
     thumbnailRefreshInterval.v = json['thumbnailRefreshInterval'] ?? 30;
   }
@@ -68,7 +77,7 @@ class RefreshConfigController extends GetxController {
     return {
       'autoRefreshFavorite': refresh['autoRefreshFavorite'] ?? false,
       'autoRefreshInterval': refresh['autoRefreshInterval'] ?? 30,
-      'maxConcurrentRefresh': refresh['maxConcurrentRefresh'] ?? 2,
+      'maxConcurrentRefresh': normalizeMaxConcurrentRefresh(refresh['maxConcurrentRefresh']),
       'autoRefreshThumbnails': refresh['autoRefreshThumbnails'] ?? false,
       'thumbnailRefreshInterval': refresh['thumbnailRefreshInterval'] ?? 30,
     };

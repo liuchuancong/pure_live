@@ -11,6 +11,7 @@ void main() {
       expect(config['autoRefreshFavorite'], isTrue);
       expect(config['autoRefreshThumbnails'], isFalse);
       expect(config['thumbnailRefreshInterval'], 30);
+      expect(config['maxConcurrentRefresh'], RefreshConfigController.defaultMaxConcurrentRefresh);
     });
 
     test('preserves unrelated refresh and root settings', () {
@@ -28,6 +29,15 @@ void main() {
       expect(merged['refresh']['autoRefreshFavorite'], isTrue);
       expect(merged['refresh']['autoRefreshThumbnails'], isTrue);
       expect(merged['refresh']['thumbnailRefreshInterval'], 60);
+    });
+
+    test('normalizes invalid concurrency without hiding advanced values', () {
+      expect(RefreshConfigController.normalizeMaxConcurrentRefresh(0), 1);
+      expect(RefreshConfigController.normalizeMaxConcurrentRefresh(6), 6);
+      expect(
+        RefreshConfigController.normalizeMaxConcurrentRefresh(99),
+        RefreshConfigController.maxAllowedConcurrentRefresh,
+      );
     });
   });
 }

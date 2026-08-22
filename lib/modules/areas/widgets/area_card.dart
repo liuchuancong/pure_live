@@ -87,7 +87,7 @@ class _AreaCardState extends State<AreaCard> {
           mainAxisSize: MainAxisSize.min,
           children: [
             AspectRatio(
-              aspectRatio: 1,
+              aspectRatio: 0.9,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(15),
                 child: ColoredBox(
@@ -104,14 +104,14 @@ class _AreaCardState extends State<AreaCard> {
               title: Text(
                 widget.category.areaName!,
                 maxLines: 1,
-                overflow: TextOverflow.clip,
-                style: const TextStyle(fontWeight: FontWeight.w500),
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.w600),
               ),
-              subtitle: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Text(widget.category.typeName!, style: AppTextStyles.t11.copyWith(fontWeight: FontWeight.bold)),
-                ],
+              subtitle: Text(
+                widget.category.typeName!,
+                style: AppTextStyles.t11.copyWith(fontWeight: FontWeight.w500),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],

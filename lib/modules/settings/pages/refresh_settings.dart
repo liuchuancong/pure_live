@@ -36,7 +36,9 @@ class RefreshSettingsPage extends GetView<RefreshConfigController> {
               () => context.buildTile(
                 icon: Remix.server_line,
                 title: i18n("max_concurrent_refresh"),
-                subtitle: controller.maxConcurrentRefresh.value.toString(),
+                subtitle:
+                    '${controller.maxConcurrentRefresh.value} ${i18n('concurrent_tasks')} · ${i18n('max_concurrent_refresh_subtitle')}',
+                isLong: true,
                 onTap: showMaxConcurrentDialog,
               ),
             ),
@@ -141,6 +143,10 @@ class RefreshSettingsPage extends GetView<RefreshConfigController> {
         return SimpleDialog(
           title: Text(i18n("max_concurrent_refresh")),
           children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 10),
+              child: Text(i18n('max_concurrent_refresh_hint'), style: Theme.of(context).textTheme.bodySmall),
+            ),
             Obx(() {
               return RadioGroup<int>(
                 groupValue: controller.maxConcurrentRefresh.value,
@@ -160,7 +166,11 @@ class RefreshSettingsPage extends GetView<RefreshConfigController> {
                     itemBuilder: (context, index) {
                       final val = index + 1;
                       return RadioListTile<int>(
-                        title: Text(val.toString()),
+                        title: Text(
+                          val == RefreshConfigController.defaultMaxConcurrentRefresh
+                              ? '$val · ${i18n('recommended')}'
+                              : val.toString(),
+                        ),
                         value: val,
                         activeColor: Theme.of(context).colorScheme.primary,
                       );

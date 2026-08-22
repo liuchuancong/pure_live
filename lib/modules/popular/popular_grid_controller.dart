@@ -16,19 +16,16 @@ class PopularLocalReactiveController extends LocalReactivePageController<LiveRoo
       final rooms = await getLocalRawData();
       updateLocalReactivePool(rooms);
     } catch (e) {
-      list.clear();
-      pageEmpty.value = true;
+      handleError(e, showPageError: list.isEmpty);
+      pageEmpty.value = list.isEmpty;
+      finishRefreshControllers(IndicatorResult.fail);
     } finally {
       loadding.value = false;
     }
   }
 
   Future<List<LiveRoom>> getLocalRawData() async {
-    try {
-      return await site.liveSite.getRecommendRooms(page: 1, pageSize: pageSize.value);
-    } catch (e) {
-      return [];
-    }
+    return await site.liveSite.getRecommendRooms(page: 1, pageSize: pageSize.value);
   }
 
   Future<List<LiveRoom>> refreshNetworkStatus(List<LiveRoom> currentPool, int page, int pageSize) async {

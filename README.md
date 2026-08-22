@@ -33,9 +33,9 @@
 
 > 本维护分支持续同步 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)，并维护本机优先构建、正式签名、接口探测、Windows 数据迁移及高刷新率优化。
 
-- **最新稳定版**：[v2.3.0](https://github.com/wzgrx/pure_live/releases/tag/v2.3.0)
-- **当前版本**：`2.3.0+4071`
-- **v2.3.0 上游源码基线**：已同步至 `liuchuancong/pure_live@e51df666`，包含 SC、平台目录整理、虎牙增强、SOOP/Twitch 与播放器/导航修复；维护分支同时保留高刷新率、PiP 弹幕、后台播放和本地互动增强
+- **最新稳定版**：[v2.5.0](https://github.com/wzgrx/pure_live/releases/tag/v2.5.0)
+- **当前版本**：`2.5.0+4072`
+- **v2.5.0 上游源码基线**：已同步至 `liuchuancong/pure_live@b84a847d`；维护分支同时保留三档刷新率、PiP 弹幕、后台播放、本地互动、Windows 数据迁移与稳定性增强
 - **构建平台**：Android arm64、Windows x64、Linux x64、macOS Universal、iOS arm64 设备包
 
 ![Pure Live 界面预览](assets/images/banner.png)
@@ -88,6 +88,7 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 | [v2.1.6 Android 播放修复](docs/STAGE_UPDATE_2_1_6.md) | 音频/视频切换灰白画面与后台音频生命周期 |
 | [v2.2.0 阶段更新](docs/STAGE_UPDATE_2_2_0.md) | 播放恢复、音频模式、弹幕设置、Windows 多开与最终验证 |
 | [v2.3.0 稳定性更新](docs/STAGE_UPDATE_2_3_0.md) | PiP 返回弹幕恢复、启动刷新、横屏输入、长时间资源边界与验收状态 |
+| [v2.5.0 阶段稳定版](docs/STAGE_UPDATE_2_5_0.md) | 首页有界并发、三档刷新率、Windows 视频纹理与依赖/上游审计 |
 | [参与贡献](CONTRIBUTING.md) | 分支、提交、测试和 Pull Request 要求 |
 | [安全策略](SECURITY.md) | 私密漏洞报告和签名材料管理 |
 | [版本说明](RELEASE_NOTES.md) | 当前版本变更与历史记录 |
@@ -352,7 +353,7 @@ Firebase 不是 Pure Live 使用的必要条件。
 
 ### Android
 
-v2.3.0 优先提供 `arm64-v8a`，适用于当前主流 64 位 ARM 手机和平板。更新页读取版本清单中的实际 ABI 列表，不会显示本轮没有发布的下载链接。
+v2.5.0 优先提供 `arm64-v8a`，适用于当前主流 64 位 ARM 手机和平板。更新页读取版本清单中的实际 ABI 列表，只展示本轮实际发布的下载链接。
 
 Android 始终使用正式包名：
 
@@ -418,7 +419,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
 PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
 ```
 
-当前 v2.3.0 build 4071 源码已通过 Flutter Analyze（0 issue）与 196 项单元/Widget 测试。首页首刷、手动刷新和前台恢复现在串行化，同一批卡片保留旧快照并在请求完成后一次性替换；收藏启动核验也只发布一个完整结果，不再清空、分批插入和反复排序。平台页签与分区页签各自持有独立纵向滚动控制器，横向手势完全结束后才提交筛选结果。封面使用有容量上限的磁盘/解码缓存并保留旧像素，缓存统计移到后台 isolate；Android 仅在触摸、滚动和转场期间请求设备最高刷新率，空闲后交还系统动态策略。手机连接和设备采样只在明确安排的验收任务中执行。完整流程见 [构建与发布](docs/BUILD_AND_RELEASE.md)。
+当前 v2.5.0 build 4072 将首页收藏核验改为 4 路有界网络工作池：单个慢房间不再卡住整个固定批次，同时继续保留旧快照并在本轮完成后一次性替换，避免卡片跳动。Android 提供省电、均衡、高性能三档刷新率，新安装默认省电；均衡仅在触摸、滚动和转场期间请求设备最高刷新率，高性能在前台持续请求最高刷新率。Windows 视频纹理按实际可见物理尺寸设置，减少小窗口播放高分辨率源时的原生内存和拷贝压力。源码已通过 Flutter Analyze（0 issue）、207 项单元/Widget 测试与 26/26 平台接口探测；设备连接和采样按当前验收安排执行。完整门禁和构建结果见 [v2.5.0 阶段稳定版](docs/STAGE_UPDATE_2_5_0.md) 与 [构建与发布](docs/BUILD_AND_RELEASE.md)。
 
 ## 🤝 参与开发
 

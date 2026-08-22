@@ -157,7 +157,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
                   resultWidget = DesktopManager.buildWithTitleBar(resultWidget);
                 } else if (Platform.isAndroid) {
                   resultWidget = AdaptiveRefreshRateScope(
-                    enabled: SettingsService.to.app.enableHighRefreshRate.v,
+                    mode: SettingsService.to.app.refreshRateMode,
                     child: resultWidget,
                   );
                 }

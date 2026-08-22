@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pure_live/common/models/app_refresh_rate_mode.dart';
 import 'package:pure_live/common/widgets/adaptive_refresh_rate_scope.dart';
 
 void main() {
@@ -28,7 +29,10 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
-        home: AdaptiveRefreshRateScope(enabled: true, child: Scaffold(body: SizedBox.expand())),
+        home: AdaptiveRefreshRateScope(
+          mode: AppRefreshRateMode.balanced,
+          child: Scaffold(body: SizedBox.expand()),
+        ),
       ),
     );
     await tester.pump();
@@ -43,5 +47,43 @@ void main() {
     expect(AdaptiveRefreshRateController.requestedHigh, isFalse);
     expect(requests, contains(true));
     expect(requests.last, isFalse);
+  });
+
+  testWidgets('power-saving mode ignores interaction bursts', (tester) async {
+    AdaptiveRefreshRateController.setMode(AppRefreshRateMode.powerSaving);
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: AdaptiveRefreshRateScope(
+          mode: AppRefreshRateMode.powerSaving,
+          child: Scaffold(body: SizedBox.expand()),
+        ),
+      ),
+    );
+
+    final gesture = await tester.startGesture(const Offset(100, 100));
+    await tester.pump();
+    expect(AdaptiveRefreshRateController.requestedHigh, isFalse);
+    await gesture.up();
+  });
+
+  testWidgets('performance mode stays high in foreground and releases in background', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: AdaptiveRefreshRateScope(
+          mode: AppRefreshRateMode.performance,
+          child: Scaffold(body: SizedBox.expand()),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(AdaptiveRefreshRateController.requestedHigh, isTrue);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump();
+    expect(AdaptiveRefreshRateController.requestedHigh, isFalse);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    expect(AdaptiveRefreshRateController.requestedHigh, isTrue);
   });
 }

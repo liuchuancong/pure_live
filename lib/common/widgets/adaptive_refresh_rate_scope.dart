@@ -1,10 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
+import 'package:pure_live/common/models/app_refresh_rate_mode.dart';
 import 'package:pure_live/common/services/display_mode_service.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 
-/// Requests the device's highest compatible mode only around real UI input.
+/// Coordinates the selected power-saving, balanced or performance policy.
 ///
 /// Keeping Window.preferredRefreshRate pinned to 120/144 Hz for the entire
 /// process doubles the frame budget pressure of every loading indicator and
@@ -23,39 +24,48 @@ class AdaptiveRefreshRateController {
   );
 
   static Timer? _settleTimer;
-  static bool _enabled = false;
+  static AppRefreshRateMode _mode = AppRefreshRateMode.powerSaving;
+  static bool _isResumed = true;
   static bool? _requestedHigh;
   static int _activePointers = 0;
 
   @visibleForTesting
   static bool get requestedHigh => _requestedHigh == true;
 
-  static void setEnabled(bool enabled) {
-    _enabled = enabled;
+  static void setMode(AppRefreshRateMode mode) {
+    _mode = mode;
     _activePointers = 0;
     _settleTimer?.cancel();
     _requestHigh(false);
   }
 
   static void beginPointer() {
-    if (!_enabled) return;
+    if (_mode != AppRefreshRateMode.balanced || !_isResumed) return;
     _activePointers++;
     _settleTimer?.cancel();
     _requestHigh(true);
   }
 
   static void keepInteractive() {
-    if (!_enabled) return;
+    if (_mode != AppRefreshRateMode.balanced || !_isResumed) return;
     _requestHigh(true);
     if (_activePointers == 0) _scheduleSettle();
   }
 
   static void endPointer() {
     if (_activePointers > 0) _activePointers--;
-    if (_enabled && _activePointers == 0) _scheduleSettle();
+    if (_mode == AppRefreshRateMode.balanced && _isResumed && _activePointers == 0) _scheduleSettle();
   }
 
   static void pause() {
+    _isResumed = false;
+    _activePointers = 0;
+    _settleTimer?.cancel();
+    _requestHigh(false);
+  }
+
+  static void resume() {
+    _isResumed = true;
     _activePointers = 0;
     _settleTimer?.cancel();
     _requestHigh(false);
@@ -67,7 +77,8 @@ class AdaptiveRefreshRateController {
   }
 
   static void _requestHigh(bool high) {
-    final target = _enabled && high;
+    final target =
+        _isResumed && (_mode == AppRefreshRateMode.performance || (_mode == AppRefreshRateMode.balanced && high));
     if (_requestedHigh == target) return;
     _requestedHigh = target;
     unawaited(_transitions.submit(target));
@@ -75,9 +86,9 @@ class AdaptiveRefreshRateController {
 }
 
 class AdaptiveRefreshRateScope extends StatefulWidget {
-  const AdaptiveRefreshRateScope({super.key, required this.enabled, required this.child});
+  const AdaptiveRefreshRateScope({super.key, required this.mode, required this.child});
 
-  final bool enabled;
+  final AppRefreshRateMode mode;
   final Widget child;
 
   @override
@@ -89,20 +100,25 @@ class _AdaptiveRefreshRateScopeState extends State<AdaptiveRefreshRateScope> wit
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    AdaptiveRefreshRateController.setEnabled(widget.enabled);
+    AdaptiveRefreshRateController.setMode(widget.mode);
+    AdaptiveRefreshRateController.resume();
   }
 
   @override
   void didUpdateWidget(covariant AdaptiveRefreshRateScope oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.enabled != widget.enabled) {
-      AdaptiveRefreshRateController.setEnabled(widget.enabled);
+    if (oldWidget.mode != widget.mode) {
+      AdaptiveRefreshRateController.setMode(widget.mode);
     }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.resumed) AdaptiveRefreshRateController.pause();
+    if (state == AppLifecycleState.resumed) {
+      AdaptiveRefreshRateController.resume();
+    } else {
+      AdaptiveRefreshRateController.pause();
+    }
   }
 
   @override

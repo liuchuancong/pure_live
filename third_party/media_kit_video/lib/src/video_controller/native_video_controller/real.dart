@@ -80,30 +80,37 @@ class NativeVideoController extends PlatformVideoController {
 
         final int handle = await player.handle;
 
-        final int width;
-        final int height;
+        final int sourceWidth;
+        final int sourceHeight;
         if (event.rotate == 0 || event.rotate == 180) {
-          width = event.dw ?? 0;
-          height = event.dh ?? 0;
+          sourceWidth = event.dw ?? 0;
+          sourceHeight = event.dh ?? 0;
         } else {
           // width & height are swapped for 90 or 270 degrees rotation.
-          width = event.dh ?? 0;
-          height = event.dw ?? 0;
+          sourceWidth = event.dh ?? 0;
+          sourceHeight = event.dw ?? 0;
         }
 
-        if (videoParamsWidth == width && videoParamsHeight == height) {
+        if (videoParamsWidth == sourceWidth &&
+            videoParamsHeight == sourceHeight) {
           return;
         }
 
-        videoParamsWidth = width;
-        videoParamsHeight = height;
+        videoParamsWidth = sourceWidth;
+        videoParamsHeight = sourceHeight;
+
+        // Respect an application-provided viewport size. Previously every
+        // video-parameter event overwrote setSize(), recreating a source-sized
+        // BGRA texture even when the visible Windows viewport was much smaller.
+        final outputWidth = this.width ?? sourceWidth;
+        final outputHeight = this.height ?? sourceHeight;
 
         await _channel.invokeMethod(
           'VideoOutputManager.SetSize',
           {
             'handle': handle.toString(),
-            'width': width.toString(),
-            'height': height.toString(),
+            'width': outputWidth.toString(),
+            'height': outputHeight.toString(),
           },
         );
       }),

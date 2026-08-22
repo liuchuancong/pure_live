@@ -14,6 +14,12 @@ try {
     & $flutterw pub get --enforce-lockfile
     if ($LASTEXITCODE) { exit $LASTEXITCODE }
 
+    # Seed the verified Windows FFmpeg Native Assets archive before analyze or
+    # tests invoke the package build hook. Android artifacts are fetched only
+    # for an Android release build.
+    & (Join-Path $PSScriptRoot 'prefetch_android_native.ps1') -SkipAndroidMedia
+    if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
     python (Join-Path $PSScriptRoot 'audit_built_in_kotlin.py')
     if ($LASTEXITCODE) { exit $LASTEXITCODE }
 
@@ -39,10 +45,12 @@ try {
         if ($LASTEXITCODE) { exit $LASTEXITCODE }
     }
 
-    & $flutterw analyze --no-fatal-infos --no-fatal-warnings
+    # Dependency resolution already completed with the lockfile above. Avoid a
+    # second network/Native Assets pass for every quality-gate command.
+    & $flutterw analyze --no-pub --no-fatal-infos --no-fatal-warnings
     if ($LASTEXITCODE) { exit $LASTEXITCODE }
 
-    & $flutterw test
+    & $flutterw test --no-pub
     if ($LASTEXITCODE) { exit $LASTEXITCODE }
 
     if (-not $SkipInterfaces) {
