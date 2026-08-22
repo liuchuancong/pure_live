@@ -1638,7 +1638,6 @@ class FavoriteButton extends StatefulWidget {
 
 class _FavoriteButtonState extends State<FavoriteButton> {
   StreamSubscription<dynamic>? subscription;
-  late bool isFavorite = SettingsService.to.fav.isFavorite(widget.controller.room);
 
   @override
   void initState() {
@@ -1662,6 +1661,7 @@ class _FavoriteButtonState extends State<FavoriteButton> {
 
   @override
   Widget build(BuildContext context) {
+    bool isFavorite = SettingsService.to.fav.isFavorite(widget.controller.room);
     return GestureDetector(
       onTap: () {
         widget.controller.enableController();
@@ -1787,7 +1787,7 @@ class SettingsPanel extends StatelessWidget {
                         ),
                         Text(
                           i18n('danmaku_realtime_hint'),
-                          maxLines: 1,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: AppTextStyles.t12.copyWith(color: Colors.white60),
                         ),

@@ -628,7 +628,12 @@ class LivePlayController extends GetxController
       );
 
       unawaited(getSuperChatMessage(roomId));
-      final liveRoom = fetchedRoom.withAudienceFallbackFrom(state.value.room.detail!);
+      LiveRoom liveRoom = fetchedRoom.withAudienceFallbackFrom(state.value.room.detail!);
+      final detail = state.value.room.detail;
+      if (detail != null) {
+        liveRoom = liveRoom.fillFromDetail(detail);
+      }
+
       if (!_isRoomLoadCurrent(loadEpoch, roomId, requestedPlatform)) return liveRoom;
 
       if (currentSite.id == Sites.iptvSite) {

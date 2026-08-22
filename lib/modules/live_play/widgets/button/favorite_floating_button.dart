@@ -41,13 +41,10 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
   Future<void> _toggleFavorite(bool isFavorite) async {
     if (!isFavorite) {
       SettingsService.to.fav.addRoom(widget.room);
-
       EventBus.instance.emit('changeFavorite', true);
-
       if (mounted) {
         setState(() {});
       }
-
       return;
     }
 
@@ -87,36 +84,38 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
 
   @override
   Widget build(BuildContext context) {
-    final isFavorite = SettingsService.to.fav.isFavorite(widget.room);
+    return Obx(() {
+      final isFavorite = SettingsService.to.fav.isFavorite(widget.room);
 
-    final label = i18n(isFavorite ? 'followed' : 'follow');
+      final label = i18n(isFavorite ? 'followed' : 'follow');
 
-    if (widget.compact) {
-      return Tooltip(
-        message: label,
-        child: IconButton.filledTonal(
-          visualDensity: VisualDensity.compact,
-          constraints: const BoxConstraints.tightFor(width: 40, height: 38),
-          padding: EdgeInsets.zero,
-          onPressed: () => _toggleFavorite(isFavorite),
-          icon: Icon(isFavorite ? Remix.heart_3_fill : Remix.heart_3_line, size: 19),
+      if (widget.compact) {
+        return Tooltip(
+          message: label,
+          child: IconButton.filledTonal(
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints.tightFor(width: 40, height: 38),
+            padding: EdgeInsets.zero,
+            onPressed: () => _toggleFavorite(isFavorite),
+            icon: Icon(isFavorite ? Remix.heart_3_fill : Remix.heart_3_line, size: 19),
+          ),
+        );
+      }
+
+      return FilledButton(
+        style: ButtonStyle(
+          padding: WidgetStateProperty.all(Platform.isWindows ? const EdgeInsets.all(12) : const EdgeInsets.all(5)),
+          backgroundColor: WidgetStateProperty.all(
+            isFavorite ? Get.theme.colorScheme.primary.withAlpha(125) : Get.theme.colorScheme.primary,
+          ),
+          shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
+          textStyle: WidgetStateProperty.all(AppTextStyles.t12),
+          minimumSize: WidgetStateProperty.all(Size.zero),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
+        onPressed: () => _toggleFavorite(isFavorite),
+        child: Text(label),
       );
-    }
-
-    return FilledButton(
-      style: ButtonStyle(
-        padding: WidgetStateProperty.all(Platform.isWindows ? const EdgeInsets.all(12) : const EdgeInsets.all(5)),
-        backgroundColor: WidgetStateProperty.all(
-          isFavorite ? Get.theme.colorScheme.primary.withAlpha(125) : Get.theme.colorScheme.primary,
-        ),
-        shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
-        textStyle: WidgetStateProperty.all(AppTextStyles.t12),
-        minimumSize: WidgetStateProperty.all(Size.zero),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-      onPressed: () => _toggleFavorite(isFavorite),
-      child: Text(label),
-    );
+    });
   }
 }
