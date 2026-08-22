@@ -741,10 +741,17 @@ class _WindowsViewportSizedVideoState extends State<_WindowsViewportSizedVideo> 
   }
 
   Future<void> _cancelSourceSubscriptions() async {
-    await _widthSubscription?.cancel();
-    await _heightSubscription?.cancel();
+    // Capture before awaiting. didUpdateWidget immediately binds the new
+    // streams; reading the fields again after the first await could cancel the
+    // replacement height subscription and drop the replacement width handle.
+    final widthSubscription = _widthSubscription;
+    final heightSubscription = _heightSubscription;
     _widthSubscription = null;
     _heightSubscription = null;
+    await Future.wait<void>([
+      if (widthSubscription != null) widthSubscription.cancel(),
+      if (heightSubscription != null) heightSubscription.cancel(),
+    ]);
   }
 
   void _scheduleResize() {
