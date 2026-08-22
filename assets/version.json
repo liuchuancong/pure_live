@@ -1,13 +1,13 @@
 {
-  "version": "2.5.0",
-  "build_number": 4072,
-  "version_num": 2054072,
+  "version": "2.5.1",
+  "build_number": 4073,
+  "version_num": 2054173,
   "android_abis": [
     "arm64-v8a"
   ],
-  "version_desc": "v2.5.0 首页刷新与高刷策略稳定版 build 4072\n- 首页收藏核验改为 4 路有界异步工作池，慢请求不再阻塞同批后续房间；结果完整后一次性发布，减少首屏等待和卡片跳动。\n- Android 新增省电、均衡、高性能三档刷新率；默认省电，均衡仅在交互期间请求设备最高刷新率，高性能在前台持续请求最高刷新率。\n- Windows 视频纹理按可见物理尺寸有界输出，避免高分辨率源在小窗口持续分配超大纹理；分区卡片和滚动行为同步上游修复。\n- 更新 ffmpeg_kit_extended_flutter、flutter_color，复核 dynamic_color 1.9.0 兼容边界，并同步上游至 b84a847d；本地门禁与全平台构建状态以 Release 清单为准。\n",
+  "version_desc": "v2.5.1 关注页平台横滑与收藏完整性修复 build 4073\n- 空平台继续保留横向分页，滑到零结果平台后可立即返回；空状态支持下拉刷新和一键查看未开播。\n- 平台控制器按平台 ID 保持选中项，平台开关或顺序变化时同步视觉页、数据页与滚动位置。\n- 平台与开播状态切换合并为单次筛选事务，收藏快照未变化时跳过重复全量排序，降低横滑卡顿和卡片闪动。\n- 收藏、标签和刷新统一使用“平台 + 房间号”身份，并迁移旧平台 ID 与标签映射，修复跨平台相同房间号导致的关注缺项。\n- Flutter Analyze 0 issue，211 项单元与 Widget 测试全部通过。\n",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.5.0",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.5.1",
   "platforms": {
     "windows": {
       "version": "2.5.0",
