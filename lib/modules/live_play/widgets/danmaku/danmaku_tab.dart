@@ -30,7 +30,10 @@ class DanmakuTabView extends GetView<LivePlayController> {
                           child: Text(i18n('danmaku_display_disabled_hint'), textAlign: TextAlign.center),
                         ),
                       ),
-                SuperChatPage(messages: controller.superChats),
+                // RxList mutations do not invalidate this outer Obx unless
+                // its value is read while building. Snapshot it here so new
+                // SC entries appear immediately without switching tabs.
+                Obx(() => SuperChatPage(messages: controller.superChats.toList(growable: false))),
                 DanmakuSettingsPage(controller: state.player.videoController!),
                 const KeywordBlockPage(),
               ],

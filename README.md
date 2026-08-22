@@ -33,10 +33,11 @@
 
 > 本维护分支持续同步 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)，并维护本机优先构建、正式签名、接口探测、Windows 数据迁移及高刷新率优化。
 
-- **最新稳定版**：[v2.5.0](https://github.com/wzgrx/pure_live/releases/tag/v2.5.0)
-- **当前版本**：`2.5.0+4072`
-- **v2.5.0 上游源码基线**：已同步至 `liuchuancong/pure_live@b84a847d`；维护分支同时保留三档刷新率、PiP 弹幕、后台播放、本地互动、Windows 数据迁移与稳定性增强
+- **最新稳定版**：[v2.6.0](https://github.com/wzgrx/pure_live/releases/tag/v2.6.0)
+- **当前版本**：`2.6.0+4076`
+- **v2.6.0 上游源码基线**：已同步至 `liuchuancong/pure_live@aeac68ca`；维护分支同时保留三档刷新率、PiP 弹幕、后台播放、本地互动、Windows 数据迁移与稳定性增强
 - **构建平台**：Android arm64、Windows x64、Linux x64、macOS Universal、iOS arm64 设备包
+- **质量门禁**：Flutter Analyze 0 issue、223/223 项自动化测试、26/26 项发布时点公开接口探测通过
 
 ![Pure Live 界面预览](assets/images/banner.png)
 
@@ -89,6 +90,8 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 | [v2.2.0 阶段更新](docs/STAGE_UPDATE_2_2_0.md) | 播放恢复、音频模式、弹幕设置、Windows 多开与最终验证 |
 | [v2.3.0 稳定性更新](docs/STAGE_UPDATE_2_3_0.md) | PiP 返回弹幕恢复、启动刷新、横屏输入、长时间资源边界与验收状态 |
 | [v2.5.0 阶段稳定版](docs/STAGE_UPDATE_2_5_0.md) | 首页有界并发、三档刷新率、Windows 视频纹理与依赖/上游审计 |
+| [v2.6.0 阶段稳定版](docs/STAGE_UPDATE_2_6_0.md) | 上游同步、近期 Issue、字体/SC/播放器与全平台阶段发布 |
+| [近期 Issue 审计](docs/ISSUE_AUDIT_2026_08_23.md) | #769、#770、#771、#773 与 Windows 高 DPI 问题映射 |
 | [参与贡献](CONTRIBUTING.md) | 分支、提交、测试和 Pull Request 要求 |
 | [安全策略](SECURITY.md) | 私密漏洞报告和签名材料管理 |
 | [版本说明](RELEASE_NOTES.md) | 当前版本变更与历史记录 |
@@ -353,7 +356,7 @@ Firebase 不是 Pure Live 使用的必要条件。
 
 ### Android
 
-v2.5.0 优先提供 `arm64-v8a`，适用于当前主流 64 位 ARM 手机和平板。更新页读取版本清单中的实际 ABI 列表，只展示本轮实际发布的下载链接。
+v2.6.0 的 Android 包仅提供 `arm64-v8a`，适用于当前主流 64 位 ARM 手机和平板。更新页读取版本清单中的实际 ABI 列表，只展示本轮实际发布的下载链接。
 
 Android 始终使用正式包名：
 
@@ -420,7 +423,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
   -Target AndroidArm64 -Configuration Release -FullRegression -RequireReleaseSigning
 ```
 
-当前 v2.5.0 build 4072 将首页收藏核验改为 4 路有界网络工作池：单个慢房间不再卡住整个固定批次，同时继续保留旧快照并在本轮完成后一次性替换，避免卡片跳动；首次空快照也会进入明确空状态，不再保留无限加载动画。Android 提供省电、均衡、高性能三档刷新率，新安装默认省电；均衡仅在触摸、滚动和转场期间请求设备最高刷新率，高性能在前台持续请求最高刷新率。Windows 视频纹理按实际可见物理尺寸设置，减少小窗口播放高分辨率源时的原生内存和拷贝压力。源码已通过 Flutter Analyze（0 issue）、208 项单元/Widget 测试与 26/26 平台接口探测；设备连接和采样按当前验收安排执行。完整门禁和构建结果见 [v2.5.0 阶段稳定版](docs/STAGE_UPDATE_2_5_0.md) 与 [构建与发布](docs/BUILD_AND_RELEASE.md)。
+当前 v2.6.0 build 4076 在原有首页有界并发、PiP 弹幕恢复和三档刷新率基础上，修复每张卡片首挂载时清除图片缓存造成的重复请求与解码；多文件字体、弹幕字体、醒目留言、链接跳转关注及强制销毁后黑屏均使用持久选择、响应式状态和房间代次治理。Windows 视频纹理按实际可见视口适配且切换比例不重新拉流，iOS 新配置默认使用 IJK 并识别设备最高刷新率。完整门禁和全平台产物记录见 [v2.6.0 阶段稳定版](docs/STAGE_UPDATE_2_6_0.md) 与 [构建与发布](docs/BUILD_AND_RELEASE.md)。
 
 ## 🤝 参与开发
 

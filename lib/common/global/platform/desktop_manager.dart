@@ -16,6 +16,7 @@ import 'package:pure_live/plugins/share_command_handler.dart';
 import 'package:pure_live/routes/route_observer_controller.dart';
 import 'package:pure_live/common/utils/share_command_handler.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
+import 'package:pure_live/player/utils/window_helper.dart';
 
 class DesktopManager {
   static State? _currentState;
@@ -675,6 +676,7 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
 
   @override
   void onWindowMoved() {
+    _scheduleWindowSizeUpdate();
     _sizeController.setTracking(false);
   }
 
@@ -758,9 +760,11 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
   void handleStatusBarTap() {}
 
   void _updateWindowSizeToController() {
-    windowManager.getSize().then((size) {
-      _sizeController.updateSize(size);
-    });
+    if (WindowHelper.instance.currentMode == WindowLayoutMode.pip) {
+      unawaited(WindowHelper.instance.capturePiPGeometry());
+      return;
+    }
+    windowManager.getSize().then(_sizeController.updateSize);
   }
 
   void _scheduleWindowSizeUpdate() {

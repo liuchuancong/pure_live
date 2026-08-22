@@ -7,6 +7,10 @@ class WindowSizeController extends GetxController {
 
   final RxDouble storedWidth = hiveDouble('window_width', 1280.0);
   final RxDouble storedHeight = hiveDouble('window_height', 720.0);
+  final RxDouble windowsPipWidth = hiveDouble('windows_pip_width', 0.0);
+  final RxDouble windowsPipHeight = hiveDouble('windows_pip_height', 0.0);
+  final RxDouble windowsPipX = hiveDouble('windows_pip_x', 0.0);
+  final RxDouble windowsPipY = hiveDouble('windows_pip_y', 0.0);
 
   final windowSize = const Size(1280, 720).obs;
   final isTracking = false.obs;
@@ -49,13 +53,32 @@ class WindowSizeController extends GetxController {
     isTracking.value = tracking;
   }
 
+  void updateWindowsPipGeometry(Size size, Offset position) {
+    if (!size.isFinite || size.isEmpty || !position.isFinite) return;
+    windowsPipWidth.v = size.width;
+    windowsPipHeight.v = size.height;
+    windowsPipX.v = position.dx;
+    windowsPipY.v = position.dy;
+  }
+
   Map<String, dynamic> toJson() {
-    return {'storedWidth': storedWidth.v, 'storedHeight': storedHeight.v};
+    return {
+      'storedWidth': storedWidth.v,
+      'storedHeight': storedHeight.v,
+      'windowsPipWidth': windowsPipWidth.v,
+      'windowsPipHeight': windowsPipHeight.v,
+      'windowsPipX': windowsPipX.v,
+      'windowsPipY': windowsPipY.v,
+    };
   }
 
   void fromJson(Map<String, dynamic> json) {
     storedWidth.v = (json['storedWidth'] as num?)?.toDouble() ?? 1280.0;
     storedHeight.v = (json['storedHeight'] as num?)?.toDouble() ?? 720.0;
+    windowsPipWidth.v = (json['windowsPipWidth'] as num?)?.toDouble() ?? 0.0;
+    windowsPipHeight.v = (json['windowsPipHeight'] as num?)?.toDouble() ?? 0.0;
+    windowsPipX.v = (json['windowsPipX'] as num?)?.toDouble() ?? 0.0;
+    windowsPipY.v = (json['windowsPipY'] as num?)?.toDouble() ?? 0.0;
     windowSize.value = Size(storedWidth.v, storedHeight.v);
   }
 
@@ -64,6 +87,10 @@ class WindowSizeController extends GetxController {
     return {
       'storedWidth': (windowSize['storedWidth'] ?? 1280.0).toDouble(),
       'storedHeight': (windowSize['storedHeight'] ?? 720.0).toDouble(),
+      'windowsPipWidth': (windowSize['windowsPipWidth'] ?? 0.0).toDouble(),
+      'windowsPipHeight': (windowSize['windowsPipHeight'] ?? 0.0).toDouble(),
+      'windowsPipX': (windowSize['windowsPipX'] ?? 0.0).toDouble(),
+      'windowsPipY': (windowSize['windowsPipY'] ?? 0.0).toDouble(),
     };
   }
 

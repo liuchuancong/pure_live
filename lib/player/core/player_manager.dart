@@ -761,12 +761,12 @@ class PlayerManager {
   }
 
   void changeVideoFit(int index) {
+    final fitList = SettingsService.to.player.videoFitArray;
+    if (fitList.isEmpty || index < 0 || index >= fitList.length) return;
     videoFitIndex.value = index;
     if (_currentPlayer is BetterPlayerAdapter) {
-      var player = _currentPlayer as BetterPlayerAdapter;
-      var fitList = SettingsService.to.player.videoFitArray;
+      final player = _currentPlayer as BetterPlayerAdapter;
       player.betterPlayerController.setOverriddenFit(fitList[index]);
-      player.betterPlayerController.retryDataSource();
     }
   }
 
@@ -1292,6 +1292,7 @@ class PlayerManager {
   }) {
     // Read by the room's outer Obx. Audio/video presentation changes rebuild
     // this surface without changing [videoKey] and remounting the native view.
+    videoPresentationRevision.value;
 
     return Obx(() {
       final initialized = isInitialized.value;
@@ -1354,32 +1355,36 @@ class PlayerManager {
     });
   }
 
-  Widget _buildVideoWidget(UnifiedPlayer player, boxFit) {
+  Widget _buildVideoWidget(UnifiedPlayer player, BoxFit boxFit) {
     if (player.engine == PlayerEngine.exo) {
       return player.getVideoWidget();
     }
 
-    return FittedBox(
-      fit: boxFit,
-      clipBehavior: Clip.hardEdge,
-      child: StreamBuilder<List<int?>>(
-        stream: CombineLatestStream.list([width, height]),
-        builder: (context, snapshot) {
-          final data = snapshot.data;
-
-          if (data == null || data.length < 2 || data[0] == null || data[1] == null || data[0]! <= 0 || data[1]! <= 0) {
-            return const SizedBox.shrink();
-          }
-
-          final videoWidth = data[0]!.toDouble();
-          final videoHeight = data[1]!.toDouble();
-
-          const baseHeight = 1080.0;
-          final baseWidth = baseHeight * videoWidth / videoHeight;
-
-          return SizedBox(width: baseWidth, height: baseHeight, child: player.getVideoWidget());
-        },
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final viewport = constraints.biggest;
+        return StreamBuilder<List<int?>>(
+          stream: CombineLatestStream.list([width, height]),
+          builder: (context, snapshot) {
+            final data = snapshot.data;
+            // Mount the native texture immediately. Waiting for its own width
+            // and height stream before mounting creates a first-frame deadlock
+            // after a hard dispose or engine switch.
+            final videoWidth = data != null && data.length >= 2 && (data[0] ?? 0) > 0 ? data[0]!.toDouble() : 1920.0;
+            final videoHeight = data != null && data.length >= 2 && (data[1] ?? 0) > 0 ? data[1]!.toDouble() : 1080.0;
+            if (!viewport.width.isFinite || !viewport.height.isFinite || viewport.width <= 0 || viewport.height <= 0) {
+              return player.getVideoWidget();
+            }
+            final fitted = applyBoxFit(boxFit, Size(videoWidth, videoHeight), viewport).destination;
+            return ClipRect(
+              child: Align(
+                alignment: Alignment.center,
+                child: SizedBox(width: fitted.width, height: fitted.height, child: player.getVideoWidget()),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

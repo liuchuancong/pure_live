@@ -25,6 +25,8 @@ class _AreaCardState extends State<AreaCard> {
       final epoch = SettingsService.to.cache.imageCacheEpoch.value;
       return LayoutBuilder(
         builder: (context, constraints) {
+          final logicalWidth = constraints.maxWidth.isFinite ? constraints.maxWidth : 160.0;
+          final cacheWidth = (logicalWidth * MediaQuery.devicePixelRatioOf(context)).round().clamp(160, 512).toInt();
           return CachedNetworkImage(
             cacheKey: epoch == 0 ? imageUrl : '$imageUrl#$epoch',
             imageUrl: imageUrl,
@@ -32,6 +34,8 @@ class _AreaCardState extends State<AreaCard> {
             cacheManager: CustomImageCacheManager.instance,
             fit: BoxFit.cover,
             filterQuality: FilterQuality.low,
+            memCacheWidth: cacheWidth,
+            maxWidthDiskCache: 512,
             fadeInDuration: Duration.zero,
             fadeOutDuration: Duration.zero,
             useOldImageOnUrlChange: true,

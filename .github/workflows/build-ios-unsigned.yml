@@ -63,7 +63,7 @@ jobs:
           cache: true
 
       - name: Resolve locked packages
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
 
       - name: Get version
         id: version
