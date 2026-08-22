@@ -65,7 +65,7 @@ class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
     final controller = _findLivePlayController();
     if (controller == null) return;
 
-    SchedulerBinding.instance.addPostFrameCallback((_) {
+    SchedulerBinding.instance.addPostFrameCallback((_) async {
       if (!controller.isClosed) {
         controller.updateUI(displayVideoLayer: visible);
       }
