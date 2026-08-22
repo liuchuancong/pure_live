@@ -1,6 +1,5 @@
 name: PureLive Release Build
 
-
 on:
   workflow_dispatch:
     inputs:
@@ -10,13 +9,11 @@ on:
         type: boolean
         default: true
 
-
       build_windows:
         description: Build Windows EXE and MSIX
         required: true
         type: boolean
         default: true
-
 
       build_linux:
         description: Build Linux x64 portable archive
@@ -24,20 +21,17 @@ on:
         type: boolean
         default: true
 
-
       build_macos:
         description: Build macOS universal application archive
         required: true
         type: boolean
         default: true
 
-
       build_ios:
-        description: Build unsigned iOS device application archive
+        description: Build unsigned iOS app and TrollStore IPA
         required: true
         type: boolean
         default: true
-
 
       run_quality:
         description: Run analyze, tests and public interface probes first
@@ -45,20 +39,17 @@ on:
         type: boolean
         default: false
 
-
       create_release:
         description: Create a GitHub Release and update releases.json
         required: true
         type: boolean
         default: true
 
-
       release_tag:
         description: Release tag (e.g. v1.0.0) – required if create_release is true
         required: true
         type: string
         default: 'v2.5.0'
-
 
   push:
     tags:
@@ -67,36 +58,35 @@ on:
       - "stage-apple-*"
       - "stage-ios-*"
 
-
 permissions:
   contents: read
-
 
 concurrency:
   group: manual-build-${{ github.ref }}
   cancel-in-progress: true
-
 
 env:
   FLUTTER_VERSION: 3.47.0
   FLUTTER_LINUX_ARCHIVE: stable/linux/flutter_linux_3.47.0-stable.tar.xz
   FLUTTER_LINUX_SHA256: 26cd99d3d94b1367e6b50535a18aeef0282c10a535bbe3ec493534dcdab75296
 
-
 # =========================================================
 # QUALITY
 # =========================================================
-
 
 jobs:
 
   quality:
     name: Analyze, test and probe
+
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_quality }}
+
     runs-on: ubuntu-latest
+
     timeout-minutes: 35
 
     steps:
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
@@ -107,16 +97,22 @@ jobs:
       - name: Install pinned Flutter SDK from the official archive
         shell: bash
         run: |
+          set -euo pipefail
+
           archive="$RUNNER_TEMP/flutter-linux.tar.xz"
 
-          curl --fail --location --retry 3 \
+          curl \
+            --fail \
+            --location \
+            --retry 3 \
             "https://storage.googleapis.com/flutter_infra_release/releases/$FLUTTER_LINUX_ARCHIVE" \
             --output "$archive"
 
           echo "$FLUTTER_LINUX_SHA256  $archive" |
             sha256sum --check --strict
 
-          tar --extract \
+          tar \
+            --extract \
             --file "$archive" \
             --directory "$RUNNER_TEMP"
 
@@ -129,8 +125,11 @@ jobs:
         run: flutter pub get
 
       - name: Generate production AppConfig
-        run: dart run enven --env-files .env,.env.prod --class-name AppConfig
-        
+        run: |
+          dart run enven \
+            --env-files .env,.env.prod \
+            --class-name AppConfig
+
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
@@ -141,19 +140,23 @@ jobs:
         run: python tool/interface_probe.py
 
 
-
 # =========================================================
 # ANDROID
 # =========================================================
 
   android:
     name: Android all ABIs
+
     if: ${{ always() && inputs.build_android && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+
     needs: quality
+
     runs-on: ubuntu-latest
+
     timeout-minutes: 55
 
     steps:
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
@@ -167,6 +170,10 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
+      # -----------------------------------------------------
+      # Android signing
+      # -----------------------------------------------------
+
       - name: Configure Android signing
         shell: bash
         env:
@@ -175,16 +182,20 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
+          set -euo pipefail
+
           if [[ -z "$KEYSTORE_BASE64" ||
                 -z "$STORE_PASSWORD" ||
                 -z "$KEY_PASSWORD" ||
                 -z "$KEY_ALIAS" ]]; then
 
-            echo "Release signing secrets are required for the manual Android package." >&2
+            echo "Release signing secrets are required."
             exit 1
           fi
 
-          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/pure-live-release.jks"
+          echo "$KEYSTORE_BASE64" |
+            base64 --decode \
+            > "$RUNNER_TEMP/pure-live-release.jks"
 
           cat > android/key.properties <<EOF
           storeFile=$RUNNER_TEMP/pure-live-release.jks
@@ -197,7 +208,14 @@ jobs:
         run: flutter pub get
 
       - name: Generate production AppConfig
-        run: dart run enven --env-files .env,.env.prod --class-name AppConfig
+        run: |
+          dart run enven \
+            --env-files .env,.env.prod \
+            --class-name AppConfig
+
+      # -----------------------------------------------------
+      # Build
+      # -----------------------------------------------------
 
       - name: Build Android release APKs
         run: |
@@ -206,18 +224,33 @@ jobs:
             --split-per-abi \
             --dart-define=PURELIVE_BUILD_SOURCE=github-manual
 
+      # -----------------------------------------------------
+      # Version
+      # -----------------------------------------------------
+
       - name: Get version
         id: version
         shell: bash
         run: |
-          FULL_VERSION=$(grep '^version:' pubspec.yaml |
-            sed 's/version: //; s/[`"'"'"']//g')
+          set -euo pipefail
+
+          FULL_VERSION=$(
+            grep '^version:' pubspec.yaml |
+            sed 's/version: //; s/[`"'"'"']//g'
+          )
+
           echo "version=${FULL_VERSION%%+*}" >> "$GITHUB_OUTPUT"
           echo "artifact_version=${FULL_VERSION/+/-}" >> "$GITHUB_OUTPUT"
+
+      # -----------------------------------------------------
+      # Rename
+      # -----------------------------------------------------
 
       - name: Rename Android APKs
         shell: bash
         run: |
+          set -euo pipefail
+
           VERSION="${{ steps.version.outputs.artifact_version }}"
           APK_DIR="build/app/outputs/flutter-apk"
 
@@ -237,17 +270,47 @@ jobs:
             "$APK_DIR/app-x86_64-release.apk" \
             "PureLive-${VERSION}-x86_64-release.apk"
 
+      # -----------------------------------------------------
+      # SHA256
+      # -----------------------------------------------------
+
+      - name: Generate Android SHA256 checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for file in \
+            PureLive-*-arm64-v8a-release.apk \
+            PureLive-*-armeabi-v7a-release.apk \
+            PureLive-*-x86_64-release.apk
+          do
+            sha256sum "$file" > "$file.sha256"
+          done
+
+          echo "=== Android checksums ==="
+
+          cat \
+            PureLive-*-arm64-v8a-release.apk.sha256 \
+            PureLive-*-armeabi-v7a-release.apk.sha256 \
+            PureLive-*-x86_64-release.apk.sha256
+
+      # -----------------------------------------------------
+      # Upload
+      # -----------------------------------------------------
+
       - name: Upload Android artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pure-live-android
           path: |
             PureLive-*-arm64-v8a-release.apk
+            PureLive-*-arm64-v8a-release.apk.sha256
             PureLive-*-armeabi-v7a-release.apk
+            PureLive-*-armeabi-v7a-release.apk.sha256
             PureLive-*-x86_64-release.apk
+            PureLive-*-x86_64-release.apk.sha256
           if-no-files-found: error
           retention-days: 3
-
 
 
 # =========================================================
@@ -256,12 +319,17 @@ jobs:
 
   windows:
     name: Windows EXE + MSIX
+
     if: ${{ always() && inputs.build_windows && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+
     needs: quality
+
     runs-on: windows-latest
+
     timeout-minutes: 35
 
     steps:
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # -----------------------------------------------------
@@ -273,11 +341,12 @@ jobs:
         env:
           CERTIFICATE: ${{ secrets.CERTIFICATE }}
         run: |
+          $ErrorActionPreference = "Stop"
+
           $certBase64 = "$env:CERTIFICATE".Trim() -replace '\s+', ''
 
           if ([string]::IsNullOrEmpty($certBase64)) {
             Write-Error "CERTIFICATE secret is empty!"
-            exit 1
           }
 
           $certBytes = [System.Convert]::FromBase64String($certBase64)
@@ -295,11 +364,16 @@ jobs:
         env:
           CERT_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
         run: |
+          $ErrorActionPreference = "Stop"
+
           $configPath = "windows/packaging/msix/make_config.yaml"
 
           if (!(Test-Path $configPath)) {
             Write-Error "Config file not found: $configPath"
-            exit 1
+          }
+
+          if ([string]::IsNullOrEmpty($env:CERT_PASSWORD)) {
+            Write-Error "CERTIFICATE_PASSWORD secret is empty!"
           }
 
           $absolutePath = $env:FINAL_CERT_PATH -replace '\\', '/'
@@ -309,16 +383,14 @@ jobs:
           $content = $content -replace `
             'certificate_path:\s*.*',
             "certificate_path: $absolutePath"
-          $password = $env:CERT_PASSWORD
-          if ([string]::IsNullOrEmpty($password)) {
-            Write-Error "CERTIFICATE_PASSWORD secret is empty!"
-            exit 1
-          }
-          $content = $content -replace '(?m)^(\s*certificate_password:\s*).*$', "`${1}'$password'"
-          Set-Content $configPath $content
 
-          Write-Host "MSIX certificate path configured:"
-          Write-Host $absolutePath
+          $content = $content -replace `
+            '(?m)^(\s*certificate_password:\s*).*$', `
+            "`${1}'$($env:CERT_PASSWORD)'"
+
+          Set-Content `
+            -Path $configPath `
+            -Value $content
 
       # -----------------------------------------------------
       # Flutter
@@ -336,19 +408,27 @@ jobs:
         run: flutter pub get
 
       - name: Generate production AppConfig
-        run: dart run enven --env-files .env,.env.prod --class-name AppConfig
+        run: |
+          dart run enven `
+            --env-files .env,.env.prod `
+            --class-name AppConfig
+
       # -----------------------------------------------------
       # Inno Setup
       # -----------------------------------------------------
 
-      - name: Install fastforge (from source)
+      - name: Install fastforge from source dependencies
         shell: pwsh
         run: |
           git clone https://github.com/SlotSun/fastforge.git
+
           cd fastforge
+
           dart pub global activate melos
+
           melos run activate
-          choco install innosetup
+
+          choco install innosetup -y
 
       - name: Copy Chinese language pack
         shell: pwsh
@@ -389,16 +469,27 @@ jobs:
           }
 
           Write-Error "Version not found"
-          exit 1
+
+      # -----------------------------------------------------
+      # Package
+      # -----------------------------------------------------
 
       - name: Package Windows EXE and MSIX
         shell: pwsh
         run: |
-          fastforge package --platform windows --targets exe,msix
+          fastforge package `
+            --platform windows `
+            --targets exe,msix
+
+      # -----------------------------------------------------
+      # Rename
+      # -----------------------------------------------------
 
       - name: Rename Windows installers
         shell: pwsh
         run: |
+          $ErrorActionPreference = "Stop"
+
           $VERSION = "${{ steps.version.outputs.version }}"
           $DIST_DIR = "dist"
 
@@ -410,7 +501,6 @@ jobs:
 
           if (!$EXE_FILE) {
             Write-Error "Windows EXE package not found."
-            exit 1
           }
 
           Copy-Item `
@@ -426,7 +516,6 @@ jobs:
 
           if (!$MSIX_FILE) {
             Write-Error "Windows MSIX package not found."
-            exit 1
           }
 
           Copy-Item `
@@ -434,16 +523,44 @@ jobs:
             "PureLive-$VERSION-windows-x64.msix" `
             -Force
 
+      # -----------------------------------------------------
+      # SHA256
+      # -----------------------------------------------------
+
+      - name: Generate Windows SHA256 checksums
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          Get-ChildItem -File -Filter "PureLive-*-windows-x64-setup.exe" |
+            ForEach-Object {
+              $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+              "$hash  $($_.Name)" |
+                Set-Content "$($_.FullName).sha256"
+            }
+
+          Get-ChildItem -File -Filter "PureLive-*-windows-x64.msix" |
+            ForEach-Object {
+              $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+              "$hash  $($_.Name)" |
+                Set-Content "$($_.FullName).sha256"
+            }
+
+      # -----------------------------------------------------
+      # Upload
+      # -----------------------------------------------------
+
       - name: Upload Windows artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a0 # v7.0.1
         with:
           name: pure-live-windows
           path: |
             PureLive-*-windows-x64-setup.exe
+            PureLive-*-windows-x64-setup.exe.sha256
             PureLive-*-windows-x64.msix
+            PureLive-*-windows-x64.msix.sha256
           if-no-files-found: error
           retention-days: 3
-
 
 
 # =========================================================
@@ -452,35 +569,82 @@ jobs:
 
   linux:
     name: Linux x64 portable
+
     if: ${{ always() && ((github.event_name == 'push' && (startsWith(github.ref_name, 'stage-build-') || startsWith(github.ref_name, 'stage-linux-'))) || inputs.build_linux) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+
     needs: quality
+
     runs-on: ubuntu-24.04
+
     timeout-minutes: 35
 
     steps:
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install Linux desktop dependencies
         run: |
           sudo apt-get -o Acquire::Retries=5 update
+
           sudo apt-get -o Acquire::Retries=5 install -y \
-            clang g++ make cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libasound2-dev \
-            libayatana-appindicator3-dev libsecret-1-dev libva-dev libvdpau-dev \
-            libpulse-dev libxv-dev libunwind-dev libgnutls28-dev liblcms2-dev \
-            libarchive-dev libgbm-dev libxss-dev libxrandr-dev libegl1-mesa-dev \
-            libwayland-dev libxkbcommon-dev libfontconfig1-dev libharfbuzz-dev \
-            libfribidi-dev libfreetype6-dev zlib1g-dev libdrm-dev libx11-dev \
-            libxext-dev libxfixes-dev libxcb1-dev
+            clang \
+            g++ \
+            make \
+            cmake \
+            ninja-build \
+            pkg-config \
+            libgtk-3-dev \
+            liblzma-dev \
+            libasound2-dev \
+            libayatana-appindicator3-dev \
+            libsecret-1-dev \
+            libva-dev \
+            libvdpau-dev \
+            libpulse-dev \
+            libxv-dev \
+            libunwind-dev \
+            libgnutls28-dev \
+            liblcms2-dev \
+            libarchive-dev \
+            libgbm-dev \
+            libxss-dev \
+            libxrandr-dev \
+            libegl1-mesa-dev \
+            libwayland-dev \
+            libxkbcommon-dev \
+            libfontconfig1-dev \
+            libharfbuzz-dev \
+            libfribidi-dev \
+            libfreetype6-dev \
+            zlib1g-dev \
+            libdrm-dev \
+            libx11-dev \
+            libxext-dev \
+            libxfixes-dev \
+            libxcb1-dev
 
       - name: Install pinned Flutter SDK from the official archive
         shell: bash
         run: |
+          set -euo pipefail
+
           archive="$RUNNER_TEMP/flutter-linux.tar.xz"
-          curl --fail --location --retry 3 \
+
+          curl \
+            --fail \
+            --location \
+            --retry 3 \
             "https://storage.googleapis.com/flutter_infra_release/releases/$FLUTTER_LINUX_ARCHIVE" \
             --output "$archive"
-          echo "$FLUTTER_LINUX_SHA256  $archive" | sha256sum --check --strict
-          tar --extract --file "$archive" --directory "$RUNNER_TEMP"
+
+          echo "$FLUTTER_LINUX_SHA256  $archive" |
+            sha256sum --check --strict
+
+          tar \
+            --extract \
+            --file "$archive" \
+            --directory "$RUNNER_TEMP"
+
           echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
 
       - name: Verify Flutter SDK
@@ -490,19 +654,41 @@ jobs:
         run: flutter pub get
 
       - name: Generate production AppConfig
-        run: dart run enven --env-files .env,.env.prod --class-name AppConfig
+        run: |
+          dart run enven \
+            --env-files .env,.env.prod \
+            --class-name AppConfig
+
+      # -----------------------------------------------------
+      # mimalloc
+      # -----------------------------------------------------
 
       - name: Prefetch verified Linux native sources
         shell: bash
         run: |
+          set -euo pipefail
+
           archive_dir="build/linux/x64/release"
           archive="$archive_dir/mimalloc-2.1.2.tar.gz"
+
           mkdir -p "$archive_dir"
-          curl --fail --location --retry 6 --retry-all-errors \
+
+          curl \
+            --fail \
+            --location \
+            --retry 6 \
+            --retry-all-errors \
             https://github.com/microsoft/mimalloc/archive/refs/tags/v2.1.2.tar.gz \
             --output "$archive.tmp"
-          echo "5179c8f5cf1237d2300e2d8559a7bc55  $archive.tmp" | md5sum --check --strict
+
+          echo "5179c8f5cf1237d2300e2d8559a7bc55  $archive.tmp" |
+            md5sum --check --strict
+
           mv "$archive.tmp" "$archive"
+
+      # -----------------------------------------------------
+      # Build
+      # -----------------------------------------------------
 
       - name: Build Linux release
         run: |
@@ -510,29 +696,69 @@ jobs:
             --release \
             --dart-define=PURELIVE_BUILD_SOURCE=github-manual
 
+      # -----------------------------------------------------
+      # Version
+      # -----------------------------------------------------
+
       - name: Get version
         id: version
         shell: bash
         run: |
-          FULL_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //; s/[`"'"'"']//g')
+          set -euo pipefail
+
+          FULL_VERSION=$(
+            grep '^version:' pubspec.yaml |
+            sed 's/version: //; s/[`"'"'"']//g'
+          )
+
           echo "version=${FULL_VERSION%%+*}" >> "$GITHUB_OUTPUT"
           echo "artifact_version=${FULL_VERSION/+/-}" >> "$GITHUB_OUTPUT"
 
+      # -----------------------------------------------------
+      # Archive
+      # -----------------------------------------------------
+
       - name: Create portable archive
+        shell: bash
         run: |
+          set -euo pipefail
+
           VERSION="${{ steps.version.outputs.artifact_version }}"
+
           tar \
             -C build/linux/x64/release/bundle \
-            -czf PureLive-${VERSION}-linux-x64.tar.gz \
+            -czf \
+            "PureLive-${VERSION}-linux-x64.tar.gz" \
             .
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      # -----------------------------------------------------
+      # SHA256
+      # -----------------------------------------------------
+
+      - name: Generate Linux SHA256 checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          FILE="PureLive-${{ steps.version.outputs.artifact_version }}-linux-x64.tar.gz"
+
+          sha256sum "$FILE" > "$FILE.sha256"
+
+          cat "$FILE.sha256"
+
+      # -----------------------------------------------------
+      # Upload
+      # -----------------------------------------------------
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pure-live-linux-x64
-          path: PureLive-*-linux-x64.tar.gz
+          path: |
+            PureLive-*-linux-x64.tar.gz
+            PureLive-*-linux-x64.tar.gz.sha256
           if-no-files-found: error
           retention-days: 3
-
 
 
 # =========================================================
@@ -541,24 +767,37 @@ jobs:
 
   apple:
     name: Apple platform packages
+
     if: ${{ always() && ((github.event_name == 'push' && (startsWith(github.ref_name, 'stage-build-') || startsWith(github.ref_name, 'stage-apple-') || startsWith(github.ref_name, 'stage-ios-'))) || inputs.build_macos || inputs.build_ios) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+
     needs: quality
+
     runs-on: macos-15
-    timeout-minutes: 60
+
+    timeout-minutes: 90
 
     steps:
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Select an Xcode 26 toolchain
+      # -----------------------------------------------------
+      # Xcode
+      # -----------------------------------------------------
+
+      - name: Select Xcode 26 toolchain
         shell: bash
         run: |
-          xcode_path="$(find /Applications \
-            -maxdepth 1 \
-            -type d \
-            -name 'Xcode_26*.app' \
-            -print |
-            sort |
-            tail -n 1)"
+          set -euo pipefail
+
+          xcode_path="$(
+            find /Applications \
+              -maxdepth 1 \
+              -type d \
+              -name 'Xcode_26*.app' \
+              -print |
+              sort |
+              tail -n 1
+          )"
 
           test -n "$xcode_path"
 
@@ -566,6 +805,10 @@ jobs:
             --switch "$xcode_path/Contents/Developer"
 
           xcodebuild -version
+
+      # -----------------------------------------------------
+      # Flutter
+      # -----------------------------------------------------
 
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
@@ -576,19 +819,33 @@ jobs:
         run: flutter pub get
 
       - name: Generate production AppConfig
-        run: dart run enven --env-files .env,.env.prod --class-name AppConfig
+        run: |
+          dart run enven \
+            --env-files .env,.env.prod \
+            --class-name AppConfig
+
+      # -----------------------------------------------------
+      # Version
+      # -----------------------------------------------------
 
       - name: Get version
         id: version
         shell: bash
         run: |
-          FULL_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //; s/[`"'"'"']//g')
+          set -euo pipefail
+
+          FULL_VERSION=$(
+            grep '^version:' pubspec.yaml |
+            sed 's/version: //; s/[`"'"'"']//g'
+          )
+
           echo "version=${FULL_VERSION%%+*}" >> "$GITHUB_OUTPUT"
           echo "artifact_version=${FULL_VERSION/+/-}" >> "$GITHUB_OUTPUT"
 
-# -----------------------------------------------------
+
+# =========================================================
 # macOS
-# -----------------------------------------------------
+# =========================================================
 
       - name: Build macOS release
         if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
@@ -597,18 +854,22 @@ jobs:
             --release \
             --dart-define=PURELIVE_BUILD_SOURCE=github-manual
 
-      - name: Get macOS application
+      - name: Locate macOS application
         id: macos_app
         if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
         shell: bash
         run: |
-          app_path="$(find \
-            build/macos/Build/Products/Release \
-            -maxdepth 1 \
-            -type d \
-            -name '*.app' \
-            -print \
-            -quit)"
+          set -euo pipefail
+
+          app_path="$(
+            find \
+              build/macos/Build/Products/Release \
+              -maxdepth 1 \
+              -type d \
+              -name '*.app' \
+              -print \
+              -quit
+          )"
 
           if [[ -z "$app_path" ]]; then
             echo "macOS .app not found."
@@ -617,13 +878,15 @@ jobs:
 
           echo "app_path=$app_path" >> "$GITHUB_OUTPUT"
 
-          echo "Found macOS application:"
+          echo "Found:"
           echo "$app_path"
 
       - name: Verify macOS application
         if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
         shell: bash
         run: |
+          set -euo pipefail
+
           app_path="${{ steps.macos_app.outputs.app_path }}"
 
           executable="$app_path/Contents/MacOS/$(basename "$app_path" .app)"
@@ -635,33 +898,38 @@ jobs:
           fi
 
           echo "=== macOS architecture ==="
+
           lipo -info "$executable"
 
       - name: Archive macOS application
         if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
         shell: bash
         run: |
+          set -euo pipefail
+
           VERSION="${{ steps.version.outputs.artifact_version }}"
-          app_path="${{ steps.macos_app.outputs.app_path }}"
+          APP="${{ steps.macos_app.outputs.app_path }}"
 
           ditto \
             -c \
             -k \
             --sequesterRsrc \
             --keepParent \
-            "$app_path" \
+            "$APP" \
             "PureLive-${VERSION}-macos-universal.zip"
 
       - name: Build macOS DMG
         if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
         shell: bash
         run: |
+          set -euo pipefail
+
           VERSION="${{ steps.version.outputs.artifact_version }}"
-          app_path="${{ steps.macos_app.outputs.app_path }}"
+          APP="${{ steps.macos_app.outputs.app_path }}"
 
           hdiutil create \
             -volname "PureLive" \
-            -srcfolder "$app_path" \
+            -srcfolder "$APP" \
             -ov \
             -format UDZO \
             "PureLive-${VERSION}-macos-universal.dmg"
@@ -670,30 +938,60 @@ jobs:
         if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
         shell: bash
         run: |
+          set -euo pipefail
+
           VERSION="${{ steps.version.outputs.artifact_version }}"
 
           test -f "PureLive-${VERSION}-macos-universal.zip"
           test -f "PureLive-${VERSION}-macos-universal.dmg"
 
           echo "=== macOS packages ==="
+
           ls -lh \
             "PureLive-${VERSION}-macos-universal.zip" \
             "PureLive-${VERSION}-macos-universal.dmg"
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      # -----------------------------------------------------
+      # macOS SHA256
+      # -----------------------------------------------------
+
+      - name: Generate macOS SHA256 checksums
         if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          VERSION="${{ steps.version.outputs.artifact_version }}"
+
+          sha256sum \
+            "PureLive-${VERSION}-macos-universal.zip" \
+            > "PureLive-${VERSION}-macos-universal.zip.sha256"
+
+          sha256sum \
+            "PureLive-${VERSION}-macos-universal.dmg" \
+            > "PureLive-${VERSION}-macos-universal.dmg.sha256"
+
+      # -----------------------------------------------------
+      # Upload macOS
+      # -----------------------------------------------------
+
+      - name: Upload macOS artifacts
+        if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pure-live-macos
           path: |
             PureLive-*-macos-universal.zip
+            PureLive-*-macos-universal.zip.sha256
             PureLive-*-macos-universal.dmg
+            PureLive-*-macos-universal.dmg.sha256
           if-no-files-found: error
           retention-days: 3
 
 
-      # -------------------------------------------------------
-      # iOS
-      # -----------------------------------------------------
+# =========================================================
+# iOS
+# =========================================================
 
       - name: Build iOS device application
         if: ${{ github.event_name == 'push' || inputs.build_ios }}
@@ -703,26 +1001,313 @@ jobs:
             --no-codesign \
             --dart-define=PURELIVE_BUILD_SOURCE=github-manual
 
-      - name: Archive iOS application
+      - name: Locate built Runner.app
+        id: ios_app
         if: ${{ github.event_name == 'push' || inputs.build_ios }}
+        shell: bash
         run: |
+          set -euo pipefail
+
+          app_path="$(
+            find \
+              build/ios/iphoneos \
+              -maxdepth 1 \
+              -type d \
+              -name 'Runner.app' \
+              -print \
+              -quit
+          )"
+
+          if [[ -z "$app_path" ]]; then
+            echo "Runner.app not found under build/ios/iphoneos"
+            exit 1
+          fi
+
+          echo "app_path=$app_path" >> "$GITHUB_OUTPUT"
+
+          echo "Found iOS application:"
+          echo "$app_path"
+
+      # -----------------------------------------------------
+      # Original unsigned app
+      # -----------------------------------------------------
+
+      - name: Archive unsigned iOS application
+        if: ${{ github.event_name == 'push' || inputs.build_ios }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
           VERSION="${{ steps.version.outputs.artifact_version }}"
+          APP="${{ steps.ios_app.outputs.app_path }}"
+
           ditto \
             -c \
             -k \
             --sequesterRsrc \
             --keepParent \
-            build/ios/iphoneos/Runner.app \
+            "$APP" \
             "PureLive-${VERSION}-ios-arm64-unsigned-app.zip"
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: ${{ github.event_name == 'push' || inputs.build_ios }}
-        with:
-          name: pure-live-ios-unsigned-app
-          path: PureLive-*-ios-arm64-unsigned-app.zip
-          if-no-files-found: error
-          retention-days: 3
+      # -----------------------------------------------------
+      # TrollStore entitlements
+      # -----------------------------------------------------
 
+      - name: Create TrollStore entitlements
+        if: ${{ github.event_name == 'push' || inputs.build_ios }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ENT="$RUNNER_TEMP/trollstore-entitlements.plist"
+
+          cat > "$ENT" <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+            "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>get-task-allow</key>
+            <false/>
+          </dict>
+          </plist>
+          PLIST
+
+          echo "entitlements=$ENT" >> "$GITHUB_ENV"
+
+      # -----------------------------------------------------
+      # Ad-hoc signing
+      # -----------------------------------------------------
+
+      - name: Ad-hoc sign iOS application
+        if: ${{ github.event_name == 'push' || inputs.build_ios }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          APP="${{ steps.ios_app.outputs.app_path }}"
+          ENT="$RUNNER_TEMP/trollstore-entitlements.plist"
+
+          echo "========================================"
+          echo "Ad-hoc signing iOS application"
+          echo "========================================"
+
+          echo "$APP"
+
+          # ---------------------------------------------------
+          # Sign nested frameworks / appex
+          # ---------------------------------------------------
+
+          while IFS= read -r item; do
+
+            base="$item/$(basename "$item" | sed -E 's/\.(framework|appex)$//')"
+
+            if [[ -e "$base" ]] && \
+               file "$base" 2>/dev/null | grep -q "Mach-O"; then
+
+              echo "Signing nested executable:"
+              echo "$base"
+
+              codesign \
+                -f \
+                -s - \
+                --entitlements "$ENT" \
+                "$base"
+            fi
+
+          done < <(
+            find "$APP" \
+              -type d \
+              \( -name '*.framework' -o -name '*.appex' \)
+          )
+
+          # ---------------------------------------------------
+          # Sign dylibs
+          # ---------------------------------------------------
+
+          while IFS= read -r dylib; do
+
+            echo "Signing dylib:"
+            echo "$dylib"
+
+            codesign \
+              -f \
+              -s - \
+              --entitlements "$ENT" \
+              "$dylib"
+
+          done < <(
+            find "$APP" \
+              -type f \
+              -name '*.dylib'
+          )
+
+          # ---------------------------------------------------
+          # Sign main application
+          # ---------------------------------------------------
+
+          codesign \
+            -f \
+            -s - \
+            --entitlements "$ENT" \
+            "$APP"
+
+          echo ""
+          echo "========================================"
+          echo "Main application signature"
+          echo "========================================"
+
+          codesign \
+            -dvv \
+            "$APP" \
+            2>&1 | head -30
+
+          echo ""
+          echo "========================================"
+          echo "Verify signature"
+          echo "========================================"
+
+          codesign \
+            --verify \
+            --deep \
+            --strict \
+            "$APP"
+
+          echo "SIGNATURE OK"
+
+      # -----------------------------------------------------
+      # Package TrollStore IPA
+      # -----------------------------------------------------
+
+      - name: Package TrollStore IPA
+        if: ${{ github.event_name == 'push' || inputs.build_ios }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          VERSION="${{ steps.version.outputs.artifact_version }}"
+          APP="${{ steps.ios_app.outputs.app_path }}"
+
+          WORK_DIR="$RUNNER_TEMP/ios-ipa-build"
+
+          rm -rf "$WORK_DIR"
+
+          mkdir -p "$WORK_DIR/Payload"
+
+          cp -R \
+            "$APP" \
+            "$WORK_DIR/Payload/Runner.app"
+
+          cd "$WORK_DIR"
+
+          zip \
+            -r \
+            -q \
+            "$GITHUB_WORKSPACE/PureLive-${VERSION}-ios-arm64-trollstore.ipa" \
+            Payload
+
+          echo "Created:"
+          echo "PureLive-${VERSION}-ios-arm64-trollstore.ipa"
+
+      # -----------------------------------------------------
+      # Verify IPA
+      # -----------------------------------------------------
+
+      - name: Verify TrollStore IPA
+        if: ${{ github.event_name == 'push' || inputs.build_ios }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          VERSION="${{ steps.version.outputs.artifact_version }}"
+          IPA="PureLive-${VERSION}-ios-arm64-trollstore.ipa"
+
+          test -f "$IPA"
+
+          echo "========================================"
+          echo "IPA structure"
+          echo "========================================"
+
+          unzip -l "$IPA" | head -30
+
+          echo ""
+          echo "========================================"
+          echo "Verify Payload/Runner.app"
+          echo "========================================"
+
+          unzip -l "$IPA" |
+            grep -qE 'Payload/Runner\.app/$'
+
+          echo "Payload/Runner.app OK"
+
+          TMPD="$RUNNER_TEMP/ios-ipa-verify"
+
+          rm -rf "$TMPD"
+
+          mkdir -p "$TMPD"
+
+          unzip \
+            -q \
+            "$IPA" \
+            -d "$TMPD"
+
+          echo ""
+          echo "========================================"
+          echo "Verify code signature"
+          echo "========================================"
+
+          codesign \
+            --verify \
+            --deep \
+            --strict \
+            "$TMPD/Payload/Runner.app"
+
+          echo "IPA SIGNATURE OK"
+
+      # -----------------------------------------------------
+      # iOS SHA256
+      # -----------------------------------------------------
+
+      - name: Generate iOS SHA256 checksums
+        if: ${{ github.event_name == 'push' || inputs.build_ios }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          VERSION="${{ steps.version.outputs.artifact_version }}"
+
+          sha256sum \
+            "PureLive-${VERSION}-ios-arm64-unsigned-app.zip" \
+            > "PureLive-${VERSION}-ios-arm64-unsigned-app.zip.sha256"
+
+          sha256sum \
+            "PureLive-${VERSION}-ios-arm64-trollstore.ipa" \
+            > "PureLive-${VERSION}-ios-arm64-trollstore.ipa.sha256"
+
+          echo "========================================"
+          echo "iOS SHA256"
+          echo "========================================"
+
+          cat \
+            "PureLive-${VERSION}-ios-arm64-unsigned-app.zip.sha256" \
+            "PureLive-${VERSION}-ios-arm64-trollstore.ipa.sha256"
+
+      # -----------------------------------------------------
+      # Upload iOS
+      # -----------------------------------------------------
+
+      - name: Upload iOS artifacts
+        if: ${{ github.event_name == 'push' || inputs.build_ios }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pure-live-ios
+          path: |
+            PureLive-*-ios-arm64-unsigned-app.zip
+            PureLive-*-ios-arm64-unsigned-app.zip.sha256
+            PureLive-*-ios-arm64-trollstore.ipa
+            PureLive-*-ios-arm64-trollstore.ipa.sha256
+          if-no-files-found: error
+          retention-days: 7
 
 
 # =========================================================
@@ -748,9 +1333,15 @@ jobs:
 
     steps:
 
+      # -----------------------------------------------------
+      # Validate release tag
+      # -----------------------------------------------------
+
       - name: Validate release tag
         shell: bash
         run: |
+          set -euo pipefail
+
           TAG="${{ inputs.release_tag }}"
 
           if [[ -z "$TAG" ]]; then
@@ -764,16 +1355,28 @@ jobs:
             exit 1
           fi
 
+      # -----------------------------------------------------
+      # Checkout
+      # -----------------------------------------------------
+
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: master
           fetch-depth: 0
 
+      # -----------------------------------------------------
+      # Download artifacts
+      # -----------------------------------------------------
+
       - name: Download all build artifacts
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v7.0.1
         with:
           path: artifacts
+
+      # -----------------------------------------------------
+      # Show artifacts
+      # -----------------------------------------------------
 
       - name: Show release artifacts
         shell: bash
@@ -784,11 +1387,56 @@ jobs:
 
           find artifacts \
             -type f \
-            -print \
-            | sort
+            -print |
+            sort
 
       # -----------------------------------------------------
-      # assets/version.json
+      # Verify SHA256 files
+      # -----------------------------------------------------
+
+      - name: Verify SHA256 checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "========================================"
+          echo "Verifying SHA256 checksums"
+          echo "========================================"
+
+          found=0
+
+          while IFS= read -r checksum_file; do
+            found=1
+
+            echo ""
+            echo "Checking:"
+            echo "$checksum_file"
+
+            cd "$(dirname "$checksum_file")"
+
+            sha256sum \
+              --check \
+              "$(basename "$checksum_file")"
+
+            cd "$GITHUB_WORKSPACE"
+
+          done < <(
+            find artifacts \
+              -type f \
+              -name '*.sha256' \
+              -print
+          )
+
+          if [[ "$found" -eq 0 ]]; then
+            echo "No SHA256 files found."
+            exit 1
+          fi
+
+          echo ""
+          echo "All SHA256 checksums verified."
+
+      # -----------------------------------------------------
+      # Read version description
       # -----------------------------------------------------
 
       - name: Read version description
@@ -797,10 +1445,16 @@ jobs:
         with:
           path: assets/version.json
 
+      # -----------------------------------------------------
+      # Build Release Body
+      # -----------------------------------------------------
+
       - name: Build Release Body
         id: release_body
         shell: bash
         run: |
+          set -euo pipefail
+
           cat << 'EOF' > release_body.txt
 
           # 纯粹直播 ${{ inputs.release_tag }}
@@ -808,17 +1462,21 @@ jobs:
           |版本|下载地址|
           |---|---|
           |TV版|[pure_live_TV](https://github.com/liuchuancong/pure_live_TV/releases/latest)|
-          |Windows/macOS/Android版|[pure_live](https://github.com/liuchuancong/pure_live/releases/latest)|
+          |Windows/macOS/Android/iOS版|[pure_live](https://github.com/liuchuancong/pure_live/releases/latest)|
 
           ### 🖥️ Windows 版
 
           - **EXE 安装包**：适合所有用户
           - **MSIX 包**：现代应用格式，支持干净卸载
           - 适配：Windows 10/11 x64
+          - 提供 SHA256 校验文件
 
           ### 🍎 macOS 版
 
           - macOS 桌面版
+          - Universal：Apple Silicon + Intel
+          - ZIP / DMG
+          - 提供 SHA256 校验文件
 
           ### 📱 Android 版
 
@@ -826,14 +1484,20 @@ jobs:
           - ARM64-v8a
           - armeabi-v7a
           - x86_64
+          - 提供 SHA256 校验文件
 
           ### 🐧 Linux 版
 
           - Linux x64
+          - Portable tar.gz
+          - 提供 SHA256 校验文件
 
           ### 🍎 iOS 版
 
           - unsigned iOS device application
+          - TrollStore / ad-hoc IPA
+          - ARM64
+          - 提供 SHA256 校验文件
 
           ### 📝 本次更新
 
@@ -864,7 +1528,6 @@ jobs:
 
           files: |
             artifacts/**/*
-
 
 
 # =========================================================
@@ -898,9 +1561,7 @@ jobs:
           python-version: "3.10"
 
       # -----------------------------------------------------
-      # 直接读取 GitHub Release
-      #
-      # 不执行 update_releases.py
+      # Update releases.json
       # -----------------------------------------------------
 
       - name: Update assets/releases.json
@@ -909,6 +1570,8 @@ jobs:
           RELEASE_TAG: ${{ inputs.release_tag }}
         shell: bash
         run: |
+          set -euo pipefail
+
           python <<'PY'
           import json
           import os
@@ -948,25 +1611,27 @@ jobs:
           else:
               data = {}
 
-          if isinstance(data, dict) and isinstance(
-              data.get("releases"),
-              list
+          if (
+              isinstance(data, dict)
+              and isinstance(data.get("releases"), list)
           ):
               releases = data["releases"]
 
           elif isinstance(data, list):
               releases = data
+
               data = {
                   "releases": releases
               }
 
           else:
               releases = []
+
               data = {
                   "releases": releases
               }
 
-          # Remove old entry with the same tag.
+          # Remove old entry with same tag.
           releases[:] = [
               item
               for item in releases
@@ -976,7 +1641,7 @@ jobs:
               )
           ]
 
-          # Add the newest release to the beginning.
+          # Insert newest release at the beginning.
           releases.insert(0, release)
 
           path.write_text(
@@ -992,14 +1657,21 @@ jobs:
           PY
 
       # -----------------------------------------------------
-      # Commit + Push
+      # Commit
       # -----------------------------------------------------
 
       - name: Commit and Push releases.json
         shell: bash
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          set -euo pipefail
+
+          git config \
+            user.name \
+            "github-actions[bot]"
+
+          git config \
+            user.email \
+            "github-actions[bot]@users.noreply.github.com"
 
           if [[ -z "$(git status --porcelain)" ]]; then
             echo "assets/releases.json has no changes."
@@ -1011,6 +1683,9 @@ jobs:
           git commit \
             -m "chore: update releases.json for ${{ inputs.release_tag }} [skip ci]"
 
-          git pull --rebase origin master
+          git pull \
+            --rebase \
+            origin master
 
-          git push origin master
+          git push \
+            origin master
