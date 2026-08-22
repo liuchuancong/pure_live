@@ -320,6 +320,7 @@ class PlayerManager {
         });
       }
       isInitialized.value = true;
+      videoPresentationRevision.value++;
       _stateSubject.add(PlayerState.initialized);
       _scheduleAudioServiceSync(_currentPlayer!, audioOnly, sessionId: _sessionId);
     } catch (e, s) {
@@ -1282,76 +1283,80 @@ class PlayerManager {
   }) {
     // Read by the room's outer Obx. Audio/video presentation changes rebuild
     // this surface without changing [videoKey] and remounting the native view.
-    videoPresentationRevision.value;
-    final showAudioOnly = audioOnlyOverride ?? _runtimeAudioOnly;
-    final player = _currentPlayer;
-    if (_disposed || _isClosing || player == null) {
-      return _buildPlaceholder();
-    }
-    return RepaintBoundary(
-      key: trackPipSource ? _pipSourceKey : null,
-      child: PureLivePipWidget(
-        child: Container(
-          color: Colors.black,
-          padding: const EdgeInsets.all(0),
-          child: StreamBuilder<bool>(
-            stream: onPlaying,
-            initialData: isPlayingNow,
-            builder: (context, snapshot) {
-              final safeFitIndex = fitList.isEmpty ? 0 : fitIndex.clamp(0, fitList.length - 1);
-              final boxFit = fitList.isEmpty ? BoxFit.contain : fitList[safeFitIndex];
-              final content = KeyedSubtree(
-                key: videoKey.value,
-                child: Container(
-                  color: Colors.black,
-                  width: double.infinity,
-                  height: double.infinity,
-                  child: Stack(
-                    children: [
-                      // Keep the same Video/Texture element and Android Surface
-                      // registered while the audio card is visible. Removing
-                      // it forced a new WID/Surface attach (and a refresh seek)
-                      // on every video restore, adding a visible 1-2 second
-                      // delay. Offstage skips painting the texture without
-                      // disposing its state, unlike conditional construction;
-                      // it also avoids the platform-view opacity behaviour that
-                      // previously let an opaque black Surface cover this card.
-                      Positioned.fill(
-                        child: Offstage(
-                          offstage: showAudioOnly,
-                          child: Container(
-                            color: Colors.black,
-                            child: FittedBox(
-                              fit: boxFit,
-                              clipBehavior: Clip.hardEdge,
-                              child: StreamBuilder<List<int?>>(
-                                stream: CombineLatestStream.list([width, height]),
-                                builder: (context, snapshot) {
-                                  final vW = snapshot.data?[0]?.toDouble() ?? 1920.0;
-                                  final vH = snapshot.data?[1]?.toDouble() ?? 1080.0;
-                                  return SizedBox(width: vW, height: vH, child: player.getVideoWidget());
-                                },
+
+    return Obx(() {
+      final initialized = isInitialized.value;
+      final showAudioOnly = audioOnlyOverride ?? _runtimeAudioOnly;
+      final player = _currentPlayer;
+
+      if (!initialized || _disposed || _isClosing || player == null) {
+        return _buildPlaceholder();
+      }
+      return RepaintBoundary(
+        key: trackPipSource ? _pipSourceKey : null,
+        child: PureLivePipWidget(
+          child: Container(
+            color: Colors.black,
+            padding: const EdgeInsets.all(0),
+            child: StreamBuilder<bool>(
+              stream: onPlaying,
+              initialData: isPlayingNow,
+              builder: (context, snapshot) {
+                final safeFitIndex = fitList.isEmpty ? 0 : fitIndex.clamp(0, fitList.length - 1);
+                final boxFit = fitList.isEmpty ? BoxFit.contain : fitList[safeFitIndex];
+                final content = KeyedSubtree(
+                  key: videoKey.value,
+                  child: Container(
+                    color: Colors.black,
+                    width: double.infinity,
+                    height: double.infinity,
+                    child: Stack(
+                      children: [
+                        // Keep the same Video/Texture element and Android Surface
+                        // registered while the audio card is visible. Removing
+                        // it forced a new WID/Surface attach (and a refresh seek)
+                        // on every video restore, adding a visible 1-2 second
+                        // delay. Offstage skips painting the texture without
+                        // disposing its state, unlike conditional construction;
+                        // it also avoids the platform-view opacity behaviour that
+                        // previously let an opaque black Surface cover this card.
+                        Positioned.fill(
+                          child: Offstage(
+                            offstage: showAudioOnly,
+                            child: Container(
+                              color: Colors.black,
+                              child: FittedBox(
+                                fit: boxFit,
+                                clipBehavior: Clip.hardEdge,
+                                child: StreamBuilder<List<int?>>(
+                                  stream: CombineLatestStream.list([width, height]),
+                                  builder: (context, snapshot) {
+                                    final vW = snapshot.data?[0]?.toDouble() ?? 1920.0;
+                                    final vH = snapshot.data?[1]?.toDouble() ?? 1080.0;
+                                    return SizedBox(width: vW, height: vH, child: player.getVideoWidget());
+                                  },
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      if (showAudioOnly) Positioned.fill(child: buildAudioOnlyUI(context, currentFloatRoom)),
-                      if (controls != null) Positioned.fill(child: controls),
-                    ],
+                        if (showAudioOnly) Positioned.fill(child: buildAudioOnlyUI(context, currentFloatRoom)),
+                        if (controls != null) Positioned.fill(child: controls),
+                      ],
+                    ),
                   ),
-                ),
-              );
-              // The same player surface is used in and out of PiP. Wrapping
-              // identical children in PiPSwitcher rebuilt an AnimatedSwitcher
-              // exactly when Android started its resize animation, adding a
-              // needless transition on the hottest frame.
-              return content;
-            },
+                );
+                // The same player surface is used in and out of PiP. Wrapping
+                // identical children in PiPSwitcher rebuilt an AnimatedSwitcher
+                // exactly when Android started its resize animation, adding a
+                // needless transition on the hottest frame.
+                return content;
+              },
+            ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildPlaceholder() {
