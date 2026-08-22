@@ -145,14 +145,14 @@ packages:
       url: "https://mirrors.cloud.tencent.com/dart-pub/"
     source: hosted
     version: "0.2.4"
-  back_button_interceptor:
+  back_button_interceptor_plus:
     dependency: "direct main"
     description:
-      name: back_button_interceptor
-      sha256: b85977faabf4aeb95164b3b8bf81784bed4c54ea1aef90a036ab6927ecf80c5a
+      name: back_button_interceptor_plus
+      sha256: ebd262dec5aba8e8655d38993aa506d174dfa5654f348eb35402d3783c26fb8b
       url: "https://mirrors.cloud.tencent.com/dart-pub/"
     source: hosted
-    version: "8.0.4"
+    version: "8.1.1"
   battery_plus:
     dependency: "direct main"
     description:

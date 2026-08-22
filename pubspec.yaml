@@ -191,7 +191,7 @@ dependencies:
     path: plugins/built_in_kotlin/floating
   flutter_floating: ^2.0.1 # 悬浮窗
   qr_flutter: ^4.1.0 # 二维码生成
-  back_button_interceptor: ^8.0.4 # 返回键拦截
+  back_button_interceptor_plus: ^8.1.1
   easy_localization: ^3.0.8 #多语言
   app_links: ^7.2.1
   scroll_animator: 0.3.0
