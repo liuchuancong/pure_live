@@ -71,20 +71,18 @@ class _RoomCardState extends State<RoomCard> {
     // old pixels and forced independent network/decode progress callbacks for
     // the full grid. That was the main source of mixed placeholders, flashes
     // and CPU spikes during refresh and tab switching.
-    return Obx(() {
-      return CachedNetworkImage(
-        imageUrl: coverUrl,
-        httpHeaders: networkImageHeaders(coverUrl),
-        cacheManager: CustomImageCacheManager.instance,
-        fit: BoxFit.cover,
-        filterQuality: FilterQuality.low,
-        fadeInDuration: Duration.zero,
-        fadeOutDuration: Duration.zero,
-        useOldImageOnUrlChange: true,
-        placeholder: (context, _) => _coverPlaceholder(context, isDark),
-        errorWidget: (context, _, _) => _coverFallback(context, isDark),
-      );
-    });
+    return CachedNetworkImage(
+      imageUrl: coverUrl,
+      httpHeaders: networkImageHeaders(coverUrl),
+      cacheManager: CustomImageCacheManager.instance,
+      fit: BoxFit.cover,
+      filterQuality: FilterQuality.low,
+      fadeInDuration: Duration.zero,
+      fadeOutDuration: Duration.zero,
+      useOldImageOnUrlChange: true,
+      placeholder: (context, _) => _coverPlaceholder(context, isDark),
+      errorWidget: (context, _, _) => _coverFallback(context, isDark),
+    );
   }
 
   Widget _coverPlaceholder(BuildContext context, bool isDark) {
@@ -692,9 +690,14 @@ class _RoomCardState extends State<RoomCard> {
     // second composited layer per card and keep the cover clip lightweight.
     return Card(
       margin: EdgeInsets.zero,
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      color: isDark ? Colors.grey[900] : Colors.white,
+      elevation: 2,
+      shadowColor: Colors.black.withValues(alpha: 0.10),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: Colors.black.withValues(alpha: 0.04)),
+      ),
+      color: isDark ? Colors.grey[900] : const Color(0xFFFAFAFA),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
         onTap: () => onTap(context),
