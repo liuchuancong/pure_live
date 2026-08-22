@@ -69,17 +69,21 @@ try {
 
     # This file vendors JavaScript in raw Dart strings and stays outside format.
     $formatExclusions = @('lib/core/scripts/douyin_sign.dart')
+    # Wrap the complete pipeline in an array expression. With no changed Dart
+    # files PowerShell otherwise assigns $null, which has no Count in strict mode.
     [string[]] $dartFiles = @(
-        git diff --name-only --diff-filter=ACMR HEAD -- '*.dart'
-        git ls-files --others --exclude-standard -- '*.dart'
-    ) | Where-Object {
-        $_ -and
-        $_ -notin $formatExclusions -and
-        -not $_.StartsWith('plugins/built_in_kotlin/', [StringComparison]::OrdinalIgnoreCase) -and
-        -not $_.StartsWith('plugins/flv_lzc/', [StringComparison]::OrdinalIgnoreCase) -and
-        -not $_.StartsWith('third_party/media_kit_video/', [StringComparison]::OrdinalIgnoreCase) -and
-        (Test-Path -LiteralPath $_)
-    } | Sort-Object -Unique
+        @(
+            git diff --name-only --diff-filter=ACMR HEAD -- '*.dart'
+            git ls-files --others --exclude-standard -- '*.dart'
+        ) | Where-Object {
+            $_ -and
+            $_ -notin $formatExclusions -and
+            -not $_.StartsWith('plugins/built_in_kotlin/', [StringComparison]::OrdinalIgnoreCase) -and
+            -not $_.StartsWith('plugins/flv_lzc/', [StringComparison]::OrdinalIgnoreCase) -and
+            -not $_.StartsWith('third_party/media_kit_video/', [StringComparison]::OrdinalIgnoreCase) -and
+            (Test-Path -LiteralPath $_)
+        } | Sort-Object -Unique
+    )
     if ($dartFiles.Count -gt 0) {
         & $flutterw dart format --output=none --set-exit-if-changed @dartFiles
         Assert-PureLiveCommandSucceeded 'Changed Dart file format check'
