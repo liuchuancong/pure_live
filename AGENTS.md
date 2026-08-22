@@ -14,24 +14,28 @@
 
 ## Toolchain and commands
 
+Read and follow [`BUILD_POLICY.md`](BUILD_POLICY.md) before starting any Flutter, Dart, Gradle, Java, test, build, package, or release command. It is the repository default for platform scope, serial staging, worker limits, caching, resource arbitration, and build records.
+
 Use Flutter `3.47.0` from `.fvmrc`. On Windows, call the repository wrapper so the same SDK is selected consistently:
 
 ```powershell
 .\tool\flutterw.ps1 pub get --enforce-lockfile
-.\tool\flutterw.ps1 analyze --no-fatal-infos --no-fatal-warnings
-.\tool\flutterw.ps1 test
+.\tool\flutterw.ps1 analyze --no-pub --no-fatal-infos --no-fatal-warnings # once, after edits settle
+.\tool\flutterw.ps1 test --no-pub --concurrency=12 test/example_test.dart
 python .\tool\interface_probe.py
 ```
 
-Preferred complete gate:
+Focused development gate (pass only affected tests and run Analyze once after the edit is complete):
 
 ```powershell
-PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
+PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1 -Scope Focused -TestPath test/example_test.dart -Analyze
 ```
+
+Use `-Scope Full` only for a formal delivery or an explicitly requested complete regression. Flutter tests start at `--concurrency=12`.
 
 Do not run `dart format .` across the whole repository. `lib/core/scripts/douyin_sign.dart` vendors raw JavaScript and is intentionally excluded by `tool/local_ci.ps1`. Format changed Dart files through the local gate.
 
-Package locally with `tool/build_local_release.ps1`; see `docs/BUILD_AND_RELEASE.md`. GitHub workflows are manual fallback jobs, not the primary release path.
+Package locally with `tool/build_local_release.ps1`; both `-Target` and `-Configuration` are required, and one invocation builds exactly one platform/variant. Build Android, Windows, and other platforms as separate serial stages. GitHub workflows are manual fallback jobs, not the primary release path; see `docs/BUILD_AND_RELEASE.md`.
 
 ## Style and tests
 

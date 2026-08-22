@@ -5,7 +5,7 @@
 ## 开始之前
 
 1. Fork 仓库并从最新 `master` 创建短期分支。
-2. 使用 `.fvmrc` 指定的 Flutter `3.44.9`，保留 `pubspec.lock`。
+2. 使用 `.fvmrc` 指定的 Flutter `3.47.0`，保留 `pubspec.lock`。
 3. 不提交账号、Cookie、签名文件、应用密码、私有直播源和包含个人数据的备份。
 4. 依赖或工具链升级需说明兼容性理由，并同步更新审计文档。
 
@@ -19,18 +19,20 @@ docs/build-guide
 
 ## 开发与验证
 
-Windows 11 推荐运行完整门禁：
+日常修改先运行受影响测试，并在修改完成后执行一次 Analyze：
 
 ```powershell
-PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1
+PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1 `
+  -Scope Focused -TestPath test/example_test.dart -Analyze
 ```
 
-门禁包括锁定依赖解析、改动文件格式检查、静态分析、完整测试和公开接口探测。只修改文档时仍应检查链接、路径和 Markdown 显示；修改 Flutter 代码时应至少通过 `analyze` 和 `test`。
+正式交付改用 `-Scope Full`，门禁包括锁定依赖解析、改动文件格式检查、一次静态分析、完整测试和公开接口探测。只修改文档时检查链接、路径和 Markdown 显示。完整资源与串行构建规则见 [BUILD_POLICY.md](BUILD_POLICY.md)。
 
-涉及安装包时继续运行：
+涉及安装包时显式选择一个平台和一个变体；不同平台另起串行阶段。例如：
 
 ```powershell
-PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1
+PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
+  -Target WindowsX64 -Configuration Debug -SkipQuality
 ```
 
 Android UI、播放器、画中画或弹幕改动默认采用无设备流程：先定位状态机与事件顺序，补充可重复的单元/Widget 回归测试，再执行静态分析、本地测试和目标产物构建。连接手机、启动 ADB、安装 APK 或自动操作设备仅在当前任务明确提出设备验收时执行；以前连接过设备不代表后续任务持续开放设备操作。

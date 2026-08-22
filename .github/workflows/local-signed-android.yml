@@ -2,9 +2,6 @@ name: local-signed-android
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - "signed-build-*"
 
 permissions:
   contents: read
@@ -16,7 +13,6 @@ concurrency:
 jobs:
   android:
     name: Signed Android arm64-v8a on local runner
-    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: [self-hosted, Windows, X64]
     timeout-minutes: 90
     steps:
@@ -86,7 +82,8 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
-            -SkipQuality -SkipWindows -RequireReleaseSigning
+            -Target AndroidArm64 -Configuration Release -FullRegression `
+            -RequireReleaseSigning -DedicatedBuild
 
       - name: Stage only the current Android release
         shell: pwsh
@@ -130,78 +127,3 @@ jobs:
           Remove-Item -LiteralPath android/key.properties -Force -ErrorAction SilentlyContinue
           Remove-Item -LiteralPath (Join-Path $env:RUNNER_TEMP 'pure-live-release.jks') `
             -Force -ErrorAction SilentlyContinue
-
-  hosted-android:
-    name: Signed Android arm64-v8a hosted fallback
-    if: ${{ github.event_name == 'push' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 55
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
-        with:
-          distribution: zulu
-          java-version: "25"
-          cache: gradle
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
-        with:
-          flutter-version: 3.47.0
-          cache: true
-      - name: Configure temporary release signing
-        shell: bash
-        env:
-          KEYSTORE_BASE64: ${{ secrets.PURELIVE_KEYSTORE_BASE64 }}
-          STORE_PASSWORD: ${{ secrets.PURELIVE_STORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.PURELIVE_KEY_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.PURELIVE_KEY_ALIAS }}
-        run: |
-          set -euo pipefail
-          test -n "$KEYSTORE_BASE64"
-          test -n "$STORE_PASSWORD"
-          test -n "$KEY_PASSWORD"
-          test -n "$KEY_ALIAS"
-          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/pure-live-release.jks"
-          cat > android/key.properties <<EOF
-          storeFile=$RUNNER_TEMP/pure-live-release.jks
-          storePassword=$STORE_PASSWORD
-          keyPassword=$KEY_PASSWORD
-          keyAlias=$KEY_ALIAS
-          EOF
-      - name: Resolve locked packages
-        run: flutter pub get --enforce-lockfile
-      - name: Build signed arm64-v8a release
-        run: flutter build apk --release --split-per-abi --target-platform android-arm64 --dart-define=PURELIVE_BUILD_SOURCE=github-hosted-fallback
-      - name: Prepare verification metadata
-        shell: bash
-        run: |
-          set -euo pipefail
-          full_version="$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1)"
-          artifact_version="${full_version/+/-}"
-          output="local-artifacts/$artifact_version"
-          mkdir -p "$output"
-          apk="PureLive-$artifact_version-arm64-v8a-release.apk"
-          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk "$output/$apk"
-          cat > "$output/BUILD_METADATA.json" <<EOF
-          {
-            "version": "$full_version",
-            "built_at_utc": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "source_commit": "$GITHUB_SHA",
-            "tracked_files_dirty": false,
-            "android_package": "com.mystyle.purelive",
-            "android_signing": "release",
-            "windows_signing": "not-built",
-            "build_source": "github-hosted-fallback"
-          }
-          EOF
-          (cd "$output" && sha256sum BUILD_METADATA.json "$apk" | sed 's/  / */' > SHA256SUMS.txt)
-      - name: Upload signed APK and verification metadata
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: pure-live-android
-          path: local-artifacts/*
-          if-no-files-found: error
-          retention-days: 3
-      - name: Remove temporary signing material
-        if: always()
-        shell: bash
-        run: rm -f android/key.properties "$RUNNER_TEMP/pure-live-release.jks"

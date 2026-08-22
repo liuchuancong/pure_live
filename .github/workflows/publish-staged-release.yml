@@ -94,7 +94,7 @@ jobs:
             exit 0
           }
           PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
-            -SkipQuality -SkipAndroid
+            -Target WindowsX64 -Configuration Release -SkipQuality -DedicatedBuild
 
       - name: Verify Windows packages
         id: verify

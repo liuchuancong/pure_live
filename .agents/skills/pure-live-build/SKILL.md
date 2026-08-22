@@ -1,0 +1,20 @@
+---
+name: pure-live-build
+description: Plan or execute Pure Live Flutter validation, Android/Windows builds, packaging, or releases with the repository's resource limits, serial platform staging, caches, and build records.
+---
+
+# Pure Live Build
+
+Before selecting or running a validation/build command, read [`../../../BUILD_POLICY.md`](../../../BUILD_POLICY.md). Treat it as the authoritative default for this repository.
+
+## Workflow
+
+1. Extract only the platform, architecture, configuration, validation scope, packaging, and publication actions explicitly requested in the current task.
+2. Keep one platform/variant per build invocation. Queue Android, Windows, Linux, macOS, and iOS stages serially.
+3. During development, use focused tests and target-platform Debug. Run Analyze once after edits settle.
+4. Use full regression and target-platform Release only for formal delivery.
+5. Enter the repository heavy-task guard before Gradle, Java, Dart, Flutter, or broad-search work. Default to 16 Gradle workers; use 20 only for an explicitly dedicated build. Start Flutter tests at concurrency 12.
+6. Preserve incremental outputs and caches. Do not add a clean step unless evidence identifies damaged or incompatible generated state.
+7. Report the generated build record and artifacts, then stop. Do not append another platform, full regression, package, upload, or release stage unless it was included in the current request.
+
+Use `tool/local_ci.ps1` for focused/full validation and `tool/build_local_release.ps1` for the single explicitly selected local target.
