@@ -55,6 +55,7 @@ $requiredGradle = [ordered]@{
     'org.gradle.parallel' = 'true'
     'org.gradle.caching' = 'true'
     'org.gradle.configuration-cache' = 'true'
+    'org.gradle.configuration-cache.problems' = 'fail'
     'org.gradle.vfs.watch' = 'true'
     'org.gradle.workers.max' = '16'
     'kotlin.incremental' = 'true'
@@ -71,6 +72,16 @@ if ($properties['org.gradle.jvmargs'] -notmatch '-Xmx6g' -or
 }
 if ($properties['kotlin.daemon.jvmargs'] -notmatch '-Xmx4g') {
     throw 'Kotlin daemon policy must use a 4 GiB heap.'
+}
+
+$androidAppBuild = Get-Content -LiteralPath (Join-Path $repoRoot 'android\app\build.gradle.kts') -Raw
+foreach ($marker in @(
+    'tasks.matching { it.name.startsWith("assemble") }',
+    'notCompatibleWithConfigurationCache('
+)) {
+    if (-not $androidAppBuild.Contains($marker)) {
+        throw "Android Flutter configuration-cache compatibility marker is missing: $marker"
+    }
 }
 
 $buildScript = Get-Content -LiteralPath (Join-Path $repoRoot 'tool\build_local_release.ps1') -Raw

@@ -93,4 +93,16 @@ kotlin {
 
 flutter {
     source = "../.."
-}    
+}
+
+// Flutter's aggregate assemble task currently captures live AGP Built-in
+// Kotlin variant state. Gradle cannot safely serialize that task action and,
+// while storing it, also attempts to resolve inactive variant classpaths.
+// Keep Configuration Cache enabled for compatible Android tasks, but make the
+// affected Flutter entry explicit so Gradle discards it instead of failing or
+// reusing an incomplete cache entry.
+tasks.matching { it.name.startsWith("assemble") }.configureEach {
+    notCompatibleWithConfigurationCache(
+        "Flutter aggregate assemble tasks capture AGP Built-in Kotlin state",
+    )
+}
