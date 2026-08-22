@@ -16,6 +16,26 @@ on:
         required: true
         type: string
         default: v2.5.0
+      target_sha:
+        description: Exact source commit shared by every platform artifact
+        required: true
+        type: string
+      windows_source:
+        description: Build Windows on the local runner or reuse packages pre-uploaded to the draft release
+        required: true
+        type: choice
+        options:
+          - self-hosted
+          - preuploaded-release
+        default: self-hosted
+      preuploaded_windows_signing:
+        description: Signing state of Windows packages reused from the draft release
+        required: true
+        type: choice
+        options:
+          - unsigned
+          - authenticode
+        default: unsigned
 
 permissions:
   actions: read
@@ -28,6 +48,7 @@ concurrency:
 jobs:
   windows:
     name: Build Windows x64 on local runner
+    if: ${{ inputs.windows_source == 'self-hosted' }}
     runs-on: [self-hosted, Windows, X64, pure-live-local]
     timeout-minutes: 75
     steps:
@@ -42,6 +63,8 @@ jobs:
           }
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.target_sha }}
 
       - name: Restore packages when only the publisher workflow changed
         shell: pwsh
@@ -55,8 +78,7 @@ jobs:
           if ($metadata.tracked_files_dirty -or -not $metadata.source_commit) { exit 0 }
           git cat-file -e "$($metadata.source_commit)^{commit}"
           if ($LASTEXITCODE -ne 0) { exit 0 }
-          $changed = @(git diff --name-only $metadata.source_commit $env:GITHUB_SHA -- . `
-            ':(exclude).github/workflows/publish-staged-release.yml')
+          $changed = @(git diff --name-only $metadata.source_commit '${{ inputs.target_sha }}' -- .)
           if ($LASTEXITCODE -ne 0 -or $changed.Count -ne 0) { exit 0 }
           $destination = Join-Path $env:GITHUB_WORKSPACE 'local-artifacts'
           New-Item -ItemType Directory -Path $destination -Force | Out-Null
@@ -118,6 +140,7 @@ jobs:
   publish:
     name: Verify and publish all platforms
     needs: windows
+    if: ${{ always() && (needs.windows.result == 'success' || needs.windows.result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
@@ -125,10 +148,13 @@ jobs:
       RELEASE_TAG: ${{ inputs.release_tag }}
       STAGE_RUN_ID: ${{ inputs.stage_run_id }}
       ANDROID_RUN_ID: ${{ inputs.android_run_id }}
+      TARGET_SHA: ${{ inputs.target_sha }}
+      PREUPLOADED_WINDOWS_SIGNING: ${{ inputs.preuploaded_windows_signing }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          ref: ${{ inputs.target_sha }}
 
       - name: Validate source runs
         id: sources
@@ -141,14 +167,33 @@ jobs:
           test "$(jq -r .conclusion <<<"$stage_json")" = success
           test "$(jq -r .status <<<"$android_json")" = completed
           test "$(jq -r .conclusion <<<"$android_json")" = success
+          test "$(jq -r .head_sha <<<"$stage_json")" = "$TARGET_SHA"
+          test "$(jq -r .head_sha <<<"$android_json")" = "$TARGET_SHA"
           echo "stage_sha=$(jq -r .head_sha <<<"$stage_json")" >> "$GITHUB_OUTPUT"
           echo "android_sha=$(jq -r .head_sha <<<"$android_json")" >> "$GITHUB_OUTPUT"
 
       - name: Download local Windows packages
+        if: ${{ inputs.windows_source == 'self-hosted' }}
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v7.0.1
         with:
           name: pure-live-windows-release
           path: downloads/windows
+
+      - name: Download pre-uploaded local Windows packages
+        if: ${{ inputs.windows_source == 'preuploaded-release' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p downloads/windows
+          gh release download "$RELEASE_TAG" \
+            --pattern 'PureLive-*-windows-x64-portable.zip' \
+            --pattern 'PureLive-*-windows-x64-setup.exe' \
+            --dir downloads/windows \
+            --repo "$GITHUB_REPOSITORY"
+          printf '%s\n' "$PREUPLOADED_WINDOWS_SIGNING" \
+            > downloads/windows/WINDOWS_SIGNING.txt
+          printf '%s\n' "$TARGET_SHA" \
+            > downloads/windows/WINDOWS_SOURCE_COMMIT.txt
 
       - name: Download signed Android package
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v7.0.1
@@ -261,7 +306,7 @@ jobs:
           metadata = {
               "version": full_version,
               "built_at_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-              "release_commit": os.environ["GITHUB_SHA"],
+              "release_commit": os.environ["TARGET_SHA"],
               "tracked_files_dirty": False,
               "android_package": "com.mystyle.purelive",
               "android_signing": "release",
@@ -335,10 +380,11 @@ jobs:
             gh release edit "$RELEASE_TAG" \
               --title "Pure Live $RELEASE_TAG" \
               --notes-file current-release-notes.md \
-              --latest --repo "$GITHUB_REPOSITORY"
+              --draft=false --prerelease=false --latest \
+              --repo "$GITHUB_REPOSITORY"
           else
             gh release create "$RELEASE_TAG" release-assets/* \
-              --target "$GITHUB_SHA" \
+              --target "$TARGET_SHA" \
               --title "Pure Live $RELEASE_TAG" \
               --notes-file current-release-notes.md \
               --latest --repo "$GITHUB_REPOSITORY"
