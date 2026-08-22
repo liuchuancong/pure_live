@@ -34,7 +34,6 @@ import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/utils/pip_window_widget.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
-import 'package:pure_live/player/adapters/video_player_adapter.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
@@ -762,12 +761,6 @@ class PlayerManager {
 
   void changeVideoFit(int index) {
     videoFitIndex.value = index;
-    if (_currentPlayer is BetterPlayerAdapter) {
-      var player = _currentPlayer as BetterPlayerAdapter;
-      var fitList = SettingsService.to.player.videoFitArray;
-      player.betterPlayerController.setOverriddenFit(fitList[index]);
-      player.betterPlayerController.retryDataSource();
-    }
   }
 
   Future<void> enablePip() async {
@@ -1355,10 +1348,6 @@ class PlayerManager {
   }
 
   Widget _buildVideoWidget(UnifiedPlayer player, boxFit) {
-    if (player.engine == PlayerEngine.exo) {
-      return player.getVideoWidget();
-    }
-
     return FittedBox(
       fit: boxFit,
       clipBehavior: Clip.hardEdge,
