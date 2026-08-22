@@ -13,6 +13,9 @@ Before selecting or running a validation/build command, read [`../../../BUILD_PO
 2. Keep one platform/variant per build invocation. Queue Android, Windows, Linux, macOS, and iOS stages serially.
 3. During development, use focused tests and target-platform Debug. Run Analyze once after edits settle.
 4. Use full regression and target-platform Release only for formal delivery.
+   A failed packaging stage may use `-SkipQuality` only when the same app source
+   already passed full regression and the retry changes build/Gradle/release
+   plumbing only; cite that prior run in the delivery report.
 5. Enter the repository heavy-task guard before Gradle, Java, Dart, Flutter, or broad-search work. Default to 16 Gradle workers; use 20 only for an explicitly dedicated build. Start Flutter tests at concurrency 12.
 6. Preserve incremental outputs and caches. Do not add a clean step unless evidence identifies damaged or incompatible generated state.
    Keep Configuration Cache in strict failure mode. Mark a confirmed incompatible

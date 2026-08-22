@@ -76,7 +76,8 @@ if ($properties['kotlin.daemon.jvmargs'] -notmatch '-Xmx4g') {
 
 $androidAppBuild = Get-Content -LiteralPath (Join-Path $repoRoot 'android\app\build.gradle.kts') -Raw
 foreach ($marker in @(
-    'tasks.matching { it.name.startsWith("assemble") }',
+    'it.name.contains("flutter", ignoreCase = true)',
+    'it.name.startsWith("assemble")',
     'notCompatibleWithConfigurationCache('
 )) {
     if (-not $androidAppBuild.Contains($marker)) {
@@ -143,6 +144,11 @@ foreach ($marker in @(
 $localAndroidWorkflow = Get-Content -LiteralPath (Join-Path $repoRoot '.github\workflows\local-signed-android.yml') -Raw
 if ($localAndroidWorkflow -match '(?m)^\s+push:\s*$' -or $localAndroidWorkflow -match 'hosted-android') {
     throw 'Local signed Android workflow must stay manual and local-runner only.'
+}
+foreach ($marker in @('run_full_regression:', "'-SkipQuality'", "'-FullRegression'")) {
+    if (-not $localAndroidWorkflow.Contains($marker)) {
+        throw "Local Android retry quality marker is missing: $marker"
+    }
 }
 
 Write-Host 'Build policy static validation passed.'
