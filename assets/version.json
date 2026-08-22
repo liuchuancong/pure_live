@@ -1,13 +1,13 @@
 {
-  "version": "2.5.1",
-  "build_number": 4073,
-  "version_num": 2054173,
+  "version": "2.5.2",
+  "build_number": 4074,
+  "version_num": 2054274,
   "android_abis": [
     "arm64-v8a"
   ],
-  "version_desc": "v2.5.1 关注页平台横滑与收藏完整性修复 build 4073\n- 空平台继续保留横向分页，滑到零结果平台后可立即返回；空状态支持下拉刷新和一键查看未开播。\n- 平台控制器按平台 ID 保持选中项，平台开关或顺序变化时同步视觉页、数据页与滚动位置。\n- 平台与开播状态切换合并为单次筛选事务，收藏快照未变化时跳过重复全量排序，降低横滑卡顿和卡片闪动。\n- 收藏、标签和刷新统一使用“平台 + 房间号”身份，并迁移旧平台 ID 与标签映射，修复跨平台相同房间号导致的关注缺项。\n- Flutter Analyze 0 issue，211 项单元与 Widget 测试全部通过。\n",
+  "version_desc": "v2.5.2 启动刷新、动态高刷与弹幕帧同步更新 build 4074\n- 关注核验从首帧开始并与启动页动画重叠，进入首页仅保留 350 ms 有界等待。\n- 哔哩哔哩、斗鱼、虎牙、快手使用轻量房间元数据刷新，复用平台会话并减少播放与弹幕凭据请求。\n- 通用界面、主画面弹幕和小窗弹幕统一省电、均衡、设备最高三档策略，切换立即生效。\n- 弹幕引擎改用 vsync 对齐的 Ticker；竖屏弹幕列表阻止自动追尾抢占手指快速上滑。\n- Flutter Analyze 0 issue，215 项单元与 Widget 测试全部通过。\n",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.5.1",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.5.2",
   "platforms": {
     "windows": {
       "version": "2.5.0",
