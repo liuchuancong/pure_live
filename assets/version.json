@@ -1,21 +1,23 @@
 {
-  "version": "2.5.0",
-  "build_number": 4072,
-  "version_num": 2054072,
+  "version": "2.3.0",
+  "build_number": 68,
+  "version_num": 2030068,
   "android_abis": [
-    "arm64-v8a"
+    "arm64-v8a",
+    "armeabi-v7a",
+    "x86_64"
   ],
-  "version_desc": "v2.5.0 首页刷新与高刷策略稳定版 build 4072\n- 首页收藏核验改为 4 路有界异步工作池，慢请求不再阻塞同批后续房间；结果完整后一次性发布，减少首屏等待和卡片跳动。\n- Android 新增省电、均衡、高性能三档刷新率；默认省电，均衡仅在交互期间请求设备最高刷新率，高性能在前台持续请求最高刷新率。\n- Windows 视频纹理按可见物理尺寸有界输出，避免高分辨率源在小窗口持续分配超大纹理；分区卡片和滚动行为同步上游修复。\n- 更新 ffmpeg_kit_extended_flutter、flutter_color，复核 dynamic_color 1.9.0 兼容边界，并同步上游至 b84a847d；本地门禁与全平台构建状态以 Release 清单为准。\n",
+  "version_desc": "- 优化部分UI，修复windows部分情况下崩溃问题。\n- 添加醒目头条。\n- 修复底部导航栏都不显示导致的白屏。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.5.0",
+  "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.3.0",
   "platforms": {
     "windows": {
-      "version": "2.5.0",
-      "build_number": 4072,
-      "version_num": 2054072,
-      "version_desc": "v2.5.0 首页刷新与高刷策略稳定版 build 4072\n- 首页收藏核验改为 4 路有界异步工作池，慢请求不再阻塞同批后续房间；结果完整后一次性发布，减少首屏等待和卡片跳动。\n- Android 新增省电、均衡、高性能三档刷新率；默认省电，均衡仅在交互期间请求设备最高刷新率，高性能在前台持续请求最高刷新率。\n- Windows 视频纹理按可见物理尺寸有界输出，避免高分辨率源在小窗口持续分配超大纹理；分区卡片和滚动行为同步上游修复。\n- 更新 ffmpeg_kit_extended_flutter、flutter_color，复核 dynamic_color 1.9.0 兼容边界，并同步上游至 b84a847d；本地门禁与全平台构建状态以 Release 清单为准。\n",
+      "version": "2.3.0",
+      "build_number": 68,
+      "version_num": 2030068,
+      "version_desc": "- 音频/视频切换复用同一播放器与纹理，前台保留视频热状态，后台停用视频轨并在恢复前静默预热。\n- 增加有界深度恢复、最新目标栅栏和恢复态音频卡片，修复连续切换、悬浮窗重进、横竖屏及后台恢复中的白屏/黑屏/永久加载。\n- 统一竖屏与全屏弹幕设置，保留上游字体粗细和相似弹幕过滤；增加精确重复文本合并，并限制每条消息的模糊比较预算。\n- Windows 支持隔离数据目录的多实例启动，改进鼠标滚轮、启动与 Release 构建；安装包剔除原生链接中间文件。\n- 增加网络/房间代次、WebSocket 半开恢复、录制续接、更新源和设置迁移回归测试。\n",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.5.0"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.3.0"
     }
   }
 }
