@@ -88,14 +88,38 @@ jobs:
           PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
             -SkipQuality -SkipWindows -RequireReleaseSigning
 
+      - name: Stage only the current Android release
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $versionLine = Select-String -LiteralPath pubspec.yaml -Pattern '^version:\s*(\S+)' |
+            Select-Object -First 1
+          if (-not $versionLine) {
+            throw 'pubspec.yaml has no version field.'
+          }
+          $fullVersion = $versionLine.Matches[0].Groups[1].Value
+          $artifactVersion = $fullVersion.Replace('+', '-')
+          $source = Join-Path $PWD "local-artifacts\$artifactVersion"
+          $stage = Join-Path $env:RUNNER_TEMP `
+            "pure-live-android-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          foreach ($name in @(
+            "PureLive-$artifactVersion-arm64-v8a-release.apk",
+            'BUILD_METADATA.json',
+            'SHA256SUMS.txt'
+          )) {
+            $path = Join-Path $source $name
+            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+              throw "Current release artifact is missing: $path"
+            }
+            Copy-Item -LiteralPath $path -Destination (Join-Path $stage $name) -Force
+          }
+
       - name: Upload signed APK and verification metadata
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pure-live-android
-          path: |
-            local-artifacts/*/PureLive-*-arm64-v8a-release.apk
-            local-artifacts/*/BUILD_METADATA.json
-            local-artifacts/*/SHA256SUMS.txt
+          path: ${{ runner.temp }}/pure-live-android-${{ github.run_id }}-${{ github.run_attempt }}/*
           if-no-files-found: error
           retention-days: 3
 
