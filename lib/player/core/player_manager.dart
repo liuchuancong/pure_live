@@ -34,6 +34,7 @@ import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/utils/pip_window_widget.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
+import 'package:pure_live/player/adapters/video_player_adapter.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
@@ -763,6 +764,10 @@ class PlayerManager {
     final fitList = SettingsService.to.player.videoFitArray;
     if (fitList.isEmpty || index < 0 || index >= fitList.length) return;
     videoFitIndex.value = index;
+    if (_currentPlayer is BetterPlayerAdapter) {
+      final player = _currentPlayer as BetterPlayerAdapter;
+      player.betterPlayerController.setOverriddenFit(fitList[index]);
+    }
   }
 
   Future<void> enablePip() async {
@@ -1350,28 +1355,36 @@ class PlayerManager {
     });
   }
 
-  Widget _buildVideoWidget(UnifiedPlayer player, boxFit) {
-    return FittedBox(
-      fit: boxFit,
-      clipBehavior: Clip.hardEdge,
-      child: StreamBuilder<List<int?>>(
-        stream: CombineLatestStream.list([width, height]),
-        builder: (context, snapshot) {
-          final data = snapshot.data;
+  Widget _buildVideoWidget(UnifiedPlayer player, BoxFit boxFit) {
+    if (player.engine == PlayerEngine.exo) {
+      return player.getVideoWidget();
+    }
 
-          if (data == null || data.length < 2 || data[0] == null || data[1] == null || data[0]! <= 0 || data[1]! <= 0) {
-            return const SizedBox.shrink();
-          }
-
-          final videoWidth = data[0]!.toDouble();
-          final videoHeight = data[1]!.toDouble();
-
-          const baseHeight = 1080.0;
-          final baseWidth = baseHeight * videoWidth / videoHeight;
-
-          return SizedBox(width: baseWidth, height: baseHeight, child: player.getVideoWidget());
-        },
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final viewport = constraints.biggest;
+        return StreamBuilder<List<int?>>(
+          stream: CombineLatestStream.list([width, height]),
+          builder: (context, snapshot) {
+            final data = snapshot.data;
+            // Mount the native texture immediately. Waiting for its own width
+            // and height stream before mounting creates a first-frame deadlock
+            // after a hard dispose or engine switch.
+            final videoWidth = data != null && data.length >= 2 && (data[0] ?? 0) > 0 ? data[0]!.toDouble() : 1920.0;
+            final videoHeight = data != null && data.length >= 2 && (data[1] ?? 0) > 0 ? data[1]!.toDouble() : 1080.0;
+            if (!viewport.width.isFinite || !viewport.height.isFinite || viewport.width <= 0 || viewport.height <= 0) {
+              return player.getVideoWidget();
+            }
+            final fitted = applyBoxFit(boxFit, Size(videoWidth, videoHeight), viewport).destination;
+            return ClipRect(
+              child: Align(
+                alignment: Alignment.center,
+                child: SizedBox(width: fitted.width, height: fitted.height, child: player.getVideoWidget()),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

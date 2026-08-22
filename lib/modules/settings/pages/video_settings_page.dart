@@ -195,7 +195,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
                   );
 
                   if (result == true) {
-                    SettingsService.to.player.pipWindowPositions.v = '{}';
+                    SettingsService.to.window.clearWindowsPipGeometry();
                   }
                 },
               ),
