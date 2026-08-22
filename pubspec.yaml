@@ -257,6 +257,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0 # 代码规范检查
   dmg: ^0.1.7 # macOS安装包打包
   drift_dev: ^2.33.0
+  enven: ^1.3.0
 
 # 应用图标配置
 flutter_icons:

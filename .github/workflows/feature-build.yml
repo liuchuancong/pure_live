@@ -128,6 +128,9 @@ jobs:
       - name: Resolve locked packages
         run: flutter pub get
 
+      - name: Generate production AppConfig
+        run: dart run enven --env-files .env,.env.prod --class-name AppConfig
+        
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
@@ -192,6 +195,9 @@ jobs:
 
       - name: Resolve locked packages
         run: flutter pub get
+
+      - name: Generate production AppConfig
+        run: dart run enven --env-files .env,.env.prod --class-name AppConfig
 
       - name: Build Android release APKs
         run: |
@@ -329,6 +335,8 @@ jobs:
       - name: Resolve locked packages
         run: flutter pub get
 
+      - name: Generate production AppConfig
+        run: dart run enven --env-files .env,.env.prod --class-name AppConfig
       # -----------------------------------------------------
       # Inno Setup
       # -----------------------------------------------------
@@ -481,6 +489,9 @@ jobs:
       - name: Resolve locked packages
         run: flutter pub get
 
+      - name: Generate production AppConfig
+        run: dart run enven --env-files .env,.env.prod --class-name AppConfig
+
       - name: Prefetch verified Linux native sources
         shell: bash
         run: |
@@ -563,6 +574,9 @@ jobs:
 
       - name: Resolve locked packages
         run: flutter pub get
+
+      - name: Generate production AppConfig
+        run: dart run enven --env-files .env,.env.prod --class-name AppConfig
 
       - name: Get version
         id: version

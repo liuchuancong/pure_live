@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:pure_live/gen/env.g.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/race_http.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -15,13 +16,10 @@ class VersionUtil {
   /// release feed without editing runtime code. This repository defaults to
   /// the wzgrx release channel so its bundled version.json and generated asset
   /// URLs always describe the same published artifacts.
-  static const String updateOwner = String.fromEnvironment('PURELIVE_UPDATE_OWNER', defaultValue: 'wzgrx');
-  static const String updateRepository = String.fromEnvironment(
-    'PURELIVE_UPDATE_REPOSITORY',
-    defaultValue: 'pure_live',
-  );
-  static const String projectUrl = 'https://github.com/$updateOwner/$updateRepository';
-  static const String issuesUrl = '$projectUrl/issues';
+  static final String updateOwner = AppConfig.pureliveUpdateOwner;
+  static final String updateRepository = AppConfig.pureliveUpdateRepository;
+  static final String projectUrl = 'https://github.com/$updateOwner/$updateRepository';
+  static final String issuesUrl = '$projectUrl/issues';
   static const String githubUrl = 'https://github.com/liuchuancong';
 
   static const String email = '17792321552@163.com';
@@ -30,7 +28,7 @@ class VersionUtil {
   static const String telegramGroup = 't.me/pure_live_channel';
   static const String telegramGroupUrl = 'https://t.me/pure_live_channel';
 
-  static const String releaseUrl = 'https://api.github.com/repos/$updateOwner/$updateRepository/releases?per_page=30';
+  static final String releaseUrl = 'https://api.github.com/repos/$updateOwner/$updateRepository/releases?per_page=30';
 
   static final GitHubMirror mirror = GitHubMirror(owner: updateOwner, repo: updateRepository, branch: 'master');
 
