@@ -65,3 +65,4 @@ app.*.map.json
 
 # FVM Version Cache
 .fvm/
+**/.make_config.yaml
