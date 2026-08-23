@@ -35,7 +35,7 @@ class _AreaCardState extends State<AreaCard> {
             fit: BoxFit.cover,
             filterQuality: FilterQuality.low,
             memCacheWidth: cacheWidth,
-            maxWidthDiskCache: 512,
+            // maxWidthDiskCache: 512,
             fadeInDuration: Duration.zero,
             fadeOutDuration: Duration.zero,
             useOldImageOnUrlChange: true,
