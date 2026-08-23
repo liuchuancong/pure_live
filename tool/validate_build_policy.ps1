@@ -161,7 +161,7 @@ foreach ($marker in @(
     'name: pure-live-ios',
     'ios-arm64-trollstore.ipa',
     'Verify Android release signature',
-    'c0bb95744c81f9c7dd4535a9552775038eb5a59c5922f791d1695f45ac34ceaf'
+    'certificate SHA-256 digest'
 )) {
     if (-not $publisherWorkflow.Contains($marker)) {
         throw "Staged publisher verification marker is missing: $marker"

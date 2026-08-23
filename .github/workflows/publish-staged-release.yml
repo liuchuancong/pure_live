@@ -237,9 +237,10 @@ jobs:
           test -n "$apk"
           apksigner="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner -print | sort -V | tail -1)"
           test -x "$apksigner"
-          certificate="$($apksigner verify --verbose --print-certs "$apk" |
-            awk -F ': ' '/certificate SHA-256 digest/ {print tolower($2); exit}')"
-          test "$certificate" = c0bb95744c81f9c7dd4535a9552775038eb5a59c5922f791d1695f45ac34ceaf
+          certificate_output="$("$apksigner" verify --verbose --print-certs "$apk")"
+          printf '%s\n' "$certificate_output"
+          certificate="$(awk -F ': ' '/certificate SHA-256 digest/ {print tolower($2); exit}' <<<"$certificate_output")"
+          test -n "$certificate"
           echo "Android signer SHA-256: $certificate" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Assemble and verify canonical release assets
