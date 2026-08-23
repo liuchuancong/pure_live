@@ -17,6 +17,7 @@ import 'package:pure_live/core/iptv/local/database.dart' as database;
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/pages/danmaku_settings_page.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/widgets/content_first_panel_layout.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/volume_control.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_settings_binding.dart';
@@ -24,6 +25,9 @@ import 'package:pure_live/modules/live_play/widgets/local_interaction/local_danm
 
 @visibleForTesting
 enum TopActionLeadingSlot { back, datetime, battery }
+
+@visibleForTesting
+enum TopActionTrailingSlot { roomHistory, datetime, battery, audioOnly, cast, pip }
 
 /// Resolves the fixed order of the fullscreen leading actions. On Android the
 /// clock and battery sit beside Back; PiP moves to the opposite corner so the
@@ -35,6 +39,24 @@ List<TopActionLeadingSlot> resolveTopActionLeadingSlots({required bool fullscree
     TopActionLeadingSlot.back,
     if (android) TopActionLeadingSlot.datetime,
     if (android) TopActionLeadingSlot.battery,
+  ];
+}
+
+/// Keeps the three Android playback actions identical in portrait and
+/// fullscreen: headphones, casting, then picture-in-picture.
+@visibleForTesting
+List<TopActionTrailingSlot> resolveTopActionTrailingSlots({
+  required bool fullscreen,
+  required bool android,
+  required bool windows,
+}) {
+  return <TopActionTrailingSlot>[
+    if (fullscreen) TopActionTrailingSlot.roomHistory,
+    if (fullscreen && !android) TopActionTrailingSlot.datetime,
+    if (fullscreen && !android) TopActionTrailingSlot.battery,
+    TopActionTrailingSlot.audioOnly,
+    if (android) TopActionTrailingSlot.cast,
+    if (android || windows) TopActionTrailingSlot.pip,
   ];
 }
 
@@ -280,25 +302,39 @@ class TopActionBar extends StatelessWidget {
                     );
                   },
                 ),
-              if (GlobalPlayerState.to.fullscreenUI) ...[
-                IconButton(
-                  key: const ValueKey('fullscreen-room-history'),
-                  icon: const Icon(Icons.swap_horiz_outlined),
-                  tooltip: i18n('switch_live_room'),
-                  color: Colors.white,
-                  onPressed: () {
-                    Get.dialog(PlayOther(controller: Get.find<LivePlayController>()));
-                  },
-                  style: IconButton.styleFrom(backgroundColor: Colors.black26),
-                ),
-                if (PlatformUtils.isAndroid)
-                  PIPButton(key: const ValueKey('fullscreen-pip-shortcut'), controller: controller),
-                if (!PlatformUtils.isAndroid) ...[const DatetimeInfo(), BatteryInfo(controller: controller)],
-              ],
-              AudioOnlyButton(controller: controller),
-              if (PlatformUtils.isAndroid) CastButton(controller: controller),
-              if (!GlobalPlayerState.to.fullscreenUI && PlatformUtils.isAndroid) PIPButton(controller: controller),
-              if (PlatformUtils.isWindows) PIPButton(controller: controller),
+              for (final slot in resolveTopActionTrailingSlots(
+                fullscreen: GlobalPlayerState.to.fullscreenUI,
+                android: PlatformUtils.isAndroid,
+                windows: PlatformUtils.isWindows,
+              ))
+                switch (slot) {
+                  TopActionTrailingSlot.roomHistory => IconButton(
+                    key: const ValueKey('fullscreen-room-history'),
+                    icon: const Icon(Icons.swap_horiz_outlined),
+                    tooltip: i18n('switch_live_room'),
+                    color: Colors.white,
+                    onPressed: () {
+                      Get.dialog(PlayOther(controller: Get.find<LivePlayController>()));
+                    },
+                    style: IconButton.styleFrom(backgroundColor: Colors.black26),
+                  ),
+                  TopActionTrailingSlot.datetime => const DatetimeInfo(),
+                  TopActionTrailingSlot.battery => BatteryInfo(controller: controller),
+                  TopActionTrailingSlot.audioOnly => AudioOnlyButton(
+                    key: const ValueKey('playback-action-audio-only'),
+                    controller: controller,
+                  ),
+                  TopActionTrailingSlot.cast => CastButton(
+                    key: const ValueKey('playback-action-cast'),
+                    controller: controller,
+                  ),
+                  TopActionTrailingSlot.pip => PIPButton(
+                    key: GlobalPlayerState.to.fullscreenUI
+                        ? const ValueKey('fullscreen-pip-shortcut')
+                        : const ValueKey('playback-action-pip'),
+                    controller: controller,
+                  ),
+                },
             ],
           ),
         ),
@@ -1213,6 +1249,7 @@ class FullscreenStreamSelectorButton extends StatelessWidget {
   final VideoController controller;
 
   Future<void> _showSelector(BuildContext context) async {
+    final layout = resolveContentFirstPanelLayout(MediaQuery.sizeOf(context), ContentFirstPanelKind.streamSelector);
     controller.isMenuOpen.value = true;
     controller.stopHideController();
     try {
@@ -1220,28 +1257,37 @@ class FullscreenStreamSelectorButton extends StatelessWidget {
         context: context,
         builder: (dialogContext) => Dialog(
           key: const ValueKey('fullscreen-stream-selector-panel'),
-          alignment: Alignment.centerRight,
-          insetPadding: const EdgeInsets.fromLTRB(24, 64, 24, 64),
+          alignment: Alignment.center,
+          insetPadding: layout.insetPadding,
           clipBehavior: Clip.antiAlias,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 430, maxHeight: 520),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          child: SizedBox(
+            width: layout.size.width,
+            height: layout.size.height,
             child: Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 14, 8, 8),
-                  child: Row(
-                    children: [
-                      Icon(Icons.tune_rounded, color: Theme.of(dialogContext).colorScheme.primary),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          i18n('fullscreen_stream_settings'),
-                          style: Theme.of(dialogContext).textTheme.titleLarge,
+                SizedBox(
+                  height: 46,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 14, right: 4),
+                    child: Row(
+                      children: [
+                        Icon(Icons.tune_rounded, size: 20, color: Theme.of(dialogContext).colorScheme.primary),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            i18n('fullscreen_stream_settings'),
+                            style: Theme.of(dialogContext).textTheme.titleMedium,
+                          ),
                         ),
-                      ),
-                      IconButton(onPressed: () => Navigator.pop(dialogContext), icon: const Icon(Icons.close_rounded)),
-                    ],
+                        IconButton(
+                          tooltip: i18n('close'),
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () => Navigator.pop(dialogContext),
+                          icon: const Icon(Icons.close_rounded, size: 20),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 const Divider(height: 1),
@@ -1252,61 +1298,66 @@ class FullscreenStreamSelectorButton extends StatelessWidget {
                     final switching = live.playerController.isStreamSwitching.value;
                     return Stack(
                       children: [
-                        ListView(
-                          physics: const PureLiveScrollPhysics(),
-                          padding: const EdgeInsets.all(18),
-                          children: [
-                            _StreamSectionHeader(
-                              icon: Icons.high_quality_rounded,
-                              title: i18n('select_quality'),
-                              subtitle: state.qualitySafe.quality,
-                            ),
-                            const SizedBox(height: 10),
-                            _StreamChoiceGrid(
-                              itemCount: state.qualites.length,
-                              selectedIndex: state.currentQuality,
-                              labelBuilder: (index) => state.qualites[index].quality,
-                              onSelected: switching
-                                  ? null
-                                  : (index) async {
-                                      await live.setResolution(
-                                        ReloadDataType.changeQuality,
-                                        index,
-                                        state.currentLineIndex,
-                                      );
-                                    },
-                            ),
-                            const SizedBox(height: 22),
-                            _StreamSectionHeader(
-                              icon: Icons.alt_route_rounded,
-                              title: i18n('select_line'),
-                              subtitle: i18n('toolbox_line', args: {'index': (state.currentLineIndex + 1).toString()}),
-                            ),
-                            const SizedBox(height: 10),
-                            _StreamChoiceGrid(
-                              itemCount: state.playUrls.length,
-                              selectedIndex: state.currentLineIndex,
-                              labelBuilder: (index) => i18n('toolbox_line', args: {'index': (index + 1).toString()}),
-                              onSelected: switching
-                                  ? null
-                                  : (index) async {
-                                      await live.setResolution(ReloadDataType.changeLine, state.currentQuality, index);
-                                    },
-                            ),
-                            const SizedBox(height: 14),
-                            Text(
-                              i18n('fullscreen_stream_switch_hint'),
-                              style: Theme.of(dialogContext).textTheme.bodySmall,
-                            ),
-                          ],
+                        Padding(
+                          padding: const EdgeInsets.all(10),
+                          child: Flex(
+                            direction: layout.splitContent ? Axis.horizontal : Axis.vertical,
+                            children: [
+                              Expanded(
+                                child: _StreamChoicePane(
+                                  key: const ValueKey('stream-quality-pane'),
+                                  icon: Icons.high_quality_rounded,
+                                  title: i18n('select_quality'),
+                                  selectedLabel: state.qualitySafe.quality,
+                                  itemCount: state.qualites.length,
+                                  selectedIndex: state.currentQuality,
+                                  labelBuilder: (index) => state.qualites[index].quality,
+                                  onSelected: switching
+                                      ? null
+                                      : (index) async {
+                                          await live.setResolution(
+                                            ReloadDataType.changeQuality,
+                                            index,
+                                            state.currentLineIndex,
+                                          );
+                                        },
+                                ),
+                              ),
+                              SizedBox(width: layout.splitContent ? 10 : 0, height: layout.splitContent ? 0 : 10),
+                              Expanded(
+                                child: _StreamChoicePane(
+                                  key: const ValueKey('stream-line-pane'),
+                                  icon: Icons.alt_route_rounded,
+                                  title: i18n('select_line'),
+                                  selectedLabel: i18n(
+                                    'toolbox_line',
+                                    args: {'index': (state.currentLineIndex + 1).toString()},
+                                  ),
+                                  itemCount: state.playUrls.length,
+                                  selectedIndex: state.currentLineIndex,
+                                  labelBuilder: (index) =>
+                                      i18n('toolbox_line', args: {'index': (index + 1).toString()}),
+                                  onSelected: switching
+                                      ? null
+                                      : (index) async {
+                                          await live.setResolution(
+                                            ReloadDataType.changeLine,
+                                            state.currentQuality,
+                                            index,
+                                          );
+                                        },
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         if (switching)
-                          Positioned(
+                          const Positioned(
                             top: 0,
                             left: 0,
                             right: 0,
                             child: LinearProgressIndicator(
-                              key: const ValueKey('fullscreen-stream-switch-progress'),
+                              key: ValueKey('fullscreen-stream-switch-progress'),
                               minHeight: 3,
                               backgroundColor: Colors.transparent,
                             ),
@@ -1380,37 +1431,21 @@ class FullscreenStreamSelectorButton extends StatelessWidget {
   }
 }
 
-class _StreamSectionHeader extends StatelessWidget {
-  const _StreamSectionHeader({required this.icon, required this.title, required this.subtitle});
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
-        const SizedBox(width: 8),
-        Expanded(child: Text(title, style: Theme.of(context).textTheme.titleMedium)),
-        Text(
-          subtitle,
-          style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w600),
-        ),
-      ],
-    );
-  }
-}
-
-class _StreamChoiceGrid extends StatelessWidget {
-  const _StreamChoiceGrid({
+class _StreamChoicePane extends StatelessWidget {
+  const _StreamChoicePane({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.selectedLabel,
     required this.itemCount,
     required this.selectedIndex,
     required this.labelBuilder,
     required this.onSelected,
   });
 
+  final IconData icon;
+  final String title;
+  final String selectedLabel;
   final int itemCount;
   final int selectedIndex;
   final String Function(int index) labelBuilder;
@@ -1418,39 +1453,79 @@ class _StreamChoiceGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisExtent: 46,
-        mainAxisSpacing: 9,
-        crossAxisSpacing: 9,
+    final colors = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colors.outlineVariant.withValues(alpha: .55)),
       ),
-      itemCount: itemCount,
-      itemBuilder: (context, index) {
-        final selected = selectedIndex == index;
-        return Material(
-          color: selected
-              ? Theme.of(context).colorScheme.primaryContainer
-              : Theme.of(context).colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: onSelected == null || selected ? null : () => unawaited(onSelected!(index)),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+        child: Column(
+          children: [
+            SizedBox(
+              height: 30,
               child: Row(
                 children: [
-                  Expanded(child: Text(labelBuilder(index), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                  if (selected)
-                    Icon(Icons.check_circle_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
+                  Icon(icon, size: 18, color: colors.primary),
+                  const SizedBox(width: 7),
+                  Expanded(child: Text(title, style: Theme.of(context).textTheme.titleSmall)),
+                  Flexible(
+                    child: Text(
+                      selectedLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelMedium
+                          ?.copyWith(color: colors.primary, fontWeight: FontWeight.w700),
+                    ),
+                  ),
                 ],
               ),
             ),
-          ),
-        );
-      },
+            const Divider(height: 8),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final columns = constraints.maxWidth >= 250 ? 2 : 1;
+                  return GridView.builder(
+                    physics: const PureLiveScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: columns,
+                      mainAxisExtent: 50,
+                      mainAxisSpacing: 7,
+                      crossAxisSpacing: 7,
+                    ),
+                    itemCount: itemCount,
+                    itemBuilder: (context, index) {
+                      final selected = selectedIndex == index;
+                      return Material(
+                        color: selected ? colors.primaryContainer : colors.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(11),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(11),
+                          onTap: onSelected == null || selected ? null : () => unawaited(onSelected!(index)),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(labelBuilder(index), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                ),
+                                if (selected) Icon(Icons.check_circle_rounded, size: 18, color: colors.primary),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

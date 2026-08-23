@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/plugins/event_bus.dart';
-import 'package:pure_live/common/widgets/common_avatar.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/widgets/content_first_panel_layout.dart';
+import 'package:pure_live/plugins/cache_manager.dart';
+import 'package:pure_live/plugins/event_bus.dart';
 
 class PlayOther extends StatefulWidget {
   const PlayOther({required this.controller, super.key});
@@ -20,6 +22,7 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
   final recordingRooms = <LiveRoom>[].obs;
   final historyRooms = <LiveRoom>[].obs;
   final loadingFinish = false.obs;
+  final refreshing = false.obs;
   StreamSubscription<dynamic>? subscription;
 
   @override
@@ -40,6 +43,7 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
     recordingRooms.assignAll(recordList);
     historyRooms.assignAll(SettingsService.to.history.historyRooms.v);
     loadingFinish.value = true;
+    refreshing.value = false;
   }
 
   int _audienceSortValue(LiveRoom room) {
@@ -59,68 +63,90 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
+    final layout = resolveContentFirstPanelLayout(MediaQuery.sizeOf(context), ContentFirstPanelKind.roomHistory);
     return Dialog(
       key: const ValueKey('fullscreen-room-history-dialog'),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      insetPadding: layout.insetPadding,
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: SizedBox(
-        width: (size.width - 48).clamp(300, 820).toDouble(),
-        height: (size.height - 48).clamp(260, 560).toDouble(),
+        width: layout.size.width,
+        height: layout.size.height,
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 8, 4),
-              child: Row(
-                children: [
-                  Icon(Icons.video_library_rounded, color: Theme.of(context).colorScheme.primary),
-                  const SizedBox(width: 10),
-                  Expanded(child: Text(i18n('switch_live_room'), style: Theme.of(context).textTheme.titleLarge)),
-                  IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => Navigator.of(context).pop()),
+            SizedBox(
+              height: 46,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 14, right: 4),
+                child: Row(
+                  children: [
+                    Icon(Icons.video_library_rounded, size: 20, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(i18n('switch_live_room'), style: Theme.of(context).textTheme.titleMedium)),
+                    Obx(
+                      () => IconButton(
+                        tooltip: i18n('refresh'),
+                        visualDensity: VisualDensity.compact,
+                        onPressed: refreshing.value
+                            ? null
+                            : () {
+                                refreshing.value = true;
+                                EventBus.instance.emit('refresh_favorite_rooms', true);
+                              },
+                        icon: const Icon(Icons.refresh_rounded, size: 20),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: i18n('close'),
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 40,
+              child: TabBar(
+                controller: tabController,
+                labelColor: Theme.of(context).colorScheme.primary,
+                unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                indicatorSize: TabBarIndicatorSize.label,
+                dividerHeight: 0,
+                tabs: [
+                  _CompactTab(icon: Icons.sensors_rounded, label: i18n('online_room_title')),
+                  _CompactTab(icon: Icons.fiber_smart_record_rounded, label: i18n('recording_room_title')),
+                  _CompactTab(icon: Icons.history_rounded, label: i18n('watch_history')),
                 ],
               ),
             ),
-            TabBar(
-              controller: tabController,
-              labelColor: Theme.of(context).colorScheme.primary,
-              unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
-              indicatorSize: TabBarIndicatorSize.label,
-              tabs: [
-                Tab(icon: const Icon(Icons.sensors_rounded, size: 18), text: i18n('online_room_title')),
-                Tab(icon: const Icon(Icons.fiber_smart_record_rounded, size: 18), text: i18n('recording_room_title')),
-                Tab(icon: const Icon(Icons.history_rounded, size: 18), text: i18n('watch_history')),
-              ],
-            ),
             const Divider(height: 1),
             Expanded(
-              child: Obx(
-                () => loadingFinish.value
-                    ? TabBarView(
-                        controller: tabController,
-                        children: [
-                          _buildRoomGrid(onlineRooms, history: false),
-                          _buildRoomGrid(recordingRooms, history: false),
-                          _buildRoomGrid(historyRooms, history: true),
-                        ],
-                      )
-                    : AppStatusView(type: AppStatusType.loading, title: '', subtitle: ''),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
-              child: Row(
+              child: Stack(
                 children: [
-                  TextButton.icon(
-                    onPressed: () {
-                      loadingFinish.value = false;
-                      EventBus.instance.emit('refresh_favorite_rooms', true);
-                    },
-                    icon: const Icon(Icons.refresh_rounded, size: 18),
-                    label: Text(i18n('refresh')),
+                  Obx(
+                    () => loadingFinish.value
+                        ? TabBarView(
+                            controller: tabController,
+                            children: [
+                              _buildRoomGrid(onlineRooms, history: false),
+                              _buildRoomGrid(recordingRooms, history: false),
+                              _buildRoomGrid(historyRooms, history: true),
+                            ],
+                          )
+                        : AppStatusView(type: AppStatusType.loading, title: '', subtitle: ''),
                   ),
-                  const Spacer(),
-                  FilledButton.tonal(onPressed: () => Navigator.of(context).pop(), child: Text(i18n('close'))),
+                  Obx(
+                    () => refreshing.value
+                        ? const Positioned(
+                            left: 0,
+                            right: 0,
+                            top: 0,
+                            child: LinearProgressIndicator(minHeight: 2, backgroundColor: Colors.transparent),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
                 ],
               ),
             ),
@@ -134,16 +160,16 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
     if (rooms.isEmpty) return AppStatusView(type: AppStatusType.empty, title: '', subtitle: '');
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 560 ? 2 : 1;
+        final columns = constraints.maxWidth >= 620 ? 2 : 1;
         return GridView.builder(
           key: ValueKey(history ? 'watch-history-grid' : 'live-room-grid'),
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(10),
           physics: const PureLiveScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: columns,
-            mainAxisExtent: 116,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
+            mainAxisExtent: columns == 2 ? 136 : 126,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
           ),
           itemCount: rooms.length,
           itemBuilder: (context, index) => _RoomSwitchCard(
@@ -156,6 +182,28 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
           ),
         );
       },
+    );
+  }
+}
+
+class _CompactTab extends StatelessWidget {
+  const _CompactTab({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tab(
+      height: 38,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 17),
+          const SizedBox(width: 6),
+          Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis)),
+        ],
+      ),
     );
   }
 }
@@ -199,59 +247,142 @@ class _RoomSwitchCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              CommonAvatar(avatarUrl: room.avatar, fallbackName: room.nick, dense: false),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      room.title?.trim().isNotEmpty == true ? room.title! : i18n('untitled_room'),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(room.nick ?? '', maxLines: 1, overflow: TextOverflow.ellipsis),
-                    const Spacer(),
-                    Row(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final coverWidth = (constraints.maxWidth * .49).clamp(150.0, 238.0).toDouble();
+            final meta = history
+                ? _historyLabel()
+                : (audience.isEmpty ? i18n('audience_unknown') : readableCount(audience));
+            return Row(
+              children: [
+                SizedBox(
+                  key: const ValueKey('room-history-cover'),
+                  width: coverWidth,
+                  height: double.infinity,
+                  child: _RoomSwitchCover(room: room, meta: meta),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(11, 10, 10, 9),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: colors.primaryContainer,
-                            borderRadius: BorderRadius.circular(9),
-                          ),
-                          child: Text(
-                            room.platform?.toUpperCase() ?? '',
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colors.onPrimaryContainer),
-                          ),
+                        Text(
+                          room.title?.trim().isNotEmpty == true ? room.title! : i18n('untitled_room'),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w700, height: 1.18),
                         ),
-                        const SizedBox(width: 7),
-                        Expanded(
-                          child: Text(
-                            history
-                                ? _historyLabel()
-                                : (audience.isEmpty ? i18n('audience_unknown') : readableCount(audience)),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colors.onSurfaceVariant),
-                          ),
+                        const Spacer(),
+                        Row(
+                          children: [
+                            Icon(Icons.person_outline_rounded, size: 15, color: colors.onSurfaceVariant),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                room.nick ?? '',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+                              ),
+                            ),
+                            Icon(Icons.chevron_right_rounded, size: 18, color: colors.onSurfaceVariant),
+                          ],
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            );
+          },
         ),
       ),
+    );
+  }
+}
+
+class _RoomSwitchCover extends StatelessWidget {
+  const _RoomSwitchCover({required this.room, required this.meta});
+
+  final LiveRoom room;
+  final String meta;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = normalizeNetworkImageUrl(room.cover);
+    final colors = Theme.of(context).colorScheme;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        if (url.isEmpty)
+          ColoredBox(
+            color: colors.surfaceContainerHighest,
+            child: Icon(Icons.live_tv_rounded, size: 34, color: colors.onSurfaceVariant.withValues(alpha: .35)),
+          )
+        else
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final cacheWidth = (constraints.maxWidth * MediaQuery.devicePixelRatioOf(context))
+                  .round()
+                  .clamp(240, 720)
+                  .toInt();
+              return CachedNetworkImage(
+                imageUrl: url,
+                httpHeaders: networkImageHeaders(url),
+                cacheManager: CustomImageCacheManager.instance,
+                fit: BoxFit.cover,
+                filterQuality: FilterQuality.low,
+                memCacheWidth: cacheWidth,
+                fadeInDuration: Duration.zero,
+                fadeOutDuration: Duration.zero,
+                useOldImageOnUrlChange: true,
+                placeholder: (_, _) => ColoredBox(
+                  color: colors.surfaceContainerHighest,
+                  child: Icon(Icons.live_tv_rounded, color: colors.onSurfaceVariant.withValues(alpha: .25)),
+                ),
+                errorWidget: (_, _, _) => ColoredBox(
+                  color: colors.surfaceContainerHighest,
+                  child: Icon(Icons.broken_image_outlined, color: colors.onSurfaceVariant.withValues(alpha: .35)),
+                ),
+              );
+            },
+          ),
+        Positioned(
+          top: 7,
+          left: 7,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+            decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
+            child: Text(
+              room.platform?.toUpperCase() ?? '',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(8, 18, 8, 7),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Colors.black87],
+              ),
+            ),
+            child: Text(
+              meta,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
