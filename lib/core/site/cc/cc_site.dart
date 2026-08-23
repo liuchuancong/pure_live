@@ -11,7 +11,7 @@ import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 
-class CCSite implements LiveSite {
+class CCSite implements LiveSite, LiveSiteRoomRefresher {
   @override
   String id = Sites.ccSite;
 
@@ -180,39 +180,7 @@ class CCSite implements LiveSite {
   @override
   Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
     try {
-      var url = "https://api.cc.163.com/v1/activitylives/anchor/lives";
-      var result = await HttpClient.instance.getJson(
-        url,
-        queryParameters: {'anchor_ccid': roomId},
-        header: {"user-agent": kUserAgent},
-      );
-      var channelId = result['data'][roomId]['channel_id'];
-      String urlToGetReal = "https://cc.163.com/live/channel/?channelids=$channelId";
-      var resultReal = await HttpClient.instance.getJson(urlToGetReal, queryParameters: {'anchor_ccid': roomId});
-      var roomInfo = resultReal["data"][0];
-      final onlineViewers =
-          [roomInfo['webcc_visitor'], roomInfo['vision_visitor'], roomInfo['visitor'], roomInfo['online_num']]
-              .map((value) => value?.toString() ?? '')
-              .firstWhere((value) => LiveRoom.parseAudienceNumber(value) > 0, orElse: () => '');
-      return LiveRoom(
-        cover: roomInfo["cover"],
-        watching: onlineViewers.isNotEmpty ? onlineViewers : roomInfo["follower_num"].toString(),
-        onlineViewers: onlineViewers,
-        audienceMetricType: onlineViewers.isNotEmpty ? AudienceMetricType.onlineViewers : AudienceMetricType.followers,
-        roomId: roomInfo["ccid"].toString(),
-        area: roomInfo["gamename"],
-        title: roomInfo["title"],
-        nick: roomInfo["nickname"].toString(),
-        avatar: roomInfo["purl"].toString(),
-        introduction: roomInfo["personal_label"],
-        notice: roomInfo["personal_label"],
-        status: roomInfo["status"] == 1,
-        liveStatus: roomInfo["status"] == 1 ? LiveStatus.live : LiveStatus.offline,
-        platform: Sites.ccSite,
-        link: roomInfo['m3u8'],
-        userId: roomInfo['cid'].toString(),
-        data: roomInfo["quickplay"] ?? roomInfo["stream_list"],
-      );
+      return await _loadRoomDetail(roomId);
     } catch (e) {
       if (Get.isRegistered<PlayerController>()) {
         final PlayerController playerController = Get.find<PlayerController>();
@@ -221,6 +189,50 @@ class CCSite implements LiveSite {
       }
       return LiveRoom(roomId: roomId, platform: platform).getLiveRoomWithError();
     }
+  }
+
+  @override
+  Future<LiveRoom> getRoomDetailForRefresh({required String platform, required String roomId}) {
+    // Propagate transport/shape errors to the favourite verifier. Treating a
+    // failed request as an authoritative offline response corrupts the card
+    // state and hides the failure from the retry policy.
+    return _loadRoomDetail(roomId);
+  }
+
+  Future<LiveRoom> _loadRoomDetail(String roomId) async {
+    const url = "https://api.cc.163.com/v1/activitylives/anchor/lives";
+    final result = await HttpClient.instance.getJson(
+      url,
+      queryParameters: {'anchor_ccid': roomId},
+      header: {"user-agent": kUserAgent},
+    );
+    final channelId = result['data'][roomId]['channel_id'];
+    final urlToGetReal = "https://cc.163.com/live/channel/?channelids=$channelId";
+    final resultReal = await HttpClient.instance.getJson(urlToGetReal, queryParameters: {'anchor_ccid': roomId});
+    final roomInfo = resultReal["data"][0];
+    final onlineViewers =
+        [roomInfo['webcc_visitor'], roomInfo['vision_visitor'], roomInfo['visitor'], roomInfo['online_num']]
+            .map((value) => value?.toString() ?? '')
+            .firstWhere((value) => LiveRoom.parseAudienceNumber(value) > 0, orElse: () => '');
+    return LiveRoom(
+      cover: roomInfo["cover"],
+      watching: onlineViewers.isNotEmpty ? onlineViewers : roomInfo["follower_num"].toString(),
+      onlineViewers: onlineViewers,
+      audienceMetricType: onlineViewers.isNotEmpty ? AudienceMetricType.onlineViewers : AudienceMetricType.followers,
+      roomId: roomInfo["ccid"].toString(),
+      area: roomInfo["gamename"],
+      title: roomInfo["title"],
+      nick: roomInfo["nickname"].toString(),
+      avatar: roomInfo["purl"].toString(),
+      introduction: roomInfo["personal_label"],
+      notice: roomInfo["personal_label"],
+      status: roomInfo["status"] == 1,
+      liveStatus: roomInfo["status"] == 1 ? LiveStatus.live : LiveStatus.offline,
+      platform: Sites.ccSite,
+      link: roomInfo['m3u8'],
+      userId: roomInfo['cid'].toString(),
+      data: roomInfo["quickplay"] ?? roomInfo["stream_list"],
+    );
   }
 
   @override

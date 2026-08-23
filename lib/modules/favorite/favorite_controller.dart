@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:developer' as developer;
+
+import 'package:synchronized/synchronized.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:pure_live/modules/tags/live_tag.dart';
@@ -7,7 +9,6 @@ import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
 import 'package:pure_live/modules/favorite/favorite_startup_policy.dart';
 import 'package:pure_live/common/services/settings/refresh_config_controller.dart';
-
 
 class FavoriteController extends LocalReactivePageController<LiveRoom>
     with GetTickerProviderStateMixin, WidgetsBindingObserver {
@@ -30,9 +31,11 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   bool _selectionTransaction = false;
   int? _lastSyncedFavoriteSnapshot;
   int _refreshEpoch = 0;
+  final Lock _refreshLock = Lock();
   DateTime? _lastFullRefreshAt;
   final isVerifyingFavorites = false.obs;
   Future<void>? _startupRefresh;
+  FavoriteVerificationPreview? _verificationPreview;
   final Map<String, DateTime> _refreshFailureCooldown = {};
   static const Duration _refreshFailureRetryAfter = Duration(minutes: 5);
   // Treat returning to the app as a fresh launch after a short debounce.  A
@@ -143,7 +146,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
       _resumeRefreshTimer?.cancel();
       _resumeRefreshTimer = Timer(
         const Duration(milliseconds: 450),
-        () => unawaited(_fullRefreshRooms(showLoading: true, emitFinish: false)),
+        () => unawaited(_fullRefreshRooms(showLoading: true, emitFinish: false, bypassFailureCooldown: true)),
       );
     }
   }
@@ -329,11 +332,20 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   }
 
   void syncRooms({Iterable<LiveRoom>? roomSnapshot}) {
-    final List<LiveRoom> roomsBase = List<LiveRoom>.from(roomSnapshot ?? SettingsService.to.fav.favoriteRooms.v);
+    final preview = roomSnapshot == null ? _verificationPreview : null;
+    final List<LiveRoom> roomsBase = List<LiveRoom>.from(
+      roomSnapshot ?? preview?.rooms ?? SettingsService.to.fav.favoriteRooms.v,
+    );
     _lastSyncedFavoriteSnapshot = _favoriteSnapshotSignature(roomsBase);
-    final nextOnline = roomsBase.where((r) => r.liveStatus == LiveStatus.live && r.isRecord == false).toList();
-    final nextOffline = roomsBase.where((r) => r.liveStatus != LiveStatus.live).toList();
-    final nextReplay = roomsBase.where((r) => r.liveStatus == LiveStatus.live && r.isRecord == true).toList();
+    final nextOnline = preview != null
+        ? List<LiveRoom>.from(preview.onlineRooms)
+        : roomsBase.where((r) => r.liveStatus == LiveStatus.live && r.isRecord == false).toList();
+    final nextOffline = preview != null
+        ? List<LiveRoom>.from(preview.offlineRooms)
+        : roomsBase.where((r) => r.liveStatus != LiveStatus.live).toList();
+    final nextReplay = preview != null
+        ? List<LiveRoom>.from(preview.replayRooms)
+        : roomsBase.where((r) => r.liveStatus == LiveStatus.live && r.isRecord == true).toList();
 
     final currentAvailableSites = Sites().availableSites(containsAll: true);
     var nextVisibleTags = <LiveTag>[];
@@ -508,17 +520,35 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
       return;
     }
     currentPage = 1;
-    await _fullRefreshFilterRooms(showLoading: true);
+    await _fullRefreshFilterRooms(showLoading: true, bypassFailureCooldown: true);
   }
 
-  Future<void> _fullRefreshFilterRooms({required bool showLoading}) async {
+  Future<void> _fullRefreshFilterRooms({required bool showLoading, bool bypassFailureCooldown = false}) async {
     final roomsToRefresh = getFilteredRoomsIgnoringLiveStatus();
-    await _runRoomRefresh(roomsToRefresh, showLoading: showLoading);
+    await _runRoomRefresh(roomsToRefresh, showLoading: showLoading, bypassFailureCooldown: bypassFailureCooldown);
   }
 
-  Future<void> _fullRefreshRooms({required bool showLoading, bool emitFinish = true}) async {
+  Future<void> _fullRefreshRooms({
+    required bool showLoading,
+    bool emitFinish = true,
+    bool bypassFailureCooldown = false,
+  }) async {
+    final startup = _startupRefresh;
+    if (startup != null) {
+      // Cold-start verification already covers every favourite. Coalescing
+      // lifecycle/timer events here prevents a second refresh from invalidating
+      // the authoritative startup result halfway through its network pass.
+      await startup;
+      return;
+    }
     final roomsToRefresh = getAllRooms();
-    await _runRoomRefresh(roomsToRefresh, showLoading: showLoading, emitFinish: emitFinish, markFullRefresh: true);
+    await _runRoomRefresh(
+      roomsToRefresh,
+      showLoading: showLoading,
+      emitFinish: emitFinish,
+      markFullRefresh: true,
+      bypassFailureCooldown: bypassFailureCooldown,
+    );
   }
 
   Future<void> refreshPersistedRoomsOnStartup() {
@@ -534,12 +564,13 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   }
 
   Future<void> _refreshPersistedRoomsOnStartupInternal() async {
-    isVerifyingFavorites.value = true;
     final persisted = List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
+    _verificationPreview = buildFavoriteVerificationPreview(persisted);
+    isVerifyingFavorites.value = true;
     if (persisted.isNotEmpty) {
-      // Keep the complete previous snapshot in place while verification runs.
-      // The former clear -> batch preview -> persisted chunk sequence made the
-      // grid disappear, reorder and reappear once per network batch.
+      // Keep cached metadata and bucket positions, but publish every status as
+      // unknown. This avoids both stale "live" claims and the clear/reorder/
+      // reappear sequence that made launch feel visually unstable.
       applyLocalFilter();
       pageEmpty.value = false;
     } else {
@@ -552,8 +583,10 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
         emitFinish: false,
         markFullRefresh: true,
         invalidateUnverified: true,
+        bypassFailureCooldown: true,
       );
     } finally {
+      _verificationPreview = null;
       isVerifyingFavorites.value = false;
       // Also restores a useful offline/unknown view if a controller-level
       // exception interrupted the refresh before its normal final publish.
@@ -567,33 +600,49 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     bool emitFinish = true,
     bool markFullRefresh = false,
     bool invalidateUnverified = false,
-  }) async {
-    final refreshEpoch = ++_refreshEpoch;
-    if (showLoading) loadding.value = true;
-    try {
-      final updates = await _refreshRoomDetails(rooms, refreshEpoch: refreshEpoch);
-      if (refreshEpoch != _refreshEpoch || isClosed) return;
+    bool bypassFailureCooldown = false,
+  }) {
+    // One refresh owns the snapshot transaction at a time. The former epoch
+    // scheme cancelled whichever pass happened to finish second; a lifecycle
+    // resume 450 ms after launch could therefore discard startup verification
+    // and leave failed rooms with yesterday's live bit.
+    return _refreshLock.synchronized(() async {
+      if (isClosed) return;
+      final refreshEpoch = _refreshEpoch;
+      if (showLoading) loadding.value = true;
+      try {
+        final updates = await _refreshRoomDetails(
+          rooms,
+          refreshEpoch: refreshEpoch,
+          bypassFailureCooldown: bypassFailureCooldown,
+        );
+        if (refreshEpoch != _refreshEpoch || isClosed) return;
 
-      final latest = List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
-      final merged = invalidateUnverified
-          ? (rooms: buildVerifiedFavoriteSnapshot(latest, updates), changed: true)
-          : mergeFavoriteRoomUpdates(latest, updates);
-      if (merged.changed) {
-        // One Hive write and one visible publication. A failed startup request
-        // remains unknown instead of carrying the previous process's live bit.
-        SettingsService.to.fav.favoriteRooms.v = merged.rooms;
+        final latest = List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
+        final merged = invalidateUnverified
+            ? (rooms: buildVerifiedFavoriteSnapshot(latest, updates), changed: true)
+            : mergeFavoriteRoomUpdates(latest, updates);
+        if (merged.changed) {
+          // One Hive write and one visible publication. A failed startup request
+          // remains unknown instead of carrying the previous process's live bit.
+          SettingsService.to.fav.favoriteRooms.v = merged.rooms;
+        }
+        if (markFullRefresh) _lastFullRefreshAt = DateTime.now();
+        applyLocalFilter();
+        if (emitFinish) EventBus.instance.emit('refresh_favorite_finish', true);
+      } finally {
+        if (showLoading && refreshEpoch == _refreshEpoch && !isClosed) {
+          loadding.value = false;
+        }
       }
-      if (markFullRefresh) _lastFullRefreshAt = DateTime.now();
-      applyLocalFilter();
-      if (emitFinish) EventBus.instance.emit('refresh_favorite_finish', true);
-    } finally {
-      if (showLoading && refreshEpoch == _refreshEpoch && !isClosed) {
-        loadding.value = false;
-      }
-    }
+    });
   }
 
-  Future<Map<String, LiveRoom>> _refreshRoomDetails(List<LiveRoom> rooms, {required int refreshEpoch}) async {
+  Future<Map<String, LiveRoom>> _refreshRoomDetails(
+    List<LiveRoom> rooms, {
+    required int refreshEpoch,
+    required bool bypassFailureCooldown,
+  }) async {
     final valid = rooms
         .where((r) => (r.platform?.isNotEmpty ?? false) && (r.roomId?.isNotEmpty ?? false))
         .toList(growable: false);
@@ -607,23 +656,34 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     // state while the bounded I/O workers refresh several cards concurrently.
     final siteCache = <String, LiveSite>{};
     final pendingUpdates = <String, LiveRoom>{};
-    final results = await boundedAsyncMap<LiveRoom, LiveRoom>(
+    final results = await boundedAsyncMap<LiveRoom, ({String key, LiveRoom room})>(
       valid,
       maxConcurrent: concurrency,
-      task: (room) => _refreshOneRoom(room, siteCache),
+      task: (room) async {
+        final updated = await _refreshOneRoom(room, siteCache, bypassFailureCooldown: bypassFailureCooldown);
+        if (updated == null) return null;
+        // Match by the requested favourite identity, not a canonical id that a
+        // platform may return (Douyin room ids, for example, can change to the
+        // stable web rid). Keep the stored identity stable for tags and keys.
+        return (key: _roomKey(room), room: bindFavoriteRefreshResultToRequest(room, updated));
+      },
       shouldCancel: () => refreshEpoch != _refreshEpoch || isClosed,
     );
     if (refreshEpoch != _refreshEpoch || isClosed) return const <String, LiveRoom>{};
-    for (final updated in results.whereType<LiveRoom>()) {
-      pendingUpdates[_roomKey(updated)] = updated;
+    for (final update in results.whereType<({String key, LiveRoom room})>()) {
+      pendingUpdates[update.key] = update.room;
     }
     return pendingUpdates;
   }
 
-  Future<LiveRoom?> _refreshOneRoom(LiveRoom room, Map<String, LiveSite> siteCache) async {
+  Future<LiveRoom?> _refreshOneRoom(
+    LiveRoom room,
+    Map<String, LiveSite> siteCache, {
+    required bool bypassFailureCooldown,
+  }) async {
     final key = _roomKey(room);
     final failedAt = _refreshFailureCooldown[key];
-    if (failedAt != null && DateTime.now().difference(failedAt) < _refreshFailureRetryAfter) {
+    if (!bypassFailureCooldown && failedAt != null && DateTime.now().difference(failedAt) < _refreshFailureRetryAfter) {
       return null;
     }
 

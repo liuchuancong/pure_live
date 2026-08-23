@@ -30,32 +30,33 @@ class RoomGridView extends GetView<FavoriteController> {
             crossAxisCount = width > 1280 ? 5 : (width > 960 ? 4 : (width > 640 ? 3 : 2));
           }
 
-          final Widget content;
-          if (displayList.isEmpty) {
-            content = CustomScrollView(
-              controller: scrollController,
-              physics: const PureLiveScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              slivers: [
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child:
-                      emptyBuilder?.call(context) ??
-                      AppStatusView(
-                        type: AppStatusType.empty,
-                        icon: Icons.favorite_rounded,
-                        title: i18n('empty_favorite_online_title'),
-                        subtitle: i18n('empty_favorite_online_subtitle'),
-                      ),
-                ),
-              ],
-            );
-          } else {
+          Widget buildScrollable(ScrollPhysics physics) {
+            if (displayList.isEmpty) {
+              return CustomScrollView(
+                controller: scrollController,
+                physics: physics,
+                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                slivers: [
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child:
+                        emptyBuilder?.call(context) ??
+                        AppStatusView(
+                          type: AppStatusType.empty,
+                          icon: Icons.favorite_rounded,
+                          title: i18n('empty_favorite_online_title'),
+                          subtitle: i18n('empty_favorite_online_subtitle'),
+                        ),
+                  ),
+                ],
+              );
+            }
+
             final itemWidth = (width - 24 - spacing * (crossAxisCount - 1)) / crossAxisCount;
-            content = GridView.builder(
+            return GridView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               controller: scrollController,
-              physics: const PureLiveScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+              physics: physics,
               scrollCacheExtent: ScrollCacheExtent.pixels(width > 680 ? 480 : 320),
               addAutomaticKeepAlives: false,
               addRepaintBoundaries: true,
@@ -73,14 +74,29 @@ class RoomGridView extends GetView<FavoriteController> {
                   key: ValueKey('${room.platform}:${room.roomId}'),
                   room: room,
                   dense: dense,
-                  audiencePending: isVerifyingFavorites,
+                  statusPending: isVerifyingFavorites || room.liveStatus == LiveStatus.unknown,
+                  statusPendingLabel: isVerifyingFavorites
+                      ? i18n('favorite_status_verifying')
+                      : i18n('favorite_status_unknown'),
                 );
               },
             );
           }
 
-          if (width > 680) return content;
-          return buildFavoritePullToRefresh(siteId: siteId, onRefresh: controller.refreshData, child: content);
+          if (width > 680) {
+            return buildScrollable(const PureLiveScrollPhysics(parent: AlwaysScrollableScrollPhysics()));
+          }
+
+          // EasyRefresh must own the exact physics installed on the vertical
+          // child. Supplying PureLiveScrollPhysics directly made Android's
+          // outer ClampingScrollPhysics consume boundary movement before the
+          // refresh header could observe it, so the callback existed while the
+          // pull animation never armed.
+          return buildFavoritePullToRefresh(
+            siteId: siteId,
+            onRefresh: controller.refreshData,
+            childBuilder: (_, physics) => buildScrollable(physics),
+          );
         });
       },
     );
@@ -91,7 +107,18 @@ class RoomGridView extends GetView<FavoriteController> {
 Widget buildFavoritePullToRefresh({
   required String siteId,
   required Future<void> Function() onRefresh,
-  required Widget child,
+  required ERChildBuilder childBuilder,
 }) {
-  return EasyRefresh(key: ValueKey('favorite_pull_to_refresh_$siteId'), onRefresh: onRefresh, child: child);
+  return EasyRefresh.builder(
+    key: ValueKey('favorite_pull_to_refresh_$siteId'),
+    header: MaterialHeader(
+      key: ValueKey('favorite_pull_to_refresh_indicator_$siteId'),
+      triggerOffset: 72,
+      triggerWhenRelease: true,
+      clamping: true,
+    ),
+    triggerAxis: Axis.vertical,
+    onRefresh: onRefresh,
+    childBuilder: childBuilder,
+  );
 }

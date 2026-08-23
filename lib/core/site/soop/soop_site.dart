@@ -11,7 +11,7 @@ import 'package:pure_live/core/danmaku/soop_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 
-class SoopSite extends LiveSite {
+class SoopSite extends LiveSite implements LiveSiteRoomRefresher {
   @override
   String get id => Sites.soopSite;
 
@@ -293,6 +293,34 @@ class SoopSite extends LiveSite {
       }
       return LiveRoom(roomId: roomId, platform: Sites.soopSite).getLiveRoomWithError();
     }
+  }
+
+  @override
+  Future<LiveRoom> getRoomDetailForRefresh({required String platform, required String roomId}) async {
+    final data = await getPlayerLiveApiData(roomId: roomId);
+    final channel = data['CHANNEL'];
+    if (channel is! Map) {
+      throw const FormatException('SOOP channel metadata is missing');
+    }
+    final rawResultCode = channel['RESULT'];
+    final resultCode = rawResultCode is num ? rawResultCode.toInt() : int.tryParse(rawResultCode?.toString() ?? '');
+    if (resultCode == null) {
+      throw const FormatException('SOOP channel result code is missing');
+    }
+    if (resultCode == 0) {
+      // SOOP documents zero as an explicit no-live response.
+      return LiveRoom(roomId: roomId, platform: Sites.soopSite, status: false, liveStatus: LiveStatus.offline);
+    }
+    if (resultCode == -2) {
+      return LiveRoom(roomId: roomId, platform: Sites.soopSite, status: false, liveStatus: LiveStatus.banned);
+    }
+    if (resultCode != 1) {
+      // Login/session and malformed business responses are not proof that the
+      // channel ended. Let startup verification retain an unknown state.
+      throw StateError('SOOP room metadata returned code $resultCode');
+    }
+    // Favourite cards do not need websocket credentials or playback signing.
+    return getLiveRoomByApi(data, null, roomId);
   }
 
   Future<LiveRoom> getLiveRoomByApi(

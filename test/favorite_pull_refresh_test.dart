@@ -1,24 +1,58 @@
+import 'dart:async';
+
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/modules/favorite/room_grid_view.dart';
 
 void main() {
-  test('favorite platform page owns a working pull-to-refresh callback', () async {
+  testWidgets('favorite platform page shows and triggers its vertical pull indicator', (tester) async {
     var refreshCount = 0;
+    final refreshCompleter = Completer<void>();
+    ScrollPhysics? installedPhysics;
 
-    final widget = buildFavoritePullToRefresh(
-      siteId: 'bilibili',
-      onRefresh: () async => refreshCount++,
-      child: ListView(physics: const AlwaysScrollableScrollPhysics(), children: const [SizedBox(height: 900)]),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: buildFavoritePullToRefresh(
+            siteId: 'bilibili',
+            onRefresh: () {
+              refreshCount++;
+              return refreshCompleter.future;
+            },
+            childBuilder: (context, physics) {
+              installedPhysics = physics;
+              return ListView(
+                physics: physics,
+                children: const [SizedBox(height: 120, child: Text('favourite'))],
+              );
+            },
+          ),
+        ),
+      ),
     );
 
-    expect(widget, isA<EasyRefresh>());
-    final refresh = widget as EasyRefresh;
+    final refresh = tester.widget<EasyRefresh>(find.byType(EasyRefresh));
     expect(refresh.key, const ValueKey('favorite_pull_to_refresh_bilibili'));
-    expect(refresh.onRefresh, isNotNull);
+    expect(refresh.childBuilder, isNotNull);
+    expect(installedPhysics, isNotNull, reason: 'the scrollable must use EasyRefresh-owned physics');
 
-    await refresh.onRefresh!.call();
-    expect(refreshCount, 1);
+    final gesture = await tester.startGesture(tester.getCenter(find.byType(ListView)));
+    for (var index = 0; index < 6; index++) {
+      await gesture.moveBy(const Offset(0, 70));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+
+    expect(find.byType(RefreshProgressIndicator), findsOneWidget);
+
+    await gesture.up();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(refreshCount, 1, reason: 'a real drag, rather than a direct callback invocation, must arm refresh');
+    expect(find.byType(RefreshProgressIndicator), findsOneWidget);
+
+    refreshCompleter.complete();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 800));
   });
 }

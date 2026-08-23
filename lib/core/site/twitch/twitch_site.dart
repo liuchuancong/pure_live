@@ -12,7 +12,7 @@ import 'package:pure_live/core/danmaku/twitch_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/utils/twitch/twitch_models.dart';
 
-class TwitchSite implements LiveSite {
+class TwitchSite implements LiveSite, LiveSiteRoomRefresher {
   @override
   String id = Sites.twitchSite;
 
@@ -301,57 +301,64 @@ class TwitchSite implements LiveSite {
   @override
   Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
     try {
-      var roomInfo = await _getRoomInfo(roomId);
-      if (roomInfo.length < 2) {
-        throw StateError('Twitch room metadata response is incomplete');
-      }
-      var channelShell = roomInfo.first;
-      var streamMetaData = roomInfo[1];
-
-      final userOrError = channelShell.data.userOrError;
-      if (userOrError == null) {
-        throw Exception('Could not find user_or_error');
-      }
-      var user = streamMetaData.data.user;
-      if (user == null) {
-        throw Exception('Could not find user');
-      }
-
-      bool online = switch (user.stream) {
-        Stream stream when stream.streamType == 'live' => true,
-        _ => false,
-      };
-      var title = user.lastBroadcast?.title ?? "";
-      return LiveRoom(
-        roomId: roomId,
-        title: title,
-        cover: user.profileImageUrl,
-        nick: userOrError.displayName,
-        avatar: user.profileImageUrl,
-        watching: online ? user.stream!.viewersCount.toString() : "0",
-        onlineViewers: online ? user.stream!.viewersCount.toString() : "0",
-        audienceMetricType: AudienceMetricType.onlineViewers,
-        area: user.stream?.game?.name ?? user.stream?.game?.displayName,
-        status: online,
-        liveStatus: online ? LiveStatus.live : LiveStatus.offline,
-        platform: Sites.twitchSite,
-        link: "$baseUrl/$roomId",
-        danmakuData: roomId,
-        introduction: "",
-        notice: "",
-        userId: roomId,
-        data: roomId,
-      );
+      return await _loadRoomDetail(roomId);
     } catch (e) {
-      LiveRoom liveRoom =
+      final liveRoom =
           SettingsService.to.fav.favoriteRooms.v.firstWhereOrNull(
             (r) => r.roomId == roomId && r.platform == platform,
           ) ??
           LiveRoom(roomId: roomId, platform: Sites.twitchSite);
-      liveRoom.liveStatus = LiveStatus.offline;
-      liveRoom.status = false;
-      return liveRoom;
+      return liveRoom.copyWith(liveStatus: LiveStatus.offline, status: false, isRecord: false);
     }
+  }
+
+  @override
+  Future<LiveRoom> getRoomDetailForRefresh({required String platform, required String roomId}) {
+    return _loadRoomDetail(roomId);
+  }
+
+  Future<LiveRoom> _loadRoomDetail(String roomId) async {
+    final roomInfo = await _getRoomInfo(roomId);
+    if (roomInfo.length < 2) {
+      throw StateError('Twitch room metadata response is incomplete');
+    }
+    final channelShell = roomInfo.first;
+    final streamMetaData = roomInfo[1];
+
+    final userOrError = channelShell.data.userOrError;
+    if (userOrError == null) {
+      throw StateError('Twitch channel metadata is missing');
+    }
+    final user = streamMetaData.data.user;
+    if (user == null) {
+      throw StateError('Twitch stream metadata is missing');
+    }
+
+    final online = switch (user.stream) {
+      Stream stream when stream.streamType == 'live' => true,
+      _ => false,
+    };
+    final title = user.lastBroadcast?.title ?? "";
+    return LiveRoom(
+      roomId: roomId,
+      title: title,
+      cover: user.profileImageUrl,
+      nick: userOrError.displayName,
+      avatar: user.profileImageUrl,
+      watching: online ? user.stream!.viewersCount.toString() : "0",
+      onlineViewers: online ? user.stream!.viewersCount.toString() : "0",
+      audienceMetricType: AudienceMetricType.onlineViewers,
+      area: user.stream?.game?.name ?? user.stream?.game?.displayName,
+      status: online,
+      liveStatus: online ? LiveStatus.live : LiveStatus.offline,
+      platform: Sites.twitchSite,
+      link: "$baseUrl/$roomId",
+      danmakuData: roomId,
+      introduction: "",
+      notice: "",
+      userId: roomId,
+      data: roomId,
+    );
   }
 
   Future<List<TwitchResponse>> _getRoomInfo(String roomId) async {

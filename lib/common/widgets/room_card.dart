@@ -8,10 +8,17 @@ import 'package:pure_live/modules/tags/tag_management_controller.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class RoomCard extends StatelessWidget {
-  const RoomCard({super.key, required this.room, this.dense = false, this.audiencePending = false});
+  const RoomCard({
+    super.key,
+    required this.room,
+    this.dense = false,
+    this.statusPending = false,
+    this.statusPendingLabel,
+  });
   final LiveRoom room;
   final bool dense;
-  final bool audiencePending;
+  final bool statusPending;
+  final String? statusPendingLabel;
 
   Widget _buildCover(BuildContext context, bool isDark) {
     final coverUrl = normalizeNetworkImageUrl(room.cover);
@@ -691,14 +698,14 @@ class RoomCard extends StatelessWidget {
                       color: Get.theme.primaryColor,
                     ),
                   ),
-                if (audiencePending)
+                if (statusPending)
                   Positioned(
                     right: 8,
                     bottom: 8,
                     child: CoverMetricBadge(
                       icon: Icons.sync_rounded,
-                      value: i18n('audience_waiting'),
-                      semanticLabel: i18n('audience_waiting'),
+                      value: statusPendingLabel ?? i18n('favorite_status_verifying'),
+                      semanticLabel: statusPendingLabel ?? i18n('favorite_status_verifying'),
                       dense: dense,
                     ),
                   )

@@ -156,6 +156,8 @@
     "favorite_empty_filter_subtitle": "Your {count} follows are still saved; swipe between platforms or pull to refresh",
     "favorite_empty_platform_subtitle": "No follows on this platform; swipe to return to another platform",
     "favorite_show_offline": "View offline",
+    "favorite_status_verifying": "Verifying",
+    "favorite_status_unknown": "Status pending",
     "empty_favorite_subtitle": "Please follow live rooms first",
     "empty_favorite_title": "No Favorites",
     "empty_history": "No history here",

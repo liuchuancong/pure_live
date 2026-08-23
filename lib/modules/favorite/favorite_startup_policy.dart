@@ -1,5 +1,29 @@
 import 'package:pure_live/common/models/live_room.dart';
 
+/// A transient, non-persisted snapshot used while launch-time verification is
+/// in flight.
+///
+/// Every room is marked [LiveStatus.unknown], so cached state is never
+/// presented as current. The three buckets retain their previous positions,
+/// however, which prevents the grid from disappearing and reappearing while
+/// several platform requests settle.
+class FavoriteVerificationPreview {
+  FavoriteVerificationPreview._({
+    required List<LiveRoom> rooms,
+    required List<LiveRoom> onlineRooms,
+    required List<LiveRoom> replayRooms,
+    required List<LiveRoom> offlineRooms,
+  }) : rooms = List<LiveRoom>.unmodifiable(rooms),
+       onlineRooms = List<LiveRoom>.unmodifiable(onlineRooms),
+       replayRooms = List<LiveRoom>.unmodifiable(replayRooms),
+       offlineRooms = List<LiveRoom>.unmodifiable(offlineRooms);
+
+  final List<LiveRoom> rooms;
+  final List<LiveRoom> onlineRooms;
+  final List<LiveRoom> replayRooms;
+  final List<LiveRoom> offlineRooms;
+}
+
 /// Invalidates the live/offline bit persisted by a previous process before a
 /// new launch starts its network verification.
 ///
@@ -10,7 +34,37 @@ List<LiveRoom> markFavoriteRoomsPendingVerification(Iterable<LiveRoom> rooms) {
   return rooms.map((room) => room.copyWith(status: false, liveStatus: LiveStatus.unknown)).toList(growable: false);
 }
 
+FavoriteVerificationPreview buildFavoriteVerificationPreview(Iterable<LiveRoom> rooms) {
+  final persisted = List<LiveRoom>.from(rooms);
+  final pending = markFavoriteRoomsPendingVerification(persisted);
+  final online = <LiveRoom>[];
+  final replay = <LiveRoom>[];
+  final offline = <LiveRoom>[];
+
+  for (var index = 0; index < persisted.length; index++) {
+    final previous = persisted[index];
+    final preview = pending[index];
+    if (previous.liveStatus == LiveStatus.live && previous.isRecord == true) {
+      replay.add(preview);
+    } else if (previous.liveStatus == LiveStatus.live) {
+      online.add(preview);
+    } else {
+      offline.add(preview);
+    }
+  }
+
+  return FavoriteVerificationPreview._(rooms: pending, onlineRooms: online, replayRooms: replay, offlineRooms: offline);
+}
+
 String favoriteRoomIdentity(LiveRoom room) => room.identityKey;
+
+/// Keeps local favourite identity stable when a platform response exposes a
+/// different canonical/live-session id. The fresh id is useful inside a full
+/// room detail, but replacing the persisted key would detach local tags and
+/// make the in-flight result miss its merge target.
+LiveRoom bindFavoriteRefreshResultToRequest(LiveRoom requested, LiveRoom refreshed) {
+  return refreshed.copyWith(roomId: requested.normalizedRoomId, platform: requested.normalizedPlatformId);
+}
 
 /// Merges room-detail responses into the latest user-owned favourites
 /// snapshot. Tags and reliable audience fields come from the latest snapshot,

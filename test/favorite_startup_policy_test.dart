@@ -36,6 +36,23 @@ void main() {
     expect(original.liveStatus, LiveStatus.live, reason: 'the persisted input is not mutated in place');
   });
 
+  test('verification preview preserves card buckets without claiming cached status is current', () {
+    final online = LiveRoom(roomId: '100', platform: 'bilibili', liveStatus: LiveStatus.live);
+    final replay = LiveRoom(roomId: '200', platform: 'huya', liveStatus: LiveStatus.live, isRecord: true);
+    final offline = LiveRoom(roomId: '300', platform: 'douyu', liveStatus: LiveStatus.offline);
+
+    final preview = buildFavoriteVerificationPreview([online, replay, offline]);
+
+    expect(preview.rooms, hasLength(3));
+    expect(preview.rooms.every((room) => room.liveStatus == LiveStatus.unknown), isTrue);
+    expect(preview.rooms.every((room) => room.status == false), isTrue);
+    expect(preview.onlineRooms.map(favoriteRoomIdentity), ['bilibili:100']);
+    expect(preview.replayRooms.map(favoriteRoomIdentity), ['huya:200']);
+    expect(preview.offlineRooms.map(favoriteRoomIdentity), ['douyu:300']);
+    expect(online.liveStatus, LiveStatus.live);
+    expect(replay.isRecord, isTrue);
+  });
+
   test('refresh merge preserves local tags and does not restore removed rooms', () {
     final kept = LiveRoom(
       roomId: '100',
@@ -67,6 +84,22 @@ void main() {
     expect(result.rooms.single.tagIds, ['sleep']);
     expect(result.rooms.single.effectivePopularity, '9000');
     expect(refreshed.tagIds, ['remote-tag'], reason: 'network response is not mutated in place');
+  });
+
+  test('refresh response stays bound to the requested favourite identity', () {
+    final requested = LiveRoom(roomId: 'session-room-id', platform: 'douyin');
+    final refreshed = LiveRoom(
+      roomId: 'canonical-web-rid',
+      platform: 'douyin',
+      title: 'fresh metadata',
+      liveStatus: LiveStatus.live,
+    );
+
+    final bound = bindFavoriteRefreshResultToRequest(requested, refreshed);
+
+    expect(bound.identityKey, requested.identityKey);
+    expect(bound.title, 'fresh metadata');
+    expect(refreshed.roomId, 'canonical-web-rid', reason: 'the adapter response remains immutable');
   });
 
   test('refresh merge keeps object identity when no response matches', () {
