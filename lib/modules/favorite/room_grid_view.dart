@@ -2,8 +2,15 @@ import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/common/index.dart';
 
 class RoomGridView extends GetView<FavoriteController> {
-  const RoomGridView({super.key, required this.scrollController, required this.displayList, this.emptyBuilder});
+  const RoomGridView({
+    super.key,
+    required this.siteId,
+    required this.scrollController,
+    required this.displayList,
+    this.emptyBuilder,
+  });
 
+  final String siteId;
   final ScrollController scrollController;
   final List<LiveRoom> displayList;
   final WidgetBuilder? emptyBuilder;
@@ -23,8 +30,9 @@ class RoomGridView extends GetView<FavoriteController> {
             crossAxisCount = width > 1280 ? 5 : (width > 960 ? 4 : (width > 640 ? 3 : 2));
           }
 
+          final Widget content;
           if (displayList.isEmpty) {
-            return CustomScrollView(
+            content = CustomScrollView(
               controller: scrollController,
               physics: const PureLiveScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -42,36 +50,48 @@ class RoomGridView extends GetView<FavoriteController> {
                 ),
               ],
             );
+          } else {
+            final itemWidth = (width - 24 - spacing * (crossAxisCount - 1)) / crossAxisCount;
+            content = GridView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              controller: scrollController,
+              physics: const PureLiveScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+              scrollCacheExtent: ScrollCacheExtent.pixels(width > 680 ? 480 : 320),
+              addAutomaticKeepAlives: false,
+              addRepaintBoundaries: true,
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                crossAxisSpacing: spacing,
+                mainAxisSpacing: mainAxisSpacing,
+                mainAxisExtent: itemWidth * 9 / 16 + (dense ? 72 : 84),
+              ),
+              itemCount: displayList.length,
+              itemBuilder: (context, index) {
+                final room = displayList[index];
+                return RoomCard(
+                  key: ValueKey('${room.platform}:${room.roomId}'),
+                  room: room,
+                  dense: dense,
+                  audiencePending: isVerifyingFavorites,
+                );
+              },
+            );
           }
 
-          final itemWidth = (width - 24 - spacing * (crossAxisCount - 1)) / crossAxisCount;
-          return GridView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            controller: scrollController,
-            physics: const PureLiveScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-            scrollCacheExtent: ScrollCacheExtent.pixels(width > 680 ? 480 : 320),
-            addAutomaticKeepAlives: false,
-            addRepaintBoundaries: true,
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: crossAxisCount,
-              crossAxisSpacing: spacing,
-              mainAxisSpacing: mainAxisSpacing,
-              mainAxisExtent: itemWidth * 9 / 16 + (dense ? 72 : 84),
-            ),
-            itemCount: displayList.length,
-            itemBuilder: (context, index) {
-              final room = displayList[index];
-              return RoomCard(
-                key: ValueKey('${room.platform}:${room.roomId}'),
-                room: room,
-                dense: dense,
-                audiencePending: isVerifyingFavorites,
-              );
-            },
-          );
+          if (width > 680) return content;
+          return buildFavoritePullToRefresh(siteId: siteId, onRefresh: controller.refreshData, child: content);
         });
       },
     );
   }
+}
+
+@visibleForTesting
+Widget buildFavoritePullToRefresh({
+  required String siteId,
+  required Future<void> Function() onRefresh,
+  required Widget child,
+}) {
+  return EasyRefresh(key: ValueKey('favorite_pull_to_refresh_$siteId'), onRefresh: onRefresh, child: child);
 }

@@ -15,8 +15,9 @@
 - [v2.1.6 Android 播放修复](STAGE_UPDATE_2_1_6.md)：音频/视频切换灰白画面与后台音频生命周期。
 - [v2.2.0 阶段更新](STAGE_UPDATE_2_2_0.md)：播放器快速恢复、弹幕合并、Windows 多开与最终验证。
 - [v2.3.0 稳定性更新](STAGE_UPDATE_2_3_0.md)：PiP 返回弹幕恢复、启动逐批刷新、横屏输入与长时间资源边界。
-- [v2.5.0 阶段稳定版](STAGE_UPDATE_2_5_0.md)：首页有界并发、三档刷新率、Windows 视频纹理与依赖/上游审计。
+- [v2.7.0 阶段稳定版](STAGE_UPDATE_2_7_0.md)：最新上游整合、热门页生命周期和全平台阶段发布。
 - [v2.6.0 阶段稳定版](STAGE_UPDATE_2_6_0.md)：近期 Issue、字体/SC/播放器稳定性和全平台阶段发布。
+- [v2.5.0 阶段稳定版](STAGE_UPDATE_2_5_0.md)：首页有界并发、三档刷新率、Windows 视频纹理与依赖/上游审计。
 - [参与贡献](../CONTRIBUTING.md)：分支、提交、测试和 Pull Request 约定。
 - [版本说明](../RELEASE_NOTES.md)：当前开发版本变更。
 - [安全策略](../SECURITY.md)：漏洞报告、凭据和签名材料管理。

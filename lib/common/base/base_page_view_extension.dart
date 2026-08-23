@@ -32,7 +32,7 @@ extension BasePageViewContentExtension<C extends BasePageScrollAndStateBone<T>, 
           ),
         ),
       );
-    } else {
+    } else if (wrapMobileRefresh) {
       return EasyRefresh(
         controller: controller.easyRefreshController,
         onRefresh: enableRefresh ? controller.refreshData : null,
@@ -44,6 +44,7 @@ extension BasePageViewContentExtension<C extends BasePageScrollAndStateBone<T>, 
         child: contentBuilder(context, controller.list, controller.scrollController),
       );
     }
+    return contentBuilder(context, controller.list, controller.scrollController);
   }
 
   Widget buildFloatingButtons(BuildContext context) {

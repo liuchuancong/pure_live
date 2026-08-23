@@ -1,45 +1,45 @@
 {
-  "version": "2.6.0",
-  "build_number": 4076,
-  "version_num": 2064076,
+  "version": "2.7.0",
+  "build_number": 4077,
+  "version_num": 2074077,
   "android_abis": [
     "arm64-v8a"
   ],
-  "version_desc": "- 同步上游至 c3ae29bb，修复关注、房间详情补全与弹幕模板状态。\n- 修复多文件字体/弹幕字体重启失效、醒目留言实时刷新及切换房间越界。\n- 修复播放器强制销毁后的黑屏转圈并吸收 BetterPlayer 尺寸修复；优化 Windows 小窗记忆、高 DPI 视频纹理、首页图片缓存与长时间资源占用。\n- iOS 默认使用可显示画面的 IJK 内核并补齐设备刷新率检测；更新 scrollview_observer 1.27.1。",
+  "version_desc": "- 同步上游至 81ec372a，整合热门页关闭状态、加载代次与平台切换稳定性。\n- 恢复关注页逐平台下拉刷新，空列表也可直接核验最新开播状态。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存与 wzgrx 更新源。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.6.0",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.7.0",
   "platforms": {
     "windows": {
-      "version": "2.6.0",
-      "build_number": 4076,
-      "version_num": 2064076,
-      "version_desc": "- 同步上游至 c3ae29bb，修复关注、房间详情补全与弹幕模板状态。\n- 修复多文件字体/弹幕字体重启失效、醒目留言实时刷新及切换房间越界。\n- 修复播放器强制销毁后的黑屏转圈并吸收 BetterPlayer 尺寸修复；优化 Windows 小窗记忆、高 DPI 视频纹理、首页图片缓存与长时间资源占用。\n- iOS 默认使用可显示画面的 IJK 内核并补齐设备刷新率检测；更新 scrollview_observer 1.27.1。",
+      "version": "2.7.0",
+      "build_number": 4077,
+      "version_num": 2074077,
+      "version_desc": "- 同步上游至 81ec372a，整合热门页关闭状态、加载代次与平台切换稳定性。\n- 恢复关注页逐平台下拉刷新，空列表也可直接核验最新开播状态。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存与 wzgrx 更新源。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.6.0"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.7.0"
     },
     "linux": {
-      "version": "2.6.0",
-      "build_number": 4076,
-      "version_num": 2064076,
-      "version_desc": "- 同步上游至 c3ae29bb，修复关注、房间详情补全与弹幕模板状态。\n- 修复多文件字体/弹幕字体重启失效、醒目留言实时刷新及切换房间越界。\n- 修复播放器强制销毁后的黑屏转圈并吸收 BetterPlayer 尺寸修复；优化 Windows 小窗记忆、高 DPI 视频纹理、首页图片缓存与长时间资源占用。\n- iOS 默认使用可显示画面的 IJK 内核并补齐设备刷新率检测；更新 scrollview_observer 1.27.1。",
+      "version": "2.7.0",
+      "build_number": 4077,
+      "version_num": 2074077,
+      "version_desc": "- 同步上游至 81ec372a，整合热门页关闭状态、加载代次与平台切换稳定性。\n- 恢复关注页逐平台下拉刷新，空列表也可直接核验最新开播状态。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存与 wzgrx 更新源。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.6.0"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.7.0"
     },
     "macos": {
-      "version": "2.6.0",
-      "build_number": 4076,
-      "version_num": 2064076,
-      "version_desc": "- 同步上游至 c3ae29bb，修复关注、房间详情补全与弹幕模板状态。\n- 修复多文件字体/弹幕字体重启失效、醒目留言实时刷新及切换房间越界。\n- 修复播放器强制销毁后的黑屏转圈并吸收 BetterPlayer 尺寸修复；优化 Windows 小窗记忆、高 DPI 视频纹理、首页图片缓存与长时间资源占用。\n- iOS 默认使用可显示画面的 IJK 内核并补齐设备刷新率检测；更新 scrollview_observer 1.27.1。",
+      "version": "2.7.0",
+      "build_number": 4077,
+      "version_num": 2074077,
+      "version_desc": "- 同步上游至 81ec372a，整合热门页关闭状态、加载代次与平台切换稳定性。\n- 恢复关注页逐平台下拉刷新，空列表也可直接核验最新开播状态。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存与 wzgrx 更新源。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.6.0"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.7.0"
     },
     "ios": {
-      "version": "2.6.0",
-      "build_number": 4076,
-      "version_num": 2064076,
-      "version_desc": "- 同步上游至 c3ae29bb，修复关注、房间详情补全与弹幕模板状态。\n- 修复多文件字体/弹幕字体重启失效、醒目留言实时刷新及切换房间越界。\n- 修复播放器强制销毁后的黑屏转圈并吸收 BetterPlayer 尺寸修复；优化 Windows 小窗记忆、高 DPI 视频纹理、首页图片缓存与长时间资源占用。\n- iOS 默认使用可显示画面的 IJK 内核并补齐设备刷新率检测；更新 scrollview_observer 1.27.1。",
+      "version": "2.7.0",
+      "build_number": 4077,
+      "version_num": 2074077,
+      "version_desc": "- 同步上游至 81ec372a，整合热门页关闭状态、加载代次与平台切换稳定性。\n- 恢复关注页逐平台下拉刷新，空列表也可直接核验最新开播状态。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存与 wzgrx 更新源。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.6.0"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.7.0"
     }
   }
 }

@@ -7,6 +7,12 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
   final bool enableRefresh;
   final bool enableLoadMore;
 
+  /// Lets a nested tab page own the mobile refresh indicator directly.
+  ///
+  /// A refresh wrapper outside a horizontal [PageView] does not reliably
+  /// receive overscroll notifications from its active vertical child.
+  final bool wrapMobileRefresh;
+
   /// Keeps [contentBuilder] mounted after an empty snapshot has been
   /// published. Tabbed pages use this so landing on one empty tab does not
   /// dispose the surrounding TabBarView and strand the horizontal gesture.
@@ -27,6 +33,7 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
     required this.contentBuilder,
     this.enableRefresh = true,
     this.enableLoadMore = true,
+    this.wrapMobileRefresh = true,
     this.preserveContentWhenEmpty = false,
     this.showScrollToTopBtn,
     this.showPageSizeSelector = false,

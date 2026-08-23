@@ -153,6 +153,7 @@ class _FavoriteSiteTabsState extends State<_FavoriteSiteTabs> with SingleTickerP
             controller: controller,
             enableRefresh: true,
             enableLoadMore: true,
+            wrapMobileRefresh: false,
             preserveContentWhenEmpty: true,
             showScrollToTopBtn: SettingsService.to.page.showScrollToTopBtn.v,
             showPageSizeSelector: SettingsService.to.page.showPageSizeSelector.v,
@@ -173,6 +174,7 @@ class _FavoriteSiteTabsState extends State<_FavoriteSiteTabs> with SingleTickerP
                       final isCurrentSite = entry.key == activeSiteIndex;
                       final pageList = isCurrentSite ? list : controller.filteredSyncedRoomsForSite(site.id);
                       return RoomGridView(
+                        siteId: site.id,
                         scrollController: _scrollControllerFor(site.id),
                         displayList: pageList,
                         emptyBuilder: (context) => _FavoriteEmptyState(controller: controller, siteId: site.id),

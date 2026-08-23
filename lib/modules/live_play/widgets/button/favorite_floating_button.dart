@@ -17,15 +17,18 @@ class FavoriteFloatingButton extends StatelessWidget {
       }
       return;
     }
-    // Get.back() not only closes the dialog but may also pop the current page.
+    // Bind the actions to the dialog route itself. A global Get context may
+    // point at the page navigator while routes are transitioning.
     final confirmed = await Get.dialog<bool>(
-      AlertDialog(
-        title: Text(i18n('unfollow')),
-        content: Text(i18n('unfollow_message', args: {'name': room.nick ?? ''})),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(Get.context!).pop(false), child: Text(i18n('cancel'))),
-          TextButton(onPressed: () => Navigator.of(Get.context!).pop(true), child: Text(i18n('confirm'))),
-        ],
+      Builder(
+        builder: (dialogContext) => AlertDialog(
+          title: Text(i18n('unfollow')),
+          content: Text(i18n('unfollow_message', args: {'name': room.nick ?? ''})),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(i18n('cancel'))),
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text(i18n('confirm'))),
+          ],
+        ),
       ),
     );
     if (confirmed == true && SettingsService.to.fav.removeRoom(room)) {

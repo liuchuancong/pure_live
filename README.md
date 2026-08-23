@@ -33,11 +33,11 @@
 
 > 本维护分支持续同步 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)，并维护本机优先构建、正式签名、接口探测、Windows 数据迁移及高刷新率优化。
 
-- **最新稳定版**：[v2.6.0](https://github.com/wzgrx/pure_live/releases/tag/v2.6.0)
-- **当前版本**：`2.6.0+4076`
-- **v2.6.0 上游源码基线**：已同步至 `liuchuancong/pure_live@c3ae29bb`；维护分支同时保留三档刷新率、PiP 弹幕、后台播放、本地互动、Windows 数据迁移与稳定性增强
+- **最新稳定版**：[v2.7.0](https://github.com/wzgrx/pure_live/releases/tag/v2.7.0)
+- **当前版本**：`2.7.0+4077`
+- **v2.7.0 上游源码基线**：已同步至 `liuchuancong/pure_live@81ec372a`；维护分支同时保留三档刷新率、PiP 弹幕、后台播放、本地互动、Windows 数据迁移与稳定性增强
 - **构建平台**：Android arm64、Windows x64、Linux x64、macOS Universal、iOS arm64 设备包
-- **质量门禁**：Flutter Analyze 0 issue、223/223 项自动化测试、26/26 项发布时点公开接口探测通过
+- **质量门禁**：Flutter Analyze 0 issue、226/226 项自动化测试、26/26 项发布时点公开接口探测通过
 
 ![Pure Live 界面预览](assets/images/banner.png)
 
@@ -89,8 +89,9 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 | [v2.1.6 Android 播放修复](docs/STAGE_UPDATE_2_1_6.md) | 音频/视频切换灰白画面与后台音频生命周期 |
 | [v2.2.0 阶段更新](docs/STAGE_UPDATE_2_2_0.md) | 播放恢复、音频模式、弹幕设置、Windows 多开与最终验证 |
 | [v2.3.0 稳定性更新](docs/STAGE_UPDATE_2_3_0.md) | PiP 返回弹幕恢复、启动刷新、横屏输入、长时间资源边界与验收状态 |
-| [v2.5.0 阶段稳定版](docs/STAGE_UPDATE_2_5_0.md) | 首页有界并发、三档刷新率、Windows 视频纹理与依赖/上游审计 |
+| [v2.7.0 阶段稳定版](docs/STAGE_UPDATE_2_7_0.md) | 最新上游整合、热门页生命周期与全平台阶段发布 |
 | [v2.6.0 阶段稳定版](docs/STAGE_UPDATE_2_6_0.md) | 上游同步、近期 Issue、字体/SC/播放器与全平台阶段发布 |
+| [v2.5.0 阶段稳定版](docs/STAGE_UPDATE_2_5_0.md) | 首页有界并发、三档刷新率、Windows 视频纹理与依赖/上游审计 |
 | [近期 Issue 审计](docs/ISSUE_AUDIT_2026_08_23.md) | #769、#770、#771、#773 与 Windows 高 DPI 问题映射 |
 | [参与贡献](CONTRIBUTING.md) | 分支、提交、测试和 Pull Request 要求 |
 | [安全策略](SECURITY.md) | 私密漏洞报告和签名材料管理 |
@@ -356,7 +357,7 @@ Firebase 不是 Pure Live 使用的必要条件。
 
 ### Android
 
-v2.6.0 的 Android 包仅提供 `arm64-v8a`，适用于当前主流 64 位 ARM 手机和平板。更新页读取版本清单中的实际 ABI 列表，只展示本轮实际发布的下载链接。
+v2.7.0 的 Android 包仅提供 `arm64-v8a`，适用于当前主流 64 位 ARM 手机和平板。更新页读取版本清单中的实际 ABI 列表，只展示本轮实际发布的下载链接。
 
 Android 始终使用正式包名：
 
@@ -423,7 +424,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
   -Target AndroidArm64 -Configuration Release -FullRegression -RequireReleaseSigning
 ```
 
-当前 v2.6.0 build 4076 在原有首页有界并发、PiP 弹幕恢复和三档刷新率基础上，修复每张卡片首挂载时清除图片缓存造成的重复请求与解码；多文件字体、弹幕字体、醒目留言、链接跳转关注及强制销毁后黑屏均使用持久选择、响应式状态和房间代次治理。Windows 视频纹理按实际可见视口适配且切换比例不重新拉流，iOS 新配置默认使用 IJK 并识别设备最高刷新率。完整门禁和全平台产物记录见 [v2.6.0 阶段稳定版](docs/STAGE_UPDATE_2_6_0.md) 与 [构建与发布](docs/BUILD_AND_RELEASE.md)。
+当前 v2.7.0 build 4077 在原有首页有界并发、PiP 弹幕恢复和三档刷新率基础上，同步上游至 `81ec372a`，并为热门页平台切换增加关闭状态、加载代次与延迟任务隔离；关注页每个平台列表重新直接承载下拉刷新，空列表也可手势核验；取消关注弹窗绑定自身路由，避免误退直播页。Windows 视频纹理按实际可见视口适配且切换比例不重新拉流，iOS 新配置默认使用 IJK 并识别设备最高刷新率。完整门禁和全平台产物记录见 [v2.7.0 阶段稳定版](docs/STAGE_UPDATE_2_7_0.md) 与 [构建与发布](docs/BUILD_AND_RELEASE.md)。
 
 ## 🤝 参与开发
 

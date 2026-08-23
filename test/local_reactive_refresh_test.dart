@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:easy_refresh/easy_refresh.dart';
 import 'package:pure_live/common/base/base_page_view.dart';
 import 'package:pure_live/common/base/local_reactive_page_controller.dart';
 
@@ -79,5 +80,37 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     pageController.dispose();
     controller.onClose();
+  });
+
+  testWidgets('nested mobile pages can own the refresh wrapper', (tester) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final controller = _TestLocalController()..updateLocalReactivePool(const <int>[1]);
+    addTearDown(controller.onClose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: BasePageView<_TestLocalController, int>(
+            controller: controller,
+            enableLoadMore: false,
+            wrapMobileRefresh: false,
+            showScrollToTopBtn: false,
+            contentBuilder: (context, list, scrollController) => ListView(
+              key: const ValueKey('nested-refresh-owner'),
+              controller: scrollController,
+              children: const [SizedBox(height: 900)],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('nested-refresh-owner')), findsOneWidget);
+    expect(find.byType(EasyRefresh), findsNothing);
   });
 }
