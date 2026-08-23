@@ -9,6 +9,7 @@ void main() {
       });
 
       expect(config['autoRefreshFavorite'], isTrue);
+      expect(config['refreshFavoriteOnResume'], isTrue);
       expect(config['autoRefreshThumbnails'], isFalse);
       expect(config['thumbnailRefreshInterval'], 30);
       expect(config['maxConcurrentRefresh'], RefreshConfigController.defaultMaxConcurrentRefresh);

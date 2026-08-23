@@ -150,6 +150,84 @@ def require_path(value: object, *path: str) -> None:
         current = current[part]
 
 
+def douyin_search_probe() -> None:
+    """Exercise the anonymous partition fallback used when live search asks for login."""
+    cookie_jar = http.cookiejar.CookieJar()
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookie_jar))
+
+    def get_json(url: str, params: dict[str, object]) -> object:
+        request = urllib.request.Request(
+            f"{url}?{urllib.parse.urlencode(params)}",
+            headers={
+                "User-Agent": USER_AGENT,
+                "Accept": "application/json,text/plain,*/*",
+                "Accept-Language": "zh-CN,zh;q=0.9",
+                "Referer": "https://live.douyin.com/",
+                "Connection": "close",
+            },
+        )
+        with opener.open(request, timeout=20) as response:
+            payload = response.read()
+        if not payload.strip():
+            raise ValueError("empty response body")
+        return json.loads(payload.decode("utf-8", errors="replace").lstrip("\ufeff"))
+
+    home_request = urllib.request.Request(
+        "https://live.douyin.com/?from_nav=1",
+        headers={"User-Agent": USER_AGENT, "Connection": "close"},
+    )
+    with opener.open(home_request, timeout=20) as response:
+        response.read(1)
+    if not any(cookie.name == "ttwid" for cookie in cookie_jar):
+        raise ValueError("anonymous ttwid cookie missing")
+
+    search = get_json(
+        "https://live.douyin.com/webcast/web/partition/search/",
+        {"keyword": "三角洲", "aid": 6383},
+    )
+    require_path(search, "data", "SearchResult")
+    partitions = search["data"]["SearchResult"]  # type: ignore[index]
+    if not isinstance(partitions, list) or not partitions:
+        raise ValueError("partition search returned no matching category")
+    partition = partitions[0].get("partition") if isinstance(partitions[0], dict) else None
+    if not isinstance(partition, dict) or not partition.get("id_str") or partition.get("type") is None:
+        raise ValueError("partition search returned an invalid category")
+
+    params = {
+        "aid": 6383,
+        "app_name": "douyin_web",
+        "live_id": 1,
+        "device_platform": "web",
+        "language": "zh-CN",
+        "browser_language": "zh-CN",
+        "browser_platform": "Win32",
+        "browser_name": "Chrome",
+        "browser_version": "140.0.0.0",
+        "partition": partition["id_str"],
+        "partition_type": partition["type"],
+        "count": 5,
+        "offset": 0,
+        "cookie_enabled": "true",
+        "screen_width": 1920,
+        "screen_height": 1080,
+    }
+    errors: list[str] = []
+    for endpoint in (
+        "https://live.douyin.com/webcast/web/partition/detail/room/v2/",
+        "https://webcast.amemv.com/webcast/web/partition/detail/room/v2/",
+    ):
+        try:
+            response = get_json(endpoint, params)
+            require_path(response, "data", "data")
+            rooms = response["data"]["data"]  # type: ignore[index]
+            if isinstance(rooms, list) and rooms:
+                return
+            errors.append(f"{endpoint}: empty room list")
+        except Exception as error:  # noqa: BLE001 - verify both production fallbacks
+            errors.append(f"{endpoint}: {error}")
+    raise ValueError("; ".join(errors))
+
+
 def bilibili_danmaku_probe() -> None:
     """Validate the signed endpoint and the current secure socket nodes."""
     jar = http.cookiejar.CookieJar()
@@ -592,6 +670,7 @@ def main() -> int:
         ("bilibili.recommend", bilibili_recommend_probe),
         ("bilibili.danmaku", bilibili_danmaku_probe),
         ("huya.danmaku_identity", huya_danmaku_identity_probe),
+        ("douyin.search", douyin_search_probe),
         (
             "douyu.search",
             lambda: require_path(

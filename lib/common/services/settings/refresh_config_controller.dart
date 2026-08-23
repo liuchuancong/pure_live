@@ -12,7 +12,11 @@ class RefreshConfigController extends GetxController {
   }
 
   final RxBool autoRefreshFavorite = hiveBool('autoRefreshFavorite', false);
-  final refreshFavoriteOnResume = hiveBool('refreshFavoriteOnResume', false);
+  // Foregrounding an existing process is the common Android interpretation of
+  // "opening" the app. Default to a fresh status pass so cached live flags do
+  // not survive indefinitely; users who prefer no foreground traffic can still
+  // disable this independently from periodic refresh.
+  final refreshFavoriteOnResume = hiveBool('refreshFavoriteOnResume', true);
   final RxInt autoRefreshInterval = hiveInt('autoRefreshInterval', 30);
   final RxInt maxConcurrentRefresh = hiveInt('maxConcurrentRefresh', defaultMaxConcurrentRefresh);
   final RxBool autoRefreshThumbnails = hiveBool('autoRefreshThumbnails', false);
@@ -63,7 +67,7 @@ class RefreshConfigController extends GetxController {
 
   void fromJson(Map<String, dynamic> json) {
     autoRefreshFavorite.v = json['autoRefreshFavorite'] ?? false;
-    refreshFavoriteOnResume.v = json['refreshFavoriteOnResume'] ?? false;
+    refreshFavoriteOnResume.v = json['refreshFavoriteOnResume'] ?? true;
     autoRefreshInterval.v = json['autoRefreshInterval'] ?? 30;
     maxConcurrentRefresh.v = normalizeMaxConcurrentRefresh(json['maxConcurrentRefresh']);
     autoRefreshThumbnails.v = json['autoRefreshThumbnails'] ?? false;
@@ -81,7 +85,7 @@ class RefreshConfigController extends GetxController {
     final refresh = rootConfig?['refresh'] as Map<String, dynamic>? ?? {};
     return {
       'autoRefreshFavorite': refresh['autoRefreshFavorite'] ?? false,
-      'refreshFavoriteOnResume': refresh['refreshFavoriteOnResume'] ?? false,
+      'refreshFavoriteOnResume': refresh['refreshFavoriteOnResume'] ?? true,
       'autoRefreshInterval': refresh['autoRefreshInterval'] ?? 30,
       'maxConcurrentRefresh': normalizeMaxConcurrentRefresh(refresh['maxConcurrentRefresh']),
       'autoRefreshThumbnails': refresh['autoRefreshThumbnails'] ?? false,

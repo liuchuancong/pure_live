@@ -33,11 +33,11 @@
 
 > 本维护分支持续同步 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)，并维护本机优先构建、正式签名、接口探测、Windows 数据迁移及高刷新率优化。
 
-- **最新稳定版**：[v2.7.0](https://github.com/wzgrx/pure_live/releases/tag/v2.7.0)
-- **当前版本**：`2.7.0+4077`
-- **v2.7.0 上游源码基线**：已同步至 `liuchuancong/pure_live@81ec372a`；维护分支同时保留三档刷新率、PiP 弹幕、后台播放、本地互动、Windows 数据迁移与稳定性增强
+- **最新稳定版**：[v2.8.0](https://github.com/wzgrx/pure_live/releases/tag/v2.8.0)
+- **当前版本**：`2.8.0+4078`
+- **v2.8.0 上游源码基线**：已同步至 `liuchuancong/pure_live@231a7c61`；维护分支同时保留三档刷新率、PiP 弹幕、后台播放、本地互动、Windows 数据迁移与稳定性增强
 - **构建平台**：Android arm64、Windows x64、Linux x64、macOS Universal、iOS arm64 设备包
-- **质量门禁**：Flutter Analyze 0 issue、226/226 项自动化测试、26/26 项发布时点公开接口探测通过
+- **质量门禁**：Flutter Analyze、完整自动化测试与公开接口探测结果见 `docs/STAGE_UPDATE_2_8_0.md`
 
 ![Pure Live 界面预览](assets/images/banner.png)
 

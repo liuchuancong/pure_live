@@ -1,45 +1,45 @@
 {
-  "version": "2.7.0",
-  "build_number": 4077,
-  "version_num": 2074077,
+  "version": "2.8.0",
+  "build_number": 4078,
+  "version_num": 208004078,
+  "version_desc": "- 同步上游至 231a7c61，整合抖音搜索、恢复关注刷新、Windows PiP 几何校验与 RTX VSR 可选项。\n- 关注页保留逐平台下拉动画；启动、恢复、定时和手动刷新使用权威快照，失败状态不再沿用旧开播位。\n- 抖音匿名搜索自动回退公开分区接口，并加固 Cookie、备用域名、分页与稳定房间身份。\n- 保留 Windows 高 DPI 视频纹理限幅、稳定 AppId、图片有界缓存与 wzgrx 更新源。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
+  "prerelease": false,
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.8.0",
   "android_abis": [
     "arm64-v8a"
   ],
-  "version_desc": "- 同步上游至 81ec372a，整合热门页关闭状态、加载代次与平台切换稳定性。\n- 关注页恢复可见下拉动画；启动、恢复与手动刷新串行核验，失败状态不再沿用旧开播位。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存与 wzgrx 更新源。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
-  "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.7.0",
   "platforms": {
     "windows": {
-      "version": "2.7.0",
-      "build_number": 4077,
-      "version_num": 2074077,
-      "version_desc": "- 同步上游至 81ec372a，整合热门页关闭状态、加载代次与平台切换稳定性。\n- 恢复关注页逐平台下拉刷新，空列表也可直接核验最新开播状态。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存与 wzgrx 更新源。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
+      "version": "2.8.0",
+      "build_number": 4078,
+      "version_num": 208004078,
+      "version_desc": "- 同步上游至 231a7c61，整合抖音搜索、恢复关注刷新、Windows PiP 几何校验与 RTX VSR 可选项。\n- 关注页保留逐平台下拉动画；启动、恢复、定时和手动刷新使用权威快照，失败状态不再沿用旧开播位。\n- 抖音匿名搜索自动回退公开分区接口，并加固 Cookie、备用域名、分页与稳定房间身份。\n- 保留 Windows 高 DPI 视频纹理限幅、稳定 AppId、图片有界缓存与 wzgrx 更新源。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.7.0"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.8.0"
     },
     "linux": {
-      "version": "2.7.0",
-      "build_number": 4077,
-      "version_num": 2074077,
-      "version_desc": "- 同步上游至 81ec372a，整合热门页关闭状态、加载代次与平台切换稳定性。\n- 恢复关注页逐平台下拉刷新，空列表也可直接核验最新开播状态。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存与 wzgrx 更新源。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
+      "version": "2.8.0",
+      "build_number": 4078,
+      "version_num": 208004078,
+      "version_desc": "- 同步上游至 231a7c61，整合抖音搜索、恢复关注刷新、Windows PiP 几何校验与 RTX VSR 可选项。\n- 关注页保留逐平台下拉动画；启动、恢复、定时和手动刷新使用权威快照，失败状态不再沿用旧开播位。\n- 抖音匿名搜索自动回退公开分区接口，并加固 Cookie、备用域名、分页与稳定房间身份。\n- 保留 Windows 高 DPI 视频纹理限幅、稳定 AppId、图片有界缓存与 wzgrx 更新源。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.7.0"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.8.0"
     },
     "macos": {
-      "version": "2.7.0",
-      "build_number": 4077,
-      "version_num": 2074077,
-      "version_desc": "- 同步上游至 81ec372a，整合热门页关闭状态、加载代次与平台切换稳定性。\n- 恢复关注页逐平台下拉刷新，空列表也可直接核验最新开播状态。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存与 wzgrx 更新源。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
+      "version": "2.8.0",
+      "build_number": 4078,
+      "version_num": 208004078,
+      "version_desc": "- 同步上游至 231a7c61，整合抖音搜索、恢复关注刷新、Windows PiP 几何校验与 RTX VSR 可选项。\n- 关注页保留逐平台下拉动画；启动、恢复、定时和手动刷新使用权威快照，失败状态不再沿用旧开播位。\n- 抖音匿名搜索自动回退公开分区接口，并加固 Cookie、备用域名、分页与稳定房间身份。\n- 保留 Windows 高 DPI 视频纹理限幅、稳定 AppId、图片有界缓存与 wzgrx 更新源。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.7.0"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.8.0"
     },
     "ios": {
-      "version": "2.7.0",
-      "build_number": 4077,
-      "version_num": 2074077,
-      "version_desc": "- 同步上游至 81ec372a，整合热门页关闭状态、加载代次与平台切换稳定性。\n- 恢复关注页逐平台下拉刷新，空列表也可直接核验最新开播状态。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存与 wzgrx 更新源。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
+      "version": "2.8.0",
+      "build_number": 4078,
+      "version_num": 208004078,
+      "version_desc": "- 同步上游至 231a7c61，整合抖音搜索、恢复关注刷新、Windows PiP 几何校验与 RTX VSR 可选项。\n- 关注页保留逐平台下拉动画；启动、恢复、定时和手动刷新使用权威快照，失败状态不再沿用旧开播位。\n- 抖音匿名搜索自动回退公开分区接口，并加固 Cookie、备用域名、分页与稳定房间身份。\n- 保留 Windows 高 DPI 视频纹理限幅、稳定 AppId、图片有界缓存与 wzgrx 更新源。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.7.0"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.8.0"
     }
   }
 }
