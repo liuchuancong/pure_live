@@ -41,7 +41,7 @@ on:
         description: Release tag (e.g. v1.0.0) – required if create_release is true
         required: true
         type: string
-        default: 'v2.7.0'
+        default: "v2.7.0"
   push:
     tags:
       - "stage-linux-*"
@@ -95,13 +95,14 @@ jobs:
         run: python tool/interface_probe.py
   android:
     name: Android all ABIs
+    needs: quality
     if: >-
       ${{
+        always() &&
         github.event_name == 'workflow_dispatch' &&
         inputs.build_android &&
         (needs.quality.result == 'success' || needs.quality.result == 'skipped')
       }}
-    needs: quality
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
@@ -210,7 +211,7 @@ jobs:
   windows:
     name: Windows EXE + MSIX + Portable
     if: >-
-      ${{
+      ${{ always() &&
         github.event_name == 'workflow_dispatch' &&
         inputs.build_windows &&
         (needs.quality.result == 'success' || needs.quality.result == 'skipped')
