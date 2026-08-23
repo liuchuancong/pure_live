@@ -34,15 +34,13 @@ class _VideoPlayerState extends State<VideoPlayer> with WidgetsBindingObserver {
       final state = controller.livePlayController.state.value;
       final displayVideo = state.ui.displayVideoLayer;
 
-      return displayVideo
-          ? GlobalPlayerService.instance.player.getVideoWidget(
-              SettingsService.to.player.videoFitIndex.v,
-              fitList: SettingsService.to.player.videoFitArray,
-              trackPipSource: true,
-              audioOnlyOverride: audioOnly,
-              controls: VideoControllerPanel(controller: controller),
-            )
-          : VideoLoading();
+      return _DelayedVideoWidget(
+        displayVideo: displayVideo,
+        audioOnly: audioOnly,
+        videoFitIndex: SettingsService.to.player.videoFitIndex.v,
+        fitList: SettingsService.to.player.videoFitArray,
+        controller: controller,
+      );
     });
   }
 
@@ -79,5 +77,95 @@ class _VideoPlayerState extends State<VideoPlayer> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return _buildVideo();
+  }
+}
+
+// 修复从录制页面返回崩溃
+class _DelayedVideoWidget extends StatefulWidget {
+  final bool displayVideo;
+  final bool audioOnly;
+  final int videoFitIndex;
+  final List<BoxFit> fitList;
+  final VideoController controller;
+
+  const _DelayedVideoWidget({
+    required this.displayVideo,
+    required this.audioOnly,
+    required this.videoFitIndex,
+    required this.fitList,
+    required this.controller,
+  });
+
+  @override
+  State<_DelayedVideoWidget> createState() => _DelayedVideoWidgetState();
+}
+
+class _DelayedVideoWidgetState extends State<_DelayedVideoWidget> {
+  Timer? _timer;
+  bool _showVideo = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.displayVideo) {
+      _startDelay();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _DelayedVideoWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.displayVideo != widget.displayVideo) {
+      if (!widget.displayVideo) {
+        _timer?.cancel();
+        _timer = null;
+        if (_showVideo) {
+          setState(() {
+            _showVideo = false;
+          });
+        }
+      } else {
+        _startDelay();
+      }
+    }
+  }
+
+  void _startDelay() {
+    _timer?.cancel();
+    if (_showVideo) {
+      setState(() {
+        _showVideo = false;
+      });
+    }
+    _timer = Timer(const Duration(milliseconds: 20), () {
+      if (!mounted || !widget.displayVideo) {
+        return;
+      }
+      setState(() {
+        _showVideo = true;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_showVideo) {
+      return VideoLoading();
+    }
+
+    return GlobalPlayerService.instance.player.getVideoWidget(
+      widget.videoFitIndex,
+      fitList: widget.fitList,
+      trackPipSource: true,
+      audioOnlyOverride: widget.audioOnly,
+      controls: VideoControllerPanel(controller: widget.controller),
+    );
   }
 }
