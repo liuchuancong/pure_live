@@ -12,6 +12,7 @@ import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/common/convert_helper.dart';
 import 'package:pure_live/core/danmaku/douyin_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
+import 'package:pure_live/core/site/douyin/douyin_search.dart';
 import 'package:pure_live/core/utils/douyin/douyin_request_params.dart';
 
 class DouyinSite implements LiveSite {
@@ -610,93 +611,7 @@ class DouyinSite implements LiveSite {
 
   @override
   Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) async {
-    String serverUrl = "https://www.douyin.com/aweme/v1/web/live/search/";
-    var uri = Uri.parse(serverUrl).replace(
-      scheme: "https",
-      port: 443,
-      queryParameters: {
-        "device_platform": "webapp",
-        "aid": "6383",
-        "channel": "channel_pc_web",
-        "search_channel": "aweme_live",
-        "keyword": keyword,
-        "search_source": "switch_tab",
-        "query_correct_type": "1",
-        "is_filter_search": "0",
-        "from_group_id": "",
-        "offset": ((page - 1) * 10).toString(),
-        "count": "10",
-        "pc_client_type": "1",
-        "version_code": "170400",
-        "version_name": "17.4.0",
-        "cookie_enabled": "true",
-        "screen_width": "1980",
-        "screen_height": "1080",
-        "browser_language": "zh-CN",
-        "browser_platform": "Win32",
-        "browser_name": "Edge",
-        "browser_version": "125.0.0.0",
-        "browser_online": "true",
-        "engine_name": "Blink",
-        "engine_version": "125.0.0.0",
-        "os_name": "Windows",
-        "os_version": "10",
-        "cpu_core_num": "12",
-        "device_memory": "8",
-        "platform": "PC",
-        "downlink": "10",
-        "effective_type": "4g",
-        "round_trip_time": "100",
-        "webid": "7382872326016435738",
-      },
-    );
-    var requlestUrl = uri.toString();
-    var headResp = await getRequestHeaders();
-    var dyCookie = headResp['cookie'];
-    var result = await HttpClient.instance.getJson(
-      requlestUrl,
-      queryParameters: {},
-      header: {
-        "Authority": 'www.douyin.com',
-        'accept': 'application/json, text/plain, */*',
-        'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8',
-        'cookie': dyCookie,
-        'priority': 'u=1, i',
-        'referer': 'https://www.douyin.com/search/${Uri.encodeComponent(keyword)}?type=live',
-        'sec-ch-ua': '"Microsoft Edge";v="125", "Chromium";v="125", "Not.A/Brand";v="24"',
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': '"Windows"',
-        'sec-fetch-dest': 'empty',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-site': 'same-origin',
-        'user-agent': DouyinRequestParams.kDefaultUserAgent,
-      },
-    );
-    if (result == "" || result == 'blocked') {
-      throw Exception("抖音直播搜索被限制，请稍后再试");
-    }
-    var items = <LiveRoom>[];
-    for (var item in result["data"] ?? []) {
-      var itemData = json.decode(item["lives"]["rawdata"].toString());
-      var roomStatus = (asT<int?>(itemData["status"]) ?? 0) == 2;
-      var roomItem = LiveRoom(
-        roomId: itemData["owner"]["web_rid"].toString(),
-        title: itemData["title"].toString(),
-        cover: itemData["cover"]["url_list"][0].toString(),
-        nick: itemData["owner"]["nickname"].toString(),
-        platform: Sites.douyinSite,
-        avatar: itemData["owner"]["avatar_thumb"]["url_list"][0].toString(),
-        liveStatus: roomStatus ? LiveStatus.live : LiveStatus.offline,
-        area: '',
-        status: roomStatus,
-        watching: itemData["stats"]["total_user_str"].toString(),
-        totalViewers: itemData["stats"]["total_user_str"].toString(),
-        onlineViewers: _douyinOnlineViewers(itemData),
-        audienceMetricType: AudienceMetricType.totalViewers,
-      );
-      items.add(roomItem);
-    }
-    return items;
+    return await DouyinSearch.search(keyword, page: page, pageSize: pageSize);
   }
 
   @override
