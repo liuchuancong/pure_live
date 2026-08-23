@@ -1033,6 +1033,8 @@
     "refresh_settings": "刷新设置",
     "auto_refresh_follow": "开启关注自动刷新",
     "auto_refresh_follow_subtitle": "定时自动拉取关注直播间状态",
+    "refresh_follow_on_resume": "返回应用时刷新收藏",
+    "refresh_follow_on_resume_subtitle": "从后台返回应用时自动刷新收藏列表",
     "auto_refresh_thumbnails": "自动刷新直播缩略图",
     "auto_refresh_thumbnails_subtitle": "按设定周期清理旧封面并重新请求当前缩略图",
     "auto_refresh_interval": "刷新间隔时间",

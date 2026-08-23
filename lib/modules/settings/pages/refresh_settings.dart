@@ -21,6 +21,12 @@ class RefreshSettingsPage extends GetView<RefreshConfigController> {
               subtitle: i18n("auto_refresh_follow_subtitle"),
               value: controller.autoRefreshFavorite,
             ),
+            context.buildSwitchTile(
+              icon: Remix.refresh_line,
+              title: i18n("refresh_follow_on_resume"),
+              subtitle: i18n("refresh_follow_on_resume_subtitle"),
+              value: controller.refreshFavoriteOnResume,
+            ),
             Obx(() {
               if (!controller.autoRefreshFavorite.value) {
                 return const SizedBox.shrink();

@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:developer' as developer;
 
-import 'package:synchronized/synchronized.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:synchronized/synchronized.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:pure_live/modules/tags/live_tag.dart';
 import 'package:pure_live/core/interface/live_site.dart';
@@ -136,6 +136,9 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) {
       _resumeRefreshTimer?.cancel();
+      return;
+    }
+    if (!refreshConfigController.refreshFavoriteOnResume.value) {
       return;
     }
     final last = _lastFullRefreshAt;

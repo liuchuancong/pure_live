@@ -1033,6 +1033,8 @@
     "refresh_settings": "Refresh Settings",
     "auto_refresh_follow": "Auto refresh follow list",
     "auto_refresh_follow_subtitle": "Auto refresh followed live status regularly",
+    "refresh_follow_on_resume": "Refresh favorites on resume",
+  "refresh_follow_on_resume_subtitle": "Automatically refresh favorites when returning from the background",
     "auto_refresh_thumbnails": "Auto refresh live thumbnails",
     "auto_refresh_thumbnails_subtitle": "Drop stale covers and reload visible thumbnails on a schedule",
     "auto_refresh_interval": "Refresh Interval",
