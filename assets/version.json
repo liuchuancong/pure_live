@@ -7,7 +7,7 @@
     "arm64-v8a",
     "x86_64"
   ],
-  "version_desc": "- 修复抖音搜索。\n- 整合热门页关闭状态、加载代次与平台切换稳定性。\n-修复关注页逐平台下拉刷新，空列表也可直接核验最新开播状态。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
+  "version_desc": "- 修复抖音搜索。\n- 整合热门页关闭状态、加载代次与平台切换稳定性。\n- 修复关注页逐平台下拉刷新，空列表也可直接核验最新开播状态。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
   "prerelease": false,
   "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.7.0",
   "platforms": {
@@ -15,7 +15,7 @@
       "version": "2.7.0",
       "build_number": 4077,
       "version_num": 207004077,
-      "version_desc": "- 修复抖音搜索。\n- 整合热门页关闭状态、加载代次与平台切换稳定性。\n-修复关注页逐平台下拉刷新，空列表也可直接核验最新开播状态。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
+      "version_desc": "- 修复抖音搜索。\n- 整合热门页关闭状态、加载代次与平台切换稳定性。\n- 修复关注页逐平台下拉刷新，空列表也可直接核验最新开播状态。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.7.0"
     },
@@ -23,7 +23,7 @@
       "version": "2.7.0",
       "build_number": 4077,
       "version_num": 207004077,
-      "version_desc": "- 修复抖音搜索。\n- 整合热门页关闭状态、加载代次与平台切换稳定性。\n-修复关注页逐平台下拉刷新，空列表也可直接核验最新开播状态。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
+      "version_desc": "- 修复抖音搜索。\n- 整合热门页关闭状态、加载代次与平台切换稳定性。\n- 修复关注页逐平台下拉刷新，空列表也可直接核验最新开播状态。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.7.0"
     },
@@ -31,7 +31,7 @@
       "version": "2.7.0",
       "build_number": 4077,
       "version_num": 207004077,
-      "version_desc": "- 修复抖音搜索。\n- 整合热门页关闭状态、加载代次与平台切换稳定性。\n-修复关注页逐平台下拉刷新，空列表也可直接核验最新开播状态。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
+      "version_desc": "- 修复抖音搜索。\n- 整合热门页关闭状态、加载代次与平台切换稳定性。\n- 修复关注页逐平台下拉刷新，空列表也可直接核验最新开播状态。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.7.0"
     },
@@ -39,7 +39,7 @@
       "version": "2.7.0",
       "build_number": 4077,
       "version_num": 207004077,
-      "version_desc": "- 修复抖音搜索。\n- 整合热门页关闭状态、加载代次与平台切换稳定性。\n-修复关注页逐平台下拉刷新，空列表也可直接核验最新开播状态。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
+      "version_desc": "- 修复抖音搜索。\n- 整合热门页关闭状态、加载代次与平台切换稳定性。\n- 修复关注页逐平台下拉刷新，空列表也可直接核验最新开播状态。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.7.0"
     }
