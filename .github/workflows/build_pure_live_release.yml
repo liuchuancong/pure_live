@@ -51,7 +51,7 @@ permissions:
   contents: read
 concurrency:
   group: manual-build-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 env:
   FLUTTER_VERSION: 3.47.0
   FLUTTER_LINUX_ARCHIVE: stable/linux/flutter_linux_3.47.0-stable.tar.xz
@@ -60,6 +60,7 @@ jobs:
   quality:
     name: Analyze, test and probe
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_quality }}
+    needs: []
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -94,7 +95,7 @@ jobs:
         run: python tool/interface_probe.py
   android:
     name: Android all ABIs
-    if: ${{ always() && inputs.build_android && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    if: ${{ inputs.build_android && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
     needs: quality
     runs-on: ubuntu-latest
     timeout-minutes: 55
@@ -203,7 +204,7 @@ jobs:
           retention-days: 3
   windows:
     name: Windows EXE + MSIX + Portable
-    if: ${{ always() && inputs.build_windows && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    if: ${{ inputs.build_windows && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
     needs: quality
     runs-on: windows-latest
     timeout-minutes: 35
@@ -376,7 +377,7 @@ jobs:
           retention-days: 3
   linux:
     name: Linux x64 portable
-    if: ${{ always() && inputs.build_linux && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    if: ${{  inputs.build_linux && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
     needs: quality
     runs-on: ubuntu-24.04
     timeout-minutes: 35
@@ -478,7 +479,7 @@ jobs:
           retention-days: 3
   apple:
     name: Apple platform packages
-    if: ${{ always() && (inputs.build_macos || inputs.build_ios) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    if: ${{ (inputs.build_macos || inputs.build_ios) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
     needs: quality
     runs-on: macos-15
     timeout-minutes: 90
@@ -679,7 +680,7 @@ jobs:
           retention-days: 7
   publish-release:
     name: Publish GitHub Release
-    if: ${{ always() && inputs.create_release && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    if: ${{  inputs.create_release && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
     needs:
       - quality
       - android
@@ -842,7 +843,7 @@ jobs:
             BUILD_METADATA.json
   update-json:
     name: Update releases.json
-    if: ${{ always() && inputs.create_release && needs.publish-release.result == 'success' }}
+    if: ${{ inputs.create_release && needs.publish-release.result == 'success' }}
     needs:
       - publish-release
     runs-on: ubuntu-latest
