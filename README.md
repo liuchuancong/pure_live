@@ -427,7 +427,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
 ## 🤝 参与开发
 
 - **主开发者**：[@liuchuancong](https://github.com/liuchuancong)
-- **协助开发者**：[@liuchuancong](https://github.com/liuchuancong/pure_live)
+- **协助开发者**：[@wzgrx](https://github.com/wzgrx/pure_live)
 - **协助开发者**：[@RebornQ](https://github.com/RebornQ)
 
 > 📌 **欢迎贡献**！
