@@ -728,7 +728,7 @@ jobs:
           retention-days: 7
   publish-release:
     name: Publish GitHub Release
-    if: ${{  inputs.create_release && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    if: ${{ always() && inputs.create_release && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
     needs:
       - quality
       - android
@@ -891,7 +891,7 @@ jobs:
             BUILD_METADATA.json
   update-json:
     name: Update releases.json
-    if: ${{ inputs.create_release && needs.publish-release.result == 'success' }}
+    if: ${{ always() && inputs.create_release && needs.publish-release.result == 'success' }}
     needs:
       - publish-release
     runs-on: ubuntu-latest
