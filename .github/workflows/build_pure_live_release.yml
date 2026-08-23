@@ -203,8 +203,8 @@ jobs:
           retention-days: 3
   windows:
     name: Windows EXE + MSIX + Portable
-    if: ${{ always() && inputs.build_windows && (needs.quality.result == 'success' || needs.quality.result == 'skipped') && (needs.android.result == 'success' || needs.android.result == 'skipped') }}
-    needs: [quality, android]
+    if: ${{ always() && inputs.build_windows && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    needs: quality
     runs-on: windows-latest
     timeout-minutes: 35
     steps:
@@ -376,8 +376,8 @@ jobs:
           retention-days: 3
   linux:
     name: Linux x64 portable
-    if: ${{ always() && ((github.event_name == 'push' && startsWith(github.ref_name, 'stage-linux-')) || inputs.build_linux) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') && (needs.windows.result == 'success' || needs.windows.result == 'skipped') }}
-    needs: [quality, windows]
+    if: ${{ always() && inputs.build_linux && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    needs: quality
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
@@ -478,8 +478,8 @@ jobs:
           retention-days: 3
   apple:
     name: Apple platform packages
-    if: ${{ always() && ((github.event_name == 'push' && (startsWith(github.ref_name, 'stage-macos-') || startsWith(github.ref_name, 'stage-ios-'))) || inputs.build_macos || inputs.build_ios) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') && (needs.linux.result == 'success' || needs.linux.result == 'skipped') }}
-    needs: [quality, linux]
+    if: ${{ always() && (inputs.build_macos || inputs.build_ios) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    needs: quality
     runs-on: macos-15
     timeout-minutes: 90
     steps:
