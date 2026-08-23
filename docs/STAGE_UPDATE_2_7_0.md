@@ -46,15 +46,22 @@
 
 本轮目标按 Android → Windows → Linux → macOS → iOS 串行构建：
 
-| 平台 | 目标 |
-| --- | --- |
-| Android | arm64-v8a 正式签名 APK |
-| Windows | x64 安装程序与便携 ZIP |
-| Linux | x64 tar.gz |
-| macOS | Universal DMG 与 ZIP |
-| iOS | arm64 unsigned app ZIP 与 TrollStore IPA |
+冻结源码：`a7c6f5f25a7f58f38fd1910423fcd9ac9074572c`。
 
-最终运行链接、产物尺寸、SHA-256、签名与归档校验将在全平台阶段完成后写入本节，并同步到 Release 的 `BUILD_METADATA.json` 与 `SHA256SUMS.txt`。
+| 平台 | 产物 | 字节数 | SHA-256 | 构建来源 |
+| --- | --- | ---: | --- | --- |
+| Android arm64-v8a | `PureLive-2.7.0-4077-arm64-v8a-release.apk` | 119,839,130 | `3d545e3d108911dbe3b2cc6c9dbc55688019bb2c68e1259d1801099a85032c45` | [Actions 32607215774](https://github.com/wzgrx/pure_live/actions/runs/32607215774) |
+| Windows x64 | `PureLive-2.7.0-windows-x64-setup.exe` | 56,408,107 | `69298593007c582275c17d0042bf3ba91b08dc9b31fedfeb36bb052fff8bec82` | 本机 Release |
+| Windows x64 | `PureLive-2.7.0-4077-windows-x64-portable.zip` | 72,841,836 | `345e00752103f320fc249b537e378fb368451ad9373da6c607d6cad35752f42a` | 本机 Release |
+| Linux x64 | `PureLive-2.7.0-4077-linux-x64.tar.gz` | 37,456,662 | `c452cefdb816388f14adf34641eb544aa929e82fe0bbe92f5ae010df7563467f` | [Actions 32608227446](https://github.com/wzgrx/pure_live/actions/runs/32608227446) |
+| macOS Universal | `PureLive-2.7.0-4077-macos-universal.dmg` | 113,971,783 | `2e4ff5b628dc3436f8f6e5f86e2a0c285365e270a1e86379b4bfe26f3cb01d05` | [Actions 32608464856](https://github.com/wzgrx/pure_live/actions/runs/32608464856) |
+| macOS Universal | `PureLive-2.7.0-4077-macos-universal.zip` | 101,234,766 | `0ead73c263f0d2091aad82769cd85233eb4980f88718e000ebd26824aa5a9179` | [Actions 32608464856](https://github.com/wzgrx/pure_live/actions/runs/32608464856) |
+| iOS arm64 | `PureLive-2.7.0-4077-ios-arm64-unsigned-app.zip` | 57,936,393 | `86803cfb72fbcc0ee0a709be28697c31138e981604af1abbea64a70e5a28e270` | [Actions 32609700256](https://github.com/wzgrx/pure_live/actions/runs/32609700256) |
+| iOS arm64 | `PureLive-2.7.0-4077-ios-arm64-trollstore.ipa` | 58,776,645 | `b528459c230950a94aba3a19a5508149953476becceb68e708570d9207615fdf` | [Actions 32609700256](https://github.com/wzgrx/pure_live/actions/runs/32609700256) |
+
+Android 复核为包名 `com.mystyle.purelive`、versionName `2.7.0`、versionCode `6077`、minSdk 24、targetSdk 37、仅 `arm64-v8a`；APK Signature Scheme v2 有效，RSA-4096 发布证书 SHA-256 为 `c0bb95744c81f9c7dd4535a9552775038eb5a59c5922f791d1695f45ac34ceaf`。Linux 归档包含可执行文件，Windows/macOS/iOS ZIP 与 IPA 均通过结构检查，远端产物侧车校验与本机 SHA-256 一致。
+
+Windows 本机构建耗时 478.301 秒，结束后活跃重型进程为 0。随后用隔离实例执行 371.975 秒、37 个采样点的 Release 烟雾测试：工作集从 312,360,960 B 降至 228,642,816 B，私有字节从 787,902,464 B 降至 688,254,976 B，CPU 累计增加 3.65625 秒；记录为 `20260823T002818941Z-windows-release-smoke.json`。
 
 ## 5. 验收边界
 
