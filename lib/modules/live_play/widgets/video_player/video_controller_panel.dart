@@ -1257,7 +1257,7 @@ class FullscreenStreamSelectorButton extends StatelessWidget {
         context: context,
         builder: (dialogContext) => Dialog(
           key: const ValueKey('fullscreen-stream-selector-panel'),
-          alignment: Alignment.center,
+          alignment: Alignment.centerRight,
           insetPadding: layout.insetPadding,
           clipBehavior: Clip.antiAlias,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
@@ -1304,6 +1304,7 @@ class FullscreenStreamSelectorButton extends StatelessWidget {
                             direction: layout.splitContent ? Axis.horizontal : Axis.vertical,
                             children: [
                               Expanded(
+                                flex: layout.splitContent ? 1 : 4,
                                 child: _StreamChoicePane(
                                   key: const ValueKey('stream-quality-pane'),
                                   icon: Icons.high_quality_rounded,
@@ -1325,6 +1326,7 @@ class FullscreenStreamSelectorButton extends StatelessWidget {
                               ),
                               SizedBox(width: layout.splitContent ? 10 : 0, height: layout.splitContent ? 0 : 10),
                               Expanded(
+                                flex: layout.splitContent ? 1 : 3,
                                 child: _StreamChoicePane(
                                   key: const ValueKey('stream-line-pane'),
                                   icon: Icons.alt_route_rounded,
@@ -1461,11 +1463,11 @@ class _StreamChoicePane extends StatelessWidget {
         border: Border.all(color: colors.outlineVariant.withValues(alpha: .55)),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+        padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
         child: Column(
           children: [
             SizedBox(
-              height: 30,
+              height: 27,
               child: Row(
                 children: [
                   Icon(icon, size: 18, color: colors.primary),
@@ -1483,7 +1485,7 @@ class _StreamChoicePane extends StatelessWidget {
                 ],
               ),
             ),
-            const Divider(height: 8),
+            const Divider(height: 6),
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
@@ -1492,18 +1494,18 @@ class _StreamChoicePane extends StatelessWidget {
                     physics: const PureLiveScrollPhysics(),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: columns,
-                      mainAxisExtent: 50,
-                      mainAxisSpacing: 7,
-                      crossAxisSpacing: 7,
+                      mainAxisExtent: 42,
+                      mainAxisSpacing: 6,
+                      crossAxisSpacing: 6,
                     ),
                     itemCount: itemCount,
                     itemBuilder: (context, index) {
                       final selected = selectedIndex == index;
                       return Material(
                         color: selected ? colors.primaryContainer : colors.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(11),
+                        borderRadius: BorderRadius.circular(10),
                         child: InkWell(
-                          borderRadius: BorderRadius.circular(11),
+                          borderRadius: BorderRadius.circular(10),
                           onTap: onSelected == null || selected ? null : () => unawaited(onSelected!(index)),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -1711,6 +1713,7 @@ class _FullscreenLocalDanmakuComposerState extends State<FullscreenLocalDanmakuC
         );
       }
 
+      final localStyle = local.currentDanmakuStyle;
       return SizedBox(
         key: const ValueKey('fullscreen-local-danmaku-composer'),
         height: 38,
@@ -1718,9 +1721,21 @@ class _FullscreenLocalDanmakuComposerState extends State<FullscreenLocalDanmakuC
           controller: _textController,
           focusNode: _focusNode,
           style: TextStyle(
-            color: Color(local.danmakuColor.v),
+            color: Color(local.danmakuColor.v).withValues(alpha: localStyle.opacity),
             fontSize: 13,
-            fontWeight: FontWeight(local.currentDanmakuStyle.fontWeight),
+            fontWeight: FontWeight(localStyle.fontWeight),
+            fontFamily: localStyle.fontFamily,
+            fontStyle: localStyle.italic ? FontStyle.italic : FontStyle.normal,
+            letterSpacing: localStyle.letterSpacing,
+            shadows: localStyle.showShadow
+                ? [
+                    Shadow(
+                      color: Color(localStyle.shadowColor).withValues(alpha: localStyle.opacity),
+                      blurRadius: localStyle.shadowBlur,
+                      offset: Offset(localStyle.shadowOffset, localStyle.shadowOffset),
+                    ),
+                  ]
+                : null,
           ),
           textInputAction: TextInputAction.send,
           onSubmitted: (_) => _send(),

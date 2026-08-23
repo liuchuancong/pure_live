@@ -11,6 +11,7 @@ Future<void> showLocalDanmakuStyleEditor(BuildContext context, {required LocalIn
       context: context,
       builder: (dialogContext) => Dialog(
         key: const ValueKey('local-danmaku-style-dialog'),
+        alignment: Alignment.centerRight,
         insetPadding: layout.insetPadding,
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
@@ -21,6 +22,7 @@ Future<void> showLocalDanmakuStyleEditor(BuildContext context, {required LocalIn
             controller: controller,
             close: () => Navigator.pop(dialogContext),
             splitPreview: layout.splitContent,
+            panelCompact: true,
           ),
         ),
       ),
@@ -40,11 +42,17 @@ Future<void> showLocalDanmakuStyleEditor(BuildContext context, {required LocalIn
 }
 
 class _StyleSurface extends StatelessWidget {
-  const _StyleSurface({required this.controller, required this.close, this.splitPreview = false});
+  const _StyleSurface({
+    required this.controller,
+    required this.close,
+    this.splitPreview = false,
+    this.panelCompact = false,
+  });
 
   final LocalInteractionController controller;
   final VoidCallback close;
   final bool splitPreview;
+  final bool panelCompact;
 
   @override
   Widget build(BuildContext context) {
@@ -103,7 +111,7 @@ class _StyleSurface extends StatelessWidget {
                   key: const ValueKey('local-danmaku-style-controls'),
                   physics: const PureLiveScrollPhysics(),
                   padding: const EdgeInsets.all(14),
-                  child: LocalDanmakuStyleEditor(controller: controller),
+                  child: LocalDanmakuStyleEditor(controller: controller, compact: panelCompact),
                 ),
         ),
       ],
@@ -142,16 +150,28 @@ class _DanmakuPreview extends StatelessWidget {
     return Obx(() {
       final selectedColor = Color(controller.danmakuColor.v);
       final previewStyle = controller.currentDanmakuStyle;
+      final previewShadows = <Shadow>[
+        if (previewStyle.showShadow)
+          Shadow(
+            color: Color(previewStyle.shadowColor).withValues(alpha: previewStyle.opacity),
+            blurRadius: previewStyle.shadowBlur,
+            offset: Offset(previewStyle.shadowOffset, previewStyle.shadowOffset),
+          ),
+        if (previewStyle.showStroke) ...[
+          Shadow(color: Color(previewStyle.strokeColor), offset: Offset(previewStyle.strokeWidth, 0)),
+          Shadow(color: Color(previewStyle.strokeColor), offset: Offset(-previewStyle.strokeWidth, 0)),
+          Shadow(color: Color(previewStyle.strokeColor), offset: Offset(0, previewStyle.strokeWidth)),
+          Shadow(color: Color(previewStyle.strokeColor), offset: Offset(0, -previewStyle.strokeWidth)),
+        ],
+      ];
       final textStyle = TextStyle(
-        color: selectedColor,
+        color: selectedColor.withValues(alpha: previewStyle.opacity),
         fontSize: previewStyle.fontSize,
         fontWeight: FontWeight(previewStyle.fontWeight),
-        shadows: previewStyle.showStroke
-            ? [
-                Shadow(color: Colors.black, blurRadius: previewStyle.strokeWidth * 1.8),
-                const Shadow(color: Colors.black, offset: Offset(1, 1)),
-              ]
-            : null,
+        fontFamily: previewStyle.fontFamily,
+        fontStyle: previewStyle.italic ? FontStyle.italic : FontStyle.normal,
+        letterSpacing: previewStyle.letterSpacing,
+        shadows: previewShadows.isEmpty ? null : previewShadows,
       );
       final preview = Container(
         key: const ValueKey('local-danmaku-style-preview'),
@@ -172,18 +192,25 @@ class _DanmakuPreview extends StatelessWidget {
             Center(
               child: Icon(Icons.live_tv_rounded, size: expanded ? 72 : 38, color: Colors.white10),
             ),
-            Positioned(
-              left: 18,
-              right: 12,
-              top: expanded ? 38 : 18,
-              child: Text(
-                i18n('local_danmaku_preview_text'),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: textStyle,
+            AnimatedAlign(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              alignment: switch (previewStyle.placement) {
+                LiveMessagePlacement.top => Alignment.topCenter,
+                LiveMessagePlacement.bottom => Alignment.bottomCenter,
+                LiveMessagePlacement.scroll => const Alignment(-.55, -.25),
+              },
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 14, vertical: expanded ? 26 : 12),
+                child: Text(
+                  i18n('local_danmaku_preview_text'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textStyle,
+                ),
               ),
             ),
-            if (expanded)
+            if (expanded && previewStyle.placement == LiveMessagePlacement.scroll)
               Positioned(
                 left: 48,
                 right: 12,
@@ -223,15 +250,21 @@ class _StyleControls extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final theme = Theme.of(context);
-      final colorSize = dense ? 32.0 : 38.0;
+      final compactUi = compact || dense;
+      final sectionGap = compactUi ? 11.0 : 17.0;
+      void custom(VoidCallback update) {
+        update();
+        controller.markDanmakuStyleCustom();
+      }
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(i18n('local_danmaku_presets'), style: theme.textTheme.titleSmall),
-          SizedBox(height: dense ? 5 : 8),
+          _StyleSectionTitle(icon: Icons.auto_awesome_rounded, label: i18n('local_danmaku_presets')),
+          SizedBox(height: compactUi ? 5 : 8),
           Wrap(
-            spacing: dense ? 6 : 8,
-            runSpacing: dense ? 5 : 8,
+            spacing: compactUi ? 5 : 8,
+            runSpacing: compactUi ? 5 : 8,
             children: LocalInteractionController.danmakuPresets
                 .map(
                   (preset) => ChoiceChip(
@@ -240,52 +273,74 @@ class _StyleControls extends StatelessWidget {
                     avatar: CircleAvatar(backgroundColor: Color(preset.color), radius: 5),
                     label: Text(i18n(preset.labelKey)),
                     labelPadding: const EdgeInsets.symmetric(horizontal: 2),
-                    visualDensity: dense ? VisualDensity.compact : VisualDensity.standard,
-                    materialTapTargetSize: dense ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                    visualDensity: compactUi ? VisualDensity.compact : VisualDensity.standard,
+                    materialTapTargetSize: compactUi ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
                     onSelected: (_) => controller.applyDanmakuPreset(preset),
                   ),
                 )
                 .toList(growable: false),
           ),
-          SizedBox(height: dense ? 10 : 18),
-          Text(i18n('local_danmaku_color'), style: theme.textTheme.titleSmall),
-          SizedBox(height: dense ? 5 : 8),
+          SizedBox(height: sectionGap),
+          _StyleSectionTitle(icon: Icons.vertical_align_center_rounded, label: i18n('local_danmaku_placement')),
+          SizedBox(height: compactUi ? 5 : 8),
           Wrap(
-            spacing: dense ? 8 : 10,
-            runSpacing: dense ? 7 : 10,
-            children: LocalInteractionController.danmakuColors
-                .map((value) {
-                  final selected = controller.danmakuColor.v == value;
-                  return InkWell(
-                    key: ValueKey('local-danmaku-color-$value'),
-                    borderRadius: BorderRadius.circular(22),
-                    onTap: () {
-                      controller.danmakuColor.v = value;
-                      controller.markDanmakuStyleCustom();
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 160),
-                      width: colorSize,
-                      height: colorSize,
-                      decoration: BoxDecoration(
-                        color: Color(value),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: selected ? theme.colorScheme.primary : theme.colorScheme.outlineVariant,
-                          width: selected ? 3 : 1,
-                        ),
-                      ),
-                      child: selected ? Icon(Icons.check_rounded, size: dense ? 17 : 20, color: Colors.black87) : null,
-                    ),
-                  );
-                })
+            spacing: 6,
+            runSpacing: 5,
+            children: LocalInteractionController.placementIds
+                .map(
+                  (id) => ChoiceChip(
+                    key: ValueKey('local-danmaku-placement-$id'),
+                    selected: controller.danmakuPlacement.v == id,
+                    avatar: Icon(switch (id) {
+                      'top' => Icons.vertical_align_top_rounded,
+                      'bottom' => Icons.vertical_align_bottom_rounded,
+                      _ => Icons.trending_flat_rounded,
+                    }, size: 17),
+                    label: Text(i18n('local_danmaku_placement_$id')),
+                    visualDensity: compactUi ? VisualDensity.compact : VisualDensity.standard,
+                    materialTapTargetSize: compactUi ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                    onSelected: (_) => custom(() => controller.danmakuPlacement.v = id),
+                  ),
+                )
                 .toList(growable: false),
           ),
-          SizedBox(height: dense ? 8 : 14),
+          SizedBox(height: sectionGap),
+          _StyleSectionTitle(icon: Icons.text_fields_rounded, label: i18n('local_danmaku_typography')),
+          SizedBox(height: compactUi ? 5 : 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 5,
+            children: LocalInteractionController.fontFamilyIds
+                .map(
+                  (id) => ChoiceChip(
+                    key: ValueKey('local-danmaku-font-$id'),
+                    selected: controller.danmakuFontFamily.v == id,
+                    label: Text(
+                      i18n('local_danmaku_font_$id'),
+                      style: TextStyle(fontFamily: LocalInteractionController.normalizeFontFamily(id)),
+                    ),
+                    visualDensity: compactUi ? VisualDensity.compact : VisualDensity.standard,
+                    materialTapTargetSize: compactUi ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                    onSelected: (_) => custom(() => controller.danmakuFontFamily.v = id),
+                  ),
+                )
+                .toList(growable: false),
+          ),
+          SizedBox(height: compactUi ? 8 : 11),
+          Text(i18n('local_danmaku_color'), style: theme.textTheme.labelLarge),
+          const SizedBox(height: 6),
+          _StyleColorPalette(
+            values: LocalInteractionController.danmakuColors,
+            selected: controller.danmakuColor.v,
+            compact: compactUi,
+            keyPrefix: 'local-danmaku-color',
+            onSelected: (value) => custom(() => controller.danmakuColor.v = value),
+          ),
+          SizedBox(height: compactUi ? 8 : 12),
           LayoutBuilder(
             builder: (context, constraints) {
-              final twoColumns = !compact && constraints.maxWidth >= 420;
-              final children = [
+              final twoColumns = constraints.maxWidth >= 340;
+              final primary = [
                 _StyleSlider(
                   label: i18n('local_danmaku_size'),
                   valueLabel: '${controller.danmakuFontSize.v.toStringAsFixed(0)} px',
@@ -293,11 +348,8 @@ class _StyleControls extends StatelessWidget {
                   min: 14,
                   max: 32,
                   divisions: 18,
-                  dense: dense,
-                  onChanged: (value) {
-                    controller.danmakuFontSize.v = value;
-                    controller.markDanmakuStyleCustom();
-                  },
+                  dense: compactUi,
+                  onChanged: (value) => custom(() => controller.danmakuFontSize.v = value),
                 ),
                 _StyleSlider(
                   label: i18n('local_danmaku_speed'),
@@ -306,79 +358,266 @@ class _StyleControls extends StatelessWidget {
                   min: 60,
                   max: 260,
                   divisions: 20,
-                  dense: dense,
-                  onChanged: (value) {
-                    controller.danmakuSpeed.v = value;
-                    controller.markDanmakuStyleCustom();
-                  },
+                  dense: compactUi,
+                  onChanged: (value) => custom(() => controller.danmakuSpeed.v = value),
                 ),
               ];
-              return twoColumns
-                  ? Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(child: children[0]),
-                        const SizedBox(width: 14),
-                        Expanded(child: children[1]),
-                      ],
-                    )
-                  : Column(children: children);
+              final secondary = [
+                _StyleSlider(
+                  label: i18n('local_danmaku_opacity'),
+                  valueLabel: '${(controller.danmakuOpacity.v * 100).round()}%',
+                  value: controller.danmakuOpacity.v,
+                  min: .35,
+                  max: 1,
+                  divisions: 13,
+                  dense: compactUi,
+                  onChanged: (value) => custom(() => controller.danmakuOpacity.v = value),
+                ),
+                _StyleSlider(
+                  label: i18n('local_danmaku_letter_spacing'),
+                  valueLabel: controller.danmakuLetterSpacing.v.toStringAsFixed(1),
+                  value: controller.danmakuLetterSpacing.v,
+                  min: -.5,
+                  max: 3,
+                  divisions: 14,
+                  dense: compactUi,
+                  onChanged: (value) => custom(() => controller.danmakuLetterSpacing.v = value),
+                ),
+              ];
+              return Column(
+                children: [
+                  _ResponsiveSliderRow(twoColumns: twoColumns, children: primary),
+                  _ResponsiveSliderRow(twoColumns: twoColumns, children: secondary),
+                ],
+              );
             },
           ),
-          SizedBox(height: dense ? 0 : 4),
+          SizedBox(height: compactUi ? 3 : 8),
+          _StyleSectionTitle(icon: Icons.auto_fix_high_rounded, label: i18n('local_danmaku_effects')),
+          SizedBox(height: compactUi ? 5 : 8),
           Wrap(
-            spacing: 8,
-            runSpacing: 6,
+            spacing: 6,
+            runSpacing: 5,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               FilterChip(
                 selected: controller.danmakuFontWeight.v >= 700,
                 avatar: const Icon(Icons.format_bold_rounded, size: 18),
                 label: Text(i18n('local_danmaku_bold')),
-                visualDensity: dense ? VisualDensity.compact : VisualDensity.standard,
-                materialTapTargetSize: dense ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
-                onSelected: (value) {
-                  controller.danmakuFontWeight.v = value ? 800 : 500;
-                  controller.markDanmakuStyleCustom();
-                },
+                visualDensity: compactUi ? VisualDensity.compact : VisualDensity.standard,
+                materialTapTargetSize: compactUi ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                onSelected: (value) => custom(() => controller.danmakuFontWeight.v = value ? 800 : 500),
+              ),
+              FilterChip(
+                selected: controller.danmakuItalic.v,
+                avatar: const Icon(Icons.format_italic_rounded, size: 18),
+                label: Text(i18n('local_danmaku_italic')),
+                visualDensity: compactUi ? VisualDensity.compact : VisualDensity.standard,
+                materialTapTargetSize: compactUi ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                onSelected: (value) => custom(() => controller.danmakuItalic.v = value),
               ),
               FilterChip(
                 selected: controller.danmakuShowStroke.v,
                 avatar: const Icon(Icons.border_color_rounded, size: 18),
                 label: Text(i18n('local_danmaku_stroke')),
-                visualDensity: dense ? VisualDensity.compact : VisualDensity.standard,
-                materialTapTargetSize: dense ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
-                onSelected: (value) {
-                  controller.danmakuShowStroke.v = value;
-                  controller.markDanmakuStyleCustom();
-                },
+                visualDensity: compactUi ? VisualDensity.compact : VisualDensity.standard,
+                materialTapTargetSize: compactUi ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                onSelected: (value) => custom(() => controller.danmakuShowStroke.v = value),
               ),
-              if (controller.danmakuShowStroke.v)
-                SizedBox(
-                  width: dense ? 190 : 220,
-                  child: _StyleSlider(
-                    label: i18n('local_danmaku_stroke_width'),
-                    valueLabel: controller.danmakuStrokeWidth.v.toStringAsFixed(1),
-                    value: controller.danmakuStrokeWidth.v,
-                    min: .5,
-                    max: 4,
-                    divisions: 7,
-                    dense: dense,
-                    onChanged: (value) {
-                      controller.danmakuStrokeWidth.v = value;
-                      controller.markDanmakuStyleCustom();
-                    },
-                  ),
-                ),
+              FilterChip(
+                selected: controller.danmakuShowShadow.v,
+                avatar: const Icon(Icons.blur_on_rounded, size: 18),
+                label: Text(i18n('local_danmaku_shadow')),
+                visualDensity: compactUi ? VisualDensity.compact : VisualDensity.standard,
+                materialTapTargetSize: compactUi ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                onSelected: (value) => custom(() => controller.danmakuShowShadow.v = value),
+              ),
             ],
           ),
+          if (controller.danmakuShowStroke.v) ...[
+            SizedBox(height: compactUi ? 8 : 12),
+            Text(i18n('local_danmaku_stroke_color'), style: theme.textTheme.labelLarge),
+            const SizedBox(height: 6),
+            _StyleColorPalette(
+              values: LocalInteractionController.effectColors,
+              selected: controller.danmakuStrokeColor.v,
+              compact: true,
+              keyPrefix: 'local-danmaku-stroke-color',
+              onSelected: (value) => custom(() => controller.danmakuStrokeColor.v = value),
+            ),
+            _StyleSlider(
+              label: i18n('local_danmaku_stroke_width'),
+              valueLabel: controller.danmakuStrokeWidth.v.toStringAsFixed(1),
+              value: controller.danmakuStrokeWidth.v,
+              min: .5,
+              max: 4,
+              divisions: 7,
+              dense: compactUi,
+              onChanged: (value) => custom(() => controller.danmakuStrokeWidth.v = value),
+            ),
+          ],
+          if (controller.danmakuShowShadow.v) ...[
+            SizedBox(height: compactUi ? 8 : 12),
+            Text(i18n('local_danmaku_shadow_color'), style: theme.textTheme.labelLarge),
+            const SizedBox(height: 6),
+            _StyleColorPalette(
+              values: LocalInteractionController.effectColors,
+              selected: controller.danmakuShadowColor.v,
+              compact: true,
+              keyPrefix: 'local-danmaku-shadow-color',
+              onSelected: (value) => custom(() => controller.danmakuShadowColor.v = value),
+            ),
+            LayoutBuilder(
+              builder: (context, constraints) => _ResponsiveSliderRow(
+                twoColumns: constraints.maxWidth >= 340,
+                children: [
+                  _StyleSlider(
+                    label: i18n('local_danmaku_shadow_blur'),
+                    valueLabel: controller.danmakuShadowBlur.v.toStringAsFixed(1),
+                    value: controller.danmakuShadowBlur.v,
+                    min: 0,
+                    max: 6,
+                    divisions: 12,
+                    dense: compactUi,
+                    onChanged: (value) => custom(() => controller.danmakuShadowBlur.v = value),
+                  ),
+                  _StyleSlider(
+                    label: i18n('local_danmaku_shadow_offset'),
+                    valueLabel: controller.danmakuShadowOffset.v.toStringAsFixed(1),
+                    value: controller.danmakuShadowOffset.v,
+                    min: 0,
+                    max: 4,
+                    divisions: 8,
+                    dense: compactUi,
+                    onChanged: (value) => custom(() => controller.danmakuShadowOffset.v = value),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (controller.danmakuPlacement.v != 'scroll') ...[
+            SizedBox(height: compactUi ? 7 : 11),
+            _StyleSlider(
+              label: i18n('local_danmaku_fixed_duration'),
+              valueLabel: '${(controller.danmakuFixedDurationMs.v / 1000).toStringAsFixed(1)} s',
+              value: controller.danmakuFixedDurationMs.v.toDouble(),
+              min: 2000,
+              max: 10000,
+              divisions: 16,
+              dense: compactUi,
+              onChanged: (value) => custom(() => controller.danmakuFixedDurationMs.v = value.round()),
+            ),
+          ],
           if (showDescription) ...[
             const SizedBox(height: 8),
-            Text(i18n('local_danmaku_style_sync_desc'), style: theme.textTheme.bodySmall),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.sync_rounded, size: 16, color: theme.colorScheme.primary),
+                const SizedBox(width: 6),
+                Expanded(child: Text(i18n('local_danmaku_style_sync_desc'), style: theme.textTheme.bodySmall)),
+              ],
+            ),
           ],
         ],
       );
     });
+  }
+}
+
+class _StyleSectionTitle extends StatelessWidget {
+  const _StyleSectionTitle({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Icon(icon, size: 17, color: colors.primary),
+        const SizedBox(width: 6),
+        Text(label, style: Theme.of(context).textTheme.titleSmall),
+      ],
+    );
+  }
+}
+
+class _StyleColorPalette extends StatelessWidget {
+  const _StyleColorPalette({
+    required this.values,
+    required this.selected,
+    required this.onSelected,
+    required this.keyPrefix,
+    this.compact = false,
+  });
+
+  final List<int> values;
+  final int selected;
+  final ValueChanged<int> onSelected;
+  final String keyPrefix;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final size = compact ? 29.0 : 36.0;
+    return Wrap(
+      spacing: compact ? 7 : 9,
+      runSpacing: compact ? 6 : 8,
+      children: values
+          .map((value) {
+            final color = Color(value);
+            final isSelected = selected == value;
+            final foreground = ThemeData.estimateBrightnessForColor(color) == Brightness.dark
+                ? Colors.white
+                : Colors.black87;
+            return InkWell(
+              key: ValueKey('$keyPrefix-$value'),
+              borderRadius: BorderRadius.circular(24),
+              onTap: () => onSelected(value),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: size,
+                height: size,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outlineVariant,
+                    width: isSelected ? 2.5 : 1,
+                  ),
+                  boxShadow: isSelected
+                      ? [BoxShadow(color: theme.colorScheme.primary.withValues(alpha: .22), blurRadius: 5)]
+                      : null,
+                ),
+                child: isSelected ? Icon(Icons.check_rounded, size: compact ? 16 : 19, color: foreground) : null,
+              ),
+            );
+          })
+          .toList(growable: false),
+    );
+  }
+}
+
+class _ResponsiveSliderRow extends StatelessWidget {
+  const _ResponsiveSliderRow({required this.children, required this.twoColumns});
+
+  final List<Widget> children;
+  final bool twoColumns;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!twoColumns) return Column(children: children);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: children[0]),
+        const SizedBox(width: 12),
+        Expanded(child: children[1]),
+      ],
+    );
   }
 }
 

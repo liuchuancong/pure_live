@@ -176,13 +176,28 @@ class DanmakuManager {
       controller.send(
         BarrageItem(
           content: msg.message,
+          type: switch (localStyle?.placement) {
+            LiveMessagePlacement.top => BarrageType.topFixed,
+            LiveMessagePlacement.bottom => BarrageType.bottomFixed,
+            _ => BarrageType.scroll,
+          },
           userId: msg.userId,
           userName: msg.userName,
           textColor: originalColor,
           fontSize: localStyle?.fontSize,
           fontWeight: localStyle == null ? null : FontWeight(localStyle.fontWeight),
+          fontStyle: localStyle?.italic == true ? FontStyle.italic : null,
+          fontFamily: localStyle?.fontFamily,
+          letterSpacing: localStyle?.letterSpacing,
+          opacity: localStyle?.opacity,
           showStroke: localStyle?.showStroke,
+          strokeColor: localStyle == null ? null : Color(localStyle.strokeColor),
           strokeWidth: localStyle?.strokeWidth,
+          showShadow: localStyle?.showShadow,
+          shadowColor: localStyle == null ? null : Color(localStyle.shadowColor),
+          shadowBlur: localStyle?.shadowBlur,
+          shadowOffset: localStyle == null ? null : Offset(localStyle.shadowOffset, localStyle.shadowOffset),
+          fixedDuration: localStyle == null ? null : Duration(milliseconds: localStyle.fixedDurationMs),
           // A single px/s value keeps portrait, landscape and desktop motion
           // consistent. Lane collision avoidance is handled by the engine.
           baseSpeed: localStyle?.baseSpeed ?? videoController.danmakuSpeed.value,
@@ -201,11 +216,26 @@ class DanmakuManager {
       pipController.send(
         BarrageItem(
           content: msg.message,
+          type: switch (localStyle?.placement) {
+            LiveMessagePlacement.top => BarrageType.topFixed,
+            LiveMessagePlacement.bottom => BarrageType.bottomFixed,
+            _ => BarrageType.scroll,
+          },
           textColor: compactColor,
           fontSize: localStyle?.fontSize,
           fontWeight: localStyle == null ? null : FontWeight(localStyle.fontWeight),
+          fontStyle: localStyle?.italic == true ? FontStyle.italic : null,
+          fontFamily: localStyle?.fontFamily,
+          letterSpacing: localStyle?.letterSpacing,
+          opacity: localStyle?.opacity,
           showStroke: localStyle?.showStroke,
+          strokeColor: localStyle == null ? null : Color(localStyle.strokeColor),
           strokeWidth: localStyle?.strokeWidth,
+          showShadow: localStyle?.showShadow,
+          shadowColor: localStyle == null ? null : Color(localStyle.shadowColor),
+          shadowBlur: localStyle?.shadowBlur,
+          shadowOffset: localStyle == null ? null : Offset(localStyle.shadowOffset, localStyle.shadowOffset),
+          fixedDuration: localStyle == null ? null : Duration(milliseconds: localStyle.fixedDurationMs),
           baseSpeed: localStyle?.baseSpeed,
         ),
       );

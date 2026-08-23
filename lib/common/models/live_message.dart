@@ -25,6 +25,8 @@ class LiveAudienceUpdate {
 
 /// Optional per-message presentation used by locally composed danmaku.
 /// Platform messages keep using the room-wide danmaku configuration.
+enum LiveMessagePlacement { scroll, top, bottom }
+
 class LiveMessageStyle {
   const LiveMessageStyle({
     required this.fontSize,
@@ -32,6 +34,17 @@ class LiveMessageStyle {
     required this.fontWeight,
     required this.showStroke,
     required this.strokeWidth,
+    this.placement = LiveMessagePlacement.scroll,
+    this.fontFamily,
+    this.italic = false,
+    this.opacity = 1,
+    this.letterSpacing = 0,
+    this.strokeColor = 0xFF000000,
+    this.showShadow = false,
+    this.shadowColor = 0xFF000000,
+    this.shadowBlur = 2,
+    this.shadowOffset = 1,
+    this.fixedDurationMs = 4000,
   });
 
   final double fontSize;
@@ -39,6 +52,17 @@ class LiveMessageStyle {
   final int fontWeight;
   final bool showStroke;
   final double strokeWidth;
+  final LiveMessagePlacement placement;
+  final String? fontFamily;
+  final bool italic;
+  final double opacity;
+  final double letterSpacing;
+  final int strokeColor;
+  final bool showShadow;
+  final int shadowColor;
+  final double shadowBlur;
+  final double shadowOffset;
+  final int fixedDurationMs;
 }
 
 class LiveMessage {

@@ -1,10 +1,10 @@
 {
-  "version": "2.9.0",
-  "build_number": 4079,
-  "version_num": 209004079,
-  "version_desc": "- 同步上游至 25f833ea，吸收从录制页返回直播时的视频层延迟挂载修复与发布资产命名一致性调整。\n- 修复竖屏、横屏清晰度和线路切换：旧流持续播放至新地址就绪，最新选择优先，切换不再重建直播页控制器。\n- 重构横屏全屏控制层，交换小窗与时间/电量区域，整合清晰度/线路面板并优化观看记录双栏卡片。\n- 扩展本地弹幕颜色、字号、速度、粗体和描边样式，横屏、竖屏、小窗与本地互动入口共用配置。\n- Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按平台串行完成正式构建。",
+  "version": "2.9.1",
+  "build_number": 4080,
+  "version_num": 209014080,
+  "version_desc": "- 横屏清晰度/线路、观看记录和本地弹幕样式改为右侧半屏紧凑面板，主要内容获得更大显示面积。\n- 本地弹幕新增滚动/顶部/底部位置、字体、透明度、字间距、斜体、描边颜色、阴影微光及固定停留时间。\n- 样式模板扩展为清爽、醒目、霓虹、极简、底部字幕与赛博，并提供 12 种主色和独立效果色。\n- 全部个性化设置实时保存并同步到竖屏、横屏、小窗、发送框、本地互动页和设置页。\n- 弹幕内核按消息缓存字体与效果图层，固定弹幕使用独立停留时间，保持高刷新率下的稳定资源占用。\n- 本轮构建并发布 Android arm64-v8a 正式更新包。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.0",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.1",
   "android_abis": [
     "arm64-v8a"
   ],

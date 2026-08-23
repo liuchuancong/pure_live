@@ -66,6 +66,7 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
     final layout = resolveContentFirstPanelLayout(MediaQuery.sizeOf(context), ContentFirstPanelKind.roomHistory);
     return Dialog(
       key: const ValueKey('fullscreen-room-history-dialog'),
+      alignment: Alignment.centerRight,
       insetPadding: layout.insetPadding,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
@@ -160,16 +161,20 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
     if (rooms.isEmpty) return AppStatusView(type: AppStatusType.empty, title: '', subtitle: '');
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 620 ? 2 : 1;
+        final columns = constraints.maxWidth >= 380 ? 2 : 1;
+        const padding = 8.0;
+        const spacing = 7.0;
+        final cardWidth = (constraints.maxWidth - padding * 2 - spacing * (columns - 1)) / columns;
+        final cardHeight = (cardWidth * 9 / 16 + 48).clamp(150.0, 310.0).toDouble();
         return GridView.builder(
           key: ValueKey(history ? 'watch-history-grid' : 'live-room-grid'),
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(padding),
           physics: const PureLiveScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: columns,
-            mainAxisExtent: columns == 2 ? 136 : 126,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
+            mainAxisExtent: cardHeight,
+            mainAxisSpacing: spacing,
+            crossAxisSpacing: spacing,
           ),
           itemCount: rooms.length,
           itemBuilder: (context, index) => _RoomSwitchCard(
@@ -247,47 +252,47 @@ class _RoomSwitchCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final coverWidth = (constraints.maxWidth * .49).clamp(150.0, 238.0).toDouble();
+        child: Builder(
+          builder: (context) {
             final meta = history
                 ? _historyLabel()
                 : (audience.isEmpty ? i18n('audience_unknown') : readableCount(audience));
-            return Row(
+            return Column(
               children: [
-                SizedBox(
-                  key: const ValueKey('room-history-cover'),
-                  width: coverWidth,
-                  height: double.infinity,
-                  child: _RoomSwitchCover(room: room, meta: meta),
-                ),
                 Expanded(
+                  child: SizedBox(
+                    key: const ValueKey('room-history-cover'),
+                    width: double.infinity,
+                    child: _RoomSwitchCover(room: room, meta: meta),
+                  ),
+                ),
+                SizedBox(
+                  height: 48,
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(11, 10, 10, 9),
+                    padding: const EdgeInsets.fromLTRB(8, 5, 5, 4),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           room.title?.trim().isNotEmpty == true ? room.title! : i18n('untitled_room'),
-                          maxLines: 3,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleSmall
-                              ?.copyWith(fontWeight: FontWeight.w700, height: 1.18),
+                          style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const Spacer(),
                         Row(
                           children: [
-                            Icon(Icons.person_outline_rounded, size: 15, color: colors.onSurfaceVariant),
-                            const SizedBox(width: 4),
+                            Icon(Icons.person_outline_rounded, size: 13, color: colors.onSurfaceVariant),
+                            const SizedBox(width: 3),
                             Expanded(
                               child: Text(
                                 room.nick ?? '',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+                                style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colors.onSurfaceVariant),
                               ),
                             ),
-                            Icon(Icons.chevron_right_rounded, size: 18, color: colors.onSurfaceVariant),
+                            Icon(Icons.chevron_right_rounded, size: 16, color: colors.onSurfaceVariant),
                           ],
                         ),
                       ],

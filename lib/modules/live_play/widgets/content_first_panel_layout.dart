@@ -24,15 +24,18 @@ ContentFirstPanelLayout resolveContentFirstPanelLayout(Size viewport, ContentFir
   final availableWidth = (viewport.width - horizontalInset * 2).clamp(280.0, double.infinity).toDouble();
   final availableHeight = (viewport.height - verticalInset * 2).clamp(240.0, double.infinity).toDouble();
 
-  final (widthFactor, maxWidth, maxHeight, splitThreshold) = switch (kind) {
-    ContentFirstPanelKind.roomHistory => (0.96, 1080.0, 720.0, 620.0),
-    ContentFirstPanelKind.streamSelector => (0.78, 760.0, 620.0, 580.0),
-    ContentFirstPanelKind.localDanmakuStyle => (0.88, 960.0, 680.0, 640.0),
+  final (widthFactor, heightFactor, maxHeight, splitThreshold) = switch (kind) {
+    // Half of the available width plus center-right alignment makes the left
+    // edge land exactly on the viewport midpoint, independent of phone size.
+    ContentFirstPanelKind.roomHistory => (0.5, 1.0, 720.0, 420.0),
+    ContentFirstPanelKind.streamSelector => (0.5, 1.0, 620.0, 620.0),
+    ContentFirstPanelKind.localDanmakuStyle => (0.48, 0.86, 680.0, 680.0),
   };
 
-  final targetWidth = (viewport.width * widthFactor).clamp(280.0, maxWidth).toDouble();
+  final targetWidth = (availableWidth * widthFactor).clamp(280.0, double.infinity).toDouble();
   final width = targetWidth.clamp(280.0, availableWidth).toDouble();
-  final height = availableHeight.clamp(240.0, maxHeight).toDouble();
+  final targetHeight = (viewport.height * heightFactor).clamp(240.0, maxHeight).toDouble();
+  final height = targetHeight.clamp(240.0, availableHeight).toDouble();
   return ContentFirstPanelLayout(
     size: Size(width, height),
     insetPadding: EdgeInsets.symmetric(horizontal: horizontalInset, vertical: verticalInset),

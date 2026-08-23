@@ -55,17 +55,24 @@ void main() {
     }
   });
 
-  test('landscape playback panels reserve most of a phone viewport for primary content', () {
+  test('landscape playback panels occupy the compact right half of a phone viewport', () {
     const viewport = Size(915, 412);
     final rooms = resolveContentFirstPanelLayout(viewport, ContentFirstPanelKind.roomHistory);
     final streams = resolveContentFirstPanelLayout(viewport, ContentFirstPanelKind.streamSelector);
     final style = resolveContentFirstPanelLayout(viewport, ContentFirstPanelKind.localDanmakuStyle);
 
-    expect(rooms.size.width / viewport.width, greaterThan(.9));
+    expect(rooms.size.width / viewport.width, inInclusiveRange(.47, .51));
     expect(rooms.size.height / viewport.height, greaterThan(.9));
-    expect(streams.size.width / viewport.width, greaterThan(.7));
-    expect(style.size.width / viewport.width, greaterThan(.8));
-    expect(streams.splitContent, isTrue);
-    expect(style.splitContent, isTrue);
+    expect(streams.size.width / viewport.width, inInclusiveRange(.47, .51));
+    expect(style.size.width / viewport.width, inInclusiveRange(.44, .49));
+    expect(streams.splitContent, isFalse);
+    expect(style.splitContent, isFalse);
+  });
+
+  test('large landscape windows keep dense panels split internally', () {
+    const viewport = Size(1920, 1080);
+    for (final kind in ContentFirstPanelKind.values) {
+      expect(resolveContentFirstPanelLayout(viewport, kind).splitContent, isTrue);
+    }
   });
 }

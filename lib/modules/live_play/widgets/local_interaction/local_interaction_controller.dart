@@ -46,6 +46,17 @@ class LocalDanmakuPreset {
     required this.fontWeight,
     required this.showStroke,
     required this.strokeWidth,
+    this.placement = 'scroll',
+    this.fontFamily = 'system',
+    this.italic = false,
+    this.opacity = 1,
+    this.letterSpacing = 0,
+    this.strokeColor = 0xFF000000,
+    this.showShadow = false,
+    this.shadowColor = 0xFF000000,
+    this.shadowBlur = 2,
+    this.shadowOffset = 1,
+    this.fixedDurationMs = 4000,
   });
 
   final String id;
@@ -56,6 +67,17 @@ class LocalDanmakuPreset {
   final int fontWeight;
   final bool showStroke;
   final double strokeWidth;
+  final String placement;
+  final String fontFamily;
+  final bool italic;
+  final double opacity;
+  final double letterSpacing;
+  final int strokeColor;
+  final bool showShadow;
+  final int shadowColor;
+  final double shadowBlur;
+  final double shadowOffset;
+  final int fixedDurationMs;
 }
 
 class LocalInteractionController extends GetxController {
@@ -77,6 +99,17 @@ class LocalInteractionController extends GetxController {
   final RxInt danmakuFontWeight = hiveInt('localInteraction.danmakuFontWeight', 600);
   final RxBool danmakuShowStroke = hiveBool('localInteraction.danmakuShowStroke', true);
   final RxDouble danmakuStrokeWidth = hiveDouble('localInteraction.danmakuStrokeWidth', 1.5);
+  final RxString danmakuPlacement = hiveString('localInteraction.danmakuPlacement', 'scroll');
+  final RxString danmakuFontFamily = hiveString('localInteraction.danmakuFontFamily', 'system');
+  final RxBool danmakuItalic = hiveBool('localInteraction.danmakuItalic', false);
+  final RxDouble danmakuOpacity = hiveDouble('localInteraction.danmakuOpacity', 1.0);
+  final RxDouble danmakuLetterSpacing = hiveDouble('localInteraction.danmakuLetterSpacing', 0.0);
+  final RxInt danmakuStrokeColor = hiveInt('localInteraction.danmakuStrokeColor', 0xFF000000);
+  final RxBool danmakuShowShadow = hiveBool('localInteraction.danmakuShowShadow', false);
+  final RxInt danmakuShadowColor = hiveInt('localInteraction.danmakuShadowColor', 0xFF000000);
+  final RxDouble danmakuShadowBlur = hiveDouble('localInteraction.danmakuShadowBlur', 2.0);
+  final RxDouble danmakuShadowOffset = hiveDouble('localInteraction.danmakuShadowOffset', 1.0);
+  final RxInt danmakuFixedDurationMs = hiveInt('localInteraction.danmakuFixedDurationMs', 4000);
 
   static const danmakuPresets = <LocalDanmakuPreset>[
     LocalDanmakuPreset(
@@ -98,6 +131,7 @@ class LocalInteractionController extends GetxController {
       fontWeight: 800,
       showStroke: true,
       strokeWidth: 2,
+      letterSpacing: .4,
     ),
     LocalDanmakuPreset(
       id: 'neon',
@@ -108,6 +142,10 @@ class LocalInteractionController extends GetxController {
       fontWeight: 700,
       showStroke: true,
       strokeWidth: 2.5,
+      showShadow: true,
+      shadowColor: 0xFFFF2DC6,
+      shadowBlur: 4,
+      shadowOffset: 0,
     ),
     LocalDanmakuPreset(
       id: 'minimal',
@@ -118,6 +156,36 @@ class LocalInteractionController extends GetxController {
       fontWeight: 500,
       showStroke: false,
       strokeWidth: 0,
+      opacity: .86,
+    ),
+    LocalDanmakuPreset(
+      id: 'caption',
+      labelKey: 'local_danmaku_preset_caption',
+      color: 0xFFFFFFFF,
+      fontSize: 20,
+      speed: 120,
+      fontWeight: 700,
+      showStroke: true,
+      strokeWidth: 2.5,
+      placement: 'bottom',
+      fixedDurationMs: 5200,
+    ),
+    LocalDanmakuPreset(
+      id: 'cyber',
+      labelKey: 'local_danmaku_preset_cyber',
+      color: 0xFF58F5FF,
+      fontSize: 20,
+      speed: 150,
+      fontWeight: 700,
+      showStroke: true,
+      strokeWidth: 1.5,
+      fontFamily: 'mono',
+      letterSpacing: 1.1,
+      strokeColor: 0xFF11243A,
+      showShadow: true,
+      shadowColor: 0xFF00C8FF,
+      shadowBlur: 3,
+      shadowOffset: 1,
     ),
   ];
 
@@ -129,7 +197,17 @@ class LocalInteractionController extends GetxController {
     0xFF8CFF98,
     0xFFFF9D66,
     0xFFBCA7FF,
+    0xFFFF5C77,
+    0xFF4EA1FF,
+    0xFF00D8B0,
+    0xFFFFB7E7,
+    0xFFB8FF67,
   ];
+
+  static const effectColors = <int>[0xFF000000, 0xFFFFFFFF, 0xFF173A5E, 0xFF6D1F45, 0xFF00C8FF, 0xFFFF2DC6, 0xFFFF8A00];
+
+  static const fontFamilyIds = <String>['system', 'rounded', 'serif', 'mono'];
+  static const placementIds = <String>['scroll', 'top', 'bottom'];
 
   static const gifts = <LocalGift>[
     LocalGift(id: 'heart', nameKey: 'local_gift_heart', emoji: '💗', price: 10, color: LiveMessageColor(255, 105, 180)),
@@ -432,6 +510,17 @@ class LocalInteractionController extends GetxController {
     required int fontWeight,
     required bool showStroke,
     required double strokeWidth,
+    String placement = 'scroll',
+    String? fontFamily,
+    bool italic = false,
+    double opacity = 1,
+    double letterSpacing = 0,
+    int strokeColor = 0xFF000000,
+    bool showShadow = false,
+    int shadowColor = 0xFF000000,
+    double shadowBlur = 2,
+    double shadowOffset = 1,
+    int fixedDurationMs = 4000,
   }) {
     return LiveMessageStyle(
       fontSize: fontSize.clamp(14.0, 32.0).toDouble(),
@@ -439,8 +528,32 @@ class LocalInteractionController extends GetxController {
       fontWeight: fontWeight.clamp(400, 900).toInt(),
       showStroke: showStroke,
       strokeWidth: showStroke ? strokeWidth.clamp(0.5, 4.0).toDouble() : 0,
+      placement: placementFromId(placement),
+      fontFamily: normalizeFontFamily(fontFamily),
+      italic: italic,
+      opacity: opacity.clamp(0.35, 1.0).toDouble(),
+      letterSpacing: letterSpacing.clamp(-0.5, 3.0).toDouble(),
+      strokeColor: strokeColor,
+      showShadow: showShadow,
+      shadowColor: shadowColor,
+      shadowBlur: showShadow ? shadowBlur.clamp(0.0, 6.0).toDouble() : 0,
+      shadowOffset: showShadow ? shadowOffset.clamp(0.0, 4.0).toDouble() : 0,
+      fixedDurationMs: fixedDurationMs.clamp(2000, 10000).toInt(),
     );
   }
+
+  static LiveMessagePlacement placementFromId(String value) => switch (value) {
+    'top' => LiveMessagePlacement.top,
+    'bottom' => LiveMessagePlacement.bottom,
+    _ => LiveMessagePlacement.scroll,
+  };
+
+  static String? normalizeFontFamily(String? value) => switch (value) {
+    'rounded' => 'sans-serif-rounded',
+    'serif' => 'serif',
+    'mono' => 'monospace',
+    _ => null,
+  };
 
   LiveMessageStyle get currentDanmakuStyle => buildDanmakuStyle(
     fontSize: danmakuFontSize.v,
@@ -448,6 +561,17 @@ class LocalInteractionController extends GetxController {
     fontWeight: danmakuFontWeight.v,
     showStroke: danmakuShowStroke.v,
     strokeWidth: danmakuStrokeWidth.v,
+    placement: danmakuPlacement.v,
+    fontFamily: danmakuFontFamily.v,
+    italic: danmakuItalic.v,
+    opacity: danmakuOpacity.v,
+    letterSpacing: danmakuLetterSpacing.v,
+    strokeColor: danmakuStrokeColor.v,
+    showShadow: danmakuShowShadow.v,
+    shadowColor: danmakuShadowColor.v,
+    shadowBlur: danmakuShadowBlur.v,
+    shadowOffset: danmakuShadowOffset.v,
+    fixedDurationMs: danmakuFixedDurationMs.v,
   );
 
   void applyDanmakuPreset(LocalDanmakuPreset preset) {
@@ -458,6 +582,17 @@ class LocalInteractionController extends GetxController {
     danmakuFontWeight.v = preset.fontWeight;
     danmakuShowStroke.v = preset.showStroke;
     danmakuStrokeWidth.v = preset.strokeWidth;
+    danmakuPlacement.v = preset.placement;
+    danmakuFontFamily.v = preset.fontFamily;
+    danmakuItalic.v = preset.italic;
+    danmakuOpacity.v = preset.opacity;
+    danmakuLetterSpacing.v = preset.letterSpacing;
+    danmakuStrokeColor.v = preset.strokeColor;
+    danmakuShowShadow.v = preset.showShadow;
+    danmakuShadowColor.v = preset.shadowColor;
+    danmakuShadowBlur.v = preset.shadowBlur;
+    danmakuShadowOffset.v = preset.shadowOffset;
+    danmakuFixedDurationMs.v = preset.fixedDurationMs;
   }
 
   void markDanmakuStyleCustom() => danmakuPreset.v = 'custom';

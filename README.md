@@ -33,11 +33,11 @@
 
 > 本维护分支持续同步 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)，并维护本机优先构建、正式签名、接口探测、Windows 数据迁移及高刷新率优化。
 
-- **最新稳定版**：[v2.9.0](https://github.com/wzgrx/pure_live/releases/tag/v2.9.0)
-- **当前版本**：`2.9.0+4079`
-- **v2.9.0 上游源码基线**：已同步至 `liuchuancong/pure_live@25f833ea`；维护分支同时保留三档刷新率、PiP 弹幕、后台播放、本地互动、Windows 数据迁移与稳定性增强
-- **构建平台**：Android arm64、Windows x64、Linux x64、macOS Universal、iOS arm64 设备包
-- **质量门禁**：Flutter Analyze、完整自动化测试与公开接口探测结果见 `docs/STAGE_UPDATE_2_9_0.md`
+- **最新稳定版**：[v2.9.1](https://github.com/wzgrx/pure_live/releases/tag/v2.9.1)
+- **当前版本**：`2.9.1+4080`
+- **v2.9.1 上游源码基线**：延续 `liuchuancong/pure_live@25f833ea`，增加横屏右侧半屏内容面板与完整本地弹幕个性化渲染
+- **本轮构建平台**：Android arm64-v8a 正式更新包；其他平台继续使用 v2.9.0 对应资产
+- **质量门禁**：Flutter Analyze、定向自动化测试与构建记录见 `docs/STAGE_UPDATE_2_9_1.md`
 
 ![Pure Live 界面预览](assets/images/banner.png)
 
@@ -85,6 +85,7 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 | [平台接口与兼容性](docs/PLATFORM_COMPATIBILITY.md) | 分区、搜索、弹幕和人数指标的当前能力 |
 | [高刷新率与性能验证](docs/PERFORMANCE.md) | Android 120 Hz 适配、渲染优化和真机帧统计 |
 | [WebDAV 配置](docs/WEBDAV.md) | 通用配置字段、坚果云示例和故障排查 |
+| [v2.9.1 Android 专项更新](docs/STAGE_UPDATE_2_9_1.md) | 横屏半屏内容面板、本地弹幕个性化与渲染缓存 |
 | [v2.1.5 阶段更新](docs/STAGE_UPDATE_2_1_5.md) | 本地弹幕同步、列表阅读、模板状态和 Windows 平滑滚动 |
 | [v2.1.6 Android 播放修复](docs/STAGE_UPDATE_2_1_6.md) | 音频/视频切换灰白画面与后台音频生命周期 |
 | [v2.2.0 阶段更新](docs/STAGE_UPDATE_2_2_0.md) | 播放恢复、音频模式、弹幕设置、Windows 多开与最终验证 |

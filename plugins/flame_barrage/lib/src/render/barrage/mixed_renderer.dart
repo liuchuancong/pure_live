@@ -8,7 +8,10 @@ class MixedRenderer implements BaseRenderer {
   @override
   Picture buildPicture(LayoutResult result) {
     final recorder = PictureRecorder();
-    final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, result.width, result.height));
+    // Keep a modest cull allowance for cached outlines and shadows. This does
+    // not allocate a layer and prevents glow/italic glyphs being cut at the
+    // paragraph bounds.
+    final canvas = Canvas(recorder, Rect.fromLTRB(-8, -8, result.width + 8, result.height + 8));
 
     final spans = result.spans;
     final len = spans.length;

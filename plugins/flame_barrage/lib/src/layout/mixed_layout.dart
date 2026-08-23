@@ -97,6 +97,7 @@ class MixedLayout {
     final opacity = config.opacity.clamp(0.0, 1.0).toDouble();
     final effectiveTextColor = config.textColor.withValues(alpha: config.textColor.a * opacity);
     final effectiveStrokeColor = config.strokeColor.withValues(alpha: config.strokeColor.a * opacity);
+    final effectiveShadowColor = config.shadowColor.withValues(alpha: config.shadowColor.a * opacity);
     final int colorValue = effectiveTextColor.toARGB32();
     final double fontSize = config.fontSize;
     final bool showStroke = config.showStroke;
@@ -109,10 +110,12 @@ class MixedLayout {
 
       if (fragment is TextFragment) {
         final textCacheKey =
-            '${fragment.text}|${config.fontSize}|$colorValue|$showStroke|${config.fontWeight}|${config.fontFamily}';
+            '${fragment.text}|${config.fontSize}|$colorValue|$showStroke|${config.fontWeight}|${config.fontStyle}|'
+            '${config.fontFamily}|${config.letterSpacing}|${config.showShadow}|${effectiveShadowColor.toARGB32()}|'
+            '${config.shadowBlur}|${config.shadowOffset.dx}|${config.shadowOffset.dy}';
         final strokeCacheKey =
             '${fragment.text}|$fontSize|${effectiveStrokeColor.toARGB32()}|${config.strokeWidth}|'
-            '${config.fontWeight}|${config.fontFamily}';
+            '${config.fontWeight}|${config.fontStyle}|${config.fontFamily}|${config.letterSpacing}';
 
         final paragraph = _buildParagraph(fragment.text, config, textCacheKey, isStroke: false);
         final strokeParagraph = config.showStroke
@@ -277,7 +280,9 @@ class MixedLayout {
           foreground: strokePaint,
           fontSize: config.fontSize,
           fontWeight: config.fontWeight,
+          fontStyle: config.fontStyle,
           fontFamily: config.fontFamily,
+          letterSpacing: config.letterSpacing,
         ),
       );
     } else {
@@ -290,7 +295,20 @@ class MixedLayout {
           foreground: textPaint,
           fontSize: config.fontSize,
           fontWeight: config.fontWeight,
+          fontStyle: config.fontStyle,
           fontFamily: config.fontFamily,
+          letterSpacing: config.letterSpacing,
+          shadows: config.showShadow
+              ? <ui.Shadow>[
+                  ui.Shadow(
+                    color: config.shadowColor.withValues(
+                      alpha: config.shadowColor.a * config.opacity.clamp(0.0, 1.0).toDouble(),
+                    ),
+                    blurRadius: config.shadowBlur,
+                    offset: config.shadowOffset,
+                  ),
+                ]
+              : null,
         ),
       );
     }
@@ -309,6 +327,8 @@ class MixedLayout {
     int hash = 17;
     hash = 37 * hash + config.fontSize.hashCode;
     hash = 37 * hash + config.fontWeight.hashCode;
+    hash = 37 * hash + config.fontStyle.hashCode;
+    hash = 37 * hash + config.letterSpacing.hashCode;
     hash = 37 * hash + config.textColor.toARGB32().hashCode;
     hash = 37 * hash + config.opacity.hashCode;
     hash = 37 * hash + config.emojiSize.hashCode;
@@ -317,6 +337,10 @@ class MixedLayout {
     hash = 37 * hash + config.showStroke.hashCode;
     hash = 37 * hash + config.strokeColor.toARGB32().hashCode;
     hash = 37 * hash + config.strokeWidth.hashCode;
+    hash = 37 * hash + config.showShadow.hashCode;
+    hash = 37 * hash + config.shadowColor.toARGB32().hashCode;
+    hash = 37 * hash + config.shadowBlur.hashCode;
+    hash = 37 * hash + config.shadowOffset.hashCode;
     hash = 37 * hash + config.fontFamily.hashCode;
 
     final len = fragments.length;
