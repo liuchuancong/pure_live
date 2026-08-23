@@ -12,8 +12,8 @@ class ReleaseAssetUrls {
   String get androidArm64 => '$releaseBase/PureLive-$version-$buildNumber-arm64-v8a-release.apk';
   String get androidArmeabiV7a => '$releaseBase/PureLive-$version-$buildNumber-armeabi-v7a-release.apk';
   String get androidX8664 => '$releaseBase/PureLive-$version-$buildNumber-x86_64-release.apk';
-  String get windowsSetup => '$releaseBase/PureLive-$version-windows-x64-setup.exe';
-  String get windowsMsix => '$releaseBase/PureLive-$version-windows-x64.msix';
+  String get windowsSetup => '$releaseBase/PureLive-$version-$buildNumber-windows-x64-setup.exe';
+  String get windowsMsix => '$releaseBase/PureLive-$version-$buildNumber-windows-x64.msix';
   String get windowsPortable => '$releaseBase/PureLive-$version-$buildNumber-windows-x64-portable.zip';
   String get macosUniversal => '$releaseBase/PureLive-$version-$buildNumber-macos-universal.zip';
 }

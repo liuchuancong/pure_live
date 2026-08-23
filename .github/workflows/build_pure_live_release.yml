@@ -364,7 +364,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          $version = "${{ steps.version.outputs.version }}"
+          $version = "${{ steps.version.outputs.artifact_version }}"
           $distDir = "dist"
           $exeFile = Get-ChildItem $distDir -Recurse -Filter "*.exe" | Select-Object -First 1
           if (!$exeFile) {
