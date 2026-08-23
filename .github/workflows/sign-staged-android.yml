@@ -167,12 +167,11 @@ jobs:
           gh release upload "$TAG" "$FINAL_APK" BUILD_METADATA.json \
             SHA256SUMS.txt ANDROID_SHA256SUM.txt --clobber --repo "$GITHUB_REPOSITORY"
 
-          release_api="repos/$GITHUB_REPOSITORY/releases/tags/$TAG"
           for name in "$STAGED_APK" "$STAGED_METADATA"; do
-            asset_id="$(gh api "$release_api" --jq ".assets[] | select(.name == \"$name\") | .id")"
-            if [[ -n "$asset_id" ]]; then
-              gh api --method DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$asset_id"
-            fi
+            # The releases/tags REST endpoint omits draft releases. The gh
+            # release command resolves drafts by tag and removes the staging
+            # asset without depending on that endpoint.
+            gh release delete-asset "$TAG" "$name" --yes --repo "$GITHUB_REPOSITORY"
           done
 
           {
