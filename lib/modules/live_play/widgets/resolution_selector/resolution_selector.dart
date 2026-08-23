@@ -16,10 +16,12 @@ class ResolutionSelector extends StatelessWidget {
         return const SizedBox.shrink();
       }
 
-      final currentIndex = state.player.currentQuality;
+      final currentIndex = state.player.currentQuality.clamp(0, state.player.qualites.length - 1);
       final currentQualityName = state.player.qualites[currentIndex].quality;
+      final switching = controller.playerController.isStreamSwitching.value;
 
       return PopupMenuButton<int>(
+        enabled: !switching,
         tooltip: i18n('toolbox_select_quality'),
         color: Get.theme.colorScheme.surfaceContainerHighest,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -33,15 +35,27 @@ class ResolutionSelector extends StatelessWidget {
         position: PopupMenuPosition.under,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
-          child: Text(
-            currentQualityName,
-            style: Get.theme.textTheme.labelSmall?.copyWith(color: Get.theme.colorScheme.primary),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (switching) ...[
+                SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(strokeWidth: 1.8, color: Get.theme.colorScheme.primary),
+                ),
+                const SizedBox(width: 5),
+              ],
+              Text(
+                currentQualityName,
+                style: Get.theme.textTheme.labelSmall?.copyWith(color: Get.theme.colorScheme.primary),
+              ),
+            ],
           ),
         ),
-        onSelected: (newQualityIndex) {
+        onSelected: (newQualityIndex) async {
           controller.updateUI(isMenuOpen: false);
-
-          controller.setResolution(ReloadDataType.changeQuality, newQualityIndex, state.player.currentLineIndex);
+          await controller.setResolution(ReloadDataType.changeQuality, newQualityIndex, state.player.currentLineIndex);
         },
         itemBuilder: (context) {
           return List.generate(state.player.qualites.length, (index) {

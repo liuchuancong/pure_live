@@ -1,5 +1,6 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/live_play/widgets/local_interaction/local_interaction_controller.dart';
+import 'package:pure_live/modules/live_play/widgets/local_interaction/local_danmaku_style_editor.dart';
 
 class LocalInteractionSheet extends StatefulWidget {
   const LocalInteractionSheet({super.key, required this.controller, required this.platform, required this.onMessage});
@@ -104,6 +105,19 @@ class _LocalInteractionSheetState extends State<LocalInteractionSheet> {
                   value: local.showAsDanmaku.v,
                   onChanged: (value) => local.showAsDanmaku.v = value,
                 ),
+              ),
+              ExpansionTile(
+                key: const ValueKey('local-interaction-danmaku-style'),
+                tilePadding: EdgeInsets.zero,
+                leading: const Icon(Icons.auto_awesome_rounded),
+                title: Text(i18n('local_danmaku_style')),
+                subtitle: Text(i18n('local_danmaku_style_sync_desc')),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: LocalDanmakuStyleEditor(controller: local, compact: true),
+                  ),
+                ],
               ),
               Row(
                 children: [

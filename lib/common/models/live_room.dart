@@ -140,6 +140,9 @@ class LiveRoom {
   int? catchUpStart; // 时移开始时间戳
   int? catchUpEnd; // 时移结束时间戳
 
+  /// Local epoch-millisecond timestamp used by the viewing-history UI.
+  int? lastWatchedAt;
+
   // 添加未命名的默认构造函数
   LiveRoom({
     this.roomId,
@@ -171,6 +174,7 @@ class LiveRoom {
     this.isCatchUp = false,
     this.catchUpStart,
     this.catchUpEnd,
+    this.lastWatchedAt,
     List<String>? tagIds,
   }) : tagIds = tagIds ?? [];
 
@@ -205,7 +209,8 @@ class LiveRoom {
       catchUpUrl = json['catchUpUrl'],
       isCatchUp = json['isCatchUp'] ?? false,
       catchUpStart = json['catchUpStart'],
-      catchUpEnd = json['catchUpEnd'] {
+      catchUpEnd = json['catchUpEnd'],
+      lastWatchedAt = json['lastWatchedAt'] is num ? (json['lastWatchedAt'] as num).toInt() : null {
     // Earlier builds stored Huya's userCount/URI 8006 popularity in the
     // concurrent-viewer field. Current captures confirm both are popularity.
     if (platform == 'huya' && _hasExplicitAudienceValue(onlineViewers)) {
@@ -249,6 +254,7 @@ class LiveRoom {
     bool? isCatchUp,
     int? catchUpStart,
     int? catchUpEnd,
+    int? lastWatchedAt,
     List<String>? tagIds,
   }) {
     return LiveRoom(
@@ -281,6 +287,7 @@ class LiveRoom {
       isCatchUp: isCatchUp ?? this.isCatchUp,
       catchUpStart: catchUpStart ?? this.catchUpStart,
       catchUpEnd: catchUpEnd ?? this.catchUpEnd,
+      lastWatchedAt: lastWatchedAt ?? this.lastWatchedAt,
       tagIds: tagIds ?? this.tagIds,
     );
   }
@@ -308,7 +315,7 @@ class LiveRoom {
 
   @override
   String toString() {
-    return 'LiveRoom{roomId: $roomId, userId: $userId, link: $link, title: $title, nick: $nick, avatar: $avatar, cover: $cover, area: $area, watching: $watching, followers: $followers, platform: $platform, tagIds: $tagIds, introduction: $introduction, notice: $notice, status: $status, data: $data, danmakuData: $danmakuData, isRecord: $isRecord, liveStatus: $liveStatus, catchUpUrl: $catchUpUrl, isCatchUp: $isCatchUp}';
+    return 'LiveRoom{roomId: $roomId, userId: $userId, link: $link, title: $title, nick: $nick, avatar: $avatar, cover: $cover, area: $area, watching: $watching, followers: $followers, platform: $platform, tagIds: $tagIds, introduction: $introduction, notice: $notice, status: $status, data: $data, danmakuData: $danmakuData, isRecord: $isRecord, liveStatus: $liveStatus, catchUpUrl: $catchUpUrl, isCatchUp: $isCatchUp, lastWatchedAt: $lastWatchedAt}';
   }
 
   double getSavedVolume() {
@@ -348,6 +355,7 @@ class LiveRoom {
       'isCatchUp': isCatchUp,
       'catchUpStart': catchUpStart,
       'catchUpEnd': catchUpEnd,
+      'lastWatchedAt': lastWatchedAt,
     };
   }
 

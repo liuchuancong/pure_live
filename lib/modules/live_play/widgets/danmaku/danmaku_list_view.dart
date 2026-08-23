@@ -12,6 +12,7 @@ import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_message_actions.dart';
+import 'package:pure_live/modules/live_play/widgets/local_interaction/local_danmaku_style_editor.dart';
 
 bool isDanmakuUserScrollStart(
   ScrollNotification notification, {
@@ -376,7 +377,19 @@ class DanmakuListViewState extends State<DanmakuListView> {
                             decoration: InputDecoration(
                               isDense: true,
                               hintText: i18n('local_message_hint'),
-                              prefixIcon: const Icon(Icons.auto_awesome_rounded, size: 19),
+                              prefixIcon: IconButton(
+                                key: const ValueKey('portrait-local-danmaku-style'),
+                                tooltip: i18n('local_danmaku_style'),
+                                onPressed: () => showLocalDanmakuStyleEditor(
+                                  context,
+                                  controller: controller.localInteractionController,
+                                ),
+                                icon: Icon(
+                                  Icons.auto_awesome_rounded,
+                                  size: 19,
+                                  color: Color(controller.localInteractionController.danmakuColor.v),
+                                ),
+                              ),
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(22)),
                             ),
                           ),

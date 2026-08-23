@@ -170,6 +170,7 @@ class DanmakuManager {
     if (!isPlaying && !msg.isLocal) return;
 
     final originalColor = Color.fromARGB(255, msg.color.r, msg.color.g, msg.color.b);
+    final localStyle = msg.isLocal ? msg.style : null;
     final settings = settingsService.danmaku;
     if (settings.enableDanmakuDisplay.v && !videoController.hideDanmaku.value) {
       controller.send(
@@ -178,9 +179,13 @@ class DanmakuManager {
           userId: msg.userId,
           userName: msg.userName,
           textColor: originalColor,
+          fontSize: localStyle?.fontSize,
+          fontWeight: localStyle == null ? null : FontWeight(localStyle.fontWeight),
+          showStroke: localStyle?.showStroke,
+          strokeWidth: localStyle?.strokeWidth,
           // A single px/s value keeps portrait, landscape and desktop motion
           // consistent. Lane collision avoidance is handled by the engine.
-          baseSpeed: videoController.danmakuSpeed.value,
+          baseSpeed: localStyle?.baseSpeed ?? videoController.danmakuSpeed.value,
           onTapUp: settings.enableDanmakuTapInteraction.v ? () => _openMessageActions(msg, fromLongPress: false) : null,
           onLongTapDown: settings.enableDanmakuLongPressInteraction.v
               ? () => _openMessageActions(msg, fromLongPress: true)
@@ -190,8 +195,20 @@ class DanmakuManager {
     }
 
     if (settings.enablePipDanmaku.v && isCompactMode) {
-      final compactColor = settings.pipDanmakuUseOriginalColor.v ? originalColor : Color(settings.pipDanmakuColor.v);
-      pipController.send(BarrageItem(content: msg.message, textColor: compactColor));
+      final compactColor = msg.isLocal || settings.pipDanmakuUseOriginalColor.v
+          ? originalColor
+          : Color(settings.pipDanmakuColor.v);
+      pipController.send(
+        BarrageItem(
+          content: msg.message,
+          textColor: compactColor,
+          fontSize: localStyle?.fontSize,
+          fontWeight: localStyle == null ? null : FontWeight(localStyle.fontWeight),
+          showStroke: localStyle?.showStroke,
+          strokeWidth: localStyle?.strokeWidth,
+          baseSpeed: localStyle?.baseSpeed,
+        ),
+      );
     }
   }
 

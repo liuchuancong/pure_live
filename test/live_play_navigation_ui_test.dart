@@ -31,10 +31,11 @@ void main() {
     expect(tester.getRect(finder), before, reason: 'the section row itself must not pan horizontally');
   });
 
-  test('Android fullscreen places the PiP shortcut beside Back in the leading group', () {
+  test('Android fullscreen places time and battery beside Back after swapping PiP', () {
     expect(resolveTopActionLeadingSlots(fullscreen: true, android: true), const <TopActionLeadingSlot>[
       TopActionLeadingSlot.back,
-      TopActionLeadingSlot.pip,
+      TopActionLeadingSlot.datetime,
+      TopActionLeadingSlot.battery,
     ]);
     expect(resolveTopActionLeadingSlots(fullscreen: true, android: false), const <TopActionLeadingSlot>[
       TopActionLeadingSlot.back,

@@ -23,6 +23,24 @@ class LiveAudienceUpdate {
   final int value;
 }
 
+/// Optional per-message presentation used by locally composed danmaku.
+/// Platform messages keep using the room-wide danmaku configuration.
+class LiveMessageStyle {
+  const LiveMessageStyle({
+    required this.fontSize,
+    required this.baseSpeed,
+    required this.fontWeight,
+    required this.showStroke,
+    required this.strokeWidth,
+  });
+
+  final double fontSize;
+  final double baseSpeed;
+  final int fontWeight;
+  final bool showStroke;
+  final double strokeWidth;
+}
+
 class LiveMessage {
   /// 消息类型
   final LiveMessageType type;
@@ -60,6 +78,7 @@ class LiveMessage {
   /// Original platform timestamp. A missing timestamp means the platform did
   /// not expose one and reception time is used for ordering instead.
   final DateTime? sentAt;
+  final LiveMessageStyle? style;
 
   LiveMessage({
     required this.type,
@@ -74,6 +93,7 @@ class LiveMessage {
     this.isLocal = false,
     this.messageId = "",
     this.sentAt,
+    this.style,
   });
 }
 

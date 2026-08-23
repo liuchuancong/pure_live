@@ -18,6 +18,28 @@ void main() {
       expect(LocalInteractionController.levelForExperience(1500), 4);
     });
 
+    test('normalizes rich local danmaku style values', () {
+      final style = LocalInteractionController.buildDanmakuStyle(
+        fontSize: 60,
+        speed: 20,
+        fontWeight: 1200,
+        showStroke: false,
+        strokeWidth: 9,
+      );
+
+      expect(style.fontSize, 32);
+      expect(style.baseSpeed, 60);
+      expect(style.fontWeight, 900);
+      expect(style.showStroke, isFalse);
+      expect(style.strokeWidth, 0);
+      expect(LocalInteractionController.danmakuPresets.map((preset) => preset.id), [
+        'clean',
+        'highlight',
+        'neon',
+        'minimal',
+      ]);
+    });
+
     test('selects a platform-specific gift and badge catalogue', () {
       final bilibili = LocalInteractionController.giftsForPlatform(Sites.bilibiliSite);
       final douyin = LocalInteractionController.giftsForPlatform(Sites.douyinSite);

@@ -1,5 +1,6 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/live_play/widgets/local_interaction/local_interaction_controller.dart';
+import 'package:pure_live/modules/live_play/widgets/local_interaction/local_danmaku_style_editor.dart';
 
 class LocalInteractionSettingsPage extends StatefulWidget {
   const LocalInteractionSettingsPage({super.key});
@@ -152,6 +153,14 @@ class _LocalInteractionSettingsPageState extends State<LocalInteractionSettingsP
                       subtitle: '${controller.coins.v} · Lv.${controller.level}',
                       icon: Icons.toll_rounded,
                     ),
+                  ),
+                ]),
+                const SizedBox(height: 20),
+                context.buildGroupTitle(i18n('local_danmaku_style')),
+                context.buildModernCard([
+                  Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: LocalDanmakuStyleEditor(controller: controller),
                   ),
                 ]),
                 const SizedBox(height: 12),

@@ -1,4 +1,5 @@
 import 'dart:developer' as developer;
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/core/site/huya/huya_site.dart';
@@ -10,8 +11,44 @@ import 'package:pure_live/player/models/player_error_type.dart';
 import 'package:pure_live/core/site/bilibili/bilibili_site.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/modules/live_play/states/live_play_state.dart';
+import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 
+typedef StreamSourceOpener = Future<void> Function(
+  String url,
+  List<String> playUrls,
+  Map<String, String> headers,
+  LiveRoom room,
+  bool audioOnly,
+);
+
+@immutable
+class StreamSelection {
+  const StreamSelection({required this.qualityIndex, required this.lineIndex, required this.isValid});
+
+  final int qualityIndex;
+  final int lineIndex;
+  final bool isValid;
+}
+
+/// Normalizes a selection made from a UI snapshot against the latest stream
+/// metadata. A quality change can return a different number of CDN lines.
+@visibleForTesting
+StreamSelection resolveStreamSelection({
+  required int qualityCount,
+  required int playUrlCount,
+  required int requestedQualityIndex,
+  required int requestedLineIndex,
+}) {
+  if (qualityCount <= 0 || playUrlCount <= 0) {
+    return const StreamSelection(qualityIndex: 0, lineIndex: 0, isValid: false);
+  }
+  return StreamSelection(
+    qualityIndex: requestedQualityIndex.clamp(0, qualityCount - 1),
+    lineIndex: requestedLineIndex.clamp(0, playUrlCount - 1),
+    isValid: true,
+  );
+}
 
 abstract interface class PlayerSessionHost {
   Rx<LivePlayState> get state;
@@ -35,14 +72,33 @@ abstract interface class PlayerSessionHost {
 }
 
 class PlayerController extends GetxController {
-  PlayerController(this._main) {
+  PlayerController(this._main, {StreamSourceOpener? streamSourceOpener})
+    : _streamSourceOpener = streamSourceOpener ?? _openGlobalStream {
     _audioModeTransitions = LatestAsyncValueQueue<bool>(_applyCurrentRoomAudioOnly);
   }
 
   final PlayerSessionHost _main;
+  final StreamSourceOpener _streamSourceOpener;
   late final LatestAsyncValueQueue<bool> _audioModeTransitions;
   late Site currentSite;
   int _loadEpoch = 0;
+  int _streamSelectionEpoch = 0;
+  final RxBool isStreamSwitching = false.obs;
+
+  static Future<void> _openGlobalStream(
+    String url,
+    List<String> playUrls,
+    Map<String, String> headers,
+    LiveRoom room,
+    bool audioOnly,
+  ) {
+    final manager = GlobalPlayerService.instance.player;
+    return manager.play(url, playUrls, headers, room: room, audioOnly: audioOnly).then((_) {
+      if (manager.hasError.value) {
+        throw PlayerException(message: 'Selected stream failed to open', type: PlayerErrorType.source);
+      }
+    });
+  }
 
   LivePlayState get _state => _main.state.value;
   LiveRoom? get currentRoom => _state.room.detail;
@@ -268,6 +324,96 @@ class PlayerController extends GetxController {
     _main.updateRoom(success: true);
   }
 
+  /// Changes quality or CDN line on the active native player without
+  /// refetching room metadata or destroying the route-scoped controller.
+  ///
+  /// The current stream remains active while a new quality URL is resolved.
+  /// Rapid taps are latest-wins and the chosen line is clamped against the URL
+  /// count returned by the newly selected quality.
+  Future<bool> switchStreamSelection({
+    required ReloadDataType type,
+    required int qualityIndex,
+    required int lineIndex,
+  }) async {
+    if (type != ReloadDataType.changeQuality && type != ReloadDataType.changeLine) return false;
+
+    final room = currentRoom;
+    final site = currentSite;
+    final before = _state.player;
+    if (room == null || before.qualites.isEmpty || before.playUrls.isEmpty) return false;
+
+    final requestedQuality = type == ReloadDataType.changeLine
+        ? before.currentQuality.clamp(0, before.qualites.length - 1)
+        : qualityIndex.clamp(0, before.qualites.length - 1);
+    if (requestedQuality == before.currentQuality && lineIndex == before.currentLineIndex) return true;
+
+    final selectionEpoch = ++_streamSelectionEpoch;
+    final loadEpoch = ++_loadEpoch;
+    isStreamSwitching.value = true;
+
+    try {
+      final urls = type == ReloadDataType.changeQuality
+          ? await site.liveSite.getPlayUrls(detail: room, quality: before.qualites[requestedQuality])
+          : List<String>.from(before.playUrls);
+      if (!_isLoadCurrent(loadEpoch, room, site) || selectionEpoch != _streamSelectionEpoch) return false;
+      if (urls.isEmpty) {
+        ToastUtil.show(i18n('cannot_read_play_url'));
+        return false;
+      }
+
+      final selection = resolveStreamSelection(
+        qualityCount: before.qualites.length,
+        playUrlCount: urls.length,
+        requestedQualityIndex: requestedQuality,
+        requestedLineIndex: lineIndex,
+      );
+      if (!selection.isValid) return false;
+
+      final cachedHeaders = before.videoController?.headers;
+      final headers = cachedHeaders == null || cachedHeaders.isEmpty
+          ? await getHeaders(expectedSite: site, expectedRoom: room)
+          : Map<String, String>.from(cachedHeaders);
+      if (!_isLoadCurrent(loadEpoch, room, site) || selectionEpoch != _streamSelectionEpoch) return false;
+
+      final immutableUrls = List<String>.unmodifiable(urls);
+      _main.updatePlayer(
+        currentQuality: selection.qualityIndex,
+        playUrls: immutableUrls,
+        currentLineIndex: selection.lineIndex,
+        hasUseDefaultResolution: true,
+      );
+      await _streamSourceOpener(
+        immutableUrls[selection.lineIndex],
+        immutableUrls,
+        Map<String, String>.unmodifiable(headers),
+        room,
+        _state.player.isCurrentRoomAudioOnly,
+      );
+      if (!_isLoadCurrent(loadEpoch, room, site) || selectionEpoch != _streamSelectionEpoch) return false;
+      _main.updateRoom(success: true, isLoading: false, loadError: null);
+      return true;
+    } catch (error, stackTrace) {
+      if (_isLoadCurrent(loadEpoch, room, site) && selectionEpoch == _streamSelectionEpoch) {
+        _main.updatePlayer(
+          currentQuality: before.currentQuality,
+          playUrls: before.playUrls,
+          currentLineIndex: before.currentLineIndex,
+          hasUseDefaultResolution: before.hasUseDefaultResolution,
+        );
+        developer.log(
+          'Stream selection failed (${error.runtimeType})',
+          name: 'PlayerController',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        ToastUtil.show(i18n('read_video_failed'));
+      }
+      return false;
+    } finally {
+      if (selectionEpoch == _streamSelectionEpoch) isStreamSwitching.value = false;
+    }
+  }
+
   Future<void> changeCurrentRoomAudioOnly(bool value) async {
     await _audioModeTransitions.submit(value);
   }
@@ -308,6 +454,8 @@ class PlayerController extends GetxController {
 
   @override
   void onClose() {
+    _streamSelectionEpoch++;
+    isStreamSwitching.value = false;
     invalidateLoad();
     super.onClose();
   }

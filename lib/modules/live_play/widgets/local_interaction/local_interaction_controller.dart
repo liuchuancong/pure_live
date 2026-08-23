@@ -36,6 +36,28 @@ class LocalPlatformPack {
   final String badge;
 }
 
+class LocalDanmakuPreset {
+  const LocalDanmakuPreset({
+    required this.id,
+    required this.labelKey,
+    required this.color,
+    required this.fontSize,
+    required this.speed,
+    required this.fontWeight,
+    required this.showStroke,
+    required this.strokeWidth,
+  });
+
+  final String id;
+  final String labelKey;
+  final int color;
+  final double fontSize;
+  final double speed;
+  final int fontWeight;
+  final bool showStroke;
+  final double strokeWidth;
+}
+
 class LocalInteractionController extends GetxController {
   final RxBool enabled = hiveBool('localInteraction.enabled', true);
   final RxString userName = hiveString('localInteraction.userName', 'Pure Live');
@@ -48,6 +70,66 @@ class LocalInteractionController extends GetxController {
   final RxInt coins = hiveInt('localInteraction.coins', 1000);
   final RxInt experience = hiveInt('localInteraction.experience', 0);
   final RxList<String> history = hiveStringList('localInteraction.history', const []);
+  final RxString danmakuPreset = hiveString('localInteraction.danmakuPreset', 'clean');
+  final RxInt danmakuColor = hiveInt('localInteraction.danmakuColor', 0xFFFFFFFF);
+  final RxDouble danmakuFontSize = hiveDouble('localInteraction.danmakuFontSize', 19.0);
+  final RxDouble danmakuSpeed = hiveDouble('localInteraction.danmakuSpeed', 130.0);
+  final RxInt danmakuFontWeight = hiveInt('localInteraction.danmakuFontWeight', 600);
+  final RxBool danmakuShowStroke = hiveBool('localInteraction.danmakuShowStroke', true);
+  final RxDouble danmakuStrokeWidth = hiveDouble('localInteraction.danmakuStrokeWidth', 1.5);
+
+  static const danmakuPresets = <LocalDanmakuPreset>[
+    LocalDanmakuPreset(
+      id: 'clean',
+      labelKey: 'local_danmaku_preset_clean',
+      color: 0xFFFFFFFF,
+      fontSize: 19,
+      speed: 130,
+      fontWeight: 600,
+      showStroke: true,
+      strokeWidth: 1.5,
+    ),
+    LocalDanmakuPreset(
+      id: 'highlight',
+      labelKey: 'local_danmaku_preset_highlight',
+      color: 0xFFFFE45C,
+      fontSize: 22,
+      speed: 145,
+      fontWeight: 800,
+      showStroke: true,
+      strokeWidth: 2,
+    ),
+    LocalDanmakuPreset(
+      id: 'neon',
+      labelKey: 'local_danmaku_preset_neon',
+      color: 0xFFFF69D4,
+      fontSize: 21,
+      speed: 120,
+      fontWeight: 700,
+      showStroke: true,
+      strokeWidth: 2.5,
+    ),
+    LocalDanmakuPreset(
+      id: 'minimal',
+      labelKey: 'local_danmaku_preset_minimal',
+      color: 0xFF72E6FF,
+      fontSize: 17,
+      speed: 105,
+      fontWeight: 500,
+      showStroke: false,
+      strokeWidth: 0,
+    ),
+  ];
+
+  static const danmakuColors = <int>[
+    0xFFFFFFFF,
+    0xFFFFE45C,
+    0xFF72E6FF,
+    0xFFFF69D4,
+    0xFF8CFF98,
+    0xFFFF9D66,
+    0xFFBCA7FF,
+  ];
 
   static const gifts = <LocalGift>[
     LocalGift(id: 'heart', nameKey: 'local_gift_heart', emoji: '💗', price: 10, color: LiveMessageColor(255, 105, 180)),
@@ -344,6 +426,44 @@ class LocalInteractionController extends GetxController {
 
   static int levelForExperience(int value) => (value < 0 ? 0 : value) ~/ 500 + 1;
 
+  static LiveMessageStyle buildDanmakuStyle({
+    required double fontSize,
+    required double speed,
+    required int fontWeight,
+    required bool showStroke,
+    required double strokeWidth,
+  }) {
+    return LiveMessageStyle(
+      fontSize: fontSize.clamp(14.0, 32.0).toDouble(),
+      baseSpeed: speed.clamp(60.0, 260.0).toDouble(),
+      fontWeight: fontWeight.clamp(400, 900).toInt(),
+      showStroke: showStroke,
+      strokeWidth: showStroke ? strokeWidth.clamp(0.5, 4.0).toDouble() : 0,
+    );
+  }
+
+  LiveMessageStyle get currentDanmakuStyle => buildDanmakuStyle(
+    fontSize: danmakuFontSize.v,
+    speed: danmakuSpeed.v,
+    fontWeight: danmakuFontWeight.v,
+    showStroke: danmakuShowStroke.v,
+    strokeWidth: danmakuStrokeWidth.v,
+  );
+
+  void applyDanmakuPreset(LocalDanmakuPreset preset) {
+    danmakuPreset.v = preset.id;
+    danmakuColor.v = preset.color;
+    danmakuFontSize.v = preset.fontSize;
+    danmakuSpeed.v = preset.speed;
+    danmakuFontWeight.v = preset.fontWeight;
+    danmakuShowStroke.v = preset.showStroke;
+    danmakuStrokeWidth.v = preset.strokeWidth;
+  }
+
+  void markDanmakuStyleCustom() => danmakuPreset.v = 'custom';
+
+  void resetDanmakuStyle() => applyDanmakuPreset(danmakuPresets.first);
+
   static String normalizeUserName(String value) {
     final name = value.trim();
     if (name.isEmpty) return '';
@@ -390,9 +510,10 @@ class LocalInteractionController extends GetxController {
       type: LiveMessageType.chat,
       userName: '${profileLabel(platform)} · ${userName.v}',
       message: text.trim(),
-      color: LiveMessageColor.white,
+      color: LiveMessageColor.numberToColor(danmakuColor.v),
       userLevel: showLevelBadge.v ? level.toString() : '',
       isLocal: true,
+      style: currentDanmakuStyle,
     );
   }
 
@@ -421,6 +542,7 @@ class LocalInteractionController extends GetxController {
       userLevel: showLevelBadge.v ? level.toString() : '',
       fansName: titleLabel,
       isLocal: true,
+      style: currentDanmakuStyle,
     );
   }
 
