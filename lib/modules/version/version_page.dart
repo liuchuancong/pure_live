@@ -52,6 +52,8 @@ class VersionPage extends GetView<VersionController> {
                 children: [
                   _buildDownloadSection(context, title: i18n("exe_installer"), urls: controller.windowsSetupUrl.value),
                   const SizedBox(height: 16),
+                  _buildDownloadSection(context, title: i18n("msix_installer"), urls: controller.windowsMsixUrl.value),
+                  const SizedBox(height: 16),
                   _buildDownloadSection(
                     context,
                     title: i18n("portable_package"),
