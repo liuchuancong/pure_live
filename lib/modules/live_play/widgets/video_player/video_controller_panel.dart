@@ -1260,31 +1260,33 @@ class FullscreenStreamSelectorButton extends StatelessWidget {
           alignment: Alignment.centerRight,
           insetPadding: layout.insetPadding,
           clipBehavior: Clip.antiAlias,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: SizedBox(
             width: layout.size.width,
             height: layout.size.height,
             child: Column(
               children: [
                 SizedBox(
-                  height: 46,
+                  height: 38,
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 14, right: 4),
+                    padding: const EdgeInsets.only(left: 10, right: 2),
                     child: Row(
                       children: [
-                        Icon(Icons.tune_rounded, size: 20, color: Theme.of(dialogContext).colorScheme.primary),
-                        const SizedBox(width: 8),
+                        Icon(Icons.tune_rounded, size: 18, color: Theme.of(dialogContext).colorScheme.primary),
+                        const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             i18n('fullscreen_stream_settings'),
-                            style: Theme.of(dialogContext).textTheme.titleMedium,
+                            style: Theme.of(dialogContext).textTheme.titleSmall,
                           ),
                         ),
                         IconButton(
                           tooltip: i18n('close'),
                           visualDensity: VisualDensity.compact,
+                          constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+                          padding: EdgeInsets.zero,
                           onPressed: () => Navigator.pop(dialogContext),
-                          icon: const Icon(Icons.close_rounded, size: 20),
+                          icon: const Icon(Icons.close_rounded, size: 19),
                         ),
                       ],
                     ),
@@ -1299,7 +1301,7 @@ class FullscreenStreamSelectorButton extends StatelessWidget {
                     return Stack(
                       children: [
                         Padding(
-                          padding: const EdgeInsets.all(10),
+                          padding: const EdgeInsets.all(6),
                           child: Flex(
                             direction: layout.splitContent ? Axis.horizontal : Axis.vertical,
                             children: [
@@ -1324,7 +1326,7 @@ class FullscreenStreamSelectorButton extends StatelessWidget {
                                         },
                                 ),
                               ),
-                              SizedBox(width: layout.splitContent ? 10 : 0, height: layout.splitContent ? 0 : 10),
+                              SizedBox(width: layout.splitContent ? 6 : 0, height: layout.splitContent ? 0 : 5),
                               Expanded(
                                 flex: layout.splitContent ? 1 : 3,
                                 child: _StreamChoicePane(
@@ -1459,62 +1461,67 @@ class _StreamChoicePane extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(11),
         border: Border.all(color: colors.outlineVariant.withValues(alpha: .55)),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+        padding: const EdgeInsets.fromLTRB(6, 4, 6, 6),
         child: Column(
           children: [
             SizedBox(
-              height: 27,
+              height: 22,
               child: Row(
                 children: [
-                  Icon(icon, size: 18, color: colors.primary),
-                  const SizedBox(width: 7),
-                  Expanded(child: Text(title, style: Theme.of(context).textTheme.titleSmall)),
+                  Icon(icon, size: 16, color: colors.primary),
+                  const SizedBox(width: 5),
+                  Expanded(child: Text(title, style: Theme.of(context).textTheme.labelLarge)),
                   Flexible(
                     child: Text(
                       selectedLabel,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelMedium
+                      style: Theme.of(context).textTheme.labelSmall
                           ?.copyWith(color: colors.primary, fontWeight: FontWeight.w700),
                     ),
                   ),
                 ],
               ),
             ),
-            const Divider(height: 6),
+            const Divider(height: 4),
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final columns = constraints.maxWidth >= 250 ? 2 : 1;
+                  final columns = resolveStreamChoiceColumns(constraints.maxWidth);
                   return GridView.builder(
                     physics: const PureLiveScrollPhysics(),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: columns,
-                      mainAxisExtent: 42,
-                      mainAxisSpacing: 6,
-                      crossAxisSpacing: 6,
+                      mainAxisExtent: 34,
+                      mainAxisSpacing: 4,
+                      crossAxisSpacing: 4,
                     ),
                     itemCount: itemCount,
                     itemBuilder: (context, index) {
                       final selected = selectedIndex == index;
                       return Material(
                         color: selected ? colors.primaryContainer : colors.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(8),
                         child: InkWell(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(8),
                           onTap: onSelected == null || selected ? null : () => unawaited(onSelected!(index)),
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            padding: const EdgeInsets.symmetric(horizontal: 7),
                             child: Row(
                               children: [
                                 Expanded(
-                                  child: Text(labelBuilder(index), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  child: Text(
+                                    labelBuilder(index),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context).textTheme.labelMedium,
+                                  ),
                                 ),
-                                if (selected) Icon(Icons.check_circle_rounded, size: 18, color: colors.primary),
+                                if (selected) Icon(Icons.check_circle_rounded, size: 15, color: colors.primary),
                               ],
                             ),
                           ),

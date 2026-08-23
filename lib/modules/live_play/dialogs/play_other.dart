@@ -69,38 +69,42 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
       alignment: Alignment.centerRight,
       insetPadding: layout.insetPadding,
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: SizedBox(
         width: layout.size.width,
         height: layout.size.height,
         child: Column(
           children: [
             SizedBox(
-              height: 46,
+              height: 36,
               child: Padding(
-                padding: const EdgeInsets.only(left: 14, right: 4),
+                padding: const EdgeInsets.only(left: 10, right: 2),
                 child: Row(
                   children: [
-                    Icon(Icons.video_library_rounded, size: 20, color: Theme.of(context).colorScheme.primary),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(i18n('switch_live_room'), style: Theme.of(context).textTheme.titleMedium)),
+                    Icon(Icons.video_library_rounded, size: 17, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: 6),
+                    Expanded(child: Text(i18n('switch_live_room'), style: Theme.of(context).textTheme.titleSmall)),
                     Obx(
                       () => IconButton(
                         tooltip: i18n('refresh'),
                         visualDensity: VisualDensity.compact,
+                        constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+                        padding: EdgeInsets.zero,
                         onPressed: refreshing.value
                             ? null
                             : () {
                                 refreshing.value = true;
                                 EventBus.instance.emit('refresh_favorite_rooms', true);
                               },
-                        icon: const Icon(Icons.refresh_rounded, size: 20),
+                        icon: const Icon(Icons.refresh_rounded, size: 18),
                       ),
                     ),
                     IconButton(
                       tooltip: i18n('close'),
                       visualDensity: VisualDensity.compact,
-                      icon: const Icon(Icons.close_rounded, size: 20),
+                      constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+                      padding: EdgeInsets.zero,
+                      icon: const Icon(Icons.close_rounded, size: 18),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
@@ -108,7 +112,7 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
               ),
             ),
             SizedBox(
-              height: 40,
+              height: 30,
               child: TabBar(
                 controller: tabController,
                 labelColor: Theme.of(context).colorScheme.primary,
@@ -162,10 +166,14 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
     return LayoutBuilder(
       builder: (context, constraints) {
         final columns = constraints.maxWidth >= 380 ? 2 : 1;
-        const padding = 8.0;
-        const spacing = 7.0;
-        final cardWidth = (constraints.maxWidth - padding * 2 - spacing * (columns - 1)) / columns;
-        final cardHeight = (cardWidth * 9 / 16 + 48).clamp(150.0, 310.0).toDouble();
+        const padding = 6.0;
+        const spacing = 5.0;
+        final cardHeight = resolveRoomHistoryCardHeight(
+          contentSize: Size(constraints.maxWidth, constraints.maxHeight),
+          columns: columns,
+          padding: padding,
+          spacing: spacing,
+        );
         return GridView.builder(
           key: ValueKey(history ? 'watch-history-grid' : 'live-room-grid'),
           padding: const EdgeInsets.all(padding),
@@ -200,13 +208,20 @@ class _CompactTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Tab(
-      height: 38,
+      height: 28,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 17),
-          const SizedBox(width: 6),
-          Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis)),
+          Icon(icon, size: 14),
+          const SizedBox(width: 3),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
+          ),
         ],
       ),
     );
@@ -246,7 +261,7 @@ class _RoomSwitchCard extends StatelessWidget {
       elevation: 0,
       color: colors.surfaceContainerLow,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: colors.outlineVariant.withValues(alpha: .55)),
       ),
       clipBehavior: Clip.antiAlias,
@@ -267,9 +282,9 @@ class _RoomSwitchCard extends StatelessWidget {
                   ),
                 ),
                 SizedBox(
-                  height: 48,
+                  height: 36,
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 5, 5, 4),
+                    padding: const EdgeInsets.fromLTRB(7, 3, 3, 3),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -277,12 +292,12 @@ class _RoomSwitchCard extends StatelessWidget {
                           room.title?.trim().isNotEmpty == true ? room.title! : i18n('untitled_room'),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+                          style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const Spacer(),
                         Row(
                           children: [
-                            Icon(Icons.person_outline_rounded, size: 13, color: colors.onSurfaceVariant),
+                            Icon(Icons.person_outline_rounded, size: 12, color: colors.onSurfaceVariant),
                             const SizedBox(width: 3),
                             Expanded(
                               child: Text(
@@ -292,7 +307,7 @@ class _RoomSwitchCard extends StatelessWidget {
                                 style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colors.onSurfaceVariant),
                               ),
                             ),
-                            Icon(Icons.chevron_right_rounded, size: 16, color: colors.onSurfaceVariant),
+                            Icon(Icons.chevron_right_rounded, size: 14, color: colors.onSurfaceVariant),
                           ],
                         ),
                       ],

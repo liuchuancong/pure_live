@@ -64,9 +64,28 @@ void main() {
     expect(rooms.size.width / viewport.width, inInclusiveRange(.47, .51));
     expect(rooms.size.height / viewport.height, greaterThan(.9));
     expect(streams.size.width / viewport.width, inInclusiveRange(.47, .51));
-    expect(style.size.width / viewport.width, inInclusiveRange(.44, .49));
+    expect(style.size.width / viewport.width, inInclusiveRange(.47, .51));
+    expect(style.size.height / viewport.height, greaterThan(.9));
     expect(streams.splitContent, isFalse);
-    expect(style.splitContent, isFalse);
+    expect(style.splitContent, isTrue, reason: 'phone landscape keeps preview left and controls right');
+    expect(resolveStreamChoiceColumns(streams.size.width - 24), 3);
+
+    final roomGridSize = Size(rooms.size.width, rooms.size.height - 36 - 30 - 1);
+    final cardHeight = resolveRoomHistoryCardHeight(contentSize: roomGridSize, columns: 2);
+    expect(cardHeight * 2 + 6 * 2 + 5, lessThanOrEqualTo(roomGridSize.height));
+  });
+
+  test('stream choices scale down without dropping to a long single column', () {
+    expect(resolveStreamChoiceColumns(420), 3);
+    expect(resolveStreamChoiceColumns(260), 2);
+    expect(resolveStreamChoiceColumns(180), 1);
+  });
+
+  test('local style keeps its preview/settings split on a smaller landscape phone', () {
+    const viewport = Size(720, 360);
+    final style = resolveContentFirstPanelLayout(viewport, ContentFirstPanelKind.localDanmakuStyle);
+    expect(style.splitContent, isTrue);
+    expect(style.size.width / viewport.width, inInclusiveRange(.47, .51));
   });
 
   test('large landscape windows keep dense panels split internally', () {

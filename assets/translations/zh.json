@@ -828,6 +828,7 @@
     "local_danmaku_style": "本地弹幕样式",
     "local_danmaku_style_sync_desc": "所有选项实时保存，并同步用于竖屏、横屏、小窗、发送框和本地互动页。",
     "local_danmaku_preview_text": "Pure Live 本地弹幕预览",
+    "local_danmaku_live_preview": "实时预览",
     "local_danmaku_presets": "样式模板",
     "local_danmaku_preset_clean": "清爽",
     "local_danmaku_preset_highlight": "醒目",

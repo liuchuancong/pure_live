@@ -14,7 +14,7 @@ Future<void> showLocalDanmakuStyleEditor(BuildContext context, {required LocalIn
         alignment: Alignment.centerRight,
         insetPadding: layout.insetPadding,
         clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: SizedBox(
           width: layout.size.width,
           height: layout.size.height,
@@ -56,28 +56,44 @@ class _StyleSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final headerHeight = panelCompact ? 38.0 : 46.0;
     return Column(
       children: [
         SizedBox(
-          height: 46,
+          height: headerHeight,
           child: Padding(
-            padding: const EdgeInsets.only(left: 14, right: 4),
+            padding: EdgeInsets.only(left: panelCompact ? 10 : 14, right: 2),
             child: Row(
               children: [
-                Icon(Icons.auto_awesome_rounded, size: 20, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(width: 8),
-                Expanded(child: Text(i18n('local_danmaku_style'), style: Theme.of(context).textTheme.titleMedium)),
+                Icon(
+                  Icons.auto_awesome_rounded,
+                  size: panelCompact ? 18 : 20,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                SizedBox(width: panelCompact ? 6 : 8),
+                Expanded(
+                  child: Text(
+                    i18n('local_danmaku_style'),
+                    style: panelCompact
+                        ? Theme.of(context).textTheme.titleSmall
+                        : Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
                 IconButton(
                   tooltip: i18n('restore_default'),
                   visualDensity: VisualDensity.compact,
+                  constraints: BoxConstraints.tightFor(width: panelCompact ? 34 : 40, height: panelCompact ? 34 : 40),
+                  padding: EdgeInsets.zero,
                   onPressed: controller.resetDanmakuStyle,
-                  icon: const Icon(Icons.restart_alt_rounded, size: 20),
+                  icon: Icon(Icons.restart_alt_rounded, size: panelCompact ? 19 : 20),
                 ),
                 IconButton(
                   tooltip: i18n('close'),
                   visualDensity: VisualDensity.compact,
+                  constraints: BoxConstraints.tightFor(width: panelCompact ? 34 : 40, height: panelCompact ? 34 : 40),
+                  padding: EdgeInsets.zero,
                   onPressed: close,
-                  icon: const Icon(Icons.close_rounded, size: 20),
+                  icon: Icon(Icons.close_rounded, size: panelCompact ? 19 : 20),
                 ),
               ],
             ),
@@ -89,19 +105,20 @@ class _StyleSurface extends StatelessWidget {
               ? Row(
                   children: [
                     Expanded(
-                      flex: 5,
+                      flex: 1,
                       child: Padding(
-                        padding: const EdgeInsets.all(12),
+                        key: const ValueKey('local-danmaku-live-preview-pane'),
+                        padding: const EdgeInsets.all(8),
                         child: _DanmakuPreview(controller: controller, expanded: true),
                       ),
                     ),
                     const VerticalDivider(width: 1),
                     Expanded(
-                      flex: 6,
+                      flex: 1,
                       child: SingleChildScrollView(
                         key: const ValueKey('local-danmaku-style-controls'),
                         physics: const PureLiveScrollPhysics(),
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.fromLTRB(8, 7, 8, 10),
                         child: _StyleControls(controller: controller, dense: true),
                       ),
                     ),
@@ -173,6 +190,7 @@ class _DanmakuPreview extends StatelessWidget {
         letterSpacing: previewStyle.letterSpacing,
         shadows: previewShadows.isEmpty ? null : previewShadows,
       );
+      final previewText = i18n('local_danmaku_preview_text');
       final preview = Container(
         key: const ValueKey('local-danmaku-style-preview'),
         width: double.infinity,
@@ -190,39 +208,57 @@ class _DanmakuPreview extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             Center(
-              child: Icon(Icons.live_tv_rounded, size: expanded ? 72 : 38, color: Colors.white10),
+              child: Icon(Icons.live_tv_rounded, size: expanded ? 54 : 38, color: Colors.white10),
             ),
-            AnimatedAlign(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              alignment: switch (previewStyle.placement) {
-                LiveMessagePlacement.top => Alignment.topCenter,
-                LiveMessagePlacement.bottom => Alignment.bottomCenter,
-                LiveMessagePlacement.scroll => const Alignment(-.55, -.25),
-              },
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 14, vertical: expanded ? 26 : 12),
-                child: Text(
-                  i18n('local_danmaku_preview_text'),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textStyle,
+            if (expanded)
+              Positioned(
+                left: 9,
+                top: 8,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(color: Colors.black38, borderRadius: BorderRadius.circular(10)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.play_circle_fill_rounded, size: 12, color: Colors.white70),
+                        const SizedBox(width: 4),
+                        Text(
+                          i18n('local_danmaku_live_preview'),
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white70),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
+            if (previewStyle.placement == LiveMessagePlacement.scroll)
+              Positioned.fill(
+                child: Padding(
+                  padding: EdgeInsets.only(top: expanded ? 22 : 0),
+                  child: _ScrollingDanmakuPreview(text: previewText, style: textStyle, speed: previewStyle.baseSpeed),
+                ),
+              )
+            else
+              AnimatedAlign(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                alignment: previewStyle.placement == LiveMessagePlacement.top
+                    ? Alignment.topCenter
+                    : Alignment.bottomCenter,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: expanded ? 38 : 12),
+                  child: Text(previewText, maxLines: 1, overflow: TextOverflow.ellipsis, style: textStyle),
+                ),
+              ),
             if (expanded && previewStyle.placement == LiveMessagePlacement.scroll)
               Positioned(
-                left: 48,
-                right: 12,
-                top: 112,
+                left: 12,
+                right: 8,
+                bottom: 38,
                 child: Opacity(
-                  opacity: .62,
-                  child: Text(
-                    i18n('local_danmaku_preview_text'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textStyle,
-                  ),
+                  opacity: .45,
+                  child: Text(previewText, maxLines: 1, overflow: TextOverflow.ellipsis, style: textStyle),
                 ),
               ),
           ],
@@ -230,6 +266,98 @@ class _DanmakuPreview extends StatelessWidget {
       );
       return expanded ? SizedBox.expand(child: preview) : preview;
     });
+  }
+}
+
+/// Lightweight live speed preview. It exists only while the style editor is
+/// visible and therefore does not add work to the normal playback overlay.
+class _ScrollingDanmakuPreview extends StatefulWidget {
+  const _ScrollingDanmakuPreview({required this.text, required this.style, required this.speed});
+
+  final String text;
+  final TextStyle style;
+  final double speed;
+
+  @override
+  State<_ScrollingDanmakuPreview> createState() => _ScrollingDanmakuPreviewState();
+}
+
+class _ScrollingDanmakuPreviewState extends State<_ScrollingDanmakuPreview> with SingleTickerProviderStateMixin {
+  late final AnimationController _animation;
+  double _travelDistance = 360;
+  bool _durationUpdateScheduled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _animation = AnimationController(vsync: this, duration: _durationFor(_travelDistance))..repeat();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ScrollingDanmakuPreview oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.speed != widget.speed) _applyDuration();
+  }
+
+  Duration _durationFor(double distance) {
+    final milliseconds = (distance / widget.speed.clamp(60.0, 260.0).toDouble() * 1000)
+        .round()
+        .clamp(900, 9000)
+        .toInt();
+    return Duration(milliseconds: milliseconds);
+  }
+
+  void _applyDuration() {
+    if (!mounted) return;
+    final progress = _animation.value;
+    _animation
+      ..duration = _durationFor(_travelDistance)
+      ..value = progress
+      ..repeat();
+  }
+
+  void _scheduleTravelDistance(double value) {
+    if ((value - _travelDistance).abs() < 1 || _durationUpdateScheduled) return;
+    _durationUpdateScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _durationUpdateScheduled = false;
+      if (!mounted) return;
+      _travelDistance = value;
+      _applyDuration();
+    });
+  }
+
+  @override
+  void dispose() {
+    _animation.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final painter = TextPainter(
+          text: TextSpan(text: widget.text, style: widget.style),
+          maxLines: 1,
+          textDirection: Directionality.of(context),
+        )..layout();
+        final textWidth = painter.width;
+        painter.dispose();
+        final travel = constraints.maxWidth + textWidth + 20;
+        _scheduleTravelDistance(travel);
+        return ClipRect(
+          child: AnimatedBuilder(
+            animation: _animation,
+            child: Text(widget.text, maxLines: 1, softWrap: false, style: widget.style),
+            builder: (context, child) => Transform.translate(
+              offset: Offset(constraints.maxWidth + 10 - _animation.value * travel, 0),
+              child: Align(alignment: Alignment.centerLeft, child: child),
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 

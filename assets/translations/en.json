@@ -827,6 +827,7 @@
     "local_danmaku_style": "Local danmaku style",
     "local_danmaku_style_sync_desc": "Every option is saved live and shared by portrait, landscape, PiP, the composer, and local interaction pages.",
     "local_danmaku_preview_text": "Pure Live local danmaku preview",
+    "local_danmaku_live_preview": "Live preview",
     "local_danmaku_presets": "Style presets",
     "local_danmaku_preset_clean": "Clean",
     "local_danmaku_preset_highlight": "Highlight",
