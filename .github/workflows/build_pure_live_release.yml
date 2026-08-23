@@ -95,7 +95,12 @@ jobs:
         run: python tool/interface_probe.py
   android:
     name: Android all ABIs
-    if: ${{ inputs.build_android && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    if: >-
+      ${{
+        github.event_name == 'workflow_dispatch' &&
+        inputs.build_android &&
+        (needs.quality.result == 'success' || needs.quality.result == 'skipped')
+      }}
     needs: quality
     runs-on: ubuntu-latest
     timeout-minutes: 55
@@ -204,7 +209,12 @@ jobs:
           retention-days: 3
   windows:
     name: Windows EXE + MSIX + Portable
-    if: ${{ inputs.build_windows && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    if: >-
+      ${{
+        github.event_name == 'workflow_dispatch' &&
+        inputs.build_windows &&
+        (needs.quality.result == 'success' || needs.quality.result == 'skipped')
+      }}
     needs: quality
     runs-on: windows-latest
     timeout-minutes: 35
@@ -377,7 +387,24 @@ jobs:
           retention-days: 3
   linux:
     name: Linux x64 portable
-    if: ${{  inputs.build_linux && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    if: >-
+      ${{
+        always() &&
+        (
+          (
+            github.event_name == 'workflow_dispatch' &&
+            inputs.build_linux
+          ) ||
+          (
+            github.event_name == 'push' &&
+            startsWith(github.ref_name, 'stage-linux-')
+          )
+        ) &&
+        (
+          needs.quality.result == 'success' ||
+          needs.quality.result == 'skipped'
+        )
+      }}
     needs: quality
     runs-on: ubuntu-24.04
     timeout-minutes: 35
@@ -479,7 +506,27 @@ jobs:
           retention-days: 3
   apple:
     name: Apple platform packages
-    if: ${{ (inputs.build_macos || inputs.build_ios) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    if: >-
+      ${{
+        always() &&
+        (
+          (
+            github.event_name == 'workflow_dispatch' &&
+            (inputs.build_macos || inputs.build_ios)
+          ) ||
+          (
+            github.event_name == 'push' &&
+            (
+              startsWith(github.ref_name, 'stage-macos-') ||
+              startsWith(github.ref_name, 'stage-ios-')
+            )
+          )
+        ) &&
+        (
+          needs.quality.result == 'success' ||
+          needs.quality.result == 'skipped'
+        )
+      }}
     needs: quality
     runs-on: macos-15
     timeout-minutes: 90
