@@ -1,5 +1,6 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/routes/app_navigation.dart';
 
 class CommonAppBarActions extends StatelessWidget {
   const CommonAppBarActions({super.key});
@@ -22,6 +23,9 @@ class CommonAppBarActions extends StatelessWidget {
                 break;
               case 1:
                 Get.toNamed(RoutePath.kToolbox);
+                break;
+              case 2:
+                AppNavigator.toMultiview();
                 break;
             }
           },
@@ -47,6 +51,18 @@ class CommonAppBarActions extends StatelessWidget {
                   Icon(Remix.link, size: 20, color: Theme.of(context).colorScheme.primary),
                   const SizedBox(width: 12),
                   Text(i18n("open_link"), style: AppTextStyles.t14),
+                ],
+              ),
+            ),
+
+            PopupMenuItem(
+              value: 2,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: Row(
+                children: [
+                  Icon(Remix.layout_grid_line, size: 20, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(width: 12),
+                  Text(i18n("multiview_title"), style: AppTextStyles.t14),
                 ],
               ),
             ),

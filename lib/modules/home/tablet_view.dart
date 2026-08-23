@@ -1,6 +1,7 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
+import 'package:pure_live/routes/app_navigation.dart';
 
 class HomeTabletView extends StatelessWidget {
   final Widget body;
@@ -90,6 +91,14 @@ class HomeTabletView extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Padding(padding: EdgeInsets.all(12), child: MenuButton()),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 0, bottom: 12, left: 12, right: 12),
+                        child: IconButton(
+                          onPressed: () => AppNavigator.toMultiview(),
+                          tooltip: i18n("multiview_title"),
+                          icon: const Icon(Remix.layout_grid_line),
+                        ),
+                      ),
                       Padding(
                         padding: const EdgeInsets.only(top: 0, bottom: 12, left: 12, right: 12),
                         child: IconButton(
