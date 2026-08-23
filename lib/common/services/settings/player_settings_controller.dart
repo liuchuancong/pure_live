@@ -24,6 +24,7 @@ class PlayerSettingsController extends GetxController {
 
   final RxBool floatPlay = hiveBool('floatPlay', false);
   final RxBool windowsPipAlwaysOnTop = hiveBool('windowsPipAlwaysOnTop', false);
+  final RxBool enableRtxVsr = hiveBool('enableRtxVsr', false);
   // Kept as an inert compatibility field for old backups. Audio-only is now
   // room-scoped and controlled by the headphone action or ASMR auto-start.
   final RxBool audioOnly = false.obs;
@@ -50,6 +51,7 @@ class PlayerSettingsController extends GetxController {
     videoOutputDriver.v = 'gpu';
     audioOutputDriver.v = 'auto';
     videoHardwareDecoder.v = 'auto';
+    enableRtxVsr.v = false;
     preferResolution.v = PlayerConsts.resolutions.first;
     preferResolutionCellular.v = PlayerConsts.resolutions.first;
     useHardStopOnExit.v = false;
@@ -69,6 +71,7 @@ class PlayerSettingsController extends GetxController {
       'videoHardwareDecoder': videoHardwareDecoder.v,
       'floatPlay': floatPlay.v,
       'windowsPipAlwaysOnTop': windowsPipAlwaysOnTop.v,
+      'enableRtxVsr': enableRtxVsr.v,
       'audioOnly': false,
       'useHardStopOnExit': useHardStopOnExit.v,
     };
@@ -87,6 +90,7 @@ class PlayerSettingsController extends GetxController {
     videoHardwareDecoder.v = json['videoHardwareDecoder'] ?? 'auto';
     floatPlay.v = json['floatPlay'] ?? false;
     windowsPipAlwaysOnTop.v = json['windowsPipAlwaysOnTop'] ?? false;
+    enableRtxVsr.v = json['enableRtxVsr'] ?? false;
     audioOnly.v = false;
     useHardStopOnExit.v = json['useHardStopOnExit'] ?? false;
   }
@@ -106,7 +110,7 @@ class PlayerSettingsController extends GetxController {
       'videoHardwareDecoder': player['videoHardwareDecoder'] ?? 'auto',
       'floatPlay': player['floatPlay'] ?? false,
       'windowsPipAlwaysOnTop': player['windowsPipAlwaysOnTop'] ?? false,
-      'rememberPipPosition': player['rememberPipPosition'] ?? true,
+      'enableRtxVsr': player['enableRtxVsr'] ?? false,
       'audioOnly': false,
       'useHardStopOnExit': player['useHardStopOnExit'] ?? false,
     };

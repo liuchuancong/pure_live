@@ -183,6 +183,8 @@
     "enable_cache_limit": "启用缓存限制",
     "enable_cache_limit_desc": "超过限制后自动清理旧录制",
     "enable_codec": "开启硬解码",
+    "enable_rtx_vsr": "启用 RTX VSR",
+    "enable_rtx_vsr_subtitle": "使用 NVIDIA RTX 视频超分辨率增强画质",
     "enable_dense_favorites_mode": "紧凑模式",
     "enable_dense_favorites_mode_subtitle": "关注页面可显示更多直播间",
     "enable_dynamic_color": "动态取色",

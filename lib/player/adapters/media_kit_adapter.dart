@@ -131,6 +131,8 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
 
         if (SettingsService.to.player.customPlayerOutput.v) {
           await native.setProperty('ao', SettingsService.to.player.audioOutputDriver.v);
+        } else if (PlatformUtils.isLinux) {
+          await native.setProperty('ao', 'alsa');
         }
 
         if (SettingsService.to.proxy.enableProxy.v && SettingsService.to.proxy.proxyHost.v.isNotEmpty) {
@@ -142,8 +144,10 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
         if (PlatformUtils.isMacOS) {
           await native.setProperty('hwdec', 'no');
         }
-        if (PlatformUtils.isLinux) {
-          await native.setProperty('ao', 'alsa');
+
+        if (PlatformUtils.isWindows && SettingsService.to.player.enableRtxVsr.value) {
+          await native.setProperty('hwdec', 'd3d11va');
+          await native.setProperty('vf', 'd3d11vpp=scale=2:scaling-mode=nvidia');
         }
       }
 
