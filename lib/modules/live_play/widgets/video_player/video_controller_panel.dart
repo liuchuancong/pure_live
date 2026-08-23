@@ -1706,6 +1706,8 @@ class SettingsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final size = MediaQuery.sizeOf(context);
     final isLandscape = size.width > size.height;
     final compactLandscape = isLandscape && size.height < 620;
@@ -1713,12 +1715,12 @@ class SettingsPanel extends StatelessWidget {
         ? (size.width * (compactLandscape ? 0.44 : 0.38)).clamp(340.0, compactLandscape ? 460.0 : 540.0).toDouble()
         : (size.width * 0.92).clamp(300.0, 560.0).toDouble();
     final targetHeight = isLandscape ? size.height - (compactLandscape ? 12 : 24) : size.height * 0.84;
-    const panelColor = Color(0xFF1E1E1E);
+    final panelColor = colorScheme.surface;
 
     return Dialog(
       alignment: isLandscape ? Alignment.centerRight : Alignment.center,
       backgroundColor: Colors.transparent,
-      shadowColor: Colors.black54,
+      shadowColor: theme.shadowColor.withValues(alpha: 0.45),
       elevation: 24,
       insetPadding: EdgeInsets.symmetric(horizontal: isLandscape ? 6 : 12, vertical: isLandscape ? 6 : 12),
       child: Container(
@@ -1727,11 +1729,11 @@ class SettingsPanel extends StatelessWidget {
         height: targetHeight,
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: panelColor.withValues(alpha: 0.98),
+          color: panelColor,
           borderRadius: isLandscape
               ? const BorderRadius.horizontal(left: Radius.circular(18), right: Radius.circular(8))
               : BorderRadius.circular(16),
-          border: Border.all(color: Colors.white10, width: 0.8),
+          border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.7), width: 0.8),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1743,10 +1745,7 @@ class SettingsPanel extends StatelessWidget {
                   Container(
                     width: 3.5,
                     height: 18,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+                    decoration: BoxDecoration(color: colorScheme.primary, borderRadius: BorderRadius.circular(2)),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -1755,13 +1754,13 @@ class SettingsPanel extends StatelessWidget {
                       children: [
                         Text(
                           i18n('settings_danmaku_title'),
-                          style: AppTextStyles.t16Bold.copyWith(color: Colors.white),
+                          style: AppTextStyles.t16Bold.copyWith(color: colorScheme.onSurface),
                         ),
                         Text(
                           i18n('danmaku_realtime_hint'),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.t12.copyWith(color: Colors.white60),
+                          style: AppTextStyles.t12.copyWith(color: colorScheme.onSurfaceVariant),
                         ),
                       ],
                     ),
@@ -1769,26 +1768,19 @@ class SettingsPanel extends StatelessWidget {
                   IconButton(
                     key: const ValueKey('fullscreen-danmaku-settings-close'),
                     tooltip: i18n('close'),
-                    color: Colors.white70,
+                    color: colorScheme.onSurfaceVariant,
                     onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.close_rounded),
                   ),
                 ],
               ),
             ),
-            const Divider(color: Colors.white10, height: 1, thickness: 0.8),
+            Divider(color: colorScheme.outlineVariant.withValues(alpha: 0.7), height: 1, thickness: 0.8),
             Expanded(
-              child: Theme(
-                data: Theme.of(context).copyWith(
-                  scaffoldBackgroundColor: panelColor,
-                  colorScheme: Theme.of(context).colorScheme
-                      .copyWith(surface: panelColor, onSurface: Colors.white, onSurfaceVariant: Colors.white70),
-                ),
-                // PiP has a dedicated settings/preview page. Keeping those
-                // controls out of the short landscape sheet leaves the live
-                // picture visible and avoids a confusing nested long form.
-                child: DanmakuSettingsContent(controller: controller, embedded: true, includePipSettings: false),
-              ),
+              // PiP has a dedicated settings/preview page. Keeping those
+              // controls out of the short landscape sheet leaves the live
+              // picture visible and avoids a confusing nested long form.
+              child: DanmakuSettingsContent(controller: controller, embedded: true, includePipSettings: false),
             ),
           ],
         ),

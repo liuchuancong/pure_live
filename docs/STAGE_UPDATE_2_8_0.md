@@ -10,12 +10,13 @@
 - 合并上游抖音搜索、恢复关注刷新、Windows PiP 几何校验、RTX VSR 可选项与结构整理。
 - 修复关注页手动下拉、前台恢复和请求失败后的陈旧开播状态，保持逐平台列表稳定。
 - 加固抖音匿名搜索回退、Cookie 生命周期、分页、房间身份和备用接口。
+- 修复横屏/全屏弹幕设置面板固定夜间样式，完整继承全局浅色、深色与跟随系统主题。
 - 继续覆盖 Windows 高 DPI 视频纹理限幅、播放器资源释放、弹幕/PiP/横竖屏生命周期与长时间运行稳定性。
 
 ## 质量门禁
 
 - Flutter Analyze：0 issue（发布源码修改完成后仅执行 1 次）。
-- 单元/Widget 测试：235/235 通过；包含关注权威刷新、抖音搜索、弹幕/PiP 生命周期、播放器切换、Windows 视口纹理和旧配置迁移。
+- 单元/Widget 测试：236/236 通过；包含关注权威刷新、抖音搜索、弹幕/PiP 生命周期、播放器切换、Windows 视口纹理和旧配置迁移。
 - 公开接口探测：27/27 通过。
 - 质量记录：`local-artifacts/build-records/20260823T064043566Z-quality-focused.json`、`local-artifacts/build-records/20260823T064708611Z-quality-full-tests-only.json`。
 
