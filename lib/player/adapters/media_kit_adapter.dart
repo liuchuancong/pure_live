@@ -14,10 +14,10 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:media_kit/media_kit.dart' hide PlayerState;
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
-import 'package:pure_live/common/utils/latest_async_value_queue.dart';
-import 'package:pure_live/player/interface/media_kit_player_accessor.dart';
 import 'package:pure_live/player/utils/live_buffer_policy.dart';
+import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/player/utils/video_output_size_policy.dart';
+import 'package:pure_live/player/interface/media_kit_player_accessor.dart';
 
 class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
   MediaKitAdapter() {
@@ -141,6 +141,9 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
 
         if (PlatformUtils.isMacOS) {
           await native.setProperty('hwdec', 'no');
+        }
+        if (PlatformUtils.isLinux) {
+          await native.setProperty('ao', 'alsa');
         }
       }
 
