@@ -12,6 +12,7 @@ class RefreshConfigController extends GetxController {
   }
 
   final RxBool autoRefreshFavorite = hiveBool('autoRefreshFavorite', false);
+  final refreshFavoriteOnResume = hiveBool('refreshFavoriteOnResume', false);
   final RxInt autoRefreshInterval = hiveInt('autoRefreshInterval', 30);
   final RxInt maxConcurrentRefresh = hiveInt('maxConcurrentRefresh', defaultMaxConcurrentRefresh);
   final RxBool autoRefreshThumbnails = hiveBool('autoRefreshThumbnails', false);
@@ -28,6 +29,7 @@ class RefreshConfigController extends GetxController {
     _emitConfig();
     _configWorker = everAll([
       autoRefreshFavorite,
+      refreshFavoriteOnResume,
       autoRefreshInterval,
       maxConcurrentRefresh,
       autoRefreshThumbnails,
@@ -39,6 +41,7 @@ class RefreshConfigController extends GetxController {
     _configStream.add(
       RefreshConfig(
         autoRefreshFavorite: autoRefreshFavorite.value,
+        refreshFavoriteOnResume: refreshFavoriteOnResume.value,
         autoRefreshInterval: autoRefreshInterval.value,
         maxConcurrentRefresh: maxConcurrentRefresh.value,
         autoRefreshThumbnails: autoRefreshThumbnails.value,
@@ -50,6 +53,7 @@ class RefreshConfigController extends GetxController {
   Map<String, dynamic> toJson() {
     return {
       'autoRefreshFavorite': autoRefreshFavorite.v,
+      'refreshFavoriteOnResume': refreshFavoriteOnResume.v,
       'autoRefreshInterval': autoRefreshInterval.v,
       'maxConcurrentRefresh': maxConcurrentRefresh.v,
       'autoRefreshThumbnails': autoRefreshThumbnails.v,
@@ -59,6 +63,7 @@ class RefreshConfigController extends GetxController {
 
   void fromJson(Map<String, dynamic> json) {
     autoRefreshFavorite.v = json['autoRefreshFavorite'] ?? false;
+    refreshFavoriteOnResume.v = json['refreshFavoriteOnResume'] ?? false;
     autoRefreshInterval.v = json['autoRefreshInterval'] ?? 30;
     maxConcurrentRefresh.v = normalizeMaxConcurrentRefresh(json['maxConcurrentRefresh']);
     autoRefreshThumbnails.v = json['autoRefreshThumbnails'] ?? false;
@@ -76,6 +81,7 @@ class RefreshConfigController extends GetxController {
     final refresh = rootConfig?['refresh'] as Map<String, dynamic>? ?? {};
     return {
       'autoRefreshFavorite': refresh['autoRefreshFavorite'] ?? false,
+      'refreshFavoriteOnResume': refresh['refreshFavoriteOnResume'] ?? false,
       'autoRefreshInterval': refresh['autoRefreshInterval'] ?? 30,
       'maxConcurrentRefresh': normalizeMaxConcurrentRefresh(refresh['maxConcurrentRefresh']),
       'autoRefreshThumbnails': refresh['autoRefreshThumbnails'] ?? false,

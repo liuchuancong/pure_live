@@ -1,8 +1,8 @@
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/widgets/keep_alive_wrapper.dart';
 import 'package:pure_live/plugins/cache_manager.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:pure_live/common/widgets/keep_alive_wrapper.dart';
 
 class AreasRoomPage extends StatefulWidget {
   final Site site;
@@ -101,7 +101,7 @@ class FavoriteAreaFloatingButton extends StatelessWidget {
                 height: 32,
                 fit: BoxFit.cover,
                 memCacheWidth: 64,
-                maxWidthDiskCache: 128,
+                // maxWidthDiskCache: 128,
                 fadeInDuration: Duration.zero,
                 fadeOutDuration: Duration.zero,
                 errorWidget: (context, _, _) {

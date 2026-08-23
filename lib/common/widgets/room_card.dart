@@ -3,9 +3,9 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/cache_manager.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/common/widgets/common_avatar.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/common/utils/share_command_handler.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 class RoomCard extends StatelessWidget {
   const RoomCard({
@@ -49,7 +49,7 @@ class RoomCard extends StatelessWidget {
             fit: BoxFit.cover,
             filterQuality: FilterQuality.low,
             memCacheWidth: cacheWidth,
-            maxWidthDiskCache: 720,
+            // maxWidthDiskCache: 720,
             fadeInDuration: Duration.zero,
             fadeOutDuration: Duration.zero,
             useOldImageOnUrlChange: true,
