@@ -2,7 +2,7 @@
 
 版本：`2.7.0+4077`  
 发布日期：2026-08-23  
-维护仓库：`wzgrx/pure_live`  
+维护仓库：`liuchuancong/pure_live`  
 上游冻结点：`liuchuancong/pure_live@81ec372a`
 
 ## 1. 上游整合
@@ -10,7 +10,7 @@
 - 使用真实 merge 同步上游 `81ec372a`，共同祖先和后续增量同步关系保持完整。
 - 合入 `PopularController` 的关闭状态、generation、平台设置防抖和延迟任务隔离，页面销毁或平台列表变化后，旧加载与相邻平台预热不再回写当前页面。
 - 合入取消关注弹窗的路由修复，并让取消、确认按钮使用弹窗自身上下文关闭对应路由。
-- 上游同时修改了 Windows PiP 状态归属、图片磁盘缩放缓存、仓库更新源、Windows AppId、Android ABI 清单和一套并发全平台工作流。逐项对照后保留维护版已回归的完整 PiP 位置/大小和跨屏恢复、有界图片缓存、覆盖升级 AppId、`wzgrx` 更新源、实际发布 ABI 及串行构建策略。
+- 上游同时修改了 Windows PiP 状态归属、图片磁盘缩放缓存、仓库更新源、Windows AppId、Android ABI 清单和一套并发全平台工作流。逐项对照后保留维护版已回归的完整 PiP 位置/大小和跨屏恢复、有界图片缓存、覆盖升级 AppId、`liuchuancong` 更新源、实际发布 ABI 及串行构建策略。
 
 ## 2. 关注页下拉刷新
 
@@ -50,14 +50,14 @@
 
 | 平台 | 产物 | 字节数 | SHA-256 | 构建来源 |
 | --- | --- | ---: | --- | --- |
-| Android arm64-v8a | `PureLive-2.7.0-4077-arm64-v8a-release.apk` | 119,839,130 | `3d545e3d108911dbe3b2cc6c9dbc55688019bb2c68e1259d1801099a85032c45` | [Actions 32607215774](https://github.com/wzgrx/pure_live/actions/runs/32607215774) |
+| Android arm64-v8a | `PureLive-2.7.0-4077-arm64-v8a-release.apk` | 119,839,130 | `3d545e3d108911dbe3b2cc6c9dbc55688019bb2c68e1259d1801099a85032c45` | [Actions 32607215774](https://github.com/liuchuancong/pure_live/actions/runs/32607215774) |
 | Windows x64 | `PureLive-2.7.0-windows-x64-setup.exe` | 56,408,107 | `69298593007c582275c17d0042bf3ba91b08dc9b31fedfeb36bb052fff8bec82` | 本机 Release |
 | Windows x64 | `PureLive-2.7.0-4077-windows-x64-portable.zip` | 72,841,836 | `345e00752103f320fc249b537e378fb368451ad9373da6c607d6cad35752f42a` | 本机 Release |
-| Linux x64 | `PureLive-2.7.0-4077-linux-x64.tar.gz` | 37,456,662 | `c452cefdb816388f14adf34641eb544aa929e82fe0bbe92f5ae010df7563467f` | [Actions 32608227446](https://github.com/wzgrx/pure_live/actions/runs/32608227446) |
-| macOS Universal | `PureLive-2.7.0-4077-macos-universal.dmg` | 113,971,783 | `2e4ff5b628dc3436f8f6e5f86e2a0c285365e270a1e86379b4bfe26f3cb01d05` | [Actions 32608464856](https://github.com/wzgrx/pure_live/actions/runs/32608464856) |
-| macOS Universal | `PureLive-2.7.0-4077-macos-universal.zip` | 101,234,766 | `0ead73c263f0d2091aad82769cd85233eb4980f88718e000ebd26824aa5a9179` | [Actions 32608464856](https://github.com/wzgrx/pure_live/actions/runs/32608464856) |
-| iOS arm64 | `PureLive-2.7.0-4077-ios-arm64-unsigned-app.zip` | 57,936,393 | `86803cfb72fbcc0ee0a709be28697c31138e981604af1abbea64a70e5a28e270` | [Actions 32609700256](https://github.com/wzgrx/pure_live/actions/runs/32609700256) |
-| iOS arm64 | `PureLive-2.7.0-4077-ios-arm64-trollstore.ipa` | 58,776,645 | `b528459c230950a94aba3a19a5508149953476becceb68e708570d9207615fdf` | [Actions 32609700256](https://github.com/wzgrx/pure_live/actions/runs/32609700256) |
+| Linux x64 | `PureLive-2.7.0-4077-linux-x64.tar.gz` | 37,456,662 | `c452cefdb816388f14adf34641eb544aa929e82fe0bbe92f5ae010df7563467f` | [Actions 32608227446](https://github.com/liuchuancong/pure_live/actions/runs/32608227446) |
+| macOS Universal | `PureLive-2.7.0-4077-macos-universal.dmg` | 113,971,783 | `2e4ff5b628dc3436f8f6e5f86e2a0c285365e270a1e86379b4bfe26f3cb01d05` | [Actions 32608464856](https://github.com/liuchuancong/pure_live/actions/runs/32608464856) |
+| macOS Universal | `PureLive-2.7.0-4077-macos-universal.zip` | 101,234,766 | `0ead73c263f0d2091aad82769cd85233eb4980f88718e000ebd26824aa5a9179` | [Actions 32608464856](https://github.com/liuchuancong/pure_live/actions/runs/32608464856) |
+| iOS arm64 | `PureLive-2.7.0-4077-ios-arm64-unsigned-app.zip` | 57,936,393 | `86803cfb72fbcc0ee0a709be28697c31138e981604af1abbea64a70e5a28e270` | [Actions 32609700256](https://github.com/liuchuancong/pure_live/actions/runs/32609700256) |
+| iOS arm64 | `PureLive-2.7.0-4077-ios-arm64-trollstore.ipa` | 58,776,645 | `b528459c230950a94aba3a19a5508149953476becceb68e708570d9207615fdf` | [Actions 32609700256](https://github.com/liuchuancong/pure_live/actions/runs/32609700256) |
 
 Android 复核为包名 `com.mystyle.purelive`、versionName `2.7.0`、versionCode `6077`、minSdk 24、targetSdk 37、仅 `arm64-v8a`；APK Signature Scheme v2 有效，RSA-4096 发布证书 SHA-256 为 `c0bb95744c81f9c7dd4535a9552775038eb5a59c5922f791d1695f45ac34ceaf`。Linux 归档包含可执行文件，Windows/macOS/iOS ZIP 与 IPA 均通过结构检查，远端产物侧车校验与本机 SHA-256 一致。
 
