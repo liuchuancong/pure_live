@@ -14,14 +14,16 @@
 
 ## 2. 关注页下拉刷新
 
-根因是 `EasyRefresh` 位于横向 `TabBarView` 外层，而真正产生顶部越界拖动的是每个平台内部的纵向 `GridView`/`CustomScrollView`。横向分页层使外层刷新器无法稳定收到活动列表的垂直越界通知，因此界面仍声明 `enableRefresh`，实际手势入口却消失。
+首次修复把 `EasyRefresh` 下沉到平台页，但内部 `GridView` / `CustomScrollView` 又显式安装了 Android `ClampingScrollPhysics`。边界位移先被子列表物理模型消耗，刷新器仍然只有回调配置，真实手指拖动既不显示动画也不进入刷新状态。冷启动核验还会与 450 ms 后的 resumed 刷新通过 epoch 互相取消，失败房间因而继续沿用旧开播状态。
 
 本轮调整：
 
 - `BasePageView` 增加嵌套页面自行承载移动端刷新器的能力，其他普通列表维持原行为。
-- 关注页关闭外层刷新包装，每个平台房间列表直接拥有自己的 `EasyRefresh`，纵向手势不再穿过横向分页层。
-- 有内容时的 `GridView` 和空结果时的 `CustomScrollView` 均保留 `AlwaysScrollableScrollPhysics`，空关注、当前平台无结果及开播筛选为空时也能下拉核验。
-- 刷新 Future 继续调用 `FavoriteController.refreshData()`，沿用启动刷新合并、并发上限、房间超时、refresh epoch 和一次性快照发布逻辑。
+- 每个平台页使用 `EasyRefresh.builder`，builder 提供的 physics 直接安装到当前唯一纵向列表；Material 刷新头固定纵向触发，空列表和短列表均可下拉核验。
+- 启动、恢复、定时和手动刷新经单锁串行；启动任务存在时直接合并后续全量请求，手动刷新绕过失败冷却。
+- 启动期间保留封面、标题与卡片位置，但状态统一显示为 unknown；所有请求结束后只写入和发布一次最终快照，失败项显示“状态待确认”。
+- CC、Twitch、SOOP 的刷新路径传播网络与结构异常；虎牙 `REPLAY` 进入录播分组，规范化房间号仍绑定原收藏键。
+- Widget 回归由直接调用 callback 升级为真实 pointer drag，并检查 Material 动画与刷新次数。
 
 ## 3. 质量门禁
 
@@ -32,7 +34,7 @@
 | 构建策略与设备 UI 地图 | 通过 |
 | Built-in Kotlin 审计 | 10 个 Gradle 文件通过 |
 | Flutter Analyze | 0 issue |
-| 单元/Widget 测试 | 226/226 通过 |
+| 单元/Widget 测试 | 229/229 通过 |
 | 公开平台接口探测 | 26/26 通过 |
 | 总耗时 | 682.596 秒 |
 | 峰值进程资源 | CPU 42.73%，工作集 5,379,764,224 bytes，5 个重型进程 |
@@ -40,17 +42,17 @@
 
 质量记录：`20260823T000757112Z-quality-full.json`。
 
-新增回归覆盖关注页直接刷新包装，以及嵌套横向分页关闭外层刷新包装的约束；播放器、弹幕、PiP 恢复、音频模式、实时人数、搜索排序、Windows 升级迁移和长时间资源边界继续由既有测试覆盖。
+新增回归覆盖关注页真实拖动动画、启动未知态分桶、平台返回不同规范房间号时的收藏合并，以及严格平台刷新能力；播放器、弹幕、PiP 恢复、音频模式、实时人数、搜索排序、Windows 升级迁移和长时间资源边界继续由既有测试覆盖。维护构建中 Twitch 单一目录样本短暂为空，探针改为从多个高流量分类动态选择在线频道后重新执行，26/26 通过。
 
 ## 4. 发布矩阵
 
 本轮目标按 Android → Windows → Linux → macOS → iOS 串行构建：
 
-冻结源码：`a7c6f5f25a7f58f38fd1910423fcd9ac9074572c`。
+原全平台冻结源码：`a7c6f5f25a7f58f38fd1910423fcd9ac9074572c`。Android 维护构建源码：`3ce3588b3e861133801cc053bae860113ba40643`。
 
 | 平台 | 产物 | 字节数 | SHA-256 | 构建来源 |
 | --- | --- | ---: | --- | --- |
-| Android arm64-v8a | `PureLive-2.7.0-4077-arm64-v8a-release.apk` | 119,839,130 | `3d545e3d108911dbe3b2cc6c9dbc55688019bb2c68e1259d1801099a85032c45` | [Actions 32607215774](https://github.com/wzgrx/pure_live/actions/runs/32607215774) |
+| Android arm64-v8a | `PureLive-2.7.0-4077-arm64-v8a-release.apk` | 120,068,897 | `c5edd531f3a42591bcd30f6c654f100ab5cfda6316dfd3961d79c4a13c465f5a` | 本机编译；[22 秒正式签名 32618152342](https://github.com/wzgrx/pure_live/actions/runs/32618152342) |
 | Windows x64 | `PureLive-2.7.0-windows-x64-setup.exe` | 56,408,107 | `69298593007c582275c17d0042bf3ba91b08dc9b31fedfeb36bb052fff8bec82` | 本机 Release |
 | Windows x64 | `PureLive-2.7.0-4077-windows-x64-portable.zip` | 72,841,836 | `345e00752103f320fc249b537e378fb368451ad9373da6c607d6cad35752f42a` | 本机 Release |
 | Linux x64 | `PureLive-2.7.0-4077-linux-x64.tar.gz` | 37,456,662 | `c452cefdb816388f14adf34641eb544aa929e82fe0bbe92f5ae010df7563467f` | [Actions 32608227446](https://github.com/wzgrx/pure_live/actions/runs/32608227446) |
