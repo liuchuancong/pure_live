@@ -13,6 +13,7 @@ class ReleaseAssetUrls {
   String get androidArmeabiV7a => '$releaseBase/PureLive-$version-$buildNumber-armeabi-v7a-release.apk';
   String get androidX8664 => '$releaseBase/PureLive-$version-$buildNumber-x86_64-release.apk';
   String get windowsSetup => '$releaseBase/PureLive-$version-windows-x64-setup.exe';
+  String get windowsMsix => '$releaseBase/PureLive-$version-windows-x64.msix';
   String get windowsPortable => '$releaseBase/PureLive-$version-$buildNumber-windows-x64-portable.zip';
   String get macosUniversal => '$releaseBase/PureLive-$version-$buildNumber-macos-universal.zip';
 }
@@ -32,6 +33,7 @@ class VersionController extends GetxController {
   // Windows
   // =========================
   final windowsSetupUrl = ''.obs;
+  final windowsMsixUrl = ''.obs;
   final windowsPortableUrl = ''.obs;
 
   // =========================
@@ -89,6 +91,7 @@ class VersionController extends GetxController {
     // =====================================================
 
     windowsSetupUrl.value = assets.windowsSetup;
+    windowsMsixUrl.value = assets.windowsMsix;
     windowsPortableUrl.value = assets.windowsPortable;
 
     // =====================================================

@@ -4,6 +4,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:markdown_widget/config/configs.dart';
 import 'package:markdown_widget/widget/markdown_block.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:remixicon/remixicon.dart'; // 🌟 Imported Remix Icons pack
 
 class AboutPage extends StatefulWidget {
@@ -35,8 +36,8 @@ class _AboutPageState extends State<AboutPage> {
                     return Transform.scale(scale: value, child: child);
                   },
                   child: Container(
-                    width: 96,
-                    height: 96,
+                    width: PlatformUtils.isMobile ? 80 : 96,
+                    height: PlatformUtils.isMobile ? 80 : 96,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.08), width: 1),
