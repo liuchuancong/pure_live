@@ -80,7 +80,7 @@ jobs:
           full_version="$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1)"
           version_name="${full_version%%+*}"
           artifact_version="${full_version/+/-}"
-          final_apk="PureLive-$artifact_version-arm64-v8a-release.apk"
+          final_apk="PureLive-$artifact_version-android-arm64-v8a-release.apk"
           test "$TAG" = "v$version_name"
 
           python3 - "staged/$STAGED_METADATA" "$full_version" "$TARGET_SHA" <<'PY'

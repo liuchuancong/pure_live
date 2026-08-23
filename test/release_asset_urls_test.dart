@@ -16,10 +16,11 @@ void main() {
       buildNumber: 52,
     );
 
-    expect(urls.androidArm64, endsWith('/PureLive-2.1.4-52-arm64-v8a-release.apk'));
-    expect(urls.androidArmeabiV7a, endsWith('/PureLive-2.1.4-52-armeabi-v7a-release.apk'));
-    expect(urls.androidX8664, endsWith('/PureLive-2.1.4-52-x86_64-release.apk'));
-    expect(urls.windowsSetup, endsWith('/PureLive-2.1.4-windows-x64-setup.exe'));
+    expect(urls.androidArm64, endsWith('/PureLive-2.1.4-52-android-arm64-v8a-release.apk'));
+    expect(urls.androidArmeabiV7a, endsWith('/PureLive-2.1.4-52-android-armeabi-v7a-release.apk'));
+    expect(urls.androidX8664, endsWith('/PureLive-2.1.4-52-android-x86_64-release.apk'));
+    expect(urls.windowsSetup, endsWith('/PureLive-2.1.4-52-windows-x64-setup.exe'));
+    expect(urls.windowsMsix, endsWith('/PureLive-2.1.4-52-windows-x64.msix'));
     expect(urls.windowsPortable, endsWith('/PureLive-2.1.4-52-windows-x64-portable.zip'));
     expect(urls.macosUniversal, endsWith('/PureLive-2.1.4-52-macos-universal.zip'));
   });

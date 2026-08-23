@@ -94,6 +94,8 @@ foreach ($marker in @(
     'Invoke-PureLiveLoggedFlutter',
     '[Parameter(Mandatory = $true)][int] $ExitCode',
     'PSNativeCommandUseErrorActionPreference',
+    'PureLive-$artifactVersion-android-arm64-v8a-release.apk',
+    '/DArtifactVersion=$artifactVersion',
     'automatic_follow_up = $false'
 )) {
     if (-not $buildScript.Contains($marker)) { throw "Build script policy marker is missing: $marker" }
@@ -137,6 +139,8 @@ foreach ($marker in @(
     'cancel-in-progress: false',
     'flutter test --concurrency=12',
     '--target-platform android-arm64',
+    'PureLive-${VERSION}-android-arm64-v8a-release.apk',
+    'steps.version.outputs.artifact_version',
     'stage-macos-'
 )) {
     if (-not $featureWorkflow.Contains($marker)) { throw "Feature workflow policy marker is missing: $marker" }

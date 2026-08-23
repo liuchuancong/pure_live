@@ -178,11 +178,11 @@ try {
             throw "Expected Android artifact was not produced: $apkSource"
         }
         $artifactName = if ($Configuration -eq 'Debug') {
-            "PureLive-$artifactVersion-arm64-v8a-debug.apk"
+            "PureLive-$artifactVersion-android-arm64-v8a-debug.apk"
         } elseif ($hasReleaseSigning) {
-            "PureLive-$artifactVersion-arm64-v8a-release.apk"
+            "PureLive-$artifactVersion-android-arm64-v8a-release.apk"
         } else {
-            "PureLive-$artifactVersion-debug-signed-arm64-v8a-release.apk"
+            "PureLive-$artifactVersion-debug-signed-android-arm64-v8a-release.apk"
         }
         $artifactPath = Join-Path $output $artifactName
         Copy-Item -LiteralPath $apkSource -Destination $artifactPath -Force
@@ -248,7 +248,8 @@ try {
             ) | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
             if ($iscc) {
                 $iss = Join-Path $repoRoot 'windows\packaging\exe\local_release.iss'
-                & $iscc "/DSourceDir=$windowsPackageFull" "/DAppVersion=$displayVersion" "/DOutputDir=$output" $iss
+                & $iscc "/DSourceDir=$windowsPackageFull" "/DAppVersion=$displayVersion" `
+                    "/DArtifactVersion=$artifactVersion" "/DOutputDir=$output" $iss
                 $installerExitCode = $LASTEXITCODE
                 Assert-PureLiveCommandSucceeded 'Windows installer packaging' -ExitCode $installerExitCode
                 $setup = Get-ChildItem $output -File -Filter '*windows-x64-setup.exe' | Select-Object -First 1

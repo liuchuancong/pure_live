@@ -15,7 +15,7 @@ on:
         description: Release tag matching the version in pubspec.yaml
         required: true
         type: string
-        default: v2.7.0
+        default: v2.9.0
       target_sha:
         description: Exact source commit shared by every platform artifact
         required: true
@@ -106,7 +106,7 @@ jobs:
           $artifactVersion = $version.Replace('+', '-')
           $directory = Join-Path 'local-artifacts' $artifactVersion
           $portable = Join-Path $directory "PureLive-$artifactVersion-windows-x64-portable.zip"
-          $installer = Join-Path $directory "PureLive-$($version.Split('+')[0])-windows-x64-setup.exe"
+          $installer = Join-Path $directory "PureLive-$artifactVersion-windows-x64-setup.exe"
           foreach ($file in @($portable, $installer)) {
             if (-not (Test-Path -LiteralPath $file -PathType Leaf)) {
               throw "Expected Windows package is missing: $file"
@@ -262,9 +262,9 @@ jobs:
               raise SystemExit("release tag does not match pubspec version")
 
           expected = [
-              f"PureLive-{artifact_version}-arm64-v8a-release.apk",
+              f"PureLive-{artifact_version}-android-arm64-v8a-release.apk",
               f"PureLive-{artifact_version}-windows-x64-portable.zip",
-              f"PureLive-{display_version}-windows-x64-setup.exe",
+              f"PureLive-{artifact_version}-windows-x64-setup.exe",
               f"PureLive-{artifact_version}-linux-x64.tar.gz",
               f"PureLive-{artifact_version}-macos-universal.zip",
               f"PureLive-{artifact_version}-macos-universal.dmg",

@@ -49,7 +49,7 @@ on:
         description: Release tag (e.g. v1.0.0) – required if create_release is true
         required: true
         type: string
-        default: 'v2.8.0'
+        default: 'v2.9.0'
 
   push:
     tags:
@@ -258,7 +258,7 @@ jobs:
 
           cp \
             "$APK_DIR/app-arm64-v8a-release.apk" \
-            "PureLive-${VERSION}-arm64-v8a-release.apk"
+            "PureLive-${VERSION}-android-arm64-v8a-release.apk"
 
 
       # -----------------------------------------------------
@@ -270,14 +270,14 @@ jobs:
         run: |
           set -euo pipefail
 
-          for file in PureLive-*-arm64-v8a-release.apk
+          for file in PureLive-*-android-arm64-v8a-release.apk
           do
             sha256sum "$file" > "$file.sha256"
           done
 
           echo "=== Android checksums ==="
 
-          cat PureLive-*-arm64-v8a-release.apk.sha256
+          cat PureLive-*-android-arm64-v8a-release.apk.sha256
 
       # -----------------------------------------------------
       # Upload
@@ -288,8 +288,8 @@ jobs:
         with:
           name: pure-live-android
           path: |
-            PureLive-*-arm64-v8a-release.apk
-            PureLive-*-arm64-v8a-release.apk.sha256
+            PureLive-*-android-arm64-v8a-release.apk
+            PureLive-*-android-arm64-v8a-release.apk.sha256
           if-no-files-found: error
           retention-days: 3
 
@@ -437,9 +437,16 @@ jobs:
           foreach ($line in $lines) {
             if ($line -match '^\s*version:\s*(\S+)') {
               $v = $matches[1] -replace '[`"''`]', ''
+              $artifactVersion = $v -replace '\+', '-'
               $v = $v.Split('+')[0]
 
               "version=$v" |
+                Out-File `
+                  -FilePath $env:GITHUB_OUTPUT `
+                  -Encoding utf8 `
+                  -Append
+
+              "artifact_version=$artifactVersion" |
                 Out-File `
                   -FilePath $env:GITHUB_OUTPUT `
                   -Encoding utf8 `
@@ -471,7 +478,7 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
 
-          $VERSION = "${{ steps.version.outputs.version }}"
+          $VERSION = "${{ steps.version.outputs.artifact_version }}"
           $DIST_DIR = "dist"
 
           $EXE_FILE = Get-ChildItem `
