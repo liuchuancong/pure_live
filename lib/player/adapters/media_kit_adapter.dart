@@ -104,7 +104,8 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
 
       if (_player.platform is NativePlayer) {
         final native = _player.platform as dynamic;
-
+        // Live adapters use one explicit seekability override. The upstream
+        // Android workaround duplicated this native property write.
         await native.setProperty('force-seekable', 'yes');
 
         await native.setProperty('protocol_whitelist', 'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto');
