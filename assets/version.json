@@ -19,7 +19,9 @@
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.9.5",
       "android_abis": [
-        "arm64-v8a"
+         "armeabi-v7a",
+         "arm64-v8a",
+         "x86_64"  
       ]
     },
     "windows": {
