@@ -36,6 +36,8 @@ import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/compact_danmaku_overlay.dart';
 
+typedef UnifiedPlayerCreator = FutureOr<UnifiedPlayer> Function(PlayerEngine engine);
+
 class PlayerManager {
   final EngineFallbackManager fallbackManager;
   final LineFallbackManager lineManager;
@@ -45,6 +47,7 @@ class PlayerManager {
   /// `null` retains it until the app backgrounds; [Duration.zero] selects the
   /// immediate low-power behaviour used by automatic ASMR and focused tests.
   final Duration? audioModeVideoWarmRetention;
+  final UnifiedPlayerCreator _playerCreator;
   final bool Function() _useHardStopOnExit;
   final Future<void> Function(UnifiedPlayer player, bool audioOnly) _audioModeServiceSync;
   final Future<void> Function(LiveRoom room) _audioSessionStart;
@@ -58,10 +61,12 @@ class PlayerManager {
     required this.lineManager,
     this.audioModeSwitchTimeout = const Duration(seconds: 5),
     this.audioModeVideoWarmRetention,
+    UnifiedPlayerCreator? playerCreator,
     bool Function()? useHardStopOnExit,
     Future<void> Function(UnifiedPlayer player, bool audioOnly)? audioModeServiceSync,
     Future<void> Function(LiveRoom room)? audioSessionStart,
-  }) : _useHardStopOnExit = useHardStopOnExit ?? (() => SettingsService.to.player.useHardStopOnExit.v),
+  }) : _playerCreator = playerCreator ?? PlayerAdapterFactory.create,
+       _useHardStopOnExit = useHardStopOnExit ?? (() => SettingsService.to.player.useHardStopOnExit.v),
        _audioModeServiceSync =
            audioModeServiceSync ?? ((player, audioOnly) => LiveAudioService.setPlayer(player, audioOnly: audioOnly)),
        _audioSessionStart =
@@ -295,7 +300,7 @@ class PlayerManager {
   }
 
   Future<UnifiedPlayer> _createPlayer(PlayerEngine engine, {bool audioOnly = false}) async {
-    final player = await PlayerAdapterFactory.create(engine);
+    final player = await _playerCreator(engine);
     await player.init(audioOnly: audioOnly);
     return player;
   }
