@@ -1,11 +1,11 @@
 import 'dart:async';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/plugins/event_bus.dart';
+import 'package:pure_live/plugins/cache_manager.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/content_first_panel_layout.dart';
-import 'package:pure_live/plugins/cache_manager.dart';
-import 'package:pure_live/plugins/event_bus.dart';
 
 class PlayOther extends StatefulWidget {
   const PlayOther({required this.controller, super.key});
@@ -18,36 +18,46 @@ class PlayOther extends StatefulWidget {
 
 class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMixin {
   late final TabController tabController;
+
   final onlineRooms = <LiveRoom>[].obs;
   final recordingRooms = <LiveRoom>[].obs;
   final historyRooms = <LiveRoom>[].obs;
   final loadingFinish = false.obs;
   final refreshing = false.obs;
+
   StreamSubscription<dynamic>? subscription;
 
   @override
   void initState() {
     super.initState();
+
     tabController = TabController(length: 3, vsync: this);
+
     _updateRooms();
+
     subscription = EventBus.instance.listen('refresh_favorite_finish', (_) => _updateRooms());
   }
 
   void _updateRooms() {
     final allRooms = SettingsService.to.fav.favoriteRooms.v;
+
     final liveList = allRooms.where((room) => room.liveStatus == LiveStatus.live && room.isRecord == false).toList()
       ..sort((a, b) => _audienceSortValue(b).compareTo(_audienceSortValue(a)));
+
     final recordList = allRooms.where((room) => room.liveStatus == LiveStatus.live && room.isRecord == true).toList()
       ..sort((a, b) => _audienceSortValue(b).compareTo(_audienceSortValue(a)));
+
     onlineRooms.assignAll(liveList);
     recordingRooms.assignAll(recordList);
     historyRooms.assignAll(SettingsService.to.history.historyRooms.v);
+
     loadingFinish.value = true;
     refreshing.value = false;
   }
 
   int _audienceSortValue(LiveRoom room) {
     final app = SettingsService.to.app;
+
     return room.audienceSortValue(
       preferRealOnline: app.preferRealOnlineCounts.v,
       platformEnabled: app.isRealOnlineEnabledFor(room.platform),
@@ -63,7 +73,10 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     final layout = resolveContentFirstPanelLayout(MediaQuery.sizeOf(context), ContentFirstPanelKind.roomHistory);
+
     return Dialog(
       key: const ValueKey('fullscreen-room-history-dialog'),
       alignment: Alignment.centerRight,
@@ -76,19 +89,26 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
         child: Column(
           children: [
             SizedBox(
-              height: 36,
+              height: 44,
               child: Padding(
-                padding: const EdgeInsets.only(left: 10, right: 2),
+                padding: const EdgeInsets.only(left: 12, right: 4),
                 child: Row(
                   children: [
-                    Icon(Icons.video_library_rounded, size: 17, color: Theme.of(context).colorScheme.primary),
-                    const SizedBox(width: 6),
-                    Expanded(child: Text(i18n('switch_live_room'), style: Theme.of(context).textTheme.titleSmall)),
+                    Icon(Icons.video_library_rounded, size: 18, color: theme.colorScheme.primary),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: Text(
+                        i18n('switch_live_room'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ),
                     Obx(
                       () => IconButton(
                         tooltip: i18n('refresh'),
                         visualDensity: VisualDensity.compact,
-                        constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+                        constraints: const BoxConstraints.tightFor(width: 34, height: 34),
                         padding: EdgeInsets.zero,
                         onPressed: refreshing.value
                             ? null
@@ -102,23 +122,26 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
                     IconButton(
                       tooltip: i18n('close'),
                       visualDensity: VisualDensity.compact,
-                      constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+                      constraints: const BoxConstraints.tightFor(width: 34, height: 34),
                       padding: EdgeInsets.zero,
                       icon: const Icon(Icons.close_rounded, size: 18),
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
                     ),
                   ],
                 ),
               ),
             ),
             SizedBox(
-              height: 30,
+              height: 38,
               child: TabBar(
                 controller: tabController,
-                labelColor: Theme.of(context).colorScheme.primary,
-                unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                labelColor: theme.colorScheme.primary,
+                unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
                 indicatorSize: TabBarIndicatorSize.label,
                 dividerHeight: 0,
+                labelPadding: const EdgeInsets.symmetric(horizontal: 10),
                 tabs: [
                   _CompactTab(icon: Icons.sensors_rounded, label: i18n('online_room_title')),
                   _CompactTab(icon: Icons.fiber_smart_record_rounded, label: i18n('recording_room_title')),
@@ -162,18 +185,27 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
   }
 
   Widget _buildRoomGrid(List<LiveRoom> rooms, {required bool history}) {
-    if (rooms.isEmpty) return AppStatusView(type: AppStatusType.empty, title: '', subtitle: '');
+    if (rooms.isEmpty) {
+      return AppStatusView(type: AppStatusType.empty, title: '', subtitle: '');
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 380 ? 2 : 1;
-        const padding = 6.0;
-        const spacing = 5.0;
-        final cardHeight = resolveRoomHistoryCardHeight(
-          contentSize: Size(constraints.maxWidth, constraints.maxHeight),
-          columns: columns,
-          padding: padding,
-          spacing: spacing,
-        );
+        const padding = 10.0;
+        const spacing = 8.0;
+
+        final availableWidth = constraints.maxWidth - padding * 2;
+
+        final columns = availableWidth >= 520 ? 2 : 1;
+
+        final cardWidth = (availableWidth - spacing * (columns - 1)) / columns;
+
+        final coverHeight = cardWidth * 9 / 16;
+
+        const infoHeight = 48.0;
+
+        final cardHeight = coverHeight + infoHeight;
+
         return GridView.builder(
           key: ValueKey(history ? 'watch-history-grid' : 'live-room-grid'),
           padding: const EdgeInsets.all(padding),
@@ -185,14 +217,18 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
             crossAxisSpacing: spacing,
           ),
           itemCount: rooms.length,
-          itemBuilder: (context, index) => _RoomSwitchCard(
-            room: rooms[index],
-            history: history,
-            onTap: () {
-              Navigator.of(context).pop();
-              widget.controller.switchRoom(rooms[index]);
-            },
-          ),
+          itemBuilder: (context, index) {
+            final room = rooms[index];
+
+            return _RoomSwitchCard(
+              room: room,
+              history: history,
+              onTap: () {
+                Navigator.of(context).pop();
+                widget.controller.switchRoom(room);
+              },
+            );
+          },
         );
       },
     );
@@ -208,21 +244,18 @@ class _CompactTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Tab(
-      height: 28,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 14),
-          const SizedBox(width: 3),
-          Flexible(
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelMedium,
-            ),
-          ),
-        ],
+      height: 36,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15),
+            const SizedBox(width: 4),
+            // Flexible causes a layout error here because TabBar may provide unbounded width constraints.
+            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.labelMedium),
+          ],
+        ),
       ),
     );
   }
@@ -237,77 +270,98 @@ class _RoomSwitchCard extends StatelessWidget {
 
   String _historyLabel() {
     final value = room.lastWatchedAt;
-    if (value == null || value <= 0) return i18n('history_earlier');
+
+    if (value == null || value <= 0) {
+      return i18n('history_earlier');
+    }
+
     final watched = DateTime.fromMillisecondsSinceEpoch(value);
+
     final now = DateTime.now();
+
     final sameDay = watched.year == now.year && watched.month == now.month && watched.day == now.day;
+
     final hour = watched.hour.toString().padLeft(2, '0');
+
     final minute = watched.minute.toString().padLeft(2, '0');
+
     final text = sameDay
         ? '$hour:$minute'
         : '${watched.month.toString().padLeft(2, '0')}-${watched.day.toString().padLeft(2, '0')} $hour:$minute';
+
     return i18n(sameDay ? 'watched_today_at' : 'watched_at', args: {'time': text});
   }
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     final audience = room.audienceValue(
       preferRealOnline: SettingsService.to.app.preferRealOnlineCounts.v,
       platformEnabled: SettingsService.to.app.isRealOnlineEnabledFor(room.platform),
     );
-    return Card(
-      margin: EdgeInsets.zero,
-      elevation: 0,
-      color: colors.surfaceContainerLow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: colors.outlineVariant.withValues(alpha: .55)),
-      ),
-      clipBehavior: Clip.antiAlias,
+
+    final title = room.title?.trim().isNotEmpty == true ? room.title! : i18n('untitled_room');
+
+    final nick = room.nick?.trim() ?? '';
+
+    final meta = history
+        ? _historyLabel()
+        : audience.isEmpty
+        ? i18n('audience_unknown')
+        : readableCount(audience);
+
+    return Material(
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        child: Builder(
-          builder: (context) {
-            final meta = history
-                ? _historyLabel()
-                : (audience.isEmpty ? i18n('audience_unknown') : readableCount(audience));
-            return Column(
+        borderRadius: BorderRadius.circular(12),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: colors.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: colors.outlineVariant.withValues(alpha: .55)),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Column(
               children: [
                 Expanded(
-                  child: SizedBox(
-                    key: const ValueKey('room-history-cover'),
-                    width: double.infinity,
-                    child: _RoomSwitchCover(room: room, meta: meta),
-                  ),
+                  child: _RoomSwitchCover(room: room, meta: meta),
                 ),
                 SizedBox(
-                  height: 36,
+                  height: 48,
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(7, 3, 3, 3),
+                    padding: const EdgeInsets.fromLTRB(9, 5, 7, 5),
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          room.title?.trim().isNotEmpty == true ? room.title! : i18n('untitled_room'),
+                          title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+                          style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700, height: 1.15),
                         ),
-                        const Spacer(),
+                        const SizedBox(height: 3),
                         Row(
                           children: [
                             Icon(Icons.person_outline_rounded, size: 12, color: colors.onSurfaceVariant),
                             const SizedBox(width: 3),
                             Expanded(
                               child: Text(
-                                room.nick ?? '',
+                                nick.isEmpty ? i18n('unknown') : nick,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colors.onSurfaceVariant),
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: colors.onSurfaceVariant,
+                                  height: 1.1,
+                                ),
                               ),
                             ),
-                            Icon(Icons.chevron_right_rounded, size: 14, color: colors.onSurfaceVariant),
+                            const SizedBox(width: 2),
+                            Icon(Icons.chevron_right_rounded, size: 15, color: colors.onSurfaceVariant),
                           ],
                         ),
                       ],
@@ -315,8 +369,8 @@ class _RoomSwitchCard extends StatelessWidget {
                   ),
                 ),
               ],
-            );
-          },
+            ),
+          ),
         ),
       ),
     );
@@ -331,8 +385,11 @@ class _RoomSwitchCover extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     final url = normalizeNetworkImageUrl(room.cover);
-    final colors = Theme.of(context).colorScheme;
+
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -348,6 +405,7 @@ class _RoomSwitchCover extends StatelessWidget {
                   .round()
                   .clamp(240, 720)
                   .toInt();
+
               return CachedNetworkImage(
                 imageUrl: url,
                 httpHeaders: networkImageHeaders(url),
@@ -358,26 +416,35 @@ class _RoomSwitchCover extends StatelessWidget {
                 fadeInDuration: Duration.zero,
                 fadeOutDuration: Duration.zero,
                 useOldImageOnUrlChange: true,
-                placeholder: (_, _) => ColoredBox(
-                  color: colors.surfaceContainerHighest,
-                  child: Icon(Icons.live_tv_rounded, color: colors.onSurfaceVariant.withValues(alpha: .25)),
-                ),
-                errorWidget: (_, _, _) => ColoredBox(
-                  color: colors.surfaceContainerHighest,
-                  child: Icon(Icons.broken_image_outlined, color: colors.onSurfaceVariant.withValues(alpha: .35)),
-                ),
+                placeholder: (_, _) {
+                  return ColoredBox(
+                    color: colors.surfaceContainerHighest,
+                    child: Icon(Icons.live_tv_rounded, color: colors.onSurfaceVariant.withValues(alpha: .25)),
+                  );
+                },
+                errorWidget: (_, _, _) {
+                  return ColoredBox(
+                    color: colors.surfaceContainerHighest,
+                    child: Icon(Icons.broken_image_outlined, color: colors.onSurfaceVariant.withValues(alpha: .35)),
+                  );
+                },
               );
             },
           ),
         Positioned(
           top: 7,
-          left: 7,
+          right: 7,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-            decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: .58),
+              borderRadius: BorderRadius.circular(7),
+            ),
             child: Text(
-              room.platform?.toUpperCase() ?? '',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
+              i18n('site_${room.platform}'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.w700, height: 1),
             ),
           ),
         ),
@@ -386,7 +453,7 @@ class _RoomSwitchCover extends StatelessWidget {
           right: 0,
           bottom: 0,
           child: Container(
-            padding: const EdgeInsets.fromLTRB(8, 18, 8, 7),
+            padding: const EdgeInsets.fromLTRB(8, 22, 8, 8),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
@@ -398,7 +465,11 @@ class _RoomSwitchCover extends StatelessWidget {
               meta,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                height: 1.1,
+              ),
             ),
           ),
         ),

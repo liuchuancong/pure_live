@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer' as developer;
 
+import 'package:flutter/foundation.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:synchronized/synchronized.dart';
 import 'package:pure_live/plugins/event_bus.dart';
@@ -584,6 +585,10 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
       pageEmpty.value = false;
     } else {
       applyLocalFilter();
+    }
+    // Skip the remote loading process in debug mode.
+    if (kDebugMode) {
+      return;
     }
     try {
       await _runRoomRefresh(
