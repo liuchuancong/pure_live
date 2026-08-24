@@ -1,6 +1,16 @@
 import 'dart:ui' as ui;
 import 'dart:collection';
+import 'dart:math' as math;
 import 'package:flame_barrage/flame_barrage.dart';
+
+/// Keeps the outline readable on bright frames without turning opacity zero
+/// into a visible edge. A gamma curve is preferable to a hard alpha floor:
+/// the user's setting remains monotonic while low-opacity text retains enough
+/// contrast to separate its fill from the video.
+double resolveBarrageStrokeOpacity(double opacity) {
+  final normalized = opacity.clamp(0.0, 1.0).toDouble();
+  return math.sqrt(normalized);
+}
 
 class MixedLayout {
   MixedLayout({required this.atlas, int maxTextCacheSize = 1000})
@@ -95,8 +105,9 @@ class MixedLayout {
     double maxHeight = 0.0;
 
     final opacity = config.opacity.clamp(0.0, 1.0).toDouble();
+    final strokeOpacity = resolveBarrageStrokeOpacity(opacity);
     final effectiveTextColor = config.textColor.withValues(alpha: config.textColor.a * opacity);
-    final effectiveStrokeColor = config.strokeColor.withValues(alpha: config.strokeColor.a * opacity);
+    final effectiveStrokeColor = config.strokeColor.withValues(alpha: config.strokeColor.a * strokeOpacity);
     final effectiveShadowColor = config.shadowColor.withValues(alpha: config.shadowColor.a * opacity);
     final int colorValue = effectiveTextColor.toARGB32();
     final double fontSize = config.fontSize;
@@ -272,7 +283,9 @@ class MixedLayout {
       final strokePaint = ui.Paint()
         ..style = ui.PaintingStyle.stroke
         ..strokeWidth = config.strokeWidth
-        ..color = config.strokeColor.withValues(alpha: config.strokeColor.a * config.opacity.clamp(0.0, 1.0).toDouble())
+        ..color = config.strokeColor.withValues(
+          alpha: config.strokeColor.a * resolveBarrageStrokeOpacity(config.opacity),
+        )
         ..isAntiAlias = true;
 
       builder.pushStyle(

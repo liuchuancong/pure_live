@@ -29,12 +29,11 @@ class TextLayoutSpan extends LayoutSpan {
   @override
   void paint(ui.Canvas canvas) {
     final currentStroke = strokeParagraph;
-
     if (currentStroke != null) {
-      final offsets = const [ui.Offset(-0.5, -0.5), ui.Offset(0.5, -0.5), ui.Offset(-0.5, 0.5), ui.Offset(0.5, 0.5)];
-      for (int i = 0; i < 4; i++) {
-        canvas.drawParagraph(currentStroke, ui.Offset(x, y) + offsets[i]);
-      }
+      // The paragraph already contains a native stroked glyph path. Painting
+      // four offset copies thickens semi-transparent edges unevenly and makes
+      // CJK text look blurred on bright video frames.
+      canvas.drawParagraph(currentStroke, ui.Offset(x, y));
     }
     canvas.drawParagraph(paragraph, ui.Offset(x, y));
   }

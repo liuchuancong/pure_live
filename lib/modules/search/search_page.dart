@@ -3,6 +3,17 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/search/search_ranking.dart';
 import 'package:pure_live/modules/search/search_controller.dart' as pure_live;
 
+const ScrollPhysics searchPlatformTabPhysics = ClampingScrollPhysics();
+const TabAlignment searchPlatformTabAlignment = TabAlignment.start;
+
+ScrollPhysics resolveSearchResultScrollPhysics(TargetPlatform platform) {
+  return switch (platform) {
+    TargetPlatform.android ||
+    TargetPlatform.iOS => const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+    _ => const PureLiveScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+  };
+}
+
 class SearchPage extends GetView<pure_live.SearchController> {
   const SearchPage({super.key});
 
@@ -35,6 +46,8 @@ class SearchPage extends GetView<pure_live.SearchController> {
         bottom: TabBar(
           controller: controller.tabController,
           padding: EdgeInsets.zero,
+          tabAlignment: searchPlatformTabAlignment,
+          physics: searchPlatformTabPhysics,
           tabs: [
             Tab(text: i18n('site_all')),
             ...Sites().availableSites().map((e) => Tab(text: e.name)),
@@ -107,6 +120,7 @@ class SearchPage extends GetView<pure_live.SearchController> {
             Expanded(
               child: CustomScrollView(
                 controller: controller.scrollController,
+                physics: resolveSearchResultScrollPhysics(Theme.of(context).platform),
                 scrollCacheExtent: ScrollCacheExtent.pixels(width > 680 ? 480 : 320),
                 keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                 slivers: [

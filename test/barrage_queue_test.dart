@@ -155,6 +155,15 @@ void main() {
     expect(layout.cacheCount, 2);
   });
 
+  test('low-opacity barrage keeps a monotonic contrast-preserving outline', () {
+    expect(resolveBarrageStrokeOpacity(-1), 0);
+    expect(resolveBarrageStrokeOpacity(0), 0);
+    expect(resolveBarrageStrokeOpacity(0.25), closeTo(0.5, 0.0001));
+    expect(resolveBarrageStrokeOpacity(0.5), greaterThan(0.5));
+    expect(resolveBarrageStrokeOpacity(1), 1);
+    expect(resolveBarrageStrokeOpacity(2), 1);
+  });
+
   test('per-item typography, shadow and duration have distinct picture keys', () {
     final engine = BarrageEngine(config: const BarrageConfig(), emojiAtlas: EmojiAtlas.instance);
     const base = BarrageItem(content: 'personalized');
