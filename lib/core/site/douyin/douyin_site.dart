@@ -226,7 +226,7 @@ class DouyinSite implements LiveSite {
   @override
   Future<List<LiveRoom>> getRecommendRooms({int page = 1, int pageSize = 30}) async {
     try {
-      var result = await HttpClient.instance.getJson(
+      final result = await HttpClient.instance.getJson(
         "https://live.douyin.com/webcast/feed/",
         queryParameters: {
           "aid": "6383",
@@ -239,28 +239,138 @@ class DouyinSite implements LiveSite {
         },
         header: await getRequestHeaders(),
       );
-      var items = <LiveRoom>[];
-      for (var item in result["data"]["data"]) {
-        var roomItem = LiveRoom(
-          roomId: item["owner"]["web_rid"],
-          title: item["title"].toString(),
-          cover: item["cover"]["url_list"][0].toString(),
-          nick: item["owner"]["nickname"].toString(),
-          platform: Sites.douyinSite,
-          area: item["tag_name"] ?? '热门推荐',
-          avatar: item["owner"]["avatar_thumb"]["url_list"][0].toString(),
-          watching: item?["room_view_stats"]?["display_value"].toString() ?? '',
-          totalViewers: item?["room_view_stats"]?["display_value"].toString() ?? '',
-          onlineViewers: douyinOnlineViewers(item),
-          audienceMetricType: AudienceMetricType.totalViewers,
-          liveStatus: LiveStatus.live,
-        );
-        items.add(roomItem);
-      }
-      return items;
+      return parseRecommendRooms(result);
     } catch (e) {
       throw Exception(e.toString());
     }
+  }
+
+  /// Parses both generations of Douyin's anonymous feed response.
+  ///
+  /// The legacy response stored rooms at `data.data`. Since August 2026 the
+  /// endpoint returns `data` as a list of feed envelopes and puts the room in
+  /// each envelope's `data` field. Indexing that list with the string `data`
+  /// produced `type 'String' is not a subtype of type 'int' of 'index'` before
+  /// any card could be rendered.
+  @visibleForTesting
+  static List<LiveRoom> parseRecommendRooms(dynamic payload) {
+    final root = _asStringMap(payload);
+    if (root == null) throw const FormatException('Douyin feed response is not an object');
+
+    final statusCode = int.tryParse(root['status_code']?.toString() ?? '');
+    if (statusCode != null && statusCode != 0) {
+      throw StateError('Douyin feed rejected request: code=$statusCode');
+    }
+
+    dynamic rawRooms = root['data'];
+    if (rawRooms is Map) rawRooms = rawRooms['data'];
+    if (rawRooms is! List) throw const FormatException('Douyin feed room list is missing');
+
+    final rooms = <LiveRoom>[];
+    final seenRoomIds = <String>{};
+    for (final rawItem in rawRooms) {
+      final envelope = _asStringMap(rawItem);
+      if (envelope == null) continue;
+
+      final embedded = _decodeEmbeddedMap(envelope['data']);
+      final nestedRoom = _asStringMap(envelope['room']);
+      final room = <Map<String, dynamic>?>[
+        embedded,
+        nestedRoom,
+        envelope,
+      ].firstWhere((candidate) => candidate != null && _looksLikeRoom(candidate), orElse: () => null);
+      if (room == null) continue;
+
+      final owner = _asStringMap(room['owner']) ?? _asStringMap(envelope['owner']) ?? const <String, dynamic>{};
+      final roomId = _firstText([envelope['web_rid'], owner['web_rid'], room['web_rid'], room['id_str'], room['id']]);
+      if (roomId.isEmpty || !seenRoomIds.add(roomId)) continue;
+
+      final title = _firstText([room['title'], envelope['title'], owner['nickname']]);
+      final nick = _firstText([owner['nickname'], envelope['nickname']]);
+      final cover = _firstImageUrl([room['cover'], envelope['cover']]);
+      final avatar = _firstImageUrl([owner['avatar_thumb'], owner['avatar_large'], envelope['avatar_thumb']]);
+      final viewStats = _asStringMap(room['room_view_stats']);
+      final totalViewers = _firstText([viewStats?['display_value'], viewStats?['total_user_str'], room['user_count']]);
+
+      rooms.add(
+        LiveRoom(
+          roomId: roomId,
+          title: title,
+          cover: cover,
+          nick: nick,
+          platform: Sites.douyinSite,
+          area: _douyinFeedArea(envelope, room),
+          avatar: avatar,
+          watching: totalViewers,
+          totalViewers: totalViewers,
+          onlineViewers: douyinOnlineViewers(room),
+          audienceMetricType: AudienceMetricType.totalViewers,
+          status: true,
+          liveStatus: LiveStatus.live,
+          link: 'https://live.douyin.com/$roomId',
+        ),
+      );
+    }
+    return rooms;
+  }
+
+  static Map<String, dynamic>? _asStringMap(dynamic value) {
+    if (value is! Map) return null;
+    return value.map((key, entryValue) => MapEntry(key.toString(), entryValue));
+  }
+
+  static Map<String, dynamic>? _decodeEmbeddedMap(dynamic value) {
+    final direct = _asStringMap(value);
+    if (direct != null) return direct;
+    if (value is! String || !value.trimLeft().startsWith('{')) return null;
+    try {
+      return _asStringMap(json.decode(value));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static bool _looksLikeRoom(Map<String, dynamic> value) {
+    return value['owner'] is Map || value['title'] != null || value['id_str'] != null || value['stream_url'] is Map;
+  }
+
+  static String _firstText(Iterable<dynamic> candidates) {
+    for (final value in candidates) {
+      if (value == null || value is Map || value is Iterable && value is! String) continue;
+      final text = value.toString().trim();
+      if (text.isNotEmpty && text != 'null') return text;
+    }
+    return '';
+  }
+
+  static String _firstImageUrl(Iterable<dynamic> candidates) {
+    for (final value in candidates) {
+      final image = _asStringMap(value);
+      final urlList = image?['url_list'];
+      if (urlList is List) {
+        final url = _firstText(urlList);
+        if (url.isNotEmpty) return url;
+      }
+      final direct = _firstText([value]);
+      if (direct.startsWith('http://') || direct.startsWith('https://')) return direct;
+    }
+    return '';
+  }
+
+  static String _douyinFeedArea(Map<String, dynamic> envelope, Map<String, dynamic> room) {
+    final direct = _firstText([room['tag_name'], envelope['tag_name']]);
+    if (direct.isNotEmpty) return direct;
+
+    for (final source in [room['partition_road_map'], envelope['tags']]) {
+      if (source is! List) continue;
+      for (final rawTag in source) {
+        final tag = _asStringMap(rawTag);
+        if (tag == null) continue;
+        final text = _firstText([tag['title'], tag['name'], tag['tag_name']]);
+        if (text.isNotEmpty) return text;
+      }
+    }
+    return '热门推荐';
   }
 
   @override

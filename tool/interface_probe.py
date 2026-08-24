@@ -554,6 +554,63 @@ def douyin_search_probe() -> None:
     raise ValueError("; ".join(errors))
 
 
+def douyin_feed_probe() -> None:
+    """Validate both the current feed-envelope shape and its room payload."""
+    cookie_jar = http.cookiejar.CookieJar()
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookie_jar))
+    headers = {
+        "User-Agent": USER_AGENT,
+        "Accept": "application/json,text/plain,*/*",
+        "Accept-Language": "zh-CN,zh;q=0.9",
+        "Referer": "https://live.douyin.com/",
+        "Connection": "close",
+    }
+    home_request = urllib.request.Request("https://live.douyin.com/?from_nav=1", headers=headers)
+    with opener.open(home_request, timeout=20) as response:
+        response.read(1)
+
+    params = {
+        "aid": 6383,
+        "app_name": "douyin_web",
+        "need_map": 1,
+        "is_draw": 1,
+        "inner_from_drawer": 0,
+        "enter_source": "web_homepage_hot_web_live_card",
+        "source_key": "web_homepage_hot_web_live_card",
+    }
+    request = urllib.request.Request(
+        f"https://live.douyin.com/webcast/feed/?{urllib.parse.urlencode(params)}",
+        headers=headers,
+    )
+    with opener.open(request, timeout=20) as response:
+        payload = json.loads(response.read().decode("utf-8", errors="replace").lstrip("\ufeff"))
+
+    if not isinstance(payload, dict) or payload.get("status_code") != 0:
+        raise ValueError("Douyin feed request was rejected")
+    rooms = payload.get("data")
+    if isinstance(rooms, dict):
+        rooms = rooms.get("data")
+    if not isinstance(rooms, list) or not rooms:
+        raise ValueError("Douyin feed room list is missing")
+
+    for envelope in rooms:
+        if not isinstance(envelope, dict):
+            continue
+        room = envelope.get("data", envelope)
+        if isinstance(room, str):
+            try:
+                room = json.loads(room)
+            except json.JSONDecodeError:
+                continue
+        if not isinstance(room, dict):
+            continue
+        owner = room.get("owner")
+        web_rid = envelope.get("web_rid") or (owner.get("web_rid") if isinstance(owner, dict) else None)
+        if web_rid and room.get("title") and isinstance(room.get("cover"), dict):
+            return
+    raise ValueError("Douyin feed contains no parseable live room")
+
+
 def bilibili_danmaku_probe() -> None:
     """Validate the signed endpoint and the current secure socket nodes."""
     jar = http.cookiejar.CookieJar()
@@ -1000,6 +1057,7 @@ def main() -> int:
         ("bilibili.popularity_rank", bilibili_recommend_probe),
         ("bilibili.danmaku", bilibili_danmaku_probe),
         ("huya.danmaku_identity", huya_danmaku_identity_probe),
+        ("douyin.feed", douyin_feed_probe),
         ("douyin.search", douyin_search_probe),
         ("douyu.search", douyu_search_probe),
         (
