@@ -1,4 +1,6 @@
 import 'dart:io';
+
+import 'package:path/path.dart' as p;
 import 'package:pure_live/common/index.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
@@ -150,8 +152,11 @@ class RecordSettingsController extends GetxController {
   Future<void> pickRecordDir() async {
     final result = await FilePicker.getDirectoryPath();
     if (result != null) {
-      recordSavePath.value = result;
-      await RecorderConfig.setRecordSavePath(result);
+      final recordDir = Directory(p.join(result, AppPathManager.dirRecords));
+      await recordDir.create(recursive: true);
+
+      recordSavePath.value = recordDir.path;
+      await RecorderConfig.setRecordSavePath(recordDir.path);
       await refreshCacheSize();
     }
   }
