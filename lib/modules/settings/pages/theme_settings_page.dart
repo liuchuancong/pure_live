@@ -271,7 +271,7 @@ class ThemeSettingsPage extends GetView<SettingsService> {
               groupValue: SettingsService.to.theme.languageName.v,
               onChanged: (String? value) {
                 if (value != null) {
-                  SettingsService.to.theme.changeLanguage(value);
+                  SettingsService.to.theme.changeLanguage(value, context);
                   Navigator.of(context).pop();
                 }
               },
@@ -287,7 +287,7 @@ class ThemeSettingsPage extends GetView<SettingsService> {
                         Radio<String>(value: name, activeColor: Theme.of(context).colorScheme.primary),
                         GestureDetector(
                           onTap: () {
-                            SettingsService.to.theme.changeLanguage(name);
+                            SettingsService.to.theme.changeLanguage(name, context);
                             Navigator.of(context).pop();
                           },
                           child: Text(name, style: Theme.of(context).textTheme.bodyLarge),
