@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/plugins/utils.dart';
+import 'package:pure_live/plugins/update.dart';
 import 'package:markdown_widget/widget/all.dart';
 import 'package:pure_live/plugins/race_http.dart';
 import 'package:markdown_widget/config/configs.dart';
@@ -289,17 +291,19 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> with SingleTick
     Get.dialog(
       Dialog(
         clipBehavior: Clip.antiAlias,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         backgroundColor: theme.colorScheme.surfaceContainerHigh,
         child: Container(
-          padding: const EdgeInsets.all(24),
-          constraints: const BoxConstraints(maxWidth: 400, maxHeight: 520),
+          width: double.infinity,
+          padding: const EdgeInsets.all(15),
+          constraints: BoxConstraints(maxWidth: Get.width * .95, maxHeight: 520),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _VersionAuthorHeaderWidget(item: item),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
               Expanded(
                 child: Container(
                   width: double.infinity,
@@ -310,7 +314,6 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> with SingleTick
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -478,7 +481,7 @@ class _VersionChangelogAndFilesWidget extends StatelessWidget {
                           children: [
                             Text(
                               file.name,
-                              maxLines: 1,
+                              maxLines: 3,
                               overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                             ),
@@ -501,7 +504,12 @@ class _VersionChangelogAndFilesWidget extends StatelessWidget {
                           backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.08),
                           foregroundColor: theme.colorScheme.primary,
                         ),
-                        onPressed: () => launchUrlString(file.url),
+                        onPressed: () async {
+                          bool? result = await Utils.showAlertDialog(i18n('open_link_confirm'), title: i18n('tip'));
+                          if (result) {
+                            downloadAndInstallApk(file.url, fileName: file.name);
+                          }
+                        },
                         icon: const Icon(Remix.download_2_line, size: 16),
                       ),
                     ],
