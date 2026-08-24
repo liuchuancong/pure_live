@@ -34,7 +34,6 @@ import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/utils/pip_window_widget.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
-import 'package:pure_live/player/adapters/video_player_adapter.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
@@ -762,10 +761,8 @@ class PlayerManager {
     final fitList = SettingsService.to.player.videoFitArray;
     if (fitList.isEmpty || index < 0 || index >= fitList.length) return;
     videoFitIndex.value = index;
-    if (_currentPlayer is BetterPlayerAdapter) {
-      final player = _currentPlayer as BetterPlayerAdapter;
-      player.betterPlayerController.setOverriddenFit(fitList[index]);
-    }
+    final player = _currentPlayer;
+    if (player is VideoFitAwarePlayer) player.setVideoFit(fitList[index]);
   }
 
   Future<void> enablePip() async {
@@ -875,7 +872,10 @@ class PlayerManager {
                 Obx(
                   () => Positioned.fill(
                     child: isFloatingVideoVisible.value
-                        ? getVideoWidget(videoFitIndex.value, fitList: SettingsService.to.player.videoFitArray)
+                        ? getVideoWidget(
+                            SettingsService.to.player.videoFitIndex.v,
+                            fitList: SettingsService.to.player.videoFitArray,
+                          )
                         : const SizedBox.shrink(),
                   ),
                 ),
@@ -1042,7 +1042,12 @@ class PlayerManager {
                 onDoubleTap: () async {
                   await exitPip();
                 },
-                child: getVideoWidget(videoFitIndex.value, fitList: SettingsService.to.player.videoFitArray),
+                child: Obx(
+                  () => getVideoWidget(
+                    SettingsService.to.player.videoFitIndex.v,
+                    fitList: SettingsService.to.player.videoFitArray,
+                  ),
+                ),
               ),
               Positioned.fill(child: _buildCompactDanmaku()),
               Center(
@@ -1288,10 +1293,11 @@ class PlayerManager {
     bool trackPipSource = false,
     bool? audioOnlyOverride,
   }) {
-    // Read by the room's outer Obx. Audio/video presentation changes rebuild
-    // this surface without changing [videoKey] and remounting the native view.
-
     return Obx(() {
+      // Runtime audio-only state is intentionally non-reactive because native
+      // mode changes are serialized. The revision publishes only the final
+      // presentation state while preserving the same texture/surface element.
+      videoPresentationRevision.value;
       final initialized = isInitialized.value;
       final showAudioOnly = audioOnlyOverride ?? _runtimeAudioOnly;
       final player = _currentPlayer;
@@ -1321,7 +1327,10 @@ class PlayerManager {
                         child: Container(color: Colors.black, child: _buildVideoWidget(player, boxFit)),
                       ),
                     ),
-                    if (showAudioOnly) Positioned.fill(child: buildAudioOnlyUI(Get.context!, currentFloatRoom)),
+                    if (showAudioOnly)
+                      Positioned.fill(
+                        child: Builder(builder: (context) => buildAudioOnlyUI(context, currentFloatRoom)),
+                      ),
                     if (controls != null) Positioned.fill(child: controls),
                   ],
                 ),
@@ -1333,23 +1342,13 @@ class PlayerManager {
     });
   }
 
-  Widget _buildVideoWidget(UnifiedPlayer player, boxFit) {
-    return FittedBox(
-      fit: boxFit,
-      clipBehavior: Clip.hardEdge,
-      child: StreamBuilder<List<int?>>(
-        stream: CombineLatestStream.list([width, height]),
-        builder: (context, snapshot) {
-          final data = snapshot.data;
-          if (data == null || data.length < 2 || data[0] == null || data[1] == null || data[0]! <= 0 || data[1]! <= 0) {
-            return const SizedBox.shrink();
-          }
-          final videoWidth = data[0]!.toDouble();
-          final videoHeight = data[1]!.toDouble();
-          return SizedBox(width: videoWidth, height: videoHeight, child: player.getVideoWidget());
-        },
-      ),
-    );
+  Widget _buildVideoWidget(UnifiedPlayer player, BoxFit boxFit) {
+    // Let each native adapter own its fit. Transforming a Windows texture with
+    // FittedBox makes the media_kit output-size guard see the source dimensions
+    // instead of the real viewport, which wastes GPU memory. Waiting for the
+    // dimension streams before mounting also creates a first-frame deadlock.
+    if (player is VideoFitAwarePlayer) player.setVideoFit(boxFit);
+    return player.getVideoWidget();
   }
 
   Widget _buildPlaceholder() {

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:developer' as developer;
+
 import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
@@ -29,7 +30,6 @@ import 'package:pure_live/modules/live_play/widgets/video_player/video_controlle
 import 'package:pure_live/modules/live_play/controllers/danmaku_presentation_recovery.dart';
 import 'package:pure_live/modules/live_play/widgets/local_interaction/local_interaction_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/local_interaction/local_message_delivery_queue.dart';
-
 
 // live_play_controller.dart
 
@@ -617,25 +617,25 @@ class LivePlayController extends GetxController
     int line = 0,
     bool isReCalculate = true,
   }) async {
-    final roomId = state.value.room.detail?.roomId;
-    if (roomId == null) return LiveRoom();
-    final requestedPlatform = state.value.room.detail?.platform;
+    // Keep one immutable request snapshot. Reading state again after the
+    // platform request completes can merge an old response with a newly opened
+    // room before the epoch fence has a chance to reject it.
+    final requestedRoom = state.value.room.detail;
+    final roomId = requestedRoom?.roomId;
+    final requestedPlatform = requestedRoom?.platform;
+    if (requestedRoom == null || roomId == null || requestedPlatform == null) return LiveRoom();
     final loadEpoch = ++_roomLoadEpoch;
 
     clearSuperChats();
     updateRoom(isLoading: true, loadError: null);
 
     try {
-      final fetchedRoom = await currentSite.liveSite.getRoomDetail(
-        roomId: roomId,
-        platform: state.value.room.detail!.platform!,
-      );
+      final fetchedRoom = await currentSite.liveSite.getRoomDetail(roomId: roomId, platform: requestedPlatform);
 
-      var liveRoom = fetchedRoom.withAudienceFallbackFrom(state.value.room.detail!);
-      liveRoom = liveRoom.fillFromDetail(state.value.room.detail);
-
-      updateRoom(detail: liveRoom);
+      var liveRoom = fetchedRoom.withAudienceFallbackFrom(requestedRoom);
+      liveRoom = liveRoom.fillFromDetail(requestedRoom);
       if (!_isRoomLoadCurrent(loadEpoch, roomId, requestedPlatform)) return liveRoom;
+      updateRoom(detail: liveRoom);
       unawaited(getSuperChatMessage(roomId, platform: requestedPlatform, loadEpoch: loadEpoch));
 
       if (currentSite.id == Sites.iptvSite) {

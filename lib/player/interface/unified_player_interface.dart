@@ -1,12 +1,11 @@
 import '../models/player_state.dart';
+
 import 'package:flutter/material.dart';
+
 import '../models/player_exception.dart';
+
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/player/models/player_engine.dart';
-
-
-
-
 
 abstract class UnifiedPlayer {
   Future<void> init({bool audioOnly = false});
@@ -69,4 +68,13 @@ abstract class UnifiedPlayer {
   Stream<int?> get width;
 
   Stream<int?> get height;
+}
+
+/// Optional capability implemented by native adapters that can apply the
+/// selected viewport fit without wrapping their texture/platform view in a
+/// transformed widget.  Keeping the fit inside the adapter also lets the
+/// Windows media_kit surface receive the real viewport size instead of the
+/// source video's intrinsic dimensions.
+abstract interface class VideoFitAwarePlayer {
+  void setVideoFit(BoxFit fit);
 }
