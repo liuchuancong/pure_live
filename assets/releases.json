@@ -1,5 +1,43 @@
 [
   {
+    "version": "2.9.5",
+    "title": "Pure Live v2.9.5",
+    "date": "2026-08-24",
+    "github": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.5",
+    "author": {
+      "name": "wzgrx",
+      "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
+      "profile": "https://github.com/wzgrx"
+    },
+    "changelog": "# Pure Live v2.9.5\r\n\r\nv2.9.5 build 4084 is an Android stability update for playback quality, platform interfaces and the newly synchronized YY platform.\r\n\r\n## Quality and line switching\r\n\r\n- Added a shared stable quality identifier and transactional switching: the UI changes only after the target source opens, stale requests are discarded, failed opens keep the previous source, line indices are clamped and duplicate/blank lines are removed.\r\n- Bilibili now reads the server's actual `current_qn`; Huya replaces a stale `ratio` (and removes it for source quality); Douyin joins streams by `sdk_key`; Douyu preserves the platform's opaque rate order instead of numerically sorting it.\r\n- Twitch master variants are parsed as attribute/URI pairs without shared mutable state; Kuaishou, CC, SOOP, YY and IPTV received stable IDs, defensive payload handling and deterministic playback fixtures.\r\n- The fullscreen quality/line dialog now derives its total size from the real option rows. It removes redundant header values, gives the choice buttons the main visual area and only keeps large panes when their content actually needs scrolling.\r\n- A handled playback error finishing after an overlay lifecycle change no longer triggers a second uncaught toast exception.\r\n\r\n## Audience metrics and ranking\r\n\r\n- CC `webcc_visitor` heat is separated from `vision_visitor/online_num` concurrent viewers.\r\n- Concurrent ranking compares explicit, pending and heat-only tiers before numeric values, then uses stable room identity to stop equal cards from jumping during refresh.\r\n- Douyin no longer treats cumulative `total_user` fields as current online viewers; SOOP joins the supported concurrent-platform settings.\r\n\r\n## Douyu playback\r\n\r\n- Synchronized the upstream baseline through `liuchuancong/pure_live@a161a324` with real merge ancestry, including the latest version-history transport/parser update.\r\n- The H5 stream request now uses one session DID and consistent browser headers, refreshes stale signing descriptors, and performs one bounded retry.\r\n- Quality and CDN parsing tolerates partial response shapes, removes duplicate lines, and validates the final decoded stream URL.\r\n- Actual media requests now receive Douyu Referer, Origin, User-Agent and matching DID cookies on every player backend.\r\n- The public interface gate now verifies signing, H5 metadata, CDN selection, and a real FLV header instead of stopping at the encryption descriptor.\r\n\r\n## YY integration\r\n\r\n- Added categories, room lists, search, room status, quality/line playback, danmaku and local Cookie settings from upstream.\r\n- Replaced the native JavaScript runtime used for a simple page literal with a pure-Dart parser, keeping Android and desktop packages smaller and deterministic.\r\n- Upgraded public URLs to HTTPS and switched room refresh to the direct authoritative room-detail endpoint.\r\n- Corrected live/anchor search contracts, live-state parsing, room identifiers, and YY Cookie status display.\r\n\r\n## Search stability and discovery\r\n\r\n- Replaced the search page's auto-centering `TabBar` with a dedicated bounded platform strip. It remains horizontally scrollable when platforms exceed the screen width, but the first and last item are now hard boundaries and the selected state cannot drift away from the active platform.\r\n- Keeps one stable adapter snapshot for the page, preserving pagination cursors and preventing platform order/index mismatches while results are loading.\r\n- All-platform search now publishes each completed platform immediately, caps an individual request at 12 seconds, deduplicates results, and isolates partial failures instead of blocking the whole grid behind one slow endpoint.\r\n- Added YY native search coverage, respected requested page sizes for Bilibili, Douyu, Huya, CC and SOOP, and kept IPTV local search separate from web continuation.\r\n- Web result detection now supports Bilibili, Douyu, Huya, Douyin, Kuaishou, CC, Twitch, SOOP and YY, rejects navigation/lookalike URLs, preserves the detected platform identity, and suppresses duplicate room prompts.\r\n\r\n## Regression coverage and delivery\r\n\r\n- Multiview sorting now understands localized ten-thousand/hundred-million suffixes as well as values such as `18.3k`.\r\n- Added deterministic Douyu/YY/search parser and bounded-scroll tests plus 36 public probes across Bilibili, Douyu, Huya, Douyin, Kuaishou, CC, Twitch, SOOP and YY.\r\n- Version: `2.9.5+4084`.\r\n- This release publishes Android `arm64-v8a`; Windows, Linux, macOS and iOS remain on their v2.9.4 artifacts.\r\n- No ADB or phone automation was used; the signed APK is ready for independent device acceptance.",
+    "files": [
+      {
+        "name": "ANDROID_SHA256SUM.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.5/ANDROID_SHA256SUM.txt"
+      },
+      {
+        "name": "BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.5/BUILD_METADATA.json"
+      },
+      {
+        "name": "PureLive-2.9.5-4084-android-arm64-v8a",
+        "size": "112.86mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.5/PureLive-2.9.5-4084-android-arm64-v8a-release.apk"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.5/SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
     "version": "2.9.4",
     "title": "Pure Live v2.9.4",
     "date": "2026-08-24",
@@ -20,55 +58,55 @@
       {
         "name": "PureLive-2.9.4-4083-android-arm64-v8a",
         "size": "112.67mb",
-        "downloads": 1,
+        "downloads": 138,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.4/PureLive-2.9.4-4083-android-arm64-v8a-release.apk"
       },
       {
         "name": "PureLive-2.9.4-4083-ios-arm64-trollstore.ipa",
         "size": "55.75mb",
-        "downloads": 1,
+        "downloads": 4,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.4/PureLive-2.9.4-4083-ios-arm64-trollstore.ipa"
       },
       {
         "name": "PureLive-2.9.4-4083-ios-arm64-unsigned-app.zip",
         "size": "54.95mb",
-        "downloads": 1,
+        "downloads": 3,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.4/PureLive-2.9.4-4083-ios-arm64-unsigned-app.zip"
       },
       {
         "name": "PureLive-2.9.4-4083-linux-x64.tar.gz",
         "size": "35.85mb",
-        "downloads": 1,
+        "downloads": 3,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.4/PureLive-2.9.4-4083-linux-x64.tar.gz"
       },
       {
         "name": "PureLive-2.9.4-4083-macos-universal.dmg",
         "size": "108.54mb",
-        "downloads": 1,
+        "downloads": 3,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.4/PureLive-2.9.4-4083-macos-universal.dmg"
       },
       {
         "name": "PureLive-2.9.4-4083-macos-universal.zip",
         "size": "95.9mb",
-        "downloads": 1,
+        "downloads": 2,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.4/PureLive-2.9.4-4083-macos-universal.zip"
       },
       {
         "name": "PureLive-2.9.4-4083-windows-x64-portable.zip",
         "size": "70.06mb",
-        "downloads": 1,
+        "downloads": 13,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.4/PureLive-2.9.4-4083-windows-x64-portable.zip"
       },
       {
         "name": "PureLive-2.9.4-4083-windows-x64-setup.exe",
         "size": "53.24mb",
-        "downloads": 1,
+        "downloads": 51,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.4/PureLive-2.9.4-4083-windows-x64-setup.exe"
       },
       {
         "name": "SHA256SUMS.txt",
         "size": "0.0mb",
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.4/SHA256SUMS.txt"
       }
     ]
@@ -100,7 +138,7 @@
       {
         "name": "PureLive-2.9.3-4082-android-arm64-v8a",
         "size": "114.57mb",
-        "downloads": 211,
+        "downloads": 224,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.3/PureLive-2.9.3-4082-android-arm64-v8a-release.apk"
       },
       {
@@ -138,7 +176,7 @@
       {
         "name": "PureLive-2.9.2-4081-android-arm64-v8a",
         "size": "114.57mb",
-        "downloads": 69,
+        "downloads": 71,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.2/PureLive-2.9.2-4081-android-arm64-v8a-release.apk"
       },
       {
@@ -202,7 +240,7 @@
       {
         "name": "ANDROID_SHA256SUM.txt",
         "size": "0.0mb",
-        "downloads": 4,
+        "downloads": 5,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.0/ANDROID_SHA256SUM.txt"
       },
       {
@@ -214,19 +252,19 @@
       {
         "name": "PureLive-2.9.0-4079-android-arm64-v8a",
         "size": "114.57mb",
-        "downloads": 42,
+        "downloads": 57,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.0/PureLive-2.9.0-4079-android-arm64-v8a-release.apk"
       },
       {
         "name": "PureLive-2.9.0-4079-ios-arm64-trollstore.ipa",
         "size": "56.1mb",
-        "downloads": 15,
+        "downloads": 17,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.0/PureLive-2.9.0-4079-ios-arm64-trollstore.ipa"
       },
       {
         "name": "PureLive-2.9.0-4079-ios-arm64-unsigned-app.zip",
         "size": "55.3mb",
-        "downloads": 6,
+        "downloads": 8,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.0/PureLive-2.9.0-4079-ios-arm64-unsigned-app.zip"
       },
       {
@@ -238,7 +276,7 @@
       {
         "name": "PureLive-2.9.0-4079-macos-universal.dmg",
         "size": "109.39mb",
-        "downloads": 2,
+        "downloads": 3,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.0/PureLive-2.9.0-4079-macos-universal.dmg"
       },
       {
@@ -250,19 +288,19 @@
       {
         "name": "PureLive-2.9.0-4079-windows-x64-portable.zip",
         "size": "69.52mb",
-        "downloads": 15,
+        "downloads": 16,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.0/PureLive-2.9.0-4079-windows-x64-portable.zip"
       },
       {
         "name": "PureLive-2.9.0-4079-windows-x64-setup.exe",
         "size": "53.84mb",
-        "downloads": 46,
+        "downloads": 53,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.0/PureLive-2.9.0-4079-windows-x64-setup.exe"
       },
       {
         "name": "SHA256SUMS.txt",
         "size": "0.0mb",
-        "downloads": 3,
+        "downloads": 4,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.0/SHA256SUMS.txt"
       }
     ]
@@ -282,7 +320,7 @@
       {
         "name": "ANDROID_SHA256SUM.txt",
         "size": "0.0mb",
-        "downloads": 3,
+        "downloads": 4,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.8.0/ANDROID_SHA256SUM.txt"
       },
       {
@@ -294,7 +332,7 @@
       {
         "name": "PureLive-2.8.0-4078-arm64-v8a",
         "size": "114.51mb",
-        "downloads": 116,
+        "downloads": 120,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.8.0/PureLive-2.8.0-4078-arm64-v8a-release.apk"
       },
       {
@@ -484,7 +522,7 @@
       {
         "name": "PureLive-2.6.0-4076-ios-arm64-trollstore.ipa",
         "size": "56.05mb",
-        "downloads": 3,
+        "downloads": 6,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.6.0/PureLive-2.6.0-4076-ios-arm64-trollstore.ipa"
       },
       {
@@ -496,13 +534,13 @@
       {
         "name": "PureLive-2.6.0-4076-linux-x64.tar.gz",
         "size": "35.72mb",
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.6.0/PureLive-2.6.0-4076-linux-x64.tar.gz"
       },
       {
         "name": "PureLive-2.6.0-4076-macos-universal.dmg",
         "size": "108.87mb",
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.6.0/PureLive-2.6.0-4076-macos-universal.dmg"
       },
       {
@@ -746,13 +784,13 @@
       {
         "name": "BUILD_METADATA.json",
         "size": "0.0mb",
-        "downloads": 1,
+        "downloads": 2,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.3.0/BUILD_METADATA.json"
       },
       {
         "name": "PureLive-2.3.0-4069-arm64-v8a",
         "size": "114.06mb",
-        "downloads": 104,
+        "downloads": 105,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.3.0/PureLive-2.3.0-4069-arm64-v8a-release.apk"
       },
       {
@@ -1224,7 +1262,7 @@
       {
         "name": "arm64-v8a",
         "size": "122.55mb",
-        "downloads": 972,
+        "downloads": 975,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.24/app-arm64-v8a-release.apk"
       },
       {
@@ -1690,7 +1728,7 @@
       {
         "name": "arm64-v8a",
         "size": "122.25mb",
-        "downloads": 14242,
+        "downloads": 14245,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.22/app-arm64-v8a-release.apk"
       },
       {
@@ -1814,13 +1852,13 @@
       {
         "name": "PureLive-2.0.20+31-windows-x64-setup.exe",
         "size": "55.68mb",
-        "downloads": 1066,
+        "downloads": 1067,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.20/PureLive-2.0.20%2B31-windows-x64-setup.exe"
       },
       {
         "name": "PureLive-2.0.20+31-windows-x64.msix",
         "size": "77.68mb",
-        "downloads": 274,
+        "downloads": 275,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.20/PureLive-2.0.20%2B31-windows-x64.msix"
       }
     ]
