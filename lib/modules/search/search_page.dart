@@ -1,6 +1,6 @@
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/search/search_ranking.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/modules/search/search_controller.dart' as pure_live;
 
 class SearchPage extends GetView<pure_live.SearchController> {
@@ -107,6 +107,7 @@ class SearchPage extends GetView<pure_live.SearchController> {
             Expanded(
               child: CustomScrollView(
                 controller: controller.scrollController,
+                physics: ClampingScrollPhysics(),
                 scrollCacheExtent: ScrollCacheExtent.pixels(width > 680 ? 480 : 320),
                 keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                 slivers: [
