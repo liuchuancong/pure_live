@@ -1297,6 +1297,9 @@ class PlayerManager {
     bool trackPipSource = false,
     bool? audioOnlyOverride,
   }) {
+    // Floating/PiP callers already wrap this factory in Obx; keep their
+    // dependency registered while the inner observer covers direct callers.
+    videoPresentationRevision.value;
     return Obx(() {
       // Runtime audio-only state is intentionally non-reactive because native
       // mode changes are serialized. The revision publishes only the final
