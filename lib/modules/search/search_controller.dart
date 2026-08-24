@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/modules/search/search_capability.dart';
-import 'package:pure_live/modules/search/search_ranking.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:pure_live/modules/search/search_ranking.dart';
+import 'package:pure_live/modules/search/search_capability.dart';
 
 class SearchController extends GetxController with GetSingleTickerProviderStateMixin {
   late TabController tabController;
@@ -67,6 +67,8 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
         return "https://www.twitch.tv/search?term=$q";
       case Sites.soopSite:
         return "https://www.sooplive.co.kr/?szKeyword=$q";
+      case Sites.yySite:
+        return "https://https://www.yy.com/search?target=$q";
       default:
         return "https://www.baidu.com/s?wd=$q&rsv_spt=1&rsv_iqid=0x84b83a1e077a0c1a&issp=1&f=8&rsv_bp=1&rsv_idx=2&ie=utf-8&tn=baiduhome_pg&rsv_dl=tb_click&rsv_enter=1&rsv_sug3=3&rsv_sug1=2&rsv_sug7=100&rsv_btype=i&prefixsug=12&rsp=0&inputT=1112&rsv_sug4=1287";
     }

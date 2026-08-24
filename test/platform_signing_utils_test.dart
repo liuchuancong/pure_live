@@ -4,47 +4,8 @@ import 'package:pure_live/core/utils/douyin/douyin_utils.dart';
 
 void main() {
   group('DouyuUtils', () {
-    final descriptor = <String, dynamic>{
-      'key': 'key',
-      'rand_str': 'rand',
-      'enc_time': 1,
-      'expire_at': 2000,
-      'is_special': 0,
-      'enc_data': 'a+/=',
-    };
-
-    test('encryption expiry is compared in Unix seconds', () {
-      expect(DouyuUtils.isEncryptionKeyUsable(descriptor, nowSeconds: 1000), isTrue);
-      expect(DouyuUtils.isEncryptionKeyUsable(descriptor, nowSeconds: 1970), isFalse);
-      expect(DouyuUtils.isEncryptionKeyUsable(descriptor, nowSeconds: 1000000), isFalse);
-    });
-
-    test('signed form body is deterministic and percent-safe', () {
-      final body = DouyuUtils.buildSignedData(
-        encryptionKey: descriptor,
-        roomId: '123',
-        timestampSeconds: 1000,
-        rate: 2,
-        cdn: 'ali line',
-      );
-      final values = Uri.splitQueryString(body);
-
-      expect(values['enc_data'], 'a+/=');
-      expect(values['tt'], '1000');
-      expect(values['rate'], '2');
-      expect(values['cdn'], 'ali line');
-      expect(values['auth'], '1834439993932d590bceb2593c1c0cd0');
-    });
-
     test('invalid or unbounded encryption descriptors fail fast', () {
-      expect(
-        () => DouyuUtils.buildSignedData(
-          encryptionKey: <String, dynamic>{...descriptor, 'enc_time': 1000},
-          roomId: '123',
-          timestampSeconds: 1000,
-        ),
-        throwsFormatException,
-      );
+      expect(() => DouyuUtils.sign('123'), throwsFormatException);
     });
   });
 

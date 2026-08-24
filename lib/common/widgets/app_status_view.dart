@@ -532,8 +532,17 @@ class _AppStatusViewState extends State<AppStatusView> with SingleTickerProvider
             ),
           ],
           if (!widget.isMini || finalSubtitle.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(finalSubtitle, style: AppTextStyles.t13.copyWith(color: widget.subtitleColor ?? theme.hintColor)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(28, 6, 28, 0),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 320),
+                child: Text(
+                  finalSubtitle,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.t13.copyWith(color: widget.subtitleColor ?? theme.hintColor, height: 1.5),
+                ),
+              ),
+            ),
           ],
           if (!widget.isMini && widget.onButtonPressed != null) ...[
             const SizedBox(height: 16),

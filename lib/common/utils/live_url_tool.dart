@@ -95,6 +95,11 @@ class LiveUrlTool {
 
       return [id, Sites.soopSite];
     }
+    if (realUrl.contains("yy.com/")) {
+      final regExp = RegExp(r'(?:www\.)?yy\.com/([^/?]+)');
+      final roomId = regExp.firstMatch(realUrl)?.group(1) ?? "";
+      return [roomId, Sites.yySite];
+    }
     return [];
   }
 

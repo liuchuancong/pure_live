@@ -6,13 +6,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/model/live_play_quality.dart';
-import 'package:pure_live/player/core/player_pool.dart';
 import 'package:pure_live/player/core/player_manager.dart';
 import 'package:pure_live/player/models/player_state.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/player/models/player_exception.dart';
 import 'package:pure_live/player/core/line_fallback_manager.dart';
-import 'package:pure_live/player/core/preload_player_manager.dart';
 import 'package:pure_live/player/core/engine_fallback_manager.dart';
 import 'package:pure_live/player/interface/unified_player_interface.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
@@ -538,12 +536,10 @@ PlayerManager _createManager(
   Future<void> Function(LiveRoom room)? audioSessionStart,
 }) {
   return PlayerManager(
-    playerPool: PlayerPool(factory: (_) async => player),
     fallbackManager: EngineFallbackManager(
       defaultEngine: PlayerEngine.mediaKit,
       supportedEngines: const <PlayerEngine>[PlayerEngine.mediaKit],
     ),
-    preloadManager: PreloadPlayerManager(),
     lineManager: LineFallbackManager(),
     audioModeSwitchTimeout: timeout,
     audioModeVideoWarmRetention: warmRetention,

@@ -1,15 +1,9 @@
 import 'dart:developer';
 
-import 'core/player_pool.dart';
 import 'core/player_manager.dart';
 import 'models/player_engine.dart';
-import 'adapters/fijk_adapter.dart';
-import 'adapters/media_kit_adapter.dart';
 import 'core/line_fallback_manager.dart';
-
-import 'core/preload_player_manager.dart';
 import 'core/engine_fallback_manager.dart';
-import 'adapters/video_player_adapter.dart';
 
 import 'package:pure_live/common/global/platform_utils.dart';
 
@@ -43,32 +37,16 @@ class GlobalPlayerService {
   }
 
   Future<void> _initialize(PlayerEngine defaultEngine) async {
-    // 1. Setup the Pool with a factory that knows how to create each Adapter
-    final playerPool = PlayerPool(
-      factory: (engine) async {
-        switch (engine) {
-          case PlayerEngine.mediaKit:
-            return MediaKitAdapter();
-          case PlayerEngine.fijk:
-            return FijkAdapter();
-          case PlayerEngine.exo:
-            return BetterPlayerAdapter();
-        }
-      },
-    );
-
-    // 2. Instantiate the Orchestrator with all its specialized managers
+    // 1. Instantiate the Orchestrator with all its specialized managers
     playerManager = PlayerManager(
-      playerPool: playerPool,
       fallbackManager: EngineFallbackManager(
         defaultEngine: PlayerEngine.mediaKit,
         supportedEngines: PlatformUtils.isMobile ? PlayerEngine.values : [PlayerEngine.mediaKit],
       ),
-      preloadManager: PreloadPlayerManager(),
       lineManager: LineFallbackManager(),
     );
 
-    // 3. Keep native decoders, network workers and textures cold until the
+    // 2. Keep native decoders, network workers and textures cold until the
     // first room is opened. This avoids paying hundreds of MiB and background
     // CPU merely for browsing the home/settings UI.
     playerManager.configureDefaultEngine(defaultEngine);

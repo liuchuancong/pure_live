@@ -609,7 +609,6 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher {
     );
 
     final result = decode(resultText);
-
     final List<LiveRoom> items = [];
 
     final docs = result['data']?['searchResult']?['response']?['120']?['docs'] ?? [];
