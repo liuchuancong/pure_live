@@ -1,15 +1,16 @@
+import 'dart:io';
 import 'dart:convert';
 import 'dart:developer';
-import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
-import 'package:pure_live/common/utils/windows_multi_instance_launcher.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
-import 'package:win32_registry/win32_registry.dart';
+import 'package:flutter/foundation.dart';
 
 import 'windows_portable_path_provider.dart';
+
+import 'package:path_provider/path_provider.dart';
+import 'package:win32_registry/win32_registry.dart';
+import 'package:pure_live/common/utils/windows_multi_instance_launcher.dart';
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 class AppPathManager {
   static final AppPathManager _instance = AppPathManager._internal();
@@ -82,11 +83,10 @@ class AppPathManager {
       await _recoverMissingPersistentData(legacyRoots);
       await _recoverLegacyPluginPreferences(supportDir);
 
-      // EXE/portable installations keep plugin support, cache and temporary
-      // state under {app}\AppData as well. This runs before cache_manager and
-      // player plugins initialize.
-      PathProviderPlatform.instance = WindowsPortablePathProvider(delegate: originalPathProvider, dataRoot: rootPath);
-      configureWindowsPortableSharedPreferences(rootPath);
+      if (!_isWindowsMsix) {
+        PathProviderPlatform.instance = WindowsPortablePathProvider(delegate: originalPathProvider, dataRoot: rootPath);
+        configureWindowsPortableSharedPreferences(rootPath);
+      }
     }
   }
 
@@ -371,6 +371,28 @@ class AppPathManager {
   Future<String> getFontFamilyFolderPath(String id) async {
     final downloadDir = await getDir(dirDownload);
     return fontFamilyFolderPath(downloadDir.path, id);
+  }
+
+  bool get _isWindowsMsix {
+    if (!Platform.isWindows) return false;
+
+    final path = p.normalize(Platform.resolvedExecutable).toLowerCase();
+
+    return path.contains(r'\windowsapps\');
+  }
+
+  bool isDangerousDirectory(String path) {
+    final normalized = p.normalize(path).toLowerCase();
+
+    final home = p.normalize(Platform.environment['USERPROFILE'] ?? '').toLowerCase();
+
+    final downloads = p.normalize(p.join(home, 'Downloads')).toLowerCase();
+
+    final desktop = p.normalize(p.join(home, 'Desktop')).toLowerCase();
+
+    final documents = p.normalize(p.join(home, 'Documents')).toLowerCase();
+
+    return normalized == home || normalized == downloads || normalized == desktop || normalized == documents;
   }
 
   @visibleForTesting
