@@ -48,10 +48,11 @@ class ThemeSettingsController extends GetxController {
     Get.changeTheme(t.darkThemeData);
   }
 
-  void changeLanguage(String v) {
-    languageName.v = v;
-    EasyLocalization.of(Get.context!)!.setLocale(language);
-    Get.updateLocale(language);
+  void changeLanguage(String v, BuildContext context) {
+    languageName.value = v;
+    final locale = AppConsts.languages[v]!;
+    context.setLocale(locale);
+    Get.updateLocale(locale);
   }
 
   Map<String, dynamic> toJson() {

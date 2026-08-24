@@ -6,7 +6,6 @@ version: 2.9.3+4082
 environment:
   sdk: ^3.13.0
 
-# 主依赖
 dependencies:
   flutter:
     sdk: flutter
@@ -31,11 +30,13 @@ dependencies:
   share_plus: ^13.1.0
   photo_view: ^0.15.0
   flutter_json: ^0.2.0
+
   # Local database (SQLite)
   drift: ^2.33.0
   charset_converter: ^2.3.0
   synchronized: ^3.1.0
   meta: ^1.18.0 # Flutter 3.47.0 SDK pin
+
   # -------------------------- 网络请求/网络状态 --------------------------
   http: ^1.1.0 # 基础HTTP请求
   dio: ^5.9.0 # 强大的Dart HTTP客户端
@@ -44,18 +45,20 @@ dependencies:
   web_socket_channel: ^3.0.1 # WebSocket通信
   connectivity_plus: ^7.3.1 # 网络连接状态监听
   webdav_client: ^1.2.2 # WebDAV文件存储客户端
+
   firebase_core: ^4.10.0
   firebase_auth: ^6.5.2
   cloud_firestore: ^6.5.0
+
   win32_registry: ^3.0.3
   email_validator: ^3.0.0
   flutter_spinkit: ^5.2.2
   loading_animation_widget: ^1.3.0
   loading_indicator: ^3.1.1
-  # Local patch keeps per-item speed effective; upstream 0.0.4 moves every
-  # entry with the global speed and makes all lanes look synchronized.
+
   flame_barrage:
-    path: ./plugins/flame_barrage
+    path: ./plugins/flame_barrage # Local patch keeps per-item speed effective
+
   # -------------------------- 音视频播放 --------------------------
   media_kit:
     git:
@@ -63,32 +66,28 @@ dependencies:
       ref: 994465d9bfca3f39d0b41199d16e7fd93fe97881
       path: ./media_kit
   media_kit_video:
-    # Local patch gives Android Surface lifecycle and audio-only track
-    # selection one state owner, preventing rotation/PiP vid races.
-    path: ./third_party/media_kit_video
+    path: ./third_party/media_kit_video # Local patch gives Android Surface lifecycle and audio‑only track selection
   media_kit_libs_video:
     git:
       url: https://github.com/Predidit/media-kit.git
       ref: 994465d9bfca3f39d0b41199d16e7fd93fe97881
       path: ./libs/universal/media_kit_libs_video
-  # Local AGP 9 Built-in Kotlin patch; source version 1.3.5.
+
   better_player_plus:
-    path: plugins/built_in_kotlin/better_player_plus
+    path: plugins/built_in_kotlin/better_player_plus # Local AGP 9 Built‑in Kotlin patch
+
   audio_service: ^0.18.18 # 后台音频服务
   audio_service_win: ^0.0.3
   audio_session: ^0.2.3 # 音频会话管理
   ffmpeg_kit_extended_flutter: ^0.6.0
-  # Vendored from liuchuancong/flv_lzc@030d611 so the Android attach-time
-  # SurfaceTexture crash fix is reproducible in local/offline release builds.
+
   flv_lzc:
-    path: plugins/flv_lzc
+    path: plugins/flv_lzc # Vendored from liuchuancong/flv_lzc@030d611
 
   # -------------------------- UI组件/界面样式 --------------------------
   flutter_svg: ^2.2.1 # SVG图片渲染
   lottie: ^3.3.3 #动画
   cached_network_image: ^3.3.0 # 网络图片缓存
-  # 2.x moved ColorScheme to material_ui, which is not type-compatible with
-  # Flutter 3.47's material ColorScheme. Keep the newest compatible 1.x line.
   dynamic_color: ^1.9.0 # 动态主题色
   waterfall_flow: ^3.1.1 # 瀑布流布局
   easy_refresh: ^3.5.0 # 下拉刷新/上拉加载
@@ -110,12 +109,13 @@ dependencies:
   tray_manager: ^0.5.2 # 系统托盘管理
   flutter_acrylic: ^1.1.4 # 亚克力毛玻璃效果
   screen_retriever:
-    git: 
+    git:
       url: https://github.com/liuchuancong/screen_retriever.git
       path: ./packages/screen_retriever
       ref: b246b3963738d6cc159c921764c194c73dbdf2ad
   win32: ^6.3.0 # Windows系统API
   android_intent_plus: ^6.0.0
+
   # -------------------------- 设备/系统权限/硬件 --------------------------
   screen_brightness: ^2.1.2 # 屏幕亮度控制
   volume_controller: ^3.4.4 # 音量控制
@@ -123,9 +123,9 @@ dependencies:
   battery_plus: ^7.0.0 # 电池状态获取
   permission_handler: ^13.0.1 # 权限管理
   device_info_plus: ^13.1.0 # 设备信息
-  # Local AGP 9 Built-in Kotlin patch; source version 7.4.0.
+
   mobile_scanner:
-    path: plugins/built_in_kotlin/mobile_scanner
+    path: plugins/built_in_kotlin/mobile_scanner # Local AGP 9 Built‑in Kotlin patch
 
   # -------------------------- 数据存储/数据库 --------------------------
   hive_ce: ^2.15.1 # Hive本地数据库
@@ -146,7 +146,6 @@ dependencies:
   mime: ^2.0.0 # MIME类型处理
 
   # -------------------------- 工具/通用库 --------------------------
-
   timezone: ^0.11.0 # 时区处理
   date_format: ^2.0.9 # 日期格式化
   logger: ^2.6.2 # 日志打印
@@ -157,19 +156,12 @@ dependencies:
   dart_sm: ^0.1.5 # 工具库
 
   # -------------------------- 网页/JS解析 --------------------------
-  # Local AGP 9 Built-in Kotlin patch; source version 0.8.7.
-  flutter_js:
-    path: plugins/built_in_kotlin/flutter_js
   html: ^0.15.4 # HTML解析
   flutter_inappwebview:
     git:
       url: https://github.com/guide-inc-org/guide-flutter_inappwebview.git
       path: flutter_inappwebview
       ref: sbi_fx_pc/v6.2.0-beta.3
-  dart_quickjs:
-    git:
-      url: https://github.com/liuchuancong/dart_quickjs.git
-      ref: 0596dfcee794a6af7d6dd0bc6819ba80e0ed655d
 
   # -------------------------- 直播协议/定制SDK --------------------------
   protobuf: ^6.0.0 # Protocol Buffers
@@ -180,43 +172,38 @@ dependencies:
   url_launcher: ^6.1.12 # 打开外部链接
   share_handler: ^0.0.25 # 分享功能
   animated_splash_plus: ^1.0.3 # 启动动画
-  # Local AGP 9 Built-in Kotlin patch; source version 2.1.2.
+
   flutter_exit_app:
-    path: plugins/built_in_kotlin/flutter_exit_app
-  move_to_desktop: ^0.0.2 # 移动到桌面
+    path: plugins/built_in_kotlin/flutter_exit_app # Local AGP 9 Built‑in Kotlin patch
+
+  move_to_desktop: ^0.0.2
   package_info_plus: ^10.1.0 # 应用包信息
   stop_watch_timer: ^3.2.2 # 计时器
-  # Local AGP 9 Built-in Kotlin patch; source version 6.0.0.
+
   floating:
-    path: plugins/built_in_kotlin/floating
+    path: plugins/built_in_kotlin/floating # Local AGP 9 Built‑in Kotlin patch
+
   flutter_floating: ^2.0.1 # 悬浮窗
   qr_flutter: ^4.1.0 # 二维码生成
   back_button_interceptor_plus: ^8.1.1
   easy_localization: ^3.0.8 #多语言
   app_links: ^7.2.1
   scroll_animator: 0.3.0
+
 # 依赖覆盖（强制指定版本）
 dependency_overrides:
-  # 上游网页内核的 Android 子包仍引用 AGP 9 已移除的默认 ProGuard 文件；
-  # 本地副本只调整 Android 构建脚本，Dart/Java 实现保持解析提交 3e6c4c4a。
   flutter_inappwebview_android:
-    path: plugins/built_in_kotlin/flutter_inappwebview_android
-  # share_handler 传递依赖的 Android 实现使用本地 Built-in Kotlin 兼容补丁。
+    path: plugins/built_in_kotlin/flutter_inappwebview_android # 上游网页内核Android子包ProGuard兼容补丁
   share_handler_android:
-    path: plugins/built_in_kotlin/share_handler_android
-  # dart_quickjs 尚声明 hooks 1.x，但实现与 FFmpeg 插件使用的 2.x API 兼容。
-  hooks: ^2.2.0
-  # webdav_client 1.2.2 uses APIs retained by xml 7.x; its hosted constraint still targets 6.x.
-  xml: ^7.0.1
-  # 固定的 media_kit 提交仍声明 1.3.3；应用已验证 1.4.x API。
-  wakelock_plus: ^1.4.0
-  # window_manager 声明 hosted 源，统一到项目修订过的 Git 实现。
+    path: plugins/built_in_kotlin/share_handler_android # share_handler Android本地兼容补丁
+  hooks: ^2.2.0 # dart_quickjs hooks版本兼容
+  xml: ^7.0.1 # webdav_client xml7兼容
+  wakelock_plus: ^1.4.0 # media_kit声明版本覆盖
   screen_retriever:
     git:
       url: https://github.com/liuchuancong/screen_retriever.git
       path: ./packages/screen_retriever
       ref: b246b3963738d6cc159c921764c194c73dbdf2ad
-  # media_kit 的平台库由 Git 源传递引入；固定提交保证本地与 CI 可复现。
   media_kit_libs_linux:
     git:
       url: https://github.com/Predidit/media-kit.git
@@ -279,9 +266,6 @@ flutter_icons:
 # Flutter核心配置
 flutter:
   uses-material-design: true
-  # config:
-  #     enable-swift-package-manager: false
-  # 资源文件
   assets:
     - assets/
     - assets/images/
