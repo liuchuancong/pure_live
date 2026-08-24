@@ -43,9 +43,9 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> with SingleTick
     if (allReleased.isNotEmpty && !forceRefresh) return;
     if (historyLoading.value) return;
     try {
-      final mirror = GitHubMirror(owner: 'liuchuancong', repo: 'pure_live', branch: 'master');
       historyLoading.value = true;
       historyError.value = false;
+      final mirror = GitHubMirror(owner: 'liuchuancong', repo: 'pure_live', branch: 'master');
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final sourceUrls = SettingsService.to.app.useGitHubOriginForUpdates.v
           ? [mirror.rawUrl('assets/releases.json')]
@@ -58,19 +58,23 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> with SingleTick
       final result = await HttpClient.instance.getJson(
         url,
         header: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.51',
-          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36',
+          'Accept': 'application/json,text/plain,*/*',
         },
       );
       final decoded = result is String ? json.decode(result) : result;
-      if (decoded is! Map<String, dynamic>) {
+      final List<dynamic> releases;
+      if (decoded is List) {
+        releases = decoded;
+      } else if (decoded is Map && decoded['releases'] is List) {
+        releases = decoded['releases'] as List;
+      } else {
         throw const FormatException('版本历史数据格式错误');
       }
-      final releases = decoded['releases'];
-      if (releases is! List) {
-        throw const FormatException('版本历史数据缺少 releases');
-      }
-      final releaseList = releases.map((e) => ReleaseModel.fromJson(e)).toList();
+      final releaseList = releases
+          .whereType<Map>()
+          .map((e) => ReleaseModel.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
       releaseList.sort((a, b) => b.date.compareTo(a.date));
       allReleased.value = releaseList;
     } catch (e) {
