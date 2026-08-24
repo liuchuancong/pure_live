@@ -1,3 +1,4 @@
+# main 仓库专用请勿修改此文件
 name: PureLive All-Platform Release
 on:
   workflow_dispatch:
