@@ -1,38 +1,41 @@
-import 'dart:math';
-import 'abogus.dart';
 import 'dart:convert';
-import 'douyin_request_params.dart';
+import 'dart:math';
+
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/core/common/http_client.dart';
+
+import 'abogus.dart';
+import 'douyin_request_params.dart';
 
 class DouyinUtils {
   // 根据传入长度产生随机字符串
   static String getMSToken({int randomLength = 184}) {
-    var baseStr = 'ABCDEFGHIGKLMNOPQRSTUVWXYZabcdefghigklmnopqrstuvwxyz0123456789=';
-    var sb = StringBuffer();
+    if (randomLength < 0) throw ArgumentError.value(randomLength, 'randomLength');
+    const baseStr = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789=';
+    final random = Random.secure();
+    final sb = StringBuffer();
     for (var i = 0; i < randomLength; i++) {
-      var index = Random().nextInt(baseStr.length);
-      sb.write(baseStr[index]);
+      sb.write(baseStr[random.nextInt(baseStr.length)]);
     }
     return sb.toString();
   }
 
   static String buildRequestUrl(String baseUrl, Map<String, dynamic> params) {
-    var abogus = ABogus(userAgent: DouyinRequestParams.kDefaultUserAgent);
-    var parsedUrl = Uri.parse(baseUrl);
-    var exParams = params;
-    exParams['aid'] = "6383";
-    exParams['compress'] = "gzip";
-    exParams['device_platform'] = "web";
-    exParams['browser_language'] = "zh-CN";
-    exParams['browser_platform'] = "Win32";
-    exParams['browser_name'] = "Edge";
-    exParams['browser_version'] = "125.0.0.0";
+    final abogus = ABogus(userAgent: DouyinRequestParams.kDefaultUserAgent);
+    final parsedUrl = Uri.parse(baseUrl);
+    final exParams = <String, dynamic>{...parsedUrl.queryParameters, ...params};
+    exParams['aid'] = DouyinRequestParams.aidValue;
+    exParams['compress'] = 'gzip';
+    exParams['device_platform'] = 'web';
+    exParams['browser_language'] = 'zh-CN';
+    exParams['browser_platform'] = 'Win32';
+    exParams['browser_name'] = 'Edge';
+    exParams['browser_version'] = '125.0.0.0';
     if (!exParams.containsKey('msToken')) {
       exParams['msToken'] = getMSToken();
     }
-    var newQueryStr = Uri(queryParameters: exParams).query;
-    var signedQueryStr = abogus.generateAbogus(newQueryStr, body: "").first;
+    final newQueryStr = Uri(queryParameters: exParams).query;
+    final signedQueryStr = abogus.generateAbogus(newQueryStr).first;
     final newUrl = parsedUrl.replace(query: signedQueryStr);
     return newUrl.toString();
   }
@@ -40,10 +43,8 @@ class DouyinUtils {
   Future<Map<String, String>> getTtwidWebid({required String reqUrl}) async {
     // 先请求以获取 ttwid 等 Cookie，再解析页面的 RENDER_DATA 获取 user_unique_id
     final headers = <String, String>{
-      "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
-      "Accept":
-          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
       "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
     };
 

@@ -1,13 +1,40 @@
+import 'dart:collection';
 import 'dart:developer';
+
 import '../models/channel.dart';
 import '../models/epg.dart' as epg;
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/core/iptv/core/fuzzy_match.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
 
+class EpgChannelMatchCache {
+  EpgChannelMatchCache({this.maxEntries = 1024}) : assert(maxEntries > 0);
+
+  final int maxEntries;
+  final LinkedHashMap<String, String> _entries = LinkedHashMap<String, String>();
+
+  String _key(String sourceId, String channelName) => '$sourceId\u0000$channelName';
+
+  String? get(String sourceId, String channelName) => _entries[_key(sourceId, channelName)];
+
+  void put(String sourceId, String channelName, String epgChannelId) {
+    final key = _key(sourceId, channelName);
+    _entries.remove(key);
+    _entries[key] = epgChannelId;
+    while (_entries.length > maxEntries) {
+      _entries.remove(_entries.keys.first);
+    }
+  }
+
+  void remove(String sourceId, String channelName) => _entries.remove(_key(sourceId, channelName));
+
+  int get length => _entries.length;
+}
+
 class ChannelDetailController extends GetxController {
-  static final Map<String, String> _channelNameCache = {};
+  static final EpgChannelMatchCache _channelNameCache = EpgChannelMatchCache();
 
   final Rxn<epg.EpgChannel> currentEpgChannel = Rxn<epg.EpgChannel>();
   final Rxn<epg.EpgProgramme> nowPlayingProg = Rxn<epg.EpgProgramme>();
@@ -19,15 +46,18 @@ class ChannelDetailController extends GetxController {
     _clearCurrentEpg();
     try {
       final String queryName = channel.displayName;
-      String? matchedEpgChannelId;
+      final db = Get.find<DbService>().db;
+      final List<database.EpgChannel> dbChannels = await db.getEpgChannelsForSource(currentEpgSourceId);
+      if (dbChannels.isEmpty) return;
 
-      if (_channelNameCache.containsKey(queryName)) {
-        matchedEpgChannelId = _channelNameCache[queryName];
-      } else {
-        final db = Get.find<DbService>().db;
+      String? matchedEpgChannelId = _channelNameCache.get(currentEpgSourceId, queryName);
+      if (matchedEpgChannelId != null && !dbChannels.any((channel) => channel.id == matchedEpgChannelId)) {
+        // The selected EPG source was refreshed and the old id disappeared.
+        _channelNameCache.remove(currentEpgSourceId, queryName);
+        matchedEpgChannelId = null;
+      }
 
-        List<database.EpgChannel> dbChannels = await db.getEpgChannelsForSource(currentEpgSourceId);
-        if (dbChannels.isEmpty) return;
+      if (matchedEpgChannelId == null) {
         final matchedDbChannels = dbChannels.where((dbCh) {
           return fuzzyMatchPasses(queryName, [dbCh.displayName]);
         }).toList();
@@ -38,12 +68,10 @@ class ChannelDetailController extends GetxController {
           );
           final bestMatch = matchedDbChannels.first;
           matchedEpgChannelId = bestMatch.id;
-          _channelNameCache[queryName] = matchedEpgChannelId;
+          _channelNameCache.put(currentEpgSourceId, queryName, matchedEpgChannelId);
         }
       }
       if (matchedEpgChannelId != null) {
-        final db = Get.find<DbService>().db;
-        List<database.EpgChannel> dbChannels = await db.getEpgChannelsForSource(currentEpgSourceId);
         final matchedDbCh = dbChannels.firstWhereOrNull((e) => e.id == matchedEpgChannelId);
 
         if (matchedDbCh != null) {

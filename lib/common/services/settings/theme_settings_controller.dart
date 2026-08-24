@@ -48,10 +48,10 @@ class ThemeSettingsController extends GetxController {
     Get.changeTheme(t.darkThemeData);
   }
 
-  void changeLanguage(String v, BuildContext context) {
+  Future<void> changeLanguage(String v, BuildContext context) async {
     languageName.value = v;
     final locale = AppConsts.languages[v]!;
-    context.setLocale(locale);
+    await context.setLocale(locale);
     Get.updateLocale(locale);
   }
 

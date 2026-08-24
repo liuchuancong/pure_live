@@ -552,7 +552,7 @@ class DouyinSite implements LiveSite {
         }
         var hlsUrl = qualityData[quality["sdk_key"]]?["main"]?["hls"]?.toString();
         if (hlsUrl != null && hlsUrl.isNotEmpty) {
-          urls.insert(0, hlsUrl);
+          urls.add(hlsUrl);
         }
         var qualityItem = LivePlayQuality(quality: quality["name"], sort: quality["level"], data: urls);
         if (urls.isNotEmpty) {

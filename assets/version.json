@@ -1,46 +1,46 @@
 {
-  "version": "2.9.3",
-  "build_number": 4082,
-  "version_num": 209034082,
-  "version_desc": "- 重新设计横屏画质与线路半屏面板的纵向分配，画质区按实际选项行数决定高度，线路区使用全部剩余空间。\n- 四个画质在常见横屏手机上改为 2×2，消除三列布局留下的巨大空白；五至六项仍使用紧凑三列。\n- 画质和线路选中项增加一致的强调边框、状态色与勾选反馈，快速切换时更容易确认当前状态。\n- 小高度窗口限制画质区最多三行，并始终为线路列表保留可操作区域，避免内容被底部裁切。\n- 新增常见选项、密集选项与小视口布局边界回归。\n- 本轮构建并发布 Android arm64-v8a 正式更新包。",
+  "version": "2.9.4",
+  "build_number": 4083,
+  "version_num": 209044083,
+  "version_desc": "- 同步并合并上游 liuchuancong/pure_live@45127322，新增多画面同看、纯 Dart 平台签名与语言切换修复，并保留维护分支播放器、弹幕和高刷新率增强。\n- 修复 Windows MSIX 数据路径提供器，商店式安装使用系统隔离目录，便携版继续使用安装目录内 AppData。\n- Windows 安装包改用当前 CMake 清单与必要运行时白名单，排除增量输出中已退役的 QuickJS 运行库与旧插件资产。\n- 修复录制目录清理可能误删用户所选父目录文件的问题；自定义位置统一进入带所有权标记的 PureLiveRecords 专用子目录。\n- 修复录制限额无法发现分层文件并可能持续循环的问题，改为递归快照、有界清理和文件轮转容错。\n- 适配快手当前直播与录播两种播放结构，合并多 CDN 线路，并以房间页状态区分直播/录播回退。\n- 斗鱼、抖音签名迁移为纯 Dart；斗鱼加密描述符按秒缓存并合并并发刷新，抖音签名保留基础查询且不再污染调用方参数。\n- 多画面音频焦点改为串行最新选择，播放器 pause 异常仍执行销毁；移动端限制四路、桌面端最多九路。\n- 调试日志与 EPG 匹配缓存增加容量上限和来源隔离；站点失败回退不再把其他直播间状态写入当前房间。\n- Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按阶段串行构建发布。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.3",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.4",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "windows": {
-      "version": "2.9.0",
-      "build_number": 4079,
-      "version_num": 209004079,
-      "version_desc": "- 同步上游至 25f833ea，吸收从录制页返回直播时的视频层延迟挂载修复与发布资产命名一致性调整。\n- 修复竖屏、横屏清晰度和线路切换：旧流持续播放至新地址就绪，最新选择优先，切换不再重建直播页控制器。\n- 重构横屏全屏控制层，交换小窗与时间/电量区域，整合清晰度/线路面板并优化观看记录双栏卡片。\n- 扩展本地弹幕颜色、字号、速度、粗体和描边样式，横屏、竖屏、小窗与本地互动入口共用配置。\n- Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按平台串行完成正式构建。",
+      "version": "2.9.4",
+      "build_number": 4083,
+      "version_num": 209044083,
+      "version_desc": "- 同步并合并上游 liuchuancong/pure_live@45127322，新增多画面同看、纯 Dart 平台签名与语言切换修复，并保留维护分支播放器、弹幕和高刷新率增强。\n- 修复 Windows MSIX 数据路径提供器，商店式安装使用系统隔离目录，便携版继续使用安装目录内 AppData。\n- Windows 安装包改用当前 CMake 清单与必要运行时白名单，排除增量输出中已退役的 QuickJS 运行库与旧插件资产。\n- 修复录制目录清理可能误删用户所选父目录文件的问题；自定义位置统一进入带所有权标记的 PureLiveRecords 专用子目录。\n- 修复录制限额无法发现分层文件并可能持续循环的问题，改为递归快照、有界清理和文件轮转容错。\n- 适配快手当前直播与录播两种播放结构，合并多 CDN 线路，并以房间页状态区分直播/录播回退。\n- 斗鱼、抖音签名迁移为纯 Dart；斗鱼加密描述符按秒缓存并合并并发刷新，抖音签名保留基础查询且不再污染调用方参数。\n- 多画面音频焦点改为串行最新选择，播放器 pause 异常仍执行销毁；移动端限制四路、桌面端最多九路。\n- 调试日志与 EPG 匹配缓存增加容量上限和来源隔离；站点失败回退不再把其他直播间状态写入当前房间。\n- Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按阶段串行构建发布。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.0",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.4",
       "windows_msix_available": false
     },
     "linux": {
-      "version": "2.9.0",
-      "build_number": 4079,
-      "version_num": 209004079,
-      "version_desc": "- 同步上游至 25f833ea，吸收从录制页返回直播时的视频层延迟挂载修复与发布资产命名一致性调整。\n- 修复竖屏、横屏清晰度和线路切换：旧流持续播放至新地址就绪，最新选择优先，切换不再重建直播页控制器。\n- 重构横屏全屏控制层，交换小窗与时间/电量区域，整合清晰度/线路面板并优化观看记录双栏卡片。\n- 扩展本地弹幕颜色、字号、速度、粗体和描边样式，横屏、竖屏、小窗与本地互动入口共用配置。\n- Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按平台串行完成正式构建。",
+      "version": "2.9.4",
+      "build_number": 4083,
+      "version_num": 209044083,
+      "version_desc": "- 同步并合并上游 liuchuancong/pure_live@45127322，新增多画面同看、纯 Dart 平台签名与语言切换修复，并保留维护分支播放器、弹幕和高刷新率增强。\n- 修复 Windows MSIX 数据路径提供器，商店式安装使用系统隔离目录，便携版继续使用安装目录内 AppData。\n- Windows 安装包改用当前 CMake 清单与必要运行时白名单，排除增量输出中已退役的 QuickJS 运行库与旧插件资产。\n- 修复录制目录清理可能误删用户所选父目录文件的问题；自定义位置统一进入带所有权标记的 PureLiveRecords 专用子目录。\n- 修复录制限额无法发现分层文件并可能持续循环的问题，改为递归快照、有界清理和文件轮转容错。\n- 适配快手当前直播与录播两种播放结构，合并多 CDN 线路，并以房间页状态区分直播/录播回退。\n- 斗鱼、抖音签名迁移为纯 Dart；斗鱼加密描述符按秒缓存并合并并发刷新，抖音签名保留基础查询且不再污染调用方参数。\n- 多画面音频焦点改为串行最新选择，播放器 pause 异常仍执行销毁；移动端限制四路、桌面端最多九路。\n- 调试日志与 EPG 匹配缓存增加容量上限和来源隔离；站点失败回退不再把其他直播间状态写入当前房间。\n- Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按阶段串行构建发布。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.0"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.4"
     },
     "macos": {
-      "version": "2.9.0",
-      "build_number": 4079,
-      "version_num": 209004079,
-      "version_desc": "- 同步上游至 25f833ea，吸收从录制页返回直播时的视频层延迟挂载修复与发布资产命名一致性调整。\n- 修复竖屏、横屏清晰度和线路切换：旧流持续播放至新地址就绪，最新选择优先，切换不再重建直播页控制器。\n- 重构横屏全屏控制层，交换小窗与时间/电量区域，整合清晰度/线路面板并优化观看记录双栏卡片。\n- 扩展本地弹幕颜色、字号、速度、粗体和描边样式，横屏、竖屏、小窗与本地互动入口共用配置。\n- Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按平台串行完成正式构建。",
+      "version": "2.9.4",
+      "build_number": 4083,
+      "version_num": 209044083,
+      "version_desc": "- 同步并合并上游 liuchuancong/pure_live@45127322，新增多画面同看、纯 Dart 平台签名与语言切换修复，并保留维护分支播放器、弹幕和高刷新率增强。\n- 修复 Windows MSIX 数据路径提供器，商店式安装使用系统隔离目录，便携版继续使用安装目录内 AppData。\n- Windows 安装包改用当前 CMake 清单与必要运行时白名单，排除增量输出中已退役的 QuickJS 运行库与旧插件资产。\n- 修复录制目录清理可能误删用户所选父目录文件的问题；自定义位置统一进入带所有权标记的 PureLiveRecords 专用子目录。\n- 修复录制限额无法发现分层文件并可能持续循环的问题，改为递归快照、有界清理和文件轮转容错。\n- 适配快手当前直播与录播两种播放结构，合并多 CDN 线路，并以房间页状态区分直播/录播回退。\n- 斗鱼、抖音签名迁移为纯 Dart；斗鱼加密描述符按秒缓存并合并并发刷新，抖音签名保留基础查询且不再污染调用方参数。\n- 多画面音频焦点改为串行最新选择，播放器 pause 异常仍执行销毁；移动端限制四路、桌面端最多九路。\n- 调试日志与 EPG 匹配缓存增加容量上限和来源隔离；站点失败回退不再把其他直播间状态写入当前房间。\n- Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按阶段串行构建发布。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.0"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.4"
     },
     "ios": {
-      "version": "2.9.0",
-      "build_number": 4079,
-      "version_num": 209004079,
-      "version_desc": "- 同步上游至 25f833ea，吸收从录制页返回直播时的视频层延迟挂载修复与发布资产命名一致性调整。\n- 修复竖屏、横屏清晰度和线路切换：旧流持续播放至新地址就绪，最新选择优先，切换不再重建直播页控制器。\n- 重构横屏全屏控制层，交换小窗与时间/电量区域，整合清晰度/线路面板并优化观看记录双栏卡片。\n- 扩展本地弹幕颜色、字号、速度、粗体和描边样式，横屏、竖屏、小窗与本地互动入口共用配置。\n- Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按平台串行完成正式构建。",
+      "version": "2.9.4",
+      "build_number": 4083,
+      "version_num": 209044083,
+      "version_desc": "- 同步并合并上游 liuchuancong/pure_live@45127322，新增多画面同看、纯 Dart 平台签名与语言切换修复，并保留维护分支播放器、弹幕和高刷新率增强。\n- 修复 Windows MSIX 数据路径提供器，商店式安装使用系统隔离目录，便携版继续使用安装目录内 AppData。\n- Windows 安装包改用当前 CMake 清单与必要运行时白名单，排除增量输出中已退役的 QuickJS 运行库与旧插件资产。\n- 修复录制目录清理可能误删用户所选父目录文件的问题；自定义位置统一进入带所有权标记的 PureLiveRecords 专用子目录。\n- 修复录制限额无法发现分层文件并可能持续循环的问题，改为递归快照、有界清理和文件轮转容错。\n- 适配快手当前直播与录播两种播放结构，合并多 CDN 线路，并以房间页状态区分直播/录播回退。\n- 斗鱼、抖音签名迁移为纯 Dart；斗鱼加密描述符按秒缓存并合并并发刷新，抖音签名保留基础查询且不再污染调用方参数。\n- 多画面音频焦点改为串行最新选择，播放器 pause 异常仍执行销毁；移动端限制四路、桌面端最多九路。\n- 调试日志与 EPG 匹配缓存增加容量上限和来源隔离；站点失败回退不再把其他直播间状态写入当前房间。\n- Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按阶段串行构建发布。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.0"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.4"
     }
   },
   "windows_msix_available": false

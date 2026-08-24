@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
 
@@ -58,7 +57,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: TextButton.icon(
-                    onPressed: () => FileUtils.openFileOrUrl(controller.recordSavePath.value),
+                    onPressed: controller.openRecordDir,
                     style: TextButton.styleFrom(
                       padding: EdgeInsets.zero,
                       minimumSize: Size.zero,
@@ -78,7 +77,9 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
               context.buildTile(
                 icon: Remix.folder_video_line,
                 title: i18n("storage_directory"),
-                subtitle: controller.recordSavePath.value,
+                subtitle: controller.managedRecordPath.value.isEmpty
+                    ? controller.recordSavePath.value
+                    : controller.managedRecordPath.value,
                 onTap: controller.pickRecordDir,
               ),
               context.buildSwitchTile(

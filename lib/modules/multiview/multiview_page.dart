@@ -806,7 +806,7 @@ class _MultiviewPageState extends State<MultiviewPage> {
               setState(() => _largeControlsVisible = !_largeControlsVisible);
               return;
             }
-            controller.setAudioFocus(index);
+            unawaited(controller.setAudioFocus(index));
             // audioFocusIndex 非 Rx，焦点标识需要手动触发一次重绘。
             setState(() {});
           case MultiviewCellStatus.empty || MultiviewCellStatus.error:

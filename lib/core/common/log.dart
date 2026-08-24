@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:flutter/foundation.dart';
@@ -13,10 +14,13 @@ import 'package:pure_live/common/global/app_path_manager.dart';
 import 'package:pure_live/common/services/settings/log_controller.dart';
 
 class Log {
+  static const int maxDebugEntries = 2000;
   static LogFileWriter? _logFileWriter;
   static final List<DebugLogModel> _allLogs = [];
   static HttpServer? _server;
-  static List<DebugLogModel> get allLogs => _allLogs;
+  static List<DebugLogModel> get allLogs => List<DebugLogModel>.unmodifiable(_allLogs);
+
+  static void clearDebugLogs() => _allLogs.clear();
 
   static Future<void> init() async {
     if (LogController.to.enableLog) {
@@ -76,7 +80,7 @@ class Log {
 
   static void _handleNativeRequest(HttpRequest request) {
     if (request.uri.path == '/clear') {
-      _allLogs.clear();
+      clearDebugLogs();
       request.response
         ..headers.contentType = ContentType.json
         ..write(jsonEncode({'success': true}))
@@ -297,6 +301,10 @@ class Log {
     }
 
     _allLogs.add(DebugLogModel(DateTime.now(), processedContent, color: color));
+    final overflow = _allLogs.length - maxDebugEntries;
+    if (overflow > 0) {
+      _allLogs.removeRange(0, overflow);
+    }
   }
 
   static final Logger logger = Logger(

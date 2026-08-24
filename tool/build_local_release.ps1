@@ -220,9 +220,65 @@ try {
         }
         New-Item -ItemType Directory -Force -Path $windowsPackageFull | Out-Null
         $developmentExtensions = @('.exp', '.ilk', '.lib', '.pdb')
-        Get-ChildItem -LiteralPath $windowsSourceFull -Force |
-            Where-Object { $_.PSIsContainer -or $_.Extension.ToLowerInvariant() -notin $developmentExtensions } |
-            Copy-Item -Destination $windowsPackageFull -Recurse -Force
+        $installManifest = Join-Path $repoRoot 'build\windows\x64\install_manifest.txt'
+        if (-not (Test-Path -LiteralPath $installManifest -PathType Leaf)) {
+            throw "Windows install manifest was not produced: $installManifest"
+        }
+
+        # Flutter/CMake incremental builds intentionally retain their output
+        # directory. Plugins removed from pubspec can therefore leave obsolete
+        # DLLs and asset folders behind. Package only the current CMake install
+        # manifest instead of copying the whole Release directory.
+        $manifestEntries = @(Get-Content -LiteralPath $installManifest | Where-Object { $_.Trim() })
+        if ($manifestEntries.Count -eq 0) {
+            throw 'Windows install manifest is empty.'
+        }
+        $windowsSourcePrefix = $windowsSourceFull.TrimEnd('\') + '\'
+        $manifestSourceMarker = '\build\windows\x64\runner\Release\'
+        foreach ($entry in $manifestEntries) {
+            # Flutter may invoke CMake through its short/substituted P: path,
+            # while this script runs from the long workspace path. Resolve the
+            # manifest-relative suffix against our validated build directory.
+            $normalizedEntry = $entry.Trim().Replace('/', '\')
+            $markerIndex = $normalizedEntry.IndexOf($manifestSourceMarker, [StringComparison]::OrdinalIgnoreCase)
+            if ($markerIndex -lt 0) {
+                throw "Windows install manifest entry has an unexpected root: $normalizedEntry"
+            }
+            $relativePath = $normalizedEntry.Substring($markerIndex + $manifestSourceMarker.Length)
+            if ([string]::IsNullOrWhiteSpace($relativePath)) {
+                throw "Windows install manifest entry has no relative file: $normalizedEntry"
+            }
+            $sourceFile = [IO.Path]::GetFullPath((Join-Path $windowsSourceFull $relativePath))
+            if (-not $sourceFile.StartsWith($windowsSourcePrefix, [StringComparison]::OrdinalIgnoreCase)) {
+                throw "Windows install manifest escaped the build output: $sourceFile"
+            }
+            if (-not (Test-Path -LiteralPath $sourceFile -PathType Leaf)) {
+                throw "Windows install manifest entry is missing: $sourceFile"
+            }
+            if ([IO.Path]::GetExtension($sourceFile).ToLowerInvariant() -in $developmentExtensions) {
+                continue
+            }
+
+            $destination = Join-Path $windowsPackageFull $relativePath
+            $destinationParent = Split-Path -Parent $destination
+            if ($destinationParent) {
+                New-Item -ItemType Directory -Force -Path $destinationParent | Out-Null
+            }
+            Copy-Item -LiteralPath $sourceFile -Destination $destination -Force
+        }
+
+        # Flutter's Windows runner executable is produced outside the CMake
+        # install list. The in-app webview plugin also links the dynamic
+        # WebView2 loader without adding it to that list. Keep this small,
+        # reviewed runtime allowlist explicit rather than reopening the whole
+        # incremental Release directory.
+        foreach ($requiredRunnerFile in @('pure_live.exe', 'WebView2Loader.dll')) {
+            $sourceFile = Join-Path $windowsSourceFull $requiredRunnerFile
+            if (-not (Test-Path -LiteralPath $sourceFile -PathType Leaf)) {
+                throw "Required Windows runner file is missing: $sourceFile"
+            }
+            Copy-Item -LiteralPath $sourceFile -Destination (Join-Path $windowsPackageFull $requiredRunnerFile) -Force
+        }
         if (-not (Test-Path -LiteralPath (Join-Path $windowsPackageFull 'pure_live.exe') -PathType Leaf)) {
             throw 'The staged Windows package does not contain pure_live.exe.'
         }
@@ -230,6 +286,11 @@ try {
             Where-Object Extension -In $developmentExtensions
         if ($developmentFiles) {
             throw "Development-only files appeared in the Windows package: $($developmentFiles.FullName -join ', ')"
+        }
+        $obsoleteQuickJsFiles = Get-ChildItem -LiteralPath $windowsPackageFull -Recurse -File |
+            Where-Object { $_.Name -in @('dart_quickjs.dll', 'flutter_js_plugin.dll', 'quickjs_c_bridge.dll') }
+        if ($obsoleteQuickJsFiles) {
+            throw "Retired QuickJS runtime files appeared in the Windows package: $($obsoleteQuickJsFiles.FullName -join ', ')"
         }
 
         $zipName = if ($Configuration -eq 'Release') {
