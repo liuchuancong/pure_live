@@ -485,6 +485,7 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher {
 
   @override
   Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) async {
+    final effectivePageSize = pageSize.clamp(1, 50);
     var resultText = await HttpClient.instance.getJson(
       "https://sch.sooplive.co.kr/api.php",
       queryParameters: {
@@ -498,7 +499,7 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher {
         "szOrder": "score",
         "szKeyword": keyword,
         "nPageNo": page,
-        "nListCnt": "40",
+        "nListCnt": effectivePageSize,
         "tab": "live",
         "location": "total_search",
         "isHashSearch": "0",

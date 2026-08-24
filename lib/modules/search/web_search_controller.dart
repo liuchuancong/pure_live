@@ -2,6 +2,7 @@ import 'dart:developer' as developer;
 import 'dart:io';
 
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/modules/search/web_search_room_parser.dart';
 import 'package:pure_live/plugins/utils.dart';
 import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/routes/app_navigation.dart';
@@ -16,6 +17,9 @@ class WebSearchController extends GetxController {
   late String platform;
   var roomId = ''.obs;
   bool _isShowingDialog = false;
+  String? _lastPromptedTarget;
+  DateTime? _lastPromptedAt;
+  String? _dismissedTarget;
   final showWebView = true.obs;
   @override
   void onInit() {
@@ -96,7 +100,7 @@ class WebSearchController extends GetxController {
     Log.w(
       "🔒 遇到 SSL 证书认证请求! 主机名: ${challenge.protectionSpace.host}, 错误类型: ${challenge.protectionSpace.authenticationMethod}",
     );
-    return ServerTrustAuthResponse(action: ServerTrustAuthResponseAction.PROCEED);
+    return ServerTrustAuthResponse(action: ServerTrustAuthResponseAction.CANCEL);
   }
 
   void onConsoleMessage(InAppWebViewController controller, ConsoleMessage consoleMessage) {
@@ -125,74 +129,51 @@ class WebSearchController extends GetxController {
     if (cleanUrl.startsWith('about:blank') || !cleanUrl.toLowerCase().contains('http')) {
       return;
     }
-    String? result;
-
     try {
-      final uri = Uri.parse(cleanUrl);
-      final host = uri.host.toLowerCase();
-
-      if (host.endsWith('huya.com')) {
-        if (cleanUrl.contains('/search')) {
-          developer.log("⚠️ 虎牙非直播页面，跳过");
-          return;
-        }
-        final match = RegExp(r'^\/(\d+)').firstMatch(uri.path);
-        result = match?.group(1);
-      } else if (host == 'live.douyin.com') {
-        final match = RegExp(r'^\/(\d+)').firstMatch(uri.path);
-        result = match?.group(1);
-      } else if (host.endsWith('douyu.com')) {
-        final match = RegExp(r'^\/(\d+)').firstMatch(uri.path);
-        result = match?.group(1);
-      } else if (host == 'live.kuaishou.com') {
-        final match = RegExp(r'\/u\/([^/?#]+)').firstMatch(uri.path);
-        result = match?.group(1);
-      } else if (host == 'cc.163.com') {
-        final match = RegExp(r'^\/(\d+)').firstMatch(uri.path);
-        result = match?.group(1);
-      } else if (host == 'live.bilibili.com') {
-        final match = RegExp(r'^\/(\d+)').firstMatch(uri.path);
-        result = match?.group(1);
-      } else {
+      final target = WebSearchRoomParser.parse(cleanUrl);
+      if (target == null) {
+        _dismissedTarget = null;
         developer.log("⚠️ 非支持平台，跳过");
         return;
       }
+      if (_dismissedTarget == target.key) return;
 
-      if (result != null && result.isNotEmpty) {
-        final blackList = ['search', 'category', 'game', 'video', 'user', 'index', 'topic'];
-        if (blackList.contains(result.toLowerCase())) {
-          result = null;
-        }
+      final now = DateTime.now();
+      if (_lastPromptedTarget == target.key &&
+          _lastPromptedAt != null &&
+          now.difference(_lastPromptedAt!) < const Duration(seconds: 2)) {
+        return;
       }
 
-      if (result != null && result.isNotEmpty) {
-        if (_isShowingDialog) {
-          developer.log("⏳ 弹窗处理中，拦截重复调用");
-          return;
-        }
-        _isShowingDialog = true;
+      if (_isShowingDialog) {
+        developer.log("⏳ 弹窗处理中，拦截重复调用");
+        return;
+      }
+      _isShowingDialog = true;
+      _lastPromptedTarget = target.key;
+      _lastPromptedAt = now;
 
-        roomId.value = result;
-        developer.log("🎯 捕获到 roomId: $result");
+      roomId.value = target.roomId;
+      developer.log("🎯 捕获到 ${target.platform} roomId: ${target.roomId}");
 
-        bool? confirm = await Utils.showAlertDialog(
-          i18n("detected_room_id_open"),
-          title: i18n("tip"),
-          confirm: i18n("confirm"),
-          cancel: i18n("cancel"),
+      bool? confirm = await Utils.showAlertDialog(
+        i18n("detected_room_id_open"),
+        title: i18n("tip"),
+        confirm: i18n("confirm"),
+        cancel: i18n("cancel"),
+      );
+
+      if (confirm == true) {
+        webViewController?.stopLoading();
+        webViewController?.dispose();
+        showWebView.value = false;
+        await Future.delayed(const Duration(milliseconds: 500));
+        AppNavigator.offAndToRoomDetail(
+          liveRoom: LiveRoom(roomId: target.roomId, platform: target.platform),
         );
-
-        if (confirm == true) {
-          webViewController?.stopLoading();
-          webViewController?.dispose();
-          showWebView.value = false;
-          await Future.delayed(const Duration(milliseconds: 500));
-          AppNavigator.offAndToRoomDetail(
-            liveRoom: LiveRoom(roomId: roomId.value, platform: platform),
-          );
-        } else {
-          _isShowingDialog = false;
-        }
+      } else {
+        _dismissedTarget = target.key;
+        _isShowingDialog = false;
       }
     } catch (e) {
       developer.log("🔥 解析异常: $e");

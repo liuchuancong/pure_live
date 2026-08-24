@@ -564,6 +564,7 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher {
 
   @override
   Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) async {
+    final effectivePageSize = pageSize.clamp(1, 50);
     var result = await HttpClient.instance.getJson(
       "https://api.bilibili.com/x/web-interface/search/type?context=&search_type=live&cover_type=user_cover",
       queryParameters: {
@@ -575,6 +576,7 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher {
         "highlight": 0,
         "single_column": 0,
         "page": page,
+        "page_size": effectivePageSize,
       },
       header: await getHeader(),
     );

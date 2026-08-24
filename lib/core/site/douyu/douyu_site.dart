@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'dart:convert';
 
 import 'package:pure_live/common/index.dart';
@@ -356,19 +355,13 @@ class DouyuSite implements LiveSite, LiveSiteRoomRefresher {
 
   @override
   Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) async {
-    var did = generateRandomString(32);
+    final effectivePageSize = pageSize.clamp(1, 50);
+    final headers = DouyuUtils.requestHeaders()..['referer'] = 'https://www.douyu.com/search/';
 
     var result = await HttpClient.instance.getJson(
       "https://www.douyu.com/japi/search/api/searchShow",
-      queryParameters: {"kw": keyword, "page": page, "pageSize": 20},
-      header: {
-        'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-            'AppleWebKit/537.36 (KHTML, like Gecko) '
-            'Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.51',
-        'referer': 'https://www.douyu.com/search/',
-        'Cookie': 'dy_did=$did;acf_did=$did',
-      },
+      queryParameters: {"kw": keyword, "page": page, "pageSize": effectivePageSize},
+      header: headers,
     );
 
     if (result['error'] != 0) {
@@ -407,35 +400,15 @@ class DouyuSite implements LiveSite, LiveSiteRoomRefresher {
     return items;
   }
 
-  String generateRandomString(int length) {
-    var random = Random.secure();
-
-    var values = List<int>.generate(length, (i) => random.nextInt(16));
-
-    StringBuffer stringBuffer = StringBuffer();
-
-    for (var item in values) {
-      stringBuffer.write(item.toRadixString(16));
-    }
-
-    return stringBuffer.toString();
-  }
-
   @override
   Future<List<LiveAnchorItem>> searchAnchors(String keyword, {int page = 1, int pageSize = 30}) async {
-    var did = generateRandomString(32);
+    final effectivePageSize = pageSize.clamp(1, 50);
+    final headers = DouyuUtils.requestHeaders()..['referer'] = 'https://www.douyu.com/search/';
 
     var result = await HttpClient.instance.getJson(
       "https://www.douyu.com/japi/search/api/searchUser",
-      queryParameters: {"kw": keyword, "page": page, "pageSize": 20, "filterType": 1},
-      header: {
-        'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-            'AppleWebKit/537.36 (KHTML, like Gecko) '
-            'Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.51',
-        'referer': 'https://www.douyu.com/search/',
-        'Cookie': 'dy_did=$did;acf_did=$did',
-      },
+      queryParameters: {"kw": keyword, "page": page, "pageSize": effectivePageSize, "filterType": 1},
+      header: headers,
     );
 
     var items = <LiveAnchorItem>[];

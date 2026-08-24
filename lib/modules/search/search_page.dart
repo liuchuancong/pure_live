@@ -2,9 +2,7 @@ import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/search/search_ranking.dart';
 import 'package:pure_live/modules/search/search_controller.dart' as pure_live;
-
-const ScrollPhysics searchPlatformTabPhysics = ClampingScrollPhysics();
-const TabAlignment searchPlatformTabAlignment = TabAlignment.start;
+import 'package:pure_live/modules/search/search_platform_strip.dart';
 
 ScrollPhysics resolveSearchResultScrollPhysics(TargetPlatform platform) {
   return switch (platform) {
@@ -43,22 +41,22 @@ class SearchPage extends GetView<pure_live.SearchController> {
             controller.doSearch();
           },
         ),
-        bottom: TabBar(
-          controller: controller.tabController,
-          padding: EdgeInsets.zero,
-          tabAlignment: searchPlatformTabAlignment,
-          physics: searchPlatformTabPhysics,
-          tabs: [
-            Tab(text: i18n('site_all')),
-            ...Sites().availableSites().map((e) => Tab(text: e.name)),
-          ],
-          isScrollable: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(searchPlatformStripHeight),
+          child: Obx(
+            () => SearchPlatformStrip(
+              labels: [i18n('site_all'), ...controller.sites.map((site) => site.name)],
+              selectedIndex: controller.index.v,
+              onSelected: controller.selectPlatform,
+            ),
+          ),
         ),
       ),
       body: Obx(() {
         return Column(
           children: [
             _SearchOptions(controller: controller),
+            if (controller.pendingSiteCount.v > 0 && !controller.loading.v) const LinearProgressIndicator(minHeight: 2),
             Expanded(child: _buildContent(context)),
           ],
         );
@@ -87,11 +85,15 @@ class SearchPage extends GetView<pure_live.SearchController> {
         subtitle: controller.errorMessage.v,
         buttonText: filteredOffline
             ? i18n('search_show_offline')
+            : controller.errorMessage.v.isNotEmpty
+            ? i18n('retry')
             : controller.index.v == 0
             ? null
             : i18n('continue_web_search'),
         onButtonPressed: filteredOffline
             ? () => controller.setIncludeOffline(true)
+            : controller.errorMessage.v.isNotEmpty
+            ? controller.doSearch
             : controller.index.v == 0
             ? null
             : controller.openWebSearch,
@@ -109,7 +111,7 @@ class SearchPage extends GetView<pure_live.SearchController> {
               MaterialBanner(
                 content: Text(controller.errorMessage.v),
                 actions: [
-                  if (controller.index.v != 0)
+                  if (controller.canOpenWebSearch)
                     TextButton(onPressed: controller.openWebSearch, child: Text(i18n('continue_web_search'))),
                   TextButton(
                     onPressed: () => controller.errorMessage.v = '',
@@ -223,7 +225,7 @@ class _SearchOptions extends StatelessWidget {
                       label: Text(_sortLabel(controller.sortMode.v)),
                     ),
                   ),
-                  if (controller.index.v != 0) ...[
+                  if (controller.canOpenWebSearch) ...[
                     const SizedBox(width: 8),
                     ActionChip(
                       avatar: const Icon(Icons.open_in_browser_rounded, size: 17),

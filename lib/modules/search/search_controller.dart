@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:pure_live/common/index.dart';
@@ -5,12 +6,24 @@ import 'package:pure_live/modules/search/search_capability.dart';
 import 'package:pure_live/modules/search/search_ranking.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class SearchController extends GetxController with GetSingleTickerProviderStateMixin {
-  late TabController tabController;
+const Duration liveSearchRequestTimeout = Duration(seconds: 12);
+
+class SearchController extends GetxController {
+  SearchController() : sites = List<Site>.unmodifiable(Sites().availableSites()) {
+    scrollController.addListener(_handleSearchScroll);
+  }
+
+  /// A stable platform snapshot for the lifetime of this page.
+  ///
+  /// Rebuilding [Sites.availableSites] creates new adapter instances. Keeping
+  /// one snapshot prevents the tab labels, selected index and paginated
+  /// adapter state (notably Twitch cursors) from drifting apart mid-search.
+  final List<Site> sites;
   var index = 0.obs;
   final results = <LiveRoom>[].obs;
   final loading = false.obs;
   final loadingMore = false.obs;
+  final pendingSiteCount = 0.obs;
   final hasMore = false.obs;
   final searched = false.obs;
   final errorMessage = ''.obs;
@@ -19,26 +32,15 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
   final ScrollController scrollController = createPureLiveScrollController();
   bool _isWebView2Available = true;
   int _searchGeneration = 0;
-  int _settledTabIndex = 0;
   int _currentPage = 0;
   String _activeKeyword = '';
   final Map<String, LiveRoom> _rawResults = {};
   final Map<String, bool> _hasMoreByPlatform = {};
   final List<Worker> _audienceWorkers = [];
-  SearchController() {
-    tabController = TabController(length: Sites().availableSites().length + 1, vsync: this);
-    tabController.addListener(_handleTabChange);
-    scrollController.addListener(_handleSearchScroll);
-  }
-
-  void _handleTabChange() {
-    if (tabController.indexIsChanging) return;
-    final animationValue = tabController.animation?.value ?? tabController.index.toDouble();
-    if ((animationValue - tabController.index).abs() > 0.001) return;
-    if (_settledTabIndex == tabController.index) return;
-
-    _settledTabIndex = tabController.index;
-    index.value = tabController.index;
+  void selectPlatform(int requestedIndex) {
+    final selectedIndex = requestedIndex.clamp(0, sites.length).toInt();
+    if (selectedIndex == index.v) return;
+    index.value = selectedIndex;
     if (searched.v) doSearch();
   }
 
@@ -67,6 +69,8 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
         return "https://www.twitch.tv/search?term=$q";
       case Sites.soopSite:
         return "https://www.sooplive.co.kr/?szKeyword=$q";
+      case Sites.yySite:
+        return "https://www.yy.com/search-$q";
       default:
         return "https://www.baidu.com/s?wd=$q&rsv_spt=1&rsv_iqid=0x84b83a1e077a0c1a&issp=1&f=8&rsv_bp=1&rsv_idx=2&ie=utf-8&tn=baiduhome_pg&rsv_dl=tb_click&rsv_enter=1&rsv_sug3=3&rsv_sug1=2&rsv_sug7=100&rsv_btype=i&prefixsug=12&rsp=0&inputT=1112&rsv_sug4=1287";
     }
@@ -114,6 +118,7 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
     _currentPage = 0;
     loading.v = true;
     loadingMore.v = false;
+    pendingSiteCount.v = 0;
     hasMore.v = false;
     searched.v = true;
     errorMessage.v = '';
@@ -137,7 +142,6 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
     required int generation,
     required bool append,
   }) async {
-    final sites = Sites().availableSites();
     final selectedSites = index.v == 0 ? sites : (index.v <= sites.length ? [sites[index.v - 1]] : <Site>[]);
     if (!append) {
       for (final site in selectedSites) {
@@ -160,24 +164,34 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
       hasMore.v = false;
       loading.v = false;
       loadingMore.v = false;
+      pendingSiteCount.v = 0;
       return;
     }
 
-    final batches = await Future.wait(
+    pendingSiteCount.v = searchableSites.length;
+    final failures = <String>[];
+    var completed = 0;
+    final batchStream = Stream<_SiteSearchBatch>.fromFutures(
       searchableSites.map((site) async {
         try {
-          final rooms = await site.liveSite.searchRooms(keyword, page: page, pageSize: 20);
+          final rooms = await site.liveSite
+              .searchRooms(keyword, page: page, pageSize: 20)
+              .timeout(liveSearchRequestTimeout);
           return _SiteSearchBatch(site: site, rooms: rooms);
+        } on TimeoutException catch (error) {
+          debugPrint('Native search timed out for ${site.id}: $error');
+          return _SiteSearchBatch(site: site, rooms: const [], failed: true);
         } catch (error) {
           debugPrint('Native search failed for ${site.id}: $error');
           return _SiteSearchBatch(site: site, rooms: const [], failed: true);
         }
       }),
     );
-    if (generation != _searchGeneration) return;
 
-    final failures = <String>[];
-    for (final batch in batches) {
+    // Render completed platforms immediately instead of holding the whole
+    // result grid behind the slowest network request.
+    await for (final batch in batchStream) {
+      if (generation != _searchGeneration) return;
       final capability = LiveSearchCapabilities.forPlatform(batch.site.id);
       final beforeCount = _rawResults.length;
       for (final room in batch.rooms) {
@@ -187,9 +201,15 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
       if (batch.failed) failures.add(batch.site.name);
       _hasMoreByPlatform[batch.site.id] =
           !batch.failed && capability.supportsPagination && batch.rooms.isNotEmpty && addedCount > 0;
+      completed++;
+      pendingSiteCount.v = searchableSites.length - completed;
+      _applyFiltersAndSort();
+      if (results.isNotEmpty || completed == searchableSites.length) {
+        loading.v = false;
+      }
     }
 
-    _applyFiltersAndSort();
+    if (generation != _searchGeneration) return;
     _currentPage = page;
     hasMore.v = selectedSites.any((site) => _hasMoreByPlatform[site.id] ?? false);
     if (failures.isNotEmpty) {
@@ -199,6 +219,7 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
     }
     loading.v = false;
     loadingMore.v = false;
+    pendingSiteCount.v = 0;
   }
 
   String _roomKey(LiveRoom room) {
@@ -211,7 +232,7 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
   bool get hasFilteredOfflineResults => _rawResults.isNotEmpty && results.isEmpty && !includeOffline.v;
 
   void _applyFiltersAndSort() {
-    final platformOrder = Sites().availableSites().map((site) => site.id).toList();
+    final platformOrder = sites.map((site) => site.id).toList();
     results.assignAll(
       LiveSearchRanking.apply(
         rooms: _rawResults.values,
@@ -234,7 +255,6 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
   }
 
   String get capabilityText {
-    final sites = Sites().availableSites();
     if (index.v > 0 && index.v <= sites.length) {
       final site = sites[index.v - 1];
       final capability = LiveSearchCapabilities.forPlatform(site.id);
@@ -265,13 +285,28 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
     );
   }
 
+  bool get canOpenWebSearch {
+    if (index.v <= 0 || index.v > sites.length) return false;
+    return LiveSearchCapabilities.forPlatform(sites[index.v - 1].id).supportsWebSearch;
+  }
+
   Future<void> openWebSearch() async {
     if (index.v == 0) {
       ToastUtil.show(i18n('select_platform_for_web_search'));
       return;
     }
-    final site = Sites().availableSites()[index.v - 1];
-    final url = buildSearchUrl(site.id, searchController.text.trim());
+    if (index.v > sites.length) return;
+    final site = sites[index.v - 1];
+    if (!LiveSearchCapabilities.forPlatform(site.id).supportsWebSearch) {
+      ToastUtil.show(i18n('search_web_unavailable', args: {'site': site.name}));
+      return;
+    }
+    final keyword = searchController.text.trim();
+    if (keyword.isEmpty) {
+      ToastUtil.show(i18n('please_input_keyword'));
+      return;
+    }
+    final url = buildSearchUrl(site.id, keyword);
     if (Platform.isLinux) {
       final opened = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
       if (!opened) ToastUtil.show(i18n('external_browser_not_opened'));
@@ -341,8 +376,6 @@ class SearchController extends GetxController with GetSingleTickerProviderStateM
   @override
   void onClose() {
     _searchGeneration++;
-    tabController.removeListener(_handleTabChange);
-    tabController.dispose();
     scrollController
       ..removeListener(_handleSearchScroll)
       ..dispose();

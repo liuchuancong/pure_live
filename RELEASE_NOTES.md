@@ -17,10 +17,18 @@ v2.9.5 build 4084 is an Android stability update for Douyu playback and the newl
 - Upgraded public URLs to HTTPS and switched room refresh to the direct authoritative room-detail endpoint.
 - Corrected live/anchor search contracts, live-state parsing, room identifiers, and YY Cookie status display.
 
+## Search stability and discovery
+
+- Replaced the search page's auto-centering `TabBar` with a dedicated bounded platform strip. It remains horizontally scrollable when platforms exceed the screen width, but the first and last item are now hard boundaries and the selected state cannot drift away from the active platform.
+- Keeps one stable adapter snapshot for the page, preserving pagination cursors and preventing platform order/index mismatches while results are loading.
+- All-platform search now publishes each completed platform immediately, caps an individual request at 12 seconds, deduplicates results, and isolates partial failures instead of blocking the whole grid behind one slow endpoint.
+- Added YY native search coverage, respected requested page sizes for Bilibili, Douyu, Huya, CC and SOOP, and kept IPTV local search separate from web continuation.
+- Web result detection now supports Bilibili, Douyu, Huya, Douyin, Kuaishou, CC, Twitch, SOOP and YY, rejects navigation/lookalike URLs, preserves the detected platform identity, and suppresses duplicate room prompts.
+
 ## Regression coverage and delivery
 
 - Multiview sorting now understands localized ten-thousand/hundred-million suffixes as well as values such as `18.3k`.
-- Added deterministic Douyu/YY parser tests and 36 public probes across Bilibili, Douyu, Huya, Douyin, Kuaishou, CC, Twitch, SOOP and YY.
+- Added deterministic Douyu/YY/search parser and bounded-scroll tests plus 36 public probes across Bilibili, Douyu, Huya, Douyin, Kuaishou, CC, Twitch, SOOP and YY.
 - Version: `2.9.5+4084`.
 - This release publishes Android `arm64-v8a`; Windows, Linux, macOS and iOS remain on their v2.9.4 artifacts.
 - No ADB or phone automation was used; the signed APK is ready for independent device acceptance.

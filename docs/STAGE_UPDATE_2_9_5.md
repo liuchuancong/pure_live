@@ -11,6 +11,7 @@ Release date: 2026-08-24
 - Fix Douyu H5 stream acquisition and downstream media requests reported by upstream issue #785.
 - Audit every supported public platform interface and extend the gate from 29 checks to 36 checks.
 - Harden the newly synchronized YY adapter without adding a native JavaScript runtime.
+- Complete the follow-up for issue #784 by replacing the search platform `TabBar` with a bounded selector and hardening native/web search behavior.
 - Build and publish only the Android arm64-v8a target requested for this release.
 
 ## Douyu root cause and repair
@@ -31,9 +32,19 @@ The interface probe now selects an active room, reproduces the Dart signing path
 - Fix the account page to observe `yyCookie` rather than the Huya Cookie.
 - Parse localized audience values before sorting multiview room choices.
 
+## Search follow-up and root cause
+
+The v2.9.4 patch gave the scrollable `TabBar` clamping physics, but the widget still combined its own tab-selection animation with an internal horizontal position even though this page has no matching `TabBarView`. That left the visible strip and the controller index coupled to two independent movement paths. Rebuilding `Sites.availableSites()` also created fresh adapter instances for labels, searching, pagination and web navigation; this could lose cursor state or map an index to a different snapshot.
+
+v2.9.5 uses a dedicated clipped horizontal platform selector with an owned controller and clamped first/last boundaries. The search controller retains one immutable platform/adapter snapshot for its lifetime and changes platform through one bounded index method.
+
+Cross-platform requests still run concurrently, but completed platforms are now rendered progressively and every individual request has a 12-second UI deadline. A stalled endpoint therefore no longer holds all results for the global 20-second HTTP timeout. Results remain generation-guarded, deduplicated and independently paginated. YY joins native search; requested page sizes now reach the Bilibili, Douyu, Huya, CC and SOOP endpoints.
+
+The web-search room parser is now a pure tested component. It covers all nine applicable websites, rejects search/category pages and lookalike hosts, and returns both room ID and platform so a cross-site link cannot be opened by the wrong adapter. Invalid certificate challenges are cancelled rather than silently accepted.
+
 ## Verification
 
-- Focused Douyu, YY, signing and multiview tests: passed.
+- Focused Douyu, YY, signing, search ranking, bounded platform-strip and web room-parser tests: 19 passed.
 - Flutter Analyze: pending final release gate.
 - Full unit/Widget suite: pending final release gate.
 - Public interface probes: 36/36 passed before source freeze; the full gate reruns them once.

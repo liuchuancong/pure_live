@@ -452,6 +452,7 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher {
 
   @override
   Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) async {
+    final effectivePageSize = pageSize.clamp(1, 50);
     var resultText = await HttpClient.instance.getJson(
       "https://search.cdn.huya.com/",
       queryParameters: {
@@ -462,8 +463,8 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher {
         "v": 4,
         "typ": -5,
         "livestate": 0,
-        "rows": 20,
-        "start": (page - 1) * 20,
+        "rows": effectivePageSize,
+        "start": (page - 1) * effectivePageSize,
       },
     );
     var result = json.decode(resultText);

@@ -11,7 +11,7 @@
 | [#780 Linux 斗鱼 QuickJS](https://github.com/liuchuancong/pure_live/issues/780) | 高 | 最新上游已把斗鱼/抖音签名迁移为纯 Dart，平台原生 JS 依赖已退出播放链路 | 合并迁移，修复斗鱼缓存时间单位与并发刷新，增加描述符和签名回归 |
 | [#782 快手多数房间无法播放](https://github.com/liuchuancong/pure_live/issues/782) | 高 | 实际响应确认直播/回放数据形状不同；2026-08-24 最新跟进又确认旧 Cookie 触发平台风控，刷新后恢复 | 同时解析直播/录播结构、合并 CDN 线路并支持匹配卡片录播回退；风控场景需更新 Cookie |
 | [#783 低透明度弹幕描边发糊](https://github.com/liuchuancong/pure_live/issues/783) | 中 | 原生描边段落又被四个半像素偏移重复绘制，亮色画面下半透明像素叠加成模糊粗边 | 描边恢复单次原生绘制；轮廓透明度使用连续伽马曲线保持低透明度对比度，0 仍保持完全透明 |
-| [#784 标签无法切回全部、搜索滚动错位](https://github.com/liuchuancong/pure_live/issues/784) | 高 | 标签选择值只在懒加载 itemBuilder 中读取，未被 GetX 收集为依赖；搜索结果与平台栏缺少各自明确的边界策略 | 在响应构建阶段捕获选择值并补充往返测试；触摸端结果使用回弹，平台栏固定起始对齐并使用有界滚动 |
+| [#784 标签无法切回全部、搜索滚动错位](https://github.com/liuchuancong/pure_live/issues/784) | 高 | 标签选择值只在懒加载 itemBuilder 中读取；搜索栏即使添加物理边界，仍把无对应页面的 TabController 选择动画与内部滚动位置耦合 | 关注标签在响应阶段捕获选择值；搜索平台栏改为独立有界选择器，控制器保留稳定平台快照，并增加真实拖动首尾回归 |
 | [#785 Douyu media request failure](https://github.com/liuchuancong/pure_live/issues/785) | High | Signing and CDN bytes are valid; the full playback request path and adapter error handling were incomplete | Add consistent player headers, session DID, forced-refresh retry, defensive response parsing, and a real FLV probe |
 
 ## #778：录制目录与自动清理
@@ -73,7 +73,9 @@ Issue 在 2026-08-24 14:24（UTC+8）的最新反馈中确认：三台设备使�
 - `ListView.builder` 的 `itemBuilder` 是懒执行回调。旧代码在回调中读取 `selectedTagId.value`，外层 `Obx` 只稳定观察了标签列表，导致数据已经筛到自定义标签而选中态仍停留在“全部”；再次点击“全部”时 `ChoiceChip` 还会回传取消选择，旧回调直接忽略。
 - 新实现把标签列表和当前标签 ID 都在 `Obx` 同步阶段读取，再将不可变快照交给懒列表；所有标签点击统一提交目标 ID，由控制器负责同值去重。Widget 回归完整覆盖“全部 → 自定义 → 全部”以及两个按钮的实时选择态。
 - 搜索结果在 Android/iOS 明确使用 `BouncingScrollPhysics + AlwaysScrollableScrollPhysics`，短列表与长列表都能产生受控回弹；桌面继续沿用鼠标滚轮优化策略。
-- 平台分类栏继续允许访问屏幕外平台，但使用 `TabAlignment.start + ClampingScrollPhysics` 固定首尾边界，不再把整行拖离正确位置。
+- v2.9.4 首次补上的 `TabAlignment.start + ClampingScrollPhysics` 只约束了物理模型，`TabBar` 自身仍会按选择状态自动调整内部位置，而搜索页没有对应的 `TabBarView`。v2.9.5 将其替换为专用水平选择器：滚动控制器、选中索引和首尾边界均由搜索模块直接持有，屏幕外平台仍可访问，但反复大幅拖动后偏移始终钳制在 `minScrollExtent/maxScrollExtent`。
+- 搜索页只建立一次平台/适配器快照，避免重复实例化导致标签、索引、Twitch 游标和网页入口使用不同列表；全平台搜索按完成顺序渐进显示，每个平台最多占用 12 秒 UI 等待时间。
+- YY 纳入原生搜索；网页结果解析补齐 Twitch、SOOP、YY，并返回“平台 + 房间号”复合身份。搜索页、分类页和伪装域名不触发直播间弹窗，取消同一目标后也不再被加载开始/历史更新/加载完成事件连续弹出。
 
 ## 多画面 PR #781 复核
 
