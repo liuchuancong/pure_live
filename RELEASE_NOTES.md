@@ -1,3 +1,25 @@
+# Pure Live v2.9.6
+
+v2.9.6 build 4085 is an Android platform-interface and upstream synchronization update.
+
+## Platform interfaces
+
+- Fixed the current Douyin recommendation envelope that could otherwise index a string/list as a map and surface `type 'String' is not a subtype of type 'int' of 'index'`.
+- Douyin parsing now accepts current and legacy response shapes, embedded room JSON and missing optional fields; its live probe also requires a real playback descriptor rather than only card metadata.
+- Bilibili popularity uses the public `sort=online` ranking source plus deterministic descending client sorting instead of a personalized recommendation order.
+- Bilibili room metadata validates signed responses before indexing, refreshes stale WBI keys and performs one bounded retry when the platform rejects the signature.
+- Added playback-level live probes for Bilibili quality/CDN descriptors, Huya room/bitrate/FLV-HLS lines and CC's two-step room mapping/playback contract.
+
+## Upstream and regression coverage
+
+- Synchronized and merged upstream through `liuchuancong/pure_live@974f4c32`, including download confirmation, version history and fullscreen viewing-record improvements.
+- Preserved the maintained repository's launch refresh, background playback continuity, quality switching, local-first serial build policy and official signing workflow.
+- The final gate covers 40 public interface checks across Bilibili, Douyu, Huya, Douyin, Kuaishou, CC, Twitch, SOOP Live and YY Live, in addition to Flutter Analyze and the complete automated test suite.
+- Version: `2.9.6+4085`.
+- This release publishes Android `arm64-v8a`; Windows, Linux, macOS and iOS remain on their v2.9.4 artifacts.
+
+---
+
 # Pure Live v2.9.5
 
 v2.9.5 build 4084 is an Android stability update for playback quality, platform interfaces and the newly synchronized YY platform.

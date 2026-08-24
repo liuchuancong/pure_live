@@ -71,4 +71,31 @@ void main() {
       expect(rooms.map((room) => room.roomId), <String>['10', '20']);
     });
   });
+
+  group('Bilibili room metadata parsing', () {
+    test('accepts a complete signed response', () {
+      final data = BiliBiliSite.parseRoomInfoResponse({
+        'code': 0,
+        'data': {
+          'room_info': {'room_id': 6, 'live_status': 1},
+          'anchor_info': {
+            'base_info': {'uname': '主播'},
+          },
+        },
+      });
+
+      expect((data['room_info'] as Map)['room_id'], 6);
+    });
+
+    test('rejects expired WBI and incomplete payloads before dynamic indexing', () {
+      expect(() => BiliBiliSite.parseRoomInfoResponse({'code': -352, 'data': null}), throwsStateError);
+      expect(
+        () => BiliBiliSite.parseRoomInfoResponse({
+          'code': 0,
+          'data': {'room_info': {}},
+        }),
+        throwsFormatException,
+      );
+    });
+  });
 }

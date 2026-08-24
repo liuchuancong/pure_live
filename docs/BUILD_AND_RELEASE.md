@@ -2,7 +2,7 @@
 
 本仓库采用“本机优先、Actions 手动兜底”的流程，固定使用 Flutter `3.47.0`。`pubspec.lock`、Git 依赖提交和 FFmpeg 产物地址均已固定，便于复现结果。平台范围、CPU/RAM 配额、缓存、互斥和记录格式以 [`BUILD_POLICY.md`](../BUILD_POLICY.md) 为准。
 
-Current release candidate: 2026-08-24, v2.9.5 build 4084, Windows 11 + Java 25 + Flutter 3.47.0. This turn runs one final quality gate and builds only Android arm64-v8a; see `STAGE_UPDATE_2_9_5.md`.
+Current release candidate: 2026-08-25, v2.9.6 build 4085, Windows 11 + Java 25 + Flutter 3.47.0. This turn runs one final quality gate and builds only Android arm64-v8a; see `STAGE_UPDATE_2_9_6.md`.
 
 ## 前置环境
 
@@ -140,7 +140,7 @@ python .\tool\interface_probe.py
 
 ```powershell
 PowerShell -ExecutionPolicy Bypass -File .\tool\publish_local_release.ps1 `
-  -Tag v2.9.5 -CreateTag
+  -Tag v2.9.6 -CreateTag
 ```
 
 脚本要求工作树已提交，并通过 GitHub CLI 当前登录身份创建或更新 Release。

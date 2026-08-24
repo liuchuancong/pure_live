@@ -1,21 +1,21 @@
 {
-  "version": "2.9.5",
-  "build_number": 4084,
-  "version_num": 209054084,
-  "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@a161a324，吸收 2.9.5 的斗鱼、YY、搜索、多播放器与版本历史更新，并保留维护仓库本机优先、单平台串行和正式签名发布流程。\n- 全面修复各平台画质切换契约：Bilibili 按 current_qn 回写真实生效画质；虎牙替换旧 ratio、原画移除 ratio；抖音按 sdk_key 配对；斗鱼保持平台 rate 顺序；Twitch、快手、CC、SOOP、YY 与 IPTV 使用稳定标识和确定性解析。\n- 切流改为事务式状态提交：旧画面保持到新源成功打开，迟到请求、失败源、重复线路与服务端降级不会伪造选中状态；失败完整回滚。\n- 横屏清晰度与线路面板按实际选项行数自适应高度，压缩标题与留白，让选择按钮成为主要视觉并仅在内容溢出时滚动。\n- 分离网易 CC 热度和并发人数；真实在线排行按“明确人数、待刷新、仅热度”分层，抖音累计人数不再误标在线，SOOP 加入支持列表。\n- 本轮正式交付 Android arm64-v8a；Windows、Linux、macOS 与 iOS 继续使用 v2.9.4 对应安装包。",
+  "version": "2.9.6",
+  "build_number": 4085,
+  "version_num": 209064085,
+  "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@974f4c32，吸收下载确认、版本历史与横屏直播记录界面改进，同时保留维护仓库的本机优先构建、后台保活和启动刷新策略。\n- 修复抖音推荐 Feed 从 data.data 变为 data[] 信封结构后触发的 String/int 动态索引异常；兼容新旧 Map、嵌入 JSON 与缺失可选字段。\n- 修复哔哩哔哩热门误用推荐流导致热度不按降序的问题，改用 sort=online 排行源并在客户端稳定二次排序；房间信息遇到过期 WBI 或 -352 时刷新密钥并有界重试。\n- 平台实时门禁扩展到 40 项，新增哔哩哔哩、虎牙、网易 CC 播放链路，并强化抖音 Feed 对真实播放描述符的校验；发布前全部通过。\n- 本轮正式交付 Android arm64-v8a；Windows、Linux、macOS 与 iOS 继续使用 v2.9.4 对应安装包。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.5",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.6",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "2.9.5",
-      "build_number": 4084,
-      "version_num": 209054084,
-      "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@a161a324，吸收 2.9.5 的斗鱼、YY、搜索、多播放器与版本历史更新，并保留维护仓库本机优先、单平台串行和正式签名发布流程。\n- 全面修复各平台画质切换契约：Bilibili 按 current_qn 回写真实生效画质；虎牙替换旧 ratio、原画移除 ratio；抖音按 sdk_key 配对；斗鱼保持平台 rate 顺序；Twitch、快手、CC、SOOP、YY 与 IPTV 使用稳定标识和确定性解析。\n- 切流改为事务式状态提交：旧画面保持到新源成功打开，迟到请求、失败源、重复线路与服务端降级不会伪造选中状态；失败完整回滚。\n- 横屏清晰度与线路面板按实际选项行数自适应高度，压缩标题与留白，让选择按钮成为主要视觉并仅在内容溢出时滚动。\n- 分离网易 CC 热度和并发人数；真实在线排行按“明确人数、待刷新、仅热度”分层，抖音累计人数不再误标在线，SOOP 加入支持列表。\n- 本轮正式交付 Android arm64-v8a；Windows、Linux、macOS 与 iOS 继续使用 v2.9.4 对应安装包。",
+      "version": "2.9.6",
+      "build_number": 4085,
+      "version_num": 209064085,
+      "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@974f4c32，吸收下载确认、版本历史与横屏直播记录界面改进，同时保留维护仓库的本机优先构建、后台保活和启动刷新策略。\n- 修复抖音推荐 Feed 从 data.data 变为 data[] 信封结构后触发的 String/int 动态索引异常；兼容新旧 Map、嵌入 JSON 与缺失可选字段。\n- 修复哔哩哔哩热门误用推荐流导致热度不按降序的问题，改用 sort=online 排行源并在客户端稳定二次排序；房间信息遇到过期 WBI 或 -352 时刷新密钥并有界重试。\n- 平台实时门禁扩展到 40 项，新增哔哩哔哩、虎牙、网易 CC 播放链路，并强化抖音 Feed 对真实播放描述符的校验；发布前全部通过。\n- 本轮正式交付 Android arm64-v8a；Windows、Linux、macOS 与 iOS 继续使用 v2.9.4 对应安装包。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.5",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.6",
       "android_abis": [
         "arm64-v8a"
       ]

@@ -54,7 +54,7 @@
 python tool/interface_probe.py
 ```
 
-The release probe runs 36 checks across categories, recommendations, searches, room metadata, danmaku discovery and playback contracts. Douyu additionally executes signing, H5 metadata retrieval, CDN selection and a real FLV-header request with player-equivalent headers; YY verifies categories, recommendation, both search types, room status and playback lines. Deterministic parser tests separately cover Bilibili `current_qn`, Huya `ratio`, Douyin `sdk_key`, Douyu rate order, Kuaishou representations, CC resolution/CDN binding, Twitch master playlists, SOOP presets and YY gears.
+The release probe runs 40 checks across categories, recommendations, searches, room metadata, danmaku discovery and playback contracts. Douyu additionally executes signing, H5 metadata retrieval, CDN selection and a real FLV-header request with player-equivalent headers; Bilibili, Huya and CC now verify current quality/line descriptors; Douyin requires a playable room inside the current feed-envelope response; YY verifies categories, recommendation, both search types, room status and playback lines. Deterministic parser tests separately cover Bilibili WBI room metadata and `current_qn`, Huya `ratio`, Douyin feed envelopes and `sdk_key`, Douyu rate order, Kuaishou representations, CC resolution/CDN binding, Twitch master playlists, SOOP presets and YY gears.
 
 2026-08-17 再次完成哔哩哔哩访客 WebSocket 实连：`uid=0` 会话连续取得当前房间弹幕，但平台把 legacy 与 rich user 两处昵称和 UID 一并脱敏。客户端会优先读取平台 rich user 的完整昵称；访客数据仍为脱敏值时在弹幕列表提示来源。公开直播的弹幕接收继续使用访客会话，登录账号用于完整昵称、发送平台弹幕、关注、会员清晰度和其他账号功能。
 

@@ -606,9 +606,13 @@ def douyin_feed_probe() -> None:
             continue
         owner = room.get("owner")
         web_rid = envelope.get("web_rid") or (owner.get("web_rid") if isinstance(owner, dict) else None)
-        if web_rid and room.get("title") and isinstance(room.get("cover"), dict):
+        stream_url = room.get("stream_url")
+        has_stream = isinstance(stream_url, dict) and any(
+            stream_url.get(key) for key in ("live_core_sdk_data", "flv_pull_url", "hls_pull_url_map")
+        )
+        if web_rid and room.get("title") and isinstance(room.get("cover"), dict) and has_stream:
             return
-    raise ValueError("Douyin feed contains no parseable live room")
+    raise ValueError("Douyin feed contains no parseable playable room")
 
 
 def bilibili_danmaku_probe() -> None:
@@ -691,6 +695,57 @@ def bilibili_recommend_probe() -> None:
             raise ValueError("cover response is empty")
 
 
+def bilibili_playback_probe() -> None:
+    """Validate anonymous room playback descriptors and CDN URL components."""
+    recommendation = request_json(
+        "https://api.live.bilibili.com/room/v1/Area/getListByAreaID",
+        {"areaId": 0, "parent_area_id": 0, "sort": "online", "pageSize": 10, "page": 1},
+    )
+    rooms = recommendation.get("data", []) if isinstance(recommendation, dict) else []
+    if not rooms or not isinstance(rooms[0], dict):
+        raise ValueError("Bilibili playback probe has no live room")
+    room_id = str(rooms[0].get("roomid", "")).strip()
+    if not room_id:
+        raise ValueError("Bilibili playback room id missing")
+
+    response = request_json(
+        "https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo",
+        {
+            "room_id": room_id,
+            "protocol": "0,1",
+            "format": "0,1,2",
+            "codec": "0,1",
+            "qn": 10000,
+            "platform": "web",
+            "ptype": 8,
+        },
+    )
+    if not isinstance(response, dict) or response.get("code") != 0:
+        raise ValueError("Bilibili playback request was rejected")
+    data = response.get("data", {})
+    playurl_info = data.get("playurl_info", {}) if isinstance(data, dict) else {}
+    playurl = playurl_info.get("playurl", {}) if isinstance(playurl_info, dict) else {}
+    streams = playurl.get("stream", []) if isinstance(playurl, dict) else []
+    qualities = playurl.get("g_qn_desc", []) if isinstance(playurl, dict) else []
+    if not isinstance(streams, list) or not streams or not isinstance(qualities, list) or not qualities:
+        raise ValueError("Bilibili stream/quality descriptors missing")
+
+    for stream in streams:
+        formats = stream.get("format", []) if isinstance(stream, dict) else []
+        for format_item in formats if isinstance(formats, list) else []:
+            codecs = format_item.get("codec", []) if isinstance(format_item, dict) else []
+            for codec in codecs if isinstance(codecs, list) else []:
+                if not isinstance(codec, dict) or not codec.get("base_url"):
+                    continue
+                url_info = codec.get("url_info", [])
+                if isinstance(url_info, list) and any(
+                    isinstance(item, dict) and str(item.get("host", "")).startswith(("http://", "https://"))
+                    for item in url_info
+                ):
+                    return
+    raise ValueError("Bilibili playback response has no usable CDN URL")
+
+
 def huya_danmaku_identity_probe() -> None:
     """Ensure a live room exposes the numeric uid required by the gateway."""
     recommendation = request_json(
@@ -721,6 +776,70 @@ def huya_danmaku_identity_probe() -> None:
         raise ValueError("profileInfo.uid is not numeric") from error
     if uid <= 0:
         raise ValueError("profileInfo.uid missing")
+
+
+def huya_playback_probe() -> None:
+    """Validate profileRoom metadata, quality and FLV/HLS line descriptors."""
+    recommendation = request_json(
+        "https://www.huya.com/cache.php",
+        {"m": "LiveList", "do": "getLiveListByPage", "tagAll": 0, "page": 1},
+    )
+    data = recommendation.get("data", {}) if isinstance(recommendation, dict) else {}
+    rooms = data.get("datas", []) if isinstance(data, dict) else []
+    room_id = str(rooms[0].get("profileRoom", "")).strip() if rooms and isinstance(rooms[0], dict) else ""
+    if not room_id:
+        raise ValueError("Huya playback room id missing")
+    detail = request_json(
+        "https://mp.huya.com/cache.php",
+        {"m": "Live", "do": "profileRoom", "roomid": room_id, "showSecret": 1},
+    )
+    detail_data = detail.get("data", {}) if isinstance(detail, dict) and detail.get("status") == 200 else {}
+    stream = detail_data.get("stream", {}) if isinstance(detail_data, dict) else {}
+    base_streams = stream.get("baseSteamInfoList", []) if isinstance(stream, dict) else []
+    live_data = detail_data.get("liveData", {}) if isinstance(detail_data, dict) else {}
+    if not isinstance(base_streams, list) or not base_streams or not isinstance(live_data, dict):
+        raise ValueError("Huya room stream/liveData missing")
+    if not live_data.get("bitRateInfo") and not any(
+        isinstance(value, dict) and value.get("rateArray") for value in stream.values()
+    ):
+        raise ValueError("Huya quality descriptors missing")
+    for item in base_streams:
+        if not isinstance(item, dict):
+            continue
+        if item.get("sStreamName") and (item.get("sFlvUrl") or item.get("sHlsUrl")):
+            return
+    raise ValueError("Huya playback response has no usable stream line")
+
+
+def cc_room_playback_probe() -> None:
+    """Validate the two-step CC room mapping and its playback descriptor."""
+    recommendation = request_json(
+        "https://cc.163.com/api/category/live/",
+        {"format": "json", "start": 0, "size": 10},
+    )
+    rooms = recommendation.get("lives", []) if isinstance(recommendation, dict) else []
+    room_id = str(rooms[0].get("ccid", "")).strip() if rooms and isinstance(rooms[0], dict) else ""
+    if not room_id:
+        raise ValueError("CC playback room id missing")
+    mapping = request_json(
+        "https://api.cc.163.com/v1/activitylives/anchor/lives",
+        {"anchor_ccid": room_id},
+    )
+    mapping_data = mapping.get("data", {}) if isinstance(mapping, dict) else {}
+    mapped = mapping_data.get(room_id, {}) if isinstance(mapping_data, dict) else {}
+    channel_id = mapped.get("channel_id") if isinstance(mapped, dict) else None
+    if not channel_id:
+        raise ValueError("CC channel mapping missing")
+    channel = request_json(
+        "https://cc.163.com/live/channel/",
+        {"channelids": channel_id, "anchor_ccid": room_id},
+    )
+    channel_rooms = channel.get("data", []) if isinstance(channel, dict) else []
+    room = channel_rooms[0] if isinstance(channel_rooms, list) and channel_rooms else None
+    if not isinstance(room, dict) or room.get("status") != 1:
+        raise ValueError("CC channel returned no live room")
+    if not room.get("quickplay") and not room.get("stream_list") and not room.get("m3u8"):
+        raise ValueError("CC playback descriptor missing")
 
 
 def twitch_persisted_request(operation: str, sha256_hash: str, variables: dict[str, object]) -> dict[str, object]:
@@ -1055,8 +1174,11 @@ def main() -> int:
             ),
         ),
         ("bilibili.popularity_rank", bilibili_recommend_probe),
+        ("bilibili.playback", bilibili_playback_probe),
         ("bilibili.danmaku", bilibili_danmaku_probe),
         ("huya.danmaku_identity", huya_danmaku_identity_probe),
+        ("huya.playback", huya_playback_probe),
+        ("cc.room_playback", cc_room_playback_probe),
         ("douyin.feed", douyin_feed_probe),
         ("douyin.search", douyin_search_probe),
         ("douyu.search", douyu_search_probe),

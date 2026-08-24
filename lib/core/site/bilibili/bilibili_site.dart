@@ -386,17 +386,39 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LivePlayUrlResolv
   }
 
   Future<Map<String, dynamic>> getRoomInfo({required String roomId}) async {
-    final url = "https://api.live.bilibili.com/xlive/web-room/v1/index/getInfoByRoom?room_id=$roomId";
+    const baseUrl = "https://api.live.bilibili.com/xlive/web-room/v1/index/getInfoByRoom";
+    final url = "$baseUrl?room_id=$roomId";
     // WBI key discovery and anonymous-device cookie discovery are independent.
     // Starting both before the first await removes one full network round trip
     // from the first Bilibili card refresh after a cold launch.
-    final (queryParams, header) = await (getWbiSign(url), getHeader()).wait;
-    var result = await HttpClient.instance.getJson(
-      "https://api.live.bilibili.com/xlive/web-room/v1/index/getInfoByRoom",
-      queryParameters: queryParams,
-      header: header,
-    );
-    return result["data"];
+    final headerFuture = getHeader();
+    Object? lastError;
+    for (var attempt = 0; attempt < 2; attempt++) {
+      try {
+        final (queryParams, header) = await (
+          getWbiSign(url, forceRefresh: attempt > 0),
+          attempt == 0 ? headerFuture : getHeader(),
+        ).wait;
+        final result = await HttpClient.instance.getJson(baseUrl, queryParameters: queryParams, header: header);
+        return parseRoomInfoResponse(result);
+      } catch (error) {
+        lastError = error;
+        if (attempt == 0) await Future<void>.delayed(const Duration(milliseconds: 180));
+      }
+    }
+    throw StateError('Bilibili room info failed after WBI refresh: $lastError');
+  }
+
+  @visibleForTesting
+  static Map<String, dynamic> parseRoomInfoResponse(dynamic response) {
+    if (response is! Map) throw const FormatException('Bilibili room response is not an object');
+    final code = int.tryParse(response['code']?.toString() ?? '');
+    if (code != 0) throw StateError('Bilibili room request rejected: code=$code');
+    final data = response['data'];
+    if (data is! Map || data['room_info'] is! Map || data['anchor_info'] is! Map) {
+      throw const FormatException('Bilibili room metadata is incomplete');
+    }
+    return Map<String, dynamic>.from(data);
   }
 
   static String kImgKey = '';
