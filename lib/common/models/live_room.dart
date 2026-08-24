@@ -497,6 +497,12 @@ class LiveRoom {
 }
 
 extension LiveRoomExtension on LiveRoom {
+  /// Applies a fresh room-detail snapshot without discarding local metadata.
+  ///
+  /// Platform responses are intentionally sparse: an omitted live status,
+  /// title or audience field means "unknown in this response", not "offline"
+  /// or "erase the stored value". Tags belong to the local favourite and must
+  /// never be replaced by network data.
   LiveRoom mergeFrom(LiveRoom incoming) {
     if (!hasSameIdentity(incoming)) return this;
 
@@ -521,17 +527,17 @@ extension LiveRoomExtension on LiveRoom {
       totalViewers: _preferValue(incoming.totalViewers, totalViewers),
       followers: _preferValue(incoming.followers, followers),
 
-      tagIds: incoming.tagIds.isNotEmpty ? incoming.tagIds : tagIds,
+      tagIds: tagIds,
 
       introduction: _preferValue(incoming.introduction, introduction),
       notice: _preferValue(incoming.notice, notice),
 
       status: incoming.status ?? status,
-      liveStatus: incoming.liveStatus ?? LiveStatus.offline,
+      liveStatus: incoming.liveStatus ?? liveStatus,
       isRecord: incoming.isRecord ?? isRecord,
 
-      data: null,
-      danmakuData: null,
+      data: incoming.data ?? data,
+      danmakuData: incoming.danmakuData ?? danmakuData,
 
       epgId: _preferValue(incoming.epgId, epgId),
       currentProgramme: _preferValue(incoming.currentProgramme, currentProgramme),

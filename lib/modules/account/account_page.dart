@@ -45,7 +45,7 @@ class AccountPage extends GetView<AccountController> {
               );
             }),
             Obx(() {
-              final isLogined = cookie.huyaCookie.v.isNotEmpty;
+              final isLogined = cookie.yyCookie.v.isNotEmpty;
               return _buildAccountTile(
                 context,
                 logo: 'assets/images/yy.png',

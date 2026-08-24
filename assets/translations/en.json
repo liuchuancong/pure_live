@@ -788,6 +788,7 @@
     "search_coverage_local": "{site} searches channels imported on this device and is separate from network anchor search.",
     "search_coverage_web_only": "{site} currently uses its web search entry; choose Continue in web search above.",
     "search_web_only_platform": "{site} currently uses its web search entry.",
+    "search_web_unavailable": "{site} only searches local content and has no web search entry.",
     "continue_web_search": "Continue in web search",
     "select_platform_for_web_search": "Select a platform first",
     "search_partial_failure": "Some platforms failed: {sites}",

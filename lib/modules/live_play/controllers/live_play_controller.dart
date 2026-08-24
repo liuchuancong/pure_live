@@ -617,24 +617,25 @@ class LivePlayController extends GetxController
     int line = 0,
     bool isReCalculate = true,
   }) async {
-    final roomId = state.value.room.detail?.roomId;
-    if (roomId == null) return LiveRoom();
-    final requestedPlatform = state.value.room.detail?.platform;
+    // Keep one immutable request snapshot. Reading state again after the
+    // platform request completes can merge an old response with a newly opened
+    // room before the epoch fence has a chance to reject it.
+    final requestedRoom = state.value.room.detail;
+    final roomId = requestedRoom?.roomId;
+    final requestedPlatform = requestedRoom?.platform;
+    if (requestedRoom == null || roomId == null || requestedPlatform == null) return LiveRoom();
     final loadEpoch = ++_roomLoadEpoch;
 
     clearSuperChats();
     updateRoom(isLoading: true, loadError: null);
 
     try {
-      final fetchedRoom = await currentSite.liveSite.getRoomDetail(
-        roomId: roomId,
-        platform: state.value.room.detail!.platform!,
-      );
-      var liveRoom = fetchedRoom.withAudienceFallbackFrom(state.value.room.detail!);
-      liveRoom = liveRoom.fillFromDetail(state.value.room.detail);
+      final fetchedRoom = await currentSite.liveSite.getRoomDetail(roomId: roomId, platform: requestedPlatform);
 
-      updateRoom(detail: liveRoom);
+      var liveRoom = fetchedRoom.withAudienceFallbackFrom(requestedRoom);
+      liveRoom = liveRoom.fillFromDetail(requestedRoom);
       if (!_isRoomLoadCurrent(loadEpoch, roomId, requestedPlatform)) return liveRoom;
+      updateRoom(detail: liveRoom);
       unawaited(getSuperChatMessage(roomId, platform: requestedPlatform, loadEpoch: loadEpoch));
 
       if (currentSite.id == Sites.iptvSite) {
@@ -851,15 +852,11 @@ class LivePlayController extends GetxController
         webUrl = "https://cc.163.com/${detail.roomId}";
         break;
       case Sites.twitchSite:
-        nativeUrl = "twitch://player/live?broad_no=${detail.userId}&user_id=${detail.roomId}&channel=";
+        nativeUrl = "https://www.twitch.tv/${detail.roomId}";
         webUrl = "https://www.twitch.tv/${detail.roomId}";
         break;
       case Sites.soopSite:
-        nativeUrl = "sooplive://player/live?broad_no=${detail.userId}&user_id=${detail.roomId}&channel=";
-        webUrl = "https://play.sooplive.co.kr/${detail.roomId}";
-        break;
-      case Sites.yySite:
-        nativeUrl = "https://www.yy.com/${detail.roomId}";
+        nativeUrl = "https://play.sooplive.co.kr/${detail.roomId}";
         webUrl = nativeUrl;
         break;
       case Sites.kuaishouSite:

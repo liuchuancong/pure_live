@@ -33,11 +33,11 @@
 
 > 本维护分支持续同步 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)，并维护本机优先构建、正式签名、接口探测、Windows 数据迁移及高刷新率优化。
 
-- **最新稳定版**：[v](https://github.com/liuchuancong/pure_live/releases/tag/v)
-- **当前版本**：`+4084`
-- **v**：`liuchuancong/pure_live`，包含多画面同看、纯 Dart 平台签名、语言切换与 Windows MSIX 数据路径修复
-- **本轮构建平台**：Android arm64-v8a、Windows x64、Linux x64、macOS Universal、iOS arm64
-- **质量门禁**：Flutter Analyze、自动化测试、接口探测与各平台构建记录见 `docs/STAGE_UPDATE_2_9_4.md`
+- **最新稳定版**：[v2.9.5](https://github.com/liuchuancong/pure_live/releases/tag/v2.9.5)
+- **当前版本**：`2.9.5+4084`
+- **v2.9.5 上游源码基线**：`liuchuancong/pure_live@cc1f4dca`，包含多画面同看、纯 Dart 平台签名、语言切换、Windows MSIX 数据路径与房间增量合并
+- **本轮构建平台**：Android arm64-v8a (Windows/Linux/macOS/iOS remain at v2.9.4)
+- **质量门禁**：Flutter Analyze、自动化测试、接口探测与各平台构建记录见 `docs/STAGE_UPDATE_2_9_5.md`
 
 ![Pure Live 界面预览](assets/images/banner.png)
 
@@ -55,6 +55,7 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 - **网易 CC 直播**
 - **Twitch**
 - **SOOP Live**
+- **YY Live**
 - **自定义 M3U / M3U8 直播源**
 
 支持按照平台、分区等条件进行筛选，也可以隐藏不关注的平台。
@@ -85,8 +86,9 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 | [平台接口与兼容性](docs/PLATFORM_COMPATIBILITY.md) | 分区、搜索、弹幕和人数指标的当前能力 |
 | [高刷新率与性能验证](docs/PERFORMANCE.md) | Android 120 Hz 适配、渲染优化和真机帧统计 |
 | [WebDAV 配置](docs/WEBDAV.md) | 通用配置字段、坚果云示例和故障排查 |
-| [v 全平台稳定版](docs/STAGE_UPDATE_2_9_4.md) | 上游多画面、录制目录保护、平台签名/快手兼容与全平台交付 |
-| [v 上游 Issue 审计](docs/ISSUE_AUDIT_2026_08_24.md) | #778、#779、#780、#782 的复现、根因与处理结果 |
+| [v2.9.5 Android update](docs/STAGE_UPDATE_2_9_5.md) | Douyu playback, YY integration and 36 interface probes |
+| [v2.9.4 全平台稳定版](docs/STAGE_UPDATE_2_9_4.md) | 上游多画面、录制目录保护、平台签名/快手兼容与全平台交付 |
+| [v2.9.5 上游 Issue 审计](docs/ISSUE_AUDIT_2026_08_24.md) | #778、#779、#780、#782、#783、#784, #785 的复现、根因与处理结果 |
 | [v2.9.3 Android 专项更新](docs/STAGE_UPDATE_2_9_3.md) | 横屏画质/线路内容驱动布局与小视口边界保护 |
 | [v2.9.2 Android 专项更新](docs/STAGE_UPDATE_2_9_2.md) | 横屏画质/线路、四宫格直播记录与左右分栏实时弹幕预览 |
 | [v2.9.1 Android 专项更新](docs/STAGE_UPDATE_2_9_1.md) | 横屏半屏内容面板、本地弹幕个性化与渲染缓存 |
@@ -217,7 +219,7 @@ Android 支持根据设备显示模式动态适配刷新率：
 
 ## 🔍 搜索与直播互动
 
-支持跨平台直播搜索，并提供独立的平台分页状态。
+支持跨平台直播搜索，并提供独立的平台分页状态。平台选择栏可访问屏幕外项目，但首尾严格有界；“全部”搜索按平台完成顺序渐进显示，单个平台超时或失败不会挡住其他结果。
 
 搜索结果支持：
 
@@ -226,6 +228,8 @@ Android 支持根据设备显示模式动态适配刷新率：
 - 观众人数
 - 粉丝数量
 - 直播状态筛选
+- YY 等九个平台原生/本机搜索，快手保留网页搜索
+- Bilibili、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP、YY 网页直播间识别
 
 同时提供本地互动系统。
 
@@ -443,7 +447,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
 ## 🤝 参与开发
 
 - **主开发者**：[@liuchuancong](https://github.com/liuchuancong)
-- **协助开发者**：[@wzgrx](https://github.com/wzgrx/pure_live)
+- **协助开发者**：[@wzgrx](https://github.com/liuchuancong/wzgrx)
 - **协助开发者**：[@RebornQ](https://github.com/RebornQ)
 
 > 📌 **欢迎贡献**！

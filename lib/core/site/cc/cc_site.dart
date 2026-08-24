@@ -239,9 +239,10 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher {
 
   @override
   Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) async {
+    final effectivePageSize = pageSize.clamp(1, 50);
     var result = await HttpClient.instance.getJson(
       "https://cc.163.com/search/anchor",
-      queryParameters: {"query": keyword, "size": 20, "page": page},
+      queryParameters: {"query": keyword, "size": effectivePageSize, "page": page},
     );
     var items = <LiveRoom>[];
     var queryList = result["webcc_anchor"]["result"] ?? [];

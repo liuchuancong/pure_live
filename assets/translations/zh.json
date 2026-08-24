@@ -789,6 +789,7 @@
     "search_coverage_local": "{site} 搜索本机已导入的频道，不参与网络主播搜索。",
     "search_coverage_web_only": "{site} 当前使用网页搜索入口，点上方“继续网页搜索”打开。",
     "search_web_only_platform": "{site} 当前使用网页搜索入口。",
+    "search_web_unavailable": "{site} 仅搜索本机内容，没有网页搜索入口。",
     "continue_web_search": "继续网页搜索",
     "select_platform_for_web_search": "请先选择一个平台",
     "search_partial_failure": "部分平台请求失败：{sites}",

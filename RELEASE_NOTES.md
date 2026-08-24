@@ -1,10 +1,48 @@
+# Pure Live v2.9.5
+
+v2.9.5 build 4084 is an Android stability update for Douyu playback and the newly synchronized YY platform.
+
+## Douyu playback
+
+- Synchronized the upstream baseline through `liuchuancong/pure_live@cc1f4dca`.
+- The H5 stream request now uses one session DID and consistent browser headers, refreshes stale signing descriptors, and performs one bounded retry.
+- Quality and CDN parsing tolerates partial response shapes, removes duplicate lines, and validates the final decoded stream URL.
+- Actual media requests now receive Douyu Referer, Origin, User-Agent and matching DID cookies on every player backend.
+- The public interface gate now verifies signing, H5 metadata, CDN selection, and a real FLV header instead of stopping at the encryption descriptor.
+
+## YY integration
+
+- Added categories, room lists, search, room status, quality/line playback, danmaku and local Cookie settings from upstream.
+- Replaced the native JavaScript runtime used for a simple page literal with a pure-Dart parser, keeping Android and desktop packages smaller and deterministic.
+- Upgraded public URLs to HTTPS and switched room refresh to the direct authoritative room-detail endpoint.
+- Corrected live/anchor search contracts, live-state parsing, room identifiers, and YY Cookie status display.
+
+## Search stability and discovery
+
+- Replaced the search page's auto-centering `TabBar` with a dedicated bounded platform strip. It remains horizontally scrollable when platforms exceed the screen width, but the first and last item are now hard boundaries and the selected state cannot drift away from the active platform.
+- Keeps one stable adapter snapshot for the page, preserving pagination cursors and preventing platform order/index mismatches while results are loading.
+- All-platform search now publishes each completed platform immediately, caps an individual request at 12 seconds, deduplicates results, and isolates partial failures instead of blocking the whole grid behind one slow endpoint.
+- Added YY native search coverage, respected requested page sizes for Bilibili, Douyu, Huya, CC and SOOP, and kept IPTV local search separate from web continuation.
+- Web result detection now supports Bilibili, Douyu, Huya, Douyin, Kuaishou, CC, Twitch, SOOP and YY, rejects navigation/lookalike URLs, preserves the detected platform identity, and suppresses duplicate room prompts.
+
+## Regression coverage and delivery
+
+- Multiview sorting now understands localized ten-thousand/hundred-million suffixes as well as values such as `18.3k`.
+- Added deterministic Douyu/YY/search parser and bounded-scroll tests plus 36 public probes across Bilibili, Douyu, Huya, Douyin, Kuaishou, CC, Twitch, SOOP and YY.
+- Version: `2.9.5+4084`.
+- This release publishes Android `arm64-v8a`; Windows, Linux, macOS and iOS remain on their v2.9.4 artifacts.
+- No ADB or phone automation was used; the signed APK is ready for independent device acceptance.
+
+---
+
 # Pure Live v2.9.4
 
 v2.9.4 build 4083 是上游多画面同看、录制数据保护、平台播放兼容和长时间资源治理的全平台稳定更新，发布到 `liuchuancong/pure_live`。
 
 ## 上游同步与多画面
 
-- 合并 `liuchuancong/pure_live@45127322`，吸收多画面同看、斗鱼/抖音纯 Dart 签名、语言切换、Windows MSIX 数据路径修复和最新依赖锁定；保留维护分支已有的弹幕、PiP、高刷新率、音频模式和横屏交互增强。
+- 合并发布时最新的 `liuchuancong/pure_live@99ef708c`，吸收多画面同看、斗鱼/抖音纯 Dart 签名、语言切换、Windows MSIX 数据路径、视频显示模式和房间增量合并；保留维护分支已有的弹幕、PiP、高刷新率、音频模式和横屏交互增强。
+- 修正最新上游合并后的三个边界：迟到的旧房间详情先通过“代次 + 平台 + 房间号”围栏再更新；稀疏响应不再把关注房间误写为下播或覆盖本地标签；视频适配由各播放器内核直接应用，避免等待尺寸造成首帧空白及 Windows 纹理按源分辨率过度分配。
 - 多画面音频焦点改为串行“最后一次选择生效”，快速连续切换不再因原生静音 Future 乱序留下多个声源。
 - 播放器暂停失败时仍进入内核销毁，避免某一格释放异常阻断其他格；移动端限制 4 路同时解码，桌面端保留 9 路上限。
 
@@ -14,11 +52,18 @@ v2.9.4 build 4083 是上游多画面同看、录制数据保护、平台播放�
 - 自动容量限制改为一次递归快照按时间清理，覆盖平台/主播/日期多层目录；文件轮转、锁定或空目录均以有限步骤结束，消除持续循环和 CPU 异常升高风险。
 - 调试日志保留最近 2000 条，EPG 模糊匹配缓存按数据源隔离并限制 1024 项；房间详情失败只回退到身份相同的当前房间，且不再原地改写活动状态。
 
+## 关注、搜索与弹幕显示
+
+- 修复上游 #784：关注页当前标签在响应构建阶段完成订阅，“全部 → 自定义 → 全部”可稳定往返，筛选数据与 ChoiceChip 选择态保持一致。
+- 搜索结果在 Android/iOS 恢复短列表和长列表回弹；平台分类栏保持起始对齐和有界横向滚动，不再把整行拖离首尾位置。
+- 修复上游 #783：弹幕原生描边由四次偏移叠加恢复为单次清晰绘制，减少重复绘制；低透明度轮廓使用连续伽马曲线，在亮色画面上保留更多边缘对比度。
+
 ## 平台接口与依赖
 
 - 快手同时解析房间页 `{h264/hevc}` 和推荐/录播列表 `adaptationSet` 结构，同清晰度的多 CDN 地址合并为线路；房间页明确下播但卡片带有效录播地址时进入录播模式。
 - 斗鱼与抖音签名统一迁移到纯 Dart，移除 JS 运行时及其桌面原生插件；斗鱼加密描述符按 Unix 秒缓存并合并并发刷新，避免每次画质/线路切换重复请求。
 - 抖音签名 URL 不再改写调用方参数，保留基础 URL 既有查询；随机令牌复用单个安全随机源。新增斗鱼加密描述符和快手播放结构接口探测。
+- 快手 #782 的后续反馈确认“全部无法播放”来自旧 Cookie 触发平台风控，用户刷新 Cookie 后恢复；直播/录播双结构解析继续覆盖真正的数据形状差异。
 - 直接依赖已复核到 Flutter 3.47 可解析的最新兼容组合；固定 Git 依赖均再次与远端 HEAD 对齐。`dynamic_color` 维持兼容 Flutter Material `ColorScheme` 的 1.9.0 系列。
 - Windows ZIP/安装程序改用当前 CMake 安装清单与必要 runner 运行时白名单，排除增量输出遗留的 QuickJS DLL、旧插件资源和开发文件。
 

@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:collection';
 
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/plugins/fjs_engine.dart';
 import 'package:pure_live/model/live_category.dart';
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/model/live_anchor_item.dart';
@@ -28,6 +27,7 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher {
   /// ============================================================
 
   Map<String, String> getHeaders() {
+    final cookie = SettingsService.to.cookieManager.yyCookie.v.trim();
     return {
       'Accept': '*/*',
       'Origin': 'https://www.yy.com',
@@ -39,7 +39,7 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher {
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
           'AppleWebKit/537.36 (KHTML, like Gecko) '
           'Chrome/128.0.0.0 Safari/537.36',
-      'Cookie': SettingsService.to.cookieManager.yyCookie.v,
+      if (cookie.isNotEmpty) 'Cookie': cookie,
     };
   }
 
@@ -74,14 +74,53 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher {
       return 'https:$imgUrl';
     }
 
+    if (imgUrl.startsWith('http://')) {
+      return 'https://${imgUrl.substring(7)}';
+    }
+
     return imgUrl;
   }
 
   static dynamic decode(dynamic data) {
-    if (data.runtimeType == String) {
+    if (data is String) {
       return json.decode(data);
     }
     return data;
+  }
+
+  static int? _asInt(dynamic value) {
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '');
+  }
+
+  @visibleForTesting
+  static bool isLiveValue(dynamic value) {
+    if (value is bool) return value;
+    final normalized = value?.toString().trim().toLowerCase();
+    return normalized == '1' || normalized == 'true' || normalized == 'live';
+  }
+
+  /// Reads the three values YY embeds in a JavaScript object without starting
+  /// a native JavaScript runtime. The values are simple literals and are used
+  /// only as query parameters for the category endpoint.
+  @visibleForTesting
+  static Map<String, dynamic>? parseCategoryPageInfo(String html) {
+    final source = RegExp(r'pageInfo\s*=\s*(\{[\s\S]*?\})\s*;', multiLine: true).firstMatch(html)?.group(1);
+    if (source == null) return null;
+
+    final moduleId = int.tryParse(RegExp(r'''moduleId\s*:\s*['"]?(-?\d+)''').firstMatch(source)?.group(1) ?? '');
+    final biz = RegExp(r'''biz\s*:\s*['"]([^'"]+)''').firstMatch(source)?.group(1)?.trim() ?? '';
+    final subBiz = RegExp(r'''subBiz\s*:\s*['"]([^'"]+)''').firstMatch(source)?.group(1)?.trim() ?? '';
+    if (moduleId == null || biz.isEmpty || subBiz.isEmpty) return null;
+    return <String, dynamic>{'moduleId': moduleId, 'biz': biz, 'subBiz': subBiz};
+  }
+
+  @visibleForTesting
+  static String normalizeWebUrl(String value) {
+    final url = value.trim();
+    if (url.startsWith('//')) return 'https:$url';
+    if (url.startsWith('http://')) return 'https://${url.substring(7)}';
+    return url;
   }
 
   /// ============================================================
@@ -151,32 +190,18 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher {
         areaPic: item['cover']?.toString() ?? '',
         typeName: liveCategory.name,
       );
-      final url = item['url']?.toString() ?? '';
+      final url = normalizeWebUrl(item['url']?.toString() ?? '');
       if (url.isEmpty) {
         subs.add(subCategory);
         continue;
       }
       final resultText = await HttpClient.instance.getText(url, queryParameters: {}, header: getHeaders());
-      final jsonText = RegExp(r'pageInfo[^{]+([^;]+);', multiLine: true).firstMatch(resultText)?.group(1) ?? '';
-      if (jsonText.isEmpty) {
-        subs.add(subCategory);
-        continue;
+      final pageInfo = parseCategoryPageInfo(resultText);
+      if (pageInfo != null) {
+        subCategory.shortName = json.encode(pageInfo);
+        final biz = pageInfo['biz']?.toString() ?? '';
+        if (biz.isNotEmpty) bizAreaNameMap.putIfAbsent(biz, () => subCategory.areaName ?? biz);
       }
-      await FlutterJsEngine.instance.init();
-      var params = await FlutterJsEngine.instance.eval("pageInfo =$jsonText");
-
-      final pageInfo = params.rawResult;
-      CoreLog.d('pageInfo: $pageInfo');
-
-      final moduleId = pageInfo['pageBar']['moduleId'];
-
-      final biz = pageInfo['pageBar']['biz'];
-
-      final subBiz = pageInfo['pageBar']['subBiz'];
-
-      final map = {'moduleId': moduleId, 'biz': biz, 'subBiz': subBiz};
-
-      subCategory.shortName = json.encode(map);
 
       subs.add(subCategory);
     }
@@ -446,7 +471,8 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher {
     final data = result['data']?['data'] ?? [];
     for (final item in data) {
       final users = item['users']?.toString() ?? '';
-      String area = await getAreaNameByBiz(item['biz']?.toString() ?? '');
+      final biz = item['biz']?.toString() ?? '';
+      final area = bizAreaNameMap[biz] ?? biz;
       items.add(
         LiveRoom(
           roomId: item['sid']?.toString() ?? '',
@@ -513,31 +539,7 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher {
   @override
   Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
     try {
-      var liveRoomUrl = "https://www.yy.com/$roomId";
-      var resultText = await HttpClient.instance.getText(liveRoomUrl, header: getHeaders());
-      var userId = RegExp(r'uid\s*:\s*"(.*?)",\s*owUid', multiLine: true).firstMatch(resultText)?.group(1) ?? '';
-      var url = "https://www.yy.com/api/liveInfoDetail/$roomId/$roomId/$userId";
-      var newResultText = await HttpClient.instance.getJson(url, header: getHeaders());
-      var resultJson = decode(newResultText);
-      if (resultJson["resultCode"] != 0) {
-        return LiveRoom(roomId: roomId, platform: platform).getLiveRoomWithError();
-      }
-      var item = resultJson["data"];
-      var roomItem = LiveRoom(
-        roomId: item["sid"]?.toString() ?? '',
-        title: item['desc'] ?? '',
-        cover: validImgUrl(item['thumb2'] ?? ''),
-        nick: item["name"].toString(),
-        userId: item["uid"].toString(),
-        watching: item["users"].toString(),
-        avatar: validImgUrl(item["avatar"]),
-        area: await getAreaNameByBiz(item["biz"] ?? ''),
-        liveStatus: LiveStatus.live,
-        status: true,
-        platform: Sites.yySite,
-        danmakuData: YyDanmakuArgs(topSid: item["sid"] ?? 0, subSid: item["ssid"] ?? 0),
-      );
-      return roomItem;
+      return await _fetchRoomDetail(platform: platform, roomId: roomId);
     } catch (e) {
       CoreLog.error(e);
       if (Get.isRegistered<PlayerController>()) {
@@ -557,43 +559,44 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher {
 
   @override
   Future<LiveRoom> getRoomDetailForRefresh({required String platform, required String roomId}) async {
-    try {
-      var liveRoomUrl = "https://www.yy.com/$roomId";
-      var resultText = await HttpClient.instance.getText(liveRoomUrl, header: getHeaders());
-      var userId = RegExp(r'uid\s*:\s*"(.*?)",\s*owUid', multiLine: true).firstMatch(resultText)?.group(1) ?? '';
-      var url = "https://www.yy.com/api/liveInfoDetail/$roomId/$roomId/$userId";
-      var newResultText = await HttpClient.instance.getJson(url, header: getHeaders());
-      var resultJson = decode(newResultText);
-      if (resultJson["resultCode"] != 0) {
-        return LiveRoom(roomId: roomId, platform: platform).getLiveRoomWithError();
-      }
-      var item = resultJson["data"];
-      var roomItem = LiveRoom(
-        roomId: item["sid"]?.toString() ?? '',
-        title: item['desc'] ?? '',
-        cover: validImgUrl(item['thumb2'] ?? ''),
-        nick: item["name"].toString(),
-        userId: item["uid"].toString(),
-        watching: item["users"].toString(),
-        avatar: validImgUrl(item["avatar"]),
-        area: await getAreaNameByBiz(item["biz"] ?? ''),
-        liveStatus: LiveStatus.live,
-        status: true,
-        platform: Sites.yySite,
-        danmakuData: YyDanmakuArgs(topSid: item["sid"] ?? 0, subSid: item["ssid"] ?? 0),
-      );
-      return roomItem;
-    } catch (e) {
-      CoreLog.error(e);
-      if (Get.isRegistered<PlayerController>()) {
-        final PlayerController playerController = Get.find<PlayerController>();
-        final currentRoom = playerController.currentRoom;
-        if (currentRoom?.hasIdentity(platform: platform, roomId: roomId) == true) {
-          return currentRoom!.getLiveRoomWithError();
-        }
-      }
-      return LiveRoom(roomId: roomId, platform: platform).getLiveRoomWithError();
+    return _fetchRoomDetail(platform: platform, roomId: roomId);
+  }
+
+  Future<LiveRoom> _fetchRoomDetail({required String platform, required String roomId}) async {
+    final response = decode(
+      await HttpClient.instance.getJson(
+        'https://www.yy.com/api/liveInfoDetail/$roomId/$roomId/0',
+        header: getHeaders(),
+      ),
+    );
+    if (response is! Map || response['resultCode'] != 0) {
+      throw const FormatException('YY room detail response is invalid');
     }
+    final rawItem = response['data'];
+    if (rawItem is! Map) {
+      return LiveRoom(roomId: roomId, platform: platform, status: false, liveStatus: LiveStatus.offline);
+    }
+    final item = Map<String, dynamic>.from(rawItem);
+    final topSid = _asInt(item['sid']) ?? _asInt(roomId) ?? 0;
+    final subSid = _asInt(item['ssid']) ?? topSid;
+    final biz = item['biz']?.toString() ?? '';
+    return LiveRoom(
+      roomId: item['sid']?.toString() ?? roomId,
+      title: item['desc']?.toString() ?? '',
+      cover: validImgUrl(item['thumb2']?.toString() ?? ''),
+      nick: item['name']?.toString() ?? '',
+      userId: item['uid']?.toString() ?? '',
+      watching: item['users']?.toString() ?? '',
+      popularity: item['users']?.toString() ?? '',
+      audienceMetricType: AudienceMetricType.popularity,
+      avatar: validImgUrl(item['avatar']?.toString() ?? ''),
+      area: bizAreaNameMap[biz] ?? biz,
+      liveStatus: LiveStatus.live,
+      status: true,
+      platform: Sites.yySite,
+      danmakuData: YyDanmakuArgs(topSid: topSid, subSid: subSid),
+      link: 'https://www.yy.com/$roomId',
+    );
   }
 
   /// ============================================================
@@ -617,6 +620,7 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher {
       final users = item['users']?.toString() ?? '';
 
       final roomId = item['sid']?.toString() ?? '';
+      final isLive = isLiveValue(item['liveOn']);
 
       items.add(
         LiveRoom(
@@ -629,9 +633,9 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher {
           popularity: users,
           audienceMetricType: AudienceMetricType.popularity,
           avatar: validImgUrl(item['headurl']?.toString() ?? ''),
-          area: await getAreaNameByBiz(item['biz']?.toString() ?? ''),
-          liveStatus: LiveStatus.live,
-          status: true,
+          area: bizAreaNameMap[item['biz']?.toString() ?? ''] ?? item['biz']?.toString() ?? '',
+          liveStatus: isLive ? LiveStatus.live : LiveStatus.offline,
+          status: isLive,
           platform: Sites.yySite,
           link: 'https://www.yy.com/$roomId',
         ),
@@ -649,11 +653,11 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher {
   Future<List<LiveAnchorItem>> searchAnchors(String keyword, {int page = 1, int pageSize = 30}) async {
     final resultText = await HttpClient.instance.getJson(
       'https://www.yy.com/apiSearch/doSearch.json',
-      queryParameters: {'q': keyword, 't': '120', 'n': page},
+      queryParameters: {'q': keyword, 't': '1', 'n': page},
       header: getHeaders(),
     );
 
-    final result = json.decode(resultText);
+    final result = decode(resultText);
 
     final List<LiveAnchorItem> items = [];
 
@@ -662,10 +666,10 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher {
     for (final item in docs) {
       items.add(
         LiveAnchorItem(
-          roomId: item['room_id']?.toString() ?? '',
-          avatar: validImgUrl(item['game_avatarUrl180']?.toString() ?? ''),
-          userName: item['game_nick']?.toString() ?? '',
-          liveStatus: item['gameLiveOn'],
+          roomId: item['sid']?.toString() ?? item['ssid']?.toString() ?? '',
+          avatar: validImgUrl(item['headurl']?.toString() ?? ''),
+          userName: item['name']?.toString() ?? item['stageName']?.toString() ?? '',
+          liveStatus: isLiveValue(item['liveOn']),
         ),
       );
     }
@@ -675,7 +679,8 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher {
 
   @override
   Future<bool> getLiveStatus({required String platform, required String roomId}) async {
-    return Future.value(true);
+    final room = await _fetchRoomDetail(platform: platform, roomId: roomId);
+    return room.status == true && room.liveStatus == LiveStatus.live;
   }
 
   @override

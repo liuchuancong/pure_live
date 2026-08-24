@@ -19,7 +19,7 @@ import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/player/utils/video_output_size_policy.dart';
 import 'package:pure_live/player/interface/media_kit_player_accessor.dart';
 
-class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
+class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFitAwarePlayer {
   MediaKitAdapter() {
     _audioModeTransitions = LatestAsyncValueQueue<bool>(_applyAudioOnly);
   }
@@ -90,6 +90,8 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
   String? _currentUrl;
 
   bool _isAudioOnly = false;
+
+  BoxFit _videoFit = BoxFit.contain;
 
   late final LatestAsyncValueQueue<bool> _audioModeTransitions;
 
@@ -464,6 +466,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     final video = Video(
       controller: _controller,
       controls: NoVideoControls,
+      fit: _videoFit,
       // LivePlay's WidgetsBindingObserver is the single lifecycle authority.
       // Letting Video apply a second, settings-only policy paused audio-only
       // rooms on Home/lock even though the background policy kept them alive.
@@ -477,6 +480,11 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
       sourceHeight: _heightSubject,
       child: video,
     );
+  }
+
+  @override
+  void setVideoFit(BoxFit fit) {
+    _videoFit = fit;
   }
 
   // =========================

@@ -927,13 +927,6 @@ packages:
       url: "https://github.com/guide-inc-org/guide-flutter_inappwebview.git"
     source: git
     version: "0.7.0-beta.3"
-  flutter_js:
-    dependency: "direct main"
-    description:
-      path: "plugins/built_in_kotlin/flutter_js"
-      relative: true
-    source: path
-    version: "0.8.7"
   flutter_json:
     dependency: "direct main"
     description:
@@ -2223,14 +2216,6 @@ packages:
       url: "https://mirrors.cloud.tencent.com/dart-pub/"
     source: hosted
     version: "2.2.0"
-  sync_http:
-    dependency: transitive
-    description:
-      name: sync_http
-      sha256: "7f0cd72eca000d2e026bcd6f990b81d0ca06022ef4e32fb257b30d3d1014a961"
-      url: "https://mirrors.cloud.tencent.com/dart-pub/"
-    source: hosted
-    version: "0.3.1"
   syncfusion_flutter_core:
     dependency: transitive
     description:

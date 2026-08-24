@@ -1,11 +1,11 @@
 import 'dart:async';
+
 import 'package:pure_live/gen/env.g.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/race_http.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pure_live/common/utils/githup_mirror.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
-
 
 class VersionUtil {
   static PackageInfo? _packageInfo;

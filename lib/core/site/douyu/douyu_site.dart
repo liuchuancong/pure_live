@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'dart:convert';
 
 import 'package:pure_live/common/index.dart';
@@ -107,27 +106,9 @@ class DouyuSite implements LiveSite, LiveSiteRoomRefresher {
 
   @override
   Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
-    var data = await DouyuUtils.sign(detail.roomId!);
-    List<LivePlayQuality> qualities = [];
-    var result = await HttpClient.instance.postJson(
-      "https://www.douyu.com/lapi/live/getH5PlayV1/${detail.roomId}",
-      data: data,
-      formUrlEncoded: true,
-      header: {
-        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'accept-encoding': 'gzip, deflate',
-        'accept-language': 'zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3',
-        'user-agent':
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43",
-      },
-    );
-
-    var cdns = <String>[];
-    for (var item in result["data"]["cdnsWithName"]) {
-      cdns.add(item["cdn"].toString());
-    }
+    final roomId = detail.roomId ?? '';
+    final playData = await _requestPlayData(roomId);
+    final cdns = parseCdnCodes(playData);
     cdns.sort((a, b) {
       if (a.startsWith("scdn") && !b.startsWith("scdn")) {
         return 1;
@@ -136,45 +117,127 @@ class DouyuSite implements LiveSite, LiveSiteRoomRefresher {
       }
       return 0;
     });
-    for (var item in result["data"]["multirates"]) {
-      qualities.add(LivePlayQuality(quality: item["name"].toString(), data: DouyuPlayData(item["rate"], cdns)));
+    final qualities = <LivePlayQuality>[];
+    final rates = playData['multirates'];
+    if (rates is List) {
+      for (final item in rates.whereType<Map>()) {
+        final rate = _asInt(item['rate']);
+        if (rate == null) continue;
+        final name = item['name']?.toString().trim();
+        qualities.add(
+          LivePlayQuality(quality: name?.isNotEmpty == true ? name! : 'rate $rate', data: DouyuPlayData(rate, cdns)),
+        );
+      }
+    }
+    if (qualities.isEmpty) {
+      qualities.add(LivePlayQuality(quality: 'default', data: DouyuPlayData(_asInt(playData['rate']) ?? -1, cdns)));
     }
     return qualities;
   }
 
   @override
   Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
-    var data = quality.data as DouyuPlayData;
-    List<String> urls = [];
-    for (var item in data.cdns) {
-      var url = await getPlayUrl(detail.roomId!, data.rate, item);
-      if (url.isNotEmpty) {
-        urls.add(url);
+    final data = quality.data as DouyuPlayData;
+    final urls = <String>[];
+    Object? lastError;
+    for (final cdn in data.cdns) {
+      try {
+        final url = await getPlayUrl(detail.roomId!, data.rate, cdn);
+        if (url.isNotEmpty && !urls.contains(url)) urls.add(url);
+      } catch (error) {
+        lastError = error;
       }
     }
+    if (urls.isEmpty && lastError != null) throw lastError;
     return urls;
   }
 
   Future<String> getPlayUrl(String roomId, int rate, String cdn) async {
-    var sign = await DouyuUtils.sign(roomId, rate: rate, cdn: cdn);
+    final playData = await _requestPlayData(roomId, rate: rate, cdn: cdn);
+    return parsePlayUrl(playData);
+  }
 
-    var result = await HttpClient.instance.postJson(
-      "https://www.douyu.com/lapi/live/getH5PlayV1/$roomId",
-      data: sign,
-      formUrlEncoded: true,
-      header: {
-        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'accept-encoding': "gzip, deflate",
-        'accept-language': 'zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3',
-        'user-agent':
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43",
-      },
-    );
+  Future<Map<String, dynamic>> _requestPlayData(String roomId, {int rate = -1, String cdn = ''}) async {
+    if (roomId.trim().isEmpty) {
+      throw const DouyuPlayApiException('room id is empty');
+    }
+    Object? lastError;
+    for (var attempt = 0; attempt < 2; attempt++) {
+      try {
+        final sign = await DouyuUtils.sign(roomId, rate: rate, cdn: cdn, forceRefresh: attempt > 0);
+        final result = await HttpClient.instance.postJson(
+          'https://www.douyu.com/lapi/live/getH5PlayV1/$roomId',
+          data: sign,
+          formUrlEncoded: true,
+          header: DouyuUtils.requestHeaders(roomId),
+        );
+        return parsePlayResponse(result);
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw DouyuPlayApiException('H5 play request failed after retry', cause: lastError);
+  }
 
-    return "${result["data"]["rtmp_url"]}/"
-        "${HtmlUnescape().convert(result["data"]["rtmp_live"].toString())}";
+  @visibleForTesting
+  static Map<String, dynamic> parsePlayResponse(dynamic response) {
+    if (response is! Map) {
+      throw const DouyuPlayApiException('H5 play response is not an object');
+    }
+    final errorCode = _asInt(response['error']) ?? _asInt(response['code']) ?? -1;
+    if (errorCode != 0) {
+      final message = response['msg']?.toString().trim();
+      throw DouyuPlayApiException('H5 play API error $errorCode${message?.isNotEmpty == true ? ': $message' : ''}');
+    }
+    final rawData = response['data'];
+    if (rawData is! Map) {
+      throw const DouyuPlayApiException('H5 play response is missing data');
+    }
+    return Map<String, dynamic>.from(rawData);
+  }
+
+  @visibleForTesting
+  static List<String> parseCdnCodes(Map<String, dynamic> data) {
+    final result = <String>[];
+    final rawCdns = data['cdnsWithName'];
+    if (rawCdns is List) {
+      for (final item in rawCdns.whereType<Map>()) {
+        final code = item['cdn']?.toString().trim() ?? '';
+        if (code.isNotEmpty && !result.contains(code)) result.add(code);
+      }
+    }
+    final current = data['rtmp_cdn']?.toString().trim() ?? '';
+    if (current.isNotEmpty && !result.contains(current)) result.insert(0, current);
+    if (result.isEmpty) result.add('');
+    return result;
+  }
+
+  @visibleForTesting
+  static String parsePlayUrl(Map<String, dynamic> data) {
+    final unescape = HtmlUnescape();
+    for (final key in const <String>['flv_url', 'stream_url', 'url']) {
+      final value = unescape.convert(data[key]?.toString().trim() ?? '');
+      if (_isPlayableUrl(value)) return value;
+    }
+
+    final live = unescape.convert(data['rtmp_live']?.toString().trim() ?? '');
+    if (_isPlayableUrl(live)) return live;
+    final base = unescape.convert(data['rtmp_url']?.toString().trim() ?? '');
+    if (base.isNotEmpty && live.isNotEmpty) {
+      final combined = '${base.replaceFirst(RegExp(r'/+$'), '')}/${live.replaceFirst(RegExp(r'^/+'), '')}';
+      if (_isPlayableUrl(combined)) return combined;
+    }
+    throw const DouyuPlayApiException('H5 play response has no playable URL');
+  }
+
+  static int? _asInt(dynamic value) {
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '');
+  }
+
+  static bool _isPlayableUrl(String value) {
+    final uri = Uri.tryParse(value);
+    return uri != null && uri.host.isNotEmpty && const {'http', 'https', 'rtmp'}.contains(uri.scheme);
   }
 
   @override
@@ -292,19 +355,13 @@ class DouyuSite implements LiveSite, LiveSiteRoomRefresher {
 
   @override
   Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) async {
-    var did = generateRandomString(32);
+    final effectivePageSize = pageSize.clamp(1, 50);
+    final headers = DouyuUtils.requestHeaders()..['referer'] = 'https://www.douyu.com/search/';
 
     var result = await HttpClient.instance.getJson(
       "https://www.douyu.com/japi/search/api/searchShow",
-      queryParameters: {"kw": keyword, "page": page, "pageSize": 20},
-      header: {
-        'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-            'AppleWebKit/537.36 (KHTML, like Gecko) '
-            'Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.51',
-        'referer': 'https://www.douyu.com/search/',
-        'Cookie': 'dy_did=$did;acf_did=$did',
-      },
+      queryParameters: {"kw": keyword, "page": page, "pageSize": effectivePageSize},
+      header: headers,
     );
 
     if (result['error'] != 0) {
@@ -343,35 +400,15 @@ class DouyuSite implements LiveSite, LiveSiteRoomRefresher {
     return items;
   }
 
-  String generateRandomString(int length) {
-    var random = Random.secure();
-
-    var values = List<int>.generate(length, (i) => random.nextInt(16));
-
-    StringBuffer stringBuffer = StringBuffer();
-
-    for (var item in values) {
-      stringBuffer.write(item.toRadixString(16));
-    }
-
-    return stringBuffer.toString();
-  }
-
   @override
   Future<List<LiveAnchorItem>> searchAnchors(String keyword, {int page = 1, int pageSize = 30}) async {
-    var did = generateRandomString(32);
+    final effectivePageSize = pageSize.clamp(1, 50);
+    final headers = DouyuUtils.requestHeaders()..['referer'] = 'https://www.douyu.com/search/';
 
     var result = await HttpClient.instance.getJson(
       "https://www.douyu.com/japi/search/api/searchUser",
-      queryParameters: {"kw": keyword, "page": page, "pageSize": 20, "filterType": 1},
-      header: {
-        'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-            'AppleWebKit/537.36 (KHTML, like Gecko) '
-            'Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.51',
-        'referer': 'https://www.douyu.com/search/',
-        'Cookie': 'dy_did=$did;acf_did=$did',
-      },
+      queryParameters: {"kw": keyword, "page": page, "pageSize": effectivePageSize, "filterType": 1},
+      header: headers,
     );
 
     var items = <LiveAnchorItem>[];
@@ -428,4 +465,14 @@ class DouyuPlayData {
   final List<String> cdns;
 
   DouyuPlayData(this.rate, this.cdns);
+}
+
+class DouyuPlayApiException implements Exception {
+  const DouyuPlayApiException(this.message, {this.cause});
+
+  final String message;
+  final Object? cause;
+
+  @override
+  String toString() => cause == null ? 'DouyuPlayApiException: $message' : 'DouyuPlayApiException: $message ($cause)';
 }

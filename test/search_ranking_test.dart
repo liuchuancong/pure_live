@@ -99,7 +99,9 @@ void main() {
     expect(LiveSearchCapabilities.forPlatform('bilibili').mayIncludeOffline, isTrue);
     expect(LiveSearchCapabilities.forPlatform('twitch').mayIncludeOffline, isTrue);
     expect(LiveSearchCapabilities.forPlatform('soop').coverage, NativeSearchCoverage.liveOnly);
+    expect(LiveSearchCapabilities.forPlatform('yy').supportsNativeSearch, isTrue);
     expect(LiveSearchCapabilities.forPlatform('kuaishou').supportsNativeSearch, isFalse);
     expect(LiveSearchCapabilities.forPlatform('iptv').supportsPagination, isFalse);
+    expect(LiveSearchCapabilities.forPlatform('iptv').supportsWebSearch, isFalse);
   });
 }

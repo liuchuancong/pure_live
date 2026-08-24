@@ -87,6 +87,76 @@ void main() {
       expect(updated.onlineViewers, '3200');
     });
 
+    test('room refresh merge preserves local metadata and omitted status fields', () {
+      final playback = <String, dynamic>{'url': 'fixture'};
+      final danmaku = <String, dynamic>{'token': 'fixture'};
+      final stored = LiveRoom(
+        roomId: ' 100 ',
+        platform: 'BILIBILI',
+        title: 'old title',
+        nick: 'stored nick',
+        liveStatus: LiveStatus.live,
+        status: true,
+        isRecord: true,
+        data: playback,
+        danmakuData: danmaku,
+        tagIds: const ['local-tag'],
+        lastWatchedAt: 123,
+      ).normalizedIdentityCopy();
+      final sparseRefresh = LiveRoom(
+        roomId: '100',
+        platform: 'bilibili',
+        title: 'fresh title',
+        nick: '',
+        liveStatus: null,
+        status: null,
+        isRecord: null,
+        tagIds: const ['remote-tag'],
+      );
+
+      final merged = stored.mergeFrom(sparseRefresh);
+
+      expect(merged.title, 'fresh title');
+      expect(merged.nick, 'stored nick');
+      expect(merged.liveStatus, LiveStatus.live);
+      expect(merged.status, isTrue);
+      expect(merged.isRecord, isTrue);
+      expect(merged.tagIds, const ['local-tag']);
+      expect(merged.data, same(playback));
+      expect(merged.danmakuData, same(danmaku));
+      expect(merged.lastWatchedAt, 123);
+    });
+
+    test('room refresh merge accepts an explicit offline snapshot', () {
+      final stored = LiveRoom(
+        roomId: '100',
+        platform: 'bilibili',
+        liveStatus: LiveStatus.live,
+        status: true,
+        isRecord: true,
+      );
+      final offline = LiveRoom(
+        roomId: '100',
+        platform: 'bilibili',
+        liveStatus: LiveStatus.offline,
+        status: false,
+        isRecord: false,
+      );
+
+      final merged = stored.mergeFrom(offline);
+
+      expect(merged.liveStatus, LiveStatus.offline);
+      expect(merged.status, isFalse);
+      expect(merged.isRecord, isFalse);
+    });
+
+    test('room refresh merge ignores a different platform-room identity', () {
+      final stored = LiveRoom(roomId: '100', platform: 'bilibili', title: 'stored');
+      final unrelated = LiveRoom(roomId: '100', platform: 'huya', title: 'other');
+
+      expect(stored.mergeFrom(unrelated), same(stored));
+    });
+
     test('migrates Huya URI 8006 heat out of the online-viewer field', () {
       final room = LiveRoom.fromJson({
         'roomId': '998',

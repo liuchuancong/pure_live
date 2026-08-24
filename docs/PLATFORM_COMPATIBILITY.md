@@ -14,10 +14,13 @@
 | 网易 CC | 动态游戏列表，保留网站顶层入口 | 原生主播/直播间搜索，可返回未开播结果 | 当前未接入 | 分类 visitor 在线；详情有在线字段时使用，否则粉丝数 |
 | Twitch | 网站 GraphQL 标签与目录接口 | 原生频道搜索，可返回未开播频道 | Twitch IRC WebSocket；登录 Cookie 中的 `auth-token`/`login` 用于认证聊天 | `viewersCount` 为并发观看人数 |
 | SOOP Live | 官方分类与推荐接口 | 原生搜索当前直播间 | SOOP WebSocket；账号 Cookie 可选 | `current_view_cnt` 为并发观看人数，列表与房间详情统一存储 |
+| YY Live | 动态读取头部与分类元数据 | 原生直播间/主播搜索，可返回未开播结果 | YY WebSocket | `users` 为平台热度值 |
 
 > “热度”是平台排序/活跃度指标，不等同于唯一在线用户数。界面会按平台字段分别显示“热度”“在线”或“累计观看”，避免把不同含义的数据统一标成在线人数。
 
-搜索页会直接显示当前平台的覆盖范围，并提供“包含未开播”筛选。综合排序固定把直播中房间放在前面，再比较当前观看口径、粉丝数和主页平台顺序；“平台优先”直接使用“平台显示设置”的拖动顺序，“观众优先”和“粉丝优先”则调整对应字段的比较次序。粉丝字段只在平台搜索响应明确提供时参与，缺少该字段的结果保留为稳定次序；快手使用网页搜索入口。每个平台单独维护翻页结束状态，空页或重复页会停止继续请求。
+搜索页会直接显示当前平台的覆盖范围，并提供“包含未开播”筛选。平台选择栏使用独立水平列表：项目超过屏幕宽度时可横向访问，首尾为硬边界，不使用无对应内容页的 `TabBar` 自动定位。综合排序固定把直播中房间放在前面，再比较当前观看口径、粉丝数和主页平台顺序；“平台优先”直接使用“平台显示设置”的拖动顺序，“观众优先”和“粉丝优先”则调整对应字段的比较次序。粉丝字段只在平台搜索响应明确提供时参与，缺少该字段的结果保留为稳定次序；快手使用网页搜索入口，IPTV 只查找本机导入频道。每个平台单独维护翻页结束状态，空页或重复页会停止继续请求。
+
+“全部”搜索并发请求各原生平台，但按单个平台完成顺序渐进显示，某个平台超过 12 秒会被标记为本轮部分失败，不再阻塞其他结果。搜索页生命周期内复用同一组适配器，Twitch 等游标分页状态不会因每次读取平台列表而丢失。网页继续搜索可从 Bilibili、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP 和 YY 的直播间链接识别“平台 + 房间号”；搜索/分类页和相似伪装域名会被忽略。
 
 “设置 → 通用 → 观看数据与排行口径”提供两个全局模式和分平台开关：
 
@@ -32,7 +35,7 @@
 python tool/interface_probe.py
 ```
 
-脚本覆盖 25 项分类、推荐、搜索、房间信息和弹幕节点探测，并检查 Twitch 与 SOOP Live 的分类、目录/推荐、搜索、房间元数据与播放令牌。它验证响应结构和关键字段，不执行完整视频播放。
+The release probe runs 36 checks across categories, recommendations, searches, room metadata, danmaku discovery and playback contracts. Douyu additionally executes signing, H5 metadata retrieval, CDN selection and a real FLV-header request with player-equivalent headers; YY verifies categories, recommendation, both search types, room status and playback lines.
 
 2026-08-17 再次完成哔哩哔哩访客 WebSocket 实连：`uid=0` 会话连续取得当前房间弹幕，但平台把 legacy 与 rich user 两处昵称和 UID 一并脱敏。客户端会优先读取平台 rich user 的完整昵称；访客数据仍为脱敏值时在弹幕列表提示来源。公开直播的弹幕接收继续使用访客会话，登录账号用于完整昵称、发送平台弹幕、关注、会员清晰度和其他账号功能。
 

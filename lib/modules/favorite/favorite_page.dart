@@ -2,6 +2,7 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/favorite/room_grid_view.dart';
 import 'package:pure_live/common/widgets/common_appbar_actions.dart';
+import 'package:pure_live/modules/tags/live_tag.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
 
 class FavoritePage extends GetView<FavoriteController> {
@@ -147,7 +148,12 @@ class _FavoriteSiteTabsState extends State<_FavoriteSiteTabs> with SingleTickerP
           physics: const PureLiveScrollPhysics(),
           tabs: availableSitesList.map((e) => Tab(text: e.name)).toList(),
         ),
-        _FavoriteTagStrip(controller: controller),
+        FavoriteTagStrip(
+          tags: controller.visibleTags,
+          selectedTagId: controller.selectedTagId,
+          allLabel: i18n('recorder_tab_all'),
+          onSelected: controller.changeSelectedTag,
+        ),
         Expanded(
           child: BasePageView<FavoriteController, LiveRoom>(
             controller: controller,
@@ -191,17 +197,33 @@ class _FavoriteSiteTabsState extends State<_FavoriteSiteTabs> with SingleTickerP
   }
 }
 
-class _FavoriteTagStrip extends StatelessWidget {
-  const _FavoriteTagStrip({required this.controller});
+class FavoriteTagStrip extends StatelessWidget {
+  const FavoriteTagStrip({
+    super.key,
+    required this.tags,
+    required this.selectedTagId,
+    required this.allLabel,
+    required this.onSelected,
+    this.labelStyle,
+  });
 
-  final FavoriteController controller;
+  final RxList<LiveTag> tags;
+  final RxString selectedTagId;
+  final String allLabel;
+  final ValueChanged<String> onSelected;
+  final TextStyle? labelStyle;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Obx(() {
-      final tags = controller.visibleTags.toList(growable: false);
-      if (tags.isEmpty) return const SizedBox.shrink();
+      // Read both reactive values before entering ListView.builder. Its lazy
+      // itemBuilder runs outside GetX's dependency collector, which previously
+      // left the visual chip on “全部” while the data filter had already moved
+      // to a custom tag.
+      final visibleTags = tags.toList(growable: false);
+      final activeTagId = selectedTagId.value;
+      if (visibleTags.isEmpty) return const SizedBox.shrink();
       return SizedBox(
         key: const ValueKey('favorite_tag_strip'),
         height: 44,
@@ -210,19 +232,20 @@ class _FavoriteTagStrip extends StatelessWidget {
           scrollDirection: Axis.horizontal,
           physics: const PureLiveScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          itemCount: tags.length + 1,
+          itemCount: visibleTags.length + 1,
           itemBuilder: (context, index) {
             final isAll = index == 0;
-            final tag = isAll ? null : tags[index - 1];
+            final tag = isAll ? null : visibleTags[index - 1];
             final tagId = tag?.id ?? TagManagementController.allTagKey;
-            final isSelected = controller.selectedTagId.value == tagId;
+            final isSelected = activeTagId == tagId;
             return Padding(
               padding: const EdgeInsets.only(right: 6),
               child: ChoiceChip(
+                key: ValueKey('favorite_tag_$tagId'),
                 showCheckmark: false,
                 label: Text(
-                  tag?.name ?? i18n('recorder_tab_all'),
-                  style: AppTextStyles.t12.copyWith(
+                  tag?.name ?? allLabel,
+                  style: (labelStyle ?? AppTextStyles.t12).copyWith(
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     color: isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurfaceVariant,
                   ),
@@ -237,9 +260,7 @@ class _FavoriteTagStrip extends StatelessWidget {
                     width: 0.5,
                   ),
                 ),
-                onSelected: (selected) {
-                  if (selected) controller.changeSelectedTag(tagId);
-                },
+                onSelected: (_) => onSelected(tagId),
               ),
             );
           },

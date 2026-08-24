@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer' as developer;
+
 import 'package:pure_live/common/index.dart';
 import 'package:synchronized/synchronized.dart';
 import 'package:pure_live/plugins/event_bus.dart';
@@ -8,7 +9,6 @@ import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
 import 'package:pure_live/modules/favorite/favorite_startup_policy.dart';
 import 'package:pure_live/common/services/settings/refresh_config_controller.dart';
-
 
 class FavoriteController extends LocalReactivePageController<LiveRoom>
     with GetTickerProviderStateMixin, WidgetsBindingObserver {
@@ -712,7 +712,6 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
 
       if (error is FormatException && error.message == 'Huya room metadata is unavailable') {
         developer.log('Favorite room unavailable: $key', name: 'FavoriteController');
-        
       } else {
         developer.log(
           'Favorite room refresh failed: $key',
