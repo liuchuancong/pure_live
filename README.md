@@ -35,7 +35,7 @@
 
 - **最新稳定版**：[v2.9.4](https://github.com/wzgrx/pure_live/releases/tag/v2.9.4)
 - **当前版本**：`2.9.4+4083`
-- **v2.9.4 上游源码基线**：`liuchuancong/pure_live@45127322`，包含多画面同看、纯 Dart 平台签名、语言切换与 Windows MSIX 数据路径修复
+- **v2.9.4 上游源码基线**：`liuchuancong/pure_live@99ef708c`，包含多画面同看、纯 Dart 平台签名、语言切换、Windows MSIX 数据路径与房间增量合并
 - **本轮构建平台**：Android arm64-v8a、Windows x64、Linux x64、macOS Universal、iOS arm64
 - **质量门禁**：Flutter Analyze、自动化测试、接口探测与各平台构建记录见 `docs/STAGE_UPDATE_2_9_4.md`
 
