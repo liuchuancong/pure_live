@@ -4,8 +4,8 @@ import 'package:pure_live/common/index.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/core/live_audio_handler.dart';
-import 'package:pure_live/player/core/background_playback_service.dart';
 import 'package:pure_live/player/core/background_playback_policy.dart';
+import 'package:pure_live/player/core/background_playback_service.dart';
 import 'package:pure_live/player/interface/unified_player_interface.dart';
 import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 
@@ -48,7 +48,9 @@ class LiveAudioService {
         androidNotificationOngoing: true,
         // Keep the media foreground service alive across short interruptions
         // so screen-off playback can resume without recreating the process.
-        androidStopForegroundOnPause: false,
+        // Keep the notification ongoing while the foreground service is active.
+        // Fix The androidNotificationOngoing will make no effect with androidStopForegroundOnPause set to false
+        androidStopForegroundOnPause: true,
         androidNotificationClickStartsActivity: true,
         notificationColor: Colors.blue,
       ),

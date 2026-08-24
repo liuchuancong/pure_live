@@ -214,8 +214,6 @@ class VersionPage extends GetView<VersionController> {
             int maxColumns = 2;
             if (PlatformUtils.isDesktop) {
               maxColumns = maxWidth > 800 ? 4 : (maxWidth > 500 ? 3 : 2);
-            } else {
-              maxColumns = maxWidth > 340 ? 2 : 1;
             }
 
             const double spacing = 8.0;
