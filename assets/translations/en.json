@@ -140,6 +140,7 @@
     "downloading_apk": "Downloading Pure Live v{version}...",
     "downloading_progress": "Downloading v{version}... {progress}%",
     "downloading_version": "Downloading v{version}...",
+    "downloading_app": "Downloading {app}...",
     "effective_after_restart": "Takes effect after restart",
     "email": "Email",
     "empty_areas_room_subtitle": "Pull down to refresh data",

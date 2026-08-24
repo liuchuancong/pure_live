@@ -173,7 +173,7 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       backgroundColor: theme.colorScheme.surfaceContainerHigh,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 500),
+        constraints: BoxConstraints(maxWidth: Get.width < 600 ? Get.width * 0.8 : 400),
         child: SizedBox(
           width: double.infinity,
           child: Padding(
@@ -202,7 +202,9 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            i18n("downloading_version", args: {"version": fileName ?? widget.version}),
+                            fileName != null
+                                ? i18n("downloading_app", args: {"app": fileName!})
+                                : i18n("downloading_version", args: {"version": widget.version}),
                             maxLines: 5,
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
