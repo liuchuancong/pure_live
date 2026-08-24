@@ -40,6 +40,10 @@
 
 构建脚本不传 `--no-daemon`，也不在每轮开始停止 Gradle daemon。保留 `.gradle`、`.dart_tool`、`build` 和原生依赖缓存；仅在缓存损坏、生成物与源码明显不一致或工具链迁移确有需要时执行针对性清理。`flutter clean` 与递归删除整个构建目录不属于常规步骤。
 
+Windows 增量构建目录可能保留已移除插件的旧 DLL 或资源。正式 ZIP/安装程序按当前
+`build/windows/x64/install_manifest.txt` 与经审查的 runner 运行时小型白名单建立独立打包
+目录，并排除开发文件；禁止直接复制整个 `runner/Release` 目录。
+
 ## 4. 验证策略
 
 - 修改过程中优先运行直接相关的单元/Widget 测试或模块检查。

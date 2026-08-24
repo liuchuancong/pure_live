@@ -96,6 +96,8 @@ foreach ($marker in @(
     'PSNativeCommandUseErrorActionPreference',
     'PureLive-$artifactVersion-android-arm64-v8a-release.apk',
     '/DArtifactVersion=$artifactVersion',
+    'build\windows\x64\install_manifest.txt',
+    'Retired QuickJS runtime files appeared in the Windows package',
     'automatic_follow_up = $false'
 )) {
     if (-not $buildScript.Contains($marker)) { throw "Build script policy marker is missing: $marker" }
