@@ -1,3 +1,32 @@
+# Pure Live v2.9.5
+
+v2.9.5 build 4084 is an Android stability update for Douyu playback and the newly synchronized YY platform.
+
+## Douyu playback
+
+- Synchronized the upstream baseline through `liuchuancong/pure_live@cc1f4dca`.
+- The H5 stream request now uses one session DID and consistent browser headers, refreshes stale signing descriptors, and performs one bounded retry.
+- Quality and CDN parsing tolerates partial response shapes, removes duplicate lines, and validates the final decoded stream URL.
+- Actual media requests now receive Douyu Referer, Origin, User-Agent and matching DID cookies on every player backend.
+- The public interface gate now verifies signing, H5 metadata, CDN selection, and a real FLV header instead of stopping at the encryption descriptor.
+
+## YY integration
+
+- Added categories, room lists, search, room status, quality/line playback, danmaku and local Cookie settings from upstream.
+- Replaced the native JavaScript runtime used for a simple page literal with a pure-Dart parser, keeping Android and desktop packages smaller and deterministic.
+- Upgraded public URLs to HTTPS and switched room refresh to the direct authoritative room-detail endpoint.
+- Corrected live/anchor search contracts, live-state parsing, room identifiers, and YY Cookie status display.
+
+## Regression coverage and delivery
+
+- Multiview sorting now understands localized ten-thousand/hundred-million suffixes as well as values such as `18.3k`.
+- Added deterministic Douyu/YY parser tests and 36 public probes across Bilibili, Douyu, Huya, Douyin, Kuaishou, CC, Twitch, SOOP and YY.
+- Version: `2.9.5+4084`.
+- This release publishes Android `arm64-v8a`; Windows, Linux, macOS and iOS remain on their v2.9.4 artifacts.
+- No ADB or phone automation was used; the signed APK is ready for independent device acceptance.
+
+---
+
 # Pure Live v2.9.4
 
 v2.9.4 build 4083 是上游多画面同看、录制数据保护、平台播放兼容和长时间资源治理的全平台稳定更新，发布到 `wzgrx/pure_live`。

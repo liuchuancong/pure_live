@@ -14,6 +14,7 @@
 | 网易 CC | 动态游戏列表，保留网站顶层入口 | 原生主播/直播间搜索，可返回未开播结果 | 当前未接入 | 分类 visitor 在线；详情有在线字段时使用，否则粉丝数 |
 | Twitch | 网站 GraphQL 标签与目录接口 | 原生频道搜索，可返回未开播频道 | Twitch IRC WebSocket；登录 Cookie 中的 `auth-token`/`login` 用于认证聊天 | `viewersCount` 为并发观看人数 |
 | SOOP Live | 官方分类与推荐接口 | 原生搜索当前直播间 | SOOP WebSocket；账号 Cookie 可选 | `current_view_cnt` 为并发观看人数，列表与房间详情统一存储 |
+| YY Live | Dynamic header/category metadata | Native live-room and anchor search | YY WebSocket | `users` is the platform popularity value |
 
 > “热度”是平台排序/活跃度指标，不等同于唯一在线用户数。界面会按平台字段分别显示“热度”“在线”或“累计观看”，避免把不同含义的数据统一标成在线人数。
 
@@ -32,7 +33,7 @@
 python tool/interface_probe.py
 ```
 
-脚本覆盖 25 项分类、推荐、搜索、房间信息和弹幕节点探测，并检查 Twitch 与 SOOP Live 的分类、目录/推荐、搜索、房间元数据与播放令牌。它验证响应结构和关键字段，不执行完整视频播放。
+The release probe runs 36 checks across categories, recommendations, searches, room metadata, danmaku discovery and playback contracts. Douyu additionally executes signing, H5 metadata retrieval, CDN selection and a real FLV-header request with player-equivalent headers; YY verifies categories, recommendation, both search types, room status and playback lines.
 
 2026-08-17 再次完成哔哩哔哩访客 WebSocket 实连：`uid=0` 会话连续取得当前房间弹幕，但平台把 legacy 与 rich user 两处昵称和 UID 一并脱敏。客户端会优先读取平台 rich user 的完整昵称；访客数据仍为脱敏值时在弹幕列表提示来源。公开直播的弹幕接收继续使用访客会话，登录账号用于完整昵称、发送平台弹幕、关注、会员清晰度和其他账号功能。
 

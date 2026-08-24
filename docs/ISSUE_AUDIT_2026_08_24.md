@@ -4,7 +4,7 @@
 
 ## 结论摘要
 
-| Issue | 级别 | 复核结论 | v2.9.4 处理 |
+| Issue | 级别 | 复核结论 | v2.9.4/v2.9.5 处理 |
 |---|---|---|---|
 | [#778 录制目录清理误删](https://github.com/liuchuancong/pure_live/issues/778) | 严重 | 可由源码直接确认；自定义目录被当作录制根目录递归删除 | 完整修复并增加隔离目录、所有权标记和误删回归 |
 | [#779 动态应用图标](https://github.com/liuchuancong/pure_live/issues/779) | 增强 | 涉及 Android/iOS/TV 多套图标、Banner、启动图和平台审核配置 | 记录为独立资源工程，避免在稳定修复版本中只覆盖部分入口 |
@@ -12,6 +12,7 @@
 | [#782 快手多数房间无法播放](https://github.com/liuchuancong/pure_live/issues/782) | 高 | 实际响应确认直播/回放数据形状不同；2026-08-24 最新跟进又确认旧 Cookie 触发平台风控，刷新后恢复 | 同时解析直播/录播结构、合并 CDN 线路并支持匹配卡片录播回退；风控场景需更新 Cookie |
 | [#783 低透明度弹幕描边发糊](https://github.com/liuchuancong/pure_live/issues/783) | 中 | 原生描边段落又被四个半像素偏移重复绘制，亮色画面下半透明像素叠加成模糊粗边 | 描边恢复单次原生绘制；轮廓透明度使用连续伽马曲线保持低透明度对比度，0 仍保持完全透明 |
 | [#784 标签无法切回全部、搜索滚动错位](https://github.com/liuchuancong/pure_live/issues/784) | 高 | 标签选择值只在懒加载 itemBuilder 中读取，未被 GetX 收集为依赖；搜索结果与平台栏缺少各自明确的边界策略 | 在响应构建阶段捕获选择值并补充往返测试；触摸端结果使用回弹，平台栏固定起始对齐并使用有界滚动 |
+| [#785 Douyu media request failure](https://github.com/liuchuancong/pure_live/issues/785) | High | Signing and CDN bytes are valid; the full playback request path and adapter error handling were incomplete | Add consistent player headers, session DID, forced-refresh retry, defensive response parsing, and a real FLV probe |
 
 ## #778：录制目录与自动清理
 
@@ -39,6 +40,14 @@
 - 同一时间的多次取流共用一个在途刷新 Future；描述符缺字段、过期或迭代次数异常时快速失败，签名表单使用标准查询编码。
 - 抖音签名构造复制调用方参数并合并基础 URL 查询，消除重复请求对共享参数 Map 的污染；令牌生成改为单个安全随机源。
 - 自动化覆盖缓存时间单位、签名确定性、表单字符编码、迭代上限和抖音参数不可变性；公开接口探测校验斗鱼描述符字段与过期时间。
+
+## #785: Douyu H5 metadata and media request
+
+- The report independently confirmed that signing succeeds and the CDN returns valid FLV bytes. The issue exposed two untested boundaries: H5 response acquisition and the headers used when the player opens the final URL.
+- v2.9.5 gives the signing and H5 requests one session DID, matching cookies, Origin, Referer and User-Agent. Encryption descriptors are capped at five minutes and one failed request triggers a forced refresh plus one bounded retry.
+- API errors and partial data are validated before optional quality/CDN fields are read. CDN codes and URLs are deduplicated, escaped query strings are decoded, and useful adapter exceptions replace unchecked map failures.
+- `PlayerController.resolvePlaybackHeaders` now supplies Douyu Referer, Origin, User-Agent and DID cookies to media_kit, video_player, fijkplayer and the audio-only loader through their existing shared header path.
+- The public probe selects a currently live room, signs the H5 request, validates metadata, opens the selected CDN URL with player-equivalent headers, and verifies the FLV signature. This passed from the release network together with all other platform probes.
 
 ## #782：快手直播与回放
 

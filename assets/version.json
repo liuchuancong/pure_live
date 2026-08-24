@@ -1,14 +1,25 @@
 {
-  "version": "2.9.4",
-  "build_number": 4083,
-  "version_num": 209044083,
-  "version_desc": "- 同步并合并发布时最新上游 liuchuancong/pure_live@99ef708c，新增多画面同看、纯 Dart 平台签名、语言切换、视频显示模式与房间增量合并，并保留维护分支播放器、弹幕和高刷新率增强。\n- 加固最新上游边界：旧房间迟到响应通过代次与身份围栏拦截，稀疏响应保留真实状态和本地标签，画面适配由播放器内核原生执行以减少首帧空白及 Windows 纹理浪费。\n- 修复 Windows MSIX 数据路径提供器，商店式安装使用系统隔离目录，便携版继续使用安装目录内 AppData。\n- Windows 安装包改用当前 CMake 清单与必要运行时白名单，排除增量输出中已退役的 QuickJS 运行库与旧插件资产。\n- 修复录制目录清理可能误删用户所选父目录文件的问题；自定义位置统一进入带所有权标记的 PureLiveRecords 专用子目录。\n- 修复录制限额无法发现分层文件并可能持续循环的问题，改为递归快照、有界清理和文件轮转容错。\n- 适配快手当前直播与录播两种播放结构，合并多 CDN 线路，并以房间页状态区分直播/录播回退。\n- 斗鱼、抖音签名迁移为纯 Dart；斗鱼加密描述符按秒缓存并合并并发刷新，抖音签名保留基础查询且不再污染调用方参数。\n- 多画面音频焦点改为串行最新选择，播放器 pause 异常仍执行销毁；移动端限制四路、桌面端最多九路。\n- 调试日志与 EPG 匹配缓存增加容量上限和来源隔离；站点失败回退不再把其他直播间状态写入当前房间。\n- 修复关注标签选择态未被响应系统订阅导致无法切回“全部”的问题；搜索结果恢复触摸回弹，平台分类栏保持起始对齐和有界滚动。\n- 弹幕原生描边改为单次清晰绘制，低透明度轮廓使用连续对比度曲线，改善亮色画面可读性并减少重复渲染。\n- Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按阶段串行构建发布。",
+  "version": "2.9.5",
+  "build_number": 4084,
+  "version_num": 209054084,
+  "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@cc1f4dca，吸收 YY 直播平台与多画面选台排序，并保留维护仓库本机优先、单平台串行和正式签名发布流程。\n- 修复斗鱼“直播获取失败”与播放器读流失败：H5 取流统一浏览器请求头和会话 DID，失败后强制刷新加密描述符并有界重试，兼容缺失线路/清晰度字段和 HTML 转义播放地址。\n- 斗鱼实际播放请求补齐 Referer、Origin、User-Agent 与一致 Cookie；公开接口门禁从签名描述符扩展到 H5 元数据、CDN 地址和真实 FLV 文件头。\n- 加固新增 YY 平台：移除仅为解析页面字面量引入的原生 JavaScript 运行时，改用纯 Dart 解析；统一 HTTPS，直接查询权威房间状态，修复主播搜索字段、直播状态、Cookie 显示和下播刷新。\n- 多画面选台正确解析“万/亿/k”等本地化热度后排序；YY 与斗鱼新增确定性解析测试及推荐、搜索、房间、清晰度/线路播放探测。\n- 本轮正式交付 Android arm64-v8a；Windows、Linux、macOS 与 iOS 继续使用 v2.9.4 对应安装包。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.4",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.5",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
+    "android": {
+      "version": "2.9.5",
+      "build_number": 4084,
+      "version_num": 209054084,
+      "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@cc1f4dca，吸收 YY 直播平台与多画面选台排序，并保留维护仓库本机优先、单平台串行和正式签名发布流程。\n- 修复斗鱼“直播获取失败”与播放器读流失败：H5 取流统一浏览器请求头和会话 DID，失败后强制刷新加密描述符并有界重试，兼容缺失线路/清晰度字段和 HTML 转义播放地址。\n- 斗鱼实际播放请求补齐 Referer、Origin、User-Agent 与一致 Cookie；公开接口门禁从签名描述符扩展到 H5 元数据、CDN 地址和真实 FLV 文件头。\n- 加固新增 YY 平台：移除仅为解析页面字面量引入的原生 JavaScript 运行时，改用纯 Dart 解析；统一 HTTPS，直接查询权威房间状态，修复主播搜索字段、直播状态、Cookie 显示和下播刷新。\n- 多画面选台正确解析“万/亿/k”等本地化热度后排序；YY 与斗鱼新增确定性解析测试及推荐、搜索、房间、清晰度/线路播放探测。\n- 本轮正式交付 Android arm64-v8a；Windows、Linux、macOS 与 iOS 继续使用 v2.9.4 对应安装包。",
+      "prerelease": false,
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.5",
+      "android_abis": [
+        "arm64-v8a"
+      ]
+    },
     "windows": {
       "version": "2.9.4",
       "build_number": 4083,
