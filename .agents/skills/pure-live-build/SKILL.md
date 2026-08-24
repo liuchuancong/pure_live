@@ -21,6 +21,9 @@ Before selecting or running a validation/build command, read [`../../../BUILD_PO
    Keep Configuration Cache in strict failure mode. Mark a confirmed incompatible
    Flutter aggregate task with `notCompatibleWithConfigurationCache` so Gradle
    discards only that entry instead of persisting incomplete state in warning mode.
+   For Windows packaging, stage only files in the current CMake
+   `install_manifest.txt` plus the reviewed runner-runtime allowlist; never copy
+   the complete incremental Release directory, which can retain DLLs from removed plugins.
 7. Report the generated build record and artifacts, then stop. Do not append another platform, full regression, package, upload, or release stage unless it was included in the current request.
 
 Use `tool/local_ci.ps1` for focused/full validation and `tool/build_local_release.ps1` for the single explicitly selected local target.
