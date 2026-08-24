@@ -1,14 +1,10 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:developer';
-
-import 'player_pool.dart';
-
 import 'dart:math' as math;
 
 import 'line_fallback_manager.dart';
 import '../models/player_state.dart';
-import 'preload_player_manager.dart';
 import '../models/player_engine.dart';
 import 'engine_fallback_manager.dart';
 
@@ -35,14 +31,13 @@ import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/utils/pip_window_widget.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
+import 'package:pure_live/player/adapters/player_adapter_factory.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/compact_danmaku_overlay.dart';
 
 class PlayerManager {
-  final PlayerPool playerPool;
   final EngineFallbackManager fallbackManager;
-  final PreloadPlayerManager preloadManager;
   final LineFallbackManager lineManager;
   final Duration audioModeSwitchTimeout;
 
@@ -59,9 +54,7 @@ class PlayerManager {
   Future<void>? _closeFuture;
 
   PlayerManager({
-    required this.playerPool,
     required this.fallbackManager,
-    required this.preloadManager,
     required this.lineManager,
     this.audioModeSwitchTimeout = const Duration(seconds: 5),
     this.audioModeVideoWarmRetention,
@@ -301,13 +294,19 @@ class PlayerManager {
     return w / h;
   }
 
+  Future<UnifiedPlayer> _createPlayer(PlayerEngine engine, {bool audioOnly = false}) async {
+    final player = await PlayerAdapterFactory.create(engine);
+    await player.init(audioOnly: audioOnly);
+    return player;
+  }
+
   Future<void> initialize({PlayerEngine engine = PlayerEngine.mediaKit, bool audioOnly = false}) async {
     if (_disposed) return;
     _stateSubject.add(PlayerState.initializing);
     try {
       _defaultEngine = engine;
       _runtimeEngine = engine;
-      _currentPlayer = await playerPool.getPlayer(engine, audioOnly: audioOnly);
+      _currentPlayer = await _createPlayer(engine, audioOnly: audioOnly);
       _runtimeAudioOnly = audioOnly;
       _requestedAudioOnly = audioOnly;
       _nativeAudioOnly = audioOnly;
@@ -682,10 +681,9 @@ class PlayerManager {
     _audioModeVideoWarmTimer = null;
     try {
       final oldPlayer = _currentPlayer;
-      final oldEngine = _runtimeEngine;
       await _clearSubscriptions();
       final targetAudioOnly = audioOnly ?? _runtimeAudioOnly;
-      final newPlayer = await playerPool.getPlayer(engine, audioOnly: targetAudioOnly);
+      final newPlayer = await _createPlayer(engine, audioOnly: targetAudioOnly);
       _currentPlayer = newPlayer;
       _runtimeEngine = engine;
       _runtimeAudioOnly = targetAudioOnly;
@@ -694,8 +692,8 @@ class PlayerManager {
       if (isManual) _defaultEngine = engine;
       log('Switch engine to $engine', name: 'PlayerManager');
       await _bindPlayerStreams(newPlayer);
-      if (oldPlayer != null && oldEngine != null) {
-        await _safeDestroyPlayer(oldPlayer, oldEngine);
+      if (oldPlayer != null) {
+        await _safeDestroyPlayer(oldPlayer);
       }
       videoKey.value = ValueKey("video_${DateTime.now().millisecondsSinceEpoch}");
       _scheduleAudioServiceSync(newPlayer, targetAudioOnly, room: currentFloatRoom, sessionId: _sessionId);
@@ -711,29 +709,12 @@ class PlayerManager {
     }
   }
 
-  Future<void> _safeDestroyPlayer(UnifiedPlayer player, PlayerEngine engine) async {
+  Future<void> _safeDestroyPlayer(UnifiedPlayer player) async {
     try {
       await player.hardDispose();
-      await playerPool.removeFromCache(engine);
     } catch (e, s) {
       log("destroy player error: $e", stackTrace: s);
     }
-  }
-
-  Future<void> preload(String url, List<String> playUrls, Map<String, String> headers) async {
-    if (_disposed || _isClosing) return;
-    final standby = await playerPool.getPlayer(_runtimeEngine!);
-    await preloadManager.preload(standby, url, playUrls, headers);
-  }
-
-  Future<void> seamlessSwitch() async {
-    if (_disposed || _isClosing) return;
-    await preloadManager.switchToStandby();
-    final player = preloadManager.current;
-    if (player == null) return;
-    await _clearSubscriptions();
-    _currentPlayer = player;
-    await _bindPlayerStreams(player);
   }
 
   Future<void> togglePlayPause() async {
@@ -1421,8 +1402,10 @@ class PlayerManager {
     _sessionId++;
     lineManager.reset();
     await _clearSubscriptions();
-    if (_runtimeEngine != null) {
-      await playerPool.removeFromCache(_runtimeEngine!);
+    final player = _currentPlayer;
+
+    if (player != null) {
+      await player.hardDispose();
     }
     _currentPlayer = null;
     _runtimeEngine = null;
@@ -1581,7 +1564,7 @@ class PlayerManager {
     await _pipSubscription?.cancel();
     await _pipStateSubscription?.cancel();
     await _clearSubscriptions();
-    await playerPool.disposeAll();
+    await hardDispose();
     await Future.wait([
       _stateSubject.close(),
       _playingSubject.close(),

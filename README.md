@@ -35,7 +35,7 @@
 
 - **最新稳定版**：[v2.9.5](https://github.com/wzgrx/pure_live/releases/tag/v2.9.5)
 - **当前版本**：`2.9.5+4084`
-- **v2.9.5 上游源码基线**：发布提交记录最新同步点；具体提交与验证证据见 `docs/STAGE_UPDATE_2_9_5.md`
+- **v2.9.5 上游源码基线**：`liuchuancong/pure_live@b95771ed`；具体合并与验证证据见 `docs/STAGE_UPDATE_2_9_5.md`
 - **本轮构建平台**：Android arm64-v8a (Windows/Linux/macOS/iOS remain at v2.9.4)
 - **质量门禁**：Flutter Analyze、自动化测试、接口探测与各平台构建记录见 `docs/STAGE_UPDATE_2_9_5.md`
 

@@ -2,7 +2,7 @@
 
 Version: `2.9.5+4084`  
 Maintained repository: `wzgrx/pure_live`  
-Upstream baseline: synchronized at release source freeze
+Upstream baseline: `liuchuancong/pure_live@b95771ed`
 Release date: 2026-08-24
 
 ## Scope

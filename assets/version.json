@@ -2,7 +2,7 @@
   "version": "2.9.5",
   "build_number": 4084,
   "version_num": 209054084,
-  "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@cc1f4dca，吸收 YY 直播平台与多画面选台排序，并保留维护仓库本机优先、单平台串行和正式签名发布流程。\n- 修复斗鱼“直播获取失败”与播放器读流失败：H5 取流统一浏览器请求头和会话 DID，失败后强制刷新加密描述符并有界重试，兼容缺失线路/清晰度字段和 HTML 转义播放地址。\n- 斗鱼实际播放请求补齐 Referer、Origin、User-Agent 与一致 Cookie；公开接口门禁从签名描述符扩展到 H5 元数据、CDN 地址和真实 FLV 文件头。\n- 加固新增 YY 平台：移除仅为解析页面字面量引入的原生 JavaScript 运行时，改用纯 Dart 解析；统一 HTTPS，直接查询权威房间状态，修复主播搜索字段、直播状态、Cookie 显示和下播刷新。\n- 多画面选台正确解析“万/亿/k”等本地化热度后排序；YY 与斗鱼新增确定性解析测试及推荐、搜索、房间、清晰度/线路播放探测。\n- 本轮正式交付 Android arm64-v8a；Windows、Linux、macOS 与 iOS 继续使用 v2.9.4 对应安装包。",
+  "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@b95771ed，吸收 2.9.5 的斗鱼、YY、搜索与多播放器更新，并保留维护仓库本机优先、单平台串行和正式签名发布流程。\n- 全面修复各平台画质切换契约：Bilibili 按 current_qn 回写真实生效画质；虎牙替换旧 ratio、原画移除 ratio；抖音按 sdk_key 配对；斗鱼保持平台 rate 顺序；Twitch、快手、CC、SOOP、YY 与 IPTV 使用稳定标识和确定性解析。\n- 切流改为事务式状态提交：旧画面保持到新源成功打开，迟到请求、失败源、重复线路与服务端降级不会伪造选中状态；失败完整回滚。\n- 横屏清晰度与线路面板按实际选项行数自适应高度，压缩标题与留白，让选择按钮成为主要视觉并仅在内容溢出时滚动。\n- 分离网易 CC 热度和并发人数；真实在线排行按“明确人数、待刷新、仅热度”分层，抖音累计人数不再误标在线，SOOP 加入支持列表。\n- 本轮正式交付 Android arm64-v8a；Windows、Linux、macOS 与 iOS 继续使用 v2.9.4 对应安装包。",
   "prerelease": false,
   "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.5",
   "android_abis": [
@@ -13,7 +13,7 @@
       "version": "2.9.5",
       "build_number": 4084,
       "version_num": 209054084,
-      "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@cc1f4dca，吸收 YY 直播平台与多画面选台排序，并保留维护仓库本机优先、单平台串行和正式签名发布流程。\n- 修复斗鱼“直播获取失败”与播放器读流失败：H5 取流统一浏览器请求头和会话 DID，失败后强制刷新加密描述符并有界重试，兼容缺失线路/清晰度字段和 HTML 转义播放地址。\n- 斗鱼实际播放请求补齐 Referer、Origin、User-Agent 与一致 Cookie；公开接口门禁从签名描述符扩展到 H5 元数据、CDN 地址和真实 FLV 文件头。\n- 加固新增 YY 平台：移除仅为解析页面字面量引入的原生 JavaScript 运行时，改用纯 Dart 解析；统一 HTTPS，直接查询权威房间状态，修复主播搜索字段、直播状态、Cookie 显示和下播刷新。\n- 多画面选台正确解析“万/亿/k”等本地化热度后排序；YY 与斗鱼新增确定性解析测试及推荐、搜索、房间、清晰度/线路播放探测。\n- 本轮正式交付 Android arm64-v8a；Windows、Linux、macOS 与 iOS 继续使用 v2.9.4 对应安装包。",
+      "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@b95771ed，吸收 2.9.5 的斗鱼、YY、搜索与多播放器更新，并保留维护仓库本机优先、单平台串行和正式签名发布流程。\n- 全面修复各平台画质切换契约：Bilibili 按 current_qn 回写真实生效画质；虎牙替换旧 ratio、原画移除 ratio；抖音按 sdk_key 配对；斗鱼保持平台 rate 顺序；Twitch、快手、CC、SOOP、YY 与 IPTV 使用稳定标识和确定性解析。\n- 切流改为事务式状态提交：旧画面保持到新源成功打开，迟到请求、失败源、重复线路与服务端降级不会伪造选中状态；失败完整回滚。\n- 横屏清晰度与线路面板按实际选项行数自适应高度，压缩标题与留白，让选择按钮成为主要视觉并仅在内容溢出时滚动。\n- 分离网易 CC 热度和并发人数；真实在线排行按“明确人数、待刷新、仅热度”分层，抖音累计人数不再误标在线，SOOP 加入支持列表。\n- 本轮正式交付 Android arm64-v8a；Windows、Linux、macOS 与 iOS 继续使用 v2.9.4 对应安装包。",
       "prerelease": false,
       "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.5",
       "android_abis": [
