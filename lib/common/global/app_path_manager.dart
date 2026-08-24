@@ -1,16 +1,15 @@
-import 'dart:io';
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 
-import 'package:path/path.dart' as p;
 import 'package:flutter/foundation.dart';
-
-import 'windows_portable_path_provider.dart';
-
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:win32_registry/win32_registry.dart';
 import 'package:pure_live/common/utils/windows_multi_instance_launcher.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
+import 'package:win32_registry/win32_registry.dart';
+
+import 'windows_portable_path_provider.dart';
 
 class AppPathManager {
   static final AppPathManager _instance = AppPathManager._internal();
@@ -83,6 +82,9 @@ class AppPathManager {
       await _recoverMissingPersistentData(legacyRoots);
       await _recoverLegacyPluginPreferences(supportDir);
 
+      // Portable/EXE builds keep plugin support, cache and temporary state
+      // beside the executable. MSIX already receives a writable package data
+      // root from the system path provider and must retain that provider.
       if (!_isWindowsMsix) {
         PathProviderPlatform.instance = WindowsPortablePathProvider(delegate: originalPathProvider, dataRoot: rootPath);
         configureWindowsPortableSharedPreferences(rootPath);
@@ -375,24 +377,13 @@ class AppPathManager {
 
   bool get _isWindowsMsix {
     if (!Platform.isWindows) return false;
-
-    final path = p.normalize(Platform.resolvedExecutable).toLowerCase();
-
-    return path.contains(r'\windowsapps\');
+    return isWindowsMsixExecutablePath(Platform.resolvedExecutable);
   }
 
-  bool isDangerousDirectory(String path) {
-    final normalized = p.normalize(path).toLowerCase();
-
-    final home = p.normalize(Platform.environment['USERPROFILE'] ?? '').toLowerCase();
-
-    final downloads = p.normalize(p.join(home, 'Downloads')).toLowerCase();
-
-    final desktop = p.normalize(p.join(home, 'Desktop')).toLowerCase();
-
-    final documents = p.normalize(p.join(home, 'Documents')).toLowerCase();
-
-    return normalized == home || normalized == downloads || normalized == desktop || normalized == documents;
+  @visibleForTesting
+  static bool isWindowsMsixExecutablePath(String path) {
+    final normalized = path.replaceAll('/', r'\').toLowerCase();
+    return normalized.contains(r'\windowsapps\');
   }
 
   @visibleForTesting
