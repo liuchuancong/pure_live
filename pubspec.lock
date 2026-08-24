@@ -464,15 +464,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.0"
-  dart_quickjs:
-    dependency: "direct main"
-    description:
-      path: "."
-      ref: "0596dfcee794a6af7d6dd0bc6819ba80e0ed655d"
-      resolved-ref: "0596dfcee794a6af7d6dd0bc6819ba80e0ed655d"
-      url: "https://github.com/liuchuancong/dart_quickjs.git"
-    source: git
-    version: "1.0.0"
   dart_sm:
     dependency: "direct main"
     description:
@@ -936,13 +927,6 @@ packages:
       url: "https://github.com/guide-inc-org/guide-flutter_inappwebview.git"
     source: git
     version: "0.7.0-beta.3"
-  flutter_js:
-    dependency: "direct main"
-    description:
-      path: "plugins/built_in_kotlin/flutter_js"
-      relative: true
-    source: path
-    version: "0.8.7"
   flutter_json:
     dependency: "direct main"
     description:
@@ -2232,14 +2216,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
-  sync_http:
-    dependency: transitive
-    description:
-      name: sync_http
-      sha256: "7f0cd72eca000d2e026bcd6f990b81d0ca06022ef4e32fb257b30d3d1014a961"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.3.1"
   syncfusion_flutter_core:
     dependency: transitive
     description:
@@ -2468,7 +2444,7 @@ packages:
     dependency: "direct main"
     description:
       name: volume_controller
-      sha256: "851b43150972f96fa04a16af1080be9cabcd740c1b7e91dc3f5be9461ff45010"
+      sha256: "9e77687434a3f4095d8faf5321ed1c8014f78d5c555231543717c155f03b446f"
       url: "https://pub.dev"
     source: hosted
     version: "3.6.1"

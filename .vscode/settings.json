@@ -1,3 +1,4 @@
 {
-  "python-envs.defaultEnvManager": "ms-python.python:system"
+  "python-envs.defaultEnvManager": "ms-python.python:system",
+  "cmake.sourceDirectory": "D:/flutter/pure_live/linux"
 }
