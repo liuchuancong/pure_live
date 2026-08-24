@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:developer';
+
 import 'package:dio/dio.dart';
 import 'package:path/path.dart' as path;
 import 'package:open_filex/open_filex.dart';
@@ -11,8 +12,8 @@ import 'package:pure_live/common/global/app_path_manager.dart';
 class DownloadApkDialog extends StatefulWidget {
   final String apkUrl;
   final String version;
-
-  const DownloadApkDialog({super.key, required this.apkUrl, this.version = ''});
+  final String? fileName;
+  const DownloadApkDialog({super.key, required this.apkUrl, this.version = '', this.fileName});
 
   @override
   State<DownloadApkDialog> createState() => _DownloadApkDialogState();
@@ -25,7 +26,7 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
   int _progress = 0;
   bool _isDownloading = true;
   String _statusText = '';
-
+  String? get fileName => widget.fileName;
   @override
   void initState() {
     super.initState();
@@ -51,7 +52,7 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
         log('Clean old apk failed: $e');
       }
 
-      final apkName = widget.apkUrl.split('/').last;
+      final apkName = fileName ?? widget.apkUrl.split('/').last;
       final file = File(path.join(baseDir.path, apkName));
       await _dio.download(
         widget.apkUrl,
@@ -168,110 +169,116 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
 
     return Dialog(
       clipBehavior: Clip.antiAlias,
+      insetPadding: EdgeInsets.symmetric(horizontal: Get.width * 0.025, vertical: 24),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       backgroundColor: theme.colorScheme.surfaceContainerHigh,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 380),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: _isDownloading
-                          ? const AppStatusView(type: AppStatusType.loading, isMini: true)
-                          : Icon(Icons.check_circle_rounded, color: theme.colorScheme.primary, size: 24),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          i18n("downloading_version", args: {"version": widget.version}),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _statusText,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
+        constraints: BoxConstraints(maxWidth: Get.width < 600 ? Get.width * 0.8 : 400),
+        child: SizedBox(
+          width: double.infinity,
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
                   children: [
-                    Expanded(
-                      child: LinearProgressIndicator(
-                        value: _progress / 100,
-                        backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                        valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
-                        borderRadius: BorderRadius.circular(8),
-                        minHeight: 8,
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: _isDownloading
+                            ? const AppStatusView(type: AppStatusType.loading, isMini: true)
+                            : Icon(Icons.check_circle_rounded, color: theme.colorScheme.primary, size: 24),
                       ),
                     ),
                     const SizedBox(width: 16),
-                    SizedBox(
-                      width: 40,
-                      child: Text(
-                        '$_progress%',
-                        textAlign: TextAlign.end,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            fileName != null
+                                ? i18n("downloading_app", args: {"app": fileName!})
+                                : i18n("downloading_version", args: {"version": widget.version}),
+                            maxLines: 5,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _statusText,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    style: TextButton.styleFrom(
-                      foregroundColor: theme.colorScheme.error,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    onPressed: _isDownloading
-                        ? () {
-                            _cancelToken.cancel(i18n("cancel"));
-                            if (Navigator.canPop(context)) Navigator.pop(context, false);
-                          }
-                        : null,
-                    child: Text(i18n("cancel")),
+                const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                ],
-              ),
-            ],
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: LinearProgressIndicator(
+                          value: _progress / 100,
+                          backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                          valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                          borderRadius: BorderRadius.circular(8),
+                          minHeight: 8,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      SizedBox(
+                        width: 40,
+                        child: Text(
+                          '$_progress%',
+                          textAlign: TextAlign.end,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        foregroundColor: theme.colorScheme.error,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: _isDownloading
+                          ? () {
+                              _cancelToken.cancel(i18n("cancel"));
+                              if (Navigator.canPop(context)) Navigator.pop(context, false);
+                            }
+                          : null,
+                      child: Text(i18n("cancel")),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

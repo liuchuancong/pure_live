@@ -141,6 +141,7 @@
     "downloading_apk": "正在下载 纯粹直播v{version}...",
     "downloading_progress": "正在下载 v{version}... {progress}%",
     "downloading_version": "正在下载 v{version}...",
+    "downloading_app": "正在下载 {app}...",
     "effective_after_restart": "重启后生效",
     "email": "邮件",
     "empty_areas_room_subtitle": "下滑/上滑刷新数据",
@@ -1367,5 +1368,7 @@
     "multiview_line": "线路 {index}",
     "multiview_volume": "音量",
     "cookie_hint": "粘贴 {name} Cookie",
-    "cookie_tip": "登录 {name} 网页并进入任意直播间，在浏览器开发者工具的网络请求中复制完整 Cookie；Cookie 仅保存在本机。"
+    "cookie_tip": "登录 {name} 网页并进入任意直播间，在浏览器开发者工具的网络请求中复制完整 Cookie；Cookie 仅保存在本机。",
+    "open_link_confirm": "是否打开此链接？",
+    "open_download_confirm": "是否下载？"
 }

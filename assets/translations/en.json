@@ -140,6 +140,7 @@
     "downloading_apk": "Downloading Pure Live v{version}...",
     "downloading_progress": "Downloading v{version}... {progress}%",
     "downloading_version": "Downloading v{version}...",
+    "downloading_app": "Downloading {app}...",
     "effective_after_restart": "Takes effect after restart",
     "email": "Email",
     "empty_areas_room_subtitle": "Pull down to refresh data",
@@ -1367,5 +1368,7 @@
     "multiview_line": "Line {index}",
     "multiview_volume": "Volume",
     "cookie_hint": "Paste the {name} Cookie",
-    "cookie_tip": "Sign in to {name} and open any live channel, then copy the complete Cookie from a browser developer-tools network request. The Cookie stays on this device."
+    "cookie_tip": "Sign in to {name} and open any live channel, then copy the complete Cookie from a browser developer-tools network request. The Cookie stays on this device.",
+    "open_link_confirm": "Do you want to open this link?",
+    "open_download_confirm": "Do you want to download this file?"
 }
