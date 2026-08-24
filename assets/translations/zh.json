@@ -499,6 +499,7 @@
     "site_douyin": "抖音",
     "site_douyu": "斗鱼",
     "site_huya": "虎牙",
+     "site_yy": "YY",
     "site_iptv": "网络",
     "site_kuaishou": "快手",
     "sleep_timer": "定时关闭",
@@ -1359,5 +1360,7 @@
     "multiview_danmaku_settings": "弹幕设置",
     "multiview_line_selector": "线路",
     "multiview_line": "线路 {index}",
-    "multiview_volume": "音量"
-  }
+    "multiview_volume": "音量",
+    "cookie_hint": "粘贴 {name} Cookie",
+    "cookie_tip": "登录 {name} 网页并进入任意直播间，在浏览器开发者工具的网络请求中复制完整 Cookie；Cookie 仅保存在本机。"
+}

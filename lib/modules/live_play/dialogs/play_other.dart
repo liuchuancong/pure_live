@@ -1,11 +1,11 @@
 import 'dart:async';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/plugins/event_bus.dart';
+import 'package:pure_live/plugins/cache_manager.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/content_first_panel_layout.dart';
-import 'package:pure_live/plugins/cache_manager.dart';
-import 'package:pure_live/plugins/event_bus.dart';
 
 class PlayOther extends StatefulWidget {
   const PlayOther({required this.controller, super.key});
@@ -96,7 +96,7 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
                                 refreshing.value = true;
                                 EventBus.instance.emit('refresh_favorite_rooms', true);
                               },
-                        icon: const Icon(Icons.refresh_rounded, size: 18),
+                        icon: const Icon(Icons.refresh_rounded, size: 20),
                       ),
                     ),
                     IconButton(
@@ -104,9 +104,10 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
                       visualDensity: VisualDensity.compact,
                       constraints: const BoxConstraints.tightFor(width: 32, height: 32),
                       padding: EdgeInsets.zero,
-                      icon: const Icon(Icons.close_rounded, size: 18),
+                      icon: const Icon(Icons.close_rounded, size: 20),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
+                    SizedBox(width: 5),
                   ],
                 ),
               ),
@@ -208,20 +209,12 @@ class _CompactTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Tab(
-      height: 28,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14),
+          Icon(icon, size: 15),
           const SizedBox(width: 3),
-          Flexible(
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelMedium,
-            ),
-          ),
+          Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.labelMedium),
         ],
       ),
     );
@@ -259,19 +252,24 @@ class _RoomSwitchCard extends StatelessWidget {
     return Card(
       margin: EdgeInsets.zero,
       elevation: 0,
+      clipBehavior: Clip.antiAlias,
       color: colors.surfaceContainerLow,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: colors.outlineVariant.withValues(alpha: .55)),
       ),
-      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        hoverColor: colors.primary.withValues(alpha: .04),
+        splashColor: colors.primary.withValues(alpha: .08),
+        highlightColor: colors.primary.withValues(alpha: .04),
         child: Builder(
           builder: (context) {
             final meta = history
                 ? _historyLabel()
                 : (audience.isEmpty ? i18n('audience_unknown') : readableCount(audience));
+
             return Column(
               children: [
                 Expanded(
@@ -282,9 +280,9 @@ class _RoomSwitchCard extends StatelessWidget {
                   ),
                 ),
                 SizedBox(
-                  height: 36,
+                  height: 56,
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(7, 3, 3, 3),
+                    padding: const EdgeInsets.fromLTRB(9, 5, 7, 5),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -292,22 +290,39 @@ class _RoomSwitchCard extends StatelessWidget {
                           room.title?.trim().isNotEmpty == true ? room.title! : i18n('untitled_room'),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(fontWeight: FontWeight.w700, height: 1.15),
                         ),
-                        const Spacer(),
+                        const SizedBox(height: 5),
                         Row(
                           children: [
-                            Icon(Icons.person_outline_rounded, size: 12, color: colors.onSurfaceVariant),
-                            const SizedBox(width: 3),
+                            Icon(
+                              Icons.person_outline_rounded,
+                              size: 13,
+                              color: colors.onSurfaceVariant.withValues(alpha: .8),
+                            ),
+                            const SizedBox(width: 4),
                             Expanded(
                               child: Text(
-                                room.nick ?? '',
+                                room.nick?.trim().isNotEmpty == true ? room.nick! : i18n('unknown'),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.labelSmall?.copyWith(color: colors.onSurfaceVariant),
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(color: colors.onSurfaceVariant, height: 1.1),
                               ),
                             ),
-                            Icon(Icons.chevron_right_rounded, size: 14, color: colors.onSurfaceVariant),
+                            const SizedBox(width: 5),
+                            DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: colors.surfaceContainerHighest.withValues(alpha: .65),
+                                shape: BoxShape.circle,
+                              ),
+                              child: SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: Icon(Icons.chevron_right_rounded, size: 16, color: colors.onSurfaceVariant),
+                              ),
+                            ),
                           ],
                         ),
                       ],

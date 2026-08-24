@@ -204,7 +204,7 @@ class DanmakuController extends GetxController {
         _state.player.videoController?.sendDanmaku(msg);
       } else if (msg.type == LiveMessageType.online) {
         _main.updateRuntimeAudience(msg.data);
-      }else if (msg.type == LiveMessageType.superChat) {
+      } else if (msg.type == LiveMessageType.superChat) {
         _main.addAddSuperChat(msg);
       }
     };

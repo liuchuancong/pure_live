@@ -10,6 +10,7 @@
 #include <dynamic_color/dynamic_color_plugin.h>
 #include <ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter_plugin.h>
 #include <flutter_acrylic/flutter_acrylic_plugin.h>
+#include <flutter_js/flutter_js_plugin.h>
 #include <gtk/gtk_plugin.h>
 #include <media_kit_libs_linux/media_kit_libs_linux_plugin.h>
 #include <media_kit_video/media_kit_video_plugin.h>
@@ -32,6 +33,9 @@ void fl_register_plugins(FlPluginRegistry* registry) {
   g_autoptr(FlPluginRegistrar) flutter_acrylic_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "FlutterAcrylicPlugin");
   flutter_acrylic_plugin_register_with_registrar(flutter_acrylic_registrar);
+  g_autoptr(FlPluginRegistrar) flutter_js_registrar =
+      fl_plugin_registry_get_registrar_for_plugin(registry, "FlutterJsPlugin");
+  flutter_js_plugin_register_with_registrar(flutter_js_registrar);
   g_autoptr(FlPluginRegistrar) gtk_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "GtkPlugin");
   gtk_plugin_register_with_registrar(gtk_registrar);

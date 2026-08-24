@@ -26,6 +26,7 @@ class HttpClient {
   late Dio dio = _createDio();
   Dio _createDio() {
     return Dio(BaseOptions(connectTimeout: _connectTimeout, receiveTimeout: _receiveTimeout, sendTimeout: _sendTimeout))
+      ..transformer = CustomTransformer()
       ..httpClientAdapter = IOHttpClientAdapter(
         createHttpClient: () {
           final client = io.HttpClient();
@@ -202,5 +203,18 @@ class HttpClient {
     } else {
       return HttpError(defaultMsg);
     }
+  }
+}
+
+class CustomTransformer extends BackgroundTransformer {
+  @override
+  Future<dynamic> transformResponse(RequestOptions options, ResponseBody responseBody) async {
+    final contentType = responseBody.headers['content-type']?.first;
+
+    if (contentType != null && contentType.toLowerCase().startsWith('json;')) {
+      responseBody.headers['content-type'] = ['application/json${contentType.substring(4)}'];
+    }
+
+    return super.transformResponse(options, responseBody);
   }
 }
