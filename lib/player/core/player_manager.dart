@@ -761,8 +761,12 @@ class PlayerManager {
     final fitList = SettingsService.to.player.videoFitArray;
     if (fitList.isEmpty || index < 0 || index >= fitList.length) return;
     videoFitIndex.value = index;
-    final player = _currentPlayer;
-    if (player is VideoFitAwarePlayer) player.setVideoFit(fitList[index]);
+    _applyVideoFit(_currentPlayer, fitList[index]);
+  }
+
+  void _applyVideoFit(UnifiedPlayer? player, BoxFit fit) {
+    if (player is! VideoFitAwarePlayer) return;
+    (player as VideoFitAwarePlayer).setVideoFit(fit);
   }
 
   Future<void> enablePip() async {
@@ -1347,7 +1351,7 @@ class PlayerManager {
     // FittedBox makes the media_kit output-size guard see the source dimensions
     // instead of the real viewport, which wastes GPU memory. Waiting for the
     // dimension streams before mounting also creates a first-frame deadlock.
-    if (player is VideoFitAwarePlayer) player.setVideoFit(boxFit);
+    _applyVideoFit(player, boxFit);
     return player.getVideoWidget();
   }
 
