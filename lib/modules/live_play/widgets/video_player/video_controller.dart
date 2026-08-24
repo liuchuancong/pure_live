@@ -170,17 +170,37 @@ class DanmakuManager {
     if (!isPlaying && !msg.isLocal) return;
 
     final originalColor = Color.fromARGB(255, msg.color.r, msg.color.g, msg.color.b);
+    final localStyle = msg.isLocal ? msg.style : null;
     final settings = settingsService.danmaku;
     if (settings.enableDanmakuDisplay.v && !videoController.hideDanmaku.value) {
       controller.send(
         BarrageItem(
           content: msg.message,
+          type: switch (localStyle?.placement) {
+            LiveMessagePlacement.top => BarrageType.topFixed,
+            LiveMessagePlacement.bottom => BarrageType.bottomFixed,
+            _ => BarrageType.scroll,
+          },
           userId: msg.userId,
           userName: msg.userName,
           textColor: originalColor,
+          fontSize: localStyle?.fontSize,
+          fontWeight: localStyle == null ? null : FontWeight(localStyle.fontWeight),
+          fontStyle: localStyle?.italic == true ? FontStyle.italic : null,
+          fontFamily: localStyle?.fontFamily,
+          letterSpacing: localStyle?.letterSpacing,
+          opacity: localStyle?.opacity,
+          showStroke: localStyle?.showStroke,
+          strokeColor: localStyle == null ? null : Color(localStyle.strokeColor),
+          strokeWidth: localStyle?.strokeWidth,
+          showShadow: localStyle?.showShadow,
+          shadowColor: localStyle == null ? null : Color(localStyle.shadowColor),
+          shadowBlur: localStyle?.shadowBlur,
+          shadowOffset: localStyle == null ? null : Offset(localStyle.shadowOffset, localStyle.shadowOffset),
+          fixedDuration: localStyle == null ? null : Duration(milliseconds: localStyle.fixedDurationMs),
           // A single px/s value keeps portrait, landscape and desktop motion
           // consistent. Lane collision avoidance is handled by the engine.
-          baseSpeed: videoController.danmakuSpeed.value,
+          baseSpeed: localStyle?.baseSpeed ?? videoController.danmakuSpeed.value,
           onTapUp: settings.enableDanmakuTapInteraction.v ? () => _openMessageActions(msg, fromLongPress: false) : null,
           onLongTapDown: settings.enableDanmakuLongPressInteraction.v
               ? () => _openMessageActions(msg, fromLongPress: true)
@@ -190,8 +210,35 @@ class DanmakuManager {
     }
 
     if (settings.enablePipDanmaku.v && isCompactMode) {
-      final compactColor = settings.pipDanmakuUseOriginalColor.v ? originalColor : Color(settings.pipDanmakuColor.v);
-      pipController.send(BarrageItem(content: msg.message, textColor: compactColor));
+      final compactColor = msg.isLocal || settings.pipDanmakuUseOriginalColor.v
+          ? originalColor
+          : Color(settings.pipDanmakuColor.v);
+      pipController.send(
+        BarrageItem(
+          content: msg.message,
+          type: switch (localStyle?.placement) {
+            LiveMessagePlacement.top => BarrageType.topFixed,
+            LiveMessagePlacement.bottom => BarrageType.bottomFixed,
+            _ => BarrageType.scroll,
+          },
+          textColor: compactColor,
+          fontSize: localStyle?.fontSize,
+          fontWeight: localStyle == null ? null : FontWeight(localStyle.fontWeight),
+          fontStyle: localStyle?.italic == true ? FontStyle.italic : null,
+          fontFamily: localStyle?.fontFamily,
+          letterSpacing: localStyle?.letterSpacing,
+          opacity: localStyle?.opacity,
+          showStroke: localStyle?.showStroke,
+          strokeColor: localStyle == null ? null : Color(localStyle.strokeColor),
+          strokeWidth: localStyle?.strokeWidth,
+          showShadow: localStyle?.showShadow,
+          shadowColor: localStyle == null ? null : Color(localStyle.shadowColor),
+          shadowBlur: localStyle?.shadowBlur,
+          shadowOffset: localStyle == null ? null : Offset(localStyle.shadowOffset, localStyle.shadowOffset),
+          fixedDuration: localStyle == null ? null : Duration(milliseconds: localStyle.fixedDurationMs),
+          baseSpeed: localStyle?.baseSpeed,
+        ),
+      );
     }
   }
 

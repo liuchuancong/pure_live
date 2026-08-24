@@ -91,7 +91,9 @@ class VersionController extends GetxController {
     // =====================================================
 
     windowsSetupUrl.value = assets.windowsSetup;
-    windowsMsixUrl.value = assets.windowsMsix;
+    // MSIX requires a matching publisher certificate. Only advertise it when
+    // the release feed explicitly confirms that the signed asset was uploaded.
+    windowsMsixUrl.value = VersionUtil.latestWindowsMsixAvailable ? assets.windowsMsix : '';
     windowsPortableUrl.value = assets.windowsPortable;
 
     // =====================================================

@@ -94,6 +94,8 @@ foreach ($marker in @(
     'Invoke-PureLiveLoggedFlutter',
     '[Parameter(Mandatory = $true)][int] $ExitCode',
     'PSNativeCommandUseErrorActionPreference',
+    'PureLive-$artifactVersion-android-arm64-v8a-release.apk',
+    '/DArtifactVersion=$artifactVersion',
     'automatic_follow_up = $false'
 )) {
     if (-not $buildScript.Contains($marker)) { throw "Build script policy marker is missing: $marker" }
@@ -137,6 +139,8 @@ foreach ($marker in @(
     'cancel-in-progress: false',
     'flutter test --concurrency=12',
     '--target-platform android-arm64',
+    'PureLive-${VERSION}-android-arm64-v8a-release.apk',
+    'steps.version.outputs.artifact_version',
     'stage-macos-'
 )) {
     if (-not $featureWorkflow.Contains($marker)) { throw "Feature workflow policy marker is missing: $marker" }
@@ -149,6 +153,18 @@ if ($localAndroidWorkflow -match '(?m)^\s+push:\s*$' -or $localAndroidWorkflow -
 foreach ($marker in @('run_full_regression:', "'-SkipQuality'", "'-FullRegression'")) {
     if (-not $localAndroidWorkflow.Contains($marker)) {
         throw "Local Android retry quality marker is missing: $marker"
+    }
+}
+
+$publisherWorkflow = Get-Content -LiteralPath (Join-Path $repoRoot '.github\workflows\publish-staged-release.yml') -Raw
+foreach ($marker in @(
+    'name: pure-live-ios',
+    'ios-arm64-trollstore.ipa',
+    'Verify Android release signature',
+    'certificate SHA-256 digest'
+)) {
+    if (-not $publisherWorkflow.Contains($marker)) {
+        throw "Staged publisher verification marker is missing: $marker"
     }
 }
 

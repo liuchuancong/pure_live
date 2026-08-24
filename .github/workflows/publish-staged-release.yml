@@ -15,7 +15,7 @@ on:
         description: Release tag matching the version in pubspec.yaml
         required: true
         type: string
-        default: v2.7.0
+        default: v2.9.0
       target_sha:
         description: Exact source commit shared by every platform artifact
         required: true
@@ -106,7 +106,7 @@ jobs:
           $artifactVersion = $version.Replace('+', '-')
           $directory = Join-Path 'local-artifacts' $artifactVersion
           $portable = Join-Path $directory "PureLive-$artifactVersion-windows-x64-portable.zip"
-          $installer = Join-Path $directory "PureLive-$($version.Split('+')[0])-windows-x64-setup.exe"
+          $installer = Join-Path $directory "PureLive-$artifactVersion-windows-x64-setup.exe"
           foreach ($file in @($portable, $installer)) {
             if (-not (Test-Path -LiteralPath $file -PathType Leaf)) {
               throw "Expected Windows package is missing: $file"
@@ -167,6 +167,8 @@ jobs:
           test "$(jq -r .conclusion <<<"$stage_json")" = success
           test "$(jq -r .status <<<"$android_json")" = completed
           test "$(jq -r .conclusion <<<"$android_json")" = success
+          test "$(jq -r .path <<<"$stage_json")" = .github/workflows/feature-build.yml
+          test "$(jq -r .path <<<"$android_json")" = .github/workflows/feature-build.yml
           test "$(jq -r .head_sha <<<"$stage_json")" = "$TARGET_SHA"
           test "$(jq -r .head_sha <<<"$android_json")" = "$TARGET_SHA"
           echo "stage_sha=$(jq -r .head_sha <<<"$stage_json")" >> "$GITHUB_OUTPUT"
@@ -222,10 +224,24 @@ jobs:
       - name: Download staged iOS package
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v7.0.1
         with:
-          name: pure-live-ios-unsigned-app
+          name: pure-live-ios
           path: downloads/ios
           run-id: ${{ inputs.stage_run_id }}
           github-token: ${{ github.token }}
+
+      - name: Verify Android release signature
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="$(find downloads/android -type f -name 'PureLive-*-android-arm64-v8a-release.apk' -print -quit)"
+          test -n "$apk"
+          apksigner="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner -print | sort -V | tail -1)"
+          test -x "$apksigner"
+          certificate_output="$("$apksigner" verify --verbose --print-certs "$apk")"
+          printf '%s\n' "$certificate_output"
+          certificate="$(awk -F ': ' '/certificate SHA-256 digest/ {print tolower($2); exit}' <<<"$certificate_output")"
+          test -n "$certificate"
+          echo "Android signer SHA-256: $certificate" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Assemble and verify canonical release assets
         env:
@@ -262,13 +278,14 @@ jobs:
               raise SystemExit("release tag does not match pubspec version")
 
           expected = [
-              f"PureLive-{artifact_version}-arm64-v8a-release.apk",
+              f"PureLive-{artifact_version}-android-arm64-v8a-release.apk",
               f"PureLive-{artifact_version}-windows-x64-portable.zip",
-              f"PureLive-{display_version}-windows-x64-setup.exe",
+              f"PureLive-{artifact_version}-windows-x64-setup.exe",
               f"PureLive-{artifact_version}-linux-x64.tar.gz",
               f"PureLive-{artifact_version}-macos-universal.zip",
               f"PureLive-{artifact_version}-macos-universal.dmg",
               f"PureLive-{artifact_version}-ios-arm64-unsigned-app.zip",
+              f"PureLive-{artifact_version}-ios-arm64-trollstore.ipa",
           ]
           for name in expected:
               matches = [path for path in downloads.rglob(name) if path.is_file()]
@@ -282,7 +299,7 @@ jobs:
                   android_metadata.append(json.loads(path.read_text(encoding="utf-8-sig")))
               except (OSError, json.JSONDecodeError):
                   pass
-          if not any(
+          if android_metadata and not any(
               item.get("android_signing") == "release"
               and item.get("source_commit") == os.environ["ANDROID_SHA"]
               and item.get("version") == full_version

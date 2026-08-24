@@ -2,7 +2,7 @@
 param(
     [Parameter(Mandatory = $true)] [string] $Tag,
     [string] $ArtifactDirectory,
-    [string] $Repository = 'liuchuancong/pure_live',
+    [string] $Repository = 'wzgrx/pure_live',
     [switch] $CreateTag,
     [switch] $AllowQaArtifacts
 )

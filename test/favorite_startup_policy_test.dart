@@ -136,4 +136,44 @@ void main() {
     expect(verified[1].liveStatus, LiveStatus.unknown);
     expect(verified[1].status, isFalse);
   });
+
+  test('platform refresh invalidates only failed rooms that were requested', () {
+    final requestedSuccess = LiveRoom(
+      roomId: '100',
+      platform: 'bilibili',
+      title: 'old success',
+      liveStatus: LiveStatus.live,
+      tagIds: const ['sleep'],
+    );
+    final requestedFailure = LiveRoom(
+      roomId: '200',
+      platform: 'bilibili',
+      title: 'old failure',
+      status: true,
+      liveStatus: LiveStatus.live,
+    );
+    final unrelated = LiveRoom(
+      roomId: '300',
+      platform: 'huya',
+      title: 'unrelated',
+      status: true,
+      liveStatus: LiveStatus.live,
+    );
+    final fresh = LiveRoom(roomId: '100', platform: 'bilibili', title: 'fresh success', liveStatus: LiveStatus.offline);
+
+    final merged = mergeAuthoritativeFavoriteRefresh(
+      [requestedSuccess, requestedFailure, unrelated],
+      [favoriteRoomIdentity(requestedSuccess), favoriteRoomIdentity(requestedFailure)],
+      {favoriteRoomIdentity(fresh): fresh},
+    );
+
+    expect(merged.changed, isTrue);
+    expect(merged.rooms[0].title, 'fresh success');
+    expect(merged.rooms[0].liveStatus, LiveStatus.offline);
+    expect(merged.rooms[0].tagIds, ['sleep']);
+    expect(merged.rooms[1].title, 'old failure');
+    expect(merged.rooms[1].liveStatus, LiveStatus.unknown);
+    expect(merged.rooms[1].status, isFalse);
+    expect(merged.rooms[2], same(unrelated), reason: 'another platform was not part of this refresh');
+  });
 }

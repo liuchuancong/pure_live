@@ -155,6 +155,27 @@ void main() {
     expect(layout.cacheCount, 2);
   });
 
+  test('per-item typography, shadow and duration have distinct picture keys', () {
+    final engine = BarrageEngine(config: const BarrageConfig(), emojiAtlas: EmojiAtlas.instance);
+    const base = BarrageItem(content: 'personalized');
+    final baseKey = engine.buildCacheKey(base);
+
+    const personalized = BarrageItem(
+      content: 'personalized',
+      type: BarrageType.bottomFixed,
+      fontStyle: FontStyle.italic,
+      letterSpacing: 1.2,
+      opacity: .72,
+      showShadow: true,
+      shadowColor: Colors.cyan,
+      shadowBlur: 3,
+      shadowOffset: Offset(1, 1),
+      fixedDuration: Duration(seconds: 6),
+    );
+
+    expect(engine.buildCacheKey(personalized), isNot(baseKey));
+  });
+
   test('pure-text mode invalidates barrage picture and layout caches', () {
     final engine = BarrageEngine(config: const BarrageConfig(), emojiAtlas: EmojiAtlas.instance);
     const item = BarrageItem(content: 'message [emoji]');

@@ -14,7 +14,7 @@ class VersionUtil {
   ///
   /// Keeping the owner configurable lets downstream builders select their own
   /// release feed without editing runtime code. This repository defaults to
-  /// the liuchuancong maintenance release channel so its bundled version.json and generated asset
+  /// the wzgrx maintenance release channel so its bundled version.json and generated asset
   /// URLs always describe the same published artifacts.
   static final String updateOwner = AppConfig.pureliveUpdateOwner;
   static final String updateRepository = AppConfig.pureliveUpdateRepository;
@@ -45,6 +45,7 @@ class VersionUtil {
   static bool prerelease = false;
   static String downloadUrl = '';
   static Set<String> latestAndroidAbis = const {'arm64-v8a'};
+  static bool latestWindowsMsixAvailable = false;
   var allReleased = [].obs;
 
   static Map<String, dynamic>? _cachedVersionJson;
@@ -110,6 +111,7 @@ class VersionUtil {
     prerelease = selected['prerelease'] == true;
     downloadUrl = selected['download_url']?.toString() ?? '';
     latestAndroidAbis = selectAndroidAbis(selected);
+    latestWindowsMsixAvailable = selected['windows_msix_available'] == true;
   }
 
   /// Only advertises APK variants that the release feed says were published.

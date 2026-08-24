@@ -50,7 +50,7 @@ jobs:
           version_name="${full_version%%+*}"
           artifact_version="${full_version/+/-}"
           test "$TAG" = "v$version_name"
-          mapfile -t apks < <(find signed -type f -name "PureLive-$artifact_version-arm64-v8a-release.apk" -print)
+          mapfile -t apks < <(find signed -type f -name "PureLive-$artifact_version-android-arm64-v8a-release.apk" -print)
           test "${#apks[@]}" -eq 1
           apk="${apks[0]}"
           artifact_dir="$(dirname "$apk")"
@@ -81,7 +81,7 @@ jobs:
           grep -F "versionName='$version_name'" <<<"$badging"
           grep -F "native-code: 'arm64-v8a'" <<<"$badging"
           $build_tools/apksigner verify --verbose --print-certs "$apk"
-          output="PureLive-$artifact_version-arm64-v8a-release.apk"
+          output="PureLive-$artifact_version-android-arm64-v8a-release.apk"
           mv "$apk" "$output"
           sha256sum "$output" | sed 's/  / */' > ANDROID_SHA256SUM.txt
           echo "apk=$output" >> "$GITHUB_OUTPUT"

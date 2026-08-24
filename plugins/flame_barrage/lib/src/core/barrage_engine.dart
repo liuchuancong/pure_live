@@ -418,10 +418,18 @@ class BarrageEngine extends FlameGame with TapCallbacks {
       textColor: item.textColor,
       fontSize: item.fontSize,
       fontWeight: item.fontWeight,
+      fontStyle: item.fontStyle,
       fontFamily: item.fontFamily,
+      letterSpacing: item.letterSpacing,
+      opacity: item.opacity,
       showStroke: item.showStroke,
       strokeColor: item.strokeColor,
       strokeWidth: item.strokeWidth,
+      showShadow: item.showShadow,
+      shadowColor: item.shadowColor,
+      shadowBlur: item.shadowBlur,
+      shadowOffset: item.shadowOffset,
+      fixedDuration: item.fixedDuration,
       emojiSize: item.emojiSize,
       baseSpeed: item.baseSpeed,
       overlapSafeGap: item.overlapSafeGap,
@@ -435,7 +443,7 @@ class BarrageEngine extends FlameGame with TapCallbacks {
       ..height = layoutResult.height
       ..lastUpdateTime = now
       ..spawnTime = now
-      ..expireTime = now + _config.fixedDurationMs;
+      ..expireTime = now + resolvedConfig.fixedDurationMs;
     mockEntry.speed = item.type == BarrageType.scroll ? resolvedConfig.baseSpeed : 0.0;
     final trackIndex = _trackAllocator.allocate(
       tracks: _trackManager.tracks,
@@ -466,6 +474,7 @@ class BarrageEngine extends FlameGame with TapCallbacks {
         (resolvedConfig.trackHeight - layoutResult.height) / 2;
     if (item.type != BarrageType.scroll) {
       track.locked = true;
+      track.lockedUntil = mockEntry.expireTime;
       startX = (size.x - layoutResult.width) / 2;
       if (item.type == BarrageType.bottomFixed) {
         startY =
@@ -517,8 +526,9 @@ class BarrageEngine extends FlameGame with TapCallbacks {
           track.lastRight = 0.0;
           track.lastEntry = null;
         }
-        if (track.locked && now > track.lastLaunchTime + _config.fixedDurationMs) {
+        if (track.locked && now >= track.lockedUntil) {
           track.locked = false;
+          track.lockedUntil = 0;
           track.lastRight = 0.0;
           track.lastEntry = null;
         }
@@ -572,6 +582,7 @@ class BarrageEngine extends FlameGame with TapCallbacks {
       track.lastEntry = null;
       track.activeCount = 0;
       track.locked = false;
+      track.lockedUntil = 0;
     }
   }
 
@@ -581,13 +592,20 @@ class BarrageEngine extends FlameGame with TapCallbacks {
       item.type.name,
       item.fontSize ?? _config.fontSize,
       (item.fontWeight ?? _config.fontWeight).toString(),
+      (item.fontStyle ?? _config.fontStyle).name,
       (item.textColor ?? _config.textColor).toARGB32(),
       item.emojiSize ?? _config.emojiSize,
       item.fontFamily ?? _config.fontFamily ?? '',
+      item.letterSpacing ?? _config.letterSpacing,
       item.showStroke ?? _config.showStroke,
       item.strokeWidth ?? _config.strokeWidth,
       (item.strokeColor ?? _config.strokeColor).toARGB32(),
-      _config.opacity,
+      item.showShadow ?? _config.showShadow,
+      (item.shadowColor ?? _config.shadowColor).toARGB32(),
+      item.shadowBlur ?? _config.shadowBlur,
+      item.shadowOffset ?? _config.shadowOffset,
+      item.opacity ?? _config.opacity,
+      item.fixedDuration ?? _config.fixedDuration,
       _config.noEmojiMode,
     ].join('|');
   }

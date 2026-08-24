@@ -1,0 +1,187 @@
+name: sign-staged-android
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag, for example v2.7.0
+        required: true
+        type: string
+      target_sha:
+        description: Exact clean source commit used by the local build
+        required: true
+        type: string
+      staged_apk:
+        description: Temporary locally-built APK asset name
+        required: true
+        type: string
+      staged_metadata:
+        description: Temporary BUILD_METADATA asset name
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sign-staged-android-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  sign:
+    name: Sign locally-built Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ inputs.tag }}
+      TARGET_SHA: ${{ inputs.target_sha }}
+      STAGED_APK: ${{ inputs.staged_apk }}
+      STAGED_METADATA: ${{ inputs.staged_metadata }}
+      EXPECTED_CERT_SHA256: c0bb95744c81f9c7dd4535a9552775038eb5a59c5922f791d1695f45ac34ceaf
+      STORE_PASSWORD: ${{ secrets.PURELIVE_STORE_PASSWORD }}
+      KEY_PASSWORD: ${{ secrets.PURELIVE_KEY_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.PURELIVE_KEY_ALIAS }}
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.target_sha }}
+
+      - name: Download the local staging assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p staged existing
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --pattern "$STAGED_APK" --pattern "$STAGED_METADATA" --dir staged
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --pattern SHA256SUMS.txt --dir existing
+          test -f "staged/$STAGED_APK"
+          test -f "staged/$STAGED_METADATA"
+          test -f existing/SHA256SUMS.txt
+
+      - name: Restore the release certificate
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.PURELIVE_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          for name in KEYSTORE_BASE64 STORE_PASSWORD KEY_PASSWORD KEY_ALIAS; do
+            test -n "${!name:-}"
+          done
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/pure-live-release.jks"
+
+      - name: Verify, sign and prepare release metadata
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          full_version="$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1)"
+          version_name="${full_version%%+*}"
+          artifact_version="${full_version/+/-}"
+          final_apk="PureLive-$artifact_version-android-arm64-v8a-release.apk"
+          test "$TAG" = "v$version_name"
+
+          python3 - "staged/$STAGED_METADATA" "$full_version" "$TARGET_SHA" <<'PY'
+          import json
+          import sys
+
+          path, expected_version, expected_sha = sys.argv[1:]
+          with open(path, encoding="utf-8-sig") as handle:
+              metadata = json.load(handle)
+          assert metadata["version"] == expected_version
+          assert metadata["source_commit"] == expected_sha
+          assert metadata["tracked_files_dirty"] is False
+          assert metadata["requested_target"] == "AndroidArm64"
+          assert metadata["configuration"] == "Release"
+          assert metadata["android_package"] == "com.mystyle.purelive"
+          PY
+
+          build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          aapt="$build_tools/aapt"
+          apksigner="$build_tools/apksigner"
+          badging="$($aapt dump badging "staged/$STAGED_APK")"
+          grep -F "package: name='com.mystyle.purelive'" <<<"$badging"
+          grep -F "versionName='$version_name'" <<<"$badging"
+          grep -F "native-code: 'arm64-v8a'" <<<"$badging"
+
+          "$apksigner" sign \
+            --ks "$RUNNER_TEMP/pure-live-release.jks" \
+            --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass env:STORE_PASSWORD \
+            --key-pass env:KEY_PASSWORD \
+            --out "$final_apk" \
+            "staged/$STAGED_APK"
+          "$apksigner" verify --verbose --print-certs "$final_apk" | tee apksigner.txt
+          grep -Fi "certificate SHA-256 digest: $EXPECTED_CERT_SHA256" apksigner.txt
+
+          python3 - "staged/$STAGED_METADATA" BUILD_METADATA.json "$TARGET_SHA" <<'PY'
+          import datetime
+          import json
+          import sys
+
+          source, destination, commit = sys.argv[1:]
+          with open(source, encoding="utf-8-sig") as handle:
+              metadata = json.load(handle)
+          metadata["android_signing"] = "release"
+          metadata["release_commit"] = commit
+          metadata["signing_pipeline"] = "local-build/github-secret-signing"
+          metadata["signed_at_utc"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+          with open(destination, "w", encoding="utf-8", newline="\n") as handle:
+              json.dump(metadata, handle, ensure_ascii=False, indent=2)
+              handle.write("\n")
+          PY
+
+          apk_hash="$(sha256sum "$final_apk" | awk '{print $1}')"
+          metadata_hash="$(sha256sum BUILD_METADATA.json | awk '{print $1}')"
+          printf '%s *%s\n' "$apk_hash" "$final_apk" > ANDROID_SHA256SUM.txt
+          python3 - existing/SHA256SUMS.txt SHA256SUMS.txt \
+            "$final_apk" "$apk_hash" "$metadata_hash" <<'PY'
+          import re
+          import sys
+
+          source, destination, apk_name, apk_hash, metadata_hash = sys.argv[1:]
+          entries = {}
+          with open(source, encoding="ascii") as handle:
+              for raw in handle:
+                  match = re.fullmatch(r"([0-9a-fA-F]{64}) \*(.+)\n?", raw)
+                  if match:
+                      entries[match.group(2)] = match.group(1).lower()
+          entries[apk_name] = apk_hash.lower()
+          entries["BUILD_METADATA.json"] = metadata_hash.lower()
+          with open(destination, "w", encoding="ascii", newline="\n") as handle:
+              for name in sorted(entries):
+                  handle.write(f"{entries[name]} *{name}\n")
+          PY
+
+          echo "apk=$final_apk" >> "$GITHUB_OUTPUT"
+          echo "sha256=$apk_hash" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the signed Android update
+        shell: bash
+        env:
+          FINAL_APK: ${{ steps.package.outputs.apk }}
+        run: |
+          set -euo pipefail
+          gh release upload "$TAG" "$FINAL_APK" BUILD_METADATA.json \
+            SHA256SUMS.txt ANDROID_SHA256SUM.txt --clobber --repo "$GITHUB_REPOSITORY"
+
+          for name in "$STAGED_APK" "$STAGED_METADATA"; do
+            # The releases/tags REST endpoint omits draft releases. The gh
+            # release command resolves drafts by tag and removes the staging
+            # asset without depending on that endpoint.
+            gh release delete-asset "$TAG" "$name" --yes --repo "$GITHUB_REPOSITORY"
+          done
+
+          {
+            echo "### Signed Android update"
+            echo "- APK: \`$FINAL_APK\`"
+            echo "- SHA-256: \`${{ steps.package.outputs.sha256 }}\`"
+            echo "- Source: \`$TARGET_SHA\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove temporary signing material
+        if: always()
+        shell: bash
+        run: rm -f "$RUNNER_TEMP/pure-live-release.jks"

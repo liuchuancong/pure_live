@@ -137,7 +137,9 @@ class WindowHelper {
 
     Rect? savedBounds;
 
-    if (rememberPosition && pip.isValid && pip.displayId.value == currentDisplay.id) {
+    final savedDisplayMatches = pip.displayId.value.isEmpty || pip.displayId.value == currentDisplay.id;
+
+    if (rememberPosition && pip.hasValidBounds && savedDisplayMatches) {
       savedBounds = Rect.fromLTWH(
         pip.windowsPipX.value,
         pip.windowsPipY.value,
@@ -171,7 +173,8 @@ class WindowHelper {
     await windowManager.setPosition(bounds.topLeft);
 
     if (rememberPosition) {
-      pip.update(bounds.size, bounds.topLeft, currentDisplay.id);
+      final resolvedDisplay = _findDisplayForPosition(displays, bounds.topLeft) ?? currentDisplay;
+      pip.update(bounds.size, bounds.topLeft, resolvedDisplay.id);
     }
   }
 

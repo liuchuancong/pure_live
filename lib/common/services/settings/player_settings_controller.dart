@@ -110,6 +110,10 @@ class PlayerSettingsController extends GetxController {
       'videoHardwareDecoder': player['videoHardwareDecoder'] ?? 'auto',
       'floatPlay': player['floatPlay'] ?? false,
       'windowsPipAlwaysOnTop': player['windowsPipAlwaysOnTop'] ?? false,
+      // Compatibility-only input for backups created before the ownership of
+      // this setting moved to WindowSizeController. New exports store it in
+      // the windowSize section.
+      'rememberPipPosition': player['rememberPipPosition'] ?? true,
       'enableRtxVsr': player['enableRtxVsr'] ?? false,
       'audioOnly': false,
       'useHardStopOnExit': player['useHardStopOnExit'] ?? false,

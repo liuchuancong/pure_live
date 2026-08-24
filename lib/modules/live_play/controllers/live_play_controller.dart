@@ -816,14 +816,11 @@ class LivePlayController extends GetxController
   }
 
   Future<void> setResolution(ReloadDataType reloadDataType, int qualityIndex, int lineIndex) async {
-    invalidateRoomLoad();
-    playerController.invalidateLoad();
-    await GlobalPlayerService.instance.player.close();
-    await playerController.destroyPlayer();
-
-    updatePlayer(currentQuality: qualityIndex, currentLineIndex: lineIndex);
-
-    await onInitPlayerState(reloadDataType: reloadDataType, line: lineIndex, isReCalculate: false);
+    await playerController.switchStreamSelection(
+      type: reloadDataType,
+      qualityIndex: qualityIndex,
+      lineIndex: lineIndex,
+    );
   }
 
   Future<void> openNaviteAPP() async {

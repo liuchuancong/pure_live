@@ -1,4 +1,5 @@
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/common/services/settings/history_controller.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 class HistoryPage extends StatefulWidget {
@@ -26,7 +27,7 @@ class _HistoryPageState extends State<HistoryPage> {
       try {
         var newRoom = await Sites.of(room.platform!).liveSite
             .getRoomDetail(roomId: room.roomId!, platform: room.platform!);
-        list[i] = newRoom;
+        list[i] = preserveHistoryMetadata(newRoom, room);
       } catch (e) {
         result = false;
       }

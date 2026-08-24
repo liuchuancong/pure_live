@@ -1,6 +1,17 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/services/utils/backup_migration_util.dart';
 
+List<LiveRoom> upsertHistoryRoom(List<LiveRoom> current, LiveRoom room, {required int watchedAt, int limit = 50}) {
+  final next = List<LiveRoom>.from(current)..removeWhere((entry) => entry.hasSameIdentity(room));
+  next.insert(0, room.normalizedIdentityCopy().copyWith(lastWatchedAt: watchedAt));
+  if (next.length > limit) next.removeRange(limit, next.length);
+  return next;
+}
+
+LiveRoom preserveHistoryMetadata(LiveRoom refreshed, LiveRoom previous) {
+  return refreshed.withAudienceFallbackFrom(previous).copyWith(lastWatchedAt: previous.lastWatchedAt);
+}
+
 class HistoryController extends GetxController {
   static HistoryController get to => Get.find();
 
@@ -16,11 +27,7 @@ class HistoryController extends GetxController {
   );
 
   void addRoomToHistory(LiveRoom room) {
-    historyRooms.v.removeWhere((e) => e.roomId == room.roomId);
-    if (historyRooms.v.length >= 50) {
-      historyRooms.v.removeRange(0, historyRooms.v.length - 49);
-    }
-    historyRooms.v.insert(0, room);
+    historyRooms.v = upsertHistoryRoom(historyRooms.v, room, watchedAt: DateTime.now().millisecondsSinceEpoch);
     historyRooms.refresh();
   }
 

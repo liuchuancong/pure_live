@@ -1,0 +1,163 @@
+name: Stage Hosted Release Artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Successful feature-build workflow run ID
+        required: true
+        type: string
+      artifact_name:
+        description: Exact artifact name from the source run
+        required: true
+        type: choice
+        options:
+          - pure-live-linux-x64
+          - pure-live-macos
+          - pure-live-ios
+      release_tag:
+        description: Existing draft release tag
+        required: true
+        type: string
+        default: v2.9.0
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: stage-hosted-${{ inputs.release_tag }}
+  cancel-in-progress: false
+
+jobs:
+  validate-and-stage:
+    name: Validate and stage ${{ inputs.artifact_name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Validate source run and release source
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.run_id }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+
+          [[ "$RUN_ID" =~ ^[0-9]+$ ]]
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+
+          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}")"
+          run_status="$(jq -r '.status' <<<"$run_json")"
+          run_conclusion="$(jq -r '.conclusion' <<<"$run_json")"
+          run_sha="$(jq -r '.head_sha' <<<"$run_json")"
+
+          test "$run_status" = completed
+          test "$run_conclusion" = success
+
+          tag_sha="$(
+            gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" \
+              --jq '.object.sha'
+          )"
+
+          if [[ "$run_sha" != "$tag_sha" ]]; then
+            echo "Source mismatch: run=$run_sha tag=$tag_sha"
+            exit 1
+          fi
+
+          release_json="$(
+            gh api --paginate "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
+              --jq ".[] | select(.tag_name == \"${RELEASE_TAG}\")"
+          )"
+
+          test -n "$release_json"
+          test "$(jq -r '.draft' <<<"$release_json")" = true
+          test "$(jq -r '.target_commitish' <<<"$release_json")" = "$tag_sha"
+
+          {
+            echo "### Hosted artifact staging"
+            echo "- Source run: \`$RUN_ID\`"
+            echo "- Source commit: \`$run_sha\`"
+            echo "- Release: \`$RELEASE_TAG\` (draft)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Download selected workflow artifact
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v7.0.1
+        with:
+          name: ${{ inputs.artifact_name }}
+          path: staged
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+
+      - name: Verify checksums and package structure
+        shell: bash
+        env:
+          ARTIFACT_NAME: ${{ inputs.artifact_name }}
+        run: |
+          set -euo pipefail
+
+          mapfile -t checksums < <(find staged -type f -name '*.sha256' -print | sort)
+          ((${#checksums[@]} > 0))
+
+          for checksum in "${checksums[@]}"; do
+            (
+              cd "$(dirname "$checksum")"
+              sha256sum --check --strict "$(basename "$checksum")"
+            )
+          done
+
+          case "$ARTIFACT_NAME" in
+            pure-live-linux-x64)
+              archive="$(find staged -type f -name 'PureLive-*-linux-x64.tar.gz' -print -quit)"
+              test -n "$archive"
+              tar -tzf "$archive" > "$RUNNER_TEMP/linux-files.txt"
+              grep -qE '(^|/)pure_live$' "$RUNNER_TEMP/linux-files.txt"
+              if grep -qE '\.(pdb|exp|lib|ilk)$' "$RUNNER_TEMP/linux-files.txt"; then
+                echo "Development-only file found in Linux archive."
+                exit 1
+              fi
+              ;;
+
+            pure-live-macos)
+              zip_file="$(find staged -type f -name 'PureLive-*-macos-universal.zip' -print -quit)"
+              dmg_file="$(find staged -type f -name 'PureLive-*-macos-universal.dmg' -print -quit)"
+              test -n "$zip_file"
+              test -n "$dmg_file"
+              unzip -l "$zip_file" > "$RUNNER_TEMP/macos-files.txt"
+              grep -qE '\.app/Contents/MacOS/' "$RUNNER_TEMP/macos-files.txt"
+              file "$dmg_file" | grep -qi 'disk image\|data'
+              ;;
+
+            pure-live-ios)
+              unsigned_zip="$(find staged -type f -name 'PureLive-*-ios-arm64-unsigned-app.zip' -print -quit)"
+              ipa_file="$(find staged -type f -name 'PureLive-*-ios-arm64-trollstore.ipa' -print -quit)"
+              test -n "$unsigned_zip"
+              test -n "$ipa_file"
+              unzip -l "$unsigned_zip" > "$RUNNER_TEMP/ios-unsigned-files.txt"
+              unzip -l "$ipa_file" > "$RUNNER_TEMP/ios-ipa-files.txt"
+              grep -qE 'Runner\.app/' "$RUNNER_TEMP/ios-unsigned-files.txt"
+              grep -qE 'Payload/Runner\.app/' "$RUNNER_TEMP/ios-ipa-files.txt"
+              ;;
+          esac
+
+          find staged -type f -printf '%f\t%s bytes\n' | sort \
+            | sed 's/^/- /' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload validated files to draft release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+
+          mapfile -t files < <(find staged -type f -print | sort)
+          ((${#files[@]} > 0))
+
+          gh release upload "$RELEASE_TAG" "${files[@]}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber
+
+          echo "- Staged files: ${#files[@]}" >> "$GITHUB_STEP_SUMMARY"

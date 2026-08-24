@@ -77,6 +77,27 @@ void main() {
     expect(panelRect.right, greaterThan(990));
   });
 
+  testWidgets('fullscreen settings panel follows the active light theme', (tester) async {
+    final lightTheme = ThemeData(
+      colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal, brightness: Brightness.light),
+    );
+    final fullscreen = _TestDanmakuSettingsBinding();
+
+    await tester.pumpWidget(_testApp(SettingsPanel(controller: fullscreen), theme: lightTheme));
+    await tester.pumpAndSettle();
+
+    final panel = tester.widget<Container>(find.byKey(const ValueKey('fullscreen-danmaku-settings-panel')));
+    final decoration = panel.decoration! as BoxDecoration;
+    final title = tester.widget<Text>(find.text('Danmaku settings'));
+
+    expect(decoration.color, lightTheme.colorScheme.surface);
+    expect(title.style?.color, lightTheme.colorScheme.onSurface);
+    expect(
+      Theme.of(tester.element(find.byKey(const ValueKey('danmaku-settings-content-embedded')))).brightness,
+      Brightness.light,
+    );
+  });
+
   testWidgets('portrait and compact landscape keep one preset state without overflow', (tester) async {
     final shared = _TestDanmakuSettingsBinding();
     final showLandscapePanel = ValueNotifier<bool>(false);
@@ -118,7 +139,7 @@ void main() {
   });
 }
 
-Widget _testApp(Widget child) {
+Widget _testApp(Widget child, {ThemeData? theme}) {
   return EasyLocalization(
     key: ValueKey<Type>(child.runtimeType),
     supportedLocales: const [Locale('zh')],
@@ -130,7 +151,7 @@ Widget _testApp(Widget child) {
         locale: context.locale,
         localizationsDelegates: context.localizationDelegates,
         supportedLocales: context.supportedLocales,
-        theme: ThemeData.dark(),
+        theme: theme ?? ThemeData.dark(),
         home: Scaffold(body: child),
       ),
     ),

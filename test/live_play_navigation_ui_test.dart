@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_tab.dart';
+import 'package:pure_live/modules/live_play/widgets/content_first_panel_layout.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller_panel.dart';
 
 void main() {
@@ -31,14 +32,66 @@ void main() {
     expect(tester.getRect(finder), before, reason: 'the section row itself must not pan horizontally');
   });
 
-  test('Android fullscreen places the PiP shortcut beside Back in the leading group', () {
+  test('Android fullscreen places time and battery beside Back after swapping PiP', () {
     expect(resolveTopActionLeadingSlots(fullscreen: true, android: true), const <TopActionLeadingSlot>[
       TopActionLeadingSlot.back,
-      TopActionLeadingSlot.pip,
+      TopActionLeadingSlot.datetime,
+      TopActionLeadingSlot.battery,
     ]);
     expect(resolveTopActionLeadingSlots(fullscreen: true, android: false), const <TopActionLeadingSlot>[
       TopActionLeadingSlot.back,
     ]);
     expect(resolveTopActionLeadingSlots(fullscreen: false, android: true), isEmpty);
+  });
+
+  test('Android keeps audio, cast and PiP in the same trailing order in every orientation', () {
+    for (final fullscreen in <bool>[false, true]) {
+      final slots = resolveTopActionTrailingSlots(fullscreen: fullscreen, android: true, windows: false);
+      expect(slots.sublist(slots.length - 3), const <TopActionTrailingSlot>[
+        TopActionTrailingSlot.audioOnly,
+        TopActionTrailingSlot.cast,
+        TopActionTrailingSlot.pip,
+      ]);
+    }
+  });
+
+  test('landscape playback panels occupy the compact right half of a phone viewport', () {
+    const viewport = Size(915, 412);
+    final rooms = resolveContentFirstPanelLayout(viewport, ContentFirstPanelKind.roomHistory);
+    final streams = resolveContentFirstPanelLayout(viewport, ContentFirstPanelKind.streamSelector);
+    final style = resolveContentFirstPanelLayout(viewport, ContentFirstPanelKind.localDanmakuStyle);
+
+    expect(rooms.size.width / viewport.width, inInclusiveRange(.47, .51));
+    expect(rooms.size.height / viewport.height, greaterThan(.9));
+    expect(streams.size.width / viewport.width, inInclusiveRange(.47, .51));
+    expect(style.size.width / viewport.width, inInclusiveRange(.47, .51));
+    expect(style.size.height / viewport.height, greaterThan(.9));
+    expect(streams.splitContent, isFalse);
+    expect(style.splitContent, isTrue, reason: 'phone landscape keeps preview left and controls right');
+    expect(resolveStreamChoiceColumns(streams.size.width - 24), 3);
+
+    final roomGridSize = Size(rooms.size.width, rooms.size.height - 36 - 30 - 1);
+    final cardHeight = resolveRoomHistoryCardHeight(contentSize: roomGridSize, columns: 2);
+    expect(cardHeight * 2 + 6 * 2 + 5, lessThanOrEqualTo(roomGridSize.height));
+  });
+
+  test('stream choices scale down without dropping to a long single column', () {
+    expect(resolveStreamChoiceColumns(420), 3);
+    expect(resolveStreamChoiceColumns(260), 2);
+    expect(resolveStreamChoiceColumns(180), 1);
+  });
+
+  test('local style keeps its preview/settings split on a smaller landscape phone', () {
+    const viewport = Size(720, 360);
+    final style = resolveContentFirstPanelLayout(viewport, ContentFirstPanelKind.localDanmakuStyle);
+    expect(style.splitContent, isTrue);
+    expect(style.size.width / viewport.width, inInclusiveRange(.47, .51));
+  });
+
+  test('large landscape windows keep dense panels split internally', () {
+    const viewport = Size(1920, 1080);
+    for (final kind in ContentFirstPanelKind.values) {
+      expect(resolveContentFirstPanelLayout(viewport, kind).splitContent, isTrue);
+    }
   });
 }

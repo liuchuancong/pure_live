@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
@@ -95,77 +96,45 @@ class BackupController extends GetxController {
   }
 
   void _importV2(Map<String, dynamic> data) {
-    Get.find<AppSettingsController>().fromJson(
-      Map<String, dynamic>.from(data['app'] ?? {}),
-    );
+    Get.find<AppSettingsController>().fromJson(Map<String, dynamic>.from(data['app'] ?? {}));
 
-    Get.find<ThemeSettingsController>().fromJson(
-      Map<String, dynamic>.from(data['theme'] ?? {}),
-    );
+    Get.find<ThemeSettingsController>().fromJson(Map<String, dynamic>.from(data['theme'] ?? {}));
 
-    Get.find<FontSettingsController>().fromJson(
-      Map<String, dynamic>.from(data['font'] ?? {}),
-    );
+    Get.find<FontSettingsController>().fromJson(Map<String, dynamic>.from(data['font'] ?? {}));
 
-    Get.find<PlayerSettingsController>().fromJson(
-      Map<String, dynamic>.from(data['player'] ?? {}),
-    );
+    Get.find<PlayerSettingsController>().fromJson(Map<String, dynamic>.from(data['player'] ?? {}));
 
-    Get.find<DanmakuSettingsController>().fromJson(
-      Map<String, dynamic>.from(data['danmaku'] ?? {}),
-    );
+    Get.find<DanmakuSettingsController>().fromJson(Map<String, dynamic>.from(data['danmaku'] ?? {}));
 
-    Get.find<VolumeSettingsController>().fromJson(
-      Map<String, dynamic>.from(data['volume'] ?? {}),
-    );
+    Get.find<VolumeSettingsController>().fromJson(Map<String, dynamic>.from(data['volume'] ?? {}));
 
-    Get.find<FavoriteRoomController>().fromJson(
-      Map<String, dynamic>.from(data['favorite'] ?? {}),
-    );
+    Get.find<FavoriteRoomController>().fromJson(Map<String, dynamic>.from(data['favorite'] ?? {}));
 
-    Get.find<HistoryController>().fromJson(
-      Map<String, dynamic>.from(data['history'] ?? {}),
-    );
+    Get.find<HistoryController>().fromJson(Map<String, dynamic>.from(data['history'] ?? {}));
 
     if (data.containsKey('webdav')) {
-      Get.find<WebDavController>().fromJson(
-        Map<String, dynamic>.from(data['webdav'] ?? {}),
-      );
+      Get.find<WebDavController>().fromJson(Map<String, dynamic>.from(data['webdav'] ?? {}));
     }
 
-    Get.find<IptvSettingsController>().fromJson(
-      Map<String, dynamic>.from(data['iptv'] ?? {}),
-    );
+    Get.find<IptvSettingsController>().fromJson(Map<String, dynamic>.from(data['iptv'] ?? {}));
 
     if (data.containsKey('cookie')) {
-      Get.find<CookieSettingsController>().fromJson(
-        Map<String, dynamic>.from(data['cookie'] ?? {}),
-      );
+      Get.find<CookieSettingsController>().fromJson(Map<String, dynamic>.from(data['cookie'] ?? {}));
     }
 
-    Get.find<ProxySettingsController>().fromJson(
-      Map<String, dynamic>.from(data['proxy'] ?? {}),
-    );
+    Get.find<ProxySettingsController>().fromJson(Map<String, dynamic>.from(data['proxy'] ?? {}));
 
-    Get.find<WindowSizeController>().fromJson(
-      Map<String, dynamic>.from(data['windowSize'] ?? {}),
-    );
+    // Normalize both the old flat PiP rectangle and the former player-owned
+    // rememberPipPosition flag before importing the current window settings.
+    Get.find<WindowSizeController>().fromJson(WindowSizeController.extractConfig(data));
 
-    Get.find<ExitSettingsController>().fromJson(
-      Map<String, dynamic>.from(data['exit'] ?? {}),
-    );
+    Get.find<ExitSettingsController>().fromJson(Map<String, dynamic>.from(data['exit'] ?? {}));
 
-    Get.find<StartupController>().fromJson(
-      Map<String, dynamic>.from(data['startup'] ?? {}),
-    );
+    Get.find<StartupController>().fromJson(Map<String, dynamic>.from(data['startup'] ?? {}));
 
-    Get.find<RefreshConfigController>().fromJson(
-      Map<String, dynamic>.from(data['refresh'] ?? {}),
-    );
+    Get.find<RefreshConfigController>().fromJson(Map<String, dynamic>.from(data['refresh'] ?? {}));
 
-    Get.find<PageSettingsController>().fromJson(
-      Map<String, dynamic>.from(data['page'] ?? {}),
-    );
+    Get.find<PageSettingsController>().fromJson(Map<String, dynamic>.from(data['page'] ?? {}));
 
     if (!Get.isRegistered<TagManagementController>()) {
       Get.put(TagManagementController());
@@ -173,9 +142,7 @@ class BackupController extends GetxController {
 
     final tagsData = data['tags'];
     if (tagsData is Map) {
-      Get.find<TagManagementController>().importFromJson(
-        Map<String, dynamic>.from(tagsData),
-      );
+      Get.find<TagManagementController>().importFromJson(Map<String, dynamic>.from(tagsData));
     }
   }
 
@@ -203,9 +170,7 @@ class BackupController extends GetxController {
 
     final legacyTags = data['custom_tags_data'];
     if (legacyTags is Map) {
-      Get.find<TagManagementController>().importFromJson(
-        Map<String, dynamic>.from(legacyTags),
-      );
+      Get.find<TagManagementController>().importFromJson(Map<String, dynamic>.from(legacyTags));
     }
   }
 

@@ -150,6 +150,84 @@ def require_path(value: object, *path: str) -> None:
         current = current[part]
 
 
+def douyin_search_probe() -> None:
+    """Exercise the anonymous partition fallback used when live search asks for login."""
+    cookie_jar = http.cookiejar.CookieJar()
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookie_jar))
+
+    def get_json(url: str, params: dict[str, object]) -> object:
+        request = urllib.request.Request(
+            f"{url}?{urllib.parse.urlencode(params)}",
+            headers={
+                "User-Agent": USER_AGENT,
+                "Accept": "application/json,text/plain,*/*",
+                "Accept-Language": "zh-CN,zh;q=0.9",
+                "Referer": "https://live.douyin.com/",
+                "Connection": "close",
+            },
+        )
+        with opener.open(request, timeout=20) as response:
+            payload = response.read()
+        if not payload.strip():
+            raise ValueError("empty response body")
+        return json.loads(payload.decode("utf-8", errors="replace").lstrip("\ufeff"))
+
+    home_request = urllib.request.Request(
+        "https://live.douyin.com/?from_nav=1",
+        headers={"User-Agent": USER_AGENT, "Connection": "close"},
+    )
+    with opener.open(home_request, timeout=20) as response:
+        response.read(1)
+    if not any(cookie.name == "ttwid" for cookie in cookie_jar):
+        raise ValueError("anonymous ttwid cookie missing")
+
+    search = get_json(
+        "https://live.douyin.com/webcast/web/partition/search/",
+        {"keyword": "三角洲", "aid": 6383},
+    )
+    require_path(search, "data", "SearchResult")
+    partitions = search["data"]["SearchResult"]  # type: ignore[index]
+    if not isinstance(partitions, list) or not partitions:
+        raise ValueError("partition search returned no matching category")
+    partition = partitions[0].get("partition") if isinstance(partitions[0], dict) else None
+    if not isinstance(partition, dict) or not partition.get("id_str") or partition.get("type") is None:
+        raise ValueError("partition search returned an invalid category")
+
+    params = {
+        "aid": 6383,
+        "app_name": "douyin_web",
+        "live_id": 1,
+        "device_platform": "web",
+        "language": "zh-CN",
+        "browser_language": "zh-CN",
+        "browser_platform": "Win32",
+        "browser_name": "Chrome",
+        "browser_version": "140.0.0.0",
+        "partition": partition["id_str"],
+        "partition_type": partition["type"],
+        "count": 5,
+        "offset": 0,
+        "cookie_enabled": "true",
+        "screen_width": 1920,
+        "screen_height": 1080,
+    }
+    errors: list[str] = []
+    for endpoint in (
+        "https://live.douyin.com/webcast/web/partition/detail/room/v2/",
+        "https://webcast.amemv.com/webcast/web/partition/detail/room/v2/",
+    ):
+        try:
+            response = get_json(endpoint, params)
+            require_path(response, "data", "data")
+            rooms = response["data"]["data"]  # type: ignore[index]
+            if isinstance(rooms, list) and rooms:
+                return
+            errors.append(f"{endpoint}: empty room list")
+        except Exception as error:  # noqa: BLE001 - verify both production fallbacks
+            errors.append(f"{endpoint}: {error}")
+    raise ValueError("; ".join(errors))
+
+
 def bilibili_danmaku_probe() -> None:
     """Validate the signed endpoint and the current secure socket nodes."""
     jar = http.cookiejar.CookieJar()
@@ -300,31 +378,31 @@ def twitch_categories_probe() -> None:
     require_path(response, "data", "searchCategoryTags")
 
 
-def twitch_directory_probe() -> None:
-    response = twitch_gql(
-        [
-            twitch_persisted_request(
-                "DirectoryPage_Game",
-                "76cb069d835b8a02914c08dc42c421d0dafda8af5b113a3f19141824b901402f",
-                {
-                    "imageWidth": 50,
-                    "slug": "just-chatting",
-                    "options": {
-                        "sort": "VIEWER_COUNT",
-                        "recommendationsContext": {"platform": "web"},
-                        "requestID": "JIRA-VXP-2397",
-                        "freeformTags": None,
-                        "tags": [],
-                        "broadcasterLanguages": [],
-                        "systemFilters": [],
-                    },
-                    "sortTypeIsRecency": False,
-                    "limit": 5,
-                    "includeCostreaming": True,
-                },
-            )
-        ]
+def twitch_directory_request(slug: str, *, limit: int = 5) -> dict[str, object]:
+    return twitch_persisted_request(
+        "DirectoryPage_Game",
+        "76cb069d835b8a02914c08dc42c421d0dafda8af5b113a3f19141824b901402f",
+        {
+            "imageWidth": 50,
+            "slug": slug,
+            "options": {
+                "sort": "VIEWER_COUNT",
+                "recommendationsContext": {"platform": "web"},
+                "requestID": "JIRA-VXP-2397",
+                "freeformTags": None,
+                "tags": [],
+                "broadcasterLanguages": [],
+                "systemFilters": [],
+            },
+            "sortTypeIsRecency": False,
+            "limit": limit,
+            "includeCostreaming": True,
+        },
     )
+
+
+def twitch_directory_probe() -> None:
+    response = twitch_gql([twitch_directory_request("just-chatting")])
     if not isinstance(response, list) or not response:
         raise ValueError("Twitch directory result missing")
     require_path(response[0], "data", "game", "streams", "edges")
@@ -368,33 +446,33 @@ def twitch_room_probe() -> None:
 
 
 def twitch_playback_probe() -> None:
-    directory_payload = [
-        twitch_persisted_request(
-            "DirectoryPage_Game",
-            "76cb069d835b8a02914c08dc42c421d0dafda8af5b113a3f19141824b901402f",
-            {
-                "imageWidth": 50,
-                "slug": "just-chatting",
-                "options": {
-                    "sort": "VIEWER_COUNT",
-                    "recommendationsContext": {"platform": "web"},
-                    "requestID": "JIRA-VXP-2397",
-                    "freeformTags": None,
-                    "tags": [],
-                    "broadcasterLanguages": [],
-                    "systemFilters": [],
-                },
-                "sortTypeIsRecency": False,
-                "limit": 1,
-                "includeCostreaming": True,
-            },
-        )
-    ]
-    directory = twitch_gql(directory_payload)
-    try:
-        login = directory[0]["data"]["game"]["streams"]["edges"][0]["node"]["broadcaster"]["login"]
-    except (IndexError, KeyError, TypeError) as error:
-        raise ValueError("Twitch live channel missing") from error
+    # A single category can legitimately be empty for a locale, maturity
+    # filter or transient directory rollout. Probe several high-traffic
+    # categories in one bounded GQL request and select the first actual live
+    # channel instead of treating one empty category as playback breakage.
+    slugs = ("just-chatting", "grand-theft-auto-v", "league-of-legends", "valorant", "music")
+    directory = twitch_gql([twitch_directory_request(slug) for slug in slugs])
+    login = None
+    if isinstance(directory, list):
+        for result in directory:
+            try:
+                edges = result["data"]["game"]["streams"]["edges"]
+            except (KeyError, TypeError):
+                continue
+            if not isinstance(edges, list):
+                continue
+            for edge in edges:
+                try:
+                    candidate = edge["node"]["broadcaster"]["login"]
+                except (KeyError, TypeError):
+                    continue
+                if isinstance(candidate, str) and candidate.strip():
+                    login = candidate.strip()
+                    break
+            if login:
+                break
+    if not login:
+        raise ValueError("Twitch live channel missing across active categories")
     response = twitch_gql(
         twitch_persisted_request(
             "PlaybackAccessToken",
@@ -592,6 +670,7 @@ def main() -> int:
         ("bilibili.recommend", bilibili_recommend_probe),
         ("bilibili.danmaku", bilibili_danmaku_probe),
         ("huya.danmaku_identity", huya_danmaku_identity_probe),
+        ("douyin.search", douyin_search_probe),
         (
             "douyu.search",
             lambda: require_path(

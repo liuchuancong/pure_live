@@ -90,6 +90,38 @@ LiveRoom bindFavoriteRefreshResultToRequest(LiveRoom requested, LiveRoom refresh
 /// local tags/audience fallbacks continue to come from the latest user-owned
 /// favourites list.
 List<LiveRoom> buildVerifiedFavoriteSnapshot(Iterable<LiveRoom> currentRooms, Map<String, LiveRoom> successfulUpdates) {
-  final pending = markFavoriteRoomsPendingVerification(currentRooms);
-  return mergeFavoriteRoomUpdates(pending, successfulUpdates).rooms;
+  final current = List<LiveRoom>.from(currentRooms);
+  return mergeAuthoritativeFavoriteRefresh(current, current.map(favoriteRoomIdentity), successfulUpdates).rooms;
+}
+
+/// Applies one authoritative refresh without carrying a stale live flag across
+/// a failed request.
+///
+/// Only identities included in [requestedRoomKeys] are verified. A successful
+/// response replaces server-owned fields, a failed response becomes
+/// [LiveStatus.unknown], and favourites outside the requested platform/tag
+/// remain untouched. This is important for manual per-platform refreshes: the
+/// previous implementation either retained a stale "live" bit after a failure
+/// or, when invalidating globally, could mark unrelated platforms unknown.
+({List<LiveRoom> rooms, bool changed}) mergeAuthoritativeFavoriteRefresh(
+  Iterable<LiveRoom> currentRooms,
+  Iterable<String> requestedRoomKeys,
+  Map<String, LiveRoom> successfulUpdates,
+) {
+  final requested = requestedRoomKeys.toSet();
+  var changed = false;
+  final rooms = currentRooms
+      .map((previous) {
+        final key = favoriteRoomIdentity(previous);
+        if (!requested.contains(key)) return previous;
+
+        changed = true;
+        final updated = successfulUpdates[key];
+        if (updated != null) {
+          return updated.copyWith(tagIds: List<String>.from(previous.tagIds)).withAudienceFallbackFrom(previous);
+        }
+        return previous.copyWith(status: false, liveStatus: LiveStatus.unknown);
+      })
+      .toList(growable: false);
+  return (rooms: rooms, changed: changed);
 }

@@ -1,47 +1,47 @@
 {
-  "version": "2.7.0",
-  "build_number": 4077,
-  "version_num": 207004077,
-  "android_abis": [
-    "armeabi-v7a",
-    "arm64-v8a",
-    "x86_64"
-  ],
-  "version_desc": "- 修复抖音搜索。\n- 整合热门页关闭状态、加载代次与平台切换稳定性。\n- 修复关注页逐平台下拉刷新，空列表也可直接核验最新开播状态。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。所有更新文件均为 version+buildNumber, 例如： PureLive-1.2.3-123-windows-x64-setup.exe, PureLive-2.6.0-4076-arm64-v8a-release.apk\n",
+  "version": "2.9.2",
+  "build_number": 4081,
+  "version_num": 209024081,
+  "version_desc": "- 画质与线路半屏面板进一步压缩标题、留白和卡片高度，常见横屏宽度使用三列显示更多画质与线路。\n- 直播记录缩小顶部工具栏、三个标签和信息底栏，动态计算卡片高度，首屏完整容纳 2×2 四张卡片。\n- 本地弹幕样式固定占右侧半屏，内部改为左侧实时预览、右侧滚动设置的双栏布局。\n- 颜色、字号、字体、透明度、字距、描边、阴影、位置及滚动速度均即时反映到预览。\n- 预览动画只在编辑器打开期间运行，关闭后立即释放，不增加正常播放的常驻渲染负担。\n- 本轮构建并发布 Android arm64-v8a 正式更新包。",
   "prerelease": false,
-  "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.7.0",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.2",
+  "android_abis": [
+    "arm64-v8a"
+  ],
   "platforms": {
     "windows": {
-      "version": "2.7.0",
-      "build_number": 4077,
-      "version_num": 207004077,
-      "version_desc": "- 修复抖音搜索。\n- 整合热门页关闭状态、加载代次与平台切换稳定性。\n- 修复关注页逐平台下拉刷新，空列表也可直接核验最新开播状态。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
+      "version": "2.9.0",
+      "build_number": 4079,
+      "version_num": 209004079,
+      "version_desc": "- 同步上游至 25f833ea，吸收从录制页返回直播时的视频层延迟挂载修复与发布资产命名一致性调整。\n- 修复竖屏、横屏清晰度和线路切换：旧流持续播放至新地址就绪，最新选择优先，切换不再重建直播页控制器。\n- 重构横屏全屏控制层，交换小窗与时间/电量区域，整合清晰度/线路面板并优化观看记录双栏卡片。\n- 扩展本地弹幕颜色、字号、速度、粗体和描边样式，横屏、竖屏、小窗与本地互动入口共用配置。\n- Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按平台串行完成正式构建。",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.7.0"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.0",
+      "windows_msix_available": false
     },
     "linux": {
-      "version": "2.7.0",
-      "build_number": 4077,
-      "version_num": 207004077,
-      "version_desc": "- 修复抖音搜索。\n- 整合热门页关闭状态、加载代次与平台切换稳定性。\n- 修复关注页逐平台下拉刷新，空列表也可直接核验最新开播状态。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
+      "version": "2.9.0",
+      "build_number": 4079,
+      "version_num": 209004079,
+      "version_desc": "- 同步上游至 25f833ea，吸收从录制页返回直播时的视频层延迟挂载修复与发布资产命名一致性调整。\n- 修复竖屏、横屏清晰度和线路切换：旧流持续播放至新地址就绪，最新选择优先，切换不再重建直播页控制器。\n- 重构横屏全屏控制层，交换小窗与时间/电量区域，整合清晰度/线路面板并优化观看记录双栏卡片。\n- 扩展本地弹幕颜色、字号、速度、粗体和描边样式，横屏、竖屏、小窗与本地互动入口共用配置。\n- Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按平台串行完成正式构建。",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.7.0"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.0"
     },
     "macos": {
-      "version": "2.7.0",
-      "build_number": 4077,
-      "version_num": 207004077,
-      "version_desc": "- 修复抖音搜索。\n- 整合热门页关闭状态、加载代次与平台切换稳定性。\n- 修复关注页逐平台下拉刷新，空列表也可直接核验最新开播状态。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
+      "version": "2.9.0",
+      "build_number": 4079,
+      "version_num": 209004079,
+      "version_desc": "- 同步上游至 25f833ea，吸收从录制页返回直播时的视频层延迟挂载修复与发布资产命名一致性调整。\n- 修复竖屏、横屏清晰度和线路切换：旧流持续播放至新地址就绪，最新选择优先，切换不再重建直播页控制器。\n- 重构横屏全屏控制层，交换小窗与时间/电量区域，整合清晰度/线路面板并优化观看记录双栏卡片。\n- 扩展本地弹幕颜色、字号、速度、粗体和描边样式，横屏、竖屏、小窗与本地互动入口共用配置。\n- Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按平台串行完成正式构建。",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.7.0"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.0"
     },
     "ios": {
-      "version": "2.7.0",
-      "build_number": 4077,
-      "version_num": 207004077,
-      "version_desc": "- 修复抖音搜索。\n- 整合热门页关闭状态、加载代次与平台切换稳定性。\n- 修复关注页逐平台下拉刷新，空列表也可直接核验最新开播状态。\n- 取消关注弹窗绑定自身路由，避免路由切换期间误退直播页。\n- 保留维护版 Windows 小窗完整位置/大小恢复、稳定 AppId、图片有界缓存。\n- 完成 Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 全平台回归发布。",
+      "version": "2.9.0",
+      "build_number": 4079,
+      "version_num": 209004079,
+      "version_desc": "- 同步上游至 25f833ea，吸收从录制页返回直播时的视频层延迟挂载修复与发布资产命名一致性调整。\n- 修复竖屏、横屏清晰度和线路切换：旧流持续播放至新地址就绪，最新选择优先，切换不再重建直播页控制器。\n- 重构横屏全屏控制层，交换小窗与时间/电量区域，整合清晰度/线路面板并优化观看记录双栏卡片。\n- 扩展本地弹幕颜色、字号、速度、粗体和描边样式，横屏、竖屏、小窗与本地互动入口共用配置。\n- Android arm64、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按平台串行完成正式构建。",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.7.0"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.0"
     }
-  }
+  },
+  "windows_msix_available": false
 }

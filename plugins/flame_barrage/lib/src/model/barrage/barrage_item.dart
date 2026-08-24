@@ -11,10 +11,18 @@ class BarrageItem {
     this.textColor,
     this.fontSize,
     this.fontWeight,
+    this.fontStyle,
     this.fontFamily,
+    this.letterSpacing,
+    this.opacity,
     this.showStroke,
     this.strokeColor,
     this.strokeWidth,
+    this.showShadow,
+    this.shadowColor,
+    this.shadowBlur,
+    this.shadowOffset,
+    this.fixedDuration,
     this.emojiSize,
     this.baseSpeed,
     this.overlapSafeGap,
@@ -36,10 +44,18 @@ class BarrageItem {
   final Color? textColor;
   final double? fontSize;
   final FontWeight? fontWeight;
+  final FontStyle? fontStyle;
   final String? fontFamily;
+  final double? letterSpacing;
+  final double? opacity;
   final bool? showStroke;
   final Color? strokeColor;
   final double? strokeWidth;
+  final bool? showShadow;
+  final Color? shadowColor;
+  final double? shadowBlur;
+  final Offset? shadowOffset;
+  final Duration? fixedDuration;
   final double? emojiSize;
   final double? baseSpeed;
   final double? overlapSafeGap;

@@ -1,5 +1,6 @@
 import 'package:pure_live/core/sites.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pure_live/common/models/live_message.dart';
 import 'package:pure_live/modules/live_play/widgets/local_interaction/local_interaction_controller.dart';
 
 void main() {
@@ -16,6 +17,47 @@ void main() {
       expect(LocalInteractionController.levelForExperience(499), 1);
       expect(LocalInteractionController.levelForExperience(500), 2);
       expect(LocalInteractionController.levelForExperience(1500), 4);
+    });
+
+    test('normalizes rich local danmaku style values', () {
+      final style = LocalInteractionController.buildDanmakuStyle(
+        fontSize: 60,
+        speed: 20,
+        fontWeight: 1200,
+        showStroke: false,
+        strokeWidth: 9,
+        placement: 'bottom',
+        fontFamily: 'mono',
+        italic: true,
+        opacity: .1,
+        letterSpacing: 9,
+        showShadow: true,
+        shadowBlur: 20,
+        shadowOffset: 9,
+        fixedDurationMs: 50000,
+      );
+
+      expect(style.fontSize, 32);
+      expect(style.baseSpeed, 60);
+      expect(style.fontWeight, 900);
+      expect(style.showStroke, isFalse);
+      expect(style.strokeWidth, 0);
+      expect(style.placement, LiveMessagePlacement.bottom);
+      expect(style.fontFamily, 'monospace');
+      expect(style.italic, isTrue);
+      expect(style.opacity, .35);
+      expect(style.letterSpacing, 3);
+      expect(style.shadowBlur, 6);
+      expect(style.shadowOffset, 4);
+      expect(style.fixedDurationMs, 10000);
+      expect(LocalInteractionController.danmakuPresets.map((preset) => preset.id), [
+        'clean',
+        'highlight',
+        'neon',
+        'minimal',
+        'caption',
+        'cyber',
+      ]);
     });
 
     test('selects a platform-specific gift and badge catalogue', () {

@@ -20,11 +20,11 @@ class WindowPipGeometry {
   final RxDouble windowsPipY = hiveDouble('windows_pip_y', 0.0);
 
   bool get isValid {
-    return displayId.v.isNotEmpty &&
-        windowsPipWidth.v > 0 &&
-        windowsPipHeight.v > 0 &&
-        windowsPipX.v.isFinite &&
-        windowsPipY.v.isFinite;
+    return displayId.v.isNotEmpty && hasValidBounds;
+  }
+
+  bool get hasValidBounds {
+    return windowsPipWidth.v > 0 && windowsPipHeight.v > 0 && windowsPipX.v.isFinite && windowsPipY.v.isFinite;
   }
 
   Size get size => Size(windowsPipWidth.v, windowsPipHeight.v);
@@ -143,25 +143,28 @@ class WindowSizeController extends GetxController {
 
     rememberPipPosition.v = json['rememberPipPosition'] ?? true;
 
-    final pip = json['windowsPip'];
-
-    if (pip is Map) {
-      windowsPip.fromJson(Map<String, dynamic>.from(pip));
-    }
+    windowsPip.fromJson(_extractPipGeometry(json));
 
     windowSize.value = Size(storedWidth.v, storedHeight.v);
   }
 
   static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
     final windowSize = rootConfig?['windowSize'] as Map<String, dynamic>? ?? {};
-
-    final pip = windowSize['windowsPip'];
+    final player = rootConfig?['player'] as Map<String, dynamic>? ?? {};
+    final pip = _extractPipGeometry(windowSize);
 
     return {
       'storedWidth': (windowSize['storedWidth'] ?? 1280.0).toDouble(),
       'storedHeight': (windowSize['storedHeight'] ?? 720.0).toDouble(),
-      'rememberPipPosition': windowSize['rememberPipPosition'] ?? true,
-      'windowsPip': pip is Map ? Map<String, dynamic>.from(pip) : <String, dynamic>{},
+      'rememberPipPosition': windowSize['rememberPipPosition'] ?? player['rememberPipPosition'] ?? true,
+      'windowsPip': pip,
+      // Keep the legacy aliases in extracted configuration so older backup
+      // editors and downgrade imports preserve the rectangle losslessly.
+      'windowsPipDisplayId': pip['displayId'],
+      'windowsPipWidth': pip['windowsPipWidth'],
+      'windowsPipHeight': pip['windowsPipHeight'],
+      'windowsPipX': pip['windowsPipX'],
+      'windowsPipY': pip['windowsPipY'],
     };
   }
 
@@ -172,8 +175,50 @@ class WindowSizeController extends GetxController {
       windowSize[key] = value;
     });
 
+    if (updateFields.keys.any(_isLegacyPipGeometryKey)) {
+      final pip = _extractPipGeometry(windowSize);
+      const aliases = <String, String>{
+        'windowsPipDisplayId': 'displayId',
+        'windowsPipWidth': 'windowsPipWidth',
+        'windowsPipHeight': 'windowsPipHeight',
+        'windowsPipX': 'windowsPipX',
+        'windowsPipY': 'windowsPipY',
+      };
+      for (final alias in aliases.entries) {
+        if (updateFields.containsKey(alias.key)) {
+          pip[alias.value] = updateFields[alias.key];
+        }
+      }
+      windowSize['windowsPip'] = pip;
+    }
+
     rootConfig['windowSize'] = windowSize;
 
     return rootConfig;
+  }
+
+  static bool _isLegacyPipGeometryKey(String key) =>
+      key == 'windowsPipDisplayId' ||
+      key == 'windowsPipWidth' ||
+      key == 'windowsPipHeight' ||
+      key == 'windowsPipX' ||
+      key == 'windowsPipY';
+
+  static Map<String, dynamic> _extractPipGeometry(Map<String, dynamic> windowSize) {
+    final nested = windowSize['windowsPip'];
+    final pip = nested is Map ? Map<String, dynamic>.from(nested) : const <String, dynamic>{};
+
+    double number(String key) {
+      final value = pip[key] ?? windowSize[key];
+      return value is num ? value.toDouble() : 0.0;
+    }
+
+    return {
+      'displayId': (pip['displayId'] ?? windowSize['windowsPipDisplayId'] ?? '').toString(),
+      'windowsPipWidth': number('windowsPipWidth'),
+      'windowsPipHeight': number('windowsPipHeight'),
+      'windowsPipX': number('windowsPipX'),
+      'windowsPipY': number('windowsPipY'),
+    };
   }
 }

@@ -7,11 +7,17 @@ class BarrageConfig {
   const BarrageConfig({
     this.fontSize = 18,
     this.fontWeight = FontWeight.w500,
+    this.fontStyle = FontStyle.normal,
     this.fontFamily,
+    this.letterSpacing = 0,
     this.textColor = Colors.white,
     this.strokeColor = Colors.black,
     this.opacity = 1.0,
     this.showStroke = true,
+    this.showShadow = false,
+    this.shadowColor = Colors.black,
+    this.shadowBlur = 0,
+    this.shadowOffset = const Offset(1, 1),
     this.area = 1.0,
     this.topAreaDistance = 0,
     this.bottomAreaDistance = 0,
@@ -40,6 +46,12 @@ class BarrageConfig {
   /// The structural thickness and weight configuration of the rendered font.
   final FontWeight fontWeight;
 
+  /// Slant used for locally styled text.
+  final FontStyle fontStyle;
+
+  /// Additional spacing between glyphs in logical pixels.
+  final double letterSpacing;
+
   /// The default text fill color applied during paragraph compilation.
   final Color textColor;
 
@@ -53,6 +65,12 @@ class BarrageConfig {
 
   /// Toggles the native C++ hardware-accelerated text outline rendering.
   final bool showStroke;
+
+  /// Optional cached paragraph shadow. This adds no per-frame saveLayer.
+  final bool showShadow;
+  final Color shadowColor;
+  final double shadowBlur;
+  final Offset shadowOffset;
 
   /// The vertical proportion of screen space allowed for vertical lane allocation (0.1 to 1.0).
   final double area;
@@ -121,11 +139,17 @@ class BarrageConfig {
   BarrageConfig copyWith({
     double? fontSize,
     FontWeight? fontWeight,
+    FontStyle? fontStyle,
     String? fontFamily,
+    double? letterSpacing,
     Color? textColor,
     Color? strokeColor,
     double? opacity,
     bool? showStroke,
+    bool? showShadow,
+    Color? shadowColor,
+    double? shadowBlur,
+    Offset? shadowOffset,
     double? strokeWidth,
     double? area,
     double? topAreaDistance,
@@ -153,11 +177,17 @@ class BarrageConfig {
     return BarrageConfig(
       fontSize: fontSize ?? this.fontSize,
       fontWeight: fontWeight ?? this.fontWeight,
+      fontStyle: fontStyle ?? this.fontStyle,
       fontFamily: fontFamily ?? this.fontFamily,
+      letterSpacing: letterSpacing ?? this.letterSpacing,
       textColor: textColor ?? this.textColor,
       strokeColor: strokeColor ?? this.strokeColor,
       opacity: opacity ?? this.opacity,
       showStroke: showStroke ?? this.showStroke,
+      showShadow: showShadow ?? this.showShadow,
+      shadowColor: shadowColor ?? this.shadowColor,
+      shadowBlur: shadowBlur ?? this.shadowBlur,
+      shadowOffset: shadowOffset ?? this.shadowOffset,
       strokeWidth: strokeWidth ?? this.strokeWidth,
       area: area ?? this.area,
       topAreaDistance: topAreaDistance ?? this.topAreaDistance,
@@ -187,10 +217,16 @@ class BarrageConfig {
     return other is BarrageConfig &&
         other.fontSize == fontSize &&
         other.fontWeight == fontWeight &&
+        other.fontStyle == fontStyle &&
+        other.letterSpacing == letterSpacing &&
         other.textColor == textColor &&
         other.strokeColor == strokeColor &&
         other.opacity == opacity &&
         other.showStroke == showStroke &&
+        other.showShadow == showShadow &&
+        other.shadowColor == shadowColor &&
+        other.shadowBlur == shadowBlur &&
+        other.shadowOffset == shadowOffset &&
         other.strokeWidth == strokeWidth &&
         other.area == area &&
         other.topAreaDistance == topAreaDistance &&
@@ -218,10 +254,16 @@ class BarrageConfig {
     return Object.hashAll([
       fontSize,
       fontWeight,
+      fontStyle,
+      letterSpacing,
       textColor,
       strokeColor,
       opacity,
       showStroke,
+      showShadow,
+      shadowColor,
+      shadowBlur,
+      shadowOffset,
       strokeWidth,
       area,
       topAreaDistance,
@@ -236,6 +278,7 @@ class BarrageConfig {
       maxPendingCount,
       maxPendingAge,
       emitInterval,
+      baseSpeed,
       overlapSafeGap,
       noEmojiMode,
       barragePoolMaxSize,

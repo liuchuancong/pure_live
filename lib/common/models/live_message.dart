@@ -23,6 +23,48 @@ class LiveAudienceUpdate {
   final int value;
 }
 
+/// Optional per-message presentation used by locally composed danmaku.
+/// Platform messages keep using the room-wide danmaku configuration.
+enum LiveMessagePlacement { scroll, top, bottom }
+
+class LiveMessageStyle {
+  const LiveMessageStyle({
+    required this.fontSize,
+    required this.baseSpeed,
+    required this.fontWeight,
+    required this.showStroke,
+    required this.strokeWidth,
+    this.placement = LiveMessagePlacement.scroll,
+    this.fontFamily,
+    this.italic = false,
+    this.opacity = 1,
+    this.letterSpacing = 0,
+    this.strokeColor = 0xFF000000,
+    this.showShadow = false,
+    this.shadowColor = 0xFF000000,
+    this.shadowBlur = 2,
+    this.shadowOffset = 1,
+    this.fixedDurationMs = 4000,
+  });
+
+  final double fontSize;
+  final double baseSpeed;
+  final int fontWeight;
+  final bool showStroke;
+  final double strokeWidth;
+  final LiveMessagePlacement placement;
+  final String? fontFamily;
+  final bool italic;
+  final double opacity;
+  final double letterSpacing;
+  final int strokeColor;
+  final bool showShadow;
+  final int shadowColor;
+  final double shadowBlur;
+  final double shadowOffset;
+  final int fixedDurationMs;
+}
+
 class LiveMessage {
   /// 消息类型
   final LiveMessageType type;
@@ -60,6 +102,7 @@ class LiveMessage {
   /// Original platform timestamp. A missing timestamp means the platform did
   /// not expose one and reception time is used for ordering instead.
   final DateTime? sentAt;
+  final LiveMessageStyle? style;
 
   LiveMessage({
     required this.type,
@@ -74,6 +117,7 @@ class LiveMessage {
     this.isLocal = false,
     this.messageId = "",
     this.sentAt,
+    this.style,
   });
 }
 

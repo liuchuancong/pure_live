@@ -14,6 +14,9 @@ class BarrageTrack {
   /// 固定弹幕占用
   bool locked = false;
 
+  /// Monotonic engine time at which a fixed item releases this lane.
+  int lockedUntil = 0;
+
   /// 最近一次发射时间
   int lastLaunchTime = 0;
 

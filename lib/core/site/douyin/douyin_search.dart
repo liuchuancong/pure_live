@@ -18,6 +18,7 @@ class DouyinSearch {
 
   static String _cookie = '';
   static Future<String>? _cookieRequest;
+  static String _configuredCookieSnapshot = '';
 
   static Future<String> _getCookie() async {
     if (_cookie.isNotEmpty) {
@@ -27,8 +28,16 @@ class DouyinSearch {
     final configuredCookie = SettingsService.to.cookieManager.douyinCookie.v.trim();
 
     if (configuredCookie.isNotEmpty) {
+      _configuredCookieSnapshot = configuredCookie;
       _cookie = configuredCookie;
       return _cookie;
+    }
+
+    // A user may clear or replace the account cookie while the process stays
+    // alive. Do not keep searching with the old authenticated session.
+    if (_configuredCookieSnapshot.isNotEmpty) {
+      _configuredCookieSnapshot = '';
+      _cookie = '';
     }
 
     try {
@@ -62,7 +71,7 @@ class DouyinSearch {
       for (final value in setCookieValues) {
         final cookie = value.split(';').first.trim();
 
-        if (cookie.startsWith('ttwid=')) {
+        if (cookie.startsWith('ttwid=') || cookie.startsWith('UIFID_TEMP=')) {
           cookies.add(cookie);
         }
       }
@@ -80,6 +89,10 @@ class DouyinSearch {
     return {
       ...defaultHeaders,
       'Referer': 'https://www.douyin.com/search/${Uri.encodeComponent(keyword)}?source=switch_tab&type=live',
+      'Origin': 'https://www.douyin.com',
+      'Sec-Fetch-Dest': 'empty',
+      'Sec-Fetch-Mode': 'cors',
+      'Sec-Fetch-Site': 'same-origin',
       if (cookie.isNotEmpty) 'Cookie': cookie,
     };
   }
@@ -244,7 +257,10 @@ class DouyinSearch {
         (raw['status'] is num ? (raw['status'] as num).toInt() : int.tryParse(raw['status']?.toString() ?? '') ?? 0) ==
         2;
 
-    final realWebRid = webRid.isNotEmpty ? webRid : DateTime.now().millisecondsSinceEpoch.toString();
+    // Keep a deterministic identity. A millisecond timestamp produced invalid
+    // room links, changed between refreshes and could collide for adjacent
+    // results. The internal room id is a stable fallback when web_rid is absent.
+    final realWebRid = webRid.isNotEmpty ? webRid : roomId;
 
     final avatar = _firstNonEmpty([getFirstUrl(avatarThumbList), getFirstUrl(avatarList)]);
 
@@ -303,8 +319,12 @@ class DouyinSearch {
     return result;
   }
 
-  static Future<List<LiveRoom>> _searchByLiveApi(String keyword, int page) async {
-    final offset = 20 * (page - 1);
+  @visibleForTesting
+  static List<LiveRoom> parseSearchPayloadForTesting(dynamic payload) => _extractSearchVideos(payload);
+
+  static Future<List<LiveRoom>> _searchByLiveApi(String keyword, int page, int pageSize) async {
+    final count = pageSize.clamp(1, 50).toInt();
+    final offset = count * (page - 1);
 
     final headers = await _getHeaders(keyword);
 
@@ -319,7 +339,7 @@ class DouyinSearch {
       'list_type': 'single',
       'keyword': keyword,
       'offset': offset.toString(),
-      'count': '20',
+      'count': count.toString(),
       'os_version': '10',
     };
 
@@ -329,11 +349,13 @@ class DouyinSearch {
       header: headers,
     );
 
+    if (result['status_code'] != 0) return [];
     return _extractSearchVideos(result['data']);
   }
 
-  static Future<List<LiveRoom>> _searchByGeneralApi(String keyword, int page) async {
-    final offset = 20 * (page - 1);
+  static Future<List<LiveRoom>> _searchByGeneralApi(String keyword, int page, int pageSize) async {
+    final count = pageSize.clamp(1, 50).toInt();
+    final offset = count * (page - 1);
 
     final headers = await _getHeaders(keyword);
 
@@ -344,7 +366,7 @@ class DouyinSearch {
       'search_channel': 'aweme_live',
       'keyword': keyword,
       'offset': offset.toString(),
-      'count': '20',
+      'count': count.toString(),
       'os_version': '10',
     };
 
@@ -354,10 +376,11 @@ class DouyinSearch {
       header: headers,
     );
 
+    if (result['status_code'] != 0) return [];
     return _extractSearchVideos(result['data']);
   }
 
-  static Future<List<LiveRoom>> _searchByPartition(String keyword) async {
+  static Future<List<LiveRoom>> _searchByPartition(String keyword, int page, int pageSize) async {
     final headers = await _getHeaders(keyword);
 
     final result = await HttpClient.instance.getJson(
@@ -398,7 +421,7 @@ class DouyinSearch {
       }
 
       try {
-        final rooms = await _getPartitionRooms(partitionId, partitionType.toString());
+        final rooms = await _getPartitionRooms(partitionId, partitionType.toString(), page: page, pageSize: pageSize);
 
         for (final room in rooms) {
           if (seen.contains(room.roomId)) {
@@ -413,7 +436,7 @@ class DouyinSearch {
             merged.add(room);
           }
 
-          if (merged.length >= 20) {
+          if (merged.length >= pageSize) {
             return merged;
           }
         }
@@ -425,7 +448,13 @@ class DouyinSearch {
     return merged;
   }
 
-  static Future<List<LiveRoom>> _getPartitionRooms(String partition, String partitionType) async {
+  static Future<List<LiveRoom>> _getPartitionRooms(
+    String partition,
+    String partitionType, {
+    required int page,
+    required int pageSize,
+  }) async {
+    final count = pageSize.clamp(1, 50).toInt();
     final params = {
       'aid': '6383',
       'app_name': 'douyin_web',
@@ -438,9 +467,8 @@ class DouyinSearch {
       'browser_version': '120.0.0.0',
       'partition': partition,
       'partition_type': partitionType,
-      'count': '15',
-      'offset': '0',
-      'web_rid': DateTime.now().millisecondsSinceEpoch.toString(),
+      'count': count.toString(),
+      'offset': ((page - 1) * count).toString(),
       'cookie_enabled': 'true',
       'screen_width': '1920',
       'screen_height': '1080',
@@ -465,7 +493,7 @@ class DouyinSearch {
         final list = data?['data'];
 
         if (list is! List || list.isEmpty) {
-          break;
+          continue;
         }
 
         final rooms = <LiveRoom>[];
@@ -503,7 +531,7 @@ class DouyinSearch {
             continue;
           }
 
-          final rid = webRid.isNotEmpty ? webRid : DateTime.now().millisecondsSinceEpoch.toString();
+          final rid = webRid.isNotEmpty ? webRid : roomId;
 
           final online = stats['user_count_str']?.toString() ?? '';
 
@@ -522,6 +550,7 @@ class DouyinSearch {
               totalViewers: online,
               onlineViewers: _douyinOnlineViewers(room),
               audienceMetricType: AudienceMetricType.totalViewers,
+              link: 'https://live.douyin.com/$rid',
             ),
           );
         }
@@ -537,6 +566,8 @@ class DouyinSearch {
 
   static Future<List<LiveRoom>> search(String keyword, {int page = 1, int pageSize = 30}) async {
     final kw = keyword.trim();
+    final normalizedPage = page < 1 ? 1 : page;
+    final normalizedPageSize = pageSize.clamp(1, 50).toInt();
 
     if (kw.isEmpty) {
       return [];
@@ -544,7 +575,7 @@ class DouyinSearch {
 
     try {
       try {
-        final result = await _searchByLiveApi(kw, page);
+        final result = await _searchByLiveApi(kw, normalizedPage, normalizedPageSize);
 
         if (result.isNotEmpty) {
           return result;
@@ -554,7 +585,7 @@ class DouyinSearch {
       }
 
       try {
-        final result = await _searchByGeneralApi(kw, page);
+        final result = await _searchByGeneralApi(kw, normalizedPage, normalizedPageSize);
 
         if (result.isNotEmpty) {
           return result;
@@ -563,7 +594,7 @@ class DouyinSearch {
         CoreLog.error(e);
       }
 
-      return await _searchByPartition(kw);
+      return await _searchByPartition(kw, normalizedPage, normalizedPageSize);
     } catch (e) {
       CoreLog.error(e);
       return [];

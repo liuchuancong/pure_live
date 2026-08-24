@@ -528,7 +528,12 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
 
   Future<void> _fullRefreshFilterRooms({required bool showLoading, bool bypassFailureCooldown = false}) async {
     final roomsToRefresh = getFilteredRoomsIgnoringLiveStatus();
-    await _runRoomRefresh(roomsToRefresh, showLoading: showLoading, bypassFailureCooldown: bypassFailureCooldown);
+    await _runRoomRefresh(
+      roomsToRefresh,
+      showLoading: showLoading,
+      invalidateUnverified: true,
+      bypassFailureCooldown: bypassFailureCooldown,
+    );
   }
 
   Future<void> _fullRefreshRooms({
@@ -550,6 +555,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
       showLoading: showLoading,
       emitFinish: emitFinish,
       markFullRefresh: true,
+      invalidateUnverified: true,
       bypassFailureCooldown: bypassFailureCooldown,
     );
   }
@@ -623,7 +629,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
 
         final latest = List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
         final merged = invalidateUnverified
-            ? (rooms: buildVerifiedFavoriteSnapshot(latest, updates), changed: true)
+            ? mergeAuthoritativeFavoriteRefresh(latest, rooms.map(favoriteRoomIdentity), updates)
             : mergeFavoriteRoomUpdates(latest, updates);
         if (merged.changed) {
           // One Hive write and one visible publication. A failed startup request

@@ -7,6 +7,9 @@
 #ifndef OutputDir
   #define OutputDir "."
 #endif
+#ifndef ArtifactVersion
+  #define ArtifactVersion AppVersion
+#endif
 
 #define AppName "纯粹直播"
 #define AppExeName "pure_live.exe"
@@ -22,7 +25,7 @@ DisableDirPage=no
 UsePreviousAppDir=yes
 DefaultGroupName={#AppName}
 OutputDir={#OutputDir}
-OutputBaseFilename=PureLive-{#AppVersion}-windows-x64-setup
+OutputBaseFilename=PureLive-{#ArtifactVersion}-windows-x64-setup
 SetupIconFile=..\..\runner\resources\app_icon.ico
 Compression=lzma2/ultra64
 SolidCompression=yes
