@@ -24,6 +24,62 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     _audioModeTransitions = LatestAsyncValueQueue<bool>(_applyAudioOnly);
   }
 
+  /// Applies the shared low-latency live-stream mpv property set to a native
+  /// (libmpv) player platform.
+  ///
+  /// 单一事实来源：主播放器（[MediaKitAdapter.init]）与 multiview 每格播放器
+  /// 都必须使用同一套属性（seek 白名单、探测时长、LiveBufferPolicy 缓冲上限、
+  /// 网络超时、音频驱动、代理、macOS 硬解关闭），避免两处配置漂移。
+  static Future<void> applyNativeLiveProperties(dynamic native) async {
+    if (PlatformUtils.isAndroid) {
+      await native.setProperty('force-seekable', 'yes');
+    }
+    await native.setProperty('force-seekable', 'yes');
+
+    await native.setProperty('protocol_whitelist', 'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto');
+
+    await native.setProperty('demuxer-lavf-probesize', '2097152');
+
+    // Live FLV/HLS streams need a short probe rather than a long-file
+    // analysis pass.  This reduces the black-screen interval before the
+    // first decoded frame while retaining enough data for codec detection.
+    await native.setProperty('demuxer-lavf-analyzeduration', '2');
+
+    // mpv's generic defaults keep a large seek-oriented forward/backward
+    // cache. Live rooms are not meaningfully seekable, so retaining that
+    // much compressed data only makes long Windows/Android sessions appear
+    // to grow indefinitely. Keep this shared with the tested policy rather
+    // than scattering raw byte strings through the adapter.
+    await native.setProperty('demuxer-max-bytes', LiveBufferPolicy.forwardBytes.toString());
+
+    await native.setProperty('demuxer-max-back-bytes', LiveBufferPolicy.backBytes.toString());
+
+    await native.setProperty('demuxer-readahead-secs', LiveBufferPolicy.readaheadSeconds.toString());
+
+    await native.setProperty('network-timeout', '15');
+
+    if (SettingsService.to.player.customPlayerOutput.v) {
+      await native.setProperty('ao', SettingsService.to.player.audioOutputDriver.v);
+    } else if (PlatformUtils.isLinux) {
+      await native.setProperty('ao', 'alsa');
+    }
+
+    if (SettingsService.to.proxy.enableProxy.v && SettingsService.to.proxy.proxyHost.v.isNotEmpty) {
+      final proxyUrl = "http://${SettingsService.to.proxy.proxyHost.v}:${SettingsService.to.proxy.proxyPort.v}";
+
+      await native.setProperty('http-proxy', proxyUrl);
+    }
+
+    if (PlatformUtils.isMacOS) {
+      await native.setProperty('hwdec', 'no');
+    }
+
+    if (PlatformUtils.isWindows && SettingsService.to.player.enableRtxVsr.value) {
+      await native.setProperty('hwdec', 'd3d11va');
+      await native.setProperty('vf', 'd3d11vpp=scale=2:scaling-mode=nvidia');
+    }
+  }
+
   late final Player _player;
 
   late final VideoController _controller;
@@ -106,50 +162,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
         final native = _player.platform as dynamic;
         // Live adapters use one explicit seekability override. The upstream
         // Android workaround duplicated this native property write.
-        await native.setProperty('force-seekable', 'yes');
-
-        await native.setProperty('protocol_whitelist', 'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto');
-
-        await native.setProperty('demuxer-lavf-probesize', '2097152');
-
-        // Live FLV/HLS streams need a short probe rather than a long-file
-        // analysis pass.  This reduces the black-screen interval before the
-        // first decoded frame while retaining enough data for codec detection.
-        await native.setProperty('demuxer-lavf-analyzeduration', '2');
-
-        // mpv's generic defaults keep a large seek-oriented forward/backward
-        // cache. Live rooms are not meaningfully seekable, so retaining that
-        // much compressed data only makes long Windows/Android sessions appear
-        // to grow indefinitely. Keep this shared with the tested policy rather
-        // than scattering raw byte strings through the adapter.
-        await native.setProperty('demuxer-max-bytes', LiveBufferPolicy.forwardBytes.toString());
-
-        await native.setProperty('demuxer-max-back-bytes', LiveBufferPolicy.backBytes.toString());
-
-        await native.setProperty('demuxer-readahead-secs', LiveBufferPolicy.readaheadSeconds.toString());
-
-        await native.setProperty('network-timeout', '15');
-
-        if (SettingsService.to.player.customPlayerOutput.v) {
-          await native.setProperty('ao', SettingsService.to.player.audioOutputDriver.v);
-        } else if (PlatformUtils.isLinux) {
-          await native.setProperty('ao', 'alsa');
-        }
-
-        if (SettingsService.to.proxy.enableProxy.v && SettingsService.to.proxy.proxyHost.v.isNotEmpty) {
-          final proxyUrl = "http://${SettingsService.to.proxy.proxyHost.v}:${SettingsService.to.proxy.proxyPort.v}";
-
-          await native.setProperty('http-proxy', proxyUrl);
-        }
-
-        if (PlatformUtils.isMacOS) {
-          await native.setProperty('hwdec', 'no');
-        }
-
-        if (PlatformUtils.isWindows && SettingsService.to.player.enableRtxVsr.value) {
-          await native.setProperty('hwdec', 'd3d11va');
-          await native.setProperty('vf', 'd3d11vpp=scale=2:scaling-mode=nvidia');
-        }
+        await applyNativeLiveProperties(native);
       }
 
       // =========================

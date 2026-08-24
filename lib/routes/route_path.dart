@@ -24,6 +24,9 @@ class RoutePath {
   /// 播放页面
   static const kLivePlay = "/live_play";
 
+  /// 多画面同看页面
+  static const kMultiview = "/multiview";
+
   /// 搜索
   static const kSearch = "/search";
 

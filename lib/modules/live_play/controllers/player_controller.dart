@@ -9,9 +9,9 @@ import 'package:pure_live/player/core/player_manager.dart';
 import 'package:pure_live/player/models/player_exception.dart';
 import 'package:pure_live/player/models/player_error_type.dart';
 import 'package:pure_live/core/site/bilibili/bilibili_site.dart';
+import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/modules/live_play/states/live_play_state.dart';
-import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 
 typedef StreamSourceOpener = Future<void> Function(
@@ -118,10 +118,12 @@ class PlayerController extends GetxController {
         current?.platform == room.platform;
   }
 
-  Future<Map<String, String>> getHeaders({Site? expectedSite, LiveRoom? expectedRoom}) async {
+  /// 解析指定站点/房间的播放请求头（单一事实来源）。
+  ///
+  /// 主房间路径（[getHeaders]）与 multiview 每格解析器共用此入口，
+  /// 保证 Cookie/UA/Referer 等鉴权头逻辑不发生漂移。
+  static Future<Map<String, String>> resolvePlaybackHeaders({required Site site, required LiveRoom? room}) async {
     Map<String, String> headers = {};
-    final site = expectedSite ?? currentSite;
-    final room = expectedRoom ?? currentRoom;
 
     if (site.id == Sites.bilibiliSite) {
       final cookie = SettingsService.to.cookieManager.bilibiliCookie.v.trim();
@@ -142,6 +144,10 @@ class PlayerController extends GetxController {
     }
 
     return headers;
+  }
+
+  Future<Map<String, String>> getHeaders({Site? expectedSite, LiveRoom? expectedRoom}) {
+    return resolvePlaybackHeaders(site: expectedSite ?? currentSite, room: expectedRoom ?? currentRoom);
   }
 
   Future<VideoController?> setPlayer({
