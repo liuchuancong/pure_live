@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pure_live/common/services/settings_service.dart';
@@ -52,6 +53,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('danmaku-template-best')));
     await tester.pump();
     _expectBestPreset(portrait);
+    await _finishToast(tester);
   });
 
   testWidgets('fullscreen uses the same surface in an adaptive landscape panel', (tester) async {
@@ -71,6 +73,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('danmaku-template-best')));
     await tester.pump();
     _expectBestPreset(fullscreen);
+    await _finishToast(tester);
 
     final panelRect = tester.getRect(find.byKey(const ValueKey('fullscreen-danmaku-settings-panel')));
     expect(panelRect.width, inInclusiveRange(340, 460));
@@ -116,6 +119,7 @@ void main() {
     final densityBefore = tester.getRect(find.byKey(const ValueKey('danmaku-template-dense')));
     await tester.tap(find.byKey(const ValueKey('danmaku-template-comfort')));
     await tester.pump();
+    await _finishToast(tester);
     final densityAfter = tester.getRect(find.byKey(const ValueKey('danmaku-template-dense')));
     final comfort = DanmakuViewingPreset.values.firstWhere((preset) => preset.id == 'comfort');
     expect(shared.danmakuArea.value, comfort.area);
@@ -139,6 +143,11 @@ void main() {
   });
 }
 
+Future<void> _finishToast(WidgetTester tester) async {
+  await tester.pump(const Duration(seconds: 3));
+  await tester.pumpAndSettle();
+}
+
 Widget _testApp(Widget child, {ThemeData? theme}) {
   return EasyLocalization(
     key: ValueKey<Type>(child.runtimeType),
@@ -152,6 +161,8 @@ Widget _testApp(Widget child, {ThemeData? theme}) {
         localizationsDelegates: context.localizationDelegates,
         supportedLocales: context.supportedLocales,
         theme: theme ?? ThemeData.dark(),
+        navigatorObservers: [FlutterSmartDialog.observer],
+        builder: FlutterSmartDialog.init(),
         home: Scaffold(body: child),
       ),
     ),
