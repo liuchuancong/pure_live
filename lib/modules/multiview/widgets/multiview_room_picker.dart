@@ -1,5 +1,4 @@
 import 'package:remixicon/remixicon.dart';
-
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/widgets/common_avatar.dart';
 
@@ -34,19 +33,36 @@ class _MultiviewRoomPickerState extends State<MultiviewRoomPicker> {
       _PickerSource.favorites => SettingsService.to.fav.favoriteRooms.v,
       _PickerSource.history => SettingsService.to.history.historyRooms.v,
     };
+
     final query = _query.trim().toLowerCase();
-    // 仅展示核心层可解析的受支持平台房间，避免把必然失败的房间送进 assignRoom。
-    return raw.where((room) {
+
+    final rooms = raw.where((room) {
       final platform = room.platform?.trim().toLowerCase() ?? '';
       if (!Sites.isSupported(platform)) return false;
       if ((room.roomId?.trim() ?? '').isEmpty) return false;
+
       if (query.isNotEmpty) {
         final nick = (room.nick ?? '').toLowerCase();
         final title = (room.title ?? '').toLowerCase();
-        if (!nick.contains(query) && !title.contains(query)) return false;
+
+        if (!nick.contains(query) && !title.contains(query)) {
+          return false;
+        }
       }
+
       return true;
     }).toList();
+
+    rooms.sort((a, b) {
+      var result = (b.status == true ? 1 : 0).compareTo(a.status == true ? 1 : 0);
+      if (result != 0) return result;
+      final aWatching = int.tryParse(a.watching ?? '') ?? 0;
+      final bWatching = int.tryParse(b.watching ?? '') ?? 0;
+      result = bWatching.compareTo(aWatching);
+      return result;
+    });
+
+    return rooms;
   }
 
   @override
