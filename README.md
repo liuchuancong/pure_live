@@ -35,7 +35,7 @@
 
 - **最新稳定版**：[v2.9.5](https://github.com/liuchuancong/pure_live/releases/tag/v2.9.5)
 - **当前版本**：`2.9.5+4084`
-- **v2.9.5 上游源码基线**：`liuchuancong/pure_live@cc1f4dca`，包含多画面同看、纯 Dart 平台签名、语言切换、Windows MSIX 数据路径与房间增量合并
+- **v2.9.5，包含多画面同看、纯 Dart 平台签名、语言切换、Windows MSIX 数据路径与房间增量合并
 - **本轮构建平台**：Android arm64-v8a (Windows/Linux/macOS/iOS remain at v2.9.4)
 - **质量门禁**：Flutter Analyze、自动化测试、接口探测与各平台构建记录见 `docs/STAGE_UPDATE_2_9_5.md`
 
@@ -447,7 +447,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
 ## 🤝 参与开发
 
 - **主开发者**：[@liuchuancong](https://github.com/liuchuancong)
-- **协助开发者**：[@wzgrx](https://github.com/liuchuancong/wzgrx)
+- **协助开发者**：[@wzgrx](https://github.com/wzgrx/pure_live)
 - **协助开发者**：[@RebornQ](https://github.com/RebornQ)
 
 > 📌 **欢迎贡献**！
