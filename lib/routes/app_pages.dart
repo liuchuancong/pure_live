@@ -50,6 +50,8 @@ import 'package:pure_live/modules/account/twitch/twitch_cookie_page.dart';
 import 'package:pure_live/modules/account/douyin/douyin_cookie_page.dart';
 import 'package:pure_live/modules/account/twitch/twitch_cookie_binding.dart';
 import 'package:pure_live/modules/live_play/bindings/live_play_binding.dart';
+import 'package:pure_live/modules/multiview/multiview_page.dart';
+import 'package:pure_live/modules/multiview/bindings/multiview_binding.dart';
 import 'package:pure_live/modules/account/douyin/douyin_cookie_binding.dart';
 import 'package:pure_live/modules/account/kuaishou/kuaishou_cookie_page.dart';
 import 'package:pure_live/modules/account/kuaishou/kuaishou_cookie_binding.dart';
@@ -89,6 +91,12 @@ class AppPages {
       page: () => LivePlayPage(),
       preventDuplicates: false,
       bindings: [LivePlayBinding()],
+    ),
+    GetPage(
+      name: RoutePath.kMultiview,
+      page: () => const MultiviewPage(),
+      preventDuplicates: false,
+      bindings: [MultiviewBinding()],
     ),
     //账号设置
     GetPage(

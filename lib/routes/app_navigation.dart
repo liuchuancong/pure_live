@@ -59,6 +59,13 @@ class AppNavigator {
     await Get.offAndToNamed(RoutePath.kLivePlay, arguments: normalizedRoom, parameters: {"site": platform});
   }
 
+  /// 跳转至多画面同看页面。
+  ///
+  /// 房间分配由页面内交互完成，无需携带参数。
+  static Future<void> toMultiview() async {
+    await Get.toNamed(RoutePath.kMultiview);
+  }
+
   /// 跳转至哔哩哔哩登录
   static Future toBiliBiliLogin() async {
     var contents = [i18n("sms_login"), i18n("qrcode_login")];
