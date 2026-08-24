@@ -31,7 +31,6 @@ class LivePlayVideo extends StatelessWidget {
                 color: Colors.black,
                 child: VideoPlayer(controller: videoController),
               ),
-              if (state.room.isLoading) const VideoLoading(),
             ],
           );
         }),
