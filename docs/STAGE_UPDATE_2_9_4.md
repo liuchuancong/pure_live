@@ -32,10 +32,10 @@
 
 ## 质量门禁
 
-- Flutter Analyze：0 issue（147.0 秒）。
-- 单元/Widget 测试：316/316 通过。
+- Flutter Analyze：0 issue（155.5 秒）。
+- 单元/Widget 测试：320/320 通过。
 - 公开接口探测：29/29 通过，包含斗鱼加密描述符、快手播放结构和各站搜索/播放入口。
-- 完整门禁记录：`local-artifacts/build-records/20260824T065617387Z-quality-full.json`（362.3 秒，结束后活跃重型进程 0）。
+- 完整门禁记录：`local-artifacts/build-records/20260824T082032203Z-quality-full.json`（333.4 秒，结束后活跃重型进程 0）。
 - Android/Windows：本机分阶段构建；每个产物的来源提交、耗时、峰值资源和缓存状态写入随 Release 发布的 `BUILD_METADATA.json` 与 `SHA256SUMS.txt`。
 - Linux/macOS/iOS：GitHub 托管任务逐平台串行执行并在上传前复核包结构和独立 SHA-256。
 
