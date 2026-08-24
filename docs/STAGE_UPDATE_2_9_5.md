@@ -45,9 +45,10 @@ The web-search room parser is now a pure tested component. It covers all nine ap
 ## Verification
 
 - Focused Douyu, YY, signing, search ranking, bounded platform-strip and web room-parser tests: 19 passed.
-- Flutter Analyze: pending final release gate.
-- Full unit/Widget suite: pending final release gate.
-- Public interface probes: 36/36 passed before source freeze; the full gate reruns them once.
+- Flutter Analyze: 0 issue (one final invocation after source freeze).
+- Full unit/Widget suite: 332/332 passed.
+- Public interface probes: 36/36 passed in the final gate.
+- Full gate record: `20260824T114355723Z-quality-full.json`; 455.789 seconds, peak monitored working set 9.16 GiB, no active heavy process left after completion.
 - Android package verification: pending final arm64-v8a release build and official repository signing.
 
 ## Artifact
