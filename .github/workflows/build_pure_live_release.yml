@@ -6,27 +6,27 @@ on:
         description: Build Android Release APKs for all ABIs
         required: true
         type: boolean
-        default: true
+        default: false
       build_windows:
         description: Build Windows EXE, MSIX and portable ZIP
         required: true
         type: boolean
-        default: true
+        default: false
       build_linux:
         description: Build Linux x64 portable archive
         required: true
         type: boolean
-        default: true
+        default: false
       build_macos:
         description: Build macOS universal application archive
         required: true
         type: boolean
-        default: true
+        default: false
       build_ios:
         description: Build unsigned iOS app and TrollStore IPA
         required: true
         type: boolean
-        default: true
+        default: false
       run_quality:
         description: Run analyze, tests and public interface probes first
         required: true
@@ -36,12 +36,12 @@ on:
         description: Create a GitHub Release and update releases.json
         required: true
         type: boolean
-        default: true
+        default: false
       release_tag:
         description: Release tag (e.g. v1.0.0) – required if create_release is true
         required: true
         type: string
-        default: 'v2.7.0'
+        default: "v2.9.4"
   push:
     tags:
       - "stage-linux-*"
@@ -95,8 +95,14 @@ jobs:
         run: python tool/interface_probe.py
   android:
     name: Android all ABIs
-    if: ${{ inputs.build_android && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
     needs: quality
+    if: >-
+      ${{
+        always() &&
+        github.event_name == 'workflow_dispatch' &&
+        inputs.build_android &&
+        (needs.quality.result == 'success' || needs.quality.result == 'skipped')
+      }}
     runs-on: ubuntu-latest
     timeout-minutes: 55
     steps:
@@ -204,7 +210,12 @@ jobs:
           retention-days: 3
   windows:
     name: Windows EXE + MSIX + Portable
-    if: ${{ inputs.build_windows && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    if: >-
+      ${{ always() &&
+        github.event_name == 'workflow_dispatch' &&
+        inputs.build_windows &&
+        (needs.quality.result == 'success' || needs.quality.result == 'skipped')
+      }}
     needs: quality
     runs-on: windows-latest
     timeout-minutes: 35
@@ -377,7 +388,24 @@ jobs:
           retention-days: 3
   linux:
     name: Linux x64 portable
-    if: ${{  inputs.build_linux && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    if: >-
+      ${{
+        always() &&
+        (
+          (
+            github.event_name == 'workflow_dispatch' &&
+            inputs.build_linux
+          ) ||
+          (
+            github.event_name == 'push' &&
+            startsWith(github.ref_name, 'stage-linux-')
+          )
+        ) &&
+        (
+          needs.quality.result == 'success' ||
+          needs.quality.result == 'skipped'
+        )
+      }}
     needs: quality
     runs-on: ubuntu-24.04
     timeout-minutes: 35
@@ -479,7 +507,27 @@ jobs:
           retention-days: 3
   apple:
     name: Apple platform packages
-    if: ${{ (inputs.build_macos || inputs.build_ios) && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    if: >-
+      ${{
+        always() &&
+        (
+          (
+            github.event_name == 'workflow_dispatch' &&
+            (inputs.build_macos || inputs.build_ios)
+          ) ||
+          (
+            github.event_name == 'push' &&
+            (
+              startsWith(github.ref_name, 'stage-macos-') ||
+              startsWith(github.ref_name, 'stage-ios-')
+            )
+          )
+        ) &&
+        (
+          needs.quality.result == 'success' ||
+          needs.quality.result == 'skipped'
+        )
+      }}
     needs: quality
     runs-on: macos-15
     timeout-minutes: 90
@@ -680,7 +728,7 @@ jobs:
           retention-days: 7
   publish-release:
     name: Publish GitHub Release
-    if: ${{  inputs.create_release && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    if: ${{ always() && inputs.create_release && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
     needs:
       - quality
       - android
@@ -843,7 +891,7 @@ jobs:
             BUILD_METADATA.json
   update-json:
     name: Update releases.json
-    if: ${{ inputs.create_release && needs.publish-release.result == 'success' }}
+    if: ${{ always() && inputs.create_release && needs.publish-release.result == 'success' }}
     needs:
       - publish-release
     runs-on: ubuntu-latest
