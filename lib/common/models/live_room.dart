@@ -497,7 +497,62 @@ class LiveRoom {
 }
 
 extension LiveRoomExtension on LiveRoom {
-  /// 设置 离线状态 失败
+  LiveRoom mergeFrom(LiveRoom incoming) {
+    if (!hasSameIdentity(incoming)) return this;
+
+    return copyWith(
+      roomId: incoming.normalizedRoomId,
+      platform: incoming.normalizedPlatformId,
+      userId: _preferValue(incoming.userId, userId),
+      link: _preferValue(incoming.link, link),
+      title: _preferValue(incoming.title, title),
+      nick: _preferValue(incoming.nick, nick),
+      avatar: _preferValue(incoming.avatar, avatar),
+      cover: _preferValue(incoming.cover, cover),
+      area: _preferValue(incoming.area, area),
+
+      watching: _preferValue(incoming.watching, watching),
+      audienceMetricType:
+          incoming.audienceMetricType != null && incoming.audienceMetricType != AudienceMetricType.unknown
+          ? incoming.audienceMetricType
+          : audienceMetricType,
+      popularity: _preferValue(incoming.popularity, popularity),
+      onlineViewers: _preferValue(incoming.onlineViewers, onlineViewers),
+      totalViewers: _preferValue(incoming.totalViewers, totalViewers),
+      followers: _preferValue(incoming.followers, followers),
+
+      tagIds: incoming.tagIds.isNotEmpty ? incoming.tagIds : tagIds,
+
+      introduction: _preferValue(incoming.introduction, introduction),
+      notice: _preferValue(incoming.notice, notice),
+
+      status: incoming.status ?? status,
+      liveStatus: incoming.liveStatus ?? LiveStatus.offline,
+      isRecord: incoming.isRecord ?? isRecord,
+
+      data: null,
+      danmakuData: null,
+
+      epgId: _preferValue(incoming.epgId, epgId),
+      currentProgramme: _preferValue(incoming.currentProgramme, currentProgramme),
+      currentProgrammeDescription: _preferValue(incoming.currentProgrammeDescription, currentProgrammeDescription),
+
+      catchUpUrl: _preferValue(incoming.catchUpUrl, catchUpUrl),
+      isCatchUp: incoming.isCatchUp ?? isCatchUp,
+      catchUpStart: incoming.catchUpStart ?? catchUpStart,
+      catchUpEnd: incoming.catchUpEnd ?? catchUpEnd,
+
+      lastWatchedAt: incoming.lastWatchedAt ?? lastWatchedAt,
+    );
+  }
+
+  String? _preferValue(String? incoming, String? current) {
+    if (incoming == null || incoming.trim().isEmpty) {
+      return current;
+    }
+    return incoming;
+  }
+
   LiveRoom getLiveRoomWithError() {
     return copyWith(liveStatus: LiveStatus.offline, status: false, isRecord: false);
   }

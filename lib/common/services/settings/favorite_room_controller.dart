@@ -127,10 +127,13 @@ class FavoriteRoomController extends GetxController {
   bool updateRoom(LiveRoom room) {
     final normalized = room.normalizedIdentityCopy();
     final index = favoriteRooms.v.indexWhere((candidate) => candidate.hasSameIdentity(normalized));
+
     if (index < 0) return false;
+
     final updated = List<LiveRoom>.from(favoriteRooms.v);
-    updated[index] = normalized;
+    updated[index] = updated[index].mergeFrom(normalized);
     favoriteRooms.v = updated;
+
     return true;
   }
 
