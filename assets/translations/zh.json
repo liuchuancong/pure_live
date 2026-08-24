@@ -1365,5 +1365,6 @@
     "multiview_volume": "音量",
     "cookie_hint": "粘贴 {name} Cookie",
     "cookie_tip": "登录 {name} 网页并进入任意直播间，在浏览器开发者工具的网络请求中复制完整 Cookie；Cookie 仅保存在本机。",
-    "open_link_confirm": "是否打开此链接？"
+    "open_link_confirm": "是否打开此链接？",
+    "open_download_confirm": "是否下载？"
 }

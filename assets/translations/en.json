@@ -1365,5 +1365,6 @@
     "multiview_volume": "Volume",
     "cookie_hint": "Paste the {name} Cookie",
     "cookie_tip": "Sign in to {name} and open any live channel, then copy the complete Cookie from a browser developer-tools network request. The Cookie stays on this device.",
-    "open_link_confirm": "Do you want to open this link?"
+    "open_link_confirm": "Do you want to open this link?",
+    "open_download_confirm": "Do you want to download this file?"
 }

@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+import 'package:flutter/services.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/utils.dart';
@@ -11,6 +11,7 @@ import 'package:url_launcher/url_launcher_string.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/common/utils/githup_mirror.dart';
 import 'package:pure_live/common/models/release_model.dart';
+
 
 class VersionHistoryPage extends StatefulWidget {
   const VersionHistoryPage({super.key});
@@ -505,7 +506,18 @@ class _VersionChangelogAndFilesWidget extends StatelessWidget {
                           foregroundColor: theme.colorScheme.primary,
                         ),
                         onPressed: () async {
-                          bool? result = await Utils.showAlertDialog(i18n('open_link_confirm'), title: i18n('tip'));
+                          Clipboard.setData(ClipboardData(text: file.url));
+                          ToastUtil.show(i18n("copied_to_clipboard"));
+                        },
+                        icon: const Icon(Remix.file_copy_2_fill, size: 16),
+                      ),
+                      IconButton(
+                        style: IconButton.styleFrom(
+                          backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.08),
+                          foregroundColor: theme.colorScheme.primary,
+                        ),
+                        onPressed: () async {
+                          bool? result = await Utils.showAlertDialog(i18n('open_download_confirm'), title: i18n('tip'));
                           if (result) {
                             downloadAndInstallApk(file.url, fileName: file.name);
                           }
