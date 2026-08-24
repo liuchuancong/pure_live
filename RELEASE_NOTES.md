@@ -18,7 +18,7 @@ v2.9.5 build 4084 is an Android stability update for playback quality, platform 
 
 ## Douyu playback
 
-- Synchronized the upstream baseline through `liuchuancong/pure_live@b95771ed` with real merge ancestry.
+- Synchronized the upstream baseline through `liuchuancong/pure_live@a161a324` with real merge ancestry, including the latest version-history transport/parser update.
 - The H5 stream request now uses one session DID and consistent browser headers, refreshes stale signing descriptors, and performs one bounded retry.
 - Quality and CDN parsing tolerates partial response shapes, removes duplicate lines, and validates the final decoded stream URL.
 - Actual media requests now receive Douyu Referer, Origin, User-Agent and matching DID cookies on every player backend.

@@ -2,7 +2,7 @@
 
 Version: `2.9.5+4084`  
 Maintained repository: `wzgrx/pure_live`  
-Upstream baseline: `liuchuancong/pure_live@b95771ed`
+Upstream baseline: `liuchuancong/pure_live@a161a324`
 Release date: 2026-08-24
 
 ## Scope
@@ -55,6 +55,8 @@ CC's large `webcc_visitor` value is retained as heat while `vision_visitor/onlin
 - Correct room search and anchor search response types, identifiers, avatar fields and `liveOn` values.
 - Fix the account page to observe `yyCookie` rather than the Huya Cookie.
 - Parse localized audience values before sorting multiview room choices.
+- Preserve deterministic dependency resolution after the criss-cross upstream merge, remove the duplicate YY search-capability entry, and restore an injectable player creator so native-independent playback regressions continue to exercise the real manager state machine.
+- Accept both supported release-history JSON envelopes and use the current upstream request headers from `a161a324`.
 
 ## Search follow-up and root cause
 
@@ -68,11 +70,11 @@ The web-search room parser is now a pure tested component. It covers all nine ap
 
 ## Verification
 
-- Focused Douyu, YY, signing, search ranking, bounded platform-strip and web room-parser tests: 19 passed.
+- Focused player-creation and search synchronization regression tests: 27/27 passed.
 - Flutter Analyze: 0 issue (one final invocation after source freeze).
-- Full unit/Widget suite: 332/332 passed.
+- Full unit/Widget suite: 358/358 passed.
 - Public interface probes: 36/36 passed in the final gate.
-- Full gate record: `20260824T114355723Z-quality-full.json`; 455.789 seconds, peak monitored working set 9.16 GiB, no active heavy process left after completion.
+- Full gate record: `20260824T142502430Z-quality-full.json`; 812.839 seconds, peak monitored working set 14.52 GiB, no active heavy process left after completion.
 - Android package verification: pending final arm64-v8a release build and official repository signing.
 
 ## Artifact
