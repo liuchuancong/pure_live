@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import hashlib
 import gzip
+import re
 import sys
 import time
 import http.cookiejar
@@ -148,6 +149,85 @@ def require_path(value: object, *path: str) -> None:
         if not isinstance(current, dict) or part not in current:
             raise ValueError(f"missing JSON path: {'.'.join(path)}")
         current = current[part]
+
+
+def douyu_encryption_probe() -> None:
+    """Validate the current pure-Dart signing descriptor and its time unit."""
+    payload = request_json(
+        "https://www.douyu.com/wgapi/livenc/liveweb/websec/getEncryption",
+        {"did": "10000000000000000000000000001501"},
+    )
+    data = payload.get("data") if isinstance(payload, dict) else None
+    if not isinstance(data, dict):
+        raise ValueError("Douyu encryption payload is missing data")
+    for key in ("key", "rand_str", "enc_data"):
+        if not str(data.get(key, "")).strip():
+            raise ValueError(f"Douyu encryption payload is missing {key}")
+    enc_time = int(data.get("enc_time", 0))
+    expire_at = int(data.get("expire_at", 0))
+    if not 1 <= enc_time <= 16:
+        raise ValueError("Douyu encryption iteration count is out of bounds")
+    if expire_at <= int(time.time()):
+        raise ValueError("Douyu encryption descriptor is already expired")
+
+
+def kuaishou_playback_probe() -> None:
+    """Validate the current live/replay list shape and room-page status."""
+    payload = request_json("https://live.kuaishou.com/live_api/home/list")
+    if not isinstance(payload, dict):
+        raise ValueError("Kuaishou home payload is not an object")
+    groups = payload.get("data", {}).get("list", [])
+    candidates: list[dict[str, object]] = []
+    for group in groups if isinstance(groups, list) else []:
+        for game in group.get("gameLiveInfo", []) if isinstance(group, dict) else []:
+            for item in game.get("liveInfo", []) if isinstance(game, dict) else []:
+                if isinstance(item, dict):
+                    candidates.append(item)
+    if not candidates:
+        raise ValueError("Kuaishou home list has no room cards")
+
+    selected: dict[str, object] | None = None
+    for item in candidates:
+        play_urls = item.get("playUrls")
+        descriptors = play_urls if isinstance(play_urls, list) else [play_urls]
+        for descriptor in descriptors:
+            if not isinstance(descriptor, dict):
+                continue
+            adaptation = descriptor.get("adaptationSet")
+            representations = adaptation.get("representation") if isinstance(adaptation, dict) else None
+            if isinstance(representations, list) and any(
+                isinstance(rep, dict) and str(rep.get("url", "")).startswith(("http://", "https://"))
+                for rep in representations
+            ):
+                selected = item
+                break
+        if selected is not None:
+            break
+    if selected is None:
+        raise ValueError("Kuaishou list has no playable live/replay descriptor")
+
+    author = selected.get("author")
+    room_id = str(author.get("id", "")) if isinstance(author, dict) else ""
+    if not room_id:
+        raise ValueError("Kuaishou playback card is missing author id")
+    request = urllib.request.Request(
+        f"https://live.kuaishou.com/u/{urllib.parse.quote(room_id)}",
+        headers={"User-Agent": USER_AGENT, "Connection": "close"},
+    )
+    with urllib.request.urlopen(request, timeout=20) as response:
+        html = response.read().decode("utf-8", errors="replace")
+    match = re.search(r"window\.__INITIAL_STATE__=(.*?);", html)
+    if match is None:
+        raise ValueError("Kuaishou room initial state marker is missing")
+    state = json.loads(match.group(1).replace("undefined", "null"))
+    rooms = state.get("liveroom", {}).get("playList", []) if isinstance(state, dict) else []
+    if (
+        not isinstance(rooms, list)
+        or not rooms
+        or not isinstance(rooms[0], dict)
+        or not isinstance(rooms[0].get("isLiving"), bool)
+    ):
+        raise ValueError("Kuaishou room status is missing")
 
 
 def douyin_search_probe() -> None:
@@ -627,6 +707,7 @@ def main() -> int:
             "douyu.recommend",
             lambda: require_path(request_json("https://www.douyu.com/japi/weblist/apinc/allpage/6/1"), "data", "rl"),
         ),
+        ("douyu.encryption", douyu_encryption_probe),
         (
             "huya.categories",
             lambda: require_path(
@@ -656,6 +737,7 @@ def main() -> int:
             "kuaishou.home",
             lambda: require_path(request_json("https://live.kuaishou.com/live_api/home/list"), "data", "list"),
         ),
+        ("kuaishou.playback", kuaishou_playback_probe),
         (
             "cc.categories",
             lambda: require_path(request_json("https://cc.163.com/category/", {"format": "json"}), "game_list"),

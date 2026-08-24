@@ -41,6 +41,12 @@ class _RecordingPlayer implements MultiviewCellPlayerHandle {
   /// 非空时 pause 挂起直至门闩完成，模拟慢速原生释放。
   Completer<void>? pauseGate;
 
+  /// 非空时 pause 抛出，验证销毁仍执行。
+  Object? pauseError;
+
+  /// 非空时静音切换挂起，模拟原生音频调用乱序风险。
+  Completer<void>? muteGate;
+
   /// 非空时 disposePlayer 抛出，模拟原生销毁失败。
   Object? disposeError;
 
@@ -82,6 +88,8 @@ class _RecordingPlayer implements MultiviewCellPlayerHandle {
   @override
   Future<void> setMuted(bool muted) async {
     _log.add('$name:mute:${muted ? 'on' : 'off'}');
+    final gate = muteGate;
+    if (gate != null) await gate.future;
     this.muted = muted;
     volume = muted ? 0.0 : sessionVolume;
   }
@@ -110,6 +118,8 @@ class _RecordingPlayer implements MultiviewCellPlayerHandle {
     if (gate != null) {
       await gate.future;
     }
+    final error = pauseError;
+    if (error != null) throw error;
   }
 
   @override
@@ -143,12 +153,13 @@ class _FakeDanmaku extends LiveDanmaku {
 
 /// 测试装配体：假工厂 + 假解析器 + 可控的解析门闩。
 class _Harness {
-  _Harness() {
+  _Harness({int? maxCellCount}) {
     controller = MultiviewController(
       playerFactory: _factory,
       streamResolver: _resolver,
       pauseGlobalPlayback: () async => globalPauseCalls++,
       danmakuEngineFactory: _danmakuFactory,
+      maxCellCount: maxCellCount,
     );
   }
 
@@ -294,6 +305,28 @@ void main() {
       expect(harness.players[1].volume, 0.0);
       expect(harness.log.where((e) => e == 'p0:mute:off'), isNotEmpty);
       expect(harness.log.where((e) => e == 'p1:mute:on'), isNotEmpty);
+    });
+
+    test('连续切换音频焦点时最后一次选择胜出', () async {
+      final harness = _Harness();
+      final controller = harness.controller;
+      await controller.assignRoom(0, _room('r1'));
+      await controller.assignRoom(1, _room('r2'));
+      await harness.pump();
+
+      final gate = Completer<void>();
+      harness.players[1].muteGate = gate;
+      controller.setAudioFocus(0);
+      controller.setAudioFocus(1);
+      expect(controller.audioFocusIndex, 1);
+
+      gate.complete();
+      await harness.pump();
+
+      expect(harness.players[0].muted, isTrue);
+      expect(harness.players[1].muted, isFalse);
+      expect(harness.players[0].volume, 0.0);
+      expect(harness.players[1].volume, 1.0);
     });
 
     test('removeCell 按严格顺序释放并回到 empty', () async {
@@ -568,6 +601,18 @@ void main() {
       expect(controller.cells.every((cell) => cell.status == MultiviewCellStatus.empty), isTrue);
     });
 
+    test('pause 异常时 teardown 仍销毁播放器', () async {
+      final harness = _Harness();
+      final controller = harness.controller;
+      await controller.assignRoom(0, _room('r1'));
+      harness.players.first.pauseError = StateError('pause boom');
+
+      await controller.disposeAll();
+
+      expect(harness.log.where((e) => e == 'p0:pause'), hasLength(1));
+      expect(harness.log.where((e) => e == 'p0:pDispose'), hasLength(1));
+    });
+
     test('focus 下 addCell 动态增长至 maxCells 上限', () async {
       final harness = _Harness();
       final controller = harness.controller;
@@ -580,6 +625,16 @@ void main() {
 
       expect(controller.cells.length, MultiviewController.maxCells);
       expect(controller.canAddCell, isFalse);
+      await expectLater(controller.addCell(), throwsStateError);
+    });
+
+    test('移动端配置的四路上限阻止额外解码器', () async {
+      final harness = _Harness(maxCellCount: 4);
+      final controller = harness.controller;
+      await controller.setLayout(MultiviewLayout.focus);
+
+      expect(controller.canAddCell, isFalse);
+      expect(controller.cells, hasLength(4));
       await expectLater(controller.addCell(), throwsStateError);
     });
 

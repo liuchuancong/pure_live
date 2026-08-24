@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:io';
+
 import 'package:pure_live/common/index.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
+import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/recorder/consts/recorder_config.dart';
 import 'package:pure_live/recorder/services/cache_service.dart';
 
@@ -14,6 +17,7 @@ class RecordSettingsController extends GetxController {
   final maxCacheMB = RecorderConfig.maxCacheMB.obs;
   final enableCacheLimit = RecorderConfig.enableCacheLimit.obs;
   final cacheSizeMB = 0.0.obs;
+  final managedRecordPath = ''.obs;
 
   /// =====================================
   /// 录制性能与画质
@@ -45,8 +49,12 @@ class RecordSettingsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    refreshCacheSize();
-    initRecordPath();
+    unawaited(_initializeStorage());
+  }
+
+  Future<void> _initializeStorage() async {
+    await initRecordPath();
+    await refreshStorageInfo();
   }
 
   /// =====================================
@@ -54,6 +62,11 @@ class RecordSettingsController extends GetxController {
   /// =====================================
   Future<void> refreshCacheSize() async {
     cacheSizeMB.value = await CacheService.to.getCacheSize();
+  }
+
+  Future<void> refreshStorageInfo() async {
+    managedRecordPath.value = await CacheService.to.getDisplayPath();
+    await refreshCacheSize();
   }
 
   /// =====================================
@@ -69,7 +82,7 @@ class RecordSettingsController extends GetxController {
   /// =====================================
   Future<void> clearCache() async {
     await CacheService.to.clearAll();
-    await refreshCacheSize();
+    await refreshStorageInfo();
   }
 
   /// =====================================
@@ -152,8 +165,13 @@ class RecordSettingsController extends GetxController {
     if (result != null) {
       recordSavePath.value = result;
       await RecorderConfig.setRecordSavePath(result);
-      await refreshCacheSize();
+      await refreshStorageInfo();
     }
+  }
+
+  Future<void> openRecordDir() async {
+    final path = managedRecordPath.value.isNotEmpty ? managedRecordPath.value : await CacheService.to.getDisplayPath();
+    await FileUtils.openFileOrUrl(path);
   }
 
   Future<void> updateDefaultQuality(String v) async {

@@ -3,6 +3,8 @@ import 'dart:developer' as developer;
 
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
@@ -32,23 +34,35 @@ typedef MultiviewGlobalPauseHook = Future<void> Function();
 /// - 所有释放（removeCell/setLayout 缩容/disposeAll）走同一条
 ///   「pause → 销毁渲染控制器 → 销毁播放内核」路径。
 ///
-/// TODO: 弹幕、每格清晰度选择、布局切换后重设渲染分辨率、会话持久化。
+/// Remaining enhancement: layout-change render-target renegotiation and
+/// optional session persistence.
 class MultiviewController extends GetxController {
   MultiviewController({
     MultiviewCellPlayerFactory? playerFactory,
     MultiviewStreamResolver? streamResolver,
     MultiviewGlobalPauseHook? pauseGlobalPlayback,
     MultiviewDanmakuEngineFactory? danmakuEngineFactory,
+    int? maxCellCount,
   }) : _playerFactory = playerFactory ?? _defaultPlayerFactory,
        _streamResolver = streamResolver ?? _defaultStreamResolver,
        _pauseGlobalPlayback = pauseGlobalPlayback ?? _defaultPauseGlobalPlayback,
-       _danmakuEngineFactory = danmakuEngineFactory ?? _defaultDanmakuEngineFactory;
+       _danmakuEngineFactory = danmakuEngineFactory ?? _defaultDanmakuEngineFactory,
+       maxCellCount = maxCellCount ?? (PlatformUtils.isDesktop ? maxCells : MultiviewLayout.focus.capacity) {
+    if (this.maxCellCount < MultiviewLayout.focus.capacity || this.maxCellCount > maxCells) {
+      throw ArgumentError.value(this.maxCellCount, 'maxCellCount', 'must be between 4 and $maxCells');
+    }
+    _audioFocusTransitions = LatestAsyncValueQueue<int>(_applyAudioFocus);
+  }
 
   /// focus（一大多小）布局的格子数上限。
   ///
   /// 性能护栏：桌面端多实例解码上限取 9 路，超过后 addCell Fail Fast；
   /// 小格滚动呈现由 UI 层负责。
   static const int maxCells = 9;
+
+  /// Effective decoder cap. Mobile remains at four simultaneous cells while
+  /// desktop can expand the focus rail to [maxCells].
+  final int maxCellCount;
 
   /// 生产环境每格播放器工厂。
   static MultiviewCellPlayerHandle _defaultPlayerFactory({required int renderWidth, required int renderHeight}) {
@@ -162,6 +176,10 @@ class MultiviewController extends GetxController {
   /// 音频焦点格下标，默认 0。
   int _audioFocusIndex = 0;
 
+  /// Serializes native mute calls and coalesces rapid focus taps to the latest
+  /// cell, preventing out-of-order futures from leaving multiple cells audible.
+  late final LatestAsyncValueQueue<int> _audioFocusTransitions;
+
   /// 小格自动降质联动开关（仅 focus 布局生效）。
   ///
   /// 开启时：向非大画面格分配房间默认取最低档；晋升格自动换最高档、
@@ -197,7 +215,7 @@ class MultiviewController extends GetxController {
   int get audioFocusIndex => _audioFocusIndex;
 
   /// focus 布局下是否还能追加小格。
-  bool get canAddCell => layout.value == MultiviewLayout.focus && cells.length < maxCells;
+  bool get canAddCell => layout.value == MultiviewLayout.focus && cells.length < maxCellCount;
 
   @override
   void onInit() {
@@ -322,13 +340,13 @@ class MultiviewController extends GetxController {
 
   /// focus 布局下追加一个空白小格（动态容量，滚动呈现由 UI 层负责）。
   ///
-  /// 仅 focus 布局且未达 [maxCells] 时有效；否则 Fail Fast。
+  /// 仅 focus 布局且未达 [maxCellCount] 时有效；否则 Fail Fast。
   Future<void> addCell() async {
     if (layout.value != MultiviewLayout.focus) {
       throw StateError('multiview: addCell is only available in focus layout');
     }
     if (!canAddCell) {
-      throw StateError('multiview: cell limit reached ($maxCells)');
+      throw StateError('multiview: cell limit reached ($maxCellCount)');
     }
     cells.add(MultiviewCellState.empty(cells.length));
     _players.add(null);
@@ -350,7 +368,7 @@ class MultiviewController extends GetxController {
     RangeError.checkValidIndex(cellIndex, cells, 'cellIndex');
     final previousFocused = focusedCellIndex.value;
     focusedCellIndex.value = cellIndex;
-    setAudioFocus(cellIndex);
+    await setAudioFocus(cellIndex);
 
     if (!smallCellsLowQuality.value || layout.value != MultiviewLayout.focus) return;
 
@@ -469,7 +487,7 @@ class MultiviewController extends GetxController {
     // 用户点击晋升（promoteCell）才出声；其余布局维持「新格即声源」。
     final shouldTakeAudioFocus = layout.value != MultiviewLayout.focus || cellIndex == focusedCellIndex.value;
     if (shouldTakeAudioFocus) {
-      setAudioFocus(cellIndex);
+      await setAudioFocus(cellIndex);
     }
     // 大画面房间可能已变化，同步弹幕会话（幂等）。
     unawaited(_syncDanmakuSession());
@@ -648,21 +666,43 @@ class MultiviewController extends GetxController {
   }
 
   /// 切换音频焦点：仅目标格出声，其余全部静音。
-  void setAudioFocus(int cellIndex) {
+  Future<void> setAudioFocus(int cellIndex) {
     RangeError.checkValidIndex(cellIndex, cells, 'cellIndex');
-    final previous = _audioFocusIndex;
     _audioFocusIndex = cellIndex;
-    // 缩容后旧焦点槽位可能已不存在，此时无需静音旧格。
-    if (previous != cellIndex && previous >= 0 && previous < _players.length) {
-      final old = _players[previous];
-      if (old != null) {
-        unawaited(old.setMuted(true));
+    return _audioFocusTransitions.submit(cellIndex).catchError((Object error, StackTrace stackTrace) {
+      developer.log(
+        'MultiviewController: audio focus transition failed',
+        name: 'MultiviewController',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    });
+  }
+
+  Future<void> _applyAudioFocus(int targetIndex) async {
+    // Mute every non-target handle, not just the previously remembered one:
+    // this also repairs any inconsistent state left by a native call failure.
+    for (var index = 0; index < _players.length; index++) {
+      if (index == targetIndex) continue;
+      final handle = _players[index];
+      if (handle == null) continue;
+      try {
+        await handle.setMuted(true);
+      } catch (error, stackTrace) {
+        developer.log(
+          'MultiviewController: failed to mute cell $index',
+          name: 'MultiviewController',
+          error: error,
+          stackTrace: stackTrace,
+        );
       }
     }
-    final next = _players[cellIndex];
-    if (next != null) {
-      unawaited(next.setMuted(false));
-    }
+
+    // A newer tap arrived while native mute calls were in flight. The queue
+    // will apply that pending target next, so never unmute this stale target.
+    if (_audioFocusIndex != targetIndex || targetIndex >= _players.length) return;
+    final target = _players[targetIndex];
+    if (target != null) await target.setMuted(false);
   }
 
   /// 释放全部格子（页面 onClose 调用），cells 全部回到 empty。
@@ -750,8 +790,11 @@ class MultiviewController extends GetxController {
   }
 
   Future<void> _teardown(MultiviewCellPlayerHandle handle) async {
-    await handle.pause();
-    await handle.disposePlayer();
+    try {
+      await handle.pause();
+    } finally {
+      await handle.disposePlayer();
+    }
   }
 
   /// 第一个播放中的格下标；没有则返回 null。

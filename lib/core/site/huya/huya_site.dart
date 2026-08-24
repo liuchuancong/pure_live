@@ -385,7 +385,9 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher {
       if (Get.isRegistered<PlayerController>()) {
         final PlayerController playerController = Get.find<PlayerController>();
         final currentRoom = playerController.currentRoom;
-        if (currentRoom != null) return currentRoom.getLiveRoomWithError();
+        if (currentRoom?.hasIdentity(platform: platform, roomId: roomId) == true) {
+          return currentRoom!.getLiveRoomWithError();
+        }
       }
       return LiveRoom(roomId: roomId, platform: platform).getLiveRoomWithError();
     }

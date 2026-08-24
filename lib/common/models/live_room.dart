@@ -302,6 +302,10 @@ class LiveRoom {
 
   bool hasSameIdentity(LiveRoom other) => identityKey == other.identityKey;
 
+  bool hasIdentity({required String platform, required String roomId}) {
+    return normalizedPlatformId == platform.trim().toLowerCase() && normalizedRoomId == roomId.trim();
+  }
+
   LiveRoom normalizedIdentityCopy() {
     if (platform == normalizedPlatformId && roomId == normalizedRoomId) return this;
     return copyWith(platform: normalizedPlatformId, roomId: normalizedRoomId);
@@ -495,11 +499,7 @@ class LiveRoom {
 extension LiveRoomExtension on LiveRoom {
   /// 设置 离线状态 失败
   LiveRoom getLiveRoomWithError() {
-    var liveRoom = this;
-    liveRoom.liveStatus = LiveStatus.offline;
-    liveRoom.status = false;
-    liveRoom.isRecord = false;
-    return liveRoom;
+    return copyWith(liveStatus: LiveStatus.offline, status: false, isRecord: false);
   }
 
   LiveRoom fillFromDetail(LiveRoom? detail) {

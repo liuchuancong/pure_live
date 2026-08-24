@@ -604,7 +604,7 @@ class RecorderController extends GetxService {
   }
 
   void openFileDir() async {
-    final path = settings.recordSavePath.value;
+    final path = await CacheService.to.getDisplayPath();
     await FileUtils.openFileOrUrl(path);
   }
 

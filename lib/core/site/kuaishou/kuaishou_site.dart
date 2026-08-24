@@ -156,6 +156,7 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher {
         liveStatus: LiveStatus.live,
         status: true,
         platform: Sites.kuaishouSite,
+        data: item["playUrls"],
       );
       items.add(roomItem);
     }
@@ -163,25 +164,92 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher {
   }
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) {
-    List<LivePlayQuality> qualities = <LivePlayQuality>[];
-    var qulityList = detail.data["h264"]["adaptationSet"]["representation"];
-
-    for (var quality in qulityList) {
-      var qualityItem = LivePlayQuality(
-        quality: quality["name"],
-        sort: quality["level"],
-        data: <String>[quality["url"]],
-      );
-      qualities.add(qualityItem);
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
+    final qualities = parsePlayQualities(detail.data);
+    if (qualities.isEmpty) {
+      throw StateError('Kuaishou room has no playable live or replay stream');
     }
+    return qualities;
+  }
+
+  /// Parses both current Kuaishou room-page and recommendation payloads.
+  ///
+  /// Room pages expose `{h264: ..., hevc: ...}` while list/replay entries are
+  /// usually `[<direct adaptationSet descriptor>]`. Multiple descriptors can
+  /// represent CDN lines, so URLs of the same quality are merged and deduped.
+  static List<LivePlayQuality> parsePlayQualities(dynamic raw) {
+    final descriptors = raw is List ? raw : <dynamic>[raw];
+    final merged = <String, ({String name, int sort, List<String> urls})>{};
+
+    for (final rawDescriptor in descriptors) {
+      if (rawDescriptor is! Map) continue;
+      dynamic descriptor = rawDescriptor;
+
+      // Prefer AVC for broad hardware compatibility. HEVC is a fallback when
+      // the platform omits AVC rather than an additional duplicate quality set.
+      for (final codec in const ['h264', 'avc', 'hevc', 'h265']) {
+        final candidate = rawDescriptor[codec];
+        if (_representationsOf(candidate).isNotEmpty) {
+          descriptor = candidate;
+          break;
+        }
+      }
+
+      for (final item in _representationsOf(descriptor)) {
+        if (item is! Map) continue;
+        final url = item['url']?.toString().trim() ?? '';
+        if (Uri.tryParse(url)?.isAbsolute != true || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+          continue;
+        }
+        final sort = _asInt(item['level']) ?? _asInt(item['bitrate']) ?? 0;
+        final name = item['name']?.toString().trim().isNotEmpty == true
+            ? item['name'].toString().trim()
+            : item['shortName']?.toString().trim().isNotEmpty == true
+            ? item['shortName'].toString().trim()
+            : item['qualityType']?.toString().trim().isNotEmpty == true
+            ? item['qualityType'].toString().trim()
+            : '清晰度 $sort';
+        final key = '$name\u0000$sort';
+        final existing = merged[key];
+        if (existing == null) {
+          merged[key] = (name: name, sort: sort, urls: <String>[url]);
+        } else if (!existing.urls.contains(url)) {
+          existing.urls.add(url);
+        }
+      }
+    }
+
+    final qualities = merged.values
+        .map(
+          (entry) =>
+              LivePlayQuality(quality: entry.name, sort: entry.sort, data: List<String>.unmodifiable(entry.urls)),
+        )
+        .toList(growable: false);
     qualities.sort((a, b) => b.sort.compareTo(a.sort));
-    return Future.value(qualities);
+    return qualities;
+  }
+
+  static List<dynamic> _representationsOf(dynamic descriptor) {
+    if (descriptor is! Map) return const [];
+    final adaptationSet = descriptor['adaptationSet'];
+    final representations = adaptationSet is Map ? adaptationSet['representation'] : descriptor['representation'];
+    if (representations is List) return representations;
+    return const [];
+  }
+
+  static int? _asInt(dynamic value) {
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '');
   }
 
   @override
   Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
-    return quality.data as List<String>;
+    final data = quality.data;
+    if (data is String && data.isNotEmpty) return <String>[data];
+    if (data is List) {
+      return data.map((item) => item.toString()).where((url) => url.isNotEmpty).toList(growable: false);
+    }
+    return const <String>[];
   }
 
   @override
@@ -324,15 +392,29 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher {
   @override
   Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
     try {
-      return await _loadRoom(roomId, includePlaybackData: true, ensureSession: true);
-    } catch (e) {
-      if (Get.isRegistered<PlayerController>()) {
-        final PlayerController playerController = Get.find<PlayerController>();
-        final currentRoom = playerController.currentRoom;
-        if (currentRoom != null) return currentRoom.getLiveRoomWithError();
+      final loaded = await _loadRoom(roomId, includePlaybackData: true, ensureSession: true);
+      if (loaded.status == true) return loaded;
+
+      // The public recommendation feed intentionally includes replay cards.
+      // Their room page reports offline but the selected card carries signed
+      // replay URLs. Preserve that matching card as an explicit recording.
+      final current = _matchingCurrentRoom(platform: platform, roomId: roomId);
+      if (current != null && parsePlayQualities(current.data).isNotEmpty) {
+        return current.copyWith(status: true, liveStatus: LiveStatus.live, isRecord: true);
       }
+      return loaded;
+    } catch (e) {
+      final currentRoom = _matchingCurrentRoom(platform: platform, roomId: roomId);
+      if (currentRoom != null) return currentRoom.getLiveRoomWithError();
       return LiveRoom(roomId: roomId, platform: platform).getLiveRoomWithError();
     }
+  }
+
+  LiveRoom? _matchingCurrentRoom({required String platform, required String roomId}) {
+    if (!Get.isRegistered<PlayerController>()) return null;
+    final current = Get.find<PlayerController>().currentRoom;
+    if (current?.hasIdentity(platform: platform, roomId: roomId) == true) return current;
+    return null;
   }
 
   @override
@@ -357,9 +439,10 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher {
     final playList = jsonObj["liveroom"]?["playList"];
     if (playList is! List || playList.isEmpty) throw const FormatException('Kuaishou room metadata is missing');
     final room = playList.first;
-    final liveStream = room["liveStream"];
-    final author = room["author"];
-    final gameInfo = room["gameInfo"];
+    if (room is! Map) throw const FormatException('Kuaishou room metadata has an invalid shape');
+    final liveStream = room["liveStream"] is Map ? room["liveStream"] as Map : const <dynamic, dynamic>{};
+    final author = room["author"] is Map ? room["author"] as Map : const <dynamic, dynamic>{};
+    final gameInfo = room["gameInfo"] is Map ? room["gameInfo"] as Map : const <dynamic, dynamic>{};
     final live = room["isLiving"] == true;
     final description = author["description"]?.toString() ?? '';
     return LiveRoom(
@@ -436,7 +519,8 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher {
 
   @override
   Future<bool> getLiveStatus({required String platform, required String roomId}) async {
-    return false;
+    final room = await getRoomDetailForRefresh(platform: platform, roomId: roomId);
+    return room.status == true;
   }
 
   @override

@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'dart:convert';
+
 import 'package:pure_live/common/index.dart';
 import 'package:html_unescape/html_unescape.dart';
 import 'package:pure_live/model/live_category.dart';
@@ -11,7 +12,6 @@ import 'package:pure_live/core/danmaku/douyu_danmaku.dart';
 import 'package:pure_live/core/site/douyu/douyu_utils.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
-
 
 class DouyuSite implements LiveSite, LiveSiteRoomRefresher {
   @override
@@ -224,9 +224,8 @@ class DouyuSite implements LiveSite, LiveSiteRoomRefresher {
         final PlayerController playerController = Get.find<PlayerController>();
 
         final currentRoom = playerController.currentRoom;
-
-        if (currentRoom != null) {
-          return currentRoom.getLiveRoomWithError();
+        if (currentRoom?.hasIdentity(platform: platform, roomId: roomId) == true) {
+          return currentRoom!.getLiveRoomWithError();
         }
       }
 
