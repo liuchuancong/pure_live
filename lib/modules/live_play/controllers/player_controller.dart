@@ -137,6 +137,12 @@ class PlayerController extends GetxController {
     } else if (site.id == Sites.huyaSite) {
       final ua = await HuyaSite().getHuYaUA();
       headers = {"user-agent": ua, "origin": "https://www.huya.com"};
+    } else if (site.id == Sites.yySite) {
+      headers = {
+        'origin': 'https://www.yy.com',
+        'referer': 'https://www.yy.com/',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+      };
     } else if (site.id == Sites.iptvSite) {
       if (SettingsService.to.iptv.customIptvUserAgent.v.isNotEmpty) {
         headers = {"user-agent": SettingsService.to.iptv.customIptvUserAgent.v};

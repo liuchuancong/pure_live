@@ -44,7 +44,19 @@ class AccountPage extends GetView<AccountController> {
                     : Get.toNamed(RoutePath.kHuyaCookie),
               );
             }),
-
+            Obx(() {
+              final isLogined = cookie.huyaCookie.v.isNotEmpty;
+              return _buildAccountTile(
+                context,
+                logo: 'assets/images/yy.png',
+                title: i18n("site_yy"),
+                subtitle: isLogined ? i18n("logined") : i18n("set_cookie"),
+                isLogined: isLogined,
+                onTap: () => isLogined
+                    ? _showPlatformLogoutDialog(context, () => cookie.yyCookie.v = "")
+                    : Get.toNamed(RoutePath.kYyCookie),
+              );
+            }),
             Obx(() {
               final isLogined = cookie.douyinCookie.v.isNotEmpty;
               return _buildAccountTile(

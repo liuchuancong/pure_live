@@ -85,6 +85,8 @@ class RoutePath {
 
   static const kTwitchCookie = "/twitch_cookie";
 
+  static const kYyCookie = "/yy_cookie";
+
   static const kSoop = "/soop";
 
   // WebDavPage
