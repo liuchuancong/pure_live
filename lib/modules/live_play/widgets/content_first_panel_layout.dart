@@ -52,10 +52,57 @@ ContentFirstPanelLayout resolveContentFirstPanelLayout(Size viewport, ContentFir
 ///
 /// Three columns let common quality sets (for example 蓝光/超清/高清) and CDN
 /// lines remain visible without turning the right-half panel into a tall list.
-int resolveStreamChoiceColumns(double paneWidth) {
-  if (paneWidth >= 340) return 3;
-  if (paneWidth >= 210) return 2;
-  return 1;
+int resolveStreamChoiceColumns(double paneWidth, {int? itemCount}) {
+  final availableColumns = switch (paneWidth) {
+    >= 340 => 3,
+    >= 210 => 2,
+    _ => 1,
+  };
+  if (itemCount == null) return availableColumns;
+  if (itemCount <= 1) return 1;
+  // Four quality choices look unbalanced as 3 + 1. A 2 x 2 arrangement uses
+  // the same two rows while leaving substantially more room for long labels.
+  if (itemCount == 4 && availableColumns == 3) return 2;
+  return math.min(availableColumns, itemCount);
+}
+
+@immutable
+class StreamSelectorStackLayout {
+  const StreamSelectorStackLayout({required this.qualityHeight, required this.lineHeight, required this.gap});
+
+  final double qualityHeight;
+  final double lineHeight;
+  final double gap;
+}
+
+/// Allocates a compact, content-sized quality section above a flexible line
+/// section on a landscape phone.
+///
+/// The former fixed 4:3 flex split left most of the quality card empty when a
+/// platform exposed only four qualities, while a longer CDN list was clipped.
+/// This calculation measures the actual number of quality rows, caps it at
+/// three visible rows, and reserves a useful minimum for playback lines.
+StreamSelectorStackLayout resolveStreamSelectorStackLayout({
+  required Size contentSize,
+  required int qualityCount,
+  double gap = 5,
+}) {
+  const paneHorizontalPadding = 12.0;
+  const paneChromeHeight = 36.0; // vertical padding + title + divider
+  const itemHeight = 34.0;
+  const itemSpacing = 4.0;
+
+  final gridWidth = math.max(0.0, contentSize.width - paneHorizontalPadding);
+  final columns = resolveStreamChoiceColumns(gridWidth, itemCount: qualityCount);
+  final rowCount = math.max(1, (qualityCount / columns).ceil());
+  final visibleRows = math.min(3, rowCount);
+  final desiredQualityHeight = paneChromeHeight + visibleRows * itemHeight + math.max(0, visibleRows - 1) * itemSpacing;
+
+  final minimumLineHeight = math.min(112.0, math.max(84.0, contentSize.height * .36));
+  final maximumQualityHeight = math.max(70.0, contentSize.height - gap - minimumLineHeight);
+  final qualityHeight = math.min(desiredQualityHeight, maximumQualityHeight).clamp(70.0, 146.0).toDouble();
+  final lineHeight = math.max(0.0, contentSize.height - gap - qualityHeight);
+  return StreamSelectorStackLayout(qualityHeight: qualityHeight, lineHeight: lineHeight, gap: gap);
 }
 
 /// Keeps two rows of two room cards inside the visible history viewport.

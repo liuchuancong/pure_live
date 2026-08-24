@@ -79,6 +79,24 @@ void main() {
     expect(resolveStreamChoiceColumns(420), 3);
     expect(resolveStreamChoiceColumns(260), 2);
     expect(resolveStreamChoiceColumns(180), 1);
+    expect(resolveStreamChoiceColumns(420, itemCount: 4), 2, reason: 'four qualities form a balanced 2 x 2');
+    expect(resolveStreamChoiceColumns(420, itemCount: 6), 3);
+    expect(resolveStreamChoiceColumns(420, itemCount: 1), 1);
+  });
+
+  test('phone stream selector sizes quality to its rows and gives lines the remaining height', () {
+    final common = resolveStreamSelectorStackLayout(contentSize: const Size(437, 345), qualityCount: 4);
+    expect(common.qualityHeight, 108);
+    expect(common.lineHeight, 232);
+    expect(common.lineHeight, greaterThan(common.qualityHeight));
+    expect(common.qualityHeight + common.gap + common.lineHeight, 345);
+
+    final manyQualities = resolveStreamSelectorStackLayout(contentSize: const Size(437, 345), qualityCount: 12);
+    expect(manyQualities.qualityHeight, 146);
+    expect(manyQualities.lineHeight, greaterThanOrEqualTo(112));
+
+    final shortViewport = resolveStreamSelectorStackLayout(contentSize: const Size(350, 180), qualityCount: 6);
+    expect(shortViewport.lineHeight, greaterThanOrEqualTo(84));
   });
 
   test('local style keeps its preview/settings split on a smaller landscape phone', () {

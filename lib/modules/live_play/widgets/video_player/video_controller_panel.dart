@@ -1298,61 +1298,65 @@ class FullscreenStreamSelectorButton extends StatelessWidget {
                     final live = controller.livePlayController;
                     final state = live.state.value.player;
                     final switching = live.playerController.isStreamSwitching.value;
+                    final qualityPane = _StreamChoicePane(
+                      key: const ValueKey('stream-quality-pane'),
+                      icon: Icons.high_quality_rounded,
+                      title: i18n('select_quality'),
+                      selectedLabel: state.qualitySafe.quality,
+                      itemCount: state.qualites.length,
+                      selectedIndex: state.currentQuality,
+                      labelBuilder: (index) => state.qualites[index].quality,
+                      onSelected: switching
+                          ? null
+                          : (index) async {
+                              await live.setResolution(ReloadDataType.changeQuality, index, state.currentLineIndex);
+                            },
+                    );
+                    final linePane = _StreamChoicePane(
+                      key: const ValueKey('stream-line-pane'),
+                      icon: Icons.alt_route_rounded,
+                      title: i18n('select_line'),
+                      selectedLabel: i18n('toolbox_line', args: {'index': (state.currentLineIndex + 1).toString()}),
+                      itemCount: state.playUrls.length,
+                      selectedIndex: state.currentLineIndex,
+                      labelBuilder: (index) => i18n('toolbox_line', args: {'index': (index + 1).toString()}),
+                      onSelected: switching
+                          ? null
+                          : (index) async {
+                              await live.setResolution(ReloadDataType.changeLine, state.currentQuality, index);
+                            },
+                    );
                     return Stack(
                       children: [
                         Padding(
                           padding: const EdgeInsets.all(6),
-                          child: Flex(
-                            direction: layout.splitContent ? Axis.horizontal : Axis.vertical,
-                            children: [
-                              Expanded(
-                                flex: layout.splitContent ? 1 : 4,
-                                child: _StreamChoicePane(
-                                  key: const ValueKey('stream-quality-pane'),
-                                  icon: Icons.high_quality_rounded,
-                                  title: i18n('select_quality'),
-                                  selectedLabel: state.qualitySafe.quality,
-                                  itemCount: state.qualites.length,
-                                  selectedIndex: state.currentQuality,
-                                  labelBuilder: (index) => state.qualites[index].quality,
-                                  onSelected: switching
-                                      ? null
-                                      : (index) async {
-                                          await live.setResolution(
-                                            ReloadDataType.changeQuality,
-                                            index,
-                                            state.currentLineIndex,
-                                          );
-                                        },
-                                ),
-                              ),
-                              SizedBox(width: layout.splitContent ? 6 : 0, height: layout.splitContent ? 0 : 5),
-                              Expanded(
-                                flex: layout.splitContent ? 1 : 3,
-                                child: _StreamChoicePane(
-                                  key: const ValueKey('stream-line-pane'),
-                                  icon: Icons.alt_route_rounded,
-                                  title: i18n('select_line'),
-                                  selectedLabel: i18n(
-                                    'toolbox_line',
-                                    args: {'index': (state.currentLineIndex + 1).toString()},
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              if (layout.splitContent) {
+                                return Row(
+                                  children: [
+                                    Expanded(child: qualityPane),
+                                    const SizedBox(width: 6),
+                                    Expanded(child: linePane),
+                                  ],
+                                );
+                              }
+                              final stackLayout = resolveStreamSelectorStackLayout(
+                                contentSize: Size(constraints.maxWidth, constraints.maxHeight),
+                                qualityCount: state.qualites.length,
+                              );
+                              return Column(
+                                children: [
+                                  SizedBox(
+                                    key: const ValueKey('stream-quality-content-sized-slot'),
+                                    height: stackLayout.qualityHeight,
+                                    child: qualityPane,
                                   ),
-                                  itemCount: state.playUrls.length,
-                                  selectedIndex: state.currentLineIndex,
-                                  labelBuilder: (index) =>
-                                      i18n('toolbox_line', args: {'index': (index + 1).toString()}),
-                                  onSelected: switching
-                                      ? null
-                                      : (index) async {
-                                          await live.setResolution(
-                                            ReloadDataType.changeLine,
-                                            state.currentQuality,
-                                            index,
-                                          );
-                                        },
-                                ),
-                              ),
-                            ],
+                                  SizedBox(height: stackLayout.gap),
+                                  Expanded(child: linePane),
+                                ],
+                              );
+                            },
                           ),
                         ),
                         if (switching)
@@ -1476,12 +1480,21 @@ class _StreamChoicePane extends StatelessWidget {
                   const SizedBox(width: 5),
                   Expanded(child: Text(title, style: Theme.of(context).textTheme.labelLarge)),
                   Flexible(
-                    child: Text(
-                      selectedLabel,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelSmall
-                          ?.copyWith(color: colors.primary, fontWeight: FontWeight.w700),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: colors.primaryContainer.withValues(alpha: .58),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        child: Text(
+                          selectedLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(color: colors.onPrimaryContainer, fontWeight: FontWeight.w700),
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -1491,8 +1504,10 @@ class _StreamChoicePane extends StatelessWidget {
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final columns = resolveStreamChoiceColumns(constraints.maxWidth);
+                  final columns = resolveStreamChoiceColumns(constraints.maxWidth, itemCount: itemCount);
                   return GridView.builder(
+                    primary: false,
+                    padding: EdgeInsets.zero,
                     physics: const PureLiveScrollPhysics(),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: columns,
@@ -1504,8 +1519,19 @@ class _StreamChoicePane extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final selected = selectedIndex == index;
                       return Material(
-                        color: selected ? colors.primaryContainer : colors.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(8),
+                        color: selected
+                            ? colors.primaryContainer.withValues(alpha: .78)
+                            : colors.surfaceContainerHighest,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: BorderSide(
+                            color: selected
+                                ? colors.primary.withValues(alpha: .62)
+                                : colors.outlineVariant.withValues(alpha: .2),
+                            width: selected ? 1.2 : 1,
+                          ),
+                        ),
+                        clipBehavior: Clip.antiAlias,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(8),
                           onTap: onSelected == null || selected ? null : () => unawaited(onSelected!(index)),
