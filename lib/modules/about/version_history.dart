@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:flutter/services.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
@@ -11,7 +12,6 @@ import 'package:url_launcher/url_launcher_string.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/common/utils/githup_mirror.dart';
 import 'package:pure_live/common/models/release_model.dart';
-
 
 class VersionHistoryPage extends StatefulWidget {
   const VersionHistoryPage({super.key});
@@ -413,7 +413,7 @@ class _VersionAuthorHeaderWidget extends StatelessWidget {
             backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
           ),
           onPressed: () => launchUrlString(item.github),
-          icon: const Icon(Remix.github_fill, size: 16),
+          icon: const Icon(Remix.link, size: 16),
         ),
       ],
     );
@@ -511,6 +511,7 @@ class _VersionChangelogAndFilesWidget extends StatelessWidget {
                         },
                         icon: const Icon(Remix.file_copy_2_fill, size: 16),
                       ),
+                      SizedBox(width: 6),
                       IconButton(
                         style: IconButton.styleFrom(
                           backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.08),
