@@ -117,27 +117,48 @@ class DouyuSite implements LiveSite, LiveSiteRoomRefresher {
       }
       return 0;
     });
+    return parsePlayQualities(playData, cdns);
+  }
+
+  /// Keeps Douyu's advertised `multirates` order. The numeric `rate` is an
+  /// opaque request code (source is commonly 0), not a bitrate; sorting it in
+  /// descending numeric order reverses source and low-quality choices.
+  @visibleForTesting
+  static List<LivePlayQuality> parsePlayQualities(Map<String, dynamic> playData, List<String> cdns) {
     final qualities = <LivePlayQuality>[];
     final rates = playData['multirates'];
     if (rates is List) {
-      for (final item in rates.whereType<Map>()) {
+      final rateItems = rates.whereType<Map>().toList(growable: false);
+      for (var index = 0; index < rateItems.length; index++) {
+        final item = rateItems[index];
         final rate = _asInt(item['rate']);
         if (rate == null) continue;
         final name = item['name']?.toString().trim();
+        if (qualities.any((quality) => quality.selectionId == rate)) continue;
         qualities.add(
-          LivePlayQuality(quality: name?.isNotEmpty == true ? name! : 'rate $rate', data: DouyuPlayData(rate, cdns)),
+          LivePlayQuality(
+            quality: name?.isNotEmpty == true ? name! : 'rate $rate',
+            id: rate,
+            sort: rateItems.length - index,
+            data: DouyuPlayData(rate, List<String>.unmodifiable(cdns)),
+          ),
         );
       }
     }
     if (qualities.isEmpty) {
-      qualities.add(LivePlayQuality(quality: 'default', data: DouyuPlayData(_asInt(playData['rate']) ?? -1, cdns)));
+      final rate = _asInt(playData['rate']) ?? -1;
+      qualities.add(
+        LivePlayQuality(quality: 'default', id: rate, sort: 1, data: DouyuPlayData(rate, List.unmodifiable(cdns))),
+      );
     }
     return qualities;
   }
 
   @override
   Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
-    final data = quality.data as DouyuPlayData;
+    final rawData = quality.data;
+    if (rawData is! DouyuPlayData) return const <String>[];
+    final data = rawData;
     final urls = <String>[];
     Object? lastError;
     for (final cdn in data.cdns) {

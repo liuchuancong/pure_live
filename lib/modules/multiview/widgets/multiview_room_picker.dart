@@ -6,11 +6,20 @@ import 'package:pure_live/common/widgets/common_avatar.dart';
 enum _PickerSource { favorites, history }
 
 @visibleForTesting
-int compareMultiviewRooms(LiveRoom a, LiveRoom b) {
+int compareMultiviewRooms(
+  LiveRoom a,
+  LiveRoom b, {
+  bool preferRealOnline = false,
+  bool Function(String? platform)? platformEnabled,
+}) {
   var result = (b.status == true ? 1 : 0).compareTo(a.status == true ? 1 : 0);
   if (result != 0) return result;
-  result = LiveRoom.parseAudienceNumber(b.watching).compareTo(LiveRoom.parseAudienceNumber(a.watching));
-  return result;
+  return LiveRoom.compareAudienceRanking(
+    a,
+    b,
+    preferRealOnline: preferRealOnline,
+    platformEnabled: platformEnabled ?? (_) => false,
+  );
 }
 
 /// multiview 选台面板内容。
@@ -61,7 +70,15 @@ class _MultiviewRoomPickerState extends State<MultiviewRoomPicker> {
       return true;
     }).toList();
 
-    rooms.sort(compareMultiviewRooms);
+    final app = SettingsService.to.app;
+    rooms.sort(
+      (left, right) => compareMultiviewRooms(
+        left,
+        right,
+        preferRealOnline: app.preferRealOnlineCounts.v,
+        platformEnabled: app.isRealOnlineEnabledFor,
+      ),
+    );
 
     return rooms;
   }

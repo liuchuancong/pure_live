@@ -35,7 +35,7 @@
 
 - **最新稳定版**：[v2.9.5](https://github.com/wzgrx/pure_live/releases/tag/v2.9.5)
 - **当前版本**：`2.9.5+4084`
-- **v2.9.5 上游源码基线**：`liuchuancong/pure_live@cc1f4dca`，包含多画面同看、纯 Dart 平台签名、语言切换、Windows MSIX 数据路径与房间增量合并
+- **v2.9.5 上游源码基线**：发布提交记录最新同步点；具体提交与验证证据见 `docs/STAGE_UPDATE_2_9_5.md`
 - **本轮构建平台**：Android arm64-v8a (Windows/Linux/macOS/iOS remain at v2.9.4)
 - **质量门禁**：Flutter Analyze、自动化测试、接口探测与各平台构建记录见 `docs/STAGE_UPDATE_2_9_5.md`
 
@@ -86,7 +86,7 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 | [平台接口与兼容性](docs/PLATFORM_COMPATIBILITY.md) | 分区、搜索、弹幕和人数指标的当前能力 |
 | [高刷新率与性能验证](docs/PERFORMANCE.md) | Android 120 Hz 适配、渲染优化和真机帧统计 |
 | [WebDAV 配置](docs/WEBDAV.md) | 通用配置字段、坚果云示例和故障排查 |
-| [v2.9.5 Android update](docs/STAGE_UPDATE_2_9_5.md) | Douyu playback, YY integration and 36 interface probes |
+| [v2.9.5 Android update](docs/STAGE_UPDATE_2_9_5.md) | 全平台画质切换契约、横屏自适应面板、观看指标与接口回归 |
 | [v2.9.4 全平台稳定版](docs/STAGE_UPDATE_2_9_4.md) | 上游多画面、录制目录保护、平台签名/快手兼容与全平台交付 |
 | [v2.9.5 上游 Issue 审计](docs/ISSUE_AUDIT_2026_08_24.md) | #778、#779、#780、#782、#783、#784, #785 的复现、根因与处理结果 |
 | [v2.9.3 Android 专项更新](docs/STAGE_UPDATE_2_9_3.md) | 横屏画质/线路内容驱动布局与小视口边界保护 |

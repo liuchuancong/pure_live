@@ -13,6 +13,7 @@ class AudienceMetricSettingsPage extends StatelessWidget {
     (id: 'cc', name: '网易 CC', detailKey: 'audience_cc_detail'),
     (id: 'twitch', name: 'Twitch', detailKey: 'audience_twitch_detail'),
     (id: 'soop', name: 'SOOP', detailKey: 'audience_soop_detail'),
+    (id: 'yy', name: 'YY Live', detailKey: 'audience_yy_detail'),
   ];
 
   @override
@@ -49,6 +50,11 @@ class AudienceMetricSettingsPage extends StatelessWidget {
               ),
             ),
           ]),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text(i18n('audience_ranking_rule_desc'), style: Theme.of(context).textTheme.bodySmall),
+          ),
           const SizedBox(height: 20),
           context.buildGroupTitle(i18n('audience_online_platforms')),
           context.buildModernCard([

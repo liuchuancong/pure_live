@@ -1,6 +1,20 @@
 # Pure Live v2.9.5
 
-v2.9.5 build 4084 is an Android stability update for Douyu playback and the newly synchronized YY platform.
+v2.9.5 build 4084 is an Android stability update for playback quality, platform interfaces and the newly synchronized YY platform.
+
+## Quality and line switching
+
+- Added a shared stable quality identifier and transactional switching: the UI changes only after the target source opens, stale requests are discarded, failed opens keep the previous source, line indices are clamped and duplicate/blank lines are removed.
+- Bilibili now reads the server's actual `current_qn`; Huya replaces a stale `ratio` (and removes it for source quality); Douyin joins streams by `sdk_key`; Douyu preserves the platform's opaque rate order instead of numerically sorting it.
+- Twitch master variants are parsed as attribute/URI pairs without shared mutable state; Kuaishou, CC, SOOP, YY and IPTV received stable IDs, defensive payload handling and deterministic playback fixtures.
+- The fullscreen quality/line dialog now derives its total size from the real option rows. It removes redundant header values, gives the choice buttons the main visual area and only keeps large panes when their content actually needs scrolling.
+- A handled playback error finishing after an overlay lifecycle change no longer triggers a second uncaught toast exception.
+
+## Audience metrics and ranking
+
+- CC `webcc_visitor` heat is separated from `vision_visitor/online_num` concurrent viewers.
+- Concurrent ranking compares explicit, pending and heat-only tiers before numeric values, then uses stable room identity to stop equal cards from jumping during refresh.
+- Douyin no longer treats cumulative `total_user` fields as current online viewers; SOOP joins the supported concurrent-platform settings.
 
 ## Douyu playback
 

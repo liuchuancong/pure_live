@@ -36,9 +36,9 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
   void _updateRooms() {
     final allRooms = SettingsService.to.fav.favoriteRooms.v;
     final liveList = allRooms.where((room) => room.liveStatus == LiveStatus.live && room.isRecord == false).toList()
-      ..sort((a, b) => _audienceSortValue(b).compareTo(_audienceSortValue(a)));
+      ..sort(_compareAudience);
     final recordList = allRooms.where((room) => room.liveStatus == LiveStatus.live && room.isRecord == true).toList()
-      ..sort((a, b) => _audienceSortValue(b).compareTo(_audienceSortValue(a)));
+      ..sort(_compareAudience);
     onlineRooms.assignAll(liveList);
     recordingRooms.assignAll(recordList);
     historyRooms.assignAll(SettingsService.to.history.historyRooms.v);
@@ -46,11 +46,13 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
     refreshing.value = false;
   }
 
-  int _audienceSortValue(LiveRoom room) {
+  int _compareAudience(LiveRoom left, LiveRoom right) {
     final app = SettingsService.to.app;
-    return room.audienceSortValue(
+    return LiveRoom.compareAudienceRanking(
+      left,
+      right,
       preferRealOnline: app.preferRealOnlineCounts.v,
-      platformEnabled: app.isRealOnlineEnabledFor(room.platform),
+      platformEnabled: app.isRealOnlineEnabledFor,
     );
   }
 

@@ -221,8 +221,12 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher {
 
     final qualities = merged.values
         .map(
-          (entry) =>
-              LivePlayQuality(quality: entry.name, sort: entry.sort, data: List<String>.unmodifiable(entry.urls)),
+          (entry) => LivePlayQuality(
+            quality: entry.name,
+            id: '${entry.name}\u0000${entry.sort}',
+            sort: entry.sort,
+            data: List<String>.unmodifiable(entry.urls),
+          ),
         )
         .toList(growable: false);
     qualities.sort((a, b) => b.sort.compareTo(a.sort));

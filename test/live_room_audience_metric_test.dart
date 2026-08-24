@@ -13,6 +13,8 @@ void main() {
       expect(LiveRoom(platform: 'soop').effectiveAudienceMetricType, AudienceMetricType.onlineViewers);
       expect(LiveRoom(platform: 'soop').supportsRealOnlineCount, isTrue);
       expect(LiveRoom(platform: 'douyin').effectiveAudienceMetricType, AudienceMetricType.totalViewers);
+      expect(LiveRoom(platform: 'cc').effectiveAudienceMetricType, AudienceMetricType.popularity);
+      expect(LiveRoom(platform: 'yy').effectiveAudienceMetricType, AudienceMetricType.popularity);
       expect(LiveRoom(platform: 'huya', onlineViewers: '3210').supportsRealOnlineCount, isFalse);
       expect(LiveRoom(platform: 'huya').supportsRealOnlineCount, isFalse);
       expect(LiveRoom(platform: 'huya').hasRealOnlineCount, isFalse);
@@ -39,6 +41,9 @@ void main() {
       expect(LiveRoom.parseAudienceNumber('5.6万'), 56000);
       expect(LiveRoom.parseAudienceNumber('1.2亿'), 120000000);
       expect(LiveRoom.parseAudienceNumber('18.3k'), 18300);
+      expect(LiveRoom.parseAudienceNumber('1.5M'), 1500000);
+      expect(LiveRoom.parseAudienceNumber('2.4千'), 2400);
+      expect(LiveRoom.parseAudienceNumber('534，739'), 534739);
     });
 
     test('keeps an explicit zero concurrent count instead of falling back to heat', () {
@@ -63,6 +68,35 @@ void main() {
 
       expect(bilibili.audienceSortValue(preferRealOnline: true, platformEnabled: true), -1);
       expect(douyin.audienceSortValue(preferRealOnline: true, platformEnabled: true), 3200);
+    });
+
+    test('concurrent ranking separates explicit, pending, and native metric tiers', () {
+      final explicit = LiveRoom(roomId: 'explicit', platform: 'douyin', onlineViewers: '120');
+      final pending = LiveRoom(roomId: 'pending', platform: 'soop', popularity: '900万');
+      final heat = LiveRoom(roomId: 'heat', platform: 'bilibili', popularity: '900万');
+      final rooms = [heat, pending, explicit]
+        ..sort(
+          (left, right) =>
+              LiveRoom.compareAudienceRanking(left, right, preferRealOnline: true, platformEnabled: (_) => true),
+        );
+
+      expect(rooms.map((room) => room.roomId), ['explicit', 'pending', 'heat']);
+      expect(explicit.audienceRankKey(preferRealOnline: true, platformEnabled: true).metricPriority, 3);
+      expect(pending.audienceRankKey(preferRealOnline: true, platformEnabled: true).metricPriority, 2);
+      expect(heat.audienceRankKey(preferRealOnline: true, platformEnabled: true).metricPriority, 1);
+    });
+
+    test('equal ranking values use stable platform-room identity', () {
+      final rooms =
+          [
+            LiveRoom(roomId: '2', platform: 'twitch', onlineViewers: '50'),
+            LiveRoom(roomId: '1', platform: 'twitch', onlineViewers: '50'),
+          ]..sort(
+            (left, right) =>
+                LiveRoom.compareAudienceRanking(left, right, preferRealOnline: true, platformEnabled: (_) => true),
+          );
+
+      expect(rooms.map((room) => room.roomId), ['1', '2']);
     });
 
     test('round-trips an explicit metric and migrates older records', () {
@@ -160,7 +194,7 @@ void main() {
     test('migrates Huya URI 8006 heat out of the online-viewer field', () {
       final room = LiveRoom.fromJson({
         'roomId': '998',
-        'platform': 'huya',
+        'platform': 'HUYA',
         'watching': '5636930',
         'popularity': '5636930',
         'onlineViewers': '3212923',

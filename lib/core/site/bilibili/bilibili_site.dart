@@ -13,7 +13,7 @@ import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/danmaku/bilibili_danmaku.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 
-class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher {
+class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LivePlayUrlResolver {
   @override
   String id = Sites.bilibiliSite;
 
@@ -129,75 +129,168 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher {
 
   @override
   Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
-    List<LivePlayQuality> qualities = [];
-    var result = await HttpClient.instance.getJson(
+    final result = await _requestPlayInfo(detail: detail, qualityData: 0);
+    return parsePlayQualities(result);
+  }
+
+  @override
+  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
+    return (await resolvePlayUrls(detail: detail, quality: quality)).urls;
+  }
+
+  @override
+  Future<LivePlayUrlResolution> resolvePlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
+    try {
+      final result = await _requestPlayInfo(detail: detail, qualityData: quality.data);
+      return parsePlayUrlResolution(result, requestedQualityData: quality.data);
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
+  Future<dynamic> _requestPlayInfo({required LiveRoom detail, required Object? qualityData}) async {
+    return HttpClient.instance.getJson(
       "https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo",
       queryParameters: {
         "room_id": detail.roomId,
         "protocol": "0,1",
         "format": "0,1,2",
         "codec": "0",
-        "platform": "html5",
+        "qn": qualityData ?? 0,
+        "platform": "web",
+        "ptype": "8",
         "dolby": "5",
+        "panorama": "1",
+        "mask": "0",
+        "no_playurl": "0",
       },
       header: await getHeader(),
     );
-    var qualitiesMap = <int, String>{};
-    for (var item in result["data"]["playurl_info"]["playurl"]["g_qn_desc"]) {
-      qualitiesMap[int.tryParse(item["qn"].toString()) ?? 0] = item["desc"].toString();
-    }
-    for (var item in result["data"]["playurl_info"]["playurl"]["stream"][0]["format"][0]["codec"][0]["accept_qn"]) {
-      var qualityItem = LivePlayQuality(quality: qualitiesMap[item] ?? "未知清晰度", data: item);
-      qualities.add(qualityItem);
-    }
-    return qualities;
   }
 
-  @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
-    try {
-      List<String> urls = [];
-      var result = await HttpClient.instance.getJson(
-        "https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo",
-        queryParameters: {
-          "room_id": detail.roomId,
-          "protocol": "0,1",
-          "format": "0,1,2",
-          "codec": "0",
-          "platform": "html5",
-          "dolby": "5",
-          "qn": quality.data,
-        },
-        header: await getHeader(),
-      );
+  /// Extracts only qualities accepted by at least one returned codec. The
+  /// global descriptor list also contains unavailable tiers and previously
+  /// produced buttons which could never resolve to a stream.
+  static List<LivePlayQuality> parsePlayQualities(dynamic response) {
+    final playUrl = _playUrlPayload(response);
+    final descriptions = <int, String>{};
+    for (final raw in (playUrl['g_qn_desc'] as List?) ?? const []) {
+      if (raw is! Map) continue;
+      final qn = int.tryParse(raw['qn']?.toString() ?? '');
+      if (qn == null || qn <= 0) continue;
+      final description = raw['desc']?.toString().trim() ?? '';
+      descriptions[qn] = description.isEmpty ? '未知清晰度' : description;
+    }
 
-      var streamList = result["data"]["playurl_info"]["playurl"]["stream"];
-      for (var streamItem in streamList) {
-        var formatList = streamItem["format"];
-        for (var formatItem in formatList) {
-          var codecList = formatItem["codec"];
-          for (var codecItem in codecList) {
-            var urlList = codecItem["url_info"];
-            var baseUrl = codecItem["base_url"].toString();
-            for (var urlItem in urlList) {
-              urls.add("${urlItem["host"]}$baseUrl${urlItem["extra"]}");
-            }
-          }
+    final accepted = <int>{};
+    for (final payload in _codecPayloads(playUrl)) {
+      for (final rawQn in (payload.codec['accept_qn'] as List?) ?? const []) {
+        final qn = int.tryParse(rawQn.toString());
+        if (qn != null && qn > 0) accepted.add(qn);
+      }
+      final current = int.tryParse(payload.codec['current_qn']?.toString() ?? '');
+      if (current != null && current > 0) accepted.add(current);
+    }
+
+    final ordered = accepted.toList()..sort((a, b) => b.compareTo(a));
+    return ordered
+        .map((qn) => LivePlayQuality(quality: descriptions[qn] ?? '清晰度 $qn', id: qn, data: qn, sort: qn))
+        .toList(growable: false);
+  }
+
+  /// Keeps the server-acknowledged `current_qn` with the URLs. Bilibili can
+  /// advertise 10000/400 to a guest and still return qn=250 for every request;
+  /// the caller must then keep the UI on 250 instead of pretending the tap was
+  /// applied.
+  static LivePlayUrlResolution parsePlayUrlResolution(dynamic response, {required Object? requestedQualityData}) {
+    final playUrl = _playUrlPayload(response);
+    final requestedQn = int.tryParse(requestedQualityData?.toString() ?? '');
+    final candidates = <_BilibiliStreamCandidate>[];
+
+    for (final payload in _codecPayloads(playUrl)) {
+      final codec = payload.codec;
+      final currentQn = int.tryParse(codec['current_qn']?.toString() ?? '');
+      final baseUrl = codec['base_url']?.toString() ?? '';
+      if (currentQn == null || currentQn <= 0 || baseUrl.isEmpty) continue;
+      for (final rawUrl in (codec['url_info'] as List?) ?? const []) {
+        if (rawUrl is! Map) continue;
+        final url = '${rawUrl['host'] ?? ''}$baseUrl${rawUrl['extra'] ?? ''}'.trim();
+        if (!url.startsWith('http')) continue;
+        candidates.add(
+          _BilibiliStreamCandidate(
+            url: url,
+            currentQn: currentQn,
+            protocol: payload.protocol,
+            format: payload.format,
+            codec: codec['codec_name']?.toString() ?? '',
+          ),
+        );
+      }
+    }
+
+    candidates.sort((a, b) {
+      final requestedOrder = (b.currentQn == requestedQn ? 1 : 0).compareTo(a.currentQn == requestedQn ? 1 : 0);
+      if (requestedOrder != 0) return requestedOrder;
+      final protocolOrder = _protocolRank(a.protocol).compareTo(_protocolRank(b.protocol));
+      if (protocolOrder != 0) return protocolOrder;
+      final formatOrder = _formatRank(a.format).compareTo(_formatRank(b.format));
+      if (formatOrder != 0) return formatOrder;
+      final codecOrder = _codecRank(a.codec).compareTo(_codecRank(b.codec));
+      if (codecOrder != 0) return codecOrder;
+      final cdnOrder = (a.url.contains('mcdn') ? 1 : 0).compareTo(b.url.contains('mcdn') ? 1 : 0);
+      if (cdnOrder != 0) return cdnOrder;
+      return a.url.compareTo(b.url);
+    });
+
+    if (candidates.isEmpty) {
+      return LivePlayUrlResolution(urls: const [], appliedQualityData: requestedQualityData);
+    }
+    final appliedQn = candidates.first.currentQn;
+    final seen = <String>{};
+    final urls = <String>[];
+    for (final candidate in candidates) {
+      if (candidate.currentQn != appliedQn || !seen.add(candidate.url)) continue;
+      urls.add(candidate.url);
+    }
+    return LivePlayUrlResolution(urls: List.unmodifiable(urls), appliedQualityData: appliedQn);
+  }
+
+  static Map<dynamic, dynamic> _playUrlPayload(dynamic response) {
+    if (response is! Map) throw const FormatException('Bilibili play response is not an object');
+    if (response['code'] != 0) {
+      throw StateError('Bilibili play API code=${response['code']}: ${response['message']}');
+    }
+    final data = response['data'];
+    final playUrlInfo = data is Map ? data['playurl_info'] : null;
+    final playUrl = playUrlInfo is Map ? playUrlInfo['playurl'] : null;
+    if (playUrl is! Map) throw const FormatException('Bilibili playurl payload is missing');
+    return playUrl;
+  }
+
+  static Iterable<({Map<dynamic, dynamic> codec, String format, String protocol})> _codecPayloads(
+    Map<dynamic, dynamic> playUrl,
+  ) sync* {
+    for (final rawStream in (playUrl['stream'] as List?) ?? const []) {
+      if (rawStream is! Map) continue;
+      final protocol = rawStream['protocol_name']?.toString() ?? '';
+      for (final rawFormat in (rawStream['format'] as List?) ?? const []) {
+        if (rawFormat is! Map) continue;
+        final format = rawFormat['format_name']?.toString() ?? '';
+        for (final rawCodec in (rawFormat['codec'] as List?) ?? const []) {
+          if (rawCodec is Map) yield (codec: rawCodec, format: format, protocol: protocol);
         }
       }
-      // 对链接进行排序，包含mcdn的在后
-      urls.sort((a, b) {
-        if (a.contains("mcdn")) {
-          return 1;
-        } else {
-          return -1;
-        }
-      });
-      return urls;
-    } catch (e) {
-      throw Exception(e.toString());
     }
   }
+
+  static int _protocolRank(String value) => value == 'http_stream' ? 0 : 1;
+  static int _formatRank(String value) => switch (value) {
+    'flv' => 0,
+    'ts' => 1,
+    'fmp4' => 2,
+    _ => 3,
+  };
+  static int _codecRank(String value) => value == 'avc' ? 0 : 1;
 
   @override
   Future<List<LiveRoom>> getRecommendRooms({int page = 1, int pageSize = 30}) async {
@@ -709,4 +802,20 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher {
     accessId = id ?? "";
     return accessId;
   }
+}
+
+class _BilibiliStreamCandidate {
+  const _BilibiliStreamCandidate({
+    required this.url,
+    required this.currentQn,
+    required this.protocol,
+    required this.format,
+    required this.codec,
+  });
+
+  final String url;
+  final int currentQn;
+  final String protocol;
+  final String format;
+  final String codec;
 }

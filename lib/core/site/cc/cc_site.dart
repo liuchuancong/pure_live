@@ -82,14 +82,18 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher {
     var items = <LiveRoom>[];
     try {
       for (var item in result["pageProps"]["gametypeData"]["lives"]) {
+        final audience = parseRoomAudience(Map<String, dynamic>.from(item as Map));
         var roomItem = LiveRoom(
           roomId: item["cuteid"].toString(),
           title: item["title"].toString(),
           cover: item["cover"].toString(),
           nick: item["nickname"].toString(),
-          watching: item["webcc_visitor"].toString(),
-          audienceMetricType: AudienceMetricType.onlineViewers,
-          onlineViewers: item["webcc_visitor"].toString(),
+          watching: audience.popularity.isNotEmpty ? audience.popularity : audience.onlineViewers,
+          popularity: audience.popularity,
+          onlineViewers: audience.onlineViewers,
+          audienceMetricType: audience.popularity.isNotEmpty
+              ? AudienceMetricType.popularity
+              : AudienceMetricType.onlineViewers,
           avatar: item["purl"],
           area: item["game_name"] ?? '',
           liveStatus: LiveStatus.live,
@@ -106,7 +110,9 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher {
 
   @override
   Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) {
-    List<LivePlayQuality> qualities = <LivePlayQuality>[];
+    final rawData = detail.data;
+    if (rawData is! Map) return Future.value(const <LivePlayQuality>[]);
+    final qualities = <LivePlayQuality>[];
     var reflect = {
       'blueray': '原画',
       'original': '原画',
@@ -117,23 +123,35 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher {
       'ultra': '蓝光',
     };
 
-    var priority = ['hs', 'ks', 'ali', 'fws', 'wy'];
-    bool isLiveStream = detail.data['resolution'] == null;
-    Map qulityList = isLiveStream ? detail.data : detail.data['resolution'];
+    const priority = ['hs', 'ks', 'ali', 'fws', 'wy'];
+    final isLiveStream = rawData['resolution'] == null;
+    final qualityData = isLiveStream ? rawData : rawData['resolution'];
+    if (qualityData is! Map) return Future.value(const <LivePlayQuality>[]);
+    final qulityList = qualityData;
     qulityList.forEach((key, value) {
-      Map cdn = isLiveStream ? value['CDN_FMT'] : value['cdn'];
-      List<String> lines = [];
+      if (value is! Map) return;
+      final cdn = isLiveStream ? value['CDN_FMT'] : value['cdn'];
+      if (cdn is! Map) return;
+      final preferredLines = <String>[];
+      final otherLines = <String>[];
       cdn.forEach((line, lineValue) {
-        if (priority.contains(line)) {
-          if (isLiveStream) {
-            lines.add('${detail.link!}&$lineValue');
-          } else {
-            lines.add(lineValue.toString());
-          }
-        }
+        final baseUrl = detail.link?.trim() ?? '';
+        final url = isLiveStream && baseUrl.isNotEmpty ? '$baseUrl&$lineValue' : lineValue.toString();
+        if (Uri.tryParse(url)?.hasScheme != true) return;
+        final target = priority.contains(line.toString().toLowerCase()) ? preferredLines : otherLines;
+        if (!target.contains(url)) target.add(url);
       });
-      var qualityItem = LivePlayQuality(quality: reflect[key]!, sort: value['vbr'], data: lines);
-      qualities.add(qualityItem);
+      final lines = <String>[...preferredLines, ...otherLines];
+      if (lines.isEmpty) return;
+      final sort = int.tryParse(value['vbr']?.toString() ?? '') ?? 0;
+      qualities.add(
+        LivePlayQuality(
+          quality: reflect[key] ?? key.toString(),
+          id: key.toString(),
+          sort: sort,
+          data: List<String>.unmodifiable(lines),
+        ),
+      );
     });
     qualities.sort((a, b) => b.sort.compareTo(a.sort));
 
@@ -142,7 +160,9 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher {
 
   @override
   Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
-    return Future.value(quality.data as List<String>);
+    final data = quality.data;
+    if (data is! List) return const <String>[];
+    return data.map((item) => item.toString().trim()).where((url) => url.isNotEmpty).toList(growable: false);
   }
 
   @override
@@ -155,14 +175,18 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher {
 
       var items = <LiveRoom>[];
       for (var item in result["lives"]) {
+        final audience = parseRoomAudience(Map<String, dynamic>.from(item as Map));
         var roomItem = LiveRoom(
           roomId: item["cuteid"].toString(),
           title: item["title"].toString(),
           cover: item["cover"].toString(),
           nick: item["nickname"].toString(),
-          watching: item["vision_visitor"].toString(),
-          audienceMetricType: AudienceMetricType.onlineViewers,
-          onlineViewers: item["vision_visitor"].toString(),
+          watching: audience.popularity.isNotEmpty ? audience.popularity : audience.onlineViewers,
+          popularity: audience.popularity,
+          onlineViewers: audience.onlineViewers,
+          audienceMetricType: audience.popularity.isNotEmpty
+              ? AudienceMetricType.popularity
+              : AudienceMetricType.onlineViewers,
           avatar: item["purl"],
           area: item["game_name"] ?? '',
           liveStatus: LiveStatus.live,
@@ -212,15 +236,18 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher {
     final urlToGetReal = "https://cc.163.com/live/channel/?channelids=$channelId";
     final resultReal = await HttpClient.instance.getJson(urlToGetReal, queryParameters: {'anchor_ccid': roomId});
     final roomInfo = resultReal["data"][0];
-    final onlineViewers =
-        [roomInfo['webcc_visitor'], roomInfo['vision_visitor'], roomInfo['visitor'], roomInfo['online_num']]
-            .map((value) => value?.toString() ?? '')
-            .firstWhere((value) => LiveRoom.parseAudienceNumber(value) > 0, orElse: () => '');
+    final audience = parseRoomAudience(Map<String, dynamic>.from(roomInfo as Map));
+    final nativeMetric = audience.popularity.isNotEmpty ? audience.popularity : audience.onlineViewers;
     return LiveRoom(
       cover: roomInfo["cover"],
-      watching: onlineViewers.isNotEmpty ? onlineViewers : roomInfo["follower_num"].toString(),
-      onlineViewers: onlineViewers,
-      audienceMetricType: onlineViewers.isNotEmpty ? AudienceMetricType.onlineViewers : AudienceMetricType.followers,
+      watching: nativeMetric.isNotEmpty ? nativeMetric : roomInfo["follower_num"].toString(),
+      popularity: audience.popularity,
+      onlineViewers: audience.onlineViewers,
+      audienceMetricType: audience.popularity.isNotEmpty
+          ? AudienceMetricType.popularity
+          : audience.onlineViewers.isNotEmpty
+          ? AudienceMetricType.onlineViewers
+          : AudienceMetricType.followers,
       roomId: roomInfo["ccid"].toString(),
       area: roomInfo["gamename"],
       title: roomInfo["title"],
@@ -235,6 +262,24 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher {
       userId: roomInfo['cid'].toString(),
       data: roomInfo["quickplay"] ?? roomInfo["stream_list"],
     );
+  }
+
+  /// CC exposes two different audience scales in the same payload:
+  /// `webcc_visitor` is the large platform heat value, while
+  /// `vision_visitor`/`online_num` are the current viewers. Keeping both avoids
+  /// presenting values such as 500,000 heat as 500,000 people online.
+  static ({String popularity, String onlineViewers}) parseRoomAudience(Map<String, dynamic> room) {
+    final popularity = _firstAudienceValue([room['webcc_visitor']]);
+    final onlineViewers = _firstAudienceValue([room['vision_visitor'], room['online_num'], room['visitor']]);
+    return (popularity: popularity, onlineViewers: onlineViewers);
+  }
+
+  static String _firstAudienceValue(Iterable<dynamic> values) {
+    for (final value in values) {
+      final text = value?.toString().trim() ?? '';
+      if (text.isNotEmpty && text != 'null' && RegExp(r'[0-9]').hasMatch(text)) return text;
+    }
+    return '';
   }
 
   @override

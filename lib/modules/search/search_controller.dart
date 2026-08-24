@@ -239,7 +239,7 @@ class SearchController extends GetxController {
         mode: sortMode.v,
         includeOffline: includeOffline.v,
         platformOrder: platformOrder,
-        audienceValue: _audienceValue,
+        audienceCompare: _compareAudience,
       ),
     );
   }
@@ -277,11 +277,13 @@ class SearchController extends GetxController {
     );
   }
 
-  int _audienceValue(LiveRoom room) {
+  int _compareAudience(LiveRoom left, LiveRoom right) {
     final app = SettingsService.to.app;
-    return room.audienceSortValue(
+    return LiveRoom.compareAudienceRanking(
+      left,
+      right,
       preferRealOnline: app.preferRealOnlineCounts.v,
-      platformEnabled: app.isRealOnlineEnabledFor(room.platform),
+      platformEnabled: app.isRealOnlineEnabledFor,
     );
   }
 

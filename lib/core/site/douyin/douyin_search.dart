@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/core/common/http_client.dart';
+import 'package:pure_live/core/site/douyin/douyin_audience.dart';
 
 class DouyinSearch {
   static const String host = 'https://live.douyin.com';
@@ -276,7 +277,7 @@ class DouyinSearch {
       liveStatus: status ? LiveStatus.live : LiveStatus.offline,
       watching: onlineText,
       totalViewers: onlineText,
-      onlineViewers: _douyinOnlineViewers(raw),
+      onlineViewers: douyinOnlineViewers(raw),
       audienceMetricType: AudienceMetricType.totalViewers,
       link: 'https://live.douyin.com/$realWebRid',
     );
@@ -548,7 +549,7 @@ class DouyinSearch {
               liveStatus: LiveStatus.live,
               watching: online,
               totalViewers: online,
-              onlineViewers: _douyinOnlineViewers(room),
+              onlineViewers: douyinOnlineViewers(room),
               audienceMetricType: AudienceMetricType.totalViewers,
               link: 'https://live.douyin.com/$rid',
             ),
@@ -600,33 +601,4 @@ class DouyinSearch {
       return [];
     }
   }
-}
-
-String _douyinOnlineViewers(dynamic room) {
-  if (room is! Map) {
-    return '';
-  }
-
-  final stats = room['room_view_stats'];
-  final roomStats = room['stats'];
-
-  final candidates = <dynamic>[
-    if (stats is Map) stats['user_count'],
-    if (stats is Map) stats['online_user_count'],
-    if (stats is Map) stats['online_user_for_anchor'],
-    if (roomStats is Map) roomStats['user_count'],
-    if (roomStats is Map) roomStats['online_user_count'],
-    if (roomStats is Map) roomStats['online_user_for_anchor'],
-    if (roomStats is Map) roomStats['total_user_str'],
-  ];
-
-  for (final value in candidates) {
-    final text = value?.toString().trim() ?? '';
-
-    if (LiveRoom.parseAudienceNumber(text) > 0) {
-      return text;
-    }
-  }
-
-  return '';
 }

@@ -84,19 +84,45 @@ void main() {
     expect(resolveStreamChoiceColumns(420, itemCount: 1), 1);
   });
 
-  test('phone stream selector sizes quality to its rows and gives lines the remaining height', () {
-    final common = resolveStreamSelectorStackLayout(contentSize: const Size(437, 345), qualityCount: 4);
-    expect(common.qualityHeight, 108);
-    expect(common.lineHeight, 232);
-    expect(common.lineHeight, greaterThan(common.qualityHeight));
-    expect(common.qualityHeight + common.gap + common.lineHeight, 345);
+  test('phone stream selector derives its whole height from both button grids', () {
+    final common = resolveStreamSelectorPanelLayout(
+      maximumDialogSize: const Size(449.5, 396),
+      qualityCount: 4,
+      lineCount: 6,
+      splitContent: false,
+    );
+    expect(common.dialogHeight, 305);
+    expect(common.qualityHeight, 126);
+    expect(common.lineHeight, 126);
 
-    final manyQualities = resolveStreamSelectorStackLayout(contentSize: const Size(437, 345), qualityCount: 12);
-    expect(manyQualities.qualityHeight, 146);
-    expect(manyQualities.lineHeight, greaterThanOrEqualTo(112));
+    final shortLists = resolveStreamSelectorPanelLayout(
+      maximumDialogSize: const Size(449.5, 396),
+      qualityCount: 1,
+      lineCount: 1,
+      splitContent: false,
+    );
+    expect(shortLists.dialogHeight, 211, reason: 'one quality and one line must not leave a full-height blank dialog');
 
-    final shortViewport = resolveStreamSelectorStackLayout(contentSize: const Size(350, 180), qualityCount: 6);
-    expect(shortViewport.lineHeight, greaterThanOrEqualTo(84));
+    final manyChoices = resolveStreamSelectorPanelLayout(
+      maximumDialogSize: const Size(449.5, 396),
+      qualityCount: 12,
+      lineCount: 18,
+      splitContent: false,
+    );
+    expect(manyChoices.dialogHeight, 396);
+    expect(manyChoices.qualityHeight, greaterThanOrEqualTo(78));
+    expect(manyChoices.lineHeight, greaterThanOrEqualTo(78));
+
+    final wide = resolveStreamSelectorPanelLayout(
+      maximumDialogSize: const Size(700, 396),
+      qualityCount: 4,
+      lineCount: 6,
+      splitContent: true,
+    );
+    expect(wide.splitContent, isTrue);
+    expect(wide.dialogHeight, 221);
+    expect(wide.qualityHeight, 173);
+    expect(wide.lineHeight, 173);
   });
 
   test('local style keeps its preview/settings split on a smaller landscape phone', () {

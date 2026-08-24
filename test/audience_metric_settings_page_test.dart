@@ -84,6 +84,7 @@ class _AudienceAssetLoader extends AssetLoader {
     'audience_mode_heat_desc': '按平台原始口径显示',
     'audience_mode_online': '真实在线人数优先',
     'audience_mode_online_desc': '支持的平台显示并发在线',
+    'audience_ranking_rule_desc': '在线优先，其次等待数据，最后是热度。',
     'audience_online_platforms': '真实在线平台开关',
     'audience_source_room_list': '房间列表直接提供',
     'audience_source_room_realtime': '进入房间后实时提供',
@@ -96,6 +97,7 @@ class _AudienceAssetLoader extends AssetLoader {
     'audience_cc_detail': '列表可提供在线值',
     'audience_twitch_detail': '列表可提供在线值',
     'audience_soop_detail': '列表可提供在线值',
+    'audience_yy_detail': '仅提供热度',
     'audience_metric_fallback_desc': '各平台字段口径会单独标注。',
   };
 }
