@@ -96,7 +96,7 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LivePlayUrlResolv
     try {
       const baseUrl = "https://api.live.bilibili.com/xlive/web-interface/v1/second/getList";
       var url =
-          "$baseUrl?platform=web&parent_area_id=${category.areaType}&area_id=${category.areaId}&sort_type=&page=$page&w_webid=${await getAccessId()}";
+          "$baseUrl?platform=web&parent_area_id=${category.areaType}&area_id=${category.areaId}&sort_type=online&page=$page&w_webid=${await getAccessId()}";
 
       var queryParams = await getWbiSign(url);
       var result = await HttpClient.instance.getJson(baseUrl, queryParameters: queryParams, header: await getHeader());
@@ -121,7 +121,7 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LivePlayUrlResolv
         );
         items.add(roomItem);
       }
-      return items;
+      return sortRoomsByPopularity(items);
     } catch (e) {
       throw Exception(e.toString());
     }
@@ -294,43 +294,43 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LivePlayUrlResolv
 
   @override
   Future<List<LiveRoom>> getRecommendRooms({int page = 1, int pageSize = 30}) async {
-    const primaryUrl = 'https://api.live.bilibili.com/xlive/web-interface/v1/webMain/getMoreRecList';
-    Object? primaryError;
+    const rankedUrl = 'https://api.live.bilibili.com/room/v1/Area/getListByAreaID';
+    Object? rankedError;
 
-    // The former signed second/getListByArea endpoint now intermittently (and
-    // for some routes consistently) returns code -352. The web homepage feed
-    // is the current anonymous recommendation source and needs no WBI key.
+    // `webMain/getMoreRecList` is a recommendation feed: its `online` values
+    // are deliberately not ordered. The Popular page promises a heat ranking,
+    // so prefer the anonymous endpoint whose contract includes sort=online.
     for (var attempt = 0; attempt < 2; attempt++) {
       try {
         final result = await HttpClient.instance.getJson(
-          primaryUrl,
-          queryParameters: {'platform': 'web', 'page': page},
+          rankedUrl,
+          queryParameters: {
+            'areaId': 0,
+            'parent_area_id': 0,
+            'sort': 'online',
+            'pageSize': pageSize.clamp(1, 30),
+            'page': page,
+          },
           header: await getHeader(),
         );
         return parseRecommendRooms(result);
       } catch (error) {
-        primaryError = error;
+        rankedError = error;
         if (attempt == 0) await Future<void>.delayed(const Duration(milliseconds: 180));
       }
     }
 
-    // Retain a separate anonymous API as a bounded fallback. It currently
-    // accepts page sizes up to 30 and returns the same room fields.
+    // Keep the recommendation feed only as a bounded availability fallback.
+    // Local sorting still makes its displayed heat order truthful.
     try {
       final result = await HttpClient.instance.getJson(
-        'https://api.live.bilibili.com/room/v1/Area/getListByAreaID',
-        queryParameters: {
-          'areaId': 0,
-          'parent_area_id': 0,
-          'sort': 'online',
-          'pageSize': pageSize.clamp(1, 30),
-          'page': page,
-        },
+        'https://api.live.bilibili.com/xlive/web-interface/v1/webMain/getMoreRecList',
+        queryParameters: {'platform': 'web', 'page': page},
         header: await getHeader(),
       );
       return parseRecommendRooms(result);
     } catch (fallbackError) {
-      throw Exception('Bilibili recommend failed: primary=$primaryError; fallback=$fallbackError');
+      throw Exception('Bilibili recommend failed: ranked=$rankedError; fallback=$fallbackError');
     }
   }
 
@@ -346,7 +346,7 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LivePlayUrlResolv
     final dynamic rawList = data is Map ? data['recommend_room_list'] : data;
     if (rawList is! List) throw const FormatException('Bilibili recommendation list is missing');
 
-    return rawList
+    final rooms = rawList
         .whereType<Map>()
         .map((raw) {
           final item = Map<String, dynamic>.from(raw);
@@ -369,6 +369,20 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LivePlayUrlResolv
         })
         .where((room) => room.roomId?.isNotEmpty == true)
         .toList(growable: false);
+    return sortRoomsByPopularity(rooms);
+  }
+
+  /// Bilibili's list payload can be a recommendation snapshot, and even the
+  /// ranked endpoint can contain small adjacent inversions while heat changes.
+  /// Re-sort the values shown on the cards and use room identity for stable
+  /// ties so the visible ranking is always strictly deterministic.
+  static List<LiveRoom> sortRoomsByPopularity(Iterable<LiveRoom> rooms) {
+    final result = rooms.toList(growable: false);
+    result.sort(
+      (left, right) =>
+          LiveRoom.compareAudienceRanking(left, right, preferRealOnline: false, platformEnabled: (_) => false),
+    );
+    return result;
   }
 
   Future<Map<String, dynamic>> getRoomInfo({required String roomId}) async {

@@ -608,17 +608,18 @@ def bilibili_danmaku_probe() -> None:
 
 
 def bilibili_recommend_probe() -> None:
-    """Validate the anonymous homepage feed and a transformed cover URL."""
+    """Validate the anonymous popularity feed and a transformed cover URL."""
     response = request_json(
-        "https://api.live.bilibili.com/xlive/web-interface/v1/webMain/getMoreRecList",
-        {"platform": "web", "page": 1},
+        "https://api.live.bilibili.com/room/v1/Area/getListByAreaID",
+        {"areaId": 0, "parent_area_id": 0, "sort": "online", "pageSize": 30, "page": 1},
     )
     if not isinstance(response, dict) or response.get("code") != 0:
         raise ValueError(f"recommend code={response.get('code') if isinstance(response, dict) else 'invalid'}")
-    data = response.get("data", {})
-    rooms = data.get("recommend_room_list", []) if isinstance(data, dict) else []
+    rooms = response.get("data", [])
     if not rooms or not isinstance(rooms[0], dict):
-        raise ValueError("recommend_room_list missing")
+        raise ValueError("popularity room list missing")
+    if any(not str(room.get("online", "")).isdigit() for room in rooms if isinstance(room, dict)):
+        raise ValueError("popularity value missing")
     cover = str(rooms[0].get("cover", "")).strip()
     if not cover.startswith("https://"):
         raise ValueError("recommend cover URL missing")
@@ -996,7 +997,7 @@ def main() -> int:
                 "lives",
             ),
         ),
-        ("bilibili.recommend", bilibili_recommend_probe),
+        ("bilibili.popularity_rank", bilibili_recommend_probe),
         ("bilibili.danmaku", bilibili_danmaku_probe),
         ("huya.danmaku_identity", huya_danmaku_identity_probe),
         ("douyin.search", douyin_search_probe),
