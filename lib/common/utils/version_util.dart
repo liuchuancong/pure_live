@@ -1,11 +1,11 @@
 import 'dart:async';
-
 import 'package:pure_live/gen/env.g.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/race_http.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pure_live/common/utils/githup_mirror.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
+
 
 class VersionUtil {
   static PackageInfo? _packageInfo;
@@ -14,7 +14,7 @@ class VersionUtil {
   ///
   /// Keeping the owner configurable lets downstream builders select their own
   /// release feed without editing runtime code. This repository defaults to
-  /// the wzgrx maintenance release channel so its bundled version.json and generated asset
+  /// the liuchuancong maintenance release channel so its bundled version.json and generated asset
   /// URLs always describe the same published artifacts.
   static final String updateOwner = AppConfig.pureliveUpdateOwner;
   static final String updateRepository = AppConfig.pureliveUpdateRepository;

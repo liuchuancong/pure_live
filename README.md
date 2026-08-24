@@ -12,17 +12,17 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/wzgrx/pure_live/releases/latest">
-    <img alt="Latest Release" src="https://img.shields.io/github/v/release/wzgrx/pure_live">
+  <a href="https://github.com/liuchuancong/pure_live/releases/latest">
+    <img alt="Latest Release" src="https://img.shields.io/github/v/release/liuchuancong/pure_live">
   </a>
-  <a href="https://github.com/wzgrx/pure_live/actions/workflows/feature-build.yml">
-    <img alt="Manual Build" src="https://github.com/wzgrx/pure_live/actions/workflows/feature-build.yml/badge.svg">
+  <a href="https://github.com/liuchuancong/pure_live/actions/workflows/feature-build.yml">
+    <img alt="Manual Build" src="https://github.com/liuchuancong/pure_live/actions/workflows/feature-build.yml/badge.svg">
   </a>
   <a href="https://github.com/liuchuancong/pure_live">
     <img alt="Stars" src="https://img.shields.io/github/stars/liuchuancong/pure_live?color=yellow">
   </a>
-  <a href="https://github.com/wzgrx/pure_live/releases">
-    <img alt="Downloads" src="https://img.shields.io/github/downloads/wzgrx/pure_live/total?style=flat-square">
+  <a href="https://github.com/liuchuancong/pure_live/releases">
+    <img alt="Downloads" src="https://img.shields.io/github/downloads/liuchuancong/pure_live/total?style=flat-square">
   </a>
   <a href="LICENSE">
     <img alt="License" src="https://img.shields.io/github/license/liuchuancong/pure_live?color=blue">
@@ -33,9 +33,9 @@
 
 > 本维护分支持续同步 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)，并维护本机优先构建、正式签名、接口探测、Windows 数据迁移及高刷新率优化。
 
-- **最新稳定版**：[v2.9.4](https://github.com/wzgrx/pure_live/releases/tag/v2.9.4)
+- **最新稳定版**：[v2.9.4](https://github.com/liuchuancong/pure_live/releases/tag/v2.9.4)
 - **当前版本**：`2.9.4+4083`
-- **v2.9.4 上游源码基线**：`liuchuancong/pure_live@45127322`，包含多画面同看、纯 Dart 平台签名、语言切换与 Windows MSIX 数据路径修复
+- **v2.9.4**：`liuchuancong/pure_live`，包含多画面同看、纯 Dart 平台签名、语言切换与 Windows MSIX 数据路径修复
 - **本轮构建平台**：Android arm64-v8a、Windows x64、Linux x64、macOS Universal、iOS arm64
 - **质量门禁**：Flutter Analyze、自动化测试、接口探测与各平台构建记录见 `docs/STAGE_UPDATE_2_9_4.md`
 
@@ -367,7 +367,7 @@ Firebase 不是 Pure Live 使用的必要条件。
 
 ## 📥 下载
 
-前往 [维护分支 GitHub Releases](https://github.com/wzgrx/pure_live/releases/latest) 获取最新安装包，并使用同一 Release 的 `SHA256SUMS.txt` 校验完整性。
+前往 [维护分支 GitHub Releases](https://github.com/liuchuancong/pure_live/releases/latest) 获取最新安装包，并使用同一 Release 的 `SHA256SUMS.txt` 校验完整性。
 
 ### Android
 
