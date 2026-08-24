@@ -6,7 +6,9 @@ from __future__ import annotations
 import json
 import hashlib
 import gzip
+import html
 import re
+import secrets
 import sys
 import time
 import http.cookiejar
@@ -110,6 +112,7 @@ def post_form_json(
     payload: dict[str, object],
     params: dict[str, object] | None = None,
     attempts: int = 3,
+    headers: dict[str, str] | None = None,
 ) -> object:
     """POST form data with bounded retries for platform player endpoints."""
     if params:
@@ -128,6 +131,7 @@ def post_form_json(
                     "Content-Type": "application/x-www-form-urlencoded",
                     "Origin": "https://www.sooplive.co.kr",
                     "Referer": "https://www.sooplive.co.kr/",
+                    **(headers or {}),
                 },
             )
             with urllib.request.urlopen(request, timeout=20) as response:
@@ -169,6 +173,248 @@ def douyu_encryption_probe() -> None:
         raise ValueError("Douyu encryption iteration count is out of bounds")
     if expire_at <= int(time.time()):
         raise ValueError("Douyu encryption descriptor is already expired")
+
+
+def douyu_playback_probe() -> None:
+    """Exercise signing, H5 metadata, CDN URL and the actual FLV header."""
+    did = secrets.token_hex(16)
+    descriptor_payload = request_json(
+        "https://www.douyu.com/wgapi/livenc/liveweb/websec/getEncryption",
+        {"did": did},
+    )
+    descriptor = descriptor_payload.get("data") if isinstance(descriptor_payload, dict) else None
+    if not isinstance(descriptor, dict):
+        raise ValueError("Douyu encryption payload is missing data")
+
+    recommendation = request_json("https://www.douyu.com/japi/weblist/apinc/allpage/6/1")
+    rooms = recommendation.get("data", {}).get("rl", []) if isinstance(recommendation, dict) else []
+    if not isinstance(rooms, list) or not rooms:
+        raise ValueError("Douyu recommendation returned no rooms")
+
+    errors: list[str] = []
+    for room in rooms[:10]:
+        room_id = str(room.get("rid", "")).strip() if isinstance(room, dict) else ""
+        if not room_id:
+            continue
+        try:
+            timestamp = int(time.time())
+            key = str(descriptor["key"])
+            secret = str(descriptor["rand_str"])
+            iterations = int(descriptor["enc_time"])
+            for _ in range(iterations):
+                secret = hashlib.md5(f"{secret}{key}".encode()).hexdigest()
+            salt = "" if int(descriptor.get("is_special", 0)) == 1 else f"{room_id}{timestamp}"
+            auth = hashlib.md5(f"{secret}{key}{salt}".encode()).hexdigest()
+            form = {
+                "enc_data": descriptor["enc_data"],
+                "tt": timestamp,
+                "did": did,
+                "auth": auth,
+                "cdn": "",
+                "rate": -1,
+                "hevc": 0,
+                "fa": 0,
+                "ive": 0,
+                "ver": "Douyu_new",
+                "iar": 0,
+            }
+            headers = {
+                "Origin": "https://www.douyu.com",
+                "Referer": f"https://www.douyu.com/{room_id}",
+                "Cookie": f"dy_did={did}; acf_did={did}",
+            }
+            response = post_form_json(
+                f"https://www.douyu.com/lapi/live/getH5PlayV1/{room_id}",
+                form,
+                attempts=2,
+                headers=headers,
+            )
+            if not isinstance(response, dict) or int(response.get("error", -1)) != 0:
+                raise ValueError(f"H5 error={response.get('error') if isinstance(response, dict) else 'invalid'}")
+            data = response.get("data")
+            if not isinstance(data, dict):
+                raise ValueError("H5 playback data missing")
+            rates = data.get("multirates")
+            cdns = data.get("cdnsWithName")
+            if not isinstance(rates, list) or not rates:
+                raise ValueError("H5 quality list missing")
+            if not isinstance(cdns, list) or not cdns:
+                raise ValueError("H5 CDN list missing")
+            base = str(data.get("rtmp_url", "")).rstrip("/")
+            live = html.unescape(str(data.get("rtmp_live", ""))).lstrip("/")
+            stream_url = live if live.startswith(("http://", "https://")) else f"{base}/{live}"
+            if not stream_url.startswith(("http://", "https://")):
+                raise ValueError("H5 stream URL missing")
+            stream_request = urllib.request.Request(
+                stream_url,
+                headers={
+                    "User-Agent": USER_AGENT,
+                    "Origin": "https://www.douyu.com",
+                    "Referer": f"https://www.douyu.com/{room_id}",
+                    "Cookie": f"dy_did={did}; acf_did={did}",
+                    "Range": "bytes=0-31",
+                    "Connection": "close",
+                },
+            )
+            with urllib.request.urlopen(stream_request, timeout=20) as stream_response:
+                prefix = stream_response.read(16)
+            if not prefix.startswith(b"FLV"):
+                raise ValueError(f"CDN returned a non-FLV prefix: {prefix[:8]!r}")
+            return
+        except Exception as error:  # noqa: BLE001 - try another active room
+            errors.append(f"{room_id}: {error}")
+    raise ValueError("; ".join(errors[-3:]) or "no usable Douyu room")
+
+
+def douyu_search_probe() -> None:
+    """Validate the anonymous search contract without relying on one keyword."""
+    errors: list[str] = []
+    for keyword in ("ASMR", "", "英雄联盟"):
+        try:
+            response = request_json(
+                "https://www.douyu.com/japi/search/api/searchShow",
+                {"kw": keyword, "page": 1, "pageSize": 20},
+            )
+            data = response.get("data") if isinstance(response, dict) and response.get("error") == 0 else None
+            if isinstance(data, dict) and isinstance(data.get("relateShow"), list):
+                return
+            errors.append(f"{keyword or '<empty>'}: invalid response shape")
+        except Exception as error:  # noqa: BLE001 - verify bounded query variants
+            errors.append(f"{keyword or '<empty>'}: {error}")
+    raise ValueError("; ".join(errors))
+
+
+_yy_room_cache: dict[str, object] | None = None
+
+
+def yy_live_room() -> dict[str, object]:
+    global _yy_room_cache
+    if _yy_room_cache is not None:
+        return _yy_room_cache
+    response = request_json(
+        "https://www.yy.com/more/page.action",
+        {"page": 1, "pageSize": 10, "biz": "other", "subBiz": "idx", "moduleId": -1},
+    )
+    rooms = response.get("data", {}).get("data", []) if isinstance(response, dict) else []
+    for room in rooms if isinstance(rooms, list) else []:
+        room_id = str(room.get("sid", "")).strip() if isinstance(room, dict) else ""
+        if not room_id:
+            continue
+        detail = request_json(f"https://www.yy.com/api/liveInfoDetail/{room_id}/{room_id}/0")
+        data = detail.get("data") if isinstance(detail, dict) and detail.get("resultCode") == 0 else None
+        if isinstance(data, dict) and str(data.get("sid", "")).strip():
+            _yy_room_cache = data
+            return data
+    raise ValueError("YY recommendation has no verifiable live room")
+
+
+def yy_room_probe() -> None:
+    room = yy_live_room()
+    for key in ("sid", "ssid", "uid", "name", "users"):
+        if room.get(key) in (None, ""):
+            raise ValueError(f"YY room field missing: {key}")
+
+
+def yy_search_probe() -> None:
+    room = yy_live_room()
+    keyword = str(room.get("name", "")).strip() or "YY"
+    response = request_json(
+        "https://www.yy.com/apiSearch/doSearch.json",
+        {"q": keyword, "t": 120, "n": 1},
+    )
+    search_result = response.get("data", {}).get("searchResult", {}) if isinstance(response, dict) else {}
+    docs = search_result.get("response", {}).get("120", {}).get("docs", {}) if isinstance(search_result, dict) else {}
+    if not isinstance(docs, list):
+        raise ValueError("YY live search docs missing")
+
+
+def yy_anchor_search_probe() -> None:
+    room = yy_live_room()
+    keyword = str(room.get("name", "")).strip() or "YY"
+    response = request_json(
+        "https://www.yy.com/apiSearch/doSearch.json",
+        {"q": keyword, "t": 1, "n": 1},
+    )
+    search_result = response.get("data", {}).get("searchResult", {}) if isinstance(response, dict) else {}
+    docs = search_result.get("response", {}).get("1", {}).get("docs", []) if isinstance(search_result, dict) else []
+    if not isinstance(docs, list) or not docs or not isinstance(docs[0], dict):
+        raise ValueError("YY anchor search docs missing")
+    for key in ("sid", "name", "liveOn"):
+        if key not in docs[0]:
+            raise ValueError(f"YY anchor field missing: {key}")
+
+
+def yy_playback_probe() -> None:
+    room = yy_live_room()
+    room_id = str(room["sid"])
+    sequence = int(time.time() * 1000)
+    query = urllib.parse.urlencode(
+        {
+            "uid": 0,
+            "cid": room_id,
+            "sid": room_id,
+            "appid": 0,
+            "sequence": sequence,
+            "encode": "json",
+        }
+    )
+    response = post_json(
+        f"https://stream-manager.yy.com/v3/channel/streams?{query}",
+        {
+            "head": {
+                "seq": sequence,
+                "appidstr": "0",
+                "bidstr": "123",
+                "cidstr": room_id,
+                "sidstr": room_id,
+                "uid64": 0,
+                "client_type": 108,
+                "client_ver": "5.19.4",
+                "stream_sys_ver": 1,
+                "app": "yylive_web",
+                "playersdk_ver": "5.19.4",
+                "thundersdk_ver": "0",
+                "streamsdk_ver": "5.19.4",
+            },
+            "client_attribute": {
+                "client": "web",
+                "model": "web0",
+                "cpu": "",
+                "graphics_card": "",
+                "os": "chrome",
+                "osversion": "128.0.0.0",
+                "width": "1366",
+                "height": "768",
+                "client_type": 8,
+                "h265": 0,
+            },
+            "avp_parameter": {
+                "version": 1,
+                "client_type": 8,
+                "service_type": 0,
+                "imsi": 0,
+                "send_time": int(time.time()),
+                "line_seq": -1,
+                "gear": 1,
+                "ssl": 1,
+                "stream_format": 0,
+            },
+        },
+        headers={
+            "Content-Type": "application/json",
+            "Origin": "https://www.yy.com",
+            "Referer": f"https://www.yy.com/{room_id}",
+        },
+    )
+    streams = response.get("channel_stream_info", {}).get("streams", []) if isinstance(response, dict) else []
+    lines = response.get("avp_info_res", {}).get("stream_line_addr", {}) if isinstance(response, dict) else {}
+    if not isinstance(streams, list) or not streams:
+        raise ValueError("YY quality list missing")
+    if not isinstance(lines, dict) or not any(
+        isinstance(value, dict) and str(value.get("cdn_info", {}).get("url", "")).startswith("https://")
+        for value in lines.values()
+    ):
+        raise ValueError("YY playback lines missing")
 
 
 def kuaishou_playback_probe() -> None:
@@ -708,6 +954,7 @@ def main() -> int:
             lambda: require_path(request_json("https://www.douyu.com/japi/weblist/apinc/allpage/6/1"), "data", "rl"),
         ),
         ("douyu.encryption", douyu_encryption_probe),
+        ("douyu.playback", douyu_playback_probe),
         (
             "huya.categories",
             lambda: require_path(
@@ -753,17 +1000,7 @@ def main() -> int:
         ("bilibili.danmaku", bilibili_danmaku_probe),
         ("huya.danmaku_identity", huya_danmaku_identity_probe),
         ("douyin.search", douyin_search_probe),
-        (
-            "douyu.search",
-            lambda: require_path(
-                request_json(
-                    "https://www.douyu.com/japi/search/api/searchShow",
-                    {"kw": "ASMR", "page": 1, "pageSize": 20},
-                ),
-                "data",
-                "relateShow",
-            ),
-        ),
+        ("douyu.search", douyu_search_probe),
         (
             "huya.search",
             lambda: require_path(
@@ -835,6 +1072,25 @@ def main() -> int:
         ("soop.search", soop_search_probe),
         ("soop.room", soop_room_probe),
         ("soop.playback_token", soop_playback_probe),
+        (
+            "yy.categories",
+            lambda: require_path(request_json("https://www.yy.com/yyweb/module/data/header"), "categoryTabs"),
+        ),
+        (
+            "yy.recommend",
+            lambda: require_path(
+                request_json(
+                    "https://www.yy.com/more/page.action",
+                    {"page": 1, "pageSize": 5, "biz": "other", "subBiz": "idx", "moduleId": -1},
+                ),
+                "data",
+                "data",
+            ),
+        ),
+        ("yy.search", yy_search_probe),
+        ("yy.anchor_search", yy_anchor_search_probe),
+        ("yy.room", yy_room_probe),
+        ("yy.playback", yy_playback_probe),
     ]
 
     failures: list[str] = []

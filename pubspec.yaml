@@ -82,8 +82,6 @@ dependencies:
 
   flv_lzc:
     path: plugins/flv_lzc # Vendored from liuchuancong/flv_lzc@030d611
-  flutter_js:
-    path: plugins/built_in_kotlin/flutter_js
   # -------------------------- UI组件/界面样式 --------------------------
   flutter_svg: ^2.2.1 # SVG图片渲染
   lottie: ^3.3.3 #动画

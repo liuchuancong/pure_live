@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/core/site/huya/huya_site.dart';
+import 'package:pure_live/core/site/douyu/douyu_utils.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/player/core/player_manager.dart';
@@ -134,6 +135,8 @@ class PlayerController extends GetxController {
         'referer': 'https://live.bilibili.com/$roomId',
         if (cookie.isNotEmpty) 'cookie': cookie,
       };
+    } else if (site.id == Sites.douyuSite) {
+      headers = DouyuUtils.playbackHeaders(room?.roomId ?? '');
     } else if (site.id == Sites.huyaSite) {
       final ua = await HuyaSite().getHuYaUA();
       headers = {"user-agent": ua, "origin": "https://www.huya.com"};

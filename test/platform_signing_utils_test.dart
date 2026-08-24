@@ -31,6 +31,7 @@ void main() {
 
       expect(values['enc_data'], 'a+/=');
       expect(values['tt'], '1000');
+      expect(values['did'], DouyuUtils.defaultDeviceId);
       expect(values['rate'], '2');
       expect(values['cdn'], 'ali line');
       expect(values['auth'], '1834439993932d590bceb2593c1c0cd0');
@@ -45,6 +46,17 @@ void main() {
         ),
         throwsFormatException,
       );
+    });
+
+    test('session identity and playback headers stay internally consistent', () {
+      expect(DouyuUtils.deviceId, matches(RegExp(r'^[0-9a-f]{32}$')));
+
+      final headers = DouyuUtils.playbackHeaders('123');
+      expect(headers['referer'], 'https://www.douyu.com/123');
+      expect(headers['origin'], 'https://www.douyu.com');
+      expect(headers['user-agent'], isNotEmpty);
+      expect(headers['cookie'], contains('dy_did=${DouyuUtils.deviceId}'));
+      expect(headers['cookie'], contains('acf_did=${DouyuUtils.deviceId}'));
     });
   });
 

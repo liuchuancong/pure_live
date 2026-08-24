@@ -1,23 +1,29 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:crypto/crypto.dart';
 import 'package:pure_live/core/common/http_client.dart';
 
 class DouyuUtils {
-  static const String _did = '10000000000000000000000000001501';
+  static const String defaultDeviceId = '10000000000000000000000000001501';
   static const String _apiDouyuEnc = 'https://www.douyu.com/wgapi/livenc/liveweb/websec/getEncryption';
   static const int _expirySafetySeconds = 30;
+  static const int _maximumCacheAgeSeconds = 5 * 60;
+  static const String userAgent =
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+      'AppleWebKit/537.36 (KHTML, like Gecko) '
+      'Chrome/128.0.0.0 Safari/537.36';
 
   static Map<String, dynamic> _encKey = <String, dynamic>{};
   static Future<void>? _encKeyRefresh;
+  static int? _encKeyFetchedAtSeconds;
+  static final String _sessionDeviceId = generateDeviceId();
+
+  static String get deviceId => _sessionDeviceId;
 
   static int _nowSeconds() => DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
   /// Validates the server encryption descriptor using second-based Unix time.
-  ///
-  /// The upstream implementation compared a seconds timestamp with
-  /// milliseconds, which invalidated the cache on every quality/line request
-  /// and added an avoidable network round-trip to each stream switch.
   static bool isEncryptionKeyUsable(
     Map<String, dynamic> value, {
     required int nowSeconds,
@@ -35,13 +41,21 @@ class DouyuUtils {
         _nonEmpty(value['enc_data']);
   }
 
-  static Future<void> _encKeyUpdate() async {
-    if (isEncryptionKeyUsable(_encKey, nowSeconds: _nowSeconds())) return;
+  static bool _isCachedEncryptionKeyUsable(int nowSeconds) {
+    final fetchedAt = _encKeyFetchedAtSeconds;
+    return fetchedAt != null &&
+        nowSeconds - fetchedAt < _maximumCacheAgeSeconds &&
+        isEncryptionKeyUsable(_encKey, nowSeconds: nowSeconds);
+  }
+
+  static Future<void> _encKeyUpdate({bool forceRefresh = false}) async {
+    final nowSeconds = _nowSeconds();
+    if (!forceRefresh && _isCachedEncryptionKeyUsable(nowSeconds)) return;
 
     final activeRefresh = _encKeyRefresh;
     if (activeRefresh != null) {
       await activeRefresh;
-      return;
+      if (_isCachedEncryptionKeyUsable(_nowSeconds())) return;
     }
 
     final refresh = _fetchEncryptionKey();
@@ -56,13 +70,8 @@ class DouyuUtils {
   static Future<void> _fetchEncryptionKey() async {
     final response = await HttpClient.instance.getJson(
       _apiDouyuEnc,
-      queryParameters: const {'did': _did},
-      header: const {
-        'user-agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-            'AppleWebKit/537.36 (KHTML, like Gecko) '
-            'Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0',
-      },
+      queryParameters: {'did': deviceId},
+      header: requestHeaders(),
     );
     final rawData = response is Map ? response['data'] : null;
     if (rawData is! Map) {
@@ -73,7 +82,33 @@ class DouyuUtils {
       throw const FormatException('Douyu encryption descriptor is incomplete or expired');
     }
     _encKey = data;
+    _encKeyFetchedAtSeconds = _nowSeconds();
   }
+
+  /// Creates the browser DID used by a single app process.
+  static String generateDeviceId({Random? random}) {
+    final source = random ?? Random.secure();
+    return List<String>.generate(32, (_) => source.nextInt(16).toRadixString(16)).join();
+  }
+
+  static Map<String, String> requestHeaders([String roomId = '']) {
+    final referer = roomId.isEmpty ? 'https://www.douyu.com/' : 'https://www.douyu.com/$roomId';
+    return <String, String>{
+      'accept': 'application/json, text/plain, */*',
+      'accept-language': 'zh-CN,zh;q=0.9,en;q=0.7',
+      'origin': 'https://www.douyu.com',
+      'referer': referer,
+      'user-agent': userAgent,
+      'cookie': 'dy_did=$deviceId; acf_did=$deviceId',
+    };
+  }
+
+  static Map<String, String> playbackHeaders(String roomId) => <String, String>{
+    'origin': 'https://www.douyu.com',
+    'referer': 'https://www.douyu.com/$roomId',
+    'user-agent': userAgent,
+    'cookie': 'dy_did=$deviceId; acf_did=$deviceId',
+  };
 
   /// Builds the form body from an already validated encryption descriptor.
   /// Exposed as a deterministic unit-test seam for the platform signing path.
@@ -83,6 +118,7 @@ class DouyuUtils {
     required int timestampSeconds,
     int rate = -1,
     String cdn = '',
+    String deviceId = defaultDeviceId,
   }) {
     if (!isEncryptionKeyUsable(encryptionKey, nowSeconds: timestampSeconds, safetySeconds: 0)) {
       throw const FormatException('Douyu encryption descriptor is incomplete or expired');
@@ -101,7 +137,7 @@ class DouyuUtils {
       queryParameters: <String, String>{
         'enc_data': encryptionKey['enc_data'].toString(),
         'tt': timestampSeconds.toString(),
-        'did': _did,
+        'did': deviceId,
         'auth': auth,
         'cdn': cdn,
         'rate': rate.toString(),
@@ -114,14 +150,15 @@ class DouyuUtils {
     ).query;
   }
 
-  static Future<String> sign(String roomId, {int rate = -1, String cdn = ''}) async {
-    await _encKeyUpdate();
+  static Future<String> sign(String roomId, {int rate = -1, String cdn = '', bool forceRefresh = false}) async {
+    await _encKeyUpdate(forceRefresh: forceRefresh);
     return buildSignedData(
       encryptionKey: _encKey,
       roomId: roomId,
       timestampSeconds: _nowSeconds(),
       rate: rate,
       cdn: cdn,
+      deviceId: deviceId,
     );
   }
 

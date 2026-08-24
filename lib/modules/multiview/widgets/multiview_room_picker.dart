@@ -5,6 +5,14 @@ import 'package:pure_live/common/widgets/common_avatar.dart';
 /// 选台数据来源。
 enum _PickerSource { favorites, history }
 
+@visibleForTesting
+int compareMultiviewRooms(LiveRoom a, LiveRoom b) {
+  var result = (b.status == true ? 1 : 0).compareTo(a.status == true ? 1 : 0);
+  if (result != 0) return result;
+  result = LiveRoom.parseAudienceNumber(b.watching).compareTo(LiveRoom.parseAudienceNumber(a.watching));
+  return result;
+}
+
 /// multiview 选台面板内容。
 ///
 /// 复用本地关注（FavoritesService/FavoriteRoomController）与观看历史
@@ -53,14 +61,7 @@ class _MultiviewRoomPickerState extends State<MultiviewRoomPicker> {
       return true;
     }).toList();
 
-    rooms.sort((a, b) {
-      var result = (b.status == true ? 1 : 0).compareTo(a.status == true ? 1 : 0);
-      if (result != 0) return result;
-      final aWatching = int.tryParse(a.watching ?? '') ?? 0;
-      final bWatching = int.tryParse(b.watching ?? '') ?? 0;
-      result = bWatching.compareTo(aWatching);
-      return result;
-    });
+    rooms.sort(compareMultiviewRooms);
 
     return rooms;
   }
