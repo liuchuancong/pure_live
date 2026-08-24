@@ -165,9 +165,9 @@ jobs:
           VERSION="${{ steps.version.outputs.artifact_version }}"
           APK_DIR="build/app/outputs/flutter-apk"
           declare -A APK_MAP=(
-            ["app-arm64-v8a-release.apk"]="PureLive-${VERSION}-android-arm64-v8a.apk"
-            ["app-armeabi-v7a-release.apk"]="PureLive-${VERSION}-android-armeabi-v7a.apk"
-            ["app-x86_64-release.apk"]="PureLive-${VERSION}-android-x86_64.apk"
+            ["app-arm64-v8a-release.apk"]="PureLive-${VERSION}-android-arm64-v8a-release.apk"
+            ["app-armeabi-v7a-release.apk"]="PureLive-${VERSION}-android-armeabi-v7a-release.apk"
+            ["app-x86_64-release.apk"]="PureLive-${VERSION}-android-x86_64-release.apk"
           )
           for source in "${!APK_MAP[@]}"; do
             target="${APK_MAP[$source]}"
@@ -179,9 +179,9 @@ jobs:
             echo "Created: $target"
           done
           ls -lh \
-            "PureLive-${VERSION}-android-arm64-v8a.apk" \
-            "PureLive-${VERSION}-android-armeabi-v7a.apk" \
-            "PureLive-${VERSION}-android-x86_64.apk"
+            "PureLive-${VERSION}-android-arm64-v8a-release.apk" \
+            "PureLive-${VERSION}-android-armeabi-v7a-release.apk" \
+            "PureLive-${VERSION}-android-x86_64-release.apk"
       - name: Generate Android SHA256SUM file
         shell: bash
         run: |
@@ -189,9 +189,9 @@ jobs:
           VERSION="${{ steps.version.outputs.artifact_version }}"
           SHA_FILE="ANDROID_SHA256SUM.txt"
           rm -f "$SHA_FILE"
-          sha256sum "PureLive-${VERSION}-android-arm64-v8a.apk" >> "$SHA_FILE"
-          sha256sum "PureLive-${VERSION}-android-armeabi-v7a.apk" >> "$SHA_FILE"
-          sha256sum "PureLive-${VERSION}-android-x86_64.apk" >> "$SHA_FILE"
+          sha256sum "PureLive-${VERSION}-android-arm64-v8a-release.apk" >> "$SHA_FILE"
+          sha256sum "PureLive-${VERSION}-android-armeabi-v7a-release.apk" >> "$SHA_FILE"
+          sha256sum "PureLive-${VERSION}-android-x86_64-release.apk" >> "$SHA_FILE"
           cat "$SHA_FILE"
       - name: Verify Android SHA256SUM
         shell: bash
@@ -203,9 +203,9 @@ jobs:
         with:
           name: pure-live-android
           path: |
-            PureLive-*-android-arm64-v8a.apk
-            PureLive-*-android-armeabi-v7a.apk
-            PureLive-*-android-x86_64.apk
+            PureLive-*-android-arm64-v8a-release.apk
+            PureLive-*-android-armeabi-v7a-release.apk
+            PureLive-*-android-x86_64-release.apk
             ANDROID_SHA256SUM.txt
           if-no-files-found: error
           retention-days: 3
@@ -365,13 +365,15 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          $version = "${{ steps.version.outputs.version }}"
+          $version = "${{ steps.version.outputs.artifact_version }}"
           $distDir = "dist"
+
           $exeFile = Get-ChildItem $distDir -Recurse -Filter "*.exe" | Select-Object -First 1
           if (!$exeFile) {
             Write-Error "Windows EXE package not found."
           }
           Copy-Item $exeFile.FullName "PureLive-$version-windows-x64-setup.exe" -Force
+
           $msixFile = Get-ChildItem $distDir -Recurse -Filter "*.msix" | Select-Object -First 1
           if (!$msixFile) {
             Write-Error "Windows MSIX package not found."
