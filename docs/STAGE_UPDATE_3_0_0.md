@@ -32,7 +32,9 @@
 
 - 定向录制回归：请求头、FFmpeg命令、重试策略和目录策略通过。
 - 上游状态回归：关注平台身份保持、Release ABI和热门排序测试通过。
-- 最终 Flutter Analyze、完整测试、40 项公开接口探测及各平台构建结果在发布完成后记录到本节和 Release 校验文件。
+- 最终完整门禁通过：Flutter Analyze 零问题（单次执行）、380 项 Flutter 测试全部通过、40/40 项公开平台接口探针通过。
+- 完整门禁耗时 808.142 秒，峰值 CPU 25.91%，峰值工作集 15,174,893,568 字节，结束后重型进程数为 0；记录：`local-artifacts/build-records/20260825T030150322Z-quality-full.json`。
+- 各平台构建结果在发布完成后补充到本节和 Release 校验记录。
 - 本轮遵循 `BUILD_POLICY.md`：完整门禁一次；Android、Windows 和托管平台按阶段串行；没有执行 ADB 或手机操作。
 
 ## 目标产物
