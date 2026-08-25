@@ -328,7 +328,7 @@ class _TaskCard extends GetView<RecorderController> {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
       minimumSize: const Size(0, 34),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      textStyle: const TextStyle(fontWeight: FontWeight.w700),
+      textStyle: AppTextStyles.t12.copyWith(fontWeight: FontWeight.w700),
     );
 
     final outlineStyle = OutlinedButton.styleFrom(
@@ -336,7 +336,7 @@ class _TaskCard extends GetView<RecorderController> {
       minimumSize: const Size(0, 34),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       side: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.2)),
-      textStyle: const TextStyle(fontWeight: FontWeight.w700),
+      textStyle: AppTextStyles.t12.copyWith(fontWeight: FontWeight.w700),
     );
 
     final dangerStyle = FilledButton.styleFrom(
