@@ -6,8 +6,10 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 
 $requiredFiles = @(
     'BUILD_POLICY.md',
+    'UPSTREAM_REVIEW_POLICY.md',
     '.agents\skills\pure-live-build\SKILL.md',
     'tool\build_resource_guard.ps1',
+    'tool\review_upstream_update.ps1',
     'tool\local_ci.ps1',
     'tool\build_local_release.ps1',
     'tool\prefetch_windows_native.ps1',
@@ -30,6 +32,7 @@ $powerShellFiles = @(
     'tool\build_local_release.ps1',
     'tool\prefetch_windows_native.ps1',
     'tool\flutterw.ps1',
+    'tool\review_upstream_update.ps1',
     'tool\validate_build_policy.ps1'
 )
 foreach ($relativePath in $powerShellFiles) {
@@ -133,6 +136,35 @@ if ([regex]::Matches($qualityScript, [regex]::Escape('& $flutterw analyze')).Cou
 $featureWorkflow = Get-Content -LiteralPath (Join-Path $repoRoot '.github\workflows\feature-build.yml') -Raw
 if ([regex]::Matches($featureWorkflow, '(?m)^\s+default:\s+true\s*$').Count -ne 0) {
     throw 'Feature workflow platform/release inputs must default to false.'
+}
+
+$allPlatformWorkflow = Get-Content -LiteralPath (Join-Path $repoRoot '.github\workflows\build_pure_live_release.yml') -Raw
+if ([regex]::Matches($allPlatformWorkflow, '(?m)^\s+default:\s+true\s*$').Count -ne 0) {
+    throw 'All-platform workflow platform/release inputs must default to false.'
+}
+
+$upstreamPolicy = Get-Content -LiteralPath (Join-Path $repoRoot 'UPSTREAM_REVIEW_POLICY.md') -Raw
+$upstreamReviewScript = Get-Content -LiteralPath (Join-Path $repoRoot 'tool\review_upstream_update.ps1') -Raw
+foreach ($marker in @(
+    'review_upstream_update.ps1',
+    'normal-live-layout-visible',
+    'manual-workflow-defaults-off'
+)) {
+    if (-not $upstreamPolicy.Contains($marker)) {
+        throw "Upstream review policy marker is missing: $marker"
+    }
+}
+foreach ($marker in @('ApproveHighRisk', 'unsafe_workflow_defaults', 'git -C $repoRoot diff --check')) {
+    if (-not $upstreamReviewScript.Contains($marker)) {
+        throw "Upstream review script marker is missing: $marker"
+    }
+}
+
+$normalLayout = Get-Content -LiteralPath (Join-Path $repoRoot 'lib\modules\live_play\widgets\layout\live_play_content.dart') -Raw
+foreach ($marker in @('live-play-portrait-stack', 'live-play-desktop-panel', 'live-play-video-only-layout')) {
+    if (-not $normalLayout.Contains($marker)) {
+        throw "Normal live-room layout invariant marker is missing: $marker"
+    }
 }
 if ($featureWorkflow -match 'stage-build-' -or $featureWorkflow -match 'stage-apple-') {
     throw 'Feature workflow must use precise single-platform stage tags.'

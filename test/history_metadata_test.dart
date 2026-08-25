@@ -8,9 +8,9 @@ void main() {
     final sameNumberOtherSite = LiveRoom(roomId: '100', platform: 'huya', title: 'Huya');
     final updated = LiveRoom(roomId: '100', platform: 'bilibili', title: 'Bili updated');
 
-    var history = HistoryController.to.upsertHistoryRoom(const [], first, watchedAt: 10);
-    history = HistoryController.to.upsertHistoryRoom(history, sameNumberOtherSite, watchedAt: 20);
-    history = HistoryController.to.upsertHistoryRoom(history, updated, watchedAt: 30);
+    var history = upsertHistoryRoom(const [], first, watchedAt: 10);
+    history = upsertHistoryRoom(history, sameNumberOtherSite, watchedAt: 20);
+    history = upsertHistoryRoom(history, updated, watchedAt: 30);
 
     expect(history, hasLength(2));
     expect(history.first.title, 'Bili updated');
@@ -21,10 +21,7 @@ void main() {
   test('history timestamp survives JSON and detail refresh', () {
     final stored = LiveRoom(roomId: '1', platform: 'test', title: 'Old', lastWatchedAt: 123456);
     final decoded = LiveRoom.fromJson(stored.toJson());
-    final refreshed = HistoryController.to.preserveHistoryMetadata(
-      LiveRoom(roomId: '1', platform: 'test', title: 'Fresh'),
-      decoded,
-    );
+    final refreshed = preserveHistoryMetadata(LiveRoom(roomId: '1', platform: 'test', title: 'Fresh'), decoded);
 
     expect(decoded.lastWatchedAt, 123456);
     expect(refreshed.title, 'Fresh');
@@ -34,7 +31,7 @@ void main() {
   test('history list keeps newest fifty entries', () {
     var history = <LiveRoom>[];
     for (var index = 0; index < 55; index++) {
-      history = HistoryController.to.upsertHistoryRoom(
+      history = upsertHistoryRoom(
         history,
         LiveRoom(roomId: '$index', platform: 'test'),
         watchedAt: index,
@@ -43,5 +40,32 @@ void main() {
     expect(history, hasLength(50));
     expect(history.first.roomId, '54');
     expect(history.last.roomId, '5');
+  });
+
+  test('history limit is bounded and applied without a registered GetX controller', () {
+    expect(normalizeHistoryLimit(0), 1);
+    expect(normalizeHistoryLimit(120), 120);
+    expect(normalizeHistoryLimit(999999), maxHistoryLimit);
+
+    var history = <LiveRoom>[];
+    for (var index = 0; index < 5; index++) {
+      history = upsertHistoryRoom(
+        history,
+        LiveRoom(roomId: '$index', platform: 'test'),
+        watchedAt: index,
+        limit: 3,
+      );
+    }
+    expect(history.map((room) => room.roomId), ['4', '3', '2']);
+  });
+
+  test('history backup extraction preserves and enforces the configured limit', () {
+    final rooms = List.generate(4, (index) => LiveRoom(roomId: '$index', platform: 'test').toJson());
+    final extracted = HistoryController.extractConfig({
+      'history': {'historyLimit': 2, 'historyRooms': rooms},
+    });
+
+    expect(extracted['historyLimit'], 2);
+    expect(extracted['historyRooms'], hasLength(2));
   });
 }

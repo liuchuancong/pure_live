@@ -1,6 +1,7 @@
 import 'package:pure_live/common/index.dart';
-import 'package:waterfall_flow/waterfall_flow.dart';
 import 'package:pure_live/common/services/settings/history_controller.dart';
+import 'package:pure_live/common/services/settings/refresh_config_controller.dart';
+import 'package:waterfall_flow/waterfall_flow.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -20,17 +21,33 @@ class _HistoryPageState extends State<HistoryPage> {
   Future<void> onRefresh() async {
     bool result = true;
     final list = List<LiveRoom>.from(SettingsService.to.history.historyRooms.v);
-    for (int i = 0; i < list.length; i++) {
-      final room = list[i];
-      try {
-        final newRoom = await Sites.of(room.platform!).liveSite
-            .getRoomDetail(roomId: room.roomId!, platform: room.platform!);
-        list[i] = HistoryController.to.preserveHistoryMetadata(newRoom, room);
-      } catch (_) {
-        result = false;
-      }
-    }
-    SettingsService.to.history.historyRooms.v.assignAll(list);
+    final concurrency = RefreshConfigController.normalizeMaxConcurrentRefresh(
+      SettingsService.to.refreshConfig.maxConcurrentRefresh.v,
+    );
+    final refreshed = await boundedAsyncMap<LiveRoom, LiveRoom>(
+      list,
+      maxConcurrent: concurrency,
+      task: (room) async {
+        final platform = room.platform;
+        final roomId = room.roomId;
+        if (platform == null || platform.isEmpty || roomId == null || roomId.isEmpty) {
+          result = false;
+          return room;
+        }
+        try {
+          final newRoom = await Sites.of(platform).liveSite
+              .getRoomDetail(roomId: roomId, platform: platform)
+              .timeout(const Duration(seconds: 12));
+          return preserveHistoryMetadata(newRoom, room);
+        } catch (_) {
+          result = false;
+          return room;
+        }
+      },
+      shouldCancel: () => !mounted,
+    );
+    if (!mounted) return;
+    SettingsService.to.history.historyRooms.v = refreshed.whereType<LiveRoom>().toList(growable: true);
     if (result) {
       refreshController.finishRefresh(IndicatorResult.success);
       refreshController.resetFooter();
@@ -103,8 +120,8 @@ class _HistoryPageState extends State<HistoryPage> {
                           ElevatedButton(
                             onPressed: () {
                               final value = int.tryParse(customController.text.trim());
-                              if (value == null || value <= 0) return;
-                              setDialogState(() => draftLimit = value);
+                              if (value == null) return;
+                              setDialogState(() => draftLimit = normalizeHistoryLimit(value));
                               customController.clear();
                             },
                             child: Text(
@@ -128,9 +145,9 @@ class _HistoryPageState extends State<HistoryPage> {
               child: Text(i18n("cancel"), style: AppTextStyles.t14Muted),
             ),
             TextButton(
-              onPressed: () async {
+              onPressed: () {
                 if (draftLimit <= 0) return;
-                await controller.setHistoryLimit(draftLimit);
+                controller.setHistoryLimit(draftLimit);
                 if (context.mounted) Navigator.pop(context);
               },
               child: Text(i18n("confirm"), style: AppTextStyles.t14Primary),

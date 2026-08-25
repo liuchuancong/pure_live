@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
-
 
 class AppSettingsController extends GetxController {
   static const int maxSleepMinutes = 525600;
@@ -49,8 +49,11 @@ class AppSettingsController extends GetxController {
   final RxBool preferRealOnlineCounts = hiveBool('preferRealOnlineCounts', false);
   late final RxList<String> realOnlinePlatforms = hiveStringList('realOnlinePlatforms', defaultRealOnlinePlatforms);
   final RxInt audienceMetricMigration = hiveInt('audienceMetricMigration', 0);
-  final RxBool enableMultiView = hiveBool('enableMultiView', false);
-  final RxBool enableNewWindowPlay = hiveBool('enableNewWindowPlay', false); 
+  // These entry points existed before they became configurable upstream.
+  // Defaulting missing keys to true keeps upgrades feature-compatible while
+  // still allowing users to hide either entry explicitly.
+  final RxBool enableMultiView = hiveBool('enableMultiView', true);
+  final RxBool enableNewWindowPlay = hiveBool('enableNewWindowPlay', true);
 
   AppRefreshRateMode get refreshRateMode => AppRefreshRateMode.parse(refreshRateModeName.v);
 
@@ -184,8 +187,8 @@ class AppSettingsController extends GetxController {
     realOnlinePlatforms.v = List<String>.from(json['realOnlinePlatforms'] ?? defaultRealOnlinePlatforms);
     _removeUnsupportedOnlinePlatforms();
     savedMenuIds.v = List<String>.from(json['savedMenuIds'] ?? HomeMenu.values.map((e) => e.id).toList());
-    enableMultiView.v = json['enableMultiView'] ?? false;
-    enableNewWindowPlay.v = json['enableNewWindowPlay'] ?? false;
+    enableMultiView.v = json['enableMultiView'] ?? true;
+    enableNewWindowPlay.v = json['enableNewWindowPlay'] ?? true;
   }
 
   static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
@@ -209,8 +212,8 @@ class AppSettingsController extends GetxController {
         List<String>.from(app['realOnlinePlatforms'] ?? defaultRealOnlinePlatforms),
       ),
       'savedMenuIds': List<String>.from(app['savedMenuIds'] ?? []),
-      'enableMultiView': app['enableMultiView'] ?? false,
-      'enableNewWindowPlay': app['enableNewWindowPlay'] ?? false,
+      'enableMultiView': app['enableMultiView'] ?? true,
+      'enableNewWindowPlay': app['enableNewWindowPlay'] ?? true,
     };
   }
 

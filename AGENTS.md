@@ -14,7 +14,7 @@
 
 ## Toolchain and commands
 
-Read and follow [`BUILD_POLICY.md`](BUILD_POLICY.md) before starting any Flutter, Dart, Gradle, Java, test, build, package, or release command. It is the repository default for platform scope, serial staging, worker limits, caching, resource arbitration, and build records.
+Read and follow [`BUILD_POLICY.md`](BUILD_POLICY.md) before starting any Flutter, Dart, Gradle, Java, test, build, package, or release command. It is the repository default for platform scope, serial staging, worker limits, caching, resource arbitration, and build records. Before merging an upstream revision, also follow [`UPSTREAM_REVIEW_POLICY.md`](UPSTREAM_REVIEW_POLICY.md) and run its high-risk diff gate.
 
 Use Flutter `3.47.0` from `.fvmrc`. On Windows, call the repository wrapper so the same SDK is selected consistently:
 

@@ -13,6 +13,17 @@ void main() {
       expect(config['asmrSleepMinutes'], 60);
       expect(config['realOnlinePlatforms'], AppSettingsController.defaultRealOnlinePlatforms);
       expect(config['useGitHubOriginForUpdates'], isFalse);
+      expect(config['enableMultiView'], isTrue);
+      expect(config['enableNewWindowPlay'], isTrue);
+    });
+
+    test('preserves explicit disabled desktop entry points', () {
+      final config = AppSettingsController.extractConfig({
+        'app': {'enableMultiView': false, 'enableNewWindowPlay': false},
+      });
+
+      expect(config['enableMultiView'], isFalse);
+      expect(config['enableNewWindowPlay'], isFalse);
     });
 
     test('migrates the legacy high refresh switch to balanced', () {

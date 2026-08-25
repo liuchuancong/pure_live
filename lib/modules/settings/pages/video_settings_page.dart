@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
@@ -9,7 +10,6 @@ import 'package:pure_live/modules/settings/pages/font_family_manager_page.dart';
 import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 import 'package:pure_live/modules/settings/pages/pip_danmaku_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/audience_metric_settings_page.dart';
-
 
 class VideoSettingsPage extends GetView<SettingsService> {
   const VideoSettingsPage({super.key});
@@ -100,7 +100,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
           // 播放行为设置
           context.buildGroupTitle(i18n("playback_behavior_settings")),
           context.buildModernCard([
-                        context.buildTile(
+            context.buildTile(
               title: i18n('audience_metric_settings'),
               subtitle: i18n('audience_metric_settings_desc'),
               icon: Icons.groups_2_rounded,
