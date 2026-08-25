@@ -121,6 +121,7 @@ void main() {
   test('a new room clears stale portrait geometry before its metadata arrives', () async {
     final player = _FakePlayer();
     final manager = _createManager(player);
+    manager.configureDefaultEngine(PlayerEngine.mediaKit);
 
     await manager.play(
       'https://example.invalid/portrait.flv',
