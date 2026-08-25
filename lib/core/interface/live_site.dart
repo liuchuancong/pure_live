@@ -11,11 +11,14 @@ import 'package:pure_live/core/interface/live_danmaku.dart';
 ///
 /// Some platforms advertise a quality in `accept_qn` but silently downgrade
 /// anonymous requests. Returning only the URLs made the UI commit the tapped
-/// label even though the media source was still a lower quality. Adapters that
-/// can inspect the response should set [appliedQualityData] to the server's
-/// actual stable quality identifier; the default implementation keeps the
-/// requested [LivePlayQuality.selectionId] for platforms whose URL response
-/// has no separate acknowledgement.
+/// label even though the media source was still a lower quality.
+///
+/// Adapters that can inspect the response should set [appliedQualityData]
+/// to the server's actual stable quality identifier.
+///
+/// The default implementation keeps the requested
+/// [LivePlayQuality.selectionId] for platforms whose URL response has no
+/// separate acknowledgement.
 class LivePlayUrlResolution {
   const LivePlayUrlResolution({required this.urls, this.appliedQualityData});
 
@@ -24,24 +27,35 @@ class LivePlayUrlResolution {
 }
 
 /// Removes blank and duplicate lines while preserving platform priority.
+///
 /// Scheme validation remains adapter-specific because imported IPTV sources
 /// may legitimately use non-HTTP protocols.
 List<String> normalizeResolvedPlayUrls(Iterable<String> urls) {
   final result = <String>[];
   final seen = <String>{};
+
   for (final rawUrl in urls) {
     final url = rawUrl.trim();
-    if (url.isNotEmpty && seen.add(url)) result.add(url);
+
+    if (url.isNotEmpty && seen.add(url)) {
+      result.add(url);
+    }
   }
+
   return List<String>.unmodifiable(result);
 }
 
 /// Optional capability for platforms whose play API reports the quality that
-/// was actually applied. Most adapters can use the URL-list fallback below;
-/// Bilibili implements this contract because guest requests may be downgraded
-/// even when a higher `qn` was requested.
+/// was actually applied.
+///
+/// Use `resolvePlayUrlsRaw` intentionally here because `resolvePlayUrls` is
+/// the unified extension API exposed by [LiveSite].
+///
+/// Most adapters can continue using [LiveSite.getPlayUrls].
+/// Bilibili can implement this contract because guest requests may be
+/// downgraded even when a higher `qn` was requested.
 abstract interface class LivePlayUrlResolver {
-  Future<LivePlayUrlResolution> resolvePlayUrls({required LiveRoom detail, required LivePlayQuality quality});
+  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom detail, required LivePlayQuality quality});
 }
 
 class LiveSite {
@@ -107,20 +121,28 @@ class LiveSite {
   }
 }
 
-/// Resolves a quality without forcing every `implements LiveSite` adapter to
-/// duplicate boilerplate. A capability-aware adapter can acknowledge the
-/// server-applied quality; all other adapters retain their stable requested
-/// identifier and use the existing URL method.
+/// Unified playback URL resolution.
+///
+/// Capability-aware adapters can return the quality actually applied by
+/// the server through [LivePlayUrlResolver.resolvePlayUrlsRaw].
+///
+/// Other adapters continue using [LiveSite.getPlayUrls] and assume that
+/// the requested quality was applied.
 extension LiveSitePlayUrlResolution on LiveSite {
   Future<LivePlayUrlResolution> resolvePlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
     final site = this;
+
     if (site is LivePlayUrlResolver) {
-      final resolution = await site.resolvePlayUrls(detail: detail, quality: quality);
+      final resolver = site as LivePlayUrlResolver;
+
+      final resolution = await resolver.resolvePlayUrlsRaw(detail: detail, quality: quality);
+
       return LivePlayUrlResolution(
         urls: normalizeResolvedPlayUrls(resolution.urls),
         appliedQualityData: resolution.appliedQualityData,
       );
     }
+
     return LivePlayUrlResolution(
       urls: normalizeResolvedPlayUrls(await getPlayUrls(detail: detail, quality: quality)),
       appliedQualityData: quality.selectionId,
@@ -131,9 +153,11 @@ extension LiveSitePlayUrlResolution on LiveSite {
 /// Optional fast metadata path used by favourites/background verification.
 ///
 /// Entering a room needs playback URLs, signing material and chat credentials;
-/// refreshing a card needs only status/title/cover/audience metadata. Keeping
-/// this as a separate capability lets platforms skip those extra calls without
-/// changing the full room-entry contract for every site implementation.
+/// refreshing a card needs only status/title/cover/audience metadata.
+///
+/// Keeping this as a separate capability lets platforms skip those extra
+/// calls without changing the full room-entry contract for every site
+/// implementation.
 abstract interface class LiveSiteRoomRefresher {
   Future<LiveRoom> getRoomDetailForRefresh({required String roomId, required String platform});
 }
