@@ -83,9 +83,50 @@ if ($executable -eq $flutter -and $env:JAVA_HOME -and $FlutterArgs[0] -notin @('
 }
 
 $workDir = $repoRoot
+$shortPathReady = $false
+
+if ($repoRoot.Length -gt 80) {
+    # Keep the short project path on the same drive as the Pub cache. Kotlin's
+    # incremental compiler cannot relativize plugin sources when a SUBST drive
+    # (for example P:) and the default C: Pub cache are mixed, so it discards
+    # its cache and recompiles every Kotlin plugin. A stable junction preserves
+    # short paths without changing the drive root seen by the compiler.
+    try {
+        $normalizedRepoRoot = [IO.Path]::GetFullPath($repoRoot).TrimEnd('\').ToLowerInvariant()
+        $sha256 = [Security.Cryptography.SHA256]::Create()
+        try {
+            $digest = $sha256.ComputeHash([Text.Encoding]::UTF8.GetBytes($normalizedRepoRoot))
+        } finally {
+            $sha256.Dispose()
+        }
+        $repoHash = -join ($digest[0..5] | ForEach-Object { $_.ToString('x2') })
+        $junctionParent = Join-Path $env:LOCALAPPDATA 'Codex\workspaces'
+        $junctionPath = Join-Path $junctionParent "pure-live-$repoHash"
+        New-Item -ItemType Directory -Force -Path $junctionParent | Out-Null
+
+        if (Test-Path -LiteralPath $junctionPath) {
+            $junction = Get-Item -LiteralPath $junctionPath -Force
+            $junctionTarget = @($junction.Target) | Select-Object -First 1
+            if ($junctionTarget -and
+                [IO.Path]::GetFullPath($junctionTarget).TrimEnd('\').Equals(
+                    [IO.Path]::GetFullPath($repoRoot).TrimEnd('\'),
+                    [StringComparison]::OrdinalIgnoreCase)) {
+                $workDir = $junctionPath
+                $shortPathReady = $true
+            }
+        } else {
+            New-Item -ItemType Junction -Path $junctionPath -Target $repoRoot | Out-Null
+            $workDir = $junctionPath
+            $shortPathReady = $true
+        }
+    } catch {
+        # SUBST remains a compatibility fallback when junction creation is restricted.
+    }
+}
+
 $substDrive = $null
 $substMappingFile = Join-Path $repoRoot '.dart_tool\pure_live_subst_drive.txt'
-if ($repoRoot.Length -gt 80) {
+if ($repoRoot.Length -gt 80 -and -not $shortPathReady) {
     $repoParent = Split-Path -Parent $repoRoot
     $repoLeaf = Split-Path -Leaf $repoRoot
     $savedDrive = if (Test-Path -LiteralPath $substMappingFile) {
