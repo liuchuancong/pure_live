@@ -35,7 +35,7 @@
 
 - **最新稳定版**：[v3.0.0](https://github.com/wzgrx/pure_live/releases/tag/v3.0.0)
 - **当前版本**：`3.0.0+4087`
-- **v3.0.0 上游源码基线**：`liuchuancong/pure_live@fd35593f`；完整记录见 `docs/STAGE_UPDATE_3_0_0.md`
+- **v3.0.0 上游源码基线**：`liuchuancong/pure_live@e4d0d2fb`；完整记录见 `docs/STAGE_UPDATE_3_0_0.md`
 - **本轮构建平台**：Android arm64-v8a、Windows x64、Linux x64、macOS Universal、iOS arm64
 - **质量门禁**：Flutter Analyze、完整自动化测试、40 项接口语义探测与串行构建记录见 `docs/STAGE_UPDATE_3_0_0.md`
 

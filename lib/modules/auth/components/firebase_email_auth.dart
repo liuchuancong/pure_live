@@ -89,7 +89,7 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
               autofillHints: const [AutofillHints.email],
               style: AppTextStyles.t14,
               validator: (value) {
-                if (Validators.validateEmail(value) != null) {
+                if (Validators.validateEmail(value?.trim()) != null) {
                   return i18n('firebase_enter_valid_email');
                 }
                 return null;
@@ -309,7 +309,7 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
     } catch (e) {
       _showErrorSnackbar(e.toString(), isError: true);
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 

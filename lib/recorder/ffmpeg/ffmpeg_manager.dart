@@ -19,7 +19,21 @@ class FFmpegManager {
   Future<void>? _initializeFuture;
 
   Future<void> initialize() {
-    return _initializeFuture ??= _ffmpeg.initialize();
+    final inFlight = _initializeFuture;
+    if (inFlight != null) return inFlight;
+
+    late final Future<void> initialization;
+    initialization = _ffmpeg.initialize().catchError((Object error, StackTrace stackTrace) {
+      // A transient native-library or filesystem failure must not poison the
+      // singleton for the remainder of the process. A later recording action
+      // gets one fresh attempt while concurrent callers still share this one.
+      if (identical(_initializeFuture, initialization)) {
+        _initializeFuture = null;
+      }
+      Error.throwWithStackTrace(error, stackTrace);
+    });
+    _initializeFuture = initialization;
+    return initialization;
   }
 
   Future<void> start({required String taskId, required String command}) async {

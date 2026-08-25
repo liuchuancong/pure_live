@@ -54,7 +54,6 @@ class PlayerManager {
   Future<void> _playerLifecycleQueue = Future.value();
   int _sessionId = 0;
   bool _isClosing = false;
-  Future<void>? _closeFuture;
 
   PlayerManager({
     required this.fallbackManager,
@@ -293,10 +292,20 @@ class PlayerManager {
   }
 
   double get currentVideoRatio {
-    final w = _widthSubject.value?.toDouble() ?? 1920;
-    final h = _heightSubject.value?.toDouble() ?? 1080;
-    if (w <= 0 || h <= 0) return 16 / 9;
+    final width = _widthSubject.value;
+    final height = _heightSubject.value;
+    if (width == null || height == null || width <= 0 || height <= 0) {
+      return 16 / 9;
+    }
+    final w = width.toDouble();
+    final h = height.toDouble();
     return w / h;
+  }
+
+  void _resetVideoGeometry() {
+    if (_widthSubject.value != null) _widthSubject.add(null);
+    if (_heightSubject.value != null) _heightSubject.add(null);
+    isVerticalVideo.value = false;
   }
 
   Future<UnifiedPlayer> _createPlayer(PlayerEngine engine, {bool audioOnly = false}) async {
@@ -409,15 +418,17 @@ class PlayerManager {
     _audioModeVideoWarmTimer?.cancel();
     _audioModeVideoWarmTimer = null;
     isVideoRestorePending.value = false;
-    final closing = _closeFuture;
-    if (closing != null) {
-      await closing;
-    }
-    if (_disposed) return;
+    if (_disposed || _isClosing) return;
     final mySessionId = ++_sessionId;
 
-    if (room?.roomId != currentFloatRoom?.roomId) {
+    final roomChanged = room != currentFloatRoom;
+    if (roomChanged) {
       lineManager.reset();
+      // A reusable native player keeps its dimension streams alive between
+      // sources. Retaining the previous room's portrait dimensions until the
+      // next metadata event makes a following landscape room render inside a
+      // portrait FittedBox and visibly squashes the picture.
+      _resetVideoGeometry();
     }
     if (_currentPlayer == null || _runtimeEngine == null) {
       if (_defaultEngine == null) {
@@ -893,7 +904,6 @@ class PlayerManager {
   Future<void> exitPip() async {
     if (Platform.isWindows) {
       await WindowService().exitWinPiP();
-      GlobalPlayerState.to.reset();
       isInPip.value = false;
     }
   }
@@ -1441,17 +1451,16 @@ class PlayerManager {
           stream: CombineLatestStream.list([width, height]),
           builder: (context, snapshot) {
             final data = snapshot.data;
-            if (data == null ||
-                data.length < 2 ||
-                data[0] == null ||
-                data[1] == null ||
-                data[0]! <= 0 ||
-                data[1]! <= 0) {
-              return const SizedBox.shrink();
-            }
-            final videoWidth = data[0]!.toDouble();
-            final videoHeight = data[1]!.toDouble();
-            return SizedBox(width: videoWidth, height: videoHeight, child: player.getVideoWidget());
+            final resolvedWidth = data != null && data.length >= 2 ? data[0] : null;
+            final resolvedHeight = data != null && data.length >= 2 ? data[1] : null;
+            // Mount the native video immediately with a 16:9 provisional size.
+            // Waiting for metadata before inserting the Surface/texture can
+            // itself prevent the first dimensions from arriving on mobile.
+            final hasCompleteGeometry =
+                resolvedWidth != null && resolvedWidth > 0 && resolvedHeight != null && resolvedHeight > 0;
+            final videoWidth = hasCompleteGeometry ? resolvedWidth.toDouble() : 1920.0;
+            final videoHeight = hasCompleteGeometry ? resolvedHeight.toDouble() : 1080.0;
+            return SizedBox(width: videoWidth, height: videoHeight, child: videoWidget);
           },
         ),
       );
@@ -1526,14 +1535,18 @@ class PlayerManager {
     isInitialized.value = false;
   }
 
-  Future<void> retry() async {
-    await _playInternal(
-      _currentUrl!,
-      _currentPlayUrls,
-      _currentHeaders,
-      room: currentFloatRoom,
-      audioOnly: _runtimeAudioOnly,
-    );
+  Future<void> retry() {
+    return _enqueuePlayerLifecycle(() async {
+      final url = _currentUrl;
+      if (url == null) return;
+      await _playInternal(
+        url,
+        _currentPlayUrls,
+        _currentHeaders,
+        room: currentFloatRoom,
+        audioOnly: _runtimeAudioOnly,
+      );
+    });
   }
 
   Future<void> _handleError(PlayerException error, {int? sessionId}) async {

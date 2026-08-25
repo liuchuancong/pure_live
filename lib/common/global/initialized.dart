@@ -10,7 +10,6 @@ import 'package:pure_live/plugins/cache_manager.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_manager.dart';
 import 'package:pure_live/common/global/initial_services.dart';
 import 'package:windows_single_instance/windows_single_instance.dart';
 import 'package:pure_live/common/global/platform/mobile_manager.dart';
@@ -81,7 +80,6 @@ class AppInitializer {
     // SettingsService was registered, then work on a later launch only because
     // the database/cache files had already been created.
     await InitialServices.init();
-    FFmpegManager.to.initialize();
     _initSmartDialog();
     initRefresh();
 

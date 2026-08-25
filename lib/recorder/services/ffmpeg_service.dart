@@ -44,6 +44,10 @@ class FFmpegService {
     required String command,
     required void Function(FFmpegEvent event) onEvent,
   }) async {
+    // Prewarming at application startup is best-effort. Keep this guard at
+    // the service boundary because audio extraction and video processing also
+    // call FFmpegService directly instead of going through FFmpegManager.
+    await _ensureInitialized();
     onEvent(FFmpegEvent(taskId: taskId, type: FFmpegEventType.started));
 
     final ffempgSession = FFmpegKit.createSession(command);

@@ -118,6 +118,40 @@ void main() {
     await manager.dispose();
   });
 
+  test('a new room clears stale portrait geometry before its metadata arrives', () async {
+    final player = _FakePlayer();
+    final manager = _createManager(player);
+
+    await manager.play(
+      'https://example.invalid/portrait.flv',
+      const <String>['https://example.invalid/portrait.flv'],
+      const <String, String>{},
+      room: LiveRoom(roomId: 'portrait-room', platform: 'test'),
+    );
+    player.emitVideoSize(width: 1080, height: 1920);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(manager.isVerticalVideo.value, isTrue);
+    expect(manager.currentVideoRatio, closeTo(9 / 16, 0.001));
+
+    await manager.play(
+      'https://example.invalid/landscape.flv',
+      const <String>['https://example.invalid/landscape.flv'],
+      const <String, String>{},
+      room: LiveRoom(roomId: 'landscape-room', platform: 'test'),
+    );
+
+    expect(manager.isVerticalVideo.value, isFalse);
+    expect(manager.currentVideoRatio, closeTo(16 / 9, 0.001));
+
+    player.emitVideoSize(width: 1920, height: 1080);
+    await Future<void>.delayed(Duration.zero);
+    expect(manager.isVerticalVideo.value, isFalse);
+    expect(manager.currentVideoRatio, closeTo(16 / 9, 0.001));
+
+    await manager.dispose();
+  });
+
   test('a delayed media-service sync never blocks or rolls back the native mode change', () async {
     final player = _FakePlayer();
     final syncStarted = Completer<void>();
@@ -570,6 +604,13 @@ class _FakePlayer implements UnifiedPlayer {
   int hardDisposeCalls = 0;
   bool _initialized = false;
   bool _audioOnly = false;
+  final StreamController<int?> _widthController = StreamController<int?>.broadcast();
+  final StreamController<int?> _heightController = StreamController<int?>.broadcast();
+
+  void emitVideoSize({required int width, required int height}) {
+    _widthController.add(width);
+    _heightController.add(height);
+  }
 
   @override
   Future<void> init({bool audioOnly = false}) async {
@@ -652,10 +693,10 @@ class _FakePlayer implements UnifiedPlayer {
   Stream<PlayerState> get onStateChanged => const Stream<PlayerState>.empty();
 
   @override
-  Stream<int?> get width => const Stream<int?>.empty();
+  Stream<int?> get width => _widthController.stream;
 
   @override
-  Stream<int?> get height => const Stream<int?>.empty();
+  Stream<int?> get height => _heightController.stream;
 
   @override
   PlayerEngine get engine => PlayerEngine.fijk;

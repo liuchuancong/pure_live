@@ -2,7 +2,7 @@
   "version": "3.0.0",
   "build_number": 4087,
   "version_num": 300004087,
-  "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@fd35593f，吸收关注页、热门页响应状态绑定及 Android ABI 版本管理调整，并保留维护仓库更新源。\n- 修复 Android 录制失败：播放器与录制器统一平台请求头，斗鱼补齐房间 Referer、Origin、User-Agent 与 DID Cookie；签名 URL、输出路径正确引用，临时缺失音视频轨不再直接终止。\n- 过期 CDN 403/404 与 I/O 错误重新解析最新播放地址后有界重试；本地路径、权限和命令错误停止重试，录制目录写入能力先探测再申请权限。\n- 录制进度更新不再每次重排完整任务列表，持久化写入合并为两秒节流；平台名和主播名统一清理非法路径字符及 Windows 保留名。\n- 关注平台列表变化后按平台身份保留当前选择；修正全平台发布工作流的 Windows artifact SHA、发布成功门禁，并固定第三方 Action 提交。\n- 依赖锁统一使用 pub.dev 当前归档哈希；除需全应用 material_ui 迁移的 dynamic_color 2.x 外，直接依赖保持当前工具链可兼容的最新版本。\n- Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按资源策略串行构建并发布。",
+  "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@e4d0d2fb，吸收关注页/热门页状态绑定、Android ABI 管理、播放器生命周期串行化、移动端画面适配、录制初始化与 Bilibili 线路递归修复，并保留维护仓库更新源。\n- 修复 Android 录制失败：播放器与录制器统一平台请求头，斗鱼补齐房间 Referer、Origin、User-Agent 与 DID Cookie；签名 URL、输出路径正确引用，临时缺失音视频轨不再直接终止。\n- 过期 CDN 403/404 与 I/O 错误重新解析最新播放地址后有界重试；本地路径、权限和命令错误停止重试，录制目录写入能力先探测再申请权限。\n- 录制进度更新不再每次重排完整任务列表，持久化写入合并为两秒节流；平台名和主播名统一清理非法路径字符及 Windows 保留名。\n- 关注平台列表变化后按平台身份保留当前选择；修正全平台发布工作流的 Windows artifact SHA、发布成功门禁，并固定第三方 Action 提交。\n- 依赖锁统一使用 pub.dev 当前归档哈希；除需全应用 material_ui 迁移的 dynamic_color 2.x 外，直接依赖保持当前工具链可兼容的最新版本。\n- Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按资源策略串行构建并发布。",
   "prerelease": false,
   "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.0",
   "android_abis": [
@@ -13,7 +13,7 @@
       "version": "3.0.0",
       "build_number": 4087,
       "version_num": 300004087,
-      "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@fd35593f，吸收关注页、热门页响应状态绑定及 Android ABI 版本管理调整，并保留维护仓库更新源。\n- 修复 Android 录制失败：播放器与录制器统一平台请求头，斗鱼补齐房间 Referer、Origin、User-Agent 与 DID Cookie；签名 URL、输出路径正确引用，临时缺失音视频轨不再直接终止。\n- 过期 CDN 403/404 与 I/O 错误重新解析最新播放地址后有界重试；本地路径、权限和命令错误停止重试，录制目录写入能力先探测再申请权限。\n- 录制进度更新不再每次重排完整任务列表，持久化写入合并为两秒节流；平台名和主播名统一清理非法路径字符及 Windows 保留名。\n- 关注平台列表变化后按平台身份保留当前选择；修正全平台发布工作流的 Windows artifact SHA、发布成功门禁，并固定第三方 Action 提交。\n- 依赖锁统一使用 pub.dev 当前归档哈希；除需全应用 material_ui 迁移的 dynamic_color 2.x 外，直接依赖保持当前工具链可兼容的最新版本。\n- Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按资源策略串行构建并发布。",
+      "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@e4d0d2fb，吸收关注页/热门页状态绑定、Android ABI 管理、播放器生命周期串行化、移动端画面适配、录制初始化与 Bilibili 线路递归修复，并保留维护仓库更新源。\n- 修复 Android 录制失败：播放器与录制器统一平台请求头，斗鱼补齐房间 Referer、Origin、User-Agent 与 DID Cookie；签名 URL、输出路径正确引用，临时缺失音视频轨不再直接终止。\n- 过期 CDN 403/404 与 I/O 错误重新解析最新播放地址后有界重试；本地路径、权限和命令错误停止重试，录制目录写入能力先探测再申请权限。\n- 录制进度更新不再每次重排完整任务列表，持久化写入合并为两秒节流；平台名和主播名统一清理非法路径字符及 Windows 保留名。\n- 关注平台列表变化后按平台身份保留当前选择；修正全平台发布工作流的 Windows artifact SHA、发布成功门禁，并固定第三方 Action 提交。\n- 依赖锁统一使用 pub.dev 当前归档哈希；除需全应用 material_ui 迁移的 dynamic_color 2.x 外，直接依赖保持当前工具链可兼容的最新版本。\n- Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按资源策略串行构建并发布。",
       "prerelease": false,
       "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.0",
       "android_abis": [
@@ -24,7 +24,7 @@
       "version": "3.0.0",
       "build_number": 4087,
       "version_num": 300004087,
-      "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@fd35593f，吸收关注页、热门页响应状态绑定及 Android ABI 版本管理调整，并保留维护仓库更新源。\n- 修复 Android 录制失败：播放器与录制器统一平台请求头，斗鱼补齐房间 Referer、Origin、User-Agent 与 DID Cookie；签名 URL、输出路径正确引用，临时缺失音视频轨不再直接终止。\n- 过期 CDN 403/404 与 I/O 错误重新解析最新播放地址后有界重试；本地路径、权限和命令错误停止重试，录制目录写入能力先探测再申请权限。\n- 录制进度更新不再每次重排完整任务列表，持久化写入合并为两秒节流；平台名和主播名统一清理非法路径字符及 Windows 保留名。\n- 关注平台列表变化后按平台身份保留当前选择；修正全平台发布工作流的 Windows artifact SHA、发布成功门禁，并固定第三方 Action 提交。\n- 依赖锁统一使用 pub.dev 当前归档哈希；除需全应用 material_ui 迁移的 dynamic_color 2.x 外，直接依赖保持当前工具链可兼容的最新版本。\n- Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按资源策略串行构建并发布。",
+      "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@e4d0d2fb，吸收关注页/热门页状态绑定、Android ABI 管理、播放器生命周期串行化、移动端画面适配、录制初始化与 Bilibili 线路递归修复，并保留维护仓库更新源。\n- 修复 Android 录制失败：播放器与录制器统一平台请求头，斗鱼补齐房间 Referer、Origin、User-Agent 与 DID Cookie；签名 URL、输出路径正确引用，临时缺失音视频轨不再直接终止。\n- 过期 CDN 403/404 与 I/O 错误重新解析最新播放地址后有界重试；本地路径、权限和命令错误停止重试，录制目录写入能力先探测再申请权限。\n- 录制进度更新不再每次重排完整任务列表，持久化写入合并为两秒节流；平台名和主播名统一清理非法路径字符及 Windows 保留名。\n- 关注平台列表变化后按平台身份保留当前选择；修正全平台发布工作流的 Windows artifact SHA、发布成功门禁，并固定第三方 Action 提交。\n- 依赖锁统一使用 pub.dev 当前归档哈希；除需全应用 material_ui 迁移的 dynamic_color 2.x 外，直接依赖保持当前工具链可兼容的最新版本。\n- Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按资源策略串行构建并发布。",
       "prerelease": false,
       "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.0",
       "windows_msix_available": true
@@ -33,7 +33,7 @@
       "version": "3.0.0",
       "build_number": 4087,
       "version_num": 300004087,
-      "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@fd35593f，吸收关注页、热门页响应状态绑定及 Android ABI 版本管理调整，并保留维护仓库更新源。\n- 修复 Android 录制失败：播放器与录制器统一平台请求头，斗鱼补齐房间 Referer、Origin、User-Agent 与 DID Cookie；签名 URL、输出路径正确引用，临时缺失音视频轨不再直接终止。\n- 过期 CDN 403/404 与 I/O 错误重新解析最新播放地址后有界重试；本地路径、权限和命令错误停止重试，录制目录写入能力先探测再申请权限。\n- 录制进度更新不再每次重排完整任务列表，持久化写入合并为两秒节流；平台名和主播名统一清理非法路径字符及 Windows 保留名。\n- 关注平台列表变化后按平台身份保留当前选择；修正全平台发布工作流的 Windows artifact SHA、发布成功门禁，并固定第三方 Action 提交。\n- 依赖锁统一使用 pub.dev 当前归档哈希；除需全应用 material_ui 迁移的 dynamic_color 2.x 外，直接依赖保持当前工具链可兼容的最新版本。\n- Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按资源策略串行构建并发布。",
+      "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@e4d0d2fb，吸收关注页/热门页状态绑定、Android ABI 管理、播放器生命周期串行化、移动端画面适配、录制初始化与 Bilibili 线路递归修复，并保留维护仓库更新源。\n- 修复 Android 录制失败：播放器与录制器统一平台请求头，斗鱼补齐房间 Referer、Origin、User-Agent 与 DID Cookie；签名 URL、输出路径正确引用，临时缺失音视频轨不再直接终止。\n- 过期 CDN 403/404 与 I/O 错误重新解析最新播放地址后有界重试；本地路径、权限和命令错误停止重试，录制目录写入能力先探测再申请权限。\n- 录制进度更新不再每次重排完整任务列表，持久化写入合并为两秒节流；平台名和主播名统一清理非法路径字符及 Windows 保留名。\n- 关注平台列表变化后按平台身份保留当前选择；修正全平台发布工作流的 Windows artifact SHA、发布成功门禁，并固定第三方 Action 提交。\n- 依赖锁统一使用 pub.dev 当前归档哈希；除需全应用 material_ui 迁移的 dynamic_color 2.x 外，直接依赖保持当前工具链可兼容的最新版本。\n- Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按资源策略串行构建并发布。",
       "prerelease": false,
       "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.0"
     },
@@ -41,7 +41,7 @@
       "version": "3.0.0",
       "build_number": 4087,
       "version_num": 300004087,
-      "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@fd35593f，吸收关注页、热门页响应状态绑定及 Android ABI 版本管理调整，并保留维护仓库更新源。\n- 修复 Android 录制失败：播放器与录制器统一平台请求头，斗鱼补齐房间 Referer、Origin、User-Agent 与 DID Cookie；签名 URL、输出路径正确引用，临时缺失音视频轨不再直接终止。\n- 过期 CDN 403/404 与 I/O 错误重新解析最新播放地址后有界重试；本地路径、权限和命令错误停止重试，录制目录写入能力先探测再申请权限。\n- 录制进度更新不再每次重排完整任务列表，持久化写入合并为两秒节流；平台名和主播名统一清理非法路径字符及 Windows 保留名。\n- 关注平台列表变化后按平台身份保留当前选择；修正全平台发布工作流的 Windows artifact SHA、发布成功门禁，并固定第三方 Action 提交。\n- 依赖锁统一使用 pub.dev 当前归档哈希；除需全应用 material_ui 迁移的 dynamic_color 2.x 外，直接依赖保持当前工具链可兼容的最新版本。\n- Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按资源策略串行构建并发布。",
+      "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@e4d0d2fb，吸收关注页/热门页状态绑定、Android ABI 管理、播放器生命周期串行化、移动端画面适配、录制初始化与 Bilibili 线路递归修复，并保留维护仓库更新源。\n- 修复 Android 录制失败：播放器与录制器统一平台请求头，斗鱼补齐房间 Referer、Origin、User-Agent 与 DID Cookie；签名 URL、输出路径正确引用，临时缺失音视频轨不再直接终止。\n- 过期 CDN 403/404 与 I/O 错误重新解析最新播放地址后有界重试；本地路径、权限和命令错误停止重试，录制目录写入能力先探测再申请权限。\n- 录制进度更新不再每次重排完整任务列表，持久化写入合并为两秒节流；平台名和主播名统一清理非法路径字符及 Windows 保留名。\n- 关注平台列表变化后按平台身份保留当前选择；修正全平台发布工作流的 Windows artifact SHA、发布成功门禁，并固定第三方 Action 提交。\n- 依赖锁统一使用 pub.dev 当前归档哈希；除需全应用 material_ui 迁移的 dynamic_color 2.x 外，直接依赖保持当前工具链可兼容的最新版本。\n- Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按资源策略串行构建并发布。",
       "prerelease": false,
       "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.0"
     },
@@ -49,7 +49,7 @@
       "version": "3.0.0",
       "build_number": 4087,
       "version_num": 300004087,
-      "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@fd35593f，吸收关注页、热门页响应状态绑定及 Android ABI 版本管理调整，并保留维护仓库更新源。\n- 修复 Android 录制失败：播放器与录制器统一平台请求头，斗鱼补齐房间 Referer、Origin、User-Agent 与 DID Cookie；签名 URL、输出路径正确引用，临时缺失音视频轨不再直接终止。\n- 过期 CDN 403/404 与 I/O 错误重新解析最新播放地址后有界重试；本地路径、权限和命令错误停止重试，录制目录写入能力先探测再申请权限。\n- 录制进度更新不再每次重排完整任务列表，持久化写入合并为两秒节流；平台名和主播名统一清理非法路径字符及 Windows 保留名。\n- 关注平台列表变化后按平台身份保留当前选择；修正全平台发布工作流的 Windows artifact SHA、发布成功门禁，并固定第三方 Action 提交。\n- 依赖锁统一使用 pub.dev 当前归档哈希；除需全应用 material_ui 迁移的 dynamic_color 2.x 外，直接依赖保持当前工具链可兼容的最新版本。\n- Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按资源策略串行构建并发布。",
+      "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@e4d0d2fb，吸收关注页/热门页状态绑定、Android ABI 管理、播放器生命周期串行化、移动端画面适配、录制初始化与 Bilibili 线路递归修复，并保留维护仓库更新源。\n- 修复 Android 录制失败：播放器与录制器统一平台请求头，斗鱼补齐房间 Referer、Origin、User-Agent 与 DID Cookie；签名 URL、输出路径正确引用，临时缺失音视频轨不再直接终止。\n- 过期 CDN 403/404 与 I/O 错误重新解析最新播放地址后有界重试；本地路径、权限和命令错误停止重试，录制目录写入能力先探测再申请权限。\n- 录制进度更新不再每次重排完整任务列表，持久化写入合并为两秒节流；平台名和主播名统一清理非法路径字符及 Windows 保留名。\n- 关注平台列表变化后按平台身份保留当前选择；修正全平台发布工作流的 Windows artifact SHA、发布成功门禁，并固定第三方 Action 提交。\n- 依赖锁统一使用 pub.dev 当前归档哈希；除需全应用 material_ui 迁移的 dynamic_color 2.x 外，直接依赖保持当前工具链可兼容的最新版本。\n- Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按资源策略串行构建并发布。",
       "prerelease": false,
       "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.0"
     }

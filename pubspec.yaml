@@ -93,7 +93,7 @@ dependencies:
   flex_color_picker: ^3.7.2 # 颜色选择器
   bordered_text: ^3.0.2 # 带边框文字
   flutter_color: ^2.1.1 # 颜色工具
-  syncfusion_flutter_sliders: ^34.2.4 # 滑块组件
+  syncfusion_flutter_sliders: ^34.2.5 # 滑块组件
   markdown_widget: ^2.3.2+8 # Markdown渲染
 
   # -------------------------- 图标/字体 --------------------------
