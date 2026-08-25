@@ -188,6 +188,12 @@ try {
         Copy-Item -LiteralPath $apkSource -Destination $artifactPath -Force
         $artifactPaths += [IO.Path]::GetFullPath($artifactPath)
     } else {
+        $pubGetExitCode = Invoke-PureLiveLoggedFlutter `
+            -Arguments @('pub', 'get', '--enforce-lockfile') `
+            -LogPath $commandLog
+        Assert-PureLiveCommandSucceeded 'Windows locked dependency resolution' -ExitCode $pubGetExitCode
+        & (Join-Path $PSScriptRoot 'prefetch_windows_native.ps1')
+
         $windowsArgs = @(
             'build', 'windows', "--$configurationLower",
             '--dart-define=PURELIVE_BUILD_SOURCE=local'

@@ -10,6 +10,7 @@ $requiredFiles = @(
     'tool\build_resource_guard.ps1',
     'tool\local_ci.ps1',
     'tool\build_local_release.ps1',
+    'tool\prefetch_windows_native.ps1',
     'android\gradle.properties'
 )
 foreach ($relativePath in $requiredFiles) {
@@ -27,6 +28,7 @@ $powerShellFiles = @(
     'tool\build_resource_guard.ps1',
     'tool\local_ci.ps1',
     'tool\build_local_release.ps1',
+    'tool\prefetch_windows_native.ps1',
     'tool\flutterw.ps1',
     'tool\validate_build_policy.ps1'
 )
@@ -95,6 +97,7 @@ foreach ($marker in @(
     '[Parameter(Mandatory = $true)][int] $ExitCode',
     'PSNativeCommandUseErrorActionPreference',
     'PureLive-$artifactVersion-android-arm64-v8a-release.apk',
+    "Join-Path `$PSScriptRoot 'prefetch_windows_native.ps1'",
     '/DArtifactVersion=$artifactVersion',
     'build\windows\x64\install_manifest.txt',
     'Retired QuickJS runtime files appeared in the Windows package',
@@ -142,6 +145,7 @@ foreach ($marker in @(
     'flutter test --concurrency=12',
     '--target-platform android-arm64',
     'PureLive-${VERSION}-android-arm64-v8a-release.apk',
+    'Prefetch verified Firebase C++ SDK',
     'steps.version.outputs.artifact_version',
     "!inputs.build_windows || needs.windows.result == 'success'",
     "!(inputs.build_macos || inputs.build_ios) || needs.apple.result == 'success'",

@@ -12,6 +12,7 @@
 - 修复 #791 Android 录制链路：统一请求头、补齐斗鱼反盗链信息、重新解析过期 CDN、引用 FFmpeg 参数、允许短时单轨输入、清理目录组件并降低高频持久化开销。
 - 修复正式发布工作流的 Windows artifact Action 无效 SHA，固定第三方 Action 完整提交，并阻止任一请求平台失败后创建不完整 Release。
 - 修复 Windows 长路径本机构建的 Kotlin 增量缓存跨盘回退：优先使用与 Pub 缓存同盘的稳定短路径目录联接，保留 `SUBST` 兼容后备。
+- 修复 Windows Firebase C++ SDK 大文件下载中断及旧 `extracted` 目录串版：增加续传、长度/ZIP/SHA256/版本头校验，并显式绑定 13.11.0 SDK。
 - 保持 `wzgrx/pure_live` 为应用内更新、版本历史和下载源；上游仓库地址只用于源码基线与贡献链接。
 - 复核所有直接依赖、Git 固定提交、Gradle/AGP/Flutter 组合和 40 项公开平台接口合同。
 

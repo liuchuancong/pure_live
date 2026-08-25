@@ -46,6 +46,8 @@ Windows 增量构建目录可能保留已移除插件的旧 DLL 或资源。正�
 `build/windows/x64/install_manifest.txt` 与经审查的 runner 运行时小型白名单建立独立打包
 目录，并排除开发文件；禁止直接复制整个 `runner/Release` 目录。
 
+Windows Firebase C++ SDK 由 `tool/prefetch_windows_native.ps1` 在构建前按插件声明版本预取：断点续传并重试大型归档，核对服务端长度与 ZIP 结构，写入 SHA256 记录，校验解压后的版本头文件，并通过 `FIREBASE_CPP_SDK_DIR` 避免 CMake 误复用旧版本的通用 `extracted` 目录。
+
 ## 4. 验证策略
 
 - 修改过程中优先运行直接相关的单元/Widget 测试或模块检查。

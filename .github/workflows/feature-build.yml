@@ -123,6 +123,10 @@ jobs:
       - name: Resolve locked packages
         run: flutter pub get --enforce-lockfile
 
+      - name: Prefetch verified Firebase C++ SDK
+        shell: pwsh
+        run: .\tool\prefetch_windows_native.ps1
+
       - name: Generate production AppConfig
         run: |
           dart run enven \
