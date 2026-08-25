@@ -1372,5 +1372,7 @@
     "open_download_confirm": "Do you want to download this file?",
     "open_panel": "Open Panel",
     "close_panel": "Close Panel",
-    "play_settings": "Play Settings"
+    "play_settings": "Play Settings",
+    "recording_cannot_start": "无法开始录制",
+    "recording_private_storage": "当前录制目录位于 Android 应用私有目录，请重新选择录制目录。"
 }
