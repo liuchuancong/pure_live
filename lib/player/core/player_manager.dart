@@ -2,26 +2,18 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:developer';
 import 'dart:math' as math;
-
 import 'line_fallback_manager.dart';
 import '../models/player_state.dart';
 import '../models/player_engine.dart';
 import 'engine_fallback_manager.dart';
-
 import 'package:floating/floating.dart';
 import 'package:flutter/scheduler.dart';
-
 import '../models/player_exception.dart';
-
 import 'package:remixicon/remixicon.dart';
-
 import '../models/player_error_type.dart';
-
 import 'package:rxdart/rxdart.dart' hide Rx;
 import 'package:pure_live/common/index.dart';
-
 import '../interface/unified_player_interface.dart';
-
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
@@ -35,6 +27,14 @@ import 'package:pure_live/player/adapters/player_adapter_factory.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/compact_danmaku_overlay.dart';
+
+
+
+
+
+
+
+
 
 typedef UnifiedPlayerCreator = FutureOr<UnifiedPlayer> Function(PlayerEngine engine);
 
@@ -1430,8 +1430,33 @@ class PlayerManager {
     // FittedBox makes the media_kit output-size guard see the source dimensions
     // instead of the real viewport, which wastes GPU memory. Waiting for the
     // dimension streams before mounting also creates a first-frame deadlock.
+    final videoWidget = player.getVideoWidget();
+
     _applyVideoFit(player, boxFit);
-    return player.getVideoWidget();
+    if (PlatformUtils.isMobile) {
+      return FittedBox(
+        fit: boxFit,
+        clipBehavior: Clip.hardEdge,
+        child: StreamBuilder<List<int?>>(
+          stream: CombineLatestStream.list([width, height]),
+          builder: (context, snapshot) {
+            final data = snapshot.data;
+            if (data == null ||
+                data.length < 2 ||
+                data[0] == null ||
+                data[1] == null ||
+                data[0]! <= 0 ||
+                data[1]! <= 0) {
+              return const SizedBox.shrink();
+            }
+            final videoWidth = data[0]!.toDouble();
+            final videoHeight = data[1]!.toDouble();
+            return SizedBox(width: videoWidth, height: videoHeight, child: player.getVideoWidget());
+          },
+        ),
+      );
+    }
+    return videoWidget;
   }
 
   Widget _buildPlaceholder() {
