@@ -54,7 +54,7 @@
 | 平台 | 目标产物 | 架构/说明 |
 |---|---|---|
 | Android | `PureLive-3.0.0-4087-android-arm64-v8a-release.apk` | arm64-v8a，正式签名 |
-| Windows | `PureLive-3.0.0-4087-windows-x64-setup.exe` / `.msix` | Windows 10/11 x64 |
+| Windows | `PureLive-3.0.0-4087-windows-x64-setup.exe` / `portable.zip` | Windows 10/11 x64；安装版或目录便携版 |
 | Linux | `PureLive-3.0.0-4087-linux-x64.tar.gz` | Ubuntu 24.04 构建基线 |
 | macOS | `PureLive-3.0.0-4087-macos-universal.zip` / `.dmg` | Apple Silicon + Intel |
 | iOS | `PureLive-3.0.0-4087-ios-arm64-unsigned-app.zip` / `trollstore.ipa` | arm64 |

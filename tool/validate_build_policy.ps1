@@ -185,7 +185,12 @@ foreach ($marker in @(
     'name: pure-live-ios',
     'ios-arm64-trollstore.ipa',
     'Verify Android release signature',
-    'certificate SHA-256 digest'
+    'certificate SHA-256 digest',
+    'EXPECTED_ANDROID_CERT_SHA256',
+    "android_source == 'preuploaded-release'",
+    '.github/workflows/local-signed-android.yml',
+    'Windows package source does not match the release commit',
+    'gh release delete-asset'
 )) {
     if (-not $publisherWorkflow.Contains($marker)) {
         throw "Staged publisher verification marker is missing: $marker"

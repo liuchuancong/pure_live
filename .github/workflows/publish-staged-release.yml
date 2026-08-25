@@ -8,9 +8,18 @@ on:
         required: true
         type: string
       android_run_id:
-        description: Completed local-signed-android run containing the signed arm64 APK
-        required: true
+        description: Completed Android artifact run (unused when reusing a signed APK from the draft release)
+        required: false
         type: string
+        default: ''
+      android_source:
+        description: Download Android from a workflow artifact or reuse the locally built/GitHub-signed draft asset
+        required: true
+        type: choice
+        options:
+          - workflow-artifact
+          - preuploaded-release
+        default: workflow-artifact
       release_tag:
         description: Release tag matching the version in pubspec.yaml
         required: true
@@ -148,8 +157,10 @@ jobs:
       RELEASE_TAG: ${{ inputs.release_tag }}
       STAGE_RUN_ID: ${{ inputs.stage_run_id }}
       ANDROID_RUN_ID: ${{ inputs.android_run_id }}
+      ANDROID_SOURCE: ${{ inputs.android_source }}
       TARGET_SHA: ${{ inputs.target_sha }}
       PREUPLOADED_WINDOWS_SIGNING: ${{ inputs.preuploaded_windows_signing }}
+      EXPECTED_ANDROID_CERT_SHA256: c0bb95744c81f9c7dd4535a9552775038eb5a59c5922f791d1695f45ac34ceaf
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -162,17 +173,26 @@ jobs:
         run: |
           set -euo pipefail
           stage_json="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$STAGE_RUN_ID")"
-          android_json="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ANDROID_RUN_ID")"
           test "$(jq -r .status <<<"$stage_json")" = completed
           test "$(jq -r .conclusion <<<"$stage_json")" = success
-          test "$(jq -r .status <<<"$android_json")" = completed
-          test "$(jq -r .conclusion <<<"$android_json")" = success
           test "$(jq -r .path <<<"$stage_json")" = .github/workflows/feature-build.yml
-          test "$(jq -r .path <<<"$android_json")" = .github/workflows/feature-build.yml
           test "$(jq -r .head_sha <<<"$stage_json")" = "$TARGET_SHA"
-          test "$(jq -r .head_sha <<<"$android_json")" = "$TARGET_SHA"
           echo "stage_sha=$(jq -r .head_sha <<<"$stage_json")" >> "$GITHUB_OUTPUT"
-          echo "android_sha=$(jq -r .head_sha <<<"$android_json")" >> "$GITHUB_OUTPUT"
+          if [[ "$ANDROID_SOURCE" = workflow-artifact ]]; then
+            [[ "$ANDROID_RUN_ID" =~ ^[0-9]+$ ]]
+            android_json="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ANDROID_RUN_ID")"
+            test "$(jq -r .status <<<"$android_json")" = completed
+            test "$(jq -r .conclusion <<<"$android_json")" = success
+            android_workflow="$(jq -r .path <<<"$android_json")"
+            case "$android_workflow" in
+              .github/workflows/feature-build.yml|.github/workflows/local-signed-android.yml) ;;
+              *) echo "Unexpected Android workflow: $android_workflow"; exit 1 ;;
+            esac
+            test "$(jq -r .head_sha <<<"$android_json")" = "$TARGET_SHA"
+            echo "android_sha=$(jq -r .head_sha <<<"$android_json")" >> "$GITHUB_OUTPUT"
+          else
+            echo "android_sha=$TARGET_SHA" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Download local Windows packages
         if: ${{ inputs.windows_source == 'self-hosted' }}
@@ -198,12 +218,25 @@ jobs:
             > downloads/windows/WINDOWS_SOURCE_COMMIT.txt
 
       - name: Download signed Android package
+        if: ${{ inputs.android_source == 'workflow-artifact' }}
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v7.0.1
         with:
           name: pure-live-android
           path: downloads/android
           run-id: ${{ inputs.android_run_id }}
           github-token: ${{ github.token }}
+
+      - name: Download pre-uploaded signed Android package
+        if: ${{ inputs.android_source == 'preuploaded-release' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p downloads/android
+          gh release download "$RELEASE_TAG" \
+            --pattern 'PureLive-*-android-arm64-v8a-release.apk' \
+            --pattern 'BUILD_METADATA.json' \
+            --dir downloads/android \
+            --repo "$GITHUB_REPOSITORY"
 
       - name: Download staged Linux package
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v7.0.1
@@ -235,12 +268,22 @@ jobs:
           set -euo pipefail
           apk="$(find downloads/android -type f -name 'PureLive-*-android-arm64-v8a-release.apk' -print -quit)"
           test -n "$apk"
-          apksigner="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner -print | sort -V | tail -1)"
+          build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
+          apksigner="$build_tools/apksigner"
+          aapt="$build_tools/aapt"
           test -x "$apksigner"
+          test -x "$aapt"
+          full_version="$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -n 1)"
+          version_name="${full_version%%+*}"
+          badging="$("$aapt" dump badging "$apk")"
+          grep -F "package: name='com.mystyle.purelive'" <<<"$badging"
+          grep -F "versionName='$version_name'" <<<"$badging"
+          grep -F "native-code: 'arm64-v8a'" <<<"$badging"
           certificate_output="$("$apksigner" verify --verbose --print-certs "$apk")"
           printf '%s\n' "$certificate_output"
           certificate="$(awk -F ': ' '/certificate SHA-256 digest/ {print tolower($2); exit}' <<<"$certificate_output")"
           test -n "$certificate"
+          test "$certificate" = "$EXPECTED_ANDROID_CERT_SHA256"
           echo "Android signer SHA-256: $certificate" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Assemble and verify canonical release assets
@@ -299,6 +342,8 @@ jobs:
                   android_metadata.append(json.loads(path.read_text(encoding="utf-8-sig")))
               except (OSError, json.JSONDecodeError):
                   pass
+          if os.environ["ANDROID_SOURCE"] == "preuploaded-release" and not android_metadata:
+              raise SystemExit("pre-uploaded Android verification metadata is missing")
           if android_metadata and not any(
               item.get("android_signing") == "release"
               and item.get("source_commit") == os.environ["ANDROID_SHA"]
@@ -319,6 +364,8 @@ jobs:
           windows_source = source_files[0].read_text(encoding="ascii").strip()
           if not re.fullmatch(r"[0-9a-f]{40}", windows_source):
               raise SystemExit("Windows source commit is invalid")
+          if windows_source != os.environ["TARGET_SHA"]:
+              raise SystemExit("Windows package source does not match the release commit")
 
           metadata = {
               "version": full_version,
@@ -337,7 +384,11 @@ jobs:
                   "ios": os.environ["STAGE_SHA"],
               },
               "source_runs": {
-                  "android": int(os.environ["ANDROID_RUN_ID"]),
+                  "android": (
+                      int(os.environ["ANDROID_RUN_ID"])
+                      if os.environ["ANDROID_SOURCE"] == "workflow-artifact"
+                      else None
+                  ),
                   "stage": int(os.environ["STAGE_RUN_ID"]),
                   "publisher": int(os.environ["GITHUB_RUN_ID"]),
               },
@@ -392,6 +443,14 @@ jobs:
         run: |
           set -euo pipefail
           if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            expected_assets="$(find release-assets -maxdepth 1 -type f -printf '%f\n')"
+            while IFS= read -r asset; do
+              if ! grep -Fxq "$asset" <<<"$expected_assets"; then
+                gh release delete-asset "$RELEASE_TAG" "$asset" --yes \
+                  --repo "$GITHUB_REPOSITORY"
+              fi
+            done < <(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+              --json assets --jq '.assets[].name')
             gh release upload "$RELEASE_TAG" release-assets/* \
               --clobber --repo "$GITHUB_REPOSITORY"
             gh release edit "$RELEASE_TAG" \

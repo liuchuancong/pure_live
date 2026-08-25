@@ -27,7 +27,7 @@
       "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@cbbead4d，吸收直播页 Shell、播放器生命周期、移动画面、画中画状态、无效关注记录清理、录制配置持久化及 Android 目录检查，并保留维护仓库更新源。\n- 修复跨房间横竖屏比例串联：房间变化立即清理旧视频宽高，宽高成对有效后才应用真实比例。\n- 修复 Windows 重复启动卡顿及宽屏/全屏进入画中画后状态丢失；无参数二次启动在 Flutter engine 前拦截，协议和多窗口参数继续转发。\n- 修复 YY 部分直播间 ErrAuthNotPass：对齐当前 StreamManager 合同，失败时自动回退官方匿名移动 HLS，并实读上游 #798 房间清单。\n- 增强 Android/斗鱼录制：统一播放请求头、重新解析过期 CDN、正确引用 FFmpeg 参数、允许短时单轨输入，并隔离及探测自定义录制目录。\n- 降低启动和长时间录制开销：FFmpeg 惰性且可重试初始化，录制进度不重排全表，持久化写入节流。\n- Syncfusion sliders 更新至 34.2.5；42 项公开平台接口合同、完整测试和全平台串行发布门禁覆盖 Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64。",
       "prerelease": false,
       "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.0",
-      "windows_msix_available": true
+      "windows_msix_available": false
     },
     "linux": {
       "version": "3.0.0",

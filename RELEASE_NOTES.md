@@ -36,6 +36,7 @@ v3.0.0 build 4087 是播放状态机、平台接口、录制可靠性、Windows 
 
 - hosted 依赖统一使用官方 `pub.dev` URL与当前归档哈希；除需要全应用迁移到 `material_ui.ColorScheme` 的 `dynamic_color` 2.x 外，直接依赖均为 Flutter 3.47 当前兼容线的最新版本。
 - 修复全平台工作流中 Windows artifact Action 多余字符导致的无效 SHA；第三方 Release/读文件 Action 固定到完整提交。
+- 全平台发布汇总支持复用本机编译、GitHub Secrets 短时签名后的 Android APK与本机 Windows 包；发布前强制核对 Android 包名、版本、ABI、固定证书指纹及 Windows 源码提交，并清理草稿中的阶段资产。
 - Release 仅在本轮明确请求的每个平台都构建成功后创建，避免某个阶段失败时误发布不完整的“全平台”版本。
 - 版本：`3.0.0+4087`；Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 串行构建发布。
 
