@@ -45,7 +45,7 @@ class MenuButton extends GetView<AuthController> {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: MenuListTile(leading: const Icon(Remix.history_line), text: i18n("history")),
         ),
-        if (Platform.isWindows)
+        if (Platform.isWindows && SettingsService.to.app.enableNewWindowPlay.v)
           PopupMenuItem(
             value: 3,
             padding: const EdgeInsets.symmetric(horizontal: 12),

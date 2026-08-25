@@ -1,13 +1,19 @@
 import 'dart:io';
 import 'dart:async';
-
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 
+
 class AppSettingsController extends GetxController {
   static const int maxSleepMinutes = 525600;
-  static const List<String> defaultRealOnlinePlatforms = ['douyin', 'kuaishou', 'cc', 'twitch', 'soop'];
+  static const List<String> defaultRealOnlinePlatforms = [
+    Sites.douyinSite,
+    Sites.kuaishouSite,
+    Sites.ccSite,
+    Sites.twitchSite,
+    Sites.soopSite,
+  ];
 
   Worker? _refreshRateModeWorker;
 
@@ -34,9 +40,7 @@ class AppSettingsController extends GetxController {
   final RxBool enableAsmrSleepMode = hiveBool('enableAsmrSleepMode', false);
   final RxInt asmrSleepMinutes = hiveInt('asmrSleepMinutes', 60);
   final RxBool enableRotateScreen = hiveBool('enableRotateScreen', false);
-
   final RxBool enableScreenKeepOn = hiveBool('enableScreenKeepOn', true);
-
   final RxBool enableAutoCheckUpdate = hiveBool('enableAutoCheckUpdate', true);
   final RxBool useGitHubOriginForUpdates = hiveBool('useGitHubOriginForUpdates', false);
   final RxBool enableFullScreenDefault = hiveBool('enableFullScreenDefault', false);
@@ -45,6 +49,8 @@ class AppSettingsController extends GetxController {
   final RxBool preferRealOnlineCounts = hiveBool('preferRealOnlineCounts', false);
   late final RxList<String> realOnlinePlatforms = hiveStringList('realOnlinePlatforms', defaultRealOnlinePlatforms);
   final RxInt audienceMetricMigration = hiveInt('audienceMetricMigration', 0);
+  final RxBool enableMultiView = hiveBool('enableMultiView', false);
+  final RxBool enableNewWindowPlay = hiveBool('enableNewWindowPlay', false); 
 
   AppRefreshRateMode get refreshRateMode => AppRefreshRateMode.parse(refreshRateModeName.v);
 
@@ -152,11 +158,12 @@ class AppSettingsController extends GetxController {
       'enableFullScreenDefault': enableFullScreenDefault.v,
       'showSplashPage': showSplashPage.v,
       'refreshRateMode': refreshRateMode.storageValue,
-      // Kept for restoring this backup into older Pure Live builds.
       'enableHighRefreshRate': refreshRateMode != AppRefreshRateMode.powerSaving,
       'preferRealOnlineCounts': preferRealOnlineCounts.v,
       'realOnlinePlatforms': realOnlinePlatforms.v,
       'savedMenuIds': savedMenuIds.v,
+      'enableMultiView': enableMultiView.v,
+      'enableNewWindowPlay': enableNewWindowPlay.v,
     };
   }
 
@@ -177,6 +184,8 @@ class AppSettingsController extends GetxController {
     realOnlinePlatforms.v = List<String>.from(json['realOnlinePlatforms'] ?? defaultRealOnlinePlatforms);
     _removeUnsupportedOnlinePlatforms();
     savedMenuIds.v = List<String>.from(json['savedMenuIds'] ?? HomeMenu.values.map((e) => e.id).toList());
+    enableMultiView.v = json['enableMultiView'] ?? false;
+    enableNewWindowPlay.v = json['enableNewWindowPlay'] ?? false;
   }
 
   static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
@@ -200,6 +209,8 @@ class AppSettingsController extends GetxController {
         List<String>.from(app['realOnlinePlatforms'] ?? defaultRealOnlinePlatforms),
       ),
       'savedMenuIds': List<String>.from(app['savedMenuIds'] ?? []),
+      'enableMultiView': app['enableMultiView'] ?? false,
+      'enableNewWindowPlay': app['enableNewWindowPlay'] ?? false,
     };
   }
 

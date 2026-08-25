@@ -1,6 +1,7 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
 
 class NavigationSettingsPage extends StatelessWidget {
   const NavigationSettingsPage({super.key});
@@ -18,6 +19,18 @@ class NavigationSettingsPage extends StatelessWidget {
         physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
+          if (PlatformUtils.isWindows) ...[
+            context.buildGroupTitle(i18n("multiview_title")),
+            context.buildModernCard([
+              context.buildSwitchTile(
+                title: i18n("multiview_title"),
+                subtitle: "",
+                value: SettingsService.to.app.enableMultiView,
+                icon: Remix.layout_grid_line,
+              ),
+            ]),
+            const SizedBox(height: 16),
+          ],
           _buildTipBanner(theme),
           const SizedBox(height: 16),
           context.buildGroupTitle(i18n("navigation_display_settings")),

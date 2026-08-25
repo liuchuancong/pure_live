@@ -63,12 +63,13 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
               subtitle: i18n("gpu_decode"),
               value: SettingsService.to.player.enableCodec,
             ),
-            context.buildSwitchTile(
-              icon: Remix.image_edit_line,
-              title: i18n('enable_rtx_vsr'),
-              subtitle: i18n('enable_rtx_vsr_subtitle'),
-              value: SettingsService.to.player.enableRtxVsr,
-            ),
+            if (PlatformUtils.isWindows)
+              context.buildSwitchTile(
+                icon: Remix.image_edit_line,
+                title: i18n('enable_rtx_vsr'),
+                subtitle: i18n('enable_rtx_vsr_subtitle'),
+                value: SettingsService.to.player.enableRtxVsr,
+              ),
             context.buildSwitchTile(
               icon: Remix.shut_down_line,
               title: i18n('force_destroy_player'),
