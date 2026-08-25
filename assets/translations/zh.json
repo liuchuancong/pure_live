@@ -1372,5 +1372,7 @@
     "open_download_confirm": "是否下载？",
     "open_panel": "打开面板",
     "close_panel": "关闭面板",
-    "play_settings": "播放设置"
+    "play_settings": "播放设置",
+    "record_private_path_title": "无法开始录制",
+    "record_private_path_message": "当前录制目录位于 Android 应用私有目录，请重新选择录制目录。"
 }

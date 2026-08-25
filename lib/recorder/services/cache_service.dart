@@ -1,11 +1,11 @@
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
-import 'package:pure_live/common/global/app_path_manager.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/recorder/consts/recorder_keys.dart';
 import 'package:pure_live/recorder/services/path_helper.dart';
+import 'package:pure_live/common/global/app_path_manager.dart';
 
 typedef RecorderConfiguredPathResolver = String? Function();
 typedef RecorderDefaultDirectoryResolver = Future<Directory> Function();
@@ -40,7 +40,7 @@ class CacheService extends GetxService {
     final configuredPath = _configuredPathResolver()?.trim() ?? '';
     final Directory recordDir;
 
-    if (configuredPath.isEmpty || _samePath(configuredPath, defaultDir.path)) {
+    if (configuredPath.isEmpty || _samePath(configuredPath, defaultDir.path) || isAndroidPrivatePath(configuredPath)) {
       recordDir = defaultDir;
     } else if (p.basename(p.normalize(configuredPath)).toLowerCase() == managedFolderName.toLowerCase() &&
         await File(p.join(configuredPath, ownershipMarkerName)).exists()) {
@@ -151,6 +151,18 @@ class CacheService extends GetxService {
         // same locked file indefinitely.
       }
     }
+  }
+
+  static bool isAndroidPrivatePath(String path) {
+    if (!Platform.isAndroid) return false;
+
+    final normalized = p.normalize(path).replaceAll('\\', '/').toLowerCase();
+
+    return normalized.startsWith('/data/user/0/') ||
+        normalized.startsWith('/data/user/10/') ||
+        normalized.startsWith('/data/data/') ||
+        normalized.startsWith('/data/user_de/0/') ||
+        normalized.contains('/app_flutter/');
   }
 
   Future<String> getDisplayPath() async => (await getRecordDir()).path;

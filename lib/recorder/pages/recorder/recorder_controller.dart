@@ -8,6 +8,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/file_utils.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
 import 'package:pure_live/recorder/consts/recorder_keys.dart';
@@ -231,6 +232,13 @@ class RecorderController extends GetxService {
   }
 
   Future<void> startTask(LiveRecordTask task) async {
+    if (PlatformUtils.isAndroid) {
+      final recordPath = await CacheService.to.getDisplayPath();
+      if (CacheService.isAndroidPrivatePath(recordPath)) {
+        Get.snackbar(i18n('record_private_path_title'), i18n('record_private_path_message'));
+        return;
+      }
+    }
     task.retryCount = 0;
     task.wasStoppedByUser = false;
     task.autoReconnect = settings.autoReconnect.value;
