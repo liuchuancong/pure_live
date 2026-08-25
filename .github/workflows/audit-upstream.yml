@@ -1,0 +1,47 @@
+name: Audit Upstream Update
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: audit-upstream-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: Inventory upstream diff and current repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Fetch frozen upstream master
+        shell: bash
+        run: |
+          set -euo pipefail
+          git remote add upstream https://github.com/liuchuancong/pure_live.git
+          git fetch --no-tags upstream master
+      - name: Inventory every incoming commit and changed file
+        shell: pwsh
+        run: |
+          ./tool/review_upstream_update.ps1 `
+            -BaseRef HEAD `
+            -UpstreamRef upstream/master `
+            -ReportOnly `
+            -OutputPath local-artifacts/upstream-reviews/latest.json
+      - name: Audit every tracked repository file
+        run: python tool/audit_repository.py --output local-artifacts/repository-audits/current.json
+      - name: Upload immutable review evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: upstream-and-repository-audit
+          path: |
+            local-artifacts/upstream-reviews/latest.json
+            local-artifacts/repository-audits/current.json
+          if-no-files-found: warn
+          retention-days: 14

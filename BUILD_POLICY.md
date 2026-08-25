@@ -51,8 +51,7 @@ Windows Firebase C++ SDK 由 `tool/prefetch_windows_native.ps1` 在构建前按�
 ## 4. 验证策略
 
 - 上游同步先执行 [`UPSTREAM_REVIEW_POLICY.md`](UPSTREAM_REVIEW_POLICY.md)：冻结完整提交，运行
-  `tool/review_upstream_update.ps1`，记录高风险差异与冲突处置，再允许 merge。上游工作流、版本、
-  更新源和默认设置不得机械覆盖维护分支；播放器普通页布局必须通过确定性 Widget 回归。
+  `tool/review_upstream_update.ps1`，以 merge base 盘点全部入站提交和全部文件，记录逐文件差异与冲突处置，再允许 merge。合并后必须运行 `tool/audit_repository.py` 复核整个已跟踪仓库。上游工作流、版本、更新源和默认设置不得机械覆盖维护分支；播放器普通页布局与系统返回必须通过确定性 Widget 回归。
 - 修改过程中优先运行直接相关的单元/Widget 测试或模块检查。
 - `flutter analyze` 在本轮代码修改完成后执行一次，避免每个小改动后重复启动分析服务器。
 - 定向测试使用一个 Flutter 命令承载全部目标文件，并从 `--concurrency=12` 开始。

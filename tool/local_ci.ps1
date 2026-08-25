@@ -45,6 +45,7 @@ $resourceSummary = $null
 $remainingHeavyProcesses = $null
 $status = 'failed'
 $failureMessage = $null
+$repositoryAuditPath = Join-Path $repoRoot "local-artifacts\repository-audits\$([DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ'))-$($Scope.ToLowerInvariant()).json"
 
 Push-Location $repoRoot
 try {
@@ -58,6 +59,9 @@ try {
 
     & $flutterw pub get --enforce-lockfile
     Assert-PureLiveCommandSucceeded 'Locked dependency resolution'
+
+    python (Join-Path $PSScriptRoot 'audit_repository.py') --output $repositoryAuditPath
+    Assert-PureLiveCommandSucceeded 'Whole repository integrity audit'
 
     # Native Assets hooks share the persistent verified Windows cache. Android
     # media stays cold until an explicitly targeted Android build.
@@ -140,7 +144,7 @@ try {
         }
         peak_resources = $resourceSummary
         active_heavy_processes_after = $remainingHeavyProcesses
-        outputs = @()
+        outputs = @($repositoryAuditPath)
         automatic_follow_up = $false
     }
     $recordPath = Write-PureLiveTaskRecord -RepoRoot $repoRoot -Record $record

@@ -82,7 +82,7 @@ jobs:
       - name: Verify Flutter SDK
         run: flutter --version
       - name: Resolve packages
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
       - name: Generate production AppConfig
         run: |
           dart run enven \
@@ -138,7 +138,7 @@ jobs:
           keyAlias=$KEY_ALIAS
           EOF
       - name: Resolve packages
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
       - name: Generate production AppConfig
         run: |
           dart run enven \
@@ -215,9 +215,10 @@ jobs:
       ${{ always() &&
         github.event_name == 'workflow_dispatch' &&
         inputs.build_windows &&
-        (needs.quality.result == 'success' || needs.quality.result == 'skipped')
+        (needs.quality.result == 'success' || needs.quality.result == 'skipped') &&
+        (!inputs.build_android || needs.android.result == 'success')
       }}
-    needs: quality
+    needs: [quality, android]
     runs-on: windows-latest
     timeout-minutes: 35
     steps:
@@ -261,21 +262,18 @@ jobs:
       - name: Enable Flutter Windows
         run: flutter config --enable-windows-desktop
       - name: Resolve packages
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
       - name: Generate production AppConfig
         run: |
           dart run enven `
             --env-files .env,.env.prod `
             --class-name AppConfig
-      - name: Install fastforge and Inno Setup
+      - name: Install pinned Windows packagers
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          git clone https://github.com/SlotSun/fastforge.git
-          Set-Location fastforge
-          dart pub global activate melos
-          melos run activate
-          choco install innosetup -y
+          choco install innosetup --version=6.7.1 -y --no-progress
+          dart pub global activate fastforge 0.6.0
       - name: Copy Chinese language pack
         shell: pwsh
         run: |
@@ -284,8 +282,6 @@ jobs:
           if (Test-Path $source) {
             Copy-Item $source $target -Force
           }
-      - name: Install Fastforge
-        run: dart pub global activate fastforge
       - name: Get version
         id: version
         shell: pwsh
@@ -407,9 +403,19 @@ jobs:
         (
           needs.quality.result == 'success' ||
           needs.quality.result == 'skipped'
+        ) &&
+        (
+          github.event_name == 'push' ||
+          !inputs.build_android ||
+          needs.android.result == 'success'
+        ) &&
+        (
+          github.event_name == 'push' ||
+          !inputs.build_windows ||
+          needs.windows.result == 'success'
         )
       }}
-    needs: quality
+    needs: [quality, android, windows]
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
@@ -465,7 +471,7 @@ jobs:
       - name: Verify Flutter SDK
         run: flutter --version
       - name: Resolve packages
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
       - name: Generate production AppConfig
         run: |
           dart run enven \
@@ -529,9 +535,24 @@ jobs:
         (
           needs.quality.result == 'success' ||
           needs.quality.result == 'skipped'
+        ) &&
+        (
+          github.event_name == 'push' ||
+          !inputs.build_android ||
+          needs.android.result == 'success'
+        ) &&
+        (
+          github.event_name == 'push' ||
+          !inputs.build_windows ||
+          needs.windows.result == 'success'
+        ) &&
+        (
+          github.event_name == 'push' ||
+          !inputs.build_linux ||
+          needs.linux.result == 'success'
         )
       }}
-    needs: quality
+    needs: [quality, android, windows, linux]
     runs-on: macos-15
     timeout-minutes: 90
     steps:
@@ -549,7 +570,7 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
       - name: Resolve packages
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
       - name: Generate production AppConfig
         run: |
           dart run enven \

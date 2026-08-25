@@ -402,18 +402,11 @@ jobs:
       # Inno Setup
       # -----------------------------------------------------
 
-      - name: Install fastforge from source dependencies
+      - name: Install pinned Windows packagers
         shell: pwsh
         run: |
-          git clone https://github.com/SlotSun/fastforge.git
-
-          cd fastforge
-
-          dart pub global activate melos
-
-          melos run activate
-
-          choco install innosetup -y
+          choco install innosetup --version=6.7.1 -y --no-progress
+          dart pub global activate fastforge 0.6.0
 
       - name: Copy Chinese language pack
         shell: pwsh
@@ -424,13 +417,6 @@ jobs:
           if (Test-Path $source) {
             Copy-Item $source $target -Force
           }
-
-      # -----------------------------------------------------
-      # Fastforge
-      # -----------------------------------------------------
-
-      - name: Install Fastforge
-        run: dart pub global activate fastforge
 
       - name: Get version
         id: version

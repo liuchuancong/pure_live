@@ -385,8 +385,7 @@ class LogFileWriter {
     if (_isInitialized) return;
 
     try {
-      var supportDir = await getSafLogDir();
-      var logDir = Directory("${supportDir.path}/log");
+      final logDir = await resolveLogDirectory();
       if (!await logDir.exists()) {
         await logDir.create(recursive: true);
       }
@@ -402,19 +401,15 @@ class LogFileWriter {
     }
   }
 
-  Future<Directory> getSafLogDir() async {
-    Directory logDir;
+  static Future<Directory> resolveLogDirectory() async {
     if (Platform.isAndroid) {
       final dir = await getDownloadsDirectory();
-      logDir = Directory(path.join(dir!.path, AppPathManager.dirLogs));
-    } else {
-      logDir = await AppPathManager().getDir(AppPathManager.dirLogs);
+      if (dir == null) {
+        throw const FileSystemException('Downloads directory is unavailable');
+      }
+      return Directory(AppPathManager.logFilesDirectoryPath(path.join(dir.path, AppPathManager.dirLogs)));
     }
-
-    if (!await logDir.exists()) {
-      await logDir.create(recursive: true);
-    }
-    return logDir;
+    return AppPathManager().logFilesDir;
   }
 
   void write(String content) {

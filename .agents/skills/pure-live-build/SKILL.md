@@ -12,8 +12,10 @@ Before selecting or running a validation/build command, read [`../../../BUILD_PO
 1. Extract only the platform, architecture, configuration, validation scope, packaging, and publication actions explicitly requested in the current task.
    For an upstream sync, freeze the full upstream SHA and run
    `tool/review_upstream_update.ps1` under `UPSTREAM_REVIEW_POLICY.md` before
-   merging; high-risk changes require a committed audit document and explicit
-   approval at the gate.
+   merging. The range must be merge-base-to-upstream, every incoming commit and
+   file must be classified, and any incoming change requires a committed audit
+   document plus explicit approval at the gate. After merging, run
+   `python tool/audit_repository.py` before tests or packaging.
 2. Keep one platform/variant per build invocation. Queue Android, Windows, Linux, macOS, and iOS stages serially.
 3. During development, use focused tests and target-platform Debug. Run Analyze once after edits settle.
 4. Use full regression and target-platform Release only for formal delivery.

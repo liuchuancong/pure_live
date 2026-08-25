@@ -75,13 +75,15 @@ class AppSettingsController extends GetxController {
       audienceMetricMigration.v = 2;
     }
     _removeUnsupportedOnlinePlatforms();
-    if (Platform.isAndroid) {
+    if (Platform.isAndroid || Platform.isWindows) {
       // Persist the migrated value once so later upgrades no longer depend on
       // the legacy boolean. Existing `true` maps to balanced; a fresh install
       // starts in power-saving mode.
       if (!HivePrefUtil.containsKey('refreshRateMode')) {
         unawaited(HivePrefUtil.setString('refreshRateMode', refreshRateMode.storageValue));
       }
+    }
+    if (Platform.isAndroid) {
       AdaptiveRefreshRateController.setMode(refreshRateMode);
       _refreshRateModeWorker = ever<String>(
         refreshRateModeName,

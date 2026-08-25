@@ -1,13 +1,12 @@
 import 'dart:io';
 
-import 'package:path/path.dart' as path;
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/modules/backup/scan_page.dart';
 import 'package:pure_live/modules/auth/auth_controller.dart';
-import 'package:pure_live/common/global/app_path_manager.dart';
 import 'package:pure_live/plugins/backup_recovery_service.dart';
 import 'package:pure_live/common/services/settings/log_controller.dart';
 
@@ -25,20 +24,15 @@ class _BackupPageState extends State<BackupPage> {
 
   Future<void> _openLogDirectory() async {
     try {
-      Directory logDir;
-      if (Platform.isAndroid) {
-        final dir = await getDownloadsDirectory();
-        logDir = Directory(path.join(dir!.path, AppPathManager.dirLogs));
-      } else {
-        logDir = await AppPathManager().getDir(AppPathManager.dirLogs);
-      }
-
-      if (await logDir.exists()) {
-        FileUtils.openFileOrUrl(path.join(logDir.path, 'log'));
-      } else {
+      final logDir = await LogFileWriter.resolveLogDirectory();
+      if (!await logDir.exists()) {
         ToastUtil.show(i18n('log_dir_not_exist'));
+        return;
       }
-    } catch (e) {
+      if (!await FileUtils.openFileOrUrl(logDir.path)) {
+        ToastUtil.show(i18n('open_log_dir_failed'));
+      }
+    } catch (_) {
       ToastUtil.show(i18n('open_log_dir_failed'));
     }
   }

@@ -1,7 +1,10 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/live_play/widgets/keyboard/video_keyboard.dart';
+import 'package:pure_live/modules/live_play/widgets/layout/live_play_back_scope.dart';
 import 'package:pure_live/modules/live_play/widgets/layout/live_play_content.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/controllers/player_state.dart';
+import 'package:pure_live/modules/live_play/states/ui_state.dart';
 
 class LivePlayPage extends GetView<LivePlayController> {
   const LivePlayPage({super.key});
@@ -15,19 +18,27 @@ class LivePlayPage extends GetView<LivePlayController> {
       final state = controller.state.value;
       final mode = state.ui.screenMode;
       final videoController = state.player.videoController;
+      final globalState = GlobalPlayerState.to;
+      final presentationActive =
+          !isInPip &&
+          (mode != VideoMode.normal || globalState.isFullscreen.value || globalState.isWindowFullscreen.value);
 
       final child = LivePlayContent(controller: controller, isInPip: isInPip, mode: mode);
 
       final content = _withLocalGiftEffect(child);
 
-      if (videoController != null) {
-        return VideoKeyboardShortcuts(
-          controller: videoController,
-          child: Container(color: Colors.black, width: double.infinity, height: double.infinity, child: content),
-        );
-      }
+      final page = videoController != null
+          ? VideoKeyboardShortcuts(
+              controller: videoController,
+              child: Container(color: Colors.black, width: double.infinity, height: double.infinity, child: content),
+            )
+          : Container(color: Colors.black, width: double.infinity, height: double.infinity, child: content);
 
-      return Container(color: Colors.black, width: double.infinity, height: double.infinity, child: content);
+      return LivePlayBackScope(
+        presentationActive: presentationActive,
+        onExitPresentation: controller.exitPresentationForSystemBack,
+        child: page,
+      );
     });
   }
 

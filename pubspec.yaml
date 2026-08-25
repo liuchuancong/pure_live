@@ -1,7 +1,7 @@
 name: pure_live
 description: 纯粹直播,一款开源的第三方多平台直播聚合播放器.
 publish_to: none
-version: 3.0.0+4087
+version: 3.0.0+4088
 
 environment:
   sdk: ^3.13.0
@@ -159,7 +159,7 @@ dependencies:
     git:
       url: https://github.com/guide-inc-org/guide-flutter_inappwebview.git
       path: flutter_inappwebview
-      ref: sbi_fx_pc/v6.2.0-beta.3
+      ref: 3e6c4c4a25340cd363af9d38891d88498b90be26
 
   # -------------------------- 直播协议/定制SDK --------------------------
   protobuf: ^6.0.0 # Protocol Buffers
@@ -183,7 +183,6 @@ dependencies:
 
   flutter_floating: ^2.0.1 # 悬浮窗
   qr_flutter: ^4.1.0 # 二维码生成
-  back_button_interceptor_plus: ^8.1.1
   easy_localization: ^3.0.8 #多语言
   app_links: ^7.2.1
   scroll_animator: 0.3.0

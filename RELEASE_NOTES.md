@@ -1,6 +1,15 @@
 # Pure Live v3.0.0
 
-v3.0.0 build 4087 是经上游二次审查、直播页布局回归修复、播放状态机、平台接口、录制可靠性、Windows 生命周期与全平台发布链路重新验证后的稳定更新。先前错误草稿及资产已删除，本页描述重新构建的同版本产物。
+v3.0.0 build 4088 是对错误 build 4087 的原位修正版：在既有直播页布局、播放状态机、平台接口、录制可靠性与全平台验证基础上，修复 Android 直播页系统侧滑返回失效，并加入全上游差异与全仓源码审查门禁。Release 中旧资产由同一源码提交重新构建的 build 4088 完整替换，不混用两个 build。
+
+## build 4088 返回、审查与桌面修正
+
+- 根因是直播页沿用全局 `back_button_interceptor_plus`，同时 Android Manifest 关闭预测性返回；正常返回分支还在路由真正退出前清理播放器监听。Flutter 3.47 / targetSdk 37 下，这套旧模型会和系统侧滑手势及嵌套路由竞争，表现为进入直播后侧边返回没有响应或页面状态残缺。
+- 删除全局返回拦截并启用 Android 预测性返回。直播路由使用局部 `PopScope`：普通竖屏直接退出；横屏/全屏第一次返回普通竖屏，第二次退出；弹窗和底部面板优先自行关闭；路由确认退出前不拆播放器监听。
+- 新增返回行为 Widget 回归，覆盖普通直播页、横屏/全屏两段式返回和弹窗优先级；全仓审计同时禁止重新引入全局 `SystemChannels.navigation` 或旧拦截依赖。
+- 新增手动只读 `Audit Upstream Update` 工作流：冻结上游 SHA，以 merge-base 盘点每个入站提交、文件、重命名、二进制和风险类别；合并后再扫描全部已跟踪文件。Git 依赖固定为 40 位提交，避免远端分支漂移。
+- 修正旧全平台工作流仍可能并发占用多个 runner 的问题，Android、Windows、Linux、Apple 阶段依次排队；所有平台和发布输入继续默认关闭。
+- 修复 Windows/MSIX“打开日志目录”检查父目录却打开不存在子目录、且忽略打开结果的问题；日志写入与 UI 统一解析实际 `LOGS/log` 路径。
 
 ## 上游同步与页面状态
 
@@ -42,7 +51,7 @@ v3.0.0 build 4087 是经上游二次审查、直播页布局回归修复、播�
 - 修复全平台工作流中 Windows artifact Action 多余字符导致的无效 SHA；第三方 Release/读文件 Action 固定到完整提交。
 - 全平台发布汇总支持复用本机编译、GitHub Secrets 短时签名后的 Android APK与本机 Windows 包；发布前强制核对 Android 包名、版本、ABI、固定证书指纹及 Windows 源码提交，并清理草稿中的阶段资产。
 - Release 仅在本轮明确请求的每个平台都构建成功后创建，避免某个阶段失败时误发布不完整的“全平台”版本。
-- 版本：`3.0.0+4087`；Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 串行构建发布。
+- 版本：`3.0.0+4088`；Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 串行构建发布。
 
 ---
 

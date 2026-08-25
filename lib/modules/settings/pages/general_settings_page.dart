@@ -17,7 +17,7 @@ class GeneralSettingsPage extends GetView<SettingsService> {
         children: [
           context.buildGroupTitle(i18n("general")),
           context.buildModernCard([
-            if (Platform.isAndroid)
+            if (Platform.isAndroid || Platform.isWindows)
               Obx(() {
                 final info = DisplayModeService.info.value;
                 final mode = SettingsService.to.app.refreshRateMode;

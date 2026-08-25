@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 import 'package:pure_live/common/global/app_path_manager.dart';
 
 void main() {
@@ -16,5 +17,12 @@ void main() {
       isTrue,
     );
     expect(AppPathManager.isWindowsMsixExecutablePath(r'D:\Soft\PureLive\pure_live.exe'), isFalse);
+  });
+
+  test('log files always live in the nested LOGS log directory', () {
+    expect(
+      AppPathManager.logFilesDirectoryPath(p.join('root', AppPathManager.dirLogs)),
+      p.join('root', AppPathManager.dirLogs, 'log'),
+    );
   });
 }

@@ -21,7 +21,6 @@ import 'package:pure_live/modules/live_play/states/live_play_state.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/timer_controller.dart';
-import 'package:back_button_interceptor_plus/back_button_interceptor_plus.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_session_host.dart';
@@ -73,6 +72,7 @@ class LivePlayController extends GetxController
   late final DanmakuPresentationRecovery _danmakuPresentationRecovery;
   bool _wasInSystemPip = false;
   bool _wasBackgrounded = false;
+  bool _handlingSystemBackPresentation = false;
   final List<LiveMessage> _pendingDanmakuMessages = <LiveMessage>[];
   late final LocalMessageDeliveryQueue _localMessageDeliveryQueue;
   late final String _controllerTag;
@@ -216,7 +216,6 @@ class LivePlayController extends GetxController
   }
 
   Future<void> _initCore() async {
-    _initBackInterceptor();
     final restored = _reentrySession;
     if (restored != null) {
       _reentrySession = null;
@@ -248,12 +247,6 @@ class LivePlayController extends GetxController
         developer.log('Emoji preload failed', name: 'LivePlayController', error: error, stackTrace: stackTrace);
       }),
     );
-  }
-
-  void _initBackInterceptor() {
-    if (Platform.isAndroid) {
-      BackButtonInterceptor.add(myInterceptor, zIndex: 1, name: "live_play_page");
-    }
   }
 
   Future<void> _preloadEmoji() async {
@@ -367,20 +360,36 @@ class LivePlayController extends GetxController
     if (superChats.isNotEmpty) superChats.clear();
   }
 
-  bool myInterceptor(bool stopDefaultButtonEvent, RouteInfo info) {
-    if (state.value.ui.isMenuOpen) {
-      Navigator.of(Get.context!).pop();
-      updateUI(isMenuOpen: false);
-      return true;
-    }
-    if (GlobalPlayerState.to.isFullscreen.value) {
-      setNormalScreen();
-      state.value.player.videoController?.exitFullScreen();
-      return true;
-    }
+  /// Restores the normal room presentation for one system-back attempt.
+  ///
+  /// The route-local PopScope owns whether the route can pop. Keeping teardown
+  /// out of this pre-pop path prevents a failed gesture from leaving the room
+  /// visible after its player listeners have already been removed.
+  Future<void> exitPresentationForSystemBack() async {
+    if (_handlingSystemBackPresentation || isClosed || _ownerClosed) return;
+    _handlingSystemBackPresentation = true;
 
-    state.value.player.videoController?.clearListener();
-    return false;
+    final globalState = GlobalPlayerState.to;
+    final wasFullscreen = globalState.isFullscreen.value || state.value.ui.screenMode == VideoMode.fullscreen;
+    try {
+      setNormalScreen();
+      globalState.isWindowFullscreen.value = false;
+
+      if (wasFullscreen) {
+        final videoController = state.value.player.videoController;
+        if (videoController != null) {
+          await videoController.exitFullScreen();
+        } else {
+          globalState.isFullscreen.value = false;
+        }
+      } else {
+        globalState.isFullscreen.value = false;
+      }
+    } finally {
+      globalState.isFullscreen.value = false;
+      globalState.isWindowFullscreen.value = false;
+      _handlingSystemBackPresentation = false;
+    }
   }
 
   @override
@@ -1003,10 +1012,6 @@ class LivePlayController extends GetxController
     _danmakuFlushTimer?.cancel();
     _pendingDanmakuMessages.clear();
     tabController.dispose();
-
-    if (Platform.isAndroid) {
-      BackButtonInterceptor.removeByName("live_play_page");
-    }
 
     final keepForAppFloating = GlobalPlayerService.instance.player.shouldKeepDanmakuForAppFloating;
     if (!keepForAppFloating) {

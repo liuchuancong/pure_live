@@ -10,8 +10,11 @@ $requiredFiles = @(
     '.agents\skills\pure-live-build\SKILL.md',
     'tool\build_resource_guard.ps1',
     'tool\review_upstream_update.ps1',
+    'tool\audit_repository.py',
+    '.github\workflows\audit-upstream.yml',
     'tool\local_ci.ps1',
     'tool\build_local_release.ps1',
+    'tool\publish_local_release.ps1',
     'tool\prefetch_windows_native.ps1',
     'android\gradle.properties'
 )
@@ -30,6 +33,7 @@ $powerShellFiles = @(
     'tool\build_resource_guard.ps1',
     'tool\local_ci.ps1',
     'tool\build_local_release.ps1',
+    'tool\publish_local_release.ps1',
     'tool\prefetch_windows_native.ps1',
     'tool\flutterw.ps1',
     'tool\review_upstream_update.ps1',
@@ -89,7 +93,6 @@ foreach ($marker in @(
         throw "Android Flutter configuration-cache compatibility marker is missing: $marker"
     }
 }
-
 $buildScript = Get-Content -LiteralPath (Join-Path $repoRoot 'tool\build_local_release.ps1') -Raw
 foreach ($marker in @(
     "[ValidateSet('AndroidArm64', 'WindowsX64')]",
@@ -125,9 +128,24 @@ if ($buildScript -match '--no-daemon' -or
     throw 'Build script disables a required Gradle reuse feature.'
 }
 
+$publishScript = Get-Content -LiteralPath (Join-Path $repoRoot 'tool\publish_local_release.ps1') -Raw
+foreach ($marker in @(
+    'ReplaceExistingRelease',
+    'gh release delete-asset',
+    'gh release edit $Tag --draft',
+    'git push --force origin "refs/tags/$Tag"'
+)) {
+    if (-not $publishScript.Contains($marker)) {
+        throw "Corrected-release replacement marker is missing: $marker"
+    }
+}
+
 $qualityScript = Get-Content -LiteralPath (Join-Path $repoRoot 'tool\local_ci.ps1') -Raw
 foreach ($marker in @("[ValidateSet('Focused', 'Full')]", '[int] $TestConcurrency = 12', 'Enter-PureLiveHeavyTaskSlot')) {
     if (-not $qualityScript.Contains($marker)) { throw "Quality script policy marker is missing: $marker" }
+}
+if (-not $qualityScript.Contains("audit_repository.py') --output `$repositoryAuditPath")) {
+    throw 'Quality gate must run the whole-repository audit.'
 }
 if ([regex]::Matches($qualityScript, [regex]::Escape('& $flutterw analyze')).Count -ne 1) {
     throw 'Quality script must contain exactly one Flutter Analyze invocation.'
@@ -142,9 +160,32 @@ $allPlatformWorkflow = Get-Content -LiteralPath (Join-Path $repoRoot '.github\wo
 if ([regex]::Matches($allPlatformWorkflow, '(?m)^\s+default:\s+true\s*$').Count -ne 0) {
     throw 'All-platform workflow platform/release inputs must default to false.'
 }
+foreach ($workflowText in @($featureWorkflow, $allPlatformWorkflow)) {
+    foreach ($marker in @('choco install innosetup --version=6.7.1', 'dart pub global activate fastforge 0.6.0')) {
+        if (-not $workflowText.Contains($marker)) {
+            throw "Windows packaging dependency is not pinned: $marker"
+        }
+    }
+    if ($workflowText.Contains('git clone https://github.com/SlotSun/fastforge.git')) {
+        throw 'Windows workflow must not install Fastforge from a mutable branch.'
+    }
+}
+foreach ($marker in @(
+    'needs: [quality, android]',
+    'needs: [quality, android, windows]',
+    'needs: [quality, android, windows, linux]',
+    "needs.android.result == 'success'",
+    "needs.windows.result == 'success'",
+    "needs.linux.result == 'success'"
+)) {
+    if (-not $allPlatformWorkflow.Contains($marker)) {
+        throw "All-platform workflow is missing serial-stage marker: $marker"
+    }
+}
 
 $upstreamPolicy = Get-Content -LiteralPath (Join-Path $repoRoot 'UPSTREAM_REVIEW_POLICY.md') -Raw
 $upstreamReviewScript = Get-Content -LiteralPath (Join-Path $repoRoot 'tool\review_upstream_update.ps1') -Raw
+$upstreamAuditWorkflow = Get-Content -LiteralPath (Join-Path $repoRoot '.github\workflows\audit-upstream.yml') -Raw
 foreach ($marker in @(
     'review_upstream_update.ps1',
     'normal-live-layout-visible',
@@ -154,10 +195,64 @@ foreach ($marker in @(
         throw "Upstream review policy marker is missing: $marker"
     }
 }
-foreach ($marker in @('ApproveHighRisk', 'unsafe_workflow_defaults', 'git -C $repoRoot diff --check')) {
+foreach ($marker in @(
+    'ApproveHighRisk',
+    'ReportOnly',
+    "@('merge-base', `$baseSha, `$upstreamSha)",
+    'incoming_range',
+    'audit_document_valid',
+    'credential_material_in_added_lines'
+)) {
     if (-not $upstreamReviewScript.Contains($marker)) {
         throw "Upstream review script marker is missing: $marker"
     }
+}
+foreach ($marker in @('workflow_dispatch:', 'fetch-depth: 0', '-ReportOnly', 'audit_repository.py', 'contents: read')) {
+    if (-not $upstreamAuditWorkflow.Contains($marker)) {
+        throw "Upstream audit workflow is missing required marker: $marker"
+    }
+}
+
+$repositoryAuditScript = Get-Content -LiteralPath (Join-Path $repoRoot 'tool\audit_repository.py') -Raw
+foreach ($marker in @(
+    'mutable_action_reference',
+    'mutable_git_dependency',
+    'predictive_back_disabled',
+    'global_back_interceptor_forbidden',
+    'live_back_invariant_missing',
+    'untracked_file_count',
+    'mutable_git_clone',
+    'unlocked_workflow_pub_get'
+)) {
+    if (-not $repositoryAuditScript.Contains($marker)) {
+        throw "Whole-repository audit marker is missing: $marker"
+    }
+}
+
+$androidManifest = Get-Content -LiteralPath (Join-Path $repoRoot 'android\app\src\main\AndroidManifest.xml') -Raw
+if ($androidManifest -match 'enableOnBackInvokedCallback="false"') {
+    throw 'Android predictive back must not be disabled.'
+}
+$livePage = Get-Content -LiteralPath (Join-Path $repoRoot 'lib\modules\live_play\pages\live_play_page.dart') -Raw
+$liveController = Get-Content -LiteralPath (Join-Path $repoRoot 'lib\modules\live_play\controllers\live_play_controller.dart') -Raw
+if (-not $livePage.Contains('LivePlayBackScope(') -or -not $liveController.Contains('exitPresentationForSystemBack')) {
+    throw 'Live room route-local back handling is missing.'
+}
+if ($liveController.Contains('BackButtonInterceptor') -or $liveController.Contains('clearListener();`r`n    return false')) {
+    throw 'Live room must not use the legacy global back interceptor or pre-pop listener teardown.'
+}
+
+$generalSettings = Get-Content -LiteralPath (Join-Path $repoRoot 'lib\modules\settings\pages\general_settings_page.dart') -Raw
+if (-not $generalSettings.Contains('Platform.isAndroid || Platform.isWindows') -or
+    -not $generalSettings.Contains('_showRefreshRateModeDialog(context)')) {
+    throw 'Android and Windows must both expose the shared refresh-rate policy.'
+}
+$backupPage = Get-Content -LiteralPath (Join-Path $repoRoot 'lib\modules\backup\backup_page.dart') -Raw
+$fileUtils = Get-Content -LiteralPath (Join-Path $repoRoot 'lib\plugins\file_utils.dart') -Raw
+if (-not $backupPage.Contains('LogFileWriter.resolveLogDirectory()') -or
+    -not $backupPage.Contains('await FileUtils.openFileOrUrl(logDir.path)') -or
+    -not $fileUtils.Contains('ProcessStartMode.detached')) {
+    throw 'Desktop/MSIX directory opening must use the canonical log directory and checked shell launch.'
 }
 
 $normalLayout = Get-Content -LiteralPath (Join-Path $repoRoot 'lib\modules\live_play\widgets\layout\live_play_content.dart') -Raw
@@ -236,6 +331,10 @@ if ($pubspecText -notmatch '(?m)^version:\s*([0-9]+\.[0-9]+\.[0-9]+)\+([0-9]+)\s
 $displayVersion = $Matches[1]
 $buildNumber = [int]$Matches[2]
 $releaseTag = "v$displayVersion"
+$msixConfig = Get-Content -LiteralPath (Join-Path $repoRoot 'windows\packaging\msix\make_config.yaml') -Raw
+if ($msixConfig -notmatch "(?m)^msix_version:\s*$([regex]::Escape($displayVersion))\.$buildNumber\s*$") {
+    throw 'Windows MSIX version must match pubspec.yaml display version and build number.'
+}
 $versionFeed = Get-Content -LiteralPath (Join-Path $repoRoot 'assets\version.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 if ($versionFeed.version -ne $displayVersion -or [int]$versionFeed.build_number -ne $buildNumber) {
     throw 'assets/version.json top-level version must match pubspec.yaml.'

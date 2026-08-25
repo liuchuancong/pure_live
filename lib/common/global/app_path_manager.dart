@@ -362,6 +362,7 @@ class AppPathManager {
   Future<Directory> get iptvCacheDir => getDir(dirIptvCache);
   Future<Directory> get downloadDir => getDir(dirDownload);
   Future<Directory> get logsDir => getDir(dirLogs);
+  Future<Directory> get logFilesDir => getDir(p.join(dirLogs, 'log'));
   Future<Directory> get hiveDbDir => getDir(dirHiveDB);
   Future<Directory> get imageCacheDir => getDir(dirImageCache);
   Future<Directory> get recordsDir => getDir(dirRecords);
@@ -389,5 +390,9 @@ class AppPathManager {
   @visibleForTesting
   static String fontFamilyFolderPath(String downloadPath, String id) {
     return p.join(downloadPath, fontDirectoryName, id);
+  }
+
+  static String logFilesDirectoryPath(String logsRoot) {
+    return p.join(logsRoot, 'log');
   }
 }

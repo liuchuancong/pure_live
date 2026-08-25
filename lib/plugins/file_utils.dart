@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math';
+
 import 'package:path/path.dart' as p;
 import 'package:open_filex/open_filex.dart';
 import 'package:pure_live/common/index.dart';
@@ -101,11 +102,13 @@ class FileUtils {
     if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
       try {
         if (Platform.isWindows) {
-          await Process.run('explorer.exe', [p.context.canonicalize(trimmedPath)]);
+          await Process.start('explorer.exe', [p.context.canonicalize(trimmedPath)], mode: ProcessStartMode.detached);
         } else if (Platform.isMacOS) {
-          await Process.run('open', [trimmedPath]);
+          final result = await Process.run('open', [trimmedPath]);
+          if (result.exitCode != 0) return false;
         } else if (Platform.isLinux) {
-          await Process.run('xdg-open', [trimmedPath]);
+          final result = await Process.run('xdg-open', [trimmedPath]);
+          if (result.exitCode != 0) return false;
         }
         return true;
       } catch (_) {}

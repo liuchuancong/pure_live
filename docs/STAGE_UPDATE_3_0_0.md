@@ -1,11 +1,16 @@
 # v3.0.0 全平台稳定版
 
-- 版本：`3.0.0+4087`
+- 版本：`3.0.0+4088`
 - 维护仓库：`wzgrx/pure_live`
 - 上游基线：`liuchuancong/pure_live@e808dcae`
 - 发布日期：2026-08-25
 
 ## 本轮范围
+
+- build 4088 原位替换存在 Android 系统侧滑返回回归的 build 4087；根因、全仓风险分类和修复证据见 `REPOSITORY_AUDIT_3_0_0_BUILD_4088.md`。
+- 删除直播控制器的全局返回拦截，启用预测性返回并改用路由局部 `PopScope`；普通页直接退出，横屏/全屏先恢复普通页，弹窗优先关闭，路由退出前不拆播放器监听。
+- 补齐 Windows 省电/均衡/最高刷新率档位，使自动弹幕可跟随 165 Hz 等当前显示器上限；修复 MSIX 日志按钮实际目录与错误反馈。
+- 新增只读上游全差异工作流和合并后全仓扫描，固定 Git/Windows 打包依赖，旧全平台工作流改为阶段串行且强制锁文件解析。
 
 - 通过连续真实 merge 把上游从 `974f4c32` 同步到重新发布冻结点 `e808dcae`，保留共同祖先和维护分支历史；本次增量审查见 `UPSTREAM_AUDIT_E808DCAE.md`。
 - 删除先前错误的 v3.0.0 草稿、标签和阶段资产，取消旧托管构建；所有平台从修复后的同一源码提交重新构建。
@@ -45,12 +50,11 @@
 
 ## 质量与构建证据
 
-- 定向录制回归：请求头、FFmpeg命令、重试策略和目录策略通过。
-- 上游状态回归：关注平台身份保持、Release ABI和热门排序测试通过。
-- 重新发布冻结应用源码 `1e154a97` 的 Flutter Analyze 为 `No issues found`；完整 Flutter 测试 `396/396` 通过，覆盖普通直播页几何、页面刷新、播放器/音频模式、PiP、弹幕生命周期、画质事务、历史容量、录制、搜索、观看指标和 Windows 窗口状态。
-- 同一门禁的公开接口合同 `42/42` 通过，包含抖音搜索瞬态重试、YY #798 匿名 HLS及斗鱼 #799 房间 `71415` 的元数据、H5 清晰度/CDN与实际 FLV 文件头。
-- 完整记录：`local-artifacts/build-records/20260825T113844441Z-quality-full.json`；总用时 768.344 秒，峰值 CPU 30.96%，峰值工作集 9,637,343,232 字节，结束后活跃重型进程为 0。
-- 完整门禁后只补录审查/验证文档，不再修改应用源码或依赖；各平台从随后推送的同一最终提交构建。
+- build 4088 冻结提交执行一次 `tool/local_ci.ps1 -Scope Full`：静态策略、设备 UI 映射、锁文件解析、全仓审计、Built-in Kotlin、格式、Flutter Analyze、完整测试和公开接口探针必须全部通过。
+- 定向回归额外覆盖普通/横屏/全屏系统返回、弹窗优先级、普通直播页几何、Windows/MSIX 日志目录、当前/最高显示刷新率和自动弹幕 FPS 策略。
+- 全仓审计同时包含提交前非忽略新增文件，阻断冲突标记、凭据、可变依赖/Action、未锁工作流依赖、关闭预测性返回、全局直播返回拦截和版本漂移。
+- 完整门禁记录写入 `local-artifacts/build-records/`，全仓与上游 JSON 写入 `local-artifacts/repository-audits/`、`local-artifacts/upstream-reviews/`；这些机器证据不提交，但 Release 的 `BUILD_METADATA.json` 与校验和绑定最终提交。
+- 完整门禁后不再修改应用源码或依赖；各平台只从同一最终提交构建。
 - 各平台产物、字节数与 SHA-256 由串行构建工作流写入 Release 校验清单，避免发布后再改动冻结源码提交。
 - 本轮遵循 `BUILD_POLICY.md`：完整门禁一次；Android、Windows 和托管平台按阶段串行；没有执行 ADB 或手机操作。
 
@@ -58,11 +62,11 @@
 
 | 平台 | 目标产物 | 架构/说明 |
 |---|---|---|
-| Android | `PureLive-3.0.0-4087-android-arm64-v8a-release.apk` | arm64-v8a，正式签名 |
-| Windows | `PureLive-3.0.0-4087-windows-x64-setup.exe` / `portable.zip` | Windows 10/11 x64；安装版或目录便携版 |
-| Linux | `PureLive-3.0.0-4087-linux-x64.tar.gz` | Ubuntu 24.04 构建基线 |
-| macOS | `PureLive-3.0.0-4087-macos-universal.zip` / `.dmg` | Apple Silicon + Intel |
-| iOS | `PureLive-3.0.0-4087-ios-arm64-unsigned-app.zip` / `trollstore.ipa` | arm64 |
+| Android | `PureLive-3.0.0-4088-android-arm64-v8a-release.apk` | arm64-v8a，正式签名 |
+| Windows | `PureLive-3.0.0-4088-windows-x64-setup.exe` / `portable.zip` | Windows 10/11 x64；安装版或目录便携版 |
+| Linux | `PureLive-3.0.0-4088-linux-x64.tar.gz` | Ubuntu 24.04 构建基线 |
+| macOS | `PureLive-3.0.0-4088-macos-universal.zip` / `.dmg` | Apple Silicon + Intel |
+| iOS | `PureLive-3.0.0-4088-ios-arm64-unsigned-app.zip` / `trollstore.ipa` | arm64 |
 
 ## 验证边界
 
