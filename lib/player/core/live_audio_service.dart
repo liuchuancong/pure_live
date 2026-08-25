@@ -48,8 +48,6 @@ class LiveAudioService {
         androidNotificationOngoing: true,
         // Keep the media foreground service alive across short interruptions
         // so screen-off playback can resume without recreating the process.
-        // Keep the notification ongoing while the foreground service is active.
-        // Fix The androidNotificationOngoing will make no effect with androidStopForegroundOnPause set to false
         androidStopForegroundOnPause: true,
         androidNotificationClickStartsActivity: true,
         notificationColor: Colors.blue,
