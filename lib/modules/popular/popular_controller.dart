@@ -1,12 +1,12 @@
 import 'dart:async';
-
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/popular/popular_grid_controller.dart';
+
 
 class PopularController extends GetxController with GetTickerProviderStateMixin {
   late TabController tabController;
   int index = 0;
-  late List<Site> sites;
+  final RxList<Site> sites = <Site>[].obs;
   bool _isTabControllerInitialized = false;
   bool _isClosing = false;
   int _generation = 0;
@@ -102,8 +102,7 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
         tabController.dispose();
         _isTabControllerInitialized = false;
       }
-
-      sites = newSites;
+      sites.assignAll(newSites);
       index = 0;
       return;
     }
@@ -113,32 +112,27 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
         ? sites[index].id
         : null;
 
-    sites = newSites;
-
-    initControllers(sites);
-
     if (isFirstLoad) {
       final preferPlatform = SettingsService.to.fav.preferPlatform.v;
-      final pIndex = sites.indexWhere((e) => e.id == preferPlatform);
+      final pIndex = newSites.indexWhere((e) => e.id == preferPlatform);
       index = pIndex == -1 ? 0 : pIndex;
     } else if (oldSiteId != null) {
-      final newIndex = sites.indexWhere((e) => e.id == oldSiteId);
-      index = newIndex == -1 ? oldIndex.clamp(0, sites.length - 1) : newIndex;
+      final newIndex = newSites.indexWhere((e) => e.id == oldSiteId);
+      index = newIndex == -1 ? oldIndex.clamp(0, newSites.length - 1) : newIndex;
     } else {
-      index = oldIndex.clamp(0, sites.length - 1);
+      index = oldIndex.clamp(0, newSites.length - 1);
     }
-
+    initControllers(newSites);
     if (_isTabControllerInitialized) {
       tabController.removeListener(_handleTabChange);
       tabController.dispose();
       _isTabControllerInitialized = false;
     }
-
-    tabController = TabController(length: sites.length, vsync: this, initialIndex: index);
-
+    // Update the source list before exposing the new TabController.
+    sites.assignAll(newSites);
+    tabController = TabController(length: newSites.length, vsync: this, initialIndex: index);
     tabController.addListener(_handleTabChange);
     _isTabControllerInitialized = true;
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_isClosing || generation != _generation) return;
       unawaited(_loadDataAtIndex(index, generation: generation));
