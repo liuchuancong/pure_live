@@ -47,7 +47,23 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
   -Target AndroidArm64 -Configuration Release -FullRegression
 ```
 
-最终 Analyze、自动化测试、40 项外部接口探测、构建记录、APK 哈希与正式签名结果在发布完成后记录于本节和 GitHub Release。
+最终结果：
+
+| 证据层 | 结果 |
+| --- | --- |
+| Flutter Analyze | 通过，正式门禁耗时 312.0 秒 |
+| 自动化测试 | 371 项全部通过 |
+| 平台实时接口 | 40/40 通过；覆盖九个平台，其中八个平台的推荐检查包含观看字段语义 |
+| Android Release 构建 | 通过；`assembleRelease` 340.6 秒，产出仅含 `arm64-v8a` 的 APK |
+| 构建资源 | Gradle 16 workers；峰值 CPU 47.96%；重型进程峰值内存 15,761,190,912 bytes；结束后活动重型进程 0 |
+| 正式签名 | GitHub `sign-staged-android` run `32796787943` 通过；V2/V3 签名有效 |
+| 证书 SHA-256 | `c0bb95744c81f9c7dd4535a9552775038eb5a59c5922f791d1695f45ac34ceaf` |
+| APK SHA-256 | `c6d053370c6d900be376d9dabc1b54708da1d0b8fdcb46fddadb07f71459da0c` |
+| 源码提交 | `b74a67c7635ea37b6f68bb6a10d9b106de851fdd`，tag `v2.9.7` |
+
+完整回归第一次执行接口阶段时，新增探测函数误把只做校验、返回 `None` 的 `require_path` 当作路径值，形成七个“空列表”假失败；Analyze 与 371 项测试在该轮均已通过。探测器改为返回已校验节点后，40 项实时接口全部通过；应用源码未变化，Android 阶段依照构建策略复用完整回归证据，仅重跑目标平台构建。
+
+正式 Release：[Pure Live v2.9.7](https://github.com/wzgrx/pure_live/releases/tag/v2.9.7)。
 
 ## 交付边界
 
