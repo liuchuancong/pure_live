@@ -1,11 +1,11 @@
 import 'dart:async';
-
 import 'package:pure_live/gen/env.g.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/race_http.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pure_live/common/utils/githup_mirror.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
+
 
 class VersionUtil {
   static PackageInfo? _packageInfo;
@@ -14,7 +14,7 @@ class VersionUtil {
   ///
   /// Keeping the owner configurable lets downstream builders select their own
   /// release feed without editing runtime code. This repository defaults to
-  /// the wzgrx maintenance release channel so its bundled version.json and generated asset
+  /// the liuchuancong maintenance release channel so its bundled version.json and generated asset
   /// URLs always describe the same published artifacts.
   static final String updateOwner = AppConfig.pureliveUpdateOwner;
   static final String updateRepository = AppConfig.pureliveUpdateRepository;
@@ -120,7 +120,7 @@ class VersionUtil {
   static Set<String> selectAndroidAbis(Map<String, dynamic> data) {
     const supported = {'armeabi-v7a', 'arm64-v8a', 'x86_64'};
     final raw = data['android_abis'];
-    if (raw is! List) return const {'arm64-v8a'};
+    if (raw is! List) return supported;
     return raw.map((item) => item.toString()).where(supported.contains).toSet();
   }
 

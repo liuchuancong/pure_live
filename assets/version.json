@@ -4,7 +4,7 @@
   "version_num": 209064085,
   "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@974f4c32，吸收下载确认、版本历史与横屏直播记录界面改进，同时保留维护仓库的本机优先构建、后台保活和启动刷新策略。\n- 修复抖音推荐 Feed 从 data.data 变为 data[] 信封结构后触发的 String/int 动态索引异常；兼容新旧 Map、嵌入 JSON 与缺失可选字段。\n- 修复哔哩哔哩热门误用推荐流导致热度不按降序的问题，改用 sort=online 排行源并在客户端稳定二次排序；房间信息遇到过期 WBI 或 -352 时刷新密钥并有界重试。\n- 平台实时门禁扩展到 40 项，新增哔哩哔哩、虎牙、网易 CC 播放链路，并强化抖音 Feed 对真实播放描述符的校验；发布前全部通过。\n- 本轮正式交付 Android arm64-v8a；Windows、Linux、macOS 与 iOS 继续使用 v2.9.4 对应安装包。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.6",
+  "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.9.6",
   "android_abis": [
     "arm64-v8a"
   ],
@@ -15,7 +15,7 @@
       "version_num": 209064085,
       "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@974f4c32，吸收下载确认、版本历史与横屏直播记录界面改进，同时保留维护仓库的本机优先构建、后台保活和启动刷新策略。\n- 修复抖音推荐 Feed 从 data.data 变为 data[] 信封结构后触发的 String/int 动态索引异常；兼容新旧 Map、嵌入 JSON 与缺失可选字段。\n- 修复哔哩哔哩热门误用推荐流导致热度不按降序的问题，改用 sort=online 排行源并在客户端稳定二次排序；房间信息遇到过期 WBI 或 -352 时刷新密钥并有界重试。\n- 平台实时门禁扩展到 40 项，新增哔哩哔哩、虎牙、网易 CC 播放链路，并强化抖音 Feed 对真实播放描述符的校验；发布前全部通过。\n- 本轮正式交付 Android arm64-v8a；Windows、Linux、macOS 与 iOS 继续使用 v2.9.4 对应安装包。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.6",
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.9.6",
       "android_abis": [
         "arm64-v8a"
       ]
@@ -26,7 +26,7 @@
       "version_num": 209044083,
       "version_desc": "- 同步并合并发布时最新上游 liuchuancong/pure_live@99ef708c，新增多画面同看、纯 Dart 平台签名、语言切换、视频显示模式与房间增量合并，并保留维护分支播放器、弹幕和高刷新率增强。\n- 加固最新上游边界：旧房间迟到响应通过代次与身份围栏拦截，稀疏响应保留真实状态和本地标签，画面适配由播放器内核原生执行以减少首帧空白及 Windows 纹理浪费。\n- 修复 Windows MSIX 数据路径提供器，商店式安装使用系统隔离目录，便携版继续使用安装目录内 AppData。\n- Windows 安装包改用当前 CMake 清单与必要运行时白名单，排除增量输出中已退役的 QuickJS 运行库与旧插件资产。\n- 修复录制目录清理可能误删用户所选父目录文件的问题；自定义位置统一进入带所有权标记的 PureLiveRecords 专用子目录。\n- 修复录制限额无法发现分层文件并可能持续循环的问题，改为递归快照、有界清理和文件轮转容错。\n- 适配快手当前直播与录播两种播放结构，合并多 CDN 线路，并以房间页状态区分直播/录播回退。\n- 斗鱼、抖音签名迁移为纯 Dart；斗鱼加密描述符按秒缓存并合并并发刷新，抖音签名保留基础查询且不再污染调用方参数。\n- 多画面音频焦点改为串行最新选择，播放器 pause 异常仍执行销毁；移动端限制四路、桌面端最多九路。\n- 调试日志与 EPG 匹配缓存增加容量上限和来源隔离；站点失败回退不再把其他直播间状态写入当前房间。\n- 修复关注标签选择态未被响应系统订阅导致无法切回“全部”的问题；搜索结果恢复触摸回弹，平台分类栏保持起始对齐和有界滚动。\n- 弹幕原生描边改为单次清晰绘制，低透明度轮廓使用连续对比度曲线，改善亮色画面可读性并减少重复渲染。\n- Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按阶段串行构建发布。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.4",
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.9.4",
       "windows_msix_available": false
     },
     "linux": {
@@ -35,7 +35,7 @@
       "version_num": 209044083,
       "version_desc": "- 同步并合并发布时最新上游 liuchuancong/pure_live@99ef708c，新增多画面同看、纯 Dart 平台签名、语言切换、视频显示模式与房间增量合并，并保留维护分支播放器、弹幕和高刷新率增强。\n- 加固最新上游边界：旧房间迟到响应通过代次与身份围栏拦截，稀疏响应保留真实状态和本地标签，画面适配由播放器内核原生执行以减少首帧空白及 Windows 纹理浪费。\n- 修复 Windows MSIX 数据路径提供器，商店式安装使用系统隔离目录，便携版继续使用安装目录内 AppData。\n- Windows 安装包改用当前 CMake 清单与必要运行时白名单，排除增量输出中已退役的 QuickJS 运行库与旧插件资产。\n- 修复录制目录清理可能误删用户所选父目录文件的问题；自定义位置统一进入带所有权标记的 PureLiveRecords 专用子目录。\n- 修复录制限额无法发现分层文件并可能持续循环的问题，改为递归快照、有界清理和文件轮转容错。\n- 适配快手当前直播与录播两种播放结构，合并多 CDN 线路，并以房间页状态区分直播/录播回退。\n- 斗鱼、抖音签名迁移为纯 Dart；斗鱼加密描述符按秒缓存并合并并发刷新，抖音签名保留基础查询且不再污染调用方参数。\n- 多画面音频焦点改为串行最新选择，播放器 pause 异常仍执行销毁；移动端限制四路、桌面端最多九路。\n- 调试日志与 EPG 匹配缓存增加容量上限和来源隔离；站点失败回退不再把其他直播间状态写入当前房间。\n- 修复关注标签选择态未被响应系统订阅导致无法切回“全部”的问题；搜索结果恢复触摸回弹，平台分类栏保持起始对齐和有界滚动。\n- 弹幕原生描边改为单次清晰绘制，低透明度轮廓使用连续对比度曲线，改善亮色画面可读性并减少重复渲染。\n- Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按阶段串行构建发布。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.4"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.9.4"
     },
     "macos": {
       "version": "2.9.4",
@@ -43,7 +43,7 @@
       "version_num": 209044083,
       "version_desc": "- 同步并合并发布时最新上游 liuchuancong/pure_live@99ef708c，新增多画面同看、纯 Dart 平台签名、语言切换、视频显示模式与房间增量合并，并保留维护分支播放器、弹幕和高刷新率增强。\n- 加固最新上游边界：旧房间迟到响应通过代次与身份围栏拦截，稀疏响应保留真实状态和本地标签，画面适配由播放器内核原生执行以减少首帧空白及 Windows 纹理浪费。\n- 修复 Windows MSIX 数据路径提供器，商店式安装使用系统隔离目录，便携版继续使用安装目录内 AppData。\n- Windows 安装包改用当前 CMake 清单与必要运行时白名单，排除增量输出中已退役的 QuickJS 运行库与旧插件资产。\n- 修复录制目录清理可能误删用户所选父目录文件的问题；自定义位置统一进入带所有权标记的 PureLiveRecords 专用子目录。\n- 修复录制限额无法发现分层文件并可能持续循环的问题，改为递归快照、有界清理和文件轮转容错。\n- 适配快手当前直播与录播两种播放结构，合并多 CDN 线路，并以房间页状态区分直播/录播回退。\n- 斗鱼、抖音签名迁移为纯 Dart；斗鱼加密描述符按秒缓存并合并并发刷新，抖音签名保留基础查询且不再污染调用方参数。\n- 多画面音频焦点改为串行最新选择，播放器 pause 异常仍执行销毁；移动端限制四路、桌面端最多九路。\n- 调试日志与 EPG 匹配缓存增加容量上限和来源隔离；站点失败回退不再把其他直播间状态写入当前房间。\n- 修复关注标签选择态未被响应系统订阅导致无法切回“全部”的问题；搜索结果恢复触摸回弹，平台分类栏保持起始对齐和有界滚动。\n- 弹幕原生描边改为单次清晰绘制，低透明度轮廓使用连续对比度曲线，改善亮色画面可读性并减少重复渲染。\n- Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按阶段串行构建发布。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.4"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.9.4"
     },
     "ios": {
       "version": "2.9.4",
@@ -51,7 +51,7 @@
       "version_num": 209044083,
       "version_desc": "- 同步并合并发布时最新上游 liuchuancong/pure_live@99ef708c，新增多画面同看、纯 Dart 平台签名、语言切换、视频显示模式与房间增量合并，并保留维护分支播放器、弹幕和高刷新率增强。\n- 加固最新上游边界：旧房间迟到响应通过代次与身份围栏拦截，稀疏响应保留真实状态和本地标签，画面适配由播放器内核原生执行以减少首帧空白及 Windows 纹理浪费。\n- 修复 Windows MSIX 数据路径提供器，商店式安装使用系统隔离目录，便携版继续使用安装目录内 AppData。\n- Windows 安装包改用当前 CMake 清单与必要运行时白名单，排除增量输出中已退役的 QuickJS 运行库与旧插件资产。\n- 修复录制目录清理可能误删用户所选父目录文件的问题；自定义位置统一进入带所有权标记的 PureLiveRecords 专用子目录。\n- 修复录制限额无法发现分层文件并可能持续循环的问题，改为递归快照、有界清理和文件轮转容错。\n- 适配快手当前直播与录播两种播放结构，合并多 CDN 线路，并以房间页状态区分直播/录播回退。\n- 斗鱼、抖音签名迁移为纯 Dart；斗鱼加密描述符按秒缓存并合并并发刷新，抖音签名保留基础查询且不再污染调用方参数。\n- 多画面音频焦点改为串行最新选择，播放器 pause 异常仍执行销毁；移动端限制四路、桌面端最多九路。\n- 调试日志与 EPG 匹配缓存增加容量上限和来源隔离；站点失败回退不再把其他直播间状态写入当前房间。\n- 修复关注标签选择态未被响应系统订阅导致无法切回“全部”的问题；搜索结果恢复触摸回弹，平台分类栏保持起始对齐和有界滚动。\n- 弹幕原生描边改为单次清晰绘制，低透明度轮廓使用连续对比度曲线，改善亮色画面可读性并减少重复渲染。\n- Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 按阶段串行构建发布。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.4"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.9.4"
     }
   },
   "windows_msix_available": false

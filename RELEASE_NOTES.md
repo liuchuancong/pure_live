@@ -73,7 +73,7 @@ v2.9.5 build 4084 is an Android stability update for playback quality, platform 
 
 # Pure Live v2.9.4
 
-v2.9.4 build 4083 是上游多画面同看、录制数据保护、平台播放兼容和长时间资源治理的全平台稳定更新，发布到 `wzgrx/pure_live`。
+v2.9.4 build 4083 是上游多画面同看、录制数据保护、平台播放兼容和长时间资源治理的全平台稳定更新，发布到 `liuchuancong/pure_live`。
 
 ## 上游同步与多画面
 
@@ -113,7 +113,7 @@ v2.9.4 build 4083 是上游多画面同看、录制数据保护、平台播放�
 
 # Pure Live v2.9.3
 
-v2.9.3 build 4082 是横屏画质与线路面板内容驱动布局专项 Android 更新，发布到 `wzgrx/pure_live`。
+v2.9.3 build 4082 是横屏画质与线路面板内容驱动布局专项 Android 更新，发布到 `liuchuancong/pure_live`。
 
 ## 画质与线路布局
 
@@ -136,7 +136,7 @@ v2.9.3 build 4082 是横屏画质与线路面板内容驱动布局专项 Android
 
 # Pure Live v2.9.2
 
-v2.9.2 build 4081 是横屏右侧半屏布局二次优化与本地弹幕实时预览专项 Android 更新，发布到 `wzgrx/pure_live`。
+v2.9.2 build 4081 是横屏右侧半屏布局二次优化与本地弹幕实时预览专项 Android 更新，发布到 `liuchuancong/pure_live`。
 
 ## 画质与线路
 
@@ -165,7 +165,7 @@ v2.9.2 build 4081 是横屏右侧半屏布局二次优化与本地弹幕实时�
 
 # Pure Live v2.9.1
 
-v2.9.1 build 4080 是横屏半屏内容面板与本地弹幕个性化专项 Android 更新，发布到 `wzgrx/pure_live`。
+v2.9.1 build 4080 是横屏半屏内容面板与本地弹幕个性化专项 Android 更新，发布到 `liuchuancong/pure_live`。
 
 ## 横屏内容优先面板
 
@@ -190,7 +190,7 @@ v2.9.1 build 4080 是横屏半屏内容面板与本地弹幕个性化专项 Andr
 
 # Pure Live v2.9.0
 
-v2.9.0 build 4079 是清晰度切换、横屏全屏控制层、本地弹幕样式和上游播放稳定性整合的全平台正式更新；发布到 `wzgrx/pure_live`。
+v2.9.0 build 4079 是清晰度切换、横屏全屏控制层、本地弹幕样式和上游播放稳定性整合的全平台正式更新；发布到 `liuchuancong/pure_live`。
 
 ## 上游同步与播放稳定性
 
@@ -215,7 +215,7 @@ v2.9.0 build 4079 是清晰度切换、横屏全屏控制层、本地弹幕样�
 
 # Pure Live v2.8.0
 
-v2.8.0 build 4078 是上游同步、关注状态权威刷新、抖音搜索和桌面播放增强的全平台稳定更新；仅发布到 `wzgrx/pure_live`。
+v2.8.0 build 4078 是上游同步、关注状态权威刷新、抖音搜索和桌面播放增强的全平台稳定更新；仅发布到 `liuchuancong/pure_live`。
 
 ## 上游同步与近期 Issue
 
@@ -238,14 +238,14 @@ v2.8.0 build 4078 是上游同步、关注状态权威刷新、抖音搜索和�
 
 # Pure Live v2.7.0
 
-v2.7.0 build 4077 是最新上游整合、热门页生命周期和全平台交付更新；Android 资产已用关注刷新修复后的源码重新构建，仅发布到 `wzgrx/pure_live`。
+v2.7.0 build 4077 是最新上游整合、热门页生命周期和全平台交付更新；Android 资产已用关注刷新修复后的源码重新构建，仅发布到 `liuchuancong/pure_live`。
 
 ## 上游同步
 
 - 真实合并上游 `liuchuancong/pure_live@81ec372a`，保留完整提交关系，后续同步可继续按共同祖先合并。
 - 吸收热门页关闭状态、加载代次、平台配置防抖及延迟预热隔离，防止页面销毁或平台列表重建后旧任务继续刷新当前界面。
 - 吸收取消关注弹窗路由修复，并进一步让按钮绑定弹窗自己的 `BuildContext`，避免导航转场期间误退直播页面。
-- 对上游 Windows 小窗、图片缓存、更新源、应用 AppId、ABI 清单与全平台工作流逐项审查；保留维护版已经验证的位置/大小记忆、跨屏边界恢复、有界图片缓存、覆盖升级 AppId、`wzgrx` 更新源及串行构建策略。
+- 对上游 Windows 小窗、图片缓存、更新源、应用 AppId、ABI 清单与全平台工作流逐项审查；保留维护版已经验证的位置/大小记忆、跨屏边界恢复、有界图片缓存、覆盖升级 AppId、`liuchuancong` 更新源及串行构建策略。
 
 ## 稳定性与兼容性
 
@@ -268,7 +268,7 @@ v2.7.0 build 4077 是最新上游整合、热门页生命周期和全平台交�
 
 # Pure Live v2.6.0
 
-v2.6.0 build 4076 是上游同步、近期 Issue 修复、播放器与长时间资源治理的阶段稳定版；仅发布到 `wzgrx/pure_live`。
+v2.6.0 build 4076 是上游同步、近期 Issue 修复、播放器与长时间资源治理的阶段稳定版；仅发布到 `liuchuancong/pure_live`。
 
 ## 上游与近期问题
 
