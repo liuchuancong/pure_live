@@ -176,7 +176,7 @@ def douyu_encryption_probe() -> None:
         raise ValueError("Douyu encryption descriptor is already expired")
 
 
-def douyu_playback_probe() -> None:
+def douyu_playback_probe(room_ids: list[str] | None = None) -> None:
     """Exercise signing, H5 metadata, CDN URL and the actual FLV header."""
     did = secrets.token_hex(16)
     descriptor_payload = request_json(
@@ -187,14 +187,17 @@ def douyu_playback_probe() -> None:
     if not isinstance(descriptor, dict):
         raise ValueError("Douyu encryption payload is missing data")
 
-    recommendation = request_json("https://www.douyu.com/japi/weblist/apinc/allpage/6/1")
-    rooms = recommendation.get("data", {}).get("rl", []) if isinstance(recommendation, dict) else []
-    if not isinstance(rooms, list) or not rooms:
-        raise ValueError("Douyu recommendation returned no rooms")
+    if room_ids is None:
+        recommendation = request_json("https://www.douyu.com/japi/weblist/apinc/allpage/6/1")
+        rooms = recommendation.get("data", {}).get("rl", []) if isinstance(recommendation, dict) else []
+        if not isinstance(rooms, list) or not rooms:
+            raise ValueError("Douyu recommendation returned no rooms")
+        candidate_ids = [str(room.get("rid", "")).strip() for room in rooms[:10] if isinstance(room, dict)]
+    else:
+        candidate_ids = [str(room_id).strip() for room_id in room_ids]
 
     errors: list[str] = []
-    for room in rooms[:10]:
-        room_id = str(room.get("rid", "")).strip() if isinstance(room, dict) else ""
+    for room_id in candidate_ids:
         if not room_id:
             continue
         try:
@@ -265,6 +268,18 @@ def douyu_playback_probe() -> None:
         except Exception as error:  # noqa: BLE001 - try another active room
             errors.append(f"{room_id}: {error}")
     raise ValueError("; ".join(errors[-3:]) or "no usable Douyu room")
+
+
+def douyu_reported_room_probe() -> None:
+    """Recheck the concrete room reported by upstream issue #799."""
+    room_id = "71415"
+    payload = request_json(f"https://www.douyu.com/betard/{room_id}")
+    room = payload.get("room") if isinstance(payload, dict) else None
+    if not isinstance(room, dict) or str(room.get("room_id", "")) != room_id:
+        raise ValueError("reported Douyu room metadata is missing")
+    if int(room.get("show_status", 0)) != 1 or int(room.get("videoLoop", 0)) == 1:
+        return
+    douyu_playback_probe([room_id])
 
 
 def douyu_search_probe() -> None:
@@ -1319,6 +1334,7 @@ def main() -> int:
         ("douyu.recommend", douyu_recommend_probe),
         ("douyu.encryption", douyu_encryption_probe),
         ("douyu.playback", douyu_playback_probe),
+        ("douyu.reported_room_799", douyu_reported_room_probe),
         (
             "huya.categories",
             lambda: require_path(

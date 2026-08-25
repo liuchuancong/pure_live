@@ -21,6 +21,7 @@ void main() {
     expect(command, contains('-user_agent "Pure Live Test UA"'));
     expect(command, contains('referer: https://example.test/room/1\r\n'));
     expect(command, contains('"$outputDir${Platform.pathSeparator}%Y%m%d_%H%M%S.ts"'));
+    expect(command, isNot(contains('-tls_verify 0')));
   });
 
   test('audio relay also quotes a signed input URL', () {
@@ -30,5 +31,6 @@ void main() {
     );
 
     expect(command, contains('-i "https://cdn.example/audio.m3u8?token=a&expires=2"'));
+    expect(command, isNot(contains('-tls_verify 0')));
   });
 }

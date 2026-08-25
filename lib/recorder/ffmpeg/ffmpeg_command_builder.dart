@@ -22,7 +22,6 @@ class FFmpegCommandBuilder {
       // 基础
       '-hide_banner',
       '-loglevel', 'info',
-      '-tls_verify', '0',
       // 重连
       '-reconnect', '1',
       '-reconnect_streamed', '1',
@@ -69,7 +68,6 @@ class FFmpegCommandBuilder {
       '-y',
       '-hide_banner',
       '-loglevel', 'info',
-      '-tls_verify', '0',
       '-analyzeduration', '1000000',
       '-probesize', '1048576',
       '-fflags', 'igndts+genpts+nobuffer+flush_packets+fastseek',
