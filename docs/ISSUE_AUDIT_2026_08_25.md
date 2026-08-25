@@ -1,11 +1,12 @@
 # 上游 Issue 审计（2026-08-25）
 
-审计范围：`liuchuancong/pure_live` 当前全部开放 Issue，重点复核 2026-08-25 新建的 #793～#798、此前的 #783、#786、#789、#791，以及仍开放的 Windows 性能问题 #767。审计冻结点为上游 `c22ae2f4`。
+审计范围：`liuchuancong/pure_live` 当前全部开放 Issue，重点复核 2026-08-25 新建的 #793～#799、此前的 #783、#786、#789、#791，以及仍开放的 Windows 性能问题 #767。审计冻结点为上游 `ff8c0469`。
 
 ## 结论表
 
 | Issue | 类型 | 代码结论 | v3.0.0 处理 |
 |---|---|---|---|
+| #799 斗鱼直播间读取视频信息失败 | 平台播放缺陷/旧版回归 | 报告来自 v2.9.4，截图房间为“寅子” `71415`；旧链路的签名描述、DID Cookie、播放请求头和 CDN URL 处理会让“卡片可见、播放器拉流失败”同时出现 | v3.0.0 复用已重写的纯 Dart 签名、同会话 DID、H5 有界重试、URL 校验与播放器请求头；发布审计实查 `betard/71415` 在线状态，并完成 H5 清晰度/CDN及实际 FLV 文件头读取 |
 | #798 YY 部分直播间不能播放 | 平台接口缺陷 | 当前网页的 HTTP StreamManager 会对部分匿名频道返回 `ErrAuthNotPass`，但 YY 官方移动 HLS 接口仍返回可播放、短时签名的 M3U8；只依赖 StreamManager 会把这类房间误判为无播放地址 | StreamManager 对齐官方 bid 121、SDK 5.23.0-beta.2 和 `text/plain` 合同；失败或空结果时自动切到匿名移动 HLS，按实际视频流去重清晰度，并实读 #798 房间的 M3U8 头 |
 | #797 竖屏房间后横屏画面压缩 | 播放器状态缺陷 | 复用原生播放器时，上一房间的 width/height 流会保留到下一房间元数据到达，外层 `FittedBox` 因旧竖屏比例先压缩横屏画面 | 房间身份变化时同步清空宽高和竖屏标志；宽高必须成对有效才采用真实比例，并加入竖屏→横屏确定性回归 |
 | #796 斗鱼录制失败 | 录制缺陷 | 播放器能播不代表 FFmpeg 能拉流；旧录制头缺少斗鱼房间 Referer/Origin/DID，且 403/404/I/O 被错误归类为永久失败 | 与 #791 共用播放请求头解析器，签名 URL 正确引用，过期 CDN 重新解析后有界重试，并覆盖命令/请求头/续录策略测试 |
@@ -40,6 +41,7 @@
 - `lib/recorder/services/path_helper.dart` / `cache_service.dart`：可移植目录组件与 Windows 保留名保护。
 - `test/playback_header_resolver_test.dart`、`ffmpeg_record_command_test.dart`、`recorder_continuation_policy_test.dart`、`recorder_storage_policy_test.dart`：确定性回归。
 - `lib/core/site/yy/yy_site.dart` / `tool/interface_probe.py`：YY 当前 StreamManager 合同、匿名 HLS 回退和 #798 直播清单实读。
+- `lib/core/site/douyu/douyu_site.dart` / `douyu_utils.dart` / `tool/interface_probe.py`：斗鱼签名、同会话 DID、H5重试、播放头及 #799 房间实流验证。
 - `lib/player/core/player_manager.dart` / `test/player_audio_mode_transition_test.dart`：跨房间视频几何清理。
 - `lib/player/utils/fullscreen.dart` / `test/windows_pip_presentation_test.dart`：Windows PiP 前后显示模式快照与恢复。
 - `windows/runner/main.cpp`：无参数重复启动的原生早期互斥与已有窗口激活。

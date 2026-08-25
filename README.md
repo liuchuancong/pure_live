@@ -35,11 +35,13 @@
 
 - **最新稳定版**：[v3.0.0](https://github.com/wzgrx/pure_live/releases/tag/v3.0.0)
 - **当前版本**：`3.0.0+4087`
-- **v3.0.0 上游源码基线**：`liuchuancong/pure_live@c22ae2f4`；完整记录见 `docs/STAGE_UPDATE_3_0_0.md`
+- **v3.0.0 上游源码基线**：`liuchuancong/pure_live@ff8c0469`；完整记录见 `docs/STAGE_UPDATE_3_0_0.md`
 - **本轮构建平台**：Android arm64-v8a、Windows x64、Linux x64、macOS Universal、iOS arm64
-- **质量门禁**：Flutter Analyze、完整自动化测试、41 项接口语义探测与串行构建记录见 `docs/STAGE_UPDATE_3_0_0.md`
+- **质量门禁**：Flutter Analyze、完整自动化测试、42 项接口语义探测与串行构建记录见 `docs/STAGE_UPDATE_3_0_0.md`
 
 本版本还会在启动、备份恢复和手动清理时剔除空平台、空房间号、`0/null/undefined/nan/none` 等无效关注记录，并按“平台 + 房间号”去重，避免损坏的历史收藏继续参与首页刷新。
+
+录制页的自动重连、轮询、缓存限制、最高画质和目录命名等开关现在直接绑定持久化配置；缓存限制改为实时读取，重新进入页面或升级后保持用户选择。
 
 ![Pure Live 界面预览](assets/images/banner.png)
 
