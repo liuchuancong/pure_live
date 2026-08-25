@@ -10,6 +10,7 @@ import 'package:pure_live/modules/settings/pages/font_family_manager_page.dart';
 import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 import 'package:pure_live/modules/settings/pages/pip_danmaku_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/audience_metric_settings_page.dart';
+import 'package:pure_live/modules/settings/pages/portrait_live_settings_page.dart';
 
 class VideoSettingsPage extends GetView<SettingsService> {
   const VideoSettingsPage({super.key});
@@ -100,6 +101,13 @@ class VideoSettingsPage extends GetView<SettingsService> {
           // 播放行为设置
           context.buildGroupTitle(i18n("playback_behavior_settings")),
           context.buildModernCard([
+            context.buildTile(
+              title: i18n('portrait_live_settings'),
+              subtitle: i18n('portrait_live_settings_desc'),
+              icon: Icons.stay_current_portrait_rounded,
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => Get.to(() => const PortraitLiveSettingsPage()),
+            ),
             context.buildTile(
               title: i18n('audience_metric_settings'),
               subtitle: i18n('audience_metric_settings_desc'),

@@ -261,6 +261,24 @@ foreach ($marker in @('live-play-portrait-stack', 'live-play-desktop-panel', 'li
         throw "Normal live-room layout invariant marker is missing: $marker"
     }
 }
+$portraitSupport = Get-Content -LiteralPath (Join-Path $repoRoot 'lib\player\core\portrait_stream_support.dart') -Raw
+foreach ($marker in @(
+    'stabilityDelay = const Duration(milliseconds: 500)',
+    'portraitThreshold = 0.90',
+    'landscapeThreshold = 1.10',
+    'resolveAndroidPipAspectRatio',
+    '1 / 2.39',
+    'minimumDanmakuHeight = 200'
+)) {
+    if (-not $portraitSupport.Contains($marker)) {
+        throw "Portrait-source presentation invariant marker is missing: $marker"
+    }
+}
+$fullscreenPolicy = Get-Content -LiteralPath (Join-Path $repoRoot 'lib\player\utils\fullscreen.dart') -Raw
+if (-not $fullscreenPolicy.Contains('supportsOrientationLockForLogicalDisplay') -or
+    -not $fullscreenPolicy.Contains('logicalDisplaySize.shortestSide < 600')) {
+    throw 'Android large-screen orientation policy must remain adaptive.'
+}
 if ($featureWorkflow -match 'stage-build-' -or $featureWorkflow -match 'stage-apple-') {
     throw 'Feature workflow must use precise single-platform stage tags.'
 }

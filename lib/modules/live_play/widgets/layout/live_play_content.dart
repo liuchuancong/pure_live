@@ -1,5 +1,6 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/live_play/states/ui_state.dart';
+import 'package:pure_live/player/core/portrait_stream_support.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_tab.dart';
 import 'package:pure_live/modules/live_play/widgets/layout/live_play_video.dart';
@@ -26,12 +27,20 @@ class LivePlayNormalLayout extends StatelessWidget {
     required this.resolution,
     required this.danmaku,
     this.showPanel = true,
+    this.isPortraitSource = false,
+    this.sourceAspectRatio = 16 / 9,
+    this.adaptivePortraitHeight = false,
+    this.portraitLayoutMode = PortraitLayoutMode.balanced,
   });
 
   final Widget video;
   final Widget resolution;
   final Widget danmaku;
   final bool showPanel;
+  final bool isPortraitSource;
+  final double sourceAspectRatio;
+  final bool adaptivePortraitHeight;
+  final PortraitLayoutMode portraitLayoutMode;
 
   @override
   Widget build(BuildContext context) {
@@ -45,10 +54,27 @@ class LivePlayNormalLayout extends StatelessWidget {
           );
         }
         if (resolveLivePlayNormalLayout(constraints.maxWidth) == LivePlayNormalLayoutKind.portraitStack) {
+          final videoHeight = PortraitPresentationPolicy.resolveNormalVideoHeight(
+            availableWidth: constraints.maxWidth,
+            availableHeight: constraints.maxHeight,
+            isPortraitSource: isPortraitSource,
+            sourceAspectRatio: sourceAspectRatio,
+            adaptiveHeightEnabled: adaptivePortraitHeight,
+            mode: portraitLayoutMode,
+          );
           return Column(
             key: const ValueKey('live-play-portrait-stack'),
             children: [
-              video,
+              AnimatedContainer(
+                key: const ValueKey('live-play-adaptive-video-frame'),
+                width: constraints.maxWidth,
+                height: videoHeight,
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                clipBehavior: Clip.hardEdge,
+                decoration: const BoxDecoration(color: Colors.black),
+                child: video,
+              ),
               resolution,
               const Divider(height: 1),
               Expanded(key: const ValueKey('live-play-portrait-danmaku'), child: danmaku),
@@ -114,12 +140,24 @@ class LivePlayContent extends StatelessWidget {
       backgroundColor: Colors.black,
       appBar: LivePlayHeader(controller: controller, compactHeader: compactHeader),
       body: SafeArea(
-        child: LivePlayNormalLayout(
-          video: LivePlayVideo(controller: controller),
-          resolution: const ResolutionsRow(),
-          danmaku: _buildDanmaku(),
-          showPanel: controller.site != Sites.iptvSite,
-        ),
+        child: Obx(() {
+          final manager = GlobalPlayerService.instance.player;
+          final settings = SettingsService.to.player;
+          final geometry = manager.videoGeometry.value;
+          final isPortrait = manager.isVerticalVideo.value;
+          return LivePlayNormalLayout(
+            video: LivePlayVideo(controller: controller),
+            resolution: const ResolutionsRow(),
+            danmaku: _buildDanmaku(),
+            showPanel: controller.site != Sites.iptvSite,
+            isPortraitSource: isPortrait,
+            sourceAspectRatio: isPortrait && (!geometry.hasValidDimensions || !geometry.isStable)
+                ? 9 / 16
+                : geometry.aspectRatio,
+            adaptivePortraitHeight: settings.enablePortraitStreamAdaptation.v && settings.portraitAdaptiveHeight.v,
+            portraitLayoutMode: settings.portraitLayoutMode,
+          );
+        }),
       ),
     );
   }

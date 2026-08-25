@@ -43,5 +43,33 @@ void main() {
       expect(oldConfig['rememberPipPosition'], isTrue);
       expect(optedOutConfig['rememberPipPosition'], isFalse);
     });
+
+    test('migrates old backups to the safe portrait-source defaults', () {
+      final config = PlayerSettingsController.extractConfig({'player': <String, dynamic>{}});
+
+      expect(config['enablePortraitStreamAdaptation'], isTrue);
+      expect(config['portraitAdaptiveHeight'], isTrue);
+      expect(config['portraitLayoutMode'], 'balanced');
+      expect(config['portraitFullscreenPolicy'], 'followSource');
+      expect(config['portraitPipFollowSource'], isTrue);
+      expect(config['portraitDanmakuMode'], 'followGlobal');
+      expect(config['portraitRoomOverrides'], isEmpty);
+    });
+
+    test('sanitizes invalid portrait enum names while retaining room overrides', () {
+      final config = PlayerSettingsController.extractConfig({
+        'player': <String, dynamic>{
+          'portraitLayoutMode': 'broken',
+          'portraitFullscreenPolicy': 'broken',
+          'portraitDanmakuMode': 'broken',
+          'portraitRoomOverrides': <String, String>{'bilibili:1': 'portrait'},
+        },
+      });
+
+      expect(config['portraitLayoutMode'], 'balanced');
+      expect(config['portraitFullscreenPolicy'], 'followSource');
+      expect(config['portraitDanmakuMode'], 'followGlobal');
+      expect(config['portraitRoomOverrides'], <String, String>{'bilibili:1': 'portrait'});
+    });
   });
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/modules/live_play/widgets/layout/live_play_content.dart';
+import 'package:pure_live/player/core/portrait_stream_support.dart';
 
 void main() {
   Widget fixture({bool showPanel = true}) {
@@ -56,6 +57,31 @@ void main() {
     expect(video.right, panel.left);
     expect(resolution.width, panel.width);
     expect(danmaku.height, greaterThan(0));
+  });
+
+  testWidgets('portrait source grows video but preserves the interaction list', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 780));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: LivePlayNormalLayout(
+            isPortraitSource: true,
+            sourceAspectRatio: 9 / 16,
+            adaptivePortraitHeight: true,
+            portraitLayoutMode: PortraitLayoutMode.balanced,
+            video: const ColoredBox(key: ValueKey('portrait-video'), color: Colors.black),
+            resolution: const SizedBox(height: 44),
+            danmaku: const ColoredBox(key: ValueKey('portrait-danmaku'), color: Colors.white),
+          ),
+        ),
+      ),
+    );
+
+    final video = tester.getRect(find.byKey(const ValueKey('portrait-video')));
+    final danmaku = tester.getRect(find.byKey(const ValueKey('portrait-danmaku')));
+    expect(video.height, greaterThan(390 / (16 / 9)));
+    expect(danmaku.height, greaterThanOrEqualTo(200));
   });
 
   testWidgets('video-only sites do not reserve an empty interaction panel', (tester) async {

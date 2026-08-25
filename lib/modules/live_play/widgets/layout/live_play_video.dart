@@ -11,8 +11,7 @@ class LivePlayVideo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 16 / 9,
+    return SizedBox.expand(
       child: ColoredBox(
         color: Colors.black,
         child: Obx(() {

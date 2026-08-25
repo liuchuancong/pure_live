@@ -34,7 +34,7 @@
 > 本维护分支持续同步 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)，并维护本机优先构建、正式签名、接口探测、Windows 数据迁移及高刷新率优化。
 
 - **最新稳定版**：[v3.0.0](https://github.com/wzgrx/pure_live/releases/tag/v3.0.0)
-- **当前版本**：`3.0.0+4088`（替换存在 Android 返回回归的 build 4087）
+- **当前 Android 构建版本**：`3.0.1+4089`（竖屏直播源、全屏方向与画中画比例适配）
 - **v3.0.0 上游源码基线**：`liuchuancong/pure_live@e808dcae`；完整记录见 `docs/STAGE_UPDATE_3_0_0.md`
 - **本轮构建平台**：Android arm64-v8a、Windows x64、Linux x64、macOS Universal、iOS arm64
 - **质量门禁**：Flutter Analyze、完整自动化测试、42 项接口语义探测与串行构建记录见 `docs/STAGE_UPDATE_3_0_0.md`
@@ -92,6 +92,7 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 | [高刷新率与性能验证](docs/PERFORMANCE.md) | Android 120 Hz 适配、渲染优化和真机帧统计 |
 | [WebDAV 配置](docs/WEBDAV.md) | 通用配置字段、坚果云示例和故障排查 |
 | [v3.0.0 全平台稳定版](docs/STAGE_UPDATE_3_0_0.md) | 最新上游状态绑定、Android 录制恢复、依赖锁与全平台发布门禁 |
+| [v3.0.1 Android 竖屏直播适配](docs/STAGE_UPDATE_3_0_1.md) | 稳定源方向识别、普通页自适应、全屏策略、画中画比例和房间覆盖 |
 | [2026-08-25 上游 Issue 审计](docs/ISSUE_AUDIT_2026_08_25.md) | #793～#798、#791 录制根因及既有问题处理状态 |
 | [v2.9.7 Android update](docs/STAGE_UPDATE_2_9_7.md) | 全平台观看指标语义、热门排行、SOOP PC/移动端总在线与 40 项接口门禁 |
 | [v2.9.6 Android update](docs/STAGE_UPDATE_2_9_6.md) | 上游同步、抖音 Feed、Bilibili 热度排行与 40 项接口门禁 |
