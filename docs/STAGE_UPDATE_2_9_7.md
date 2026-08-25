@@ -63,7 +63,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
 
 完整回归第一次执行接口阶段时，新增探测函数误把只做校验、返回 `None` 的 `require_path` 当作路径值，形成七个“空列表”假失败；Analyze 与 371 项测试在该轮均已通过。探测器改为返回已校验节点后，40 项实时接口全部通过；应用源码未变化，Android 阶段依照构建策略复用完整回归证据，仅重跑目标平台构建。
 
-正式 Release：[Pure Live v2.9.7](https://github.com/wzgrx/pure_live/releases/tag/v2.9.7)。
+正式 Release：[Pure Live v2.9.7](https://github.com/liuchuancong/pure_live/releases/tag/v2.9.7)。
 
 ## 交付边界
 

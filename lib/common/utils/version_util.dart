@@ -15,8 +15,7 @@ class VersionUtil {
   ///
   /// Keeping the owner configurable lets downstream builders select their own
   /// release feed without editing runtime code. This repository defaults to
-  /// the wzgrx maintenance release channel so its bundled version.json and generated asset
-  /// URLs always describe the same published artifacts.
+  /// the wzgrx maintenance release channel so its bundled version.json and generated asset`r`n  /// URLs always describe the same published artifacts.
   static final String updateOwner = AppConfig.pureliveUpdateOwner;
   static final String updateRepository = AppConfig.pureliveUpdateRepository;
   static final String projectUrl = 'https://github.com/$updateOwner/$updateRepository';

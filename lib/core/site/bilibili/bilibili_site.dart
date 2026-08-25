@@ -135,13 +135,14 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LivePlayUrlResolv
 
   @override
   Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
-    return (await resolvePlayUrls(detail: detail, quality: quality)).urls;
+    return (await resolvePlayUrlsRaw(detail: detail, quality: quality)).urls;
   }
 
   @override
-  Future<LivePlayUrlResolution> resolvePlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
+  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom detail, required LivePlayQuality quality}) async {
     try {
       final result = await _requestPlayInfo(detail: detail, qualityData: quality.data);
+
       return parsePlayUrlResolution(result, requestedQualityData: quality.data);
     } catch (e) {
       throw Exception(e.toString());
