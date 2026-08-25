@@ -1,3 +1,32 @@
+# Pure Live v3.0.0
+
+v3.0.0 build 4087 是录制可靠性、上游状态绑定与全平台发布链路的稳定更新。
+
+## 上游同步与页面状态
+
+- 以真实合并历史同步到 `liuchuancong/pure_live@fd35593f`，吸收关注页/热门页响应状态绑定和 Android ABI 版本管理调整。
+- 热门页只使用控制器发布的响应式平台快照构建 `TabBar` 与内容页，避免设置变化期间列表与控制器长度短暂错位。
+- 关注平台列表重建时按平台 ID 保留当前选择；已移除的平台使用有界索引回退，并在下一帧同步筛选状态。
+- 维护发行版继续使用 `wzgrx/pure_live` 更新源，上游批量替换的仓库地址没有覆盖维护分支的安装包、版本历史和下载入口。
+
+## Android 录制与长时间稳定性
+
+- 修复上游 #791：播放器、多画面、音频转发和录制共用同一平台播放请求头；斗鱼录制补齐房间 Referer、Origin、User-Agent 与进程级 DID Cookie。
+- 移除 Bilibili CDN 请求中的错误 API authority；YY、IPTV 与虎牙录制头不再和播放器策略漂移。
+- FFmpeg 正确引用带 `&` 的签名 URL和含空格的输出目录；音频或视频轨暂时缺失时使用可选映射，避免初始化阶段直接退出。
+- CDN 403/404、AVERROR(EIO) 与短时输入错误会重新解析最新地址后有界重试；本地路径、权限及无效输出参数仍立即结束任务。
+- 默认私有录制目录先实际探测写入能力，再决定是否申请 Android 存储权限；主播名和平台名统一处理非法字符、保留设备名与超长组件。
+- FFmpeg 高频进度只更新对应任务，不再反复排序完整列表；Hive 持久化合并为两秒节流并在控制器关闭时刷新，减少长时间录制的 UI、CPU 与磁盘负载。
+
+## 依赖、工作流与交付
+
+- hosted 依赖统一使用官方 `pub.dev` URL与当前归档哈希；除需要全应用迁移到 `material_ui.ColorScheme` 的 `dynamic_color` 2.x 外，直接依赖均为 Flutter 3.47 当前兼容线的最新版本。
+- 修复全平台工作流中 Windows artifact Action 多余字符导致的无效 SHA；第三方 Release/读文件 Action 固定到完整提交。
+- Release 仅在本轮明确请求的每个平台都构建成功后创建，避免某个阶段失败时误发布不完整的“全平台”版本。
+- 版本：`3.0.0+4087`；Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 串行构建发布。
+
+---
+
 # Pure Live v2.9.7
 
 v2.9.7 build 4086 is an Android audience-metric and ranking consistency update.

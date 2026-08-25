@@ -11,6 +11,8 @@
 - [Android/Windows 性能验证](PERFORMANCE.md)：120 Hz 请求、渲染/滑动优化和实机采样方法。
 - [关注页刷新与状态一致性](FAVORITE_REFRESH_DESIGN.md)：下拉手势、启动核验、并发事务和失败语义。
 - [上游问题审计（2026-08-24）](ISSUE_AUDIT_2026_08_24.md)：#778、#779、#780、#782、#783、#784, #785 的根因、代码落点和验证状态。
+- [上游问题审计（2026-08-25）](ISSUE_AUDIT_2026_08_25.md)：#791 录制根因，以及 #789、#786、#783、#767 的当前处理状态。
+- [v3.0.0 全平台稳定版](STAGE_UPDATE_3_0_0.md)：最新上游状态绑定、录制恢复、依赖锁与全平台发布门禁。
 - [v2.9.7 Android update](STAGE_UPDATE_2_9_7.md): cross-platform audience semantics, stable popular ranking and SOOP PC/mobile totals.
 - [v2.9.6 Android update](STAGE_UPDATE_2_9_6.md): upstream synchronization, Douyin/Bilibili repairs and 40 interface probes.
 - [v2.9.5 Android update](STAGE_UPDATE_2_9_5.md): Douyu playback, YY integration and 36 interface probes.

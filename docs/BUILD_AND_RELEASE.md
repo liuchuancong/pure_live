@@ -2,7 +2,7 @@
 
 本仓库采用“本机优先、Actions 手动兜底”的流程，固定使用 Flutter `3.47.0`。`pubspec.lock`、Git 依赖提交和 FFmpeg 产物地址均已固定，便于复现结果。平台范围、CPU/RAM 配额、缓存、互斥和记录格式以 [`BUILD_POLICY.md`](../BUILD_POLICY.md) 为准。
 
-Current release candidate: 2026-08-25, v2.9.6 build 4085, Windows 11 + Java 25 + Flutter 3.47.0. This turn runs one final quality gate and builds only Android arm64-v8a; see `STAGE_UPDATE_2_9_6.md`.
+Current release candidate: 2026-08-25, v3.0.0 build 4087, Windows 11 + Java 25 + Flutter 3.47.0. This formal delivery runs one final quality gate, local Android/Windows stages and serial hosted Linux/macOS/iOS stages; see `STAGE_UPDATE_3_0_0.md`.
 
 ## 前置环境
 

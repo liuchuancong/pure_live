@@ -13,7 +13,7 @@ Android 已启用 AGP 9 Built-in Kotlin。主应用、`flv_lzc` 以及六个仍�
 
 AGP 9.3.1 是当前 9.3 稳定补丁，官方兼容表给出的默认 Gradle 为 9.5.0；仓库保持该验证组合。Google Services 4.5.0 与 Firebase 当前官方设置文档一致。Gradle 独立发行线虽已有更新版本，但不越过 AGP/Flutter 已验证默认组合做孤立升级。
 
-`flutter pub outdated` 已于 2026-08-24 再次复核：除 `dynamic_color` 外，直接依赖与开发依赖均处于当前约束可升级的最新版本。`dynamic_color` 1.9.0 是当前 Flutter Material `ColorScheme` 可直接使用的最新系列；2.1.0 已把公开类型迁移到独立 `material_ui.ColorScheme`，全应用主题迁移前保持 1.9.0。其余可见更新均为 Flutter 3.47 SDK或上游约束锁定的传递依赖，保持解析器给出的兼容组合，避免以 override 破坏播放器或代码生成组合。
+`flutter pub outdated` 已于 2026-08-25 再次复核：除 `dynamic_color` 外，直接依赖与开发依赖均处于当前约束可升级的最新版本。`dynamic_color` 1.9.0 是当前 Flutter Material `ColorScheme` 可直接使用的最新系列；2.1.0 已把公开类型迁移到独立 `material_ui.ColorScheme`，全应用主题迁移前保持 1.9.0。其余可见更新均为 Flutter 3.47 SDK或上游约束锁定的传递依赖，保持解析器给出的兼容组合，避免以 override 破坏播放器或代码生成组合。
 
 播放器依赖在 v2.6.0 再次单独核验：`better_player_plus` 为 1.3.5 的 Built-in Kotlin 本地快照；项目使用的 `Predidit/media-kit` 修订分支仍固定到 `994465d9bfca3f39d0b41199d16e7fd93fe97881`，`media_kit_video` 使用包含 Surface/音频模式生命周期修复的仓库副本。`pub outdated` 中其余较新版本均为当前 Flutter SDK 或上游依赖约束锁定的传递包，未用强制 override 破坏播放器组合兼容性。
 
@@ -21,6 +21,7 @@ AGP 9.3.1 是当前 9.3 稳定补丁，官方兼容表给出的默认 Gradle 为
 
 - 应用提交 `pubspec.lock`，所有 hosted 包锁定具体版本。
 - hosted 包来源已统一为官方 `https://pub.dev`，本地与 GitHub Actions 均使用 `flutter pub get --enforce-lockfile`，避免仅因镜像 URL 不同重写整份锁文件。
+- 上游 `03c88c9b` 切换 hosted URL时保留了镜像归档哈希，v3.0.0 使用官方解析器重建 12 个受影响条目的当前 SHA-256；最新上游 `db5ac31b` 已包含同一锁结果，合并后 `--enforce-lockfile` 复核一致。
 - `flame_barrage 0.0.4` 暂存于 `plugins/flame_barrage`，仅修补引擎移动时忽略逐条速度的问题并保留原许可证；上游发布等效修复后再恢复 hosted 依赖。
 - `plugins/built_in_kotlin/` 保存 `better_player_plus 1.3.5`、`floating 6.0.0`、`flutter_exit_app 2.1.2`、`mobile_scanner 7.4.0` 和 `share_handler_android 0.0.11` 的活动源快照；旧 `flutter_js` 快照仅保留许可证归档，不再出现在 `pubspec`、插件注册或运行时依赖图中。
 - `media_kit`、`screen_retriever` 固定到已复核的完整 Git 提交；网页内核同步上游锁定到 `guide-inc-org/guide-flutter_inappwebview` 的 `sbi_fx_pc/v6.2.0-beta.3`（解析提交 `3e6c4c4a`），覆盖 Android、iOS、macOS 与 Windows。Android 子包保留同一提交的 Dart/Java 实现，并在 `plugins/built_in_kotlin/flutter_inappwebview_android` 修正 AGP 9 默认 ProGuard 文件、模块私有 AGP classpath 和 Java 17 目标。Linux 的网页搜索使用系统浏览器，避免额外 WPE WebKit 原生依赖。

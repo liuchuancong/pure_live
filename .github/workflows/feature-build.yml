@@ -49,7 +49,7 @@ on:
         description: Release tag (e.g. v1.0.0) – required if create_release is true
         required: true
         type: string
-        default: 'v2.9.7'
+        default: 'v3.0.0'
 
   push:
     tags:
@@ -539,7 +539,7 @@ jobs:
       # -----------------------------------------------------
 
       - name: Upload Windows artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a0 # v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pure-live-windows
           path: |
@@ -1305,7 +1305,13 @@ jobs:
   publish-release:
     name: Publish GitHub Release
 
-    if: ${{ always() && inputs.create_release && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    if: >-
+      ${{ always() && inputs.create_release &&
+          (needs.quality.result == 'success' || needs.quality.result == 'skipped') &&
+          (!inputs.build_android || needs.android.result == 'success') &&
+          (!inputs.build_windows || needs.windows.result == 'success') &&
+          (!inputs.build_linux || needs.linux.result == 'success') &&
+          (!(inputs.build_macos || inputs.build_ios) || needs.apple.result == 'success') }}
 
     needs:
       - quality
@@ -1429,7 +1435,7 @@ jobs:
 
       - name: Read version description
         id: version
-        uses: juliangruber/read-file-action@v1
+        uses: juliangruber/read-file-action@271ff311a4947af354c6abcd696a306553b9ec18 # v1
         with:
           path: assets/version.json
 
@@ -1498,7 +1504,7 @@ jobs:
       # -----------------------------------------------------
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           tag_name: ${{ inputs.release_tag }}
           name: ${{ inputs.release_tag }}

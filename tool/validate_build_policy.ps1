@@ -143,9 +143,27 @@ foreach ($marker in @(
     '--target-platform android-arm64',
     'PureLive-${VERSION}-android-arm64-v8a-release.apk',
     'steps.version.outputs.artifact_version',
+    "!inputs.build_windows || needs.windows.result == 'success'",
+    "!(inputs.build_macos || inputs.build_ios) || needs.apple.result == 'success'",
     'stage-macos-'
 )) {
     if (-not $featureWorkflow.Contains($marker)) { throw "Feature workflow policy marker is missing: $marker" }
+}
+
+# Every external Action is immutable at review time. This also rejects an
+# accidental extra/missing hex character, which previously made the Windows
+# upload step reference a non-existent commit.
+foreach ($workflow in Get-ChildItem -LiteralPath (Join-Path $repoRoot '.github\workflows') -Filter '*.yml' -File) {
+    $lineNumber = 0
+    foreach ($line in Get-Content -LiteralPath $workflow.FullName) {
+        $lineNumber++
+        if ($line -match 'uses:\s+([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)@([^\s#]+)') {
+            $reference = $Matches[2]
+            if ($reference -notmatch '^[0-9a-f]{40}$') {
+                throw "External Action must use a 40-character commit: $($workflow.Name):$lineNumber ($reference)"
+            }
+        }
+    }
 }
 
 $localAndroidWorkflow = Get-Content -LiteralPath (Join-Path $repoRoot '.github\workflows\local-signed-android.yml') -Raw
@@ -168,6 +186,40 @@ foreach ($marker in @(
     if (-not $publisherWorkflow.Contains($marker)) {
         throw "Staged publisher verification marker is missing: $marker"
     }
+}
+
+$pubspecText = Get-Content -LiteralPath (Join-Path $repoRoot 'pubspec.yaml') -Raw
+if ($pubspecText -notmatch '(?m)^version:\s*([0-9]+\.[0-9]+\.[0-9]+)\+([0-9]+)\s*$') {
+    throw 'pubspec.yaml must expose a semantic version and numeric build.'
+}
+$displayVersion = $Matches[1]
+$buildNumber = [int]$Matches[2]
+$releaseTag = "v$displayVersion"
+$versionFeed = Get-Content -LiteralPath (Join-Path $repoRoot 'assets\version.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+if ($versionFeed.version -ne $displayVersion -or [int]$versionFeed.build_number -ne $buildNumber) {
+    throw 'assets/version.json top-level version must match pubspec.yaml.'
+}
+if ($versionFeed.platforms.android.version -ne $displayVersion -or
+    [int]$versionFeed.platforms.android.build_number -ne $buildNumber) {
+    throw 'assets/version.json Android version must match the current application version.'
+}
+if ($versionFeed.download_url -ne "https://github.com/wzgrx/pure_live/releases/tag/$releaseTag") {
+    throw 'assets/version.json must advertise the maintained repository release.'
+}
+foreach ($workflowName in @('feature-build.yml', 'stage-hosted-artifacts.yml', 'publish-staged-release.yml')) {
+    $workflowText = Get-Content -LiteralPath (Join-Path $repoRoot ".github\workflows\$workflowName") -Raw
+    $acceptedDefaults = @("default: $releaseTag", "default: '$releaseTag'", "default: `"$releaseTag`"")
+    $hasCurrentDefault = @($acceptedDefaults | Where-Object { $workflowText.Contains($_) }).Count -gt 0
+    if (-not $hasCurrentDefault) {
+        throw "Workflow default tag is stale: $workflowName (expected $releaseTag)"
+    }
+}
+
+$environmentText = Get-Content -LiteralPath (Join-Path $repoRoot '.env.prod') -Raw
+$generatedEnvironment = Get-Content -LiteralPath (Join-Path $repoRoot 'lib\gen\env.g.dart') -Raw
+if ($environmentText -notmatch '(?m)^PURELIVE_UPDATE_OWNER=wzgrx\s*$' -or
+    $generatedEnvironment -notmatch "pureliveUpdateOwner = 'wzgrx'") {
+    throw 'Production and generated update repositories must both target wzgrx/pure_live.'
 }
 
 Write-Host 'Build policy static validation passed.'
