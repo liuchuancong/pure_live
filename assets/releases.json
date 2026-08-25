@@ -9,7 +9,7 @@
       "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
       "profile": "https://github.com/wzgrx"
     },
-    "changelog": "# Pure Live v3.0.0\n\nv3.0.0 build 4087 是经上游二次审查、直播页布局回归修复、播放状态机、平台接口、录制可靠性、Windows 生命周期与全平台发布链路重新验证后的稳定更新。先前错误草稿及资产已删除，本页描述重新构建的同版本产物。\n\n## 上游同步与页面状态\n\n- 以真实合并历史同步并审查到 `liuchuancong/pure_live@e808dcae`，吸收关注页/热门页状态绑定、无效关注记录清理、录制配置持久化与目录检查、Android ABI 管理、播放器生命周期串行化、移动端画面适配、多窗口开关和历史记录容量管理。\n- 修复上游 `eae6c9e7` 引入的普通直播页回归：删除默认关闭的全屏翻转 Shell；手机重新同时显示顶部栏、视频、画质/线路和弹幕列表，桌面保留 300–400 px 可见侧栏，IPTV 不预留空面板。\n- 新增普通直播页几何 Widget 回归和上游高风险差异门禁，后续涉及播放器、持久化设置、平台接口、工作流、版本或原生平台的上游改动必须先审查并记录处置。\n- 修正新历史容量功能的 GetX 测试耦合、1–5000 边界、备份恢复与响应式持久化；多画面/新窗口开关在旧安装缺失键时保持原入口可用。\n- 修正英文录制目录提示键名与正文，并让平板多画面入口随设置实时更新。\n- 热门页只使用控制器发布的响应式平台快照构建 `TabBar` 与内容页，避免设置变化期间列表与控制器长度短暂错位。\n- 关注平台列表重建时按平台 ID 保留当前选择；已移除的平台使用有界索引回退，并在下一帧同步筛选状态。\n- 关注数据在启动、备份恢复和显式清理时统一过滤空平台、空/占位房间号并按平台内身份去重，损坏的旧记录不再进入首页刷新队列。\n- 维护发行版继续使用 `wzgrx/pure_live` 更新源，上游批量替换的仓库地址没有覆盖维护分支的安装包、版本历史和下载入口。\n\n## 播放器、画中画与平台接口\n\n- 修复上游 #797：切换房间时立即清理上一直播间的宽高与竖屏标志，只有成对有效的视频尺寸才参与比例计算，避免竖屏房间后打开横屏直播被旧比例压缩。\n- 修复上游 #794：Windows 进入画中画前保存全屏/宽屏表达状态，退出后按原状态恢复 UI，不再统一重置为普通窗口。\n- 修复上游 #793：无参数重复启动在 Windows native runner 创建 Flutter engine 前拦截并激活已有窗口；分享链接、协议参数和显式多窗口参数仍交给 Dart 转发。\n- 修复上游 #798：YY StreamManager 请求对齐当前官方 bid、SDK 版本和正文类型；遇到 `ErrAuthNotPass` 或空结果时自动使用匿名移动 HLS，并按实际视频流去重清晰度选项。\n- YY 发布探针新增 #798 指定房间的 M3U8 实读；斗鱼新增 #799“寅子”房间元数据、H5 描述和实际 FLV 文件头验证；全平台公开接口门禁由 40 项扩展到 42 项。\n- 复核上游 #799：报告使用 v2.9.4，当前分支的纯 Dart 签名、同会话 DID、H5 有界重试、播放请求头与 CDN URL 校验已覆盖其根因链，并对截图对应的 `71415` 房间执行在线实流验证。\n- 抖音匿名搜索探针在同一 Cookie 会话内对 HTTP 503 等瞬态故障执行至多三次有界重试，持续故障仍直接失败并保留端点诊断。\n\n## Android 录制与长时间稳定性\n\n- 修复上游 #791：播放器、多画面、音频转发和录制共用同一平台播放请求头；斗鱼录制补齐房间 Referer、Origin、User-Agent 与进程级 DID Cookie。\n- 移除 Bilibili CDN 请求中的错误 API authority；YY、IPTV 与虎牙录制头不再和播放器策略漂移。\n- FFmpeg 正确引用带 `&` 的签名 URL和含空格的输出目录；音频或视频轨暂时缺失时使用可选映射，避免初始化阶段直接退出。\n- CDN 403/404、AVERROR(EIO) 与短时输入错误会重新解析最新地址后有界重试；本地路径、权限及无效输出参数仍立即结束任务。\n- 默认私有录制目录先实际探测写入能力，再决定是否申请 Android 存储权限；主播名和平台名统一处理非法字符、保留设备名与超长组件。\n- FFmpeg 高频进度只更新对应任务，不再反复排序完整列表；Hive 持久化合并为两秒节流并在控制器关闭时刷新，减少长时间录制的 UI、CPU 与磁盘负载。\n- FFmpeg 改为首次录制时惰性初始化，直接服务调用也执行初始化保护；一次瞬时 native/文件系统失败不会永久污染进程内初始化状态。\n- 录制页布尔开关改为响应式 Hive 持久化，缓存限制不再使用进程启动时的静态快照；FFmpeg 仍校验 HTTPS 证书，不以关闭 TLS 校验掩盖 CDN 或证书故障。\n- Android 私有录制目录在创建任务和申请广泛存储权限前拦截，避免留下不能启动的任务；私有路径识别覆盖所有数字用户/工作资料 ID，并排除外部同名目录误判，轮询任务在路径未修正时继续等待。\n\n## 依赖、工作流与交付\n\n- hosted 依赖统一使用官方 `pub.dev` URL与当前归档哈希；除需要全应用迁移到 `material_ui.ColorScheme` 的 `dynamic_color` 2.x 外，直接依赖均为 Flutter 3.47 当前兼容线的最新版本。\n- 修复全平台工作流中 Windows artifact Action 多余字符导致的无效 SHA；第三方 Release/读文件 Action 固定到完整提交。\n- 全平台发布汇总支持复用本机编译、GitHub Secrets 短时签名后的 Android APK与本机 Windows 包；发布前强制核对 Android 包名、版本、ABI、固定证书指纹及 Windows 源码提交，并清理草稿中的阶段资产。\n- Release 仅在本轮明确请求的每个平台都构建成功后创建，避免某个阶段失败时误发布不完整的“全平台”版本。\n- 版本：`3.0.0+4087`；Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 串行构建发布。",
+    "changelog": "# Pure Live v3.0.0\n\nv3.0.0 build 4088 是对错误 build 4087 的原位修正版：在既有直播页布局、播放状态机、平台接口、录制可靠性与全平台验证基础上，修复 Android 直播页系统侧滑返回失效，并加入全上游差异与全仓源码审查门禁。Release 中旧资产由同一源码提交重新构建的 build 4088 完整替换，不混用两个 build。\n\n## build 4088 返回、审查与桌面修正\n\n- 根因是直播页沿用全局 `back_button_interceptor_plus`，同时 Android Manifest 关闭预测性返回；正常返回分支还在路由真正退出前清理播放器监听。Flutter 3.47 / targetSdk 37 下，这套旧模型会和系统侧滑手势及嵌套路由竞争，表现为进入直播后侧边返回没有响应或页面状态残缺。\n- 删除全局返回拦截并启用 Android 预测性返回。直播路由使用局部 `PopScope`：普通竖屏直接退出；横屏/全屏第一次返回普通竖屏，第二次退出；弹窗和底部面板优先自行关闭；路由确认退出前不拆播放器监听。\n- 新增返回行为 Widget 回归，覆盖普通直播页、横屏/全屏两段式返回和弹窗优先级；全仓审计同时禁止重新引入全局 `SystemChannels.navigation` 或旧拦截依赖。\n- 新增手动只读 `Audit Upstream Update` 工作流：冻结上游 SHA，以 merge-base 盘点每个入站提交、文件、重命名、二进制和风险类别；合并后再扫描全部已跟踪文件。Git 依赖固定为 40 位提交，避免远端分支漂移。\n- 修正旧全平台工作流仍可能并发占用多个 runner 的问题，Android、Windows、Linux、Apple 阶段依次排队；所有平台和发布输入继续默认关闭。\n- 修复 Windows/MSIX“打开日志目录”检查父目录却打开不存在子目录、且忽略打开结果的问题；日志写入与 UI 统一解析实际 `LOGS/log` 路径。\n\n## 上游同步与页面状态\n\n- 以真实合并历史同步并审查到 `liuchuancong/pure_live@e808dcae`，吸收关注页/热门页状态绑定、无效关注记录清理、录制配置持久化与目录检查、Android ABI 管理、播放器生命周期串行化、移动端画面适配、多窗口开关和历史记录容量管理。\n- 修复上游 `eae6c9e7` 引入的普通直播页回归：删除默认关闭的全屏翻转 Shell；手机重新同时显示顶部栏、视频、画质/线路和弹幕列表，桌面保留 300–400 px 可见侧栏，IPTV 不预留空面板。\n- 新增普通直播页几何 Widget 回归和上游高风险差异门禁，后续涉及播放器、持久化设置、平台接口、工作流、版本或原生平台的上游改动必须先审查并记录处置。\n- 修正新历史容量功能的 GetX 测试耦合、1–5000 边界、备份恢复与响应式持久化；多画面/新窗口开关在旧安装缺失键时保持原入口可用。\n- 修正英文录制目录提示键名与正文，并让平板多画面入口随设置实时更新。\n- 热门页只使用控制器发布的响应式平台快照构建 `TabBar` 与内容页，避免设置变化期间列表与控制器长度短暂错位。\n- 关注平台列表重建时按平台 ID 保留当前选择；已移除的平台使用有界索引回退，并在下一帧同步筛选状态。\n- 关注数据在启动、备份恢复和显式清理时统一过滤空平台、空/占位房间号并按平台内身份去重，损坏的旧记录不再进入首页刷新队列。\n- 维护发行版继续使用 `wzgrx/pure_live` 更新源，上游批量替换的仓库地址没有覆盖维护分支的安装包、版本历史和下载入口。\n\n## 播放器、画中画与平台接口\n\n- 修复上游 #797：切换房间时立即清理上一直播间的宽高与竖屏标志，只有成对有效的视频尺寸才参与比例计算，避免竖屏房间后打开横屏直播被旧比例压缩。\n- 修复上游 #794：Windows 进入画中画前保存全屏/宽屏表达状态，退出后按原状态恢复 UI，不再统一重置为普通窗口。\n- 修复上游 #793：无参数重复启动在 Windows native runner 创建 Flutter engine 前拦截并激活已有窗口；分享链接、协议参数和显式多窗口参数仍交给 Dart 转发。\n- 修复上游 #798：YY StreamManager 请求对齐当前官方 bid、SDK 版本和正文类型；遇到 `ErrAuthNotPass` 或空结果时自动使用匿名移动 HLS，并按实际视频流去重清晰度选项。\n- YY 发布探针新增 #798 指定房间的 M3U8 实读；斗鱼新增 #799“寅子”房间元数据、H5 描述和实际 FLV 文件头验证；全平台公开接口门禁由 40 项扩展到 42 项。\n- 复核上游 #799：报告使用 v2.9.4，当前分支的纯 Dart 签名、同会话 DID、H5 有界重试、播放请求头与 CDN URL 校验已覆盖其根因链，并对截图对应的 `71415` 房间执行在线实流验证。\n- 抖音匿名搜索探针在同一 Cookie 会话内对 HTTP 503 等瞬态故障执行至多三次有界重试，持续故障仍直接失败并保留端点诊断。\n\n## Android 录制与长时间稳定性\n\n- 修复上游 #791：播放器、多画面、音频转发和录制共用同一平台播放请求头；斗鱼录制补齐房间 Referer、Origin、User-Agent 与进程级 DID Cookie。\n- 移除 Bilibili CDN 请求中的错误 API authority；YY、IPTV 与虎牙录制头不再和播放器策略漂移。\n- FFmpeg 正确引用带 `&` 的签名 URL和含空格的输出目录；音频或视频轨暂时缺失时使用可选映射，避免初始化阶段直接退出。\n- CDN 403/404、AVERROR(EIO) 与短时输入错误会重新解析最新地址后有界重试；本地路径、权限及无效输出参数仍立即结束任务。\n- 默认私有录制目录先实际探测写入能力，再决定是否申请 Android 存储权限；主播名和平台名统一处理非法字符、保留设备名与超长组件。\n- FFmpeg 高频进度只更新对应任务，不再反复排序完整列表；Hive 持久化合并为两秒节流并在控制器关闭时刷新，减少长时间录制的 UI、CPU 与磁盘负载。\n- FFmpeg 改为首次录制时惰性初始化，直接服务调用也执行初始化保护；一次瞬时 native/文件系统失败不会永久污染进程内初始化状态。\n- 录制页布尔开关改为响应式 Hive 持久化，缓存限制不再使用进程启动时的静态快照；FFmpeg 仍校验 HTTPS 证书，不以关闭 TLS 校验掩盖 CDN 或证书故障。\n- Android 私有录制目录在创建任务和申请广泛存储权限前拦截，避免留下不能启动的任务；私有路径识别覆盖所有数字用户/工作资料 ID，并排除外部同名目录误判，轮询任务在路径未修正时继续等待。\n\n## 依赖、工作流与交付\n\n- hosted 依赖统一使用官方 `pub.dev` URL与当前归档哈希；除需要全应用迁移到 `material_ui.ColorScheme` 的 `dynamic_color` 2.x 外，直接依赖均为 Flutter 3.47 当前兼容线的最新版本。\n- 修复全平台工作流中 Windows artifact Action 多余字符导致的无效 SHA；第三方 Release/读文件 Action 固定到完整提交。\n- 全平台发布汇总支持复用本机编译、GitHub Secrets 短时签名后的 Android APK与本机 Windows 包；发布前强制核对 Android 包名、版本、ABI、固定证书指纹及 Windows 源码提交，并清理草稿中的阶段资产。\n- Release 仅在本轮明确请求的每个平台都构建成功后创建，避免某个阶段失败时误发布不完整的“全平台”版本。\n- 版本：`3.0.0+4088`；Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64 串行构建发布。",
     "files": [
       {
         "name": "BUILD_METADATA.json",
@@ -18,52 +18,52 @@
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.0/BUILD_METADATA.json"
       },
       {
-        "name": "PureLive-3.0.0-4087-android-arm64-v8a",
+        "name": "PureLive-3.0.0-4088-android-arm64-v8a",
         "size": "112.89mb",
         "downloads": 0,
-        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.0/PureLive-3.0.0-4087-android-arm64-v8a-release.apk"
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.0/PureLive-3.0.0-4088-android-arm64-v8a-release.apk"
       },
       {
-        "name": "PureLive-3.0.0-4087-ios-arm64-trollstore.ipa",
+        "name": "PureLive-3.0.0-4088-ios-arm64-trollstore.ipa",
         "size": "55.93mb",
         "downloads": 0,
-        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.0/PureLive-3.0.0-4087-ios-arm64-trollstore.ipa"
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.0/PureLive-3.0.0-4088-ios-arm64-trollstore.ipa"
       },
       {
-        "name": "PureLive-3.0.0-4087-ios-arm64-unsigned-app.zip",
-        "size": "55.12mb",
+        "name": "PureLive-3.0.0-4088-ios-arm64-unsigned-app.zip",
+        "size": "55.13mb",
         "downloads": 0,
-        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.0/PureLive-3.0.0-4087-ios-arm64-unsigned-app.zip"
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.0/PureLive-3.0.0-4088-ios-arm64-unsigned-app.zip"
       },
       {
-        "name": "PureLive-3.0.0-4087-linux-x64.tar.gz",
+        "name": "PureLive-3.0.0-4088-linux-x64.tar.gz",
         "size": "35.93mb",
         "downloads": 0,
-        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.0/PureLive-3.0.0-4087-linux-x64.tar.gz"
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.0/PureLive-3.0.0-4088-linux-x64.tar.gz"
       },
       {
-        "name": "PureLive-3.0.0-4087-macos-universal.dmg",
-        "size": "107.53mb",
+        "name": "PureLive-3.0.0-4088-macos-universal.dmg",
+        "size": "107.48mb",
         "downloads": 0,
-        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.0/PureLive-3.0.0-4087-macos-universal.dmg"
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.0/PureLive-3.0.0-4088-macos-universal.dmg"
       },
       {
-        "name": "PureLive-3.0.0-4087-macos-universal.zip",
+        "name": "PureLive-3.0.0-4088-macos-universal.zip",
         "size": "96.23mb",
         "downloads": 0,
-        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.0/PureLive-3.0.0-4087-macos-universal.zip"
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.0/PureLive-3.0.0-4088-macos-universal.zip"
       },
       {
-        "name": "PureLive-3.0.0-4087-windows-x64-portable.zip",
-        "size": "70.16mb",
+        "name": "PureLive-3.0.0-4088-windows-x64-portable.zip",
+        "size": "68.77mb",
         "downloads": 0,
-        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.0/PureLive-3.0.0-4087-windows-x64-portable.zip"
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.0/PureLive-3.0.0-4088-windows-x64-portable.zip"
       },
       {
-        "name": "PureLive-3.0.0-4087-windows-x64-setup.exe",
+        "name": "PureLive-3.0.0-4088-windows-x64-setup.exe",
         "size": "53.31mb",
         "downloads": 0,
-        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.0/PureLive-3.0.0-4087-windows-x64-setup.exe"
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.0/PureLive-3.0.0-4088-windows-x64-setup.exe"
       },
       {
         "name": "SHA256SUMS.txt",
@@ -88,79 +88,79 @@
       {
         "name": "ANDROID_SHA256SUM.txt",
         "size": "0.0mb",
-        "downloads": 7,
+        "downloads": 31,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.8/ANDROID_SHA256SUM.txt"
       },
       {
         "name": "BUILD_METADATA.json",
         "size": "0.0mb",
-        "downloads": 3,
+        "downloads": 9,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.8/BUILD_METADATA.json"
       },
       {
         "name": "PureLive-2.9.8-4087-android-arm64-v8a",
         "size": "112.74mb",
-        "downloads": 421,
+        "downloads": 1036,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.8/PureLive-2.9.8-4087-android-arm64-v8a-release.apk"
       },
       {
         "name": "PureLive-2.9.8-4087-android-armeabi-v7a",
         "size": "100.13mb",
-        "downloads": 19,
+        "downloads": 45,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.8/PureLive-2.9.8-4087-android-armeabi-v7a-release.apk"
       },
       {
         "name": "PureLive-2.9.8-4087-android-x86_64",
         "size": "127.28mb",
-        "downloads": 12,
+        "downloads": 37,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.8/PureLive-2.9.8-4087-android-x86_64-release.apk"
       },
       {
         "name": "PureLive-2.9.8-4087-ios-arm64-trollstore.ipa",
         "size": "55.93mb",
-        "downloads": 16,
+        "downloads": 41,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.8/PureLive-2.9.8-4087-ios-arm64-trollstore.ipa"
       },
       {
         "name": "PureLive-2.9.8-4087-ios-arm64-unsigned-app.zip",
         "size": "55.13mb",
-        "downloads": 6,
+        "downloads": 23,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.8/PureLive-2.9.8-4087-ios-arm64-unsigned-app.zip"
       },
       {
         "name": "PureLive-2.9.8-4087-linux-x64.tar.gz",
         "size": "35.93mb",
-        "downloads": 2,
+        "downloads": 6,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.8/PureLive-2.9.8-4087-linux-x64.tar.gz"
       },
       {
         "name": "PureLive-2.9.8-4087-macos-universal.dmg",
         "size": "107.5mb",
-        "downloads": 6,
+        "downloads": 18,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.8/PureLive-2.9.8-4087-macos-universal.dmg"
       },
       {
         "name": "PureLive-2.9.8-4087-macos-universal.zip",
         "size": "96.23mb",
-        "downloads": 3,
+        "downloads": 17,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.8/PureLive-2.9.8-4087-macos-universal.zip"
       },
       {
         "name": "PureLive-2.9.8-4087-windows-x64-portable.zip",
         "size": "73.4mb",
-        "downloads": 28,
+        "downloads": 77,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.8/PureLive-2.9.8-4087-windows-x64-portable.zip"
       },
       {
         "name": "PureLive-2.9.8-4087-windows-x64-setup.exe",
         "size": "56.03mb",
-        "downloads": 130,
+        "downloads": 332,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.8/PureLive-2.9.8-4087-windows-x64-setup.exe"
       },
       {
         "name": "PureLive-2.9.8-4087-windows-x64.msix",
         "size": "79.21mb",
-        "downloads": 26,
+        "downloads": 47,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.8/PureLive-2.9.8-4087-windows-x64.msix"
       }
     ]
@@ -192,7 +192,7 @@
       {
         "name": "PureLive-2.9.7-4086-android-arm64-v8a",
         "size": "112.87mb",
-        "downloads": 183,
+        "downloads": 198,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.7/PureLive-2.9.7-4086-android-arm64-v8a-release.apk"
       },
       {
@@ -1032,7 +1032,7 @@
       {
         "name": "PureLive-2.3.0-4069-arm64-v8a",
         "size": "114.06mb",
-        "downloads": 105,
+        "downloads": 106,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.3.0/PureLive-2.3.0-4069-arm64-v8a-release.apk"
       },
       {
@@ -1074,7 +1074,7 @@
       {
         "name": "PureLive-2.3.0-4071-arm64-v8a",
         "size": "114.07mb",
-        "downloads": 35,
+        "downloads": 41,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.3.0/PureLive-2.3.0-4071-arm64-v8a-release.apk"
       },
       {
@@ -1112,7 +1112,7 @@
       {
         "name": "PureLive-2.2.0-4068-arm64-v8a",
         "size": "122.37mb",
-        "downloads": 55,
+        "downloads": 56,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v2.2.0/PureLive-2.2.0-4068-arm64-v8a-release.apk"
       },
       {
@@ -2020,7 +2020,7 @@
       {
         "name": "arm64-v8a",
         "size": "126.58mb",
-        "downloads": 6478,
+        "downloads": 6479,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.21/app-arm64-v8a-release.apk"
       },
       {
@@ -2088,7 +2088,7 @@
       {
         "name": "PureLive-2.0.20+31-macOS.dmg",
         "size": "93.41mb",
-        "downloads": 106,
+        "downloads": 107,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.20/PureLive-2.0.20%2B31-macOS.dmg"
       },
       {
