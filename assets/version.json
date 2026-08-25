@@ -1,23 +1,23 @@
 {
-  "version": "2.9.7",
-  "build_number": 4086,
-  "version_num": 209074086,
+  "version": "2.9.8",
+  "build_number": 4087,
+  "version_num": 209084087,
   "android_abis": [
     "arm64-v8a",
     "armeabi-v7a",
     "x86_64"
   ],
-  "version_desc": "- 修复Android录制。\n- 抖音：读取当前 Feed 顶层 user_count 作为真实在线；累计观看与在线人数彻底分字段。\n- 网易 CC：webcc_visitor/hot_score/visitor 归为热度，只有 vision_visitor/online_num 归为在线。\n- SOOP：推荐和搜索改用 PC + 移动端 total_view_cnt，不再只统计 PC 端。\n- 斗鱼、虎牙、YY：继续按平台热度显示，避免把百万级热度误标为真实人数。\n- 快手、Twitch：保留明确在线口径。\n- 热门页、收藏、搜索和房间选择器统一使用指标感知、稳定、从高到低的排行规则；切换口径会刷新当前热门平台。\n- 修复抖音推荐 Feed 从 data.data 变为 data[] 信封结构后触发的 String/int 动态索引异常；兼容新旧 Map、嵌入 JSON 与缺失可选字段。\n- 修复哔哩哔哩热门误用推荐流导致热度不按降序的问题，改用 sort=online 排行源并在客户端稳定二次排序；房间信息遇到过期 WBI 或 -352 时刷新密钥并有界重试。\n",
+  "version_desc": "- 修复斗鱼录制无法正常使用的问题\n- 修复YY直播录制失败的问题（建议使用英文路径或开启拼音路径）\n- 历史记录现在支持自定义管理\n- Android端新增路径格式错误提醒",
   "prerelease": false,
-  "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.9.7",
+  "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.9.8",
   "platforms": {
     "android": {
-      "version": "2.9.7",
-      "build_number": 4086,
-      "version_num": 209074086,
-      "version_desc": "- 修复Android录制。\n- 抖音：读取当前 Feed 顶层 user_count 作为真实在线；累计观看与在线人数彻底分字段。\n- 网易 CC：webcc_visitor/hot_score/visitor 归为热度，只有 vision_visitor/online_num 归为在线。\n- SOOP：推荐和搜索改用 PC + 移动端 total_view_cnt，不再只统计 PC 端。\n- 斗鱼、虎牙、YY：继续按平台热度显示，避免把百万级热度误标为真实人数。\n- 快手、Twitch：保留明确在线口径。\n- 热门页、收藏、搜索和房间选择器统一使用指标感知、稳定、从高到低的排行规则；切换口径会刷新当前热门平台。\n- 修复抖音推荐 Feed 从 data.data 变为 data[] 信封结构后触发的 String/int 动态索引异常；兼容新旧 Map、嵌入 JSON 与缺失可选字段。\n- 修复哔哩哔哩热门误用推荐流导致热度不按降序的问题，改用 sort=online 排行源并在客户端稳定二次排序；房间信息遇到过期 WBI 或 -352 时刷新密钥并有界重试。\n",
+      "version": "2.9.8",
+      "build_number": 4087,
+      "version_num": 209084087,
+      "version_desc": "- 修复斗鱼录制无法正常使用的问题\n- 修复YY直播录制失败的问题（建议使用英文路径或开启拼音路径）\n- 历史记录现在支持自定义管理\n- Android端新增路径格式错误提醒",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.9.7",
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.9.8",
       "android_abis": [
         "arm64-v8a",
         "armeabi-v7a",
@@ -25,37 +25,37 @@
       ]
     },
     "windows": {
-      "version": "2.9.7",
-      "build_number": 4085,
-      "version_num": 209074086,
-      "version_desc": "- 修复Android录制。\n- 抖音：读取当前 Feed 顶层 user_count 作为真实在线；累计观看与在线人数彻底分字段。\n- 网易 CC：webcc_visitor/hot_score/visitor 归为热度，只有 vision_visitor/online_num 归为在线。\n- SOOP：推荐和搜索改用 PC + 移动端 total_view_cnt，不再只统计 PC 端。\n- 斗鱼、虎牙、YY：继续按平台热度显示，避免把百万级热度误标为真实人数。\n- 快手、Twitch：保留明确在线口径。\n- 热门页、收藏、搜索和房间选择器统一使用指标感知、稳定、从高到低的排行规则；切换口径会刷新当前热门平台。\n- 修复抖音推荐 Feed 从 data.data 变为 data[] 信封结构后触发的 String/int 动态索引异常；兼容新旧 Map、嵌入 JSON 与缺失可选字段。\n- 修复哔哩哔哩热门误用推荐流导致热度不按降序的问题，改用 sort=online 排行源并在客户端稳定二次排序；房间信息遇到过期 WBI 或 -352 时刷新密钥并有界重试。\n",
+      "version": "2.9.8",
+      "build_number": 4087,
+      "version_num": 209084087,
+      "version_desc": "- 修复斗鱼录制无法正常使用的问题\n- 修复YY直播录制失败的问题（建议使用英文路径或开启拼音路径）\n- 历史记录现在支持自定义管理\n- Android端新增路径格式错误提醒",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.9.7",
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.9.8",
       "windows_msix_available": true
     },
     "linux": {
-      "version": "2.9.7",
-      "build_number": 4085,
-      "version_num": 209074086,
-      "version_desc": "- 修复Android录制。\n- 抖音：读取当前 Feed 顶层 user_count 作为真实在线；累计观看与在线人数彻底分字段。\n- 网易 CC：webcc_visitor/hot_score/visitor 归为热度，只有 vision_visitor/online_num 归为在线。\n- SOOP：推荐和搜索改用 PC + 移动端 total_view_cnt，不再只统计 PC 端。\n- 斗鱼、虎牙、YY：继续按平台热度显示，避免把百万级热度误标为真实人数。\n- 快手、Twitch：保留明确在线口径。\n- 热门页、收藏、搜索和房间选择器统一使用指标感知、稳定、从高到低的排行规则；切换口径会刷新当前热门平台。\n- 修复抖音推荐 Feed 从 data.data 变为 data[] 信封结构后触发的 String/int 动态索引异常；兼容新旧 Map、嵌入 JSON 与缺失可选字段。\n- 修复哔哩哔哩热门误用推荐流导致热度不按降序的问题，改用 sort=online 排行源并在客户端稳定二次排序；房间信息遇到过期 WBI 或 -352 时刷新密钥并有界重试。\n",
+      "version": "2.9.8",
+      "build_number": 4087,
+      "version_num": 209084087,
+      "version_desc": "- 修复斗鱼录制无法正常使用的问题\n- 修复YY直播录制失败的问题（建议使用英文路径或开启拼音路径）\n- 历史记录现在支持自定义管理\n- Android端新增路径格式错误提醒",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.9.7"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.9.8"
     },
     "macos": {
-      "version": "2.9.7",
-      "build_number": 4085,
-      "version_num": 209074086,
-      "version_desc": "- 修复Android录制。\n- 抖音：读取当前 Feed 顶层 user_count 作为真实在线；累计观看与在线人数彻底分字段。\n- 网易 CC：webcc_visitor/hot_score/visitor 归为热度，只有 vision_visitor/online_num 归为在线。\n- SOOP：推荐和搜索改用 PC + 移动端 total_view_cnt，不再只统计 PC 端。\n- 斗鱼、虎牙、YY：继续按平台热度显示，避免把百万级热度误标为真实人数。\n- 快手、Twitch：保留明确在线口径。\n- 热门页、收藏、搜索和房间选择器统一使用指标感知、稳定、从高到低的排行规则；切换口径会刷新当前热门平台。\n- 修复抖音推荐 Feed 从 data.data 变为 data[] 信封结构后触发的 String/int 动态索引异常；兼容新旧 Map、嵌入 JSON 与缺失可选字段。\n- 修复哔哩哔哩热门误用推荐流导致热度不按降序的问题，改用 sort=online 排行源并在客户端稳定二次排序；房间信息遇到过期 WBI 或 -352 时刷新密钥并有界重试。\n",
+      "version": "2.9.8",
+      "build_number": 4087,
+      "version_num": 209084087,
+      "version_desc": "- 修复斗鱼录制无法正常使用的问题\n- 修复YY直播录制失败的问题（建议使用英文路径或开启拼音路径）\n- 历史记录现在支持自定义管理\n- Android端新增路径格式错误提醒",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.9.7"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.9.8"
     },
     "ios": {
-      "version": "2.9.7",
-      "build_number": 4085,
-      "version_num": 209074086,
-      "version_desc": "- 修复Android录制。\n- 抖音：读取当前 Feed 顶层 user_count 作为真实在线；累计观看与在线人数彻底分字段。\n- 网易 CC：webcc_visitor/hot_score/visitor 归为热度，只有 vision_visitor/online_num 归为在线。\n- SOOP：推荐和搜索改用 PC + 移动端 total_view_cnt，不再只统计 PC 端。\n- 斗鱼、虎牙、YY：继续按平台热度显示，避免把百万级热度误标为真实人数。\n- 快手、Twitch：保留明确在线口径。\n- 热门页、收藏、搜索和房间选择器统一使用指标感知、稳定、从高到低的排行规则；切换口径会刷新当前热门平台。\n- 修复抖音推荐 Feed 从 data.data 变为 data[] 信封结构后触发的 String/int 动态索引异常；兼容新旧 Map、嵌入 JSON 与缺失可选字段。\n- 修复哔哩哔哩热门误用推荐流导致热度不按降序的问题，改用 sort=online 排行源并在客户端稳定二次排序；房间信息遇到过期 WBI 或 -352 时刷新密钥并有界重试。\n",
+      "version": "2.9.8",
+      "build_number": 4087,
+      "version_num": 209084087,
+      "version_desc": "- 修复斗鱼录制无法正常使用的问题\n- 修复YY直播录制失败的问题（建议使用英文路径或开启拼音路径）\n- 历史记录现在支持自定义管理\n- Android端新增路径格式错误提醒",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.9.7"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v2.9.8"
     }
   }
 }
