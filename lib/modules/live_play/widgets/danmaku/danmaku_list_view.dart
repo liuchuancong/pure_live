@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:collection';
 import 'dart:ui' as ui;
+import 'dart:collection';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +9,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/modules/live_play/states/ui_state.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_message_actions.dart';
@@ -361,6 +362,8 @@ class DanmakuListViewState extends State<DanmakuListView> {
             ),
             Obx(() {
               if (!controller.localInteractionController.enabled.v) return const SizedBox.shrink();
+              final state = controller.state.value;
+              final screenMode = state.ui.screenMode;
               return Material(
                 color: Theme.of(context).colorScheme.surfaceContainerLow,
                 child: SafeArea(
@@ -387,7 +390,9 @@ class DanmakuListViewState extends State<DanmakuListView> {
                                 icon: Icon(
                                   Icons.auto_awesome_rounded,
                                   size: 19,
-                                  color: Color(controller.localInteractionController.danmakuColor.v),
+                                  color: screenMode == VideoMode.normal
+                                      ? Theme.of(context).primaryColor
+                                      : Color(controller.localInteractionController.danmakuColor.v),
                                 ),
                               ),
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(22)),
