@@ -56,7 +56,10 @@ function Get-PureLiveActiveHeavyProcess {
         # the cache-warm daemons, but only classify them as heavy when they are
         # doing sustained work; explicit build clients are active immediately.
         if ($isLongLivedDaemon -and $cpuDelta -lt 1.25) { continue }
-        if ($cpuDelta -lt $CpuSecondsThreshold -and $current.Name -ne 'rg' -and -not $isBuildClient) { continue }
+        # `rg` without an explicit path can remain alive while waiting for
+        # stdin. Treat it like every other tool and require measurable work;
+        # otherwise one idle search process can block all builds indefinitely.
+        if ($cpuDelta -lt $CpuSecondsThreshold -and -not $isBuildClient) { continue }
 
         $active += [pscustomobject]@{
             Id = $id

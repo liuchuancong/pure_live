@@ -1,6 +1,9 @@
 #include <flutter/dart_project.h>
 #include <flutter/flutter_view_controller.h>
 #include <windows.h>
+#include <cstdlib>
+#include <string>
+#include <vector>
 #include "flutter_window.h"
 #include "utils.h"
 #include <shobjidl.h>
@@ -9,16 +12,6 @@ namespace {
 
 constexpr wchar_t kPrimaryInstanceMutex[] =
     L"Local\\PureLive_Primary_Instance_v1";
-
-bool HasExplicitInstanceArgument(
-    const std::vector<std::string>& arguments) {
-  for (const auto& argument : arguments) {
-    if (argument.rfind("--instance=", 0) == 0) {
-      return true;
-    }
-  }
-  return false;
-}
 
 void BringPrimaryWindowToFront() {
   const HWND window =
@@ -48,7 +41,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   // retained for argument forwarding; this early fence prevents the brief
   // decoder/UI stall observed when users launch the installed shortcut twice.
   HANDLE primary_instance_mutex = nullptr;
-  if (!HasExplicitInstanceArgument(command_line_arguments)) {
+  // Business arguments (shared URLs, protocol links and --instance=...) must
+  // still reach the Dart single-instance channel for forwarding or intentional
+  // multi-window creation. The common duplicate-shortcut case has no arguments
+  // and can be rejected here without starting a second Flutter engine.
+  if (command_line_arguments.empty()) {
     primary_instance_mutex =
         ::CreateMutexW(nullptr, TRUE, kPrimaryInstanceMutex);
     if (primary_instance_mutex != nullptr &&

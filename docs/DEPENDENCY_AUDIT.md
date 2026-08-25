@@ -13,7 +13,7 @@ Android 已启用 AGP 9 Built-in Kotlin。主应用、`flv_lzc` 以及六个仍�
 
 AGP 9.3.1 是当前 9.3 稳定补丁，官方兼容表给出的默认 Gradle 为 9.5.0；仓库保持该验证组合。Google Services 4.5.0 与 Firebase 当前官方设置文档一致。Gradle 独立发行线虽已有更新版本，但不越过 AGP/Flutter 已验证默认组合做孤立升级。
 
-`flutter pub outdated` 已于 2026-08-25 再次复核：除 `dynamic_color` 外，直接依赖与开发依赖均处于当前约束可升级的最新版本。`dynamic_color` 1.9.0 是当前 Flutter Material `ColorScheme` 可直接使用的最新系列；2.1.0 已把公开类型迁移到独立 `material_ui.ColorScheme`，全应用主题迁移前保持 1.9.0。其余可见更新均为 Flutter 3.47 SDK或上游约束锁定的传递依赖，保持解析器给出的兼容组合，避免以 override 破坏播放器或代码生成组合。
+`flutter pub outdated` 已于 2026-08-25 再次复核：Syncfusion sliders 已更新到兼容补丁 `34.2.5`，上游邮箱校验已迁移到 `best_form_validator 1.4.0`；除 `dynamic_color` 外，直接依赖与开发依赖均处于当前约束可升级的最新版本。`dynamic_color` 1.9.0 是当前 Flutter Material `ColorScheme` 可直接使用的最新系列；2.1.0 已把公开类型迁移到独立 `material_ui.ColorScheme`，全应用主题迁移前保持 1.9.0。其余可见更新均为 Flutter 3.47 SDK或上游约束锁定的传递依赖，保持解析器给出的兼容组合，避免以 override 破坏播放器或代码生成组合。
 
 播放器依赖在 v2.6.0 再次单独核验：`better_player_plus` 为 1.3.5 的 Built-in Kotlin 本地快照；项目使用的 `Predidit/media-kit` 修订分支仍固定到 `994465d9bfca3f39d0b41199d16e7fd93fe97881`，`media_kit_video` 使用包含 Surface/音频模式生命周期修复的仓库副本。`pub outdated` 中其余较新版本均为当前 Flutter SDK 或上游依赖约束锁定的传递包，未用强制 override 破坏播放器组合兼容性。
 
@@ -44,7 +44,7 @@ AGP 9.3.1 是当前 9.3 稳定补丁，官方兼容表给出的默认 Gradle 为
 python .\tool\interface_probe.py
 ```
 
-当前脚本总计检查 40 项，覆盖 Bilibili、Douyu、Huya、Kuaishou、Douyin、网易 CC、Twitch、SOOP Live 与 YY Live 的公开分类/推荐入口、搜索、房间元数据、弹幕节点和播放链路。v2.9.7 在不增加重复请求的前提下，把既有推荐检查升级为字段语义检查：斗鱼 `ol`、虎牙 `totalCount`、抖音 `user_count`、快手 `watchingCount`、CC 热度/并发双字段、Twitch `viewersCount`、SOOP `total_view_cnt = pc_view_cnt + mobile_view_cnt` 与 YY `users` 都必须存在并可解析。播放器链路继续覆盖斗鱼签名 + H5 + CDN FLV 实读、快手直播/录播结构、Bilibili/Huya/CC 画质线路以及 Twitch/SOOP/YY 播放令牌。发布结果写入对应阶段文档；Android 设备验收仍作为独立证据层。
+当前脚本总计检查 41 项，覆盖 Bilibili、Douyu、Huya、Kuaishou、Douyin、网易 CC、Twitch、SOOP Live 与 YY Live 的公开分类/推荐入口、搜索、房间元数据、弹幕节点和播放链路。v2.9.7 在不增加重复请求的前提下，把既有推荐检查升级为字段语义检查：斗鱼 `ol`、虎牙 `totalCount`、抖音 `user_count`、快手 `watchingCount`、CC 热度/并发双字段、Twitch `viewersCount`、SOOP `total_view_cnt = pc_view_cnt + mobile_view_cnt` 与 YY `users` 都必须存在并可解析。播放器链路继续覆盖斗鱼签名 + H5 + CDN FLV 实读、快手直播/录播结构、Bilibili/Huya/CC 画质线路以及 Twitch/SOOP/YY 播放令牌；v3.0.0 额外实读上游 #798 指定 YY 房间的匿名移动 HLS 清单，防止“常规房间探针通过、受限房间仍不能播”的盲区。发布结果写入对应阶段文档；Android 设备验收仍作为独立证据层。
 
 虎牙另提供 `python .\tool\huya_danmaku_probe.py` 实时 WebSocket 回归；2026-08-16 已验证注册、新版心跳和真实推送接收。该项依赖当前直播间与平台网关状态，保留为发布前手动检查。
 

@@ -365,17 +365,17 @@ def yy_playback_probe() -> None:
             "head": {
                 "seq": sequence,
                 "appidstr": "0",
-                "bidstr": "123",
+                "bidstr": "121",
                 "cidstr": room_id,
                 "sidstr": room_id,
                 "uid64": 0,
                 "client_type": 108,
-                "client_ver": "5.19.4",
+                "client_ver": "5.23.0-beta.2",
                 "stream_sys_ver": 1,
                 "app": "yylive_web",
-                "playersdk_ver": "5.19.4",
+                "playersdk_ver": "5.23.0-beta.2",
                 "thundersdk_ver": "0",
-                "streamsdk_ver": "5.19.4",
+                "streamsdk_ver": "5.23.0-beta.2",
             },
             "client_attribute": {
                 "client": "web",
@@ -402,7 +402,7 @@ def yy_playback_probe() -> None:
             },
         },
         headers={
-            "Content-Type": "application/json",
+            "Content-Type": "text/plain;charset=UTF-8",
             "Origin": "https://www.yy.com",
             "Referer": f"https://www.yy.com/{room_id}",
         },
@@ -416,6 +416,42 @@ def yy_playback_probe() -> None:
         for value in lines.values()
     ):
         raise ValueError("YY playback lines missing")
+
+
+def yy_restricted_room_fallback_probe() -> None:
+    """Exercise the anonymous HLS fallback for upstream issue #798."""
+    room_id = "1382736873"
+    response = urllib.request.urlopen(
+        urllib.request.Request(
+            f"https://interface.yy.com/hls/new/get/{room_id}/{room_id}/4000?source=wapyy&callback=",
+            headers={
+                "User-Agent": (
+                    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) "
+                    "AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1"
+                ),
+                "Referer": f"https://wap.yy.com/mobileweb/{room_id}/{room_id}",
+                "Connection": "close",
+            },
+        ),
+        timeout=20,
+    )
+    payload = response.read().decode("utf-8", errors="replace").strip()
+    json_start = payload.find("{")
+    json_end = payload.rfind("}")
+    if json_start < 0 or json_end < json_start:
+        raise ValueError("YY fallback returned no JSON object")
+    data = json.loads(payload[json_start : json_end + 1])
+    stream_url = str(data.get("hls", "")).strip() if isinstance(data, dict) else ""
+    if data.get("code") != 0 or not stream_url.startswith("https://"):
+        raise ValueError("YY fallback stream URL missing")
+    stream_request = urllib.request.Request(
+        stream_url,
+        headers={"User-Agent": USER_AGENT, "Referer": "https://wap.yy.com/", "Connection": "close"},
+    )
+    with urllib.request.urlopen(stream_request, timeout=20) as stream_response:
+        prefix = stream_response.read(16)
+    if not prefix.startswith(b"#EXTM3U"):
+        raise ValueError(f"YY fallback returned a non-HLS prefix: {prefix!r}")
 
 
 def kuaishou_playback_probe() -> None:
@@ -1358,6 +1394,7 @@ def main() -> int:
         ("yy.anchor_search", yy_anchor_search_probe),
         ("yy.room", yy_room_probe),
         ("yy.playback", yy_playback_probe),
+        ("yy.restricted_room_fallback", yy_restricted_room_fallback_probe),
     ]
 
     failures: list[str] = []

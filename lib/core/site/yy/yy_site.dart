@@ -12,6 +12,10 @@ import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 
 class YYSite implements LiveSite, LiveSiteRoomRefresher {
+  static const String _streamSdkVersion = '5.23.0-beta.2';
+  static const String _mobileHlsPrefix = 'mobile-hls:';
+  static const List<String> _mobileHlsRates = <String>['1200', '4000'];
+
   @override
   String id = Sites.yySite;
 
@@ -269,15 +273,25 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher {
   /// 获取直播流
   /// ============================================================
 
+  ({String cid, String sid}) _channelIds(LiveRoom detail) {
+    final danmakuArgs = detail.danmakuData;
+    if (danmakuArgs is YyDanmakuArgs && danmakuArgs.topSid > 0) {
+      return (cid: danmakuArgs.topSid.toString(), sid: danmakuArgs.subSid.toString());
+    }
+    final roomId = detail.roomId?.trim() ?? '';
+    return (cid: roomId, sid: roomId);
+  }
+
   Future<Map<String, dynamic>> getLiveStreamObj({required LiveRoom detail, required String qn}) async {
     final sequence = DateTime.now().millisecondsSinceEpoch;
+    final channel = _channelIds(detail);
 
     final result = await HttpClient.instance.postJson(
       'https://stream-manager.yy.com/v3/channel/streams',
       queryParameters: {
         'uid': '0',
-        'cid': detail.roomId,
-        'sid': detail.roomId,
+        'cid': channel.cid,
+        'sid': channel.sid,
         'appid': '0',
         'sequence': sequence.toString(),
         'encode': 'json',
@@ -286,17 +300,17 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher {
         'head': {
           'seq': sequence,
           'appidstr': '0',
-          'bidstr': '123',
-          'cidstr': detail.roomId,
-          'sidstr': detail.roomId,
+          'bidstr': '121',
+          'cidstr': channel.cid,
+          'sidstr': channel.sid,
           'uid64': 0,
           'client_type': 108,
-          'client_ver': '5.19.4',
+          'client_ver': _streamSdkVersion,
           'stream_sys_ver': 1,
           'app': 'yylive_web',
-          'playersdk_ver': '5.19.4',
+          'playersdk_ver': _streamSdkVersion,
           'thundersdk_ver': '0',
-          'streamsdk_ver': '5.19.4',
+          'streamsdk_ver': _streamSdkVersion,
         },
         'client_attribute': {
           'client': 'web',
@@ -327,10 +341,91 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher {
           'stream_format': 0,
         },
       },
-      header: getHeaders(),
+      header: {
+        ...getHeaders(),
+        // YY's current web SDK sends this JSON-shaped body as text/plain.
+        // Some protected channels reject application/json before evaluating
+        // the otherwise identical request.
+        'Content-Type': 'text/plain;charset=UTF-8',
+        'Referer': 'https://www.yy.com/${channel.cid}/${channel.sid}',
+      },
     );
 
     return decode(result);
+  }
+
+  @visibleForTesting
+  static Map<String, dynamic>? parseMobileHlsPayload(String payload) {
+    final source = payload.trim();
+    final jsonStart = source.indexOf('{');
+    final jsonEnd = source.lastIndexOf('}');
+    if (jsonStart < 0 || jsonEnd < jsonStart) return null;
+    try {
+      final value = json.decode(source.substring(jsonStart, jsonEnd + 1));
+      if (value is! Map || _asInt(value['code']) != 0) return null;
+      final url = value['hls']?.toString().trim() ?? '';
+      final uri = Uri.tryParse(url);
+      if (uri == null || !uri.hasScheme || !const {'http', 'https'}.contains(uri.scheme)) return null;
+      return Map<String, dynamic>.from(value);
+    } catch (error) {
+      CoreLog.w('YY mobile HLS payload is invalid: $error');
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> _getMobileHlsStream({required LiveRoom detail, required String rate}) async {
+    final channel = _channelIds(detail);
+    final response = await HttpClient.instance.getText(
+      'https://interface.yy.com/hls/new/get/${channel.cid}/${channel.sid}/$rate',
+      queryParameters: const {'source': 'wapyy', 'callback': ''},
+      header: {
+        ...getHeaders(),
+        'Referer': 'https://wap.yy.com/mobileweb/${channel.cid}/${channel.sid}',
+        'User-Agent':
+            'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) '
+            'AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1',
+      },
+    );
+    return parseMobileHlsPayload(response);
+  }
+
+  Future<List<LivePlayQuality>> _getMobileHlsQualities({required LiveRoom detail}) async {
+    final responses = await Future.wait(
+      _mobileHlsRates.map((rate) async {
+        try {
+          return (rate: rate, payload: await _getMobileHlsStream(detail: detail, rate: rate));
+        } catch (error) {
+          CoreLog.w('YY mobile HLS quality $rate failed: $error');
+          return (rate: rate, payload: null);
+        }
+      }),
+    );
+
+    final byStream = <String, LivePlayQuality>{};
+    for (final response in responses) {
+      final payload = response.payload;
+      if (payload == null) continue;
+      final width = _asInt(payload['width']) ?? 0;
+      final height = _asInt(payload['height']) ?? 0;
+      final shortEdge = width > 0 && height > 0 ? (width < height ? width : height) : 0;
+      final streamKey = payload['video']?.toString().trim();
+      final identity = streamKey?.isNotEmpty == true ? streamKey! : '${width}x$height';
+      final rate = int.tryParse(response.rate) ?? 0;
+      final tier = response.rate == _mobileHlsRates.first ? '流畅' : '高清';
+      final resolution = shortEdge > 0 ? ' · ${shortEdge}p' : '';
+      // The endpoint may map several requested rates to the same actual
+      // source. Keep only the highest request for that source so the picker
+      // never shows duplicate buttons that play identical content.
+      byStream[identity] = LivePlayQuality(
+        quality: '$tier$resolution',
+        id: '$_mobileHlsPrefix${response.rate}',
+        sort: rate,
+        data: '$_mobileHlsPrefix${response.rate}',
+      );
+    }
+    final qualities = byStream.values.toList(growable: false);
+    qualities.sort((left, right) => right.sort.compareTo(left.sort));
+    return qualities;
   }
 
   /// ============================================================
@@ -339,7 +434,16 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher {
 
   @override
   Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
-    return parsePlayQualities(await getLiveStreamObj(detail: detail, qn: '1'));
+    try {
+      final qualities = parsePlayQualities(await getLiveStreamObj(detail: detail, qn: '1'));
+      if (qualities.isNotEmpty) return qualities;
+      CoreLog.w('YY stream manager returned no qualities; using the mobile HLS source.');
+    } catch (error) {
+      // Certain official YY channels reject the HTTP StreamManager route with
+      // ErrAuthNotPass while the anonymous mobile HLS route remains playable.
+      CoreLog.w('YY stream manager failed; using the mobile HLS source: $error');
+    }
+    return _getMobileHlsQualities(detail: detail);
   }
 
   @visibleForTesting
@@ -397,9 +501,23 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher {
       return [];
     }
 
-    final liveData = await getLiveStreamObj(detail: detail, qn: qn);
+    if (qn.startsWith(_mobileHlsPrefix)) {
+      final rate = qn.substring(_mobileHlsPrefix.length);
+      final payload = await _getMobileHlsStream(detail: detail, rate: rate);
+      final url = payload?['hls']?.toString().trim() ?? '';
+      return url.isEmpty ? const <String>[] : <String>[url];
+    }
 
-    return parsePlayUrls(liveData);
+    try {
+      final urls = parsePlayUrls(await getLiveStreamObj(detail: detail, qn: qn));
+      if (urls.isNotEmpty) return urls;
+    } catch (error) {
+      CoreLog.w('YY stream URL request failed; retrying through mobile HLS: $error');
+    }
+    final fallbackRate = quality.sort >= 2000 ? _mobileHlsRates.last : _mobileHlsRates.first;
+    final payload = await _getMobileHlsStream(detail: detail, rate: fallbackRate);
+    final url = payload?['hls']?.toString().trim() ?? '';
+    return url.isEmpty ? const <String>[] : <String>[url];
   }
 
   @visibleForTesting

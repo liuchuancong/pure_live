@@ -61,5 +61,18 @@ void main() {
         ['https://cdn.test/live.flv'],
       );
     });
+
+    test('parses YY anonymous mobile HLS fallback and rejects unsafe URLs', () {
+      expect(
+        YYSite.parseMobileHlsPayload(
+          '({"code":0,"width":1280,"height":720,'
+          '"video":"xv_room_0_0_0","hls":"https://sslproxy.yy.com/live.m3u8?tk=token"})',
+        ),
+        containsPair('video', 'xv_room_0_0_0'),
+      );
+      expect(YYSite.parseMobileHlsPayload('{"code":1,"hls":"https://cdn.test/live.m3u8"}'), isNull);
+      expect(YYSite.parseMobileHlsPayload('{"code":0,"hls":"javascript:alert(1)"}'), isNull);
+      expect(YYSite.parseMobileHlsPayload('not-json'), isNull);
+    });
   });
 }
