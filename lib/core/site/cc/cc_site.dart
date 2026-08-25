@@ -265,12 +265,17 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher {
   }
 
   /// CC exposes two different audience scales in the same payload:
-  /// `webcc_visitor` is the large platform heat value, while
-  /// `vision_visitor`/`online_num` are the current viewers. Keeping both avoids
+  /// `webcc_visitor`/`hot_score`/`visitor` are aliases for the large platform
+  /// heat value, while `vision_visitor`/`online_num` are the current viewers. Keeping both avoids
   /// presenting values such as 500,000 heat as 500,000 people online.
   static ({String popularity, String onlineViewers}) parseRoomAudience(Map<String, dynamic> room) {
-    final popularity = _firstAudienceValue([room['webcc_visitor']]);
-    final onlineViewers = _firstAudienceValue([room['vision_visitor'], room['online_num'], room['visitor']]);
+    final popularity = _firstAudienceValue([
+      room['webcc_visitor'],
+      room['hot_score'],
+      room['visitor'],
+      room['total_visitor'],
+    ]);
+    final onlineViewers = _firstAudienceValue([room['vision_visitor'], room['online_num']]);
     return (popularity: popularity, onlineViewers: onlineViewers);
   }
 

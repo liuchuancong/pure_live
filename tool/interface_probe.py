@@ -147,12 +147,13 @@ def post_form_json(
     raise last_error
 
 
-def require_path(value: object, *path: str) -> None:
+def require_path(value: object, *path: str) -> object:
     current = value
     for part in path:
         if not isinstance(current, dict) or part not in current:
             raise ValueError(f"missing JSON path: {'.'.join(path)}")
         current = current[part]
+    return current
 
 
 def douyu_encryption_probe() -> None:
@@ -610,9 +611,22 @@ def douyin_feed_probe() -> None:
         has_stream = isinstance(stream_url, dict) and any(
             stream_url.get(key) for key in ("live_core_sdk_data", "flv_pull_url", "hls_pull_url_map")
         )
-        if web_rid and room.get("title") and isinstance(room.get("cover"), dict) and has_stream:
+        view_stats = room.get("room_view_stats") if isinstance(room.get("room_view_stats"), dict) else {}
+        stats = room.get("stats") if isinstance(room.get("stats"), dict) else {}
+        has_online = any(
+            _audience_int(value) is not None
+            for value in (
+                room.get("user_count"),
+                room.get("user_count_str"),
+                view_stats.get("user_count"),
+                view_stats.get("online_user_for_anchor"),
+                stats.get("user_count"),
+                stats.get("user_count_str"),
+            )
+        )
+        if web_rid and room.get("title") and isinstance(room.get("cover"), dict) and has_stream and has_online:
             return
-    raise ValueError("Douyin feed contains no parseable playable room")
+    raise ValueError("Douyin feed contains no playable room with an explicit online audience")
 
 
 def bilibili_danmaku_probe() -> None:
@@ -908,7 +922,12 @@ def twitch_directory_probe() -> None:
     response = twitch_gql([twitch_directory_request("just-chatting")])
     if not isinstance(response, list) or not response:
         raise ValueError("Twitch directory result missing")
-    require_path(response[0], "data", "game", "streams", "edges")
+    edges = require_path(response[0], "data", "game", "streams", "edges")
+    if not isinstance(edges, list) or not edges:
+        raise ValueError("Twitch directory has no live channels")
+    nodes = [edge.get("node") for edge in edges if isinstance(edge, dict)]
+    if not any(isinstance(node, dict) and _audience_int(node.get("viewersCount")) is not None for node in nodes):
+        raise ValueError("Twitch directory viewersCount missing")
 
 
 def twitch_search_probe() -> None:
@@ -1113,6 +1132,120 @@ def soop_playback_probe() -> None:
     require_path(aid_response, "CHANNEL", "AID")
 
 
+def _audience_int(value: object) -> int | None:
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        return int(str(value).replace(",", "").strip())
+    except ValueError:
+        return None
+
+
+def douyu_recommend_probe() -> None:
+    rooms = require_path(request_json("https://www.douyu.com/japi/weblist/apinc/allpage/6/1"), "data", "rl")
+    if not isinstance(rooms, list) or not rooms:
+        raise ValueError("Douyu recommendation returned no rooms")
+    if not any(isinstance(room, dict) and _audience_int(room.get("ol")) is not None for room in rooms):
+        raise ValueError("Douyu ol heat field missing")
+
+
+def huya_recommend_probe() -> None:
+    rooms = require_path(
+        request_json(
+            "https://www.huya.com/cache.php",
+            {"m": "LiveList", "do": "getLiveListByPage", "tagAll": 0, "page": 1},
+        ),
+        "data",
+        "datas",
+    )
+    if not isinstance(rooms, list) or not rooms:
+        raise ValueError("Huya recommendation returned no rooms")
+    if not any(isinstance(room, dict) and _audience_int(room.get("totalCount")) is not None for room in rooms):
+        raise ValueError("Huya totalCount heat field missing")
+
+
+def kuaishou_home_probe() -> None:
+    groups = require_path(request_json("https://live.kuaishou.com/live_api/home/list"), "data", "list")
+    if not isinstance(groups, list) or not groups:
+        raise ValueError("Kuaishou home returned no groups")
+    rooms: list[dict[str, object]] = []
+    for group in groups:
+        if not isinstance(group, dict):
+            continue
+        for game_group in group.get("gameLiveInfo", []):
+            if isinstance(game_group, dict):
+                rooms.extend(room for room in game_group.get("liveInfo", []) if isinstance(room, dict))
+    if not rooms:
+        raise ValueError("Kuaishou home returned no room cards")
+    if not any(_audience_int(room.get("watchingCount")) is not None for room in rooms):
+        raise ValueError("Kuaishou watchingCount missing")
+
+
+def cc_recommend_probe() -> None:
+    rooms = require_path(
+        request_json("https://cc.163.com/api/category/live/", {"format": "json", "start": 0, "size": 30}),
+        "lives",
+    )
+    if not isinstance(rooms, list) or not rooms:
+        raise ValueError("CC recommendation returned no rooms")
+    has_heat = any(
+        isinstance(room, dict)
+        and any(_audience_int(room.get(key)) is not None for key in ("webcc_visitor", "hot_score", "visitor"))
+        for room in rooms
+    )
+    has_online = any(
+        isinstance(room, dict)
+        and any(_audience_int(room.get(key)) is not None for key in ("vision_visitor", "online_num"))
+        for room in rooms
+    )
+    if not has_heat or not has_online:
+        raise ValueError("CC heat/concurrent audience fields missing")
+
+
+def soop_recommend_probe() -> None:
+    rooms = require_path(
+        request_json(
+            "https://live.sooplive.co.kr/api/main_broad_list_api.php",
+            {
+                "selectType": "action",
+                "selectValue": "all",
+                "orderType": "view_cnt",
+                "pageNo": 1,
+                "lang": "ko_KR",
+            },
+        ),
+        "broad",
+    )
+    if not isinstance(rooms, list) or not rooms:
+        raise ValueError("SOOP recommendation returned no rooms")
+    for room in rooms:
+        if not isinstance(room, dict):
+            continue
+        total = _audience_int(room.get("total_view_cnt"))
+        pc = _audience_int(room.get("pc_view_cnt"))
+        mobile = _audience_int(room.get("mobile_view_cnt"))
+        if total is not None and pc is not None and mobile is not None:
+            if total != pc + mobile:
+                raise ValueError("SOOP total_view_cnt no longer equals PC + mobile viewers")
+            return
+    raise ValueError("SOOP total/PC/mobile viewer fields missing")
+
+
+def yy_recommend_probe() -> None:
+    rooms = require_path(
+        request_json(
+            "https://www.yy.com/more/page.action",
+            {"page": 1, "pageSize": 5, "biz": "other", "subBiz": "idx", "moduleId": -1},
+        ),
+        "data",
+        "data",
+    )
+    if not isinstance(rooms, list) or not rooms:
+        raise ValueError("YY recommendation returned no rooms")
+    if not any(isinstance(room, dict) and _audience_int(room.get("users")) is not None for room in rooms):
+        raise ValueError("YY users heat field missing")
+
+
 def main() -> int:
     probes = [
         (
@@ -1126,10 +1259,7 @@ def main() -> int:
             "douyu.categories",
             lambda: require_path(request_json("https://m.douyu.com/api/cate/list"), "data", "cate1Info"),
         ),
-        (
-            "douyu.recommend",
-            lambda: require_path(request_json("https://www.douyu.com/japi/weblist/apinc/allpage/6/1"), "data", "rl"),
-        ),
+        ("douyu.recommend", douyu_recommend_probe),
         ("douyu.encryption", douyu_encryption_probe),
         ("douyu.playback", douyu_playback_probe),
         (
@@ -1138,17 +1268,7 @@ def main() -> int:
                 request_json("https://live.cdn.huya.com/liveconfig/game/bussLive", {"bussType": 1}), "data"
             ),
         ),
-        (
-            "huya.recommend",
-            lambda: require_path(
-                request_json(
-                    "https://www.huya.com/cache.php",
-                    {"m": "LiveList", "do": "getLiveListByPage", "tagAll": 0, "page": 1},
-                ),
-                "data",
-                "datas",
-            ),
-        ),
+        ("huya.recommend", huya_recommend_probe),
         (
             "kuaishou.categories",
             lambda: require_path(
@@ -1157,22 +1277,13 @@ def main() -> int:
                 "list",
             ),
         ),
-        (
-            "kuaishou.home",
-            lambda: require_path(request_json("https://live.kuaishou.com/live_api/home/list"), "data", "list"),
-        ),
+        ("kuaishou.home", kuaishou_home_probe),
         ("kuaishou.playback", kuaishou_playback_probe),
         (
             "cc.categories",
             lambda: require_path(request_json("https://cc.163.com/category/", {"format": "json"}), "game_list"),
         ),
-        (
-            "cc.recommend",
-            lambda: require_path(
-                request_json("https://cc.163.com/api/category/live/", {"format": "json", "start": 0, "size": 30}),
-                "lives",
-            ),
-        ),
+        ("cc.recommend", cc_recommend_probe),
         ("bilibili.popularity_rank", bilibili_recommend_probe),
         ("bilibili.playback", bilibili_playback_probe),
         ("bilibili.danmaku", bilibili_danmaku_probe),
@@ -1234,22 +1345,7 @@ def main() -> int:
                 "list",
             ),
         ),
-        (
-            "soop.recommend",
-            lambda: require_path(
-                request_json(
-                    "https://live.sooplive.co.kr/api/main_broad_list_api.php",
-                    {
-                        "selectType": "action",
-                        "selectValue": "all",
-                        "orderType": "view_cnt",
-                        "pageNo": 1,
-                        "lang": "ko_KR",
-                    },
-                ),
-                "broad",
-            ),
-        ),
+        ("soop.recommend", soop_recommend_probe),
         ("soop.search", soop_search_probe),
         ("soop.room", soop_room_probe),
         ("soop.playback_token", soop_playback_probe),
@@ -1257,17 +1353,7 @@ def main() -> int:
             "yy.categories",
             lambda: require_path(request_json("https://www.yy.com/yyweb/module/data/header"), "categoryTabs"),
         ),
-        (
-            "yy.recommend",
-            lambda: require_path(
-                request_json(
-                    "https://www.yy.com/more/page.action",
-                    {"page": 1, "pageSize": 5, "biz": "other", "subBiz": "idx", "moduleId": -1},
-                ),
-                "data",
-                "data",
-            ),
-        ),
+        ("yy.recommend", yy_recommend_probe),
         ("yy.search", yy_search_probe),
         ("yy.anchor_search", yy_anchor_search_probe),
         ("yy.room", yy_room_probe),

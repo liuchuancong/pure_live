@@ -1,3 +1,24 @@
+# Pure Live v2.9.7
+
+v2.9.7 build 4086 is an Android audience-metric and ranking consistency update.
+
+## Audience semantics
+
+- Audited current public payloads for Douyu, Huya, Douyin, Kuaishou, NetEase CC, Twitch, SOOP Live and YY Live. Douyu `ol/hot`, Huya `totalCount/userCount/iAttendeeCount` and YY `users` remain platform heat rather than concurrent head counts.
+- Douyin now reads the current anonymous feed's top-level `user_count` as concurrent viewers and no longer stores that value as cumulative views when `total_user` is an unavailable zero placeholder.
+- NetEase CC now treats `webcc_visitor`, `hot_score` and `visitor` as heat aliases; only `vision_visitor/online_num` can populate the online-viewer field.
+- SOOP recommendation and search cards now use `total_view_cnt`, including both PC and mobile viewers. Category `view_cnt` remains authoritative, explicit PC/mobile fields are summed as a fallback, and missing player-detail counts remain pending instead of becoming a false zero.
+
+## Ranking and regression coverage
+
+- Popular-platform pages now share the same descending, metric-aware and deterministic comparator as favourites, search and room pickers. Changing heat/online mode refreshes and re-ranks the active platform; CC uses a 100-room candidate window for meaningful real-online ordering.
+- Existing interface probes now verify each platform's audience-field contract as part of the 40-check gate, while focused parser tests cover the Douyin, CC and SOOP regressions and heat/online ordering.
+- Synchronized remotes before source freeze; upstream remains `liuchuancong/pure_live@974f4c32` with no newer commit at release preparation time.
+- Version: `2.9.7+4086`.
+- This release publishes Android `arm64-v8a`; Windows, Linux, macOS and iOS remain on their v2.9.4 artifacts.
+
+---
+
 # Pure Live v2.9.6
 
 v2.9.6 build 4085 is an Android platform-interface and upstream synchronization update.

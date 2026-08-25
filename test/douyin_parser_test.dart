@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/core/site/douyin/douyin_site.dart';
 
 void main() {
@@ -77,6 +78,28 @@ void main() {
 
       expect(rooms.map((room) => room.roomId), ['legacy', 'encoded']);
       expect(rooms.map((room) => room.title), ['旧结构', '字符串结构']);
+    });
+
+    test('uses top-level user_count as online instead of cumulative total', () {
+      final rooms = DouyinSite.parseRecommendRooms({
+        'status_code': 0,
+        'data': [
+          {
+            'web_rid': 'online-room',
+            'data': {
+              'title': '在线口径',
+              'user_count': 1757,
+              'stats': {'total_user': 0, 'user_count_str': '1757'},
+              'owner': {'nickname': '主播'},
+            },
+          },
+        ],
+      });
+
+      expect(rooms.single.watching, '1757');
+      expect(rooms.single.onlineViewers, '1757');
+      expect(rooms.single.totalViewers, isEmpty);
+      expect(rooms.single.audienceMetricType, AudienceMetricType.onlineViewers);
     });
 
     test('surfaces a platform rejection without a dynamic index exception', () {

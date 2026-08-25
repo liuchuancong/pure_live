@@ -6,6 +6,21 @@ import 'package:pure_live/core/sites.dart';
 
 void main() {
   group('SOOP platform integration', () {
+    test('uses PC plus mobile viewers instead of the PC-only count', () {
+      expect(
+        SoopSite.parseOnlineViewers({
+          'current_view_cnt': '6372',
+          'm_current_view_cnt': '7834',
+          'total_view_cnt': '14206',
+        }),
+        '14206',
+      );
+      expect(SoopSite.parseOnlineViewers({'pc_view_cnt': 12, 'mobile_view_cnt': 8}), '20');
+      expect(SoopSite.parseOnlineViewers({'view_cnt': 321}), '321');
+      expect(SoopSite.parseOnlineViewers({'RESULT': 1}), isEmpty);
+      expect(SoopSite.parseOnlineViewers({'total_view_cnt': 0}), '0');
+    });
+
     test('parses play and main-site channel links', () async {
       expect(await LiveUrlTool.parseLiveUrl('https://play.sooplive.co.kr/example_channel'), [
         'example_channel',
