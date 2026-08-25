@@ -143,27 +143,49 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher {
 
   @override
   Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) {
-    List<LivePlayQuality> qualities = <LivePlayQuality>[];
-    var urlData = detail.data as HuyaUrlDataModel;
-    if (urlData.bitRates.isEmpty) {
-      urlData.bitRates = [HuyaBitRateModel(name: "原画", bitRate: 0), HuyaBitRateModel(name: "高清", bitRate: 2000)];
-    }
-    for (var item in urlData.bitRates) {
-      qualities.add(LivePlayQuality(data: {"urls": urlData.lines, "bitRate": item.bitRate}, quality: item.name));
-    }
+    final data = detail.data;
+    if (data is! HuyaUrlDataModel) return Future.value(const <LivePlayQuality>[]);
+    return Future.value(parsePlayQualities(data));
+  }
 
-    return Future.value(qualities);
+  /// Exposes only rates returned by Huya. The old fallback invented a 2000
+  /// kbps "高清" option when the room returned no rate list, so tapping it
+  /// could only reopen the same source stream while the UI claimed a change.
+  @visibleForTesting
+  static List<LivePlayQuality> parsePlayQualities(HuyaUrlDataModel data) {
+    final rates = data.bitRates.isEmpty ? <HuyaBitRateModel>[HuyaBitRateModel(name: '原画', bitRate: 0)] : data.bitRates;
+    final unique = <int, HuyaBitRateModel>{};
+    for (final rate in rates) {
+      if (rate.bitRate < 0 || rate.name.trim().isEmpty) continue;
+      unique.putIfAbsent(rate.bitRate, () => rate);
+    }
+    final qualities = unique.values
+        .map(
+          (rate) => LivePlayQuality(
+            quality: rate.name,
+            id: rate.bitRate,
+            sort: rate.bitRate == 0 ? 1 << 30 : rate.bitRate,
+            data: <String, Object>{'urls': List<HuyaLineModel>.unmodifiable(data.lines), 'bitRate': rate.bitRate},
+          ),
+        )
+        .toList(growable: false);
+    qualities.sort((left, right) => right.sort.compareTo(left.sort));
+    return qualities;
   }
 
   @override
   Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
-    var ls = <String>[];
-    for (var element in quality.data["urls"]) {
-      var line = element as HuyaLineModel;
-      var url = await getPlayUrl(line, quality.data["bitRate"]);
-      ls.add(url);
+    final data = quality.data;
+    if (data is! Map) return const <String>[];
+    final bitRate = int.tryParse(data['bitRate']?.toString() ?? '');
+    final rawLines = data['urls'];
+    if (bitRate == null || rawLines is! List) return const <String>[];
+    final urls = <String>[];
+    for (final line in rawLines.whereType<HuyaLineModel>()) {
+      final url = await getPlayUrl(line, bitRate);
+      if (url.isNotEmpty && !urls.contains(url)) urls.add(url);
     }
-    return ls;
+    return urls;
   }
 
   Future<String> getHuYaUA() async {
@@ -192,14 +214,32 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher {
 
     final extension = line.lineType == HuyaLineType.hls ? 'm3u8' : 'flv';
     final cdnBase = secureHuyaCdnBase(line.line);
-    var url = '$cdnBase/${line.streamName}.$extension?$antiCode';
-    if (!RegExp(r'(^|&)codec=').hasMatch(antiCode)) {
-      url += '&codec=264';
+    if (!RegExp(r'(^|&)codec=').hasMatch(antiCode)) antiCode = '$antiCode&codec=264';
+    // Huya reuses one anti-leech query for every quality. `ratio`, when
+    // already present, describes the URL captured from the page rather than
+    // the user's new selection. Always replace it for a transcode and remove
+    // it for source quality (bitRate=0), matching the current web extractor.
+    antiCode = replaceQueryParameter(antiCode, 'ratio', bitRate > 0 ? '$bitRate' : null);
+    return '$cdnBase/${line.streamName}.$extension?$antiCode';
+  }
+
+  @visibleForTesting
+  static String replaceQueryParameter(String query, String key, String? value) {
+    final output = <String>[];
+    var replaced = false;
+    for (final segment in query.split('&')) {
+      if (segment.isEmpty) continue;
+      final separator = segment.indexOf('=');
+      final segmentKey = separator < 0 ? segment : segment.substring(0, separator);
+      if (segmentKey != key) {
+        output.add(segment);
+        continue;
+      }
+      if (!replaced && value != null) output.add('$key=$value');
+      replaced = true;
     }
-    if (bitRate > 0 && !RegExp(r'(^|&)ratio=').hasMatch(antiCode)) {
-      url += '&ratio=$bitRate';
-    }
-    return url;
+    if (!replaced && value != null) output.add('$key=$value');
+    return output.join('&');
   }
 
   static String secureHuyaCdnBase(String base) {
@@ -345,15 +385,19 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher {
         }
       }
       //清晰度
-      var biterates = data['liveData']['bitRateInfo'] != null
-          ? jsonDecode(data['liveData']['bitRateInfo'])
-          : data['stream']['flv']['rateArray'];
-      for (var item in biterates) {
-        var name = item["sDisplayName"].toString();
-        if (huyaBiterates.map((e) => e.name).toList().every((element) => element != name)) {
-          huyaBiterates.add(HuyaBitRateModel(bitRate: item["iBitRate"], name: name));
+      final encodedBitRates = data['liveData']['bitRateInfo'];
+      dynamic rawBitRates;
+      if (encodedBitRates is String && encodedBitRates.trim().isNotEmpty) {
+        try {
+          rawBitRates = jsonDecode(encodedBitRates);
+        } catch (error) {
+          CoreLog.error('Huya bitRateInfo decode failed: $error');
         }
+      } else if (encodedBitRates is List) {
+        rawBitRates = encodedBitRates;
       }
+      rawBitRates ??= data['stream']['flv']['rateArray'];
+      huyaBiterates.addAll(parseBitRates(rawBitRates));
       bool isXingxiu = data['liveData']['gid'] == 1663;
       final audience = parseRoomAudience(Map<String, dynamic>.from(data['liveData'] as Map));
       return LiveRoom(
@@ -391,6 +435,20 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher {
       }
       return LiveRoom(roomId: roomId, platform: platform).getLiveRoomWithError();
     }
+  }
+
+  @visibleForTesting
+  static List<HuyaBitRateModel> parseBitRates(dynamic raw) {
+    if (raw is! List) return const <HuyaBitRateModel>[];
+    final result = <HuyaBitRateModel>[];
+    final seen = <int>{};
+    for (final item in raw.whereType<Map>()) {
+      final name = item['sDisplayName']?.toString().trim() ?? '';
+      final bitRate = int.tryParse(item['iBitRate']?.toString() ?? '');
+      if (name.isEmpty || bitRate == null || bitRate < 0 || !seen.add(bitRate)) continue;
+      result.add(HuyaBitRateModel(bitRate: bitRate, name: name));
+    }
+    return result;
   }
 
   @override

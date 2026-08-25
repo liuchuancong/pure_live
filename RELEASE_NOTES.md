@@ -1,10 +1,46 @@
+# Pure Live v2.9.6
+
+v2.9.6 build 4085 is an Android platform-interface and upstream synchronization update.
+
+## Platform interfaces
+
+- Fixed the current Douyin recommendation envelope that could otherwise index a string/list as a map and surface `type 'String' is not a subtype of type 'int' of 'index'`.
+- Douyin parsing now accepts current and legacy response shapes, embedded room JSON and missing optional fields; its live probe also requires a real playback descriptor rather than only card metadata.
+- Bilibili popularity uses the public `sort=online` ranking source plus deterministic descending client sorting instead of a personalized recommendation order.
+- Bilibili room metadata validates signed responses before indexing, refreshes stale WBI keys and performs one bounded retry when the platform rejects the signature.
+- Added playback-level live probes for Bilibili quality/CDN descriptors, Huya room/bitrate/FLV-HLS lines and CC's two-step room mapping/playback contract.
+
+## Upstream and regression coverage
+
+- Synchronized and merged upstream through `liuchuancong/pure_live@974f4c32`, including download confirmation, version history and fullscreen viewing-record improvements.
+- Preserved the maintained repository's launch refresh, background playback continuity, quality switching, local-first serial build policy and official signing workflow.
+- The final gate covers 40 public interface checks across Bilibili, Douyu, Huya, Douyin, Kuaishou, CC, Twitch, SOOP Live and YY Live, in addition to Flutter Analyze and the complete automated test suite.
+- Version: `2.9.6+4085`.
+- This release publishes Android `arm64-v8a`; Windows, Linux, macOS and iOS remain on their v2.9.4 artifacts.
+
+---
+
 # Pure Live v2.9.5
 
-v2.9.5 build 4084 is an Android stability update for Douyu playback and the newly synchronized YY platform.
+v2.9.5 build 4084 is an Android stability update for playback quality, platform interfaces and the newly synchronized YY platform.
+
+## Quality and line switching
+
+- Added a shared stable quality identifier and transactional switching: the UI changes only after the target source opens, stale requests are discarded, failed opens keep the previous source, line indices are clamped and duplicate/blank lines are removed.
+- Bilibili now reads the server's actual `current_qn`; Huya replaces a stale `ratio` (and removes it for source quality); Douyin joins streams by `sdk_key`; Douyu preserves the platform's opaque rate order instead of numerically sorting it.
+- Twitch master variants are parsed as attribute/URI pairs without shared mutable state; Kuaishou, CC, SOOP, YY and IPTV received stable IDs, defensive payload handling and deterministic playback fixtures.
+- The fullscreen quality/line dialog now derives its total size from the real option rows. It removes redundant header values, gives the choice buttons the main visual area and only keeps large panes when their content actually needs scrolling.
+- A handled playback error finishing after an overlay lifecycle change no longer triggers a second uncaught toast exception.
+
+## Audience metrics and ranking
+
+- CC `webcc_visitor` heat is separated from `vision_visitor/online_num` concurrent viewers.
+- Concurrent ranking compares explicit, pending and heat-only tiers before numeric values, then uses stable room identity to stop equal cards from jumping during refresh.
+- Douyin no longer treats cumulative `total_user` fields as current online viewers; SOOP joins the supported concurrent-platform settings.
 
 ## Douyu playback
 
-- Synchronized the upstream baseline through `liuchuancong/pure_live@cc1f4dca`.
+- Synchronized the upstream baseline through `liuchuancong/pure_live@a161a324` with real merge ancestry, including the latest version-history transport/parser update.
 - The H5 stream request now uses one session DID and consistent browser headers, refreshes stale signing descriptors, and performs one bounded retry.
 - Quality and CDN parsing tolerates partial response shapes, removes duplicate lines, and validates the final decoded stream URL.
 - Actual media requests now receive Douyu Referer, Origin, User-Agent and matching DID cookies on every player backend.
@@ -37,7 +73,7 @@ v2.9.5 build 4084 is an Android stability update for Douyu playback and the newl
 
 # Pure Live v2.9.4
 
-v2.9.4 build 4083 是上游多画面同看、录制数据保护、平台播放兼容和长时间资源治理的全平台稳定更新，发布到 `liuchuancong/pure_live`。
+v2.9.4 build 4083 是上游多画面同看、录制数据保护、平台播放兼容和长时间资源治理的全平台稳定更新，发布到 `wzgrx/pure_live`。
 
 ## 上游同步与多画面
 
@@ -77,7 +113,7 @@ v2.9.4 build 4083 是上游多画面同看、录制数据保护、平台播放�
 
 # Pure Live v2.9.3
 
-v2.9.3 build 4082 是横屏画质与线路面板内容驱动布局专项 Android 更新，发布到 `liuchuancong/pure_live`。
+v2.9.3 build 4082 是横屏画质与线路面板内容驱动布局专项 Android 更新，发布到 `wzgrx/pure_live`。
 
 ## 画质与线路布局
 
@@ -100,7 +136,7 @@ v2.9.3 build 4082 是横屏画质与线路面板内容驱动布局专项 Android
 
 # Pure Live v2.9.2
 
-v2.9.2 build 4081 是横屏右侧半屏布局二次优化与本地弹幕实时预览专项 Android 更新，发布到 `liuchuancong/pure_live`。
+v2.9.2 build 4081 是横屏右侧半屏布局二次优化与本地弹幕实时预览专项 Android 更新，发布到 `wzgrx/pure_live`。
 
 ## 画质与线路
 
@@ -129,7 +165,7 @@ v2.9.2 build 4081 是横屏右侧半屏布局二次优化与本地弹幕实时�
 
 # Pure Live v2.9.1
 
-v2.9.1 build 4080 是横屏半屏内容面板与本地弹幕个性化专项 Android 更新，发布到 `liuchuancong/pure_live`。
+v2.9.1 build 4080 是横屏半屏内容面板与本地弹幕个性化专项 Android 更新，发布到 `wzgrx/pure_live`。
 
 ## 横屏内容优先面板
 
@@ -154,7 +190,7 @@ v2.9.1 build 4080 是横屏半屏内容面板与本地弹幕个性化专项 Andr
 
 # Pure Live v2.9.0
 
-v2.9.0 build 4079 是清晰度切换、横屏全屏控制层、本地弹幕样式和上游播放稳定性整合的全平台正式更新；发布到 `liuchuancong/pure_live`。
+v2.9.0 build 4079 是清晰度切换、横屏全屏控制层、本地弹幕样式和上游播放稳定性整合的全平台正式更新；发布到 `wzgrx/pure_live`。
 
 ## 上游同步与播放稳定性
 
@@ -179,7 +215,7 @@ v2.9.0 build 4079 是清晰度切换、横屏全屏控制层、本地弹幕样�
 
 # Pure Live v2.8.0
 
-v2.8.0 build 4078 是上游同步、关注状态权威刷新、抖音搜索和桌面播放增强的全平台稳定更新；仅发布到 `liuchuancong/pure_live`。
+v2.8.0 build 4078 是上游同步、关注状态权威刷新、抖音搜索和桌面播放增强的全平台稳定更新；仅发布到 `wzgrx/pure_live`。
 
 ## 上游同步与近期 Issue
 
@@ -202,14 +238,14 @@ v2.8.0 build 4078 是上游同步、关注状态权威刷新、抖音搜索和�
 
 # Pure Live v2.7.0
 
-v2.7.0 build 4077 是最新上游整合、热门页生命周期和全平台交付更新；Android 资产已用关注刷新修复后的源码重新构建，仅发布到 `liuchuancong/pure_live`。
+v2.7.0 build 4077 是最新上游整合、热门页生命周期和全平台交付更新；Android 资产已用关注刷新修复后的源码重新构建，仅发布到 `wzgrx/pure_live`。
 
 ## 上游同步
 
 - 真实合并上游 `liuchuancong/pure_live@81ec372a`，保留完整提交关系，后续同步可继续按共同祖先合并。
 - 吸收热门页关闭状态、加载代次、平台配置防抖及延迟预热隔离，防止页面销毁或平台列表重建后旧任务继续刷新当前界面。
 - 吸收取消关注弹窗路由修复，并进一步让按钮绑定弹窗自己的 `BuildContext`，避免导航转场期间误退直播页面。
-- 对上游 Windows 小窗、图片缓存、更新源、应用 AppId、ABI 清单与全平台工作流逐项审查；保留维护版已经验证的位置/大小记忆、跨屏边界恢复、有界图片缓存、覆盖升级 AppId、`liuchuancong` 更新源及串行构建策略。
+- 对上游 Windows 小窗、图片缓存、更新源、应用 AppId、ABI 清单与全平台工作流逐项审查；保留维护版已经验证的位置/大小记忆、跨屏边界恢复、有界图片缓存、覆盖升级 AppId、`wzgrx` 更新源及串行构建策略。
 
 ## 稳定性与兼容性
 
@@ -232,7 +268,7 @@ v2.7.0 build 4077 是最新上游整合、热门页生命周期和全平台交�
 
 # Pure Live v2.6.0
 
-v2.6.0 build 4076 是上游同步、近期 Issue 修复、播放器与长时间资源治理的阶段稳定版；仅发布到 `liuchuancong/pure_live`。
+v2.6.0 build 4076 是上游同步、近期 Issue 修复、播放器与长时间资源治理的阶段稳定版；仅发布到 `wzgrx/pure_live`。
 
 ## 上游与近期问题
 

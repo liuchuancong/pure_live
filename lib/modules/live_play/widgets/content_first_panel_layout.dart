@@ -67,42 +67,94 @@ int resolveStreamChoiceColumns(double paneWidth, {int? itemCount}) {
 }
 
 @immutable
-class StreamSelectorStackLayout {
-  const StreamSelectorStackLayout({required this.qualityHeight, required this.lineHeight, required this.gap});
+class StreamSelectorPanelLayout {
+  const StreamSelectorPanelLayout({
+    required this.dialogHeight,
+    required this.qualityHeight,
+    required this.lineHeight,
+    required this.gap,
+    required this.splitContent,
+  });
 
+  final double dialogHeight;
   final double qualityHeight;
   final double lineHeight;
   final double gap;
+  final bool splitContent;
 }
 
-/// Allocates a compact, content-sized quality section above a flexible line
-/// section on a landscape phone.
+/// Sizes the complete stream selector from the number of visible choices.
 ///
-/// The former fixed 4:3 flex split left most of the quality card empty when a
-/// platform exposed only four qualities, while a longer CDN list was clipped.
-/// This calculation measures the actual number of quality rows, caps it at
-/// three visible rows, and reserves a useful minimum for playback lines.
-StreamSelectorStackLayout resolveStreamSelectorStackLayout({
-  required Size contentSize,
+/// A short quality/line list produces a short dialog instead of two mostly
+/// empty cards. If either list exceeds the viewport, both panes retain a useful
+/// minimum and only their button grids scroll.
+StreamSelectorPanelLayout resolveStreamSelectorPanelLayout({
+  required Size maximumDialogSize,
   required int qualityCount,
+  required int lineCount,
+  required bool splitContent,
   double gap = 5,
 }) {
-  const paneHorizontalPadding = 12.0;
-  const paneChromeHeight = 36.0; // vertical padding + title + divider
-  const itemHeight = 34.0;
-  const itemSpacing = 4.0;
+  const dialogChromeHeight = 36.0; // compact title row + divider
+  const bodyPadding = 6.0;
+  const minimumPaneHeight = 78.0;
 
-  final gridWidth = math.max(0.0, contentSize.width - paneHorizontalPadding);
-  final columns = resolveStreamChoiceColumns(gridWidth, itemCount: qualityCount);
-  final rowCount = math.max(1, (qualityCount / columns).ceil());
-  final visibleRows = math.min(3, rowCount);
-  final desiredQualityHeight = paneChromeHeight + visibleRows * itemHeight + math.max(0, visibleRows - 1) * itemSpacing;
+  final innerWidth = math.max(0.0, maximumDialogSize.width - bodyPadding * 2);
+  final paneWidth = splitContent ? math.max(0.0, (innerWidth - gap) / 2) : innerWidth;
+  final desiredQuality = _streamChoicePaneHeight(paneWidth, qualityCount);
+  final desiredLine = _streamChoicePaneHeight(paneWidth, lineCount);
+  final maximumBodyHeight = math.max(0.0, maximumDialogSize.height - dialogChromeHeight - bodyPadding * 2);
 
-  final minimumLineHeight = math.min(112.0, math.max(84.0, contentSize.height * .36));
-  final maximumQualityHeight = math.max(70.0, contentSize.height - gap - minimumLineHeight);
-  final qualityHeight = math.min(desiredQualityHeight, maximumQualityHeight).clamp(70.0, 146.0).toDouble();
-  final lineHeight = math.max(0.0, contentSize.height - gap - qualityHeight);
-  return StreamSelectorStackLayout(qualityHeight: qualityHeight, lineHeight: lineHeight, gap: gap);
+  if (splitContent) {
+    final paneHeight = math.min(math.max(desiredQuality, desiredLine), maximumBodyHeight);
+    final dialogHeight = (dialogChromeHeight + bodyPadding * 2 + paneHeight)
+        .clamp(124.0, maximumDialogSize.height)
+        .toDouble();
+    return StreamSelectorPanelLayout(
+      dialogHeight: dialogHeight,
+      qualityHeight: paneHeight,
+      lineHeight: paneHeight,
+      gap: gap,
+      splitContent: true,
+    );
+  }
+
+  final desiredPanesHeight = desiredQuality + gap + desiredLine;
+  if (desiredPanesHeight <= maximumBodyHeight) {
+    return StreamSelectorPanelLayout(
+      dialogHeight: dialogChromeHeight + bodyPadding * 2 + desiredPanesHeight,
+      qualityHeight: desiredQuality,
+      lineHeight: desiredLine,
+      gap: gap,
+      splitContent: false,
+    );
+  }
+
+  final availableForPanes = math.max(minimumPaneHeight * 2, maximumBodyHeight - gap);
+  final extraSpace = math.max(0.0, availableForPanes - minimumPaneHeight * 2);
+  final desiredExtra = math.max(1.0, desiredQuality + desiredLine - minimumPaneHeight * 2);
+  final qualityExtraShare = math.max(0.0, desiredQuality - minimumPaneHeight) / desiredExtra;
+  final qualityHeight = minimumPaneHeight + extraSpace * qualityExtraShare;
+  final lineHeight = availableForPanes - qualityHeight;
+  return StreamSelectorPanelLayout(
+    dialogHeight: maximumDialogSize.height,
+    qualityHeight: qualityHeight,
+    lineHeight: lineHeight,
+    gap: gap,
+    splitContent: false,
+  );
+}
+
+double _streamChoicePaneHeight(double paneWidth, int itemCount) {
+  // 4 top padding + 23 header + 4 divider + 6 bottom padding.
+  const paneChromeHeight = 37.0;
+  const itemHeight = 42.0;
+  const itemSpacing = 5.0;
+  if (itemCount <= 0) return 78;
+  final gridWidth = math.max(0.0, paneWidth - 12);
+  final columns = resolveStreamChoiceColumns(gridWidth, itemCount: itemCount);
+  final rows = math.max(1, (itemCount / columns).ceil());
+  return paneChromeHeight + rows * itemHeight + math.max(0, rows - 1) * itemSpacing;
 }
 
 /// Keeps two rows of two room cards inside the visible history viewport.

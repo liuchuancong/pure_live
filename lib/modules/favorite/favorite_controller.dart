@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:developer' as developer;
 
-import 'package:flutter/foundation.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:synchronized/synchronized.dart';
 import 'package:pure_live/plugins/event_bus.dart';
@@ -390,21 +389,21 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
 
     nextOnline.sort((a, b) {
       if (selectedTagId.value == TagManagementController.allTagKey) {
-        return _audienceSortValue(b).compareTo(_audienceSortValue(a));
+        return _compareAudience(a, b);
       }
       int sa = _getRoomTagScore(a);
       int sb = _getRoomTagScore(b);
       if (sa != sb) return sb.compareTo(sa);
-      return _audienceSortValue(b).compareTo(_audienceSortValue(a));
+      return _compareAudience(a, b);
     });
     nextReplay.sort((a, b) {
       if (selectedTagId.value == TagManagementController.allTagKey) {
-        return _audienceSortValue(b).compareTo(_audienceSortValue(a));
+        return _compareAudience(a, b);
       }
       int sa = _getRoomTagScore(a);
       int sb = _getRoomTagScore(b);
       if (sa != sb) return sb.compareTo(sa);
-      return _audienceSortValue(b).compareTo(_audienceSortValue(a));
+      return _compareAudience(a, b);
     });
 
     // Build and sort plain lists first, then publish each result once. The old
@@ -481,11 +480,13 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     target.assignAll(next);
   }
 
-  int _audienceSortValue(LiveRoom room) {
+  int _compareAudience(LiveRoom left, LiveRoom right) {
     final app = SettingsService.to.app;
-    return room.audienceSortValue(
+    return LiveRoom.compareAudienceRanking(
+      left,
+      right,
       preferRealOnline: app.preferRealOnlineCounts.v,
-      platformEnabled: app.isRealOnlineEnabledFor(room.platform),
+      platformEnabled: app.isRealOnlineEnabledFor,
     );
   }
 
@@ -585,10 +586,6 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
       pageEmpty.value = false;
     } else {
       applyLocalFilter();
-    }
-    // Skip the remote loading process in debug mode.
-    if (kDebugMode) {
-      return;
     }
     try {
       await _runRoomRefresh(

@@ -19,8 +19,6 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher {
   @override
   String name = 'Twitch';
 
-  final _playUrlList = <String>[];
-
   static const defaultUa =
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36";
   static const gplApiUrl = "https://gql.twitch.tv/gql";
@@ -243,40 +241,85 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher {
     var m3u8Url = "https://usher.ttvnw.net/api/channel/hls/${detail.roomId}.m3u8";
     var content = await HttpClient.instance.getText(m3u8Url, queryParameters: params, header: headers);
 
-    _playUrlList.clear();
-    final lines = content.split("\n");
-    for (var i in lines) {
-      if (i.startsWith("https://")) {
-        _playUrlList.add(i.trim());
+    return parseMasterPlaylist(content, masterUri: Uri.parse(m3u8Url));
+  }
+
+  /// Parses each `#EXT-X-STREAM-INF` together with its following URI.
+  ///
+  /// The previous implementation collected every URL and every BANDWIDTH in
+  /// separate arrays. Any extra URI/comment or relative variant shifted those
+  /// arrays and attached the wrong label to the stream. Keeping parser state
+  /// local also prevents simultaneous multi-view requests from clearing one
+  /// another's shared URL list.
+  @visibleForTesting
+  static List<LivePlayQuality> parseMasterPlaylist(String content, {required Uri masterUri}) {
+    final grouped = <String, ({String label, int bandwidth, List<String> urls})>{};
+    Map<String, String>? pendingAttributes;
+    for (final rawLine in content.split(RegExp(r'\r?\n'))) {
+      final line = rawLine.trim();
+      if (line.startsWith('#EXT-X-STREAM-INF:')) {
+        pendingAttributes = _parsePlaylistAttributes(line.substring('#EXT-X-STREAM-INF:'.length));
+        continue;
+      }
+      if (line.isEmpty || line.startsWith('#') || pendingAttributes == null) continue;
+
+      final uri = masterUri.resolve(line);
+      if (!uri.hasScheme || !const {'http', 'https'}.contains(uri.scheme)) {
+        pendingAttributes = null;
+        continue;
+      }
+      final attributes = pendingAttributes;
+      pendingAttributes = null;
+      final bandwidth = int.tryParse(attributes['BANDWIDTH'] ?? '') ?? 0;
+      final resolution = RegExp(r'^(\d+)x(\d+)$').firstMatch(attributes['RESOLUTION'] ?? '');
+      final height = int.tryParse(resolution?.group(2) ?? '') ?? 0;
+      final frameRate = double.tryParse(attributes['FRAME-RATE'] ?? '') ?? 0;
+      final videoGroup = attributes['VIDEO'] ?? '';
+      final label = _qualityName(
+        bandwidth,
+        height: height,
+        frameRate: frameRate,
+        source: videoGroup.toLowerCase() == 'chunked',
+      );
+      final id = '$height:${frameRate.round()}:$bandwidth:${videoGroup.toLowerCase()}';
+      final existing = grouped[id];
+      if (existing == null) {
+        grouped[id] = (label: label, bandwidth: bandwidth, urls: <String>[uri.toString()]);
+      } else if (!existing.urls.contains(uri.toString())) {
+        existing.urls.add(uri.toString());
       }
     }
-    if (_playUrlList.isEmpty) {
-      for (final i in lines) {
-        if (i.trim().endsWith('m3u8')) {
-          _playUrlList.add(i.trim());
-        }
-      }
-    }
 
-    final bandwidthPattern = RegExp(r'BANDWIDTH=(\d+)');
-    final bandwidthList = bandwidthPattern.allMatches(content).map((match) => match.group(1)!).toList();
-
-    final urlToBandwidth = <String, int>{};
-    for (int i = 0; i < _playUrlList.length; i++) {
-      final bandwidth = i < bandwidthList.length ? int.parse(bandwidthList[i]) : 0;
-      urlToBandwidth[_playUrlList[i]] = bandwidth;
-    }
-    _playUrlList.sort((a, b) => (urlToBandwidth[b] ?? 0).compareTo(urlToBandwidth[a] ?? 0));
-
-    qualities = _playUrlList.map((url) {
-      final bandwidth = urlToBandwidth[url] ?? 0;
-      return LivePlayQuality(quality: _getQualityName(bandwidth), sort: bandwidth, data: [url]);
-    }).toList();
-
+    final qualities = grouped.entries
+        .map(
+          (entry) => LivePlayQuality(
+            quality: entry.value.label,
+            id: entry.key,
+            sort: entry.value.bandwidth,
+            data: List<String>.unmodifiable(entry.value.urls),
+          ),
+        )
+        .toList(growable: false);
+    qualities.sort((left, right) => right.sort.compareTo(left.sort));
     return qualities;
   }
 
-  String _getQualityName(int bandwidth) {
+  static Map<String, String> _parsePlaylistAttributes(String value) {
+    final attributes = <String, String>{};
+    for (final match in RegExp(r'([A-Z0-9-]+)=("[^"]*"|[^,]*)').allMatches(value)) {
+      final raw = match.group(2) ?? '';
+      attributes[match.group(1)!] = raw.length >= 2 && raw.startsWith('"') && raw.endsWith('"')
+          ? raw.substring(1, raw.length - 1)
+          : raw;
+    }
+    return attributes;
+  }
+
+  static String _qualityName(int bandwidth, {int height = 0, double frameRate = 0, bool source = false}) {
+    if (height > 0) {
+      final fps = frameRate >= 45 ? frameRate.round().toString() : '';
+      return '${height}p$fps${source ? ' (Source)' : ''}';
+    }
     if (bandwidth > 5000000) return '1080P';
     if (bandwidth > 2500000) return '720P';
     if (bandwidth > 1000000) return '480P';
@@ -286,7 +329,9 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher {
 
   @override
   Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
-    return List<String>.from(quality.data);
+    final data = quality.data;
+    if (data is! List) return const <String>[];
+    return data.map((item) => item.toString().trim()).where((url) => url.isNotEmpty).toList(growable: false);
   }
 
   @override

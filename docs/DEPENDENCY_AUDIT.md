@@ -1,6 +1,6 @@
 # 依赖与接口审计
 
-最近核验日期：2026-08-24
+最近核验日期：2026-08-25
 
 ## 固定工具链
 
@@ -43,7 +43,7 @@ AGP 9.3.1 是当前 9.3 稳定补丁，官方兼容表给出的默认 Gradle 为
 python .\tool\interface_probe.py
 ```
 
-当前脚本共检查 28 项并另行检查抖音首页，总计 29 项：Bilibili、Douyu、Huya、Kuaishou、Douyin、网易 CC、Twitch、SOOP Live 的公开分类/推荐入口、搜索、Bilibili 弹幕节点、Huya 弹幕注册身份、斗鱼加密描述符、快手直播/录播播放结构、Twitch 房间元数据与播放令牌，以及 SOOP 房间元数据和播放令牌。发布结果写入对应阶段文档；另外保留 Windows release 的 Douyu 2K60 直播和实时弹幕持续接收样本。Android 弹幕恢复默认由协议、生命周期和通知顺序自动化回归覆盖；设备复核只在当前任务明确安排时追加。
+当前脚本总计检查 40 项，覆盖 Bilibili、Douyu、Huya、Kuaishou、Douyin、网易 CC、Twitch、SOOP Live 与 YY Live 的公开分类/推荐入口、搜索、房间元数据、弹幕节点和播放链路。除既有的斗鱼签名 + H5 + CDN FLV 实读、快手直播/录播结构、Twitch/SOOP/YY 房间与播放令牌外，v2.9.6 新增 Bilibili 实时播放描述符、Huya 房间线路/画质、网易 CC 两段房间映射/播放描述符，并要求抖音 Feed 至少含有一条可解析的真实播放源。发布结果写入对应阶段文档；Android 设备验收仍作为独立证据层。
 
 虎牙另提供 `python .\tool\huya_danmaku_probe.py` 实时 WebSocket 回归；2026-08-16 已验证注册、新版心跳和真实推送接收。该项依赖当前直播间与平台网关状态，保留为发布前手动检查。
 

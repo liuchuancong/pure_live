@@ -10,6 +10,7 @@ import 'package:pure_live/player/core/player_manager.dart';
 import 'package:pure_live/player/models/player_exception.dart';
 import 'package:pure_live/player/models/player_error_type.dart';
 import 'package:pure_live/core/site/bilibili/bilibili_site.dart';
+import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/modules/live_play/states/live_play_state.dart';
@@ -49,6 +50,53 @@ StreamSelection resolveStreamSelection({
     lineIndex: requestedLineIndex.clamp(0, playUrlCount - 1),
     isValid: true,
   );
+}
+
+/// Maps a platform-acknowledged quality identifier back to the current UI
+/// list. The requested index remains the fallback for adapters whose response
+/// does not expose an applied quality.
+@visibleForTesting
+int resolveAppliedQualityIndex({
+  required List<LivePlayQuality> qualities,
+  required int requestedIndex,
+  required Object? appliedQualityData,
+}) {
+  if (qualities.isEmpty) return 0;
+  final fallback = requestedIndex.clamp(0, qualities.length - 1);
+  if (appliedQualityData == null) return fallback;
+  final applied = appliedQualityData.toString();
+  final index = qualities.indexWhere((quality) => quality.selectionId.toString() == applied);
+  return index < 0 ? fallback : index;
+}
+
+@visibleForTesting
+List<LivePlayQuality> normalizePlayQualities(Iterable<LivePlayQuality> qualities) {
+  final unique = <LivePlayQuality>[];
+  final ids = <String>{};
+  for (final quality in qualities) {
+    if (quality.quality.trim().isEmpty || !ids.add(quality.selectionId.toString())) continue;
+    unique.add(quality);
+  }
+  final labelCounts = <String, int>{};
+  for (final quality in unique) {
+    final label = quality.quality.trim();
+    labelCounts.update(label, (count) => count + 1, ifAbsent: () => 1);
+  }
+  final labelOrdinals = <String, int>{};
+  final result = unique.map((quality) {
+    final label = quality.quality.trim();
+    if (labelCounts[label] == 1) return quality;
+    final ordinal = labelOrdinals.update(label, (value) => value + 1, ifAbsent: () => 1);
+    return LivePlayQuality(quality: '$label $ordinal', id: quality.id, data: quality.data, sort: quality.sort);
+  });
+  return List<LivePlayQuality>.unmodifiable(result);
+}
+
+@visibleForTesting
+bool hasSameStreamChoices(Iterable<String> current, Iterable<String> next) {
+  final currentSet = current.map((url) => url.trim()).where((url) => url.isNotEmpty).toSet();
+  final nextSet = next.map((url) => url.trim()).where((url) => url.isNotEmpty).toSet();
+  return currentSet.isNotEmpty && currentSet.length == nextSet.length && currentSet.containsAll(nextSet);
 }
 
 abstract interface class PlayerSessionHost {
@@ -255,7 +303,7 @@ class PlayerController extends GetxController {
     if (room == null) return;
 
     try {
-      final playQualites = await site.liveSite.getPlayQualites(detail: room);
+      final playQualites = normalizePlayQualities(await site.liveSite.getPlayQualites(detail: room));
       if (!_isLoadCurrent(loadEpoch, room, site)) return;
 
       if (playQualites.isEmpty) {
@@ -316,19 +364,29 @@ class PlayerController extends GetxController {
     final playerState = _state.player;
     if (playerState.qualites.isEmpty || playerState.currentQuality >= playerState.qualites.length) return;
 
-    final playUrl = await site.liveSite.getPlayUrls(
+    final resolution = await site.liveSite.resolvePlayUrls(
       detail: room,
       quality: playerState.qualites[playerState.currentQuality],
     );
     if (!_isLoadCurrent(loadEpoch, room, site)) return;
 
-    if (playUrl.isEmpty) {
+    if (resolution.urls.isEmpty) {
       ToastUtil.show(i18n('cannot_read_play_url'));
       _main.updateRoom(success: false);
       return;
     }
 
-    _main.updatePlayer(playUrls: playUrl);
+    final appliedQuality = resolveAppliedQualityIndex(
+      qualities: playerState.qualites,
+      requestedIndex: playerState.currentQuality,
+      appliedQualityData: resolution.appliedQualityData,
+    );
+    final lineIndex = playerState.currentLineIndex.clamp(0, resolution.urls.length - 1);
+    _main.updatePlayer(
+      playUrls: List<String>.unmodifiable(resolution.urls),
+      currentQuality: appliedQuality,
+      currentLineIndex: lineIndex,
+    );
     final controller = await setPlayer(
       roomId: room.roomId!,
       expectedRoom: room,
@@ -367,22 +425,43 @@ class PlayerController extends GetxController {
     isStreamSwitching.value = true;
 
     try {
-      final urls = type == ReloadDataType.changeQuality
-          ? await site.liveSite.getPlayUrls(detail: room, quality: before.qualites[requestedQuality])
-          : List<String>.from(before.playUrls);
+      final resolution = type == ReloadDataType.changeQuality
+          ? await site.liveSite.resolvePlayUrls(detail: room, quality: before.qualites[requestedQuality])
+          : LivePlayUrlResolution(
+              urls: List<String>.from(before.playUrls),
+              appliedQualityData: before.qualites[before.currentQuality].selectionId,
+            );
       if (!_isLoadCurrent(loadEpoch, room, site) || selectionEpoch != _streamSelectionEpoch) return false;
+      final urls = resolution.urls;
       if (urls.isEmpty) {
         ToastUtil.show(i18n('cannot_read_play_url'));
+        return false;
+      }
+
+      final appliedQuality = resolveAppliedQualityIndex(
+        qualities: before.qualites,
+        requestedIndex: requestedQuality,
+        appliedQualityData: resolution.appliedQualityData,
+      );
+      final qualityAdjusted = type == ReloadDataType.changeQuality && appliedQuality != requestedQuality;
+      if (qualityAdjusted && appliedQuality == before.currentQuality) {
+        ToastUtil.show(i18n('quality_limited_to', args: {'quality': before.qualites[appliedQuality].quality}));
         return false;
       }
 
       final selection = resolveStreamSelection(
         qualityCount: before.qualites.length,
         playUrlCount: urls.length,
-        requestedQualityIndex: requestedQuality,
+        requestedQualityIndex: appliedQuality,
         requestedLineIndex: lineIndex,
       );
       if (!selection.isValid) return false;
+      if (type == ReloadDataType.changeQuality &&
+          selection.qualityIndex != before.currentQuality &&
+          hasSameStreamChoices(before.playUrls, urls)) {
+        ToastUtil.show(i18n('quality_stream_unchanged'));
+        return false;
+      }
 
       final cachedHeaders = before.videoController?.headers;
       final headers = cachedHeaders == null || cachedHeaders.isEmpty
@@ -391,12 +470,6 @@ class PlayerController extends GetxController {
       if (!_isLoadCurrent(loadEpoch, room, site) || selectionEpoch != _streamSelectionEpoch) return false;
 
       final immutableUrls = List<String>.unmodifiable(urls);
-      _main.updatePlayer(
-        currentQuality: selection.qualityIndex,
-        playUrls: immutableUrls,
-        currentLineIndex: selection.lineIndex,
-        hasUseDefaultResolution: true,
-      );
       await _streamSourceOpener(
         immutableUrls[selection.lineIndex],
         immutableUrls,
@@ -405,7 +478,16 @@ class PlayerController extends GetxController {
         _state.player.isCurrentRoomAudioOnly,
       );
       if (!_isLoadCurrent(loadEpoch, room, site) || selectionEpoch != _streamSelectionEpoch) return false;
+      _main.updatePlayer(
+        currentQuality: selection.qualityIndex,
+        playUrls: immutableUrls,
+        currentLineIndex: selection.lineIndex,
+        hasUseDefaultResolution: true,
+      );
       _main.updateRoom(success: true, isLoading: false, loadError: null);
+      if (qualityAdjusted) {
+        ToastUtil.show(i18n('quality_limited_to', args: {'quality': before.qualites[selection.qualityIndex].quality}));
+      }
       return true;
     } catch (error, stackTrace) {
       if (_isLoadCurrent(loadEpoch, room, site) && selectionEpoch == _streamSelectionEpoch) {

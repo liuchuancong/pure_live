@@ -1,7 +1,7 @@
 # v2.9.4 全平台稳定版
 
 版本：`2.9.4+4083`
-维护仓库：`liuchuancong/pure_live`
+维护仓库：`wzgrx/pure_live`
 上游基线：`liuchuancong/pure_live@99ef708c`
 发布日期：2026-08-24
 

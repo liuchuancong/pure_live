@@ -1,8 +1,8 @@
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/search/search_ranking.dart';
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
-import 'package:pure_live/modules/search/search_platform_strip.dart';
 import 'package:pure_live/modules/search/search_controller.dart' as pure_live;
+import 'package:pure_live/modules/search/search_platform_strip.dart';
 
 ScrollPhysics resolveSearchResultScrollPhysics(TargetPlatform platform) {
   return switch (platform) {

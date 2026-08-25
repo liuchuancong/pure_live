@@ -38,7 +38,14 @@ void main() {
     });
 
     test('invalid or unbounded encryption descriptors fail fast', () {
-      expect(() => DouyuUtils.sign('123'), throwsFormatException);
+      expect(
+        () => DouyuUtils.buildSignedData(
+          encryptionKey: <String, dynamic>{...descriptor, 'enc_time': 1000},
+          roomId: '123',
+          timestampSeconds: 1000,
+        ),
+        throwsFormatException,
+      );
     });
 
     test('session identity and playback headers stay internally consistent', () {

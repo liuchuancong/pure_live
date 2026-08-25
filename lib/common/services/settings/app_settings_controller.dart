@@ -7,7 +7,7 @@ import 'package:pure_live/common/utils/hive_pref_util.dart';
 
 class AppSettingsController extends GetxController {
   static const int maxSleepMinutes = 525600;
-  static const List<String> defaultRealOnlinePlatforms = ['douyin', 'kuaishou', 'cc', 'twitch'];
+  static const List<String> defaultRealOnlinePlatforms = ['douyin', 'kuaishou', 'cc', 'twitch', 'soop'];
 
   Worker? _refreshRateModeWorker;
 
@@ -61,6 +61,10 @@ class AppSettingsController extends GetxController {
       if (!realOnlinePlatforms.contains('twitch')) realOnlinePlatforms.add('twitch');
       audienceMetricMigration.v = 1;
     }
+    if (audienceMetricMigration.v < 2) {
+      if (!realOnlinePlatforms.contains('soop')) realOnlinePlatforms.add('soop');
+      audienceMetricMigration.v = 2;
+    }
     _removeUnsupportedOnlinePlatforms();
     if (Platform.isAndroid) {
       // Persist the migrated value once so later upgrades no longer depend on
@@ -91,6 +95,7 @@ class AppSettingsController extends GetxController {
 
   static List<String> normalizeRealOnlinePlatforms(Iterable<String> platforms) {
     return platforms
+        .map((platform) => platform.trim().toLowerCase())
         .where((platform) => LiveRoom.audienceCapabilityFor(platform).supportsConcurrentOnline)
         .toSet()
         .toList();
@@ -116,15 +121,16 @@ class AppSettingsController extends GetxController {
     savedMenuIds.v = current;
   }
 
-  bool isRealOnlineEnabledFor(String? platform) => realOnlinePlatforms.contains(platform);
+  bool isRealOnlineEnabledFor(String? platform) => realOnlinePlatforms.contains(platform?.trim().toLowerCase());
 
   void setRealOnlineEnabledFor(String platform, bool enabled) {
-    if (!LiveRoom.audienceCapabilityFor(platform).supportsConcurrentOnline) return;
+    final normalized = platform.trim().toLowerCase();
+    if (!LiveRoom.audienceCapabilityFor(normalized).supportsConcurrentOnline) return;
     final next = List<String>.from(realOnlinePlatforms);
     if (enabled) {
-      if (!next.contains(platform)) next.add(platform);
+      if (!next.contains(normalized)) next.add(normalized);
     } else {
-      next.remove(platform);
+      next.remove(normalized);
     }
     realOnlinePlatforms.v = next;
   }

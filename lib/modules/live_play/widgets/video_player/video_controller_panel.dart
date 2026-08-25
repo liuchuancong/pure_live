@@ -1255,109 +1255,111 @@ class FullscreenStreamSelectorButton extends StatelessWidget {
     try {
       await showDialog<void>(
         context: context,
-        builder: (dialogContext) => Dialog(
-          key: const ValueKey('fullscreen-stream-selector-panel'),
-          alignment: Alignment.centerRight,
-          insetPadding: layout.insetPadding,
-          clipBehavior: Clip.antiAlias,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: SizedBox(
-            width: layout.size.width,
-            height: layout.size.height,
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 38,
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 10, right: 2),
-                    child: Row(
-                      children: [
-                        Icon(Icons.tune_rounded, size: 18, color: Theme.of(dialogContext).colorScheme.primary),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            i18n('fullscreen_stream_settings'),
-                            style: Theme.of(dialogContext).textTheme.titleSmall,
+        builder: (dialogContext) => Obx(() {
+          final live = controller.livePlayController;
+          final state = live.state.value.player;
+          final switching = live.playerController.isStreamSwitching.value;
+          final panelLayout = resolveStreamSelectorPanelLayout(
+            maximumDialogSize: layout.size,
+            qualityCount: state.qualites.length,
+            lineCount: state.playUrls.length,
+            splitContent: layout.splitContent,
+          );
+          final qualityPane = _StreamChoicePane(
+            key: const ValueKey('stream-quality-pane'),
+            icon: Icons.high_quality_rounded,
+            title: i18n('select_quality'),
+            itemCount: state.qualites.length,
+            selectedIndex: state.currentQuality,
+            labelBuilder: (index) => state.qualites[index].quality,
+            onSelected: switching
+                ? null
+                : (index) async {
+                    await live.setResolution(ReloadDataType.changeQuality, index, state.currentLineIndex);
+                  },
+          );
+          final linePane = _StreamChoicePane(
+            key: const ValueKey('stream-line-pane'),
+            icon: Icons.alt_route_rounded,
+            title: i18n('select_line'),
+            itemCount: state.playUrls.length,
+            selectedIndex: state.currentLineIndex,
+            labelBuilder: (index) => i18n('toolbox_line', args: {'index': (index + 1).toString()}),
+            onSelected: switching
+                ? null
+                : (index) async {
+                    await live.setResolution(ReloadDataType.changeLine, state.currentQuality, index);
+                  },
+          );
+
+          return Dialog(
+            key: const ValueKey('fullscreen-stream-selector-panel'),
+            alignment: Alignment.centerRight,
+            insetPadding: layout.insetPadding,
+            clipBehavior: Clip.antiAlias,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              width: layout.size.width,
+              height: panelLayout.dialogHeight,
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: 35,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 9, right: 1),
+                      child: Row(
+                        children: [
+                          Icon(Icons.tune_rounded, size: 17, color: Theme.of(dialogContext).colorScheme.primary),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              i18n('fullscreen_stream_settings'),
+                              style: Theme.of(dialogContext).textTheme.titleSmall,
+                            ),
                           ),
-                        ),
-                        IconButton(
-                          tooltip: i18n('close'),
-                          visualDensity: VisualDensity.compact,
-                          constraints: const BoxConstraints.tightFor(width: 34, height: 34),
-                          padding: EdgeInsets.zero,
-                          onPressed: () => Navigator.pop(dialogContext),
-                          icon: const Icon(Icons.close_rounded, size: 19),
-                        ),
-                      ],
+                          IconButton(
+                            tooltip: i18n('close'),
+                            visualDensity: VisualDensity.compact,
+                            constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+                            padding: EdgeInsets.zero,
+                            onPressed: () => Navigator.pop(dialogContext),
+                            icon: const Icon(Icons.close_rounded, size: 19),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const Divider(height: 1),
-                Expanded(
-                  child: Obx(() {
-                    final live = controller.livePlayController;
-                    final state = live.state.value.player;
-                    final switching = live.playerController.isStreamSwitching.value;
-                    final qualityPane = _StreamChoicePane(
-                      key: const ValueKey('stream-quality-pane'),
-                      icon: Icons.high_quality_rounded,
-                      title: i18n('select_quality'),
-                      selectedLabel: state.qualitySafe.quality,
-                      itemCount: state.qualites.length,
-                      selectedIndex: state.currentQuality,
-                      labelBuilder: (index) => state.qualites[index].quality,
-                      onSelected: switching
-                          ? null
-                          : (index) async {
-                              await live.setResolution(ReloadDataType.changeQuality, index, state.currentLineIndex);
-                            },
-                    );
-                    final linePane = _StreamChoicePane(
-                      key: const ValueKey('stream-line-pane'),
-                      icon: Icons.alt_route_rounded,
-                      title: i18n('select_line'),
-                      selectedLabel: i18n('toolbox_line', args: {'index': (state.currentLineIndex + 1).toString()}),
-                      itemCount: state.playUrls.length,
-                      selectedIndex: state.currentLineIndex,
-                      labelBuilder: (index) => i18n('toolbox_line', args: {'index': (index + 1).toString()}),
-                      onSelected: switching
-                          ? null
-                          : (index) async {
-                              await live.setResolution(ReloadDataType.changeLine, state.currentQuality, index);
-                            },
-                    );
-                    return Stack(
+                  const Divider(height: 1),
+                  Expanded(
+                    child: Stack(
                       children: [
                         Padding(
                           padding: const EdgeInsets.all(6),
-                          child: LayoutBuilder(
-                            builder: (context, constraints) {
-                              if (layout.splitContent) {
-                                return Row(
+                          child: panelLayout.splitContent
+                              ? Row(
                                   children: [
-                                    Expanded(child: qualityPane),
-                                    const SizedBox(width: 6),
-                                    Expanded(child: linePane),
+                                    Expanded(
+                                      child: SizedBox(height: panelLayout.qualityHeight, child: qualityPane),
+                                    ),
+                                    SizedBox(width: panelLayout.gap),
+                                    Expanded(
+                                      child: SizedBox(height: panelLayout.lineHeight, child: linePane),
+                                    ),
                                   ],
-                                );
-                              }
-                              final stackLayout = resolveStreamSelectorStackLayout(
-                                contentSize: Size(constraints.maxWidth, constraints.maxHeight),
-                                qualityCount: state.qualites.length,
-                              );
-                              return Column(
-                                children: [
-                                  SizedBox(
-                                    key: const ValueKey('stream-quality-content-sized-slot'),
-                                    height: stackLayout.qualityHeight,
-                                    child: qualityPane,
-                                  ),
-                                  SizedBox(height: stackLayout.gap),
-                                  Expanded(child: linePane),
-                                ],
-                              );
-                            },
-                          ),
+                                )
+                              : Column(
+                                  children: [
+                                    SizedBox(
+                                      key: const ValueKey('stream-quality-content-sized-slot'),
+                                      height: panelLayout.qualityHeight,
+                                      child: qualityPane,
+                                    ),
+                                    SizedBox(height: panelLayout.gap),
+                                    SizedBox(height: panelLayout.lineHeight, child: linePane),
+                                  ],
+                                ),
                         ),
                         if (switching)
                           const Positioned(
@@ -1371,13 +1373,13 @@ class FullscreenStreamSelectorButton extends StatelessWidget {
                             ),
                           ),
                       ],
-                    );
-                  }),
-                ),
-              ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ),
+          );
+        }),
       );
     } finally {
       if (controller.status != PlayerStatus.disposed) {
@@ -1444,7 +1446,6 @@ class _StreamChoicePane extends StatelessWidget {
     super.key,
     required this.icon,
     required this.title,
-    required this.selectedLabel,
     required this.itemCount,
     required this.selectedIndex,
     required this.labelBuilder,
@@ -1453,7 +1454,6 @@ class _StreamChoicePane extends StatelessWidget {
 
   final IconData icon;
   final String title;
-  final String selectedLabel;
   final int itemCount;
   final int selectedIndex;
   final String Function(int index) labelBuilder;
@@ -1473,28 +1473,15 @@ class _StreamChoicePane extends StatelessWidget {
         child: Column(
           children: [
             SizedBox(
-              height: 22,
+              height: 23,
               child: Row(
                 children: [
                   Icon(icon, size: 16, color: colors.primary),
                   const SizedBox(width: 5),
-                  Expanded(child: Text(title, style: Theme.of(context).textTheme.labelLarge)),
-                  Flexible(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: colors.primaryContainer.withValues(alpha: .58),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        child: Text(
-                          selectedLabel,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(color: colors.onPrimaryContainer, fontWeight: FontWeight.w700),
-                        ),
-                      ),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ],
@@ -1511,9 +1498,9 @@ class _StreamChoicePane extends StatelessWidget {
                     physics: const PureLiveScrollPhysics(),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: columns,
-                      mainAxisExtent: 34,
-                      mainAxisSpacing: 4,
-                      crossAxisSpacing: 4,
+                      mainAxisExtent: 42,
+                      mainAxisSpacing: 5,
+                      crossAxisSpacing: 5,
                     ),
                     itemCount: itemCount,
                     itemBuilder: (context, index) {
@@ -1536,18 +1523,26 @@ class _StreamChoicePane extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                           onTap: onSelected == null || selected ? null : () => unawaited(onSelected!(index)),
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 7),
-                            child: Row(
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            child: Stack(
+                              alignment: Alignment.center,
                               children: [
-                                Expanded(
+                                Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: selected ? 18 : 2),
                                   child: Text(
                                     labelBuilder(index),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context).textTheme.labelMedium,
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context).textTheme.bodyMedium
+                                        ?.copyWith(fontWeight: selected ? FontWeight.w800 : FontWeight.w600),
                                   ),
                                 ),
-                                if (selected) Icon(Icons.check_circle_rounded, size: 15, color: colors.primary),
+                                if (selected)
+                                  Positioned(
+                                    right: 1,
+                                    child: Icon(Icons.check_circle_rounded, size: 16, color: colors.primary),
+                                  ),
                               ],
                             ),
                           ),

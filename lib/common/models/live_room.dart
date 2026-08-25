@@ -6,6 +6,20 @@ enum AudienceMetricType { popularity, onlineViewers, totalViewers, followers, un
 
 enum AudienceOnlineAvailability { unsupported, roomRealtime, roomList }
 
+/// Comparable audience key used when rooms from different platform metric
+/// scales appear in one list.
+///
+/// In concurrent-viewer mode an explicit concurrent value must always rank
+/// ahead of a pending value, and a pending supported room must stay ahead of a
+/// heat/cumulative fallback. This prevents a multi-million popularity score
+/// from outranking a real audience of a few thousand people.
+class AudienceRankKey {
+  const AudienceRankKey({required this.metricPriority, required this.value});
+
+  final int metricPriority;
+  final int value;
+}
+
 class AudiencePlatformCapability {
   const AudiencePlatformCapability({
     required this.hasPopularity,
@@ -54,7 +68,7 @@ class LiveRoom {
       onlineAvailability: AudienceOnlineAvailability.roomList,
     ),
     'cc': AudiencePlatformCapability(
-      hasPopularity: false,
+      hasPopularity: true,
       hasTotalViewers: false,
       onlineAvailability: AudienceOnlineAvailability.roomList,
     ),
@@ -71,6 +85,13 @@ class LiveRoom {
       hasPopularity: false,
       hasTotalViewers: false,
       onlineAvailability: AudienceOnlineAvailability.roomList,
+    ),
+    // YY's public `users` value follows the platform popularity scale. No
+    // separate concurrent audience field is exposed by the current web API.
+    'yy': AudiencePlatformCapability(
+      hasPopularity: true,
+      hasTotalViewers: false,
+      onlineAvailability: AudienceOnlineAvailability.unsupported,
     ),
   };
 
@@ -213,7 +234,7 @@ class LiveRoom {
       lastWatchedAt = json['lastWatchedAt'] is num ? (json['lastWatchedAt'] as num).toInt() : null {
     // Earlier builds stored Huya's userCount/URI 8006 popularity in the
     // concurrent-viewer field. Current captures confirm both are popularity.
-    if (platform == 'huya' && _hasExplicitAudienceValue(onlineViewers)) {
+    if (normalizedPlatformId == 'huya' && _hasExplicitAudienceValue(onlineViewers)) {
       if (!_hasAudienceValue(popularity)) {
         popularity = onlineViewers;
       }
@@ -367,10 +388,9 @@ class LiveRoom {
     if (audienceMetricType != null && audienceMetricType != AudienceMetricType.unknown) {
       return audienceMetricType!;
     }
-    return switch (platform) {
-      'bilibili' || 'douyu' => AudienceMetricType.popularity,
+    return switch (normalizedPlatformId) {
+      'bilibili' || 'douyu' || 'huya' || 'cc' || 'yy' => AudienceMetricType.popularity,
       'kuaishou' || 'twitch' || 'soop' => AudienceMetricType.onlineViewers,
-      'huya' => AudienceMetricType.popularity,
       'douyin' => AudienceMetricType.totalViewers,
       _ => AudienceMetricType.unknown,
     };
@@ -391,7 +411,10 @@ class LiveRoom {
 
   String get effectiveOnlineViewers {
     if (_hasExplicitAudienceValue(onlineViewers)) return onlineViewers!.trim();
-    return effectiveAudienceMetricType == AudienceMetricType.onlineViewers && _hasExplicitAudienceValue(watching)
+    // `watching` defaults to the legacy sentinel "0". Treat only a positive
+    // legacy value as a populated concurrent count; an adapter that really
+    // reports zero writes it to [onlineViewers] explicitly and remains valid.
+    return effectiveAudienceMetricType == AudienceMetricType.onlineViewers && _hasAudienceValue(watching)
         ? (watching ?? '').trim()
         : '';
   }
@@ -434,20 +457,59 @@ class LiveRoom {
     return parseAudienceNumber(audienceValue(preferRealOnline: preferRealOnline, platformEnabled: platformEnabled));
   }
 
+  AudienceRankKey audienceRankKey({required bool preferRealOnline, required bool platformEnabled}) {
+    if (preferRealOnline && platformEnabled && supportsRealOnlineCount) {
+      return AudienceRankKey(
+        metricPriority: hasRealOnlineCount ? 3 : 2,
+        value: hasRealOnlineCount ? parseAudienceNumber(effectiveOnlineViewers) : 0,
+      );
+    }
+
+    final nativeValue = audienceValue(preferRealOnline: false, platformEnabled: false);
+    return AudienceRankKey(
+      metricPriority: _hasExplicitAudienceValue(nativeValue) ? 1 : 0,
+      value: parseAudienceNumber(nativeValue),
+    );
+  }
+
+  /// Sorts two rooms by the selected metric policy and then by stable room
+  /// identity. The deterministic tie-breaker prevents cards from shuffling on
+  /// every refresh when their audience values are equal or still pending.
+  static int compareAudienceRanking(
+    LiveRoom left,
+    LiveRoom right, {
+    required bool preferRealOnline,
+    required bool Function(String? platform) platformEnabled,
+  }) {
+    final leftKey = left.audienceRankKey(
+      preferRealOnline: preferRealOnline,
+      platformEnabled: platformEnabled(left.platform),
+    );
+    final rightKey = right.audienceRankKey(
+      preferRealOnline: preferRealOnline,
+      platformEnabled: platformEnabled(right.platform),
+    );
+    final metricOrder = rightKey.metricPriority.compareTo(leftKey.metricPriority);
+    if (metricOrder != 0) return metricOrder;
+    final valueOrder = rightKey.value.compareTo(leftKey.value);
+    if (valueOrder != 0) return valueOrder;
+    return left.identityKey.compareTo(right.identityKey);
+  }
+
   /// Keeps a reliable audience snapshot when a room-detail request or the
   /// first websocket heartbeat omits a metric. Bilibili can transiently return
   /// `1` for a busy room while its list API still has the current popularity;
   /// accepting that value makes the room header jump from hundreds of
   /// thousands to one. A later plausible heartbeat is still accepted.
   LiveRoom withAudienceFallbackFrom(LiveRoom fallback) {
-    if (roomId != fallback.roomId || platform != fallback.platform) return this;
+    if (!hasSameIdentity(fallback)) return this;
 
     final currentPopularity = effectivePopularity;
     final fallbackPopularity = fallback.effectivePopularity;
     final currentPopularityCount = parseAudienceNumber(currentPopularity);
     final fallbackPopularityCount = parseAudienceNumber(fallbackPopularity);
     final hasTransientBilibiliDrop =
-        platform == 'bilibili' &&
+        normalizedPlatformId == 'bilibili' &&
         fallbackPopularityCount >= 1000 &&
         currentPopularityCount <= 1 &&
         currentPopularityCount * 100 < fallbackPopularityCount;
@@ -473,15 +535,16 @@ class LiveRoom {
   static int parseAudienceNumber(String? value) {
     final text = value?.trim().toLowerCase() ?? '';
     if (text.isEmpty) return 0;
-    final match = RegExp(r'([0-9]+(?:\.[0-9]+)?)').firstMatch(text.replaceAll(',', ''));
+    final normalized = text.replaceAll(',', '').replaceAll('，', '');
+    final match = RegExp(r'([0-9]+(?:\.[0-9]+)?)\s*(亿|万|千|[kwm])?').firstMatch(normalized);
     final number = double.tryParse(match?.group(1) ?? '') ?? 0;
-    final multiplier = text.contains('亿')
-        ? 100000000
-        : (text.contains('万') || text.contains('w'))
-        ? 10000
-        : text.contains('k')
-        ? 1000
-        : 1;
+    final multiplier = switch (match?.group(2)) {
+      '亿' => 100000000,
+      '万' || 'w' => 10000,
+      '千' || 'k' => 1000,
+      'm' => 1000000,
+      _ => 1,
+    };
     return (number * multiplier).round();
   }
 

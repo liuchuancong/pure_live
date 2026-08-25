@@ -10,6 +10,7 @@ import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/common/convert_helper.dart';
 import 'package:pure_live/core/danmaku/douyin_danmaku.dart';
+import 'package:pure_live/core/site/douyin/douyin_audience.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/site/douyin/douyin_search.dart';
 import 'package:pure_live/core/utils/douyin/douyin_utils.dart';
@@ -214,7 +215,7 @@ class DouyinSite implements LiveSite {
         area: item['tag_name'].toString(),
         watching: item["room"]?["room_view_stats"]?["display_value"].toString() ?? '',
         totalViewers: item["room"]?["room_view_stats"]?["display_value"].toString() ?? '',
-        onlineViewers: _douyinOnlineViewers(item["room"]),
+        onlineViewers: douyinOnlineViewers(item["room"]),
         audienceMetricType: AudienceMetricType.totalViewers,
       );
       items.add(roomItem);
@@ -225,7 +226,7 @@ class DouyinSite implements LiveSite {
   @override
   Future<List<LiveRoom>> getRecommendRooms({int page = 1, int pageSize = 30}) async {
     try {
-      var result = await HttpClient.instance.getJson(
+      final result = await HttpClient.instance.getJson(
         "https://live.douyin.com/webcast/feed/",
         queryParameters: {
           "aid": "6383",
@@ -238,28 +239,138 @@ class DouyinSite implements LiveSite {
         },
         header: await getRequestHeaders(),
       );
-      var items = <LiveRoom>[];
-      for (var item in result["data"]["data"]) {
-        var roomItem = LiveRoom(
-          roomId: item["owner"]["web_rid"],
-          title: item["title"].toString(),
-          cover: item["cover"]["url_list"][0].toString(),
-          nick: item["owner"]["nickname"].toString(),
-          platform: Sites.douyinSite,
-          area: item["tag_name"] ?? '热门推荐',
-          avatar: item["owner"]["avatar_thumb"]["url_list"][0].toString(),
-          watching: item?["room_view_stats"]?["display_value"].toString() ?? '',
-          totalViewers: item?["room_view_stats"]?["display_value"].toString() ?? '',
-          onlineViewers: _douyinOnlineViewers(item),
-          audienceMetricType: AudienceMetricType.totalViewers,
-          liveStatus: LiveStatus.live,
-        );
-        items.add(roomItem);
-      }
-      return items;
+      return parseRecommendRooms(result);
     } catch (e) {
       throw Exception(e.toString());
     }
+  }
+
+  /// Parses both generations of Douyin's anonymous feed response.
+  ///
+  /// The legacy response stored rooms at `data.data`. Since August 2026 the
+  /// endpoint returns `data` as a list of feed envelopes and puts the room in
+  /// each envelope's `data` field. Indexing that list with the string `data`
+  /// produced `type 'String' is not a subtype of type 'int' of 'index'` before
+  /// any card could be rendered.
+  @visibleForTesting
+  static List<LiveRoom> parseRecommendRooms(dynamic payload) {
+    final root = _asStringMap(payload);
+    if (root == null) throw const FormatException('Douyin feed response is not an object');
+
+    final statusCode = int.tryParse(root['status_code']?.toString() ?? '');
+    if (statusCode != null && statusCode != 0) {
+      throw StateError('Douyin feed rejected request: code=$statusCode');
+    }
+
+    dynamic rawRooms = root['data'];
+    if (rawRooms is Map) rawRooms = rawRooms['data'];
+    if (rawRooms is! List) throw const FormatException('Douyin feed room list is missing');
+
+    final rooms = <LiveRoom>[];
+    final seenRoomIds = <String>{};
+    for (final rawItem in rawRooms) {
+      final envelope = _asStringMap(rawItem);
+      if (envelope == null) continue;
+
+      final embedded = _decodeEmbeddedMap(envelope['data']);
+      final nestedRoom = _asStringMap(envelope['room']);
+      final room = <Map<String, dynamic>?>[
+        embedded,
+        nestedRoom,
+        envelope,
+      ].firstWhere((candidate) => candidate != null && _looksLikeRoom(candidate), orElse: () => null);
+      if (room == null) continue;
+
+      final owner = _asStringMap(room['owner']) ?? _asStringMap(envelope['owner']) ?? const <String, dynamic>{};
+      final roomId = _firstText([envelope['web_rid'], owner['web_rid'], room['web_rid'], room['id_str'], room['id']]);
+      if (roomId.isEmpty || !seenRoomIds.add(roomId)) continue;
+
+      final title = _firstText([room['title'], envelope['title'], owner['nickname']]);
+      final nick = _firstText([owner['nickname'], envelope['nickname']]);
+      final cover = _firstImageUrl([room['cover'], envelope['cover']]);
+      final avatar = _firstImageUrl([owner['avatar_thumb'], owner['avatar_large'], envelope['avatar_thumb']]);
+      final viewStats = _asStringMap(room['room_view_stats']);
+      final totalViewers = _firstText([viewStats?['display_value'], viewStats?['total_user_str'], room['user_count']]);
+
+      rooms.add(
+        LiveRoom(
+          roomId: roomId,
+          title: title,
+          cover: cover,
+          nick: nick,
+          platform: Sites.douyinSite,
+          area: _douyinFeedArea(envelope, room),
+          avatar: avatar,
+          watching: totalViewers,
+          totalViewers: totalViewers,
+          onlineViewers: douyinOnlineViewers(room),
+          audienceMetricType: AudienceMetricType.totalViewers,
+          status: true,
+          liveStatus: LiveStatus.live,
+          link: 'https://live.douyin.com/$roomId',
+        ),
+      );
+    }
+    return rooms;
+  }
+
+  static Map<String, dynamic>? _asStringMap(dynamic value) {
+    if (value is! Map) return null;
+    return value.map((key, entryValue) => MapEntry(key.toString(), entryValue));
+  }
+
+  static Map<String, dynamic>? _decodeEmbeddedMap(dynamic value) {
+    final direct = _asStringMap(value);
+    if (direct != null) return direct;
+    if (value is! String || !value.trimLeft().startsWith('{')) return null;
+    try {
+      return _asStringMap(json.decode(value));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static bool _looksLikeRoom(Map<String, dynamic> value) {
+    return value['owner'] is Map || value['title'] != null || value['id_str'] != null || value['stream_url'] is Map;
+  }
+
+  static String _firstText(Iterable<dynamic> candidates) {
+    for (final value in candidates) {
+      if (value == null || value is Map || value is Iterable && value is! String) continue;
+      final text = value.toString().trim();
+      if (text.isNotEmpty && text != 'null') return text;
+    }
+    return '';
+  }
+
+  static String _firstImageUrl(Iterable<dynamic> candidates) {
+    for (final value in candidates) {
+      final image = _asStringMap(value);
+      final urlList = image?['url_list'];
+      if (urlList is List) {
+        final url = _firstText(urlList);
+        if (url.isNotEmpty) return url;
+      }
+      final direct = _firstText([value]);
+      if (direct.startsWith('http://') || direct.startsWith('https://')) return direct;
+    }
+    return '';
+  }
+
+  static String _douyinFeedArea(Map<String, dynamic> envelope, Map<String, dynamic> room) {
+    final direct = _firstText([room['tag_name'], envelope['tag_name']]);
+    if (direct.isNotEmpty) return direct;
+
+    for (final source in [room['partition_road_map'], envelope['tags']]) {
+      if (source is! List) continue;
+      for (final rawTag in source) {
+        final tag = _asStringMap(rawTag);
+        if (tag == null) continue;
+        final text = _firstText([tag['title'], tag['name'], tag['tag_name']]);
+        if (text.isNotEmpty) return text;
+      }
+    }
+    return '热门推荐';
   }
 
   @override
@@ -306,7 +417,7 @@ class DouyinSite implements LiveSite {
       avatar: owner["avatar_thumb"]["url_list"][0].toString(),
       watching: roomStatus ? room["room_view_stats"]["display_value"].toString() : "",
       totalViewers: roomStatus ? room["room_view_stats"]["display_value"].toString() : '',
-      onlineViewers: roomStatus ? _douyinOnlineViewers(room) : '',
+      onlineViewers: roomStatus ? douyinOnlineViewers(room) : '',
       audienceMetricType: AudienceMetricType.totalViewers,
       status: roomStatus,
       link: "https://live.douyin.com/$webRid",
@@ -365,7 +476,7 @@ class DouyinSite implements LiveSite {
           : userData["avatar_thumb"]["url_list"][0].toString(),
       watching: roomStatus ? roomData["room_view_stats"]["display_value"].toString() : "",
       totalViewers: roomStatus ? roomData["room_view_stats"]["display_value"].toString() : '',
-      onlineViewers: roomStatus ? _douyinOnlineViewers(roomData) : '',
+      onlineViewers: roomStatus ? douyinOnlineViewers(roomData) : '',
       audienceMetricType: AudienceMetricType.totalViewers,
       status: roomStatus,
       liveStatus: roomStatus ? LiveStatus.live : LiveStatus.offline,
@@ -406,7 +517,7 @@ class DouyinSite implements LiveSite {
           : anchor["avatar_thumb"]["url_list"][0].toString(),
       watching: roomInfo?["room_view_stats"]?["display_value"].toString() ?? '',
       totalViewers: roomInfo?["room_view_stats"]?["display_value"].toString() ?? '',
-      onlineViewers: _douyinOnlineViewers(roomInfo),
+      onlineViewers: douyinOnlineViewers(roomInfo),
       audienceMetricType: AudienceMetricType.totalViewers,
       liveStatus: roomStatus ? LiveStatus.live : LiveStatus.offline,
       link: "https://live.douyin.com/$webRid",
@@ -517,57 +628,126 @@ class DouyinSite implements LiveSite {
 
   @override
   Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
-    List<LivePlayQuality> qualities = [];
+    return parseStreamQualities(detail.data);
+  }
 
-    var qulityList = detail.data["live_core_sdk_data"]["pull_data"]["options"]["qualities"];
-    var streamData = detail.data["live_core_sdk_data"]["pull_data"]["stream_data"].toString();
+  /// Resolves Douyin qualities by their stable `sdk_key`.
+  ///
+  /// The former fallback converted URL maps to positional lists and paired
+  /// them using `length - level`. JSON map order is not a quality contract, so
+  /// multiple buttons could point at the same or the wrong stream. Both the
+  /// modern `stream_data.data` payload and legacy pull-url maps are now joined
+  /// by key, never by position.
+  @visibleForTesting
+  static List<LivePlayQuality> parseStreamQualities(dynamic rawStreamUrl) {
+    if (rawStreamUrl is! Map) return const <LivePlayQuality>[];
+    final liveCore = rawStreamUrl['live_core_sdk_data'];
+    final pullData = liveCore is Map ? liveCore['pull_data'] : null;
+    final options = pullData is Map ? pullData['options'] : null;
+    final optionQualities = options is Map && options['qualities'] is List
+        ? (options['qualities'] as List).whereType<Map>().toList(growable: false)
+        : const <Map>[];
 
-    if (!streamData.startsWith('{')) {
-      var flvList = (detail.data["flv_pull_url"] as Map).values.cast<String>().toList();
-      var hlsList = (detail.data["hls_pull_url_map"] as Map).values.cast<String>().toList();
-      for (var quality in qulityList) {
-        int level = quality["level"];
-        List<String> urls = [];
-        var flvIndex = flvList.length - level;
-        if (flvIndex >= 0 && flvIndex < flvList.length) {
-          urls.add(flvList[flvIndex]);
-        }
-        var hlsIndex = hlsList.length - level;
-        if (hlsIndex >= 0 && hlsIndex < hlsList.length) {
-          urls.add(hlsList[hlsIndex]);
-        }
-        var qualityItem = LivePlayQuality(quality: quality["name"], sort: level, data: urls);
-        if (urls.isNotEmpty) {
-          qualities.add(qualityItem);
-        }
-      }
-    } else {
-      var qualityData = json.decode(streamData)["data"] as Map;
-      for (var quality in qulityList) {
-        List<String> urls = [];
-        var flvUrl = qualityData[quality["sdk_key"]]?["main"]?["flv"]?.toString();
-
-        if (flvUrl != null && flvUrl.isNotEmpty) {
-          urls.add(flvUrl);
-        }
-        var hlsUrl = qualityData[quality["sdk_key"]]?["main"]?["hls"]?.toString();
-        if (hlsUrl != null && hlsUrl.isNotEmpty) {
-          urls.add(hlsUrl);
-        }
-        var qualityItem = LivePlayQuality(quality: quality["name"], sort: quality["level"], data: urls);
-        if (urls.isNotEmpty) {
-          qualities.add(qualityItem);
-        }
+    Map<dynamic, dynamic> decodedStreams = const {};
+    final streamDataText = pullData is Map ? pullData['stream_data']?.toString().trim() ?? '' : '';
+    if (streamDataText.startsWith('{')) {
+      try {
+        final decoded = json.decode(streamDataText);
+        if (decoded is Map && decoded['data'] is Map) decodedStreams = decoded['data'] as Map;
+      } catch (error) {
+        CoreLog.error('Douyin stream_data decode failed: $error');
       }
     }
 
-    qualities.sort((a, b) => b.sort.compareTo(a.sort));
+    final flvMap = rawStreamUrl['flv_pull_url'] is Map
+        ? rawStreamUrl['flv_pull_url'] as Map
+        : const <dynamic, dynamic>{};
+    final hlsMap = rawStreamUrl['hls_pull_url_map'] is Map
+        ? rawStreamUrl['hls_pull_url_map'] as Map
+        : const <dynamic, dynamic>{};
+    final resolutionNames = rawStreamUrl['resolution_name'] is Map
+        ? rawStreamUrl['resolution_name'] as Map
+        : const <dynamic, dynamic>{};
+
+    final descriptors = <String, Map<dynamic, dynamic>>{};
+    for (final option in optionQualities) {
+      final key = option['sdk_key']?.toString().trim() ?? '';
+      if (key.isNotEmpty) descriptors.putIfAbsent(key.toLowerCase(), () => option);
+    }
+    for (final key in <dynamic>{...decodedStreams.keys, ...flvMap.keys, ...hlsMap.keys}) {
+      final text = key?.toString().trim() ?? '';
+      if (text.isNotEmpty) {
+        descriptors.putIfAbsent(text.toLowerCase(), () => <dynamic, dynamic>{'sdk_key': text});
+      }
+    }
+
+    final qualities = <LivePlayQuality>[];
+    for (final entry in descriptors.entries) {
+      final key = entry.key;
+      final descriptor = entry.value;
+      final urls = <String>[];
+      final stream = _caseInsensitiveMapValue(decodedStreams, key);
+      final main = stream is Map ? stream['main'] : null;
+      if (main is Map) {
+        _addPlayableUrl(urls, main['flv']);
+        _addPlayableUrl(urls, main['hls']);
+      }
+      _addPlayableUrl(urls, _caseInsensitiveMapValue(flvMap, key));
+      _addPlayableUrl(urls, _caseInsensitiveMapValue(hlsMap, key));
+      if (urls.isEmpty) continue;
+
+      final configuredName = descriptor['name']?.toString().trim() ?? '';
+      final resolutionName = _caseInsensitiveMapValue(resolutionNames, key)?.toString().trim() ?? '';
+      final bitRate = int.tryParse(descriptor['v_bit_rate']?.toString() ?? '');
+      final sort = bitRate ?? _douyinQualityRank(key);
+      qualities.add(
+        LivePlayQuality(
+          quality: configuredName.isNotEmpty
+              ? configuredName
+              : resolutionName.isNotEmpty
+              ? resolutionName
+              : key,
+          id: key.toLowerCase(),
+          sort: sort,
+          data: List<String>.unmodifiable(urls),
+        ),
+      );
+    }
+
+    qualities.sort((left, right) => right.sort.compareTo(left.sort));
     return qualities;
   }
 
+  static dynamic _caseInsensitiveMapValue(Map<dynamic, dynamic> map, String key) {
+    final direct = map[key];
+    if (direct != null) return direct;
+    final normalized = key.toLowerCase();
+    for (final entry in map.entries) {
+      if (entry.key?.toString().toLowerCase() == normalized) return entry.value;
+    }
+    return null;
+  }
+
+  static void _addPlayableUrl(List<String> urls, dynamic value) {
+    final url = value?.toString().trim() ?? '';
+    final uri = Uri.tryParse(url);
+    if (uri == null || !uri.hasScheme || !const {'http', 'https'}.contains(uri.scheme) || urls.contains(url)) return;
+    urls.add(url);
+  }
+
+  static int _douyinQualityRank(String key) => switch (key.toUpperCase()) {
+    'ORIGION' || 'ORIGIN' => 10000000,
+    'FULL_HD1' || 'UHD' => 4000000,
+    'HD1' || 'HD' => 2000000,
+    'SD1' || 'SD' => 1000000,
+    'SD2' || 'LD' => 500000,
+    _ => 0,
+  };
+
   @override
   Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
-    return quality.data;
+    final data = quality.data;
+    return data is List ? data.map((url) => url.toString()).where((url) => url.isNotEmpty).toList(growable: false) : [];
   }
 
   @override
@@ -612,23 +792,4 @@ class DouyinSite implements LiveSite {
     }
     return int.tryParse(stringBuffer.toString()) ?? math.Random().nextInt(1000000000);
   }
-}
-
-String _douyinOnlineViewers(dynamic room) {
-  if (room is! Map) return '';
-  final stats = room['room_view_stats'];
-  final roomStats = room['stats'];
-  final candidates = <dynamic>[
-    if (stats is Map) stats['user_count'],
-    if (stats is Map) stats['online_user_count'],
-    if (stats is Map) stats['online_user_for_anchor'],
-    if (roomStats is Map) roomStats['user_count'],
-    if (roomStats is Map) roomStats['online_user_count'],
-    if (roomStats is Map) roomStats['online_user_for_anchor'],
-  ];
-  for (final value in candidates) {
-    final text = value?.toString().trim() ?? '';
-    if (LiveRoom.parseAudienceNumber(text) > 0) return text;
-  }
-  return '';
 }

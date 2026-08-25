@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:collection';
 
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/model/live_category.dart';
@@ -193,8 +192,7 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher {
   @override
   Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) {
     List<LivePlayQuality> qualities = <LivePlayQuality>[];
-    Map<String, LivePlayQuality> qualityMap = HashMap();
-    CoreLog.d("detail.data: ${jsonEncode(detail.data)}");
+    final qualityMap = <String, LivePlayQuality>{};
     final data = detail.data;
     final presets = data is Map ? data["viewpreset"] : null;
     if (presets is! List) return Future.value(qualities);
@@ -206,6 +204,7 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher {
       qualityMap.putIfAbsent(key, () {
         return LivePlayQuality(
           quality: key.toString(),
+          id: key.toString(),
           sort: int.tryParse(quality["bps"].toString()) ?? 0,
           data: <String>[],
         );
@@ -332,7 +331,6 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher {
   ) async {
     var playerLiveApi = playerLiveApiData;
     var jsonObj = playerLiveApi["CHANNEL"];
-    CoreLog.d("playerLiveApi: ${jsonEncode(jsonObj)}");
 
     int resultCode = jsonObj['RESULT'] ?? 0;
     // 业务码：1成功，-6需要登录，0无直播，‑2屏蔽

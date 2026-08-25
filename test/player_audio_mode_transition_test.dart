@@ -536,6 +536,7 @@ PlayerManager _createManager(
   Future<void> Function(LiveRoom room)? audioSessionStart,
 }) {
   return PlayerManager(
+    playerCreator: (_) => player,
     fallbackManager: EngineFallbackManager(
       defaultEngine: PlayerEngine.mediaKit,
       supportedEngines: const <PlayerEngine>[PlayerEngine.mediaKit],

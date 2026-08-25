@@ -278,8 +278,10 @@ class IptvSite implements LiveSite {
 
   @override
   Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
+    final url = detail.data?.toString().trim() ?? '';
+    if (url.isEmpty) return const <LivePlayQuality>[];
     return [
-      LivePlayQuality(quality: '默认', sort: 1, data: <String>[detail.data]),
+      LivePlayQuality(quality: '默认', id: 'default', sort: 1, data: <String>[url]),
     ];
   }
 
@@ -289,7 +291,9 @@ class IptvSite implements LiveSite {
 
   @override
   Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
-    return quality.data as List<String>;
+    final data = quality.data;
+    if (data is! List) return const <String>[];
+    return data.map((item) => item.toString().trim()).where((url) => url.isNotEmpty).toList(growable: false);
   }
 
   // =========================================================

@@ -67,5 +67,13 @@ void main() {
 
       expect(config['realOnlinePlatforms'], ['douyin', 'kuaishou', 'cc']);
     });
+
+    test('normalizes concurrent platform ids and includes SOOP for new installs', () {
+      expect(AppSettingsController.defaultRealOnlinePlatforms, contains('soop'));
+      expect(AppSettingsController.normalizeRealOnlinePlatforms(['DOUYIN', ' soop ', 'YY', 'SOOP']), [
+        'douyin',
+        'soop',
+      ]);
+    });
   });
 }

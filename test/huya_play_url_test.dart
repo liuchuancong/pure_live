@@ -44,7 +44,7 @@ void main() {
     expect(HuyaSite.secureHuyaCdnBase('http://example.com/src'), 'http://example.com/src');
   });
 
-  test('Huya room tokens do not duplicate codec or ratio parameters', () async {
+  test('Huya quality selection replaces a captured ratio instead of keeping stale quality', () async {
     final url = await HuyaSite().getPlayUrl(
       line(
         HuyaLineType.hls,
@@ -57,6 +57,49 @@ void main() {
     expect(RegExp(r'(^|&)codec=').allMatches(Uri.parse(url).query).length, 1);
     expect(RegExp(r'(^|&)ratio=').allMatches(Uri.parse(url).query).length, 1);
     expect(url, contains('&codec=265'));
-    expect(url, contains('&ratio=4000'));
+    expect(url, contains('&ratio=2000'));
+    expect(url, isNot(contains('&ratio=4000')));
+  });
+
+  test('Huya source quality removes a captured transcode ratio', () async {
+    final url = await HuyaSite().getPlayUrl(
+      line(
+        HuyaLineType.flv,
+        'https://tx.flv.huya.com/src',
+        flvAntiCode: 'wsSecret=flv-token&wsTime=6a87f351&ratio=500',
+      ),
+      0,
+    );
+
+    expect(Uri.parse(url).queryParameters.containsKey('ratio'), isFalse);
+  });
+
+  test('Huya exposes only server advertised bitrates and has stable selection ids', () {
+    final data = HuyaUrlDataModel(
+      url: '',
+      uid: '',
+      lines: [line(HuyaLineType.flv, 'https://tx.flv.huya.com/src')],
+      bitRates: [
+        HuyaBitRateModel(name: '蓝光4M', bitRate: 0),
+        HuyaBitRateModel(name: '超清', bitRate: 2000),
+        HuyaBitRateModel(name: '重复超清', bitRate: 2000),
+        HuyaBitRateModel(name: '流畅', bitRate: 500),
+      ],
+      isXingxiu: false,
+    );
+
+    final qualities = HuyaSite.parsePlayQualities(data);
+
+    expect(qualities.map((quality) => quality.quality), ['蓝光4M', '超清', '流畅']);
+    expect(qualities.map((quality) => quality.selectionId), [0, 2000, 500]);
+  });
+
+  test('Huya does not invent an unsupported transcode when no rate list exists', () {
+    final qualities = HuyaSite.parsePlayQualities(
+      HuyaUrlDataModel(url: '', uid: '', lines: const [], bitRates: const [], isXingxiu: false),
+    );
+
+    expect(qualities, hasLength(1));
+    expect(qualities.single.selectionId, 0);
   });
 }

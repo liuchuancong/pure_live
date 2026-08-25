@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:collection';
 
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/model/live_category.dart';
@@ -340,64 +339,49 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher {
 
   @override
   Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
-    final jsonObj = await getLiveStreamObj(detail: detail, qn: '1');
+    return parsePlayQualities(await getLiveStreamObj(detail: detail, qn: '1'));
+  }
 
-    final channelStreamInfo = jsonObj['channel_stream_info'] as Map<String, dynamic>?;
+  @visibleForTesting
+  static List<LivePlayQuality> parsePlayQualities(dynamic payload) {
+    final channelStreamInfo = payload is Map ? payload['channel_stream_info'] : null;
+    final streams = channelStreamInfo is Map ? channelStreamInfo['streams'] : null;
+    if (streams is! List) return const <LivePlayQuality>[];
 
-    if (channelStreamInfo == null) {
-      return [];
-    }
-
-    final streams = channelStreamInfo['streams'] as List<dynamic>? ?? [];
-
-    final Map<String, LivePlayQuality> qualityMap = HashMap();
-
-    for (final stream in streams) {
-      if (stream is! Map) {
-        continue;
-      }
-
-      final streamMap = Map<String, dynamic>.from(stream);
-
-      if (!streamMap.containsKey('stream_key')) {
-        continue;
-      }
-
-      final jsonStr = streamMap['json']?.toString() ?? '';
-
-      if (jsonStr.isEmpty) {
-        continue;
-      }
-
+    final records = <({String name, String gear, int rate})>[];
+    final seenGears = <String>{};
+    for (final stream in streams.whereType<Map>()) {
+      final jsonText = stream['json']?.toString().trim() ?? '';
+      if (jsonText.isEmpty) continue;
       try {
-        final info = json.decode(jsonStr) as Map<String, dynamic>;
-
-        final gearInfo = info['gear_info'] as Map<String, dynamic>?;
-
-        if (gearInfo == null) {
-          continue;
-        }
-
-        final desc = gearInfo['name']?.toString() ?? '';
-
-        final qn = gearInfo['gear']?.toString() ?? '';
-
-        final rate = int.tryParse(info['rate']?.toString() ?? '') ?? 0;
-
-        if (qn.isEmpty || desc.isEmpty) {
-          continue;
-        }
-
-        qualityMap.putIfAbsent(desc, () => LivePlayQuality(quality: desc, sort: rate, data: qn));
-      } catch (e) {
-        CoreLog.error('YY parse quality error: $e');
+        final decoded = json.decode(jsonText);
+        final gearInfo = decoded is Map ? decoded['gear_info'] : null;
+        if (gearInfo is! Map) continue;
+        final name = gearInfo['name']?.toString().trim() ?? '';
+        final gear = gearInfo['gear']?.toString().trim() ?? '';
+        final rate = int.tryParse(decoded['rate']?.toString() ?? '') ?? 0;
+        if (name.isEmpty || gear.isEmpty || !seenGears.add(gear)) continue;
+        records.add((name: name, gear: gear, rate: rate));
+      } catch (error) {
+        CoreLog.error('YY parse quality error: $error');
       }
     }
 
-    final qualities = qualityMap.values.toList();
-
-    qualities.sort((a, b) => b.sort.compareTo(a.sort));
-
+    final nameCounts = <String, int>{};
+    for (final record in records) {
+      nameCounts.update(record.name, (count) => count + 1, ifAbsent: () => 1);
+    }
+    final qualities = records
+        .map(
+          (record) => LivePlayQuality(
+            quality: nameCounts[record.name] == 1 ? record.name : '${record.name} · ${record.gear}',
+            id: record.gear,
+            sort: record.rate,
+            data: record.gear,
+          ),
+        )
+        .toList(growable: false);
+    qualities.sort((left, right) => right.sort.compareTo(left.sort));
     return qualities;
   }
 
@@ -415,40 +399,27 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher {
 
     final liveData = await getLiveStreamObj(detail: detail, qn: qn);
 
-    final avpInfoRes = liveData['avp_info_res'] as Map<String, dynamic>?;
+    return parsePlayUrls(liveData);
+  }
 
-    if (avpInfoRes == null) {
-      return [];
-    }
+  @visibleForTesting
+  static List<String> parsePlayUrls(dynamic payload) {
+    final avpInfoRes = payload is Map ? payload['avp_info_res'] : null;
+    final streamLineAddr = avpInfoRes is Map ? avpInfoRes['stream_line_addr'] : null;
+    if (streamLineAddr is! Map) return const <String>[];
 
-    final streamLineAddr = avpInfoRes['stream_line_addr'] as Map<String, dynamic>?;
-
-    if (streamLineAddr == null || streamLineAddr.isEmpty) {
-      return [];
-    }
-
-    final List<String> urls = [];
-
-    for (final entry in streamLineAddr.entries) {
-      final value = entry.value;
-
-      if (value is! Map) {
+    final urls = <String>[];
+    for (final value in streamLineAddr.values.whereType<Map>()) {
+      final cdnInfo = value['cdn_info'];
+      if (cdnInfo is! Map) continue;
+      var url = cdnInfo['url']?.toString().trim() ?? '';
+      if (url.startsWith('//')) url = 'https:$url';
+      final uri = Uri.tryParse(url);
+      if (uri == null || !uri.hasScheme || !const {'http', 'https'}.contains(uri.scheme) || urls.contains(url)) {
         continue;
       }
-
-      final cdnInfo = value['cdn_info'] as Map?;
-
-      if (cdnInfo == null) {
-        continue;
-      }
-
-      final url = cdnInfo['url']?.toString() ?? '';
-
-      if (url.isNotEmpty && !urls.contains(url)) {
-        urls.add(url);
-      }
+      urls.add(url);
     }
-
     return urls;
   }
 

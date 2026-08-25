@@ -47,5 +47,23 @@ void main() {
         throwsA(isA<DouyuPlayApiException>()),
       );
     });
+
+    test('keeps API quality order because rate is an opaque request code', () {
+      final qualities = DouyuSite.parsePlayQualities(
+        <String, dynamic>{
+          'multirates': <Map<String, dynamic>>[
+            {'name': '蓝光8M', 'rate': 0},
+            {'name': '蓝光4M', 'rate': 1},
+            {'name': '流畅', 'rate': 3},
+            {'name': '重复流畅', 'rate': 3},
+          ],
+        },
+        const <String>['main', 'backup'],
+      );
+
+      expect(qualities.map((quality) => quality.quality), ['蓝光8M', '蓝光4M', '流畅']);
+      expect(qualities.map((quality) => quality.selectionId), [0, 1, 3]);
+      expect((qualities.first.data as DouyuPlayData).cdns, ['main', 'backup']);
+    });
   });
 }
