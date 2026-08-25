@@ -518,29 +518,50 @@ def douyin_search_probe() -> None:
     cookie_jar = http.cookiejar.CookieJar()
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookie_jar))
 
-    def get_json(url: str, params: dict[str, object]) -> object:
-        request = urllib.request.Request(
-            f"{url}?{urllib.parse.urlencode(params)}",
-            headers={
-                "User-Agent": USER_AGENT,
-                "Accept": "application/json,text/plain,*/*",
-                "Accept-Language": "zh-CN,zh;q=0.9",
-                "Referer": "https://live.douyin.com/",
-                "Connection": "close",
-            },
-        )
-        with opener.open(request, timeout=20) as response:
-            payload = response.read()
-        if not payload.strip():
-            raise ValueError("empty response body")
-        return json.loads(payload.decode("utf-8", errors="replace").lstrip("\ufeff"))
+    def get_json(url: str, params: dict[str, object], attempts: int = 3) -> object:
+        last_error: Exception | None = None
+        for attempt in range(1, attempts + 1):
+            try:
+                request = urllib.request.Request(
+                    f"{url}?{urllib.parse.urlencode(params)}",
+                    headers={
+                        "User-Agent": USER_AGENT,
+                        "Accept": "application/json,text/plain,*/*",
+                        "Accept-Language": "zh-CN,zh;q=0.9",
+                        "Referer": "https://live.douyin.com/",
+                        "Cache-Control": "no-cache",
+                        "Connection": "close",
+                    },
+                )
+                with opener.open(request, timeout=20) as response:
+                    payload = response.read()
+                if not payload.strip():
+                    raise ValueError("empty response body")
+                return json.loads(payload.decode("utf-8", errors="replace").lstrip("\ufeff"))
+            except Exception as error:  # noqa: BLE001 - bounded transient retry
+                last_error = error
+                if attempt < attempts:
+                    time.sleep(attempt)
+        assert last_error is not None
+        raise last_error
 
-    home_request = urllib.request.Request(
-        "https://live.douyin.com/?from_nav=1",
-        headers={"User-Agent": USER_AGENT, "Connection": "close"},
-    )
-    with opener.open(home_request, timeout=20) as response:
-        response.read(1)
+    last_home_error: Exception | None = None
+    for attempt in range(1, 4):
+        try:
+            home_request = urllib.request.Request(
+                "https://live.douyin.com/?from_nav=1",
+                headers={"User-Agent": USER_AGENT, "Cache-Control": "no-cache", "Connection": "close"},
+            )
+            with opener.open(home_request, timeout=20) as response:
+                response.read(1)
+            break
+        except Exception as error:  # noqa: BLE001 - bounded transient retry
+            last_home_error = error
+            if attempt < 3:
+                time.sleep(attempt)
+    else:
+        assert last_home_error is not None
+        raise last_home_error
     if not any(cookie.name == "ttwid" for cookie in cookie_jar):
         raise ValueError("anonymous ttwid cookie missing")
 

@@ -40,8 +40,10 @@
 
 - 定向录制回归：请求头、FFmpeg命令、重试策略和目录策略通过。
 - 上游状态回归：关注平台身份保持、Release ABI和热门排序测试通过。
-- 发布冻结提交将重新执行一次 Flutter Analyze、完整 Flutter 测试和 41 项公开平台接口探针；最终计数、耗时和资源记录以本节发布前更新为准。
-- 各平台构建结果在发布完成后补充到本节和 Release 校验记录。
+- Flutter Analyze 在发布冻结源码上完成，结果为 `No issues found`；完整 Flutter 测试共 `385/385` 通过，覆盖页面刷新、播放器/音频模式、PiP、弹幕生命周期、画质事务、录制、搜索、热度/在线人数和 Windows 窗口状态。
+- 完整门禁记录 `local-artifacts/build-records/20260825T090433062Z-quality-full.json` 用时 533.293 秒，Analyze 与完整测试均通过；随后抖音搜索公开端点短暂返回 HTTP 503，使该次在线探针以 `40/41` 结束。
+- 为在线合同增加同 Cookie 会话下的有界瞬态重试后，`local-artifacts/build-records/20260825T090730487Z-interface-probe-final.json` 在 51.491 秒内 `41/41` 通过；重试不掩盖持续失败，耗尽三次后仍保留原始错误。
+- 各平台产物、字节数与 SHA-256 由串行构建工作流写入 Release 校验清单，避免发布后再改动冻结源码提交。
 - 本轮遵循 `BUILD_POLICY.md`：完整门禁一次；Android、Windows 和托管平台按阶段串行；没有执行 ADB 或手机操作。
 
 ## 目标产物
