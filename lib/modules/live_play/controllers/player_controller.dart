@@ -2,14 +2,12 @@ import 'dart:developer' as developer;
 
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/model/live_play_quality.dart';
-import 'package:pure_live/core/site/huya/huya_site.dart';
-import 'package:pure_live/core/site/douyu/douyu_utils.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:pure_live/player/core/playback_header_resolver.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/player/core/player_manager.dart';
 import 'package:pure_live/player/models/player_exception.dart';
 import 'package:pure_live/player/models/player_error_type.dart';
-import 'package:pure_live/core/site/bilibili/bilibili_site.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
@@ -172,35 +170,7 @@ class PlayerController extends GetxController {
   /// 主房间路径（[getHeaders]）与 multiview 每格解析器共用此入口，
   /// 保证 Cookie/UA/Referer 等鉴权头逻辑不发生漂移。
   static Future<Map<String, String>> resolvePlaybackHeaders({required Site site, required LiveRoom? room}) async {
-    Map<String, String> headers = {};
-
-    if (site.id == Sites.bilibiliSite) {
-      final cookie = SettingsService.to.cookieManager.bilibiliCookie.v.trim();
-      final roomId = room?.roomId ?? '';
-      headers = {
-        'user-agent': BiliBiliSite.kDefaultUserAgent,
-        'origin': 'https://live.bilibili.com',
-        'referer': 'https://live.bilibili.com/$roomId',
-        if (cookie.isNotEmpty) 'cookie': cookie,
-      };
-    } else if (site.id == Sites.douyuSite) {
-      headers = DouyuUtils.playbackHeaders(room?.roomId ?? '');
-    } else if (site.id == Sites.huyaSite) {
-      final ua = await HuyaSite().getHuYaUA();
-      headers = {"user-agent": ua, "origin": "https://www.huya.com"};
-    } else if (site.id == Sites.yySite) {
-      headers = {
-        'origin': 'https://www.yy.com',
-        'referer': 'https://www.yy.com/',
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-      };
-    } else if (site.id == Sites.iptvSite) {
-      if (SettingsService.to.iptv.customIptvUserAgent.v.isNotEmpty) {
-        headers = {"user-agent": SettingsService.to.iptv.customIptvUserAgent.v};
-      }
-    }
-
-    return headers;
+    return PlaybackHeaderResolver.resolve(platform: site.id, roomId: room?.roomId ?? '');
   }
 
   Future<Map<String, String>> getHeaders({Site? expectedSite, LiveRoom? expectedRoom}) {

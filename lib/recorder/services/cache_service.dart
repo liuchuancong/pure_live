@@ -173,8 +173,8 @@ class CacheService extends GetxService {
         '${now.hour.toString().padLeft(2, '0')}-'
         '${now.minute.toString().padLeft(2, '0')}-'
         '${now.second.toString().padLeft(2, '0')}';
-    final safePlatform = usePinyinForFolder ? PathHelper.toSafePinyin(platform) : platform;
-    final safeNick = usePinyinForFolder ? PathHelper.toSafePinyin(nick) : nick;
+    final safePlatform = usePinyinForFolder ? PathHelper.toSafePinyin(platform) : PathHelper.toSafeComponent(platform);
+    final safeNick = usePinyinForFolder ? PathHelper.toSafePinyin(nick) : PathHelper.toSafeComponent(nick);
     final dir = Directory(p.join(base.path, safePlatform, safeNick, date, time));
     await dir.create(recursive: true);
     return dir;

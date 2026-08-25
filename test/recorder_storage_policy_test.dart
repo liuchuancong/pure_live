@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:pure_live/recorder/services/cache_service.dart';
+import 'package:pure_live/recorder/services/path_helper.dart';
 
 void main() {
   late Directory sandbox;
@@ -110,5 +111,23 @@ void main() {
 
     expect(await oldest.exists(), isFalse);
     expect(await newest.exists(), isTrue);
+  });
+
+  test('room directory labels are portable even without pinyin mode', () async {
+    final service = serviceFor(null);
+
+    final directory = await service.getRoomDir(platform: 'douyu:/', nick: r'主播 <A>|CON?');
+
+    final relative = p.relative(directory.path, from: (await service.getRecordDir()).path);
+    expect(relative, isNot(contains(RegExp(r'[<>:"|?*]'))));
+    expect(relative, contains('douyu_'));
+    expect(relative, contains('主播_A_CON_'));
+  });
+
+  test('safe path components handle reserved names, empty labels and length', () {
+    expect(PathHelper.toSafeComponent('CON'), '_CON');
+    expect(PathHelper.toSafeComponent(' <>:"/\\|?* '), 'unknown');
+    expect(PathHelper.toSafeComponent(List<String>.filled(100, 'a').join()).runes.length, 80);
+    expect(PathHelper.toSafeComponent('anything', maxRunes: 0), 'unknown');
   });
 }

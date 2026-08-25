@@ -38,7 +38,7 @@ class FFmpegCommandBuilder {
       // Headers
       if (headerStr.isNotEmpty) ...['-headers', _quote(headerStr)],
       // 输入流
-      '-i', remoteStreamUrl,
+      '-i', _quote(remoteStreamUrl),
       '-map', '0:a',
       '-vn',
       '-acodec', 'copy',
@@ -84,16 +84,19 @@ class FFmpegCommandBuilder {
       '-thread_queue_size', threadQueueSize.toString(),
       if (ua != null && ua.isNotEmpty) ...['-user_agent', _quote(ua)], //ua
       if (headerStr.isNotEmpty) ...['-headers', _quote(headerStr)], //headers
-      '-i', url,
-      '-map', preferBestStream ? '0:v:0' : '0:v',
-      '-map', preferBestStream ? '0:a:0' : '0:a',
+      '-i', _quote(url),
+      // Some platforms temporarily expose audio-only/video-only variants.
+      // Optional maps keep the recorder alive instead of failing before the
+      // resolver can rotate to another CDN.
+      '-map', preferBestStream ? '0:v:0?' : '0:v?',
+      '-map', preferBestStream ? '0:a:0?' : '0:a?',
       '-c', 'copy',
       '-f', 'segment',
       '-segment_format', 'mpegts',
       '-segment_time', segmentTime.toString(),
       '-reset_timestamps', '1',
       '-strftime', '1',
-      normalizedOutputPath,
+      _quote(normalizedOutputPath),
     ];
 
     return args.join(' ');
