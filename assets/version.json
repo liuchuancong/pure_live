@@ -1,21 +1,21 @@
 {
-  "version": "2.9.6",
-  "build_number": 4085,
-  "version_num": 209064085,
-  "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@974f4c32，吸收下载确认、版本历史与横屏直播记录界面改进，同时保留维护仓库的本机优先构建、后台保活和启动刷新策略。\n- 修复抖音推荐 Feed 从 data.data 变为 data[] 信封结构后触发的 String/int 动态索引异常；兼容新旧 Map、嵌入 JSON 与缺失可选字段。\n- 修复哔哩哔哩热门误用推荐流导致热度不按降序的问题，改用 sort=online 排行源并在客户端稳定二次排序；房间信息遇到过期 WBI 或 -352 时刷新密钥并有界重试。\n- 平台实时门禁扩展到 40 项，新增哔哩哔哩、虎牙、网易 CC 播放链路，并强化抖音 Feed 对真实播放描述符的校验；发布前全部通过。\n- 本轮正式交付 Android arm64-v8a；Windows、Linux、macOS 与 iOS 继续使用 v2.9.4 对应安装包。",
+  "version": "2.9.7",
+  "build_number": 4086,
+  "version_num": 209074086,
+  "version_desc": "- 全面核对斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP Live 与 YY Live 当前公开接口，明确区分平台热度、累计观看与真实并发人数。\n- 修复抖音匿名推荐顶层 user_count 未读取且被误写为累计观看的问题；total_user 为无效 0 时改用明确在线值。\n- 修复网易 CC visitor 热度误落入在线人数，以及 SOOP 只统计 PC 端 current_view_cnt、漏掉移动端观众的问题。\n- 热门页与收藏、搜索、房间选择器统一使用指标感知的稳定降序排序；切换热度/在线口径后刷新当前平台，CC 使用 100 个候选重排。\n- 40 项平台接口门禁增加观看字段语义校验；本轮正式交付 Android arm64-v8a，其他平台继续使用 v2.9.4 对应安装包。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.6",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.7",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "2.9.6",
-      "build_number": 4085,
-      "version_num": 209064085,
-      "version_desc": "- 同步并合并最新上游 liuchuancong/pure_live@974f4c32，吸收下载确认、版本历史与横屏直播记录界面改进，同时保留维护仓库的本机优先构建、后台保活和启动刷新策略。\n- 修复抖音推荐 Feed 从 data.data 变为 data[] 信封结构后触发的 String/int 动态索引异常；兼容新旧 Map、嵌入 JSON 与缺失可选字段。\n- 修复哔哩哔哩热门误用推荐流导致热度不按降序的问题，改用 sort=online 排行源并在客户端稳定二次排序；房间信息遇到过期 WBI 或 -352 时刷新密钥并有界重试。\n- 平台实时门禁扩展到 40 项，新增哔哩哔哩、虎牙、网易 CC 播放链路，并强化抖音 Feed 对真实播放描述符的校验；发布前全部通过。\n- 本轮正式交付 Android arm64-v8a；Windows、Linux、macOS 与 iOS 继续使用 v2.9.4 对应安装包。",
+      "version": "2.9.7",
+      "build_number": 4086,
+      "version_num": 209074086,
+      "version_desc": "- 全面核对斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP Live 与 YY Live 当前公开接口，明确区分平台热度、累计观看与真实并发人数。\n- 修复抖音匿名推荐顶层 user_count 未读取且被误写为累计观看的问题；total_user 为无效 0 时改用明确在线值。\n- 修复网易 CC visitor 热度误落入在线人数，以及 SOOP 只统计 PC 端 current_view_cnt、漏掉移动端观众的问题。\n- 热门页与收藏、搜索、房间选择器统一使用指标感知的稳定降序排序；切换热度/在线口径后刷新当前平台，CC 使用 100 个候选重排。\n- 40 项平台接口门禁增加观看字段语义校验；本轮正式交付 Android arm64-v8a，其他平台继续使用 v2.9.4 对应安装包。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.6",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.7",
       "android_abis": [
         "arm64-v8a"
       ]

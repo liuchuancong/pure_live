@@ -17,6 +17,13 @@ void main() {
       expect(audience.popularity, '65150');
       expect(audience.onlineViewers, '0');
     });
+
+    test('never falls back from heat alias visitor to online viewers', () {
+      final audience = CCSite.parseRoomAudience({'visitor': 390013, 'hot_score': 390013});
+
+      expect(audience.popularity, '390013');
+      expect(audience.onlineViewers, isEmpty);
+    });
   });
 
   test('CC quality keys stay attached to their own ordered CDN lines', () async {

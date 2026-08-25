@@ -63,6 +63,49 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher {
     return data;
   }
 
+  /// SOOP splits viewers across PC and mobile in recommendation/search
+  /// payloads. `current_view_cnt` is PC-only; `total_view_cnt` (or the sum of
+  /// the explicit PC/mobile fields) is the actual concurrent audience.
+  @visibleForTesting
+  static String parseOnlineViewers(Map<dynamic, dynamic> room) {
+    String? explicitZero;
+
+    String positiveValue(dynamic value) {
+      final text = value?.toString().trim() ?? '';
+      if (text.isEmpty || text == 'null' || !RegExp(r'[0-9]').hasMatch(text)) return '';
+      final parsed = int.tryParse(text.replaceAll(',', '').replaceAll('，', ''));
+      if (parsed == null) return '';
+      if (parsed == 0) explicitZero ??= '0';
+      return parsed > 0 ? parsed.toString() : '';
+    }
+
+    for (final value in [room['total_view_cnt'], room['view_cnt'], room['VIEW_CNT']]) {
+      final parsed = positiveValue(value);
+      if (parsed.isNotEmpty) return parsed;
+    }
+
+    int? sumPair(dynamic left, dynamic right) {
+      final leftText = left?.toString().trim().replaceAll(',', '') ?? '';
+      final rightText = right?.toString().trim().replaceAll(',', '') ?? '';
+      final leftValue = int.tryParse(leftText);
+      final rightValue = int.tryParse(rightText);
+      if (leftValue == null && rightValue == null) return null;
+      return (leftValue ?? 0) + (rightValue ?? 0);
+    }
+
+    for (final pair in [
+      (room['pc_view_cnt'], room['mobile_view_cnt']),
+      (room['current_view_cnt'], room['m_current_view_cnt']),
+    ]) {
+      final total = sumPair(pair.$1, pair.$2);
+      if (total == null) continue;
+      if (total > 0) return total.toString();
+      explicitZero ??= '0';
+    }
+
+    return explicitZero ?? '';
+  }
+
   final Map<String, dynamic> headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2049.0 Safari/537.36',
     'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
@@ -169,7 +212,7 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher {
     result = decode(result);
     var items = <LiveRoom>[];
     for (var item in result["data"]["list"]) {
-      final viewerCount = item["view_cnt"].toString();
+      final viewerCount = parseOnlineViewers(Map<dynamic, dynamic>.from(item as Map));
       var roomItem = LiveRoom(
         roomId: item["user_id"] ?? '',
         title: item['broad_title'] ?? '',
@@ -257,7 +300,7 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher {
     result = decode(result);
     for (var item in result["broad"]) {
       var roomId = item["user_id"] ?? '';
-      final viewerCount = item["current_view_cnt"].toString();
+      final viewerCount = parseOnlineViewers(Map<dynamic, dynamic>.from(item as Map));
       var roomItem = LiveRoom(
         roomId: roomId,
         title: item['broad_title'] ?? '',
@@ -282,7 +325,14 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher {
     try {
       Map<dynamic, dynamic> playerLiveApiFuture = await getPlayerLiveApiData(roomId: roomId);
       var danmakuFuture = geDanmakuArgs(playerLiveApiFuture, roomId);
-      return await getLiveRoomByApi(playerLiveApiFuture, danmakuFuture, roomId);
+      final room = await getLiveRoomByApi(playerLiveApiFuture, danmakuFuture, roomId);
+      if (Get.isRegistered<PlayerController>()) {
+        final currentRoom = Get.find<PlayerController>().currentRoom;
+        if (currentRoom?.hasIdentity(platform: Sites.soopSite, roomId: roomId) == true) {
+          return room.withAudienceFallbackFrom(currentRoom!);
+        }
+      }
+      return room;
     } catch (e) {
       CoreLog.error(e);
       if (Get.isRegistered<PlayerController>()) {
@@ -365,7 +415,7 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher {
     var avatar = validImgUrl("https://stimg.sooplive.co.kr/LOGO/${sRoomId.substring(0, 2)}/$sRoomId/$sRoomId.jpg");
 
     var isLiving = jsonObj["VIEWPRESET"] != null;
-    final viewerCount = (jsonObj["VIEW_CNT"] ?? jsonObj["view_cnt"] ?? 0).toString();
+    final viewerCount = parseOnlineViewers(Map<dynamic, dynamic>.from(jsonObj as Map));
 
     var data = {"viewpreset": jsonObj["VIEWPRESET"], "bno": bno, "rmd": rmd, "cdn": cdn};
     return LiveRoom(
@@ -513,7 +563,7 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher {
       var userId = item["user_id"].toString();
       var title = item["broad_title"]?.toString() ?? "";
       var area = item["standard_broad_cate_name"]?.toString() ?? "";
-      final viewerCount = item["current_view_cnt"].toString();
+      final viewerCount = parseOnlineViewers(Map<dynamic, dynamic>.from(item as Map));
 
       var roomItem = LiveRoom(
         roomId: userId,

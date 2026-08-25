@@ -9,11 +9,11 @@
 | 哔哩哔哩 | 动态读取直播分区接口 | 原生直播间搜索，可返回未开播结果 | 访客模式动态获取 token；先连官方通用网关，再轮换 `host_list` 区域节点；认证失败后刷新凭据 | `online`/心跳为热度，`WATCHED_CHANGE` 为累计看过 |
 | 斗鱼 | 动态读取移动端分类接口 | 原生直播间搜索，可返回未开播结果 | WebSocket | 热度 |
 | 虎牙 | 网站业务分类与动态游戏列表 | 原生搜索当前直播间 | `wsapi.huya.com` WebSocket，按 `live:<uid>`/`chat:<uid>` 注册房间组并解析批量推送 | 列表/详情/URI 8006 均为热度 |
-| 抖音 | 从直播首页动态提取分类 | 带网页签名参数的当前直播搜索 | WebSocket | 列表累计观看；可用时显示房间在线人数 |
+| 抖音 | 从直播首页动态提取分类 | 带网页签名参数的当前直播搜索 | WebSocket | 顶层/嵌套 `user_count` 为当前在线；`display_value/total_user` 为累计观看，缺少累计值时不再用在线值冒充 |
 | 快手 | 网站当前直播频道、动态子分类与推荐回放 | 网页搜索入口 | 当前未接入 | 在线；房间页下播但卡片仍带播放地址时按录播处理 |
-| 网易 CC | 动态游戏列表，保留网站顶层入口 | 原生主播/直播间搜索，可返回未开播结果 | 当前未接入 | `webcc_visitor` 为热度；`vision_visitor/online_num` 为并发人数；两者分字段保存 |
+| 网易 CC | 动态游戏列表，保留网站顶层入口 | 原生主播/直播间搜索，可返回未开播结果 | 当前未接入 | `webcc_visitor/hot_score/visitor` 为同一热度口径；只有 `vision_visitor/online_num` 为并发人数 |
 | Twitch | 网站 GraphQL 标签与目录接口 | 原生频道搜索，可返回未开播频道 | Twitch IRC WebSocket；登录 Cookie 中的 `auth-token`/`login` 用于认证聊天 | `viewersCount` 为并发观看人数 |
-| SOOP Live | 官方分类与推荐接口 | 原生搜索当前直播间 | SOOP WebSocket；账号 Cookie 可选 | `current_view_cnt` 为并发观看人数，列表与房间详情统一存储 |
+| SOOP Live | 官方分类与推荐接口 | 原生搜索当前直播间 | SOOP WebSocket；账号 Cookie 可选 | 推荐/搜索以 `total_view_cnt`（PC + 移动端）为并发人数；分类使用 `view_cnt`；`current_view_cnt` 仅是 PC 端分量 |
 | YY Live | 动态读取头部与分类元数据 | 原生直播间/主播搜索，可返回未开播结果 | YY WebSocket | `users` 为平台热度值 |
 
 > “热度”是平台排序/活跃度指标，不等同于唯一在线用户数。界面会按平台字段分别显示“热度”“在线”或“累计观看”，避免把不同含义的数据统一标成在线人数。
@@ -24,10 +24,10 @@
 
 “设置 → 通用 → 观看数据与排行口径”提供两个全局模式和分平台开关：
 
-- **平台热度优先**：按平台列表提供的热度或累计观看显示、排序；快手等只公开当前观看人数的平台继续保留“在线”标签。
+- **平台热度优先**：按平台列表提供的热度或累计观看显示、降序排序；快手等只公开当前观看人数的平台继续保留“在线”标签。热门页、收藏、搜索与房间选择器共用同一个数值解析和稳定排序器。
 - **真实在线人数优先**：抖音、快手、网易 CC、Twitch、SOOP Live 仅在拿到明确并发人数时按在线显示、排序；支持平台尚未取得列表值或房间消息时明确显示“待刷新”，不再回退为一个被误标或参与在线排行的热度值。
 - 哔哩哔哩的列表 `online` 与弹幕心跳、斗鱼公开 `ol/hot`、虎牙 `totalCount/userCount/iAttendeeCount` 都是热度，均不换写成真实人数。由此避免把几百万热度显示为几百万人同时在线。
-- 切换全局口径或分平台开关后，收藏与搜索现有结果会立即重新排序，无需等待下一次网络刷新；在线模式把已启用且支持并发人数的平台排在仅提供热度/累计值的平台之前。
+- 切换全局口径或分平台开关后，收藏与搜索现有结果会立即重新排序，热门页会刷新当前平台的候选池后重排；在线模式把已启用且支持并发人数的平台排在仅提供热度/累计值的平台之前。网易 CC 在线模式一次取 100 个热度候选后按并发人数排序，避免只在每 20 张卡片内部重排。
 
 ## 画质与播放线路契约
 
@@ -54,7 +54,7 @@
 python tool/interface_probe.py
 ```
 
-The release probe runs 40 checks across categories, recommendations, searches, room metadata, danmaku discovery and playback contracts. Douyu additionally executes signing, H5 metadata retrieval, CDN selection and a real FLV-header request with player-equivalent headers; Bilibili, Huya and CC now verify current quality/line descriptors; Douyin requires a playable room inside the current feed-envelope response; YY verifies categories, recommendation, both search types, room status and playback lines. Deterministic parser tests separately cover Bilibili WBI room metadata and `current_qn`, Huya `ratio`, Douyin feed envelopes and `sdk_key`, Douyu rate order, Kuaishou representations, CC resolution/CDN binding, Twitch master playlists, SOOP presets and YY gears.
+The release probe runs 40 checks across categories, recommendations, searches, room metadata, danmaku discovery and playback contracts. Its existing recommendation checks now also validate the audience-field contract for Douyu `ol`, Huya `totalCount`, Douyin `user_count`, Kuaishou `watchingCount`, CC heat/concurrent pairs, Twitch `viewersCount`, SOOP PC/mobile totals and YY `users`. Douyu additionally executes signing, H5 metadata retrieval, CDN selection and a real FLV-header request with player-equivalent headers; Bilibili, Huya and CC verify current quality/line descriptors; YY verifies categories, both search types, room status and playback lines. Deterministic parser tests separately cover the display/ranking semantics and platform playback mappings.
 
 2026-08-17 再次完成哔哩哔哩访客 WebSocket 实连：`uid=0` 会话连续取得当前房间弹幕，但平台把 legacy 与 rich user 两处昵称和 UID 一并脱敏。客户端会优先读取平台 rich user 的完整昵称；访客数据仍为脱敏值时在弹幕列表提示来源。公开直播的弹幕接收继续使用访客会话，登录账号用于完整昵称、发送平台弹幕、关注、会员清晰度和其他账号功能。
 

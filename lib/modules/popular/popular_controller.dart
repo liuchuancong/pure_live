@@ -12,7 +12,10 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
   int _generation = 0;
   Timer? _settledTabLoadTimer;
   Timer? _adjacentWarmTimer;
+  Timer? _audienceRefreshTimer;
   Worker? _hotAreasWorker;
+  Worker? _audienceModeWorker;
+  Worker? _audiencePlatformsWorker;
 
   @override
   void onInit() {
@@ -24,6 +27,8 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
       if (_isClosing) return;
       _initTabController(isFirstLoad: false);
     }, time: const Duration(milliseconds: 150));
+    _audienceModeWorker = ever(SettingsService.to.app.preferRealOnlineCounts, (_) => _scheduleAudienceRefresh());
+    _audiencePlatformsWorker = ever(SettingsService.to.app.realOnlinePlatforms, (_) => _scheduleAudienceRefresh());
   }
 
   void initControllers(List<Site> sites) {
@@ -56,6 +61,13 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
             return PopularServerFixedController(site, fixedSize: 60);
           }
 
+          if (site.id == Sites.ccSite) {
+            // CC's server order is heat-based. Fetch a larger stable candidate
+            // window so real-online mode can rank by vision_visitor rather
+            // than merely reordering each 20-card slice.
+            return PopularServerFixedController(site, fixedSize: 100);
+          }
+
           if (site.id == Sites.douyinSite) {
             return PopularServerFixedController(site, fixedSize: 20);
           }
@@ -75,7 +87,10 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
 
     _settledTabLoadTimer?.cancel();
     _adjacentWarmTimer?.cancel();
+    _audienceRefreshTimer?.cancel();
     _hotAreasWorker?.dispose();
+    _audienceModeWorker?.dispose();
+    _audiencePlatformsWorker?.dispose();
 
     if (_isTabControllerInitialized) {
       tabController.removeListener(_handleTabChange);
@@ -84,6 +99,15 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
     }
 
     super.onClose();
+  }
+
+  void _scheduleAudienceRefresh() {
+    if (_isClosing) return;
+    _audienceRefreshTimer?.cancel();
+    _audienceRefreshTimer = Timer(const Duration(milliseconds: 160), () {
+      if (_isClosing) return;
+      unawaited(refreshCurrentData());
+    });
   }
 
   void _initTabController({required bool isFirstLoad}) {

@@ -203,20 +203,26 @@ class DouyinSite implements LiveSite {
     var result = await HttpClient.instance.getJson(targetUrl, header: await getRequestHeaders());
     var items = <LiveRoom>[];
     for (var item in result["data"]["data"]) {
+      final room = item["room"];
+      final totalViewers = douyinTotalViewers(room);
+      final onlineViewers = douyinOnlineViewers(room);
+      final nativeAudience = totalViewers.isNotEmpty ? totalViewers : onlineViewers;
       var roomItem = LiveRoom(
         roomId: item["web_rid"],
-        title: item["room"]["title"].toString(),
-        cover: item["room"]["cover"]["url_list"][0].toString(),
-        nick: item["room"]["owner"]["nickname"].toString(),
+        title: room["title"].toString(),
+        cover: room["cover"]["url_list"][0].toString(),
+        nick: room["owner"]["nickname"].toString(),
         liveStatus: LiveStatus.live,
-        avatar: item["room"]["owner"]["avatar_thumb"]["url_list"][0].toString(),
+        avatar: room["owner"]["avatar_thumb"]["url_list"][0].toString(),
         status: true,
         platform: Sites.douyinSite,
         area: item['tag_name'].toString(),
-        watching: item["room"]?["room_view_stats"]?["display_value"].toString() ?? '',
-        totalViewers: item["room"]?["room_view_stats"]?["display_value"].toString() ?? '',
-        onlineViewers: douyinOnlineViewers(item["room"]),
-        audienceMetricType: AudienceMetricType.totalViewers,
+        watching: nativeAudience,
+        totalViewers: totalViewers,
+        onlineViewers: onlineViewers,
+        audienceMetricType: totalViewers.isNotEmpty
+            ? AudienceMetricType.totalViewers
+            : AudienceMetricType.onlineViewers,
       );
       items.add(roomItem);
     }
@@ -289,8 +295,9 @@ class DouyinSite implements LiveSite {
       final nick = _firstText([owner['nickname'], envelope['nickname']]);
       final cover = _firstImageUrl([room['cover'], envelope['cover']]);
       final avatar = _firstImageUrl([owner['avatar_thumb'], owner['avatar_large'], envelope['avatar_thumb']]);
-      final viewStats = _asStringMap(room['room_view_stats']);
-      final totalViewers = _firstText([viewStats?['display_value'], viewStats?['total_user_str'], room['user_count']]);
+      final totalViewers = douyinTotalViewers(room);
+      final onlineViewers = douyinOnlineViewers(room);
+      final nativeAudience = totalViewers.isNotEmpty ? totalViewers : onlineViewers;
 
       rooms.add(
         LiveRoom(
@@ -301,10 +308,12 @@ class DouyinSite implements LiveSite {
           platform: Sites.douyinSite,
           area: _douyinFeedArea(envelope, room),
           avatar: avatar,
-          watching: totalViewers,
+          watching: nativeAudience,
           totalViewers: totalViewers,
-          onlineViewers: douyinOnlineViewers(room),
-          audienceMetricType: AudienceMetricType.totalViewers,
+          onlineViewers: onlineViewers,
+          audienceMetricType: totalViewers.isNotEmpty
+              ? AudienceMetricType.totalViewers
+              : AudienceMetricType.onlineViewers,
           status: true,
           liveStatus: LiveStatus.live,
           link: 'https://live.douyin.com/$roomId',
@@ -406,6 +415,9 @@ class DouyinSite implements LiveSite {
     }
 
     var roomStatus = status == 2;
+    final totalViewers = roomStatus ? douyinTotalViewers(room) : '';
+    final onlineViewers = roomStatus ? douyinOnlineViewers(room) : '';
+    final nativeAudience = totalViewers.isNotEmpty ? totalViewers : onlineViewers;
     // 主要是为了获取cookie,用于弹幕websocket连接
     var headers = await getRequestHeaders();
 
@@ -415,10 +427,10 @@ class DouyinSite implements LiveSite {
       cover: roomStatus ? room["cover"]["url_list"][0].toString() : "",
       nick: owner["nickname"].toString(),
       avatar: owner["avatar_thumb"]["url_list"][0].toString(),
-      watching: roomStatus ? room["room_view_stats"]["display_value"].toString() : "",
-      totalViewers: roomStatus ? room["room_view_stats"]["display_value"].toString() : '',
-      onlineViewers: roomStatus ? douyinOnlineViewers(room) : '',
-      audienceMetricType: AudienceMetricType.totalViewers,
+      watching: nativeAudience,
+      totalViewers: totalViewers,
+      onlineViewers: onlineViewers,
+      audienceMetricType: totalViewers.isNotEmpty ? AudienceMetricType.totalViewers : AudienceMetricType.onlineViewers,
       status: roomStatus,
       link: "https://live.douyin.com/$webRid",
       platform: Sites.douyinSite,
@@ -463,6 +475,9 @@ class DouyinSite implements LiveSite {
     var owner = roomData["owner"];
 
     var roomStatus = (asT<int?>(roomData["status"]) ?? 0) == 2;
+    final totalViewers = roomStatus ? douyinTotalViewers(roomData) : '';
+    final onlineViewers = roomStatus ? douyinOnlineViewers(roomData) : '';
+    final nativeAudience = totalViewers.isNotEmpty ? totalViewers : onlineViewers;
 
     // 主要是为了获取cookie,用于弹幕websocket连接
     var headers = await getRequestHeaders();
@@ -474,10 +489,10 @@ class DouyinSite implements LiveSite {
       avatar: roomStatus
           ? owner["avatar_thumb"]["url_list"][0].toString()
           : userData["avatar_thumb"]["url_list"][0].toString(),
-      watching: roomStatus ? roomData["room_view_stats"]["display_value"].toString() : "",
-      totalViewers: roomStatus ? roomData["room_view_stats"]["display_value"].toString() : '',
-      onlineViewers: roomStatus ? douyinOnlineViewers(roomData) : '',
-      audienceMetricType: AudienceMetricType.totalViewers,
+      watching: nativeAudience,
+      totalViewers: totalViewers,
+      onlineViewers: onlineViewers,
+      audienceMetricType: totalViewers.isNotEmpty ? AudienceMetricType.totalViewers : AudienceMetricType.onlineViewers,
       status: roomStatus,
       liveStatus: roomStatus ? LiveStatus.live : LiveStatus.offline,
       link: "https://live.douyin.com/$webRid",
@@ -503,6 +518,9 @@ class DouyinSite implements LiveSite {
     var owner = roomInfo["owner"];
     var anchor = detail["roomStore"]["roomInfo"]["anchor"];
     var roomStatus = (asT<int?>(roomInfo["status"]) ?? 0) == 2;
+    final totalViewers = roomStatus ? douyinTotalViewers(roomInfo) : '';
+    final onlineViewers = roomStatus ? douyinOnlineViewers(roomInfo) : '';
+    final nativeAudience = totalViewers.isNotEmpty ? totalViewers : onlineViewers;
 
     // 主要是为了获取cookie,用于弹幕websocket连接
     var headers = await getRequestHeaders();
@@ -515,10 +533,10 @@ class DouyinSite implements LiveSite {
       avatar: roomStatus
           ? owner["avatar_thumb"]["url_list"][0].toString()
           : anchor["avatar_thumb"]["url_list"][0].toString(),
-      watching: roomInfo?["room_view_stats"]?["display_value"].toString() ?? '',
-      totalViewers: roomInfo?["room_view_stats"]?["display_value"].toString() ?? '',
-      onlineViewers: douyinOnlineViewers(roomInfo),
-      audienceMetricType: AudienceMetricType.totalViewers,
+      watching: nativeAudience,
+      totalViewers: totalViewers,
+      onlineViewers: onlineViewers,
+      audienceMetricType: totalViewers.isNotEmpty ? AudienceMetricType.totalViewers : AudienceMetricType.onlineViewers,
       liveStatus: roomStatus ? LiveStatus.live : LiveStatus.offline,
       link: "https://live.douyin.com/$webRid",
       area: '',
