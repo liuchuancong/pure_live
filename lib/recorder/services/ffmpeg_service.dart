@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'dart:developer';
-
 import 'package:flutter/services.dart';
+import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
-import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart';
+import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart' hide Log;
+
 
 class FFmpegRecordSession {
   final String taskId;
@@ -34,12 +35,15 @@ class FFmpegService {
     BackgroundIsolateBinaryMessenger.ensureInitialized(token);
   }
 
+  Future<void> initialize() async {
+    await _ensureInitialized();
+  }
+
   Future<void> start({
     required String taskId,
     required String command,
     required void Function(FFmpegEvent event) onEvent,
   }) async {
-    await _ensureInitialized();
     onEvent(FFmpegEvent(taskId: taskId, type: FFmpegEventType.started));
 
     final ffempgSession = FFmpegKit.createSession(command);
@@ -75,14 +79,14 @@ class FFmpegService {
         -1005272104, // 读取中断
       ].contains(code);
 
-      log('FFmpeg complete => taskId: $taskId; code: $code');
+      Log.i('FFmpeg complete => taskId: $taskId; code: $code');
 
       String userFriendlyMessage = '录制遇到未知错误 (代码: $code)';
       Map<String, dynamic> errorData = {"code": code};
       if (!isNormalExit) {
         try {
           final String logs = completedSession.getLogs() ?? '';
-          log('FFmpeg 原始错误日志:\n$logs');
+          Log.i('FFmpeg 原始错误日志:\n$logs');
           final lowerLogs = logs.toLowerCase();
           errorData["raw_logs"] = lowerLogs;
           // 1. 路径与权限错误
@@ -115,7 +119,7 @@ class FFmpegService {
             userFriendlyMessage = i18n('unknown_error', args: {'error_log': lastLogLine});
           }
         } catch (e) {
-          log('解析 FFmpeg 日志时发生异常: $e');
+          Log.i('解析 FFmpeg 日志时发生异常: $e');
         }
 
         // 传递给 UI 层调用
