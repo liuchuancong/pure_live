@@ -1,10 +1,11 @@
-import 'dart:async';
 import 'dart:io';
+import 'dart:async';
 
 import 'package:pure_live/common/index.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:pure_live/common/global/app_path_manager.dart';
 import 'package:pure_live/plugins/file_utils.dart';
+import 'package:pure_live/recorder/consts/recorder_keys.dart';
+import 'package:pure_live/common/global/app_path_manager.dart';
 import 'package:pure_live/recorder/consts/recorder_config.dart';
 import 'package:pure_live/recorder/services/cache_service.dart';
 
@@ -15,7 +16,6 @@ class RecordSettingsController extends GetxController {
   final defaultQuality = RecorderConfig.defaultQuality.obs;
   final recordSavePath = RecorderConfig.recordSavePath.obs;
   final maxCacheMB = RecorderConfig.maxCacheMB.obs;
-  final enableCacheLimit = RecorderConfig.enableCacheLimit.obs;
   final cacheSizeMB = 0.0.obs;
   final managedRecordPath = ''.obs;
 
@@ -24,27 +24,30 @@ class RecordSettingsController extends GetxController {
   /// =====================================
   final segmentTime = RecorderConfig.segmentTime.obs;
   final maxTaskCount = RecorderConfig.maxTaskCount.obs;
-  final preferBestStream = RecorderConfig.preferBestStream.obs;
+  final preferBestStream = hiveBool(RecorderKeys.preferBestStream, RecorderConfig.defaultPreferBestStream);
   final rwTimeout = RecorderConfig.rwTimeout.obs;
   final threadQueueSize = RecorderConfig.threadQueueSize.obs;
 
   /// =====================================
   /// 自动重连逻辑
   /// =====================================
-  final autoReconnect = RecorderConfig.autoReconnect.obs;
+  final autoReconnect = hiveBool(RecorderKeys.autoReconnect, RecorderConfig.defaultAutoReconnect);
   final maxRetryCount = RecorderConfig.maxRetryCount.obs;
   final retryDelay = RecorderConfig.retryDelay.obs;
 
   /// =====================================
   /// 挂机检测轮询
   /// =====================================
-  final enablePolling = RecorderConfig.enablePolling.obs;
+  final enablePolling = hiveBool(RecorderKeys.enablePolling, RecorderConfig.defaultEnablePolling);
   final liveCheckInterval = RecorderConfig.liveCheckInterval.obs;
-  final enableBackoff = RecorderConfig.enableBackoff.obs;
+  final enableBackoff = hiveBool(RecorderKeys.enableBackoff, RecorderConfig.defaultEnableBackoff);
   final maxCheckInterval = RecorderConfig.maxCheckInterval.obs;
 
-  final autoStartOnBoot = RecorderConfig.autoStartOnBoot.obs;
-  final usePinyinForFolder = RecorderConfig.usePinyinForFolder.obs;
+  final autoStartOnBoot = hiveBool(RecorderKeys.autoStartOnBoot, RecorderConfig.defaultAutoStartOnBoot);
+  final usePinyinForFolder = hiveBool(RecorderKeys.folderNamingStrategy, RecorderConfig.defaultUsePinyinForFolder);
+
+  /// 缓存限制开关
+  final enableCacheLimit = hiveBool(RecorderKeys.enableCacheLimit, RecorderConfig.defaultEnableCacheLimit);
 
   @override
   void onInit() {
@@ -72,9 +75,13 @@ class RecordSettingsController extends GetxController {
   /// =====================================
   /// 更新缓存限制开关
   /// =====================================
+  ///
+  /// enableCacheLimit 使用 hiveBool() 后，
+  /// 修改 value 会自动保存到 Hive。
+  ///
+  /// 保留这个方法是为了兼容现有 UI 调用。
   Future<void> updateEnableCacheLimit(bool v) async {
     enableCacheLimit.value = v;
-    await RecorderConfig.setEnableCacheLimit(v);
   }
 
   /// =====================================
@@ -104,9 +111,13 @@ class RecordSettingsController extends GetxController {
   /// =====================================
   /// 更新自动重连
   /// =====================================
+  ///
+  /// autoReconnect 使用 hiveBool() 后，
+  /// 修改 value 会自动保存到 Hive。
+  ///
+  /// 保留这个方法是为了兼容现有 UI 调用。
   Future<void> updateAutoReconnect(bool v) async {
     autoReconnect.value = v;
-    await RecorderConfig.setAutoReconnect(v);
   }
 
   /// =====================================
@@ -144,17 +155,25 @@ class RecordSettingsController extends GetxController {
   /// =====================================
   /// 更新挂机检测
   /// =====================================
+  ///
+  /// enablePolling 使用 hiveBool() 后，
+  /// 修改 value 会自动保存到 Hive。
+  ///
+  /// 保留这个方法是为了兼容现有 UI 调用。
   Future<void> updateEnablePolling(bool v) async {
     enablePolling.value = v;
-    await RecorderConfig.setEnablePolling(v);
   }
 
   /// =====================================
   /// 更新指数退避
   /// =====================================
+  ///
+  /// enableBackoff 使用 hiveBool() 后，
+  /// 修改 value 会自动保存到 Hive。
+  ///
+  /// 保留这个方法是为了兼容现有 UI 调用。
   Future<void> updateEnableBackoff(bool v) async {
     enableBackoff.value = v;
-    await RecorderConfig.setEnableBackoff(v);
   }
 
   /// =====================================
@@ -162,7 +181,8 @@ class RecordSettingsController extends GetxController {
   /// =====================================
   Future<void> pickRecordDir() async {
     final result = await FilePicker.getDirectoryPath();
-    if (result != null) {
+
+    if (result != null && result.isNotEmpty) {
       recordSavePath.value = result;
       await RecorderConfig.setRecordSavePath(result);
       await refreshStorageInfo();
@@ -171,6 +191,11 @@ class RecordSettingsController extends GetxController {
 
   Future<void> openRecordDir() async {
     final path = managedRecordPath.value.isNotEmpty ? managedRecordPath.value : await CacheService.to.getDisplayPath();
+
+    if (path.isEmpty) {
+      return;
+    }
+
     await FileUtils.openFileOrUrl(path);
   }
 
@@ -184,9 +209,16 @@ class RecordSettingsController extends GetxController {
     await RecorderConfig.setMaxCacheMB(v);
   }
 
+  /// =====================================
+  /// 更新优先最高画质
+  /// =====================================
+  ///
+  /// preferBestStream 使用 hiveBool() 后，
+  /// 修改 value 会自动保存到 Hive。
+  ///
+  /// 保留这个方法是为了兼容现有 UI 调用。
   Future<void> updatePreferBestStream(bool v) async {
     preferBestStream.value = v;
-    await RecorderConfig.setPreferBestStream(v);
   }
 
   /// =====================================
@@ -205,20 +237,28 @@ class RecordSettingsController extends GetxController {
     await RecorderConfig.setThreadQueueSize(v);
   }
 
+  /// =====================================
+  /// 更新后台自动启动
+  /// =====================================
+
   Future<void> updateAutoStartOnBoot(bool v) async {
     autoStartOnBoot.value = v;
-    await RecorderConfig.setAutoStartOnBoot(v);
   }
+
+  /// =====================================
+  /// 更新文件夹命名策略
+  /// =====================================
 
   Future<void> updateUsePinyinForFolder(bool v) async {
     usePinyinForFolder.value = v;
-    await RecorderConfig.setUsePinyinForFolder(v);
   }
 
   Future<void> initRecordPath() async {
-    if (recordSavePath.isEmpty) {
+    if (recordSavePath.value.isEmpty) {
       final Directory recordDir = await AppPathManager().getDir(AppPathManager.dirRecords);
+
       recordSavePath.value = recordDir.path;
+
       await RecorderConfig.setRecordSavePath(recordDir.path);
     }
   }
