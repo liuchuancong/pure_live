@@ -8,9 +8,9 @@ void main() {
     final sameNumberOtherSite = LiveRoom(roomId: '100', platform: 'huya', title: 'Huya');
     final updated = LiveRoom(roomId: '100', platform: 'bilibili', title: 'Bili updated');
 
-    var history = upsertHistoryRoom(const [], first, watchedAt: 10);
-    history = upsertHistoryRoom(history, sameNumberOtherSite, watchedAt: 20);
-    history = upsertHistoryRoom(history, updated, watchedAt: 30);
+    var history = HistoryController.to.upsertHistoryRoom(const [], first, watchedAt: 10);
+    history = HistoryController.to.upsertHistoryRoom(history, sameNumberOtherSite, watchedAt: 20);
+    history = HistoryController.to.upsertHistoryRoom(history, updated, watchedAt: 30);
 
     expect(history, hasLength(2));
     expect(history.first.title, 'Bili updated');
@@ -21,7 +21,10 @@ void main() {
   test('history timestamp survives JSON and detail refresh', () {
     final stored = LiveRoom(roomId: '1', platform: 'test', title: 'Old', lastWatchedAt: 123456);
     final decoded = LiveRoom.fromJson(stored.toJson());
-    final refreshed = preserveHistoryMetadata(LiveRoom(roomId: '1', platform: 'test', title: 'Fresh'), decoded);
+    final refreshed = HistoryController.to.preserveHistoryMetadata(
+      LiveRoom(roomId: '1', platform: 'test', title: 'Fresh'),
+      decoded,
+    );
 
     expect(decoded.lastWatchedAt, 123456);
     expect(refreshed.title, 'Fresh');
@@ -31,7 +34,7 @@ void main() {
   test('history list keeps newest fifty entries', () {
     var history = <LiveRoom>[];
     for (var index = 0; index < 55; index++) {
-      history = upsertHistoryRoom(
+      history = HistoryController.to.upsertHistoryRoom(
         history,
         LiveRoom(roomId: '$index', platform: 'test'),
         watchedAt: index,

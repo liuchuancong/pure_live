@@ -14,12 +14,15 @@ class RoomCard extends StatelessWidget {
     this.dense = false,
     this.statusPending = false,
     this.statusPendingLabel,
+    this.showDelete = false,
+    this.onDelete,
   });
   final LiveRoom room;
   final bool dense;
   final bool statusPending;
   final String? statusPendingLabel;
-
+  final bool showDelete;
+  final VoidCallback? onDelete;
   Widget _buildCover(BuildContext context, bool isDark) {
     final coverUrl = normalizeNetworkImageUrl(room.cover);
 
@@ -740,6 +743,20 @@ class RoomCard extends StatelessWidget {
                         dense: dense,
                       );
                     }),
+                  ),
+                if (showDelete)
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: GestureDetector(
+                      onTap: onDelete,
+                      behavior: HitTestBehavior.opaque, // 阻止事件穿透
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6), shape: BoxShape.circle),
+                        child: Icon(RemixIcons.delete_bin_line, color: Colors.white, size: dense ? 16 : 18),
+                      ),
+                    ),
                   ),
               ],
             ),

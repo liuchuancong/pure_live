@@ -1335,6 +1335,7 @@
     "windows_pip_reset_position_subtitle": "清除已保存的小窗尺寸与位置，下次从应用所在显示器右下角打开",
     "windows_pip_reset_position_confirm": "确定要清除已保存的小窗位置和大小吗？",
     "open_new_window": "新建独立播放窗口",
+    "open_new_window_subtitle": "在独立窗口中打开当前直播",
     "open_room_in_new_window": "在新窗口播放此直播间",
     "open_new_window_failed": "新窗口启动失败，请重试",
     "danmaku_repeat_filter": "重复弹幕过滤",
@@ -1374,5 +1375,10 @@
     "close_panel": "关闭面板",
     "play_settings": "播放设置",
     "record_private_path_title": "无法开始录制",
-    "record_private_path_message": "当前录制目录位于 Android 应用私有目录，请重新选择录制目录。"
+    "record_private_path_message": "当前录制目录位于 Android 应用私有目录，请重新选择录制目录。",
+    "history_limit": "历史记录上限",
+    "clear_history": "清空历史",
+    "clear_history_confirm": "确定要清空所有历史记录吗？",
+    "current_value": "当前值",
+    "items": "条"
 }
