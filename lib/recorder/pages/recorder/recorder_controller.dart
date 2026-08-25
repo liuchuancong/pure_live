@@ -241,6 +241,10 @@ class RecorderController extends GetxService {
   }
 
   Future<void> addTask({required LiveRoom room}) async {
+    if (!await _hasUsableRecordPath()) {
+      return;
+    }
+
     final granted = await requestStoragePermission();
     if (!granted) {
       ToastUtil.show(i18n('no_storage'));
@@ -267,19 +271,30 @@ class RecorderController extends GetxService {
     }
   }
 
-  Future<void> startTask(LiveRecordTask task) async {
-    if (PlatformUtils.isAndroid) {
-      final recordPath = await CacheService.to.getDisplayPath();
-      if (CacheService.isAndroidPrivatePath(recordPath)) {
-        Get.snackbar(i18n('record_private_path_title'), i18n('record_private_path_message'));
-        return;
-      }
+  Future<bool> startTask(LiveRecordTask task) async {
+    if (!await _hasUsableRecordPath()) {
+      return false;
     }
     task.retryCount = 0;
     task.wasStoppedByUser = false;
     task.autoReconnect = settings.autoReconnect.value;
 
     await _startTask(task);
+    return true;
+  }
+
+  Future<bool> _hasUsableRecordPath() async {
+    if (!PlatformUtils.isAndroid) {
+      return true;
+    }
+
+    final recordPath = await CacheService.to.getDisplayPath();
+    if (!CacheService.isAndroidPrivatePath(recordPath)) {
+      return true;
+    }
+
+    Get.snackbar(i18n('record_private_path_title'), i18n('record_private_path_message'));
+    return false;
   }
 
   Future<void> forceStartTask(LiveRecordTask task) async {
@@ -528,8 +543,6 @@ class RecorderController extends GetxService {
         updateTask(task);
 
         if (room.liveStatus == LiveStatus.live) {
-          _stopPolling(task.taskId);
-
           await startTask(task);
         }
       } catch (_) {}

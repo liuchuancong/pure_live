@@ -130,4 +130,22 @@ void main() {
     expect(PathHelper.toSafeComponent(List<String>.filled(100, 'a').join()).runes.length, 80);
     expect(PathHelper.toSafeComponent('anything', maxRunes: 0), 'unknown');
   });
+
+  test('Android private-path detection covers every user profile without external false positives', () {
+    expect(
+      CacheService.isAndroidPrivatePath('/data/user/0/com.example/app_flutter/RECORDS', androidPlatform: true),
+      isTrue,
+    );
+    expect(CacheService.isAndroidPrivatePath('/data/user/17/com.example/files/RECORDS', androidPlatform: true), isTrue);
+    expect(
+      CacheService.isAndroidPrivatePath('/data/user_de/11/com.example/files/RECORDS', androidPlatform: true),
+      isTrue,
+    );
+    expect(CacheService.isAndroidPrivatePath('/data/data/com.example/files/RECORDS', androidPlatform: true), isTrue);
+    expect(
+      CacheService.isAndroidPrivatePath('/storage/emulated/0/app_flutter/Recordings', androidPlatform: true),
+      isFalse,
+    );
+    expect(CacheService.isAndroidPrivatePath('/data/user/not-a-profile/app', androidPlatform: true), isFalse);
+  });
 }

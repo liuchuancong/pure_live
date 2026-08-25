@@ -153,16 +153,13 @@ class CacheService extends GetxService {
     }
   }
 
-  static bool isAndroidPrivatePath(String path) {
-    if (!Platform.isAndroid) return false;
+  static bool isAndroidPrivatePath(String path, {bool? androidPlatform}) {
+    if (!(androidPlatform ?? Platform.isAndroid)) return false;
 
     final normalized = p.normalize(path).replaceAll('\\', '/').toLowerCase();
 
-    return normalized.startsWith('/data/user/0/') ||
-        normalized.startsWith('/data/user/10/') ||
-        normalized.startsWith('/data/data/') ||
-        normalized.startsWith('/data/user_de/0/') ||
-        normalized.contains('/app_flutter/');
+    return RegExp(r'^/data/(?:user|user_de)/\d+(?:/|$)').hasMatch(normalized) ||
+        RegExp(r'^/data/data(?:/|$)').hasMatch(normalized);
   }
 
   Future<String> getDisplayPath() async => (await getRecordDir()).path;
