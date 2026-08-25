@@ -17,7 +17,7 @@ on:
         description: Build Linux x64 portable archive
         required: true
         type: boolean
-        default: false
+        default: false 
       build_macos:
         description: Build macOS universal application archive
         required: true

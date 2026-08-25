@@ -3,11 +3,11 @@
     "version": "2.9.7",
     "title": "Pure Live v2.9.7",
     "date": "2026-08-25",
-    "github": "https://github.com/wzgrx/pure_live/releases/tag/v2.9.7",
+    "github": "https://github.com/liuchuancong/pure_live/releases/tag/v2.9.7",
     "author": {
-      "name": "wzgrx",
+      "name": "liuchuancong",
       "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
-      "profile": "https://github.com/wzgrx"
+      "profile": "https://github.com/liuchuancong"
     },
     "changelog": "## Pure Live v2.9.7（Android arm64-v8a）\n\n本版全面校正除哔哩哔哩外各平台的观看指标语义和热门排行：\n\n- 抖音：读取当前 Feed 顶层 `user_count` 作为真实在线；累计观看与在线人数彻底分字段。\n- 网易 CC：`webcc_visitor/hot_score/visitor` 归为热度，只有 `vision_visitor/online_num` 归为在线。\n- SOOP：推荐和搜索改用 PC + 移动端 `total_view_cnt`，不再只统计 PC 端。\n- 斗鱼、虎牙、YY：继续按平台热度显示，避免把百万级热度误标为真实人数。\n- 快手、Twitch：保留明确在线口径。\n- 热门页、收藏、搜索和房间选择器统一使用指标感知、稳定、从高到低的排行规则；切换口径会刷新当前热门平台。\n\n### 验证\n\n- Flutter Analyze：通过\n- 自动化测试：371 项通过\n- 平台实时接口门禁：40/40 通过\n- Android Release：本机串行构建，Gradle 16 workers，峰值 CPU 47.96%，峰值重型进程内存约 14.68 GiB\n- 包名：`com.mystyle.purelive`\n- ABI：`arm64-v8a`\n- 源码：`b74a67c7635ea37b6f68bb6a10d9b106de851fdd`\n\n正式 APK 由本机构建产物经仓库签名工作流签名；Release 同时提供 SHA-256 与构建元数据。",
     "files": [
@@ -15,25 +15,25 @@
         "name": "ANDROID_SHA256SUM.txt",
         "size": "0.0mb",
         "downloads": 0,
-        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.7/ANDROID_SHA256SUM.txt"
+        "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.7/ANDROID_SHA256SUM.txt"
       },
       {
         "name": "BUILD_METADATA.json",
         "size": "0.0mb",
         "downloads": 0,
-        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.7/BUILD_METADATA.json"
+        "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.7/BUILD_METADATA.json"
       },
       {
         "name": "PureLive-2.9.7-4086-android-arm64-v8a",
         "size": "112.87mb",
         "downloads": 0,
-        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.7/PureLive-2.9.7-4086-android-arm64-v8a-release.apk"
+        "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.7/PureLive-2.9.7-4086-android-arm64-v8a-release.apk"
       },
       {
         "name": "SHA256SUMS.txt",
         "size": "0.0mb",
         "downloads": 0,
-        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.7/SHA256SUMS.txt"
+        "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.7/SHA256SUMS.txt"
       }
     ]
   },
@@ -53,25 +53,25 @@
         "name": "ANDROID_SHA256SUM.txt",
         "size": "0.0mb",
         "downloads": 1,
-        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.6/ANDROID_SHA256SUM.txt"
+        "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.6/ANDROID_SHA256SUM.txt"
       },
       {
         "name": "BUILD_METADATA.json",
         "size": "0.0mb",
         "downloads": 1,
-        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.6/BUILD_METADATA.json"
+        "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.6/BUILD_METADATA.json"
       },
       {
         "name": "PureLive-2.9.6-4085-android-arm64-v8a",
         "size": "112.87mb",
         "downloads": 15,
-        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.6/PureLive-2.9.6-4085-android-arm64-v8a-release.apk"
+        "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.6/PureLive-2.9.6-4085-android-arm64-v8a-release.apk"
       },
       {
         "name": "SHA256SUMS.txt",
         "size": "0.0mb",
         "downloads": 1,
-        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.6/SHA256SUMS.txt"
+        "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.6/SHA256SUMS.txt"
       }
     ]
   },
@@ -177,7 +177,7 @@
         "name": "PureLive-2.9.4-4083-windows-x64-setup.exe",
         "size": "53.24mb",
         "downloads": 55,
-        "url": "https://github.com/wzgrx/pure_live/releases/download/v2.9.4/PureLive-2.9.4-4083-windows-x64-setup.exe"
+        "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.4/PureLive-2.9.4-4083-windows-x64-setup.exe"
       },
       {
         "name": "SHA256SUMS.txt",
