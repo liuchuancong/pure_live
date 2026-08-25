@@ -1,7 +1,7 @@
 # v2.9.5 Android stability update
 
 Version: `2.9.5+4084`  
-Maintained repository: `wzgrx/pure_live`  
+Maintained repository: `wzgrx/pure_live`
 Upstream baseline: `liuchuancong/pure_live@a161a324`
 Release date: 2026-08-24
 

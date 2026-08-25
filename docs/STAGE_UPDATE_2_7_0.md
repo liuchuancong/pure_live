@@ -2,7 +2,7 @@
 
 版本：`2.7.0+4077`  
 发布日期：2026-08-23  
-维护仓库：`wzgrx/pure_live`  
+维护仓库：`wzgrx/pure_live`
 上游冻结点：`liuchuancong/pure_live@81ec372a`
 
 ## 1. 上游整合
