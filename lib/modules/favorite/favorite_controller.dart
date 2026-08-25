@@ -20,6 +20,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   final tabBottomIndex = 0.obs;
   final tabSiteIndex = 0.obs;
   final tabOnlineIndex = 0.obs;
+  String selectedPlatformId = Sites.allSite;
   StreamSubscription<dynamic>? subscription;
   StreamSubscription<dynamic>? roomChangedSubscription;
 
@@ -192,11 +193,13 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   void selectSiteIndex(int index) {
     final availableSites = Sites().availableSites(containsAll: true);
     if (index < 0 || index >= availableSites.length) return;
+    final nextPlatformId = availableSites[index].id;
     final resetTag = selectedTagId.value != TagManagementController.allTagKey;
-    if (tabSiteIndex.value == index && !resetTag) return;
+    if (tabSiteIndex.value == index && selectedPlatformId == nextPlatformId && !resetTag) return;
 
     _selectionTransaction = true;
     tabSiteIndex.value = index;
+    selectedPlatformId = nextPlatformId;
     if (resetTag) selectedTagId.value = TagManagementController.allTagKey;
     _selectionTransaction = false;
     currentPage = 1;

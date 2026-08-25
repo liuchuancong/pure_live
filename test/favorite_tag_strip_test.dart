@@ -6,6 +6,14 @@ import 'package:pure_live/modules/tags/live_tag.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
 
 void main() {
+  test('platform tab rebuild preserves the selected site by identity', () {
+    expect(
+      resolveFavoriteSiteIndex(siteIds: const ['all', 'huya', 'bilibili'], selectedSiteId: 'bilibili', fallback: 1),
+      2,
+    );
+    expect(resolveFavoriteSiteIndex(siteIds: const ['all', 'huya'], selectedSiteId: 'bilibili', fallback: 8), 1);
+  });
+
   testWidgets('favorite tag chips reactively switch from custom back to all', (tester) async {
     Get.testMode = true;
     addTearDown(Get.reset);

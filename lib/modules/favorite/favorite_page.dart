@@ -1,8 +1,8 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/modules/tags/live_tag.dart';
 import 'package:pure_live/modules/favorite/room_grid_view.dart';
 import 'package:pure_live/common/widgets/common_appbar_actions.dart';
-import 'package:pure_live/modules/tags/live_tag.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
 
 class FavoritePage extends GetView<FavoriteController> {
@@ -15,6 +15,7 @@ class FavoritePage extends GetView<FavoriteController> {
         return Obx(() {
           bool showAction = Get.width <= 680;
           final availableSitesList = Sites().availableSites(containsAll: true);
+          final siteKey = ValueKey(availableSitesList.map((e) => e.id).join('|'));
 
           return Scaffold(
             appBar: AppBar(
@@ -31,12 +32,19 @@ class FavoritePage extends GetView<FavoriteController> {
                 ],
               ),
             ),
-            body: _FavoriteSiteTabs(controller: controller, availableSitesList: availableSitesList),
+            body: _FavoriteSiteTabs(key: siteKey, controller: controller, availableSitesList: availableSitesList),
           );
         });
       },
     );
   }
+}
+
+@visibleForTesting
+int resolveFavoriteSiteIndex({required List<String> siteIds, required String selectedSiteId, required int fallback}) {
+  if (siteIds.isEmpty) return 0;
+  final selectedIndex = siteIds.indexOf(selectedSiteId);
+  return selectedIndex >= 0 ? selectedIndex : fallback.clamp(0, siteIds.length - 1).toInt();
 }
 
 /// Owns one stable site [TabController] across reactive data publications.
@@ -45,7 +53,7 @@ class FavoritePage extends GetView<FavoriteController> {
 /// order changes, instead of resetting the visual controller to index zero
 /// while the data controller still points at an older numeric index.
 class _FavoriteSiteTabs extends StatefulWidget {
-  const _FavoriteSiteTabs({required this.controller, required this.availableSitesList});
+  const _FavoriteSiteTabs({super.key, required this.controller, required this.availableSitesList});
 
   final FavoriteController controller;
   final List<Site> availableSitesList;
@@ -64,53 +72,17 @@ class _FavoriteSiteTabsState extends State<_FavoriteSiteTabs> with SingleTickerP
   @override
   void initState() {
     super.initState();
-    final initialIndex = _clampSiteIndex(widget.controller.tabSiteIndex.value, widget.availableSitesList);
+    final initialIndex = resolveFavoriteSiteIndex(
+      siteIds: widget.availableSitesList.map((site) => site.id).toList(growable: false),
+      selectedSiteId: widget.controller.selectedPlatformId,
+      fallback: widget.controller.tabSiteIndex.value,
+    );
     _tabController = TabController(length: widget.availableSitesList.length, initialIndex: initialIndex, vsync: this)
       ..addListener(_handleTabChanged);
     widget.controller.bindActiveScrollController(_scrollControllerFor(widget.availableSitesList[initialIndex].id));
-  }
-
-  @override
-  void didUpdateWidget(covariant _FavoriteSiteTabs oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final oldIds = oldWidget.availableSitesList.map((site) => site.id).toList(growable: false);
-    final newIds = widget.availableSitesList.map((site) => site.id).toList(growable: false);
-    if (_sameSiteOrder(oldIds, newIds)) return;
-
-    final oldIndex = _clampSiteIndex(_tabController.index, oldWidget.availableSitesList);
-    final selectedSiteId = oldWidget.availableSitesList[oldIndex].id;
-    final preservedIndex = newIds.indexOf(selectedSiteId);
-    final nextIndex = preservedIndex >= 0
-        ? preservedIndex
-        : _clampSiteIndex(widget.controller.tabSiteIndex.value, widget.availableSitesList);
-
-    _tabController.removeListener(_handleTabChanged);
-    _tabController.dispose();
-    _tabController = TabController(length: widget.availableSitesList.length, initialIndex: nextIndex, vsync: this)
-      ..addListener(_handleTabChanged);
-
-    // Rebind before disposing a removed platform's controller. The base page
-    // detaches its listener from the previous controller while rebinding.
-    final nextScrollController = _scrollControllerFor(widget.availableSitesList[nextIndex].id);
-    widget.controller.bindActiveScrollController(nextScrollController);
-    final retainedIds = newIds.toSet();
-    final removedIds = _siteScrollControllers.keys.where((id) => !retainedIds.contains(id)).toList(growable: false);
-    for (final id in removedIds) {
-      _siteScrollControllers.remove(id)?.dispose();
-    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) widget.controller.selectSiteIndex(nextIndex);
+      if (mounted) widget.controller.selectSiteIndex(initialIndex);
     });
-  }
-
-  int _clampSiteIndex(int index, List<Site> sites) => index.clamp(0, sites.length - 1).toInt();
-
-  bool _sameSiteOrder(List<String> left, List<String> right) {
-    if (left.length != right.length) return false;
-    for (var index = 0; index < left.length; index++) {
-      if (left[index] != right[index]) return false;
-    }
-    return true;
   }
 
   void _handleTabChanged() {

@@ -14,9 +14,11 @@ class PopularPage extends GetView<PopularController> {
         return Obx(() {
           bool showAction = Get.width <= 680;
 
-          final availableSitesList = Sites().availableSites();
+          final sites = controller.sites;
 
-          if (availableSitesList.isEmpty) return const Scaffold();
+          if (sites.isEmpty) {
+            return const Scaffold();
+          }
 
           return Scaffold(
             appBar: AppBar(
@@ -28,14 +30,14 @@ class PopularPage extends GetView<PopularController> {
                 isScrollable: true,
                 physics: const PureLiveScrollPhysics(),
                 dragStartBehavior: DragStartBehavior.down,
-                tabs: availableSitesList.map((e) => Tab(text: e.name)).toList(),
+                tabs: sites.map((e) => Tab(text: e.name)).toList(),
               ),
             ),
             body: TabBarView(
               controller: controller.tabController,
               physics: const PureLiveScrollPhysics(),
               dragStartBehavior: DragStartBehavior.down,
-              children: availableSitesList.map((e) => PopularGridView(e.id)).toList(),
+              children: sites.map((e) => PopularGridView(e.id)).toList(),
             ),
           );
         });
