@@ -12,17 +12,17 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/wzgrx/pure_live/releases/latest">
-    <img alt="Latest Release" src="https://img.shields.io/github/v/release/wzgrx/pure_live">
+  <a href="https://github.com/liuchuancong/pure_live/releases/latest">
+    <img alt="Latest Release" src="https://img.shields.io/github/v/release/liuchuancong/pure_live">
   </a>
-  <a href="https://github.com/wzgrx/pure_live/actions/workflows/feature-build.yml">
-    <img alt="Manual Build" src="https://github.com/wzgrx/pure_live/actions/workflows/feature-build.yml/badge.svg">
+  <a href="https://github.com/liuchuancong/pure_live/actions/workflows/feature-build.yml">
+    <img alt="Manual Build" src="https://github.com/liuchuancong/pure_live/actions/workflows/feature-build.yml/badge.svg">
   </a>
   <a href="https://github.com/liuchuancong/pure_live">
     <img alt="Stars" src="https://img.shields.io/github/stars/liuchuancong/pure_live?color=yellow">
   </a>
-  <a href="https://github.com/wzgrx/pure_live/releases">
-    <img alt="Downloads" src="https://img.shields.io/github/downloads/wzgrx/pure_live/total?style=flat-square">
+  <a href="https://github.com/liuchuancong/pure_live/releases">
+    <img alt="Downloads" src="https://img.shields.io/github/downloads/liuchuancong/pure_live/total?style=flat-square">
   </a>
   <a href="LICENSE">
     <img alt="License" src="https://img.shields.io/github/license/liuchuancong/pure_live?color=blue">
@@ -43,7 +43,7 @@
 - 本仓库 Issue 仅受理**可复现的维护型 Bug**。新增功能、产品方向和全新平台适配请提交到[原项目 Issue](https://github.com/liuchuancong/pure_live/issues/new/choose)。
 - 每次同步上游、分析 Bug 和审查原项目 Issue 的来源判定、根因、兼容、验证与回滚流程见[维护范围与问题处置策略](MAINTENANCE_POLICY.md)及[上游同步审查策略](UPSTREAM_REVIEW_POLICY.md)。
 
-- **最新稳定版**：[v3.0.2](https://github.com/wzgrx/pure_live/releases/tag/v3.0.2)
+- **最新稳定版**：[v3.0.2](https://github.com/liuchuancong/pure_live/releases/tag/v3.0.2)
 - **当前 Android 构建版本**：`3.0.2+4090`（普通横屏比例、竖屏隔离、全屏/小窗与弹幕布局修复）
 - **v3.0.0 上游源码基线**：`liuchuancong/pure_live@e808dcae`；完整记录见 `docs/STAGE_UPDATE_3_0_0.md`
 - **本轮构建平台**：仅 Android arm64-v8a；其他平台继续使用 v3.0.0 安装包
@@ -394,7 +394,7 @@ Firebase 不是 Pure Live 使用的必要条件。
 
 ## 📥 下载
 
-前往 [维护分支 GitHub Releases](https://github.com/wzgrx/pure_live/releases/latest) 获取最新安装包，并使用同一 Release 的 `SHA256SUMS.txt` 校验完整性。
+前往 [维护分支 GitHub Releases](https://github.com/liuchuancong/pure_live/releases/latest) 获取最新安装包，并使用同一 Release 的 `SHA256SUMS.txt` 校验完整性。
 
 ### Android
 
@@ -458,7 +458,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
 ## 🤝 参与开发
 
 - **主开发者**：[@liuchuancong](https://github.com/liuchuancong)
-- **协助开发者**：[@wzgrx](https://github.com/wzgrx/pure_live)
+- **协助开发者**：[@liuchuancong](https://github.com/liuchuancong/pure_live)
 - **协助开发者**：[@RebornQ](https://github.com/RebornQ)
 
 > 📌 **欢迎贡献维护型修复、测试和文档**！

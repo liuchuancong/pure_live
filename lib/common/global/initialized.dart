@@ -81,6 +81,8 @@ class AppInitializer {
     // SettingsService was registered, then work on a later launch only because
     // the database/cache files had already been created.
     await InitialServices.init();
+    // 需要提前初始化 否则会导致手机部分平台录制失败导致I/O错误
+    FFmpegManager.to.initialize();
     _initSmartDialog();
     initRefresh();
 
@@ -89,8 +91,6 @@ class AppInitializer {
     } else if (PlatformUtils.isMobile) {
       await MobileManager.initialize();
     }
-    // 需要提前初始化 否则会导致手机部分平台录制失败导致I/O错误
-    FFmpegManager.to.initialize();
 
     if (PlatformUtils.isDesktopNotMac && instanceId.isEmpty) {
       _setupLaunchAtStartupSafe();

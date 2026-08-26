@@ -1524,19 +1524,8 @@ class PlayerManager {
     // from different metadata events and visibly squashed landscape streams.
     // Apply the requested fit before constructing the adapter widget, then keep
     // one native aspect authority on every platform.
-
-    return FittedBox(
-      fit: boxFit,
-      clipBehavior: Clip.hardEdge,
-      child: StreamBuilder<List<int?>>(
-        stream: CombineLatestStream.list([width, height]),
-        builder: (context, snapshot) {
-          final vW = snapshot.data?[0]?.toDouble() ?? 1920.0;
-          final vH = snapshot.data?[1]?.toDouble() ?? 1080.0;
-          return SizedBox(width: vW, height: vH, child: player.getVideoWidget());
-        },
-      ),
-    );
+    _applyVideoFit(player, boxFit);
+    return player.getVideoWidget();
   }
 
   Widget _buildPlaceholder() {

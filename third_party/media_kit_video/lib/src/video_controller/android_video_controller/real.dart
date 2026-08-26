@@ -16,6 +16,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/src/utils/query_decoders.dart';
 import 'package:media_kit_video/src/video_controller/platform_video_controller.dart';
 import 'package:media_kit_video/src/video_controller/video_output_policy.dart';
+import 'package:media_kit_video/src/video_controller/video_params_geometry.dart';
 
 /// {@template android_video_controller}
 ///
@@ -119,42 +120,50 @@ class AndroidVideoController extends PlatformVideoController {
   /// [StreamSubscription] for listening to video [Rect].
   StreamSubscription<VideoParams>? videoParamsSubscription;
 
+  /// Surface resize requests must retain decoder-event order. An older async
+  /// MethodChannel reply used to be able to overwrite a newer portrait size
+  /// during source, quality, fullscreen or PiP transitions.
+  Future<void> _videoParamsResizeQueue = Future<void>.value();
+  bool _videoParamsDisposed = false;
+
   /// {@macro android_video_controller}
   AndroidVideoController._(super.player, super.configuration) {
     wid.addListener(widListener);
     videoParamsSubscription = player.stream.videoParams.listen(
-      (event) => unawaited(_handleVideoParams(event)),
+      _scheduleVideoParams,
     );
   }
 
-  Future<void> _handleVideoParams(VideoParams event) async {
-    try {
-      final int width;
-      final int height;
-      if (event.rotate == 0 || event.rotate == 180) {
-        width = event.dw ?? 0;
-        height = event.dh ?? 0;
-      } else {
-        // width & height are swapped for 90 or 270 degrees rotation.
-        width = event.dh ?? 0;
-        height = event.dw ?? 0;
-      }
+  void _scheduleVideoParams(VideoParams event) {
+    if (_videoParamsDisposed) return;
+    final size = resolveVideoParamsDisplaySize(event);
+    if (size == null) return;
+    _videoParamsResizeQueue = _videoParamsResizeQueue.then(
+      (_) => _applyVideoDisplaySize(size),
+    );
+  }
 
-      final isZero = width == 0 || height == 0;
+  Future<void> _applyVideoDisplaySize(VideoDisplaySize size) async {
+    try {
+      if (_videoParamsDisposed) return;
+      final width = size.width;
+      final height = size.height;
       final isSame = width == rect.value?.width.toInt() &&
           height == rect.value?.height.toInt();
-      if (isZero || isSame) return;
+      if (isSame) return;
 
       // Surface-size IPC is independent from mpv's WID/vo/vid transaction.
       // Keeping this vendor MethodChannel await inside [lock] meant one delayed
       // Android reply could prevent the headphone action from ever acquiring
       // the video-output lock. Only WID and track selection share [lock].
       final handle = await player.handle;
+      if (_videoParamsDisposed) return;
       await _channel.invokeMethod('VideoOutputManager.SetSurfaceSize', {
         'handle': handle.toString(),
         'width': width.toString(),
         'height': height.toString(),
       });
+      if (_videoParamsDisposed) return;
 
       rect.value = Rect.fromLTWH(
         0.0,
@@ -261,10 +270,12 @@ class AndroidVideoController extends PlatformVideoController {
 
   /// Disposes the instance. Releases allocated resources back to the system.
   Future<void> _dispose() async {
+    _videoParamsDisposed = true;
+    await videoParamsSubscription?.cancel();
+    await _videoParamsResizeQueue;
+    wid.removeListener(widListener);
     super.dispose();
     wid.dispose();
-    wid.removeListener(widListener);
-    await videoParamsSubscription?.cancel();
     final handle = await player.handle;
     _controllers.remove(handle);
     await _channel.invokeMethod('VideoOutputManager.Dispose', {

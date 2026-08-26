@@ -21,12 +21,8 @@ import 'package:pure_live/player/interface/media_kit_player_accessor.dart';
 
 @visibleForTesting
 ({int width, int height})? resolveMediaKitDisplaySize(VideoParams params) {
-  final decodedWidth = params.dw ?? params.w;
-  final decodedHeight = params.dh ?? params.h;
-  if (decodedWidth == null || decodedHeight == null || decodedWidth <= 0 || decodedHeight <= 0) return null;
-
-  final quarterTurn = ((params.rotate ?? 0) % 180).abs() == 90;
-  return quarterTurn ? (width: decodedHeight, height: decodedWidth) : (width: decodedWidth, height: decodedHeight);
+  final size = resolveVideoParamsDisplaySize(params);
+  return size == null ? null : (width: size.width, height: size.height);
 }
 
 class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFitAwarePlayer {

@@ -2,7 +2,7 @@
 
 ## 冻结范围
 
-- 维护分支：`wzgrx/pure_live:master`
+- 维护分支：`liuchuancong/pure_live:master`
 - 上游：`liuchuancong/pure_live@e808dcaef14627413d5b1f634d8c7e8f6eb6103c`
 - merge base：`e808dcaef14627413d5b1f634d8c7e8f6eb6103c`
 - 入站上游提交：0；上游冻结点已经包含在维护分支中，没有用远端树覆盖本地修复。

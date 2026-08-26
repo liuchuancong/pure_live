@@ -79,13 +79,13 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
         child: Column(
           children: [
             SizedBox(
-              height: 44,
+              height: 36,
               child: Padding(
-                padding: const EdgeInsets.only(left: 12, right: 4),
+                padding: const EdgeInsets.only(left: 10, right: 2),
                 child: Row(
                   children: [
-                    Icon(Icons.video_library_rounded, size: 18, color: theme.colorScheme.primary),
-                    const SizedBox(width: 7),
+                    Icon(Icons.video_library_rounded, size: 17, color: theme.colorScheme.primary),
+                    const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         i18n('switch_live_room'),
@@ -98,7 +98,7 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
                       () => IconButton(
                         tooltip: i18n('refresh'),
                         visualDensity: VisualDensity.compact,
-                        constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+                        constraints: const BoxConstraints.tightFor(width: 32, height: 32),
                         padding: EdgeInsets.zero,
                         onPressed: refreshing.value
                             ? null
@@ -112,7 +112,7 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
                     IconButton(
                       tooltip: i18n('close'),
                       visualDensity: VisualDensity.compact,
-                      constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+                      constraints: const BoxConstraints.tightFor(width: 32, height: 32),
                       padding: EdgeInsets.zero,
                       icon: const Icon(Icons.close_rounded, size: 18),
                       onPressed: () {
@@ -124,14 +124,14 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
               ),
             ),
             SizedBox(
-              height: 38,
+              height: 30,
               child: TabBar(
                 controller: tabController,
                 labelColor: theme.colorScheme.primary,
                 unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
                 indicatorSize: TabBarIndicatorSize.label,
                 dividerHeight: 0,
-                labelPadding: const EdgeInsets.symmetric(horizontal: 10),
+                labelPadding: const EdgeInsets.symmetric(horizontal: 6),
                 tabs: [
                   _CompactTab(icon: Icons.sensors_rounded, label: i18n('online_room_title')),
                   _CompactTab(icon: Icons.fiber_smart_record_rounded, label: i18n('recording_room_title')),
@@ -180,8 +180,8 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
     }
     return LayoutBuilder(
       builder: (context, constraints) {
-        const padding = 10.0;
-        const spacing = 8.0;
+        const padding = 6.0;
+        const spacing = 5.0;
         final availableWidth = constraints.maxWidth - padding * 2;
         final isLargeScreen = availableWidth >= 520;
         final columns = isLargeScreen ? 2 : 1;
@@ -231,7 +231,7 @@ class _CompactTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Tab(
-      height: 36,
+      height: 28,
       child: FittedBox(
         fit: BoxFit.scaleDown,
         child: Row(

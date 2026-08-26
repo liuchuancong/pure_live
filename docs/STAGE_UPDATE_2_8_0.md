@@ -1,7 +1,7 @@
 # v2.8.0 阶段稳定版
 
 版本：`2.8.0+4078`
-维护仓库：`wzgrx/pure_live`
+维护仓库：`liuchuancong/pure_live`
 上游基线：`liuchuancong/pure_live@4ca626d9`
 发布日期：2026-08-23
 

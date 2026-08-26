@@ -2,7 +2,7 @@
 
 <!-- maintenance-policy-markers: android-first; windows-maintained; feature-requests-upstream; bug-provenance-required; semantic-change-ledger; evidence-layered; rollback-required -->
 
-本文件定义 `wzgrx/pure_live` 维护分支的支持边界、Issue 分流、Bug 根因判定、上游同步和发布证据要求。它与 [上游同步审查策略](UPSTREAM_REVIEW_POLICY.md) 和 [构建资源策略](BUILD_POLICY.md) 一起构成本仓库后续工作的默认流程。
+本文件定义 `liuchuancong/pure_live` 维护分支的支持边界、Issue 分流、Bug 根因判定、上游同步和发布证据要求。它与 [上游同步审查策略](UPSTREAM_REVIEW_POLICY.md) 和 [构建资源策略](BUILD_POLICY.md) 一起构成本仓库后续工作的默认流程。
 
 ## 1. 仓库定位与维护范围
 
@@ -26,7 +26,7 @@
 - Android 与 Windows 的性能、资源释放和交互一致性问题；
 - 已有功能在上游同步后发生的兼容冲突。
 
-新增功能、产品方向和全新平台适配统一提交到[原项目 Issue](https://github.com/liuchuancong/pure_live/issues/new/choose)。安全漏洞通过本仓库的 [Security Advisory](https://github.com/wzgrx/pure_live/security/advisories/new) 私密提交。
+新增功能、产品方向和全新平台适配统一提交到[原项目 Issue](https://github.com/liuchuancong/pure_live/issues/new/choose)。安全漏洞通过本仓库的 [Security Advisory](https://github.com/liuchuancong/pure_live/security/advisories/new) 私密提交。
 
 Linux、macOS、iOS 等社区验证平台的问题可以保留为技术记录；处置结论会明确标为“社区证据”“待贡献者验证”或“已由上游覆盖”，不写成已完成本机验证。
 

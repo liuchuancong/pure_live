@@ -502,7 +502,7 @@ if ($versionFeed.platforms.android.version -ne $displayVersion -or
     [int]$versionFeed.platforms.android.build_number -ne $buildNumber) {
     throw 'assets/version.json Android version must match the current application version.'
 }
-if ($versionFeed.download_url -ne "https://github.com/wzgrx/pure_live/releases/tag/$releaseTag") {
+if ($versionFeed.download_url -ne "https://github.com/liuchuancong/pure_live/releases/tag/$releaseTag") {
     throw 'assets/version.json must advertise the maintained repository release.'
 }
 foreach ($workflowName in @('feature-build.yml', 'stage-hosted-artifacts.yml', 'publish-staged-release.yml')) {
@@ -516,9 +516,9 @@ foreach ($workflowName in @('feature-build.yml', 'stage-hosted-artifacts.yml', '
 
 $environmentText = Get-Content -LiteralPath (Join-Path $repoRoot '.env.prod') -Raw
 $generatedEnvironment = Get-Content -LiteralPath (Join-Path $repoRoot 'lib\gen\env.g.dart') -Raw
-if ($environmentText -notmatch '(?m)^PURELIVE_UPDATE_OWNER=wzgrx\s*$' -or
-    $generatedEnvironment -notmatch "pureliveUpdateOwner = 'wzgrx'") {
-    throw 'Production and generated update repositories must both target wzgrx/pure_live.'
+if ($environmentText -notmatch '(?m)^PURELIVE_UPDATE_OWNER=liuchuancong\s*$' -or
+    $generatedEnvironment -notmatch "pureliveUpdateOwner = 'liuchuancong'") {
+    throw 'Production and generated update repositories must both target liuchuancong/pure_live.'
 }
 
 Write-Host 'Build policy static validation passed.'
