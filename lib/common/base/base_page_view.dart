@@ -1,5 +1,6 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/base/base_controller.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
 
 class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends StatelessWidget {
   final C controller;
@@ -49,7 +50,7 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
   Widget build(BuildContext context) {
     final bool showBtn = showScrollToTopBtn ?? true;
     final double currentWidth = context.width;
-    final bool isDesktop = currentWidth > 680;
+    final bool isDesktop = currentWidth > 680 && !PlatformUtils.isMobile;
 
     double bottomPadding = isDesktop ? (customDesktopBottomPadding ?? 70) : (customMobileBottomPadding ?? 20);
 
