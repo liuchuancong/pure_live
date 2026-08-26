@@ -5,16 +5,50 @@ import 'package:pure_live/player/core/live_stream_geometry_hint.dart';
 
 void main() {
   group('Douyin live-stream geometry hints', () {
-    test('prefers top-level stream extra dimensions', () {
+    test('ignores top-level placeholders and dual-screen selector flags', () {
       final hint = LiveStreamGeometryHintResolver.resolveDouyin({
         'extra': {'width': 1080, 'height': 1920},
         'stream_orientation': 2,
       });
 
+      expect(hint, isNull);
+    });
+
+    test('joins the selected URL to its sdk geometry instead of the default quality', () {
+      final hint = LiveStreamGeometryHintResolver.resolveDouyin({
+        'live_core_sdk_data': {
+          'pull_data': {
+            'options': {
+              'default_quality': {'sdk_key': 'landscape'},
+              'qualities': [
+                {'sdk_key': 'landscape', 'resolution': '1920x1080'},
+                {'sdk_key': 'portrait', 'resolution': '720x1280'},
+              ],
+            },
+            'stream_data': jsonEncode({
+              'data': {
+                'landscape': {
+                  'main': {
+                    'flv': 'https://cdn.example/live.flv?quality=landscape',
+                    'sdk_params': jsonEncode({'resolution': '1920x1080'}),
+                  },
+                },
+                'portrait': {
+                  'main': {
+                    'flv': 'https://cdn.example/live.flv?quality=portrait',
+                    'sdk_params': jsonEncode({'resolution': '720x1280'}),
+                  },
+                },
+              },
+            }),
+          },
+        },
+      }, selectedUrl: 'https://cdn.example/live.flv?quality=portrait&codec=h264');
+
       expect(hint, isNotNull);
       expect(hint!.aspectRatio, closeTo(9 / 16, 0.001));
-      expect(hint.confidence, 0.99);
-      expect(hint.source, 'douyin.extra');
+      expect(hint.source, 'douyin.selected_sdk_params');
+      expect(hint.allowsCenteredCrop, isTrue);
     });
 
     test('uses the default quality resolution when extra is absent', () {
@@ -36,6 +70,43 @@ void main() {
       expect(hint!.width, 720);
       expect(hint.height, 1280);
       expect(hint.source, 'douyin.default_quality');
+      expect(hint.allowsCenteredCrop, isTrue);
+    });
+
+    test('uses resolution declared directly by the selected default quality', () {
+      final hint = LiveStreamGeometryHintResolver.resolveDouyin({
+        'live_core_sdk_data': {
+          'pull_data': {
+            'options': {
+              'default_quality': {'sdk_key': 'origin', 'resolution': '1080x1920'},
+            },
+          },
+        },
+        'flv_pull_url': {'origin': 'https://cdn.example/origin.flv'},
+      }, selectedUrl: 'https://cdn.example/origin.flv');
+
+      expect(hint, isNotNull);
+      expect(hint!.aspectRatio, closeTo(9 / 16, 0.001));
+      expect(hint.source, 'douyin.selected_default_quality');
+      expect(hint.allowsCenteredCrop, isTrue);
+    });
+
+    test('does not borrow default geometry for an unmatched selected URL', () {
+      final hint = LiveStreamGeometryHintResolver.resolveDouyin({
+        'live_core_sdk_data': {
+          'pull_data': {
+            'options': {
+              'default_quality': {'sdk_key': 'landscape', 'resolution': '1920x1080'},
+              'qualities': [
+                {'sdk_key': 'landscape', 'resolution': '1920x1080'},
+              ],
+            },
+          },
+        },
+        'flv_pull_url': {'landscape': 'https://cdn.example/landscape.flv'},
+      }, selectedUrl: 'https://alternate.example/portrait.flv');
+
+      expect(hint, isNull);
     });
 
     test('reads resolution from nested stream sdk_params', () {

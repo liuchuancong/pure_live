@@ -4,6 +4,23 @@ import 'package:pure_live/player/core/player_manager.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
 
 void main() {
+  test('application floating bounds follow a late portrait ratio', () {
+    final landscape = resolveAppFloatingSize(aspectRatio: 16 / 9, maxSide: 220);
+    final portrait = resolveAppFloatingSize(aspectRatio: 9 / 16, maxSide: 220);
+
+    expect(landscape, const Size(220, 123.75));
+    expect(portrait.width / portrait.height, closeTo(9 / 16, 0.001));
+    expect(portrait.height, greaterThan(portrait.width));
+  });
+
+  test('PiP source hint encloses the same contained pixels as its portrait ratio', () {
+    final rect = resolveContainedVideoRect(container: const Rect.fromLTWH(0, 0, 400, 300), contentAspectRatio: 9 / 16);
+
+    expect(rect.height, 300);
+    expect(rect.width / rect.height, closeTo(9 / 16, 0.001));
+    expect(rect.center, const Offset(200, 150));
+  });
+
   testWidgets('mobile video frame owns one trusted contain ratio', (tester) async {
     await tester.binding.setSurfaceSize(const Size(400, 400));
     addTearDown(() => tester.binding.setSurfaceSize(null));

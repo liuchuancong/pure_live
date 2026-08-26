@@ -127,6 +127,50 @@ void main() {
       expect(snapshot.hasActiveContentCrop, isFalse);
     });
 
+    test('selected-stream portrait metadata provisionally crops a landscape transport canvas', () {
+      final detector = PortraitStreamDetector();
+      detector.observeSourceMetadata(
+        1080,
+        1920,
+        confidence: 0.995,
+        source: 'douyin.selected_sdk_params',
+        allowsCenteredCrop: true,
+      );
+
+      final snapshot = detector.observe(1920, 1080);
+      final insets = PortraitPresentationPolicy.resolveVideoContentInsets(
+        snapshot: snapshot,
+        presentationAspectRatio: 9 / 16,
+      );
+
+      expect(snapshot.hasProvisionalContentCrop, isTrue);
+      expect(insets.left, closeTo(0.3418, 0.002));
+      expect(insets.right, closeTo(0.3418, 0.002));
+      expect(insets.applyToAspectRatio(snapshot.renderCanvasAspectRatio), closeTo(9 / 16, 0.002));
+    });
+
+    test('selected landscape metadata never invents a crop for a portrait decoder canvas', () {
+      final detector = PortraitStreamDetector();
+      detector.observeSourceMetadata(
+        1920,
+        1080,
+        confidence: 0.995,
+        source: 'douyin.selected_sdk_params',
+        allowsCenteredCrop: true,
+      );
+
+      final snapshot = detector.observe(1080, 1920);
+
+      expect(snapshot.hasProvisionalContentCrop, isFalse);
+      expect(
+        PortraitPresentationPolicy.resolveVideoContentInsets(
+          snapshot: snapshot,
+          presentationAspectRatio: 16 / 9,
+        ).hasCrop,
+        isFalse,
+      );
+    });
+
     test('two full-frame probes can disprove a conflicting platform hint', () {
       final detector = PortraitStreamDetector();
       detector.observeSourceMetadata(1080, 1920, confidence: 0.99, source: 'douyin.extra');
@@ -197,8 +241,30 @@ void main() {
 
       expect(portrait.hasActiveContentCrop, isTrue);
       expect(transition.hasActiveContentCrop, isFalse);
+      expect(transition.hasTrustedSourceHint, isFalse);
+      expect(transition.sourceHintAllowsCenteredCrop, isFalse);
       expect(transition.isProvisional, isTrue);
       expect(transition.aspectRatio, closeTo(9 / 16, 0.02));
+    });
+
+    test('source transition requires the new URL to re-authorize a platform crop', () {
+      final detector = PortraitStreamDetector();
+      detector.observeSourceMetadata(
+        1080,
+        1920,
+        confidence: 0.995,
+        source: 'douyin.selected_sdk_params',
+        allowsCenteredCrop: true,
+      );
+      final selected = detector.observe(1920, 1080);
+
+      final transition = detector.beginSourceTransition();
+
+      expect(selected.hasProvisionalContentCrop, isTrue);
+      expect(transition.effectiveAspectRatio, closeTo(9 / 16, 0.001));
+      expect(transition.hasTrustedSourceHint, isFalse);
+      expect(transition.sourceHintAllowsCenteredCrop, isFalse);
+      expect(transition.hasProvisionalContentCrop, isFalse);
     });
 
     test('a cached room geometry is provisional until fresh decoder evidence arrives', () {
@@ -370,7 +436,7 @@ void main() {
       );
     });
 
-    test('platform portrait metadata does not invent crop coordinates for a landscape canvas', () {
+    test('generic platform metadata does not invent crop coordinates for a landscape canvas', () {
       final snapshot = VideoGeometrySnapshot(
         width: 1920,
         height: 1080,
@@ -393,6 +459,36 @@ void main() {
 
       expect(insets.hasCrop, isFalse);
       expect(snapshot.renderCanvasAspectRatio, closeTo(16 / 9, 0.001));
+    });
+
+    test('settled full-frame evidence clears a provisional selected-stream crop', () {
+      final detector = PortraitStreamDetector();
+      detector.observeSourceMetadata(
+        1080,
+        1920,
+        confidence: 0.995,
+        source: 'douyin.selected_sdk_params',
+        allowsCenteredCrop: true,
+      );
+      detector.observe(1920, 1080);
+      const fullFrame = ActiveVideoContentObservation(
+        insets: NormalizedVideoInsets.none,
+        confidence: 0.96,
+        canvasAspectRatio: 16 / 9,
+      );
+
+      detector.observeActiveContent(fullFrame);
+      final settled = detector.observeActiveContent(fullFrame);
+
+      expect(settled.hasTrustedSourceHint, isFalse);
+      expect(settled.hasProvisionalContentCrop, isFalse);
+      expect(
+        PortraitPresentationPolicy.resolveVideoContentInsets(
+          snapshot: settled,
+          presentationAspectRatio: 16 / 9,
+        ).hasCrop,
+        isFalse,
+      );
     });
   });
 

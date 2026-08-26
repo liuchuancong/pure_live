@@ -163,6 +163,7 @@ class PlayerManager {
   Future<void>? _floatingCleanup;
   bool _appFloatingPrepared = false;
   bool _pipTransitionInFlight = false;
+  int _pipGeometryUpdateGeneration = 0;
   double? _lastAppliedPipAspectRatio;
   final GlobalKey _pipSourceKey = GlobalKey(debugLabel: 'pip-video-source');
 
@@ -331,7 +332,7 @@ class PlayerManager {
     effectiveOrientation: effectiveVideoOrientation,
   );
 
-  void _beginVideoGeometrySession(LiveRoom? nextRoom) {
+  void _beginVideoGeometrySession(LiveRoom? nextRoom, {String? selectedUrl}) {
     _geometrySessionGeneration++;
     _geometryObservationTimer?.cancel();
     _geometryStabilityTimer?.cancel();
@@ -361,13 +362,14 @@ class PlayerManager {
       next = _portraitDetector.beginSourceTransition();
     }
 
-    final hint = LiveStreamGeometryHintResolver.resolve(nextRoom);
+    final hint = LiveStreamGeometryHintResolver.resolve(nextRoom, selectedUrl: selectedUrl);
     if (hint != null) {
       next = _portraitDetector.observeSourceMetadata(
         hint.width,
         hint.height,
         confidence: hint.confidence,
         source: hint.source,
+        allowsCenteredCrop: hint.allowsCenteredCrop,
       );
       log(
         'Source geometry hint ${hint.width}x${hint.height} (${hint.source}, ${hint.confidence.toStringAsFixed(2)})',
@@ -420,7 +422,10 @@ class PlayerManager {
   void _scheduleActiveContentProbe() {
     final snapshot = videoGeometry.value;
     final needsCanvasInspection =
-        snapshot.aspectRatio >= 1.10 || snapshot.hasActiveContentCrop || snapshot.sourceHintOverridesDecoder;
+        snapshot.aspectRatio >= 1.10 ||
+        snapshot.hasActiveContentCrop ||
+        snapshot.sourceHintOverridesDecoder ||
+        snapshot.sourceHintAllowsCenteredCrop;
     if (!PlatformUtils.isMobile ||
         _disposed ||
         _isClosing ||
@@ -559,7 +564,7 @@ class PlayerManager {
         final controller = _videoController;
         if (controller != null) unawaited(controller.applyFullscreenOrientationPolicy());
       }
-      if (isInPip.value) unawaited(_updateActiveAndroidPip(currentVideoRatio));
+      if (isInPip.value) unawaited(_updateActiveAndroidPip());
     }
     final room = currentFloatRoom;
     if (room != null && snapshot.isStable && snapshot.hasValidDimensions && !snapshot.isProvisional) {
@@ -567,8 +572,15 @@ class PlayerManager {
     }
   }
 
-  Future<void> _updateActiveAndroidPip(double compactRatio) async {
+  Future<void> _updateActiveAndroidPip() async {
     if (!Platform.isAndroid || !isInPip.value || _pipTransitionInFlight) return;
+    final generation = ++_pipGeometryUpdateGeneration;
+    // Mirror Android's layout-listener guidance: publish geometry only after
+    // the compact video view has adopted the new presentation ratio.
+    SchedulerBinding.instance.scheduleFrame();
+    await SchedulerBinding.instance.endOfFrame;
+    if (generation != _pipGeometryUpdateGeneration || !isInPip.value || _disposed || _isClosing) return;
+    final compactRatio = currentVideoRatio;
     final pipRatio = PortraitPresentationPolicy.resolveAndroidPipAspectRatio(
       width: (compactRatio * 10000).round(),
       height: 10000,
@@ -576,7 +588,10 @@ class PlayerManager {
     );
     if (_lastAppliedPipAspectRatio != null && (_lastAppliedPipAspectRatio! - pipRatio.value).abs() < 0.004) return;
     try {
-      await floating.update(aspectRatio: Rational(pipRatio.width, pipRatio.height));
+      await floating.update(
+        aspectRatio: Rational(pipRatio.width, pipRatio.height),
+        sourceRectHint: _currentPipSourceRect(contentAspectRatio: pipRatio.value),
+      );
       _lastAppliedPipAspectRatio = pipRatio.value;
     } catch (error, stackTrace) {
       log(
@@ -708,7 +723,7 @@ class PlayerManager {
     // Start a geometry generation for every new source, including quality and
     // CDN switches in the same room. Same-room presentation remains visible;
     // another room receives only its own bounded cache entry.
-    _beginVideoGeometrySession(room);
+    _beginVideoGeometrySession(room, selectedUrl: url);
     if (_currentPlayer == null || _runtimeEngine == null) {
       if (_defaultEngine == null) {
         final String savedKey = SettingsService.to.player.videoPlayerKey.v;
@@ -1149,11 +1164,11 @@ class PlayerManager {
         // Build the compact video-only surface first, then enter PiP after a
         // rendered frame so Texture/PlatformView players do not show an app
         // icon or a black placeholder while being reattached.
-        final sourceRectHint = _currentPipSourceRect();
         isPipPreparing.value = true;
         await SchedulerBinding.instance.endOfFrame;
 
         final compactRatio = currentVideoRatio;
+        final sourceRectHint = _currentPipSourceRect(contentAspectRatio: compactRatio);
         final pipRatio = PortraitPresentationPolicy.resolveAndroidPipAspectRatio(
           width: (compactRatio * 10000).round(),
           height: 10000,
@@ -1175,18 +1190,22 @@ class PlayerManager {
     }
   }
 
-  math.Rectangle<int>? _currentPipSourceRect() {
+  math.Rectangle<int>? _currentPipSourceRect({required double contentAspectRatio}) {
     final context = _pipSourceKey.currentContext;
     final renderObject = context?.findRenderObject();
     if (renderObject is! RenderBox || !renderObject.hasSize) return null;
     final view = View.maybeOf(context!);
     if (view == null) return null;
     final origin = renderObject.localToGlobal(Offset.zero);
-    final ratio = View.of(context).devicePixelRatio;
-    final left = (origin.dx * ratio).round();
-    final top = (origin.dy * ratio).round();
-    final width = (renderObject.size.width * ratio).round();
-    final height = (renderObject.size.height * ratio).round();
+    final visibleRect = resolveContainedVideoRect(
+      container: origin & renderObject.size,
+      contentAspectRatio: contentAspectRatio,
+    );
+    final ratio = view.devicePixelRatio;
+    final left = (visibleRect.left * ratio).round();
+    final top = (visibleRect.top * ratio).round();
+    final width = (visibleRect.width * ratio).round();
+    final height = (visibleRect.height * ratio).round();
     if (width <= 0 || height <= 0) return null;
     return math.Rectangle<int>(left, top, width, height);
   }
@@ -1206,21 +1225,7 @@ class PlayerManager {
     isFloatingVideoVisible.value = true;
     floatingManager.disposeFloating(_floatTag);
     _hideTimer?.cancel();
-    double maxSide = Platform.isWindows ? 350 : 220;
-    final ratio = currentVideoRatio;
-    double floatWidth;
-    double floatHeight;
-    if (ratio >= 1) {
-      floatWidth = maxSide;
-      floatHeight = maxSide / ratio;
-    } else {
-      floatHeight = maxSide * 1.2;
-      floatWidth = floatHeight * ratio;
-      if (floatWidth < 120) {
-        floatWidth = 120;
-        floatHeight = floatWidth / ratio;
-      }
-    }
+    final maxSide = Platform.isWindows ? 350.0 : 220.0;
 
     void resetHideTimer() {
       if (Platform.isAndroid || Platform.isIOS) {
@@ -1242,89 +1247,98 @@ class PlayerManager {
           onExit: (_) {
             if (Platform.isWindows || Platform.isMacOS) isHovered.value = false;
           },
-          child: Container(
-            width: floatWidth,
-            height: floatHeight,
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Colors.black),
-            child: Stack(
-              children: [
-                Obx(
-                  () => Positioned.fill(
-                    child: isFloatingVideoVisible.value
-                        ? getVideoWidget(
-                            SettingsService.to.player.videoFitIndex.v,
-                            fitList: SettingsService.to.player.videoFitArray,
-                          )
-                        : const SizedBox.shrink(),
-                  ),
-                ),
-                Positioned.fill(child: _buildCompactDanmaku()),
-                Positioned.fill(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () async {
-                      final room = currentFloatRoom;
-                      if (room != null) {
-                        await AppNavigator.toLiveRoomDetail(liveRoom: room);
-                      }
-                    },
-                    child: const SizedBox.expand(),
-                  ),
-                ),
-                Center(
-                  child: AnimatedOpacity(
-                    opacity: isHovered.value ? 1 : 0,
-                    duration: const Duration(milliseconds: 200),
-                    child: IgnorePointer(
-                      ignoring: !isHovered.value,
-                      child: StreamBuilder<bool>(
-                        stream: onPlaying,
-                        initialData: isPlayingNow,
-                        builder: (context, snapshot) {
-                          var isPlay = snapshot.data ?? true;
-                          return IconButton(
-                            iconSize: 42,
-                            style: IconButton.styleFrom(backgroundColor: Colors.black45),
-                            icon: Icon(
-                              isPlay ? Icons.pause_circle_filled : Icons.play_circle_filled,
-                              color: Colors.white,
-                            ),
-                            onPressed: () {
-                              togglePlayPause();
-                              resetHideTimer();
-                            },
-                          );
-                        },
-                      ),
+          child: Obx(() {
+            // The overlay is created before late decoder/frame evidence may
+            // settle. Keep its outer bounds on the same reactive geometry as
+            // the texture instead of freezing the entry-time 16:9 size.
+            videoPresentationRevision.value;
+            final floatingSize = resolveAppFloatingSize(aspectRatio: currentVideoRatio, maxSide: maxSide);
+            return Container(
+              width: floatingSize.width,
+              height: floatingSize.height,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Colors.black),
+              child: Stack(
+                children: [
+                  Obx(
+                    () => Positioned.fill(
+                      child: isFloatingVideoVisible.value
+                          ? getVideoWidget(
+                              SettingsService.to.player.videoFitIndex.v,
+                              fitList: SettingsService.to.player.videoFitArray,
+                            )
+                          : const SizedBox.shrink(),
                     ),
                   ),
-                ),
-                Positioned(
-                  right: 4,
-                  top: 4,
-                  child: Obx(
-                    () => AnimatedOpacity(
-                      opacity: isHovered.value ? 1 : 0,
-                      duration: const Duration(milliseconds: 200),
-                      child: IgnorePointer(
-                        ignoring: !isHovered.value,
-                        child: IconButton(
-                          constraints: const BoxConstraints(),
-                          padding: const EdgeInsets.all(4),
-                          style: IconButton.styleFrom(backgroundColor: Colors.black45),
-                          icon: const Icon(Icons.close, color: Colors.white, size: 20),
-                          onPressed: () async {
-                            await stop();
-                          },
+                  Positioned.fill(child: _buildCompactDanmaku()),
+                  Positioned.fill(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () async {
+                        final room = currentFloatRoom;
+                        if (room != null) {
+                          await AppNavigator.toLiveRoomDetail(liveRoom: room);
+                        }
+                      },
+                      child: const SizedBox.expand(),
+                    ),
+                  ),
+                  Center(
+                    child: Obx(
+                      () => AnimatedOpacity(
+                        opacity: isHovered.value ? 1 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        child: IgnorePointer(
+                          ignoring: !isHovered.value,
+                          child: StreamBuilder<bool>(
+                            stream: onPlaying,
+                            initialData: isPlayingNow,
+                            builder: (context, snapshot) {
+                              var isPlay = snapshot.data ?? true;
+                              return IconButton(
+                                iconSize: 42,
+                                style: IconButton.styleFrom(backgroundColor: Colors.black45),
+                                icon: Icon(
+                                  isPlay ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                                  color: Colors.white,
+                                ),
+                                onPressed: () {
+                                  togglePlayPause();
+                                  resetHideTimer();
+                                },
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
+                  Positioned(
+                    right: 4,
+                    top: 4,
+                    child: Obx(
+                      () => AnimatedOpacity(
+                        opacity: isHovered.value ? 1 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        child: IgnorePointer(
+                          ignoring: !isHovered.value,
+                          child: IconButton(
+                            constraints: const BoxConstraints(),
+                            padding: const EdgeInsets.all(4),
+                            style: IconButton.styleFrom(backgroundColor: Colors.black45),
+                            icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                            onPressed: () async {
+                              await stop();
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
         ),
         right: 50,
         top: 100,
@@ -1426,6 +1440,7 @@ class PlayerManager {
                   () => getVideoWidget(
                     SettingsService.to.player.videoFitIndex.v,
                     fitList: SettingsService.to.player.videoFitArray,
+                    trackPipSource: true,
                   ),
                 ),
               ),
@@ -1992,6 +2007,48 @@ class PlayerManager {
       _heightSubject.close(),
     ]);
   }
+}
+
+/// Resolves application-floating bounds from the same aspect used by the
+/// normal player and Android PiP. Keeping this pure makes late portrait
+/// detection and size clamping deterministic in widget-free tests.
+@visibleForTesting
+Size resolveAppFloatingSize({
+  required double aspectRatio,
+  required double maxSide,
+  double minimumWidth = 120,
+  double portraitHeightFactor = 1.2,
+}) {
+  final safeMaxSide = maxSide.isFinite && maxSide > 0 ? maxSide : 220.0;
+  final safeMinimumWidth = minimumWidth.isFinite && minimumWidth > 0 ? minimumWidth : 120.0;
+  final ratio = aspectRatio.isFinite && aspectRatio > 0
+      ? aspectRatio.clamp(PortraitPresentationPolicy.androidPipMinimumAspectRatio, 4.0).toDouble()
+      : 16 / 9;
+  if (ratio >= 1) return Size(safeMaxSide, safeMaxSide / ratio);
+
+  var height = safeMaxSide * (portraitHeightFactor.isFinite && portraitHeightFactor > 0 ? portraitHeightFactor : 1.2);
+  var width = height * ratio;
+  if (width < safeMinimumWidth) {
+    width = safeMinimumWidth;
+    height = width / ratio;
+  }
+  return Size(width, height);
+}
+
+/// Returns the visible contain-fitted video bounds used as Android's PiP
+/// transition hint. The system expects this rectangle and the requested PiP
+/// aspect to describe the same pixels.
+@visibleForTesting
+Rect resolveContainedVideoRect({required Rect container, required double contentAspectRatio}) {
+  if (container.isEmpty || !contentAspectRatio.isFinite || contentAspectRatio <= 0) return container;
+  final containerRatio = container.width / container.height;
+  if ((containerRatio - contentAspectRatio).abs() <= 0.001) return container;
+  if (containerRatio > contentAspectRatio) {
+    final width = container.height * contentAspectRatio;
+    return Rect.fromLTWH(container.left + (container.width - width) / 2, container.top, width, container.height);
+  }
+  final height = container.width / contentAspectRatio;
+  return Rect.fromLTWH(container.left, container.top + (container.height - height) / 2, container.width, height);
 }
 
 /// Builds the single mobile texture geometry boundary used by every engine.
