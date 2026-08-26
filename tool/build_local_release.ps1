@@ -144,6 +144,10 @@ try {
     $monitor = Start-PureLiveResourceMonitor
 
     if ($Target -eq 'AndroidArm64') {
+        $packageConfig = Join-Path $repoRoot '.dart_tool\package_config.json'
+        if (-not (Test-Path -LiteralPath $packageConfig -PathType Leaf)) {
+            throw 'Android packaging requires the lock-resolved package config from the preceding quality/dependency stage.'
+        }
         # Keep daemon, parallel execution, both Gradle caches and VFS watching.
         # The default interactive profile leaves eight logical processors free;
         # an explicitly dedicated build leaves four free.
@@ -168,6 +172,7 @@ try {
         $androidArgs = @(
             'build', 'apk', "--$configurationLower", '--split-per-abi',
             '--target-platform', 'android-arm64',
+            '--no-pub',
             '--dart-define=PURELIVE_BUILD_SOURCE=local'
         )
         $buildExitCode = Invoke-PureLiveLoggedFlutter -Arguments $androidArgs -LogPath $commandLog
@@ -177,6 +182,9 @@ try {
         if (-not (Test-Path -LiteralPath $apkSource -PathType Leaf)) {
             throw "Expected Android artifact was not produced: $apkSource"
         }
+        & (Join-Path $PSScriptRoot 'verify_android_apk.ps1') `
+            -ApkPath $apkSource `
+            -ExpectedAbi 'arm64-v8a'
         $artifactName = if ($Configuration -eq 'Debug') {
             "PureLive-$artifactVersion-android-arm64-v8a-debug.apk"
         } elseif ($hasReleaseSigning) {

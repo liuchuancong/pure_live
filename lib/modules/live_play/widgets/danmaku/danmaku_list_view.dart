@@ -27,6 +27,9 @@ bool isDanmakuUserScrollStart(
           notification.direction != ScrollDirection.idle);
 }
 
+@visibleForTesting
+bool useEdgeToEdgeDanmakuList(double width) => width <= 680;
+
 /// Invalidates tail-follow work that was queued before a user gesture.
 ///
 /// `ScrollController.jumpTo` cancels an active drag. Message delivery used to
@@ -278,142 +281,154 @@ class DanmakuListViewState extends State<DanmakuListView> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
-      decoration: BoxDecoration(
-        color: Get.theme.colorScheme.surface.withValues(alpha: 0.88),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Get.theme.colorScheme.outline.withValues(alpha: 0.02), width: 0.5),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4))],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: Column(
-          children: [
-            Expanded(
-              child: Stack(
-                children: [
-                  Listener(
-                    onPointerDown: (_) {
-                      _activeScrollPointers++;
-                      // Cancel a queued live-tail jump at pointer-down, before
-                      // touch slop delays the first ScrollStartNotification.
-                      _tailFollowGuard.invalidate();
-                    },
-                    onPointerUp: (_) => _removeActiveScrollPointer(),
-                    onPointerCancel: (_) => _removeActiveScrollPointer(),
-                    child: NotificationListener<ScrollNotification>(
-                      onNotification: (notification) {
-                        onScrollNotification(notification);
-                        return false;
-                      },
-                      child: ListView.builder(
-                        key: const ValueKey('danmaku-message-list'),
-                        addAutomaticKeepAlives: false,
-                        // DanmakuItem already owns a boundary. Avoid nesting a
-                        // second automatic layer around every visible row.
-                        addRepaintBoundaries: false,
-                        controller: _scrollController,
-                        reverse: true,
-                        dragStartBehavior: DragStartBehavior.down,
-                        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                        physics: const PureLiveScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-                        scrollCacheExtent: const ScrollCacheExtent.pixels(360),
-                        itemCount: _visibleMessages.length,
-                        itemBuilder: (_, index) {
-                          final msg = _visibleMessages[_visibleMessages.length - 1 - index];
-                          // Returning the identical widget instance lets
-                          // Element.updateChild skip rebuilding emoji spans,
-                          // HSL colors and decorations for every existing row
-                          // on each 80 ms live-tail update.
-                          return _itemFor(msg);
+    final theme = Theme.of(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final edgeToEdge = useEdgeToEdgeDanmakuList(constraints.maxWidth);
+        final radius = edgeToEdge ? BorderRadius.zero : BorderRadius.circular(10);
+        return Container(
+          key: const ValueKey('danmaku-list-surface'),
+          margin: edgeToEdge ? EdgeInsets.zero : const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: radius,
+            border: edgeToEdge
+                ? null
+                : Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35), width: 0.5),
+            boxShadow: edgeToEdge
+                ? null
+                : [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4))],
+          ),
+          child: ClipRRect(
+            borderRadius: radius,
+            child: Column(
+              children: [
+                Expanded(
+                  child: Stack(
+                    children: [
+                      Listener(
+                        onPointerDown: (_) {
+                          _activeScrollPointers++;
+                          // Cancel a queued live-tail jump at pointer-down, before
+                          // touch slop delays the first ScrollStartNotification.
+                          _tailFollowGuard.invalidate();
                         },
-                      ),
-                    ),
-                  ),
-                  if (userScrolling)
-                    Positioned(
-                      right: 12,
-                      bottom: 12,
-                      child: FilledButton.icon(
-                        key: const ValueKey('danmaku-resume-live'),
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          backgroundColor: Get.theme.colorScheme.primary.withValues(alpha: 0.92),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        ),
-                        icon: const Icon(Icons.arrow_downward_rounded, size: 18),
-                        label: ValueListenableBuilder<int>(
-                          valueListenable: _pendingMessageCount,
-                          builder: (context, count, _) => Text(
-                            count > 0
-                                ? i18n('danmaku_new_messages', args: {'count': '$count'})
-                                : i18n('scroll_to_bottom'),
-                            style: const TextStyle(fontWeight: FontWeight.w600),
+                        onPointerUp: (_) => _removeActiveScrollPointer(),
+                        onPointerCancel: (_) => _removeActiveScrollPointer(),
+                        child: NotificationListener<ScrollNotification>(
+                          onNotification: (notification) {
+                            onScrollNotification(notification);
+                            return false;
+                          },
+                          child: ListView.builder(
+                            key: const ValueKey('danmaku-message-list'),
+                            addAutomaticKeepAlives: false,
+                            // DanmakuItem already owns a boundary. Avoid nesting a
+                            // second automatic layer around every visible row.
+                            addRepaintBoundaries: false,
+                            controller: _scrollController,
+                            reverse: true,
+                            dragStartBehavior: DragStartBehavior.down,
+                            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                            physics: const PureLiveScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+                            scrollCacheExtent: const ScrollCacheExtent.pixels(360),
+                            itemCount: _visibleMessages.length,
+                            itemBuilder: (_, index) {
+                              final msg = _visibleMessages[_visibleMessages.length - 1 - index];
+                              // Returning the identical widget instance lets
+                              // Element.updateChild skip rebuilding emoji spans,
+                              // HSL colors and decorations for every existing row
+                              // on each 80 ms live-tail update.
+                              return _itemFor(msg);
+                            },
                           ),
                         ),
-                        onPressed: _resumeAutoScroll,
                       ),
-                    ),
-                ],
-              ),
-            ),
-            Obx(() {
-              if (!controller.localInteractionController.enabled.v) return const SizedBox.shrink();
-              final state = controller.state.value;
-              final screenMode = state.ui.screenMode;
-              return Material(
-                color: Theme.of(context).colorScheme.surfaceContainerLow,
-                child: SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _composerController,
-                            textInputAction: TextInputAction.send,
-                            onSubmitted: (_) => _sendLocalMessage(),
-                            decoration: InputDecoration(
-                              isDense: true,
-                              hintText: i18n('local_message_hint'),
-                              prefixIcon: IconButton(
-                                key: const ValueKey('portrait-local-danmaku-style'),
-                                tooltip: i18n('local_danmaku_style'),
-                                onPressed: () => showLocalDanmakuStyleEditor(
-                                  context,
-                                  controller: controller.localInteractionController,
-                                ),
-                                icon: Icon(
-                                  Icons.auto_awesome_rounded,
-                                  size: 19,
-                                  color: screenMode == VideoMode.normal
-                                      ? Theme.of(context).primaryColor
-                                      : Color(controller.localInteractionController.danmakuColor.v),
-                                ),
-                              ),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(22)),
+                      if (userScrolling)
+                        Positioned(
+                          right: 12,
+                          bottom: 12,
+                          child: FilledButton.icon(
+                            key: const ValueKey('danmaku-resume-live'),
+                            style: FilledButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.92),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                             ),
+                            icon: const Icon(Icons.arrow_downward_rounded, size: 18),
+                            label: ValueListenableBuilder<int>(
+                              valueListenable: _pendingMessageCount,
+                              builder: (context, count, _) => Text(
+                                count > 0
+                                    ? i18n('danmaku_new_messages', args: {'count': '$count'})
+                                    : i18n('scroll_to_bottom'),
+                                style: const TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            onPressed: _resumeAutoScroll,
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        IconButton.filled(
-                          tooltip: i18n('local_send_message'),
-                          onPressed: _sendLocalMessage,
-                          icon: const Icon(Icons.send_rounded),
-                        ),
-                      ],
-                    ),
+                    ],
                   ),
                 ),
-              );
-            }),
-          ],
-        ),
-      ),
+                Obx(() {
+                  if (!controller.localInteractionController.enabled.v) return const SizedBox.shrink();
+                  final state = controller.state.value;
+                  final screenMode = state.ui.screenMode;
+                  return Material(
+                    color: Theme.of(context).colorScheme.surfaceContainerLow,
+                    child: SafeArea(
+                      top: false,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _composerController,
+                                textInputAction: TextInputAction.send,
+                                onSubmitted: (_) => _sendLocalMessage(),
+                                decoration: InputDecoration(
+                                  isDense: true,
+                                  hintText: i18n('local_message_hint'),
+                                  prefixIcon: IconButton(
+                                    key: const ValueKey('portrait-local-danmaku-style'),
+                                    tooltip: i18n('local_danmaku_style'),
+                                    onPressed: () => showLocalDanmakuStyleEditor(
+                                      context,
+                                      controller: controller.localInteractionController,
+                                    ),
+                                    icon: Icon(
+                                      Icons.auto_awesome_rounded,
+                                      size: 19,
+                                      color: screenMode == VideoMode.normal
+                                          ? Theme.of(context).primaryColor
+                                          : Color(controller.localInteractionController.danmakuColor.v),
+                                    ),
+                                  ),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(22)),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            IconButton.filled(
+                              tooltip: i18n('local_send_message'),
+                              onPressed: _sendLocalMessage,
+                              icon: const Icon(Icons.send_rounded),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

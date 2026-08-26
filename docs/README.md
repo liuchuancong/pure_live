@@ -4,6 +4,10 @@
 
 ## 开发与发布
 
+- [维护范围与问题处置策略](../MAINTENANCE_POLICY.md)：Android/Windows 维护边界、Issue 分流、Bug 来源判定、上游 Issue 优先级、验证和回滚标准。
+- [上游同步审查策略](../UPSTREAM_REVIEW_POLICY.md)：三方差异、全入站文件审查、语义变更台账、冲突处置与合并门禁。
+- [Bug 根因分析模板](BUG_TRIAGE_TEMPLATE.md)：复现基线、来源分类、首次错误状态、影响矩阵与分层证据模板。
+- [上游同步审计模板](UPSTREAM_AUDIT_TEMPLATE.md)：审查脚本要求的逐文件台账、Issue 映射、质量评估、处置和回归字段。
 - [本地构建、测试与发布](BUILD_AND_RELEASE.md)：固定工具链、一键质量门禁、Android 签名、Windows 打包与本地发布。
 - [Windows 数据目录与升级](WINDOWS_DATA_AND_UPGRADE.md)：安装目录数据、旧版关注合并、换盘迁移与回滚。
 - [依赖与接口审计](DEPENDENCY_AUDIT.md)：依赖锁定策略、暂缓升级原因和直播平台接口探测边界。
@@ -15,6 +19,7 @@
 - [v3.0.0 全平台稳定版](STAGE_UPDATE_3_0_0.md)：最新上游状态绑定、录制恢复、依赖锁与全平台发布门禁。
 - [v3.0.0 build 4088 全仓审查](REPOSITORY_AUDIT_3_0_0_BUILD_4088.md)：Android 返回根因、全上游/全仓流程、供应链、Windows 刷新率与 MSIX 修正。
 - [v3.0.1 Android 竖屏直播适配](STAGE_UPDATE_3_0_1.md)：源方向稳定识别、普通页自适应、全屏策略、画中画比例与房间覆盖。
+- [v3.0.2 Android 播放比例修复](STAGE_UPDATE_3_0_2.md)：普通横屏 16:9 边界、竖屏适配隔离、原生单层缩放与弹幕主题布局。
 - [v2.9.7 Android update](STAGE_UPDATE_2_9_7.md): cross-platform audience semantics, stable popular ranking and SOOP PC/mobile totals.
 - [v2.9.6 Android update](STAGE_UPDATE_2_9_6.md): upstream synchronization, Douyin/Bilibili repairs and 40 interface probes.
 - [v2.9.5 Android update](STAGE_UPDATE_2_9_5.md): Douyu playback, YY integration and 36 interface probes.
@@ -38,8 +43,11 @@
 
 ## 维护原则
 
-1. 命令以仓库根目录为工作目录，优先调用 `tool/` 中的包装脚本。
-2. 工具链版本以 `.fvmrc`、Gradle 配置和 `pubspec.lock` 为准。
-3. 外部接口和依赖状态具有时效性，发布前重新运行质量门禁。
-4. 构建产物进入 `local-artifacts/`，不提交到 Git。
-5. 文档中的密钥、账号、Cookie 和本地绝对路径只使用占位符。
+1. Android/Android TV 与 Windows 是主要维护目标；其他平台按社区证据记录。
+2. Bug 先判定上游、维护分支、整合冲突、外部漂移或本地数据来源，再设计修复。
+3. 上游同步先完成三方语义审查和处置台账，再创建 merge。
+4. 命令以仓库根目录为工作目录，优先调用 `tool/` 中的包装脚本。
+5. 工具链版本以 `.fvmrc`、Gradle 配置和 `pubspec.lock` 为准。
+6. 外部接口和依赖状态具有时效性，发布前重新运行质量门禁。
+7. 构建产物进入 `local-artifacts/`，不提交到 Git。
+8. 文档中的密钥、账号、Cookie 和本地绝对路径只使用占位符。

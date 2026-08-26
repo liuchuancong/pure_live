@@ -126,6 +126,7 @@ class PlayerManager {
   final _errorSubject = PublishSubject<PlayerException>();
   final _widthSubject = BehaviorSubject<int?>.seeded(null);
   final _heightSubject = BehaviorSubject<int?>.seeded(null);
+  final PortraitStreamDetector _portraitDetector = PortraitStreamDetector();
 
   final List<StreamSubscription> _subscriptions = [];
   StreamSubscription<PiPStatus>? _pipSubscription;
@@ -297,10 +298,50 @@ class PlayerManager {
   }
 
   double get currentVideoRatio {
-    final geometry = videoGeometry.value;
-    return geometry.hasValidDimensions && geometry.isStable
-        ? geometry.aspectRatio
-        : (isVerticalVideo.value ? 9 / 16 : 16 / 9);
+    final settings = _portraitSettings;
+    return PortraitPresentationPolicy.resolveCompactWindowAspectRatio(
+      snapshot: videoGeometry.value,
+      effectiveOrientation: effectiveVideoOrientation,
+      followStablePortraitSource: settings?.portraitPipFollowSource.v ?? true,
+    );
+  }
+
+  void _resetVideoGeometry() {
+    _geometryObservationTimer?.cancel();
+    _geometryStabilityTimer?.cancel();
+    _geometryObservationTimer = null;
+    _geometryStabilityTimer = null;
+    if (_widthSubject.value != null) _widthSubject.add(null);
+    if (_heightSubject.value != null) _heightSubject.add(null);
+    _portraitDetector.reset();
+    _publishVideoGeometry(const VideoGeometrySnapshot.unknown(), notifyController: false);
+  }
+
+  void _scheduleVideoGeometryObservation() {
+    _geometryObservationTimer?.cancel();
+    _geometryObservationTimer = Timer(const Duration(milliseconds: 120), () {
+      _geometryObservationTimer = null;
+      final width = _widthSubject.value;
+      final height = _heightSubject.value;
+      if (width == null || height == null || width <= 0 || height <= 0 || _disposed || _isClosing) return;
+      final snapshot = _portraitDetector.observe(width, height);
+      _publishVideoGeometry(snapshot);
+      _scheduleGeometryStabilityCommit();
+    });
+  }
+
+  void _scheduleGeometryStabilityCommit() {
+    _geometryStabilityTimer?.cancel();
+    _geometryStabilityTimer = null;
+    final since = _portraitDetector.pendingSince;
+    if (since == null) return;
+    final elapsed = DateTime.now().difference(since);
+    final remaining = _portraitDetector.stabilityDelay - elapsed;
+    _geometryStabilityTimer = Timer(remaining.isNegative ? Duration.zero : remaining, () {
+      _geometryStabilityTimer = null;
+      if (_disposed || _isClosing) return;
+      _publishVideoGeometry(_portraitDetector.commitPending());
+    });
   }
 
   VideoSourceOrientation get effectiveVideoOrientation {
@@ -458,6 +499,11 @@ class PlayerManager {
     final roomChanged = room != currentFloatRoom;
     if (roomChanged) {
       lineManager.reset();
+      // A reusable native player keeps its dimension streams alive between
+      // sources. Retaining the previous room's portrait dimensions until the
+      // next metadata event would apply the old adaptive frame and compact
+      // window policy to the following landscape room.
+      _resetVideoGeometry();
     }
     if (_currentPlayer == null || _runtimeEngine == null) {
       if (_defaultEngine == null) {
@@ -902,20 +948,12 @@ class PlayerManager {
         isPipPreparing.value = true;
         await SchedulerBinding.instance.endOfFrame;
 
-        final settings = _portraitSettings;
-        final geometry = videoGeometry.value;
-        final useSourceRatio = settings?.portraitPipFollowSource.v ?? true;
-        final pipRatio = useSourceRatio
-            ? PortraitPresentationPolicy.resolveAndroidPipAspectRatio(
-                width: geometry.isStable ? geometry.width : 0,
-                height: geometry.isStable ? geometry.height : 0,
-                portraitFallback: isVerticalVideo.value,
-              )
-            : PortraitPresentationPolicy.resolveAndroidPipAspectRatio(
-                width: isVerticalVideo.value ? 9 : 16,
-                height: isVerticalVideo.value ? 16 : 9,
-                portraitFallback: isVerticalVideo.value,
-              );
+        final compactRatio = currentVideoRatio;
+        final pipRatio = PortraitPresentationPolicy.resolveAndroidPipAspectRatio(
+          width: (compactRatio * 10000).round(),
+          height: 10000,
+          portraitFallback: isVerticalVideo.value,
+        );
         final rational = Rational(pipRatio.width, pipRatio.height);
         final result = await floating.enable(ImmediatePiP(aspectRatio: rational, sourceRectHint: sourceRectHint));
         if (result == PiPStatus.enabled) isInPip.value = true;
@@ -961,11 +999,7 @@ class PlayerManager {
     floatingManager.disposeFloating(_floatTag);
     _hideTimer?.cancel();
     double maxSide = Platform.isWindows ? 350 : 220;
-    final settings = _portraitSettings;
-    double ratio =
-        ((settings?.portraitPipFollowSource.v ?? true) ? currentVideoRatio : (isVerticalVideo.value ? 9 / 16 : 16 / 9))
-            .clamp(1 / 2.39, 2.39)
-            .toDouble();
+    final ratio = currentVideoRatio;
     double floatWidth;
     double floatHeight;
     if (ratio >= 1) {
@@ -1484,11 +1518,12 @@ class PlayerManager {
   }
 
   Widget _buildVideoWidget(UnifiedPlayer player, BoxFit boxFit) {
-    // Let each native adapter own its fit. Transforming a Windows texture with
-    // FittedBox makes the media_kit output-size guard see the source dimensions
-    // instead of the real viewport, which wastes GPU memory. Waiting for the
-    // dimension streams before mounting also creates a first-frame deadlock.
-    final videoWidget = player.getVideoWidget();
+    // Every adapter already owns its aspect correction and BoxFit behavior.
+    // Wrapping Android/iOS in a second FittedBox based on independently emitted
+    // width/height streams double-applied the ratio, briefly paired dimensions
+    // from different metadata events and visibly squashed landscape streams.
+    // Apply the requested fit before constructing the adapter widget, then keep
+    // one native aspect authority on every platform.
 
     return FittedBox(
       fit: boxFit,
@@ -1498,7 +1533,7 @@ class PlayerManager {
         builder: (context, snapshot) {
           final vW = snapshot.data?[0]?.toDouble() ?? 1920.0;
           final vH = snapshot.data?[1]?.toDouble() ?? 1080.0;
-          return SizedBox(width: vW, height: vH, child: videoWidget);
+          return SizedBox(width: vW, height: vH, child: player.getVideoWidget());
         },
       ),
     );
@@ -1696,11 +1731,13 @@ class PlayerManager {
     _subscriptions.add(
       player.width.listen((event) {
         _widthSubject.add(event);
+        _scheduleVideoGeometryObservation();
       }),
     );
     _subscriptions.add(
       player.height.listen((event) {
         _heightSubject.add(event);
+        _scheduleVideoGeometryObservation();
       }),
     );
   }

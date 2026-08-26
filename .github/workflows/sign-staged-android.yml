@@ -98,6 +98,47 @@ jobs:
           assert metadata["android_package"] == "com.mystyle.purelive"
           PY
 
+          python3 - "staged/$STAGED_APK" <<'PY'
+          import sys
+          import zipfile
+
+          path = sys.argv[1]
+          expected_abi = "arm64-v8a"
+          required = {
+              "assets/flutter_assets/AssetManifest.bin": 1024,
+              "assets/flutter_assets/NOTICES.Z": 1024,
+              "assets/flutter_assets/assets/version.json": 50,
+              "assets/flutter_assets/assets/releases.json": 50,
+              "assets/flutter_assets/assets/translations/zh.json": 1024,
+              "assets/flutter_assets/assets/images/banner.png": 1024,
+              "assets/flutter_assets/assets/emo/json/bilibili.json": 1024,
+              f"lib/{expected_abi}/libapp.so": 1024 * 1024,
+              f"lib/{expected_abi}/libflutter.so": 5 * 1024 * 1024,
+              f"lib/{expected_abi}/libmpv.so": 10 * 1024 * 1024,
+              f"lib/{expected_abi}/libijkffmpeg.so": 1024 * 1024,
+              f"lib/{expected_abi}/libffmpegkit.so": 20 * 1024 * 1024,
+              f"lib/{expected_abi}/libsqlite3.so": 512 * 1024,
+          }
+          with zipfile.ZipFile(path) as archive:
+              entries = {entry.filename: entry for entry in archive.infolist()}
+              for name, minimum_size in required.items():
+                  assert name in entries, f"required APK entry is missing: {name}"
+                  assert entries[name].file_size >= minimum_size, f"APK entry is unexpectedly small: {name}"
+              flutter_assets = [
+                  entry for entry in archive.infolist()
+                  if entry.filename.startswith("assets/flutter_assets/")
+                  and not entry.is_dir()
+              ]
+              assert len(flutter_assets) >= 1000, "Flutter asset file count is incomplete"
+              assert sum(entry.file_size for entry in flutter_assets) >= 10 * 1024 * 1024, "Flutter asset bytes are incomplete"
+              abis = {
+                  entry.filename.split("/")[1]
+                  for entry in archive.infolist()
+                  if entry.filename.startswith("lib/") and entry.filename.count("/") >= 2
+              }
+              assert abis == {expected_abi}, f"unexpected APK ABI set: {sorted(abis)}"
+          PY
+
           build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
           aapt="$build_tools/aapt"
           apksigner="$build_tools/apksigner"

@@ -231,6 +231,9 @@ class PipAspectRatio {
 class PortraitPresentationPolicy {
   const PortraitPresentationPolicy._();
 
+  static const double androidPipMinimumAspectRatio = 1 / 2.39;
+  static const double androidPipMaximumAspectRatio = 2.39;
+
   static VideoSourceOrientation resolveOrientation({
     required VideoGeometrySnapshot snapshot,
     required PortraitOrientationOverride override,
@@ -271,6 +274,24 @@ class PortraitPresentationPolicy {
     return desiredHeight.clamp(legacyHeight, upperBound).toDouble();
   }
 
+  /// Returns the ratio used by PiP and the application floating window.
+  ///
+  /// Portrait adaptation is an opt-in extension to the established 16:9
+  /// landscape pipeline. Landscape, square, unknown and implausible metadata
+  /// therefore keep the legacy ratio instead of allowing one decoder metadata
+  /// anomaly to resize every presentation mode.
+  static double resolveCompactWindowAspectRatio({
+    required VideoGeometrySnapshot snapshot,
+    required VideoSourceOrientation effectiveOrientation,
+    required bool followStablePortraitSource,
+  }) {
+    if (effectiveOrientation != VideoSourceOrientation.portrait) return 16 / 9;
+    if (!followStablePortraitSource || !snapshot.hasValidDimensions || !snapshot.isStable) return 9 / 16;
+    final ratio = snapshot.aspectRatio;
+    if (ratio < androidPipMinimumAspectRatio || ratio > 0.90) return 9 / 16;
+    return ratio;
+  }
+
   /// Android accepts PiP ratios only in the inclusive [1/2.39, 2.39] range.
   /// Invalid decoder dimensions fall back to the effective presentation ratio.
   static PipAspectRatio resolveAndroidPipAspectRatio({
@@ -279,10 +300,10 @@ class PortraitPresentationPolicy {
     required bool portraitFallback,
   }) {
     double ratio = width > 0 && height > 0 ? width / height : (portraitFallback ? 9 / 16 : 16 / 9);
-    ratio = ratio.clamp(1 / 2.39, 2.39).toDouble();
+    ratio = ratio.clamp(androidPipMinimumAspectRatio, androidPipMaximumAspectRatio).toDouble();
     const denominator = 1000;
-    final minimumNumerator = ((1 / 2.39) * denominator).ceil();
-    final maximumNumerator = (2.39 * denominator).floor();
+    final minimumNumerator = (androidPipMinimumAspectRatio * denominator).ceil();
+    final maximumNumerator = (androidPipMaximumAspectRatio * denominator).floor();
     final numerator = (ratio * denominator).round().clamp(minimumNumerator, maximumNumerator);
     final divisor = _greatestCommonDivisor(numerator, denominator);
     return PipAspectRatio(numerator ~/ divisor, denominator ~/ divisor);

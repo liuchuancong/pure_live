@@ -12,9 +12,20 @@
 - `docs/`: build, dependency and feature documentation.
 - `android/`, `windows/`, `ios/`, `macos/`: platform projects. Primary maintained release targets are Android and Windows.
 
+## Maintenance scope and triage
+
+Read and follow [`MAINTENANCE_POLICY.md`](MAINTENANCE_POLICY.md) for every reported Bug, upstream Issue review, upstream sync, or repository-maintenance change.
+
+- Treat Android/Android TV and Windows as the primary maintained targets. Android is normally fixed and delivered first because it has the strongest day-to-day evidence. Linux, macOS, and iOS are community-verified unless the current task provides corresponding platform evidence.
+- Route new feature/product requests to the original [`liuchuancong/pure_live`](https://github.com/liuchuancong/pure_live/issues/new/choose) project. This fork's Issue intake focuses on reproducible maintenance regressions.
+- Before editing a Bug, freeze the relevant fork/upstream commits and classify its provenance as `upstream-existing`, `fork-regression`, `integration-conflict`, `external-drift`, `environment-or-data`, or `not-reproduced`.
+- Trace the first invalid state and root call/event lifecycle. Record why the selected direct reuse, adaptation, compatibility layer, or rewrite addresses both the reproduction and adjacent modes.
+- Separate evidence into code review, deterministic tests, build output, optional device sampling, and external interface probes. Report uncovered platforms and residual risk; do not make blanket claims that every Bug is fixed.
+- Review upstream Issues from the latest supported version and newest dates first, then order by severity, reproducibility, and user impact. Map each reviewed Issue to the fork before changing code.
+
 ## Toolchain and commands
 
-Read and follow [`BUILD_POLICY.md`](BUILD_POLICY.md) before starting any Flutter, Dart, Gradle, Java, test, build, package, or release command. It is the repository default for platform scope, serial staging, worker limits, caching, resource arbitration, and build records. Before merging an upstream revision, follow [`UPSTREAM_REVIEW_POLICY.md`](UPSTREAM_REVIEW_POLICY.md): review every incoming commit and file from the merge base, commit the audit decision, then run the whole-repository audit after merging.
+Read and follow [`BUILD_POLICY.md`](BUILD_POLICY.md) before starting any Flutter, Dart, Gradle, Java, test, build, package, or release command. It is the repository default for platform scope, serial staging, worker limits, caching, resource arbitration, and build records. Before merging an upstream revision, follow [`UPSTREAM_REVIEW_POLICY.md`](UPSTREAM_REVIEW_POLICY.md): perform the three-way fork/upstream comparison; review every incoming commit and file from the merge base; document intent, Bug mapping, implementation quality, fork-feature impact, explicit disposition, regression and rollback; commit the audit decision; then run the whole-repository audit after merging.
 
 Use Flutter `3.47.0` from `.fvmrc`. On Windows, call the repository wrapper so the same SDK is selected consistently:
 
@@ -42,6 +53,7 @@ Package locally with `tool/build_local_release.ps1`; both `-Target` and `-Config
 - Follow `flutter_lints` and standard Dart naming: `lower_snake_case.dart`, `UpperCamelCase` types and `lowerCamelCase` members.
 - Keep GetX module naming consistent: `*_page.dart`, `*_controller.dart`, `*_binding.dart`.
 - Add focused tests for parser, adapter, settings migration and non-trivial service changes.
+- Every Bug fix must state provenance and root cause before implementation. Avoid replacing lifecycle analysis with arbitrary delay, refresh, rebuild, polling, or retry loops.
 - Playback, PiP, floating-window and danmaku fixes default to a device-independent workflow: trace the state/event ordering, add a deterministic regression test, run static analysis and the affected local test suite, then build the target artifact when requested.
 - Never connect to or operate a user's phone, start ADB, install an APK, or automate device UI unless the user explicitly requests device work in the current task. A connection mentioned in an earlier message is not standing permission.
 - Before every device command, re-check the user's latest instruction. If the current task says to avoid phone operations, do not run even read-only ADB discovery, `dumpsys`, log collection, screenshots or package queries; continue from source and deterministic tests instead.
@@ -53,6 +65,7 @@ Package locally with `tool/build_local_release.ps1`; both `-Target` and `-Config
 - Use short imperative Conventional Commit-style subjects such as `feat(pip): ...`, `fix(windows): ...`, or `docs: ...`.
 - Keep each commit focused and update generated files, lockfiles and documentation with the source change that requires them.
 - Pull Requests must include motivation, verification commands/results, tested platforms, linked issues, and screenshots or recordings for UI changes.
+- Bug Pull Requests must include provenance, first invalid state, root cause, adjacent-mode impact, migration/rollback and evidence gaps. Upstream integration Pull Requests must include the required semantic change ledger and `accept/adapt/rewrite/drop/defer` disposition for every incoming change.
 - Sync a feature branch with the latest `master` and rerun affected checks before merge.
 
 ## Security and configuration

@@ -5,13 +5,15 @@ import 'package:pure_live/modules/live_play/widgets/video_player/video_loading.d
 import 'package:pure_live/modules/live_play/widgets/placeholder/not_living_video_widget.dart';
 
 class LivePlayVideo extends StatelessWidget {
-  const LivePlayVideo({super.key, required this.controller});
+  const LivePlayVideo({super.key, required this.controller, this.expandToParent = false});
 
   final LivePlayController controller;
+  final bool expandToParent;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox.expand(
+    return LivePlayVideoFrame(
+      expandToParent: expandToParent,
       child: ColoredBox(
         color: Colors.black,
         child: Obx(() {
@@ -35,5 +37,25 @@ class LivePlayVideo extends StatelessWidget {
         }),
       ),
     );
+  }
+}
+
+/// Keeps the legacy 16:9 contract for every ordinary landscape room.
+///
+/// Only a caller that already owns an explicit adaptive portrait/fullscreen
+/// frame may opt into expansion. Making the generic video widget expand by
+/// default lets an unrelated parent constraint change every playback mode at
+/// once, which caused the v3.0.1 landscape/PiP regression.
+@visibleForTesting
+class LivePlayVideoFrame extends StatelessWidget {
+  const LivePlayVideoFrame({super.key, required this.child, required this.expandToParent});
+
+  final Widget child;
+  final bool expandToParent;
+
+  @override
+  Widget build(BuildContext context) {
+    if (expandToParent) return SizedBox.expand(child: child);
+    return AspectRatio(aspectRatio: 16 / 9, child: child);
   }
 }
