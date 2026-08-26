@@ -15,6 +15,7 @@
 - [v3.0.0 全平台稳定版](STAGE_UPDATE_3_0_0.md)：最新上游状态绑定、录制恢复、依赖锁与全平台发布门禁。
 - [v3.0.0 build 4088 全仓审查](REPOSITORY_AUDIT_3_0_0_BUILD_4088.md)：Android 返回根因、全上游/全仓流程、供应链、Windows 刷新率与 MSIX 修正。
 - [v3.0.1 Android 竖屏直播适配](STAGE_UPDATE_3_0_1.md)：源方向稳定识别、普通页自适应、全屏策略、画中画比例与房间覆盖。
+- [v3.0.2 Android 播放比例修复](STAGE_UPDATE_3_0_2.md)：普通横屏 16:9 边界、竖屏适配隔离、原生单层缩放与弹幕主题布局。
 - [v2.9.7 Android update](STAGE_UPDATE_2_9_7.md): cross-platform audience semantics, stable popular ranking and SOOP PC/mobile totals.
 - [v2.9.6 Android update](STAGE_UPDATE_2_9_6.md): upstream synchronization, Douyin/Bilibili repairs and 40 interface probes.
 - [v2.9.5 Android update](STAGE_UPDATE_2_9_5.md): Douyu playback, YY integration and 36 interface probes.

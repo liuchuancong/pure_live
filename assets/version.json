@@ -1,21 +1,21 @@
 {
-  "version": "3.0.1",
-  "build_number": 4089,
-  "version_num": 300014089,
-  "version_desc": "- 新增竖屏直播源智能识别：使用解码后的真实宽高、500ms/三样本稳定门和近方形中性区，避免线路与画质切换时误旋转。\n- 普通竖屏直播页按均衡、沉浸或兼容模式自适应视频高度，默认保留至少 200px 弹幕列表空间；横屏源和桌面布局保持稳定。\n- 全屏支持跟随直播源、跟随系统或始终横屏；Android 16+ 大屏、分屏和折叠屏不强制方向，方向变化不重建播放器。\n- Android 画中画使用稳定的真实视频比例并限制在系统支持的 1:2.39–2.39:1 范围；应用内小窗同步使用稳定源比例。\n- 新增直播间自动/强制竖屏/强制横屏快捷覆盖、可选记忆、竖屏弹幕覆盖策略与尺寸/比例诊断层，所有设置实时生效。\n- 增加检测防抖、近方形、跨房间重置、PiP 比例、手机自适应高度和大屏方向边界回归；本轮仅构建 Android arm64-v8a Release。",
+  "version": "3.0.2",
+  "build_number": 4090,
+  "version_num": 300024090,
+  "version_desc": "- 修复 v3.0.1 普通横屏直播被压缩成超宽细条：恢复普通直播间 16:9 几何边界，竖屏自适应只作用于已稳定识别的竖屏源。\n- 移除移动端播放器外层重复 FittedBox，由 MediaKit/Fijk 原生适配器唯一处理 BoxFit，横屏、全屏和小窗不再重复缩放。\n- MediaKit 从同一个 VideoParams 事件读取显示校正后的 dw/dh 与旋转信息；Fijk 同时响应宽高变化，避免清晰度或方向切换时混合新旧尺寸。\n- Android 画中画与应用内小窗隔离异常元数据：横屏、未知和不合理比例保持 16:9，只有稳定且合理的竖屏源允许跟随真实比例。\n- 修复手机弹幕区黑边、巨大灰色圆角卡片和主题颜色割裂，弹幕列表改为手机全宽主题表面，桌面仍保留面板层次。\n- 增加普通横屏、稳定竖屏、异常比例、旋转尺寸、PiP/浮窗和弹幕布局回归；本轮仅发布 Android arm64-v8a Release。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.1",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.2",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.0.1",
-      "build_number": 4089,
-      "version_num": 300014089,
-      "version_desc": "- 新增竖屏直播源智能识别：使用解码后的真实宽高、500ms/三样本稳定门和近方形中性区，避免线路与画质切换时误旋转。\n- 普通竖屏直播页按均衡、沉浸或兼容模式自适应视频高度，默认保留至少 200px 弹幕列表空间；横屏源和桌面布局保持稳定。\n- 全屏支持跟随直播源、跟随系统或始终横屏；Android 16+ 大屏、分屏和折叠屏不强制方向，方向变化不重建播放器。\n- Android 画中画使用稳定的真实视频比例并限制在系统支持的 1:2.39–2.39:1 范围；应用内小窗同步使用稳定源比例。\n- 新增直播间自动/强制竖屏/强制横屏快捷覆盖、可选记忆、竖屏弹幕覆盖策略与尺寸/比例诊断层，所有设置实时生效。\n- 增加检测防抖、近方形、跨房间重置、PiP 比例、手机自适应高度和大屏方向边界回归；本轮仅构建 Android arm64-v8a Release。",
+      "version": "3.0.2",
+      "build_number": 4090,
+      "version_num": 300024090,
+      "version_desc": "- 修复 v3.0.1 普通横屏直播被压缩成超宽细条：恢复普通直播间 16:9 几何边界，竖屏自适应只作用于已稳定识别的竖屏源。\n- 移除移动端播放器外层重复 FittedBox，由 MediaKit/Fijk 原生适配器唯一处理 BoxFit，横屏、全屏和小窗不再重复缩放。\n- MediaKit 从同一个 VideoParams 事件读取显示校正后的 dw/dh 与旋转信息；Fijk 同时响应宽高变化，避免清晰度或方向切换时混合新旧尺寸。\n- Android 画中画与应用内小窗隔离异常元数据：横屏、未知和不合理比例保持 16:9，只有稳定且合理的竖屏源允许跟随真实比例。\n- 修复手机弹幕区黑边、巨大灰色圆角卡片和主题颜色割裂，弹幕列表改为手机全宽主题表面，桌面仍保留面板层次。\n- 增加普通横屏、稳定竖屏、异常比例、旋转尺寸、PiP/浮窗和弹幕布局回归；本轮仅发布 Android arm64-v8a Release。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.1",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.2",
       "android_abis": [
         "arm64-v8a"
       ]
