@@ -10,6 +10,7 @@ import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
+import 'package:pure_live/core/utils/live_quality_label.dart';
 
 class YYSite implements LiveSite, LiveSiteRoomRefresher {
   static const String _streamSdkVersion = '5.23.0-beta.2';
@@ -478,7 +479,12 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher {
     final qualities = records
         .map(
           (record) => LivePlayQuality(
-            quality: nameCounts[record.name] == 1 ? record.name : '${record.name} · ${record.gear}',
+            quality: LiveQualityLabel.normalize(
+              platform: Sites.yySite,
+              rawLabel: nameCounts[record.name] == 1 ? record.name : '${record.name} · ${record.gear}',
+              id: record.gear,
+              bitrate: record.rate > 0 ? record.rate * 1000 : null,
+            ),
             id: record.gear,
             sort: record.rate,
             data: record.gear,

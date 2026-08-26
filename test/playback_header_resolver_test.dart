@@ -24,4 +24,27 @@ void main() {
     expect(yy['user-agent'], isNotEmpty);
     expect(unknown, isEmpty);
   });
+
+  test('every built-in HTTP platform has a deterministic media origin profile', () async {
+    final expectedOrigins = <String, String>{
+      'bilibili': 'https://live.bilibili.com',
+      'douyu': 'https://www.douyu.com',
+      'huya': 'https://www.huya.com',
+      'douyin': 'https://live.douyin.com',
+      'kuaishou': 'https://live.kuaishou.com',
+      'cc': 'https://cc.163.com',
+      'twitch': 'https://www.twitch.tv',
+      'soop': 'https://www.sooplive.co.kr',
+      'yy': 'https://www.yy.com',
+    };
+
+    for (final entry in expectedOrigins.entries) {
+      final headers = await PlaybackHeaderResolver.resolve(platform: entry.key, roomId: 'room 1');
+      expect(headers['origin'], entry.value, reason: entry.key);
+      expect(headers['referer'], isNotEmpty, reason: entry.key);
+      expect(headers['user-agent'], isNotEmpty, reason: entry.key);
+      expect(headers.keys, everyElement(matches(RegExp(r'^[a-z0-9-]+$'))), reason: entry.key);
+      expect(headers.values, everyElement(isNot(contains('\n'))), reason: entry.key);
+    }
+  });
 }

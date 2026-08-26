@@ -22,7 +22,30 @@ class RecorderContinuationPolicy {
       'permission denied',
       'unable to open output',
       'error opening output',
+      'option not found',
+      'unrecognized option',
+      'unknown protocol',
+      'protocol not found',
+      'muxer not found',
+      'invalid data found when processing output',
+      'file exists',
     ];
     return !fatalMarkers.any(normalizedLogs.contains);
+  }
+
+  static Duration pollingDelay({
+    required int failureCount,
+    required int baseSeconds,
+    required int maximumSeconds,
+    required bool enableBackoff,
+  }) {
+    final base = baseSeconds.clamp(1, 86400);
+    final maximum = maximumSeconds.clamp(base, 86400);
+    if (!enableBackoff || failureCount <= 0) return Duration(seconds: base);
+
+    // Cap before shifting to keep corrupt persisted counters bounded.
+    final exponent = failureCount.clamp(0, 20);
+    final seconds = (base * (1 << exponent)).clamp(base, maximum);
+    return Duration(seconds: seconds);
   }
 }

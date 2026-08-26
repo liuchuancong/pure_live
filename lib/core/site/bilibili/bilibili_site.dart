@@ -11,6 +11,7 @@ import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/common/convert_helper.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/danmaku/bilibili_danmaku.dart';
+import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 
 class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LivePlayUrlResolver {
@@ -195,7 +196,14 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LivePlayUrlResolv
 
     final ordered = accepted.toList()..sort((a, b) => b.compareTo(a));
     return ordered
-        .map((qn) => LivePlayQuality(quality: descriptions[qn] ?? '清晰度 $qn', id: qn, data: qn, sort: qn))
+        .map(
+          (qn) => LivePlayQuality(
+            quality: LiveQualityLabel.normalize(platform: Sites.bilibiliSite, rawLabel: descriptions[qn] ?? '', id: qn),
+            id: qn,
+            data: qn,
+            sort: qn,
+          ),
+        )
         .toList(growable: false);
   }
 

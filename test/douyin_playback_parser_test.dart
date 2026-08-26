@@ -59,5 +59,86 @@ void main() {
       expect(qualities.map((quality) => quality.quality), ['原画', '高清']);
       expect(qualities.map((quality) => quality.selectionId), ['origin', 'hd']);
     });
+
+    test('localizes SDK labels and ranks semantic tiers before instantaneous bitrate', () {
+      final streamData = jsonEncode({
+        'data': {
+          'origin': {
+            'main': {'flv': 'https://cdn.test/source.flv'},
+          },
+          'hd': {
+            'main': {'flv': 'https://cdn.test/hd.flv'},
+          },
+          'sd': {
+            'main': {'flv': 'https://cdn.test/sd.flv'},
+          },
+          'ld': {
+            'main': {'flv': 'https://cdn.test/ld.flv'},
+          },
+        },
+      });
+      final qualities = DouyinSite.parseStreamQualities({
+        'live_core_sdk_data': {
+          'pull_data': {
+            'stream_data': streamData,
+            'options': {
+              'qualities': [
+                // A source stream may report a lower instantaneous bitrate
+                // than a transcoded tier. sdk_key/level is the hierarchy.
+                {'name': 'origin', 'sdk_key': 'origin', 'level': 4, 'v_bit_rate': 1200000},
+                {'name': 'HD', 'sdk_key': 'HD', 'level': 3, 'v_bit_rate': 3000000},
+                {'name': 'SD', 'sdk_key': 'SD', 'level': 2, 'v_bit_rate': 1500000},
+                {'name': 'LD', 'sdk_key': 'LD', 'level': 1, 'v_bit_rate': 600000},
+              ],
+            },
+          },
+        },
+      });
+
+      expect(qualities.map((quality) => quality.quality), ['原画', '超清', '高清', '标清']);
+      expect(qualities.map((quality) => quality.selectionId), ['origin', 'hd', 'sd', 'ld']);
+    });
+
+    test('covers legacy quality keys, sdk metadata and duplicate source aliases', () {
+      final sharedSource = 'https://cdn.test/source.flv';
+      final streamData = jsonEncode({
+        'data': {
+          'origin': {
+            'main': {'flv': sharedSource},
+          },
+          'FULL_HD1': {
+            'main': {'flv': 'https://cdn.test/blue.flv'},
+          },
+          'HD1': {
+            'main': {'flv': 'https://cdn.test/super.flv'},
+          },
+          'SD2': {
+            'main': {'flv': 'https://cdn.test/high.flv'},
+          },
+          'SD1': {
+            'main': {'flv': 'https://cdn.test/standard.flv'},
+          },
+          'MD': {
+            'main': {
+              'flv': 'https://cdn.test/smooth.flv',
+              'sdk_params': jsonEncode({'vbitrate': 300000, 'resolution': '360x640'}),
+            },
+          },
+          'ORIGION': {
+            'main': {'flv': sharedSource},
+          },
+        },
+      });
+
+      final qualities = DouyinSite.parseStreamQualities({
+        'live_core_sdk_data': {
+          'pull_data': {'stream_data': streamData},
+        },
+      });
+
+      expect(qualities.map((quality) => quality.quality), ['原画', '蓝光', '超清', '高清', '标清', '流畅']);
+      expect(qualities.map((quality) => quality.selectionId), ['origin', 'full_hd1', 'hd1', 'sd2', 'sd1', 'md']);
+      expect(qualities.last.sort, 1000000);
+    });
   });
 }

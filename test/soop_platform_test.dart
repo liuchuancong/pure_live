@@ -45,16 +45,18 @@ void main() {
           data: {
             'viewpreset': [
               {'name': 'auto', 'bps': 0},
-              {'name': 'original', 'bps': '8000000'},
+              {'name': 'AUTO', 'bps': 0},
+              {'name': 'original', 'bps': '0'},
               {'name': 'hd', 'bps': 2000000},
-              {'name': 'hd', 'bps': 1000000},
+              {'name': 'HD', 'bps': 1000000},
             ],
           },
         ),
       );
 
       expect(qualities.map((quality) => quality.selectionId), ['original', 'hd']);
-      expect(qualities.map((quality) => quality.sort), [8000000, 2000000]);
+      expect(qualities.map((quality) => quality.quality), ['原画', '高清']);
+      expect(qualities.first.sort, greaterThan(qualities.last.sort));
     });
   });
 }

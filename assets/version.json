@@ -1,21 +1,21 @@
 {
-  "version": "3.0.11",
-  "build_number": 4099,
-  "version_num": 300114099,
-  "version_desc": "- 清理存在跨模式比例污染的 3.0.10 草稿与标签，以 3.0.9 稳定渲染链为基线重新修复。\n- 根因是全屏竖屏布局把特殊 BoxFit 写进普通页、全屏、小窗共用的播放器适配器/原生控制器，切换重建时最后写入者会改变另外两种模式。\n- 新实现只在横屏全屏路由约束解码视频图层为可信节目比例，控制层继续覆盖整屏；播放器接口、MediaKit/Fijk/BetterPlayer fit 状态和其他入口保持原合同。\n- 竖屏全屏两侧增加封面/头像回退的暗化模糊背景与渐变兜底；普通横屏、普通竖屏、应用小窗和 Android PiP 不进入该局部视口。\n- 新增共享播放器从竖屏全屏返回普通页的确定性回归，核对视频视口、整屏控件和用户 fit 全程不被重写。",
+  "version": "3.0.12",
+  "build_number": 4100,
+  "version_num": 300124100,
+  "version_desc": "- 全面核对哔哩哔哩、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP、YY 与 IPTV 的画质名称、排序、稳定请求 ID 和实际 URL 归属。\n- 抖音新旧 SDK 档位统一中文化：原画、蓝光、超清、高清、标清、流畅；补齐 MD/sdk_params，并去除指向同一源的伪重复选项。\n- 哔哩哔哩回读实际 current_qn，斗鱼保留服务端 rate 顺序，虎牙正确处理 ratio，SOOP 始终发送原 preset，CC/Twitch/SOOP 源流缺码率仍保持原画优先。\n- 录制每次重试刷新签名 URL 并轮换 CDN；FFmpeg 事件使用 session 代次、有界重连和协议专用参数，迟到回调不再串线。\n- 分片按尝试隔离，MP4 使用 partial 原子提交；失败保留 TS，崩溃恢复兼容旧分片，活跃目录引用计数保护。\n- 签名 CDN URL 不再持久化，日志敏感字段脱敏；缓存清理、轮询、取消与关闭路径均设置有限资源边界。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.11",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.12",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.0.11",
-      "build_number": 4099,
-      "version_num": 300114099,
-      "version_desc": "- 清理存在跨模式比例污染的 3.0.10 草稿与标签，以 3.0.9 稳定渲染链为基线重新修复。\n- 根因是全屏竖屏布局把特殊 BoxFit 写进普通页、全屏、小窗共用的播放器适配器/原生控制器，切换重建时最后写入者会改变另外两种模式。\n- 新实现只在横屏全屏路由约束解码视频图层为可信节目比例，控制层继续覆盖整屏；播放器接口、MediaKit/Fijk/BetterPlayer fit 状态和其他入口保持原合同。\n- 竖屏全屏两侧增加封面/头像回退的暗化模糊背景与渐变兜底；普通横屏、普通竖屏、应用小窗和 Android PiP 不进入该局部视口。\n- 新增共享播放器从竖屏全屏返回普通页的确定性回归，核对视频视口、整屏控件和用户 fit 全程不被重写。",
+      "version": "3.0.12",
+      "build_number": 4100,
+      "version_num": 300124100,
+      "version_desc": "- 全面核对哔哩哔哩、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP、YY 与 IPTV 的画质名称、排序、稳定请求 ID 和实际 URL 归属。\n- 抖音新旧 SDK 档位统一中文化：原画、蓝光、超清、高清、标清、流畅；补齐 MD/sdk_params，并去除指向同一源的伪重复选项。\n- 哔哩哔哩回读实际 current_qn，斗鱼保留服务端 rate 顺序，虎牙正确处理 ratio，SOOP 始终发送原 preset，CC/Twitch/SOOP 源流缺码率仍保持原画优先。\n- 录制每次重试刷新签名 URL 并轮换 CDN；FFmpeg 事件使用 session 代次、有界重连和协议专用参数，迟到回调不再串线。\n- 分片按尝试隔离，MP4 使用 partial 原子提交；失败保留 TS，崩溃恢复兼容旧分片，活跃目录引用计数保护。\n- 签名 CDN URL 不再持久化，日志敏感字段脱敏；缓存清理、轮询、取消与关闭路径均设置有限资源边界。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.11",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.12",
       "android_abis": [
         "arm64-v8a"
       ]

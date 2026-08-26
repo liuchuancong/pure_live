@@ -1,16 +1,21 @@
 import 'dart:async';
 import 'dart:developer';
+
+import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart' hide Log;
 import 'package:flutter/services.dart';
 import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
-import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart' hide Log;
-
 
 class FFmpegRecordSession {
+  FFmpegRecordSession({required this.taskId, required this.sessionId, required this.session});
+
   final String taskId;
-  int? sessionId;
+  final int sessionId;
+  final FFmpegSession session;
+  final Completer<void> completion = Completer<void>();
+
   bool manualStop = false;
   int recordedSeconds = 0;
   int fileSize = 0;
@@ -18,12 +23,11 @@ class FFmpegRecordSession {
   double speed = 0;
   double fps = 0;
   DateTime lastUpdate = DateTime.now();
-  FFmpegSession? session;
-  FFmpegRecordSession({required this.taskId});
 }
 
 class FFmpegService {
   FFmpegService._internal();
+
   static final FFmpegService _instance = FFmpegService._internal();
   static FFmpegService get to => _instance;
 
@@ -44,104 +48,109 @@ class FFmpegService {
     required String command,
     required void Function(FFmpegEvent event) onEvent,
   }) async {
-    // Prewarming at application startup is best-effort. Keep this guard at
-    // the service boundary because audio extraction and video processing also
-    // call FFmpegService directly instead of going through FFmpegManager.
     await _ensureInitialized();
-    onEvent(FFmpegEvent(taskId: taskId, type: FFmpegEventType.started));
+    if (_sessions.containsKey(taskId)) {
+      throw StateError('FFmpeg task is already active: $taskId');
+    }
 
-    final ffempgSession = FFmpegKit.createSession(command);
-
-    final session = FFmpegRecordSession(taskId: taskId);
+    final nativeSession = FFmpegKit.createSession(command);
+    final session = FFmpegRecordSession(
+      taskId: taskId,
+      sessionId: nativeSession.getSessionId(),
+      session: nativeSession,
+    );
     _sessions[taskId] = session;
-    session.session = ffempgSession;
-    session.sessionId = ffempgSession.getSessionId();
-    ffempgSession.setStatisticsCallback((s) {
+
+    nativeSession.setStatisticsCallback((statistics) {
+      if (!identical(_sessions[taskId], session)) return;
       session
-        ..recordedSeconds = s.time ~/ 1000
-        ..fileSize = s.size
-        ..bitrate = s.bitrate
-        ..speed = s.speed
-        ..fps = s.videoFps
+        ..recordedSeconds = statistics.time ~/ 1000
+        ..fileSize = statistics.size
+        ..bitrate = statistics.bitrate
+        ..speed = statistics.speed
+        ..fps = statistics.videoFps
         ..lastUpdate = DateTime.now();
 
-      onEvent(
+      _safeEmit(
+        onEvent,
         FFmpegEvent(
           taskId: taskId,
           type: FFmpegEventType.progress,
-          data: {"time": s.time, "size": s.size, "bitrate": s.bitrate, "speed": s.speed, "fps": s.videoFps},
+          data: {
+            'sessionId': session.sessionId,
+            'time': statistics.time,
+            'size': statistics.size,
+            'bitrate': statistics.bitrate,
+            'speed': statistics.speed,
+            'fps': statistics.videoFps,
+          },
         ),
       );
     });
-    ffempgSession.setCompleteCallback((completedSession) async {
-      final code = completedSession.getReturnCode();
-      bool isNormalExit = [
-        0, // 正常结束（直播间下播）
-        255, // 用户手动点击停止
-        -1094995529, // 断流/无数据
-        -1077350400, // 超时/网络断开
-        -1005272104, // 读取中断
-      ].contains(code);
 
-      Log.i('FFmpeg complete => taskId: $taskId; code: $code');
+    nativeSession.setCompleteCallback((completedSession) {
+      try {
+        final code = completedSession.getReturnCode();
+        final manuallyStopped = session.manualStop;
+        final isNormalExit = manuallyStopped || code == 0 || code == -541478725;
+        Log.i('FFmpeg complete => taskId: $taskId; sessionId: ${session.sessionId}; code: $code');
 
-      String userFriendlyMessage = '录制遇到未知错误 (代码: $code)';
-      Map<String, dynamic> errorData = {"code": code};
-      if (!isNormalExit) {
-        try {
-          final String logs = completedSession.getLogs() ?? '';
-          Log.i('FFmpeg 原始错误日志:\n$logs');
-          final lowerLogs = logs.toLowerCase();
-          errorData["raw_logs"] = lowerLogs;
-          // 1. 路径与权限错误
-          if (code == -2 || lowerLogs.contains('no such file') || lowerLogs.contains('permission denied')) {
-            userFriendlyMessage = i18n('path_or_permission_error');
-          }
-          // 2. 拦截 404 错误（原逻辑在此处有重复条件，现已优化合并）
-          else if (lowerLogs.contains('server returned 404') || lowerLogs.contains('http error 404')) {
-            userFriendlyMessage = i18n('url_expired_404');
-          }
-          // 3. 拦截 403 错误
-          else if (lowerLogs.contains('server returned 403') || lowerLogs.contains('http error 403')) {
-            userFriendlyMessage = i18n('url_forbidden_403');
-          }
-          // 4. 拦截连接超时
-          else if (lowerLogs.contains('connection timed out') || lowerLogs.contains('timed out')) {
-            userFriendlyMessage = i18n('timeout');
-          }
-          // 5. 拦截参数错误
-          else if (lowerLogs.contains('invalid argument')) {
-            userFriendlyMessage = i18n('param_error');
-          }
-          // 6. 拦截流地址格式无法打开
-          else if (lowerLogs.contains('unable to open')) {
-            userFriendlyMessage = i18n('invalid_stream_format');
-          }
-          // 7. 兜底未知错误：提取最后一行并使用具名参数传给国际化
-          else if (logs.trim().isNotEmpty) {
-            final lastLogLine = logs.trim().split('\n').last;
-            userFriendlyMessage = i18n('unknown_error', args: {'error_log': lastLogLine});
-          }
-        } catch (e) {
-          Log.i('解析 FFmpeg 日志时发生异常: $e');
+        final rawLogs = completedSession.getLogs() ?? '';
+        final diagnosticLogs = _sanitizeLogs(rawLogs).toLowerCase();
+        final errorData = <String, dynamic>{
+          'sessionId': session.sessionId,
+          'code': code,
+          'manualStop': manuallyStopped,
+          if (!isNormalExit) 'raw_logs': diagnosticLogs,
+        };
+        if (!isNormalExit) {
+          errorData['message'] = _friendlyError(code, diagnosticLogs);
         }
 
-        // 传递给 UI 层调用
-        errorData["message"] = userFriendlyMessage;
+        _safeEmit(
+          onEvent,
+          FFmpegEvent(
+            taskId: taskId,
+            type: isNormalExit ? FFmpegEventType.complete : FFmpegEventType.error,
+            data: errorData,
+          ),
+        );
+      } finally {
+        if (identical(_sessions[taskId], session)) _sessions.remove(taskId);
+        if (!session.completion.isCompleted) session.completion.complete();
       }
-
-      onEvent(
-        FFmpegEvent(
-          taskId: taskId,
-          type: isNormalExit ? FFmpegEventType.complete : FFmpegEventType.error,
-          data: {...errorData, "manualStop": session.manualStop},
-        ),
-      );
-
-      _sessions.remove(taskId);
     });
 
-    await ffempgSession.executeAsync();
+    _safeEmit(
+      onEvent,
+      FFmpegEvent(taskId: taskId, type: FFmpegEventType.started, data: {'sessionId': session.sessionId}),
+    );
+
+    try {
+      await nativeSession.executeAsync();
+    } catch (error, stackTrace) {
+      Log.e('FFmpeg execution failed before native completion: $error', stackTrace);
+      if (identical(_sessions[taskId], session)) {
+        _sessions.remove(taskId);
+        _safeEmit(
+          onEvent,
+          FFmpegEvent(
+            taskId: taskId,
+            type: FFmpegEventType.error,
+            data: {
+              'sessionId': session.sessionId,
+              'code': -1,
+              'manualStop': session.manualStop,
+              'raw_logs': _sanitizeLogs(error.toString()).toLowerCase(),
+              'message': i18n('unknown_error', args: {'error_log': _sanitizeLogs(error.toString())}),
+            },
+          ),
+        );
+      }
+    } finally {
+      if (identical(_sessions[taskId], session)) _sessions.remove(taskId);
+      if (!session.completion.isCompleted) session.completion.complete();
+    }
   }
 
   Future<void> _ensureInitialized() async {
@@ -163,14 +172,54 @@ class FFmpegService {
     final session = _sessions[taskId];
     if (session == null) return;
     session.manualStop = true;
-    final ffempgSession = session.session;
-    if (ffempgSession == null) {
-      return;
+    log('FFmpeg stop => $taskId (${session.sessionId})');
+    FFmpegKit.cancel(session.session);
+    try {
+      await session.completion.future.timeout(const Duration(seconds: 10));
+    } on TimeoutException {
+      Log.w('FFmpeg stop timeout => taskId: $taskId; sessionId: ${session.sessionId}');
     }
-    log('FFmpeg stop => $taskId');
-    FFmpegKit.cancel(ffempgSession);
   }
 
   FFmpegRecordSession? getSession(String taskId) => _sessions[taskId];
   bool isRunning(String taskId) => _sessions.containsKey(taskId);
+
+  static void _safeEmit(void Function(FFmpegEvent event) onEvent, FFmpegEvent event) {
+    try {
+      onEvent(event);
+    } catch (error, stackTrace) {
+      Log.e('FFmpeg event listener failed: $error', stackTrace);
+    }
+  }
+
+  static String _friendlyError(int code, String logs) {
+    if (code == -2 || logs.contains('no such file') || logs.contains('permission denied')) {
+      return i18n('path_or_permission_error');
+    }
+    if (logs.contains('server returned 404') || logs.contains('http error 404')) {
+      return i18n('url_expired_404');
+    }
+    if (logs.contains('server returned 403') || logs.contains('http error 403')) {
+      return i18n('url_forbidden_403');
+    }
+    if (logs.contains('connection timed out') || logs.contains('timed out')) {
+      return i18n('timeout');
+    }
+    if (logs.contains('invalid argument') || logs.contains('option not found')) {
+      return i18n('param_error');
+    }
+    if (logs.contains('unable to open') || logs.contains('error opening input')) {
+      return i18n('invalid_stream_format');
+    }
+    final lines = logs.trim().split('\n');
+    final lastLine = lines.isEmpty ? '' : lines.last.trim();
+    return i18n('unknown_error', args: {'error_log': lastLine.isEmpty ? 'code $code' : lastLine});
+  }
+
+  static String _sanitizeLogs(String logs) {
+    return logs
+        .replaceAll(RegExp(r'(?:https?|rtmps?|rtsp|srt|udp|rtp)://[^\s]+', caseSensitive: false), '[stream-url]')
+        .replaceAll(RegExp(r'^(cookie|authorization):.*$', caseSensitive: false, multiLine: true), r'$1: [redacted]')
+        .replaceAll(RegExp(r'(token|sign|auth|key)=([^&\s]+)', caseSensitive: false), r'$1=[redacted]');
+  }
 }
