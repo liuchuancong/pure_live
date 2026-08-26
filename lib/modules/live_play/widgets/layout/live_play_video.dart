@@ -5,17 +5,23 @@ import 'package:pure_live/modules/live_play/widgets/video_player/video_loading.d
 import 'package:pure_live/modules/live_play/widgets/placeholder/not_living_video_widget.dart';
 
 class LivePlayVideo extends StatelessWidget {
-  const LivePlayVideo({super.key, required this.controller, this.expandToParent = false});
+  const LivePlayVideo({
+    super.key,
+    required this.controller,
+    this.expandToParent = false,
+    this.transparentSurface = false,
+  });
 
   final LivePlayController controller;
   final bool expandToParent;
+  final bool transparentSurface;
 
   @override
   Widget build(BuildContext context) {
     return LivePlayVideoFrame(
       expandToParent: expandToParent,
       child: ColoredBox(
-        color: Colors.black,
+        color: transparentSurface ? Colors.transparent : Colors.black,
         child: Obx(() {
           final state = controller.state.value;
           final videoController = state.player.videoController;
@@ -29,8 +35,11 @@ class LivePlayVideo extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               ColoredBox(
-                color: Colors.black,
-                child: VideoPlayer(controller: videoController),
+                color: transparentSurface ? Colors.transparent : Colors.black,
+                child: VideoPlayer(
+                  controller: videoController,
+                  surfaceColor: transparentSurface ? Colors.transparent : Colors.black,
+                ),
               ),
             ],
           );

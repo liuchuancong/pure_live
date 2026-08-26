@@ -83,8 +83,48 @@ void main() {
     final video = tester.getRect(find.byKey(const ValueKey('portrait-video')));
     final danmaku = tester.getRect(find.byKey(const ValueKey('portrait-danmaku')));
     expect(find.byKey(const ValueKey('live-play-adaptive-video-frame')), findsOneWidget);
-    expect(video.height, greaterThan(390 / (16 / 9)));
+    expect(find.byKey(const ValueKey('live-play-portrait-sheet')), findsOneWidget);
+    expect(video.height, 780);
     expect(danmaku.height, greaterThanOrEqualTo(200));
+  });
+
+  testWidgets('portrait interaction sheet has bounded drag stops independent from list scrolling', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 780));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: PortraitLiveRoomLayout(
+            mode: PortraitLayoutMode.balanced,
+            video: ColoredBox(color: Colors.black),
+            resolution: SizedBox(height: 44),
+            danmaku: ColoredBox(color: Colors.white),
+          ),
+        ),
+      ),
+    );
+
+    final before = tester.getSize(find.byKey(const ValueKey('live-play-portrait-sheet'))).height;
+    await tester.drag(find.byKey(const ValueKey('live-play-portrait-sheet-handle')), const Offset(0, -180));
+    await tester.pump();
+    final after = tester.getSize(find.byKey(const ValueKey('live-play-portrait-sheet'))).height;
+    final range = portraitPanelRange(780, PortraitLayoutMode.balanced);
+    expect(after, greaterThan(before));
+    expect(after, inInclusiveRange(range.minimum, range.maximum));
+  });
+
+  testWidgets('portrait fullscreen presentation keeps its child above the ambient layer', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: PortraitFullscreenPresentation(
+          coverUrl: '',
+          child: ColoredBox(key: ValueKey('portrait-fullscreen-video'), color: Colors.transparent),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const ValueKey('fullscreen-portrait-presentation')), findsOneWidget);
+    expect(find.byKey(const ValueKey('portrait-fullscreen-video')), findsOneWidget);
   });
 
   testWidgets('generic live video keeps 16:9 unless its caller owns an explicit frame', (tester) async {

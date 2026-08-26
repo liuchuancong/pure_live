@@ -39,30 +39,7 @@ class FloatingPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
   override fun onMethodCall(call: MethodCall, result: Result) {
     if (call.method == "enablePip") {
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val builder = PictureInPictureParams.Builder()
-          .setAspectRatio(
-            Rational(
-              call.argument("numerator") ?: 16,
-              call.argument("denominator") ?: 9
-            )
-          )
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-          // Video and Flutter textures can resize without a screenshot-style
-          // cross-fade; this keeps the system transition continuous.
-          builder.setSeamlessResizeEnabled(true)
-        }
-        val sourceRectHintLTRB = call.argument<List<Int>>("sourceRectHintLTRB")
-        if (sourceRectHintLTRB?.size == 4) {
-          val bounds = Rect(
-            sourceRectHintLTRB[0],
-            sourceRectHintLTRB[1],
-            sourceRectHintLTRB[2],
-            sourceRectHintLTRB[3]
-          )
-          builder.setSourceRectHint(bounds)
-        }
-
-
+        val builder = buildPictureInPictureParams(call)
         val autoEnable = call.argument<Boolean>("autoEnable") ?: false
         if (autoEnable && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
           builder.setAutoEnterEnabled(true)
@@ -84,6 +61,11 @@ class FloatingPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
       } else {
         result.success(activity.enterPictureInPictureMode())
       }
+    } else if (call.method == "updatePip") {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        activity.setPictureInPictureParams(buildPictureInPictureParams(call).build())
+      }
+      result.success(true)
     } else if (call.method == "pipAvailable") {
       result.success(
           activity.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
@@ -102,6 +84,32 @@ class FloatingPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
      {
       result.notImplemented()
     }
+  }
+
+  @RequiresApi(Build.VERSION_CODES.O)
+  private fun buildPictureInPictureParams(call: MethodCall): PictureInPictureParams.Builder {
+    val builder = PictureInPictureParams.Builder()
+      .setAspectRatio(
+        Rational(
+          call.argument("numerator") ?: 16,
+          call.argument("denominator") ?: 9
+        )
+      )
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+      builder.setSeamlessResizeEnabled(true)
+    }
+    val sourceRectHintLTRB = call.argument<List<Int>>("sourceRectHintLTRB")
+    if (sourceRectHintLTRB?.size == 4) {
+      builder.setSourceRectHint(
+        Rect(
+          sourceRectHintLTRB[0],
+          sourceRectHintLTRB[1],
+          sourceRectHintLTRB[2],
+          sourceRectHintLTRB[3]
+        )
+      )
+    }
+    return builder
   }
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {

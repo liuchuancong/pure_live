@@ -1,21 +1,21 @@
 {
-  "version": "3.0.4",
-  "build_number": 4092,
-  "version_num": 300044092,
-  "version_desc": "- 修正移动端多层比例控制：普通页、横屏全屏、系统画中画和应用内小窗共享唯一可信显示比例。\n- 稳定横屏、竖屏和近方形源保留真实比例；缺失、瞬态或异常解码尺寸按展示方向安全回退，避免画面被压成细条。\n- 移动端播放器适配器在统一画框内填充，桌面继续保留原生缩放与 Windows 可见视口策略。\n- 直播记录显示完整本地日期时间，保留数量支持任意正整数，0 表示保留全部记录；升级、备份与恢复语义一致。\n- 同步并审查上游到 c7d99cc3，吸收录制权限检查并保留经过回归的返回、FFmpeg 预热与 HTTPS 校验策略。\n- 增加可信比例、移动端统一画框、普通页/全屏/小窗和历史记录回归；本轮只构建 Android arm64-v8a Release。",
+  "version": "3.0.5",
+  "build_number": 4093,
+  "version_num": 300054093,
+  "version_desc": "- 新增双证据 Video Geometry Engine：解码元数据与两帧低分辨率有效画面分析共同识别竖屏直播。\n- 修复 16:9 编码画布内嵌 9:16 节目时的误判与拉伸；先裁去高置信对称黑边，再执行唯一缩放层。\n- 房间、线路和清晰度切换使用几何代际隔离，并以短时房间缓存减少重进时的比例跳变。\n- 普通竖屏页新增收起/中间/展开三档互动面板；横屏全屏增加低成本模糊暗化背景。\n- Android PiP 在稳定比例变化后更新活动窗口参数，应用内小窗同步跟随有效竖屏比例。\n- 暗场、转场和低置信画面保持解码比例；普通横屏、方形与未知源继续既有布局和 16:9 小窗。\n- Analyze 0 问题，定向几何/裁边/布局回归通过；本轮不合并上游，只构建 Android arm64-v8a Release。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.4",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.5",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.0.4",
-      "build_number": 4092,
-      "version_num": 300044092,
-      "version_desc": "- 修正移动端多层比例控制：普通页、横屏全屏、系统画中画和应用内小窗共享唯一可信显示比例。\n- 稳定横屏、竖屏和近方形源保留真实比例；缺失、瞬态或异常解码尺寸按展示方向安全回退，避免画面被压成细条。\n- 移动端播放器适配器在统一画框内填充，桌面继续保留原生缩放与 Windows 可见视口策略。\n- 直播记录显示完整本地日期时间，保留数量支持任意正整数，0 表示保留全部记录；升级、备份与恢复语义一致。\n- 同步并审查上游到 c7d99cc3，吸收录制权限检查并保留经过回归的返回、FFmpeg 预热与 HTTPS 校验策略。\n- 增加可信比例、移动端统一画框、普通页/全屏/小窗和历史记录回归；本轮只构建 Android arm64-v8a Release。",
+      "version": "3.0.5",
+      "build_number": 4093,
+      "version_num": 300054093,
+      "version_desc": "- 新增双证据 Video Geometry Engine：解码元数据与两帧低分辨率有效画面分析共同识别竖屏直播。\n- 修复 16:9 编码画布内嵌 9:16 节目时的误判与拉伸；先裁去高置信对称黑边，再执行唯一缩放层。\n- 房间、线路和清晰度切换使用几何代际隔离，并以短时房间缓存减少重进时的比例跳变。\n- 普通竖屏页新增收起/中间/展开三档互动面板；横屏全屏增加低成本模糊暗化背景。\n- Android PiP 在稳定比例变化后更新活动窗口参数，应用内小窗同步跟随有效竖屏比例。\n- 暗场、转场和低置信画面保持解码比例；普通横屏、方形与未知源继续既有布局和 16:9 小窗。\n- Analyze 0 问题，定向几何/裁边/布局回归通过；本轮不合并上游，只构建 Android arm64-v8a Release。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.4",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.5",
       "android_abis": [
         "arm64-v8a"
       ]

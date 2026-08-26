@@ -12,6 +12,65 @@ enum PortraitFullscreenPolicy { followSource, followSystem, landscape }
 
 enum PortraitDanmakuMode { followGlobal, upperQuarter, reduced, hidden }
 
+/// Evidence currently driving the effective video geometry.
+///
+/// Decoder metadata is the fast default. A cached value may be shown while a
+/// room reconnects, and a high-confidence active-content probe may refine a
+/// landscape canvas that actually contains a portrait programme with pillar
+/// bars. Manual room overrides remain a presentation policy and are therefore
+/// intentionally kept outside this enum.
+enum VideoGeometryEvidence { unknown, cache, decoderMetadata, activeContent }
+
+@immutable
+class NormalizedVideoInsets {
+  const NormalizedVideoInsets({this.left = 0, this.top = 0, this.right = 0, this.bottom = 0});
+
+  static const none = NormalizedVideoInsets();
+
+  final double left;
+  final double top;
+  final double right;
+  final double bottom;
+
+  double get widthFraction => (1 - left - right).clamp(0.0, 1.0).toDouble();
+  double get heightFraction => (1 - top - bottom).clamp(0.0, 1.0).toDouble();
+  bool get hasCrop => left > 0.001 || top > 0.001 || right > 0.001 || bottom > 0.001;
+
+  bool get isValid =>
+      left.isFinite &&
+      top.isFinite &&
+      right.isFinite &&
+      bottom.isFinite &&
+      left >= 0 &&
+      top >= 0 &&
+      right >= 0 &&
+      bottom >= 0 &&
+      widthFraction > 0.10 &&
+      heightFraction > 0.10;
+
+  double applyToAspectRatio(double encodedAspectRatio) {
+    if (!isValid || !encodedAspectRatio.isFinite || encodedAspectRatio <= 0) return encodedAspectRatio;
+    return encodedAspectRatio * widthFraction / heightFraction;
+  }
+
+  bool isNear(NormalizedVideoInsets other, {double tolerance = 0.035}) {
+    return (left - other.left).abs() <= tolerance &&
+        (top - other.top).abs() <= tolerance &&
+        (right - other.right).abs() <= tolerance &&
+        (bottom - other.bottom).abs() <= tolerance;
+  }
+}
+
+@immutable
+class ActiveVideoContentObservation {
+  const ActiveVideoContentObservation({required this.insets, required this.confidence});
+
+  final NormalizedVideoInsets insets;
+  final double confidence;
+
+  bool get isReliable => insets.isValid && confidence.isFinite && confidence >= 0.86;
+}
+
 @immutable
 class VideoGeometrySnapshot {
   const VideoGeometrySnapshot({
@@ -23,6 +82,10 @@ class VideoGeometrySnapshot {
     required this.stableSampleCount,
     required this.confidence,
     required this.observedAt,
+    this.activeContentInsets = NormalizedVideoInsets.none,
+    this.activeContentConfidence = 0,
+    this.evidence = VideoGeometryEvidence.decoderMetadata,
+    this.isProvisional = false,
   });
 
   const VideoGeometrySnapshot.unknown()
@@ -33,7 +96,11 @@ class VideoGeometrySnapshot {
       candidateOrientation = VideoSourceOrientation.unknown,
       stableSampleCount = 0,
       confidence = 0,
-      observedAt = null;
+      observedAt = null,
+      activeContentInsets = NormalizedVideoInsets.none,
+      activeContentConfidence = 0,
+      evidence = VideoGeometryEvidence.unknown,
+      isProvisional = false;
 
   final int width;
   final int height;
@@ -47,9 +114,16 @@ class VideoGeometrySnapshot {
   final int stableSampleCount;
   final double confidence;
   final DateTime? observedAt;
+  final NormalizedVideoInsets activeContentInsets;
+  final double activeContentConfidence;
+  final VideoGeometryEvidence evidence;
+  final bool isProvisional;
 
   bool get hasValidDimensions => width > 0 && height > 0 && aspectRatio.isFinite;
   bool get isStable => orientation != VideoSourceOrientation.unknown && orientation == candidateOrientation;
+  bool get hasActiveContentCrop => activeContentInsets.hasCrop && activeContentConfidence >= 0.86;
+  double get effectiveAspectRatio =>
+      hasActiveContentCrop ? activeContentInsets.applyToAspectRatio(aspectRatio) : aspectRatio;
 
   VideoGeometrySnapshot copyWith({
     int? width,
@@ -60,6 +134,10 @@ class VideoGeometrySnapshot {
     int? stableSampleCount,
     double? confidence,
     DateTime? observedAt,
+    NormalizedVideoInsets? activeContentInsets,
+    double? activeContentConfidence,
+    VideoGeometryEvidence? evidence,
+    bool? isProvisional,
   }) {
     return VideoGeometrySnapshot(
       width: width ?? this.width,
@@ -70,6 +148,10 @@ class VideoGeometrySnapshot {
       stableSampleCount: stableSampleCount ?? this.stableSampleCount,
       confidence: confidence ?? this.confidence,
       observedAt: observedAt ?? this.observedAt,
+      activeContentInsets: activeContentInsets ?? this.activeContentInsets,
+      activeContentConfidence: activeContentConfidence ?? this.activeContentConfidence,
+      evidence: evidence ?? this.evidence,
+      isProvisional: isProvisional ?? this.isProvisional,
     );
   }
 }
@@ -98,6 +180,8 @@ class PortraitStreamDetector {
   VideoSourceOrientation _pending = VideoSourceOrientation.unknown;
   DateTime? _pendingSince;
   int _pendingSamples = 0;
+  ActiveVideoContentObservation? _pendingContent;
+  int _pendingContentSamples = 0;
 
   VideoGeometrySnapshot get snapshot => _snapshot;
   DateTime? get pendingSince => _pendingSince;
@@ -107,15 +191,36 @@ class PortraitStreamDetector {
     _pending = VideoSourceOrientation.unknown;
     _pendingSince = null;
     _pendingSamples = 0;
+    _pendingContent = null;
+    _pendingContentSamples = 0;
     _snapshot = const VideoGeometrySnapshot.unknown();
+    return _snapshot;
+  }
+
+  void resetPendingEvidence() {
+    _clearPending();
+    _pendingContent = null;
+    _pendingContentSamples = 0;
+  }
+
+  /// Seeds the next decoder session from a recent stable room snapshot. It is
+  /// explicitly provisional: fresh decoder/content observations replace it,
+  /// while the UI avoids a visible 16:9 -> portrait jump during reconnects.
+  VideoGeometrySnapshot seed(VideoGeometrySnapshot cached) {
+    if (!cached.isStable || !cached.hasValidDimensions) return reset();
+    resetPendingEvidence();
+    _snapshot = cached.copyWith(evidence: VideoGeometryEvidence.cache, isProvisional: true);
     return _snapshot;
   }
 
   VideoGeometrySnapshot observe(int width, int height, {DateTime? now}) {
     if (width <= 0 || height <= 0) return _snapshot;
     final timestamp = now ?? DateTime.now();
-    final ratio = width / height;
-    if (!ratio.isFinite || ratio <= 0) return _snapshot;
+    final encodedRatio = width / height;
+    if (!encodedRatio.isFinite || encodedRatio <= 0) return _snapshot;
+    final ratio = _snapshot.hasActiveContentCrop
+        ? _snapshot.activeContentInsets.applyToAspectRatio(encodedRatio)
+        : encodedRatio;
 
     final candidate = _classify(ratio);
     if (candidate == _snapshot.orientation && candidate != VideoSourceOrientation.unknown) {
@@ -124,6 +229,7 @@ class PortraitStreamDetector {
         width: width,
         height: height,
         ratio: ratio,
+        encodedRatio: encodedRatio,
         orientation: candidate,
         candidate: candidate,
         samples: requiredSamples,
@@ -146,12 +252,47 @@ class PortraitStreamDetector {
       width: width,
       height: height,
       ratio: ratio,
+      encodedRatio: encodedRatio,
       orientation: shouldCommit ? candidate : _snapshot.orientation,
       candidate: candidate,
       samples: _pendingSamples,
       observedAt: timestamp,
     );
     if (shouldCommit) _clearPending();
+    return _snapshot;
+  }
+
+  /// Fuses an off-path, low-resolution frame probe with decoder metadata.
+  /// Two mutually consistent observations are required. This prevents a dark
+  /// scene, transition frame or danmaku overlay from resizing all player modes.
+  VideoGeometrySnapshot observeActiveContent(ActiveVideoContentObservation observation, {DateTime? now}) {
+    if (!_snapshot.hasValidDimensions || !observation.isReliable) return _snapshot;
+    if (_pendingContent?.insets.isNear(observation.insets) ?? false) {
+      _pendingContentSamples++;
+      if (observation.confidence > _pendingContent!.confidence) _pendingContent = observation;
+    } else {
+      _pendingContent = observation;
+      _pendingContentSamples = 1;
+    }
+    if (_pendingContentSamples < 2) return _snapshot;
+
+    final accepted = _pendingContent!;
+    _pendingContent = null;
+    _pendingContentSamples = 0;
+    final effectiveRatio = accepted.insets.applyToAspectRatio(_snapshot.aspectRatio);
+    final orientation = _classifyWithoutHysteresis(effectiveRatio);
+    _clearPending();
+    _snapshot = _snapshot.copyWith(
+      orientation: orientation,
+      candidateOrientation: orientation,
+      stableSampleCount: requiredSamples,
+      confidence: math.max(_snapshot.confidence, accepted.confidence),
+      observedAt: now ?? DateTime.now(),
+      activeContentInsets: accepted.insets,
+      activeContentConfidence: accepted.confidence,
+      evidence: accepted.insets.hasCrop ? VideoGeometryEvidence.activeContent : VideoGeometryEvidence.decoderMetadata,
+      isProvisional: false,
+    );
     return _snapshot;
   }
 
@@ -187,10 +328,17 @@ class PortraitStreamDetector {
     return VideoSourceOrientation.square;
   }
 
+  VideoSourceOrientation _classifyWithoutHysteresis(double ratio) {
+    if (ratio <= portraitThreshold) return VideoSourceOrientation.portrait;
+    if (ratio >= landscapeThreshold) return VideoSourceOrientation.landscape;
+    return VideoSourceOrientation.square;
+  }
+
   VideoGeometrySnapshot _buildSnapshot({
     required int width,
     required int height,
     required double ratio,
+    required double encodedRatio,
     required VideoSourceOrientation orientation,
     required VideoSourceOrientation candidate,
     required int samples,
@@ -203,12 +351,18 @@ class PortraitStreamDetector {
     return VideoGeometrySnapshot(
       width: width,
       height: height,
-      aspectRatio: ratio,
+      aspectRatio: encodedRatio,
       orientation: orientation,
       candidateOrientation: candidate,
       stableSampleCount: samples,
       confidence: confidence,
       observedAt: observedAt,
+      activeContentInsets: _snapshot.activeContentInsets,
+      activeContentConfidence: _snapshot.activeContentConfidence,
+      evidence: _snapshot.hasActiveContentCrop
+          ? VideoGeometryEvidence.activeContent
+          : VideoGeometryEvidence.decoderMetadata,
+      isProvisional: false,
     );
   }
 
@@ -246,7 +400,7 @@ class PortraitPresentationPolicy {
     required VideoGeometrySnapshot snapshot,
     required VideoSourceOrientation effectiveOrientation,
   }) {
-    final ratio = snapshot.aspectRatio;
+    final ratio = snapshot.effectiveAspectRatio;
     final valid = snapshot.hasValidDimensions && ratio > 0;
     return switch (effectiveOrientation) {
       VideoSourceOrientation.portrait =>
@@ -310,7 +464,7 @@ class PortraitPresentationPolicy {
     required bool followStablePortraitSource,
   }) {
     if (effectiveOrientation != VideoSourceOrientation.portrait) return 16 / 9;
-    if (!followStablePortraitSource || !snapshot.isStable) return 9 / 16;
+    if (!snapshot.isStable || !followStablePortraitSource) return 9 / 16;
     return resolveVideoDisplayAspectRatio(snapshot: snapshot, effectiveOrientation: effectiveOrientation);
   }
 

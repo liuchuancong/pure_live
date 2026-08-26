@@ -57,6 +57,42 @@ void main() {
       expect(transient.orientation, VideoSourceOrientation.portrait);
       expect(transient.candidateOrientation, VideoSourceOrientation.landscape);
     });
+
+    test('two active-content observations identify portrait video inside a landscape canvas', () {
+      final detector = PortraitStreamDetector();
+      final start = DateTime(2026, 1, 1);
+      detector.observe(1920, 1080, now: start);
+      detector.commitPending(now: start.add(const Duration(milliseconds: 500)));
+      const observation = ActiveVideoContentObservation(
+        insets: NormalizedVideoInsets(left: 0.3418, right: 0.3418),
+        confidence: 0.96,
+      );
+
+      expect(detector.observeActiveContent(observation).orientation, VideoSourceOrientation.landscape);
+      final active = detector.observeActiveContent(observation);
+
+      expect(active.orientation, VideoSourceOrientation.portrait);
+      expect(active.evidence, VideoGeometryEvidence.activeContent);
+      expect(active.effectiveAspectRatio, closeTo(9 / 16, 0.02));
+      expect(active.aspectRatio, closeTo(16 / 9, 0.001));
+    });
+
+    test('a cached room geometry is provisional until fresh decoder evidence arrives', () {
+      final detector = PortraitStreamDetector();
+      final cached = VideoGeometrySnapshot(
+        width: 1080,
+        height: 1920,
+        aspectRatio: 9 / 16,
+        orientation: VideoSourceOrientation.portrait,
+        candidateOrientation: VideoSourceOrientation.portrait,
+        stableSampleCount: 3,
+        confidence: 1,
+        observedAt: DateTime(2026),
+      );
+
+      expect(detector.seed(cached).isProvisional, isTrue);
+      expect(detector.observe(720, 1280).isProvisional, isFalse);
+    });
   });
 
   group('PortraitPresentationPolicy', () {

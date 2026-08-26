@@ -1,3 +1,6 @@
+import 'dart:ui' as ui;
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/live_play/states/ui_state.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
@@ -56,29 +59,18 @@ class LivePlayNormalLayout extends StatelessWidget {
         if (resolveLivePlayNormalLayout(constraints.maxWidth) == LivePlayNormalLayoutKind.portraitStack) {
           final useAdaptivePortraitFrame =
               isPortraitSource && adaptivePortraitHeight && portraitLayoutMode != PortraitLayoutMode.compatibility;
+          if (useAdaptivePortraitFrame) {
+            return PortraitLiveRoomLayout(
+              video: video,
+              resolution: resolution,
+              danmaku: danmaku,
+              mode: portraitLayoutMode,
+            );
+          }
           return Column(
             key: const ValueKey('live-play-portrait-stack'),
             children: [
-              if (useAdaptivePortraitFrame)
-                AnimatedContainer(
-                  key: const ValueKey('live-play-adaptive-video-frame'),
-                  width: constraints.maxWidth,
-                  height: PortraitPresentationPolicy.resolveNormalVideoHeight(
-                    availableWidth: constraints.maxWidth,
-                    availableHeight: constraints.maxHeight,
-                    isPortraitSource: true,
-                    sourceAspectRatio: sourceAspectRatio,
-                    adaptiveHeightEnabled: true,
-                    mode: portraitLayoutMode,
-                  ),
-                  duration: const Duration(milliseconds: 220),
-                  curve: Curves.easeOutCubic,
-                  clipBehavior: Clip.hardEdge,
-                  decoration: const BoxDecoration(color: Colors.black),
-                  child: video,
-                )
-              else
-                video,
+              video,
               resolution,
               const Divider(height: 1),
               Expanded(
@@ -112,6 +104,123 @@ class LivePlayNormalLayout extends StatelessWidget {
   }
 }
 
+/// Portrait programme presentation for a phone room.
+///
+/// The video owns the full available canvas while a three-stop interaction
+/// sheet overlays its lower edge. Users can reveal more danmaku without
+/// throwing away the tall video area, and the drag handle is isolated from the
+/// list's own scroll recognizer.
+class PortraitLiveRoomLayout extends StatefulWidget {
+  const PortraitLiveRoomLayout({
+    super.key,
+    required this.video,
+    required this.resolution,
+    required this.danmaku,
+    required this.mode,
+  });
+
+  final Widget video;
+  final Widget resolution;
+  final Widget danmaku;
+  final PortraitLayoutMode mode;
+
+  @override
+  State<PortraitLiveRoomLayout> createState() => _PortraitLiveRoomLayoutState();
+}
+
+class _PortraitLiveRoomLayoutState extends State<PortraitLiveRoomLayout> {
+  double? _panelHeight;
+
+  @override
+  void didUpdateWidget(covariant PortraitLiveRoomLayout oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.mode != widget.mode) _panelHeight = null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final range = portraitPanelRange(constraints.maxHeight, widget.mode);
+        final current = (_panelHeight ?? range.initial).clamp(range.minimum, range.maximum).toDouble();
+        return Stack(
+          key: const ValueKey('live-play-portrait-stack'),
+          fit: StackFit.expand,
+          children: [
+            Positioned.fill(
+              child: ColoredBox(
+                key: const ValueKey('live-play-adaptive-video-frame'),
+                color: Colors.black,
+                child: RepaintBoundary(child: widget.video),
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: current,
+              child: Material(
+                key: const ValueKey('live-play-portrait-sheet'),
+                color: Theme.of(context).colorScheme.surface,
+                elevation: 10,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  children: [
+                    GestureDetector(
+                      key: const ValueKey('live-play-portrait-sheet-handle'),
+                      behavior: HitTestBehavior.opaque,
+                      onVerticalDragUpdate: (details) {
+                        setState(() {
+                          _panelHeight = (current - details.delta.dy).clamp(range.minimum, range.maximum).toDouble();
+                        });
+                      },
+                      onVerticalDragEnd: (_) {
+                        final dragEndHeight = (_panelHeight ?? current).clamp(range.minimum, range.maximum).toDouble();
+                        final stops = <double>[range.minimum, range.middle, range.maximum];
+                        stops.sort((a, b) => (a - dragEndHeight).abs().compareTo((b - dragEndHeight).abs()));
+                        setState(() => _panelHeight = stops.first);
+                      },
+                      child: SizedBox(
+                        height: 24,
+                        child: Center(
+                          child: Container(
+                            width: 38,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.30),
+                              borderRadius: BorderRadius.circular(99),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    widget.resolution,
+                    const Divider(height: 1),
+                    Expanded(key: const ValueKey('live-play-portrait-danmaku'), child: widget.danmaku),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+@visibleForTesting
+({double minimum, double middle, double maximum, double initial}) portraitPanelRange(
+  double availableHeight,
+  PortraitLayoutMode mode,
+) {
+  final minimum = (availableHeight * 0.27).clamp(190.0, 250.0).toDouble();
+  final maximum = (availableHeight * 0.68).clamp(minimum, availableHeight - 120).toDouble();
+  final middle = (availableHeight * 0.44).clamp(minimum, maximum).toDouble();
+  final initial = mode == PortraitLayoutMode.immersive ? minimum : middle;
+  return (minimum: minimum, middle: middle, maximum: maximum, initial: initial);
+}
+
 class LivePlayContent extends StatelessWidget {
   const LivePlayContent({super.key, required this.controller, required this.isInPip, required this.mode});
 
@@ -138,10 +247,22 @@ class LivePlayContent extends StatelessWidget {
       );
     }
 
-    return Container(
-      color: Colors.black,
-      child: LivePlayVideo(controller: controller, expandToParent: true),
-    );
+    return Obx(() {
+      final settings = SettingsService.to.player;
+      final isPortrait = manager.isVerticalVideo.value && settings.enablePortraitStreamAdaptation.v;
+      if (!isPortrait) {
+        return Container(
+          key: const ValueKey('fullscreen-standard-video'),
+          color: Colors.black,
+          child: LivePlayVideo(controller: controller, expandToParent: true),
+        );
+      }
+      final cover = controller.state.value.room.detail?.cover ?? controller.room.cover ?? '';
+      return PortraitFullscreenPresentation(
+        coverUrl: cover,
+        child: LivePlayVideo(controller: controller, expandToParent: true, transparentSurface: true),
+      );
+    });
   }
 
   Widget _buildNormalView(BuildContext context) {
@@ -188,5 +309,45 @@ class LivePlayContent extends StatelessWidget {
       }
       return const DanmakuTabView();
     });
+  }
+}
+
+/// Fullscreen presentation for a portrait programme on a landscape display.
+/// Controls still own the complete screen, while only the video texture is
+/// fitted to its trusted portrait geometry. A dim cached cover replaces harsh
+/// empty side columns without duplicating or continuously sampling video.
+class PortraitFullscreenPresentation extends StatelessWidget {
+  const PortraitFullscreenPresentation({super.key, required this.coverUrl, required this.child});
+
+  final String coverUrl;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      key: const ValueKey('fullscreen-portrait-presentation'),
+      color: Colors.black,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (coverUrl.isNotEmpty)
+            ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+              child: Transform.scale(
+                scale: 1.12,
+                child: CachedNetworkImage(
+                  imageUrl: coverUrl,
+                  fit: BoxFit.cover,
+                  fadeInDuration: Duration.zero,
+                  placeholder: (_, _) => const ColoredBox(color: Colors.black),
+                  errorWidget: (_, _, _) => const ColoredBox(color: Colors.black),
+                ),
+              ),
+            ),
+          const ColoredBox(color: Color(0xB3000000)),
+          RepaintBoundary(child: child),
+        ],
+      ),
+    );
   }
 }

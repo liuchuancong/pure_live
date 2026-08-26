@@ -761,6 +761,8 @@ class PortraitStreamDiagnosticsBadge extends StatelessWidget {
       final orientation = manager.effectiveVideoOrientation;
       final pending = geometry.candidateOrientation != geometry.orientation;
       final ratio = geometry.hasValidDimensions ? geometry.aspectRatio.toStringAsFixed(3) : '--';
+      final effectiveRatio = geometry.hasValidDimensions ? geometry.effectiveAspectRatio.toStringAsFixed(3) : '--';
+      final evidence = geometry.evidence.name;
       final state = pending ? '${_orientationLabel(geometry.candidateOrientation)}…' : _orientationLabel(orientation);
       final observedAt = geometry.observedAt;
       final observedTime = observedAt == null
@@ -779,8 +781,8 @@ class PortraitStreamDiagnosticsBadge extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
               child: Text(
                 '${geometry.width > 0 ? geometry.width : '--'}×${geometry.height > 0 ? geometry.height : '--'}  '
-                '$ratio  $state  ${_overrideLabel(roomOverride)}\n'
-                'C${(geometry.confidence * 100).round()}%  S${geometry.stableSampleCount}  $observedTime',
+                '$ratio→$effectiveRatio  $state  ${_overrideLabel(roomOverride)}\n'
+                '$evidence  C${(geometry.confidence * 100).round()}%  S${geometry.stableSampleCount}  $observedTime',
                 style: const TextStyle(color: Colors.white, fontSize: 11, decoration: TextDecoration.none),
               ),
             ),

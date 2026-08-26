@@ -24,7 +24,7 @@ on:
         description: Release tag matching the version in pubspec.yaml
         required: true
         type: string
-        default: v3.0.4
+        default: v3.0.5
       target_sha:
         description: Exact source commit shared by every platform artifact
         required: true

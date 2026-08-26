@@ -34,6 +34,8 @@ import 'package:pure_live/player/utils/pip_window_widget.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/player/adapters/player_adapter_factory.dart';
+import 'package:pure_live/player/interface/media_kit_player_accessor.dart';
+import 'package:pure_live/player/utils/media_kit_content_probe.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/compact_danmaku_overlay.dart';
@@ -77,6 +79,7 @@ class PlayerManager {
     _audioServiceTransitions = LatestAsyncValueQueue<_AudioServiceRequest>(_applyAudioServiceRequest);
     _pipStateSubscription = isInPip.listen((value) {
       GlobalPlayerState.to.isPipMode.value = value;
+      if (!value) _lastAppliedPipAspectRatio = null;
       if (!value && !isFloating.value && !_appFloatingPrepared) {
         _videoController?.clearPipDanmaku();
       }
@@ -139,6 +142,11 @@ class PlayerManager {
   Timer? _hideTimer;
   Timer? _geometryObservationTimer;
   Timer? _geometryStabilityTimer;
+  Timer? _contentProbeTimer;
+  int _geometrySessionGeneration = 0;
+  int _contentProbeAttempts = 0;
+  int? _contentProbeInFlightGeneration;
+  final Map<String, _CachedVideoGeometry> _geometryCache = <String, _CachedVideoGeometry>{};
   late Floating floating;
   LiveRoom? currentFloatRoom;
   VideoController? _videoController;
@@ -146,6 +154,7 @@ class PlayerManager {
   Future<void>? _floatingCleanup;
   bool _appFloatingPrepared = false;
   bool _pipTransitionInFlight = false;
+  double? _lastAppliedPipAspectRatio;
   final GlobalKey _pipSourceKey = GlobalKey(debugLabel: 'pip-video-source');
 
   UnifiedPlayer? get currentPlayer => _currentPlayer;
@@ -313,27 +322,51 @@ class PlayerManager {
     effectiveOrientation: effectiveVideoOrientation,
   );
 
-  void _resetVideoGeometry() {
+  void _beginVideoGeometrySession(LiveRoom? nextRoom) {
+    _geometrySessionGeneration++;
     _geometryObservationTimer?.cancel();
     _geometryStabilityTimer?.cancel();
+    _contentProbeTimer?.cancel();
     _geometryObservationTimer = null;
     _geometryStabilityTimer = null;
+    _contentProbeTimer = null;
+    _contentProbeAttempts = 0;
     if (_widthSubject.value != null) _widthSubject.add(null);
     if (_heightSubject.value != null) _heightSubject.add(null);
-    _portraitDetector.reset();
-    _publishVideoGeometry(const VideoGeometrySnapshot.unknown(), notifyController: false);
+    _portraitDetector.resetPendingEvidence();
+
+    final previousRoom = currentFloatRoom;
+    final roomChanged = nextRoom != previousRoom;
+    if (!roomChanged) return;
+    final previous = videoGeometry.value;
+    if (previousRoom != null && previous.isStable && previous.hasValidDimensions && !previous.isProvisional) {
+      _rememberVideoGeometry(previousRoom.identityKey, previous);
+    }
+    final cached = nextRoom == null ? null : _cachedVideoGeometry(nextRoom.identityKey);
+    final next = cached == null ? _portraitDetector.reset() : _portraitDetector.seed(cached);
+    _publishVideoGeometry(next, notifyController: false);
   }
 
   void _scheduleVideoGeometryObservation() {
     _geometryObservationTimer?.cancel();
+    final generation = _geometrySessionGeneration;
     _geometryObservationTimer = Timer(const Duration(milliseconds: 120), () {
       _geometryObservationTimer = null;
       final width = _widthSubject.value;
       final height = _heightSubject.value;
-      if (width == null || height == null || width <= 0 || height <= 0 || _disposed || _isClosing) return;
+      if (generation != _geometrySessionGeneration ||
+          width == null ||
+          height == null ||
+          width <= 0 ||
+          height <= 0 ||
+          _disposed ||
+          _isClosing) {
+        return;
+      }
       final snapshot = _portraitDetector.observe(width, height);
       _publishVideoGeometry(snapshot);
       _scheduleGeometryStabilityCommit();
+      if (snapshot.isStable) _scheduleActiveContentProbe();
     });
   }
 
@@ -344,11 +377,92 @@ class PlayerManager {
     if (since == null) return;
     final elapsed = DateTime.now().difference(since);
     final remaining = _portraitDetector.stabilityDelay - elapsed;
+    final generation = _geometrySessionGeneration;
     _geometryStabilityTimer = Timer(remaining.isNegative ? Duration.zero : remaining, () {
       _geometryStabilityTimer = null;
-      if (_disposed || _isClosing) return;
-      _publishVideoGeometry(_portraitDetector.commitPending());
+      if (generation != _geometrySessionGeneration || _disposed || _isClosing) return;
+      final snapshot = _portraitDetector.commitPending();
+      _publishVideoGeometry(snapshot);
+      if (snapshot.isStable) _scheduleActiveContentProbe();
     });
+  }
+
+  void _scheduleActiveContentProbe() {
+    if (!PlatformUtils.isMobile ||
+        _disposed ||
+        _isClosing ||
+        _runtimeAudioOnly ||
+        !isPlayingNow ||
+        _contentProbeAttempts >= 2 ||
+        _contentProbeInFlightGeneration == _geometrySessionGeneration ||
+        _contentProbeTimer != null ||
+        !videoGeometry.value.isStable ||
+        !(_portraitSettings?.enablePortraitStreamAdaptation.v ?? true) ||
+        _currentPlayer is! MediaKitPlayerAccessor) {
+      return;
+    }
+    final generation = _geometrySessionGeneration;
+    _contentProbeTimer = Timer(const Duration(milliseconds: 240), () {
+      _contentProbeTimer = null;
+      if (generation != _geometrySessionGeneration || _disposed || _isClosing) return;
+      unawaited(_runActiveContentProbe(generation));
+    });
+  }
+
+  Future<void> _runActiveContentProbe(int generation) async {
+    final player = _currentPlayer;
+    if (player is! MediaKitPlayerAccessor ||
+        _contentProbeInFlightGeneration == generation ||
+        _contentProbeAttempts >= 2) {
+      return;
+    }
+    final accessor = player as MediaKitPlayerAccessor;
+    _contentProbeInFlightGeneration = generation;
+    _contentProbeAttempts++;
+    try {
+      final observation = await MediaKitContentProbe.capture(accessor);
+      if (observation == null ||
+          generation != _geometrySessionGeneration ||
+          _disposed ||
+          _isClosing ||
+          !identical(player, _currentPlayer)) {
+        return;
+      }
+      _publishVideoGeometry(_portraitDetector.observeActiveContent(observation));
+    } catch (error, stackTrace) {
+      log(
+        'Active content probe skipped: $error',
+        name: 'PlayerManager.VideoGeometry',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    } finally {
+      if (_contentProbeInFlightGeneration == generation) {
+        _contentProbeInFlightGeneration = null;
+      }
+      if (generation == _geometrySessionGeneration && _contentProbeAttempts < 2) {
+        _scheduleActiveContentProbe();
+      }
+    }
+  }
+
+  void _rememberVideoGeometry(String roomKey, VideoGeometrySnapshot snapshot) {
+    if (roomKey == ':' || !snapshot.isStable || !snapshot.hasValidDimensions) return;
+    _geometryCache.remove(roomKey);
+    _geometryCache[roomKey] = _CachedVideoGeometry(snapshot: snapshot, storedAt: DateTime.now());
+    while (_geometryCache.length > 96) {
+      _geometryCache.remove(_geometryCache.keys.first);
+    }
+  }
+
+  VideoGeometrySnapshot? _cachedVideoGeometry(String roomKey) {
+    final cached = _geometryCache[roomKey];
+    if (cached == null) return null;
+    if (DateTime.now().difference(cached.storedAt) > const Duration(hours: 4)) {
+      _geometryCache.remove(roomKey);
+      return null;
+    }
+    return cached.snapshot;
   }
 
   VideoSourceOrientation get effectiveVideoOrientation {
@@ -377,16 +491,50 @@ class PlayerManager {
   }
 
   void _publishVideoGeometry(VideoGeometrySnapshot snapshot, {bool notifyController = true}) {
+    final previous = videoGeometry.value;
+    final previousOrientation = effectiveVideoOrientation;
+    final previousRatio = PortraitPresentationPolicy.resolveVideoDisplayAspectRatio(
+      snapshot: previous,
+      effectiveOrientation: previousOrientation,
+    );
     videoGeometry.value = snapshot;
     final wasVertical = isVerticalVideo.value;
     final nextVertical = effectiveVideoOrientation == VideoSourceOrientation.portrait;
-    if (wasVertical != nextVertical) {
+    final nextRatio = currentPresentationAspectRatio;
+    final presentationChanged = wasVertical != nextVertical || (previousRatio - nextRatio).abs() > 0.004;
+    if (presentationChanged) {
       isVerticalVideo.value = nextVertical;
       videoPresentationRevision.value++;
       if (notifyController) {
         final controller = _videoController;
         if (controller != null) unawaited(controller.applyFullscreenOrientationPolicy());
       }
+      if (isInPip.value) unawaited(_updateActiveAndroidPip(currentVideoRatio));
+    }
+    final room = currentFloatRoom;
+    if (room != null && snapshot.isStable && snapshot.hasValidDimensions && !snapshot.isProvisional) {
+      _rememberVideoGeometry(room.identityKey, snapshot);
+    }
+  }
+
+  Future<void> _updateActiveAndroidPip(double compactRatio) async {
+    if (!Platform.isAndroid || !isInPip.value || _pipTransitionInFlight) return;
+    final pipRatio = PortraitPresentationPolicy.resolveAndroidPipAspectRatio(
+      width: (compactRatio * 10000).round(),
+      height: 10000,
+      portraitFallback: effectiveVideoOrientation == VideoSourceOrientation.portrait,
+    );
+    if (_lastAppliedPipAspectRatio != null && (_lastAppliedPipAspectRatio! - pipRatio.value).abs() < 0.004) return;
+    try {
+      await floating.update(aspectRatio: Rational(pipRatio.width, pipRatio.height));
+      _lastAppliedPipAspectRatio = pipRatio.value;
+    } catch (error, stackTrace) {
+      log(
+        'Update active PiP geometry failed: $error',
+        name: 'PlayerManager.VideoGeometry',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -506,12 +654,11 @@ class PlayerManager {
     final roomChanged = room != currentFloatRoom;
     if (roomChanged) {
       lineManager.reset();
-      // A reusable native player keeps its dimension streams alive between
-      // sources. Retaining the previous room's portrait dimensions until the
-      // next metadata event would apply the old adaptive frame and compact
-      // window policy to the following landscape room.
-      _resetVideoGeometry();
     }
+    // Start a geometry generation for every new source, including quality and
+    // CDN switches in the same room. Same-room presentation remains visible;
+    // another room receives only its own bounded cache entry.
+    _beginVideoGeometrySession(room);
     if (_currentPlayer == null || _runtimeEngine == null) {
       if (_defaultEngine == null) {
         final String savedKey = SettingsService.to.player.videoPlayerKey.v;
@@ -689,6 +836,7 @@ class PlayerManager {
       if (!enteringAudioMode) {
         isVideoRestorePending.value = false;
         videoPresentationRevision.value++;
+        _scheduleActiveContentProbe();
       }
     } catch (error, stackTrace) {
       if (!identical(_currentPlayer, player) || _disposed || _isClosing || transitionSessionId != _sessionId) {
@@ -963,7 +1111,10 @@ class PlayerManager {
         );
         final rational = Rational(pipRatio.width, pipRatio.height);
         final result = await floating.enable(ImmediatePiP(aspectRatio: rational, sourceRectHint: sourceRectHint));
-        if (result == PiPStatus.enabled) isInPip.value = true;
+        if (result == PiPStatus.enabled) {
+          _lastAppliedPipAspectRatio = pipRatio.value;
+          isInPip.value = true;
+        }
       } finally {
         isPipPreparing.value = false;
         _pipTransitionInFlight = false;
@@ -1471,6 +1622,7 @@ class PlayerManager {
     required List<BoxFit> fitList,
     bool trackPipSource = false,
     bool? audioOnlyOverride,
+    Color surfaceColor = Colors.black,
   }) {
     // Floating/PiP callers already wrap this factory in Obx; keep their
     // dependency registered while the inner observer covers direct callers.
@@ -1485,7 +1637,7 @@ class PlayerManager {
       final player = _currentPlayer;
 
       if (!initialized || _disposed || _isClosing || player == null) {
-        return _buildPlaceholder();
+        return _buildPlaceholder(surfaceColor: surfaceColor);
       }
       final safeFitIndex = fitList.isEmpty ? 0 : fitIndex.clamp(0, fitList.length - 1);
       final boxFit = fitList.isEmpty ? BoxFit.contain : fitList[safeFitIndex];
@@ -1493,12 +1645,12 @@ class PlayerManager {
         key: trackPipSource ? _pipSourceKey : null,
         child: PureLivePipWidget(
           child: Container(
-            color: Colors.black,
+            color: surfaceColor,
             padding: EdgeInsets.zero,
             child: KeyedSubtree(
               key: videoKey.value,
               child: Container(
-                color: Colors.black,
+                color: surfaceColor,
                 width: double.infinity,
                 height: double.infinity,
                 child: Stack(
@@ -1506,7 +1658,7 @@ class PlayerManager {
                     Positioned.fill(
                       child: Offstage(
                         offstage: showAudioOnly,
-                        child: Container(color: Colors.black, child: _buildVideoWidget(player, boxFit)),
+                        child: Container(color: surfaceColor, child: _buildVideoWidget(player, boxFit)),
                       ),
                     ),
                     if (showAudioOnly)
@@ -1537,14 +1689,21 @@ class PlayerManager {
     // fill that frame, leaving exactly one BoxFit owner. This differs from the
     // old double-FittedBox implementation: it never waits for two independent
     // width/height streams and it never lets the adapter apply the ratio again.
+    final snapshot = videoGeometry.value;
     final aspectRatio = currentPresentationAspectRatio;
     _applyVideoFit(player, BoxFit.fill);
-    return buildUnifiedMobileVideoFrame(aspectRatio: aspectRatio, fit: boxFit, child: player.getVideoWidget());
+    return buildUnifiedMobileVideoFrame(
+      aspectRatio: aspectRatio,
+      encodedAspectRatio: snapshot.aspectRatio,
+      contentInsets: snapshot.hasActiveContentCrop ? snapshot.activeContentInsets : NormalizedVideoInsets.none,
+      fit: boxFit,
+      child: player.getVideoWidget(),
+    );
   }
 
-  Widget _buildPlaceholder() {
+  Widget _buildPlaceholder({Color surfaceColor = Colors.black}) {
     return Container(
-      color: Colors.black,
+      color: surfaceColor,
       child: AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", iconColor: Colors.white, isMini: true),
     );
   }
@@ -1701,6 +1860,7 @@ class PlayerManager {
           if (_isSwitchingDueToFallback) {
             _isSwitchingDueToFallback = false;
           }
+          _scheduleActiveContentProbe();
         } else {
           _stateSubject.add(PlayerState.paused);
         }
@@ -1761,6 +1921,7 @@ class PlayerManager {
     _hideTimer?.cancel();
     _geometryObservationTimer?.cancel();
     _geometryStabilityTimer?.cancel();
+    _contentProbeTimer?.cancel();
     _audioModeVideoWarmTimer?.cancel();
     await closeAppFloating();
     await _pipSubscription?.cancel();
@@ -1783,15 +1944,46 @@ class PlayerManager {
 /// Kept outside [PlayerManager] so its BoxFit contract has deterministic widget
 /// coverage without allocating a native player.
 @visibleForTesting
-Widget buildUnifiedMobileVideoFrame({required double aspectRatio, required BoxFit fit, required Widget child}) {
+Widget buildUnifiedMobileVideoFrame({
+  required double aspectRatio,
+  required BoxFit fit,
+  required Widget child,
+  double? encodedAspectRatio,
+  NormalizedVideoInsets contentInsets = NormalizedVideoInsets.none,
+}) {
   final safeAspectRatio = aspectRatio.isFinite && aspectRatio > 0 ? aspectRatio : 16 / 9;
+  final safeEncodedRatio = encodedAspectRatio != null && encodedAspectRatio.isFinite && encodedAspectRatio > 0
+      ? encodedAspectRatio
+      : safeAspectRatio;
   const basis = 1000.0;
+  final useActiveCrop = contentInsets.hasCrop && contentInsets.isValid;
+  final rawWidth = basis * (useActiveCrop ? safeEncodedRatio : safeAspectRatio);
+  final rawHeight = basis;
+  final viewportWidth = useActiveCrop ? rawWidth * contentInsets.widthFraction : rawWidth;
+  final viewportHeight = useActiveCrop ? rawHeight * contentInsets.heightFraction : rawHeight;
+  final videoFrame = useActiveCrop
+      ? SizedBox(
+          key: const ValueKey('active-video-content-viewport'),
+          width: viewportWidth,
+          height: viewportHeight,
+          child: ClipRect(
+            child: Stack(
+              clipBehavior: Clip.hardEdge,
+              children: [
+                Positioned(
+                  left: -rawWidth * contentInsets.left,
+                  top: -rawHeight * contentInsets.top,
+                  width: rawWidth,
+                  height: rawHeight,
+                  child: child,
+                ),
+              ],
+            ),
+          ),
+        )
+      : SizedBox(width: rawWidth, height: rawHeight, child: child);
   return ClipRect(
-    child: FittedBox(
-      fit: fit,
-      clipBehavior: Clip.hardEdge,
-      child: SizedBox(width: basis * safeAspectRatio, height: basis, child: child),
-    ),
+    child: FittedBox(fit: fit, clipBehavior: Clip.hardEdge, child: videoFrame),
   );
 }
 
@@ -1807,6 +1999,13 @@ class _AudioServiceRequest {
   final bool audioOnly;
   final LiveRoom? room;
   final int sessionId;
+}
+
+class _CachedVideoGeometry {
+  const _CachedVideoGeometry({required this.snapshot, required this.storedAt});
+
+  final VideoGeometrySnapshot snapshot;
+  final DateTime storedAt;
 }
 
 /// Immutable presentation state transferred from the popped live-room route to
