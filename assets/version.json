@@ -1,21 +1,21 @@
 {
-  "version": "3.0.6",
-  "build_number": 4094,
-  "version_num": 300064094,
-  "version_desc": "- 修复 v3.0.5 竖屏直播仍被压成细条：渲染层只接受与最终比例一致的裁边，已是竖屏的解码画布不再重复裁左右边。\n- 线路、清晰度和重连切换清除上一画布裁边；缓存只保留最终有效比例，由新一代证据重新确认。\n- 新增抖音 stream_url.extra、默认清晰度 resolution、sdk_params 与候选分辨率解析，平台声明、解码画布、有效内容和呈现比例分层仲裁。\n- 截图识别改为 500 ms 起最多六次有界采样，首帧空白或转场不会耗尽有效证据，两次一致后立即停止。\n- 平台元数据冲突可由两次全帧证据纠正；普通竖屏页、横屏全屏、系统 PiP 和应用内小窗共享同一可信结果。\n- 完整质量门禁通过后构建 Android arm64-v8a Release；本轮保持上游冻结。",
+  "version": "3.0.7",
+  "build_number": 4095,
+  "version_num": 300074095,
+  "version_desc": "- 修复竖屏节目比例仍异常：截图证据携带自己的真实画布比例，不再把截图裁边错误套到另一套解码尺寸。\n- 平台分辨率只参与方向仲裁，不再凭空推导左右黑边；原生纹理始终按真实画布尺寸布局，避免横向拉伸和二次压窄。\n- 两次一致的全帧或裁边证据可修正过期平台提示，并统一驱动普通页、横屏全屏、系统 PiP 与应用内小窗。\n- 竖屏普通页新增始终可见的“横屏全屏”入口，浮在弹幕面板上方；单次强制横屏不修改用户的长期方向偏好。\n- 对照 dtv_mobile 的原子视频尺寸、单一缩放所有者和显式全屏状态思路，并避开其竖屏源隐藏全屏按钮的限制。\n- 完整质量门禁通过后构建 Android arm64-v8a Release；本轮保持上游冻结且不操作手机。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.6",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.7",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.0.6",
-      "build_number": 4094,
-      "version_num": 300064094,
-      "version_desc": "- 修复 v3.0.5 竖屏直播仍被压成细条：渲染层只接受与最终比例一致的裁边，已是竖屏的解码画布不再重复裁左右边。\n- 线路、清晰度和重连切换清除上一画布裁边；缓存只保留最终有效比例，由新一代证据重新确认。\n- 新增抖音 stream_url.extra、默认清晰度 resolution、sdk_params 与候选分辨率解析，平台声明、解码画布、有效内容和呈现比例分层仲裁。\n- 截图识别改为 500 ms 起最多六次有界采样，首帧空白或转场不会耗尽有效证据，两次一致后立即停止。\n- 平台元数据冲突可由两次全帧证据纠正；普通竖屏页、横屏全屏、系统 PiP 和应用内小窗共享同一可信结果。\n- 完整质量门禁通过后构建 Android arm64-v8a Release；本轮保持上游冻结。",
+      "version": "3.0.7",
+      "build_number": 4095,
+      "version_num": 300074095,
+      "version_desc": "- 修复竖屏节目比例仍异常：截图证据携带自己的真实画布比例，不再把截图裁边错误套到另一套解码尺寸。\n- 平台分辨率只参与方向仲裁，不再凭空推导左右黑边；原生纹理始终按真实画布尺寸布局，避免横向拉伸和二次压窄。\n- 两次一致的全帧或裁边证据可修正过期平台提示，并统一驱动普通页、横屏全屏、系统 PiP 与应用内小窗。\n- 竖屏普通页新增始终可见的“横屏全屏”入口，浮在弹幕面板上方；单次强制横屏不修改用户的长期方向偏好。\n- 对照 dtv_mobile 的原子视频尺寸、单一缩放所有者和显式全屏状态思路，并避开其竖屏源隐藏全屏按钮的限制。\n- 完整质量门禁通过后构建 Android arm64-v8a Release；本轮保持上游冻结且不操作手机。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.6",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.7",
       "android_abis": [
         "arm64-v8a"
       ]

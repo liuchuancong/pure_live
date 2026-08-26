@@ -95,4 +95,28 @@ void main() {
     expect(texture.height, closeTo(400, 0.1));
     expect(texture.width / texture.height, closeTo(9 / 16, 0.002));
   });
+
+  testWidgets('platform orientation hint never stretches an unmeasured landscape canvas', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SizedBox.expand(
+          child: buildUnifiedMobileVideoFrame(
+            aspectRatio: 9 / 16,
+            encodedAspectRatio: 16 / 9,
+            fit: BoxFit.contain,
+            child: const ColoredBox(key: ValueKey('unmeasured-landscape-texture'), color: Colors.black),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const ValueKey('active-video-content-viewport')), findsNothing);
+    final texture = tester.getRect(find.byKey(const ValueKey('unmeasured-landscape-texture')));
+    expect(texture.width / texture.height, closeTo(16 / 9, 0.002));
+    expect(texture.width, closeTo(400, 0.1));
+    expect(texture.height, closeTo(225, 0.1));
+  });
 }

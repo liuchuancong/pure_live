@@ -1748,7 +1748,7 @@ class PlayerManager {
     _applyVideoFit(player, BoxFit.fill);
     return buildUnifiedMobileVideoFrame(
       aspectRatio: aspectRatio,
-      encodedAspectRatio: snapshot.aspectRatio,
+      encodedAspectRatio: snapshot.renderCanvasAspectRatio,
       contentInsets: contentInsets,
       fit: boxFit,
       child: player.getVideoWidget(),
@@ -2016,7 +2016,11 @@ Widget buildUnifiedMobileVideoFrame({
     contentInsets: contentInsets,
   );
   final useActiveCrop = safeContentInsets.hasCrop;
-  final rawWidth = basis * (useActiveCrop ? safeEncodedRatio : safeAspectRatio);
+  // Always size the native texture from its actual canvas. Presentation ratio
+  // may come from platform metadata, a room override or visual content, none of
+  // which is permission to stretch the decoded pixels. A measured crop changes
+  // only the viewport below.
+  final rawWidth = basis * safeEncodedRatio;
   final rawHeight = basis;
   final viewportWidth = useActiveCrop ? rawWidth * safeContentInsets.widthFraction : rawWidth;
   final viewportHeight = useActiveCrop ? rawHeight * safeContentInsets.heightFraction : rawHeight;

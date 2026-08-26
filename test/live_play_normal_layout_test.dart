@@ -113,6 +113,32 @@ void main() {
     expect(after, inInclusiveRange(range.minimum, range.maximum));
   });
 
+  testWidgets('portrait room keeps an explicit landscape fullscreen action above the sheet', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 780));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    var requested = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PortraitLiveRoomLayout(
+            mode: PortraitLayoutMode.balanced,
+            video: const ColoredBox(color: Colors.black),
+            resolution: const SizedBox(height: 44),
+            danmaku: const ColoredBox(color: Colors.white),
+            onEnterLandscapeFullscreen: () => requested = true,
+          ),
+        ),
+      ),
+    );
+
+    final action = find.byKey(const ValueKey('portrait-landscape-fullscreen'));
+    final sheet = tester.getRect(find.byKey(const ValueKey('live-play-portrait-sheet')));
+    expect(action, findsOneWidget);
+    expect(tester.getRect(action).bottom, lessThan(sheet.top));
+    await tester.tap(action);
+    expect(requested, isTrue);
+  });
+
   testWidgets('portrait fullscreen presentation keeps its child above the ambient layer', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(

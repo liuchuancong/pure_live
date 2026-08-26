@@ -26,6 +26,7 @@ void main() {
     expect(result.insets.top, 0);
     expect(result.insets.applyToAspectRatio(width / height), closeTo(50 / 90, 0.12));
     expect(result.confidence, greaterThanOrEqualTo(0.86));
+    expect(result.canvasAspectRatio, closeTo(width / height, 0.001));
   });
 
   test('keeps an ordinary full-frame landscape source untouched', () {
@@ -38,6 +39,7 @@ void main() {
     expect(result, isNotNull);
     expect(result!.insets.hasCrop, isFalse);
     expect(result.confidence, greaterThanOrEqualTo(0.86));
+    expect(result.canvasAspectRatio, closeTo(width / height, 0.001));
   });
 
   test('does not treat a uniformly dark scene as letterbox evidence', () {

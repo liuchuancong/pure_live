@@ -66,6 +66,7 @@ void main() {
       const observation = ActiveVideoContentObservation(
         insets: NormalizedVideoInsets(left: 0.3418, right: 0.3418),
         confidence: 0.96,
+        canvasAspectRatio: 16 / 9,
       );
 
       expect(detector.observeActiveContent(observation).orientation, VideoSourceOrientation.landscape);
@@ -94,7 +95,7 @@ void main() {
       expect(snapshot.effectiveAspectRatio, closeTo(9 / 16, 0.001));
     });
 
-    test('fresh decoder canvas invalidates crop measured on an earlier quality', () {
+    test('a new source generation invalidates crop measured on an earlier quality', () {
       final detector = PortraitStreamDetector();
       final start = DateTime(2026, 1, 1);
       detector.observe(1920, 1080, now: start);
@@ -106,6 +107,7 @@ void main() {
       detector.observeActiveContent(bars);
       expect(detector.observeActiveContent(bars).hasActiveContentCrop, isTrue);
 
+      detector.beginSourceTransition();
       final switched = detector.observe(1080, 1920, now: start.add(const Duration(seconds: 1)));
 
       expect(switched.hasActiveContentCrop, isFalse);
@@ -137,7 +139,46 @@ void main() {
       expect(snapshot.orientation, VideoSourceOrientation.landscape);
       expect(snapshot.hasTrustedSourceHint, isFalse);
       expect(snapshot.effectiveAspectRatio, closeTo(16 / 9, 0.001));
-      expect(snapshot.evidence, VideoGeometryEvidence.decoderMetadata);
+      expect(snapshot.evidence, VideoGeometryEvidence.activeContent);
+    });
+
+    test('screenshot canvas corrects decoder metadata before applying measured bars', () {
+      final detector = PortraitStreamDetector();
+      detector.observeSourceMetadata(1080, 1920, confidence: 0.99, source: 'douyin.extra');
+      detector.observe(360, 1920);
+      const bars = ActiveVideoContentObservation(
+        insets: NormalizedVideoInsets(left: 0.3418, right: 0.3418),
+        confidence: 0.97,
+        canvasAspectRatio: 16 / 9,
+      );
+
+      detector.observeActiveContent(bars);
+      final snapshot = detector.observeActiveContent(bars);
+
+      expect(snapshot.orientation, VideoSourceOrientation.portrait);
+      expect(snapshot.aspectRatio, closeTo(360 / 1920, 0.001));
+      expect(snapshot.renderCanvasAspectRatio, closeTo(16 / 9, 0.001));
+      expect(snapshot.effectiveAspectRatio, closeTo(9 / 16, 0.02));
+      expect(snapshot.hasActiveContentCrop, isTrue);
+    });
+
+    test('two direct portrait frame probes replace a malformed landscape decoder canvas', () {
+      final detector = PortraitStreamDetector();
+      final start = DateTime(2026, 1, 1);
+      detector.observe(1920, 1080, now: start);
+      detector.commitPending(now: start.add(const Duration(milliseconds: 500)));
+      const portraitFrame = ActiveVideoContentObservation(
+        insets: NormalizedVideoInsets.none,
+        confidence: 0.95,
+        canvasAspectRatio: 9 / 16,
+      );
+
+      detector.observeActiveContent(portraitFrame);
+      final snapshot = detector.observeActiveContent(portraitFrame);
+
+      expect(snapshot.orientation, VideoSourceOrientation.portrait);
+      expect(snapshot.effectiveAspectRatio, closeTo(9 / 16, 0.001));
+      expect(snapshot.renderCanvasAspectRatio, closeTo(9 / 16, 0.001));
     });
 
     test('source transition retains effective ratio but drops the previous canvas crop', () {
@@ -329,7 +370,7 @@ void main() {
       );
     });
 
-    test('platform portrait metadata infers symmetric bars for a landscape transport canvas', () {
+    test('platform portrait metadata does not invent crop coordinates for a landscape canvas', () {
       final snapshot = VideoGeometrySnapshot(
         width: 1920,
         height: 1080,
@@ -350,9 +391,8 @@ void main() {
         presentationAspectRatio: 9 / 16,
       );
 
-      expect(insets.left, closeTo(0.3418, 0.002));
-      expect(insets.right, closeTo(0.3418, 0.002));
-      expect(insets.applyToAspectRatio(16 / 9), closeTo(9 / 16, 0.002));
+      expect(insets.hasCrop, isFalse);
+      expect(snapshot.renderCanvasAspectRatio, closeTo(16 / 9, 0.001));
     });
   });
 

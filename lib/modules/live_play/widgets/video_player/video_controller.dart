@@ -973,7 +973,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     }
   }
 
-  Future<void> enterFullScreen() async {
+  Future<void> enterFullScreen({bool forceLandscape = false}) async {
     await WindowService().doEnterFullScreen();
     GlobalPlayerState.to.isFullscreen.value = true;
 
@@ -982,7 +982,31 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     // native transition was still running, producing inconsistent work-area
     // bounds on Windows systems with a side taskbar.
     if (Platform.isAndroid || Platform.isIOS) {
-      await applyFullscreenOrientationPolicy();
+      if (forceLandscape) {
+        await WindowService().landScape();
+      } else {
+        await applyFullscreenOrientationPolicy();
+      }
+    }
+  }
+
+  /// Explicit landscape-fullscreen action for a portrait live room.
+  ///
+  /// This is intentionally a one-shot presentation action rather than a
+  /// settings mutation: users keep their preferred automatic policy while the
+  /// visible room control can always request a conventional landscape view.
+  Future<void> enterLandscapeFullScreen() async {
+    if (_fullscreenTransitioning) return;
+    _fullscreenTransitioning = true;
+    showLocked.value = false;
+    stopHideController();
+    GlobalPlayerState.to.isWindowFullscreen.value = false;
+    try {
+      _livePlayController.setFullScreen();
+      await enterFullScreen(forceLandscape: true);
+      enableController();
+    } finally {
+      _fullscreenTransitioning = false;
     }
   }
 

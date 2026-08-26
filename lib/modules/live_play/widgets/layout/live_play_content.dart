@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -34,6 +35,7 @@ class LivePlayNormalLayout extends StatelessWidget {
     this.sourceAspectRatio = 16 / 9,
     this.adaptivePortraitHeight = false,
     this.portraitLayoutMode = PortraitLayoutMode.balanced,
+    this.onEnterLandscapeFullscreen,
   });
 
   final Widget video;
@@ -44,6 +46,7 @@ class LivePlayNormalLayout extends StatelessWidget {
   final double sourceAspectRatio;
   final bool adaptivePortraitHeight;
   final PortraitLayoutMode portraitLayoutMode;
+  final VoidCallback? onEnterLandscapeFullscreen;
 
   @override
   Widget build(BuildContext context) {
@@ -65,6 +68,7 @@ class LivePlayNormalLayout extends StatelessWidget {
               resolution: resolution,
               danmaku: danmaku,
               mode: portraitLayoutMode,
+              onEnterLandscapeFullscreen: onEnterLandscapeFullscreen,
             );
           }
           return Column(
@@ -117,12 +121,14 @@ class PortraitLiveRoomLayout extends StatefulWidget {
     required this.resolution,
     required this.danmaku,
     required this.mode,
+    this.onEnterLandscapeFullscreen,
   });
 
   final Widget video;
   final Widget resolution;
   final Widget danmaku;
   final PortraitLayoutMode mode;
+  final VoidCallback? onEnterLandscapeFullscreen;
 
   @override
   State<PortraitLiveRoomLayout> createState() => _PortraitLiveRoomLayoutState();
@@ -202,6 +208,34 @@ class _PortraitLiveRoomLayoutState extends State<PortraitLiveRoomLayout> {
                 ),
               ),
             ),
+            if (widget.onEnterLandscapeFullscreen != null)
+              Positioned(
+                right: 12,
+                bottom: current + 12,
+                child: Material(
+                  color: Colors.black.withValues(alpha: 0.68),
+                  borderRadius: BorderRadius.circular(24),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    key: const ValueKey('portrait-landscape-fullscreen'),
+                    onTap: widget.onEnterLandscapeFullscreen,
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.screen_rotation_rounded, color: Colors.white, size: 20),
+                          SizedBox(width: 6),
+                          Text(
+                            '横屏全屏',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
           ],
         );
       },
@@ -291,6 +325,10 @@ class LivePlayContent extends StatelessWidget {
             sourceAspectRatio: manager.currentPresentationAspectRatio,
             adaptivePortraitHeight: settings.enablePortraitStreamAdaptation.v && settings.portraitAdaptiveHeight.v,
             portraitLayoutMode: settings.portraitLayoutMode,
+            onEnterLandscapeFullscreen: () {
+              final videoController = controller.state.value.player.videoController;
+              if (videoController != null) unawaited(videoController.enterLandscapeFullScreen());
+            },
           );
         }),
       ),

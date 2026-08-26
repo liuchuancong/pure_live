@@ -37,7 +37,11 @@ class ActiveVideoContentAnalyzer {
       // is real content. Publishing an explicit full-frame observation lets a
       // later programme clear an earlier cached crop without guessing.
       if (outerScore < 0.48) {
-        return const ActiveVideoContentObservation(insets: NormalizedVideoInsets.none, confidence: 0.90);
+        return ActiveVideoContentObservation(
+          insets: NormalizedVideoInsets.none,
+          confidence: 0.90,
+          canvasAspectRatio: width / height,
+        );
       }
       return null;
     }
@@ -63,7 +67,7 @@ class ActiveVideoContentAnalyzer {
         .clamp(0.0, 1.0)
         .toDouble();
     if (confidence < 0.86) return null;
-    return ActiveVideoContentObservation(insets: insets, confidence: confidence);
+    return ActiveVideoContentObservation(insets: insets, confidence: confidence, canvasAspectRatio: width / height);
   }
 
   double _columnMatteScore(Uint8List rgba, {required int width, required int height, required int x}) {
