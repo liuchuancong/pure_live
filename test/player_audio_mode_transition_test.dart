@@ -433,6 +433,34 @@ void main() {
     unawaited(manager.dispose());
   });
 
+  testWidgets('fullscreen fit and transparent surface reach the native player contract', (tester) async {
+    final player = _FakePlayer();
+    final manager = _createManager(player);
+    await manager.initialize(engine: PlayerEngine.mediaKit);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SizedBox(
+          width: 1280,
+          height: 720,
+          child: manager.getVideoWidget(
+            2,
+            fitList: const <BoxFit>[BoxFit.contain, BoxFit.cover, BoxFit.fill],
+            surfaceColor: Colors.transparent,
+            fitOverride: BoxFit.contain,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(player.lastVideoFit, BoxFit.contain, reason: 'portrait fullscreen must ignore the global fill mode');
+    expect(player.lastVideoFill, Colors.transparent, reason: 'the native viewport must expose the ambient layer');
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    unawaited(manager.dispose());
+  });
+
   test('a room re-entry request supersedes an in-flight audio-only request', () async {
     final firstStarted = Completer<void>();
     final releaseFirst = Completer<void>();
@@ -612,6 +640,8 @@ class _FakePlayer implements UnifiedPlayer {
   int setDataSourceCalls = 0;
   int initCalls = 0;
   int hardDisposeCalls = 0;
+  BoxFit? lastVideoFit;
+  Color? lastVideoFill;
   bool _initialized = false;
   bool _audioOnly = false;
   final StreamController<int?> _widthController = StreamController<int?>.broadcast();
@@ -676,7 +706,11 @@ class _FakePlayer implements UnifiedPlayer {
   Future<void> stop() async {}
 
   @override
-  Widget getVideoWidget({BoxFit? fit}) => videoWidget ?? const SizedBox.shrink();
+  Widget getVideoWidget({BoxFit? fit, Color? fill}) {
+    lastVideoFit = fit;
+    lastVideoFill = fill;
+    return videoWidget ?? const SizedBox.shrink();
+  }
 
   @override
   bool get isInitialized => _initialized;

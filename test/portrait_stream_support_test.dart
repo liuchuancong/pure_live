@@ -21,6 +21,19 @@ void main() {
       expect(stable.aspectRatio, closeTo(9 / 16, 0.001));
     });
 
+    test('decoder-driven portrait classification is independent of live platform', () {
+      const platformIds = ['bilibili', 'douyu', 'huya', 'douyin', 'kuaishou', 'cc', 'twitch', 'soop', 'yy'];
+      final start = DateTime(2026, 1, 1);
+
+      for (final platformId in platformIds) {
+        final detector = PortraitStreamDetector();
+        detector.observe(720, 1280, now: start);
+        final stable = detector.commitPending(now: start.add(const Duration(milliseconds: 500)));
+        expect(stable.orientation, VideoSourceOrientation.portrait, reason: platformId);
+        expect(stable.effectiveAspectRatio, closeTo(9 / 16, 0.001), reason: platformId);
+      }
+    });
+
     test('single decoder metadata event commits after the stability delay', () {
       final detector = PortraitStreamDetector();
       final start = DateTime(2026, 1, 1);

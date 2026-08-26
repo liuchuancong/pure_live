@@ -14,6 +14,55 @@ import 'package:pure_live/modules/live_play/widgets/resolution_selector/resoluti
 
 enum LivePlayNormalLayoutKind { portraitStack, desktopSplit }
 
+@immutable
+class FullscreenVideoSurfaceStyle {
+  const FullscreenVideoSurfaceStyle({
+    required this.useAmbientBackground,
+    required this.fitOverride,
+    required this.surfaceColor,
+  });
+
+  final bool useAmbientBackground;
+  final BoxFit? fitOverride;
+  final Color surfaceColor;
+}
+
+/// Resolves the viewport policy before constructing any native video widget.
+///
+/// Portrait content in a landscape fullscreen must remain contained even when
+/// the user's ordinary-room fit is `fill` or `cover`. Its unused viewport must
+/// also be transparent so the ambient cover behind the native player remains
+/// visible. Ordinary landscape rooms retain the selected global fit and black
+/// surface exactly as before.
+@visibleForTesting
+FullscreenVideoSurfaceStyle resolveFullscreenVideoSurfaceStyle({
+  required VideoPresentationGeometry geometry,
+  required bool portraitAdaptationEnabled,
+}) {
+  final usePortraitPresentation = portraitAdaptationEnabled && geometry.orientation == VideoSourceOrientation.portrait;
+  return usePortraitPresentation
+      ? const FullscreenVideoSurfaceStyle(
+          useAmbientBackground: true,
+          fitOverride: BoxFit.contain,
+          surfaceColor: Colors.transparent,
+        )
+      : const FullscreenVideoSurfaceStyle(useAmbientBackground: false, fitOverride: null, surfaceColor: Colors.black);
+}
+
+@visibleForTesting
+String resolvePortraitFullscreenBackgroundUrl({
+  String? detailCover,
+  String? roomCover,
+  String? detailAvatar,
+  String? roomAvatar,
+}) {
+  for (final value in [detailCover, roomCover, detailAvatar, roomAvatar]) {
+    final candidate = value?.trim() ?? '';
+    if (candidate.isNotEmpty) return candidate;
+  }
+  return '';
+}
+
 LivePlayNormalLayoutKind resolveLivePlayNormalLayout(double width) {
   return width <= 680 ? LivePlayNormalLayoutKind.portraitStack : LivePlayNormalLayoutKind.desktopSplit;
 }
@@ -283,18 +332,34 @@ class LivePlayContent extends StatelessWidget {
 
     return Obx(() {
       final settings = SettingsService.to.player;
-      final isPortrait = manager.isVerticalVideo.value && settings.enablePortraitStreamAdaptation.v;
-      if (!isPortrait) {
+      manager.videoPresentationRevision.value;
+      final geometry = manager.currentPresentationGeometry;
+      final style = resolveFullscreenVideoSurfaceStyle(
+        geometry: geometry,
+        portraitAdaptationEnabled: settings.enablePortraitStreamAdaptation.v,
+      );
+      if (!style.useAmbientBackground) {
         return Container(
           key: const ValueKey('fullscreen-standard-video'),
           color: Colors.black,
           child: LivePlayVideo(controller: controller, expandToParent: true),
         );
       }
-      final cover = controller.state.value.room.detail?.cover ?? controller.room.cover ?? '';
+      final detail = controller.state.value.room.detail;
+      final backgroundUrl = resolvePortraitFullscreenBackgroundUrl(
+        detailCover: detail?.cover,
+        roomCover: controller.room.cover,
+        detailAvatar: detail?.avatar,
+        roomAvatar: controller.room.avatar,
+      );
       return PortraitFullscreenPresentation(
-        coverUrl: cover,
-        child: LivePlayVideo(controller: controller, expandToParent: true, transparentSurface: true),
+        backgroundUrl: backgroundUrl,
+        child: LivePlayVideo(
+          controller: controller,
+          expandToParent: true,
+          surfaceColor: style.surfaceColor,
+          fitOverride: style.fitOverride,
+        ),
       );
     });
   }
@@ -355,9 +420,9 @@ class LivePlayContent extends StatelessWidget {
 /// fitted to its trusted portrait geometry. A dim cached cover replaces harsh
 /// empty side columns without duplicating or continuously sampling video.
 class PortraitFullscreenPresentation extends StatelessWidget {
-  const PortraitFullscreenPresentation({super.key, required this.coverUrl, required this.child});
+  const PortraitFullscreenPresentation({super.key, required this.backgroundUrl, required this.child});
 
-  final String coverUrl;
+  final String backgroundUrl;
   final Widget child;
 
   @override
@@ -368,21 +433,33 @@ class PortraitFullscreenPresentation extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          if (coverUrl.isNotEmpty)
+          const DecoratedBox(
+            key: ValueKey('fullscreen-portrait-ambient-fallback'),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF171A22), Color(0xFF07080B)],
+              ),
+            ),
+          ),
+          if (backgroundUrl.isNotEmpty)
             ImageFiltered(
+              key: const ValueKey('fullscreen-portrait-ambient-image'),
               imageFilter: ui.ImageFilter.blur(sigmaX: 28, sigmaY: 28),
               child: Transform.scale(
                 scale: 1.12,
                 child: CachedNetworkImage(
-                  imageUrl: coverUrl,
+                  imageUrl: backgroundUrl,
                   fit: BoxFit.cover,
                   fadeInDuration: Duration.zero,
-                  placeholder: (_, _) => const ColoredBox(color: Colors.black),
-                  errorWidget: (_, _, _) => const ColoredBox(color: Colors.black),
+                  filterQuality: FilterQuality.low,
+                  placeholder: (_, _) => const SizedBox.expand(),
+                  errorWidget: (_, _, _) => const SizedBox.expand(),
                 ),
               ),
             ),
-          const ColoredBox(color: Color(0xB3000000)),
+          const ColoredBox(color: Color(0x73000000)),
           RepaintBoundary(child: child),
         ],
       ),

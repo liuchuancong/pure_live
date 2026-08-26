@@ -1,21 +1,21 @@
 {
-  "version": "3.0.9",
-  "build_number": 4097,
-  "version_num": 300094097,
-  "version_desc": "- 修复 Android 竖屏直播被压成超窄条的首个错误状态：移除移动端普通帧的外层比例 FittedBox，由 MediaKit/Fijk/BetterPlayer 原生视图唯一执行 contain/cover/fill。\n- 抖音选中流分辨率只负责首帧前的方向分类；首个合理的解码 dw/dh 成为纹理事实来源，平台比例不再推测像素裁边。\n- 只有两次一致的真实帧检测可以建立黑边裁剪；线路、清晰度、房间与画面方向变化统一生成新的不可变几何状态。\n- 普通竖屏页、横屏全屏、应用内小窗与 Android PiP 共用同一 VideoPresentationGeometry；普通横屏源继续沿用原生比例。\n- 对照抖音官方 orientation/object-fit/fullscreen direction/分辨率变化模型，并使用带原生固有比例和内部 FittedBox 的回归组件覆盖真实双重缩放时序。",
+  "version": "3.0.10",
+  "build_number": 4098,
+  "version_num": 300104098,
+  "version_desc": "- 修复竖屏直播进入横屏全屏后被 fill/cover 拉伸或裁切：全屏竖屏展示固定使用 contain，不再继承普通直播间的全局填充模式。\n- 统一 MediaKit、Fijk 与 BetterPlayer 的原生视频表面契约，显式传递画面 fit 与未使用视口 fill；竖屏全屏使用透明表面，恢复居中画面及两侧模糊封面。\n- 模糊背景按直播封面、房间封面、主播头像顺序回退；网络图片缺失时使用暗色渐变，不再被播放器默认黑底遮挡。\n- 识别继续位于平台适配器之后，Bilibili、斗鱼、虎牙、抖音、快手、CC、Twitch、SOOP、YY 与自定义源共享解码尺寸分类；异常元数据仍由真实帧证据或房间手动覆盖纠正。\n- 新增全屏比例覆盖、透明表面透传、背景回退及跨平台竖屏分类回归，普通横屏、普通竖屏和应用小窗路径保持原行为。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.9",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.10",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.0.9",
-      "build_number": 4097,
-      "version_num": 300094097,
-      "version_desc": "- 修复 Android 竖屏直播被压成超窄条的首个错误状态：移除移动端普通帧的外层比例 FittedBox，由 MediaKit/Fijk/BetterPlayer 原生视图唯一执行 contain/cover/fill。\n- 抖音选中流分辨率只负责首帧前的方向分类；首个合理的解码 dw/dh 成为纹理事实来源，平台比例不再推测像素裁边。\n- 只有两次一致的真实帧检测可以建立黑边裁剪；线路、清晰度、房间与画面方向变化统一生成新的不可变几何状态。\n- 普通竖屏页、横屏全屏、应用内小窗与 Android PiP 共用同一 VideoPresentationGeometry；普通横屏源继续沿用原生比例。\n- 对照抖音官方 orientation/object-fit/fullscreen direction/分辨率变化模型，并使用带原生固有比例和内部 FittedBox 的回归组件覆盖真实双重缩放时序。",
+      "version": "3.0.10",
+      "build_number": 4098,
+      "version_num": 300104098,
+      "version_desc": "- 修复竖屏直播进入横屏全屏后被 fill/cover 拉伸或裁切：全屏竖屏展示固定使用 contain，不再继承普通直播间的全局填充模式。\n- 统一 MediaKit、Fijk 与 BetterPlayer 的原生视频表面契约，显式传递画面 fit 与未使用视口 fill；竖屏全屏使用透明表面，恢复居中画面及两侧模糊封面。\n- 模糊背景按直播封面、房间封面、主播头像顺序回退；网络图片缺失时使用暗色渐变，不再被播放器默认黑底遮挡。\n- 识别继续位于平台适配器之后，Bilibili、斗鱼、虎牙、抖音、快手、CC、Twitch、SOOP、YY 与自定义源共享解码尺寸分类；异常元数据仍由真实帧证据或房间手动覆盖纠正。\n- 新增全屏比例覆盖、透明表面透传、背景回退及跨平台竖屏分类回归，普通横屏、普通竖屏和应用小窗路径保持原行为。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.9",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.10",
       "android_abis": [
         "arm64-v8a"
       ]

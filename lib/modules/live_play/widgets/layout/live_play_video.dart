@@ -9,19 +9,21 @@ class LivePlayVideo extends StatelessWidget {
     super.key,
     required this.controller,
     this.expandToParent = false,
-    this.transparentSurface = false,
+    this.surfaceColor = Colors.black,
+    this.fitOverride,
   });
 
   final LivePlayController controller;
   final bool expandToParent;
-  final bool transparentSurface;
+  final Color surfaceColor;
+  final BoxFit? fitOverride;
 
   @override
   Widget build(BuildContext context) {
     return LivePlayVideoFrame(
       expandToParent: expandToParent,
       child: ColoredBox(
-        color: transparentSurface ? Colors.transparent : Colors.black,
+        color: surfaceColor,
         child: Obx(() {
           final state = controller.state.value;
           final videoController = state.player.videoController;
@@ -35,11 +37,8 @@ class LivePlayVideo extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               ColoredBox(
-                color: transparentSurface ? Colors.transparent : Colors.black,
-                child: VideoPlayer(
-                  controller: videoController,
-                  surfaceColor: transparentSurface ? Colors.transparent : Colors.black,
-                ),
+                color: surfaceColor,
+                child: VideoPlayer(controller: videoController, surfaceColor: surfaceColor, fitOverride: fitOverride),
               ),
             ],
           );
