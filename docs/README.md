@@ -4,6 +4,10 @@
 
 ## 开发与发布
 
+- [维护范围与问题处置策略](../MAINTENANCE_POLICY.md)：Android/Windows 维护边界、Issue 分流、Bug 来源判定、上游 Issue 优先级、验证和回滚标准。
+- [上游同步审查策略](../UPSTREAM_REVIEW_POLICY.md)：三方差异、全入站文件审查、语义变更台账、冲突处置与合并门禁。
+- [Bug 根因分析模板](BUG_TRIAGE_TEMPLATE.md)：复现基线、来源分类、首次错误状态、影响矩阵与分层证据模板。
+- [上游同步审计模板](UPSTREAM_AUDIT_TEMPLATE.md)：审查脚本要求的逐文件台账、Issue 映射、质量评估、处置和回归字段。
 - [本地构建、测试与发布](BUILD_AND_RELEASE.md)：固定工具链、一键质量门禁、Android 签名、Windows 打包与本地发布。
 - [Windows 数据目录与升级](WINDOWS_DATA_AND_UPGRADE.md)：安装目录数据、旧版关注合并、换盘迁移与回滚。
 - [依赖与接口审计](DEPENDENCY_AUDIT.md)：依赖锁定策略、暂缓升级原因和直播平台接口探测边界。
@@ -39,8 +43,11 @@
 
 ## 维护原则
 
-1. 命令以仓库根目录为工作目录，优先调用 `tool/` 中的包装脚本。
-2. 工具链版本以 `.fvmrc`、Gradle 配置和 `pubspec.lock` 为准。
-3. 外部接口和依赖状态具有时效性，发布前重新运行质量门禁。
-4. 构建产物进入 `local-artifacts/`，不提交到 Git。
-5. 文档中的密钥、账号、Cookie 和本地绝对路径只使用占位符。
+1. Android/Android TV 与 Windows 是主要维护目标；其他平台按社区证据记录。
+2. Bug 先判定上游、维护分支、整合冲突、外部漂移或本地数据来源，再设计修复。
+3. 上游同步先完成三方语义审查和处置台账，再创建 merge。
+4. 命令以仓库根目录为工作目录，优先调用 `tool/` 中的包装脚本。
+5. 工具链版本以 `.fvmrc`、Gradle 配置和 `pubspec.lock` 为准。
+6. 外部接口和依赖状态具有时效性，发布前重新运行质量门禁。
+7. 构建产物进入 `local-artifacts/`，不提交到 Git。
+8. 文档中的密钥、账号、Cookie 和本地绝对路径只使用占位符。

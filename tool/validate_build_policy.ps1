@@ -6,8 +6,15 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 
 $requiredFiles = @(
     'BUILD_POLICY.md',
+    'MAINTENANCE_POLICY.md',
     'UPSTREAM_REVIEW_POLICY.md',
     '.agents\skills\pure-live-build\SKILL.md',
+    '.agents\skills\pure-live-maintenance\SKILL.md',
+    '.github\ISSUE_TEMPLATE\bug_report.yml',
+    '.github\ISSUE_TEMPLATE\config.yml',
+    '.github\pull_request_template.md',
+    'docs\BUG_TRIAGE_TEMPLATE.md',
+    'docs\UPSTREAM_AUDIT_TEMPLATE.md',
     'tool\build_resource_guard.ps1',
     'tool\review_upstream_update.ps1',
     'tool\audit_repository.py',
@@ -28,6 +35,80 @@ foreach ($relativePath in $requiredFiles) {
 $skillText = Get-Content -LiteralPath (Join-Path $repoRoot '.agents\skills\pure-live-build\SKILL.md') -Raw
 if ($skillText -notmatch '(?s)^---\s*\r?\nname:\s*pure-live-build\s*\r?\ndescription:\s*.+?\r?\n---') {
     throw 'Pure Live build skill frontmatter is incomplete.'
+}
+
+$maintenanceSkillText = Get-Content -LiteralPath (Join-Path $repoRoot '.agents\skills\pure-live-maintenance\SKILL.md') -Raw
+if ($maintenanceSkillText -notmatch '(?s)^---\s*\r?\nname:\s*pure-live-maintenance\s*\r?\ndescription:\s*.+?\r?\n---') {
+    throw 'Pure Live maintenance skill frontmatter is incomplete.'
+}
+foreach ($marker in @('MAINTENANCE_POLICY.md', 'bug-provenance', 'semantic change ledger')) {
+    if (-not $maintenanceSkillText.Contains($marker)) {
+        throw "Pure Live maintenance skill marker is missing: $marker"
+    }
+}
+
+$maintenancePolicy = Get-Content -LiteralPath (Join-Path $repoRoot 'MAINTENANCE_POLICY.md') -Raw
+foreach ($marker in @(
+    'android-first',
+    'windows-maintained',
+    'feature-requests-upstream',
+    'bug-provenance-required',
+    'semantic-change-ledger',
+    'evidence-layered',
+    'rollback-required',
+    'upstream-existing',
+    'fork-regression',
+    'integration-conflict',
+    'external-drift',
+    'environment-or-data',
+    'not-reproduced',
+    'accept',
+    'adapt',
+    'rewrite',
+    'drop',
+    'defer'
+)) {
+    if (-not $maintenancePolicy.Contains($marker)) {
+        throw "Maintenance policy marker is missing: $marker"
+    }
+}
+
+$featureRequestTemplate = Join-Path $repoRoot '.github\ISSUE_TEMPLATE\feature_request.yml'
+if (Test-Path -LiteralPath $featureRequestTemplate) {
+    throw 'Feature requests must route to the upstream project instead of a local Issue form.'
+}
+$issueConfig = Get-Content -LiteralPath (Join-Path $repoRoot '.github\ISSUE_TEMPLATE\config.yml') -Raw
+$bugTemplate = Get-Content -LiteralPath (Join-Path $repoRoot '.github\ISSUE_TEMPLATE\bug_report.yml') -Raw
+$pullRequestTemplate = Get-Content -LiteralPath (Join-Path $repoRoot '.github\pull_request_template.md') -Raw
+if (-not $issueConfig.Contains('https://github.com/liuchuancong/pure_live/issues/new/choose')) {
+    throw 'Issue configuration must route feature requests to the upstream project.'
+}
+foreach ($marker in @('maintenance-bug-only', 'upstream-comparison', 'community-verified', 'upstream_comparison', 'last_working')) {
+    if (-not $bugTemplate.Contains($marker)) {
+        throw "Bug report triage marker is missing: $marker"
+    }
+}
+foreach ($marker in @('bug-provenance', 'semantic-audit', 'impact-matrix', 'evidence-layered', 'rollback', 'semantic_change_ledger', 'fork_feature_impact', 'quality_assessment', 'disposition')) {
+    if (-not $pullRequestTemplate.Contains($marker)) {
+        throw "Pull Request maintenance marker is missing: $marker"
+    }
+}
+
+$readmeText = Get-Content -LiteralPath (Join-Path $repoRoot 'README.md') -Raw
+$contributingText = Get-Content -LiteralPath (Join-Path $repoRoot 'CONTRIBUTING.md') -Raw
+$agentText = Get-Content -LiteralPath (Join-Path $repoRoot 'AGENTS.md') -Raw
+$upstreamAuditTemplate = Get-Content -LiteralPath (Join-Path $repoRoot 'docs\UPSTREAM_AUDIT_TEMPLATE.md') -Raw
+foreach ($entry in @(
+    [pscustomobject]@{ Name = 'README'; Text = $readmeText; Markers = @('maintenance-readme-markers', 'android-first', 'windows-maintained', 'upstream-feature-routing', 'MAINTENANCE_POLICY.md', 'issues/new/choose') },
+    [pscustomobject]@{ Name = 'CONTRIBUTING'; Text = $contributingText; Markers = @('contribution-policy-markers', 'maintenance-bug-only', 'bug-triage', 'upstream-review', 'feature-routing', 'integration-conflict') },
+    [pscustomobject]@{ Name = 'AGENTS'; Text = $agentText; Markers = @('Maintenance scope and triage', 'MAINTENANCE_POLICY.md', 'not-reproduced') },
+    [pscustomobject]@{ Name = 'upstream audit template'; Text = $upstreamAuditTemplate; Markers = @('file_review', 'semantic_change_ledger', 'issue_and_bug_mapping', 'fork_feature_impact', 'quality_assessment', 'disposition', 'conflict_resolution', 'regression_plan', 'verification_plan') }
+)) {
+    foreach ($marker in $entry.Markers) {
+        if (-not $entry.Text.Contains($marker)) {
+            throw "$($entry.Name) maintenance marker is missing: $marker"
+        }
+    }
 }
 
 $powerShellFiles = @(
@@ -220,7 +301,11 @@ $upstreamAuditWorkflow = Get-Content -LiteralPath (Join-Path $repoRoot '.github\
 foreach ($marker in @(
     'review_upstream_update.ps1',
     'normal-live-layout-visible',
-    'manual-workflow-defaults-off'
+    'manual-workflow-defaults-off',
+    'semantic-change-ledger',
+    'fork-feature-impact',
+    'disposition-required',
+    'bug-provenance-required'
 )) {
     if (-not $upstreamPolicy.Contains($marker)) {
         throw "Upstream review policy marker is missing: $marker"
@@ -232,6 +317,15 @@ foreach ($marker in @(
     "@('merge-base', `$baseSha, `$upstreamSha)",
     'incoming_range',
     'audit_document_valid',
+    'audit_document_required_markers',
+    'audit_document_missing_commits',
+    'audit_document_missing_files',
+    'semantic_change_ledger',
+    'issue_and_bug_mapping',
+    'fork_feature_impact',
+    'quality_assessment',
+    'disposition',
+    'regression_plan',
     'credential_material_in_added_lines'
 )) {
     if (-not $upstreamReviewScript.Contains($marker)) {

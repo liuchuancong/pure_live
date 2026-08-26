@@ -33,6 +33,16 @@
 
 > 本维护分支持续同步 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)，并维护本机优先构建、正式签名、接口探测、Windows 数据迁移及高刷新率优化。
 
+## 维护分支说明（请先阅读）
+
+<!-- maintenance-readme-markers: maintenance-scope; android-first; windows-maintained; upstream-feature-routing -->
+
+- 本仓库重点维护 **Android / Android TV 与 Windows**。当前日常使用 Android 更多，因此多数修复、功能整合和安装包会优先更新 Android；Windows 继续作为主要桌面维护目标。
+- Linux、macOS 和 iOS 保留源码及上游兼容性，但缺少持续使用的对应设备，列为社区验证范围，不承诺每轮构建、更新时效或运行结果。
+- 本分支更新频繁、历史定制较多，仍可能出现较多回归、接口时效和设备兼容问题。若更看重低频变更或原项目行为，可切换到[原项目](https://github.com/liuchuancong/pure_live)。
+- 本仓库 Issue 仅受理**可复现的维护型 Bug**。新增功能、产品方向和全新平台适配请提交到[原项目 Issue](https://github.com/liuchuancong/pure_live/issues/new/choose)。
+- 每次同步上游、分析 Bug 和审查原项目 Issue 的来源判定、根因、兼容、验证与回滚流程见[维护范围与问题处置策略](MAINTENANCE_POLICY.md)及[上游同步审查策略](UPSTREAM_REVIEW_POLICY.md)。
+
 - **最新稳定版**：[v3.0.2](https://github.com/wzgrx/pure_live/releases/tag/v3.0.2)
 - **当前 Android 构建版本**：`3.0.2+4090`（普通横屏比例、竖屏隔离、全屏/小窗与弹幕布局修复）
 - **v3.0.0 上游源码基线**：`liuchuancong/pure_live@e808dcae`；完整记录见 `docs/STAGE_UPDATE_3_0_0.md`
@@ -84,6 +94,8 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 | 文档 | 内容 |
 | --- | --- |
 | [文档索引](docs/README.md) | 开发、发布、依赖和功能文档入口 |
+| [维护范围与问题处置策略](MAINTENANCE_POLICY.md) | 平台支持边界、Issue 分流、Bug 来源判定、上游 Issue 优先级与完成标准 |
+| [上游同步审查策略](UPSTREAM_REVIEW_POLICY.md) | 三方差异、语义变更台账、冲突处置与合并门禁 |
 | [构建与发布](docs/BUILD_AND_RELEASE.md) | 本机质量门禁、签名、打包和 Release 流程 |
 | [Windows 数据与升级](docs/WINDOWS_DATA_AND_UPGRADE.md) | 安装目录存储、关注恢复、换盘迁移和回滚 |
 | [Windows MSIX 证书说明](docs/MSIX_INSTALL.md) | 自行构建 MSIX 时的证书指纹核对与安装步骤 |
@@ -386,7 +398,7 @@ Firebase 不是 Pure Live 使用的必要条件。
 
 ### Android
 
-v2.7.0 的 Android 包仅提供 `arm64-v8a`，适用于当前主流 64 位 ARM 手机和平板。更新页读取版本清单中的实际 ABI 列表，只展示本轮实际发布的下载链接。
+当前 Android 正式包以 `arm64-v8a` 为主，适用于当前主流 64 位 ARM 手机和平板。更新页读取版本清单中的实际 ABI 列表，只展示对应 Release 实际发布的下载链接。
 
 Android 始终使用正式包名：
 
@@ -414,27 +426,15 @@ EXE 安装向导支持选择其他磁盘，并把设置、关注、历史、IPTV
 
 ### macOS
 
-支持：
-
-- Intel x64
-- Apple Silicon arm64
-- Universal
-
-macOS Universal 包可以同时运行在 Intel 和 Apple Silicon Mac 上。
+源码保留 Intel x64、Apple Silicon arm64 与 Universal 构建能力。本维护分支缺少持续使用的 macOS 设备，相关产物只在 Release 明确列出时成立，并标为社区验证。
 
 ### Linux
 
-提供 Linux x64 阶段构建。
-
-Linux 网页搜索会交给系统浏览器，原生搜索与播放继续在应用内完成。
+源码保留 Linux x64 构建能力。Linux 网页搜索会交给系统浏览器，原生搜索与播放继续在应用内完成；本维护分支缺少常规运行验证。
 
 ### iOS
 
-提供 iOS arm64 设备构建包。
-
-iOS 附件为设备 `.app` 编译归档。
-
-签名和 IPA 封装需要在持有 Apple 开发者证书的环境中完成。
+源码保留 iOS arm64 设备构建能力。相关 `.app`、签名和 IPA 状态以具体 Release 说明为准，本维护分支缺少持续使用的 iOS 设备。
 
 ---
 
@@ -453,7 +453,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
   -Target AndroidArm64 -Configuration Release -FullRegression -RequireReleaseSigning
 ```
 
-当前 v2.7.0 build 4077 在原有首页有界并发、PiP 弹幕恢复和三档刷新率基础上，同步上游至 `81ec372a`，并为热门页平台切换增加关闭状态、加载代次与延迟任务隔离；关注页每个平台列表重新直接承载下拉刷新，空列表也可手势核验；取消关注弹窗绑定自身路由，避免误退直播页。Windows 视频纹理按实际可见视口适配且切换比例不重新拉流，iOS 新配置默认使用 IJK 并识别设备最高刷新率。完整门禁和全平台产物记录见 [v2.7.0 阶段稳定版](docs/STAGE_UPDATE_2_7_0.md) 与 [构建与发布](docs/BUILD_AND_RELEASE.md)。
+当前稳定版的源码基线、修复范围、验证证据、实际构建平台和产物校验见顶部版本条目及对应阶段文档；通用门禁和单平台串行发布流程见[构建与发布](docs/BUILD_AND_RELEASE.md)。
 
 ## 🤝 参与开发
 
@@ -461,9 +461,9 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
 - **协助开发者**：[@wzgrx](https://github.com/wzgrx/pure_live)
 - **协助开发者**：[@RebornQ](https://github.com/RebornQ)
 
-> 📌 **欢迎贡献**！
+> 📌 **欢迎贡献维护型修复、测试和文档**！
 > - 如发现 License 使用不当，请提交 Issue 或 Pull Request
-> - 如有新的想法或建议，欢迎贡献合作！
+> - 本仓库 Issue 聚焦可复现 Bug；新增功能和产品建议统一提交到[原项目](https://github.com/liuchuancong/pure_live/issues/new/choose)
 
 ### 代码参考
 - [dart_simple_live](https://github.com/xiaoyaocz/dart_simple_live)

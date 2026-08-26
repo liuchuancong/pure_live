@@ -60,7 +60,8 @@ function Resolve-Category {
         workflows_and_release = '^(\.github/workflows/|assets/version\.json$|assets/releases\.json$|RELEASE_NOTES\.md$)'
         translations_and_assets = '^assets/'
         tests = '^test/'
-        tooling_and_policy = '^(tool/|docs/|BUILD_POLICY\.md$|UPSTREAM_REVIEW_POLICY\.md$|AGENTS\.md$|\.agents/)'
+        tooling_and_policy = '^(tool/|docs/|BUILD_POLICY\.md$|MAINTENANCE_POLICY\.md$|UPSTREAM_REVIEW_POLICY\.md$|AGENTS\.md$|\.agents/)'
+        repository_governance = '^(README\.md$|CONTRIBUTING\.md$|\.github/(ISSUE_TEMPLATE/|pull_request_template\.md$))'
         repository_metadata = '.*'
     }
     foreach ($entry in $rules.GetEnumerator()) {
@@ -76,7 +77,7 @@ function Resolve-Risk {
         'recording_and_storage', 'android_native', 'windows_native', 'apple_native',
         'linux_native', 'dependencies_and_vendored', 'workflows_and_release'
     )) { return 'high' }
-    if ($Category -in @('app_modules', 'common_runtime', 'other_application_source', 'translations_and_assets')) {
+    if ($Category -in @('app_modules', 'common_runtime', 'other_application_source', 'translations_and_assets', 'repository_governance')) {
         return 'medium'
     }
     return 'low'
@@ -179,13 +180,39 @@ $binaryChanges = @($changes | Where-Object binary)
 
 $resolvedAuditDocument = $null
 $auditDocumentValid = $false
+$requiredAuditMarkers = @(
+    $upstreamSha,
+    $mergeBase,
+    'file_review',
+    'semantic_change_ledger',
+    'issue_and_bug_mapping',
+    'fork_feature_impact',
+    'quality_assessment',
+    'disposition',
+    'conflict_resolution',
+    'regression_plan',
+    'verification_plan'
+)
+$auditDocumentMissingMarkers = @($requiredAuditMarkers)
+$auditDocumentMissingCommits = @($commits | ForEach-Object { $_.sha })
+$auditDocumentMissingFiles = @($changes | ForEach-Object { $_.path })
 if (-not [string]::IsNullOrWhiteSpace($AuditDocument)) {
     $resolvedAuditDocument = if ([IO.Path]::IsPathRooted($AuditDocument)) { $AuditDocument } else { Join-Path $repoRoot $AuditDocument }
     if (Test-Path -LiteralPath $resolvedAuditDocument -PathType Leaf) {
         $auditText = Get-Content -LiteralPath $resolvedAuditDocument -Raw -Encoding UTF8
-        $requiredMarkers = @($upstreamSha, $mergeBase, 'file_review', 'conflict_resolution', 'verification_plan')
-        $auditDocumentValid = @($requiredMarkers | Where-Object { -not $auditText.Contains($_) }).Count -eq 0
+        $auditDocumentMissingMarkers = @($requiredAuditMarkers | Where-Object { -not $auditText.Contains($_) })
+        $auditDocumentMissingCommits = @($commits | Where-Object { -not $auditText.Contains($_.sha) } | ForEach-Object { $_.sha })
+        $auditDocumentMissingFiles = @($changes | Where-Object { -not $auditText.Contains($_.path) } | ForEach-Object { $_.path })
+        $auditDocumentValid = $auditDocumentMissingMarkers.Count -eq 0 -and
+            $auditDocumentMissingCommits.Count -eq 0 -and
+            $auditDocumentMissingFiles.Count -eq 0
     }
+}
+if ($commits.Count -eq 0) {
+    $auditDocumentMissingMarkers = @()
+    $auditDocumentMissingCommits = @()
+    $auditDocumentMissingFiles = @()
+    $auditDocumentValid = $true
 }
 
 if ([string]::IsNullOrWhiteSpace($OutputPath)) {
@@ -195,7 +222,7 @@ if ([string]::IsNullOrWhiteSpace($OutputPath)) {
 }
 
 $result = [ordered]@{
-    schema_version = 2
+    schema_version = 3
     reviewed_at_utc = [DateTime]::UtcNow.ToString('o')
     base_ref = $BaseRef
     base_sha = $baseSha
@@ -221,6 +248,10 @@ $result = [ordered]@{
     violations = $violations
     audit_document = $resolvedAuditDocument
     audit_document_valid = $auditDocumentValid
+    audit_document_required_markers = $requiredAuditMarkers
+    audit_document_missing_markers = $auditDocumentMissingMarkers
+    audit_document_missing_commits = $auditDocumentMissingCommits
+    audit_document_missing_files = $auditDocumentMissingFiles
     high_risk_approved = [bool]$ApproveHighRisk
     report_only = [bool]$ReportOnly
 }
@@ -243,7 +274,8 @@ if ($commits.Count -gt 0 -and -not $ReportOnly -and -not $ApproveHighRisk) {
     throw 'Every incoming upstream commit requires a documented whole-diff review and -ApproveHighRisk.'
 }
 if ($commits.Count -gt 0 -and -not $ReportOnly -and -not $auditDocumentValid) {
-    throw 'Incoming upstream commits require an audit document containing the frozen SHA, merge base, file_review, conflict_resolution and verification_plan.'
+    $missingFilePreview = @($auditDocumentMissingFiles | Select-Object -First 10) -join ', '
+    throw "Incoming upstream commits require the complete semantic audit document. Missing markers: $($auditDocumentMissingMarkers -join ', '); missing commits: $($auditDocumentMissingCommits.Count); missing files: $($auditDocumentMissingFiles.Count) [$missingFilePreview]"
 }
 
 if ($ReportOnly -and $commits.Count -gt 0) {

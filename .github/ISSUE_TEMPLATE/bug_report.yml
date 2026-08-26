@@ -1,3 +1,4 @@
+# policy-markers: maintenance-bug-only; upstream-comparison; community-verified
 name: Bug 报告
 description: 报告可复现的播放、弹幕、界面、备份或安装问题
 title: "[Bug] "
@@ -6,12 +7,15 @@ labels:
 body:
   - type: markdown
     attributes:
-      value: 请先使用关键词搜索已有 Issue，并移除日志中的 Cookie、令牌、账号和本地隐私数据。
+      value: |
+        本维护分支重点维护 Android / Android TV 与 Windows，仅受理可复现的已有功能异常。新增功能和产品建议请前往原项目。Linux、macOS、iOS 报告按社区证据跟踪。
+
+        请先搜索已有 Issue，并移除日志中的 Cookie、令牌、账号、私有直播源和本地隐私数据。
   - type: input
     id: version
     attributes:
       label: Pure Live 版本
-      description: 例如 v2.0.23 或 master 提交 SHA
+      description: 例如 v3.0.2、构建号或 master 完整提交 SHA
     validations:
       required: true
   - type: dropdown
@@ -19,11 +23,13 @@ body:
     attributes:
       label: 平台
       options:
-        - Android 手机/平板
-        - Android TV
-        - Windows
-        - macOS
-        - 其他
+        - Android 手机/平板（主要维护）
+        - Android TV（随 Android 维护）
+        - Windows x64（主要维护）
+        - Linux（社区验证）
+        - macOS（社区验证）
+        - iOS（社区验证）
+        - 其他（社区验证）
     validations:
       required: true
   - type: input
@@ -33,10 +39,48 @@ body:
       description: 系统版本、设备型号、CPU 架构；播放问题请附播放器类型
     validations:
       required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: 问题模块
+      options:
+        - 启动 / 首页 / 关注刷新
+        - 直播播放 / 黑屏 / 清晰度与线路
+        - 竖屏 / 横屏 / 全屏 / 返回
+        - 小窗 / 画中画 / 音频模式 / 后台
+        - 弹幕 / 评论 / 本地互动
+        - 搜索 / 分区 / 热度与在线人数
+        - 设置 / 备份 / 升级迁移
+        - Windows 窗口 / 安装 / 数据目录
+        - 性能 / CPU / 内存 / 帧率
+        - 直播平台接口 / 协议
+        - 其他已有功能
+    validations:
+      required: true
+  - type: input
+    id: last_working
+    attributes:
+      label: 最后正常版本
+      description: 首次出现问题的版本与最后正常版本；从未正常或不确定时请写明。
+    validations:
+      required: true
+  - type: dropdown
+    id: upstream_comparison
+    attributes:
+      label: 原项目同版本或最新版是否复现
+      description: 此项帮助区分上游既有问题、维护分支回归和整合冲突；不确定时选择“尚未核对”。
+      options:
+        - 尚未核对
+        - 原项目也复现
+        - 仅维护分支复现
+        - 原项目不存在对应功能
+        - 外部平台接口当前也异常
+    validations:
+      required: true
   - type: textarea
     id: steps
     attributes:
-      label: 复现步骤
+      label: 最短复现步骤
       placeholder: |
         1. 打开……
         2. 选择……
@@ -52,16 +96,30 @@ body:
   - type: textarea
     id: actual
     attributes:
-      label: 实际结果与日志
-      description: 可拖入截图或录屏；粘贴日志前请清理敏感字段
+      label: 实际结果
+      description: 描述首次出现的异常状态、发生频率和是否能自行恢复。
     validations:
       required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 日志、截图或录屏
+      description: 可拖入材料；平台接口问题请附发生时间，日志粘贴前请清理敏感字段。
+  - type: textarea
+    id: related_modes
+    attributes:
+      label: 相邻模式与补充信息
+      description: 说明竖屏、横屏、全屏、小窗、音频模式、前后台、弹幕、旧配置或不同播放器是否同样出现。
   - type: checkboxes
     id: checks
     attributes:
       label: 提交检查
       options:
         - label: 已搜索重复问题
+          required: true
+        - label: 已核对最新 Release 说明和当前版本号
+          required: true
+        - label: 这是已有功能异常；新增功能与产品建议将提交到原项目
           required: true
         - label: 已清理 Cookie、令牌、账号、私有直播源和个人数据
           required: true
