@@ -43,7 +43,7 @@
 - 本仓库 Issue 仅受理**可复现的维护型 Bug**。新增功能、产品方向和全新平台适配请提交到[原项目 Issue](https://github.com/liuchuancong/pure_live/issues/new/choose)。
 - 每次同步上游、分析 Bug 和审查原项目 Issue 的来源判定、根因、兼容、验证与回滚流程见[维护范围与问题处置策略](MAINTENANCE_POLICY.md)及[上游同步审查策略](UPSTREAM_REVIEW_POLICY.md)。
 
-- **最新稳定版**：[v3.0.2](https://github.com/wzgrx/pure_live/releases/tag/v3.0.2)
+- **最新稳定版**：[v3.0.3](https://github.com/wzgrx/pure_live/releases/tag/v3.0.3)
 - **当前 Android 构建版本**：`3.0.3+4091`（竖屏 Surface 比例统一与横屏直播记录双列恢复）
 - **v3.0.0 上游源码基线**：`liuchuancong/pure_live@e808dcae`；完整记录见 `docs/STAGE_UPDATE_3_0_0.md`
 - **本轮构建平台**：仅 Android arm64-v8a；其他平台继续使用 v3.0.0 安装包
