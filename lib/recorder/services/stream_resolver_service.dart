@@ -31,7 +31,7 @@ class StreamResolverService extends GetxService {
       final detail = await Sites.of(platform).liveSite.getRoomDetail(roomId: roomId, platform: platform);
 
       /// 未开播
-      if (detail.liveStatus != LiveStatus.live) {
+      if (detail.liveStatus != LiveStatus.live && detail.isRecord == false) {
         throw StreamException(type: StreamErrorType.notLive, message: i18n("stream_not_live"), retryable: false);
       }
 
