@@ -154,7 +154,6 @@ class LivePlayContent extends StatelessWidget {
         child: Obx(() {
           final manager = GlobalPlayerService.instance.player;
           final settings = SettingsService.to.player;
-          final geometry = manager.videoGeometry.value;
           final isPortrait = manager.isVerticalVideo.value;
           final useAdaptivePortraitFrame =
               MediaQuery.sizeOf(context).width <= 680 &&
@@ -168,9 +167,7 @@ class LivePlayContent extends StatelessWidget {
             danmaku: _buildDanmaku(),
             showPanel: controller.site != Sites.iptvSite,
             isPortraitSource: isPortrait,
-            sourceAspectRatio: isPortrait && (!geometry.hasValidDimensions || !geometry.isStable)
-                ? 9 / 16
-                : geometry.aspectRatio,
+            sourceAspectRatio: manager.currentPresentationAspectRatio,
             adaptivePortraitHeight: settings.enablePortraitStreamAdaptation.v && settings.portraitAdaptiveHeight.v,
             portraitLayoutMode: settings.portraitLayoutMode,
           );

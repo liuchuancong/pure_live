@@ -306,6 +306,13 @@ class PlayerManager {
     );
   }
 
+  /// The single trusted presentation ratio shared by the normal room,
+  /// fullscreen, system PiP and the application floating window.
+  double get currentPresentationAspectRatio => PortraitPresentationPolicy.resolveVideoDisplayAspectRatio(
+    snapshot: videoGeometry.value,
+    effectiveOrientation: effectiveVideoOrientation,
+  );
+
   void _resetVideoGeometry() {
     _geometryObservationTimer?.cancel();
     _geometryStabilityTimer?.cancel();
@@ -1518,14 +1525,21 @@ class PlayerManager {
   }
 
   Widget _buildVideoWidget(UnifiedPlayer player, BoxFit boxFit) {
-    // Every adapter already owns its aspect correction and BoxFit behavior.
-    // Wrapping Android/iOS in a second FittedBox based on independently emitted
-    // width/height streams double-applied the ratio, briefly paired dimensions
-    // from different metadata events and visibly squashed landscape streams.
-    // Apply the requested fit before constructing the adapter widget, then keep
-    // one native aspect authority on every platform.
-    _applyVideoFit(player, boxFit);
-    return player.getVideoWidget();
+    if (!PlatformUtils.isMobile) {
+      // Desktop adapters retain their native aspect and visible-viewport
+      // policies, including the bounded Windows texture implementation.
+      _applyVideoFit(player, boxFit);
+      return player.getVideoWidget();
+    }
+
+    // Mobile player engines report dimensions through different native
+    // surfaces. Give all of them the same trusted frame and set the adapter to
+    // fill that frame, leaving exactly one BoxFit owner. This differs from the
+    // old double-FittedBox implementation: it never waits for two independent
+    // width/height streams and it never lets the adapter apply the ratio again.
+    final aspectRatio = currentPresentationAspectRatio;
+    _applyVideoFit(player, BoxFit.fill);
+    return buildUnifiedMobileVideoFrame(aspectRatio: aspectRatio, fit: boxFit, child: player.getVideoWidget());
   }
 
   Widget _buildPlaceholder() {
@@ -1763,6 +1777,22 @@ class PlayerManager {
       _heightSubject.close(),
     ]);
   }
+}
+
+/// Builds the single mobile texture geometry boundary used by every engine.
+/// Kept outside [PlayerManager] so its BoxFit contract has deterministic widget
+/// coverage without allocating a native player.
+@visibleForTesting
+Widget buildUnifiedMobileVideoFrame({required double aspectRatio, required BoxFit fit, required Widget child}) {
+  final safeAspectRatio = aspectRatio.isFinite && aspectRatio > 0 ? aspectRatio : 16 / 9;
+  const basis = 1000.0;
+  return ClipRect(
+    child: FittedBox(
+      fit: fit,
+      clipBehavior: Clip.hardEdge,
+      child: SizedBox(width: basis * safeAspectRatio, height: basis, child: child),
+    ),
+  );
 }
 
 class _AudioServiceRequest {
