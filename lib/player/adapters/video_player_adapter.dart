@@ -1,26 +1,25 @@
 import 'dart:async';
-
 import 'package:rxdart/rxdart.dart';
-
 import '../models/player_state.dart';
 import '../models/player_exception.dart';
 import '../models/player_error_type.dart';
-
 import 'package:pure_live/common/index.dart';
-
 import '../interface/unified_player_interface.dart';
-
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:better_player_plus/better_player_plus.dart';
 import 'package:pure_live/player/interface/video_player_accessor.dart';
 
-class BetterPlayerAdapter implements UnifiedPlayer, BetterPlayerAccessor, VideoFitAwarePlayer {
+
+
+
+
+
+class BetterPlayerAdapter implements UnifiedPlayer, BetterPlayerAccessor {
   BetterPlayerController? _controller;
 
   bool _initialized = false;
   bool _disposed = false;
   bool _isAudioOnly = false;
-  BoxFit _videoFit = BoxFit.contain;
 
   void Function(BetterPlayerEvent)? _eventListener;
 
@@ -41,7 +40,6 @@ class BetterPlayerAdapter implements UnifiedPlayer, BetterPlayerAccessor, VideoF
 
     BetterPlayerConfiguration betterPlayerConfiguration = BetterPlayerConfiguration(
       autoPlay: true,
-      fit: _videoFit,
       handleLifecycle: false,
       fullScreenByDefault: false,
       autoDispose: false,
@@ -167,16 +165,9 @@ class BetterPlayerAdapter implements UnifiedPlayer, BetterPlayerAccessor, VideoF
   }
 
   @override
-  Widget getVideoWidget() {
+  Widget getVideoWidget(BoxFit boxfit) {
     if (_isAudioOnly) return const SizedBox.shrink();
     return BetterPlayer(controller: _controller!);
-  }
-
-  @override
-  void setVideoFit(BoxFit fit) {
-    if (_videoFit == fit) return;
-    _videoFit = fit;
-    _controller?.setOverriddenFit(fit);
   }
 
   @override

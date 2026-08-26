@@ -1,7 +1,6 @@
-import 'dart:io';
-
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
+import 'package:pure_live/common/services/settings/player_settings_controller.dart';
 
 class PortraitLiveSettingsPage extends StatelessWidget {
   const PortraitLiveSettingsPage({super.key});
@@ -10,6 +9,7 @@ class PortraitLiveSettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final settings = SettingsService.to.player;
     final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(title: Text(i18n('portrait_live_settings'))),
       body: ListView(
@@ -18,21 +18,6 @@ class PortraitLiveSettingsPage extends StatelessWidget {
         children: [
           context.buildGroupTitle(i18n('portrait_detection_group')),
           context.buildModernCard([
-            context.buildSwitchTile(
-              icon: Icons.aspect_ratio_rounded,
-              title: i18n('portrait_smart_detection'),
-              subtitle: i18n('portrait_smart_detection_desc'),
-              isLong: true,
-              value: settings.enablePortraitStreamAdaptation,
-              onChanged: (_) => _refreshPresentation(),
-            ),
-            context.buildSwitchTile(
-              icon: Icons.view_agenda_outlined,
-              title: i18n('portrait_adaptive_height'),
-              subtitle: i18n('portrait_adaptive_height_desc'),
-              isLong: true,
-              value: settings.portraitAdaptiveHeight,
-            ),
             Obx(
               () => context.buildTile(
                 icon: Icons.dashboard_customize_outlined,
@@ -43,51 +28,10 @@ class PortraitLiveSettingsPage extends StatelessWidget {
                   _layoutModeLabel(settings.portraitLayoutMode),
                   style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
                 ),
-                onTap: () => _selectEnum<PortraitLayoutMode>(
-                  context,
-                  title: i18n('portrait_layout_mode'),
-                  values: PortraitLayoutMode.values,
-                  selected: settings.portraitLayoutMode,
-                  label: _layoutModeLabel,
-                  onSelected: (value) => settings.portraitLayoutModeName.v = value.name,
-                ),
+                onTap: () => _selectLayoutMode(context, settings),
               ),
             ),
-          ]),
-          const SizedBox(height: 20),
-          context.buildGroupTitle(i18n('portrait_presentation_group')),
-          context.buildModernCard([
-            Obx(
-              () => context.buildTile(
-                icon: Icons.fullscreen_rounded,
-                title: i18n('portrait_fullscreen_policy'),
-                subtitle: i18n('portrait_fullscreen_policy_desc'),
-                isLong: true,
-                trailing: Text(
-                  _fullscreenPolicyLabel(settings.portraitFullscreenPolicy),
-                  style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
-                ),
-                onTap: () => _selectEnum<PortraitFullscreenPolicy>(
-                  context,
-                  title: i18n('portrait_fullscreen_policy'),
-                  values: PortraitFullscreenPolicy.values,
-                  selected: settings.portraitFullscreenPolicy,
-                  label: _fullscreenPolicyLabel,
-                  onSelected: (value) {
-                    settings.portraitFullscreenPolicyName.v = value.name;
-                    _refreshPresentation();
-                  },
-                ),
-              ),
-            ),
-            if (Platform.isAndroid)
-              context.buildSwitchTile(
-                icon: Icons.picture_in_picture_alt_rounded,
-                title: i18n('portrait_pip_follow_source'),
-                subtitle: i18n('portrait_pip_follow_source_desc'),
-                isLong: true,
-                value: settings.portraitPipFollowSource,
-              ),
+
             Obx(
               () => context.buildTile(
                 icon: Icons.subtitles_outlined,
@@ -98,106 +42,134 @@ class PortraitLiveSettingsPage extends StatelessWidget {
                   _danmakuModeLabel(settings.portraitDanmakuMode),
                   style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
                 ),
-                onTap: () => _selectEnum<PortraitDanmakuMode>(
-                  context,
-                  title: i18n('portrait_danmaku_mode'),
-                  values: PortraitDanmakuMode.values,
-                  selected: settings.portraitDanmakuMode,
-                  label: _danmakuModeLabel,
-                  onSelected: (value) => settings.portraitDanmakuModeName.v = value.name,
-                ),
+                onTap: () => _selectDanmakuMode(context, settings),
               ),
             ),
-            context.buildSwitchTile(
-              icon: Icons.bookmark_added_outlined,
-              title: i18n('portrait_remember_room_override'),
-              subtitle: i18n('portrait_remember_room_override_desc'),
-              isLong: true,
-              value: settings.rememberPortraitRoomOverride,
-            ),
           ]),
+
           const SizedBox(height: 20),
-          context.buildGroupTitle(i18n('portrait_diagnostics_group')),
+
+          // ─────────────────────────────────────────────
+          // 恢复默认设置
+          // ─────────────────────────────────────────────
+          context.buildGroupTitle(i18n('portrait_presentation_group')),
           context.buildModernCard([
-            context.buildSwitchTile(
-              icon: Icons.monitor_heart_outlined,
-              title: i18n('portrait_show_diagnostics'),
-              subtitle: i18n('portrait_show_diagnostics_desc'),
-              isLong: true,
-              value: settings.showPortraitDiagnostics,
-            ),
             context.buildTile(
               icon: Icons.restart_alt_rounded,
               title: i18n('portrait_reset_settings'),
               subtitle: i18n('portrait_reset_settings_desc'),
               isLong: true,
               onTap: () {
-                settings.resetPortraitStreamSettings();
-                _refreshPresentation();
+                settings.resetPortraitLayoutMode();
+                settings.resetPortraitDanmakuMode();
+
                 ToastUtil.show(i18n('settings_reset_done'));
               },
             ),
           ]),
+
           const SizedBox(height: 32),
         ],
       ),
     );
   }
 
-  void _refreshPresentation() {
-    GlobalPlayerService.instance.player.refreshPortraitPresentationPolicy();
-  }
+  // ═══════════════════════════════════════════════════
+  // PortraitLayoutMode
+  // ═══════════════════════════════════════════════════
 
-  Future<void> _selectEnum<T extends Enum>(
-    BuildContext context, {
-    required String title,
-    required List<T> values,
-    required T selected,
-    required String Function(T) label,
-    required ValueChanged<T> onSelected,
-  }) async {
-    final value = await showDialog<T>(
+  Future<void> _selectLayoutMode(BuildContext context, PlayerSettingsController settings) async {
+    final value = await showDialog<PortraitLayoutMode>(
       context: context,
-      builder: (dialogContext) => SimpleDialog(
-        title: Text(title),
-        children: values
-            .map(
-              (item) => SimpleDialogOption(
-                onPressed: () => Navigator.of(dialogContext).pop(item),
-                child: Row(
-                  children: [
-                    Icon(
-                      item == selected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
-                      color: item == selected ? Theme.of(dialogContext).colorScheme.primary : null,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(child: Text(label(item))),
-                  ],
+      builder: (dialogContext) {
+        return SimpleDialog(
+          title: Text(i18n('portrait_layout_mode')),
+          children: PortraitLayoutMode.values
+              .map(
+                (item) => SimpleDialogOption(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop(item);
+                  },
+                  child: Row(
+                    children: [
+                      Icon(
+                        item == settings.portraitLayoutMode
+                            ? Icons.radio_button_checked_rounded
+                            : Icons.radio_button_off_rounded,
+                        color: item == settings.portraitLayoutMode ? Theme.of(dialogContext).colorScheme.primary : null,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(_layoutModeLabel(item))),
+                    ],
+                  ),
                 ),
-              ),
-            )
-            .toList(),
-      ),
+              )
+              .toList(),
+        );
+      },
     );
-    if (value != null) onSelected(value);
+
+    if (value != null) {
+      settings.changePortraitLayoutMode(value);
+    }
   }
 
-  String _layoutModeLabel(PortraitLayoutMode value) => switch (value) {
-    PortraitLayoutMode.balanced => i18n('portrait_layout_balanced'),
-    PortraitLayoutMode.immersive => i18n('portrait_layout_immersive'),
-    PortraitLayoutMode.compatibility => i18n('portrait_layout_compatibility'),
-  };
+  String _layoutModeLabel(PortraitLayoutMode value) {
+    return switch (value) {
+      PortraitLayoutMode.balanced => i18n('portrait_layout_balanced'),
+      PortraitLayoutMode.immersive => i18n('portrait_layout_immersive'),
+      PortraitLayoutMode.compatibility => i18n('portrait_layout_compatibility'),
+    };
+  }
 
-  String _fullscreenPolicyLabel(PortraitFullscreenPolicy value) => switch (value) {
-    PortraitFullscreenPolicy.followSource => i18n('portrait_fullscreen_follow_source'),
-    PortraitFullscreenPolicy.followSystem => i18n('portrait_fullscreen_follow_system'),
-    PortraitFullscreenPolicy.landscape => i18n('portrait_fullscreen_landscape'),
-  };
+  // ═══════════════════════════════════════════════════
+  // PortraitDanmakuMode
+  // ═══════════════════════════════════════════════════
 
-  String _danmakuModeLabel(PortraitDanmakuMode value) => switch (value) {
-    PortraitDanmakuMode.followGlobal => i18n('portrait_danmaku_follow_global'),
-    PortraitDanmakuMode.upperQuarter => i18n('portrait_danmaku_upper_quarter'),
-    PortraitDanmakuMode.reduced => i18n('portrait_danmaku_reduced'),
-    PortraitDanmakuMode.hidden => i18n('portrait_danmaku_hidden'),
-  };
+  Future<void> _selectDanmakuMode(BuildContext context, PlayerSettingsController settings) async {
+    final value = await showDialog<PortraitDanmakuMode>(
+      context: context,
+      builder: (dialogContext) {
+        return SimpleDialog(
+          title: Text(i18n('portrait_danmaku_mode')),
+          children: PortraitDanmakuMode.values
+              .map(
+                (item) => SimpleDialogOption(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop(item);
+                  },
+                  child: Row(
+                    children: [
+                      Icon(
+                        item == settings.portraitDanmakuMode
+                            ? Icons.radio_button_checked_rounded
+                            : Icons.radio_button_off_rounded,
+                        color: item == settings.portraitDanmakuMode
+                            ? Theme.of(dialogContext).colorScheme.primary
+                            : null,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(_danmakuModeLabel(item))),
+                    ],
+                  ),
+                ),
+              )
+              .toList(),
+        );
+      },
+    );
+
+    if (value != null) {
+      settings.changePortraitDanmakuMode(value);
+    }
+  }
+
+  String _danmakuModeLabel(PortraitDanmakuMode value) {
+    return switch (value) {
+      PortraitDanmakuMode.followGlobal => i18n('portrait_danmaku_follow_global'),
+      PortraitDanmakuMode.upperQuarter => i18n('portrait_danmaku_upper_quarter'),
+      PortraitDanmakuMode.reduced => i18n('portrait_danmaku_reduced'),
+      PortraitDanmakuMode.hidden => i18n('portrait_danmaku_hidden'),
+    };
+  }
 }

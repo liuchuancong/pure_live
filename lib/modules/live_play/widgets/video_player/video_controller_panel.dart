@@ -12,6 +12,7 @@ import 'package:pure_live/common/utils/live_url_tool.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:scrollview_observer/scrollview_observer.dart';
 import 'package:pure_live/modules/live_play/states/load_type.dart';
+import 'package:pure_live/player/core/portrait_stream_support.dart';
 import 'package:pure_live/modules/live_play/dialogs/play_other.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
@@ -22,7 +23,6 @@ import 'package:pure_live/modules/live_play/widgets/video_player/volume_control.
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_settings_binding.dart';
 import 'package:pure_live/modules/live_play/widgets/local_interaction/local_danmaku_style_editor.dart';
-import 'package:pure_live/player/core/portrait_stream_support.dart';
 
 @visibleForTesting
 enum TopActionLeadingSlot { back, datetime, battery }
@@ -182,7 +182,6 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                   child: BrightnessVolumnDargArea(controller: controller),
                 ),
                 LockButton(controller: controller),
-                const PortraitStreamDiagnosticsBadge(),
                 TopActionBar(controller: controller, barHeight: barHeight),
                 BottomActionBar(controller: controller, barHeight: barHeight),
               ],
@@ -665,144 +664,6 @@ class PIPButton extends StatelessWidget {
     );
   }
 }
-
-class PortraitOrientationButton extends StatelessWidget {
-  const PortraitOrientationButton({super.key, required this.controller});
-
-  final VideoController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      final settings = SettingsService.to.player;
-      final selected = settings.portraitOverrideForRoom(controller.room);
-      final icon = switch (selected) {
-        PortraitOrientationOverride.automatic => Icons.screen_rotation_alt_rounded,
-        PortraitOrientationOverride.portrait => Icons.stay_current_portrait_rounded,
-        PortraitOrientationOverride.landscape => Icons.stay_current_landscape_rounded,
-      };
-      return IconButton(
-        key: const ValueKey('portrait-orientation-override'),
-        tooltip: i18n('portrait_room_override'),
-        visualDensity: VisualDensity.compact,
-        color: selected == PortraitOrientationOverride.automatic ? Colors.white : const Color(0xFFFFD166),
-        onPressed: () => _showPicker(context, selected),
-        icon: Icon(icon, size: 21),
-      );
-    });
-  }
-
-  Future<void> _showPicker(BuildContext context, PortraitOrientationOverride selected) async {
-    controller.isMenuOpen.value = true;
-    controller.stopHideController();
-    try {
-      final settings = SettingsService.to.player;
-      final value = await showDialog<PortraitOrientationOverride>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: Text(i18n('portrait_room_override')),
-          contentPadding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-          content: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 360),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (final item in PortraitOrientationOverride.values)
-                  ListTile(
-                    key: ValueKey('portrait-room-override-${item.name}'),
-                    dense: true,
-                    leading: Icon(
-                      item == selected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
-                      color: item == selected ? Theme.of(dialogContext).colorScheme.primary : null,
-                    ),
-                    title: Text(_overrideLabel(item)),
-                    onTap: () => Navigator.of(dialogContext).pop(item),
-                  ),
-                const Divider(height: 1),
-                Obx(
-                  () => SwitchListTile(
-                    dense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                    title: Text(i18n('portrait_remember_room_override')),
-                    value: settings.rememberPortraitRoomOverride.v,
-                    onChanged: (value) => settings.rememberPortraitRoomOverride.v = value,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(i18n('cancel')))],
-        ),
-      );
-      if (value != null) {
-        settings.setPortraitOverrideForRoom(controller.room, value, remember: settings.rememberPortraitRoomOverride.v);
-        GlobalPlayerService.instance.player.refreshPortraitPresentationPolicy();
-      }
-    } finally {
-      if (controller.status != PlayerStatus.disposed) {
-        controller.isMenuOpen.value = false;
-        controller.enableController();
-      }
-    }
-  }
-}
-
-class PortraitStreamDiagnosticsBadge extends StatelessWidget {
-  const PortraitStreamDiagnosticsBadge({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      final settings = SettingsService.to.player;
-      if (!settings.showPortraitDiagnostics.v) return const SizedBox.shrink();
-      final manager = GlobalPlayerService.instance.player;
-      final geometry = manager.videoGeometry.value;
-      final roomOverride = settings.portraitOverrideForRoom(manager.currentFloatRoom);
-      final orientation = manager.effectiveVideoOrientation;
-      final pending = geometry.candidateOrientation != geometry.orientation;
-      final ratio = geometry.hasValidDimensions ? geometry.aspectRatio.toStringAsFixed(3) : '--';
-      final state = pending ? '${_orientationLabel(geometry.candidateOrientation)}…' : _orientationLabel(orientation);
-      final observedAt = geometry.observedAt;
-      final observedTime = observedAt == null
-          ? '--:--:--'
-          : '${observedAt.hour.toString().padLeft(2, '0')}:'
-                '${observedAt.minute.toString().padLeft(2, '0')}:'
-                '${observedAt.second.toString().padLeft(2, '0')}';
-      return Positioned(
-        key: const ValueKey('portrait-stream-diagnostics'),
-        top: 62,
-        left: 12,
-        child: IgnorePointer(
-          child: DecoratedBox(
-            decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-              child: Text(
-                '${geometry.width > 0 ? geometry.width : '--'}×${geometry.height > 0 ? geometry.height : '--'}  '
-                '$ratio  $state  ${_overrideLabel(roomOverride)}\n'
-                'C${(geometry.confidence * 100).round()}%  S${geometry.stableSampleCount}  $observedTime',
-                style: const TextStyle(color: Colors.white, fontSize: 11, decoration: TextDecoration.none),
-              ),
-            ),
-          ),
-        ),
-      );
-    });
-  }
-}
-
-String _orientationLabel(VideoSourceOrientation value) => switch (value) {
-  VideoSourceOrientation.portrait => i18n('portrait_orientation_portrait'),
-  VideoSourceOrientation.landscape => i18n('portrait_orientation_landscape'),
-  VideoSourceOrientation.square => i18n('portrait_orientation_square'),
-  VideoSourceOrientation.unknown => i18n('portrait_orientation_unknown'),
-};
-
-String _overrideLabel(PortraitOrientationOverride value) => switch (value) {
-  PortraitOrientationOverride.automatic => i18n('portrait_override_auto'),
-  PortraitOrientationOverride.portrait => i18n('portrait_override_portrait'),
-  PortraitOrientationOverride.landscape => i18n('portrait_override_landscape'),
-};
 
 // Center widgets
 class DanmakuViewer extends StatelessWidget {
@@ -1811,7 +1672,6 @@ class BottomActionBar extends StatelessWidget {
         if (GlobalPlayerState.to.isWindowFullscreen.value || GlobalPlayerState.to.isFullscreen.value) ...[
           FullscreenStreamSelectorButton(controller: controller),
         ],
-        if (PlatformUtils.isMobile) PortraitOrientationButton(controller: controller),
         if (!compact) VideoFitSetting(controller: controller),
         if (Platform.isWindows) OverlayVolumeControl(controller: controller),
         if (Platform.isWindows && controller.supportWindowFull && !GlobalPlayerState.to.isFullscreen.value)
