@@ -22,12 +22,13 @@ class LivePlayBackScope extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope<Object?>(
-      canPop: !presentationActive,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && presentationActive) {
-          unawaited(Future<void>.sync(onExitPresentation));
+    return BackButtonListener(
+      onBackButtonPressed: () async {
+        if (presentationActive) {
+          await onExitPresentation();
+          return true;
         }
+        return false;
       },
       child: child,
     );
