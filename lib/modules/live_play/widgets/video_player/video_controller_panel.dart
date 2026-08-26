@@ -1811,7 +1811,7 @@ class BottomActionBar extends StatelessWidget {
         if (GlobalPlayerState.to.isWindowFullscreen.value || GlobalPlayerState.to.isFullscreen.value) ...[
           FullscreenStreamSelectorButton(controller: controller),
         ],
-        // if (PlatformUtils.isMobile) PortraitOrientationButton(controller: controller),
+        if (PlatformUtils.isMobile) PortraitOrientationButton(controller: controller),
         if (!compact) VideoFitSetting(controller: controller),
         if (Platform.isWindows) OverlayVolumeControl(controller: controller),
         if (Platform.isWindows && controller.supportWindowFull && !GlobalPlayerState.to.isFullscreen.value)
