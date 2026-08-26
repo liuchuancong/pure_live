@@ -177,3 +177,21 @@ double resolveRoomHistoryCardHeight({
   final minimumHeight = math.min(112.0, naturalHeight);
   return math.max(minimumHeight, math.min(naturalHeight, twoRowHeight)).clamp(96.0, 310.0).toDouble();
 }
+
+/// Selects the room-history grid from the actual panel content width instead
+/// of a desktop-oriented breakpoint.
+///
+/// The landscape dialog deliberately occupies the right half of a phone. Two
+/// compact 168 px cards fit comfortably in the common 360–430 logical-pixel
+/// pane; genuinely narrow panes retain one readable column.
+int resolveRoomHistoryColumns(
+  double contentWidth, {
+  double padding = 6,
+  double spacing = 5,
+  double minimumCardWidth = 168,
+}) {
+  if (!contentWidth.isFinite || contentWidth <= 0) return 1;
+  final usableWidth = math.max(0.0, contentWidth - padding * 2);
+  final twoColumnMinimum = minimumCardWidth * 2 + spacing;
+  return usableWidth >= twoColumnMinimum ? 2 : 1;
+}
