@@ -58,6 +58,7 @@ Windows Firebase C++ SDK 由 `tool/prefetch_windows_native.ps1` 在构建前按�
 - 完整回归由 `tool/local_ci.ps1 -Scope Full` 显式触发；日常定向检查使用 `-Scope Focused -TestPath ...`。
 - 打包脚本要求显式传入 `-Target` 与 `-Configuration`，每次调用只生成该目标产物。
 - Android APK 在复制、签名和发布前必须通过内容完整性门禁：核对唯一目标 ABI、Flutter AssetManifest/版本清单/翻译与表情资源，以及 FFmpegKit、SQLite、MediaKit、Flutter 和应用原生库。仅验证包名、版本、ABI 与签名不构成完整交付证据。
+- Android 正式打包复用同一源码提交质量门已经锁定的 `.dart_tool/package_config.json`，目标构建使用 `--no-pub`，避免为 Android 打包重建 Windows/iOS/macOS 插件链接，也避免 Windows 长路径目录联接与 SUBST 盘符在同一增量图中混用。
 - 同一应用源码提交已通过完整回归后，如果失败阶段只涉及构建脚本、Gradle 兼容配置或
   发布流程，打包重试可使用 `-SkipQuality`；构建记录与交付报告必须引用此前通过的完整
   回归运行。业务源码、依赖或生成逻辑有变化时仍执行完整回归。

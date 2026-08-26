@@ -106,6 +106,8 @@ foreach ($marker in @(
     'PSNativeCommandUseErrorActionPreference',
     'PureLive-$artifactVersion-android-arm64-v8a-release.apk',
     "Join-Path `$PSScriptRoot 'verify_android_apk.ps1'",
+    "'--target-platform', 'android-arm64',",
+    "'--no-pub',",
     "Join-Path `$PSScriptRoot 'prefetch_windows_native.ps1'",
     '/DArtifactVersion=$artifactVersion',
     'build\windows\x64\install_manifest.txt',

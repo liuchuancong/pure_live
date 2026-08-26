@@ -26,6 +26,9 @@ Before selecting or running a validation/build command, read [`../../../BUILD_PO
    complete Flutter asset bundle, the single requested ABI, and the FFmpegKit,
    SQLite, MediaKit, Flutter, IJK and app native libraries; package metadata and
    signature checks alone are insufficient.
+6. Android packaging consumes the package config produced by the preceding
+   quality/dependency stage and uses `--no-pub`; do not regenerate unrelated
+   desktop/Apple plugin links inside the Android Gradle invocation.
 5. Enter the repository heavy-task guard before Gradle, Java, Dart, Flutter, or broad-search work. Default to 16 Gradle workers; use 20 only for an explicitly dedicated build. Start Flutter tests at concurrency 12. Classify work by sustained CPU/build-client activity so an `rg` process merely waiting on stdin does not block the queue indefinitely.
 6. Preserve incremental outputs and caches. Do not add a clean step unless evidence identifies damaged or incompatible generated state.
    Keep Configuration Cache in strict failure mode. Mark a confirmed incompatible
