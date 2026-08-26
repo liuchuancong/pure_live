@@ -4,8 +4,8 @@ import 'dart:developer';
 import 'dart:math' as math;
 
 import 'line_fallback_manager.dart';
-import 'portrait_stream_support.dart';
 import '../models/player_state.dart';
+import 'portrait_stream_support.dart';
 import '../models/player_engine.dart';
 import 'engine_fallback_manager.dart';
 
@@ -20,7 +20,6 @@ import '../models/player_error_type.dart';
 
 import 'package:rxdart/rxdart.dart' hide Rx;
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/services/settings/player_settings_controller.dart';
 
 import '../interface/unified_player_interface.dart';
 
@@ -35,6 +34,7 @@ import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/player/adapters/player_adapter_factory.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
+import 'package:pure_live/common/services/settings/player_settings_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/compact_danmaku_overlay.dart';
 
@@ -126,7 +126,6 @@ class PlayerManager {
   final _errorSubject = PublishSubject<PlayerException>();
   final _widthSubject = BehaviorSubject<int?>.seeded(null);
   final _heightSubject = BehaviorSubject<int?>.seeded(null);
-  final PortraitStreamDetector _portraitDetector = PortraitStreamDetector();
 
   final List<StreamSubscription> _subscriptions = [];
   StreamSubscription<PiPStatus>? _pipSubscription;
@@ -304,44 +303,6 @@ class PlayerManager {
         : (isVerticalVideo.value ? 9 / 16 : 16 / 9);
   }
 
-  void _resetVideoGeometry() {
-    _geometryObservationTimer?.cancel();
-    _geometryStabilityTimer?.cancel();
-    _geometryObservationTimer = null;
-    _geometryStabilityTimer = null;
-    if (_widthSubject.value != null) _widthSubject.add(null);
-    if (_heightSubject.value != null) _heightSubject.add(null);
-    _portraitDetector.reset();
-    _publishVideoGeometry(const VideoGeometrySnapshot.unknown(), notifyController: false);
-  }
-
-  void _scheduleVideoGeometryObservation() {
-    _geometryObservationTimer?.cancel();
-    _geometryObservationTimer = Timer(const Duration(milliseconds: 120), () {
-      _geometryObservationTimer = null;
-      final width = _widthSubject.value;
-      final height = _heightSubject.value;
-      if (width == null || height == null || width <= 0 || height <= 0 || _disposed || _isClosing) return;
-      final snapshot = _portraitDetector.observe(width, height);
-      _publishVideoGeometry(snapshot);
-      _scheduleGeometryStabilityCommit();
-    });
-  }
-
-  void _scheduleGeometryStabilityCommit() {
-    _geometryStabilityTimer?.cancel();
-    _geometryStabilityTimer = null;
-    final since = _portraitDetector.pendingSince;
-    if (since == null) return;
-    final elapsed = DateTime.now().difference(since);
-    final remaining = _portraitDetector.stabilityDelay - elapsed;
-    _geometryStabilityTimer = Timer(remaining.isNegative ? Duration.zero : remaining, () {
-      _geometryStabilityTimer = null;
-      if (_disposed || _isClosing) return;
-      _publishVideoGeometry(_portraitDetector.commitPending());
-    });
-  }
-
   VideoSourceOrientation get effectiveVideoOrientation {
     final settings = _portraitSettings;
     return PortraitPresentationPolicy.resolveOrientation(
@@ -497,11 +458,6 @@ class PlayerManager {
     final roomChanged = room != currentFloatRoom;
     if (roomChanged) {
       lineManager.reset();
-      // A reusable native player keeps its dimension streams alive between
-      // sources. Retaining the previous room's portrait dimensions until the
-      // next metadata event makes a following landscape room render inside a
-      // portrait FittedBox and visibly squashes the picture.
-      _resetVideoGeometry();
     }
     if (_currentPlayer == null || _runtimeEngine == null) {
       if (_defaultEngine == null) {
@@ -1534,30 +1490,18 @@ class PlayerManager {
     // dimension streams before mounting also creates a first-frame deadlock.
     final videoWidget = player.getVideoWidget();
 
-    _applyVideoFit(player, boxFit);
-    if (PlatformUtils.isMobile) {
-      return FittedBox(
-        fit: boxFit,
-        clipBehavior: Clip.hardEdge,
-        child: StreamBuilder<List<int?>>(
-          stream: CombineLatestStream.list([width, height]),
-          builder: (context, snapshot) {
-            final data = snapshot.data;
-            final resolvedWidth = data != null && data.length >= 2 ? data[0] : null;
-            final resolvedHeight = data != null && data.length >= 2 ? data[1] : null;
-            // Mount the native video immediately with a 16:9 provisional size.
-            // Waiting for metadata before inserting the Surface/texture can
-            // itself prevent the first dimensions from arriving on mobile.
-            final hasCompleteGeometry =
-                resolvedWidth != null && resolvedWidth > 0 && resolvedHeight != null && resolvedHeight > 0;
-            final videoWidth = hasCompleteGeometry ? resolvedWidth.toDouble() : 1920.0;
-            final videoHeight = hasCompleteGeometry ? resolvedHeight.toDouble() : 1080.0;
-            return SizedBox(width: videoWidth, height: videoHeight, child: videoWidget);
-          },
-        ),
-      );
-    }
-    return videoWidget;
+    return FittedBox(
+      fit: boxFit,
+      clipBehavior: Clip.hardEdge,
+      child: StreamBuilder<List<int?>>(
+        stream: CombineLatestStream.list([width, height]),
+        builder: (context, snapshot) {
+          final vW = snapshot.data?[0]?.toDouble() ?? 1920.0;
+          final vH = snapshot.data?[1]?.toDouble() ?? 1080.0;
+          return SizedBox(width: vW, height: vH, child: videoWidget);
+        },
+      ),
+    );
   }
 
   Widget _buildPlaceholder() {
@@ -1752,13 +1696,11 @@ class PlayerManager {
     _subscriptions.add(
       player.width.listen((event) {
         _widthSubject.add(event);
-        _scheduleVideoGeometryObservation();
       }),
     );
     _subscriptions.add(
       player.height.listen((event) {
         _heightSubject.add(event);
-        _scheduleVideoGeometryObservation();
       }),
     );
   }

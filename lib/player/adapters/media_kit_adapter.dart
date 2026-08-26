@@ -463,7 +463,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
 
   @override
   Widget getVideoWidget() {
-    final video = Video(
+    return Video(
       controller: _controller,
       controls: NoVideoControls,
       fit: _videoFit,
@@ -472,13 +472,6 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
       // rooms on Home/lock even though the background policy kept them alive.
       pauseUponEnteringBackgroundMode: false,
       resumeUponEnteringForegroundMode: false,
-    );
-    if (!PlatformUtils.isWindows) return video;
-    return _WindowsViewportSizedVideo(
-      controller: _controller,
-      sourceWidth: _widthSubject,
-      sourceHeight: _heightSubject,
-      child: video,
     );
   }
 
