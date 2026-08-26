@@ -13,7 +13,7 @@ class FijkHelper {
     await player.setOption(FijkOption.playerCategory, 'soundtouch', 1);
     await player.setOption(FijkOption.playerCategory, 'subtitle', 1);
     await player.setOption(FijkOption.hostCategory, "request-screen-on", 1);
-    await player.setOption(FijkOption.hostCategory, "request-audio-focus", 1);
+    await player.setOption(FijkOption.hostCategory, "request-audio-focus", 0);
     // Set format
     await player.setOption(FijkOption.formatCategory, 'reconnect', 1);
     await player.setOption(FijkOption.formatCategory, 'timeout', 30 * 1000 * 1000);
