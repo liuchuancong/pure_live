@@ -1,4 +1,3 @@
-import 'package:rxdart/rxdart.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/live_play/states/ui_state.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
@@ -9,6 +8,7 @@ import 'package:pure_live/modules/live_play/widgets/layout/live_play_video.dart'
 import 'package:pure_live/modules/live_play/widgets/layout/live_play_header.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/resolution_selector/resolutions_row.dart';
+
 
 enum LivePlayNormalLayoutKind { portraitStack, desktopSplit }
 
