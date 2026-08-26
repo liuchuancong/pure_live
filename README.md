@@ -12,17 +12,17 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/liuchuancong/pure_live/releases/latest">
-    <img alt="Latest Release" src="https://img.shields.io/github/v/release/liuchuancong/pure_live">
+  <a href="https://github.com/wzgrx/pure_live/releases/latest">
+    <img alt="Latest Release" src="https://img.shields.io/github/v/release/wzgrx/pure_live">
   </a>
-  <a href="https://github.com/liuchuancong/pure_live/actions/workflows/feature-build.yml">
-    <img alt="Manual Build" src="https://github.com/liuchuancong/pure_live/actions/workflows/feature-build.yml/badge.svg">
+  <a href="https://github.com/wzgrx/pure_live/actions/workflows/feature-build.yml">
+    <img alt="Manual Build" src="https://github.com/wzgrx/pure_live/actions/workflows/feature-build.yml/badge.svg">
   </a>
   <a href="https://github.com/liuchuancong/pure_live">
     <img alt="Stars" src="https://img.shields.io/github/stars/liuchuancong/pure_live?color=yellow">
   </a>
-  <a href="https://github.com/liuchuancong/pure_live/releases">
-    <img alt="Downloads" src="https://img.shields.io/github/downloads/liuchuancong/pure_live/total?style=flat-square">
+  <a href="https://github.com/wzgrx/pure_live/releases">
+    <img alt="Downloads" src="https://img.shields.io/github/downloads/wzgrx/pure_live/total?style=flat-square">
   </a>
   <a href="LICENSE">
     <img alt="License" src="https://img.shields.io/github/license/liuchuancong/pure_live?color=blue">
@@ -35,19 +35,20 @@
 
 ## 维护分支说明（请先阅读）
 
-<!-- maintenance-readme-markers: maintenance-scope; android-first; windows-maintained; upstream-feature-routing -->
+<!-- maintenance-readme-markers: maintenance-scope; android-first; windows-maintained; upstream-feature-routing; bugfix-release-default -->
 
 - 本仓库重点维护 **Android / Android TV 与 Windows**。当前日常使用 Android 更多，因此多数修复、功能整合和安装包会优先更新 Android；Windows 继续作为主要桌面维护目标。
 - Linux、macOS 和 iOS 保留源码及上游兼容性，但缺少持续使用的对应设备，列为社区验证范围，不承诺每轮构建、更新时效或运行结果。
 - 本分支更新频繁、历史定制较多，仍可能出现较多回归、接口时效和设备兼容问题。若更看重低频变更或原项目行为，可切换到[原项目](https://github.com/liuchuancong/pure_live)。
 - 本仓库 Issue 仅受理**可复现的维护型 Bug**。新增功能、产品方向和全新平台适配请提交到[原项目 Issue](https://github.com/liuchuancong/pure_live/issues/new/choose)。
+- 每个完成的 Bug 修复批次默认递增版本，优先构建 Android `arm64-v8a` 正式更新包，并同步源码、版本标签、安装包与校验文件到本仓库 GitHub Release；其他平台仍按本轮明确范围串行构建。
 - 每次同步上游、分析 Bug 和审查原项目 Issue 的来源判定、根因、兼容、验证与回滚流程见[维护范围与问题处置策略](MAINTENANCE_POLICY.md)及[上游同步审查策略](UPSTREAM_REVIEW_POLICY.md)。
 
-- **最新稳定版**：[v3.0.3](https://github.com/wzgrx/pure_live/releases/tag/v3.0.3)
-- **当前 Android 构建版本**：`3.0.3+4091`（竖屏 Surface 比例统一与横屏直播记录双列恢复）
+- **最新稳定版**：[v3.0.4](https://github.com/wzgrx/pure_live/releases/tag/v3.0.4)
+- **当前 Android 构建版本**：`3.0.4+4092`（移动端单一可信画面比例与历史记录增强）
 - **v3.0.0 上游源码基线**：`liuchuancong/pure_live@e808dcae`；完整记录见 `docs/STAGE_UPDATE_3_0_0.md`
 - **本轮构建平台**：仅 Android arm64-v8a；其他平台继续使用 v3.0.0 安装包
-- **质量门禁**：竖屏 Surface 根因、直播记录布局回归与分层验证见 `docs/STAGE_UPDATE_3_0_3.md`
+- **质量门禁**：普通页、横屏、系统画中画和应用内小窗的统一比例回归见 `docs/STAGE_UPDATE_3_0_4.md`
 
 本版本还会在启动、备份恢复和手动清理时剔除空平台、空房间号、`0/null/undefined/nan/none` 等无效关注记录，并按“平台 + 房间号”去重，避免损坏的历史收藏继续参与首页刷新。
 
@@ -107,6 +108,7 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 | [v3.0.1 Android 竖屏直播适配](docs/STAGE_UPDATE_3_0_1.md) | 稳定源方向识别、普通页自适应、全屏策略、画中画比例和房间覆盖 |
 | [v3.0.2 Android 播放比例修复](docs/STAGE_UPDATE_3_0_2.md) | 普通横屏 16:9 边界、竖屏适配隔离、原生单层缩放与弹幕主题布局 |
 | [v3.0.3 Android 竖屏 Surface 修复](docs/STAGE_UPDATE_3_0_3.md) | 原生/应用层几何统一、切换时序和横屏直播记录自适应双列 |
+| [v3.0.4 Android 可信画面比例修复](docs/STAGE_UPDATE_3_0_4.md) | 移动端单一比例控制、异常元数据回退与历史记录数量/日期增强 |
 | [2026-08-25 上游 Issue 审计](docs/ISSUE_AUDIT_2026_08_25.md) | #793～#798、#791 录制根因及既有问题处理状态 |
 | [v2.9.7 Android update](docs/STAGE_UPDATE_2_9_7.md) | 全平台观看指标语义、热门排行、SOOP PC/移动端总在线与 40 项接口门禁 |
 | [v2.9.6 Android update](docs/STAGE_UPDATE_2_9_6.md) | 上游同步、抖音 Feed、Bilibili 热度排行与 40 项接口门禁 |
@@ -395,7 +397,7 @@ Firebase 不是 Pure Live 使用的必要条件。
 
 ## 📥 下载
 
-前往 [维护分支 GitHub Releases](https://github.com/liuchuancong/pure_live/releases/latest) 获取最新安装包，并使用同一 Release 的 `SHA256SUMS.txt` 校验完整性。
+前往 [维护分支 GitHub Releases](https://github.com/wzgrx/pure_live/releases/latest) 获取最新安装包，并使用同一 Release 的 `SHA256SUMS.txt` 校验完整性。
 
 ### Android
 
@@ -459,7 +461,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
 ## 🤝 参与开发
 
 - **主开发者**：[@liuchuancong](https://github.com/liuchuancong)
-- **协助开发者**：[@liuchuancong](https://github.com/liuchuancong/pure_live)
+- **协助开发者**：[@wzgrx](https://github.com/wzgrx/pure_live)
 - **协助开发者**：[@RebornQ](https://github.com/RebornQ)
 
 > 📌 **欢迎贡献维护型修复、测试和文档**！

@@ -2,11 +2,19 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/services/utils/backup_migration_util.dart';
 
 const int defaultHistoryLimit = 50;
-const int maxHistoryLimit = 500;
+const int unlimitedHistoryLimit = 0;
 
 int normalizeHistoryLimit(Object? value) {
   final parsed = value is num ? value.toInt() : int.tryParse(value?.toString() ?? '');
-  return (parsed ?? defaultHistoryLimit).clamp(1, maxHistoryLimit);
+  if (parsed == null || parsed < 0) return defaultHistoryLimit;
+  return parsed;
+}
+
+List<T> applyHistoryLimit<T>(Iterable<T> values, int limit) {
+  final normalized = normalizeHistoryLimit(limit);
+  return normalized == unlimitedHistoryLimit
+      ? List<T>.of(values, growable: true)
+      : values.take(normalized).toList(growable: true);
 }
 
 List<LiveRoom> upsertHistoryRoom(
@@ -18,7 +26,9 @@ List<LiveRoom> upsertHistoryRoom(
   final maxLength = normalizeHistoryLimit(limit);
   final next = List<LiveRoom>.from(current)..removeWhere((entry) => entry.hasSameIdentity(room));
   next.insert(0, room.normalizedIdentityCopy().copyWith(lastWatchedAt: watchedAt));
-  if (next.length > maxLength) next.removeRange(maxLength, next.length);
+  if (maxLength != unlimitedHistoryLimit && next.length > maxLength) {
+    next.removeRange(maxLength, next.length);
+  }
   return next;
 }
 
@@ -53,7 +63,7 @@ class HistoryController extends GetxController {
   void setHistoryLimit(int value) {
     final normalized = normalizeHistoryLimit(value);
     historyLimit.v = normalized;
-    if (historyRooms.v.length > normalized) {
+    if (normalized != unlimitedHistoryLimit && historyRooms.v.length > normalized) {
       historyRooms.v = historyRooms.v.take(normalized).toList(growable: true);
     }
   }
@@ -87,10 +97,10 @@ class HistoryController extends GetxController {
   void fromJson(Map<String, dynamic> json) {
     final limit = normalizeHistoryLimit(json[historyLimitKey]);
     historyLimit.v = limit;
-    historyRooms.v = BackupMigrationUtil.parseObjectList(
-      json['historyRooms'],
-      (m) => LiveRoom.fromJson(m),
-    ).take(limit).toList(growable: true);
+    historyRooms.v = applyHistoryLimit(
+      BackupMigrationUtil.parseObjectList(json['historyRooms'], (m) => LiveRoom.fromJson(m)),
+      limit,
+    );
   }
 
   static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
@@ -99,7 +109,7 @@ class HistoryController extends GetxController {
     final list = BackupMigrationUtil.parseObjectList(history['historyRooms'], LiveRoom.fromJson);
 
     final limit = normalizeHistoryLimit(history[historyLimitKey]);
-    return {'historyRooms': list.take(limit).map((e) => e.toJson()).toList(), historyLimitKey: limit};
+    return {'historyRooms': applyHistoryLimit(list, limit).map((e) => e.toJson()).toList(), historyLimitKey: limit};
   }
 
   static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {

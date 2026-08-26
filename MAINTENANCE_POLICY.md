@@ -1,8 +1,8 @@
 # Pure Live 维护范围与问题处置策略
 
-<!-- maintenance-policy-markers: android-first; windows-maintained; feature-requests-upstream; bug-provenance-required; semantic-change-ledger; evidence-layered; rollback-required -->
+<!-- maintenance-policy-markers: android-first; windows-maintained; feature-requests-upstream; bug-provenance-required; semantic-change-ledger; evidence-layered; rollback-required; bugfix-android-release-default -->
 
-本文件定义 `liuchuancong/pure_live` 维护分支的支持边界、Issue 分流、Bug 根因判定、上游同步和发布证据要求。它与 [上游同步审查策略](UPSTREAM_REVIEW_POLICY.md) 和 [构建资源策略](BUILD_POLICY.md) 一起构成本仓库后续工作的默认流程。
+本文件定义 `wzgrx/pure_live` 维护分支的支持边界、Issue 分流、Bug 根因判定、上游同步和发布证据要求。它与 [上游同步审查策略](UPSTREAM_REVIEW_POLICY.md) 和 [构建资源策略](BUILD_POLICY.md) 一起构成本仓库后续工作的默认流程。
 
 ## 1. 仓库定位与维护范围
 
@@ -26,7 +26,7 @@
 - Android 与 Windows 的性能、资源释放和交互一致性问题；
 - 已有功能在上游同步后发生的兼容冲突。
 
-新增功能、产品方向和全新平台适配统一提交到[原项目 Issue](https://github.com/liuchuancong/pure_live/issues/new/choose)。安全漏洞通过本仓库的 [Security Advisory](https://github.com/liuchuancong/pure_live/security/advisories/new) 私密提交。
+新增功能、产品方向和全新平台适配统一提交到[原项目 Issue](https://github.com/liuchuancong/pure_live/issues/new/choose)。安全漏洞通过本仓库的 [Security Advisory](https://github.com/wzgrx/pure_live/security/advisories/new) 私密提交。
 
 Linux、macOS、iOS 等社区验证平台的问题可以保留为技术记录；处置结论会明确标为“社区证据”“待贡献者验证”或“已由上游覆盖”，不写成已完成本机验证。
 
@@ -117,4 +117,6 @@ Linux、macOS、iOS 等社区验证平台的问题可以保留为技术记录；
 5. 外部接口修复应保留类型容错、超时、错误分类、有限退避和可观测日志；禁止无限重试和静默吞错。
 6. 性能优化以可重复基线比较 CPU、内存趋势、帧耗时、网络请求数和后台任务数量，不以主观“更流畅”作为唯一证据。
 7. 不使用“全部 Bug 已修复”一类绝对结论；报告已覆盖范围、未覆盖平台和剩余风险。
-8. 构建与发布严格遵循 [BUILD_POLICY.md](BUILD_POLICY.md)：一次只处理本轮明确要求的平台和变体，平台阶段串行，完成后停止自动追加任务。
+8. 每个已完成的 Bug 修复批次默认递增补丁版本和 build，构建 Android `arm64-v8a` Release，并将最终源码、tag、正式签名 APK、构建元数据和校验文件同步到 `wzgrx/pure_live`；多个同根因修复在同一任务内合并为一个版本。
+9. 正式 APK 优先在本机构建，GitHub Actions 只承担 Secrets 短时签名和 Release 更新；Android、Windows 与其他平台始终分阶段串行，Bug 修复默认交付不会扩展为全平台构建。
+10. 发布页面与 APK 核验通过后刷新 `assets/releases.json` 并推送索引提交。当前任务明确要求暂缓版本、构建或发布时，以该次要求为准并在报告中记录闭环停在哪一层。

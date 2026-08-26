@@ -234,6 +234,30 @@ class PortraitPresentationPolicy {
   static const double androidPipMinimumAspectRatio = 1 / 2.39;
   static const double androidPipMaximumAspectRatio = 2.39;
 
+  /// Resolves the one aspect ratio used to present a native video texture.
+  ///
+  /// Some live CDNs expose a decoded buffer size whose sample-aspect metadata
+  /// is temporarily malformed. Letting that raw ratio drive a texture directly
+  /// can turn a regular 9:16 stream into a very narrow strip. The established
+  /// orientation (including a room override) is therefore the authority:
+  /// plausible ratios in the same orientation are preserved, while conflicting
+  /// or out-of-range metadata falls back to the conventional live ratio.
+  static double resolveVideoDisplayAspectRatio({
+    required VideoGeometrySnapshot snapshot,
+    required VideoSourceOrientation effectiveOrientation,
+  }) {
+    final ratio = snapshot.aspectRatio;
+    final valid = snapshot.hasValidDimensions && ratio > 0;
+    return switch (effectiveOrientation) {
+      VideoSourceOrientation.portrait =>
+        valid && ratio >= androidPipMinimumAspectRatio && ratio < 0.90 ? ratio : 9 / 16,
+      VideoSourceOrientation.landscape =>
+        valid && ratio > 1.10 && ratio <= androidPipMaximumAspectRatio ? ratio : 16 / 9,
+      VideoSourceOrientation.square => valid && ratio >= 0.90 && ratio <= 1.10 ? ratio : 1.0,
+      VideoSourceOrientation.unknown => 16 / 9,
+    };
+  }
+
   static VideoSourceOrientation resolveOrientation({
     required VideoGeometrySnapshot snapshot,
     required PortraitOrientationOverride override,
@@ -286,10 +310,8 @@ class PortraitPresentationPolicy {
     required bool followStablePortraitSource,
   }) {
     if (effectiveOrientation != VideoSourceOrientation.portrait) return 16 / 9;
-    if (!followStablePortraitSource || !snapshot.hasValidDimensions || !snapshot.isStable) return 9 / 16;
-    final ratio = snapshot.aspectRatio;
-    if (ratio < androidPipMinimumAspectRatio || ratio > 0.90) return 9 / 16;
-    return ratio;
+    if (!followStablePortraitSource || !snapshot.isStable) return 9 / 16;
+    return resolveVideoDisplayAspectRatio(snapshot: snapshot, effectiveOrientation: effectiveOrientation);
   }
 
   /// Android accepts PiP ratios only in the inclusive [1/2.39, 2.39] range.

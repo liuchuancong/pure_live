@@ -37,7 +37,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1 -Scope Full
 1. 从控制器、生命周期、通知与数据订阅中还原可重复的事件顺序。
 2. 用单元或 Widget 测试固化故障序列和期望状态，优先覆盖修复前失败、修复后通过的路径。
 3. 执行受影响测试；本轮修改完成后执行一次 `flutter analyze`，正式交付前再执行 `tool/local_ci.ps1 -Scope Full`。
-4. 需要安装包时在本机完成 Android arm64 或 Windows x64 构建，并独立记录签名与构建结果。
+4. 完成 Bug 修复批次后默认在本机生成新的 Android arm64 Release，随后推送源码并通过 GitHub Secrets 短时签名发布；Windows 及其他平台仍由当前任务单独指定。
 
 手机连接、ADB、APK 安装和设备 UI 自动化是单独的可选验收层，仅在当前任务明确要求设备操作时启用。以前连接过设备不构成持续授权。没有设备采样时，文档分别报告“代码审查 / 自动化测试 / 本地构建”的实际证据，不把设备状态当作代码修复的阻塞项。
 
@@ -145,6 +145,12 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\publish_local_release.ps1 `
 
 脚本要求工作树已提交，并通过 GitHub CLI 当前登录身份创建或更新 Release。
 
+### Bug 修复默认发布
+
+`bugfix-android-release-default` 是本维护分支的常设交付规则。一次任务中的相关 Bug 合并为一个补丁版本：先完成根因记录和定向回归，再更新版本元数据并在干净提交上运行一次完整门禁；本机只构建 Android `arm64-v8a` Release。构建成功后推送 `master`、创建 tag/草稿 Release、暂存 APK 与元数据，并调用 `sign-staged-android` 完成固定发布证书签名。正式 APK、证书指纹、SHA-256 和 Release 来源提交全部一致后公开发布，最后刷新发布索引。
+
+这个默认闭环不触发 Windows、Linux、macOS 或 iOS 构建，也不连接 Android 设备。当前任务明确要求暂缓某一交付层时，在该层停止并保留之前的验证记录。
+
 ## GitHub Actions
 
 `.github/workflows/feature-build.yml` 支持手动触发，可分别选择 Android arm64、Windows x64、Linux x64、macOS universal 和 iOS arm64 设备编译；所有平台、质量门禁和发布开关默认关闭，只有本轮明确选择的阶段进入队列。选择多个平台时按依赖链串行。`stage-linux-*`、`stage-macos-*` 与 `stage-ios-*` 标签仅用于精确单平台补建，产物保留 3 天。
@@ -173,7 +179,7 @@ python .\tool\update_releases.py
 2. 运行 `tool/local_ci.ps1 -Scope Full` 一次。
 3. 按本轮发布范围串行运行 `tool/build_local_release.ps1 -Target <目标> -Configuration Release -SkipQuality`，逐个平台核对产物、构建记录和 SHA-256。
 4. 当前任务明确安排设备验收时，再运行 `tool/install_android_local.ps1` 覆盖安装并启动；正式 Release 使用仓库持久签名验证升级链。
-5. 提交并推送 `master`，再运行 `tool/publish_local_release.ps1`。
-6. 在 [维护分支 Releases](https://github.com/liuchuancong/pure_live/releases) 核对附件和校验文件。
+5. 提交并推送 `master`，创建与该提交一致的 tag 和草稿 Release；Android 本地暂存包通过 `sign-staged-android` 正式签名后再公开发布。
+6. 在 [维护分支 Releases](https://github.com/wzgrx/pure_live/releases) 核对附件、固定证书指纹、校验文件和源码提交，随后刷新 `assets/releases.json` 并推送 `[skip ci]` 索引提交。
 
 返回 [文档索引](README.md)。

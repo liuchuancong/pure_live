@@ -5,6 +5,7 @@ param(
     [string[]] $TestPath = @(),
     [switch] $Analyze,
     [switch] $SkipInterfaces,
+    [switch] $SkipTestAssets,
     [ValidateRange(1, 20)]
     [int] $TestConcurrency = 12
 )
@@ -35,7 +36,8 @@ $commandDescription = if ($Scope -eq 'Full') {
     ".\tool\local_ci.ps1 -Scope Full -TestConcurrency $TestConcurrency"
 } else {
     ".\tool\local_ci.ps1 -Scope Focused -TestPath $($resolvedTests -join ',')" +
-        $(if ($shouldAnalyze) { ' -Analyze' } else { '' })
+        $(if ($shouldAnalyze) { ' -Analyze' } else { '' }) +
+        $(if ($SkipTestAssets) { ' -SkipTestAssets' } else { '' })
 }
 $startedAt = [DateTime]::UtcNow
 $stopwatch = [Diagnostics.Stopwatch]::StartNew()
@@ -45,6 +47,7 @@ $resourceSummary = $null
 $remainingHeavyProcesses = $null
 $status = 'failed'
 $failureMessage = $null
+$analyzeInvocationCount = 0
 $repositoryAuditPath = Join-Path $repoRoot "local-artifacts\repository-audits\$([DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ'))-$($Scope.ToLowerInvariant()).json"
 
 Push-Location $repoRoot
@@ -95,16 +98,19 @@ try {
 
     # Analyze is deliberately a single end-of-edit invocation.
     if ($shouldAnalyze) {
+        $analyzeInvocationCount++
         & $flutterw analyze --no-pub --no-fatal-infos --no-fatal-warnings
         Assert-PureLiveCommandSucceeded 'Flutter Analyze'
     }
 
+    [string[]] $testAssetArgs = @()
+    if ($SkipTestAssets) { $testAssetArgs = @('--no-test-assets') }
     if ($Scope -eq 'Full') {
-        & $flutterw test --no-pub "--concurrency=$TestConcurrency"
+        & $flutterw test --no-pub "--concurrency=$TestConcurrency" @testAssetArgs
         Assert-PureLiveCommandSucceeded 'Full Flutter test suite'
     } elseif ($resolvedTests.Count -gt 0) {
         # Keep all affected files in one test process so concurrency is bounded once.
-        & $flutterw test --no-pub "--concurrency=$TestConcurrency" @resolvedTests
+        & $flutterw test --no-pub "--concurrency=$TestConcurrency" @testAssetArgs @resolvedTests
         Assert-PureLiveCommandSucceeded 'Focused Flutter tests'
     }
 
@@ -134,8 +140,9 @@ try {
         status = $status
         failure = $failureMessage
         scope = $Scope
-        analyze_invocations = if ($shouldAnalyze) { 1 } else { 0 }
+        analyze_invocations = $analyzeInvocationCount
         test_concurrency = $TestConcurrency
+        test_assets = if ($SkipTestAssets) { 'skipped' } else { 'built' }
         test_paths = if ($Scope -eq 'Full') { @('test/') } else { $resolvedTests }
         cache = [ordered]@{
             gradle_build_cache = 'enabled'

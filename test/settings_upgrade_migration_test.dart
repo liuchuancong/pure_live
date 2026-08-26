@@ -71,6 +71,26 @@ void main() {
       expect(areas, hasLength(1));
     });
 
+    test('does not silently truncate a configured unlimited history during upgrade', () {
+      final rooms = List.generate(75, (index) => room('$index'));
+      final merged = SettingsUpgradeMigration.mergeRawSettings(
+        {
+          'historyLimit': 0,
+          'historyRooms': jsonEncode({'list': rooms.take(40).toList()}),
+        },
+        [
+          {
+            'historyLimit': 0,
+            'historyRooms': jsonEncode({'list': rooms.skip(40).toList()}),
+          },
+        ],
+      );
+      final history = (jsonDecode(merged['historyRooms'] as String) as Map)['list'] as List;
+
+      expect(history, hasLength(75));
+      expect(merged['historyLimit'], 0);
+    });
+
     test('imports a legacy Hive file once and persists the source ledger', () async {
       final root = await Directory.systemTemp.createTemp('pure_live_upgrade_test_');
       final targetDirectory = Directory('${root.path}/target')..createSync();

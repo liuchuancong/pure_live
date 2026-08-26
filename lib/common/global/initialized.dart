@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'dart:developer';
 
 import 'app_path_manager.dart';
@@ -11,6 +12,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/global/initial_services.dart';
+import 'package:pure_live/recorder/ffmpeg/ffmpeg_manager.dart';
 import 'package:windows_single_instance/windows_single_instance.dart';
 import 'package:pure_live/common/global/platform/mobile_manager.dart';
 import 'package:pure_live/common/global/platform/desktop_manager.dart';
@@ -89,11 +91,29 @@ class AppInitializer {
       await MobileManager.initialize();
     }
 
+    _scheduleFFmpegPrewarm();
+
     if (PlatformUtils.isDesktopNotMac && instanceId.isEmpty) {
       _setupLaunchAtStartupSafe();
     }
 
     _isInitialized = true;
+  }
+
+  /// Loads the native recorder after the first frame instead of competing with
+  /// settings, home data and the first player surface during application
+  /// startup. Recording still awaits the same idempotent initializer at its
+  /// service boundary, so a best-effort warm-up failure remains retryable.
+  void _scheduleFFmpegPrewarm() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Timer(const Duration(seconds: 2), () {
+        unawaited(
+          FFmpegManager.to.initialize().catchError((Object error, StackTrace stackTrace) {
+            log('FFmpeg prewarm failed: $error', stackTrace: stackTrace);
+          }),
+        );
+      });
+    });
   }
 
   Future<void> _initWindowsSingleInstance(List<String> args, String instanceId) async {

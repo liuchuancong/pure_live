@@ -7,27 +7,27 @@ on:
         description: Build Android Release APKs for all ABIs
         required: true
         type: boolean
-        default: true
+        default: false
       build_windows:
         description: Build Windows EXE, MSIX and portable ZIP
         required: true
         type: boolean
-        default: true
+        default: false
       build_linux:
         description: Build Linux x64 portable archive
         required: true
         type: boolean
-        default: true 
+        default: false
       build_macos:
         description: Build macOS universal application archive
         required: true
         type: boolean
-        default: true
+        default: false
       build_ios:
         description: Build unsigned iOS app and TrollStore IPA
         required: true
         type: boolean
-        default: true
+        default: false
       run_quality:
         description: Run analyze, tests and public interface probes first
         required: true
@@ -37,13 +37,12 @@ on:
         description: Create a GitHub Release and update releases.json
         required: true
         type: boolean
-        default: true
+        default: false
       release_tag:
         description: Release tag (e.g. v1.0.0) – required if create_release is true
         required: true
         type: string
-        default: 'v3.0.1'
-
+        default: "v3.0.4"
   push:
     tags:
       - "stage-linux-*"
@@ -83,7 +82,7 @@ jobs:
       - name: Verify Flutter SDK
         run: flutter --version
       - name: Resolve packages
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
       - name: Generate production AppConfig
         run: |
           dart run enven \
@@ -139,7 +138,7 @@ jobs:
           keyAlias=$KEY_ALIAS
           EOF
       - name: Resolve packages
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
       - name: Generate production AppConfig
         run: |
           dart run enven \
@@ -216,9 +215,10 @@ jobs:
       ${{ always() &&
         github.event_name == 'workflow_dispatch' &&
         inputs.build_windows &&
-        (needs.quality.result == 'success' || needs.quality.result == 'skipped')
+        (needs.quality.result == 'success' || needs.quality.result == 'skipped') &&
+        (!inputs.build_android || needs.android.result == 'success')
       }}
-    needs: quality
+    needs: [quality, android]
     runs-on: windows-latest
     timeout-minutes: 35
     steps:
@@ -262,21 +262,18 @@ jobs:
       - name: Enable Flutter Windows
         run: flutter config --enable-windows-desktop
       - name: Resolve packages
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
       - name: Generate production AppConfig
         run: |
           dart run enven `
             --env-files .env,.env.prod `
             --class-name AppConfig
-      - name: Install fastforge and Inno Setup
+      - name: Install pinned Windows packagers
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          git clone https://github.com/SlotSun/fastforge.git
-          Set-Location fastforge
-          dart pub global activate melos
-          melos run activate
-          choco install innosetup -y
+          choco install innosetup --version=6.7.1 -y --no-progress
+          dart pub global activate fastforge 0.6.0
       - name: Copy Chinese language pack
         shell: pwsh
         run: |
@@ -285,8 +282,6 @@ jobs:
           if (Test-Path $source) {
             Copy-Item $source $target -Force
           }
-      - name: Install Fastforge
-        run: dart pub global activate fastforge
       - name: Get version
         id: version
         shell: pwsh
@@ -408,9 +403,19 @@ jobs:
         (
           needs.quality.result == 'success' ||
           needs.quality.result == 'skipped'
+        ) &&
+        (
+          github.event_name == 'push' ||
+          !inputs.build_android ||
+          needs.android.result == 'success'
+        ) &&
+        (
+          github.event_name == 'push' ||
+          !inputs.build_windows ||
+          needs.windows.result == 'success'
         )
       }}
-    needs: quality
+    needs: [quality, android, windows]
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
@@ -466,7 +471,7 @@ jobs:
       - name: Verify Flutter SDK
         run: flutter --version
       - name: Resolve packages
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
       - name: Generate production AppConfig
         run: |
           dart run enven \
@@ -530,9 +535,24 @@ jobs:
         (
           needs.quality.result == 'success' ||
           needs.quality.result == 'skipped'
+        ) &&
+        (
+          github.event_name == 'push' ||
+          !inputs.build_android ||
+          needs.android.result == 'success'
+        ) &&
+        (
+          github.event_name == 'push' ||
+          !inputs.build_windows ||
+          needs.windows.result == 'success'
+        ) &&
+        (
+          github.event_name == 'push' ||
+          !inputs.build_linux ||
+          needs.linux.result == 'success'
         )
       }}
-    needs: quality
+    needs: [quality, android, windows, linux]
     runs-on: macos-15
     timeout-minutes: 90
     steps:
@@ -550,7 +570,7 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
       - name: Resolve packages
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
       - name: Generate production AppConfig
         run: |
           dart run enven \
@@ -783,7 +803,7 @@ jobs:
           sha256sum --check "$(basename "$checksum_file")"
       - name: Read version description
         id: version
-        uses: juliangruber/read-file-action@v1
+        uses: juliangruber/read-file-action@271ff311a4947af354c6abcd696a306553b9ec18 # v1
         with:
           path: assets/version.json
       - name: Generate BUILD_METADATA.json
@@ -850,7 +870,7 @@ jobs:
           |版本|下载地址|
           |---|---|
           |TV版|[pure_live_TV](https://github.com/liuchuancong/pure_live_TV/releases/latest)|
-          |Windows/macOS/Android/iOS版|[pure_live](https://github.com/liuchuancong/pure_live/releases/latest)|
+          |Windows/macOS/Android/iOS版|[pure_live](https://github.com/wzgrx/pure_live/releases/latest)|
           ### 🖥️ Windows 版
           - **Portable ZIP**：解压即用，无需安装
           - **EXE 安装包**：适合所有用户
@@ -865,7 +885,7 @@ jobs:
           - ARM64-v8a
           - ARMv7
           - x86_64
-          - 统一 SHA256 校验文件：[**ANDROID_SHA256SUM.txt**](https://github.com/liuchuancong/pure_live/releases/download/${{ inputs.release_tag }}/ANDROID_SHA256SUM.txt)
+          - 统一 SHA256 校验文件：[**ANDROID_SHA256SUM.txt**](https://github.com/wzgrx/pure_live/releases/download/${{ inputs.release_tag }}/ANDROID_SHA256SUM.txt)
           ### 🐧 Linux 版
           - Linux x64
           - Portable tar.gz
@@ -874,13 +894,13 @@ jobs:
           - TrollStore / ad-hoc IPA
           - ARM64
           ### 🔧 Build Metadata
-          [**BUILD_METADATA.json**](https://github.com/liuchuancong/pure_live/releases/download/${{ inputs.release_tag }}/BUILD_METADATA.json)
+          [**BUILD_METADATA.json**](https://github.com/wzgrx/pure_live/releases/download/${{ inputs.release_tag }}/BUILD_METADATA.json)
           ### 📝 本次更新
           ${{ fromJson(steps.version.outputs.content).version_desc }}
           EOF
           echo "body_path=$(pwd)/release_body.txt" >> "$GITHUB_OUTPUT"
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           tag_name: ${{ inputs.release_tag }}
           name: ${{ inputs.release_tag }}

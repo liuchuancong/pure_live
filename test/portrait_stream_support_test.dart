@@ -164,6 +164,51 @@ void main() {
         closeTo(9 / 16, 0.0001),
       );
     });
+
+    test('one trusted ratio rejects malformed or orientation-conflicting metadata', () {
+      final malformedPortrait = VideoGeometrySnapshot(
+        width: 360,
+        height: 1920,
+        aspectRatio: 360 / 1920,
+        orientation: VideoSourceOrientation.portrait,
+        candidateOrientation: VideoSourceOrientation.portrait,
+        stableSampleCount: 3,
+        confidence: 1,
+        observedAt: DateTime(2026),
+      );
+      final landscapeMetadata = VideoGeometrySnapshot(
+        width: 1920,
+        height: 1080,
+        aspectRatio: 16 / 9,
+        orientation: VideoSourceOrientation.landscape,
+        candidateOrientation: VideoSourceOrientation.landscape,
+        stableSampleCount: 3,
+        confidence: 1,
+        observedAt: DateTime(2026),
+      );
+
+      expect(
+        PortraitPresentationPolicy.resolveVideoDisplayAspectRatio(
+          snapshot: malformedPortrait,
+          effectiveOrientation: VideoSourceOrientation.portrait,
+        ),
+        closeTo(9 / 16, 0.0001),
+      );
+      expect(
+        PortraitPresentationPolicy.resolveVideoDisplayAspectRatio(
+          snapshot: landscapeMetadata,
+          effectiveOrientation: VideoSourceOrientation.portrait,
+        ),
+        closeTo(9 / 16, 0.0001),
+      );
+      expect(
+        PortraitPresentationPolicy.resolveVideoDisplayAspectRatio(
+          snapshot: landscapeMetadata,
+          effectiveOrientation: VideoSourceOrientation.landscape,
+        ),
+        closeTo(16 / 9, 0.0001),
+      );
+    });
   });
 
   test('orientation locking is reserved for compact displays', () {

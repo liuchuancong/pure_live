@@ -3,12 +3,10 @@ import 'package:pure_live/modules/live_play/states/ui_state.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_tab.dart';
-import 'package:pure_live/modules/live_play/widgets/layout/live_play_shell.dart';
 import 'package:pure_live/modules/live_play/widgets/layout/live_play_video.dart';
 import 'package:pure_live/modules/live_play/widgets/layout/live_play_header.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/resolution_selector/resolutions_row.dart';
-
 
 enum LivePlayNormalLayoutKind { portraitStack, desktopSplit }
 
@@ -33,7 +31,6 @@ class LivePlayNormalLayout extends StatelessWidget {
     this.sourceAspectRatio = 16 / 9,
     this.adaptivePortraitHeight = false,
     this.portraitLayoutMode = PortraitLayoutMode.balanced,
-    this.compatibilityMode = false,
   });
 
   final Widget video;
@@ -44,7 +41,6 @@ class LivePlayNormalLayout extends StatelessWidget {
   final double sourceAspectRatio;
   final bool adaptivePortraitHeight;
   final PortraitLayoutMode portraitLayoutMode;
-  final bool compatibilityMode;
 
   @override
   Widget build(BuildContext context) {
@@ -57,113 +53,61 @@ class LivePlayNormalLayout extends StatelessWidget {
             child: video,
           );
         }
-
-        final layoutKind = resolveLivePlayNormalLayout(constraints.maxWidth);
-
-        if (layoutKind == LivePlayNormalLayoutKind.portraitStack) {
-          return _buildPortraitStack(context, constraints);
-        }
-
-        return _buildDesktopSplit(constraints);
-      },
-    );
-  }
-
-  Widget _buildPortraitStack(BuildContext context, BoxConstraints constraints) {
-    if (compatibilityMode) {
-      return _buildCompatibilityPortraitStack(context, constraints);
-    }
-
-    final useAdaptivePortraitFrame =
-        isPortraitSource && adaptivePortraitHeight && portraitLayoutMode != PortraitLayoutMode.compatibility;
-
-    return Column(
-      key: const ValueKey('live-play-portrait-stack'),
-      children: [
-        _buildPortraitVideo(context, constraints, useAdaptivePortraitFrame),
-        resolution,
-        const Divider(height: 1),
-        Expanded(
-          key: const ValueKey('live-play-portrait-danmaku'),
-          child: ColoredBox(color: Theme.of(context).colorScheme.surface, child: danmaku),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCompatibilityPortraitStack(BuildContext context, BoxConstraints constraints) {
-    final videoWidth = constraints.maxWidth;
-
-    var aspectRatio = 16 / 9;
-
-    if (isPortraitSource) {
-      aspectRatio = sourceAspectRatio;
-    }
-
-    final videoHeight = videoWidth / aspectRatio;
-
-    final maxVideoHeight = constraints.maxHeight * 0.6;
-
-    final height = videoHeight.clamp(0.0, maxVideoHeight);
-
-    return Column(
-      key: const ValueKey('live-play-compatibility-portrait-stack'),
-      children: [
-        SizedBox(width: videoWidth, height: height, child: video),
-        resolution,
-        const Divider(height: 1),
-        Expanded(
-          child: ColoredBox(color: Theme.of(context).colorScheme.surface, child: danmaku),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPortraitVideo(BuildContext context, BoxConstraints constraints, bool useAdaptivePortraitFrame) {
-    if (!useAdaptivePortraitFrame) {
-      return video;
-    }
-
-    final height = PortraitPresentationPolicy.resolveNormalVideoHeight(
-      availableWidth: constraints.maxWidth,
-      availableHeight: constraints.maxHeight,
-      isPortraitSource: true,
-      sourceAspectRatio: sourceAspectRatio,
-      adaptiveHeightEnabled: true,
-      mode: portraitLayoutMode,
-    );
-
-    return AnimatedContainer(
-      key: const ValueKey('live-play-adaptive-video-frame'),
-      width: constraints.maxWidth,
-      height: height,
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOutCubic,
-      clipBehavior: Clip.hardEdge,
-      decoration: const BoxDecoration(color: Colors.black),
-      child: video,
-    );
-  }
-
-  Widget _buildDesktopSplit(BoxConstraints constraints) {
-    final panelWidth = (constraints.maxWidth * 0.34).clamp(300.0, 400.0);
-
-    return Row(
-      key: ValueKey(compatibilityMode ? 'live-play-compatibility-desktop-split' : 'live-play-desktop-split'),
-      children: [
-        Expanded(child: video),
-        SizedBox(
-          key: ValueKey(compatibilityMode ? 'live-play-compatibility-desktop-panel' : 'live-play-desktop-panel'),
-          width: panelWidth,
-          child: Column(
+        if (resolveLivePlayNormalLayout(constraints.maxWidth) == LivePlayNormalLayoutKind.portraitStack) {
+          final useAdaptivePortraitFrame =
+              isPortraitSource && adaptivePortraitHeight && portraitLayoutMode != PortraitLayoutMode.compatibility;
+          return Column(
+            key: const ValueKey('live-play-portrait-stack'),
             children: [
+              if (useAdaptivePortraitFrame)
+                AnimatedContainer(
+                  key: const ValueKey('live-play-adaptive-video-frame'),
+                  width: constraints.maxWidth,
+                  height: PortraitPresentationPolicy.resolveNormalVideoHeight(
+                    availableWidth: constraints.maxWidth,
+                    availableHeight: constraints.maxHeight,
+                    isPortraitSource: true,
+                    sourceAspectRatio: sourceAspectRatio,
+                    adaptiveHeightEnabled: true,
+                    mode: portraitLayoutMode,
+                  ),
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
+                  clipBehavior: Clip.hardEdge,
+                  decoration: const BoxDecoration(color: Colors.black),
+                  child: video,
+                )
+              else
+                video,
               resolution,
               const Divider(height: 1),
-              Expanded(child: danmaku),
+              Expanded(
+                key: const ValueKey('live-play-portrait-danmaku'),
+                child: ColoredBox(color: Theme.of(context).colorScheme.surface, child: danmaku),
+              ),
             ],
-          ),
-        ),
-      ],
+          );
+        }
+
+        final panelWidth = (constraints.maxWidth * 0.34).clamp(300.0, 400.0);
+        return Row(
+          key: const ValueKey('live-play-desktop-split'),
+          children: [
+            Expanded(child: video),
+            SizedBox(
+              key: const ValueKey('live-play-desktop-panel'),
+              width: panelWidth,
+              child: Column(
+                children: [
+                  resolution,
+                  const Divider(height: 1),
+                  Expanded(child: danmaku),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -187,7 +131,11 @@ class LivePlayContent extends StatelessWidget {
     }
 
     if (mode == VideoMode.normal) {
-      return _buildNormalPage(context);
+      return ColoredBox(
+        key: const ValueKey('normal'),
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: _buildNormalView(context),
+      );
     }
 
     return Container(
@@ -196,23 +144,7 @@ class LivePlayContent extends StatelessWidget {
     );
   }
 
-  Widget _buildNormalPage(BuildContext context) {
-    final settings = SettingsService.to.player;
-
-    switch (settings.portraitLayoutMode) {
-      case PortraitLayoutMode.balanced:
-        return _buildNormalView(context, compatibilityMode: false);
-
-      case PortraitLayoutMode.compatibility:
-        return _buildNormalView(context, compatibilityMode: true);
-
-      case PortraitLayoutMode.immersive:
-        return _buildImmersiveView(context);
-    }
-  }
-
-  /// 普通播放布局
-  Widget _buildNormalView(BuildContext context, {required bool compatibilityMode}) {
+  Widget _buildNormalView(BuildContext context) {
     final compactHeader = MediaQuery.sizeOf(context).width < 600;
 
     return Scaffold(
@@ -222,71 +154,39 @@ class LivePlayContent extends StatelessWidget {
         child: Obx(() {
           final manager = GlobalPlayerService.instance.player;
           final settings = SettingsService.to.player;
-          final geometry = manager.videoGeometry.value;
           final isPortrait = manager.isVerticalVideo.value;
-
-          final adaptiveHeightEnabled = settings.enablePortraitStreamAdaptation.v && settings.portraitAdaptiveHeight.v;
-
-          final sourceAspectRatio = isPortrait && (!geometry.hasValidDimensions || !geometry.isStable)
-              ? 9 / 16
-              : geometry.aspectRatio;
-
+          final useAdaptivePortraitFrame =
+              MediaQuery.sizeOf(context).width <= 680 &&
+              isPortrait &&
+              settings.enablePortraitStreamAdaptation.v &&
+              settings.portraitAdaptiveHeight.v &&
+              settings.portraitLayoutMode != PortraitLayoutMode.compatibility;
           return LivePlayNormalLayout(
-            video: LivePlayVideo(
-              controller: controller,
-              expandToParent:
-                  !compatibilityMode && isPortrait && adaptiveHeightEnabled && MediaQuery.sizeOf(context).width <= 680,
-            ),
+            video: LivePlayVideo(controller: controller, expandToParent: useAdaptivePortraitFrame),
             resolution: const ResolutionsRow(),
             danmaku: _buildDanmaku(),
             showPanel: controller.site != Sites.iptvSite,
             isPortraitSource: isPortrait,
-            sourceAspectRatio: sourceAspectRatio,
-            adaptivePortraitHeight: adaptiveHeightEnabled,
+            sourceAspectRatio: manager.currentPresentationAspectRatio,
+            adaptivePortraitHeight: settings.enablePortraitStreamAdaptation.v && settings.portraitAdaptiveHeight.v,
             portraitLayoutMode: settings.portraitLayoutMode,
-            compatibilityMode: compatibilityMode,
           );
         }),
       ),
     );
   }
 
-  /// 沉浸式播放布局
-  Widget _buildImmersiveView(BuildContext context) {
-    final compactHeader = MediaQuery.sizeOf(context).width < 600;
-
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: LivePlayHeader(controller: controller, compactHeader: compactHeader),
-      body: LivePlayShell(controller: controller),
-    );
-  }
-
-  Widget _buildDanmaku({bool expanded = false}) {
+  Widget _buildDanmaku() {
     return Obx(() {
       final state = controller.state.value;
-
-      if (!state.room.success) {
+      if (!state.room.success || controller.site == Sites.iptvSite) {
         return const SizedBox.shrink();
       }
-
-      if (controller.site == Sites.iptvSite) {
-        return const SizedBox.shrink();
-      }
-
       final globalState = GlobalPlayerState.to;
-
       if (globalState.isFullscreen.value || globalState.isWindowFullscreen.value) {
         return const SizedBox.shrink();
       }
-
-      final child = const DanmakuTabView();
-
-      if (!expanded) {
-        return child;
-      }
-
-      return Expanded(child: child);
+      return const DanmakuTabView();
     });
   }
 }

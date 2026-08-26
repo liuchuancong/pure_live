@@ -17,6 +17,7 @@ Read [`../../../MAINTENANCE_POLICY.md`](../../../MAINTENANCE_POLICY.md) whenever
 4. Trace the first invalid state and its call/event lifecycle. Do not treat the final UI symptom as the root cause.
 5. Select direct reuse, adapted merge, compatibility layer or local rewrite based on product invariants and regression surface.
 6. Record affected modes, focused regression evidence, migration/rollback behavior and remaining evidence gaps.
+7. Apply `bugfix-android-release-default` after the repair batch passes: increment one patch/build version, complete the local Android arm64 Release gate, sync `master`, publish the fixed-certificate GitHub Release, and refresh the release index. Related fixes in the same user task share one version; other platforms remain explicitly scoped.
 
 ## Upstream workflow
 

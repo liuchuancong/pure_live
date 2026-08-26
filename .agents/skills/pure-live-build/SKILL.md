@@ -11,7 +11,7 @@ When the build follows a Bug fix, upstream Issue review or upstream merge, first
 
 ## Workflow
 
-1. Extract only the platform, architecture, configuration, validation scope, packaging, and publication actions explicitly requested in the current task.
+1. Extract the platform, architecture, configuration, validation scope, packaging, and publication actions from the current task. For a completed Bug-fix batch, apply `bugfix-android-release-default`: one patch/build increment, local Android arm64 Release, source push, GitHub fixed-certificate signing, Release publication, and release-index sync are standing scope. Treat multiple related fixes in one task as one version; other platforms remain explicit.
    For an upstream sync, freeze the full upstream SHA and run
    `tool/review_upstream_update.ps1` under `UPSTREAM_REVIEW_POLICY.md` before
    merging. The range must be merge-base-to-upstream, every incoming commit and
@@ -39,6 +39,6 @@ When the build follows a Bug fix, upstream Issue review or upstream merge, first
    For Windows packaging, stage only files in the current CMake
    `install_manifest.txt` plus the reviewed runner-runtime allowlist; never copy
    the complete incremental Release directory, which can retain DLLs from removed plugins.
-9. Report the generated build record and artifacts, then stop. Do not append another platform, full regression, package, upload, or release stage unless it was included in the current request.
+9. Report the generated build record and artifacts. For a Bug-fix batch, continue only through the predeclared Android signing, GitHub Release, and index-sync stages; do not append another platform or a second full regression. For ordinary build requests, stop after the requested target.
 
 Use `tool/local_ci.ps1` for focused/full validation and `tool/build_local_release.ps1` for the single explicitly selected local target.

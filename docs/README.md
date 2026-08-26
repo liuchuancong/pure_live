@@ -8,6 +8,9 @@
 - [上游同步审查策略](../UPSTREAM_REVIEW_POLICY.md)：三方差异、全入站文件审查、语义变更台账、冲突处置与合并门禁。
 - [Bug 根因分析模板](BUG_TRIAGE_TEMPLATE.md)：复现基线、来源分类、首次错误状态、影响矩阵与分层证据模板。
 - [上游同步审计模板](UPSTREAM_AUDIT_TEMPLATE.md)：审查脚本要求的逐文件台账、Issue 映射、质量评估、处置和回归字段。
+- [上游同步审计（9e80f3be）](UPSTREAM_AUDIT_9E80F3BE.md)：竖屏比例、直播记录、录播与播放器布局入站提交的逐项处置。
+- [上游同步审计（c7d99cc3）](UPSTREAM_AUDIT_C7D99CC3.md)：上游吸收维护分支后的返回、录制权限、初始化与 FFmpeg 参数冲突处置。
+- [竖屏比例与直播记录根因审计](BUG_AUDIT_2026_08_26_PORTRAIT_HISTORY.md)：移动端单一可信比例、完整观看日期与不限数量回归证据。
 - [本地构建、测试与发布](BUILD_AND_RELEASE.md)：固定工具链、一键质量门禁、Android 签名、Windows 打包与本地发布。
 - [Windows 数据目录与升级](WINDOWS_DATA_AND_UPGRADE.md)：安装目录数据、旧版关注合并、换盘迁移与回滚。
 - [依赖与接口审计](DEPENDENCY_AUDIT.md)：依赖锁定策略、暂缓升级原因和直播平台接口探测边界。
@@ -21,6 +24,7 @@
 - [v3.0.1 Android 竖屏直播适配](STAGE_UPDATE_3_0_1.md)：源方向稳定识别、普通页自适应、全屏策略、画中画比例与房间覆盖。
 - [v3.0.2 Android 播放比例修复](STAGE_UPDATE_3_0_2.md)：普通横屏 16:9 边界、竖屏适配隔离、原生单层缩放与弹幕主题布局。
 - [v3.0.3 Android 竖屏 Surface 修复](STAGE_UPDATE_3_0_3.md)：原生/应用层几何统一、切换时序和横屏直播记录自适应双列。
+- [v3.0.4 Android 可信画面比例修复](STAGE_UPDATE_3_0_4.md)：普通页、全屏、系统画中画和应用内小窗共享单一可信比例，并增强历史记录日期与容量。
 - [v2.9.7 Android update](STAGE_UPDATE_2_9_7.md): cross-platform audience semantics, stable popular ranking and SOOP PC/mobile totals.
 - [v2.9.6 Android update](STAGE_UPDATE_2_9_6.md): upstream synchronization, Douyin/Bilibili repairs and 40 interface probes.
 - [v2.9.5 Android update](STAGE_UPDATE_2_9_5.md): Douyu playback, YY integration and 36 interface probes.

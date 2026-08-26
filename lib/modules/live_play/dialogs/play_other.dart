@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:pure_live/plugins/cache_manager.dart';
-import 'package:pure_live/common/widgets/common_avatar.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/content_first_panel_layout.dart';
 
 class PlayOther extends StatefulWidget {
   const PlayOther({required this.controller, super.key});
+
   final LivePlayController controller;
 
   @override
@@ -18,23 +18,29 @@ class PlayOther extends StatefulWidget {
 
 class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMixin {
   late final TabController tabController;
+
   final onlineRooms = <LiveRoom>[].obs;
   final recordingRooms = <LiveRoom>[].obs;
   final historyRooms = <LiveRoom>[].obs;
   final loadingFinish = false.obs;
   final refreshing = false.obs;
+
   StreamSubscription<dynamic>? subscription;
 
   @override
   void initState() {
     super.initState();
+
     tabController = TabController(length: 3, vsync: this);
+
     _updateRooms();
+
     subscription = EventBus.instance.listen('refresh_favorite_finish', (_) => _updateRooms());
   }
 
   void _updateRooms() {
     final allRooms = SettingsService.to.fav.favoriteRooms.v;
+
     final liveList = allRooms.where((room) => room.liveStatus == LiveStatus.live && room.isRecord == false).toList()
       ..sort(_compareAudience);
     final recordList = allRooms.where((room) => room.liveStatus == LiveStatus.live && room.isRecord == true).toList()
@@ -42,6 +48,7 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
     onlineRooms.assignAll(liveList);
     recordingRooms.assignAll(recordList);
     historyRooms.assignAll(SettingsService.to.history.historyRooms.v);
+
     loadingFinish.value = true;
     refreshing.value = false;
   }
@@ -66,7 +73,9 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     final layout = resolveContentFirstPanelLayout(MediaQuery.sizeOf(context), ContentFirstPanelKind.roomHistory);
+
     return Dialog(
       key: const ValueKey('fullscreen-room-history-dialog'),
       alignment: Alignment.centerRight,
@@ -178,22 +187,19 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
     if (rooms.isEmpty) {
       return AppStatusView(type: AppStatusType.empty);
     }
+
     return LayoutBuilder(
       builder: (context, constraints) {
         const padding = 6.0;
         const spacing = 5.0;
-        final availableWidth = constraints.maxWidth - padding * 2;
-        final isLargeScreen = availableWidth >= 520;
-        final columns = isLargeScreen ? 2 : 1;
-        late final double cardHeight;
-        if (isLargeScreen) {
-          final cardWidth = (availableWidth - spacing * (columns - 1)) / columns;
-          final coverHeight = cardWidth * 7 / 16;
-          const infoHeight = 48.0;
-          cardHeight = coverHeight + infoHeight;
-        } else {
-          cardHeight = 72;
-        }
+        final columns = resolveRoomHistoryColumns(constraints.maxWidth, padding: padding, spacing: spacing);
+        final cardHeight = resolveRoomHistoryCardHeight(
+          contentSize: Size(constraints.maxWidth, constraints.maxHeight),
+          columns: columns,
+          padding: padding,
+          spacing: spacing,
+        );
+
         return GridView.builder(
           key: ValueKey(history ? 'watch-history-grid' : 'live-room-grid'),
           padding: const EdgeInsets.all(padding),
@@ -207,10 +213,10 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
           itemCount: rooms.length,
           itemBuilder: (context, index) {
             final room = rooms[index];
+
             return _RoomSwitchCard(
               room: room,
               history: history,
-              largeScreen: isLargeScreen,
               onTap: () {
                 Navigator.of(context).pop();
                 widget.controller.switchRoom(room);
@@ -225,6 +231,7 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
 
 class _CompactTab extends StatelessWidget {
   const _CompactTab({required this.icon, required this.label});
+
   final IconData icon;
   final String label;
 
@@ -237,8 +244,9 @@ class _CompactTab extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 15),
-            const SizedBox(width: 4),
+            Icon(icon, size: 14),
+            const SizedBox(width: 3),
+            // Flexible causes a layout error here because TabBar may provide unbounded width constraints.
             Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.labelMedium),
           ],
         ),
@@ -248,38 +256,36 @@ class _CompactTab extends StatelessWidget {
 }
 
 class _RoomSwitchCard extends StatelessWidget {
-  const _RoomSwitchCard({required this.room, required this.history, required this.largeScreen, required this.onTap});
+  const _RoomSwitchCard({required this.room, required this.history, required this.onTap});
+
   final LiveRoom room;
   final bool history;
-  final bool largeScreen;
   final VoidCallback onTap;
 
   String _historyLabel() {
     final value = room.lastWatchedAt;
+
     if (value == null || value <= 0) {
       return i18n('history_earlier');
     }
-    final watched = DateTime.fromMillisecondsSinceEpoch(value);
-    final now = DateTime.now();
-    final sameDay = watched.year == now.year && watched.month == now.month && watched.day == now.day;
-    final hour = watched.hour.toString().padLeft(2, '0');
-    final minute = watched.minute.toString().padLeft(2, '0');
-    final text = sameDay
-        ? '$hour:$minute'
-        : '${watched.month.toString().padLeft(2, '0')}-${watched.day.toString().padLeft(2, '0')} $hour:$minute';
-    return i18n(sameDay ? 'watched_today_at' : 'watched_at', args: {'time': text});
+
+    return i18n('watched_at', args: {'time': formatHistoryWatchedAt(value)});
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+
     final audience = room.audienceValue(
       preferRealOnline: SettingsService.to.app.preferRealOnlineCounts.v,
       platformEnabled: SettingsService.to.app.isRealOnlineEnabledFor(room.platform),
     );
+
     final title = room.title?.trim().isNotEmpty == true ? room.title! : i18n('untitled_room');
+
     final nick = room.nick?.trim() ?? '';
+
     final meta = history
         ? _historyLabel()
         : audience.isEmpty
@@ -299,116 +305,65 @@ class _RoomSwitchCard extends StatelessWidget {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: largeScreen
-                ? _buildLargeLayout(context, title, nick, meta)
-                : _buildMobileLayout(context, title, nick, meta, audience),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLargeLayout(BuildContext context, String title, String nick, String meta) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    return Column(
-      children: [
-        Expanded(
-          child: _RoomSwitchCover(room: room, meta: meta),
-        ),
-        SizedBox(
-          height: 48,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(9, 5, 7, 5),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700, height: 1.15),
+                Expanded(
+                  child: _RoomSwitchCover(room: room, meta: meta),
                 ),
-                const SizedBox(height: 3),
-                Row(
-                  children: [
-                    Icon(Icons.person_outline_rounded, size: 12, color: colors.onSurfaceVariant),
-                    const SizedBox(width: 3),
-                    Expanded(
-                      child: Text(
-                        nick.isEmpty ? i18n('unknown') : nick,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.labelSmall?.copyWith(color: colors.onSurfaceVariant, height: 1.1),
-                      ),
+                SizedBox(
+                  height: 36,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(7, 3, 3, 3),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        const Spacer(),
+                        Row(
+                          children: [
+                            Icon(Icons.person_outline_rounded, size: 12, color: colors.onSurfaceVariant),
+                            const SizedBox(width: 3),
+                            Expanded(
+                              child: Text(
+                                nick.isEmpty ? i18n('unknown') : nick,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.labelSmall?.copyWith(color: colors.onSurfaceVariant),
+                              ),
+                            ),
+                            Icon(Icons.chevron_right_rounded, size: 14, color: colors.onSurfaceVariant),
+                          ],
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 2),
-                    Icon(Icons.chevron_right_rounded, size: 15, color: colors.onSurfaceVariant),
-                  ],
+                  ),
                 ),
               ],
             ),
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildMobileLayout(BuildContext context, String title, String nick, String meta, String audience) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(
-        children: [
-          CommonAvatar(avatarUrl: room.avatar, fallbackName: nick, dense: true),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  nick.isEmpty ? i18n('unknown') : nick,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelSmall?.copyWith(color: colors.onSurfaceVariant),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(color: colors.primary, borderRadius: BorderRadius.circular(12)),
-                child: Text(
-                  i18n('site_${room.platform}'),
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w400, color: Colors.white),
-                ),
-              ),
-              if (!history) Text(meta, style: TextStyle(fontSize: 12, color: Colors.orange.shade700)),
-            ],
-          ),
-        ],
       ),
     );
   }
 }
 
+@visibleForTesting
+String formatHistoryWatchedAt(int millisecondsSinceEpoch) {
+  final watched = DateTime.fromMillisecondsSinceEpoch(millisecondsSinceEpoch);
+  String twoDigits(int value) => value.toString().padLeft(2, '0');
+  return '${watched.year.toString().padLeft(4, '0')}-'
+      '${twoDigits(watched.month)}-${twoDigits(watched.day)} '
+      '${twoDigits(watched.hour)}:${twoDigits(watched.minute)}';
+}
+
 class _RoomSwitchCover extends StatelessWidget {
   const _RoomSwitchCover({required this.room, required this.meta});
+
   final LiveRoom room;
   final String meta;
 
@@ -416,7 +371,9 @@ class _RoomSwitchCover extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+
     final url = normalizeNetworkImageUrl(room.cover);
+
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -430,8 +387,9 @@ class _RoomSwitchCover extends StatelessWidget {
             builder: (context, constraints) {
               final cacheWidth = (constraints.maxWidth * MediaQuery.devicePixelRatioOf(context))
                   .round()
-                  .clamp(240, 360)
+                  .clamp(240, 720)
                   .toInt();
+
               return CachedNetworkImage(
                 imageUrl: url,
                 httpHeaders: networkImageHeaders(url),
