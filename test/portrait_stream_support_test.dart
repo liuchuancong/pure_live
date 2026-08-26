@@ -127,15 +127,9 @@ void main() {
       expect(snapshot.hasActiveContentCrop, isFalse);
     });
 
-    test('selected-stream portrait metadata provisionally crops a landscape transport canvas', () {
+    test('selected-stream portrait metadata classifies but never invents a crop', () {
       final detector = PortraitStreamDetector();
-      detector.observeSourceMetadata(
-        1080,
-        1920,
-        confidence: 0.995,
-        source: 'douyin.selected_sdk_params',
-        allowsCenteredCrop: true,
-      );
+      detector.observeSourceMetadata(1080, 1920, confidence: 0.995, source: 'douyin.selected_sdk_params');
 
       final snapshot = detector.observe(1920, 1080);
       final insets = PortraitPresentationPolicy.resolveVideoContentInsets(
@@ -143,25 +137,17 @@ void main() {
         presentationAspectRatio: 9 / 16,
       );
 
-      expect(snapshot.hasProvisionalContentCrop, isTrue);
-      expect(insets.left, closeTo(0.3418, 0.002));
-      expect(insets.right, closeTo(0.3418, 0.002));
-      expect(insets.applyToAspectRatio(snapshot.renderCanvasAspectRatio), closeTo(9 / 16, 0.002));
+      expect(snapshot.effectiveAspectRatio, closeTo(16 / 9, 0.002));
+      expect(snapshot.candidateOrientation, VideoSourceOrientation.landscape);
+      expect(insets.hasCrop, isFalse);
     });
 
     test('selected landscape metadata never invents a crop for a portrait decoder canvas', () {
       final detector = PortraitStreamDetector();
-      detector.observeSourceMetadata(
-        1920,
-        1080,
-        confidence: 0.995,
-        source: 'douyin.selected_sdk_params',
-        allowsCenteredCrop: true,
-      );
+      detector.observeSourceMetadata(1920, 1080, confidence: 0.995, source: 'douyin.selected_sdk_params');
 
       final snapshot = detector.observe(1080, 1920);
 
-      expect(snapshot.hasProvisionalContentCrop, isFalse);
       expect(
         PortraitPresentationPolicy.resolveVideoContentInsets(
           snapshot: snapshot,
@@ -242,29 +228,22 @@ void main() {
       expect(portrait.hasActiveContentCrop, isTrue);
       expect(transition.hasActiveContentCrop, isFalse);
       expect(transition.hasTrustedSourceHint, isFalse);
-      expect(transition.sourceHintAllowsCenteredCrop, isFalse);
       expect(transition.isProvisional, isTrue);
       expect(transition.aspectRatio, closeTo(9 / 16, 0.02));
     });
 
-    test('source transition requires the new URL to re-authorize a platform crop', () {
+    test('source transition drops the previous URL geometry authority', () {
       final detector = PortraitStreamDetector();
-      detector.observeSourceMetadata(
-        1080,
-        1920,
-        confidence: 0.995,
-        source: 'douyin.selected_sdk_params',
-        allowsCenteredCrop: true,
-      );
-      final selected = detector.observe(1920, 1080);
+      final start = DateTime(2026, 1, 1);
+      detector.observeSourceMetadata(1080, 1920, confidence: 0.995, source: 'douyin.selected_sdk_params');
+      detector.observe(1920, 1080, now: start);
+      final selected = detector.commitPending(now: start.add(const Duration(milliseconds: 500)));
 
       final transition = detector.beginSourceTransition();
 
-      expect(selected.hasProvisionalContentCrop, isTrue);
-      expect(transition.effectiveAspectRatio, closeTo(9 / 16, 0.001));
+      expect(selected.orientation, VideoSourceOrientation.landscape);
+      expect(transition.effectiveAspectRatio, closeTo(16 / 9, 0.001));
       expect(transition.hasTrustedSourceHint, isFalse);
-      expect(transition.sourceHintAllowsCenteredCrop, isFalse);
-      expect(transition.hasProvisionalContentCrop, isFalse);
     });
 
     test('a cached room geometry is provisional until fresh decoder evidence arrives', () {
@@ -461,15 +440,9 @@ void main() {
       expect(snapshot.renderCanvasAspectRatio, closeTo(16 / 9, 0.001));
     });
 
-    test('settled full-frame evidence clears a provisional selected-stream crop', () {
+    test('settled full-frame evidence clears a conflicting selected-stream hint', () {
       final detector = PortraitStreamDetector();
-      detector.observeSourceMetadata(
-        1080,
-        1920,
-        confidence: 0.995,
-        source: 'douyin.selected_sdk_params',
-        allowsCenteredCrop: true,
-      );
+      detector.observeSourceMetadata(1080, 1920, confidence: 0.995, source: 'douyin.selected_sdk_params');
       detector.observe(1920, 1080);
       const fullFrame = ActiveVideoContentObservation(
         insets: NormalizedVideoInsets.none,
@@ -481,7 +454,6 @@ void main() {
       final settled = detector.observeActiveContent(fullFrame);
 
       expect(settled.hasTrustedSourceHint, isFalse);
-      expect(settled.hasProvisionalContentCrop, isFalse);
       expect(
         PortraitPresentationPolicy.resolveVideoContentInsets(
           snapshot: settled,

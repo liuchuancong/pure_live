@@ -167,8 +167,9 @@ class BetterPlayerAdapter implements UnifiedPlayer, BetterPlayerAccessor, VideoF
   }
 
   @override
-  Widget getVideoWidget() {
+  Widget getVideoWidget({BoxFit? fit}) {
     if (_isAudioOnly) return const SizedBox.shrink();
+    if (fit != null) setVideoFit(fit);
     return BetterPlayer(controller: _controller!);
   }
 

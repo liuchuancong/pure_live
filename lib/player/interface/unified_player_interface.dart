@@ -45,7 +45,13 @@ abstract class UnifiedPlayer {
   /// 获取渲染组件
   /// [fitIndex] 对应 BoxFit 的索引
   /// [controls] 覆盖在视频上的 UI 控制层
-  Widget getVideoWidget();
+  /// Builds the native video view with [fit] as the only viewport scaling
+  /// policy for this widget generation.
+  ///
+  /// Passing the fit directly avoids mutating an adapter and then wrapping its
+  /// still-updating native view in a second [FittedBox]. That ordering was
+  /// especially visible for portrait streams while decoder geometry settled.
+  Widget getVideoWidget({BoxFit? fit});
 
   bool get isInitialized;
 

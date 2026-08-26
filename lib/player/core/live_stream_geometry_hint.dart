@@ -5,9 +5,9 @@ import 'package:pure_live/common/models/live_room.dart';
 
 /// Platform-declared geometry for the programme carried by a live stream.
 ///
-/// This is deliberately separate from decoder dimensions: a platform may
-/// declare a 1080x1920 portrait programme while a CDN or decoder exposes a
-/// 1920x1080 transport canvas with symmetric pillar bars.
+/// This is deliberately separate from decoder dimensions. It may classify the
+/// initial programme before the first frame, but it never supplies crop pixel
+/// coordinates or overrides a plausible post-rotation decoder display size.
 @immutable
 class LiveStreamGeometryHint {
   const LiveStreamGeometryHint({
@@ -15,20 +15,12 @@ class LiveStreamGeometryHint {
     required this.height,
     required this.confidence,
     required this.source,
-    this.allowsCenteredCrop = false,
   });
 
   final int width;
   final int height;
   final double confidence;
   final String source;
-
-  /// Whether this geometry is tied closely enough to the selected stream to
-  /// provisionally remove symmetric transport-canvas bars.
-  ///
-  /// The crop remains reversible when decoded-frame evidence arrives. Generic
-  /// room flags and top-level placeholders never receive this authority.
-  final bool allowsCenteredCrop;
 
   double get aspectRatio => width / height;
 }
@@ -80,12 +72,7 @@ class LiveStreamGeometryHintResolver {
     final hasSelectedUrl = selectedUrl?.trim().isNotEmpty == true;
     if (selectedKey.isNotEmpty) {
       final selectedStream = _caseInsensitiveValue(streams, selectedKey);
-      final sdkHint = _dimensionsFromStream(
-        selectedStream,
-        confidence: 0.995,
-        source: 'douyin.selected_sdk_params',
-        allowsCenteredCrop: true,
-      );
+      final sdkHint = _dimensionsFromStream(selectedStream, confidence: 0.995, source: 'douyin.selected_sdk_params');
       if (sdkHint != null) return sdkHint;
 
       final qualityHint = _qualityResolutionForKey(
@@ -93,7 +80,6 @@ class LiveStreamGeometryHintResolver {
         selectedKey,
         confidence: 0.99,
         source: 'douyin.selected_quality',
-        allowsCenteredCrop: true,
       );
       if (qualityHint != null) return qualityHint;
       if (selectedKey == defaultKey && defaultQuality is Map) {
@@ -101,7 +87,6 @@ class LiveStreamGeometryHintResolver {
           _mapValue(defaultQuality, 'resolution'),
           confidence: 0.985,
           source: 'douyin.selected_default_quality',
-          allowsCenteredCrop: true,
         );
         if (declaredDefault != null) return declaredDefault;
       }
@@ -118,7 +103,6 @@ class LiveStreamGeometryHintResolver {
           _mapValue(defaultQuality, 'resolution'),
           confidence: 0.975,
           source: 'douyin.default_quality',
-          allowsCenteredCrop: true,
         );
         if (declaredDefault != null) return declaredDefault;
       }
@@ -127,19 +111,13 @@ class LiveStreamGeometryHintResolver {
         defaultKey,
         confidence: 0.97,
         source: 'douyin.default_quality',
-        allowsCenteredCrop: true,
       );
       if (qualityHint != null) return qualityHint;
     }
 
     if (defaultKey.isNotEmpty && !hasSelectedUrl) {
       final defaultStream = _caseInsensitiveValue(streams, defaultKey);
-      final sdkHint = _dimensionsFromStream(
-        defaultStream,
-        confidence: 0.96,
-        source: 'douyin.default_sdk_params',
-        allowsCenteredCrop: true,
-      );
+      final sdkHint = _dimensionsFromStream(defaultStream, confidence: 0.96, source: 'douyin.default_sdk_params');
       if (sdkHint != null) return sdkHint;
     }
 
@@ -149,7 +127,6 @@ class LiveStreamGeometryHintResolver {
         _mapValue(defaultQuality, 'resolution'),
         confidence: 0.95,
         source: 'douyin.default_quality',
-        allowsCenteredCrop: true,
       );
       if (resolution != null) candidates.add(resolution);
     }
@@ -158,28 +135,17 @@ class LiveStreamGeometryHintResolver {
         _mapValue(quality, 'resolution'),
         confidence: 0.94,
         source: 'douyin.quality_resolution',
-        allowsCenteredCrop: true,
       );
       if (resolution != null) candidates.add(resolution);
     }
     for (final stream in streams.values) {
-      final sdkHint = _dimensionsFromStream(
-        stream,
-        confidence: 0.93,
-        source: 'douyin.sdk_params',
-        allowsCenteredCrop: true,
-      );
+      final sdkHint = _dimensionsFromStream(stream, confidence: 0.93, source: 'douyin.sdk_params');
       if (sdkHint != null) candidates.add(sdkHint);
     }
     final candidateResolution = _mapValue(rawStreamUrl, 'candidate_resolution');
     if (candidateResolution is List) {
       for (final value in candidateResolution) {
-        final hint = _parseResolution(
-          value,
-          confidence: 0.92,
-          source: 'douyin.candidate_resolution',
-          allowsCenteredCrop: true,
-        );
+        final hint = _parseResolution(value, confidence: 0.92, source: 'douyin.candidate_resolution');
         if (hint != null) candidates.add(hint);
       }
     }
@@ -193,19 +159,13 @@ class LiveStreamGeometryHintResolver {
     String requestedKey, {
     required double confidence,
     required String source,
-    required bool allowsCenteredCrop,
   }) {
     final normalizedKey = requestedKey.trim().toLowerCase();
     if (normalizedKey.isEmpty) return null;
     for (final quality in qualities) {
       final key = _mapValue(quality, 'sdk_key')?.toString().trim().toLowerCase() ?? '';
       if (key != normalizedKey) continue;
-      return _parseResolution(
-        _mapValue(quality, 'resolution'),
-        confidence: confidence,
-        source: source,
-        allowsCenteredCrop: allowsCenteredCrop,
-      );
+      return _parseResolution(_mapValue(quality, 'resolution'), confidence: confidence, source: source);
     }
     return null;
   }
@@ -267,58 +227,30 @@ class LiveStreamGeometryHintResolver {
     dynamic stream, {
     required double confidence,
     required String source,
-    required bool allowsCenteredCrop,
   }) {
     if (stream is! Map) return null;
     final main = _mapValue(stream, 'main');
     if (main is! Map) return null;
-    final direct = _dimensionsFromMap(
-      main,
-      confidence: confidence,
-      source: source,
-      allowsCenteredCrop: allowsCenteredCrop,
-    );
+    final direct = _dimensionsFromMap(main, confidence: confidence, source: source);
     if (direct != null) return direct;
     final sdkParams = _decodeMap(_mapValue(main, 'sdk_params'));
     if (sdkParams == null) return null;
-    return _dimensionsFromMap(
-          sdkParams,
-          confidence: confidence,
-          source: source,
-          allowsCenteredCrop: allowsCenteredCrop,
-        ) ??
-        _parseResolution(
-          _mapValue(sdkParams, 'resolution'),
-          confidence: confidence,
-          source: source,
-          allowsCenteredCrop: allowsCenteredCrop,
-        );
+    return _dimensionsFromMap(sdkParams, confidence: confidence, source: source) ??
+        _parseResolution(_mapValue(sdkParams, 'resolution'), confidence: confidence, source: source);
   }
 
   static LiveStreamGeometryHint? _dimensionsFromMap(
     dynamic value, {
     required double confidence,
     required String source,
-    bool allowsCenteredCrop = false,
   }) {
     if (value is! Map) return null;
     final width = _positiveInt(_mapValue(value, 'width'));
     final height = _positiveInt(_mapValue(value, 'height'));
-    return _validatedHint(
-      width,
-      height,
-      confidence: confidence,
-      source: source,
-      allowsCenteredCrop: allowsCenteredCrop,
-    );
+    return _validatedHint(width, height, confidence: confidence, source: source);
   }
 
-  static LiveStreamGeometryHint? _parseResolution(
-    dynamic value, {
-    required double confidence,
-    required String source,
-    bool allowsCenteredCrop = false,
-  }) {
+  static LiveStreamGeometryHint? _parseResolution(dynamic value, {required double confidence, required String source}) {
     final text = value?.toString().trim() ?? '';
     final match = RegExp(r'(\d{2,5})\s*[xX×*]\s*(\d{2,5})').firstMatch(text);
     if (match == null) return null;
@@ -327,7 +259,6 @@ class LiveStreamGeometryHintResolver {
       int.tryParse(match.group(2)!),
       confidence: confidence,
       source: source,
-      allowsCenteredCrop: allowsCenteredCrop,
     );
   }
 
@@ -336,20 +267,13 @@ class LiveStreamGeometryHintResolver {
     int? height, {
     required double confidence,
     required String source,
-    bool allowsCenteredCrop = false,
   }) {
     if (width == null || height == null || width < 120 || height < 120 || width > 16384 || height > 16384) {
       return null;
     }
     final ratio = width / height;
     if (!ratio.isFinite || ratio < 0.30 || ratio > 3.50) return null;
-    return LiveStreamGeometryHint(
-      width: width,
-      height: height,
-      confidence: confidence,
-      source: source,
-      allowsCenteredCrop: allowsCenteredCrop,
-    );
+    return LiveStreamGeometryHint(width: width, height: height, confidence: confidence, source: source);
   }
 
   static LiveStreamGeometryHint? _selectAspectConsensus(List<LiveStreamGeometryHint> candidates) {
@@ -365,7 +289,6 @@ class LiveStreamGeometryHintResolver {
       height: reference.height,
       confidence: reference.confidence,
       source: 'douyin.stream_consensus',
-      allowsCenteredCrop: true,
     );
   }
 

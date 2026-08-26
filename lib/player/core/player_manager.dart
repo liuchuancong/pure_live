@@ -325,12 +325,14 @@ class PlayerManager {
     );
   }
 
-  /// The single trusted presentation ratio shared by the normal room,
-  /// fullscreen, system PiP and the application floating window.
-  double get currentPresentationAspectRatio => PortraitPresentationPolicy.resolveVideoDisplayAspectRatio(
+  /// The single immutable geometry shared by the normal room, fullscreen,
+  /// system PiP and the application floating window.
+  VideoPresentationGeometry get currentPresentationGeometry => PortraitPresentationPolicy.resolvePresentationGeometry(
     snapshot: videoGeometry.value,
     effectiveOrientation: effectiveVideoOrientation,
   );
+
+  double get currentPresentationAspectRatio => currentPresentationGeometry.contentAspectRatio;
 
   void _beginVideoGeometrySession(LiveRoom? nextRoom, {String? selectedUrl}) {
     _geometrySessionGeneration++;
@@ -369,7 +371,6 @@ class PlayerManager {
         hint.height,
         confidence: hint.confidence,
         source: hint.source,
-        allowsCenteredCrop: hint.allowsCenteredCrop,
       );
       log(
         'Source geometry hint ${hint.width}x${hint.height} (${hint.source}, ${hint.confidence.toStringAsFixed(2)})',
@@ -422,10 +423,7 @@ class PlayerManager {
   void _scheduleActiveContentProbe() {
     final snapshot = videoGeometry.value;
     final needsCanvasInspection =
-        snapshot.aspectRatio >= 1.10 ||
-        snapshot.hasActiveContentCrop ||
-        snapshot.sourceHintOverridesDecoder ||
-        snapshot.sourceHintAllowsCenteredCrop;
+        snapshot.aspectRatio >= 1.10 || snapshot.hasActiveContentCrop || snapshot.sourceHintOverridesDecoder;
     if (!PlatformUtils.isMobile ||
         _disposed ||
         _isClosing ||
@@ -1745,28 +1743,21 @@ class PlayerManager {
     if (!PlatformUtils.isMobile) {
       // Desktop adapters retain their native aspect and visible-viewport
       // policies, including the bounded Windows texture implementation.
-      _applyVideoFit(player, boxFit);
-      return player.getVideoWidget();
+      return player.getVideoWidget(fit: boxFit);
     }
 
-    // Mobile player engines report dimensions through different native
-    // surfaces. Give all of them the same trusted frame and set the adapter to
-    // fill that frame, leaving exactly one BoxFit owner. This differs from the
-    // old double-FittedBox implementation: it never waits for two independent
-    // width/height streams and it never lets the adapter apply the ratio again.
-    final snapshot = videoGeometry.value;
-    final aspectRatio = currentPresentationAspectRatio;
-    final contentInsets = PortraitPresentationPolicy.resolveVideoContentInsets(
-      snapshot: snapshot,
-      presentationAspectRatio: aspectRatio,
-    );
-    _applyVideoFit(player, BoxFit.fill);
-    return buildUnifiedMobileVideoFrame(
-      aspectRatio: aspectRatio,
-      encodedAspectRatio: snapshot.renderCanvasAspectRatio,
-      contentInsets: contentInsets,
+    // The native player is the only fit owner for ordinary frames. media_kit,
+    // FijkPlayer and BetterPlayer already size their texture/surface from the
+    // decoded frame. Wrapping that view in another aspect-ratio FittedBox made
+    // a transient 16:9 manager snapshot multiply with the native 9:16 fit and
+    // produced the persistent narrow-strip portrait regression.
+    final geometry = currentPresentationGeometry;
+    return buildUnifiedMobileVideoPresentation(
+      aspectRatio: geometry.contentAspectRatio,
+      encodedAspectRatio: geometry.canvasAspectRatio,
+      contentInsets: geometry.contentInsets,
       fit: boxFit,
-      child: player.getVideoWidget(),
+      nativeVideoBuilder: (nativeFit) => player.getVideoWidget(fit: nativeFit),
     );
   }
 
@@ -2051,9 +2042,42 @@ Rect resolveContainedVideoRect({required Rect container, required double content
   return Rect.fromLTWH(container.left, container.top + (container.height - height) / 2, container.width, height);
 }
 
-/// Builds the single mobile texture geometry boundary used by every engine.
-/// Kept outside [PlayerManager] so its BoxFit contract has deterministic widget
-/// coverage without allocating a native player.
+/// Selects exactly one owner for mobile scaling.
+///
+/// Ordinary decoded frames are returned directly and the native player owns
+/// [fit]. A confirmed active-content crop is the only case that adds a Flutter
+/// viewport: the native surface fills its measured raw canvas, then one outer
+/// transform applies the crop and requested fit. Keeping the builder here also
+/// lets widget tests reproduce media_kit's internal FittedBox contract.
+@visibleForTesting
+Widget buildUnifiedMobileVideoPresentation({
+  required double aspectRatio,
+  required BoxFit fit,
+  required Widget Function(BoxFit fit) nativeVideoBuilder,
+  double? encodedAspectRatio,
+  NormalizedVideoInsets contentInsets = NormalizedVideoInsets.none,
+}) {
+  final safeAspectRatio = aspectRatio.isFinite && aspectRatio > 0 ? aspectRatio : 16 / 9;
+  final safeEncodedRatio = encodedAspectRatio != null && encodedAspectRatio.isFinite && encodedAspectRatio > 0
+      ? encodedAspectRatio
+      : safeAspectRatio;
+  final safeContentInsets = resolveConsistentVideoContentInsets(
+    encodedAspectRatio: safeEncodedRatio,
+    presentationAspectRatio: safeAspectRatio,
+    contentInsets: contentInsets,
+  );
+  if (!safeContentInsets.hasCrop) return nativeVideoBuilder(fit);
+  return buildUnifiedMobileVideoFrame(
+    aspectRatio: safeAspectRatio,
+    encodedAspectRatio: safeEncodedRatio,
+    contentInsets: safeContentInsets,
+    fit: fit,
+    child: nativeVideoBuilder(BoxFit.fill),
+  );
+}
+
+/// Builds the exceptional measured-crop viewport used by
+/// [buildUnifiedMobileVideoPresentation].
 @visibleForTesting
 Widget buildUnifiedMobileVideoFrame({
   required double aspectRatio,

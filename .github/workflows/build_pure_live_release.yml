@@ -42,7 +42,7 @@ on:
         description: Release tag (e.g. v1.0.0) – required if create_release is true
         required: true
         type: string
-        default: "v3.0.8"
+        default: "v3.0.9"
   push:
     tags:
       - "stage-linux-*"

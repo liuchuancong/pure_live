@@ -95,7 +95,6 @@ class VideoGeometrySnapshot {
     this.sourceHintAspectRatio = 0,
     this.sourceHintConfidence = 0,
     this.sourceHintSource = '',
-    this.sourceHintAllowsCenteredCrop = false,
     this.evidence = VideoGeometryEvidence.decoderMetadata,
     this.isProvisional = false,
   });
@@ -115,7 +114,6 @@ class VideoGeometrySnapshot {
       sourceHintAspectRatio = 0,
       sourceHintConfidence = 0,
       sourceHintSource = '',
-      sourceHintAllowsCenteredCrop = false,
       evidence = VideoGeometryEvidence.unknown,
       isProvisional = false;
 
@@ -137,7 +135,6 @@ class VideoGeometrySnapshot {
   final double sourceHintAspectRatio;
   final double sourceHintConfidence;
   final String sourceHintSource;
-  final bool sourceHintAllowsCenteredCrop;
   final VideoGeometryEvidence evidence;
   final bool isProvisional;
 
@@ -159,19 +156,6 @@ class VideoGeometrySnapshot {
 
   bool get sourceHintOverridesDecoder =>
       hasTrustedSourceHint && _sourceHintShouldOverrideDecoder(aspectRatio, sourceHintAspectRatio);
-
-  bool get hasProvisionalContentCrop =>
-      !hasActiveContentObservation &&
-      hasTrustedSourceHint &&
-      sourceHintAllowsCenteredCrop &&
-      _centeredInsetsForContentAspect(
-        canvasAspectRatio: aspectRatio,
-        contentAspectRatio: sourceHintAspectRatio,
-      ).hasCrop;
-
-  NormalizedVideoInsets get provisionalContentInsets => hasProvisionalContentCrop
-      ? _centeredInsetsForContentAspect(canvasAspectRatio: aspectRatio, contentAspectRatio: sourceHintAspectRatio)
-      : NormalizedVideoInsets.none;
 
   double get effectiveAspectRatio {
     if (hasActiveContentObservation) {
@@ -213,7 +197,6 @@ class VideoGeometrySnapshot {
     double? sourceHintAspectRatio,
     double? sourceHintConfidence,
     String? sourceHintSource,
-    bool? sourceHintAllowsCenteredCrop,
     VideoGeometryEvidence? evidence,
     bool? isProvisional,
   }) {
@@ -232,7 +215,6 @@ class VideoGeometrySnapshot {
       sourceHintAspectRatio: sourceHintAspectRatio ?? this.sourceHintAspectRatio,
       sourceHintConfidence: sourceHintConfidence ?? this.sourceHintConfidence,
       sourceHintSource: sourceHintSource ?? this.sourceHintSource,
-      sourceHintAllowsCenteredCrop: sourceHintAllowsCenteredCrop ?? this.sourceHintAllowsCenteredCrop,
       evidence: evidence ?? this.evidence,
       isProvisional: isProvisional ?? this.isProvisional,
     );
@@ -309,11 +291,10 @@ class PortraitStreamDetector {
       observedAt: cached.observedAt,
       // A cached effective ratio smooths the transition, but the platform hint
       // belonged to the previous concrete URL. Fresh selected-stream metadata
-      // must re-authorize any decoder override or synthetic centered crop.
+      // must re-authorize any decoder override.
       sourceHintAspectRatio: 0,
       sourceHintConfidence: 0,
       sourceHintSource: '',
-      sourceHintAllowsCenteredCrop: false,
       evidence: VideoGeometryEvidence.cache,
       isProvisional: true,
     );
@@ -332,13 +313,13 @@ class PortraitStreamDetector {
   /// Commits strong platform stream metadata immediately. Decoder dimensions
   /// still replace the encoded-canvas fields later, while this declared content
   /// ratio remains available to repair malformed sample-aspect metadata and to
-  /// identify a portrait programme carried in a landscape canvas.
+  /// classify the initial programme until the decoder publishes a plausible
+  /// post-rotation display size.
   VideoGeometrySnapshot observeSourceMetadata(
     int width,
     int height, {
     required double confidence,
     required String source,
-    bool allowsCenteredCrop = false,
     DateTime? now,
   }) {
     if (width <= 0 || height <= 0 || !confidence.isFinite || confidence <= 0) return _snapshot;
@@ -361,7 +342,6 @@ class PortraitStreamDetector {
       sourceHintAspectRatio: ratio,
       sourceHintConfidence: confidence.clamp(0.0, 1.0).toDouble(),
       sourceHintSource: source,
-      sourceHintAllowsCenteredCrop: allowsCenteredCrop,
       evidence: VideoGeometryEvidence.platformMetadata,
       isProvisional: true,
     );
@@ -477,7 +457,6 @@ class PortraitStreamDetector {
       sourceHintAspectRatio: clearContradictedHint ? 0 : _snapshot.sourceHintAspectRatio,
       sourceHintConfidence: clearContradictedHint ? 0 : _snapshot.sourceHintConfidence,
       sourceHintSource: clearContradictedHint ? '' : _snapshot.sourceHintSource,
-      sourceHintAllowsCenteredCrop: clearContradictedHint ? false : _snapshot.sourceHintAllowsCenteredCrop,
       evidence: VideoGeometryEvidence.activeContent,
       isProvisional: false,
     );
@@ -551,7 +530,6 @@ class PortraitStreamDetector {
       sourceHintAspectRatio: _snapshot.sourceHintAspectRatio,
       sourceHintConfidence: _snapshot.sourceHintConfidence,
       sourceHintSource: _snapshot.sourceHintSource,
-      sourceHintAllowsCenteredCrop: _snapshot.sourceHintAllowsCenteredCrop,
       evidence: _snapshot.hasActiveContentObservation
           ? VideoGeometryEvidence.activeContent
           : _snapshot.hasTrustedSourceHint &&
@@ -574,56 +552,15 @@ double _relativeRatioDifference(double left, double right) {
   return (left - right).abs() / math.max(left, right);
 }
 
-VideoSourceOrientation _orientationForAspect(double ratio) {
-  if (ratio <= 0.90) return VideoSourceOrientation.portrait;
-  if (ratio >= 1.10) return VideoSourceOrientation.landscape;
-  return VideoSourceOrientation.square;
-}
-
 bool _sourceHintShouldOverrideDecoder(double encodedRatio, double sourceHintRatio) {
   if (!encodedRatio.isFinite || encodedRatio <= 0 || !sourceHintRatio.isFinite || sourceHintRatio <= 0) return false;
-  final encodedOrientation = _orientationForAspect(encodedRatio);
-  final hintedOrientation = _orientationForAspect(sourceHintRatio);
-  if (encodedOrientation != hintedOrientation) return true;
-  return switch (hintedOrientation) {
-    VideoSourceOrientation.portrait => encodedRatio < PortraitPresentationPolicy.androidPipMinimumAspectRatio,
-    VideoSourceOrientation.landscape => encodedRatio > PortraitPresentationPolicy.androidPipMaximumAspectRatio,
-    VideoSourceOrientation.square => false,
-    VideoSourceOrientation.unknown => false,
-  };
-}
-
-NormalizedVideoInsets _centeredInsetsForContentAspect({
-  required double canvasAspectRatio,
-  required double contentAspectRatio,
-}) {
-  if (!canvasAspectRatio.isFinite ||
-      canvasAspectRatio <= 0 ||
-      !contentAspectRatio.isFinite ||
-      contentAspectRatio <= 0) {
-    return NormalizedVideoInsets.none;
-  }
-  final canvasOrientation = _orientationForAspect(canvasAspectRatio);
-  final contentOrientation = _orientationForAspect(contentAspectRatio);
-  NormalizedVideoInsets insets;
-  if (canvasOrientation == VideoSourceOrientation.landscape && contentOrientation == VideoSourceOrientation.portrait) {
-    final retainedWidth = contentAspectRatio / canvasAspectRatio;
-    if (!retainedWidth.isFinite || retainedWidth <= 0.10 || retainedWidth >= 0.995) {
-      return NormalizedVideoInsets.none;
-    }
-    final side = (1 - retainedWidth) / 2;
-    insets = NormalizedVideoInsets(left: side, right: side);
-  } else {
-    // The known platform transport pattern is a portrait programme carried in
-    // a landscape canvas. Do not synthesize top/bottom crop for ordinary
-    // landscape streams when a decoder reports rotated portrait dimensions.
-    return NormalizedVideoInsets.none;
-  }
-  if (!insets.isValid ||
-      _relativeRatioDifference(insets.applyToAspectRatio(canvasAspectRatio), contentAspectRatio) > 0.02) {
-    return NormalizedVideoInsets.none;
-  }
-  return insets;
+  // A selected-stream resolution is useful before decoding starts, but the
+  // first plausible post-rotation dw/dh pair is the actual native texture
+  // geometry. Orientation disagreement alone is not evidence that the texture
+  // contains black bars. Keep the hint only for obviously malformed sample
+  // aspect metadata; active-frame evidence handles real embedded content.
+  return encodedRatio < PortraitPresentationPolicy.androidPipMinimumAspectRatio ||
+      encodedRatio > PortraitPresentationPolicy.androidPipMaximumAspectRatio;
 }
 
 bool _isPlausibleActiveContentCrop(double encodedRatio, NormalizedVideoInsets insets) {
@@ -654,11 +591,56 @@ class PipAspectRatio {
   double get value => width / height;
 }
 
+/// Immutable geometry consumed by every presentation mode.
+///
+/// The normal portrait room, landscape fullscreen, application floating
+/// window and Android PiP must never independently reinterpret decoder or
+/// platform metadata. They receive the same canvas, content and crop decision;
+/// only their surrounding controls and window constraints differ.
+@immutable
+class VideoPresentationGeometry {
+  const VideoPresentationGeometry({
+    required this.canvasAspectRatio,
+    required this.contentAspectRatio,
+    required this.contentInsets,
+    required this.orientation,
+    required this.evidence,
+    required this.isStable,
+  });
+
+  final double canvasAspectRatio;
+  final double contentAspectRatio;
+  final NormalizedVideoInsets contentInsets;
+  final VideoSourceOrientation orientation;
+  final VideoGeometryEvidence evidence;
+  final bool isStable;
+
+  bool get hasMeasuredCrop => contentInsets.hasCrop && evidence == VideoGeometryEvidence.activeContent;
+}
+
 class PortraitPresentationPolicy {
   const PortraitPresentationPolicy._();
 
   static const double androidPipMinimumAspectRatio = 1 / 2.39;
   static const double androidPipMaximumAspectRatio = 2.39;
+
+  static VideoPresentationGeometry resolvePresentationGeometry({
+    required VideoGeometrySnapshot snapshot,
+    required VideoSourceOrientation effectiveOrientation,
+  }) {
+    final contentAspectRatio = resolveVideoDisplayAspectRatio(
+      snapshot: snapshot,
+      effectiveOrientation: effectiveOrientation,
+    );
+    return VideoPresentationGeometry(
+      canvasAspectRatio: snapshot.renderCanvasAspectRatio,
+      contentAspectRatio: contentAspectRatio,
+      contentInsets: resolveVideoContentInsets(snapshot: snapshot, presentationAspectRatio: contentAspectRatio),
+      orientation: effectiveOrientation,
+      evidence: snapshot.evidence,
+      isStable: snapshot.isStable && !snapshot.isProvisional,
+    );
+  }
 
   /// Resolves the one aspect ratio used to present a native video texture.
   ///
@@ -688,8 +670,8 @@ class PortraitPresentationPolicy {
   ///
   /// A measured crop is accepted only when applying it to the observed frame
   /// canvas produces that same ratio. Generic room metadata never invents crop
-  /// coordinates. Exact selected-stream dimensions may provide a provisional
-  /// symmetric crop, which settled frame evidence then confirms or removes.
+  /// coordinates. Selected-stream dimensions classify the programme early but
+  /// never manufacture pixel crop coordinates.
   static NormalizedVideoInsets resolveVideoContentInsets({
     required VideoGeometrySnapshot snapshot,
     required double presentationAspectRatio,
@@ -701,15 +683,11 @@ class PortraitPresentationPolicy {
     );
     if (snapshot.hasActiveContentObservation || measured.hasCrop) return measured;
 
-    // A selected-stream dimension may prove the programme aspect while the
-    // decoder exposes a conventional transport canvas. Use a centered crop as
-    // an immediate, reversible fallback; the first settled frame observation
-    // replaces or clears it. Generic room flags never set this authority.
-    return resolveConsistentVideoContentInsets(
-      encodedAspectRatio: snapshot.renderCanvasAspectRatio,
-      presentationAspectRatio: presentationAspectRatio,
-      contentInsets: snapshot.provisionalContentInsets,
-    );
+    // Platform metadata may arrive before the first decoder event, but it
+    // carries no pixel coordinates. Treating a ratio mismatch as proof of
+    // symmetric bars applies a second crop to a direct portrait texture when a
+    // stale landscape event is observed. Only decoded-frame pixels may crop.
+    return NormalizedVideoInsets.none;
   }
 
   static VideoSourceOrientation resolveOrientation({

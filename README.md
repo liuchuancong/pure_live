@@ -44,11 +44,11 @@
 - 每个完成的 Bug 修复批次默认递增版本，优先构建 Android `arm64-v8a` 正式更新包，并同步源码、版本标签、安装包与校验文件到本仓库 GitHub Release；其他平台仍按本轮明确范围串行构建。
 - 每次同步上游、分析 Bug 和审查原项目 Issue 的来源判定、根因、兼容、验证与回滚流程见[维护范围与问题处置策略](MAINTENANCE_POLICY.md)及[上游同步审查策略](UPSTREAM_REVIEW_POLICY.md)。
 
-- **最新稳定版**：[v3.0.8](https://github.com/wzgrx/pure_live/releases/tag/v3.0.8)
-- **当前 Android 构建版本**：`3.0.8+4096`（抖音选中流几何、小窗动态比例与系统 PiP 可视区域修复）
+- **最新稳定版**：[v3.0.9](https://github.com/wzgrx/pure_live/releases/tag/v3.0.9)
+- **当前 Android 构建版本**：`3.0.9+4097`（竖屏原生单层缩放、实测裁边与四种呈现统一修复）
 - **v3.0.0 上游源码基线**：`liuchuancong/pure_live@e808dcae`；完整记录见 `docs/STAGE_UPDATE_3_0_0.md`
 - **本轮构建平台**：仅 Android arm64-v8a；其他平台继续使用 v3.0.0 安装包
-- **质量门禁**：选中流元数据、可逆裁边、普通页、横屏、应用小窗与系统 PiP 回归见 `docs/STAGE_UPDATE_3_0_8.md`
+- **质量门禁**：原生单层缩放、解码几何、普通页、横屏、应用小窗与系统 PiP 回归见 `docs/STAGE_UPDATE_3_0_9.md`
 
 本版本还会在启动、备份恢复和手动清理时剔除空平台、空房间号、`0/null/undefined/nan/none` 等无效关注记录，并按“平台 + 房间号”去重，避免损坏的历史收藏继续参与首页刷新。
 
@@ -113,6 +113,7 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 | [v3.0.6 Android 竖屏几何仲裁修复](docs/STAGE_UPDATE_3_0_6.md) | 抖音流元数据识别、裁边代际隔离、延迟有效采样与渲染一致性门禁 |
 | [v3.0.7 Android 竖屏真实画布修复](docs/STAGE_UPDATE_3_0_7.md) | 截图/解码坐标隔离、原生纹理防拉伸与显式横屏全屏入口 |
 | [v3.0.8 Android 竖屏与小窗比例修复](docs/STAGE_UPDATE_3_0_8.md) | 抖音选中流几何、可逆居中裁边、动态应用小窗与 PiP 可视区域 |
+| [v3.0.9 Android 竖屏原生缩放修复](docs/STAGE_UPDATE_3_0_9.md) | 抖音官方几何模型、移动端单层缩放、实测裁边与四种呈现统一 |
 | [2026-08-25 上游 Issue 审计](docs/ISSUE_AUDIT_2026_08_25.md) | #793～#798、#791 录制根因及既有问题处理状态 |
 | [v2.9.7 Android update](docs/STAGE_UPDATE_2_9_7.md) | 全平台观看指标语义、热门排行、SOOP PC/移动端总在线与 40 项接口门禁 |
 | [v2.9.6 Android update](docs/STAGE_UPDATE_2_9_6.md) | 上游同步、抖音 Feed、Bilibili 热度排行与 40 项接口门禁 |

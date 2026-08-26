@@ -48,7 +48,6 @@ void main() {
       expect(hint, isNotNull);
       expect(hint!.aspectRatio, closeTo(9 / 16, 0.001));
       expect(hint.source, 'douyin.selected_sdk_params');
-      expect(hint.allowsCenteredCrop, isTrue);
     });
 
     test('uses the default quality resolution when extra is absent', () {
@@ -70,7 +69,6 @@ void main() {
       expect(hint!.width, 720);
       expect(hint.height, 1280);
       expect(hint.source, 'douyin.default_quality');
-      expect(hint.allowsCenteredCrop, isTrue);
     });
 
     test('uses resolution declared directly by the selected default quality', () {
@@ -88,7 +86,6 @@ void main() {
       expect(hint, isNotNull);
       expect(hint!.aspectRatio, closeTo(9 / 16, 0.001));
       expect(hint.source, 'douyin.selected_default_quality');
-      expect(hint.allowsCenteredCrop, isTrue);
     });
 
     test('does not borrow default geometry for an unmatched selected URL', () {

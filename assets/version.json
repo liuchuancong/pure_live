@@ -1,21 +1,21 @@
 {
-  "version": "3.0.8",
-  "build_number": 4096,
-  "version_num": 300084096,
-  "version_desc": "- 修正抖音流方向契约：stream_orientation 不再作为横竖屏枚举，顶层 extra 占位尺寸也不再污染节目比例。\n- 以当前实际播放 URL 关联同一 sdk_key，读取精确选中流分辨率；关联失败时保持未知，避免误用默认线路。\n- 选中流可建立由真实帧证据确认或撤销的居中裁边，修复 16:9 传输画布中 9:16 节目显示过窄。\n- 应用内小窗订阅晚到几何并动态调整外框；Android PiP 在紧凑 Surface 布局后按真实可视区域生成 sourceRectHint。\n- 普通横屏、直接竖屏、清晰度/线路换代继续经过保护门禁；完整质量门禁后仅构建 Android arm64-v8a Release，本轮不操作手机。",
+  "version": "3.0.9",
+  "build_number": 4097,
+  "version_num": 300094097,
+  "version_desc": "- 修复 Android 竖屏直播被压成超窄条的首个错误状态：移除移动端普通帧的外层比例 FittedBox，由 MediaKit/Fijk/BetterPlayer 原生视图唯一执行 contain/cover/fill。\n- 抖音选中流分辨率只负责首帧前的方向分类；首个合理的解码 dw/dh 成为纹理事实来源，平台比例不再推测像素裁边。\n- 只有两次一致的真实帧检测可以建立黑边裁剪；线路、清晰度、房间与画面方向变化统一生成新的不可变几何状态。\n- 普通竖屏页、横屏全屏、应用内小窗与 Android PiP 共用同一 VideoPresentationGeometry；普通横屏源继续沿用原生比例。\n- 对照抖音官方 orientation/object-fit/fullscreen direction/分辨率变化模型，并使用带原生固有比例和内部 FittedBox 的回归组件覆盖真实双重缩放时序。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.8",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.9",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.0.8",
-      "build_number": 4096,
-      "version_num": 300084096,
-      "version_desc": "- 修正抖音流方向契约：stream_orientation 不再作为横竖屏枚举，顶层 extra 占位尺寸也不再污染节目比例。\n- 以当前实际播放 URL 关联同一 sdk_key，读取精确选中流分辨率；关联失败时保持未知，避免误用默认线路。\n- 选中流可建立由真实帧证据确认或撤销的居中裁边，修复 16:9 传输画布中 9:16 节目显示过窄。\n- 应用内小窗订阅晚到几何并动态调整外框；Android PiP 在紧凑 Surface 布局后按真实可视区域生成 sourceRectHint。\n- 普通横屏、直接竖屏、清晰度/线路换代继续经过保护门禁；完整质量门禁后仅构建 Android arm64-v8a Release，本轮不操作手机。",
+      "version": "3.0.9",
+      "build_number": 4097,
+      "version_num": 300094097,
+      "version_desc": "- 修复 Android 竖屏直播被压成超窄条的首个错误状态：移除移动端普通帧的外层比例 FittedBox，由 MediaKit/Fijk/BetterPlayer 原生视图唯一执行 contain/cover/fill。\n- 抖音选中流分辨率只负责首帧前的方向分类；首个合理的解码 dw/dh 成为纹理事实来源，平台比例不再推测像素裁边。\n- 只有两次一致的真实帧检测可以建立黑边裁剪；线路、清晰度、房间与画面方向变化统一生成新的不可变几何状态。\n- 普通竖屏页、横屏全屏、应用内小窗与 Android PiP 共用同一 VideoPresentationGeometry；普通横屏源继续沿用原生比例。\n- 对照抖音官方 orientation/object-fit/fullscreen direction/分辨率变化模型，并使用带原生固有比例和内部 FittedBox 的回归组件覆盖真实双重缩放时序。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.8",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.9",
       "android_abis": [
         "arm64-v8a"
       ]
