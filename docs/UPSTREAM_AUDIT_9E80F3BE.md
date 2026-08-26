@@ -55,6 +55,7 @@
 ## conflict_resolution
 
 最终创建真实 merge，冲突文件以维护分支产品不变量为基底，逐项吸收上述 `accept/adapt/rewrite` 语义；版本、Release、工作流和更新源保持维护分支值。合并后的新修复单独提交，便于回滚上游同步与本轮行为增强。
+最终 merge：`1b6fc8e81eb716278f932d5a88881151c0974358`。
 
 ## verification_plan
 

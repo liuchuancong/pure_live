@@ -26,7 +26,7 @@
 
 | commit | upstream intent / implementation | quality_assessment | fork_feature_impact | disposition | regression_plan |
 | --- | --- | --- | --- | --- | --- |
-| `af0fed608f1efcdefafbbcbd7248f55b9cdedb80` | 上游合入本仓库 `0df66ce6`，并人工解析大量版本、工作流、播放器和 UI 文件。 | 祖先同步有价值，但其冲突结果包含上游版本源与旧播放器布局，不能作为维护分支最终树。 | 直接接受树内容会覆盖 v3.0.3 发布信息、2×2 直播记录、预测返回及播放器修复。 | `adapt`：接受拓扑祖先；所有冲突以维护分支产品不变量为准。 | 核对上游祖先关系、发布元数据、普通直播页、返回与记录布局。 |
+| `af0fed608f1efcdefafbbcbd7248f55b9cdedb80` | 上游合入本仓库 `0df66ce6`，并人工解析大量版本、工作流、播放器和 UI 文件。 | 祖先同步有价值，但其冲突结果包含上游版本源与旧播放器布局，不适合作为维护分支最终树。 | 直接接受树内容会覆盖 v3.0.3 发布信息、2×2 直播记录、预测返回及播放器修复。 | `adapt`：接受拓扑祖先；所有冲突以维护分支产品不变量为准。 | 核对上游祖先关系、发布元数据、普通直播页、返回与记录布局。 |
 | `0cc949ab065f6e9520a1976c42dda56c6cf7c6ed` | 重排 `live_play_page.dart` 导入；以 `BackButtonListener` 替换 `PopScope`。 | 导入重排无行为；返回替换绕开 `PopScope.canPop` 与 Android predictive-back 路由协议，低于现有实现。 | 可能恢复“直播间侧边返回失效/首次返回行为不一致”。 | `drop` 行为、`accept` 无语义导入整理：保留局部 `PopScope`。 | `live_play_back_scope_test.dart` 与 Android 页面转换静态核对。 |
 | `c7d99cc38ac27effb8c2af8cd0a0586256a4c67f` | 在开始录制和开机自动恢复前检查 Android 存储权限与可用路径；删除启动期同步 FFmpeg 初始化；为 Android FFmpeg 命令加入 `tls_verify=0`。 | 权限检查弥补恢复任务未经过 `addTask` 的路径；移除阻塞式初始化方向正确，但维护分支已有首帧后延迟预热；全局关闭 TLS 校验扩大网络风险且未针对具体失败证书。 | 录制权限增强可进入；启动预热保留维护分支有界实现；TLS 全局关闭不进入。 | `adapt`：接受权限检查，保留异步预热，舍弃 `tls_verify=0`。 | 录制控制器、FFmpeg 命令参数、初始化静态分析，权限拒绝和路径不可写分支代码核对。 |
 
@@ -50,6 +50,7 @@
 
 使用真实 merge 保留 `c7d99cc3` 祖先关系。`af0fed60` 带回的版本/发布/工作流及播放器冲突采用维护分支版本；
 `0cc949ab` 的返回实现采用维护分支版本；`c7d99cc3` 的录制权限检查进入最终树。
+最终 merge：`4db6df312930ec81a79c8c269e91283dac832c1e`。
 
 ## verification_plan
 
