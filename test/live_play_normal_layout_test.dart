@@ -150,7 +150,27 @@ void main() {
     );
 
     expect(find.byKey(const ValueKey('fullscreen-portrait-presentation')), findsOneWidget);
+    expect(find.byKey(const ValueKey('fullscreen-portrait-ambient-fallback')), findsOneWidget);
     expect(find.byKey(const ValueKey('portrait-fullscreen-video')), findsOneWidget);
+  });
+
+  test('portrait fullscreen background falls back through cover and avatar metadata', () {
+    expect(
+      resolvePortraitFullscreenBackgroundUrl(
+        detailCover: '  ',
+        roomCover: '',
+        detailAvatar: 'https://example.invalid/detail-avatar.jpg',
+        roomAvatar: 'https://example.invalid/room-avatar.jpg',
+      ),
+      'https://example.invalid/detail-avatar.jpg',
+    );
+    expect(
+      resolvePortraitFullscreenBackgroundUrl(
+        detailCover: 'https://example.invalid/detail-cover.jpg',
+        roomCover: 'https://example.invalid/room-cover.jpg',
+      ),
+      'https://example.invalid/detail-cover.jpg',
+    );
   });
 
   testWidgets('generic live video keeps 16:9 unless its caller owns an explicit frame', (tester) async {

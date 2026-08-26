@@ -283,6 +283,7 @@ class LivePlayContent extends StatelessWidget {
 
     return Obx(() {
       final settings = SettingsService.to.player;
+      manager.videoPresentationRevision.value;
       final isPortrait = manager.isVerticalVideo.value && settings.enablePortraitStreamAdaptation.v;
       if (!isPortrait) {
         return Container(
@@ -291,10 +292,21 @@ class LivePlayContent extends StatelessWidget {
           child: LivePlayVideo(controller: controller, expandToParent: true),
         );
       }
-      final cover = controller.state.value.room.detail?.cover ?? controller.room.cover ?? '';
+      final detail = controller.state.value.room.detail;
+      final cover = resolvePortraitFullscreenBackgroundUrl(
+        detailCover: detail?.cover,
+        roomCover: controller.room.cover,
+        detailAvatar: detail?.avatar,
+        roomAvatar: controller.room.avatar,
+      );
       return PortraitFullscreenPresentation(
         coverUrl: cover,
-        child: LivePlayVideo(controller: controller, expandToParent: true, transparentSurface: true),
+        child: LivePlayVideo(
+          controller: controller,
+          expandToParent: true,
+          transparentSurface: true,
+          videoViewportAspectRatio: manager.currentPresentationAspectRatio,
+        ),
       );
     });
   }
@@ -350,6 +362,20 @@ class LivePlayContent extends StatelessWidget {
   }
 }
 
+@visibleForTesting
+String resolvePortraitFullscreenBackgroundUrl({
+  String? detailCover,
+  String? roomCover,
+  String? detailAvatar,
+  String? roomAvatar,
+}) {
+  for (final value in [detailCover, roomCover, detailAvatar, roomAvatar]) {
+    final candidate = value?.trim() ?? '';
+    if (candidate.isNotEmpty) return candidate;
+  }
+  return '';
+}
+
 /// Fullscreen presentation for a portrait programme on a landscape display.
 /// Controls still own the complete screen, while only the video texture is
 /// fitted to its trusted portrait geometry. A dim cached cover replaces harsh
@@ -368,8 +394,19 @@ class PortraitFullscreenPresentation extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
+          const DecoratedBox(
+            key: ValueKey('fullscreen-portrait-ambient-fallback'),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF171A22), Color(0xFF07080B)],
+              ),
+            ),
+          ),
           if (coverUrl.isNotEmpty)
             ImageFiltered(
+              key: const ValueKey('fullscreen-portrait-ambient-image'),
               imageFilter: ui.ImageFilter.blur(sigmaX: 28, sigmaY: 28),
               child: Transform.scale(
                 scale: 1.12,
@@ -377,12 +414,13 @@ class PortraitFullscreenPresentation extends StatelessWidget {
                   imageUrl: coverUrl,
                   fit: BoxFit.cover,
                   fadeInDuration: Duration.zero,
-                  placeholder: (_, _) => const ColoredBox(color: Colors.black),
-                  errorWidget: (_, _, _) => const ColoredBox(color: Colors.black),
+                  filterQuality: FilterQuality.low,
+                  placeholder: (_, _) => const SizedBox.expand(),
+                  errorWidget: (_, _, _) => const SizedBox.expand(),
                 ),
               ),
             ),
-          const ColoredBox(color: Color(0xB3000000)),
+          const ColoredBox(color: Color(0x73000000)),
           RepaintBoundary(child: child),
         ],
       ),

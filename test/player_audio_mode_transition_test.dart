@@ -130,7 +130,7 @@ void main() {
       room: LiveRoom(roomId: 'portrait-room', platform: 'test'),
     );
     player.emitVideoSize(width: 1080, height: 1920);
-    await Future<void>.delayed(const Duration(milliseconds: 650));
+    await Future<void>.delayed(const Duration(milliseconds: 850));
 
     expect(manager.isVerticalVideo.value, isTrue);
     expect(manager.currentVideoRatio, closeTo(9 / 16, 0.001));
@@ -146,12 +146,12 @@ void main() {
     expect(manager.currentVideoRatio, closeTo(16 / 9, 0.001));
 
     player.emitVideoSize(width: 1920, height: 1080);
-    await Future<void>.delayed(const Duration(milliseconds: 650));
+    await Future<void>.delayed(const Duration(milliseconds: 850));
     expect(manager.isVerticalVideo.value, isFalse);
     expect(manager.currentVideoRatio, closeTo(16 / 9, 0.001));
 
     player.emitVideoSize(width: 6000, height: 1000);
-    await Future<void>.delayed(const Duration(milliseconds: 650));
+    await Future<void>.delayed(const Duration(milliseconds: 850));
     expect(manager.isVerticalVideo.value, isFalse);
     expect(
       manager.currentVideoRatio,
@@ -433,6 +433,60 @@ void main() {
     unawaited(manager.dispose());
   });
 
+  testWidgets('portrait fullscreen constrains only video and never rewrites the shared fit', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1280, 720));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final player = _FakePlayer(
+      videoWidget: const ColoredBox(key: ValueKey('native-video-surface'), color: Colors.green),
+    );
+    final manager = _createManager(player);
+    await manager.initialize(engine: PlayerEngine.mediaKit);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SizedBox.expand(
+          child: manager.getVideoWidget(
+            2,
+            fitList: const <BoxFit>[BoxFit.contain, BoxFit.cover, BoxFit.fill],
+            surfaceColor: Colors.transparent,
+            videoViewportAspectRatio: 9 / 16,
+            controls: const ColoredBox(key: ValueKey('fullscreen-controls'), color: Colors.transparent),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final viewport = tester.getRect(find.byKey(const ValueKey('presentation-video-viewport')));
+    final controls = tester.getRect(find.byKey(const ValueKey('fullscreen-controls')));
+    expect(viewport.height, closeTo(720, 0.01));
+    expect(viewport.width, closeTo(405, 0.01));
+    expect(controls.size, const Size(1280, 720));
+    expect(player.videoFitRequests, isNotEmpty);
+    expect(
+      player.videoFitRequests,
+      everyElement(BoxFit.fill),
+      reason: 'fullscreen geometry must not replace the user fit stored by the shared adapter',
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SizedBox.expand(
+          child: manager.getVideoWidget(2, fitList: const <BoxFit>[BoxFit.contain, BoxFit.cover, BoxFit.fill]),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('presentation-video-viewport')), findsNothing);
+    expect(tester.getSize(find.byKey(const ValueKey('native-video-surface'))), const Size(1280, 720));
+    expect(player.videoFitRequests, everyElement(BoxFit.fill));
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    unawaited(manager.dispose());
+  });
+
   test('a room re-entry request supersedes an in-flight audio-only request', () async {
     final firstStarted = Completer<void>();
     final releaseFirst = Completer<void>();
@@ -609,6 +663,7 @@ class _FakePlayer implements UnifiedPlayer {
   final Widget? videoWidget;
   final bool dedupeAudioMode;
   final List<bool> audioOnlyChanges = <bool>[];
+  final List<BoxFit?> videoFitRequests = <BoxFit?>[];
   int setDataSourceCalls = 0;
   int initCalls = 0;
   int hardDisposeCalls = 0;
@@ -676,7 +731,10 @@ class _FakePlayer implements UnifiedPlayer {
   Future<void> stop() async {}
 
   @override
-  Widget getVideoWidget({BoxFit? fit}) => videoWidget ?? const SizedBox.shrink();
+  Widget getVideoWidget({BoxFit? fit}) {
+    videoFitRequests.add(fit);
+    return videoWidget ?? const SizedBox.shrink();
+  }
 
   @override
   bool get isInitialized => _initialized;

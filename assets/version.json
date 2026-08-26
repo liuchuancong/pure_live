@@ -1,21 +1,21 @@
 {
-  "version": "3.0.9",
-  "build_number": 4097,
-  "version_num": 300094097,
-  "version_desc": "- 修复 Android 竖屏直播被压成超窄条的首个错误状态：移除移动端普通帧的外层比例 FittedBox，由 MediaKit/Fijk/BetterPlayer 原生视图唯一执行 contain/cover/fill。\n- 抖音选中流分辨率只负责首帧前的方向分类；首个合理的解码 dw/dh 成为纹理事实来源，平台比例不再推测像素裁边。\n- 只有两次一致的真实帧检测可以建立黑边裁剪；线路、清晰度、房间与画面方向变化统一生成新的不可变几何状态。\n- 普通竖屏页、横屏全屏、应用内小窗与 Android PiP 共用同一 VideoPresentationGeometry；普通横屏源继续沿用原生比例。\n- 对照抖音官方 orientation/object-fit/fullscreen direction/分辨率变化模型，并使用带原生固有比例和内部 FittedBox 的回归组件覆盖真实双重缩放时序。",
+  "version": "3.0.11",
+  "build_number": 4099,
+  "version_num": 300114099,
+  "version_desc": "- 清理存在跨模式比例污染的 3.0.10 草稿与标签，以 3.0.9 稳定渲染链为基线重新修复。\n- 根因是全屏竖屏布局把特殊 BoxFit 写进普通页、全屏、小窗共用的播放器适配器/原生控制器，切换重建时最后写入者会改变另外两种模式。\n- 新实现只在横屏全屏路由约束解码视频图层为可信节目比例，控制层继续覆盖整屏；播放器接口、MediaKit/Fijk/BetterPlayer fit 状态和其他入口保持原合同。\n- 竖屏全屏两侧增加封面/头像回退的暗化模糊背景与渐变兜底；普通横屏、普通竖屏、应用小窗和 Android PiP 不进入该局部视口。\n- 新增共享播放器从竖屏全屏返回普通页的确定性回归，核对视频视口、整屏控件和用户 fit 全程不被重写。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.9",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.11",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.0.9",
-      "build_number": 4097,
-      "version_num": 300094097,
-      "version_desc": "- 修复 Android 竖屏直播被压成超窄条的首个错误状态：移除移动端普通帧的外层比例 FittedBox，由 MediaKit/Fijk/BetterPlayer 原生视图唯一执行 contain/cover/fill。\n- 抖音选中流分辨率只负责首帧前的方向分类；首个合理的解码 dw/dh 成为纹理事实来源，平台比例不再推测像素裁边。\n- 只有两次一致的真实帧检测可以建立黑边裁剪；线路、清晰度、房间与画面方向变化统一生成新的不可变几何状态。\n- 普通竖屏页、横屏全屏、应用内小窗与 Android PiP 共用同一 VideoPresentationGeometry；普通横屏源继续沿用原生比例。\n- 对照抖音官方 orientation/object-fit/fullscreen direction/分辨率变化模型，并使用带原生固有比例和内部 FittedBox 的回归组件覆盖真实双重缩放时序。",
+      "version": "3.0.11",
+      "build_number": 4099,
+      "version_num": 300114099,
+      "version_desc": "- 清理存在跨模式比例污染的 3.0.10 草稿与标签，以 3.0.9 稳定渲染链为基线重新修复。\n- 根因是全屏竖屏布局把特殊 BoxFit 写进普通页、全屏、小窗共用的播放器适配器/原生控制器，切换重建时最后写入者会改变另外两种模式。\n- 新实现只在横屏全屏路由约束解码视频图层为可信节目比例，控制层继续覆盖整屏；播放器接口、MediaKit/Fijk/BetterPlayer fit 状态和其他入口保持原合同。\n- 竖屏全屏两侧增加封面/头像回退的暗化模糊背景与渐变兜底；普通横屏、普通竖屏、应用小窗和 Android PiP 不进入该局部视口。\n- 新增共享播放器从竖屏全屏返回普通页的确定性回归，核对视频视口、整屏控件和用户 fit 全程不被重写。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.9",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.11",
       "android_abis": [
         "arm64-v8a"
       ]

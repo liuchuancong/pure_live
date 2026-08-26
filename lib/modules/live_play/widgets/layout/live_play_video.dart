@@ -10,11 +10,13 @@ class LivePlayVideo extends StatelessWidget {
     required this.controller,
     this.expandToParent = false,
     this.transparentSurface = false,
+    this.videoViewportAspectRatio,
   });
 
   final LivePlayController controller;
   final bool expandToParent;
   final bool transparentSurface;
+  final double? videoViewportAspectRatio;
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +41,7 @@ class LivePlayVideo extends StatelessWidget {
                 child: VideoPlayer(
                   controller: videoController,
                   surfaceColor: transparentSurface ? Colors.transparent : Colors.black,
+                  videoViewportAspectRatio: videoViewportAspectRatio,
                 ),
               ),
             ],

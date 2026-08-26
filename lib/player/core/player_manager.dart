@@ -1686,6 +1686,7 @@ class PlayerManager {
     bool trackPipSource = false,
     bool? audioOnlyOverride,
     Color surfaceColor = Colors.black,
+    double? videoViewportAspectRatio,
   }) {
     // Floating/PiP callers already wrap this factory in Obx; keep their
     // dependency registered while the inner observer covers direct callers.
@@ -1721,7 +1722,13 @@ class PlayerManager {
                     Positioned.fill(
                       child: Offstage(
                         offstage: showAudioOnly,
-                        child: Container(color: surfaceColor, child: _buildVideoWidget(player, boxFit)),
+                        child: Container(
+                          color: surfaceColor,
+                          child: buildPresentationVideoViewport(
+                            aspectRatio: videoViewportAspectRatio,
+                            child: _buildVideoWidget(player, boxFit),
+                          ),
+                        ),
                       ),
                     ),
                     if (showAudioOnly)
@@ -2128,6 +2135,21 @@ Widget buildUnifiedMobileVideoFrame({
       : SizedBox(width: rawWidth, height: rawHeight, child: child);
   return ClipRect(
     child: FittedBox(fit: fit, clipBehavior: Clip.hardEdge, child: videoFrame),
+  );
+}
+
+/// Constrains only the decoded-video layer while leaving sibling controls on
+/// the complete presentation surface.
+///
+/// This is intentionally outside [UnifiedPlayer]. Fullscreen portrait layout
+/// is a route-local concern; writing a special fit into the shared native
+/// player/controller lets inactive normal, fullscreen and floating trees race
+/// over one adapter state during transitions.
+@visibleForTesting
+Widget buildPresentationVideoViewport({required Widget child, double? aspectRatio}) {
+  if (aspectRatio == null || !aspectRatio.isFinite || aspectRatio <= 0) return child;
+  return Center(
+    child: AspectRatio(key: const ValueKey('presentation-video-viewport'), aspectRatio: aspectRatio, child: child),
   );
 }
 
