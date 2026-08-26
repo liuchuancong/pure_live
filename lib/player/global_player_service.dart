@@ -40,7 +40,7 @@ class GlobalPlayerService {
     // 1. Instantiate the Orchestrator with all its specialized managers
     playerManager = PlayerManager(
       fallbackManager: EngineFallbackManager(
-        defaultEngine: PlayerEngine.mediaKit,
+        defaultEngine: defaultEngine,
         supportedEngines: PlatformUtils.isMobile ? PlayerEngine.values : [PlayerEngine.mediaKit],
       ),
       lineManager: LineFallbackManager(),
@@ -49,9 +49,9 @@ class GlobalPlayerService {
     // 2. Keep native decoders, network workers and textures cold until the
     // first room is opened. This avoids paying hundreds of MiB and background
     // CPU merely for browsing the home/settings UI.
-    playerManager.configureDefaultEngine(defaultEngine);
+    await playerManager.initialize(engine: defaultEngine, audioOnly: false);
     _initialized = true;
-    log("GlobalPlayerService: Ready for lazy player initialization.", name: "GlobalPlayerService");
+    log("GlobalPlayerService: Player initialized.", name: "GlobalPlayerService");
   }
 
   /// Global dispose - Call this only when the app is being destroyed
