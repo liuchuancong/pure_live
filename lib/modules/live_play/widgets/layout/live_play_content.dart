@@ -33,6 +33,7 @@ class LivePlayNormalLayout extends StatelessWidget {
     this.sourceAspectRatio = 16 / 9,
     this.adaptivePortraitHeight = false,
     this.portraitLayoutMode = PortraitLayoutMode.balanced,
+    this.compatibilityMode = false,
   });
 
   final Widget video;
@@ -43,6 +44,7 @@ class LivePlayNormalLayout extends StatelessWidget {
   final double sourceAspectRatio;
   final bool adaptivePortraitHeight;
   final PortraitLayoutMode portraitLayoutMode;
+  final bool compatibilityMode;
 
   @override
   Widget build(BuildContext context) {
@@ -68,6 +70,10 @@ class LivePlayNormalLayout extends StatelessWidget {
   }
 
   Widget _buildPortraitStack(BuildContext context, BoxConstraints constraints) {
+    if (compatibilityMode) {
+      return _buildCompatibilityPortraitStack(context, constraints);
+    }
+
     final useAdaptivePortraitFrame =
         isPortraitSource && adaptivePortraitHeight && portraitLayoutMode != PortraitLayoutMode.compatibility;
 
@@ -79,6 +85,34 @@ class LivePlayNormalLayout extends StatelessWidget {
         const Divider(height: 1),
         Expanded(
           key: const ValueKey('live-play-portrait-danmaku'),
+          child: ColoredBox(color: Theme.of(context).colorScheme.surface, child: danmaku),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCompatibilityPortraitStack(BuildContext context, BoxConstraints constraints) {
+    final videoWidth = constraints.maxWidth;
+
+    var aspectRatio = 16 / 9;
+
+    if (isPortraitSource) {
+      aspectRatio = sourceAspectRatio;
+    }
+
+    final videoHeight = videoWidth / aspectRatio;
+
+    final maxVideoHeight = constraints.maxHeight * 0.6;
+
+    final height = videoHeight.clamp(0.0, maxVideoHeight);
+
+    return Column(
+      key: const ValueKey('live-play-compatibility-portrait-stack'),
+      children: [
+        SizedBox(width: videoWidth, height: height, child: video),
+        resolution,
+        const Divider(height: 1),
+        Expanded(
           child: ColoredBox(color: Theme.of(context).colorScheme.surface, child: danmaku),
         ),
       ],
@@ -115,11 +149,11 @@ class LivePlayNormalLayout extends StatelessWidget {
     final panelWidth = (constraints.maxWidth * 0.34).clamp(300.0, 400.0);
 
     return Row(
-      key: const ValueKey('live-play-desktop-split'),
+      key: ValueKey(compatibilityMode ? 'live-play-compatibility-desktop-split' : 'live-play-desktop-split'),
       children: [
         Expanded(child: video),
         SizedBox(
-          key: const ValueKey('live-play-desktop-panel'),
+          key: ValueKey(compatibilityMode ? 'live-play-compatibility-desktop-panel' : 'live-play-desktop-panel'),
           width: panelWidth,
           child: Column(
             children: [
@@ -153,11 +187,7 @@ class LivePlayContent extends StatelessWidget {
     }
 
     if (mode == VideoMode.normal) {
-      return ColoredBox(
-        key: const ValueKey('normal'),
-        color: Theme.of(context).scaffoldBackgroundColor,
-        child: _buildPortraitLayout(context),
-      );
+      return _buildNormalPage(context);
     }
 
     return Container(
@@ -166,18 +196,23 @@ class LivePlayContent extends StatelessWidget {
     );
   }
 
-  Widget _buildPortraitLayout(BuildContext context) {
+  Widget _buildNormalPage(BuildContext context) {
     final settings = SettingsService.to.player;
 
-    return switch (settings.portraitLayoutMode) {
-      PortraitLayoutMode.balanced => _buildNormalView(context),
-      PortraitLayoutMode.immersive => _buildImmersiveView(context),
-      PortraitLayoutMode.compatibility => _buildCompatibilityView(),
-    };
+    switch (settings.portraitLayoutMode) {
+      case PortraitLayoutMode.balanced:
+        return _buildNormalView(context, compatibilityMode: false);
+
+      case PortraitLayoutMode.compatibility:
+        return _buildNormalView(context, compatibilityMode: true);
+
+      case PortraitLayoutMode.immersive:
+        return _buildImmersiveView(context);
+    }
   }
 
   /// 普通播放布局
-  Widget _buildNormalView(BuildContext context) {
+  Widget _buildNormalView(BuildContext context, {required bool compatibilityMode}) {
     final compactHeader = MediaQuery.sizeOf(context).width < 600;
 
     return Scaffold(
@@ -190,24 +225,18 @@ class LivePlayContent extends StatelessWidget {
           final geometry = manager.videoGeometry.value;
           final isPortrait = manager.isVerticalVideo.value;
 
-          final width = MediaQuery.sizeOf(context).width;
-
-          final isSmallScreen = width <= 680;
-
           final adaptiveHeightEnabled = settings.enablePortraitStreamAdaptation.v && settings.portraitAdaptiveHeight.v;
-
-          final useAdaptivePortraitFrame =
-              isSmallScreen &&
-              isPortrait &&
-              adaptiveHeightEnabled &&
-              settings.portraitLayoutMode != PortraitLayoutMode.compatibility;
 
           final sourceAspectRatio = isPortrait && (!geometry.hasValidDimensions || !geometry.isStable)
               ? 9 / 16
               : geometry.aspectRatio;
 
           return LivePlayNormalLayout(
-            video: LivePlayVideo(controller: controller, expandToParent: useAdaptivePortraitFrame),
+            video: LivePlayVideo(
+              controller: controller,
+              expandToParent:
+                  !compatibilityMode && isPortrait && adaptiveHeightEnabled && MediaQuery.sizeOf(context).width <= 680,
+            ),
             resolution: const ResolutionsRow(),
             danmaku: _buildDanmaku(),
             showPanel: controller.site != Sites.iptvSite,
@@ -215,6 +244,7 @@ class LivePlayContent extends StatelessWidget {
             sourceAspectRatio: sourceAspectRatio,
             adaptivePortraitHeight: adaptiveHeightEnabled,
             portraitLayoutMode: settings.portraitLayoutMode,
+            compatibilityMode: compatibilityMode,
           );
         }),
       ),
@@ -230,74 +260,6 @@ class LivePlayContent extends StatelessWidget {
       appBar: LivePlayHeader(controller: controller, compactHeader: compactHeader),
       body: LivePlayShell(controller: controller),
     );
-  }
-
-  Widget _buildCompatibilityView() {
-    final player = GlobalPlayerService.instance.player;
-    final settings = SettingsService.to.player;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Column(
-          children: [
-            StreamBuilder<List<int?>>(
-              stream: CombineLatestStream.list([player.width, player.height]),
-              builder: (context, snapshot) {
-                final vW = snapshot.data?[0];
-                final vH = snapshot.data?[1];
-                var aspectRatio = 16 / 9;
-                if (vW != null && vH != null && vW > 0 && vH > 0) {
-                  final ratio = vW / vH;
-                  if (ratio >= 0.5 && ratio <= 3.0) {
-                    aspectRatio = ratio;
-                  }
-                }
-                if (!settings.portraitAdaptiveHeight.value) {
-                  aspectRatio = 16 / 9;
-                }
-                final videoWidth = constraints.maxWidth;
-                final videoHeight = videoWidth / aspectRatio;
-                final maxVideoHeight = constraints.maxHeight * 0.6;
-                final height = videoHeight.clamp(0.0, maxVideoHeight);
-                return SizedBox(
-                  width: videoWidth,
-                  height: height,
-                  child: LivePlayVideo(controller: controller),
-                );
-              },
-            ),
-            Expanded(child: _buildCompatibilityPanel()),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildCompatibilityPanel() {
-    return Obx(() {
-      final state = controller.state.value;
-      final detail = state.room.detail;
-
-      if (detail == null) {
-        return const SizedBox.shrink();
-      }
-
-      if (detail.platform == Sites.iptvSite) {
-        return const SizedBox.shrink();
-      }
-
-      return Material(
-        color: Theme.of(Get.context!).colorScheme.surface,
-        elevation: 18,
-        shadowColor: Colors.black.withValues(alpha: 0.5),
-        child: Column(
-          children: [
-            const ResolutionsRow(),
-            const Divider(height: 1),
-            if (state.room.success) Expanded(child: _buildDanmaku(expanded: false)),
-          ],
-        ),
-      );
-    });
   }
 
   Widget _buildDanmaku({bool expanded = false}) {
