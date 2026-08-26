@@ -298,10 +298,12 @@ class PlayerManager {
   }
 
   double get currentVideoRatio {
-    final geometry = videoGeometry.value;
-    return geometry.hasValidDimensions && geometry.isStable
-        ? geometry.aspectRatio
-        : (isVerticalVideo.value ? 9 / 16 : 16 / 9);
+    final settings = _portraitSettings;
+    return PortraitPresentationPolicy.resolveCompactWindowAspectRatio(
+      snapshot: videoGeometry.value,
+      effectiveOrientation: effectiveVideoOrientation,
+      followStablePortraitSource: settings?.portraitPipFollowSource.v ?? true,
+    );
   }
 
   void _resetVideoGeometry() {
@@ -499,8 +501,8 @@ class PlayerManager {
       lineManager.reset();
       // A reusable native player keeps its dimension streams alive between
       // sources. Retaining the previous room's portrait dimensions until the
-      // next metadata event makes a following landscape room render inside a
-      // portrait FittedBox and visibly squashes the picture.
+      // next metadata event would apply the old adaptive frame and compact
+      // window policy to the following landscape room.
       _resetVideoGeometry();
     }
     if (_currentPlayer == null || _runtimeEngine == null) {
@@ -946,20 +948,12 @@ class PlayerManager {
         isPipPreparing.value = true;
         await SchedulerBinding.instance.endOfFrame;
 
-        final settings = _portraitSettings;
-        final geometry = videoGeometry.value;
-        final useSourceRatio = settings?.portraitPipFollowSource.v ?? true;
-        final pipRatio = useSourceRatio
-            ? PortraitPresentationPolicy.resolveAndroidPipAspectRatio(
-                width: geometry.isStable ? geometry.width : 0,
-                height: geometry.isStable ? geometry.height : 0,
-                portraitFallback: isVerticalVideo.value,
-              )
-            : PortraitPresentationPolicy.resolveAndroidPipAspectRatio(
-                width: isVerticalVideo.value ? 9 : 16,
-                height: isVerticalVideo.value ? 16 : 9,
-                portraitFallback: isVerticalVideo.value,
-              );
+        final compactRatio = currentVideoRatio;
+        final pipRatio = PortraitPresentationPolicy.resolveAndroidPipAspectRatio(
+          width: (compactRatio * 10000).round(),
+          height: 10000,
+          portraitFallback: isVerticalVideo.value,
+        );
         final rational = Rational(pipRatio.width, pipRatio.height);
         final result = await floating.enable(ImmediatePiP(aspectRatio: rational, sourceRectHint: sourceRectHint));
         if (result == PiPStatus.enabled) isInPip.value = true;
@@ -1005,11 +999,7 @@ class PlayerManager {
     floatingManager.disposeFloating(_floatTag);
     _hideTimer?.cancel();
     double maxSide = Platform.isWindows ? 350 : 220;
-    final settings = _portraitSettings;
-    double ratio =
-        ((settings?.portraitPipFollowSource.v ?? true) ? currentVideoRatio : (isVerticalVideo.value ? 9 / 16 : 16 / 9))
-            .clamp(1 / 2.39, 2.39)
-            .toDouble();
+    final ratio = currentVideoRatio;
     double floatWidth;
     double floatHeight;
     if (ratio >= 1) {
@@ -1528,36 +1518,14 @@ class PlayerManager {
   }
 
   Widget _buildVideoWidget(UnifiedPlayer player, BoxFit boxFit) {
-    // Let each native adapter own its fit. Transforming a Windows texture with
-    // FittedBox makes the media_kit output-size guard see the source dimensions
-    // instead of the real viewport, which wastes GPU memory. Waiting for the
-    // dimension streams before mounting also creates a first-frame deadlock.
-    final videoWidget = player.getVideoWidget();
-
+    // Every adapter already owns its aspect correction and BoxFit behavior.
+    // Wrapping Android/iOS in a second FittedBox based on independently emitted
+    // width/height streams double-applied the ratio, briefly paired dimensions
+    // from different metadata events and visibly squashed landscape streams.
+    // Apply the requested fit before constructing the adapter widget, then keep
+    // one native aspect authority on every platform.
     _applyVideoFit(player, boxFit);
-    if (PlatformUtils.isMobile) {
-      return FittedBox(
-        fit: boxFit,
-        clipBehavior: Clip.hardEdge,
-        child: StreamBuilder<List<int?>>(
-          stream: CombineLatestStream.list([width, height]),
-          builder: (context, snapshot) {
-            final data = snapshot.data;
-            final resolvedWidth = data != null && data.length >= 2 ? data[0] : null;
-            final resolvedHeight = data != null && data.length >= 2 ? data[1] : null;
-            // Mount the native video immediately with a 16:9 provisional size.
-            // Waiting for metadata before inserting the Surface/texture can
-            // itself prevent the first dimensions from arriving on mobile.
-            final hasCompleteGeometry =
-                resolvedWidth != null && resolvedWidth > 0 && resolvedHeight != null && resolvedHeight > 0;
-            final videoWidth = hasCompleteGeometry ? resolvedWidth.toDouble() : 1920.0;
-            final videoHeight = hasCompleteGeometry ? resolvedHeight.toDouble() : 1080.0;
-            return SizedBox(width: videoWidth, height: videoHeight, child: videoWidget);
-          },
-        ),
-      );
-    }
-    return videoWidget;
+    return player.getVideoWidget();
   }
 
   Widget _buildPlaceholder() {

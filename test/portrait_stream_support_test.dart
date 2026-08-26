@@ -112,6 +112,58 @@ void main() {
       expect(tall.value, greaterThanOrEqualTo(1 / 2.39));
       expect(wide.value, lessThanOrEqualTo(2.39));
     });
+
+    test('landscape compact windows stay on the legacy 16:9 contract', () {
+      final malformedWide = VideoGeometrySnapshot(
+        width: 6000,
+        height: 1000,
+        aspectRatio: 6,
+        orientation: VideoSourceOrientation.landscape,
+        candidateOrientation: VideoSourceOrientation.landscape,
+        stableSampleCount: 3,
+        confidence: 1,
+        observedAt: DateTime(2026),
+      );
+
+      expect(
+        PortraitPresentationPolicy.resolveCompactWindowAspectRatio(
+          snapshot: malformedWide,
+          effectiveOrientation: VideoSourceOrientation.landscape,
+          followStablePortraitSource: true,
+        ),
+        closeTo(16 / 9, 0.0001),
+      );
+    });
+
+    test('only a stable plausible portrait source changes compact-window ratio', () {
+      final portrait = VideoGeometrySnapshot(
+        width: 720,
+        height: 1080,
+        aspectRatio: 2 / 3,
+        orientation: VideoSourceOrientation.portrait,
+        candidateOrientation: VideoSourceOrientation.portrait,
+        stableSampleCount: 3,
+        confidence: 1,
+        observedAt: DateTime(2026),
+      );
+
+      expect(
+        PortraitPresentationPolicy.resolveCompactWindowAspectRatio(
+          snapshot: portrait,
+          effectiveOrientation: VideoSourceOrientation.portrait,
+          followStablePortraitSource: true,
+        ),
+        closeTo(2 / 3, 0.0001),
+      );
+      expect(
+        PortraitPresentationPolicy.resolveCompactWindowAspectRatio(
+          snapshot: portrait,
+          effectiveOrientation: VideoSourceOrientation.portrait,
+          followStablePortraitSource: false,
+        ),
+        closeTo(9 / 16, 0.0001),
+      );
+    });
   });
 
   test('orientation locking is reserved for compact displays', () {

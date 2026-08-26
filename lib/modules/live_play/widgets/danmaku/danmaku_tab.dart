@@ -15,31 +15,34 @@ class DanmakuTabView extends GetView<LivePlayController> {
       if (state.room.detail == null || state.player.videoController == null) {
         return AppStatusView(type: AppStatusType.loading, title: "", subtitle: "");
       }
-      return Column(
-        children: [
-          DanmakuSectionTabBar(controller: controller.tabController, tabs: controller.tabs),
-          Expanded(
-            child: TabBarView(
-              controller: controller.tabController,
-              children: [
-                SettingsService.to.danmaku.enableDanmakuDisplay.v
-                    ? DanmakuListView(room: state.room.detail!)
-                    : Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Text(i18n('danmaku_display_disabled_hint'), textAlign: TextAlign.center),
+      return ColoredBox(
+        color: Theme.of(context).colorScheme.surface,
+        child: Column(
+          children: [
+            DanmakuSectionTabBar(controller: controller.tabController, tabs: controller.tabs),
+            Expanded(
+              child: TabBarView(
+                controller: controller.tabController,
+                children: [
+                  SettingsService.to.danmaku.enableDanmakuDisplay.v
+                      ? DanmakuListView(room: state.room.detail!)
+                      : Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Text(i18n('danmaku_display_disabled_hint'), textAlign: TextAlign.center),
+                          ),
                         ),
-                      ),
-                // RxList mutations do not invalidate this outer Obx unless
-                // its value is read while building. Snapshot it here so new
-                // SC entries appear immediately without switching tabs.
-                Obx(() => SuperChatPage(messages: controller.superChats.toList(growable: false))),
-                DanmakuSettingsPage(controller: state.player.videoController!),
-                const KeywordBlockPage(),
-              ],
+                  // RxList mutations do not invalidate this outer Obx unless
+                  // its value is read while building. Snapshot it here so new
+                  // SC entries appear immediately without switching tabs.
+                  Obx(() => SuperChatPage(messages: controller.superChats.toList(growable: false))),
+                  DanmakuSettingsPage(controller: state.player.videoController!),
+                  const KeywordBlockPage(),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
     });
   }

@@ -22,6 +22,12 @@ void main() {
     expect(isDanmakuUserScrollStart(notification), isTrue);
   });
 
+  test('phone danmaku surface is edge-to-edge while desktop keeps panel chrome', () {
+    expect(useEdgeToEdgeDanmakuList(390), isTrue);
+    expect(useEdgeToEdgeDanmakuList(680), isTrue);
+    expect(useEdgeToEdgeDanmakuList(681), isFalse);
+  });
+
   test('programmatic scroll start does not pause live following', () {
     final notification = ScrollStartNotification(metrics: metrics, context: null);
     expect(isDanmakuUserScrollStart(notification), isFalse);

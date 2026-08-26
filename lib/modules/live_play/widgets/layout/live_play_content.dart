@@ -54,30 +54,37 @@ class LivePlayNormalLayout extends StatelessWidget {
           );
         }
         if (resolveLivePlayNormalLayout(constraints.maxWidth) == LivePlayNormalLayoutKind.portraitStack) {
-          final videoHeight = PortraitPresentationPolicy.resolveNormalVideoHeight(
-            availableWidth: constraints.maxWidth,
-            availableHeight: constraints.maxHeight,
-            isPortraitSource: isPortraitSource,
-            sourceAspectRatio: sourceAspectRatio,
-            adaptiveHeightEnabled: adaptivePortraitHeight,
-            mode: portraitLayoutMode,
-          );
+          final useAdaptivePortraitFrame =
+              isPortraitSource && adaptivePortraitHeight && portraitLayoutMode != PortraitLayoutMode.compatibility;
           return Column(
             key: const ValueKey('live-play-portrait-stack'),
             children: [
-              AnimatedContainer(
-                key: const ValueKey('live-play-adaptive-video-frame'),
-                width: constraints.maxWidth,
-                height: videoHeight,
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOutCubic,
-                clipBehavior: Clip.hardEdge,
-                decoration: const BoxDecoration(color: Colors.black),
-                child: video,
-              ),
+              if (useAdaptivePortraitFrame)
+                AnimatedContainer(
+                  key: const ValueKey('live-play-adaptive-video-frame'),
+                  width: constraints.maxWidth,
+                  height: PortraitPresentationPolicy.resolveNormalVideoHeight(
+                    availableWidth: constraints.maxWidth,
+                    availableHeight: constraints.maxHeight,
+                    isPortraitSource: true,
+                    sourceAspectRatio: sourceAspectRatio,
+                    adaptiveHeightEnabled: true,
+                    mode: portraitLayoutMode,
+                  ),
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
+                  clipBehavior: Clip.hardEdge,
+                  decoration: const BoxDecoration(color: Colors.black),
+                  child: video,
+                )
+              else
+                video,
               resolution,
               const Divider(height: 1),
-              Expanded(key: const ValueKey('live-play-portrait-danmaku'), child: danmaku),
+              Expanded(
+                key: const ValueKey('live-play-portrait-danmaku'),
+                child: ColoredBox(color: Theme.of(context).colorScheme.surface, child: danmaku),
+              ),
             ],
           );
         }
@@ -124,12 +131,16 @@ class LivePlayContent extends StatelessWidget {
     }
 
     if (mode == VideoMode.normal) {
-      return Container(key: const ValueKey('normal'), color: Colors.black, child: _buildNormalView(context));
+      return ColoredBox(
+        key: const ValueKey('normal'),
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: _buildNormalView(context),
+      );
     }
 
     return Container(
       color: Colors.black,
-      child: LivePlayVideo(controller: controller),
+      child: LivePlayVideo(controller: controller, expandToParent: true),
     );
   }
 
@@ -137,7 +148,7 @@ class LivePlayContent extends StatelessWidget {
     final compactHeader = MediaQuery.sizeOf(context).width < 600;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: LivePlayHeader(controller: controller, compactHeader: compactHeader),
       body: SafeArea(
         child: Obx(() {
@@ -145,8 +156,14 @@ class LivePlayContent extends StatelessWidget {
           final settings = SettingsService.to.player;
           final geometry = manager.videoGeometry.value;
           final isPortrait = manager.isVerticalVideo.value;
+          final useAdaptivePortraitFrame =
+              MediaQuery.sizeOf(context).width <= 680 &&
+              isPortrait &&
+              settings.enablePortraitStreamAdaptation.v &&
+              settings.portraitAdaptiveHeight.v &&
+              settings.portraitLayoutMode != PortraitLayoutMode.compatibility;
           return LivePlayNormalLayout(
-            video: LivePlayVideo(controller: controller),
+            video: LivePlayVideo(controller: controller, expandToParent: useAdaptivePortraitFrame),
             resolution: const ResolutionsRow(),
             danmaku: _buildDanmaku(),
             showPanel: controller.site != Sites.iptvSite,

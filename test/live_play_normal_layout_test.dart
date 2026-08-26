@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/modules/live_play/widgets/layout/live_play_content.dart';
+import 'package:pure_live/modules/live_play/widgets/layout/live_play_video.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
 
 void main() {
@@ -32,6 +33,7 @@ void main() {
     expect(find.byKey(const ValueKey('video')), findsOneWidget);
     expect(find.byKey(const ValueKey('resolution')), findsOneWidget);
     expect(find.byKey(const ValueKey('danmaku')), findsOneWidget);
+    expect(find.byKey(const ValueKey('live-play-adaptive-video-frame')), findsNothing);
 
     final video = tester.getRect(find.byKey(const ValueKey('video')));
     final resolution = tester.getRect(find.byKey(const ValueKey('resolution')));
@@ -80,8 +82,47 @@ void main() {
 
     final video = tester.getRect(find.byKey(const ValueKey('portrait-video')));
     final danmaku = tester.getRect(find.byKey(const ValueKey('portrait-danmaku')));
+    expect(find.byKey(const ValueKey('live-play-adaptive-video-frame')), findsOneWidget);
     expect(video.height, greaterThan(390 / (16 / 9)));
     expect(danmaku.height, greaterThanOrEqualTo(200));
+  });
+
+  testWidgets('generic live video keeps 16:9 unless its caller owns an explicit frame', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Align(
+          alignment: Alignment.topLeft,
+          child: LivePlayVideoFrame(
+            expandToParent: false,
+            child: ColoredBox(key: ValueKey('legacy-landscape-surface'), color: Colors.black),
+          ),
+        ),
+      ),
+    );
+
+    final legacy = tester.getRect(find.byKey(const ValueKey('legacy-landscape-surface')));
+    expect(legacy.width, 390);
+    expect(legacy.height, closeTo(390 / (16 / 9), 0.01));
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Align(
+          alignment: Alignment.topLeft,
+          child: SizedBox(
+            width: 390,
+            height: 500,
+            child: LivePlayVideoFrame(
+              expandToParent: true,
+              child: ColoredBox(key: ValueKey('owned-adaptive-surface'), color: Colors.black),
+            ),
+          ),
+        ),
+      ),
+    );
+    final adaptive = tester.getRect(find.byKey(const ValueKey('owned-adaptive-surface')));
+    expect(adaptive.size, const Size(390, 500));
   });
 
   testWidgets('video-only sites do not reserve an empty interaction panel', (tester) async {

@@ -261,11 +261,27 @@ foreach ($marker in @('live-play-portrait-stack', 'live-play-desktop-panel', 'li
         throw "Normal live-room layout invariant marker is missing: $marker"
     }
 }
+$liveVideoFrame = Get-Content -LiteralPath (Join-Path $repoRoot 'lib\modules\live_play\widgets\layout\live_play_video.dart') -Raw
+if (-not $liveVideoFrame.Contains('this.expandToParent = false') -or
+    -not $liveVideoFrame.Contains('return AspectRatio(aspectRatio: 16 / 9, child: child)')) {
+    throw 'Ordinary landscape rooms must retain the legacy 16:9 video-frame contract.'
+}
+$playerManager = Get-Content -LiteralPath (Join-Path $repoRoot 'lib\player\core\player_manager.dart') -Raw
+if ($playerManager.Contains('return FittedBox(') -or $playerManager.Contains('StreamBuilder<List<int?>>')) {
+    throw 'Native video adapters must remain the single aspect/BoxFit authority.'
+}
+$mediaKitAdapter = Get-Content -LiteralPath (Join-Path $repoRoot 'lib\player\adapters\media_kit_adapter.dart') -Raw
+if (-not $mediaKitAdapter.Contains('_player.stream.videoParams.listen') -or
+    $mediaKitAdapter.Contains('_player.stream.width.listen') -or
+    $mediaKitAdapter.Contains('_player.stream.height.listen')) {
+    throw 'MediaKit geometry must publish one display-corrected decoder snapshot.'
+}
 $portraitSupport = Get-Content -LiteralPath (Join-Path $repoRoot 'lib\player\core\portrait_stream_support.dart') -Raw
 foreach ($marker in @(
     'stabilityDelay = const Duration(milliseconds: 500)',
     'portraitThreshold = 0.90',
     'landscapeThreshold = 1.10',
+    'resolveCompactWindowAspectRatio',
     'resolveAndroidPipAspectRatio',
     '1 / 2.39',
     'minimumDanmakuHeight = 200'

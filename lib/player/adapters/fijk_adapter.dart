@@ -73,7 +73,7 @@ class FijkAdapter implements UnifiedPlayer, FijkPlayerAccessor, VideoFitAwarePla
       if (value.size != null) {
         final w = value.size!.width.toInt();
         final h = value.size!.height.toInt();
-        if (_widthSubject.value != w) {
+        if (_widthSubject.value != w || _heightSubject.value != h) {
           _widthSubject.add(w);
           _heightSubject.add(h);
         }

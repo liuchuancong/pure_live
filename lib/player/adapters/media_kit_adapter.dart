@@ -19,6 +19,16 @@ import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/player/utils/video_output_size_policy.dart';
 import 'package:pure_live/player/interface/media_kit_player_accessor.dart';
 
+@visibleForTesting
+({int width, int height})? resolveMediaKitDisplaySize(VideoParams params) {
+  final decodedWidth = params.dw ?? params.w;
+  final decodedHeight = params.dh ?? params.h;
+  if (decodedWidth == null || decodedHeight == null || decodedWidth <= 0 || decodedHeight <= 0) return null;
+
+  final quarterTurn = ((params.rotate ?? 0) % 180).abs() == 90;
+  return quarterTurn ? (width: decodedHeight, height: decodedWidth) : (width: decodedWidth, height: decodedHeight);
+}
+
 class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFitAwarePlayer {
   MediaKitAdapter() {
     _audioModeTransitions = LatestAsyncValueQueue<bool>(_applyAudioOnly);
@@ -123,9 +133,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
 
   StreamSubscription? _bufferingSub;
 
-  StreamSubscription? _widthSub;
-
-  StreamSubscription? _heightSub;
+  StreamSubscription? _videoParamsSub;
 
   StreamSubscription? _completeSub;
 
@@ -332,24 +340,15 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
       },
     );
 
-    // =========================
-    // width
-    // =========================
-
-    _widthSub = _player.stream.width.listen((val) {
+    // Keep width and height from the same decoder-parameter event. Listening
+    // to the two derived streams independently allowed a transient width from
+    // one quality/rotation state to be paired with the previous height. That
+    // malformed ratio was then propagated into portrait detection and PiP.
+    _videoParamsSub = _player.stream.videoParams.listen((params) {
       if (_disposed) return;
-
-      _widthSubject.add(val);
-    });
-
-    // =========================
-    // height
-    // =========================
-
-    _heightSub = _player.stream.height.listen((val) {
-      if (_disposed) return;
-
-      _heightSubject.add(val);
+      final size = resolveMediaKitDisplaySize(params);
+      _widthSubject.add(size?.width);
+      _heightSubject.add(size?.height);
     });
 
     // =========================
@@ -389,7 +388,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
     // collect
     // =========================
 
-    _subscriptions.addAll([_playingSub!, _bufferingSub!, _widthSub!, _heightSub!, _completeSub!, _errorSub!]);
+    _subscriptions.addAll([_playingSub!, _bufferingSub!, _videoParamsSub!, _completeSub!, _errorSub!]);
   }
 
   // =========================
@@ -405,8 +404,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
 
     _playingSub = null;
     _bufferingSub = null;
-    _widthSub = null;
-    _heightSub = null;
+    _videoParamsSub = null;
     _completeSub = null;
     _errorSub = null;
   }
