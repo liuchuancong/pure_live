@@ -285,62 +285,60 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher {
   Future<Map<String, dynamic>> getLiveStreamObj({required LiveRoom detail, required String qn}) async {
     final sequence = DateTime.now().millisecondsSinceEpoch;
     final channel = _channelIds(detail);
+    final cid = channel.sid;
+    final sid = channel.sid;
+    final body = jsonEncode({
+      'head': {
+        'seq': sequence,
+        'appidstr': '0',
+        'bidstr': '121',
+        'cidstr': cid,
+        'sidstr': sid,
+        'uid64': 0,
+        'client_type': 108,
+        'client_ver': _streamSdkVersion,
+        'stream_sys_ver': 1,
+        'app': 'yylive_web',
+        'playersdk_ver': _streamSdkVersion,
+        'thundersdk_ver': '0',
+        'streamsdk_ver': _streamSdkVersion,
+      },
+      'client_attribute': {
+        'client': 'web',
+        'model': 'web0',
+        'cpu': '',
+        'graphics_card': '',
+        'os': 'chrome',
+        'osversion': '128.0.0.0',
+        'vsdk_version': '',
+        'app_identify': '',
+        'app_version': '',
+        'business': '',
+        'width': '1366',
+        'height': '768',
+        'scale': '',
+        'client_type': 8,
+        'h265': 0,
+      },
+      'avp_parameter': {
+        'version': 1,
+        'client_type': 8,
+        'service_type': 0,
+        'imsi': 0,
+        'send_time': sequence ~/ 1000,
+        'line_seq': -1,
+        'gear': int.parse(qn),
+        'ssl': 1,
+        'stream_format': 0,
+      },
+    });
+
+    final query = {'uid': '0', 'cid': cid, 'sid': sid, 'appid': '0', 'sequence': sequence.toString(), 'encode': 'json'};
 
     final result = await HttpClient.instance.postJson(
       'https://stream-manager.yy.com/v3/channel/streams',
-      queryParameters: {
-        'uid': '0',
-        'cid': channel.cid,
-        'sid': channel.sid,
-        'appid': '0',
-        'sequence': sequence.toString(),
-        'encode': 'json',
-      },
-      data: {
-        'head': {
-          'seq': sequence,
-          'appidstr': '0',
-          'bidstr': '121',
-          'cidstr': channel.cid,
-          'sidstr': channel.sid,
-          'uid64': 0,
-          'client_type': 108,
-          'client_ver': _streamSdkVersion,
-          'stream_sys_ver': 1,
-          'app': 'yylive_web',
-          'playersdk_ver': _streamSdkVersion,
-          'thundersdk_ver': '0',
-          'streamsdk_ver': _streamSdkVersion,
-        },
-        'client_attribute': {
-          'client': 'web',
-          'model': 'web0',
-          'cpu': '',
-          'graphics_card': '',
-          'os': 'chrome',
-          'osversion': '128.0.0.0',
-          'vsdk_version': '',
-          'app_identify': '',
-          'app_version': '',
-          'business': '',
-          'width': '1366',
-          'height': '768',
-          'scale': '',
-          'client_type': 8,
-          'h265': 0,
-        },
-        'avp_parameter': {
-          'version': 1,
-          'client_type': 8,
-          'service_type': 0,
-          'imsi': 0,
-          'send_time': DateTime.now().millisecondsSinceEpoch ~/ 1000,
-          'line_seq': -1,
-          'gear': int.parse(qn),
-          'ssl': 1,
-          'stream_format': 0,
-        },
-      },
+      queryParameters: query,
+      data: utf8.encode(body),
       header: {
         ...getHeaders(),
         // YY's current web SDK sends this JSON-shaped body as text/plain.
