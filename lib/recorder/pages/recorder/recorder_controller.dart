@@ -241,13 +241,12 @@ class RecorderController extends GetxService {
   }
 
   Future<void> addTask({required LiveRoom room}) async {
-    if (!await _hasUsableRecordPath()) {
-      return;
-    }
-
     final granted = await requestStoragePermission();
     if (!granted) {
       ToastUtil.show(i18n('no_storage'));
+      return;
+    }
+    if (!await _hasUsableRecordPath()) {
       return;
     }
 
@@ -272,6 +271,11 @@ class RecorderController extends GetxService {
   }
 
   Future<bool> startTask(LiveRecordTask task) async {
+    final granted = await requestStoragePermission();
+    if (!granted) {
+      ToastUtil.show(i18n('no_storage'));
+      return false;
+    }
     if (!await _hasUsableRecordPath()) {
       return false;
     }
@@ -618,13 +622,10 @@ class RecorderController extends GetxService {
   Future<void> restoreAndAutoPoll() async {
     try {
       final json = HivePrefUtil.getString(RecorderKeys.recorderTasks);
-
       if (json == null || json.isEmpty) {
         return;
       }
-
       final list = (jsonDecode(json) as List).cast<Map<String, dynamic>>();
-
       List<LiveRecordTask> recorderTasks = list.map((e) => LiveRecordTask.fromJson(e)).toList();
       recorderTasks.sort((a, b) => a.status.order.compareTo(b.status.order));
       tasks.value = recorderTasks;
@@ -633,6 +634,14 @@ class RecorderController extends GetxService {
         updateTask(task);
       }
       if (settings.autoStartOnBoot.value) {
+        final granted = await requestStoragePermission();
+        if (!granted) {
+          ToastUtil.show(i18n('no_storage'));
+          return;
+        }
+        if (!await _hasUsableRecordPath()) {
+          return;
+        }
         for (final task in tasks) {
           await refreshTaskStatus(task);
         }

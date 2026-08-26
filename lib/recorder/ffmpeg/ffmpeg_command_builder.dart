@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:pure_live/common/global/platform_utils.dart';
+
 
 class FFmpegCommandBuilder {
   static String _quote(String value) {
@@ -22,6 +24,8 @@ class FFmpegCommandBuilder {
       // 基础
       '-hide_banner',
       '-loglevel', 'info',
+      // android录制会校验证书
+      if (PlatformUtils.isAndroid) ...['-tls_verify','0'],
       // 重连
       '-reconnect', '1',
       '-reconnect_streamed', '1',
@@ -68,6 +72,8 @@ class FFmpegCommandBuilder {
       '-y',
       '-hide_banner',
       '-loglevel', 'info',
+      // android录制会校验证书
+      if (PlatformUtils.isAndroid) ...['-tls_verify','0'],
       '-analyzeduration', '1000000',
       '-probesize', '1048576',
       '-fflags', 'igndts+genpts+nobuffer+flush_packets+fastseek',
