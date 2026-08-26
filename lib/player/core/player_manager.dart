@@ -1686,7 +1686,6 @@ class PlayerManager {
     bool trackPipSource = false,
     bool? audioOnlyOverride,
     Color surfaceColor = Colors.black,
-    BoxFit? fitOverride,
   }) {
     // Floating/PiP callers already wrap this factory in Obx; keep their
     // dependency registered while the inner observer covers direct callers.
@@ -1704,7 +1703,7 @@ class PlayerManager {
         return _buildPlaceholder(surfaceColor: surfaceColor);
       }
       final safeFitIndex = fitList.isEmpty ? 0 : fitIndex.clamp(0, fitList.length - 1);
-      final boxFit = fitOverride ?? (fitList.isEmpty ? BoxFit.contain : fitList[safeFitIndex]);
+      final boxFit = fitList.isEmpty ? BoxFit.contain : fitList[safeFitIndex];
       return RepaintBoundary(
         key: trackPipSource ? _pipSourceKey : null,
         child: PureLivePipWidget(
@@ -1722,7 +1721,7 @@ class PlayerManager {
                     Positioned.fill(
                       child: Offstage(
                         offstage: showAudioOnly,
-                        child: Container(color: surfaceColor, child: _buildVideoWidget(player, boxFit, surfaceColor)),
+                        child: Container(color: surfaceColor, child: _buildVideoWidget(player, boxFit)),
                       ),
                     ),
                     if (showAudioOnly)
@@ -1740,11 +1739,11 @@ class PlayerManager {
     });
   }
 
-  Widget _buildVideoWidget(UnifiedPlayer player, BoxFit boxFit, Color surfaceColor) {
+  Widget _buildVideoWidget(UnifiedPlayer player, BoxFit boxFit) {
     if (!PlatformUtils.isMobile) {
       // Desktop adapters retain their native aspect and visible-viewport
       // policies, including the bounded Windows texture implementation.
-      return player.getVideoWidget(fit: boxFit, fill: surfaceColor);
+      return player.getVideoWidget(fit: boxFit);
     }
 
     // The native player is the only fit owner for ordinary frames. media_kit,
@@ -1758,7 +1757,7 @@ class PlayerManager {
       encodedAspectRatio: geometry.canvasAspectRatio,
       contentInsets: geometry.contentInsets,
       fit: boxFit,
-      nativeVideoBuilder: (nativeFit) => player.getVideoWidget(fit: nativeFit, fill: surfaceColor),
+      nativeVideoBuilder: (nativeFit) => player.getVideoWidget(fit: nativeFit),
     );
   }
 

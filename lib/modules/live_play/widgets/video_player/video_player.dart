@@ -9,8 +9,7 @@ import 'package:pure_live/modules/live_play/widgets/video_player/video_controlle
 class VideoPlayer extends StatefulWidget {
   final VideoController controller;
   final Color surfaceColor;
-  final BoxFit? fitOverride;
-  const VideoPlayer({super.key, required this.controller, this.surfaceColor = Colors.black, this.fitOverride});
+  const VideoPlayer({super.key, required this.controller, this.surfaceColor = Colors.black});
 
   @override
   State<VideoPlayer> createState() => _VideoPlayerState();
@@ -43,7 +42,6 @@ class _VideoPlayerState extends State<VideoPlayer> with WidgetsBindingObserver {
         fitList: SettingsService.to.player.videoFitArray,
         controller: controller,
         surfaceColor: widget.surfaceColor,
-        fitOverride: widget.fitOverride,
       );
     });
   }
@@ -92,7 +90,6 @@ class _DelayedVideoWidget extends StatefulWidget {
   final List<BoxFit> fitList;
   final VideoController controller;
   final Color surfaceColor;
-  final BoxFit? fitOverride;
 
   const _DelayedVideoWidget({
     required this.displayVideo,
@@ -101,7 +98,6 @@ class _DelayedVideoWidget extends StatefulWidget {
     required this.fitList,
     required this.controller,
     required this.surfaceColor,
-    required this.fitOverride,
   });
 
   @override
@@ -175,7 +171,6 @@ class _DelayedVideoWidgetState extends State<_DelayedVideoWidget> {
       audioOnlyOverride: widget.audioOnly,
       controls: VideoControllerPanel(controller: widget.controller),
       surfaceColor: widget.surfaceColor,
-      fitOverride: widget.fitOverride,
     );
   }
 }

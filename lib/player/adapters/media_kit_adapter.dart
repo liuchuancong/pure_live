@@ -456,14 +456,13 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
   // =========================
 
   @override
-  Widget getVideoWidget({BoxFit? fit, Color? fill}) {
+  Widget getVideoWidget({BoxFit? fit}) {
     final effectiveFit = fit ?? _videoFit;
     _videoFit = effectiveFit;
     final video = Video(
       controller: _controller,
       controls: NoVideoControls,
       fit: effectiveFit,
-      fill: fill ?? Colors.black,
       // LivePlay's WidgetsBindingObserver is the single lifecycle authority.
       // Letting Video apply a second, settings-only policy paused audio-only
       // rooms on Home/lock even though the background policy kept them alive.

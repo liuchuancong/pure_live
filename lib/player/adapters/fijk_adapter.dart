@@ -178,7 +178,7 @@ class FijkAdapter implements UnifiedPlayer, FijkPlayerAccessor, VideoFitAwarePla
   }
 
   @override
-  Widget getVideoWidget({BoxFit? fit, Color? fill}) {
+  Widget getVideoWidget({BoxFit? fit}) {
     if (_isAudioOnly) {
       return const SizedBox.shrink();
     }
@@ -188,7 +188,7 @@ class FijkAdapter implements UnifiedPlayer, FijkPlayerAccessor, VideoFitAwarePla
       player: _player,
       fit: FijkHelper.getIjkBoxFit(effectiveFit),
       fs: false,
-      color: fill ?? Colors.black,
+      color: Colors.black,
       panelBuilder: (FijkPlayer fijkPlayer, FijkData fijkData, BuildContext context, Size viewSize, Rect texturePos) {
         return const SizedBox();
       },

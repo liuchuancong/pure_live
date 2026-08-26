@@ -2236,35 +2236,23 @@ class _VideoFitSettingState extends State<VideoFitSetting> {
     final attrs = AppConsts().videoFitList;
     final player = SettingsService.to.player;
 
-    return Obx(() {
-      final manager = GlobalPlayerService.instance.player;
-      manager.videoPresentationRevision.value;
-      final portraitFullscreenProtected =
-          GlobalPlayerState.to.isFullscreen.value &&
-          player.enablePortraitStreamAdaptation.v &&
-          manager.currentPresentationGeometry.orientation == VideoSourceOrientation.portrait;
-      final visibleIndex = portraitFullscreenProtected ? 0 : player.videoFitIndex.v;
-      return GestureDetector(
-        key: ValueKey(portraitFullscreenProtected ? 'portrait-fullscreen-fit-contained' : 'video-fit-setting'),
-        onTap: portraitFullscreenProtected
-            ? controller.enableController
-            : () {
-                controller.enableController();
-                int currentIndex = player.videoFitIndex.v + 1;
-                if (currentIndex >= attrs.length) {
-                  currentIndex = 0;
-                }
-                player.videoFitIndex.v = currentIndex;
-                controller.setVideoFit(currentIndex);
-              },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 2),
-          alignment: Alignment.center,
-          height: 25,
-          child: Text(descs[visibleIndex], style: AppTextStyles.t15.copyWith(color: Colors.white)),
-        ),
-      );
-    });
+    return GestureDetector(
+      onTap: () {
+        controller.enableController();
+        int currentIndex = player.videoFitIndex.v + 1;
+        if (currentIndex >= attrs.length) {
+          currentIndex = 0;
+        }
+        player.videoFitIndex.v = currentIndex;
+        controller.setVideoFit(currentIndex);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 2),
+        alignment: Alignment.center,
+        height: 25,
+        child: Obx(() => Text(descs[player.videoFitIndex.v], style: AppTextStyles.t15.copyWith(color: Colors.white))),
+      ),
+    );
   }
 }
 

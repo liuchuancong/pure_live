@@ -167,13 +167,10 @@ class BetterPlayerAdapter implements UnifiedPlayer, BetterPlayerAccessor, VideoF
   }
 
   @override
-  Widget getVideoWidget({BoxFit? fit, Color? fill}) {
+  Widget getVideoWidget({BoxFit? fit}) {
     if (_isAudioOnly) return const SizedBox.shrink();
     if (fit != null) setVideoFit(fit);
-    return ColoredBox(
-      color: fill ?? Colors.black,
-      child: BetterPlayer(controller: _controller!),
-    );
+    return BetterPlayer(controller: _controller!);
   }
 
   @override

@@ -143,61 +143,14 @@ void main() {
     await tester.pumpWidget(
       const MaterialApp(
         home: PortraitFullscreenPresentation(
-          backgroundUrl: '',
+          coverUrl: '',
           child: ColoredBox(key: ValueKey('portrait-fullscreen-video'), color: Colors.transparent),
         ),
       ),
     );
 
     expect(find.byKey(const ValueKey('fullscreen-portrait-presentation')), findsOneWidget);
-    expect(find.byKey(const ValueKey('fullscreen-portrait-ambient-fallback')), findsOneWidget);
     expect(find.byKey(const ValueKey('portrait-fullscreen-video')), findsOneWidget);
-  });
-
-  test('portrait fullscreen overrides global fill and exposes the ambient layer', () {
-    const geometry = VideoPresentationGeometry(
-      canvasAspectRatio: 9 / 16,
-      contentAspectRatio: 9 / 16,
-      contentInsets: NormalizedVideoInsets.none,
-      orientation: VideoSourceOrientation.portrait,
-      evidence: VideoGeometryEvidence.decoderMetadata,
-      isStable: true,
-    );
-
-    final style = resolveFullscreenVideoSurfaceStyle(geometry: geometry, portraitAdaptationEnabled: true);
-
-    expect(style.useAmbientBackground, isTrue);
-    expect(style.fitOverride, BoxFit.contain);
-    expect(style.surfaceColor, Colors.transparent);
-  });
-
-  test('landscape fullscreen keeps the user-selected fit path and black surface', () {
-    const geometry = VideoPresentationGeometry(
-      canvasAspectRatio: 16 / 9,
-      contentAspectRatio: 16 / 9,
-      contentInsets: NormalizedVideoInsets.none,
-      orientation: VideoSourceOrientation.landscape,
-      evidence: VideoGeometryEvidence.decoderMetadata,
-      isStable: true,
-    );
-
-    final style = resolveFullscreenVideoSurfaceStyle(geometry: geometry, portraitAdaptationEnabled: true);
-
-    expect(style.useAmbientBackground, isFalse);
-    expect(style.fitOverride, isNull);
-    expect(style.surfaceColor, Colors.black);
-  });
-
-  test('portrait fullscreen ambient image falls back from cover to avatar', () {
-    expect(
-      resolvePortraitFullscreenBackgroundUrl(
-        detailCover: ' ',
-        roomCover: '',
-        detailAvatar: 'https://example.test/avatar.webp',
-        roomAvatar: 'https://example.test/old-avatar.webp',
-      ),
-      'https://example.test/avatar.webp',
-    );
   });
 
   testWidgets('generic live video keeps 16:9 unless its caller owns an explicit frame', (tester) async {

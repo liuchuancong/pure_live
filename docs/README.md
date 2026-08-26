@@ -30,7 +30,6 @@
 - [v3.0.7 Android 竖屏真实画布修复](STAGE_UPDATE_3_0_7.md)：截图/解码坐标隔离、原生纹理防拉伸与显式横屏全屏入口。
 - [v3.0.8 Android 竖屏与小窗比例修复](STAGE_UPDATE_3_0_8.md)：抖音选中流几何、可逆居中裁边、应用小窗动态尺寸与 PiP 可视区域。
 - [v3.0.9 Android 竖屏原生缩放修复](STAGE_UPDATE_3_0_9.md)：抖音官方几何模型、移动端原生单层缩放、实测裁边与四种呈现统一。
-- [v3.0.10 Android 横屏全屏竖屏展示修复](STAGE_UPDATE_3_0_10.md)：全屏 contain、透明播放器表面、模糊背景回退与跨平台识别边界。
 - [Video Geometry Engine](VIDEO_GEOMETRY_ENGINE_2026_08_26.md)：编码画布、有效节目区域与呈现窗口的统一识别和普通直播保护设计。
 - [v2.9.7 Android update](STAGE_UPDATE_2_9_7.md): cross-platform audience semantics, stable popular ranking and SOOP PC/mobile totals.
 - [v2.9.6 Android update](STAGE_UPDATE_2_9_6.md): upstream synchronization, Douyin/Bilibili repairs and 40 interface probes.
