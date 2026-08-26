@@ -27,3 +27,4 @@ v3.0.3 已统一解码尺寸与 Android Surface 的旋转语义，但应用布�
 - 定向回归已覆盖可信比例、移动端统一画框、普通页布局、MediaKit 几何、历史日期、容量升级与备份恢复。
 - 正式构建阶段执行完整 Flutter Analyze 与自动化测试，再构建唯一 `arm64-v8a` Release APK。
 - APK 交付前核对 `com.mystyle.purelive`、`3.0.4+4092`、唯一 ABI、Flutter 资源、翻译、FFmpegKit、SQLite、MediaKit 与应用原生库，并记录 SHA-256、耗时和资源峰值。
+- 仓库默认流程自本版起采用 `bugfix-android-release-default`：完成 Bug 修复批次后自动进入 Android 新版本、本机构建、GitHub 固定证书签名、Release 与发布索引同步；其他平台继续按任务范围串行处理。

@@ -22,6 +22,7 @@ Read and follow [`MAINTENANCE_POLICY.md`](MAINTENANCE_POLICY.md) for every repor
 - Trace the first invalid state and root call/event lifecycle. Record why the selected direct reuse, adaptation, compatibility layer, or rewrite addresses both the reproduction and adjacent modes.
 - Separate evidence into code review, deterministic tests, build output, optional device sampling, and external interface probes. Report uncovered platforms and residual risk; do not make blanket claims that every Bug is fixed.
 - Review upstream Issues from the latest supported version and newest dates first, then order by severity, reproducibility, and user impact. Map each reviewed Issue to the fork before changing code.
+- `bugfix-android-release-default`: once a Bug-fix batch is complete, increment the patch/build version, run the formal Android arm64 delivery gate, push `master`, and publish the fixed-certificate GitHub Release. Treat multiple fixes in one user task as one version. Other platforms remain explicitly scoped and serial.
 
 ## Toolchain and commands
 
@@ -54,7 +55,7 @@ Package locally with `tool/build_local_release.ps1`; both `-Target` and `-Config
 - Keep GetX module naming consistent: `*_page.dart`, `*_controller.dart`, `*_binding.dart`.
 - Add focused tests for parser, adapter, settings migration and non-trivial service changes.
 - Every Bug fix must state provenance and root cause before implementation. Avoid replacing lifecycle analysis with arbitrary delay, refresh, rebuild, polling, or retry loops.
-- Playback, PiP, floating-window and danmaku fixes default to a device-independent workflow: trace the state/event ordering, add a deterministic regression test, run static analysis and the affected local test suite, then build the target artifact when requested.
+- Playback, PiP, floating-window and danmaku fixes default to a device-independent workflow: trace the state/event ordering, add a deterministic regression test, run static analysis and the affected local test suite, then complete the Android bug-fix release closure defined by `BUILD_POLICY.md`.
 - Never connect to or operate a user's phone, start ADB, install an APK, or automate device UI unless the user explicitly requests device work in the current task. A connection mentioned in an earlier message is not standing permission.
 - Before every device command, re-check the user's latest instruction. If the current task says to avoid phone operations, do not run even read-only ADB discovery, `dumpsys`, log collection, screenshots or package queries; continue from source and deterministic tests instead.
 - Device smoke checks are optional release evidence rather than a prerequisite for diagnosing or repairing code. When a physical scenario has not been sampled, report that evidence layer separately without blocking the code fix or overstating runtime coverage.

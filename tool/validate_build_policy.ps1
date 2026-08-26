@@ -46,6 +46,19 @@ foreach ($marker in @('MAINTENANCE_POLICY.md', 'bug-provenance', 'semantic chang
         throw "Pure Live maintenance skill marker is missing: $marker"
     }
 }
+if (-not $skillText.Contains('bugfix-android-release-default')) {
+    throw 'Pure Live build skill must preserve the default Android Bug-fix release closure.'
+}
+if (-not $maintenanceSkillText.Contains('bugfix-android-release-default')) {
+    throw 'Pure Live maintenance skill must preserve the default Android Bug-fix release closure.'
+}
+
+$buildPolicyText = Get-Content -LiteralPath (Join-Path $repoRoot 'BUILD_POLICY.md') -Raw
+foreach ($marker in @('bugfix-android-release-default', 'local-build-first', 'github-secret-signing', 'serial-platform-stages', 'sign-staged-android', 'assets/releases.json')) {
+    if (-not $buildPolicyText.Contains($marker)) {
+        throw "Build policy delivery marker is missing: $marker"
+    }
+}
 
 $maintenancePolicy = Get-Content -LiteralPath (Join-Path $repoRoot 'MAINTENANCE_POLICY.md') -Raw
 foreach ($marker in @(
@@ -56,6 +69,7 @@ foreach ($marker in @(
     'semantic-change-ledger',
     'evidence-layered',
     'rollback-required',
+    'bugfix-android-release-default',
     'upstream-existing',
     'fork-regression',
     'integration-conflict',
@@ -99,9 +113,9 @@ $contributingText = Get-Content -LiteralPath (Join-Path $repoRoot 'CONTRIBUTING.
 $agentText = Get-Content -LiteralPath (Join-Path $repoRoot 'AGENTS.md') -Raw
 $upstreamAuditTemplate = Get-Content -LiteralPath (Join-Path $repoRoot 'docs\UPSTREAM_AUDIT_TEMPLATE.md') -Raw
 foreach ($entry in @(
-    [pscustomobject]@{ Name = 'README'; Text = $readmeText; Markers = @('maintenance-readme-markers', 'android-first', 'windows-maintained', 'upstream-feature-routing', 'MAINTENANCE_POLICY.md', 'issues/new/choose') },
+    [pscustomobject]@{ Name = 'README'; Text = $readmeText; Markers = @('maintenance-readme-markers', 'android-first', 'windows-maintained', 'upstream-feature-routing', 'bugfix-release-default', 'MAINTENANCE_POLICY.md', 'issues/new/choose') },
     [pscustomobject]@{ Name = 'CONTRIBUTING'; Text = $contributingText; Markers = @('contribution-policy-markers', 'maintenance-bug-only', 'bug-triage', 'upstream-review', 'feature-routing', 'integration-conflict') },
-    [pscustomobject]@{ Name = 'AGENTS'; Text = $agentText; Markers = @('Maintenance scope and triage', 'MAINTENANCE_POLICY.md', 'not-reproduced') },
+    [pscustomobject]@{ Name = 'AGENTS'; Text = $agentText; Markers = @('Maintenance scope and triage', 'MAINTENANCE_POLICY.md', 'not-reproduced', 'bugfix-android-release-default') },
     [pscustomobject]@{ Name = 'upstream audit template'; Text = $upstreamAuditTemplate; Markers = @('file_review', 'semantic_change_ledger', 'issue_and_bug_mapping', 'fork_feature_impact', 'quality_assessment', 'disposition', 'conflict_resolution', 'regression_plan', 'verification_plan') }
 )) {
     foreach ($marker in $entry.Markers) {
