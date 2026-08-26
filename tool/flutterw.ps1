@@ -84,8 +84,17 @@ if ($executable -eq $flutter -and $env:JAVA_HOME -and $FlutterArgs[0] -notin @('
 
 $workDir = $repoRoot
 $shortPathReady = $false
+$flutterCommand = if ($FlutterArgs.Count -gt 0) { $FlutterArgs[0] } else { '' }
+$requiresBuildShortPath =
+    $repoRoot.Length -gt 80 -and
+    $executable -eq $flutter -and
+    $flutterCommand -in @('assemble', 'build', 'drive', 'install', 'run')
+$requiresTestSubstPath =
+    $repoRoot.Length -gt 80 -and
+    $executable -eq $flutter -and
+    $flutterCommand -eq 'test'
 
-if ($repoRoot.Length -gt 80) {
+if ($requiresBuildShortPath) {
     # Keep the short project path on the same drive as the Pub cache. Kotlin's
     # incremental compiler cannot relativize plugin sources when a SUBST drive
     # (for example P:) and the default C: Pub cache are mixed, so it discards
@@ -126,7 +135,11 @@ if ($repoRoot.Length -gt 80) {
 
 $substDrive = $null
 $substMappingFile = Join-Path $repoRoot '.dart_tool\pure_live_subst_drive.txt'
-if ($repoRoot.Length -gt 80 -and -not $shortPathReady) {
+# Native Assets hooks receive Platform.packageConfig after Dart canonicalizes a
+# junction back to this repository's long physical path. Tests therefore use a
+# stable SUBST path; Android/Windows builds keep the same-drive junction so
+# Kotlin and the Pub cache retain their incremental-path contract.
+if ($requiresTestSubstPath -or ($requiresBuildShortPath -and -not $shortPathReady)) {
     $repoParent = Split-Path -Parent $repoRoot
     $repoLeaf = Split-Path -Leaf $repoRoot
     $savedDrive = if (Test-Path -LiteralPath $substMappingFile) {
