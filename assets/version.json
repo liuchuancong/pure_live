@@ -2,57 +2,60 @@
   "version": "3.0.4",
   "build_number": 4092,
   "version_num": 300044092,
-  "version_desc": "- 修正移动端多层比例控制：普通页、横屏全屏、系统画中画和应用内小窗共享唯一可信显示比例。\n- 稳定横屏、竖屏和近方形源保留真实比例；缺失、瞬态或异常解码尺寸按展示方向安全回退，避免画面被压成细条。\n- 移动端播放器适配器在统一画框内填充，桌面继续保留原生缩放与 Windows 可见视口策略。\n- 直播记录显示完整本地日期时间，保留数量支持任意正整数，0 表示保留全部记录；升级、备份与恢复语义一致。\n- 同步并审查上游到 c7d99cc3，吸收录制权限检查并保留经过回归的返回、FFmpeg 预热与 HTTPS 校验策略。\n- 增加可信比例、移动端统一画框、普通页/全屏/小窗和历史记录回归；本轮只构建 Android arm64-v8a Release。",
-  "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.4",
   "android_abis": [
-    "arm64-v8a"
+    "armeabi-v7a",
+    "arm64-v8a",
+    "x86_64"
   ],
+  "version_desc": "- 修正移动端比例。\n- 设置-> 视频添加沉沁选择。\n- 优化返回处理。\n- 增加小屏选择其他直播间。",
+  "prerelease": false,
+  "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.4",
   "platforms": {
     "android": {
       "version": "3.0.4",
       "build_number": 4092,
       "version_num": 300044092,
-      "version_desc": "- 修正移动端多层比例控制：普通页、横屏全屏、系统画中画和应用内小窗共享唯一可信显示比例。\n- 稳定横屏、竖屏和近方形源保留真实比例；缺失、瞬态或异常解码尺寸按展示方向安全回退，避免画面被压成细条。\n- 移动端播放器适配器在统一画框内填充，桌面继续保留原生缩放与 Windows 可见视口策略。\n- 直播记录显示完整本地日期时间，保留数量支持任意正整数，0 表示保留全部记录；升级、备份与恢复语义一致。\n- 同步并审查上游到 c7d99cc3，吸收录制权限检查并保留经过回归的返回、FFmpeg 预热与 HTTPS 校验策略。\n- 增加可信比例、移动端统一画框、普通页/全屏/小窗和历史记录回归；本轮只构建 Android arm64-v8a Release。",
+      "version_desc": "- 修正移动端比例。\n- 设置-> 视频添加沉沁选择。\n- 优化返回处理。\n- 增加小屏选择其他直播间。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.4",
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.4",
       "android_abis": [
-        "arm64-v8a"
+        "armeabi-v7a",
+        "arm64-v8a",
+        "x86_64"
       ]
     },
     "windows": {
-      "version": "3.0.0",
-      "build_number": 4088,
-      "version_num": 300004088,
-      "version_desc": "- 修复 Android 3.0.0 直播页系统侧滑返回失效：移除全局返回拦截，启用预测性返回，并由路由局部 PopScope 区分普通页、横屏/全屏和弹窗；退出路由前不再提前清理播放器监听。\n- 新增只读上游全差异审查工作流与合并后全仓扫描，固定 Git 依赖到 40 位提交；全平台工作流按 Android、Windows、Linux、Apple 阶段串行。\n- 修复 Windows/MSIX 日志目录入口指向错误层级且忽略打开结果的问题。\n- 同步并审查最新上游 liuchuancong/pure_live@e808dcae；吸收多窗口开关与历史容量配置，并保留维护仓库版本、更新源和按需串行构建策略。\n- 修复上游直播页 Shell 回归：普通手机页恢复视频、画质/线路与弹幕列表同时可见，桌面恢复可见侧栏，IPTV 不预留空面板。\n- 补齐上游合并门禁、布局 Widget 回归、历史容量备份/边界/响应式持久化、多窗口升级默认值和英文录制提示。\n- 修复跨房间横竖屏比例串联：房间变化立即清理旧视频宽高，宽高成对有效后才应用真实比例。\n- 修复 Windows 重复启动卡顿及宽屏/全屏进入画中画后状态丢失；无参数二次启动在 Flutter engine 前拦截，协议和多窗口参数继续转发。\n- 修复 YY 部分直播间 ErrAuthNotPass：对齐当前 StreamManager 合同，失败时自动回退官方匿名移动 HLS，并实读上游 #798 房间清单。\n- 增强 Android/斗鱼录制：统一播放请求头、重新解析过期 CDN、正确引用 FFmpeg 参数、允许短时单轨输入，并隔离及探测自定义录制目录。\n- 降低启动和长时间录制开销：FFmpeg 惰性且可重试初始化，录制进度不重排全表，持久化写入节流。\n- Syncfusion sliders 更新至 34.2.5；42 项公开平台接口合同、完整测试和全平台串行发布门禁覆盖 Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64。",
+      "version": "3.0.4",
+      "build_number": 4092,
+      "version_num": 300004092,
+      "version_desc": "- 修正移动端比例。\n- 设置-> 视频添加沉沁选择。\n- 优化返回处理。\n- 增加小屏选择其他直播间。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.0",
-      "windows_msix_available": false
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.4",
+      "windows_msix_available": true
     },
     "linux": {
-      "version": "3.0.0",
-      "build_number": 4088,
-      "version_num": 300004088,
-      "version_desc": "- 修复 Android 3.0.0 直播页系统侧滑返回失效：移除全局返回拦截，启用预测性返回，并由路由局部 PopScope 区分普通页、横屏/全屏和弹窗；退出路由前不再提前清理播放器监听。\n- 新增只读上游全差异审查工作流与合并后全仓扫描，固定 Git 依赖到 40 位提交；全平台工作流按 Android、Windows、Linux、Apple 阶段串行。\n- 修复 Windows/MSIX 日志目录入口指向错误层级且忽略打开结果的问题。\n- 同步并审查最新上游 liuchuancong/pure_live@e808dcae；吸收多窗口开关与历史容量配置，并保留维护仓库版本、更新源和按需串行构建策略。\n- 修复上游直播页 Shell 回归：普通手机页恢复视频、画质/线路与弹幕列表同时可见，桌面恢复可见侧栏，IPTV 不预留空面板。\n- 补齐上游合并门禁、布局 Widget 回归、历史容量备份/边界/响应式持久化、多窗口升级默认值和英文录制提示。\n- 修复跨房间横竖屏比例串联：房间变化立即清理旧视频宽高，宽高成对有效后才应用真实比例。\n- 修复 Windows 重复启动卡顿及宽屏/全屏进入画中画后状态丢失；无参数二次启动在 Flutter engine 前拦截，协议和多窗口参数继续转发。\n- 修复 YY 部分直播间 ErrAuthNotPass：对齐当前 StreamManager 合同，失败时自动回退官方匿名移动 HLS，并实读上游 #798 房间清单。\n- 增强 Android/斗鱼录制：统一播放请求头、重新解析过期 CDN、正确引用 FFmpeg 参数、允许短时单轨输入，并隔离及探测自定义录制目录。\n- 降低启动和长时间录制开销：FFmpeg 惰性且可重试初始化，录制进度不重排全表，持久化写入节流。\n- Syncfusion sliders 更新至 34.2.5；42 项公开平台接口合同、完整测试和全平台串行发布门禁覆盖 Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64。",
+      "version": "3.0.4",
+      "build_number": 4092,
+      "version_num": 300004092,
+      "version_desc": "- 修正移动端比例。\n- 设置-> 视频添加沉沁选择。\n- 优化返回处理。\n- 增加小屏选择其他直播间。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.0"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.4"
     },
     "macos": {
-      "version": "3.0.0",
-      "build_number": 4088,
-      "version_num": 300004088,
-      "version_desc": "- 修复 Android 3.0.0 直播页系统侧滑返回失效：移除全局返回拦截，启用预测性返回，并由路由局部 PopScope 区分普通页、横屏/全屏和弹窗；退出路由前不再提前清理播放器监听。\n- 新增只读上游全差异审查工作流与合并后全仓扫描，固定 Git 依赖到 40 位提交；全平台工作流按 Android、Windows、Linux、Apple 阶段串行。\n- 修复 Windows/MSIX 日志目录入口指向错误层级且忽略打开结果的问题。\n- 同步并审查最新上游 liuchuancong/pure_live@e808dcae；吸收多窗口开关与历史容量配置，并保留维护仓库版本、更新源和按需串行构建策略。\n- 修复上游直播页 Shell 回归：普通手机页恢复视频、画质/线路与弹幕列表同时可见，桌面恢复可见侧栏，IPTV 不预留空面板。\n- 补齐上游合并门禁、布局 Widget 回归、历史容量备份/边界/响应式持久化、多窗口升级默认值和英文录制提示。\n- 修复跨房间横竖屏比例串联：房间变化立即清理旧视频宽高，宽高成对有效后才应用真实比例。\n- 修复 Windows 重复启动卡顿及宽屏/全屏进入画中画后状态丢失；无参数二次启动在 Flutter engine 前拦截，协议和多窗口参数继续转发。\n- 修复 YY 部分直播间 ErrAuthNotPass：对齐当前 StreamManager 合同，失败时自动回退官方匿名移动 HLS，并实读上游 #798 房间清单。\n- 增强 Android/斗鱼录制：统一播放请求头、重新解析过期 CDN、正确引用 FFmpeg 参数、允许短时单轨输入，并隔离及探测自定义录制目录。\n- 降低启动和长时间录制开销：FFmpeg 惰性且可重试初始化，录制进度不重排全表，持久化写入节流。\n- Syncfusion sliders 更新至 34.2.5；42 项公开平台接口合同、完整测试和全平台串行发布门禁覆盖 Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64。",
+      "version": "3.0.4",
+      "build_number": 4092,
+      "version_num": 300004092,
+      "version_desc": "- 修正移动端比例。\n- 设置-> 视频添加沉沁选择。\n- 优化返回处理。\n- 增加小屏选择其他直播间。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.0"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.4"
     },
     "ios": {
-      "version": "3.0.0",
-      "build_number": 4088,
-      "version_num": 300004088,
-      "version_desc": "- 修复 Android 3.0.0 直播页系统侧滑返回失效：移除全局返回拦截，启用预测性返回，并由路由局部 PopScope 区分普通页、横屏/全屏和弹窗；退出路由前不再提前清理播放器监听。\n- 新增只读上游全差异审查工作流与合并后全仓扫描，固定 Git 依赖到 40 位提交；全平台工作流按 Android、Windows、Linux、Apple 阶段串行。\n- 修复 Windows/MSIX 日志目录入口指向错误层级且忽略打开结果的问题。\n- 同步并审查最新上游 liuchuancong/pure_live@e808dcae；吸收多窗口开关与历史容量配置，并保留维护仓库版本、更新源和按需串行构建策略。\n- 修复上游直播页 Shell 回归：普通手机页恢复视频、画质/线路与弹幕列表同时可见，桌面恢复可见侧栏，IPTV 不预留空面板。\n- 补齐上游合并门禁、布局 Widget 回归、历史容量备份/边界/响应式持久化、多窗口升级默认值和英文录制提示。\n- 修复跨房间横竖屏比例串联：房间变化立即清理旧视频宽高，宽高成对有效后才应用真实比例。\n- 修复 Windows 重复启动卡顿及宽屏/全屏进入画中画后状态丢失；无参数二次启动在 Flutter engine 前拦截，协议和多窗口参数继续转发。\n- 修复 YY 部分直播间 ErrAuthNotPass：对齐当前 StreamManager 合同，失败时自动回退官方匿名移动 HLS，并实读上游 #798 房间清单。\n- 增强 Android/斗鱼录制：统一播放请求头、重新解析过期 CDN、正确引用 FFmpeg 参数、允许短时单轨输入，并隔离及探测自定义录制目录。\n- 降低启动和长时间录制开销：FFmpeg 惰性且可重试初始化，录制进度不重排全表，持久化写入节流。\n- Syncfusion sliders 更新至 34.2.5；42 项公开平台接口合同、完整测试和全平台串行发布门禁覆盖 Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64。",
+      "version": "3.0.4",
+      "build_number": 4092,
+      "version_num": 300004092,
+      "version_desc": "- 修正移动端比例。\n- 设置-> 视频添加沉沁选择。\n- 优化返回处理。\n- 增加小屏选择其他直播间。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.0"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.4"
     }
-  },
-  "windows_msix_available": false
+  }
 }

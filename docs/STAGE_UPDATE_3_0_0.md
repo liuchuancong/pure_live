@@ -1,7 +1,7 @@
 # v3.0.0 全平台稳定版
 
 - 版本：`3.0.0+4088`
-- 维护仓库：`wzgrx/pure_live`
+- 维护仓库：`liuchuancong/pure_live`
 - 上游基线：`liuchuancong/pure_live@e808dcae`
 - 发布日期：2026-08-25
 
@@ -24,7 +24,7 @@
 - 修复正式发布工作流的 Windows artifact Action 无效 SHA，固定第三方 Action 完整提交，并阻止任一请求平台失败后创建不完整 Release。
 - 修复 Windows 长路径本机构建的 Kotlin 增量缓存跨盘回退：优先使用与 Pub 缓存同盘的稳定短路径目录联接，保留 `SUBST` 兼容后备。
 - 修复 Windows Firebase C++ SDK 大文件下载中断及旧 `extracted` 目录串版：增加续传、长度/ZIP/SHA256/版本头校验，并显式绑定 13.11.0 SDK。
-- 保持 `wzgrx/pure_live` 为应用内更新、版本历史和下载源；上游仓库地址只用于源码基线与贡献链接。
+- 保持 `liuchuancong/pure_live` 为应用内更新、版本历史和下载源；上游仓库地址只用于源码基线与贡献链接。
 - 修复上游 #793、#794、#797：Windows 重复启动在 native engine 前拦截、PiP 前后恢复全屏/宽屏表达状态、跨房间清理旧视频宽高避免横竖屏比例串联。
 - 修复上游 #798：YY 对齐当前 StreamManager 合同，并为被 HTTP 路由拒绝但官方匿名 HLS 可播的频道增加自动回退和实际流去重。
 - 合并上游录制配置持久化与动态缓存限制；保留 HTTPS 证书校验，并以回归锁定 FFmpeg 命令，避免用关闭 TLS 校验掩盖真实 CDN/证书问题。
