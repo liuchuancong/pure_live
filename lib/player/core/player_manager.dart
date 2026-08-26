@@ -1646,6 +1646,15 @@ class PlayerManager {
         _heightSubject.add(event);
       }),
     );
+    _subscriptions.add(
+      CombineLatestStream.combine2<int?, int?, bool>(
+        width.where((w) => w != null && w > 0),
+        height.where((h) => h != null && h > 0),
+        (w, h) => h! >= w!,
+      ).distinct().listen((event) {
+        isVerticalVideo.value = event;
+      }),
+    );
   }
 
   Future<void> _clearSubscriptions() async {

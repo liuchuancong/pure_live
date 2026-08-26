@@ -15,6 +15,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:volume_controller/volume_controller.dart';
 import 'package:pure_live/player/core/player_manager.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:scrollview_observer/scrollview_observer.dart';
 import 'package:pure_live/player/models/player_exception.dart';
 import 'package:pure_live/player/models/player_error_type.dart';
@@ -975,6 +976,18 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   Future<void> enterFullScreen() async {
     await WindowService().doEnterFullScreen();
     GlobalPlayerState.to.isFullscreen.value = true;
+
+    // Desktop full screen is already handled by window_manager above. Calling
+    // landScape there issued a second setFullScreen(true) while the first
+    // native transition was still running, producing inconsistent work-area
+    // bounds on Windows systems with a side taskbar.
+    if (PlatformUtils.isMobile) {
+      if (_playerManager.isVerticalVideo.value) {
+        await WindowService().verticalScreen();
+      } else {
+        await WindowService().landScape();
+      }
+    }
   }
 
   void toggleWindowFullScreen() {
