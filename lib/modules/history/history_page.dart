@@ -89,7 +89,12 @@ class _HistoryPageState extends State<HistoryPage> {
                               onSelected: (_) => setDialogState(() => draftLimit = value),
                             ),
                           ),
-                          if (!presetOptions.contains(draftLimit))
+                          ChoiceChip(
+                            label: Text(i18n('history_unlimited'), style: AppTextStyles.t12),
+                            selected: draftLimit == unlimitedHistoryLimit,
+                            onSelected: (_) => setDialogState(() => draftLimit = unlimitedHistoryLimit),
+                          ),
+                          if (!presetOptions.contains(draftLimit) && draftLimit != unlimitedHistoryLimit)
                             ChoiceChip(
                               label: Text('$draftLimit', style: AppTextStyles.t12),
                               selected: true,
@@ -132,7 +137,12 @@ class _HistoryPageState extends State<HistoryPage> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      Text('${i18n("current_value")}: $draftLimit', style: AppTextStyles.t12Muted),
+                      Text(
+                        '${i18n("current_value")}: ${_historyLimitLabel(draftLimit)}',
+                        style: AppTextStyles.t12Muted,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(i18n('history_limit_desc'), style: AppTextStyles.t12Muted),
                     ],
                   ),
                 );
@@ -146,7 +156,6 @@ class _HistoryPageState extends State<HistoryPage> {
             ),
             TextButton(
               onPressed: () {
-                if (draftLimit <= 0) return;
                 controller.setHistoryLimit(draftLimit);
                 if (context.mounted) Navigator.pop(context);
               },
@@ -187,7 +196,10 @@ class _HistoryPageState extends State<HistoryPage> {
         centerTitle: true,
         title: Obx(() {
           final controller = SettingsService.to.history;
-          return Text('${i18n("history")} (${controller.historyRooms.v.length}/${controller.historyLimit.v})');
+          return Text(
+            '${i18n("history")} '
+            '(${controller.historyRooms.v.length}/${_historyLimitLabel(controller.historyLimit.v)})',
+          );
         }),
         actions: [
           IconButton(
@@ -242,5 +254,9 @@ class _HistoryPageState extends State<HistoryPage> {
         );
       }),
     );
+  }
+
+  String _historyLimitLabel(int limit) {
+    return limit == unlimitedHistoryLimit ? i18n('history_unlimited') : '$limit';
   }
 }

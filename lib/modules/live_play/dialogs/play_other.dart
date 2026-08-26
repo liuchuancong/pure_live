@@ -269,21 +269,7 @@ class _RoomSwitchCard extends StatelessWidget {
       return i18n('history_earlier');
     }
 
-    final watched = DateTime.fromMillisecondsSinceEpoch(value);
-
-    final now = DateTime.now();
-
-    final sameDay = watched.year == now.year && watched.month == now.month && watched.day == now.day;
-
-    final hour = watched.hour.toString().padLeft(2, '0');
-
-    final minute = watched.minute.toString().padLeft(2, '0');
-
-    final text = sameDay
-        ? '$hour:$minute'
-        : '${watched.month.toString().padLeft(2, '0')}-${watched.day.toString().padLeft(2, '0')} $hour:$minute';
-
-    return i18n(sameDay ? 'watched_today_at' : 'watched_at', args: {'time': text});
+    return i18n('watched_at', args: {'time': formatHistoryWatchedAt(value)});
   }
 
   @override
@@ -364,6 +350,15 @@ class _RoomSwitchCard extends StatelessWidget {
       ),
     );
   }
+}
+
+@visibleForTesting
+String formatHistoryWatchedAt(int millisecondsSinceEpoch) {
+  final watched = DateTime.fromMillisecondsSinceEpoch(millisecondsSinceEpoch);
+  String twoDigits(int value) => value.toString().padLeft(2, '0');
+  return '${watched.year.toString().padLeft(4, '0')}-'
+      '${twoDigits(watched.month)}-${twoDigits(watched.day)} '
+      '${twoDigits(watched.hour)}:${twoDigits(watched.minute)}';
 }
 
 class _RoomSwitchCover extends StatelessWidget {

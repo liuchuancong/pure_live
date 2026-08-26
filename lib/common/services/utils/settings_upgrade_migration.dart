@@ -178,8 +178,7 @@ class SettingsUpgradeMigration {
         }
       }
     }
-    final values = order.map((identity) => merged[identity]!).toList();
-    return key == 'historyRooms' && values.length > 50 ? values.take(50).toList() : values;
+    return order.map((identity) => merged[identity]!).toList();
   }
 
   static List<Map<String, dynamic>> _decodeObjectList(dynamic raw) {
