@@ -1,21 +1,21 @@
 {
-  "version": "3.0.3",
-  "build_number": 4091,
-  "version_num": 300034091,
-  "version_desc": "- 修复 Android 原生 Surface 将缺失旋转元数据误判为 90/270 度，导致竖屏直播在普通页、横屏全屏、画中画和应用内小窗被横向压窄。\n- MediaKit 应用层识别与 Android Surface 共用显示尺寸解析器：只使用完整 dw/dh 或 w/h 尺寸对，旋转归一化后只交换一次。\n- Surface 尺寸更新按解码事件顺序串行提交，避免房间、线路、清晰度、全屏和小窗切换时旧异步结果覆盖新尺寸。\n- 恢复横屏直播记录半屏多列布局：按可读卡片宽度自适应一列/两列，常见手机显示 2×2，狭窄窗口安全回退单列。\n- 压缩直播记录标题、Tab、间距和信息区并恢复两行高度约束，四个直播间卡片可完整显示。\n- 增加竖屏尺寸、旋转、Surface 一致性和半屏网格回归；本轮只构建 Android arm64-v8a Release。",
+  "version": "3.0.4",
+  "build_number": 4092,
+  "version_num": 300044092,
+  "version_desc": "- 修正移动端多层比例控制：普通页、横屏全屏、系统画中画和应用内小窗共享唯一可信显示比例。\n- 稳定横屏、竖屏和近方形源保留真实比例；缺失、瞬态或异常解码尺寸按展示方向安全回退，避免画面被压成细条。\n- 移动端播放器适配器在统一画框内填充，桌面继续保留原生缩放与 Windows 可见视口策略。\n- 直播记录显示完整本地日期时间，保留数量支持任意正整数，0 表示保留全部记录；升级、备份与恢复语义一致。\n- 同步并审查上游到 c7d99cc3，吸收录制权限检查并保留经过回归的返回、FFmpeg 预热与 HTTPS 校验策略。\n- 增加可信比例、移动端统一画框、普通页/全屏/小窗和历史记录回归；本轮只构建 Android arm64-v8a Release。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.3",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.4",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.0.3",
-      "build_number": 4091,
-      "version_num": 300034091,
-      "version_desc": "- 修复 Android 原生 Surface 将缺失旋转元数据误判为 90/270 度，导致竖屏直播在普通页、横屏全屏、画中画和应用内小窗被横向压窄。\n- MediaKit 应用层识别与 Android Surface 共用显示尺寸解析器：只使用完整 dw/dh 或 w/h 尺寸对，旋转归一化后只交换一次。\n- Surface 尺寸更新按解码事件顺序串行提交，避免房间、线路、清晰度、全屏和小窗切换时旧异步结果覆盖新尺寸。\n- 恢复横屏直播记录半屏多列布局：按可读卡片宽度自适应一列/两列，常见手机显示 2×2，狭窄窗口安全回退单列。\n- 压缩直播记录标题、Tab、间距和信息区并恢复两行高度约束，四个直播间卡片可完整显示。\n- 增加竖屏尺寸、旋转、Surface 一致性和半屏网格回归；本轮只构建 Android arm64-v8a Release。",
+      "version": "3.0.4",
+      "build_number": 4092,
+      "version_num": 300044092,
+      "version_desc": "- 修正移动端多层比例控制：普通页、横屏全屏、系统画中画和应用内小窗共享唯一可信显示比例。\n- 稳定横屏、竖屏和近方形源保留真实比例；缺失、瞬态或异常解码尺寸按展示方向安全回退，避免画面被压成细条。\n- 移动端播放器适配器在统一画框内填充，桌面继续保留原生缩放与 Windows 可见视口策略。\n- 直播记录显示完整本地日期时间，保留数量支持任意正整数，0 表示保留全部记录；升级、备份与恢复语义一致。\n- 同步并审查上游到 c7d99cc3，吸收录制权限检查并保留经过回归的返回、FFmpeg 预热与 HTTPS 校验策略。\n- 增加可信比例、移动端统一画框、普通页/全屏/小窗和历史记录回归；本轮只构建 Android arm64-v8a Release。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.3",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.4",
       "android_abis": [
         "arm64-v8a"
       ]
