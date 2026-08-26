@@ -10,6 +10,7 @@ import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/danmaku/douyu_danmaku.dart';
 import 'package:pure_live/core/site/douyu/douyu_utils.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
+import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 
 class DouyuSite implements LiveSite, LiveSiteRoomRefresher {
@@ -137,7 +138,11 @@ class DouyuSite implements LiveSite, LiveSiteRoomRefresher {
         if (qualities.any((quality) => quality.selectionId == rate)) continue;
         qualities.add(
           LivePlayQuality(
-            quality: name?.isNotEmpty == true ? name! : 'rate $rate',
+            quality: LiveQualityLabel.normalize(
+              platform: Sites.douyuSite,
+              rawLabel: name?.isNotEmpty == true ? name! : '',
+              id: rate,
+            ),
             id: rate,
             sort: rateItems.length - index,
             data: DouyuPlayData(rate, List<String>.unmodifiable(cdns)),
@@ -148,7 +153,12 @@ class DouyuSite implements LiveSite, LiveSiteRoomRefresher {
     if (qualities.isEmpty) {
       final rate = _asInt(playData['rate']) ?? -1;
       qualities.add(
-        LivePlayQuality(quality: 'default', id: rate, sort: 1, data: DouyuPlayData(rate, List.unmodifiable(cdns))),
+        LivePlayQuality(
+          quality: LiveQualityLabel.normalize(platform: Sites.douyuSite, rawLabel: 'default', id: rate),
+          id: rate,
+          sort: 1,
+          data: DouyuPlayData(rate, List.unmodifiable(cdns)),
+        ),
       );
     }
     return qualities;

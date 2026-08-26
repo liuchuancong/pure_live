@@ -113,6 +113,46 @@ void main() {
     expect(await newest.exists(), isTrue);
   });
 
+  test('clear and size enforcement preserve an active recording directory', () async {
+    final service = serviceFor(null);
+    final managed = await service.getRecordDir();
+    final activeDirectory = await Directory(p.join(managed.path, 'douyin', 'active')).create(recursive: true);
+    final oldDirectory = await Directory(p.join(managed.path, 'douyin', 'old')).create(recursive: true);
+    final active = await File(p.join(activeDirectory.path, 'active.ts')).writeAsBytes(List<int>.filled(4096, 1));
+    final old = await File(p.join(oldDirectory.path, 'old.mp4')).writeAsBytes(List<int>.filled(4096, 2));
+    await old.setLastModified(DateTime(2020));
+    service.protectDirectory(activeDirectory.path);
+
+    await service.enforceLimit(maxMB: 0);
+    expect(await active.exists(), isTrue);
+    expect(await old.exists(), isFalse);
+
+    await service.clearAll();
+    expect(await active.exists(), isTrue);
+    expect(service.isDirectoryProtected(activeDirectory.path), isTrue);
+
+    service.releaseDirectory(activeDirectory.path);
+    await service.clearAll();
+    expect(await active.exists(), isFalse);
+  });
+
+  test('active-directory protection is reference counted', () async {
+    final service = serviceFor(null);
+    final managed = await service.getRecordDir();
+    final activeDirectory = await Directory(p.join(managed.path, 'shared')).create(recursive: true);
+    final active = await File(p.join(activeDirectory.path, 'active.ts')).writeAsBytes([1]);
+
+    service.protectDirectory(activeDirectory.path);
+    service.protectDirectory(activeDirectory.path);
+    service.releaseDirectory(activeDirectory.path);
+    await service.clearAll();
+    expect(await active.exists(), isTrue);
+
+    service.releaseDirectory(activeDirectory.path);
+    await service.clearAll();
+    expect(await active.exists(), isFalse);
+  });
+
   test('room directory labels are portable even without pinyin mode', () async {
     final service = serviceFor(null);
 

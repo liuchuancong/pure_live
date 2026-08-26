@@ -20,6 +20,41 @@ void main() {
     expect(RecorderContinuationPolicy.shouldRetryFailure(errorCode: -2, rawLogs: ''), isFalse);
     expect(RecorderContinuationPolicy.shouldRetryFailure(errorCode: 1, rawLogs: 'Permission denied'), isFalse);
     expect(RecorderContinuationPolicy.shouldRetryFailure(errorCode: 1, rawLogs: 'Error opening output file'), isFalse);
+    expect(
+      RecorderContinuationPolicy.shouldRetryFailure(errorCode: 1, rawLogs: 'Unrecognized option reconnect'),
+      isFalse,
+    );
+    expect(RecorderContinuationPolicy.shouldRetryFailure(errorCode: 1, rawLogs: 'Protocol not found'), isFalse);
+  });
+
+  test('polling backoff is bounded and can be disabled', () {
+    expect(
+      RecorderContinuationPolicy.pollingDelay(
+        failureCount: 3,
+        baseSeconds: 10,
+        maximumSeconds: 60,
+        enableBackoff: true,
+      ),
+      const Duration(seconds: 60),
+    );
+    expect(
+      RecorderContinuationPolicy.pollingDelay(
+        failureCount: 20,
+        baseSeconds: 30,
+        maximumSeconds: 300,
+        enableBackoff: true,
+      ),
+      const Duration(seconds: 300),
+    );
+    expect(
+      RecorderContinuationPolicy.pollingDelay(
+        failureCount: 8,
+        baseSeconds: 30,
+        maximumSeconds: 300,
+        enableBackoff: false,
+      ),
+      const Duration(seconds: 30),
+    );
   });
 
   test('a restarted recording gets a fresh timestamp and zeroed progress', () {

@@ -9,6 +9,7 @@ import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/danmaku/soop_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
+import 'package:pure_live/core/utils/live_quality_label.dart';
 
 class SoopSite extends LiveSite implements LiveSiteRoomRefresher {
   @override
@@ -240,15 +241,20 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher {
     final presets = data is Map ? data["viewpreset"] : null;
     if (presets is! List) return Future.value(qualities);
     for (final quality in presets.whereType<Map>()) {
-      var key = quality["name"];
-      if (key == null || key == "auto") {
-        continue;
-      }
-      qualityMap.putIfAbsent(key, () {
+      final key = quality["name"]?.toString().trim() ?? '';
+      if (key.isEmpty || key.toLowerCase() == 'auto') continue;
+      final identity = key.toLowerCase();
+      final bitrate = int.tryParse(quality['bps']?.toString() ?? '') ?? 0;
+      qualityMap.putIfAbsent(identity, () {
         return LivePlayQuality(
-          quality: key.toString(),
+          quality: LiveQualityLabel.normalize(
+            platform: Sites.soopSite,
+            rawLabel: key.toString(),
+            id: key,
+            bitrate: bitrate > 0 ? bitrate : null,
+          ),
           id: key.toString(),
-          sort: int.tryParse(quality["bps"].toString()) ?? 0,
+          sort: _qualitySort(key.toString(), bitrate),
           data: <String>[],
         );
       });
@@ -256,6 +262,23 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher {
     qualities = qualityMap.values.toList();
     qualities.sort((a, b) => b.sort.compareTo(a.sort));
     return Future.value(qualities);
+  }
+
+  /// SOOP's request name is the stable quality identity. `bps` is useful only
+  /// inside the same tier: source presets are occasionally returned with a
+  /// missing/zero bitrate and must not fall below transcoded variants.
+  static int _qualitySort(String rawName, int bitrate) {
+    final name = rawName.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '');
+    final rank = switch (name) {
+      'original' || 'origin' || 'source' => 6,
+      'master' || 'uhd' => 5,
+      'fullhd' || 'fhd' => 4,
+      'hd' => 3,
+      'sd' || 'normal' => 2,
+      'low' || 'ld' => 1,
+      _ => 0,
+    };
+    return rank == 0 ? bitrate : rank * 100000000 + bitrate.clamp(0, 99999999);
   }
 
   @override
@@ -271,8 +294,9 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher {
     }
 
     try {
-      final cdnUrl = await getCdnUrl(rmd: rmd, cdn: cdn, bno: bno, quality: quality.quality);
-      final aid = await getStreamAid(roomId: detail.roomId ?? "", bno: bno, quality: quality.quality);
+      final qualityId = quality.selectionId.toString();
+      final cdnUrl = await getCdnUrl(rmd: rmd, cdn: cdn, bno: bno, quality: qualityId);
+      final aid = await getStreamAid(roomId: detail.roomId ?? "", bno: bno, quality: qualityId);
 
       if (cdnUrl.isEmpty || aid.isEmpty) return const [];
       return ['$cdnUrl?aid=$aid'];

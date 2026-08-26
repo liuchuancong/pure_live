@@ -14,6 +14,7 @@ import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
+import 'package:pure_live/core/utils/live_quality_label.dart';
 
 class KuaishowSite implements LiveSite, LiveSiteRoomRefresher {
   @override
@@ -222,7 +223,11 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher {
     final qualities = merged.values
         .map(
           (entry) => LivePlayQuality(
-            quality: entry.name,
+            quality: LiveQualityLabel.normalize(
+              platform: Sites.kuaishouSite,
+              rawLabel: entry.name,
+              id: '${entry.name}\u0000${entry.sort}',
+            ),
             id: '${entry.name}\u0000${entry.sort}',
             sort: entry.sort,
             data: List<String>.unmodifiable(entry.urls),

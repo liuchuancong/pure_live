@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer';
 import 'dart:collection';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
 
@@ -27,6 +28,7 @@ class FFmpegScheduler {
 
   /// 防止重复调度
   bool _isScheduling = false;
+  Timer? _scheduleTimer;
 
   /// 添加任务
   void enqueue({required String taskId, required Future<void> Function(TaskCancelToken token) taskRunner}) {
@@ -53,12 +55,21 @@ class FFmpegScheduler {
   /// 调用 cancel token
   Future<void> cancel(String taskId) async {
     _taskQueue.removeWhere((e) => e.taskId == taskId);
+    if (_taskQueue.isEmpty) {
+      _scheduleTimer?.cancel();
+      _scheduleTimer = null;
+    }
 
     final runningTask = _runningTasks[taskId];
 
     if (runningTask != null) {
       if (runningTask.cancelToken.isCancelled) {
-        log('Task $taskId is already being cancelled, ignoring duplicate call.', name: 'FFmpegScheduler');
+        log('Task $taskId is already being cancelled; waiting for its lifecycle fence.', name: 'FFmpegScheduler');
+        try {
+          await runningTask.future.timeout(const Duration(seconds: 20));
+        } catch (e) {
+          log('Wait for cancelled task error: $e', name: 'FFmpegScheduler');
+        }
         return;
       }
 
@@ -66,6 +77,7 @@ class FFmpegScheduler {
 
       try {
         await runningTask.cancelToken.cancel();
+        await runningTask.future.timeout(const Duration(seconds: 20));
       } catch (e) {
         log('Cancel task error: $e', name: 'FFmpegScheduler');
       }
@@ -77,14 +89,15 @@ class FFmpegScheduler {
   /// 清空所有
   Future<void> clearAll() async {
     _taskQueue.clear();
+    _scheduleTimer?.cancel();
+    _scheduleTimer = null;
 
     final tasks = _runningTasks.values.toList();
-
-    _runningTasks.clear();
 
     for (final task in tasks) {
       try {
         await task.cancelToken.cancel();
+        await task.future.timeout(const Duration(seconds: 20));
       } catch (e) {
         log('Clear task error: $e', name: 'FFmpegScheduler');
       }
@@ -93,7 +106,7 @@ class FFmpegScheduler {
 
   /// 调度核心
   void _scheduleNext() {
-    if (_isScheduling) return;
+    if (_isScheduling || _scheduleTimer?.isActive == true) return;
 
     _isScheduling = true;
 
@@ -102,9 +115,10 @@ class FFmpegScheduler {
         final now = DateTime.now();
         final diff = now.difference(_lastStartTime);
 
-        if (diff.inSeconds < 5) {
-          Future.delayed(Duration(seconds: 5 - diff.inSeconds), () {
-            _isScheduling = false;
+        const minimumGap = Duration(seconds: 5);
+        if (diff < minimumGap) {
+          _scheduleTimer = Timer(minimumGap - diff, () {
+            _scheduleTimer = null;
             _scheduleNext();
           });
           return;
@@ -125,10 +139,16 @@ class FFmpegScheduler {
   void _runTask(_SchedulerTask task) {
     final cancelToken = TaskCancelToken();
 
-    final future = task.taskRunner(cancelToken).whenComplete(() {
-      _runningTasks.remove(task.taskId);
-      _scheduleNext();
-    });
+    final future = (() async {
+      try {
+        await task.taskRunner(cancelToken);
+      } catch (error, stackTrace) {
+        log('Uncaught scheduled task error: $error\n$stackTrace', name: 'FFmpegScheduler');
+      } finally {
+        _runningTasks.remove(task.taskId);
+        _scheduleNext();
+      }
+    })();
 
     _runningTasks[task.taskId] = _RunningTask(taskId: task.taskId, future: future, cancelToken: cancelToken);
   }
@@ -195,10 +215,20 @@ class _RunningTask {
 ///
 class TaskCancelToken {
   bool _isCancelled = false;
+  bool _cancelCallbackInvoked = false;
+  FutureOr<void> Function()? _onCancel;
 
   bool get isCancelled => _isCancelled;
 
-  FutureOr<void> Function()? onCancel;
+  FutureOr<void> Function()? get onCancel => _onCancel;
+
+  set onCancel(FutureOr<void> Function()? callback) {
+    _onCancel = callback;
+    if (_isCancelled && callback != null && !_cancelCallbackInvoked) {
+      _cancelCallbackInvoked = true;
+      unawaited(_invokeLateCancel(callback));
+    }
+  }
 
   Future<void> cancel() async {
     if (_isCancelled) return;
@@ -206,9 +236,21 @@ class TaskCancelToken {
     _isCancelled = true;
 
     try {
-      await onCancel?.call();
+      final callback = _onCancel;
+      if (callback != null && !_cancelCallbackInvoked) {
+        _cancelCallbackInvoked = true;
+        await callback.call();
+      }
     } catch (e) {
       log('Cancel token error: $e', name: 'FFmpegScheduler');
+    }
+  }
+
+  Future<void> _invokeLateCancel(FutureOr<void> Function() callback) async {
+    try {
+      await callback();
+    } catch (e) {
+      log('Late cancel token callback error: $e', name: 'FFmpegScheduler');
     }
   }
 }

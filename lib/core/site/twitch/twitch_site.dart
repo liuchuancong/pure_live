@@ -11,6 +11,7 @@ import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/danmaku/twitch_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/utils/twitch/twitch_models.dart';
+import 'package:pure_live/core/utils/live_quality_label.dart';
 
 class TwitchSite implements LiveSite, LiveSiteRoomRefresher {
   @override
@@ -253,7 +254,7 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher {
   /// another's shared URL list.
   @visibleForTesting
   static List<LivePlayQuality> parseMasterPlaylist(String content, {required Uri masterUri}) {
-    final grouped = <String, ({String label, int bandwidth, List<String> urls})>{};
+    final grouped = <String, ({String label, int bandwidth, int sort, List<String> urls})>{};
     Map<String, String>? pendingAttributes;
     for (final rawLine in content.split(RegExp(r'\r?\n'))) {
       final line = rawLine.trim();
@@ -275,16 +276,20 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher {
       final height = int.tryParse(resolution?.group(2) ?? '') ?? 0;
       final frameRate = double.tryParse(attributes['FRAME-RATE'] ?? '') ?? 0;
       final videoGroup = attributes['VIDEO'] ?? '';
-      final label = _qualityName(
-        bandwidth,
-        height: height,
-        frameRate: frameRate,
-        source: videoGroup.toLowerCase() == 'chunked',
-      );
+      final source = videoGroup.toLowerCase() == 'chunked';
+      final label = _qualityName(bandwidth, height: height, frameRate: frameRate, source: source);
       final id = '$height:${frameRate.round()}:$bandwidth:${videoGroup.toLowerCase()}';
       final existing = grouped[id];
       if (existing == null) {
-        grouped[id] = (label: label, bandwidth: bandwidth, urls: <String>[uri.toString()]);
+        grouped[id] = (
+          label: label,
+          bandwidth: bandwidth,
+          // Twitch calls the broadcaster's untouched stream `chunked`. Its
+          // reported average BANDWIDTH can temporarily be below a transcode,
+          // so semantic source priority is more reliable than raw bitrate.
+          sort: source ? 1 << 30 : bandwidth,
+          urls: <String>[uri.toString()],
+        );
       } else if (!existing.urls.contains(uri.toString())) {
         existing.urls.add(uri.toString());
       }
@@ -295,7 +300,7 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher {
           (entry) => LivePlayQuality(
             quality: entry.value.label,
             id: entry.key,
-            sort: entry.value.bandwidth,
+            sort: entry.value.sort,
             data: List<String>.unmodifiable(entry.value.urls),
           ),
         )
@@ -318,8 +323,14 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher {
   static String _qualityName(int bandwidth, {int height = 0, double frameRate = 0, bool source = false}) {
     if (height > 0) {
       final fps = frameRate >= 45 ? frameRate.round().toString() : '';
-      return '${height}p$fps${source ? ' (Source)' : ''}';
+      return LiveQualityLabel.normalize(
+        platform: Sites.twitchSite,
+        rawLabel: '${height}p$fps${source ? ' (Source)' : ''}',
+        bitrate: bandwidth,
+        resolution: '${height * 16 ~/ 9}x$height',
+      );
     }
+    if (source) return '原画';
     if (bandwidth > 5000000) return '1080P';
     if (bandwidth > 2500000) return '720P';
     if (bandwidth > 1000000) return '480P';

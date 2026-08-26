@@ -31,6 +31,7 @@ class CacheService extends GetxService {
 
   final RecorderConfiguredPathResolver _configuredPathResolver;
   final RecorderDefaultDirectoryResolver _defaultDirectoryResolver;
+  final Map<String, int> _protectedDirectories = <String, int>{};
 
   /// Returns the only directory whose contents this service is allowed to
   /// manage. The default application RECORDS directory is already isolated;
@@ -72,11 +73,36 @@ class CacheService extends GetxService {
 
   bool _isMarker(FileSystemEntity entity) => p.basename(entity.path) == ownershipMarkerName;
 
-  Future<List<File>> _managedFiles() async {
+  /// Prevents cache cleanup from deleting an active recording or merge.
+  void protectDirectory(String directoryPath) {
+    final normalized = _normalizedAbsolute(directoryPath);
+    if (normalized.isNotEmpty) {
+      _protectedDirectories.update(normalized, (count) => count + 1, ifAbsent: () => 1);
+    }
+  }
+
+  void releaseDirectory(String directoryPath) {
+    final normalized = _normalizedAbsolute(directoryPath);
+    final count = _protectedDirectories[normalized] ?? 0;
+    if (count <= 1) {
+      _protectedDirectories.remove(normalized);
+    } else {
+      _protectedDirectories[normalized] = count - 1;
+    }
+  }
+
+  bool isDirectoryProtected(String directoryPath) {
+    final normalized = _normalizedAbsolute(directoryPath);
+    return _protectedDirectories.keys.any((root) => _sameOrWithin(root, normalized));
+  }
+
+  Future<List<File>> _managedFiles({bool excludeProtected = false}) async {
     final dir = await getRecordDir();
     final files = <File>[];
     await for (final entity in dir.list(recursive: true, followLinks: false)) {
-      if (entity is File && !_isMarker(entity)) files.add(entity);
+      if (entity is File && !_isMarker(entity) && (!excludeProtected || !_isProtectedPath(entity.path))) {
+        files.add(entity);
+      }
     }
     return files;
   }
@@ -97,11 +123,25 @@ class CacheService extends GetxService {
   /// Clears only files owned by Pure Live and preserves the ownership marker.
   Future<void> clearAll() async {
     final dir = await getRecordDir();
-    await for (final entity in dir.list(followLinks: false)) {
-      if (_isMarker(entity)) continue;
+    final entities = await dir.list(recursive: true, followLinks: false).toList();
+    for (final entity in entities.whereType<File>()) {
+      if (_isMarker(entity) || _isProtectedPath(entity.path)) continue;
       try {
-        await entity.delete(recursive: entity is Directory);
-      } catch (_) {}
+        await entity.delete();
+      } on FileSystemException {
+        // A file may be rotated or locked by the recorder.
+      }
+    }
+
+    final directories = entities.whereType<Directory>().toList()
+      ..sort((left, right) => right.path.length.compareTo(left.path.length));
+    for (final directory in directories) {
+      if (_isProtectedPath(directory.path)) continue;
+      try {
+        if (await directory.list(followLinks: false).isEmpty) await directory.delete();
+      } on FileSystemException {
+        // Keep non-empty or concurrently used directories.
+      }
     }
   }
 
@@ -110,7 +150,7 @@ class CacheService extends GetxService {
   /// Returns false when no deletable file exists, allowing callers to stop
   /// rather than spinning forever on an empty/nested directory.
   Future<bool> deleteOldest() async {
-    final files = await _managedFiles();
+    final files = await _managedFiles(excludeProtected: true);
     if (files.isEmpty) return false;
     files.sort((a, b) => a.lastModifiedSync().compareTo(b.lastModifiedSync()));
     try {
@@ -127,7 +167,7 @@ class CacheService extends GetxService {
   /// work even when files disappear or become locked during rotation.
   Future<void> enforceLimit({double maxMB = 2048}) async {
     final maxBytes = (maxMB.clamp(0, double.infinity) * 1024 * 1024).round();
-    final files = await _managedFiles();
+    final files = await _managedFiles(excludeProtected: true);
     final entries = <({File file, int size, DateTime modified})>[];
     var totalBytes = 0;
     for (final file in files) {
@@ -161,6 +201,20 @@ class CacheService extends GetxService {
     return RegExp(r'^/data/(?:user|user_de)/\d+(?:/|$)').hasMatch(normalized) ||
         RegExp(r'^/data/data(?:/|$)').hasMatch(normalized);
   }
+
+  String _normalizedAbsolute(String value) {
+    if (value.trim().isEmpty) return '';
+    var normalized = p.normalize(p.absolute(value));
+    if (Platform.isWindows || Platform.isMacOS) normalized = normalized.toLowerCase();
+    return normalized;
+  }
+
+  bool _isProtectedPath(String value) {
+    final candidate = _normalizedAbsolute(value);
+    return _protectedDirectories.keys.any((root) => _sameOrWithin(root, candidate));
+  }
+
+  bool _sameOrWithin(String root, String candidate) => root == candidate || p.isWithin(root, candidate);
 
   Future<String> getDisplayPath() async => (await getRecordDir()).path;
 

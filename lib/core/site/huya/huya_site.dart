@@ -26,6 +26,7 @@ import 'package:pure_live/core/site/huya/huya_request_params.dart';
 import 'package:pure_live/core/tars/get_game_event_message_board_req.dart';
 import 'package:pure_live/core/tars/get_game_event_message_board_rsp.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
+import 'package:pure_live/core/utils/live_quality_label.dart';
 
 class HuyaSite implements LiveSite, LiveSiteRoomRefresher {
   @override
@@ -162,7 +163,12 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher {
     final qualities = unique.values
         .map(
           (rate) => LivePlayQuality(
-            quality: rate.name,
+            quality: LiveQualityLabel.normalize(
+              platform: Sites.huyaSite,
+              rawLabel: rate.name,
+              id: rate.bitRate,
+              bitrate: rate.bitRate > 0 ? rate.bitRate * 1000 : null,
+            ),
             id: rate.bitRate,
             sort: rate.bitRate == 0 ? 1 << 30 : rate.bitRate,
             data: <String, Object>{'urls': List<HuyaLineModel>.unmodifiable(data.lines), 'bitRate': rate.bitRate},
