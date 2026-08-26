@@ -21,12 +21,19 @@
 - mpv：以 `video-params` / `video-out-params` 作为显示尺寸事实来源，并提供 crop、aspect、rotate
   等属性：<https://github.com/mpv-player/mpv/blob/master/DOCS/man/input.rst>
 - mpv 官方 autocrop 与 FFmpeg cropdetect 都说明暗场会产生歧义；持续启用滤镜还可能影响硬解路径。
-  因此本项目采用“新会话最多两次低分辨率截图分析”，不在渲染循环运行检测：
+  因此本项目采用“新会话有界、低分辨率、证据满足后立即停止”的截图分析，不在渲染循环运行检测：
   <https://github.com/mpv-player/mpv/blob/master/TOOLS/lua/autocrop.lua>
 - LiveKit Flutter 的渲染器以真实 track 尺寸驱动 contain/cover，而不是让多个父子组件重复决定比例：
   <https://github.com/livekit/client-sdk-flutter/blob/main/lib/src/widgets/video_track_renderer.dart>
 
 ## 统一识别链
+
+### 0. 平台流声明
+
+- 抖音优先读取 `stream_url.extra.width/height`；
+- 缺失时读取默认清晰度 `resolution`、`stream_data.main.sdk_params` 和方向一致的候选分辨率；
+- 平台声明描述节目比例，解码元数据描述传输画布，两者分别保存；
+- 强声明可修正异常采样宽高，并为横屏画布内的竖屏节目提供跨播放器内核的初始几何。
 
 ### 1. 解码元数据
 
@@ -43,7 +50,7 @@
 - 两侧黑边的对称性、最小占比与中间保留区域；
 - 中央节目区域必须具备足够亮度或纹理变化；
 - 弹幕造成的少量白色像素按局部窗口容错；
-- 两次高置信度且边界一致的结果才提交；
+- 两次高置信度且边界一致的结果才提交；首帧为空或转场时继续后续有界采样；
 - 全暗场、转场、非对称遮罩与低置信结果保持现有几何。
 
 识别得到的裁边矩形只进入呈现几何。Flutter 用一个裁剪视口显示原始比例纹理，先去除编码黑边，
@@ -51,7 +58,8 @@
 
 ### 3. 会话、缓存与回退
 
-- 每次房间、线路、清晰度源切换都会生成新的 geometry generation；旧 Timer 的结果自动失效；
+- 每次房间、线路、清晰度源切换都会生成新的 geometry generation；旧 Timer 的结果自动失效，
+  上一画布的裁边坐标立即清除；
 - 同一进程内保存最多 96 个房间、最长 4 小时的稳定几何；重进房间先显示 provisional 快照，
   新的解码证据随后接管，避免 16:9 -> 9:16 的视觉跳变；
 - 缓存按 `platform:roomId` 隔离，不跨房间复用；
@@ -85,6 +93,6 @@
 - 新布局只在稳定有效方向为 portrait、总开关开启、手机宽度断点内生效；
 - 普通横屏继续原 16:9 页面、黑色全屏背景和原小窗比例；
 - 画面分析只有强对称黑边 + 活跃中心 + 两次一致证据才接管；
+- 渲染末端要求裁边后的比例与最终呈现比例一致，阻断旧裁边或异常裁边造成的二次压窄；
 - 识别结果、手动覆盖、质量切换、全屏与 PiP 均有确定性测试；
 - 运行期不安装 cropdetect 滤镜，不增加持续 CPU/GPU 任务。
-

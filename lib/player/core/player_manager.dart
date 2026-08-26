@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'dart:math' as math;
 
 import 'line_fallback_manager.dart';
+import 'live_stream_geometry_hint.dart';
 import 'portrait_stream_support.dart';
 import '../models/player_state.dart';
 import '../models/player_engine.dart';
@@ -146,6 +147,14 @@ class PlayerManager {
   int _geometrySessionGeneration = 0;
   int _contentProbeAttempts = 0;
   int? _contentProbeInFlightGeneration;
+  static const List<Duration> _contentProbeDelays = <Duration>[
+    Duration(milliseconds: 500),
+    Duration(milliseconds: 900),
+    Duration(milliseconds: 1500),
+    Duration(milliseconds: 2500),
+    Duration(milliseconds: 4000),
+    Duration(milliseconds: 6500),
+  ];
   final Map<String, _CachedVideoGeometry> _geometryCache = <String, _CachedVideoGeometry>{};
   late Floating floating;
   LiveRoom? currentFloatRoom;
@@ -337,13 +346,34 @@ class PlayerManager {
 
     final previousRoom = currentFloatRoom;
     final roomChanged = nextRoom != previousRoom;
-    if (!roomChanged) return;
-    final previous = videoGeometry.value;
-    if (previousRoom != null && previous.isStable && previous.hasValidDimensions && !previous.isProvisional) {
-      _rememberVideoGeometry(previousRoom.identityKey, previous);
+    VideoGeometrySnapshot next;
+    if (roomChanged) {
+      final previous = videoGeometry.value;
+      if (previousRoom != null && previous.isStable && previous.hasValidDimensions && !previous.isProvisional) {
+        _rememberVideoGeometry(previousRoom.identityKey, previous);
+      }
+      final cached = nextRoom == null ? null : _cachedVideoGeometry(nextRoom.identityKey);
+      next = cached == null ? _portraitDetector.reset() : _portraitDetector.seed(cached);
+    } else {
+      // A new URL in the same room is still a new decoded canvas. Keep only the
+      // last effective ratio while fresh evidence arrives; a crop from the old
+      // quality or CDN must never be applied to the replacement source.
+      next = _portraitDetector.beginSourceTransition();
     }
-    final cached = nextRoom == null ? null : _cachedVideoGeometry(nextRoom.identityKey);
-    final next = cached == null ? _portraitDetector.reset() : _portraitDetector.seed(cached);
+
+    final hint = LiveStreamGeometryHintResolver.resolve(nextRoom);
+    if (hint != null) {
+      next = _portraitDetector.observeSourceMetadata(
+        hint.width,
+        hint.height,
+        confidence: hint.confidence,
+        source: hint.source,
+      );
+      log(
+        'Source geometry hint ${hint.width}x${hint.height} (${hint.source}, ${hint.confidence.toStringAsFixed(2)})',
+        name: 'PlayerManager.VideoGeometry',
+      );
+    }
     _publishVideoGeometry(next, notifyController: false);
   }
 
@@ -388,21 +418,27 @@ class PlayerManager {
   }
 
   void _scheduleActiveContentProbe() {
+    final snapshot = videoGeometry.value;
+    final needsCanvasInspection =
+        snapshot.aspectRatio >= 1.10 || snapshot.hasActiveContentCrop || snapshot.sourceHintOverridesDecoder;
     if (!PlatformUtils.isMobile ||
         _disposed ||
         _isClosing ||
         _runtimeAudioOnly ||
         !isPlayingNow ||
-        _contentProbeAttempts >= 2 ||
+        _contentProbeAttempts >= _contentProbeDelays.length ||
         _contentProbeInFlightGeneration == _geometrySessionGeneration ||
         _contentProbeTimer != null ||
-        !videoGeometry.value.isStable ||
+        !snapshot.isStable ||
+        !needsCanvasInspection ||
+        _portraitDetector.contentEvidenceSettled ||
         !(_portraitSettings?.enablePortraitStreamAdaptation.v ?? true) ||
         _currentPlayer is! MediaKitPlayerAccessor) {
       return;
     }
     final generation = _geometrySessionGeneration;
-    _contentProbeTimer = Timer(const Duration(milliseconds: 240), () {
+    final delay = _contentProbeDelays[_contentProbeAttempts];
+    _contentProbeTimer = Timer(delay, () {
       _contentProbeTimer = null;
       if (generation != _geometrySessionGeneration || _disposed || _isClosing) return;
       unawaited(_runActiveContentProbe(generation));
@@ -413,7 +449,7 @@ class PlayerManager {
     final player = _currentPlayer;
     if (player is! MediaKitPlayerAccessor ||
         _contentProbeInFlightGeneration == generation ||
-        _contentProbeAttempts >= 2) {
+        _contentProbeAttempts >= _contentProbeDelays.length) {
       return;
     }
     final accessor = player as MediaKitPlayerAccessor;
@@ -440,7 +476,9 @@ class PlayerManager {
       if (_contentProbeInFlightGeneration == generation) {
         _contentProbeInFlightGeneration = null;
       }
-      if (generation == _geometrySessionGeneration && _contentProbeAttempts < 2) {
+      if (generation == _geometrySessionGeneration &&
+          _contentProbeAttempts < _contentProbeDelays.length &&
+          !_portraitDetector.contentEvidenceSettled) {
         _scheduleActiveContentProbe();
       }
     }
@@ -502,6 +540,18 @@ class PlayerManager {
     final nextVertical = effectiveVideoOrientation == VideoSourceOrientation.portrait;
     final nextRatio = currentPresentationAspectRatio;
     final presentationChanged = wasVertical != nextVertical || (previousRatio - nextRatio).abs() > 0.004;
+    final evidenceChanged = previous.evidence != snapshot.evidence;
+    final encodedRatioChanged = (previous.aspectRatio - snapshot.aspectRatio).abs() > 0.01;
+    if (presentationChanged || evidenceChanged || encodedRatioChanged) {
+      log(
+        'Geometry encoded=${snapshot.aspectRatio.toStringAsFixed(4)} '
+        'effective=${snapshot.effectiveAspectRatio.toStringAsFixed(4)} '
+        'presented=${nextRatio.toStringAsFixed(4)} '
+        'orientation=${snapshot.orientation.name} evidence=${snapshot.evidence.name} '
+        'hint=${snapshot.sourceHintSource.isEmpty ? '-' : snapshot.sourceHintSource}',
+        name: 'PlayerManager.VideoGeometry',
+      );
+    }
     if (presentationChanged) {
       isVerticalVideo.value = nextVertical;
       videoPresentationRevision.value++;
@@ -1691,11 +1741,15 @@ class PlayerManager {
     // width/height streams and it never lets the adapter apply the ratio again.
     final snapshot = videoGeometry.value;
     final aspectRatio = currentPresentationAspectRatio;
+    final contentInsets = PortraitPresentationPolicy.resolveVideoContentInsets(
+      snapshot: snapshot,
+      presentationAspectRatio: aspectRatio,
+    );
     _applyVideoFit(player, BoxFit.fill);
     return buildUnifiedMobileVideoFrame(
       aspectRatio: aspectRatio,
       encodedAspectRatio: snapshot.aspectRatio,
-      contentInsets: snapshot.hasActiveContentCrop ? snapshot.activeContentInsets : NormalizedVideoInsets.none,
+      contentInsets: contentInsets,
       fit: boxFit,
       child: player.getVideoWidget(),
     );
@@ -1956,11 +2010,16 @@ Widget buildUnifiedMobileVideoFrame({
       ? encodedAspectRatio
       : safeAspectRatio;
   const basis = 1000.0;
-  final useActiveCrop = contentInsets.hasCrop && contentInsets.isValid;
+  final safeContentInsets = resolveConsistentVideoContentInsets(
+    encodedAspectRatio: safeEncodedRatio,
+    presentationAspectRatio: safeAspectRatio,
+    contentInsets: contentInsets,
+  );
+  final useActiveCrop = safeContentInsets.hasCrop;
   final rawWidth = basis * (useActiveCrop ? safeEncodedRatio : safeAspectRatio);
   final rawHeight = basis;
-  final viewportWidth = useActiveCrop ? rawWidth * contentInsets.widthFraction : rawWidth;
-  final viewportHeight = useActiveCrop ? rawHeight * contentInsets.heightFraction : rawHeight;
+  final viewportWidth = useActiveCrop ? rawWidth * safeContentInsets.widthFraction : rawWidth;
+  final viewportHeight = useActiveCrop ? rawHeight * safeContentInsets.heightFraction : rawHeight;
   final videoFrame = useActiveCrop
       ? SizedBox(
           key: const ValueKey('active-video-content-viewport'),
@@ -1971,8 +2030,8 @@ Widget buildUnifiedMobileVideoFrame({
               clipBehavior: Clip.hardEdge,
               children: [
                 Positioned(
-                  left: -rawWidth * contentInsets.left,
-                  top: -rawHeight * contentInsets.top,
+                  left: -rawWidth * safeContentInsets.left,
+                  top: -rawHeight * safeContentInsets.top,
                   width: rawWidth,
                   height: rawHeight,
                   child: child,

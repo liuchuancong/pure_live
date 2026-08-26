@@ -71,4 +71,28 @@ void main() {
     expect(texture.width / texture.height, closeTo(16 / 9, 0.02));
     expect(texture.width, greaterThan(viewport.width));
   });
+
+  testWidgets('renderer drops a stale crop that disagrees with the trusted presentation ratio', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SizedBox.expand(
+          child: buildUnifiedMobileVideoFrame(
+            aspectRatio: 9 / 16,
+            encodedAspectRatio: 9 / 16,
+            contentInsets: const NormalizedVideoInsets(left: 0.3418, right: 0.3418),
+            fit: BoxFit.contain,
+            child: const ColoredBox(key: ValueKey('direct-portrait-texture'), color: Colors.black),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const ValueKey('active-video-content-viewport')), findsNothing);
+    final texture = tester.getRect(find.byKey(const ValueKey('direct-portrait-texture')));
+    expect(texture.height, closeTo(400, 0.1));
+    expect(texture.width / texture.height, closeTo(9 / 16, 0.002));
+  });
 }

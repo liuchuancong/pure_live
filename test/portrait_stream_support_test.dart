@@ -77,6 +77,89 @@ void main() {
       expect(active.aspectRatio, closeTo(16 / 9, 0.001));
     });
 
+    test('side-bar evidence is rejected for an already portrait decoder canvas', () {
+      final detector = PortraitStreamDetector();
+      final start = DateTime(2026, 1, 1);
+      detector.observe(1080, 1920, now: start);
+      detector.commitPending(now: start.add(const Duration(milliseconds: 500)));
+      const invalid = ActiveVideoContentObservation(
+        insets: NormalizedVideoInsets(left: 0.3418, right: 0.3418),
+        confidence: 0.98,
+      );
+
+      detector.observeActiveContent(invalid);
+      final snapshot = detector.observeActiveContent(invalid);
+
+      expect(snapshot.hasActiveContentCrop, isFalse);
+      expect(snapshot.effectiveAspectRatio, closeTo(9 / 16, 0.001));
+    });
+
+    test('fresh decoder canvas invalidates crop measured on an earlier quality', () {
+      final detector = PortraitStreamDetector();
+      final start = DateTime(2026, 1, 1);
+      detector.observe(1920, 1080, now: start);
+      detector.commitPending(now: start.add(const Duration(milliseconds: 500)));
+      const bars = ActiveVideoContentObservation(
+        insets: NormalizedVideoInsets(left: 0.3418, right: 0.3418),
+        confidence: 0.96,
+      );
+      detector.observeActiveContent(bars);
+      expect(detector.observeActiveContent(bars).hasActiveContentCrop, isTrue);
+
+      final switched = detector.observe(1080, 1920, now: start.add(const Duration(seconds: 1)));
+
+      expect(switched.hasActiveContentCrop, isFalse);
+      expect(switched.aspectRatio, closeTo(9 / 16, 0.001));
+      expect(switched.candidateOrientation, VideoSourceOrientation.portrait);
+    });
+
+    test('platform metadata repairs malformed decoder sample aspect without a crop', () {
+      final detector = PortraitStreamDetector();
+      detector.observeSourceMetadata(1080, 1920, confidence: 0.99, source: 'douyin.extra');
+
+      final snapshot = detector.observe(360, 1920);
+
+      expect(snapshot.sourceHintOverridesDecoder, isTrue);
+      expect(snapshot.effectiveAspectRatio, closeTo(9 / 16, 0.001));
+      expect(snapshot.orientation, VideoSourceOrientation.portrait);
+      expect(snapshot.hasActiveContentCrop, isFalse);
+    });
+
+    test('two full-frame probes can disprove a conflicting platform hint', () {
+      final detector = PortraitStreamDetector();
+      detector.observeSourceMetadata(1080, 1920, confidence: 0.99, source: 'douyin.extra');
+      detector.observe(1920, 1080);
+      const fullFrame = ActiveVideoContentObservation(insets: NormalizedVideoInsets.none, confidence: 0.94);
+
+      detector.observeActiveContent(fullFrame);
+      final snapshot = detector.observeActiveContent(fullFrame);
+
+      expect(snapshot.orientation, VideoSourceOrientation.landscape);
+      expect(snapshot.hasTrustedSourceHint, isFalse);
+      expect(snapshot.effectiveAspectRatio, closeTo(16 / 9, 0.001));
+      expect(snapshot.evidence, VideoGeometryEvidence.decoderMetadata);
+    });
+
+    test('source transition retains effective ratio but drops the previous canvas crop', () {
+      final detector = PortraitStreamDetector();
+      final start = DateTime(2026, 1, 1);
+      detector.observe(1920, 1080, now: start);
+      detector.commitPending(now: start.add(const Duration(milliseconds: 500)));
+      const bars = ActiveVideoContentObservation(
+        insets: NormalizedVideoInsets(left: 0.3418, right: 0.3418),
+        confidence: 0.96,
+      );
+      detector.observeActiveContent(bars);
+      final portrait = detector.observeActiveContent(bars);
+
+      final transition = detector.beginSourceTransition();
+
+      expect(portrait.hasActiveContentCrop, isTrue);
+      expect(transition.hasActiveContentCrop, isFalse);
+      expect(transition.isProvisional, isTrue);
+      expect(transition.aspectRatio, closeTo(9 / 16, 0.02));
+    });
+
     test('a cached room geometry is provisional until fresh decoder evidence arrives', () {
       final detector = PortraitStreamDetector();
       final cached = VideoGeometrySnapshot(
@@ -244,6 +327,32 @@ void main() {
         ),
         closeTo(16 / 9, 0.0001),
       );
+    });
+
+    test('platform portrait metadata infers symmetric bars for a landscape transport canvas', () {
+      final snapshot = VideoGeometrySnapshot(
+        width: 1920,
+        height: 1080,
+        aspectRatio: 16 / 9,
+        orientation: VideoSourceOrientation.portrait,
+        candidateOrientation: VideoSourceOrientation.portrait,
+        stableSampleCount: 3,
+        confidence: 0.99,
+        observedAt: DateTime(2026),
+        sourceHintAspectRatio: 9 / 16,
+        sourceHintConfidence: 0.99,
+        sourceHintSource: 'douyin.extra',
+        evidence: VideoGeometryEvidence.platformMetadata,
+      );
+
+      final insets = PortraitPresentationPolicy.resolveVideoContentInsets(
+        snapshot: snapshot,
+        presentationAspectRatio: 9 / 16,
+      );
+
+      expect(insets.left, closeTo(0.3418, 0.002));
+      expect(insets.right, closeTo(0.3418, 0.002));
+      expect(insets.applyToAspectRatio(16 / 9), closeTo(9 / 16, 0.002));
     });
   });
 

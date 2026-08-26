@@ -44,8 +44,8 @@
 - 每个完成的 Bug 修复批次默认递增版本，优先构建 Android `arm64-v8a` 正式更新包，并同步源码、版本标签、安装包与校验文件到本仓库 GitHub Release；其他平台仍按本轮明确范围串行构建。
 - 每次同步上游、分析 Bug 和审查原项目 Issue 的来源判定、根因、兼容、验证与回滚流程见[维护范围与问题处置策略](MAINTENANCE_POLICY.md)及[上游同步审查策略](UPSTREAM_REVIEW_POLICY.md)。
 
-- **最新稳定版**：[v3.0.5](https://github.com/wzgrx/pure_live/releases/tag/v3.0.5)
-- **当前 Android 构建版本**：`3.0.5+4093`（有效画面识别与竖屏三模式增强）
+- **最新稳定版**：[v3.0.6](https://github.com/wzgrx/pure_live/releases/tag/v3.0.6)
+- **当前 Android 构建版本**：`3.0.6+4094`（抖音竖屏几何仲裁与裁边隔离修复）
 - **v3.0.0 上游源码基线**：`liuchuancong/pure_live@e808dcae`；完整记录见 `docs/STAGE_UPDATE_3_0_0.md`
 - **本轮构建平台**：仅 Android arm64-v8a；其他平台继续使用 v3.0.0 安装包
 - **质量门禁**：解码元数据、有效画面、普通页、横屏与小窗的统一回归见 `docs/STAGE_UPDATE_3_0_5.md`
@@ -110,6 +110,7 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 | [v3.0.3 Android 竖屏 Surface 修复](docs/STAGE_UPDATE_3_0_3.md) | 原生/应用层几何统一、切换时序和横屏直播记录自适应双列 |
 | [v3.0.4 Android 可信画面比例修复](docs/STAGE_UPDATE_3_0_4.md) | 移动端单一比例控制、异常元数据回退与历史记录数量/日期增强 |
 | [v3.0.5 Android 有效画面识别](docs/STAGE_UPDATE_3_0_5.md) | 黑边内嵌竖屏识别、三档互动面板、横屏沉浸背景与动态 PiP |
+| [v3.0.6 Android 竖屏几何仲裁修复](docs/STAGE_UPDATE_3_0_6.md) | 抖音流元数据识别、裁边代际隔离、延迟有效采样与渲染一致性门禁 |
 | [2026-08-25 上游 Issue 审计](docs/ISSUE_AUDIT_2026_08_25.md) | #793～#798、#791 录制根因及既有问题处理状态 |
 | [v2.9.7 Android update](docs/STAGE_UPDATE_2_9_7.md) | 全平台观看指标语义、热门排行、SOOP PC/移动端总在线与 40 项接口门禁 |
 | [v2.9.6 Android update](docs/STAGE_UPDATE_2_9_6.md) | 上游同步、抖音 Feed、Bilibili 热度排行与 40 项接口门禁 |
