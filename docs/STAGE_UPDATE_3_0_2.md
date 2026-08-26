@@ -25,4 +25,5 @@
 - 覆盖普通页、横屏全屏、Android 画中画、应用内小窗的比例隔离。
 - 覆盖手机弹幕区域的全宽布局、主题背景与桌面面板差异。
 - 发布前执行一次完整 Analyze、完整测试和平台接口探测；随后只执行 Android arm64-v8a Release 构建。
+- APK 在本地复制和 GitHub 正式签名前执行双重内容门禁：核对 Flutter 资源文件数量与体积、版本/翻译/表情资源、唯一 arm64 ABI，以及 FFmpegKit、SQLite、MediaKit、Flutter、IJK 和应用原生库，阻止 Windows 路径别名或异常增量状态生成的残缺包进入 Release。
 - 正式 APK 由固定发布证书签名，并核对包名 `com.mystyle.purelive`、版本 `3.0.2+4090`、ABI 与 SHA-256。

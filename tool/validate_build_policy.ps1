@@ -14,6 +14,7 @@ $requiredFiles = @(
     '.github\workflows\audit-upstream.yml',
     'tool\local_ci.ps1',
     'tool\build_local_release.ps1',
+    'tool\verify_android_apk.ps1',
     'tool\publish_local_release.ps1',
     'tool\prefetch_windows_native.ps1',
     'android\gradle.properties'
@@ -33,6 +34,7 @@ $powerShellFiles = @(
     'tool\build_resource_guard.ps1',
     'tool\local_ci.ps1',
     'tool\build_local_release.ps1',
+    'tool\verify_android_apk.ps1',
     'tool\publish_local_release.ps1',
     'tool\prefetch_windows_native.ps1',
     'tool\flutterw.ps1',
@@ -103,6 +105,7 @@ foreach ($marker in @(
     '[Parameter(Mandatory = $true)][int] $ExitCode',
     'PSNativeCommandUseErrorActionPreference',
     'PureLive-$artifactVersion-android-arm64-v8a-release.apk',
+    "Join-Path `$PSScriptRoot 'verify_android_apk.ps1'",
     "Join-Path `$PSScriptRoot 'prefetch_windows_native.ps1'",
     '/DArtifactVersion=$artifactVersion',
     'build\windows\x64\install_manifest.txt',
@@ -110,6 +113,32 @@ foreach ($marker in @(
     'automatic_follow_up = $false'
 )) {
     if (-not $buildScript.Contains($marker)) { throw "Build script policy marker is missing: $marker" }
+}
+
+$androidVerifier = Get-Content -LiteralPath (Join-Path $repoRoot 'tool\verify_android_apk.ps1') -Raw
+foreach ($marker in @(
+    'assets/flutter_assets/AssetManifest.bin',
+    'assets/flutter_assets/assets/version.json',
+    'libffmpegkit.so',
+    'libsqlite3.so',
+    '$flutterAssets.Count -lt 1000'
+)) {
+    if (-not $androidVerifier.Contains($marker)) {
+        throw "Android APK integrity marker is missing: $marker"
+    }
+}
+
+$androidSigningWorkflow = Get-Content -LiteralPath (Join-Path $repoRoot '.github\workflows\sign-staged-android.yml') -Raw
+foreach ($marker in @(
+    'assets/flutter_assets/AssetManifest.bin',
+    'assets/flutter_assets/assets/version.json',
+    'libffmpegkit.so',
+    'libsqlite3.so',
+    'Flutter asset file count is incomplete'
+)) {
+    if (-not $androidSigningWorkflow.Contains($marker)) {
+        throw "Android signing workflow integrity marker is missing: $marker"
+    }
 }
 
 $flutterWrapper = Get-Content -LiteralPath (Join-Path $repoRoot 'tool\flutterw.ps1') -Raw
