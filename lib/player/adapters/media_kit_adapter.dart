@@ -18,6 +18,8 @@ import 'package:pure_live/player/utils/live_buffer_policy.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/player/utils/video_output_size_policy.dart';
 import 'package:pure_live/player/interface/media_kit_player_accessor.dart';
+import 'package:pure_live/player/core/player_error_classifier.dart';
+import 'package:pure_live/player/core/source_event_fence.dart';
 
 @visibleForTesting
 ({int width, int height})? resolveMediaKitDisplaySize(VideoParams params) {
@@ -25,7 +27,13 @@ import 'package:pure_live/player/interface/media_kit_player_accessor.dart';
   return size == null ? null : (width: size.width, height: size.height);
 }
 
-class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFitAwarePlayer {
+class MediaKitAdapter
+    implements
+        UnifiedPlayer,
+        MediaKitPlayerAccessor,
+        VideoFitAwarePlayer,
+        SourceTransitionAwarePlayer,
+        DecoderRecoveryAwarePlayer {
   MediaKitAdapter() {
     _audioModeTransitions = LatestAsyncValueQueue<bool>(_applyAudioOnly);
   }
@@ -39,7 +47,10 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
   static Future<void> applyNativeLiveProperties(dynamic native) async {
     await native.setProperty('force-seekable', 'yes');
 
-    await native.setProperty('protocol_whitelist', 'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto');
+    await native.setProperty(
+      'protocol_whitelist',
+      'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto,rtmp,rtmps,rtsp,srt',
+    );
 
     await native.setProperty('demuxer-lavf-probesize', '2097152');
 
@@ -60,6 +71,13 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
     await native.setProperty('demuxer-readahead-secs', LiveBufferPolicy.readaheadSeconds.toString());
 
     await native.setProperty('network-timeout', '15');
+
+    // Ask mpv to abandon a broken hardware decoder after the first consecutive
+    // frame failure. This preserves the low-power fast path on compatible
+    // devices while making unsupported profiles fall back to software instead
+    // of leaving a black Surface behind. mpv's larger default can skip several
+    // live packets before the fallback is attempted.
+    await native.setProperty('hwdec-software-fallback', '1');
 
     if (SettingsService.to.player.customPlayerOutput.v) {
       await native.setProperty('ao', SettingsService.to.player.audioOutputDriver.v);
@@ -93,9 +111,51 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
 
   bool _listenerBound = false;
 
+  bool _nativePathObserved = false;
+
+  bool _nativeFramePropertiesObserved = false;
+
+  bool _usesNativeFrameProbe = false;
+
   String? _currentUrl;
 
   bool _isAudioOnly = false;
+
+  final SourceEventFence _sourceFence = SourceEventFence();
+
+  bool _sourceTransitionPrepared = false;
+
+  bool _sourceHasVideoFrame = false;
+
+  bool _sourceHasVideoMetadata = false;
+
+  bool _sourceHasAudioFrame = false;
+
+  String _preferredHardwareDecoder = 'no';
+
+  String? _softwareDecoderFallbackUrl;
+
+  int _sourceProgressRevision = 0;
+
+  Timer? _pendingNativeErrorTimer;
+
+  Timer? _sourceReadyTimeoutTimer;
+
+  _NativeDiagnostic? _openingNativeDiagnostic;
+
+  PlayerException? _pendingNativeError;
+
+  int? _pendingNativeErrorGeneration;
+
+  int _pendingNativeErrorProgressRevision = 0;
+
+  NativeDiagnosticComponent _pendingNativeErrorComponent = NativeDiagnosticComponent.either;
+
+  String? _lastEmittedNativeError;
+
+  DateTime? _lastEmittedNativeErrorAt;
+
+  int? _lastEmittedNativeErrorGeneration;
 
   BoxFit _videoFit = BoxFit.contain;
 
@@ -131,9 +191,13 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
 
   StreamSubscription? _videoParamsSub;
 
+  StreamSubscription? _audioParamsSub;
+
   StreamSubscription? _completeSub;
 
   StreamSubscription? _errorSub;
+
+  StreamSubscription? _logSub;
 
   // =========================
   // init
@@ -166,11 +230,40 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
         // Live adapters use one explicit seekability override. The upstream
         // Android workaround duplicated this native property write.
         await applyNativeLiveProperties(native);
+        // Player.stream.playlist is updated before libmpv loads the source, so
+        // it is not native confirmation. mpv's `path` property is the source
+        // that actually owns later frame, playing and error callbacks.
+        await native.observeProperty('path', (String path) async {
+          _handleNativePath(path);
+        });
+        _nativePathObserved = true;
+        // `videoParams` may contain the demuxer's declared dimensions before a
+        // frame has actually decoded. Use native frame properties as the
+        // readiness signal so metadata + `playing=true` cannot hide a black
+        // decoder failure or cancel the first-frame deadline.
+        await native.observeProperty('video-frame-info/picture-type', (String value) async {
+          _handleDecodedVideoFrameSignal(value);
+        });
+        await native.observeProperty('estimated-vf-fps', (String value) async {
+          _handleDecodedVideoFrameRate(value);
+        });
+        _nativeFramePropertiesObserved = true;
+        _usesNativeFrameProbe = true;
       }
 
       // =========================
       // controller
       // =========================
+      _preferredHardwareDecoder = PlatformUtils.isMacOS
+          ? 'no'
+          : SettingsService.to.player.playerCompatMode.v
+          ? 'mediacodec'
+          : SettingsService.to.player.customPlayerOutput.v
+          ? SettingsService.to.player.videoHardwareDecoder.v
+          : SettingsService.to.player.enableCodec.v
+          ? 'auto-safe'
+          : 'no';
+
       _controller = SettingsService.to.player.playerCompatMode.v
           ? VideoController(
               _player,
@@ -218,6 +311,149 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
   // =========================
 
   @override
+  void beginSourceTransition() {
+    if (_disposed) return;
+    _prepareSourceTransition();
+    _sourceTransitionPrepared = true;
+  }
+
+  void _prepareSourceTransition({String? url}) {
+    _pendingNativeErrorTimer?.cancel();
+    _sourceReadyTimeoutTimer?.cancel();
+    _pendingNativeErrorTimer = null;
+    _sourceReadyTimeoutTimer = null;
+    _pendingNativeError = null;
+    _pendingNativeErrorGeneration = null;
+    _pendingNativeErrorComponent = NativeDiagnosticComponent.either;
+    _openingNativeDiagnostic = null;
+    _sourceHasVideoFrame = false;
+    _sourceHasVideoMetadata = false;
+    _sourceHasAudioFrame = false;
+    _sourceProgressRevision = 0;
+    _sourceFence.begin(url ?? _currentUrl);
+    _playingSubject.add(false);
+    _loadingSubject.add(true);
+    _completeSubject.add(false);
+    _widthSubject.add(null);
+    _heightSubject.add(null);
+  }
+
+  Future<List<String>> _currentNativeSourcePaths() async {
+    if (_player.platform is! NativePlayer) return <String>[_currentUrl ?? ''];
+    try {
+      final path = await (_player.platform as dynamic).getProperty('path') as String;
+      return <String>[path];
+    } catch (_) {
+      return const <String>[];
+    }
+  }
+
+  void _handleNativePath(String path) {
+    if (_disposed) return;
+    _sourceFence.observeNativeSources(<String>[path]);
+    if (_sourceFence.isOpening) return;
+    final generation = _sourceFence.generation;
+    _publishCurrentNativeSnapshot(generation);
+    unawaited(_refreshCurrentNativeReadinessSnapshot(generation));
+    _drainDeferredNativeDiagnostic();
+    _armSourceReadinessTimeout(generation);
+  }
+
+  Future<void> _refreshCurrentNativeReadinessSnapshot(int generation) async {
+    if (_disposed || !_sourceFence.accepts(generation) || _player.platform is! NativePlayer) return;
+    final native = _player.platform as dynamic;
+    try {
+      final pictureType = (await native.getProperty('video-frame-info/picture-type') as String).trim();
+      if (_sourceFence.accepts(generation)) _handleDecodedVideoFrameSignal(pictureType);
+    } catch (_) {
+      // The property is unavailable until the first decoded video frame.
+    }
+    try {
+      final fps = (await native.getProperty('estimated-vf-fps') as String).trim();
+      if (_sourceFence.accepts(generation)) _handleDecodedVideoFrameRate(fps);
+    } catch (_) {
+      // The property is unavailable when this source has no decoded video.
+    }
+    try {
+      final audioFormat = (await native.getProperty('audio-params/format') as String).trim();
+      if (audioFormat.isNotEmpty && _sourceFence.accepts(generation)) {
+        _markDecodedAudioFrame(generation);
+      }
+    } catch (_) {
+      // The property is unavailable until the audio decoder is configured.
+    }
+  }
+
+  void _handleDecodedVideoFrameSignal(String value) {
+    final pictureType = value.trim().toUpperCase();
+    if (pictureType != 'I' && pictureType != 'P' && pictureType != 'B') return;
+    _markDecodedVideoFrame(_sourceFence.generation);
+  }
+
+  void _handleDecodedVideoFrameRate(String value) {
+    final fps = double.tryParse(value.trim());
+    if (fps == null || !fps.isFinite || fps <= 0) return;
+    _markDecodedVideoFrame(_sourceFence.generation);
+  }
+
+  void _markDecodedVideoFrame(int generation) {
+    if (_disposed || !_sourceFence.accepts(generation)) return;
+    _sourceHasVideoFrame = true;
+    _openingNativeDiagnostic = null;
+    _sourceProgressRevision++;
+    _sourceReadyTimeoutTimer?.cancel();
+    _sourceReadyTimeoutTimer = null;
+    _loadingSubject.add(false);
+    if (_player.state.playing) {
+      _playingSubject.add(true);
+      _stateSubject.add(PlayerState.playing);
+    }
+    _cancelRecoveredNativeError(NativeDiagnosticComponent.video);
+  }
+
+  void _markDecodedAudioFrame(int generation) {
+    if (_disposed || !_sourceFence.accepts(generation)) return;
+    _sourceHasAudioFrame = true;
+    _sourceProgressRevision++;
+    if (_isAudioOnly && _player.state.playing) {
+      _sourceReadyTimeoutTimer?.cancel();
+      _sourceReadyTimeoutTimer = null;
+      _loadingSubject.add(false);
+      _playingSubject.add(true);
+      _stateSubject.add(PlayerState.playing);
+    }
+    _cancelRecoveredNativeError(NativeDiagnosticComponent.audio);
+  }
+
+  @override
+  Future<bool> prepareSoftwareDecoderFallback(PlayerException error) async {
+    final url = _currentUrl;
+    if (_disposed ||
+        _isAudioOnly ||
+        error.type != PlayerErrorType.codec ||
+        error.code?.startsWith('audio_') == true ||
+        url == null ||
+        url.isEmpty ||
+        _preferredHardwareDecoder == 'no' ||
+        _softwareDecoderFallbackUrl == url) {
+      return false;
+    }
+
+    // Only mark the next open. Changing `hwdec` while the failing source still
+    // owns the decoder can synchronously emit another error into the recovery
+    // stack and race the source-generation fence.
+    _softwareDecoderFallbackUrl = url;
+    return true;
+  }
+
+  Future<void> _applyDecoderPolicyForSource(String url) async {
+    if (_player.platform is! NativePlayer) return;
+    final useSoftware = _softwareDecoderFallbackUrl == url;
+    if (!useSoftware) _softwareDecoderFallbackUrl = null;
+    await (_player.platform as dynamic).setProperty('hwdec', useSoftware ? 'no' : _preferredHardwareDecoder);
+  }
+
+  @override
   Future<void> setDataSource(
     String url,
     List<String> playUrls,
@@ -226,24 +462,35 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
     bool audioOnly = false,
   }) async {
     if (_disposed) return;
-
-    if (_currentUrl == url && isPlayingNow) {
-      return;
-    }
+    // An explicit manager play is a new source generation even if the URL is
+    // textually identical. Decoder recovery, manual retry and signed CDN URLs
+    // may all reopen the same string with different native policy. Skipping
+    // here used to clear the public subjects in beginSourceTransition and then
+    // leave them permanently empty; it also made software-decoder fallback a
+    // no-op for the exact URL that had just failed in hardware.
     _currentUrl = url;
+    _isAudioOnly = audioOnly;
+    if (_sourceTransitionPrepared) {
+      // The manager reset the public source state before rebinding its
+      // source-scoped listeners. Associate that generation with this URL.
+      _sourceFence.begin(url);
+      _sourceTransitionPrepared = false;
+    } else {
+      _prepareSourceTransition(url: url);
+    }
+    final sourceGeneration = _sourceFence.generation;
 
     try {
-      _loadingSubject.add(true);
-
       _stateSubject.add(PlayerState.preparing);
 
-      _completeSubject.add(false);
-
-      _widthSubject.add(null);
-
-      _heightSubject.add(null);
+      await _applyDecoderPolicyForSource(url);
 
       await _player.open(Media(url, httpHeaders: headers), play: true);
+
+      if (_disposed || sourceGeneration != _sourceFence.generation) return;
+      _sourceFence.finishOpen(await _currentNativeSourcePaths());
+      _publishCurrentNativeSnapshot(sourceGeneration);
+      unawaited(_refreshCurrentNativeReadinessSnapshot(sourceGeneration));
 
       // mpv opens a normal Android source with `vid=auto`, and the Surface
       // controller already owns that same initial state. Reissuing an async
@@ -257,6 +504,15 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
         await _applyAudioOnly(audioOnly, force: true);
       }
 
+      if (_disposed || sourceGeneration != _sourceFence.generation) return;
+      _publishCurrentNativeSnapshot(sourceGeneration);
+      final openingDiagnostic = _openingNativeDiagnostic;
+      _openingNativeDiagnostic = null;
+      if (openingDiagnostic != null && !_isDiagnosticComponentReady(openingDiagnostic.prefix)) {
+        _handleNativeDiagnostic(openingDiagnostic.message, nativePrefix: openingDiagnostic.prefix);
+      }
+      _armSourceReadinessTimeout(sourceGeneration);
+
       _stateSubject.add(PlayerState.ready);
 
       if (PlatformUtils.isMobile) {
@@ -266,20 +522,23 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
         await setVolume(targetVolume);
       }
     } catch (e, s) {
-      final exception = PlayerException(
-        message: 'Media open failed',
-        type: PlayerErrorType.source,
-        error: e,
-        stackTrace: s,
-      );
+      if (sourceGeneration != _sourceFence.generation || _disposed) return;
+      final classification = PlayerErrorClassifier.classify(e.toString());
+      final exception = e is PlayerException
+          ? e
+          : PlayerException(
+              message: 'Media open failed: $e',
+              type: classification.type == PlayerErrorType.native ? PlayerErrorType.source : classification.type,
+              code: classification.code,
+              error: e,
+              stackTrace: s,
+            );
 
       _safeAddError(exception);
 
-      _stateSubject.add(PlayerState.error);
-
       throw exception;
     } finally {
-      if (!_disposed) {
+      if (!_disposed && (_sourceHasVideoFrame || (_isAudioOnly && _sourceHasAudioFrame))) {
         _loadingSubject.add(false);
       }
     }
@@ -303,11 +562,21 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
     _playingSub = _player.stream.playing.listen(
       (playing) {
         if (_disposed) return;
-
-        _playingSubject.add(playing);
-
-        if (!_loadingSubject.value) {
-          _stateSubject.add(playing ? PlayerState.playing : PlayerState.paused);
+        final generation = _sourceFence.generation;
+        if (!_sourceFence.accepts(generation)) return;
+        if (playing) {
+          _sourceProgressRevision++;
+          if ((_isAudioOnly && _sourceHasAudioFrame) || (!_isAudioOnly && _sourceHasVideoFrame)) {
+            _playingSubject.add(true);
+            _loadingSubject.add(false);
+            _stateSubject.add(PlayerState.playing);
+            _cancelRecoveredNativeError(
+              _isAudioOnly ? NativeDiagnosticComponent.audio : NativeDiagnosticComponent.video,
+            );
+          }
+        } else {
+          _playingSubject.add(false);
+          if (!_loadingSubject.value) _stateSubject.add(PlayerState.paused);
         }
       },
       onError: (e, s) {
@@ -322,13 +591,20 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
     _bufferingSub = _player.stream.buffering.listen(
       (loading) {
         if (_disposed) return;
-
+        final generation = _sourceFence.generation;
+        if (!_sourceFence.accepts(generation)) return;
         _loadingSubject.add(loading);
 
         if (loading) {
           _stateSubject.add(PlayerState.buffering);
         } else {
-          _stateSubject.add(_playingSubject.value ? PlayerState.playing : PlayerState.paused);
+          if (_sourceHasVideoFrame || (_isAudioOnly && _sourceHasAudioFrame)) {
+            _sourceProgressRevision++;
+            _stateSubject.add(_playingSubject.value ? PlayerState.playing : PlayerState.paused);
+            _cancelRecoveredNativeError(
+              _isAudioOnly ? NativeDiagnosticComponent.audio : NativeDiagnosticComponent.video,
+            );
+          }
         }
       },
       onError: (e, s) {
@@ -342,9 +618,22 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
     // malformed ratio was then propagated into portrait detection and PiP.
     _videoParamsSub = _player.stream.videoParams.listen((params) {
       if (_disposed) return;
+      final generation = _sourceFence.generation;
+      if (!_sourceFence.accepts(generation)) return;
       final size = resolveMediaKitDisplaySize(params);
       _widthSubject.add(size?.width);
       _heightSubject.add(size?.height);
+      if (size != null) {
+        _sourceHasVideoMetadata = true;
+        // Non-native backends do not expose mpv frame properties. Their video
+        // parameter event remains the strongest available readiness signal.
+        if (!_usesNativeFrameProbe) _markDecodedVideoFrame(generation);
+      }
+    });
+
+    _audioParamsSub = _player.stream.audioParams.listen((_) {
+      if (_disposed) return;
+      _markDecodedAudioFrame(_sourceFence.generation);
     });
 
     // =========================
@@ -354,6 +643,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
     _completeSub = _player.stream.completed.listen(
       (completed) {
         if (_disposed) return;
+        if (!_sourceFence.accepts(_sourceFence.generation)) return;
 
         if (!completed) return;
 
@@ -370,21 +660,191 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
     // error
     // =========================
 
-    _errorSub = _player.stream.error.distinct().listen((error) {
-      if (_disposed) return;
-
-      final type = _mapErrorType(error.toString());
-
-      _safeAddError(PlayerException(message: error.toString(), type: type));
-
-      _stateSubject.add(PlayerState.error);
-    });
+    // The same native message can legitimately be emitted by two consecutive
+    // CDN lines. Stream-wide `distinct` treated the second source failure as a
+    // duplicate, so the recovery chain stopped on a permanent loading state.
+    // Deduplication below is scoped to one source generation instead.
+    if (_player.platform is NativePlayer) {
+      _logSub = _player.stream.log.listen((event) {
+        if (_disposed || event.level != 'error' || !_isActionableNativeLog(event.prefix, event.text)) return;
+        _handleNativeDiagnostic(event.text, nativePrefix: event.prefix);
+      });
+    } else {
+      _errorSub = _player.stream.error.listen((error) {
+        if (_disposed) return;
+        _handleNativeDiagnostic(error.toString());
+      });
+    }
 
     // =========================
     // collect
     // =========================
 
-    _subscriptions.addAll([_playingSub!, _bufferingSub!, _videoParamsSub!, _completeSub!, _errorSub!]);
+    _subscriptions.addAll([
+      _playingSub!,
+      _bufferingSub!,
+      _videoParamsSub!,
+      _audioParamsSub!,
+      _completeSub!,
+      if (_errorSub != null) _errorSub!,
+      if (_logSub != null) _logSub!,
+    ]);
+  }
+
+  static bool _isActionableNativeLog(String prefix, String text) {
+    final normalizedPrefix = prefix.trim().toLowerCase();
+    if (normalizedPrefix == 'ffmpeg') return text.trimLeft().toLowerCase().startsWith('tcp:');
+    return const <String>{
+      'file',
+      'vd',
+      'ad',
+      'ffmpeg/video',
+      'ffmpeg/audio',
+      'cplayer',
+      'stream',
+    }.contains(normalizedPrefix);
+  }
+
+  void _publishCurrentNativeSnapshot(int generation) {
+    if (!_sourceFence.accepts(generation) || _disposed) return;
+    final size = resolveMediaKitDisplaySize(_player.state.videoParams);
+    if (size != null) {
+      _sourceHasVideoMetadata = true;
+      _widthSubject.add(size.width);
+      _heightSubject.add(size.height);
+      if (!_usesNativeFrameProbe) _markDecodedVideoFrame(generation);
+    }
+    final audioParams = _player.state.audioParams;
+    if (audioParams.format?.isNotEmpty == true ||
+        (audioParams.sampleRate ?? 0) > 0 ||
+        (audioParams.channelCount ?? 0) > 0) {
+      _markDecodedAudioFrame(generation);
+    }
+    if (_player.state.playing && ((_isAudioOnly && _sourceHasAudioFrame) || (!_isAudioOnly && _sourceHasVideoFrame))) {
+      _playingSubject.add(true);
+      _loadingSubject.add(false);
+      _stateSubject.add(PlayerState.playing);
+      _cancelRecoveredNativeError(_isAudioOnly ? NativeDiagnosticComponent.audio : NativeDiagnosticComponent.video);
+    }
+  }
+
+  void _handleNativeDiagnostic(String message, {String? nativePrefix}) {
+    final generation = _sourceFence.generation;
+    if (_sourceFence.isOpening || !_sourceFence.accepts(generation)) {
+      _openingNativeDiagnostic = _NativeDiagnostic(message: message, prefix: nativePrefix);
+      return;
+    }
+    final classification = PlayerErrorClassifier.classify(message, nativePrefix: nativePrefix);
+    final exception = PlayerException(message: message, type: classification.type, code: classification.code);
+    if (classification.immediatelyTerminal) {
+      _emitConfirmedNativeError(exception, generation);
+      return;
+    }
+
+    // mpv reports recoverable packet and hardware-decoder diagnostics on the
+    // same stream as terminal failures. Give the active source one bounded
+    // recovery window; a fresh frame/playing transition cancels this error.
+    if (_pendingNativeErrorTimer != null) return;
+    _pendingNativeError = exception;
+    _pendingNativeErrorGeneration = generation;
+    _pendingNativeErrorProgressRevision = _sourceProgressRevision;
+    _pendingNativeErrorComponent = classification.component;
+    _pendingNativeErrorTimer = Timer(const Duration(milliseconds: 1200), () {
+      _pendingNativeErrorTimer = null;
+      final pending = _pendingNativeError;
+      final pendingGeneration = _pendingNativeErrorGeneration;
+      _pendingNativeError = null;
+      _pendingNativeErrorGeneration = null;
+      if (pending == null || pendingGeneration == null || !_sourceFence.accepts(pendingGeneration)) return;
+      final componentReady = switch (_pendingNativeErrorComponent) {
+        NativeDiagnosticComponent.video => _sourceHasVideoFrame,
+        NativeDiagnosticComponent.audio => _sourceHasAudioFrame,
+        NativeDiagnosticComponent.either => _sourceHasVideoFrame || _sourceHasAudioFrame,
+      };
+      final recovered =
+          _sourceProgressRevision > _pendingNativeErrorProgressRevision && componentReady && _player.state.playing;
+      if (recovered || (_player.state.playing && !_loadingSubject.value && componentReady)) {
+        return;
+      }
+      _emitConfirmedNativeError(pending, pendingGeneration);
+    });
+  }
+
+  void _cancelRecoveredNativeError(NativeDiagnosticComponent progressedComponent) {
+    if (_pendingNativeErrorTimer == null) return;
+    if (_pendingNativeErrorComponent != NativeDiagnosticComponent.either &&
+        _pendingNativeErrorComponent != progressedComponent) {
+      return;
+    }
+    _pendingNativeErrorTimer?.cancel();
+    _pendingNativeErrorTimer = null;
+    _pendingNativeError = null;
+    _pendingNativeErrorGeneration = null;
+    _pendingNativeErrorComponent = NativeDiagnosticComponent.either;
+  }
+
+  void _drainDeferredNativeDiagnostic() {
+    final diagnostic = _openingNativeDiagnostic;
+    if (diagnostic != null && _isDiagnosticComponentReady(diagnostic.prefix)) {
+      _openingNativeDiagnostic = null;
+      return;
+    }
+    if (diagnostic == null || !_sourceFence.accepts(_sourceFence.generation)) return;
+    _openingNativeDiagnostic = null;
+    _handleNativeDiagnostic(diagnostic.message, nativePrefix: diagnostic.prefix);
+  }
+
+  bool _isDiagnosticComponentReady(String? nativePrefix) {
+    final prefix = nativePrefix?.trim().toLowerCase();
+    if (prefix == 'ad' || prefix == 'ffmpeg/audio') return _sourceHasAudioFrame;
+    if (prefix == 'vd' || prefix == 'ffmpeg/video') return _sourceHasVideoFrame;
+    return _sourceHasVideoFrame || _sourceHasAudioFrame;
+  }
+
+  void _armSourceReadinessTimeout(int generation) {
+    _sourceReadyTimeoutTimer?.cancel();
+    _sourceReadyTimeoutTimer = null;
+    // Do not wait for playlist confirmation before arming the deadline. Native
+    // open failures can happen before mpv emits any playlist callback; the old
+    // implementation then remained in loading forever and never reached line
+    // or engine fallback.
+    final sourceReady = _isAudioOnly ? _sourceHasAudioFrame : _sourceHasVideoFrame;
+    if (sourceReady || !_sourceFence.isCurrentGeneration(generation)) return;
+    _sourceReadyTimeoutTimer = Timer(const Duration(seconds: 10), () {
+      _sourceReadyTimeoutTimer = null;
+      final ready = _isAudioOnly ? _sourceHasAudioFrame : _sourceHasVideoFrame;
+      if (!_sourceFence.isCurrentGeneration(generation) || ready || _disposed) return;
+      _emitCurrentSourceError(
+        PlayerException(
+          message: _isAudioOnly
+              ? 'Source opened but no decodable audio frame arrived within 10 seconds'
+              : 'Source opened but no decodable video frame arrived within 10 seconds',
+          type: !_isAudioOnly && _sourceHasVideoMetadata ? PlayerErrorType.codec : PlayerErrorType.source,
+          code: _isAudioOnly ? 'audio_readiness_timeout' : 'video_readiness_timeout',
+        ),
+        generation,
+      );
+    });
+  }
+
+  void _emitConfirmedNativeError(PlayerException exception, int generation) {
+    if (!_sourceFence.accepts(generation) || _disposed) return;
+    _emitCurrentSourceError(exception, generation);
+  }
+
+  void _emitCurrentSourceError(PlayerException exception, int generation) {
+    if (!_sourceFence.isCurrentGeneration(generation) || _disposed) return;
+    final now = DateTime.now();
+    if (_lastEmittedNativeErrorGeneration == generation &&
+        _lastEmittedNativeError == exception.toString() &&
+        _lastEmittedNativeErrorAt != null &&
+        now.difference(_lastEmittedNativeErrorAt!) < const Duration(seconds: 2)) {
+      return;
+    }
+    _lastEmittedNativeErrorGeneration = generation;
+    _lastEmittedNativeError = exception.toString();
+    _lastEmittedNativeErrorAt = now;
+    _safeAddError(exception);
   }
 
   // =========================
@@ -401,8 +861,11 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
     _playingSub = null;
     _bufferingSub = null;
     _videoParamsSub = null;
+    _audioParamsSub = null;
+
     _completeSub = null;
     _errorSub = null;
+    _logSub = null;
   }
 
   // =========================
@@ -413,8 +876,6 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
     if (_disposed) return;
 
     _safeAddError(PlayerException(message: error.toString(), type: type, error: error, stackTrace: stackTrace));
-
-    _stateSubject.add(PlayerState.error);
   }
 
   void _safeAddError(PlayerException exception) {
@@ -423,32 +884,6 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
     if (_errorSubject.isClosed) return;
 
     _errorSubject.add(exception);
-  }
-
-  // =========================
-  // error type
-  // =========================
-
-  PlayerErrorType _mapErrorType(String error) {
-    final lower = error.toLowerCase();
-
-    if (lower.contains('network') || lower.contains('timeout') || lower.contains('io')) {
-      return PlayerErrorType.network;
-    }
-
-    if (lower.contains('codec') || lower.contains('mediacodec') || lower.contains('decode')) {
-      return PlayerErrorType.codec;
-    }
-
-    if (lower.contains('404') || lower.contains('source') || lower.contains('open')) {
-      return PlayerErrorType.source;
-    }
-
-    if (lower.contains('surface') || lower.contains('texture')) {
-      return PlayerErrorType.texture;
-    }
-
-    return PlayerErrorType.native;
   }
 
   // =========================
@@ -632,17 +1067,44 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
 
     _listenerBound = false;
 
+    _pendingNativeErrorTimer?.cancel();
+
+    _sourceReadyTimeoutTimer?.cancel();
+
+    _pendingNativeErrorTimer = null;
+
+    _sourceReadyTimeoutTimer = null;
+
+    _sourceFence.clear();
+
     await _cancelAllSubscriptions();
+
+    if (_nativePathObserved && _player.platform is NativePlayer) {
+      try {
+        await (_player.platform as dynamic).unobserveProperty('path');
+      } catch (_) {}
+      _nativePathObserved = false;
+    }
+
+    if (_nativeFramePropertiesObserved && _player.platform is NativePlayer) {
+      try {
+        final native = _player.platform as dynamic;
+        await native.unobserveProperty('video-frame-info/picture-type');
+        await native.unobserveProperty('estimated-vf-fps');
+      } catch (_) {}
+      _nativeFramePropertiesObserved = false;
+      _usesNativeFrameProbe = false;
+    }
 
     try {
       await _player.stop();
     } catch (_) {}
 
-    await Future.delayed(const Duration(milliseconds: 300));
-
     try {
       await _player.dispose();
     } catch (_) {}
+
+    _softwareDecoderFallbackUrl = null;
 
     await Future.wait([
       _stateSubject.close(),
@@ -697,6 +1159,13 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor, VideoFit
 
   @override
   VideoController get mediaKitVideoController => _controller;
+}
+
+class _NativeDiagnostic {
+  const _NativeDiagnostic({required this.message, required this.prefix});
+
+  final String message;
+  final String? prefix;
 }
 
 /// Keeps the Windows BGRA texture close to the visible physical viewport.

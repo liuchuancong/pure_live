@@ -1,0 +1,88 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:pure_live/player/core/player_error_classifier.dart';
+import 'package:pure_live/player/core/source_event_fence.dart';
+import 'package:pure_live/player/models/player_error_type.dart';
+
+void main() {
+  group('PlayerErrorClassifier', () {
+    test('does not classify the letters io inside video/audio as network', () {
+      final result = PlayerErrorClassifier.classify('Video decoder rejected this audio/video codec');
+
+      expect(result.type, PlayerErrorType.codec);
+      expect(result.immediatelyTerminal, isFalse);
+    });
+
+    test('lets hardware initialization recover but fails an unsupported codec', () {
+      final hardwareFallback = PlayerErrorClassifier.classify('MediaCodec decoder initialization failed');
+      final terminal = PlayerErrorClassifier.classify('No decoder found for codec av1');
+      final packet = PlayerErrorClassifier.classify('Error while decoding frame: invalid NAL unit');
+
+      expect(hardwareFallback.type, PlayerErrorType.codec);
+      expect(hardwareFallback.immediatelyTerminal, isFalse);
+      expect(terminal.type, PlayerErrorType.codec);
+      expect(terminal.immediatelyTerminal, isTrue);
+      expect(packet.type, PlayerErrorType.codec);
+      expect(packet.immediatelyTerminal, isFalse);
+    });
+
+    test('uses concrete transport and source markers', () {
+      expect(PlayerErrorClassifier.classify('Input/output error').type, PlayerErrorType.network);
+      expect(PlayerErrorClassifier.classify('Server returned 403 Forbidden').type, PlayerErrorType.source);
+      expect(PlayerErrorClassifier.classify('Error opening input').type, PlayerErrorType.source);
+    });
+
+    test('keeps audio and video decoder diagnostics in separate recovery lanes', () {
+      final audio = PlayerErrorClassifier.classify('Decoder initialization failed', nativePrefix: 'ad');
+      final video = PlayerErrorClassifier.classify(
+        'Error while decoding frame: invalid NAL unit',
+        nativePrefix: 'ffmpeg/video',
+      );
+
+      expect(audio.component, NativeDiagnosticComponent.audio);
+      expect(audio.code, 'audio_decoder_runtime');
+      expect(video.component, NativeDiagnosticComponent.video);
+      expect(video.code, 'video_decoder_runtime');
+    });
+  });
+
+  group('SourceEventFence', () {
+    test('accepts events only after the exact replacement source is native-current', () {
+      final fence = SourceEventFence();
+      final generation = fence.begin('https://cdn.example/live.flv?token=new');
+
+      fence.observeNativeSources(const <String>['https://cdn.example/old.flv']);
+      expect(fence.isCurrentGeneration(generation), isFalse);
+      expect(fence.accepts(generation), isFalse);
+
+      fence.finishOpen(const <String>['https://cdn.example/live.flv?token=new']);
+      expect(fence.isCurrentGeneration(generation), isTrue);
+      expect(fence.accepts(generation), isTrue);
+
+      fence.observeNativeSources(const <String>[]);
+      expect(fence.accepts(generation), isTrue);
+    });
+
+    test('a finished open can time out even when no native path event arrives', () {
+      final fence = SourceEventFence();
+      final generation = fence.begin('https://cdn.example/live.flv');
+
+      fence.finishOpen(const <String>[]);
+
+      expect(fence.isCurrentGeneration(generation), isTrue);
+      expect(fence.accepts(generation), isFalse);
+    });
+
+    test('a later source generation invalidates every earlier callback', () {
+      final fence = SourceEventFence();
+      final oldGeneration = fence.begin('https://cdn.example/old.flv');
+      fence.finishOpen(const <String>['https://cdn.example/old.flv']);
+      expect(fence.accepts(oldGeneration), isTrue);
+
+      final newGeneration = fence.begin('https://cdn.example/new.flv');
+      fence.finishOpen(const <String>['https://cdn.example/new.flv']);
+
+      expect(fence.accepts(oldGeneration), isFalse);
+      expect(fence.accepts(newGeneration), isTrue);
+    });
+  });
+}

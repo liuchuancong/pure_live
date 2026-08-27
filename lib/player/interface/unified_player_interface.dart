@@ -84,3 +84,26 @@ abstract class UnifiedPlayer {
 abstract interface class VideoFitAwarePlayer {
   void setVideoFit(BoxFit fit);
 }
+
+/// Optional capability for adapters which retain one native player while
+/// replacing its live source.
+///
+/// The manager calls this synchronously before it rebinds source-scoped
+/// listeners. Implementations must clear cached dimensions, completion and
+/// recoverable native errors here, before the asynchronous native open starts.
+/// This prevents a BehaviorSubject or a delayed callback from the previous URL
+/// being accepted as evidence for the replacement URL.
+abstract interface class SourceTransitionAwarePlayer {
+  void beginSourceTransition();
+}
+
+/// Optional capability for a native player that can retry the current source
+/// with software video decoding before the manager allocates another engine.
+///
+/// Implementations only prepare the next source open; they must not mutate the
+/// active decoder immediately because doing so can emit another native error
+/// inside the recovery callback that requested the fallback. Returning `true`
+/// means the manager should reopen the current URL once on this same player.
+abstract interface class DecoderRecoveryAwarePlayer {
+  Future<bool> prepareSoftwareDecoderFallback(PlayerException error);
+}

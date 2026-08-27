@@ -1,7 +1,7 @@
 name: pure_live
 description: 纯粹直播,一款开源的第三方多平台直播聚合播放器.
 publish_to: none
-version: 3.0.13+4101
+version: 3.0.14+4102
 
 environment:
   sdk: ^3.13.0
@@ -78,7 +78,12 @@ dependencies:
   audio_service: ^0.18.18 # 后台音频服务
   audio_service_win: ^0.0.3
   audio_session: ^0.2.3 # 音频会话管理
-  ffmpeg_kit_extended_flutter: ^0.6.0
+  # Controlled native-binary rollback: 0.6.0 moved the bundle from FFmpeg 8 to
+  # FFmpeg 9 in the same regression window as the Android live-FLV recorder
+  # failures. Keep the last known build profile exact while both bundles are
+  # compared by the recorder contract probes; a caret silently changes native
+  # code between otherwise identical application builds.
+  ffmpeg_kit_extended_flutter: 0.5.13
 
   flv_lzc:
     path: plugins/flv_lzc # Vendored from liuchuancong/flv_lzc@030d611

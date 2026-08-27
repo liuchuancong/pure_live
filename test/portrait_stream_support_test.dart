@@ -265,6 +265,37 @@ void main() {
   });
 
   group('PortraitPresentationPolicy', () {
+    test('provisional cached or platform metadata cannot control automatic layout', () {
+      final provisional = VideoGeometrySnapshot(
+        width: 1080,
+        height: 1920,
+        aspectRatio: 9 / 16,
+        orientation: VideoSourceOrientation.portrait,
+        candidateOrientation: VideoSourceOrientation.portrait,
+        stableSampleCount: 3,
+        confidence: 1,
+        observedAt: DateTime(2026),
+        isProvisional: true,
+      );
+
+      expect(
+        PortraitPresentationPolicy.resolveOrientation(
+          snapshot: provisional,
+          override: PortraitOrientationOverride.automatic,
+          smartDetectionEnabled: true,
+        ),
+        VideoSourceOrientation.landscape,
+      );
+      expect(
+        PortraitPresentationPolicy.resolveOrientation(
+          snapshot: provisional,
+          override: PortraitOrientationOverride.portrait,
+          smartDetectionEnabled: true,
+        ),
+        VideoSourceOrientation.portrait,
+      );
+    });
+
     test('manual room override has priority over smart detection', () {
       final snapshot = VideoGeometrySnapshot(
         width: 1920,

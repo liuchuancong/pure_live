@@ -237,17 +237,22 @@ class _TaskCard extends GetView<RecorderController> {
     return "$bytes ${i18n("unit_b")}";
   }
 
-  String _failureStageText() => switch (task.lastErrorStage) {
-    'room' => i18n('recorder_stage_room'),
-    'quality' => i18n('recorder_stage_quality'),
-    'stream' => i18n('recorder_stage_stream'),
-    'network' => i18n('recorder_stage_network'),
-    'ffmpeg' => i18n('recorder_stage_ffmpeg'),
-    'merge' => i18n('recorder_stage_merge'),
-    'scheduler' => i18n('recorder_stage_scheduler'),
-    'status' => i18n('recorder_stage_status'),
-    _ => i18n('recorder_stage_unknown'),
-  };
+  String _failureStageText() {
+    final stage = task.lastErrorStage;
+    if (stage == 'ffmpeg' || stage?.startsWith('ffmpeg.') == true) {
+      return i18n('recorder_stage_ffmpeg');
+    }
+    return switch (stage) {
+      'room' => i18n('recorder_stage_room'),
+      'quality' => i18n('recorder_stage_quality'),
+      'stream' => i18n('recorder_stage_stream'),
+      'network' => i18n('recorder_stage_network'),
+      'merge' => i18n('recorder_stage_merge'),
+      'scheduler' => i18n('recorder_stage_scheduler'),
+      'status' => i18n('recorder_stage_status'),
+      _ => i18n('recorder_stage_unknown'),
+    };
+  }
 
   Widget _buildCoverImage(Color statusColor) {
     final coverUrl = normalizeNetworkImageUrl(task.cover);

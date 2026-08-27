@@ -699,7 +699,7 @@ class PortraitPresentationPolicy {
       PortraitOrientationOverride.portrait => VideoSourceOrientation.portrait,
       PortraitOrientationOverride.landscape => VideoSourceOrientation.landscape,
       PortraitOrientationOverride.automatic =>
-        smartDetectionEnabled ? snapshot.orientation : VideoSourceOrientation.landscape,
+        smartDetectionEnabled && !snapshot.isProvisional ? snapshot.orientation : VideoSourceOrientation.landscape,
     };
   }
 

@@ -566,9 +566,11 @@ void main() {
 
     manager.prepareRoomSessionReentry(room);
     expect(manager.consumeRoomSessionReentry(LiveRoom(roomId: 'room-2', platform: 'test')), isNull);
+
+    await manager.dispose();
   });
 
-  testWidgets('floating cleanup preserves the same-room re-entry handoff', (tester) async {
+  test('floating cleanup preserves the same-room re-entry handoff', () async {
     final player = _FakePlayer();
     final manager = _createManager(player);
     final room = LiveRoom(roomId: 'room-1', platform: 'test');
@@ -594,10 +596,7 @@ void main() {
     );
 
     manager.prepareRoomSessionReentry(room);
-    final cleanup = manager.closeAppFloating();
-    await tester.pump(const Duration(milliseconds: 16));
-    await tester.pump(const Duration(milliseconds: 16));
-    await cleanup.timeout(const Duration(seconds: 2));
+    await manager.closeAppFloating().timeout(const Duration(milliseconds: 500));
 
     final resumed = manager.consumeRoomSessionReentry(room);
     expect(resumed, isNotNull);
@@ -605,7 +604,8 @@ void main() {
     expect(resumed.headers, containsPair('referer', 'https://example.invalid'));
     expect(manager.currentPlayer, same(player));
     expect(player.setDataSourceCalls, 1);
-  }, timeout: const Timeout(Duration(seconds: 10)));
+    await manager.dispose();
+  });
 
   test('floating cleanup releases route resources without waiting forever for a frame', () async {
     final player = _FakePlayer();

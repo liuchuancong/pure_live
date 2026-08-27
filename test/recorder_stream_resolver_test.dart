@@ -81,6 +81,25 @@ void main() {
     );
   });
 
+  test('fresh signed URLs still rotate from a failed quality to the next candidate', () async {
+    final site = _RotatingSignedSite();
+    final resolver = StreamResolverService(siteResolver: (_) => site);
+
+    final first = await resolver.resolveStream(roomId: '1', platform: 'douyu', preferredQuality: '原画');
+    final second = await resolver.resolveStream(
+      roomId: '1',
+      platform: 'douyu',
+      preferredQuality: '原画',
+      previousUrl: first.url,
+      lineOffset: 1,
+    );
+
+    expect(first.quality.selectionId, 'source');
+    expect(first.url, contains('/source.flv?token='));
+    expect(second.quality.selectionId, 'hd');
+    expect(second.url, contains('/hd.flv?token='));
+  });
+
   test('offline rooms and unknown platforms stop before FFmpeg', () async {
     final offline = StreamResolverService(siteResolver: (_) => _FakeSite(live: false));
     await expectLater(
@@ -190,6 +209,32 @@ class _StrictFakeSite extends _FakeSite implements LiveSiteRecordRoomResolver {
       liveStatus: strictLive ? LiveStatus.live : LiveStatus.offline,
       status: strictLive,
       isRecord: false,
+    );
+  }
+}
+
+class _RotatingSignedSite extends LiveSite implements LivePlayUrlResolver {
+  int calls = 0;
+
+  @override
+  Future<LiveRoom> getRoomDetail({required String roomId, required String platform}) async {
+    return LiveRoom(roomId: roomId, platform: platform, liveStatus: LiveStatus.live, status: true);
+  }
+
+  @override
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
+    return <LivePlayQuality>[
+      LivePlayQuality(quality: '原画', id: 'source', sort: 1000),
+      LivePlayQuality(quality: '高清', id: 'hd', sort: 500),
+    ];
+  }
+
+  @override
+  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom detail, required LivePlayQuality quality}) async {
+    calls++;
+    return LivePlayUrlResolution(
+      urls: <String>['https://cdn.example/${quality.selectionId}.flv?token=$calls'],
+      appliedQualityData: quality.selectionId,
     );
   }
 }

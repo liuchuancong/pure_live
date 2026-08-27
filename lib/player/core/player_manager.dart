@@ -47,6 +47,8 @@ class PlayerManager {
   final EngineFallbackManager fallbackManager;
   final LineFallbackManager lineManager;
   final Duration audioModeSwitchTimeout;
+  final Duration sourceOpenTimeout;
+  final Duration sourceReadyTimeout;
 
   /// How long a manual foreground audio session keeps video decode warm.
   /// `null` retains it until the app backgrounds; [Duration.zero] selects the
@@ -64,6 +66,8 @@ class PlayerManager {
     required this.fallbackManager,
     required this.lineManager,
     this.audioModeSwitchTimeout = const Duration(seconds: 5),
+    this.sourceOpenTimeout = const Duration(seconds: 18),
+    this.sourceReadyTimeout = const Duration(seconds: 12),
     this.audioModeVideoWarmRetention,
     UnifiedPlayerCreator? playerCreator,
     bool Function()? useHardStopOnExit,
@@ -139,12 +143,17 @@ class PlayerManager {
   bool _disposed = false;
   bool _isSwitchingDueToFallback = false;
   bool _isHandlingError = false;
+  _PendingPlayerError? _pendingPlayerError;
+  int? _errorDedupeSession;
+  final Set<String> _errorDedupeSignatures = <String>{};
   static const String _floatTag = "global_video_player";
   Timer? _hideTimer;
+  Timer? _sourceReadyTimer;
   Timer? _geometryObservationTimer;
   Timer? _geometryStabilityTimer;
   Timer? _contentProbeTimer;
   int _geometrySessionGeneration = 0;
+  int? _freshDecoderGeometryGeneration;
   int _contentProbeAttempts = 0;
   int? _contentProbeInFlightGeneration;
   static const List<Duration> _contentProbeDelays = <Duration>[
@@ -155,7 +164,6 @@ class PlayerManager {
     Duration(milliseconds: 4000),
     Duration(milliseconds: 6500),
   ];
-  final Map<String, _CachedVideoGeometry> _geometryCache = <String, _CachedVideoGeometry>{};
   late Floating floating;
   LiveRoom? currentFloatRoom;
   VideoController? _videoController;
@@ -343,26 +351,16 @@ class PlayerManager {
     _geometryStabilityTimer = null;
     _contentProbeTimer = null;
     _contentProbeAttempts = 0;
+    _freshDecoderGeometryGeneration = null;
     if (_widthSubject.value != null) _widthSubject.add(null);
     if (_heightSubject.value != null) _heightSubject.add(null);
-    _portraitDetector.resetPendingEvidence();
-
-    final previousRoom = currentFloatRoom;
-    final roomChanged = nextRoom != previousRoom;
-    VideoGeometrySnapshot next;
-    if (roomChanged) {
-      final previous = videoGeometry.value;
-      if (previousRoom != null && previous.isStable && previous.hasValidDimensions && !previous.isProvisional) {
-        _rememberVideoGeometry(previousRoom.identityKey, previous);
-      }
-      final cached = nextRoom == null ? null : _cachedVideoGeometry(nextRoom.identityKey);
-      next = cached == null ? _portraitDetector.reset() : _portraitDetector.seed(cached);
-    } else {
-      // A new URL in the same room is still a new decoded canvas. Keep only the
-      // last effective ratio while fresh evidence arrives; a crop from the old
-      // quality or CDN must never be applied to the replacement source.
-      next = _portraitDetector.beginSourceTransition();
-    }
+    // A room ID is not a media identity. A restarted room, a refreshed signed
+    // URL, another quality or another CDN may expose a different encoded
+    // canvas. Reusing a room cache made the old orientation control the normal
+    // page, fullscreen and PiP before the current decoder spoke. Start every
+    // source from unknown; metadata below stays provisional until this source's
+    // decoder publishes a valid dimension pair.
+    VideoGeometrySnapshot next = _portraitDetector.reset();
 
     final hint = LiveStreamGeometryHintResolver.resolve(nextRoom, selectedUrl: selectedUrl);
     if (hint != null) {
@@ -397,6 +395,7 @@ class PlayerManager {
         return;
       }
       final snapshot = _portraitDetector.observe(width, height);
+      _freshDecoderGeometryGeneration = generation;
       _publishVideoGeometry(snapshot);
       _scheduleGeometryStabilityCommit();
       if (snapshot.isStable) _scheduleActiveContentProbe();
@@ -432,7 +431,9 @@ class PlayerManager {
         _contentProbeAttempts >= _contentProbeDelays.length ||
         _contentProbeInFlightGeneration == _geometrySessionGeneration ||
         _contentProbeTimer != null ||
+        _freshDecoderGeometryGeneration != _geometrySessionGeneration ||
         !snapshot.isStable ||
+        snapshot.isProvisional ||
         !needsCanvasInspection ||
         _portraitDetector.contentEvidenceSettled ||
         !(_portraitSettings?.enablePortraitStreamAdaptation.v ?? true) ||
@@ -485,25 +486,6 @@ class PlayerManager {
         _scheduleActiveContentProbe();
       }
     }
-  }
-
-  void _rememberVideoGeometry(String roomKey, VideoGeometrySnapshot snapshot) {
-    if (roomKey == ':' || !snapshot.isStable || !snapshot.hasValidDimensions) return;
-    _geometryCache.remove(roomKey);
-    _geometryCache[roomKey] = _CachedVideoGeometry(snapshot: snapshot, storedAt: DateTime.now());
-    while (_geometryCache.length > 96) {
-      _geometryCache.remove(_geometryCache.keys.first);
-    }
-  }
-
-  VideoGeometrySnapshot? _cachedVideoGeometry(String roomKey) {
-    final cached = _geometryCache[roomKey];
-    if (cached == null) return null;
-    if (DateTime.now().difference(cached.storedAt) > const Duration(hours: 4)) {
-      _geometryCache.remove(roomKey);
-      return null;
-    }
-    return cached.snapshot;
   }
 
   VideoSourceOrientation get effectiveVideoOrientation {
@@ -564,10 +546,6 @@ class PlayerManager {
       }
       if (isInPip.value) unawaited(_updateActiveAndroidPip());
     }
-    final room = currentFloatRoom;
-    if (room != null && snapshot.isStable && snapshot.hasValidDimensions && !snapshot.isProvisional) {
-      _rememberVideoGeometry(room.identityKey, snapshot);
-    }
   }
 
   Future<void> _updateActiveAndroidPip() async {
@@ -603,8 +581,15 @@ class PlayerManager {
 
   Future<UnifiedPlayer> _createPlayer(PlayerEngine engine, {bool audioOnly = false}) async {
     final player = await _playerCreator(engine);
-    await player.init(audioOnly: audioOnly);
-    return player;
+    try {
+      await player.init(audioOnly: audioOnly);
+      return player;
+    } catch (_) {
+      // Native allocation may succeed before controller/surface setup fails.
+      // Always release that partial player before trying another engine.
+      await _safeDestroyPlayer(player);
+      rethrow;
+    }
   }
 
   Future<T> _enqueuePlayerLifecycle<T>(Future<T> Function() operation) {
@@ -619,7 +604,7 @@ class PlayerManager {
 
   Future<void> initialize({PlayerEngine engine = PlayerEngine.mediaKit, bool audioOnly = false}) {
     return _enqueuePlayerLifecycle(
-      () => _initializeInternal(engine: engine, audioOnly: audioOnly, sessionId: _sessionId),
+      () => _initializeInternal(engine: engine, audioOnly: audioOnly, sessionId: _sessionId, publishError: true),
     );
   }
 
@@ -627,6 +612,7 @@ class PlayerManager {
     required PlayerEngine engine,
     required bool audioOnly,
     required int sessionId,
+    required bool publishError,
   }) async {
     if (_disposed || _isClosing) return;
 
@@ -648,7 +634,7 @@ class PlayerManager {
       _requestedAudioOnly = audioOnly;
       _nativeAudioOnly = audioOnly;
 
-      await _bindPlayerStreams(player);
+      await _bindPlayerStreams(player, sessionId: sessionId);
 
       if (!_isSessionValid(sessionId)) {
         await _safeDestroyPlayer(player);
@@ -682,9 +668,10 @@ class PlayerManager {
         stackTrace: s,
       );
 
-      hasError.value = true;
-      _errorSubject.add(exception);
-      _stateSubject.add(PlayerState.error);
+      // Explicit pre-warm calls own their terminal error. A player allocated as
+      // part of [play] is different: its initialization failure must remain
+      // private until the orchestrator has tried the remaining engines.
+      if (publishError) _publishTerminalPlayerError(exception);
 
       throw exception;
     }
@@ -708,6 +695,8 @@ class PlayerManager {
     bool audioOnly = false,
   }) async {
     if (_disposed) return;
+    _sourceReadyTimer?.cancel();
+    _sourceReadyTimer = null;
     _audioModeVideoWarmTimer?.cancel();
     _audioModeVideoWarmTimer = null;
     isVideoRestorePending.value = false;
@@ -717,11 +706,25 @@ class PlayerManager {
     final roomChanged = room != currentFloatRoom;
     if (roomChanged) {
       lineManager.reset();
+      fallbackManager.resetAll();
     }
     // Start a geometry generation for every new source, including quality and
     // CDN switches in the same room. Same-room presentation remains visible;
     // another room receives only its own bounded cache entry.
     _beginVideoGeometrySession(room, selectedUrl: url);
+
+    // Recovery needs the complete request even when the preferred native
+    // engine fails before a player exists. Previously these fields were set
+    // only after initialization, so an initialization exception escaped the
+    // line/engine recovery state machine and immediately surfaced as a decoder
+    // error.
+    _currentUrl = url;
+    _currentPlayUrls = List<String>.from(playUrls);
+    _currentHeaders = Map<String, String>.from(headers);
+    currentFloatRoom = room;
+    refreshPortraitPresentationPolicy(notifyController: false);
+    hasError.value = false;
+
     if (_currentPlayer == null || _runtimeEngine == null) {
       if (_defaultEngine == null) {
         final String savedKey = SettingsService.to.player.videoPlayerKey.v;
@@ -735,7 +738,14 @@ class PlayerManager {
 
       log('No current player, initializing with default engine: $engine', name: 'PlayerManager');
 
-      await _initializeInternal(engine: engine, audioOnly: audioOnly, sessionId: mySessionId);
+      try {
+        await _initializeInternal(engine: engine, audioOnly: audioOnly, sessionId: mySessionId, publishError: false);
+      } on PlayerException catch (error) {
+        if (_isSessionValid(mySessionId)) {
+          await _handleError(error, sessionId: mySessionId);
+        }
+        return;
+      }
     } else if (_runtimeEngine != _defaultEngine && !_isSwitchingDueToFallback) {
       await _switchEngineInternal(_defaultEngine!, isManual: false, audioOnly: audioOnly);
     } else if (_runtimeAudioOnly != audioOnly || _requestedAudioOnly != audioOnly) {
@@ -760,18 +770,38 @@ class PlayerManager {
     final String targetUrl = url;
     final List<String> targetPlayUrls = List.from(playUrls);
 
+    // Reset retained-adapter subjects before rebinding this source generation.
+    // Without this handshake BehaviorSubjects replayed the previous URL's
+    // dimensions and delayed errors into the new room/quality session.
+    if (player is SourceTransitionAwarePlayer) {
+      (player as SourceTransitionAwarePlayer).beginSourceTransition();
+    }
+    await _bindPlayerStreams(player, sessionId: mySessionId);
+    if (!_isSessionValid(mySessionId)) return;
+
     _currentUrl = targetUrl;
     _currentPlayUrls = targetPlayUrls;
-    _currentHeaders = headers;
-    currentFloatRoom = room;
-    refreshPortraitPresentationPolicy(notifyController: false);
-    hasError.value = false;
 
     try {
       _stateSubject.add(PlayerState.preparing);
-      await player.setDataSource(targetUrl, targetPlayUrls, headers, room: room, audioOnly: audioOnly);
+      final sourceOpen = player.setDataSource(targetUrl, targetPlayUrls, headers, room: room, audioOnly: audioOnly);
+      if (sourceOpenTimeout <= Duration.zero) {
+        await sourceOpen;
+      } else {
+        await sourceOpen.timeout(
+          sourceOpenTimeout,
+          onTimeout: () {
+            throw PlayerException(
+              message: 'Native player did not finish opening the source before the deadline',
+              type: PlayerErrorType.initialization,
+              code: 'source_open_timeout',
+            );
+          },
+        );
+      }
       if (!_isSessionValid(mySessionId)) return;
       _nativeAudioOnly = audioOnly;
+      _armSourceReadyDeadline(player, mySessionId);
 
       // Desktop player adapters do not all restore the per-room volume in
       // setDataSource. Apply it centrally so every engine starts consistently.
@@ -789,12 +819,10 @@ class PlayerManager {
       _stateSubject.add(PlayerState.ready);
       _scheduleAudioServiceSync(player, audioOnly, room: room, sessionId: mySessionId);
     } on PlayerException catch (e) {
-      if (!_isHandlingError && _isSessionValid(mySessionId)) {
-        await _handleError(e, sessionId: mySessionId);
-      }
+      if (_isSessionValid(mySessionId)) await _handleError(e, sessionId: mySessionId);
     } catch (e, s) {
       log(e.toString());
-      if (!_isHandlingError && _isSessionValid(mySessionId)) {
+      if (_isSessionValid(mySessionId)) {
         final exception = PlayerException(
           message: 'Play failed',
           type: PlayerErrorType.unknown,
@@ -1073,10 +1101,14 @@ class PlayerManager {
 
     final sessionId = _sessionId;
     final oldPlayer = _currentPlayer;
+    final oldEngine = _runtimeEngine;
+    final oldDefaultEngine = _defaultEngine;
+    final oldRuntimeAudioOnly = _runtimeAudioOnly;
+    final oldRequestedAudioOnly = _requestedAudioOnly;
+    final oldNativeAudioOnly = _nativeAudioOnly;
     final targetAudioOnly = audioOnly ?? _runtimeAudioOnly;
 
     try {
-      await _clearSubscriptions();
       final newPlayer = await _createPlayer(engine, audioOnly: targetAudioOnly);
       if (!_isSessionValid(sessionId)) {
         await _safeDestroyPlayer(newPlayer);
@@ -1091,7 +1123,33 @@ class PlayerManager {
       if (isManual) {
         _defaultEngine = engine;
       }
-      await _bindPlayerStreams(newPlayer);
+      try {
+        await _bindPlayerStreams(newPlayer, sessionId: sessionId);
+      } catch (_) {
+        // Stream binding is part of installing the replacement engine. Roll
+        // the transaction back instead of leaking a half-installed native
+        // player and abandoning the still-usable previous decoder.
+        _currentPlayer = oldPlayer;
+        _runtimeEngine = oldEngine;
+        _defaultEngine = oldDefaultEngine;
+        _runtimeAudioOnly = oldRuntimeAudioOnly;
+        _requestedAudioOnly = oldRequestedAudioOnly;
+        _nativeAudioOnly = oldNativeAudioOnly;
+        await _safeDestroyPlayer(newPlayer);
+        if (oldPlayer != null) {
+          try {
+            await _bindPlayerStreams(oldPlayer, sessionId: sessionId);
+          } catch (restoreError, restoreStackTrace) {
+            log(
+              'Restore previous player subscriptions failed: $restoreError',
+              name: 'PlayerManager',
+              error: restoreError,
+              stackTrace: restoreStackTrace,
+            );
+          }
+        }
+        rethrow;
+      }
       if (oldPlayer != null && !identical(oldPlayer, newPlayer)) {
         await _safeDestroyPlayer(oldPlayer);
       }
@@ -1104,7 +1162,7 @@ class PlayerManager {
         error: e,
         stackTrace: s,
       );
-      _errorSubject.add(exception);
+      if (isManual) _publishTerminalPlayerError(exception);
       rethrow;
     }
   }
@@ -1115,6 +1173,39 @@ class PlayerManager {
     } catch (e, s) {
       log("destroy player error: $e", stackTrace: s);
     }
+  }
+
+  void _armSourceReadyDeadline(UnifiedPlayer player, int sessionId) {
+    _sourceReadyTimer?.cancel();
+    _sourceReadyTimer = null;
+    if (sourceReadyTimeout <= Duration.zero || player.isPlayingNow || !_isPlayerEventCurrent(player, sessionId)) {
+      return;
+    }
+    _sourceReadyTimer = Timer(sourceReadyTimeout, () {
+      _sourceReadyTimer = null;
+      if (!_isPlayerEventCurrent(player, sessionId) || player.isPlayingNow || _playingSubject.value) return;
+      _schedulePlayerError(
+        PlayerException(
+          message: 'Source opened but produced no playable frame before the readiness deadline',
+          type: PlayerErrorType.source,
+        ),
+        sessionId,
+      );
+    });
+  }
+
+  void _schedulePlayerError(PlayerException error, int sessionId) {
+    unawaited(
+      _enqueuePlayerLifecycle(() => _handleError(error, sessionId: sessionId))
+          .catchError((Object failure, StackTrace stackTrace) {
+            log(
+              'Scheduled player recovery failed: $failure',
+              name: 'PlayerManager',
+              error: failure,
+              stackTrace: stackTrace,
+            );
+          }),
+    );
   }
 
   Future<void> togglePlayPause() async {
@@ -1382,8 +1473,12 @@ class PlayerManager {
       final hadOverlay = floatingManager.containsFloating(_floatTag);
       if (hadOverlay) {
         isFloatingVideoVisible.value = false;
-        SchedulerBinding.instance.scheduleFrame();
-        await SchedulerBinding.instance.endOfFrame;
+        // Hiding the native view normally takes one frame, but Android can
+        // stop producing vsync while the app backgrounds. Use the same bounded
+        // fence as the later unmount step so cleanup cannot retain a decoder,
+        // Surface and route subscriptions forever before it removes the
+        // overlay.
+        await _awaitBoundedWidgetUnmount();
         // OverlayEntry.remove() schedules unmount for the next frame. Calling
         // disposeFloating here would also dispose its controllers while the
         // FloatingView is still subscribed to them.
@@ -1780,6 +1875,8 @@ class PlayerManager {
   }
 
   Future<void> _closeInternal() async {
+    _sourceReadyTimer?.cancel();
+    _sourceReadyTimer = null;
     _audioModeVideoWarmTimer?.cancel();
     _audioModeVideoWarmTimer = null;
     _pendingRoomReentry = null;
@@ -1816,6 +1913,8 @@ class PlayerManager {
   }
 
   Future<void> _hardDisposeInternal() async {
+    _sourceReadyTimer?.cancel();
+    _sourceReadyTimer = null;
     _sessionId++;
     lineManager.reset();
     await _clearSubscriptions();
@@ -1845,32 +1944,69 @@ class PlayerManager {
 
   Future<void> _handleError(PlayerException error, {int? sessionId}) async {
     if (_disposed || _isClosing) return;
-    if (_isHandlingError) {
-      log("skip duplicated error handling: ${error.message}");
-      return;
-    }
     final mySessionId = sessionId ?? _sessionId;
     if (!_isSessionValid(mySessionId)) return;
+    _sourceReadyTimer?.cancel();
+    _sourceReadyTimer = null;
+
+    final request = _PendingPlayerError(error: error, sessionId: mySessionId);
+    if (!_registerPlayerError(request)) {
+      log('skip duplicated source-generation error: ${error.message}', name: 'PlayerManager');
+      return;
+    }
+    if (_isHandlingError) {
+      // A replacement line/engine can fail synchronously while the previous
+      // recovery is still on the stack. Dropping that event left the second
+      // source loading forever. Keep the newest source-generation failure and
+      // drain it as soon as the current recovery step returns.
+      _pendingPlayerError = request;
+      return;
+    }
 
     _isHandlingError = true;
     try {
-      hasError.value = true;
-      _errorSubject.add(error);
-      _stateSubject.add(PlayerState.error);
+      _PendingPlayerError? current = request;
+      while (current != null && !_disposed && !_isClosing) {
+        _pendingPlayerError = null;
+        await _recoverOrPublishPlayerError(current);
+        current = _pendingPlayerError;
+      }
+    } finally {
+      _isHandlingError = false;
+      final pending = _pendingPlayerError;
+      _pendingPlayerError = null;
+      if (pending != null && _isSessionValid(pending.sessionId)) {
+        unawaited(_handleError(pending.error, sessionId: pending.sessionId));
+      }
+    }
+  }
 
-      bool lineSwitched = false;
+  bool _registerPlayerError(_PendingPlayerError request) {
+    if (_errorDedupeSession != request.sessionId) {
+      _errorDedupeSession = request.sessionId;
+      _errorDedupeSignatures.clear();
+    }
+    return _errorDedupeSignatures.add(
+      '${request.error.type.name}:${request.error.code ?? '-'}:${request.error.message}',
+    );
+  }
+
+  Future<void> _recoverOrPublishPlayerError(_PendingPlayerError request) async {
+    if (!_isSessionValid(request.sessionId)) return;
+    final error = request.error;
+    _loadingSubject.add(true);
+    _stateSubject.add(PlayerState.buffering);
+
+    try {
+      final currentUrl = _currentUrl;
       if ((error.type == PlayerErrorType.network || error.type == PlayerErrorType.source) &&
+          currentUrl != null &&
           _currentPlayUrls.length > 1) {
-        lineManager.markFailed(_currentUrl!);
-        if (!lineManager.hasAvailable(_currentPlayUrls)) {
-          log("no available lines, fallback engine");
-        } else {
+        lineManager.markFailed(currentUrl);
+        if (lineManager.hasAvailable(_currentPlayUrls)) {
           final nextLine = lineManager.next(_currentPlayUrls);
-          if (nextLine != _currentUrl) {
-            lineSwitched = true;
-            log("switch line => $nextLine");
-            await Future.delayed(const Duration(seconds: 2));
-            if (!_isSessionValid(mySessionId)) return;
+          if (nextLine != currentUrl) {
+            log('recover playback with next line', name: 'PlayerManager');
             await _playInternal(
               nextLine,
               _currentPlayUrls,
@@ -1883,25 +2019,16 @@ class PlayerManager {
         }
       }
 
-      log(error.type.toString());
-      if (!lineSwitched && fallbackManager.shouldFallback(error)) {
-        final nextEngine = await fallbackManager.fallback(_runtimeEngine!, error);
-        if (nextEngine == _runtimeEngine) {
-          log("skip fallback: nextEngine(${nextEngine.name}) == currentEngine(${_runtimeEngine?.name})");
-          return;
-        }
-        log(
-          "fallback engine: "
-          "${_runtimeEngine?.name} -> ${nextEngine.name}",
-        );
-        _isSwitchingDueToFallback = true;
-        await Future.delayed(const Duration(milliseconds: 1200));
-        if (!_isSessionValid(mySessionId)) return;
-        await _switchEngineInternal(nextEngine, isManual: false, audioOnly: _runtimeAudioOnly);
-        await Future.delayed(const Duration(milliseconds: 500));
-        if (!_isSessionValid(mySessionId)) return;
+      final activePlayer = _currentPlayer;
+      final currentDecoderUrl = _currentUrl;
+      if (error.type == PlayerErrorType.codec &&
+          error.code?.startsWith('audio_') != true &&
+          activePlayer is DecoderRecoveryAwarePlayer &&
+          currentDecoderUrl != null &&
+          await (activePlayer as DecoderRecoveryAwarePlayer).prepareSoftwareDecoderFallback(error)) {
+        log('recover playback with software decoder on the current engine', name: 'PlayerManager');
         await _playInternal(
-          _currentUrl!,
+          currentDecoderUrl,
           _currentPlayUrls,
           _currentHeaders,
           room: currentFloatRoom,
@@ -1909,32 +2036,99 @@ class PlayerManager {
         );
         return;
       }
-    } catch (e, s) {
-      log("_handleError failed: $e", stackTrace: s);
-    } finally {
-      _isHandlingError = false;
+
+      if (fallbackManager.shouldFallback(error)) {
+        final activeEngine = _runtimeEngine;
+        if (activeEngine != null) {
+          var engineCursor = activeEngine;
+          var engineError = error;
+          while (true) {
+            final nextEngine = await fallbackManager.fallback(engineCursor, engineError);
+            if (nextEngine == engineCursor) break;
+            log('recover playback with engine: ${engineCursor.name} -> ${nextEngine.name}', name: 'PlayerManager');
+            _isSwitchingDueToFallback = true;
+            try {
+              await _switchEngineInternal(nextEngine, isManual: false, audioOnly: _runtimeAudioOnly);
+            } catch (switchError, stackTrace) {
+              // Initialization can fail before the replacement engine owns a
+              // source. Continue through the remaining engines instead of
+              // leaving the old engine marked as switching forever.
+              _isSwitchingDueToFallback = false;
+              engineCursor = nextEngine;
+              engineError = switchError is PlayerException
+                  ? switchError
+                  : PlayerException(
+                      message: 'Switch engine failed: $switchError',
+                      type: PlayerErrorType.initialization,
+                      error: switchError,
+                      stackTrace: stackTrace,
+                    );
+              continue;
+            }
+            final url = _currentUrl;
+            if (url != null) {
+              await _playInternal(
+                url,
+                _currentPlayUrls,
+                _currentHeaders,
+                room: currentFloatRoom,
+                audioOnly: _runtimeAudioOnly,
+              );
+              return;
+            }
+            break;
+          }
+        }
+      }
+      _isSwitchingDueToFallback = false;
+      _publishTerminalPlayerError(error);
+    } catch (fallbackError, stackTrace) {
+      _isSwitchingDueToFallback = false;
+      log('player recovery exhausted: $fallbackError', name: 'PlayerManager', stackTrace: stackTrace);
+      _publishTerminalPlayerError(fallbackError is PlayerException ? fallbackError : error);
     }
   }
 
-  Future<void> _bindPlayerStreams(UnifiedPlayer player) async {
+  void _publishTerminalPlayerError(PlayerException error) {
+    _sourceReadyTimer?.cancel();
+    _sourceReadyTimer = null;
+    hasError.value = true;
+    _loadingSubject.add(false);
+    _errorSubject.add(error);
+    _stateSubject.add(PlayerState.error);
+  }
+
+  bool _isPlayerEventCurrent(UnifiedPlayer player, int sessionId) {
+    return _isSessionValid(sessionId) && identical(player, _currentPlayer);
+  }
+
+  Future<void> _bindPlayerStreams(UnifiedPlayer player, {required int sessionId}) async {
     await _clearSubscriptions();
     _subscriptions.add(
-      player.onPlaying.listen((event) async {
+      player.onPlaying.listen((event) {
+        if (!_isPlayerEventCurrent(player, sessionId)) return;
         _playingSubject.add(event);
         if (event) {
+          _sourceReadyTimer?.cancel();
+          _sourceReadyTimer = null;
           hasError.value = false;
           _stateSubject.add(PlayerState.playing);
+          final currentUrl = _currentUrl;
+          if (currentUrl != null) lineManager.markSuccess(currentUrl);
+          final runtimeEngine = _runtimeEngine;
+          if (runtimeEngine != null) fallbackManager.reset(runtimeEngine);
           if (_isSwitchingDueToFallback) {
             _isSwitchingDueToFallback = false;
           }
           _scheduleActiveContentProbe();
-        } else {
+        } else if (_stateSubject.value != PlayerState.preparing && _stateSubject.value != PlayerState.buffering) {
           _stateSubject.add(PlayerState.paused);
         }
       }),
     );
     _subscriptions.add(
       player.onLoading.listen((event) {
+        if (!_isPlayerEventCurrent(player, sessionId)) return;
         _loadingSubject.add(event);
         if (event && _stateSubject.value != PlayerState.buffering) {
           _stateSubject.add(PlayerState.buffering);
@@ -1943,29 +2137,32 @@ class PlayerManager {
     );
     _subscriptions.add(
       player.onComplete.listen((event) {
+        if (!_isPlayerEventCurrent(player, sessionId)) return;
         _completeSubject.add(event);
       }),
     );
     _subscriptions.add(
       player.onStateChanged.listen((event) {
+        if (!_isPlayerEventCurrent(player, sessionId)) return;
         _stateSubject.add(event);
       }),
     );
     _subscriptions.add(
       player.onError.listen((error) {
-        if (!_isHandlingError) {
-          unawaited(_handleError(error));
-        }
+        if (!_isPlayerEventCurrent(player, sessionId)) return;
+        _schedulePlayerError(error, sessionId);
       }),
     );
     _subscriptions.add(
       player.width.listen((event) {
+        if (!_isPlayerEventCurrent(player, sessionId)) return;
         _widthSubject.add(event);
         _scheduleVideoGeometryObservation();
       }),
     );
     _subscriptions.add(
       player.height.listen((event) {
+        if (!_isPlayerEventCurrent(player, sessionId)) return;
         _heightSubject.add(event);
         _scheduleVideoGeometryObservation();
       }),
@@ -1974,18 +2171,25 @@ class PlayerManager {
 
   Future<void> _clearSubscriptions() async {
     if (_subscriptions.isEmpty) return;
-    for (final item in _subscriptions.toList()) {
-      await item.cancel();
-    }
+    final subscriptions = List<StreamSubscription>.of(_subscriptions);
+    // Detach ownership before awaiting cancellation so a synchronous source
+    // callback cannot append into the list being drained. Cancel independent
+    // streams concurrently; the previous serial loop added one event-loop turn
+    // per subject during every quality, line and engine transition.
     _subscriptions.clear();
+    await Future.wait<void>(subscriptions.map((item) => item.cancel()));
   }
 
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
     _sessionId++;
+    _pendingPlayerError = null;
+    _errorDedupeSignatures.clear();
     _isClosing = true;
     _hideTimer?.cancel();
+    _sourceReadyTimer?.cancel();
+    _sourceReadyTimer = null;
     _geometryObservationTimer?.cancel();
     _geometryStabilityTimer?.cancel();
     _contentProbeTimer?.cancel();
@@ -2167,11 +2371,11 @@ class _AudioServiceRequest {
   final int sessionId;
 }
 
-class _CachedVideoGeometry {
-  const _CachedVideoGeometry({required this.snapshot, required this.storedAt});
+class _PendingPlayerError {
+  const _PendingPlayerError({required this.error, required this.sessionId});
 
-  final VideoGeometrySnapshot snapshot;
-  final DateTime storedAt;
+  final PlayerException error;
+  final int sessionId;
 }
 
 /// Immutable presentation state transferred from the popped live-room route to

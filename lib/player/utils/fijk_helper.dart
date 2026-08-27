@@ -21,12 +21,17 @@ class FijkHelper {
     await player.setOption(FijkOption.formatCategory, 'rtsp_transport', 'tcp');
     // Set request headers
     String requestHeaders = '';
-    headers?.forEach((key, value) {
-      key.toLowerCase() == 'user-agent'
-          ? player.setOption(FijkOption.formatCategory, 'user_agent', value)
-          : requestHeaders += '$key:$value\r\n';
-    });
-    player.setOption(FijkOption.formatCategory, 'headers', requestHeaders);
+    for (final entry in headers?.entries ?? const <MapEntry<String, String>>[]) {
+      final key = entry.key.trim();
+      final value = entry.value.replaceAll(RegExp(r'[\r\n\u0000]+'), ' ').trim();
+      if (key.isEmpty || value.isEmpty) continue;
+      if (key.toLowerCase() == 'user-agent') {
+        await player.setOption(FijkOption.formatCategory, 'user_agent', value);
+      } else {
+        requestHeaders += '$key:$value\r\n';
+      }
+    }
+    await player.setOption(FijkOption.formatCategory, 'headers', requestHeaders);
   }
 
   /// 播放器时间转字符串

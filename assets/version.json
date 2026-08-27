@@ -1,21 +1,21 @@
 {
-  "version": "3.0.13",
-  "build_number": 4101,
-  "version_num": 300134101,
-  "version_desc": "- 修复十个平台录制前房间状态契约：临时接口或响应结构错误进入有界重试，不再被误判为已下播。\n- 哔哩哔哩、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP、YY 与 IPTV 均提供严格且包含播放数据的录制解析路径。\n- 恢复 Android 启动阶段非阻塞预热 FFmpegKit，解决首次录制时原生库未就绪导致的 I/O 失败；桌面仍延迟预热。\n- FFmpegKit 改用原始参数向量，完整保留签名 URL、请求头和含空格目录，避免命令字符串二次解析破坏参数。\n- 录制按钮只产生一次启动意图；增加失败阶段与脱敏错误展示，便于区分房间、画质、线路、网络、FFmpeg 和合并错误。\n- Android 最低系统版本对齐 FFmpegKit 依赖要求 API 26；本轮正式产物仅为 arm64-v8a。",
+  "version": "3.0.14",
+  "build_number": 4102,
+  "version_num": 300144102,
+  "version_desc": "- 修复播放器来源代次与恢复所有权：旧房间/线路回调不再污染当前来源，中间错误不会提前覆盖页面。\n- 修复同一 URL 软件解码回退提前返回；视频硬解失败按软件解码一次、线路、播放器内核有界恢复，音频错误独立处理。\n- 增加原生打开与真实首帧截止时间，Fijk/BetterPlayer 捕获同步打开失败，内核切换和小窗清理支持回滚与有界完成。\n- 录制轮换全部清晰度与 CDN，FFmpeg 错误按输出、命令、HTTP、传输、输入、格式、解码和原生阶段显示。\n- FFmpegKit 使用锁文件驱动且校验 SHA-256 的固定原生 profile；本轮正式产物仅为 arm64-v8a。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.13",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.14",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.0.13",
-      "build_number": 4101,
-      "version_num": 300134101,
-      "version_desc": "- 修复十个平台录制前房间状态契约：临时接口或响应结构错误进入有界重试，不再被误判为已下播。\n- 哔哩哔哩、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP、YY 与 IPTV 均提供严格且包含播放数据的录制解析路径。\n- 恢复 Android 启动阶段非阻塞预热 FFmpegKit，解决首次录制时原生库未就绪导致的 I/O 失败；桌面仍延迟预热。\n- FFmpegKit 改用原始参数向量，完整保留签名 URL、请求头和含空格目录，避免命令字符串二次解析破坏参数。\n- 录制按钮只产生一次启动意图；增加失败阶段与脱敏错误展示，便于区分房间、画质、线路、网络、FFmpeg 和合并错误。\n- Android 最低系统版本对齐 FFmpegKit 依赖要求 API 26；本轮正式产物仅为 arm64-v8a。",
+      "version": "3.0.14",
+      "build_number": 4102,
+      "version_num": 300144102,
+      "version_desc": "- 修复播放器来源代次与恢复所有权：旧房间/线路回调不再污染当前来源，中间错误不会提前覆盖页面。\n- 修复同一 URL 软件解码回退提前返回；视频硬解失败按软件解码一次、线路、播放器内核有界恢复，音频错误独立处理。\n- 增加原生打开与真实首帧截止时间，Fijk/BetterPlayer 捕获同步打开失败，内核切换和小窗清理支持回滚与有界完成。\n- 录制轮换全部清晰度与 CDN，FFmpeg 错误按输出、命令、HTTP、传输、输入、格式、解码和原生阶段显示。\n- FFmpegKit 使用锁文件驱动且校验 SHA-256 的固定原生 profile；本轮正式产物仅为 arm64-v8a。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.13",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.14",
       "android_abis": [
         "arm64-v8a"
       ]

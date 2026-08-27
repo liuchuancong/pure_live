@@ -297,6 +297,9 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   // 状态
   PlayerStatus _status = PlayerStatus.idle;
   PlayerStatus get status => _status;
+  bool _playerListenerBound = false;
+  String? _lastPlayerErrorSignature;
+  DateTime? _lastPlayerErrorAt;
   final isVertical = false.obs;
   final showController = true.obs;
   final showLocked = false.obs;
@@ -422,6 +425,11 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   // 播放器初始化
   Future<void> initVideoController() async {
     _setStatus(PlayerStatus.loading);
+    // Bind before opening the source. Native open/decode failures can arrive
+    // synchronously while PlayerManager.play is still awaiting the adapter;
+    // binding afterwards silently lost that only terminal event and then
+    // overwrote the page with a false `playing` state.
+    initPlayerListener();
 
     await _initVolumeController();
     if (_isDisposed) return;
@@ -436,14 +444,19 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     }
     if (_isDisposed) return;
 
-    initPlayerListener();
     _setupDefaultFullscreen();
 
     if (room.platform == Sites.iptvSite) {
       await loadFullChannelSchedule(room.epgId);
     }
 
-    _setStatus(PlayerStatus.playing);
+    if (_playerManager.hasError.value) {
+      _setStatus(PlayerStatus.error);
+    } else if (_playerManager.isPlayingNow) {
+      _setStatus(PlayerStatus.playing);
+    } else {
+      _setStatus(PlayerStatus.loading);
+    }
   }
 
   Future<void> _initVolumeController() async {
@@ -521,6 +534,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
       await sub.cancel();
     }
     _subscriptions.clear();
+    _playerListenerBound = false;
   }
 
   void _cancelAllTimers() {
@@ -540,21 +554,51 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   bool get _isDisposed => _status == PlayerStatus.disposed;
 
   void _setStatus(PlayerStatus newStatus) {
+    if (_status == newStatus) return;
     _status = newStatus;
     notifyListeners();
   }
 
   // 播放器监听
   void initPlayerListener() {
+    if (_playerListenerBound || _isDisposed) return;
+    _playerListenerBound = true;
     final errorSub = _playerManager.onError.listen((error) {
       log('error: ${error.toString()}', name: 'initPlayerListener');
       _handlePlayerError(error);
     });
     _addSubscription(errorSub);
+    _addSubscription(
+      _playerManager.onPlaying.distinct().listen((playing) {
+        if (_isDisposed) return;
+        if (playing) {
+          _setStatus(PlayerStatus.playing);
+        } else if (_playerManager.hasError.value) {
+          _setStatus(PlayerStatus.error);
+        }
+      }),
+    );
+    _addSubscription(
+      _playerManager.onLoading.distinct().listen((loading) {
+        if (_isDisposed || _playerManager.hasError.value) return;
+        if (loading) _setStatus(PlayerStatus.loading);
+      }),
+    );
   }
 
   void _handlePlayerError(PlayerException error) {
+    if (_isDisposed) return;
     _setStatus(PlayerStatus.error);
+
+    final now = DateTime.now();
+    final signature = error.toString();
+    if (_lastPlayerErrorSignature == signature &&
+        _lastPlayerErrorAt != null &&
+        now.difference(_lastPlayerErrorAt!) < const Duration(seconds: 2)) {
+      return;
+    }
+    _lastPlayerErrorSignature = signature;
+    _lastPlayerErrorAt = now;
 
     final errorMessage = switch (error.type) {
       PlayerErrorType.network => i18n("error_network"),

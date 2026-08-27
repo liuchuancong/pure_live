@@ -136,6 +136,8 @@ class StreamResolverService extends GetxService {
 
       final orderedQualities = orderQualities(qualities, preferredQuality);
       Object? lastError;
+      final candidates = <_ResolvedCandidate>[];
+      final seenCandidates = <String>{};
       for (final requestedQuality in orderedQualities) {
         try {
           final resolution = await site.resolvePlayUrls(detail: detail, quality: requestedQuality);
@@ -143,22 +145,30 @@ class StreamResolverService extends GetxService {
           if (validUrls.isEmpty) continue;
 
           final appliedQuality = _appliedQuality(orderedQualities, requestedQuality, resolution.appliedQualityData);
-          final selectedIndex = _selectLineIndex(validUrls, previousUrl: previousUrl, lineOffset: lineOffset);
-          final selectedUrl = validUrls[selectedIndex];
-          final rotatedUrls = <String>[
-            selectedUrl,
-            for (var offset = 1; offset < validUrls.length; offset++)
-              validUrls[(selectedIndex + offset) % validUrls.length],
-          ];
-          return ResolvedRecordStream(
-            url: selectedUrl,
-            quality: appliedQuality,
-            lineIndex: selectedIndex,
-            candidateUrls: List<String>.unmodifiable(rotatedUrls),
-          );
+          for (final (lineIndex, url) in validUrls.indexed) {
+            final identity = '${appliedQuality.selectionId}:${_streamIdentity(url)}';
+            if (!seenCandidates.add(identity)) continue;
+            candidates.add(_ResolvedCandidate(url: url, quality: appliedQuality, lineIndex: lineIndex));
+          }
         } catch (error) {
           lastError = error;
         }
+      }
+
+      if (candidates.isNotEmpty) {
+        final selectedIndex = _selectCandidateIndex(candidates, previousUrl: previousUrl, lineOffset: lineOffset);
+        final selected = candidates[selectedIndex];
+        final rotatedCandidates = <_ResolvedCandidate>[
+          selected,
+          for (var offset = 1; offset < candidates.length; offset++)
+            candidates[(selectedIndex + offset) % candidates.length],
+        ];
+        return ResolvedRecordStream(
+          url: selected.url,
+          quality: selected.quality,
+          lineIndex: selected.lineIndex,
+          candidateUrls: List<String>.unmodifiable(rotatedCandidates.map((candidate) => candidate.url)),
+        );
       }
 
       throw StreamException(
@@ -236,15 +246,41 @@ class StreamResolverService extends GetxService {
     return qualities.firstWhere((quality) => quality.selectionId.toString() == normalized, orElse: () => requested);
   }
 
-  static int _selectLineIndex(List<String> urls, {String? previousUrl, required int lineOffset}) {
-    if (urls.length == 1) return 0;
-    final previousIndex = previousUrl == null ? -1 : urls.indexOf(previousUrl);
-    if (previousIndex >= 0) return (previousIndex + 1) % urls.length;
-    return lineOffset.abs() % urls.length;
+  static int _selectCandidateIndex(
+    List<_ResolvedCandidate> candidates, {
+    String? previousUrl,
+    required int lineOffset,
+  }) {
+    if (candidates.length == 1) return 0;
+    final previousIdentity = previousUrl == null ? null : _streamIdentity(previousUrl);
+    final previousIndex = previousIdentity == null
+        ? -1
+        : candidates.indexWhere((candidate) => _streamIdentity(candidate.url) == previousIdentity);
+    if (previousIndex >= 0) return (previousIndex + 1) % candidates.length;
+    return lineOffset.abs() % candidates.length;
+  }
+
+  /// Signed query parameters are refreshed on every platform resolve. Compare
+  /// only scheme/host/path so a retry can still identify the failed CDN and
+  /// move to the next line or quality instead of repeatedly selecting the same
+  /// freshly-signed URL.
+  static String _streamIdentity(String rawUrl) {
+    final normalized = rawUrl.trim();
+    final uri = Uri.tryParse(normalized);
+    if (uri == null) return normalized;
+    return normalized.split('#').first.split('?').first;
   }
 
   static bool _isRecordableUrl(String rawUrl) {
     final uri = Uri.tryParse(rawUrl.trim());
     return uri != null && uri.hasScheme && _recordableSchemes.contains(uri.scheme.toLowerCase());
   }
+}
+
+class _ResolvedCandidate {
+  const _ResolvedCandidate({required this.url, required this.quality, required this.lineIndex});
+
+  final String url;
+  final LivePlayQuality quality;
+  final int lineIndex;
 }

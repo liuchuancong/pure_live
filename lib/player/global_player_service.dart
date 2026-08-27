@@ -40,7 +40,7 @@ class GlobalPlayerService {
     // 1. Instantiate the Orchestrator with all its specialized managers
     playerManager = PlayerManager(
       fallbackManager: EngineFallbackManager(
-        defaultEngine: PlayerEngine.mediaKit,
+        defaultEngine: defaultEngine,
         supportedEngines: PlatformUtils.isMobile ? PlayerEngine.values : [PlayerEngine.mediaKit],
       ),
       lineManager: LineFallbackManager(),
