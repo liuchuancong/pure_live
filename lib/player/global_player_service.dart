@@ -4,6 +4,8 @@ import 'core/player_manager.dart';
 import 'models/player_engine.dart';
 import 'core/line_fallback_manager.dart';
 import 'core/engine_fallback_manager.dart';
+import 'core/live_audio_service.dart';
+import 'core/playback_lifecycle_coordinator.dart';
 
 import 'package:pure_live/common/global/platform_utils.dart';
 
@@ -13,6 +15,7 @@ class GlobalPlayerService {
   static final GlobalPlayerService instance = GlobalPlayerService._();
 
   late final PlayerManager playerManager;
+  late final PlaybackLifecycleCoordinator playbackLifecycle;
   PlayerManager get player => playerManager;
   bool _initialized = false;
   Future<void>? _initializationFuture;
@@ -50,6 +53,15 @@ class GlobalPlayerService {
     // first room is opened. This avoids paying hundreds of MiB and background
     // CPU merely for browsing the home/settings UI.
     playerManager.configureDefaultEngine(defaultEngine);
+    playbackLifecycle = PlaybackLifecycleCoordinator(
+      pauseForLifecycle: playerManager.pauseForLifecycle,
+      resumeFromLifecycle: playerManager.resumeFromLifecycle,
+      shouldContinueInBackground: () => LiveAudioService.shouldContinueInBackground,
+      isAudioOnly: () => playerManager.isAudioOnlyMode,
+      isSleepSessionActive: () => LiveAudioService.isSleepSessionActive,
+      commitAudioOnlyPowerSaving: playerManager.commitAudioOnlyPowerSaving,
+      prepareAudioOnlyVideoRestore: playerManager.prepareAudioOnlyVideoRestore,
+    )..start();
     _initialized = true;
     log("GlobalPlayerService: Ready for lazy player initialization.", name: "GlobalPlayerService");
   }
@@ -57,6 +69,7 @@ class GlobalPlayerService {
   /// Global dispose - Call this only when the app is being destroyed
   Future<void> dispose() async {
     if (!_initialized) return;
+    await playbackLifecycle.dispose();
     await playerManager.dispose();
     _initialized = false;
     log("GlobalPlayerService: Disposed.", name: "GlobalPlayerService");

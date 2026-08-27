@@ -118,6 +118,29 @@ void main() {
     await manager.dispose();
   });
 
+  test('lifecycle pause resumes only the same session and playback intent', () async {
+    final player = _FakePlayer();
+    final manager = _createManager(player);
+    await manager.initialize(engine: PlayerEngine.mediaKit);
+
+    final token = await manager.pauseForLifecycle();
+    expect(token, isNotNull);
+    expect(player.pauseCalls, 1);
+    expect(player.isPlayingNow, isFalse);
+
+    expect(await manager.resumeFromLifecycle(token!), isTrue);
+    expect(player.playCalls, 1);
+    expect(player.isPlayingNow, isTrue);
+
+    final staleToken = await manager.pauseForLifecycle();
+    expect(staleToken, isNotNull);
+    await manager.pause();
+    expect(await manager.resumeFromLifecycle(staleToken!), isFalse);
+    expect(player.isPlayingNow, isFalse);
+
+    await manager.dispose();
+  });
+
   test('a new room clears stale portrait geometry before its metadata arrives', () async {
     final player = _FakePlayer();
     final manager = _createManager(player);
@@ -667,8 +690,11 @@ class _FakePlayer implements UnifiedPlayer {
   int setDataSourceCalls = 0;
   int initCalls = 0;
   int hardDisposeCalls = 0;
+  int pauseCalls = 0;
+  int playCalls = 0;
   bool _initialized = false;
   bool _audioOnly = false;
+  bool _playing = true;
   final StreamController<int?> _widthController = StreamController<int?>.broadcast();
   final StreamController<int?> _heightController = StreamController<int?>.broadcast();
 
@@ -714,10 +740,16 @@ class _FakePlayer implements UnifiedPlayer {
   }
 
   @override
-  Future<void> pause() async {}
+  Future<void> pause() async {
+    pauseCalls++;
+    _playing = false;
+  }
 
   @override
-  Future<void> play() async {}
+  Future<void> play() async {
+    playCalls++;
+    _playing = true;
+  }
 
   @override
   Future<void> setVolume(double volume) async {}
@@ -740,7 +772,7 @@ class _FakePlayer implements UnifiedPlayer {
   bool get isInitialized => _initialized;
 
   @override
-  bool get isPlayingNow => true;
+  bool get isPlayingNow => _playing;
 
   @override
   bool get isReusable => true;

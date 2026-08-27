@@ -9,6 +9,7 @@ import 'portrait_stream_support.dart';
 import '../models/player_state.dart';
 import '../models/player_engine.dart';
 import 'engine_fallback_manager.dart';
+import 'playback_lifecycle_coordinator.dart';
 
 import 'package:floating/floating.dart';
 import 'package:flutter/scheduler.dart';
@@ -60,6 +61,7 @@ class PlayerManager {
   final Future<void> Function(LiveRoom room) _audioSessionStart;
   Future<void> _playerLifecycleQueue = Future.value();
   int _sessionId = 0;
+  int _playbackIntentRevision = 0;
   bool _isClosing = false;
 
   PlayerManager({
@@ -187,6 +189,33 @@ class PlayerManager {
   bool get isPlayingNow => _playingSubject.value;
   bool get isAudioOnlyMode => _runtimeAudioOnly;
   bool get desiredAudioOnlyMode => _requestedAudioOnly;
+
+  /// A lifecycle pause is an implementation detail, not a user playback
+  /// intent. The token lets a later resume prove that neither the source nor
+  /// the user's intent changed while the application was hidden.
+  Future<PlaybackLifecyclePauseToken?> pauseForLifecycle() async {
+    final player = _currentPlayer;
+    if (player == null || _disposed || _isClosing || (!isPlayingNow && !player.isPlayingNow)) return null;
+    final token = (sessionId: _sessionId, intentRevision: _playbackIntentRevision);
+    await player.pause();
+    if (_disposed || _isClosing || _sessionId != token.sessionId) return null;
+    return token;
+  }
+
+  Future<bool> resumeFromLifecycle(PlaybackLifecyclePauseToken token) async {
+    final player = _currentPlayer;
+    if (player == null ||
+        _disposed ||
+        _isClosing ||
+        _sessionId != token.sessionId ||
+        _playbackIntentRevision != token.intentRevision ||
+        isPlayingNow ||
+        player.isPlayingNow) {
+      return false;
+    }
+    await player.play();
+    return !_disposed && !_isClosing && _sessionId == token.sessionId;
+  }
 
   /// Selects the first engine without allocating a native player yet.
   /// Browsing the home/settings pages does not need a decoder, demuxer,
@@ -1217,8 +1246,19 @@ class PlayerManager {
     }
   }
 
-  Future<void> pause() async => await _currentPlayer?.pause();
-  Future<void> resume() async => await _currentPlayer?.play();
+  Future<void> pause() async {
+    final player = _currentPlayer;
+    if (player == null) return;
+    _playbackIntentRevision++;
+    await player.pause();
+  }
+
+  Future<void> resume() async {
+    final player = _currentPlayer;
+    if (player == null) return;
+    _playbackIntentRevision++;
+    await player.play();
+  }
 
   Future<void> stop() async {
     await close();
