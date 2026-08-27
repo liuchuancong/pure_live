@@ -79,12 +79,7 @@ dependencies:
   audio_service: ^0.18.18 # 后台音频服务
   audio_service_win: ^0.0.3
   audio_session: ^0.2.3 # 音频会话管理
-  # Controlled native-binary rollback: 0.6.0 moved the bundle from FFmpeg 8 to
-  # FFmpeg 9 in the same regression window as the Android live-FLV recorder
-  # failures. Keep the last known build profile exact while both bundles are
-  # compared by the recorder contract probes; a caret silently changes native
-  # code between otherwise identical application builds.
-  ffmpeg_kit_extended_flutter: 0.5.13
+  ffmpeg_kit_extended_flutter: 0.5.3
 
   flv_lzc:
     path: plugins/flv_lzc # Vendored from liuchuancong/flv_lzc@030d611
