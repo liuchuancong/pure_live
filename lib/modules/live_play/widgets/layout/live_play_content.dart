@@ -34,12 +34,14 @@ class LivePlayLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!showPanel) {
+      return SizedBox.expand(
+        child: ColoredBox(color: Colors.black, child: video),
+      );
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (!showPanel) {
-          return _buildVideoOnlyLayout(context, constraints);
-        }
-
         switch (resolveLivePlayLayoutType(constraints.maxWidth)) {
           case LivePlayLayoutType.portrait:
             return _buildPortraitLayout(context, constraints);
@@ -48,75 +50,6 @@ class LivePlayLayout extends StatelessWidget {
         }
       },
     );
-  }
-
-  Widget _buildVideoOnlyLayout(BuildContext context, BoxConstraints constraints) {
-    return Align(alignment: Alignment.topCenter, child: _buildVideo(context, constraints));
-  }
-
-  Widget _buildVideo(BuildContext context, BoxConstraints constraints) {
-    switch (layoutMode) {
-      case PortraitLayoutMode.balanced:
-        return SizedBox(
-          width: constraints.maxWidth,
-          child: AspectRatio(
-            aspectRatio: 16 / 9,
-            child: ColoredBox(color: Colors.black, child: video),
-          ),
-        );
-      case PortraitLayoutMode.immersive:
-        return SizedBox(
-          width: constraints.maxWidth,
-          height: constraints.maxHeight,
-          child: ColoredBox(color: Colors.black, child: video),
-        );
-      case PortraitLayoutMode.compatibility:
-        return _buildCompatibilityVideo(constraints);
-    }
-  }
-
-  Widget _buildCompatibilityVideo(BoxConstraints constraints) {
-    final player = GlobalPlayerService.instance.player;
-
-    return StreamBuilder<List<int?>>(
-      stream: CombineLatestStream.list([player.width, player.height]),
-      builder: (context, snapshot) {
-        final data = snapshot.data;
-        final videoWidth = data != null && data.isNotEmpty ? data[0] : null;
-        final videoHeight = data != null && data.length > 1 ? data[1] : null;
-        final aspectRatio = _resolveAspectRatio(videoWidth, videoHeight);
-        final width = constraints.maxWidth;
-
-        if (!constraints.hasBoundedHeight) {
-          return SizedBox(
-            width: width,
-            child: AspectRatio(
-              aspectRatio: aspectRatio,
-              child: ColoredBox(color: Colors.black, child: video),
-            ),
-          );
-        }
-
-        final maxHeight = constraints.maxHeight * 0.6;
-        final calculatedHeight = width / aspectRatio;
-        final height = calculatedHeight > maxHeight ? maxHeight : calculatedHeight;
-
-        return SizedBox(
-          width: width,
-          height: height,
-          child: ColoredBox(color: Colors.black, child: video),
-        );
-      },
-    );
-  }
-
-  double _resolveAspectRatio(int? width, int? height) {
-    if (width == null || height == null || width <= 0 || height <= 0) {
-      return 16 / 9;
-    }
-
-    final ratio = width / height;
-    return ratio.isFinite && ratio > 0 ? ratio : 16 / 9;
   }
 
   Widget _buildPortraitLayout(BuildContext context, BoxConstraints constraints) {
@@ -168,6 +101,76 @@ class LivePlayLayout extends StatelessWidget {
       ],
     );
   }
+
+  Widget _buildVideo(BuildContext context, BoxConstraints constraints) {
+    switch (layoutMode) {
+      case PortraitLayoutMode.balanced:
+        return SizedBox(
+          width: constraints.maxWidth,
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: ColoredBox(color: Colors.black, child: video),
+          ),
+        );
+
+      case PortraitLayoutMode.immersive:
+        return SizedBox(
+          width: constraints.maxWidth,
+          height: constraints.maxHeight,
+          child: ColoredBox(color: Colors.black, child: video),
+        );
+
+      case PortraitLayoutMode.compatibility:
+        return _buildCompatibilityVideo(constraints);
+    }
+  }
+
+  Widget _buildCompatibilityVideo(BoxConstraints constraints) {
+    final player = GlobalPlayerService.instance.player;
+
+    return StreamBuilder<List<int?>>(
+      stream: CombineLatestStream.list([player.width, player.height]),
+      builder: (context, snapshot) {
+        final data = snapshot.data;
+        final videoWidth = data != null && data.isNotEmpty ? data[0] : null;
+        final videoHeight = data != null && data.length > 1 ? data[1] : null;
+
+        final aspectRatio = _resolveAspectRatio(videoWidth, videoHeight);
+
+        final width = constraints.maxWidth;
+
+        if (!constraints.hasBoundedHeight) {
+          return SizedBox(
+            width: width,
+            child: AspectRatio(
+              aspectRatio: aspectRatio,
+              child: ColoredBox(color: Colors.black, child: video),
+            ),
+          );
+        }
+
+        final maxHeight = constraints.maxHeight * 0.6;
+        final calculatedHeight = width / aspectRatio;
+        final height = calculatedHeight > maxHeight ? maxHeight : calculatedHeight;
+
+        return SizedBox(
+          width: width,
+          height: height,
+          child: ColoredBox(color: Colors.black, child: video),
+        );
+      },
+    );
+  }
+
+  double _resolveAspectRatio(int? width, int? height) {
+    if (width == null || height == null || width <= 0 || height <= 0) {
+      return 16 / 9;
+    }
+
+    final ratio = width / height;
+
+    return ratio.isFinite && ratio > 0 ? ratio : 16 / 9;
+  }
 }
 
 class LivePlayContent extends StatelessWidget {
@@ -214,14 +217,12 @@ class LivePlayContent extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: LivePlayHeader(controller: controller, compactHeader: compactHeader),
-      body: SafeArea(
-        child: LivePlayLayout(
-          layoutMode: layoutMode,
-          video: LivePlayVideo(controller: controller, expandToParent: false),
-          resolution: const ResolutionsRow(),
-          danmaku: _buildDanmakuContent(),
-          showPanel: controller.site != Sites.iptvSite,
-        ),
+      body: LivePlayLayout(
+        layoutMode: layoutMode,
+        video: LivePlayVideo(controller: controller, expandToParent: controller.site == Sites.iptvSite),
+        resolution: const ResolutionsRow(),
+        danmaku: _buildDanmakuContent(),
+        showPanel: controller.site != Sites.iptvSite,
       ),
     );
   }
@@ -232,7 +233,7 @@ class LivePlayContent extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: LivePlayHeader(controller: controller, compactHeader: compactHeader),
-      body: SafeArea(child: LivePlayShell(controller: controller)),
+      body: LivePlayShell(controller: controller, showPanel: controller.site != Sites.iptvSite),
     );
   }
 

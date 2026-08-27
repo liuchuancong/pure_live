@@ -7,16 +7,24 @@ import 'package:pure_live/modules/live_play/controllers/live_play_controller.dar
 import 'package:pure_live/modules/live_play/widgets/resolution_selector/resolutions_row.dart';
 
 class LivePlayShell extends StatefulWidget {
-  const LivePlayShell({super.key, required this.controller});
+  const LivePlayShell({super.key, required this.controller, this.showPanel = true});
+
   final LivePlayController controller;
+  final bool showPanel;
+
   @override
   State<LivePlayShell> createState() => _LivePlayShellState();
 }
 
 class _LivePlayShellState extends State<LivePlayShell> with SingleTickerProviderStateMixin {
   static const double _desktopPanelWidth = 380.0;
+
   late final AnimationController _drawerController;
+
   LivePlayController get controller => widget.controller;
+
+  bool get showPanel => widget.showPanel;
+
   bool _panelOpen = false;
 
   @override
@@ -37,16 +45,23 @@ class _LivePlayShellState extends State<LivePlayShell> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.showPanel) {
+      return const _VideoHost();
+    }
+
     final size = MediaQuery.sizeOf(context);
     final isSmallScreen = size.shortestSide < 600;
+
     return ClipRect(
       child: AnimatedBuilder(
         animation: _drawerController,
         builder: (context, child) {
           final progress = Curves.easeInOutCubic.transform(_drawerController.value);
+
           if (isSmallScreen) {
             return _buildMobileLayout(progress);
           }
+
           return _buildDesktopLayout(progress);
         },
       ),
@@ -87,6 +102,7 @@ class _LivePlayShellState extends State<LivePlayShell> with SingleTickerProvider
         final matrix = Matrix4.identity()
           ..setEntry(3, 2, 0.0018)
           ..rotateY(math.pi * progress);
+
         return Center(
           child: Transform(
             alignment: Alignment.center,
@@ -103,6 +119,7 @@ class _LivePlayShellState extends State<LivePlayShell> with SingleTickerProvider
 
   Widget _buildMobileVideoFace(double progress) {
     final opacity = progress <= 0.5 ? 1.0 : 0.0;
+
     return IgnorePointer(
       ignoring: progress > 0.5,
       child: Opacity(opacity: opacity, child: const _VideoHost()),
@@ -112,6 +129,7 @@ class _LivePlayShellState extends State<LivePlayShell> with SingleTickerProvider
   Widget _buildMobilePanelFace(double progress) {
     final opacity = progress >= 0.5 ? 1.0 : 0.0;
     final matrix = Matrix4.identity()..rotateY(math.pi);
+
     return IgnorePointer(
       ignoring: progress < 0.5,
       child: Opacity(
@@ -173,9 +191,11 @@ class _LivePlayShellState extends State<LivePlayShell> with SingleTickerProvider
     return Obx(() {
       final state = controller.state.value;
       final detail = state.room.detail;
+
       if (detail == null || detail.platform == Sites.iptvSite) {
         return const SizedBox.shrink();
       }
+
       return const Padding(padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8), child: ResolutionsRow());
     });
   }
@@ -183,15 +203,18 @@ class _LivePlayShellState extends State<LivePlayShell> with SingleTickerProvider
   Widget _buildDanmaku() {
     return Obx(() {
       final state = controller.state.value;
+
       if (!state.room.success || controller.site == Sites.iptvSite) {
         return const SizedBox.shrink();
       }
+
       return const DanmakuTabView();
     });
   }
 
   Future<void> _togglePanel() async {
     if (_drawerController.isAnimating) return;
+
     if (_panelOpen) {
       await _closePanel();
     } else {
@@ -201,26 +224,33 @@ class _LivePlayShellState extends State<LivePlayShell> with SingleTickerProvider
 
   Future<void> _openPanel() async {
     if (_panelOpen || !mounted) return;
+
     setState(() => _panelOpen = true);
     await _drawerController.forward();
   }
 
   Future<void> _closePanel() async {
     if (!_panelOpen || _drawerController.isAnimating) return;
+
     await _drawerController.reverse();
+
     if (!mounted) return;
+
     setState(() => _panelOpen = false);
   }
 }
 
 class _VideoHost extends StatelessWidget {
   const _VideoHost();
+
   @override
   Widget build(BuildContext context) {
     final shell = context.findAncestorStateOfType<_LivePlayShellState>();
+
     if (shell == null) {
       return const SizedBox.shrink();
     }
-    return LivePlayVideo(controller: shell.controller);
+
+    return LivePlayVideo(controller: shell.controller, expandToParent: !shell.showPanel);
   }
 }
