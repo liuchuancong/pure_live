@@ -88,16 +88,16 @@ class WindowHelper {
     _savedPosition = await windowManager.getPosition();
 
     final displays = await screenRetriever.getAllDisplays();
-
     final primaryDisplay = await screenRetriever.getPrimaryDisplay();
 
     final currentDisplay = _findDisplayForPosition(displays, _savedPosition) ?? primaryDisplay;
 
     final safeSize = currentDisplay.visibleSize ?? currentDisplay.size;
-
     final safeOffset = currentDisplay.visiblePosition ?? Offset.zero;
 
     final ratio = videoRatio.isFinite && videoRatio > 0 ? videoRatio : 16 / 9;
+
+    final isPortrait = ratio < 0.95;
 
     double w;
     double h;
@@ -130,22 +130,27 @@ class WindowHelper {
     }
 
     final windowSettings = SettingsService.to.window;
-
     final pip = windowSettings.windowsPip;
-
     final rememberPosition = windowSettings.rememberPipPosition.value;
+
+    final savedDisplayId = isPortrait ? pip.portraitDisplayId.value : pip.displayId.value;
+
+    final savedHasValidBounds = isPortrait ? pip.portraitIsValid : pip.isValid;
+
+    final savedWidth = isPortrait ? pip.portraitWidth.value : pip.windowsPipWidth.value;
+
+    final savedHeight = isPortrait ? pip.portraitHeight.value : pip.windowsPipHeight.value;
+
+    final savedX = isPortrait ? pip.portraitX.value : pip.windowsPipX.value;
+
+    final savedY = isPortrait ? pip.portraitY.value : pip.windowsPipY.value;
 
     Rect? savedBounds;
 
-    final savedDisplayMatches = pip.displayId.value.isEmpty || pip.displayId.value == currentDisplay.id;
+    final savedDisplayMatches = savedDisplayId.isEmpty || savedDisplayId == currentDisplay.id;
 
-    if (rememberPosition && pip.hasValidBounds && savedDisplayMatches) {
-      savedBounds = Rect.fromLTWH(
-        pip.windowsPipX.value,
-        pip.windowsPipY.value,
-        pip.windowsPipWidth.value,
-        pip.windowsPipHeight.value,
-      );
+    if (rememberPosition && savedHasValidBounds && savedDisplayMatches) {
+      savedBounds = Rect.fromLTWH(savedX, savedY, savedWidth, savedHeight);
     }
 
     final workAreas = displays
@@ -174,7 +179,12 @@ class WindowHelper {
 
     if (rememberPosition) {
       final resolvedDisplay = _findDisplayForPosition(displays, bounds.topLeft) ?? currentDisplay;
-      pip.update(bounds.size, bounds.topLeft, resolvedDisplay.id);
+
+      if (isPortrait) {
+        pip.updatePortrait(bounds.size, bounds.topLeft, resolvedDisplay.id);
+      } else {
+        pip.update(bounds.size, bounds.topLeft, resolvedDisplay.id);
+      }
     }
   }
 
@@ -197,7 +207,7 @@ class WindowHelper {
     await windowManager.setAlwaysOnTop(value);
   }
 
-  Future<void> capturePiPGeometry() async {
+  Future<void> capturePiPGeometry({double? videoRatio}) async {
     if (!Platform.isWindows || currentMode != WindowLayoutMode.pip) {
       return;
     }
@@ -215,7 +225,15 @@ class WindowHelper {
 
     final display = _findDisplayForPosition(displays, position) ?? await screenRetriever.getPrimaryDisplay();
 
-    windowSettings.windowsPip.update(size, position, display.id);
+    final ratio = videoRatio != null && videoRatio.isFinite && videoRatio > 0 ? videoRatio : size.width / size.height;
+
+    final isPortrait = ratio < 0.95;
+
+    if (isPortrait) {
+      windowSettings.windowsPip.updatePortrait(size, position, display.id);
+    } else {
+      windowSettings.windowsPip.update(size, position, display.id);
+    }
   }
 
   Display? _findDisplayForPosition(List<Display> displays, Offset position) {

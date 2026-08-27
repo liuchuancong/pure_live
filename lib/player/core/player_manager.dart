@@ -26,6 +26,7 @@ import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:flutter_floating/flutter_floating.dart';
+import 'package:pure_live/player/utils/window_helper.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/utils/pip_window_widget.dart';
@@ -877,18 +878,27 @@ class PlayerManager {
 
   math.Rectangle<int>? _currentPipSourceRect() {
     final context = _pipSourceKey.currentContext;
-    final renderObject = context?.findRenderObject();
+    if (context == null) return null;
+    final renderObject = context.findRenderObject();
     if (renderObject is! RenderBox || !renderObject.hasSize) return null;
-    final view = View.maybeOf(context!);
+    final view = View.maybeOf(context);
     if (view == null) return null;
     final origin = renderObject.localToGlobal(Offset.zero);
-    final ratio = View.of(context).devicePixelRatio;
-    final left = (origin.dx * ratio).round();
-    final top = (origin.dy * ratio).round();
-    final width = (renderObject.size.width * ratio).round();
-    final height = (renderObject.size.height * ratio).round();
+    final devicePixelRatio = view.devicePixelRatio;
+    final left = (origin.dx * devicePixelRatio).round();
+    final top = (origin.dy * devicePixelRatio).round();
+    final width = (renderObject.size.width * devicePixelRatio).round();
+    final height = (renderObject.size.height * devicePixelRatio).round();
     if (width <= 0 || height <= 0) return null;
     return math.Rectangle<int>(left, top, width, height);
+  }
+
+  void _schedulePipGeometryUpdate() {
+    _geometryStabilityTimer?.cancel();
+    _geometryStabilityTimer = Timer(const Duration(milliseconds: 100), () {
+      if (_disposed || _isClosing || !isInPip.value) return;
+      unawaited(WindowHelper.instance.capturePiPGeometry(videoRatio: rawVideoAspectRatio));
+    });
   }
 
   Future<void> exitPip() async {
@@ -1636,16 +1646,18 @@ class PlayerManager {
         }
       }),
     );
-    _subscriptions.add(
-      player.width.listen((event) {
-        _widthSubject.add(event);
-      }),
-    );
-    _subscriptions.add(
-      player.height.listen((event) {
-        _heightSubject.add(event);
-      }),
-    );
+    player.width.listen((event) {
+      _widthSubject.add(event);
+      if (Platform.isWindows && isInPip.value) {
+        _schedulePipGeometryUpdate();
+      }
+    });
+    player.height.listen((event) {
+      _heightSubject.add(event);
+      if (Platform.isWindows && isInPip.value) {
+        _schedulePipGeometryUpdate();
+      }
+    });
     _subscriptions.add(
       CombineLatestStream.combine2<int?, int?, bool>(
         width.where((w) => w != null && w > 0),

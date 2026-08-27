@@ -3,33 +3,43 @@ import 'package:pure_live/get/get.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
 
 //  需要指定显示到哪一个屏幕 可能存在多个显示屏
+
 class WindowPipGeometry {
-  /// Stores the display ID where the PiP window was last displayed.
   final RxString displayId = hiveString('windows_pip_display_id', '');
-
-  /// Stores the PiP window width.
   final RxDouble windowsPipWidth = hiveDouble('windows_pip_width', 0.0);
-
-  /// Stores the PiP window height.
   final RxDouble windowsPipHeight = hiveDouble('windows_pip_height', 0.0);
-
-  /// Stores the PiP window horizontal position.
   final RxDouble windowsPipX = hiveDouble('windows_pip_x', 0.0);
-
-  /// Stores the PiP window vertical position.
   final RxDouble windowsPipY = hiveDouble('windows_pip_y', 0.0);
+
+  final RxString portraitDisplayId = hiveString('windows_pip_portrait_display_id', '');
+  final RxDouble portraitWidth = hiveDouble('windows_pip_portrait_width', 0.0);
+  final RxDouble portraitHeight = hiveDouble('windows_pip_portrait_height', 0.0);
+  final RxDouble portraitX = hiveDouble('windows_pip_portrait_x', 0.0);
+  final RxDouble portraitY = hiveDouble('windows_pip_portrait_y', 0.0);
 
   bool get isValid {
     return displayId.v.isNotEmpty && hasValidBounds;
+  }
+
+  bool get portraitIsValid {
+    return portraitDisplayId.v.isNotEmpty && portraitHasValidBounds;
   }
 
   bool get hasValidBounds {
     return windowsPipWidth.v > 0 && windowsPipHeight.v > 0 && windowsPipX.v.isFinite && windowsPipY.v.isFinite;
   }
 
+  bool get portraitHasValidBounds {
+    return portraitWidth.v > 0 && portraitHeight.v > 0 && portraitX.v.isFinite && portraitY.v.isFinite;
+  }
+
   Size get size => Size(windowsPipWidth.v, windowsPipHeight.v);
 
   Offset get position => Offset(windowsPipX.v, windowsPipY.v);
+
+  Size get portraitSize => Size(portraitWidth.v, portraitHeight.v);
+
+  Offset get portraitPosition => Offset(portraitX.v, portraitY.v);
 
   void update(Size size, Offset position, String displayId) {
     if (!size.isFinite || size.isEmpty || !position.isFinite || displayId.isEmpty) {
@@ -43,12 +53,37 @@ class WindowPipGeometry {
     windowsPipY.v = position.dy;
   }
 
+  void updatePortrait(Size size, Offset position, String displayId) {
+    if (!size.isFinite || size.isEmpty || !position.isFinite || displayId.isEmpty) {
+      return;
+    }
+
+    portraitDisplayId.v = displayId;
+    portraitWidth.v = size.width;
+    portraitHeight.v = size.height;
+    portraitX.v = position.dx;
+    portraitY.v = position.dy;
+  }
+
   void clear() {
     displayId.v = '';
     windowsPipWidth.v = 0.0;
     windowsPipHeight.v = 0.0;
     windowsPipX.v = 0.0;
     windowsPipY.v = 0.0;
+  }
+
+  void clearPortrait() {
+    portraitDisplayId.v = '';
+    portraitWidth.v = 0.0;
+    portraitHeight.v = 0.0;
+    portraitX.v = 0.0;
+    portraitY.v = 0.0;
+  }
+
+  void clearAll() {
+    clear();
+    clearPortrait();
   }
 
   Map<String, dynamic> toJson() {
@@ -58,6 +93,11 @@ class WindowPipGeometry {
       'windowsPipHeight': windowsPipHeight.v,
       'windowsPipX': windowsPipX.v,
       'windowsPipY': windowsPipY.v,
+      'portraitDisplayId': portraitDisplayId.v,
+      'portraitWidth': portraitWidth.v,
+      'portraitHeight': portraitHeight.v,
+      'portraitX': portraitX.v,
+      'portraitY': portraitY.v,
     };
   }
 
@@ -67,6 +107,12 @@ class WindowPipGeometry {
     windowsPipHeight.v = (json['windowsPipHeight'] as num?)?.toDouble() ?? 0.0;
     windowsPipX.v = (json['windowsPipX'] as num?)?.toDouble() ?? 0.0;
     windowsPipY.v = (json['windowsPipY'] as num?)?.toDouble() ?? 0.0;
+
+    portraitDisplayId.v = json['portraitDisplayId'] ?? '';
+    portraitWidth.v = (json['portraitWidth'] as num?)?.toDouble() ?? 0.0;
+    portraitHeight.v = (json['portraitHeight'] as num?)?.toDouble() ?? 0.0;
+    portraitX.v = (json['portraitX'] as num?)?.toDouble() ?? 0.0;
+    portraitY.v = (json['portraitY'] as num?)?.toDouble() ?? 0.0;
   }
 }
 
@@ -76,7 +122,6 @@ class WindowSizeController extends GetxController {
   final RxDouble storedWidth = hiveDouble('window_width', 1280.0);
   final RxDouble storedHeight = hiveDouble('window_height', 720.0);
 
-  /// Whether the PiP window position should be remembered.
   final RxBool rememberPipPosition = hiveBool('rememberPipPosition', true);
 
   final WindowPipGeometry windowsPip = WindowPipGeometry();
@@ -120,7 +165,7 @@ class WindowSizeController extends GetxController {
   }
 
   void clearWindowsPipGeometry() {
-    windowsPip.clear();
+    windowsPip.clearAll();
   }
 
   void setTracking(bool tracking) {
@@ -150,7 +195,9 @@ class WindowSizeController extends GetxController {
 
   static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
     final windowSize = rootConfig?['windowSize'] as Map<String, dynamic>? ?? {};
+
     final player = rootConfig?['player'] as Map<String, dynamic>? ?? {};
+
     final pip = _extractPipGeometry(windowSize);
 
     return {
@@ -158,13 +205,16 @@ class WindowSizeController extends GetxController {
       'storedHeight': (windowSize['storedHeight'] ?? 720.0).toDouble(),
       'rememberPipPosition': windowSize['rememberPipPosition'] ?? player['rememberPipPosition'] ?? true,
       'windowsPip': pip,
-      // Keep the legacy aliases in extracted configuration so older backup
-      // editors and downgrade imports preserve the rectangle losslessly.
       'windowsPipDisplayId': pip['displayId'],
       'windowsPipWidth': pip['windowsPipWidth'],
       'windowsPipHeight': pip['windowsPipHeight'],
       'windowsPipX': pip['windowsPipX'],
       'windowsPipY': pip['windowsPipY'],
+      'windowsPipPortraitDisplayId': pip['portraitDisplayId'],
+      'windowsPipPortraitWidth': pip['portraitWidth'],
+      'windowsPipPortraitHeight': pip['portraitHeight'],
+      'windowsPipPortraitX': pip['portraitX'],
+      'windowsPipPortraitY': pip['portraitY'],
     };
   }
 
@@ -175,20 +225,28 @@ class WindowSizeController extends GetxController {
       windowSize[key] = value;
     });
 
-    if (updateFields.keys.any(_isLegacyPipGeometryKey)) {
+    if (updateFields.keys.any(_isPipGeometryKey)) {
       final pip = _extractPipGeometry(windowSize);
+
       const aliases = <String, String>{
         'windowsPipDisplayId': 'displayId',
         'windowsPipWidth': 'windowsPipWidth',
         'windowsPipHeight': 'windowsPipHeight',
         'windowsPipX': 'windowsPipX',
         'windowsPipY': 'windowsPipY',
+        'windowsPipPortraitDisplayId': 'portraitDisplayId',
+        'windowsPipPortraitWidth': 'portraitWidth',
+        'windowsPipPortraitHeight': 'portraitHeight',
+        'windowsPipPortraitX': 'portraitX',
+        'windowsPipPortraitY': 'portraitY',
       };
+
       for (final alias in aliases.entries) {
         if (updateFields.containsKey(alias.key)) {
           pip[alias.value] = updateFields[alias.key];
         }
       }
+
       windowSize['windowsPip'] = pip;
     }
 
@@ -197,16 +255,22 @@ class WindowSizeController extends GetxController {
     return rootConfig;
   }
 
-  static bool _isLegacyPipGeometryKey(String key) =>
+  static bool _isPipGeometryKey(String key) =>
       key == 'windowsPipDisplayId' ||
       key == 'windowsPipWidth' ||
       key == 'windowsPipHeight' ||
       key == 'windowsPipX' ||
-      key == 'windowsPipY';
+      key == 'windowsPipY' ||
+      key == 'windowsPipPortraitDisplayId' ||
+      key == 'windowsPipPortraitWidth' ||
+      key == 'windowsPipPortraitHeight' ||
+      key == 'windowsPipPortraitX' ||
+      key == 'windowsPipPortraitY';
 
   static Map<String, dynamic> _extractPipGeometry(Map<String, dynamic> windowSize) {
     final nested = windowSize['windowsPip'];
-    final pip = nested is Map ? Map<String, dynamic>.from(nested) : const <String, dynamic>{};
+
+    final pip = nested is Map ? Map<String, dynamic>.from(nested) : <String, dynamic>{};
 
     double number(String key) {
       final value = pip[key] ?? windowSize[key];
@@ -219,6 +283,11 @@ class WindowSizeController extends GetxController {
       'windowsPipHeight': number('windowsPipHeight'),
       'windowsPipX': number('windowsPipX'),
       'windowsPipY': number('windowsPipY'),
+      'portraitDisplayId': (pip['portraitDisplayId'] ?? windowSize['windowsPipPortraitDisplayId'] ?? '').toString(),
+      'portraitWidth': number('portraitWidth'),
+      'portraitHeight': number('portraitHeight'),
+      'portraitX': number('portraitX'),
+      'portraitY': number('portraitY'),
     };
   }
 }
