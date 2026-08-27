@@ -1,21 +1,21 @@
 {
-  "version": "3.0.12",
-  "build_number": 4100,
-  "version_num": 300124100,
-  "version_desc": "- 全面核对哔哩哔哩、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP、YY 与 IPTV 的画质名称、排序、稳定请求 ID 和实际 URL 归属。\n- 抖音新旧 SDK 档位统一中文化：原画、蓝光、超清、高清、标清、流畅；补齐 MD/sdk_params，并去除指向同一源的伪重复选项。\n- 哔哩哔哩回读实际 current_qn，斗鱼保留服务端 rate 顺序，虎牙正确处理 ratio，SOOP 始终发送原 preset，CC/Twitch/SOOP 源流缺码率仍保持原画优先。\n- 录制每次重试刷新签名 URL 并轮换 CDN；FFmpeg 事件使用 session 代次、有界重连和协议专用参数，迟到回调不再串线。\n- 分片按尝试隔离，MP4 使用 partial 原子提交；失败保留 TS，崩溃恢复兼容旧分片，活跃目录引用计数保护。\n- 签名 CDN URL 不再持久化，日志敏感字段脱敏；缓存清理、轮询、取消与关闭路径均设置有限资源边界。",
+  "version": "3.0.13",
+  "build_number": 4101,
+  "version_num": 300134101,
+  "version_desc": "- 修复十个平台录制前房间状态契约：临时接口或响应结构错误进入有界重试，不再被误判为已下播。\n- 哔哩哔哩、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP、YY 与 IPTV 均提供严格且包含播放数据的录制解析路径。\n- 恢复 Android 启动阶段非阻塞预热 FFmpegKit，解决首次录制时原生库未就绪导致的 I/O 失败；桌面仍延迟预热。\n- FFmpegKit 改用原始参数向量，完整保留签名 URL、请求头和含空格目录，避免命令字符串二次解析破坏参数。\n- 录制按钮只产生一次启动意图；增加失败阶段与脱敏错误展示，便于区分房间、画质、线路、网络、FFmpeg 和合并错误。\n- Android 最低系统版本对齐 FFmpegKit 依赖要求 API 26；本轮正式产物仅为 arm64-v8a。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.12",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.13",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.0.12",
-      "build_number": 4100,
-      "version_num": 300124100,
-      "version_desc": "- 全面核对哔哩哔哩、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP、YY 与 IPTV 的画质名称、排序、稳定请求 ID 和实际 URL 归属。\n- 抖音新旧 SDK 档位统一中文化：原画、蓝光、超清、高清、标清、流畅；补齐 MD/sdk_params，并去除指向同一源的伪重复选项。\n- 哔哩哔哩回读实际 current_qn，斗鱼保留服务端 rate 顺序，虎牙正确处理 ratio，SOOP 始终发送原 preset，CC/Twitch/SOOP 源流缺码率仍保持原画优先。\n- 录制每次重试刷新签名 URL 并轮换 CDN；FFmpeg 事件使用 session 代次、有界重连和协议专用参数，迟到回调不再串线。\n- 分片按尝试隔离，MP4 使用 partial 原子提交；失败保留 TS，崩溃恢复兼容旧分片，活跃目录引用计数保护。\n- 签名 CDN URL 不再持久化，日志敏感字段脱敏；缓存清理、轮询、取消与关闭路径均设置有限资源边界。",
+      "version": "3.0.13",
+      "build_number": 4101,
+      "version_num": 300134101,
+      "version_desc": "- 修复十个平台录制前房间状态契约：临时接口或响应结构错误进入有界重试，不再被误判为已下播。\n- 哔哩哔哩、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP、YY 与 IPTV 均提供严格且包含播放数据的录制解析路径。\n- 恢复 Android 启动阶段非阻塞预热 FFmpegKit，解决首次录制时原生库未就绪导致的 I/O 失败；桌面仍延迟预热。\n- FFmpegKit 改用原始参数向量，完整保留签名 URL、请求头和含空格目录，避免命令字符串二次解析破坏参数。\n- 录制按钮只产生一次启动意图；增加失败阶段与脱敏错误展示，便于区分房间、画质、线路、网络、FFmpeg 和合并错误。\n- Android 最低系统版本对齐 FFmpegKit 依赖要求 API 26；本轮正式产物仅为 arm64-v8a。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.12",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.13",
       "android_abis": [
         "arm64-v8a"
       ]

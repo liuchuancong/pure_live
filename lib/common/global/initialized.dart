@@ -82,6 +82,11 @@ class AppInitializer {
     // SettingsService was registered, then work on a later launch only because
     // the database/cache files had already been created.
     await InitialServices.init();
+    // Android FFmpegKit must begin native initialization during application
+    // startup. Deferring it until after the first frame reintroduced the
+    // upstream-recorded I/O failure on the first recording attempt. Keep this
+    // non-blocking; FFmpegService awaits the same idempotent future at use.
+    if (shouldStartRecorderPrewarmImmediately(mobile: PlatformUtils.isMobile)) _startFFmpegPrewarm();
     _initSmartDialog();
     initRefresh();
 
@@ -91,7 +96,9 @@ class AppInitializer {
       await MobileManager.initialize();
     }
 
-    _scheduleFFmpegPrewarm();
+    // Desktop startup has a heavier window/plugin path and did not exhibit
+    // the Android first-use failure, so it retains an idle warm-up.
+    if (PlatformUtils.isDesktop) _scheduleDesktopFFmpegPrewarm();
 
     if (PlatformUtils.isDesktopNotMac && instanceId.isEmpty) {
       _setupLaunchAtStartupSafe();
@@ -100,18 +107,21 @@ class AppInitializer {
     _isInitialized = true;
   }
 
-  /// Loads the native recorder after the first frame instead of competing with
-  /// settings, home data and the first player surface during application
-  /// startup. Recording still awaits the same idempotent initializer at its
-  /// service boundary, so a best-effort warm-up failure remains retryable.
-  void _scheduleFFmpegPrewarm() {
+  void _startFFmpegPrewarm() {
+    unawaited(
+      FFmpegManager.to.initialize().catchError((Object error, StackTrace stackTrace) {
+        log('FFmpeg prewarm failed: $error', stackTrace: stackTrace);
+      }),
+    );
+  }
+
+  @visibleForTesting
+  static bool shouldStartRecorderPrewarmImmediately({required bool mobile}) => mobile;
+
+  void _scheduleDesktopFFmpegPrewarm() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Timer(const Duration(seconds: 2), () {
-        unawaited(
-          FFmpegManager.to.initialize().catchError((Object error, StackTrace stackTrace) {
-            log('FFmpeg prewarm failed: $error', stackTrace: stackTrace);
-          }),
-        );
+        _startFFmpegPrewarm();
       });
     });
   }

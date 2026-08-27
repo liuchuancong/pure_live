@@ -4,7 +4,6 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_command_builder.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_manager.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
@@ -120,7 +119,7 @@ class VideoProcessorService extends GetxService {
         }
       });
 
-      final command = <String>[
+      final arguments = <String>[
         '-y',
         '-hide_banner',
         '-loglevel',
@@ -130,7 +129,7 @@ class VideoProcessorService extends GetxService {
         '-safe',
         '0',
         '-i',
-        FFmpegCommandBuilder.quoteArgument(listFile.path),
+        listFile.path,
         '-map',
         '0:v?',
         '-map',
@@ -141,10 +140,10 @@ class VideoProcessorService extends GetxService {
         '+faststart',
         '-f',
         'mp4',
-        FFmpegCommandBuilder.quoteArgument(partialFile.path),
-      ].join(' ');
+        partialFile.path,
+      ];
 
-      await _ffmpeg.start(taskId: ffmpegTaskId, command: command);
+      await _ffmpeg.start(taskId: ffmpegTaskId, arguments: arguments);
       final event = await terminalEvent.future.timeout(const Duration(seconds: 5));
       if (_cancelledTasks.contains(taskId) ||
           event.type != FFmpegEventType.complete ||

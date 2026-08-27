@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:developer';
+
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
 import 'package:pure_live/recorder/services/ffmpeg_service.dart';
@@ -42,14 +43,14 @@ class AudioStreamLoader {
 
     final headers = await FFmpegHeaderFactory.build(platform: platform);
 
-    final cmd = FFmpegCommandBuilder.buildAudioStreamCommand(
+    final arguments = FFmpegCommandBuilder.buildAudioStreamArguments(
       headers: headers,
       remoteStreamUrl: remoteStreamUrl,
       port: port,
     );
     await FFmpegService.to.start(
       taskId: _currentTaskId!,
-      command: cmd,
+      arguments: arguments,
       onEvent: (event) {
         if (onFFmpegEvent != null) {
           onFFmpegEvent(event);

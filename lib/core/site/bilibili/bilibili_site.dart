@@ -14,7 +14,7 @@ import 'package:pure_live/core/danmaku/bilibili_danmaku.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 
-class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LivePlayUrlResolver {
+class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LivePlayUrlResolver {
   @override
   String id = Sites.bilibiliSite;
 
@@ -678,8 +678,16 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LivePlayUrlResolv
     return _buildRoom(roomInfo, roomId: roomId);
   }
 
+  @override
+  Future<LiveRoom> getRoomDetailForRecording({required String platform, required String roomId}) {
+    // Bilibili playback is resolved from the canonical room id by a separate
+    // API, so the strict metadata-only room still contains everything the
+    // recorder needs and avoids an unrelated danmaku credential request.
+    return getRoomDetailForRefresh(platform: platform, roomId: roomId);
+  }
+
   LiveRoom _buildRoom(Map<String, dynamic> roomInfo, {required String roomId, Object? danmakuData}) {
-    final live = (asT<int?>(roomInfo["room_info"]["live_status"]) ?? 0) == 1;
+    final live = int.tryParse(roomInfo['room_info']?['live_status']?.toString() ?? '') == 1;
     return LiveRoom(
       roomId: roomId,
       title: roomInfo["room_info"]["title"].toString(),
@@ -734,9 +742,9 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LivePlayUrlResolv
         popularity: item["online"].toString(),
         followers: item["attentions"]?.toString() ?? '',
         audienceMetricType: AudienceMetricType.popularity,
-        liveStatus: (asT<int?>(item["live_status"]) ?? 0) == 1 ? LiveStatus.live : LiveStatus.offline,
+        liveStatus: int.tryParse(item['live_status']?.toString() ?? '') == 1 ? LiveStatus.live : LiveStatus.offline,
         area: item["cate_name"].toString(),
-        status: (asT<int?>(item["live_status"]) ?? 0) == 1,
+        status: int.tryParse(item['live_status']?.toString() ?? '') == 1,
         avatar: "https:${item["uface"]}@400w.jpg",
         platform: Sites.bilibiliSite,
       );
@@ -785,7 +793,7 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LivePlayUrlResolv
       queryParameters: {"room_id": roomId},
       header: await getHeader(),
     );
-    return (asT<int?>(result["data"]["live_status"]) ?? 0) == 1;
+    return int.tryParse(result['data']?['live_status']?.toString() ?? '') == 1;
   }
 
   @override

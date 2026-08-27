@@ -45,7 +45,7 @@ class FFmpegService {
 
   Future<void> start({
     required String taskId,
-    required String command,
+    required List<String> arguments,
     required void Function(FFmpegEvent event) onEvent,
   }) async {
     await _ensureInitialized();
@@ -53,7 +53,11 @@ class FFmpegService {
       throw StateError('FFmpeg task is already active: $taskId');
     }
 
-    final nativeSession = FFmpegKit.createSession(command);
+    if (arguments.isEmpty) throw ArgumentError.value(arguments, 'arguments', 'FFmpeg arguments must not be empty');
+    // Pass the exact argument vector to FFI. Re-parsing a shell-like command
+    // string was platform-dependent and could corrupt signed URLs, header CRLF
+    // blocks or Android storage paths before FFmpeg saw them.
+    final nativeSession = FFmpegKit.createSessionFromArguments(List<String>.of(arguments));
     final session = FFmpegRecordSession(
       taskId: taskId,
       sessionId: nativeSession.getSessionId(),
@@ -219,7 +223,13 @@ class FFmpegService {
   static String _sanitizeLogs(String logs) {
     return logs
         .replaceAll(RegExp(r'(?:https?|rtmps?|rtsp|srt|udp|rtp)://[^\s]+', caseSensitive: false), '[stream-url]')
-        .replaceAll(RegExp(r'^(cookie|authorization):.*$', caseSensitive: false, multiLine: true), r'$1: [redacted]')
-        .replaceAll(RegExp(r'(token|sign|auth|key)=([^&\s]+)', caseSensitive: false), r'$1=[redacted]');
+        .replaceAllMapped(
+          RegExp(r'^(cookie|authorization):.*$', caseSensitive: false, multiLine: true),
+          (match) => '${match.group(1)}: [redacted]',
+        )
+        .replaceAllMapped(
+          RegExp(r'((?:access_)?token|sign|auth|key|wssecret|txsecret)=([^&\s]+)', caseSensitive: false),
+          (match) => '${match.group(1)}=[redacted]',
+        );
   }
 }

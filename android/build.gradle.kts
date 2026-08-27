@@ -25,7 +25,8 @@ subprojects {
         if (project.name != "app") {
             extensions.findByType(com.android.build.gradle.BaseExtension::class.java)?.apply {
                 compileSdkVersion(37)
-                defaultConfig.minSdk = 23
+                // Keep plugin manifests aligned with the native FFmpeg bundle.
+                defaultConfig.minSdk = 26
 
                 if (namespace.isNullOrBlank()) {
                     namespace = project.group.toString()

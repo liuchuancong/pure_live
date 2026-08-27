@@ -48,7 +48,18 @@ class StreamResolverService extends GetxService {
 
   static StreamResolverService get to => Get.find();
 
-  static const Set<String> _recordableSchemes = {'http', 'https', 'rtmp', 'rtmps', 'rtsp', 'rtp', 'udp', 'tcp', 'file'};
+  static const Set<String> _recordableSchemes = {
+    'http',
+    'https',
+    'rtmp',
+    'rtmps',
+    'rtsp',
+    'rtp',
+    'udp',
+    'tcp',
+    'srt',
+    'file',
+  };
 
   final RecorderLiveSiteResolver _siteResolver;
 
@@ -60,6 +71,10 @@ class StreamResolverService extends GetxService {
     int lineOffset = 0,
   }) async {
     final normalizedPlatform = platform.trim().toLowerCase();
+    final normalizedRoomId = roomId.trim();
+    if (normalizedRoomId.isEmpty) {
+      throw const StreamException(type: StreamErrorType.roomNotFound, message: 'Room id is empty', retryable: false);
+    }
     if (!Sites.isSupported(normalizedPlatform)) {
       throw StreamException(
         type: StreamErrorType.unknown,
@@ -70,10 +85,34 @@ class StreamResolverService extends GetxService {
 
     try {
       final site = _siteResolver(normalizedPlatform);
-      final detail = await site.getRoomDetail(roomId: roomId, platform: normalizedPlatform);
+      late final LiveRoom detail;
+      try {
+        detail = site is LiveSiteRecordRoomResolver
+            ? await (site as LiveSiteRecordRoomResolver).getRoomDetailForRecording(
+                roomId: normalizedRoomId,
+                platform: normalizedPlatform,
+              )
+            : await site.getRoomDetail(roomId: normalizedRoomId, platform: normalizedPlatform);
+      } catch (error) {
+        // UI room loaders commonly preserve the previous card on request
+        // failure. Recording uses a strict capability so a transient metadata
+        // error enters bounded retry instead of becoming a false offline stop.
+        throw StreamException(type: StreamErrorType.networkError, message: '${i18n('stream_get_room_failed')}: $error');
+      }
 
-      if (detail.liveStatus != LiveStatus.live && detail.isRecord != true) {
+      if (detail.liveStatus == LiveStatus.banned) {
+        throw StreamException(type: StreamErrorType.banned, message: i18n('stream_room_banned'), retryable: false);
+      }
+      final explicitlyPlayable =
+          detail.liveStatus == LiveStatus.live ||
+          detail.liveStatus == LiveStatus.replay ||
+          detail.status == true ||
+          detail.isRecord == true;
+      if (!explicitlyPlayable && detail.liveStatus == LiveStatus.offline) {
         throw StreamException(type: StreamErrorType.notLive, message: i18n('stream_not_live'), retryable: false);
+      }
+      if (!explicitlyPlayable) {
+        throw StreamException(type: StreamErrorType.networkError, message: i18n('stream_room_state_unknown'));
       }
 
       late final List<LivePlayQuality> qualities;
