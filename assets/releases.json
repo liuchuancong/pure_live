@@ -1,5 +1,43 @@
 [
   {
+    "version": "3.0.15",
+    "title": "Pure Live v3.0.15",
+    "date": "2026-08-27",
+    "github": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.15",
+    "author": {
+      "name": "wzgrx",
+      "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
+      "profile": "https://github.com/wzgrx"
+    },
+    "changelog": "# Pure Live v3.0.15\n\nv3.0.15 build 4103 是 Android 播放器回归修正版。本轮只构建 `arm64-v8a` Release APK；其他平台继续使用既有安装包。v3.0.14 的播放器恢复设计已由本版本替代。\n\n## 根因与修复\n\n- v3.0.14 将 libmpv 的原生 `path` 精确字符串、可选首帧属性和公共 `playing` 状态错误地串成硬门槛。CDN 重定向、协议重写、Android 后端未提供首帧属性或事件在 `open` 期间先到时，正常直播会被判定为未播放。\n- 原生 `playing=true` 重新成为播放状态的唯一权威；首帧和解码属性只保留为诊断证据，不再阻断画面、加载完成或管理器状态。\n- 来源代次仍在新流打开期间隔离旧回调，但打开完成后不再要求 URL 字符串完全一致。重定向 URL 和没有原生 path 回调的来源均可继续发布当前尺寸与播放事件。\n- 下线适配器 10 秒与管理器 12 秒两套推测式“无首帧即失败”计时器。只有明确的打开异常或原生故障进入线路/内核恢复，避免正常缓冲中的直播被自动重开、表现为暂停或黑屏。\n- 新来源完成打开后立即回读原生播放状态和成对视频尺寸，恢复竖屏、横屏、全屏与小窗共享的当前来源几何链路。\n\n## 验证范围\n\n- 回归覆盖原生路径被 CDN 改写、完全没有 path 回调、缺少可选 mpv 首帧属性、默认策略不推测重开慢流、当前来源 `720×1280` 尺寸进入竖屏几何，以及既有音频模式、全屏和小窗状态机。\n- 本轮不连接或操作手机；自动化与本机构建证据和设备安装后的实际样本分层记录。",
+    "files": [
+      {
+        "name": "ANDROID_SHA256SUM.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.15/ANDROID_SHA256SUM.txt"
+      },
+      {
+        "name": "BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.15/BUILD_METADATA.json"
+      },
+      {
+        "name": "PureLive-3.0.15-4103-android-arm64-v8a",
+        "size": "113.1mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.15/PureLive-3.0.15-4103-android-arm64-v8a-release.apk"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.15/SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
     "version": "3.0.14",
     "title": "Pure Live v3.0.14",
     "date": "2026-08-27",
