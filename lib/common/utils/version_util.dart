@@ -20,6 +20,7 @@ class VersionUtil {
   static final String updateOwner = AppConfig.pureliveUpdateOwner;
   static final String updateRepository = AppConfig.pureliveUpdateRepository;
   static final String projectUrl = 'https://github.com/$updateOwner/$updateRepository';
+  static final String defaultAvatar = 'https://avatars.githubusercontent.com/u/36957912?v=4';
   static final String issuesUrl = '$projectUrl/issues';
   static const String githubUrl = 'https://github.com/liuchuancong';
 

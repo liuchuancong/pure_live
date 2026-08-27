@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
+import 'package:pure_live/gen/env.g.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/utils.dart';
@@ -12,6 +13,7 @@ import 'package:url_launcher/url_launcher_string.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/common/utils/githup_mirror.dart';
 import 'package:pure_live/common/models/release_model.dart';
+import 'package:pure_live/common/widgets/common_avatar.dart';
 
 class VersionHistoryPage extends StatefulWidget {
   const VersionHistoryPage({super.key});
@@ -61,8 +63,13 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> with SingleTick
       final result = await HttpClient.instance.getJson(
         url,
         header: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36',
+          'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+              'AppleWebKit/537.36 (KHTML, like Gecko) '
+              'Chrome/151.0.0.0 Safari/537.36',
           'Accept': 'application/json,text/plain,*/*',
+          'Cache-Control': 'no-cache, no-store, max-age=0',
+          'Pragma': 'no-cache',
         },
       );
       final decoded = result is String ? json.decode(result) : result;
@@ -379,30 +386,34 @@ class _DesktopChangelogDetailPanel extends StatelessWidget {
 }
 
 class _VersionAuthorHeaderWidget extends StatelessWidget {
-  final dynamic item;
+  final ReleaseModel item;
 
   const _VersionAuthorHeaderWidget({required this.item});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final avatar = item.author.avatar.trim().isNotEmpty ? item.author.avatar.trim() : VersionUtil.defaultAvatar;
 
     return Row(
       children: [
-        CircleAvatar(
-          radius: 18,
-          backgroundColor: theme.colorScheme.surfaceContainerHighest,
-          backgroundImage: NetworkImage(item.author.avatar),
-        ),
+        CommonAvatar(avatarUrl: avatar, fallbackName: AppConfig.pureliveUpdateOwner, dense: true),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('v${item.version}', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
               Text(
-                // 【Core Fix】: Localized published date text template wrapper
+                'v${item.version}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 2),
+              Text(
                 i18n("version_published_at", args: {"date": item.date}),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
             ],
@@ -412,7 +423,7 @@ class _VersionAuthorHeaderWidget extends StatelessWidget {
           style: IconButton.styleFrom(
             backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
           ),
-          onPressed: () => launchUrlString(item.github),
+          onPressed: item.github.isEmpty ? null : () => launchUrlString(item.github),
           icon: const Icon(Remix.link, size: 16),
         ),
       ],

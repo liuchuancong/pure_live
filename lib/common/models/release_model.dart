@@ -18,15 +18,64 @@ class ReleaseModel {
   });
 
   factory ReleaseModel.fromJson(Map<String, dynamic> json) {
+    final authorData = json['author'];
+    final filesData = json['files'] ?? json['assets'];
+
     return ReleaseModel(
-      version: json['version'] ?? '',
-      title: json['title'] ?? '',
-      date: json['date'] ?? '',
-      github: json['github'] ?? '',
-      author: AuthorModel.fromJson(json['author'] ?? {}),
-      changelog: json['changelog'] ?? '',
-      files: (json['files'] as List<dynamic>? ?? []).map((e) => ReleaseFileModel.fromJson(e)).toList(),
+      version: _normalizeVersion(json['version'] ?? json['tagName']),
+      title: _string(json['title'] ?? json['name']),
+      date: _formatDate(json['date'] ?? json['publishedAt'] ?? json['published_at']),
+      github: _string(json['github'] ?? json['url'] ?? json['htmlUrl'] ?? json['html_url']),
+      author: authorData is Map
+          ? AuthorModel.fromJson(Map<String, dynamic>.from(authorData))
+          : AuthorModel.defaultAuthor(),
+      changelog: _string(json['changelog'] ?? json['body']),
+      files: filesData is List
+          ? filesData.whereType<Map>().map((e) => ReleaseFileModel.fromJson(Map<String, dynamic>.from(e))).toList()
+          : <ReleaseFileModel>[],
     );
+  }
+  static String _normalizeVersion(dynamic value) {
+    final version = value?.toString().trim() ?? '';
+
+    if (version.isEmpty) {
+      return '';
+    }
+
+    return version.startsWith('v') ? version.substring(1) : version;
+  }
+
+  static String _string(dynamic value) {
+    return value?.toString() ?? '';
+  }
+
+  static String _formatDate(dynamic value) {
+    if (value == null) return '';
+
+    final text = value.toString().trim();
+
+    if (text.isEmpty) return '';
+
+    final dateTime = DateTime.tryParse(text);
+
+    if (dateTime == null) {
+      return text;
+    }
+
+    final local = dateTime.toLocal();
+
+    String two(int value) => value.toString().padLeft(2, '0');
+
+    final date = '${local.year}-${two(local.month)}-${two(local.day)}';
+
+    if (!text.contains('T') && !text.contains(' ') && !text.contains(':')) {
+      return date;
+    }
+
+    return '$date '
+        '${two(local.hour)}:'
+        '${two(local.minute)}:'
+        '${two(local.second)}';
   }
 
   Map<String, dynamic> toJson() {
@@ -50,7 +99,19 @@ class AuthorModel {
   AuthorModel({required this.name, required this.avatar, required this.profile});
 
   factory AuthorModel.fromJson(Map<String, dynamic> json) {
-    return AuthorModel(name: json['name'] ?? '', avatar: json['avatar'] ?? '', profile: json['profile'] ?? '');
+    return AuthorModel(
+      name: json['name'] ?? json['login'] ?? '',
+      avatar: json['avatar'] ?? json['avatarUrl'] ?? json['avatar_url'] ?? '',
+      profile: json['profile'] ?? json['htmlUrl'] ?? json['html_url'] ?? '',
+    );
+  }
+
+  factory AuthorModel.defaultAuthor() {
+    return AuthorModel(
+      name: 'liuchuancong',
+      avatar: 'https://avatars.githubusercontent.com/u/36957912?v=4',
+      profile: 'https://github.com/liuchuancong',
+    );
   }
 
   Map<String, dynamic> toJson() {
@@ -68,11 +129,49 @@ class ReleaseFileModel {
 
   factory ReleaseFileModel.fromJson(Map<String, dynamic> json) {
     return ReleaseFileModel(
-      name: json['name'] ?? '',
-      size: json['size'] ?? '',
-      downloads: json['downloads'] ?? 0,
-      url: json['url'] ?? '',
+      name: json['name']?.toString() ?? '',
+      size: _formatSize(json['size']),
+      downloads: _toInt(json['downloads'] ?? json['downloadCount'] ?? json['download_count']),
+      url:
+          json['url']?.toString() ??
+          json['browserDownloadUrl']?.toString() ??
+          json['browser_download_url']?.toString() ??
+          '',
     );
+  }
+
+  static int _toInt(dynamic value) {
+    if (value is int) return value;
+
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  static String _formatSize(dynamic value) {
+    if (value == null) return '';
+
+    if (value is String) {
+      return value;
+    }
+
+    if (value is! num) {
+      return value.toString();
+    }
+
+    final bytes = value.toDouble();
+
+    if (bytes < 1024) {
+      return '${bytes.toInt()} B';
+    }
+
+    if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    }
+
+    if (bytes < 1024 * 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
+
+    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 
   Map<String, dynamic> toJson() {
