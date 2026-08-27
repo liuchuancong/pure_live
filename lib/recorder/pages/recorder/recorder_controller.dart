@@ -82,6 +82,7 @@ class RecorderController extends GetxService {
         _activeSessionIds[event.taskId] = sessionId;
         task.status = RecordStatus.running;
         task.lastUpdate = DateTime.now();
+        task.clearFailure();
         updateTask(task);
         return;
       case FFmpegEventType.progress:
@@ -107,8 +108,11 @@ class RecorderController extends GetxService {
         final shouldRetry =
             !isError || RecorderContinuationPolicy.shouldRetryFailure(errorCode: errorCode, rawLogs: rawLogs);
         if (isError) {
-          task.lastFailTime = DateTime.now();
           final message = event.data['message']?.toString();
+          task.markFailure(
+            stage: 'ffmpeg',
+            error: message?.isNotEmpty == true ? message! : 'FFmpeg exit code $errorCode',
+          );
           if (message?.isNotEmpty == true && (!shouldRetry || task.retryCount == 0)) {
             ToastUtil.show(message!);
           }
@@ -186,6 +190,7 @@ class RecorderController extends GetxService {
       }
 
       if (!mergeSucceeded) {
+        task.markFailure(stage: 'merge', error: i18n('video_ffmpeg_failed'));
         task.status = RecordStatus.failed;
         updateTask(task);
         return;
@@ -205,6 +210,7 @@ class RecorderController extends GetxService {
       }
     } catch (error, stackTrace) {
       developer.log('Recorder finalization failed: $error', name: 'RecorderController', stackTrace: stackTrace);
+      task.markFailure(stage: 'merge', error: error);
       task.status = RecordStatus.failed;
       updateTask(task);
     } finally {
@@ -315,20 +321,26 @@ class RecorderController extends GetxService {
     }
   }
 
-  Future<void> addTask({required LiveRoom room}) async {
-    if (!await requestStoragePermission()) return;
-    if (tasks.any((task) => task.roomId == room.roomId && task.platform == room.platform)) return;
+  Future<LiveRecordTask?> addTask({required LiveRoom room, bool startImmediately = true}) async {
+    if (!await requestStoragePermission()) return null;
+    final existing = tasks.firstWhereOrNull((task) => task.roomId == room.roomId && task.platform == room.platform);
+    if (existing != null) return existing;
 
     final task = LiveRecordTask.fromRoom(room);
     tasks.add(task);
     updateTask(task);
-    if (room.liveStatus == LiveStatus.live) {
+    // "Start now" is an explicit user intent. Do not gate it on the room card's
+    // cached live state: cards can lag the player and several platforms use an
+    // unknown/replay state while a valid media URL is already playing. The
+    // strict stream resolver below is the authority for live/offline state.
+    if (startImmediately) {
       await startTask(task);
     } else {
       task.status = RecordStatus.waitingLive;
       updateTask(task);
       _schedulePoll(task);
     }
+    return task;
   }
 
   Future<bool> startTask(LiveRecordTask task) async {
@@ -362,6 +374,7 @@ class RecorderController extends GetxService {
       scheduler.enqueue(taskId: task.taskId, taskRunner: (token) => _runTask(task, token));
     } catch (error, stackTrace) {
       developer.log('Start recorder task failed: $error', name: 'RecorderController', stackTrace: stackTrace);
+      task.markFailure(stage: 'scheduler', error: error);
       task.status = RecordStatus.failed;
       updateTask(task);
     } finally {
@@ -417,7 +430,7 @@ class RecorderController extends GetxService {
         ..outputDir = directory.path;
       updateTask(task);
 
-      final command = FFmpegCommandBuilder.buildRecordCommand(
+      final arguments = FFmpegCommandBuilder.buildRecordArguments(
         headers: headers,
         url: resolved.url,
         outputDir: directory.path,
@@ -429,13 +442,14 @@ class RecorderController extends GetxService {
       );
       if (token.isCancelled) return;
 
-      await ffmpeg.start(taskId: task.taskId, command: command);
+      await ffmpeg.start(taskId: task.taskId, arguments: arguments);
       await lifecycle.future;
     } on StreamException catch (error) {
       developer.log('Stream resolution failed: ${error.message}', name: 'RecorderController');
       if (token.isCancelled) return;
-      task.lastFailTime = DateTime.now();
+      task.markFailure(stage: _streamFailureStage(error.type), error: error.message);
       if (error.type == StreamErrorType.notLive) {
+        task.clearFailure();
         task.status = RecordStatus.waitingLive;
         updateTask(task);
         _schedulePoll(task);
@@ -450,7 +464,7 @@ class RecorderController extends GetxService {
     } catch (error, stackTrace) {
       developer.log('Recorder task failed: $error', name: 'RecorderController', stackTrace: stackTrace);
       if (!token.isCancelled) {
-        task.lastFailTime = DateTime.now();
+        task.markFailure(stage: 'recorder', error: error);
         if (task.autoReconnect) {
           _scheduleReconnect(task);
         } else {
@@ -477,6 +491,13 @@ class RecorderController extends GetxService {
     final lifecycle = _lifecycleCompleters[taskId];
     if (lifecycle != null && !lifecycle.isCompleted) lifecycle.complete();
   }
+
+  String _streamFailureStage(StreamErrorType type) => switch (type) {
+    StreamErrorType.roomNotFound || StreamErrorType.notLive || StreamErrorType.banned => 'room',
+    StreamErrorType.noQuality => 'quality',
+    StreamErrorType.cdnFailed || StreamErrorType.loginExpired => 'stream',
+    StreamErrorType.networkError || StreamErrorType.unknown => 'network',
+  };
 
   void _scheduleReconnect(LiveRecordTask task) {
     if (task.wasStoppedByUser || !_containsTask(task.taskId)) return;
@@ -550,6 +571,8 @@ class RecorderController extends GetxService {
       _pollFailures[task.taskId] = (_pollFailures[task.taskId] ?? 0) + 1;
     } catch (error) {
       _pollFailures[task.taskId] = (_pollFailures[task.taskId] ?? 0) + 1;
+      task.markFailure(stage: 'status', error: error);
+      updateTask(task, reorder: false);
       developer.log('Recorder status poll failed: $error', name: 'RecorderController');
     } finally {
       _pollInFlight.remove(task.taskId);

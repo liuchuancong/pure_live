@@ -1,5 +1,6 @@
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/recorder/models/record_status.dart';
+import 'package:pure_live/recorder/services/recorder_diagnostics.dart';
 
 class LiveRecordTask {
   /// =========================
@@ -80,6 +81,12 @@ class LiveRecordTask {
 
   DateTime? lastFailTime;
 
+  /// Sanitized user-visible failure from the most recent attempt.
+  String? lastError;
+
+  /// Stable stage id: room, stream, ffmpeg, merge, scheduler or status.
+  String? lastErrorStage;
+
   bool wasStoppedByUser;
 
   LiveRecordTask({
@@ -117,6 +124,8 @@ class LiveRecordTask {
     this.retryCount = 0,
     this.wasStoppedByUser = false,
     this.lastFailTime,
+    this.lastError,
+    this.lastErrorStage,
   });
 
   /// =========================
@@ -202,6 +211,18 @@ class LiveRecordTask {
     selectedQuality = null;
   }
 
+  void markFailure({required String stage, required Object error, DateTime? now}) {
+    lastFailTime = now ?? DateTime.now();
+    lastErrorStage = stage.trim().toLowerCase();
+    final sanitized = RecorderDiagnostics.sanitize(error);
+    lastError = sanitized.isEmpty ? null : sanitized;
+  }
+
+  void clearFailure() {
+    lastError = null;
+    lastErrorStage = null;
+  }
+
   String get recordingFilePrefix {
     String two(int value) => value.toString().padLeft(2, '0');
     return '${createTime.year}${two(createTime.month)}${two(createTime.day)}_'
@@ -214,7 +235,7 @@ class LiveRecordTask {
   /// =========================
 
   Map<String, dynamic> toJson() => {
-    "schemaVersion": 2,
+    "schemaVersion": 3,
     "taskId": taskId,
     "roomId": roomId,
     "platform": platform,
@@ -256,6 +277,8 @@ class LiveRecordTask {
     "createTime": createTime.toIso8601String(),
 
     "lastFailTime": lastFailTime?.toIso8601String(),
+    "lastError": lastError,
+    "lastErrorStage": lastErrorStage,
     "wasStoppedByUser": wasStoppedByUser,
   };
 
@@ -329,6 +352,8 @@ class LiveRecordTask {
       createTime: _date(json["createTime"]) ?? DateTime.now(),
 
       lastFailTime: _date(json["lastFailTime"]),
+      lastError: _diagnostic(json["lastError"]),
+      lastErrorStage: _stage(json["lastErrorStage"]),
       wasStoppedByUser: _bool(json["wasStoppedByUser"]),
     );
   }
@@ -341,6 +366,28 @@ class LiveRecordTask {
   static String? _nullableString(dynamic value) {
     final text = value?.toString().trim() ?? '';
     return text.isEmpty ? null : text;
+  }
+
+  static String? _diagnostic(dynamic value) {
+    final sanitized = RecorderDiagnostics.sanitize(value);
+    return sanitized.isEmpty ? null : sanitized;
+  }
+
+  static String? _stage(dynamic value) {
+    final normalized = value?.toString().trim().toLowerCase() ?? '';
+    return const {
+          'room',
+          'quality',
+          'stream',
+          'network',
+          'ffmpeg',
+          'merge',
+          'scheduler',
+          'status',
+          'recorder',
+        }.contains(normalized)
+        ? normalized
+        : null;
   }
 
   static int _int(dynamic value) {

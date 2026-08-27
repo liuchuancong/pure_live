@@ -44,7 +44,10 @@ extensions.configure<com.android.build.api.dsl.ApplicationExtension> {
     }
     defaultConfig {
         applicationId = "com.mystyle.purelive"
-        minSdk = flutter.minSdkVersion 
+        // ffmpeg_kit_extended_flutter 0.6.0 ships native binaries with an
+        // Android API 26 floor. Advertising an older app floor lets installs
+        // succeed on devices where the recording engine cannot be loaded.
+        minSdk = 26
         multiDexEnabled = true 
         targetSdk = 37
         versionCode = flutter.versionCode

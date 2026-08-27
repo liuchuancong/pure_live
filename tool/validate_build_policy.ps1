@@ -181,6 +181,13 @@ if ($properties['kotlin.daemon.jvmargs'] -notmatch '-Xmx4g') {
 }
 
 $androidAppBuild = Get-Content -LiteralPath (Join-Path $repoRoot 'android\app\build.gradle.kts') -Raw
+if ($androidAppBuild -notmatch '(?m)^\s*minSdk\s*=\s*26\s*$') {
+    throw 'Android minSdk must match the FFmpegKit native API 26 floor.'
+}
+$androidManifest = Get-Content -LiteralPath (Join-Path $repoRoot 'android\app\src\main\AndroidManifest.xml') -Raw
+if ($androidManifest -match 'overrideLibrary="com\.akashskypatel\.ffmpeg_kit_extended_flutter"') {
+    throw 'Android manifest must not bypass the FFmpegKit native minSdk requirement.'
+}
 foreach ($marker in @(
     'it.name.contains("flutter", ignoreCase = true)',
     'it.name.startsWith("assemble")',

@@ -36,12 +36,12 @@ class FFmpegManager {
     return initialization;
   }
 
-  Future<void> start({required String taskId, required String command}) async {
+  Future<void> start({required String taskId, required List<String> arguments}) async {
     await initialize();
 
     await _ffmpeg.start(
       taskId: taskId,
-      command: command,
+      arguments: arguments,
       onEvent: (event) {
         if (!_eventController.isClosed) {
           _eventController.add(event);

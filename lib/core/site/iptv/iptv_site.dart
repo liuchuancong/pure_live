@@ -14,7 +14,7 @@ import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/iptv/services/auto_sync_scheduler.dart';
 
-class IptvSite implements LiveSite {
+class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
   @override
   String id = Sites.iptvSite;
 
@@ -214,6 +214,14 @@ class IptvSite implements LiveSite {
     }
 
     return _buildLiveRoom(channel, nowProg, epgId: finalEpgChannelId);
+  }
+
+  @override
+  Future<LiveRoom> getRoomDetailForRecording({required String platform, required String roomId}) {
+    // Imported channels already store their playback URL as room data. The
+    // database lookup is authoritative and does not use a presentation
+    // fallback, so the same loader is the strict recording contract.
+    return getRoomDetail(platform: platform, roomId: roomId);
   }
 
   LiveRoom _buildLiveRoom(Channel channel, EpgProgramme? prog, {String? epgId}) {

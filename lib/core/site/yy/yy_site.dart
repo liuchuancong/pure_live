@@ -12,7 +12,7 @@ import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 
-class YYSite implements LiveSite, LiveSiteRoomRefresher {
+class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver {
   static const String _streamSdkVersion = '5.23.0-beta.2';
   static const String _mobileHlsPrefix = 'mobile-hls:';
   static const List<String> _mobileHlsRates = <String>['1200', '4000'];
@@ -655,6 +655,11 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher {
     return _fetchRoomDetail(platform: platform, roomId: roomId);
   }
 
+  @override
+  Future<LiveRoom> getRoomDetailForRecording({required String platform, required String roomId}) {
+    return _fetchRoomDetail(platform: platform, roomId: roomId);
+  }
+
   Future<LiveRoom> _fetchRoomDetail({required String platform, required String roomId}) async {
     final response = decode(
       await HttpClient.instance.getJson(
@@ -662,7 +667,8 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher {
         header: getHeaders(),
       ),
     );
-    if (response is! Map || response['resultCode'] != 0) {
+    final resultCode = response is Map ? int.tryParse(response['resultCode']?.toString() ?? '') : null;
+    if (response is! Map || resultCode != 0) {
       throw const FormatException('YY room detail response is invalid');
     }
     final rawItem = response['data'];

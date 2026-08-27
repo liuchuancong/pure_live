@@ -13,7 +13,7 @@ import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 
-class DouyuSite implements LiveSite, LiveSiteRoomRefresher {
+class DouyuSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver {
   @override
   String id = Sites.douyuSite;
 
@@ -334,6 +334,15 @@ class DouyuSite implements LiveSite, LiveSiteRoomRefresher {
     return _buildRoom(roomInfo, roomId: roomId);
   }
 
+  @override
+  Future<LiveRoom> getRoomDetailForRecording({required String platform, required String roomId}) async {
+    // Do not use getRoomDetail here: its UI fallback converts a failed betard
+    // request into an offline room, which previously stopped recording before
+    // Douyu signing/getH5PlayV1 was reached.
+    final roomInfo = await _fetchRoomInfo(roomId);
+    return _buildRoom(roomInfo, roomId: roomId);
+  }
+
   Future<Map<dynamic, dynamic>> _fetchRoomInfo(String roomId) async {
     var result = await HttpClient.instance.getJson(
       "https://www.douyu.com/betard/$roomId",
@@ -357,10 +366,8 @@ class DouyuSite implements LiveSite, LiveSiteRoomRefresher {
   }
 
   LiveRoom _buildRoom(Map<dynamic, dynamic> roomInfo, {required String roomId}) {
-    final live =
-        roomInfo["show_status"] == 1 &&
-        roomInfo["videoLoop"] != 1 &&
-        !roomInfo["room_name"].toString().startsWith("【回放】");
+    final live = isLiveRoomPayload(roomInfo);
+    final replay = _asInt(roomInfo['videoLoop']) == 1;
 
     return LiveRoom(
       cover: roomInfo["room_pic"].toString(),
@@ -380,8 +387,15 @@ class DouyuSite implements LiveSite, LiveSiteRoomRefresher {
       data: null,
       platform: Sites.douyuSite,
       link: "https://www.douyu.com/$roomId",
-      isRecord: roomInfo["videoLoop"] == 1,
+      isRecord: replay,
     );
+  }
+
+  @visibleForTesting
+  static bool isLiveRoomPayload(Map<dynamic, dynamic> roomInfo) {
+    return _asInt(roomInfo['show_status']) == 1 &&
+        _asInt(roomInfo['videoLoop']) != 1 &&
+        !roomInfo['room_name'].toString().startsWith('【回放】');
   }
 
   @override
@@ -465,10 +479,7 @@ class DouyuSite implements LiveSite, LiveSiteRoomRefresher {
   @override
   Future<bool> getLiveStatus({required String platform, required String roomId}) async {
     var roomInfo = await _fetchRoomInfo(roomId);
-
-    return roomInfo["show_status"] == 1 &&
-        roomInfo["videoLoop"] != 1 &&
-        !roomInfo["room_name"].toString().startsWith("【回放】");
+    return isLiveRoomPayload(roomInfo);
   }
 
   int parseHotNum(String hn) {

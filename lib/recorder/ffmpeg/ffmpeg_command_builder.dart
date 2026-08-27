@@ -16,6 +16,21 @@ class FFmpegCommandBuilder {
     required int port,
     int rwTimeout = 15,
     Map<String, String>? headers,
+  }) => formatArguments(
+    buildAudioStreamArguments(remoteStreamUrl: remoteStreamUrl, port: port, rwTimeout: rwTimeout, headers: headers),
+  );
+
+  /// Returns native FFmpeg arguments without shell quoting.
+  ///
+  /// FFmpegKit has a first-class argument-list API. Using it avoids parsing a
+  /// command string a second time on Android, where signed URLs, CRLF-delimited
+  /// HTTP headers and storage paths containing spaces could otherwise be split
+  /// differently from desktop shells.
+  static List<String> buildAudioStreamArguments({
+    required String remoteStreamUrl,
+    required int port,
+    int rwTimeout = 15,
+    Map<String, String>? headers,
   }) {
     final normalizedHeaders = _normalizeHeaders(headers);
     final userAgent = normalizedHeaders.remove('user-agent');
@@ -28,10 +43,10 @@ class FFmpegCommandBuilder {
       '-protocol_whitelist',
       _protocolWhitelist,
       ..._inputProtocolOptions(remoteStreamUrl, rwTimeout: rwTimeout),
-      if (userAgent != null && userAgent.isNotEmpty) ...['-user_agent', quoteArgument(userAgent)],
-      if (headerString.isNotEmpty) ...['-headers', _quoteGeneratedHeaders(headerString)],
+      if (userAgent != null && userAgent.isNotEmpty) ...['-user_agent', userAgent],
+      if (headerString.isNotEmpty) ...['-headers', headerString],
       '-i',
-      quoteArgument(remoteStreamUrl),
+      remoteStreamUrl,
       '-map',
       '0:a:0',
       '-vn',
@@ -44,10 +59,32 @@ class FFmpegCommandBuilder {
       'http://127.0.0.1:$port/live.ts',
     ];
 
-    return args.join(' ');
+    return List<String>.unmodifiable(args);
   }
 
   static String buildRecordCommand({
+    required String url,
+    required String outputDir,
+    required int segmentTime,
+    required bool preferBestStream,
+    required int rwTimeout,
+    required int threadQueueSize,
+    String? filePrefix,
+    Map<String, String>? headers,
+  }) => formatArguments(
+    buildRecordArguments(
+      url: url,
+      outputDir: outputDir,
+      segmentTime: segmentTime,
+      preferBestStream: preferBestStream,
+      rwTimeout: rwTimeout,
+      threadQueueSize: threadQueueSize,
+      filePrefix: filePrefix,
+      headers: headers,
+    ),
+  );
+
+  static List<String> buildRecordArguments({
     required String url,
     required String outputDir,
     required int segmentTime,
@@ -83,10 +120,10 @@ class FFmpegCommandBuilder {
       ..._inputProtocolOptions(url, rwTimeout: rwTimeout),
       '-thread_queue_size',
       threadQueueSize.clamp(64, 65536).toString(),
-      if (userAgent != null && userAgent.isNotEmpty) ...['-user_agent', quoteArgument(userAgent)],
-      if (headerString.isNotEmpty) ...['-headers', _quoteGeneratedHeaders(headerString)],
+      if (userAgent != null && userAgent.isNotEmpty) ...['-user_agent', userAgent],
+      if (headerString.isNotEmpty) ...['-headers', headerString],
       '-i',
-      quoteArgument(url),
+      url,
       // Optional mappings support audio-only rooms and temporarily missing
       // video tracks without selecting metadata/data streams.
       '-map',
@@ -107,11 +144,15 @@ class FFmpegCommandBuilder {
       '0',
       '-reset_timestamps',
       '1',
-      quoteArgument(normalizedOutputPath),
+      normalizedOutputPath,
     ];
 
-    return args.join(' ');
+    return List<String>.unmodifiable(args);
   }
+
+  /// Human-readable representation for logs and deterministic tests only.
+  /// Native execution always receives the original argument list.
+  static String formatArguments(Iterable<String> arguments) => arguments.map(quoteArgument).join(' ');
 
   static List<String> _inputProtocolOptions(String rawUrl, {required int rwTimeout}) {
     final scheme = Uri.tryParse(rawUrl.trim())?.scheme.toLowerCase() ?? '';
@@ -163,12 +204,6 @@ class FFmpegCommandBuilder {
     if (headers.isEmpty) return '';
     return '${headers.entries.map((entry) => '${entry.key}: ${entry.value}').join('\r\n')}\r\n';
   }
-
-  /// Header values are sanitized before this string is generated, so the only
-  /// newlines left here are the CRLF delimiters FFmpeg requires between HTTP
-  /// fields. The generic argument quoting intentionally strips newlines and
-  /// therefore must not be used for this generated block.
-  static String _quoteGeneratedHeaders(String value) => '"${value.replaceAll('"', r'\"')}"';
 
   static String _safeFilePrefix(String value) {
     final normalized = value.replaceAll(RegExp(r'[^A-Za-z0-9_-]+'), '_').replaceAll(RegExp(r'_+'), '_');

@@ -161,3 +161,23 @@ extension LiveSitePlayUrlResolution on LiveSite {
 abstract interface class LiveSiteRoomRefresher {
   Future<LiveRoom> getRoomDetailForRefresh({required String roomId, required String platform});
 }
+
+/// Strict, playback-complete room lookup used before a recording starts.
+///
+/// The ordinary [LiveSite.getRoomDetail] contract is UI-oriented. Several
+/// adapters deliberately turn transport/shape errors into an offline-looking
+/// fallback room so an already mounted player can keep its last metadata.
+/// That behaviour is useful for presentation, but it is unsafe for recording:
+/// one temporary metadata error was interpreted as an authoritative offline
+/// state and the recorder stopped before it ever asked for a stream URL.
+///
+/// [LiveSiteRoomRefresher] is not a substitute for this capability. Refresh
+/// implementations may intentionally omit signed playback descriptors to keep
+/// favourite-card refreshes cheap. Implementations of this interface must:
+///
+/// * propagate transport and response-shape failures;
+/// * return an explicit offline/banned room only when the platform said so;
+/// * retain every field required by [LiveSite.getPlayQualites].
+abstract interface class LiveSiteRecordRoomResolver {
+  Future<LiveRoom> getRoomDetailForRecording({required String roomId, required String platform});
+}

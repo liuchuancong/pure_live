@@ -168,15 +168,10 @@ class RecordActionButton extends StatelessWidget {
       return;
     }
 
-    await recorderController.addTask(room: room);
-
-    final newTask = recorderController.tasks.firstWhereOrNull(
-      (t) => t.platform == room.platform && t.roomId == room.roomId,
-    );
-
-    if (newTask != null) {
-      recorderController.forceStartTask(newTask);
-    }
+    // addTask owns the first transition into the scheduler. Starting it again
+    // from the button created two competing intents and made first-attempt
+    // failures difficult to classify.
+    await recorderController.addTask(room: room, startImmediately: true);
   }
 
   Future<void> _addMonitor({required bool exists}) async {
@@ -184,7 +179,7 @@ class RecordActionButton extends StatelessWidget {
       return;
     }
 
-    await recorderController.addTask(room: room);
+    await recorderController.addTask(room: room, startImmediately: false);
 
     ToastUtil.show(i18n("record_task_added"));
   }

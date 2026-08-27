@@ -2,6 +2,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/core/site/douyu/douyu_site.dart';
 
 void main() {
+  test('Douyu room state accepts numeric strings without misclassifying a live room', () {
+    expect(
+      DouyuSite.isLiveRoomPayload(<String, dynamic>{'show_status': '1', 'videoLoop': '0', 'room_name': '直播中'}),
+      isTrue,
+    );
+    expect(
+      DouyuSite.isLiveRoomPayload(<String, dynamic>{'show_status': 1, 'videoLoop': 1, 'room_name': '【回放】上一场'}),
+      isFalse,
+    );
+  });
+
   group('Douyu H5 playback response', () {
     test('accepts numeric/string success and preserves playback data', () {
       final data = DouyuSite.parsePlayResponse(<String, dynamic>{

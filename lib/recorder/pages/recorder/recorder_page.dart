@@ -237,6 +237,18 @@ class _TaskCard extends GetView<RecorderController> {
     return "$bytes ${i18n("unit_b")}";
   }
 
+  String _failureStageText() => switch (task.lastErrorStage) {
+    'room' => i18n('recorder_stage_room'),
+    'quality' => i18n('recorder_stage_quality'),
+    'stream' => i18n('recorder_stage_stream'),
+    'network' => i18n('recorder_stage_network'),
+    'ffmpeg' => i18n('recorder_stage_ffmpeg'),
+    'merge' => i18n('recorder_stage_merge'),
+    'scheduler' => i18n('recorder_stage_scheduler'),
+    'status' => i18n('recorder_stage_status'),
+    _ => i18n('recorder_stage_unknown'),
+  };
+
   Widget _buildCoverImage(Color statusColor) {
     final coverUrl = normalizeNetworkImageUrl(task.cover);
     return ClipRRect(
@@ -575,6 +587,32 @@ class _TaskCard extends GetView<RecorderController> {
                           minHeight: 6,
                           backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
                           color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              if (task.lastError?.isNotEmpty == true && task.status != RecordStatus.running) ...[
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.errorContainer.withValues(alpha: 0.52),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.error_outline_rounded, size: 17, color: theme.colorScheme.error),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          i18n('recorder_last_error', args: {'stage': _failureStageText(), 'error': task.lastError!}),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.t12.copyWith(color: theme.colorScheme.onErrorContainer, height: 1.3),
                         ),
                       ),
                     ],

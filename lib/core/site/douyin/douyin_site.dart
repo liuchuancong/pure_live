@@ -17,7 +17,7 @@ import 'package:pure_live/core/utils/douyin/douyin_utils.dart';
 import 'package:pure_live/core/utils/douyin/douyin_request_params.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 
-class DouyinSite implements LiveSite {
+class DouyinSite implements LiveSite, LiveSiteRecordRoomResolver {
   @override
   String id = Sites.douyinSite;
 
@@ -391,6 +391,13 @@ class DouyinSite implements LiveSite {
     return await getRoomDetailByRoomId(roomId);
   }
 
+  @override
+  Future<LiveRoom> getRoomDetailForRecording({required String platform, required String roomId}) {
+    // Both the API and HTML paths propagate their final error and retain the
+    // stream_url envelope required to resolve every advertised sdk_key.
+    return getRoomDetail(platform: platform, roomId: roomId);
+  }
+
   Future<LiveRoom> getRoomDetailByRoomId(String roomId) async {
     // 读取房间信息
     var roomData = await _getRoomDataByRoomId(roomId);
@@ -406,7 +413,7 @@ class DouyinSite implements LiveSite {
     var room = roomData["data"]["room"];
     var owner = room["owner"];
 
-    var status = asT<int?>(room["status"]) ?? 0;
+    final status = int.tryParse(room['status']?.toString() ?? '') ?? 0;
 
     // roomId是一次性的，用户每次重新开播都会生成一个新的roomId
     // 所以如果roomId对应的直播间状态不是直播中，就通过webRid获取直播间信息
@@ -475,7 +482,7 @@ class DouyinSite implements LiveSite {
 
     var owner = roomData["owner"];
 
-    var roomStatus = (asT<int?>(roomData["status"]) ?? 0) == 2;
+    final roomStatus = int.tryParse(roomData['status']?.toString() ?? '') == 2;
     final totalViewers = roomStatus ? douyinTotalViewers(roomData) : '';
     final onlineViewers = roomStatus ? douyinOnlineViewers(roomData) : '';
     final nativeAudience = totalViewers.isNotEmpty ? totalViewers : onlineViewers;
@@ -518,7 +525,7 @@ class DouyinSite implements LiveSite {
     var roomInfo = detail["roomStore"]["roomInfo"]["room"];
     var owner = roomInfo["owner"];
     var anchor = detail["roomStore"]["roomInfo"]["anchor"];
-    var roomStatus = (asT<int?>(roomInfo["status"]) ?? 0) == 2;
+    final roomStatus = int.tryParse(roomInfo['status']?.toString() ?? '') == 2;
     final totalViewers = roomStatus ? douyinTotalViewers(roomInfo) : '';
     final onlineViewers = roomStatus ? douyinOnlineViewers(roomInfo) : '';
     final nativeAudience = totalViewers.isNotEmpty ? totalViewers : onlineViewers;

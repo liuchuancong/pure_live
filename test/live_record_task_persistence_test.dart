@@ -71,4 +71,50 @@ void main() {
     task.currentUrl = 'https://cdn.test/live.flv?token=runtime';
     expect(task.toJson(), isNot(contains('currentUrl')));
   });
+
+  test('recording failure diagnostics persist without signed URLs or credentials', () {
+    final task = LiveRecordTask.fromJson(<String, dynamic>{'roomId': '1', 'platform': 'douyu'});
+    task.markFailure(
+      stage: 'ffmpeg',
+      error: 'GET https://cdn.test/live.flv?token=secret\nCookie: sid=secret timed out',
+      now: DateTime.parse('2026-08-27T09:00:00.000'),
+    );
+
+    final json = task.toJson();
+    expect(json['schemaVersion'], 3);
+    expect(json['lastErrorStage'], 'ffmpeg');
+    expect(json['lastError'], contains('[stream-url]'));
+    expect(json['lastError'], isNot(contains('secret')));
+
+    final restored = LiveRecordTask.fromJson(json);
+    expect(restored.lastErrorStage, 'ffmpeg');
+    expect(restored.lastError, json['lastError']);
+    restored.clearFailure();
+    expect(restored.lastError, isNull);
+    expect(restored.lastErrorStage, isNull);
+  });
+
+  test('imported diagnostics are sanitized and unknown stage ids are discarded', () {
+    final task = LiveRecordTask.fromJson(<String, dynamic>{
+      'roomId': '1',
+      'platform': 'douyu',
+      'lastError': 'https://cdn.test/live.flv?auth=secret',
+      'lastErrorStage': 'custom-script',
+    });
+
+    expect(task.lastError, '[stream-url]');
+    expect(task.lastErrorStage, isNull);
+  });
+
+  test('standalone platform signing fields are redacted before persistence', () {
+    final task = LiveRecordTask.fromJson(<String, dynamic>{
+      'roomId': '1',
+      'platform': 'soop',
+      'lastError': 'request failed token=secret wsSecret=also-secret',
+      'lastErrorStage': 'stream',
+    });
+
+    expect(task.lastError, 'request failed token=[redacted] wsSecret=[redacted]');
+    expect(task.lastErrorStage, 'stream');
+  });
 }

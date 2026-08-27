@@ -28,7 +28,7 @@ import 'package:pure_live/core/tars/get_game_event_message_board_rsp.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 
-class HuyaSite implements LiveSite, LiveSiteRoomRefresher {
+class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver {
   @override
   String id = Sites.huyaSite;
   static const baseUrl = HuyaRequestParams.baseUrl;
@@ -304,7 +304,20 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher {
   }
 
   @override
-  Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
+  Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) {
+    return _loadRoomDetail(platform: platform, roomId: roomId, allowUiFallback: true);
+  }
+
+  @override
+  Future<LiveRoom> getRoomDetailForRecording({required String platform, required String roomId}) {
+    return _loadRoomDetail(platform: platform, roomId: roomId, allowUiFallback: false);
+  }
+
+  Future<LiveRoom> _loadRoomDetail({
+    required String platform,
+    required String roomId,
+    required bool allowUiFallback,
+  }) async {
     var resultText = await HttpClient.instance.getText(
       'https://mp.huya.com/cache.php?m=Live&do=profileRoom&roomid=$roomId&showSecret=1',
       header: {
@@ -318,9 +331,15 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher {
         "Cookie": SettingsService.to.cookieManager.huyaCookie.v,
       },
     );
-    var result = json.decode(resultText);
-    if (result['status'] == 200 && result['data']['stream'] != null) {
-      dynamic data = result['data'];
+    final result = json.decode(resultText);
+    final statusCode = result is Map ? int.tryParse(result['status']?.toString() ?? '') : null;
+    final responseData = result is Map && result['data'] is Map ? result['data'] as Map : null;
+    final normalizedLiveState = responseData?['liveStatus']?.toString().trim().toUpperCase() ?? '';
+    if (statusCode == 200 && responseData != null && isExplicitOfflineState(responseData['liveStatus'])) {
+      return _buildInactiveRoom(responseData, platform: platform, roomId: roomId);
+    }
+    if (statusCode == 200 && responseData != null && responseData['stream'] != null) {
+      dynamic data = responseData;
       var topSid = 0;
       var subSid = 0;
       var huyaLines = <HuyaLineModel>[];
@@ -419,9 +438,11 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher {
         avatar: data['profileInfo']?['avatar180'] ?? '',
         introduction: data['liveData']?['introduction'] ?? '',
         notice: data['welcomeText'] ?? '',
-        isRecord: data['liveStatus'] == "REPLAY",
-        status: data['liveStatus'] == "ON" || data['liveStatus'] == "REPLAY",
-        liveStatus: data['liveStatus'] == "ON" || data['liveStatus'] == "REPLAY" ? LiveStatus.live : LiveStatus.offline,
+        isRecord: normalizedLiveState == 'REPLAY',
+        status: normalizedLiveState == 'ON' || normalizedLiveState == 'REPLAY',
+        liveStatus: normalizedLiveState == 'ON' || normalizedLiveState == 'REPLAY'
+            ? LiveStatus.live
+            : LiveStatus.offline,
         platform: Sites.huyaSite,
         data: HuyaUrlDataModel(url: "", lines: huyaLines, bitRates: huyaBiterates, uid: "", isXingxiu: isXingxiu),
         danmakuData: HuyaDanmakuArgs(
@@ -432,6 +453,9 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher {
         link: "https://www.huya.com/$roomId",
       );
     } else {
+      if (!allowUiFallback) {
+        throw const FormatException('Huya room playback metadata is unavailable');
+      }
       if (Get.isRegistered<PlayerController>()) {
         final PlayerController playerController = Get.find<PlayerController>();
         final currentRoom = playerController.currentRoom;
@@ -441,6 +465,39 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher {
       }
       return LiveRoom(roomId: roomId, platform: platform).getLiveRoomWithError();
     }
+  }
+
+  @visibleForTesting
+  static bool isExplicitOfflineState(Object? value) {
+    final normalized = value?.toString().trim().toUpperCase() ?? '';
+    return const {'OFF', 'OFFLINE', 'CLOSED'}.contains(normalized);
+  }
+
+  LiveRoom _buildInactiveRoom(Map<dynamic, dynamic> data, {required String platform, required String roomId}) {
+    final liveData = data['liveData'] is Map
+        ? Map<String, dynamic>.from(data['liveData'] as Map)
+        : const <String, dynamic>{};
+    final profile = data['profileInfo'] is Map ? data['profileInfo'] as Map : const <dynamic, dynamic>{};
+    final audience = parseRoomAudience(liveData);
+    return LiveRoom(
+      cover: liveData['screenshot']?.toString() ?? '',
+      watching: audience.popularity,
+      popularity: audience.popularity,
+      onlineViewers: audience.onlineViewers,
+      audienceMetricType: AudienceMetricType.popularity,
+      roomId: roomId,
+      area: liveData['gameFullName']?.toString() ?? '',
+      title: liveData['introduction']?.toString() ?? '',
+      nick: profile['nick']?.toString() ?? '',
+      avatar: profile['avatar180']?.toString() ?? '',
+      introduction: liveData['introduction']?.toString() ?? '',
+      notice: data['welcomeText']?.toString() ?? '',
+      isRecord: false,
+      status: false,
+      liveStatus: LiveStatus.offline,
+      platform: platform,
+      link: 'https://www.huya.com/$roomId',
+    );
   }
 
   @visibleForTesting
@@ -473,14 +530,16 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher {
       },
     );
     final decoded = json.decode(resultText);
-    if (decoded is! Map || decoded['status'] != 200 || decoded['data'] is! Map) {
+    final statusCode = decoded is Map ? int.tryParse(decoded['status']?.toString() ?? '') : null;
+    if (decoded is! Map || statusCode != 200 || decoded['data'] is! Map) {
       throw const FormatException('Huya room metadata is unavailable');
     }
     final data = decoded['data'] as Map;
     final liveData = data['liveData'] is Map ? Map<String, dynamic>.from(data['liveData'] as Map) : <String, dynamic>{};
     final profile = data['profileInfo'] is Map ? data['profileInfo'] as Map : const <dynamic, dynamic>{};
     final audience = parseRoomAudience(liveData);
-    final live = data['liveStatus'] == 'ON' || data['liveStatus'] == 'REPLAY';
+    final state = data['liveStatus']?.toString().trim().toUpperCase() ?? '';
+    final live = state == 'ON' || state == 'REPLAY';
     return LiveRoom(
       cover: liveData['screenshot']?.toString() ?? '',
       watching: audience.popularity,
@@ -494,7 +553,7 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher {
       avatar: profile['avatar180']?.toString() ?? '',
       introduction: liveData['introduction']?.toString() ?? '',
       notice: data['welcomeText']?.toString() ?? '',
-      isRecord: data['liveStatus'] == 'REPLAY',
+      isRecord: state == 'REPLAY',
       status: live,
       liveStatus: live ? LiveStatus.live : LiveStatus.offline,
       platform: Sites.huyaSite,

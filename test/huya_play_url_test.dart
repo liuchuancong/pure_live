@@ -2,6 +2,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/core/site/huya/huya_site.dart';
 
 void main() {
+  test('Huya treats only explicit inactive states as authoritative offline', () {
+    expect(HuyaSite.isExplicitOfflineState('OFF'), isTrue);
+    expect(HuyaSite.isExplicitOfflineState(' offline '), isTrue);
+    expect(HuyaSite.isExplicitOfflineState('CLOSED'), isTrue);
+    expect(HuyaSite.isExplicitOfflineState('ON'), isFalse);
+    expect(HuyaSite.isExplicitOfflineState(null), isFalse);
+  });
+
   HuyaLineModel line(
     HuyaLineType type,
     String base, {

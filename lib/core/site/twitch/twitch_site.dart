@@ -13,7 +13,7 @@ import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/utils/twitch/twitch_models.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 
-class TwitchSite implements LiveSite, LiveSiteRoomRefresher {
+class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver {
   @override
   String id = Sites.twitchSite;
 
@@ -370,6 +370,11 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher {
 
   @override
   Future<LiveRoom> getRoomDetailForRefresh({required String platform, required String roomId}) {
+    return _loadRoomDetail(roomId);
+  }
+
+  @override
+  Future<LiveRoom> getRoomDetailForRecording({required String platform, required String roomId}) {
     return _loadRoomDetail(roomId);
   }
 

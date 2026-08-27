@@ -1464,7 +1464,7 @@ jobs:
 
           ### 📱 Android 版
 
-          - Android 6.0+
+          - Android 8.0+（API 26，FFmpegKit 录制依赖要求）
           - ARM64-v8a
           - 提供 SHA256 校验文件
 

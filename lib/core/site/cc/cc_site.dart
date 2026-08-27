@@ -12,7 +12,7 @@ import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 
-class CCSite implements LiveSite, LiveSiteRoomRefresher {
+class CCSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver {
   @override
   String id = Sites.ccSite;
 
@@ -267,6 +267,11 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher {
     return _loadRoomDetail(roomId);
   }
 
+  @override
+  Future<LiveRoom> getRoomDetailForRecording({required String platform, required String roomId}) {
+    return _loadRoomDetail(roomId);
+  }
+
   Future<LiveRoom> _loadRoomDetail(String roomId) async {
     const url = "https://api.cc.163.com/v1/activitylives/anchor/lives";
     final result = await HttpClient.instance.getJson(
@@ -280,6 +285,7 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher {
     final roomInfo = resultReal["data"][0];
     final audience = parseRoomAudience(Map<String, dynamic>.from(roomInfo as Map));
     final nativeMetric = audience.popularity.isNotEmpty ? audience.popularity : audience.onlineViewers;
+    final live = int.tryParse(roomInfo['status']?.toString() ?? '') == 1;
     return LiveRoom(
       cover: roomInfo["cover"],
       watching: nativeMetric.isNotEmpty ? nativeMetric : roomInfo["follower_num"].toString(),
@@ -297,8 +303,8 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher {
       avatar: roomInfo["purl"].toString(),
       introduction: roomInfo["personal_label"],
       notice: roomInfo["personal_label"],
-      status: roomInfo["status"] == 1,
-      liveStatus: roomInfo["status"] == 1 ? LiveStatus.live : LiveStatus.offline,
+      status: live,
+      liveStatus: live ? LiveStatus.live : LiveStatus.offline,
       platform: Sites.ccSite,
       link: roomInfo['m3u8'],
       userId: roomInfo['cid'].toString(),

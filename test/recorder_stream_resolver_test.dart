@@ -96,6 +96,37 @@ void main() {
       throwsA(isA<StreamException>().having((error) => error.retryable, 'retryable', isFalse)),
     );
   });
+
+  test('recording uses strict room metadata instead of an offline UI fallback', () async {
+    final site = _StrictFakeSite(
+      live: false,
+      strictLive: true,
+      qualities: <LivePlayQuality>[LivePlayQuality(quality: '原画', id: 'source')],
+      urls: const <String>['https://cdn.example/live.flv'],
+    );
+    final resolver = StreamResolverService(siteResolver: (_) => site);
+
+    final resolved = await resolver.resolveStream(roomId: '1', platform: 'douyu', preferredQuality: '原画');
+
+    expect(resolved.url, 'https://cdn.example/live.flv');
+    expect(site.genericCalls, 0);
+    expect(site.strictCalls, 1);
+  });
+
+  test('strict room transport failures stay retryable instead of becoming offline', () async {
+    final resolver = StreamResolverService(
+      siteResolver: (_) => _StrictFakeSite(strictError: StateError('temporary metadata error')),
+    );
+
+    await expectLater(
+      resolver.resolveStream(roomId: '1', platform: 'huya', preferredQuality: '原画'),
+      throwsA(
+        isA<StreamException>()
+            .having((error) => error.type, 'type', StreamErrorType.networkError)
+            .having((error) => error.retryable, 'retryable', isTrue),
+      ),
+    );
+  });
 }
 
 class _FakeSite extends LiveSite implements LivePlayUrlResolver {
@@ -132,5 +163,33 @@ class _FakeSite extends LiveSite implements LivePlayUrlResolver {
   @override
   Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom detail, required LivePlayQuality quality}) async {
     return LivePlayUrlResolution(urls: urls, appliedQualityData: appliedQuality ?? quality.selectionId);
+  }
+}
+
+class _StrictFakeSite extends _FakeSite implements LiveSiteRecordRoomResolver {
+  _StrictFakeSite({super.live, super.qualities, super.urls, this.strictLive = true, this.strictError});
+
+  final bool strictLive;
+  final Object? strictError;
+  int strictCalls = 0;
+  int genericCalls = 0;
+
+  @override
+  Future<LiveRoom> getRoomDetail({required String roomId, required String platform}) async {
+    genericCalls++;
+    return super.getRoomDetail(roomId: roomId, platform: platform);
+  }
+
+  @override
+  Future<LiveRoom> getRoomDetailForRecording({required String roomId, required String platform}) async {
+    strictCalls++;
+    if (strictError != null) throw strictError!;
+    return LiveRoom(
+      roomId: roomId,
+      platform: platform,
+      liveStatus: strictLive ? LiveStatus.live : LiveStatus.offline,
+      status: strictLive,
+      isRecord: false,
+    );
   }
 }
