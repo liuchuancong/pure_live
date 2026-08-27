@@ -29,7 +29,7 @@ class BackupController extends GetxController {
 
   final RxString backupDirectory = hiveString('backupDirectory', '');
 
-  Map<String, dynamic> exportAllSettings({bool includeSensitiveData = false}) {
+  Map<String, dynamic> exportAllSettings({bool includeSensitiveData = true}) {
     if (!Get.isRegistered<TagManagementController>()) {
       Get.put(TagManagementController());
     }
