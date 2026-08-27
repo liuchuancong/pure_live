@@ -54,7 +54,7 @@ void main() {
       expect(fence.isCurrentGeneration(generation), isFalse);
       expect(fence.accepts(generation), isFalse);
 
-      fence.finishOpen(const <String>['https://cdn.example/live.flv?token=new']);
+      fence.finishOpen(const <String>['https://cdn.example/live.flv?token=new'], authorizeSuccessfulOpen: true);
       expect(fence.isCurrentGeneration(generation), isTrue);
       expect(fence.accepts(generation), isTrue);
 
@@ -66,7 +66,7 @@ void main() {
       final fence = SourceEventFence();
       final generation = fence.begin('https://cdn.example/live.flv');
 
-      fence.finishOpen(const <String>[]);
+      fence.finishOpen(const <String>[], authorizeSuccessfulOpen: true);
 
       expect(fence.isCurrentGeneration(generation), isTrue);
       expect(fence.accepts(generation), isTrue);
@@ -77,7 +77,7 @@ void main() {
       final fence = SourceEventFence();
       final generation = fence.begin('https://api.example/live.flv?token=request');
 
-      fence.finishOpen(const <String>['https://edge.example/live.flv?token=redirected']);
+      fence.finishOpen(const <String>['https://edge.example/live.flv?token=redirected'], authorizeSuccessfulOpen: true);
 
       expect(fence.isNativeSourceConfirmed, isFalse);
       expect(fence.accepts(generation), isTrue);
@@ -86,11 +86,46 @@ void main() {
     test('a later source generation invalidates every earlier callback', () {
       final fence = SourceEventFence();
       final oldGeneration = fence.begin('https://cdn.example/old.flv');
-      fence.finishOpen(const <String>['https://cdn.example/old.flv']);
+      fence.finishOpen(const <String>['https://cdn.example/old.flv'], authorizeSuccessfulOpen: true);
       expect(fence.accepts(oldGeneration), isTrue);
 
       final newGeneration = fence.begin('https://cdn.example/new.flv');
-      fence.finishOpen(const <String>['https://cdn.example/new.flv']);
+      fence.finishOpen(const <String>['https://cdn.example/new.flv'], authorizeSuccessfulOpen: true);
+
+      expect(fence.accepts(oldGeneration), isFalse);
+      expect(fence.accepts(newGeneration), isTrue);
+    });
+
+    test('an unsuccessful open never authorizes callbacks', () {
+      final fence = SourceEventFence();
+      final generation = fence.begin('https://cdn.example/failing.flv');
+
+      fence.finishOpen(const <String>[], authorizeSuccessfulOpen: false);
+
+      expect(fence.isOpenAuthorized, isFalse);
+      expect(fence.isCurrentGeneration(generation), isFalse);
+      expect(fence.accepts(generation), isFalse);
+    });
+
+    test('manager preparation and final URL keep one generation', () {
+      final fence = SourceEventFence();
+      final generation = fence.begin(null);
+
+      fence.retargetOpening('https://cdn.example/final.flv');
+      fence.finishOpen(const <String>['https://cdn.example/final.flv'], authorizeSuccessfulOpen: true);
+
+      expect(fence.generation, generation);
+      expect(fence.isNativeSourceConfirmed, isTrue);
+      expect(fence.accepts(generation), isTrue);
+    });
+
+    test('reopening the same URL still invalidates the old callback lease', () {
+      final fence = SourceEventFence();
+      final oldGeneration = fence.begin('https://cdn.example/live.flv');
+      fence.finishOpen(const <String>['https://cdn.example/live.flv'], authorizeSuccessfulOpen: true);
+
+      final newGeneration = fence.begin('https://cdn.example/live.flv');
+      fence.finishOpen(const <String>['https://cdn.example/live.flv'], authorizeSuccessfulOpen: true);
 
       expect(fence.accepts(oldGeneration), isFalse);
       expect(fence.accepts(newGeneration), isTrue);

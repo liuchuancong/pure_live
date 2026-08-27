@@ -229,25 +229,6 @@ class MediaKitAdapter
         // Live adapters use one explicit seekability override. The upstream
         // Android workaround duplicated this native property write.
         await applyNativeLiveProperties(native);
-        // Player.stream.playlist is updated before libmpv loads the source, so
-        // it is not native confirmation. mpv's `path` property is the source
-        // that actually owns later frame, playing and error callbacks.
-        await native.observeProperty('path', (String path) async {
-          _handleNativePath(path);
-        });
-        _nativePathObserved = true;
-        // `videoParams` may contain the demuxer's declared dimensions before a
-        // frame has actually decoded. Use native frame properties as the
-        // readiness signal so metadata + `playing=true` cannot hide a black
-        // decoder failure or cancel the first-frame deadline.
-        await native.observeProperty('video-frame-info/picture-type', (String value) async {
-          _handleDecodedVideoFrameSignal(value);
-        });
-        await native.observeProperty('estimated-vf-fps', (String value) async {
-          _handleDecodedVideoFrameRate(value);
-        });
-        _nativeFramePropertiesObserved = true;
-        _usesNativeFrameProbe = true;
       }
 
       // =========================
@@ -286,7 +267,7 @@ class MediaKitAdapter
               ),
             );
 
-      await _bindListeners();
+      await _bindListeners(sourceGeneration: _sourceFence.generation);
 
       _initialized = true;
 
@@ -344,14 +325,52 @@ class MediaKitAdapter
     }
   }
 
-  void _handleNativePath(String path) {
-    if (_disposed) return;
+  Future<void> _bindNativeSourceObservers(int generation) async {
+    if (_disposed || _player.platform is! NativePlayer) return;
+    final native = _player.platform as dynamic;
+
+    if (_nativePathObserved) {
+      try {
+        await native.unobserveProperty('path');
+      } catch (_) {}
+      _nativePathObserved = false;
+    }
+    if (_nativeFramePropertiesObserved) {
+      try {
+        await native.unobserveProperty('video-frame-info/picture-type');
+        await native.unobserveProperty('estimated-vf-fps');
+      } catch (_) {}
+      _nativeFramePropertiesObserved = false;
+      _usesNativeFrameProbe = false;
+    }
+    if (_disposed || generation != _sourceFence.generation) return;
+
+    // Every callback captures the source lease that installed it. Reading the
+    // fence's current generation inside a delayed callback relabels an old
+    // room/quality event as new and was the root of stale dimensions, repeated
+    // danmaku recovery and spurious decoder errors after source replacement.
+    await native.observeProperty('path', (String path) async {
+      _handleNativePath(path, generation);
+    });
+    _nativePathObserved = true;
+    await native.observeProperty('video-frame-info/picture-type', (String value) async {
+      _handleDecodedVideoFrameSignal(value, generation);
+    });
+    await native.observeProperty('estimated-vf-fps', (String value) async {
+      _handleDecodedVideoFrameRate(value, generation);
+    });
+    _nativeFramePropertiesObserved = true;
+    _usesNativeFrameProbe = true;
+  }
+
+  void _handleNativePath(String path, int generation) {
+    if (_disposed || generation != _sourceFence.generation) return;
     _sourceFence.observeNativeSources(<String>[path]);
     if (_sourceFence.isOpening) return;
-    final generation = _sourceFence.generation;
+    if (!_sourceFence.accepts(generation)) return;
     _publishCurrentNativeSnapshot(generation);
     unawaited(_refreshCurrentNativeReadinessSnapshot(generation));
-    _drainDeferredNativeDiagnostic();
+    _drainDeferredNativeDiagnostic(generation);
   }
 
   Future<void> _refreshCurrentNativeReadinessSnapshot(int generation) async {
@@ -359,13 +378,13 @@ class MediaKitAdapter
     final native = _player.platform as dynamic;
     try {
       final pictureType = (await native.getProperty('video-frame-info/picture-type') as String).trim();
-      if (_sourceFence.accepts(generation)) _handleDecodedVideoFrameSignal(pictureType);
+      if (_sourceFence.accepts(generation)) _handleDecodedVideoFrameSignal(pictureType, generation);
     } catch (_) {
       // The property is unavailable until the first decoded video frame.
     }
     try {
       final fps = (await native.getProperty('estimated-vf-fps') as String).trim();
-      if (_sourceFence.accepts(generation)) _handleDecodedVideoFrameRate(fps);
+      if (_sourceFence.accepts(generation)) _handleDecodedVideoFrameRate(fps, generation);
     } catch (_) {
       // The property is unavailable when this source has no decoded video.
     }
@@ -379,16 +398,16 @@ class MediaKitAdapter
     }
   }
 
-  void _handleDecodedVideoFrameSignal(String value) {
+  void _handleDecodedVideoFrameSignal(String value, int generation) {
     final pictureType = value.trim().toUpperCase();
     if (pictureType != 'I' && pictureType != 'P' && pictureType != 'B') return;
-    _markDecodedVideoFrame(_sourceFence.generation);
+    _markDecodedVideoFrame(generation);
   }
 
-  void _handleDecodedVideoFrameRate(String value) {
+  void _handleDecodedVideoFrameRate(String value, int generation) {
     final fps = double.tryParse(value.trim());
     if (fps == null || !fps.isFinite || fps <= 0) return;
-    _markDecodedVideoFrame(_sourceFence.generation);
+    _markDecodedVideoFrame(generation);
   }
 
   void _markDecodedVideoFrame(int generation) {
@@ -464,7 +483,7 @@ class MediaKitAdapter
     if (_sourceTransitionPrepared) {
       // The manager reset the public source state before rebinding its
       // source-scoped listeners. Associate that generation with this URL.
-      _sourceFence.begin(url);
+      _sourceFence.retargetOpening(url);
       _sourceTransitionPrepared = false;
     } else {
       _prepareSourceTransition(url: url);
@@ -474,12 +493,16 @@ class MediaKitAdapter
     try {
       _stateSubject.add(PlayerState.preparing);
 
+      await _bindNativeSourceObservers(sourceGeneration);
+      await _bindListeners(sourceGeneration: sourceGeneration, force: true);
+      if (_disposed || sourceGeneration != _sourceFence.generation) return;
+
       await _applyDecoderPolicyForSource(url);
 
       await _player.open(Media(url, httpHeaders: headers), play: true);
 
       if (_disposed || sourceGeneration != _sourceFence.generation) return;
-      _sourceFence.finishOpen(await _currentNativeSourcePaths());
+      _sourceFence.finishOpen(await _currentNativeSourcePaths(), authorizeSuccessfulOpen: true);
       _publishCurrentNativeSnapshot(sourceGeneration);
       unawaited(_refreshCurrentNativeReadinessSnapshot(sourceGeneration));
 
@@ -500,7 +523,13 @@ class MediaKitAdapter
       final openingDiagnostic = _openingNativeDiagnostic;
       _openingNativeDiagnostic = null;
       if (openingDiagnostic != null && !_isDiagnosticComponentReady(openingDiagnostic.prefix)) {
-        _handleNativeDiagnostic(openingDiagnostic.message, nativePrefix: openingDiagnostic.prefix);
+        if (openingDiagnostic.generation == sourceGeneration) {
+          _handleNativeDiagnostic(
+            openingDiagnostic.message,
+            nativePrefix: openingDiagnostic.prefix,
+            generation: sourceGeneration,
+          );
+        }
       }
       _stateSubject.add(PlayerState.ready);
 
@@ -537,12 +566,13 @@ class MediaKitAdapter
   // listeners
   // =========================
 
-  Future<void> _bindListeners() async {
-    if (_listenerBound) return;
+  Future<void> _bindListeners({required int sourceGeneration, bool force = false}) async {
+    if (_listenerBound && !force) return;
 
     _listenerBound = true;
 
     await _cancelAllSubscriptions();
+    if (_disposed || sourceGeneration != _sourceFence.generation) return;
 
     // =========================
     // playing
@@ -551,8 +581,7 @@ class MediaKitAdapter
     _playingSub = _player.stream.playing.listen(
       (playing) {
         if (_disposed) return;
-        final generation = _sourceFence.generation;
-        if (!_sourceFence.accepts(generation)) return;
+        if (!_sourceFence.accepts(sourceGeneration)) return;
         final publishPlaying = shouldPublishMediaKitPlaying(playing);
         _playingSubject.add(publishPlaying);
         if (publishPlaying) {
@@ -569,7 +598,7 @@ class MediaKitAdapter
         }
       },
       onError: (e, s) {
-        _emitError(e, s, PlayerErrorType.native);
+        _emitError(e, s, PlayerErrorType.native, sourceGeneration);
       },
     );
 
@@ -580,8 +609,7 @@ class MediaKitAdapter
     _bufferingSub = _player.stream.buffering.listen(
       (loading) {
         if (_disposed) return;
-        final generation = _sourceFence.generation;
-        if (!_sourceFence.accepts(generation)) return;
+        if (!_sourceFence.accepts(sourceGeneration)) return;
         _loadingSubject.add(loading);
 
         if (loading) {
@@ -597,7 +625,7 @@ class MediaKitAdapter
         }
       },
       onError: (e, s) {
-        _emitError(e, s, PlayerErrorType.native);
+        _emitError(e, s, PlayerErrorType.native, sourceGeneration);
       },
     );
 
@@ -607,21 +635,20 @@ class MediaKitAdapter
     // malformed ratio was then propagated into portrait detection and PiP.
     _videoParamsSub = _player.stream.videoParams.listen((params) {
       if (_disposed) return;
-      final generation = _sourceFence.generation;
-      if (!_sourceFence.accepts(generation)) return;
+      if (!_sourceFence.accepts(sourceGeneration)) return;
       final size = resolveMediaKitDisplaySize(params);
       _widthSubject.add(size?.width);
       _heightSubject.add(size?.height);
       if (size != null) {
         // Non-native backends do not expose mpv frame properties. Their video
         // parameter event remains the strongest available readiness signal.
-        if (!_usesNativeFrameProbe) _markDecodedVideoFrame(generation);
+        if (!_usesNativeFrameProbe) _markDecodedVideoFrame(sourceGeneration);
       }
     });
 
     _audioParamsSub = _player.stream.audioParams.listen((_) {
       if (_disposed) return;
-      _markDecodedAudioFrame(_sourceFence.generation);
+      _markDecodedAudioFrame(sourceGeneration);
     });
 
     // =========================
@@ -631,7 +658,7 @@ class MediaKitAdapter
     _completeSub = _player.stream.completed.listen(
       (completed) {
         if (_disposed) return;
-        if (!_sourceFence.accepts(_sourceFence.generation)) return;
+        if (!_sourceFence.accepts(sourceGeneration)) return;
 
         if (!completed) return;
 
@@ -640,7 +667,7 @@ class MediaKitAdapter
         _stateSubject.add(PlayerState.completed);
       },
       onError: (e, s) {
-        _emitError(e, s, PlayerErrorType.native);
+        _emitError(e, s, PlayerErrorType.native, sourceGeneration);
       },
     );
 
@@ -655,12 +682,12 @@ class MediaKitAdapter
     if (_player.platform is NativePlayer) {
       _logSub = _player.stream.log.listen((event) {
         if (_disposed || event.level != 'error' || !_isActionableNativeLog(event.prefix, event.text)) return;
-        _handleNativeDiagnostic(event.text, nativePrefix: event.prefix);
+        _handleNativeDiagnostic(event.text, nativePrefix: event.prefix, generation: sourceGeneration);
       });
     } else {
       _errorSub = _player.stream.error.listen((error) {
         if (_disposed) return;
-        _handleNativeDiagnostic(error.toString());
+        _handleNativeDiagnostic(error.toString(), generation: sourceGeneration);
       });
     }
 
@@ -715,10 +742,10 @@ class MediaKitAdapter
     }
   }
 
-  void _handleNativeDiagnostic(String message, {String? nativePrefix}) {
-    final generation = _sourceFence.generation;
+  void _handleNativeDiagnostic(String message, {String? nativePrefix, required int generation}) {
+    if (generation != _sourceFence.generation) return;
     if (_sourceFence.isOpening || !_sourceFence.accepts(generation)) {
-      _openingNativeDiagnostic = _NativeDiagnostic(message: message, prefix: nativePrefix);
+      _openingNativeDiagnostic = _NativeDiagnostic(message: message, prefix: nativePrefix, generation: generation);
       return;
     }
     final classification = PlayerErrorClassifier.classify(message, nativePrefix: nativePrefix);
@@ -770,15 +797,19 @@ class MediaKitAdapter
     _pendingNativeErrorComponent = NativeDiagnosticComponent.either;
   }
 
-  void _drainDeferredNativeDiagnostic() {
+  void _drainDeferredNativeDiagnostic(int generation) {
     final diagnostic = _openingNativeDiagnostic;
+    if (diagnostic != null && diagnostic.generation != generation) {
+      _openingNativeDiagnostic = null;
+      return;
+    }
     if (diagnostic != null && _isDiagnosticComponentReady(diagnostic.prefix)) {
       _openingNativeDiagnostic = null;
       return;
     }
-    if (diagnostic == null || !_sourceFence.accepts(_sourceFence.generation)) return;
+    if (diagnostic == null || !_sourceFence.accepts(generation)) return;
     _openingNativeDiagnostic = null;
-    _handleNativeDiagnostic(diagnostic.message, nativePrefix: diagnostic.prefix);
+    _handleNativeDiagnostic(diagnostic.message, nativePrefix: diagnostic.prefix, generation: generation);
   }
 
   bool _isDiagnosticComponentReady(String? nativePrefix) {
@@ -833,8 +864,8 @@ class MediaKitAdapter
   // emit error
   // =========================
 
-  void _emitError(Object error, StackTrace stackTrace, PlayerErrorType type) {
-    if (_disposed) return;
+  void _emitError(Object error, StackTrace stackTrace, PlayerErrorType type, int generation) {
+    if (_disposed || !_sourceFence.accepts(generation)) return;
 
     _safeAddError(PlayerException(message: error.toString(), type: type, error: error, stackTrace: stackTrace));
   }
@@ -1119,10 +1150,11 @@ class MediaKitAdapter
 }
 
 class _NativeDiagnostic {
-  const _NativeDiagnostic({required this.message, required this.prefix});
+  const _NativeDiagnostic({required this.message, required this.prefix, required this.generation});
 
   final String message;
   final String? prefix;
+  final int generation;
 }
 
 /// Keeps the Windows BGRA texture close to the visible physical viewport.

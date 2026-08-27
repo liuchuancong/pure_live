@@ -118,6 +118,95 @@ void main() {
     await manager.dispose();
   });
 
+  test('manual engine switch opens the active source before retiring the old decoder', () async {
+    final oldPlayer = _FakePlayer(playerEngine: PlayerEngine.mediaKit);
+    late final _FakePlayer candidate;
+    candidate = _FakePlayer(
+      playerEngine: PlayerEngine.fijk,
+      onSetDataSource: (_, _, _, {room, required audioOnly}) async {
+        expect(oldPlayer.hardDisposeCalls, 0);
+      },
+    );
+    final manager = _createManager(
+      oldPlayer,
+      playerCreator: (engine) => engine == PlayerEngine.mediaKit ? oldPlayer : candidate,
+    );
+    await manager.initialize(engine: PlayerEngine.mediaKit);
+    await manager.play(
+      'https://example.invalid/live.flv',
+      const <String>['https://example.invalid/live.flv'],
+      const <String, String>{'referer': 'https://example.invalid'},
+      room: LiveRoom(roomId: 'switch-room', platform: 'test'),
+    );
+
+    await manager.switchEngine(PlayerEngine.fijk, isManual: true);
+
+    expect(manager.currentPlayer, same(candidate));
+    expect(manager.currentEngine, PlayerEngine.fijk);
+    expect(candidate.openedUrls, <String>['https://example.invalid/live.flv']);
+    expect(oldPlayer.hardDisposeCalls, 1);
+    expect(candidate.hardDisposeCalls, 0);
+    await manager.dispose();
+  });
+
+  test('failed engine candidate preserves the active decoder and engine selection', () async {
+    final oldPlayer = _FakePlayer(playerEngine: PlayerEngine.mediaKit);
+    final candidate = _FakePlayer(
+      playerEngine: PlayerEngine.fijk,
+      sourceError: StateError('candidate source rejected'),
+    );
+    final manager = _createManager(
+      oldPlayer,
+      playerCreator: (engine) => engine == PlayerEngine.mediaKit ? oldPlayer : candidate,
+    );
+    await manager.initialize(engine: PlayerEngine.mediaKit);
+    await manager.play(
+      'https://example.invalid/live.flv',
+      const <String>['https://example.invalid/live.flv'],
+      const <String, String>{},
+      room: LiveRoom(roomId: 'rollback-room', platform: 'test'),
+    );
+
+    await expectLater(manager.switchEngine(PlayerEngine.fijk, isManual: true), throwsA(isA<PlayerException>()));
+
+    expect(manager.currentPlayer, same(oldPlayer));
+    expect(manager.currentEngine, PlayerEngine.mediaKit);
+    expect(oldPlayer.hardDisposeCalls, 0);
+    expect(candidate.hardDisposeCalls, 1);
+    await manager.dispose();
+  });
+
+  test('play-time default engine replacement opens the requested source exactly once', () async {
+    final initialPlayer = _FakePlayer(playerEngine: PlayerEngine.mediaKit);
+    final fallbackPlayer = _FakePlayer(playerEngine: PlayerEngine.fijk);
+    final candidate = _FakePlayer(playerEngine: PlayerEngine.mediaKit);
+    var mediaKitCreations = 0;
+    final manager = _createManager(
+      initialPlayer,
+      playerCreator: (engine) {
+        if (engine == PlayerEngine.fijk) return fallbackPlayer;
+        return mediaKitCreations++ == 0 ? initialPlayer : candidate;
+      },
+    );
+    await manager.initialize(engine: PlayerEngine.mediaKit);
+    await manager.switchEngine(PlayerEngine.fijk, isManual: false);
+
+    await manager.play(
+      'https://example.invalid/next.flv',
+      const <String>['https://example.invalid/next.flv'],
+      const <String, String>{},
+      room: LiveRoom(roomId: 'next-room', platform: 'test'),
+    );
+
+    expect(manager.currentPlayer, same(candidate));
+    expect(candidate.setDataSourceCalls, 1);
+    expect(candidate.openedUrls, <String>['https://example.invalid/next.flv']);
+    expect(fallbackPlayer.setDataSourceCalls, 0);
+    expect(initialPlayer.hardDisposeCalls, 1);
+    expect(fallbackPlayer.hardDisposeCalls, 1);
+    await manager.dispose();
+  });
+
   test('lifecycle pause resumes only the same session and playback intent', () async {
     final player = _FakePlayer();
     final manager = _createManager(player);
@@ -346,6 +435,11 @@ void main() {
     expect(player.audioOnlyChanges, isEmpty);
     await Future<void>.delayed(const Duration(milliseconds: 40));
     expect(player.audioOnlyChanges, <bool>[true]);
+    // The timer deliberately starts the native change without blocking UI.
+    // Let that asynchronous commit publish its final native state before the
+    // restore request, rather than racing the fake adapter between its call log
+    // and internal state assignment.
+    await Future<void>.delayed(Duration.zero);
 
     await manager.setAudioOnlyMode(false);
     expect(player.audioOnlyChanges, <bool>[true, false]);
@@ -655,9 +749,10 @@ PlayerManager _createManager(
   Duration? warmRetention = Duration.zero,
   Future<void> Function(UnifiedPlayer player, bool audioOnly)? audioModeServiceSync,
   Future<void> Function(LiveRoom room)? audioSessionStart,
+  UnifiedPlayerCreator? playerCreator,
 }) {
   return PlayerManager(
-    playerCreator: (_) => player,
+    playerCreator: playerCreator ?? (_) => player,
     fallbackManager: EngineFallbackManager(
       defaultEngine: PlayerEngine.mediaKit,
       supportedEngines: const <PlayerEngine>[PlayerEngine.mediaKit],
@@ -678,6 +773,9 @@ class _FakePlayer implements UnifiedPlayer {
     this.onStop,
     this.videoWidget,
     this.dedupeAudioMode = false,
+    this.playerEngine = PlayerEngine.fijk,
+    this.sourceError,
+    this.onSetDataSource,
   });
 
   final bool hangWhenEnablingAudioOnly;
@@ -685,8 +783,19 @@ class _FakePlayer implements UnifiedPlayer {
   final Future<void> Function()? onStop;
   final Widget? videoWidget;
   final bool dedupeAudioMode;
+  final PlayerEngine playerEngine;
+  final Object? sourceError;
+  final Future<void> Function(
+    String url,
+    List<String> playUrls,
+    Map<String, String> headers, {
+    LiveRoom? room,
+    required bool audioOnly,
+  })?
+  onSetDataSource;
   final List<bool> audioOnlyChanges = <bool>[];
   final List<BoxFit?> videoFitRequests = <BoxFit?>[];
+  final List<String> openedUrls = <String>[];
   int setDataSourceCalls = 0;
   int initCalls = 0;
   int hardDisposeCalls = 0;
@@ -730,6 +839,9 @@ class _FakePlayer implements UnifiedPlayer {
     bool audioOnly = false,
   }) async {
     setDataSourceCalls++;
+    openedUrls.add(url);
+    await onSetDataSource?.call(url, playUrls, headers, room: room, audioOnly: audioOnly);
+    if (sourceError != null) throw sourceError!;
     _audioOnly = audioOnly;
   }
 
@@ -799,7 +911,7 @@ class _FakePlayer implements UnifiedPlayer {
   Stream<int?> get height => _heightController.stream;
 
   @override
-  PlayerEngine get engine => PlayerEngine.fijk;
+  PlayerEngine get engine => playerEngine;
 }
 
 class _VideoMountLifecycle {

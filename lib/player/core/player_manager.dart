@@ -776,7 +776,7 @@ class PlayerManager {
         return;
       }
     } else if (_runtimeEngine != _defaultEngine && !_isSwitchingDueToFallback) {
-      await _switchEngineInternal(_defaultEngine!, isManual: false, audioOnly: audioOnly);
+      await _switchEngineInternal(_defaultEngine!, isManual: false, audioOnly: audioOnly, openCurrentSource: false);
     } else if (_runtimeAudioOnly != audioOnly || _requestedAudioOnly != audioOnly) {
       await setAudioOnlyMode(audioOnly);
     }
@@ -813,21 +813,7 @@ class PlayerManager {
 
     try {
       _stateSubject.add(PlayerState.preparing);
-      final sourceOpen = player.setDataSource(targetUrl, targetPlayUrls, headers, room: room, audioOnly: audioOnly);
-      if (sourceOpenTimeout <= Duration.zero) {
-        await sourceOpen;
-      } else {
-        await sourceOpen.timeout(
-          sourceOpenTimeout,
-          onTimeout: () {
-            throw PlayerException(
-              message: 'Native player did not finish opening the source before the deadline',
-              type: PlayerErrorType.initialization,
-              code: 'source_open_timeout',
-            );
-          },
-        );
-      }
+      await _openPlayerSource(player, targetUrl, targetPlayUrls, headers, room: room, audioOnly: audioOnly);
       if (!_isSessionValid(mySessionId)) return;
       _nativeAudioOnly = audioOnly;
       _armSourceReadyDeadline(player, mySessionId);
@@ -1121,7 +1107,12 @@ class PlayerManager {
     return _enqueuePlayerLifecycle(() => _switchEngineInternal(engine, isManual: isManual, audioOnly: audioOnly));
   }
 
-  Future<void> _switchEngineInternal(PlayerEngine engine, {bool isManual = false, bool? audioOnly}) async {
+  Future<void> _switchEngineInternal(
+    PlayerEngine engine, {
+    bool isManual = false,
+    bool? audioOnly,
+    bool openCurrentSource = true,
+  }) async {
     if (_disposed || _isClosing) return;
 
     if (_runtimeEngine == engine && _currentPlayer != null) {
@@ -1136,14 +1127,40 @@ class PlayerManager {
     final oldRequestedAudioOnly = _requestedAudioOnly;
     final oldNativeAudioOnly = _nativeAudioOnly;
     final targetAudioOnly = audioOnly ?? _runtimeAudioOnly;
+    UnifiedPlayer? candidate;
+    var candidateInstalled = false;
 
     try {
-      final newPlayer = await _createPlayer(engine, audioOnly: targetAudioOnly);
+      candidate = await _createPlayer(engine, audioOnly: targetAudioOnly);
       if (!_isSessionValid(sessionId)) {
-        await _safeDestroyPlayer(newPlayer);
+        await _safeDestroyPlayer(candidate);
         return;
       }
-      _currentPlayer = newPlayer;
+
+      final sourceUrl = _currentUrl;
+      if (openCurrentSource && sourceUrl != null && sourceUrl.isNotEmpty) {
+        if (candidate is SourceTransitionAwarePlayer) {
+          (candidate as SourceTransitionAwarePlayer).beginSourceTransition();
+        }
+        await _openPlayerSource(
+          candidate,
+          sourceUrl,
+          List<String>.from(_currentPlayUrls),
+          Map<String, String>.from(_currentHeaders),
+          room: currentFloatRoom,
+          audioOnly: targetAudioOnly,
+        );
+        if (!_isSessionValid(sessionId)) {
+          await _safeDestroyPlayer(candidate);
+          return;
+        }
+      }
+
+      // Commit only after the candidate has initialized and, for a live
+      // switch, opened the active source. The previous decoder remains the
+      // visible/playing owner until this point, so a failed engine no longer
+      // turns a recoverable switch into a black screen.
+      _currentPlayer = candidate;
       _runtimeEngine = engine;
       _runtimeAudioOnly = targetAudioOnly;
       _requestedAudioOnly = targetAudioOnly;
@@ -1153,7 +1170,8 @@ class PlayerManager {
         _defaultEngine = engine;
       }
       try {
-        await _bindPlayerStreams(newPlayer, sessionId: sessionId);
+        await _bindPlayerStreams(candidate, sessionId: sessionId);
+        candidateInstalled = true;
       } catch (_) {
         // Stream binding is part of installing the replacement engine. Roll
         // the transaction back instead of leaking a half-installed native
@@ -1164,7 +1182,6 @@ class PlayerManager {
         _runtimeAudioOnly = oldRuntimeAudioOnly;
         _requestedAudioOnly = oldRequestedAudioOnly;
         _nativeAudioOnly = oldNativeAudioOnly;
-        await _safeDestroyPlayer(newPlayer);
         if (oldPlayer != null) {
           try {
             await _bindPlayerStreams(oldPlayer, sessionId: sessionId);
@@ -1179,21 +1196,60 @@ class PlayerManager {
         }
         rethrow;
       }
-      if (oldPlayer != null && !identical(oldPlayer, newPlayer)) {
+      if (openCurrentSource && sourceUrl != null && sourceUrl.isNotEmpty) {
+        _armSourceReadyDeadline(candidate, sessionId);
+      }
+      if (oldPlayer != null && !identical(oldPlayer, candidate)) {
         await _safeDestroyPlayer(oldPlayer);
       }
       videoKey.value = ValueKey("video_${DateTime.now().millisecondsSinceEpoch}");
-      _scheduleAudioServiceSync(newPlayer, targetAudioOnly, room: currentFloatRoom, sessionId: sessionId);
+      _scheduleAudioServiceSync(candidate, targetAudioOnly, room: currentFloatRoom, sessionId: sessionId);
     } catch (e, s) {
+      if (!candidateInstalled && candidate != null && !identical(candidate, oldPlayer)) {
+        await _safeDestroyPlayer(candidate);
+      }
+      if (!candidateInstalled && identical(_currentPlayer, candidate)) {
+        _currentPlayer = oldPlayer;
+        _runtimeEngine = oldEngine;
+        _defaultEngine = oldDefaultEngine;
+        _runtimeAudioOnly = oldRuntimeAudioOnly;
+        _requestedAudioOnly = oldRequestedAudioOnly;
+        _nativeAudioOnly = oldNativeAudioOnly;
+      }
       final exception = PlayerException(
-        message: 'Switch engine failed',
+        message: 'Switch engine failed: $e',
         type: PlayerErrorType.lifecycle,
         error: e,
         stackTrace: s,
       );
       if (isManual) _publishTerminalPlayerError(exception);
-      rethrow;
+      throw exception;
     }
+  }
+
+  Future<void> _openPlayerSource(
+    UnifiedPlayer player,
+    String url,
+    List<String> playUrls,
+    Map<String, String> headers, {
+    required LiveRoom? room,
+    required bool audioOnly,
+  }) async {
+    final sourceOpen = player.setDataSource(url, playUrls, headers, room: room, audioOnly: audioOnly);
+    if (sourceOpenTimeout <= Duration.zero) {
+      await sourceOpen;
+      return;
+    }
+    await sourceOpen.timeout(
+      sourceOpenTimeout,
+      onTimeout: () {
+        throw PlayerException(
+          message: 'Native player did not finish opening the source before the deadline',
+          type: PlayerErrorType.initialization,
+          code: 'source_open_timeout',
+        );
+      },
+    );
   }
 
   Future<void> _safeDestroyPlayer(UnifiedPlayer player) async {
@@ -2105,18 +2161,7 @@ class PlayerManager {
                     );
               continue;
             }
-            final url = _currentUrl;
-            if (url != null) {
-              await _playInternal(
-                url,
-                _currentPlayUrls,
-                _currentHeaders,
-                room: currentFloatRoom,
-                audioOnly: _runtimeAudioOnly,
-              );
-              return;
-            }
-            break;
+            return;
           }
         }
       }

@@ -13,11 +13,13 @@
 class SourceEventFence {
   int _generation = 0;
   bool _opening = false;
+  bool _openAuthorized = false;
   bool _nativeSourceConfirmed = false;
   String? _requestedUrl;
 
   int get generation => _generation;
   bool get isOpening => _opening;
+  bool get isOpenAuthorized => _openAuthorized;
   bool get isNativeSourceConfirmed => _nativeSourceConfirmed;
 
   /// Whether asynchronous work still belongs to the currently opened source
@@ -26,15 +28,30 @@ class SourceEventFence {
   /// first path event, but a generation-scoped readiness deadline must
   /// still be able to terminate that attempt.
   bool isCurrentGeneration(int eventGeneration) {
-    return eventGeneration == _generation && !_opening;
+    return eventGeneration == _generation && !_opening && _openAuthorized;
   }
 
   int begin(String? requestedUrl) {
     _generation++;
     _opening = true;
+    _openAuthorized = false;
     _nativeSourceConfirmed = false;
     _requestedUrl = requestedUrl?.trim();
     return _generation;
+  }
+
+  /// Associates a manager-prepared source generation with the final URL
+  /// without incrementing it a second time.
+  ///
+  /// The manager resets public subjects before it binds its source-scoped
+  /// subscriptions. [setDataSource] supplies the actual URL immediately after
+  /// that handshake. Keeping one generation across both steps means callbacks
+  /// are either wholly old or wholly new; there is no unobserved middle
+  /// generation which can accidentally authorize delayed native events.
+  void retargetOpening(String? requestedUrl) {
+    if (!_opening) return;
+    _nativeSourceConfirmed = false;
+    _requestedUrl = requestedUrl?.trim();
   }
 
   void observeNativeSources(Iterable<String> urls) {
@@ -46,9 +63,10 @@ class SourceEventFence {
     if (urls.any((url) => url == requested)) _nativeSourceConfirmed = true;
   }
 
-  void finishOpen(Iterable<String> urls) {
+  void finishOpen(Iterable<String> urls, {required bool authorizeSuccessfulOpen}) {
     observeNativeSources(urls);
     _opening = false;
+    _openAuthorized = authorizeSuccessfulOpen;
   }
 
   bool accepts(int eventGeneration) {
@@ -58,6 +76,7 @@ class SourceEventFence {
   void clear() {
     _generation++;
     _opening = false;
+    _openAuthorized = false;
     _nativeSourceConfirmed = false;
     _requestedUrl = null;
   }
