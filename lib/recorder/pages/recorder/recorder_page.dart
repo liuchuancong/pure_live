@@ -237,6 +237,12 @@ class _TaskCard extends GetView<RecorderController> {
     return "$bytes ${i18n("unit_b")}";
   }
 
+  String _formatBitrate(double kilobitsPerSecond) {
+    if (!kilobitsPerSecond.isFinite || kilobitsPerSecond <= 0) return '--';
+    if (kilobitsPerSecond >= 1000) return '${(kilobitsPerSecond / 1000).toStringAsFixed(1)} Mbps';
+    return '${kilobitsPerSecond.toStringAsFixed(0)} kbps';
+  }
+
   String _failureStageText() {
     final stage = task.lastErrorStage;
     if (stage == 'ffmpeg' || stage?.startsWith('ffmpeg.') == true) {
@@ -474,7 +480,8 @@ class _TaskCard extends GetView<RecorderController> {
 
     final color = _statusColor();
 
-    final isRecording = [RecordStatus.running, RecordStatus.reconnecting, RecordStatus.preparing].contains(task.status);
+    final isRecording = task.status == RecordStatus.running;
+    final isTransitioning = {RecordStatus.reconnecting, RecordStatus.preparing}.contains(task.status);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
@@ -556,6 +563,8 @@ class _TaskCard extends GetView<RecorderController> {
                           runSpacing: 6,
                           children: [
                             _miniInfo(Icons.high_quality_rounded, task.selectedQuality ?? i18n("recorder_auto"), theme),
+                            if (task.selectedLine?.isNotEmpty == true)
+                              _miniInfo(Icons.alt_route_rounded, task.selectedLine!, theme),
                             _miniInfo(Icons.people_alt_rounded, readableCount(task.watching), theme),
                           ],
                         ),
@@ -582,16 +591,39 @@ class _TaskCard extends GetView<RecorderController> {
                           _statItem(theme, Icons.timer_outlined, _formatDuration(task.recordedSeconds)),
                           _statItem(theme, Icons.storage_rounded, _formatFileSize(task.fileSize)),
                           _statItem(theme, Icons.speed_rounded, "${task.recordSpeed.toStringAsFixed(1)}x"),
-                          _statItem(theme, Icons.graphic_eq_rounded, "${task.bitrate ~/ 1000}M"),
+                          _statItem(theme, Icons.graphic_eq_rounded, _formatBitrate(task.bitrate)),
                         ],
                       ),
                       const SizedBox(height: 8),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(999),
-                        child: LinearProgressIndicator(
-                          minHeight: 6,
-                          backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+                      Container(
+                        height: 4,
+                        decoration: BoxDecoration(
                           color: theme.colorScheme.primary,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              if (isTransitioning) ...[
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: color.withValues(alpha: 0.14)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.sync_rounded, size: 17, color: color),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _statusText(),
+                          style: AppTextStyles.t12.copyWith(color: color, fontWeight: FontWeight.w700),
                         ),
                       ),
                     ],
