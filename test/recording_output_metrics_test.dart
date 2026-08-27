@@ -4,6 +4,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/recorder/services/recording_output_metrics.dart';
 
 void main() {
+  test('attempt progress remains monotonic across signed URL refreshes', () {
+    const firstRetry = RecordingAttemptProgress(baseBytes: 8 * 1024 * 1024, baseSeconds: 7);
+
+    expect(firstRetry.totalBytes(2 * 1024 * 1024), 10 * 1024 * 1024);
+    expect(firstRetry.totalSeconds(3), 10);
+    expect(firstRetry.totalBytes(-1), 8 * 1024 * 1024);
+  });
+
   test('sums only the active recording prefix segment files', () async {
     final directory = await Directory.systemTemp.createTemp('pure-live-recording-metrics-');
     addTearDown(() => directory.delete(recursive: true));

@@ -12,6 +12,20 @@ class RecordingOutputSnapshot {
   final DateTime? latestModified;
 }
 
+/// Converts per-FFmpeg-attempt counters into totals for one user recording
+/// session. Native statistics restart at zero whenever a signed URL is
+/// refreshed; recorder cards must stay monotonic across those retries.
+class RecordingAttemptProgress {
+  const RecordingAttemptProgress({required this.baseBytes, required this.baseSeconds});
+
+  final int baseBytes;
+  final int baseSeconds;
+
+  int totalBytes(int attemptBytes) => baseBytes + attemptBytes.clamp(0, 1 << 62).toInt();
+
+  int totalSeconds(int attemptSeconds) => baseSeconds + attemptSeconds.clamp(0, 1 << 31).toInt();
+}
+
 /// Reads the recorder's actual segment files instead of relying on FFmpeg's
 /// aggregate `size` statistic. The segment muxer commonly reports `N/A`/zero
 /// while individual files are already growing on disk.

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/core/site/huya/huya_site.dart';
@@ -82,6 +84,23 @@ void main() {
     );
 
     expect(Uri.parse(url).queryParameters.containsKey('ratio'), isFalse);
+  });
+
+  test('Huya rebuilds single-use stream signatures with a fresh expiry and seqid', () {
+    final fm = Uri.encodeComponent(base64Encode(utf8.encode(r'prefix_$0_$1_$2_$3')));
+    final site = HuyaSite();
+    final firstTime = DateTime.fromMillisecondsSinceEpoch(1_800_000_000_000);
+    final secondTime = firstTime.add(const Duration(milliseconds: 1));
+    final captured = 'wsSecret=stale&wsTime=1&fm=$fm&ctype=huya_live&fs=bgct&t=100';
+
+    final first = Uri.splitQueryString(site.buildAntiCode('stream-name', 123, captured, now: firstTime));
+    final second = Uri.splitQueryString(site.buildAntiCode('stream-name', 123, captured, now: secondTime));
+
+    expect(int.parse(first['wsTime']!, radix: 16), greaterThan(firstTime.millisecondsSinceEpoch ~/ 1000));
+    expect(first['wsSecret'], isNot('stale'));
+    expect(first['seqid'], isNot(second['seqid']));
+    expect(first['wsSecret'], isNot(second['wsSecret']));
+    expect(first['u'], isNotEmpty);
   });
 
   test('Huya exposes only server advertised bitrates and has stable selection ids', () {

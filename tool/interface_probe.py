@@ -940,7 +940,10 @@ def twitch_gql(payload: object) -> object:
     response = post_json(
         TWITCH_GQL_URL,
         payload,
-        headers={"Client-Id": TWITCH_CLIENT_ID, "Device-Id": "12345678901234567890"},
+        # Twitch discovery occasionally isolates or returns empty results for
+        # a repeatedly reused synthetic device id. Mirror a fresh anonymous
+        # web session for every bounded probe run.
+        headers={"Client-Id": TWITCH_CLIENT_ID, "Device-Id": secrets.token_hex(16)},
     )
     nodes = response if isinstance(response, list) else [response]
     for node in nodes:
@@ -991,7 +994,9 @@ def twitch_directory_request(slug: str, *, limit: int = 5) -> dict[str, object]:
 
 
 def twitch_directory_probe() -> None:
-    response = twitch_gql([twitch_directory_request("just-chatting")])
+    request = twitch_directory_request("just-chatting", limit=10)
+    request["variables"]["options"]["broadcasterLanguages"] = ["EN", "ZH", "KO"]
+    response = twitch_gql([request])
     if not isinstance(response, list) or not response:
         raise ValueError("Twitch directory result missing")
     edges = require_path(response[0], "data", "game", "streams", "edges")
@@ -1045,7 +1050,13 @@ def twitch_playback_probe() -> None:
     # categories in one bounded GQL request and select the first actual live
     # channel instead of treating one empty category as playback breakage.
     slugs = ("just-chatting", "grand-theft-auto-v", "league-of-legends", "valorant", "music")
-    directory = twitch_gql([twitch_directory_request(slug) for slug in slugs])
+    requests = [twitch_directory_request(slug, limit=10) for slug in slugs]
+    for request in requests:
+        # An empty language list currently returns an empty directory in some
+        # anonymous Twitch rollouts. Use the same bounded public-language set
+        # as the application, with English added for a reliable live sample.
+        request["variables"]["options"]["broadcasterLanguages"] = ["EN", "ZH", "KO"]
+    directory = twitch_gql(requests)
     login = None
     if isinstance(directory, list):
         for result in directory:
@@ -1056,10 +1067,19 @@ def twitch_playback_probe() -> None:
             if not isinstance(edges, list):
                 continue
             for edge in edges:
-                try:
-                    candidate = edge["node"]["broadcaster"]["login"]
-                except (KeyError, TypeError):
+                node = edge.get("node") if isinstance(edge, dict) else None
+                if not isinstance(node, dict):
                     continue
+                broadcaster = node.get("broadcaster")
+                candidate = broadcaster.get("login") if isinstance(broadcaster, dict) else None
+                if not candidate:
+                    # The monolith broadcaster subgraph can time out while the
+                    # stream edge and preview remain valid. Twitch embeds the
+                    # canonical login in its live preview URL, so retain that
+                    # public fallback rather than declaring playback broken.
+                    preview = str(node.get("previewImageURL") or "")
+                    match = re.search(r"/live_user_([A-Za-z0-9_]+)-\d+x\d+", preview)
+                    candidate = match.group(1) if match else None
                 if isinstance(candidate, str) and candidate.strip():
                     login = candidate.strip()
                     break

@@ -3,7 +3,10 @@ param(
     [Parameter(Mandatory = $true)]
     [string] $ApkPath,
 
-    [string] $ExpectedAbi = 'arm64-v8a'
+    [string] $ExpectedAbi = 'arm64-v8a',
+
+    [ValidateSet('Debug', 'Release')]
+    [string] $BuildMode = 'Release'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -18,12 +21,20 @@ $requiredEntries = [ordered]@{
     'assets/flutter_assets/assets/translations/zh.json' = 1024
     'assets/flutter_assets/assets/images/banner.png' = 1024
     'assets/flutter_assets/assets/emo/json/bilibili.json' = 1024
-    "lib/$ExpectedAbi/libapp.so" = 1MB
     "lib/$ExpectedAbi/libflutter.so" = 5MB
     "lib/$ExpectedAbi/libmpv.so" = 10MB
     "lib/$ExpectedAbi/libijkffmpeg.so" = 1MB
     "lib/$ExpectedAbi/libffmpegkit.so" = 20MB
     "lib/$ExpectedAbi/libsqlite3.so" = 512KB
+}
+
+if ($BuildMode -eq 'Release') {
+    $requiredEntries["lib/$ExpectedAbi/libapp.so"] = 1MB
+} else {
+    # Flutter Debug is JIT-based: application code lives in kernel/snapshot
+    # assets, so requiring the AOT-only libapp.so rejects a healthy debug APK.
+    $requiredEntries['assets/flutter_assets/kernel_blob.bin'] = 1MB
+    $requiredEntries['assets/flutter_assets/isolate_snapshot_data'] = 1MB
 }
 
 $archive = [IO.Compression.ZipFile]::OpenRead($resolvedApk)

@@ -56,4 +56,23 @@ void main() {
     expect(command.kind, FFmpegFailureKind.command);
     expect(command.retryable, isFalse);
   });
+
+  test('live recorder accepts only an explicit stop as successful completion', () {
+    final userStop = FFmpegTerminalDecision.forSession(code: 255, manuallyStopped: true, liveRecording: true);
+    final cleanEof = FFmpegTerminalDecision.forSession(code: 0, manuallyStopped: false, liveRecording: true);
+    final avEof = FFmpegTerminalDecision.forSession(code: -541478725, manuallyStopped: false, liveRecording: true);
+    final nativeFailure = FFmpegTerminalDecision.forSession(code: 1, manuallyStopped: false, liveRecording: true);
+    final completedMerge = FFmpegTerminalDecision.forSession(code: 0, manuallyStopped: false, liveRecording: false);
+
+    expect(userStop.isComplete, isTrue);
+    expect(userStop.unexpectedEof, isFalse);
+    expect(cleanEof.isComplete, isFalse);
+    expect(cleanEof.unexpectedEof, isTrue);
+    expect(cleanEof.retryable, isTrue);
+    expect(avEof.unexpectedEof, isTrue);
+    expect(nativeFailure.isComplete, isFalse);
+    expect(nativeFailure.unexpectedEof, isFalse);
+    expect(completedMerge.isComplete, isTrue);
+    expect(completedMerge.unexpectedEof, isFalse);
+  });
 }

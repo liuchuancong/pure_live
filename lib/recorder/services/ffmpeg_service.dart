@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart' hide Log;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/plugins/locale_helper.dart';
@@ -101,13 +102,50 @@ class FFmpegFailureClassifier {
   static bool _containsAny(String value, List<String> markers) => markers.any(value.contains);
 }
 
+/// A live recorder has no natural successful EOF.  The only successful
+/// terminal event is an explicit user stop; code 0/AVERROR_EOF from the input
+/// means the CDN response ended and the controller must refresh the signed URL
+/// instead of reporting that the room went offline.
+class FFmpegTerminalDecision {
+  const FFmpegTerminalDecision({required this.isComplete, required this.retryable, required this.unexpectedEof});
+
+  final bool isComplete;
+  final bool retryable;
+  final bool unexpectedEof;
+
+  static FFmpegTerminalDecision forSession({
+    required int code,
+    required bool manuallyStopped,
+    required bool liveRecording,
+  }) {
+    if (manuallyStopped) {
+      return const FFmpegTerminalDecision(isComplete: true, retryable: false, unexpectedEof: false);
+    }
+    if (liveRecording && (code == 0 || code == -541478725)) {
+      return const FFmpegTerminalDecision(isComplete: false, retryable: true, unexpectedEof: true);
+    }
+    if (code == 0 || code == -541478725) {
+      return const FFmpegTerminalDecision(isComplete: true, retryable: false, unexpectedEof: false);
+    }
+    return const FFmpegTerminalDecision(isComplete: false, retryable: true, unexpectedEof: false);
+  }
+}
+
 class FFmpegRecordSession {
-  FFmpegRecordSession({required this.taskId, required this.sessionId, required this.session});
+  FFmpegRecordSession({
+    required this.taskId,
+    required this.sessionId,
+    required this.session,
+    required this.liveRecording,
+  });
 
   final String taskId;
   final int sessionId;
   final FFmpegSession session;
+  final bool liveRecording;
   final Completer<void> completion = Completer<void>();
+  final List<String> _diagnosticLines = <String>[];
+  var _diagnosticCharacters = 0;
 
   bool manualStop = false;
   bool mediaStarted = false;
@@ -117,6 +155,18 @@ class FFmpegRecordSession {
   double speed = 0;
   double fps = 0;
   DateTime lastUpdate = DateTime.now();
+
+  void appendDiagnostic(String message, {int maxLines = 120, int maxCharacters = 12000}) {
+    final sanitized = FFmpegService._sanitizeLogs(message).trim();
+    if (sanitized.isEmpty) return;
+    _diagnosticLines.add(sanitized);
+    _diagnosticCharacters += sanitized.length;
+    while (_diagnosticLines.length > maxLines || _diagnosticCharacters > maxCharacters) {
+      _diagnosticCharacters -= _diagnosticLines.removeAt(0).length;
+    }
+  }
+
+  String get diagnosticTail => _diagnosticLines.join('\n');
 }
 
 class FFmpegService {
@@ -141,6 +191,7 @@ class FFmpegService {
     required String taskId,
     required List<String> arguments,
     required void Function(FFmpegEvent event) onEvent,
+    bool liveRecording = false,
   }) async {
     await _ensureInitialized();
     if (_sessions.containsKey(taskId)) {
@@ -156,8 +207,14 @@ class FFmpegService {
       taskId: taskId,
       sessionId: nativeSession.getSessionId(),
       session: nativeSession,
+      liveRecording: liveRecording,
     );
     _sessions[taskId] = session;
+
+    nativeSession.setLogCallback((entry) {
+      if (!identical(_sessions[taskId], session)) return;
+      session.appendDiagnostic(entry.message);
+    });
 
     nativeSession.setStatisticsCallback((statistics) {
       if (!identical(_sessions[taskId], session)) return;
@@ -200,29 +257,57 @@ class FFmpegService {
       try {
         final code = completedSession.getReturnCode();
         final manuallyStopped = session.manualStop;
-        final isNormalExit = manuallyStopped || code == 0 || code == -541478725;
-        Log.i('FFmpeg complete => taskId: $taskId; sessionId: ${session.sessionId}; code: $code');
+        final terminal = FFmpegTerminalDecision.forSession(
+          code: code,
+          manuallyStopped: manuallyStopped,
+          liveRecording: session.liveRecording,
+        );
 
-        final rawLogs = completedSession.getLogs() ?? '';
+        final rawLogs = session.diagnosticTail.isNotEmpty ? session.diagnosticTail : (completedSession.getLogs() ?? '');
         final diagnosticLogs = _sanitizeLogs(rawLogs).toLowerCase();
+        final logTail = _diagnosticTail(diagnosticLogs, maxCharacters: 1600);
+        Log.i(
+          'FFmpeg complete => taskId: $taskId; sessionId: ${session.sessionId}; '
+          'code: $code; live: ${session.liveRecording}; diagnostics: $logTail',
+        );
+        // `dart:developer` reaches Android logcat in debug builds, while the
+        // app logger may be disabled by the user's diagnostics preference.
+        // The text is already URL/token/cookie-sanitized above.
+        log(
+          'terminal task=$taskId session=${session.sessionId} code=$code '
+          'live=${session.liveRecording} media=${session.mediaStarted} '
+          'seconds=${session.recordedSeconds} bytes=${session.fileSize}\n$logTail',
+          name: 'PureLiveRecorder',
+        );
+        if (kDebugMode) {
+          debugPrint(
+            'PureLiveRecorder terminal task=$taskId session=${session.sessionId} code=$code '
+            'live=${session.liveRecording} media=${session.mediaStarted} '
+            'seconds=${session.recordedSeconds} bytes=${session.fileSize}\n$logTail',
+          );
+        }
         final diagnosis = FFmpegFailureClassifier.classify(code: code, logs: diagnosticLogs);
+        final isComplete = terminal.isComplete;
         final errorData = <String, dynamic>{
           'sessionId': session.sessionId,
           'code': code,
           'manualStop': manuallyStopped,
-          if (!isNormalExit) 'raw_logs': diagnosticLogs,
-          if (!isNormalExit) 'failure_kind': diagnosis.kind.name,
-          if (!isNormalExit) 'retryable': diagnosis.retryable,
+          if (!isComplete) 'raw_logs': _diagnosticTail(diagnosticLogs),
+          if (!isComplete) 'failure_kind': terminal.unexpectedEof ? 'unexpectedEof' : diagnosis.kind.name,
+          if (!isComplete) 'retryable': terminal.unexpectedEof ? terminal.retryable : diagnosis.retryable,
+          if (terminal.unexpectedEof) 'silent': true,
         };
-        if (!isNormalExit) {
-          errorData['message'] = _friendlyError(code, diagnosticLogs, diagnosis);
+        if (!isComplete) {
+          errorData['message'] = terminal.unexpectedEof
+              ? i18n('recorder_transport_failed')
+              : _friendlyError(code, diagnosticLogs, diagnosis);
         }
 
         _safeEmit(
           onEvent,
           FFmpegEvent(
             taskId: taskId,
-            type: isNormalExit ? FFmpegEventType.complete : FFmpegEventType.error,
+            type: isComplete ? FFmpegEventType.complete : FFmpegEventType.error,
             data: errorData,
           ),
         );
@@ -345,5 +430,11 @@ class FFmpegService {
           RegExp(r'((?:access_)?token|sign|auth|key|wssecret|txsecret)=([^&\s]+)', caseSensitive: false),
           (match) => '${match.group(1)}=[redacted]',
         );
+  }
+
+  static String _diagnosticTail(String logs, {int maxCharacters = 12000}) {
+    final value = logs.trim();
+    if (value.length <= maxCharacters) return value;
+    return value.substring(value.length - maxCharacters);
   }
 }

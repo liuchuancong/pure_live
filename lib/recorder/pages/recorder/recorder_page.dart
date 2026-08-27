@@ -58,7 +58,11 @@ class RecorderPage extends GetView<RecorderController> {
           ),
         ),
         body: ScrollConfiguration(
-          behavior: ScrollConfiguration.of(context).copyWith(overscroll: false, scrollbars: false),
+          behavior: const MaterialScrollBehavior().copyWith(
+            overscroll: false,
+            scrollbars: false,
+            physics: const ClampingScrollPhysics(),
+          ),
           child: TabBarView(
             physics: const PageScrollPhysics(parent: ClampingScrollPhysics()),
             children: [
@@ -473,7 +477,14 @@ class _TaskCard extends GetView<RecorderController> {
 
     final color = _statusColor();
 
-    final isRecording = task.status == RecordStatus.running;
+    final showRecordingStats =
+        task.fileSize > 0 &&
+        const <RecordStatus>{
+          RecordStatus.running,
+          RecordStatus.reconnecting,
+          RecordStatus.processing,
+          RecordStatus.preparing,
+        }.contains(task.status);
     final isTransitioning = {RecordStatus.reconnecting, RecordStatus.preparing}.contains(task.status);
 
     return AnimatedContainer(
@@ -566,7 +577,7 @@ class _TaskCard extends GetView<RecorderController> {
                   ),
                 ],
               ),
-              if (isRecording) ...[
+              if (showRecordingStats) ...[
                 const SizedBox(height: 14),
                 Container(
                   padding: const EdgeInsets.all(14),

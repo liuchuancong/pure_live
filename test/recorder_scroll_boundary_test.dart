@@ -54,4 +54,25 @@ void main() {
     await tester.pumpAndSettle();
     expect(position.pixels, closeTo(position.maxScrollExtent, 0.01));
   });
+
+  testWidgets('short recorder task lists have no draggable vertical range', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: RecorderBoundedTaskList(
+            itemCount: 1,
+            itemBuilder: (_, index) => SizedBox(height: 80, child: Text('task $index')),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final scrollable = find.descendant(of: find.byType(RecorderBoundedTaskList), matching: find.byType(Scrollable));
+    final position = tester.state<ScrollableState>(scrollable).position;
+    expect(position.minScrollExtent, position.maxScrollExtent);
+    await tester.drag(scrollable, const Offset(0, -1200));
+    await tester.pumpAndSettle();
+    expect(position.pixels, position.minScrollExtent);
+  });
 }

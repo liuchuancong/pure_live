@@ -144,6 +144,7 @@ try {
     $monitor = Start-PureLiveResourceMonitor
 
     if ($Target -eq 'AndroidArm64') {
+        & (Join-Path $PSScriptRoot 'normalize_flutter_generated_paths.ps1')
         $packageConfig = Join-Path $repoRoot '.dart_tool\package_config.json'
         if (-not (Test-Path -LiteralPath $packageConfig -PathType Leaf)) {
             throw 'Android packaging requires the lock-resolved package config from the preceding quality/dependency stage.'
@@ -184,7 +185,8 @@ try {
         }
         & (Join-Path $PSScriptRoot 'verify_android_apk.ps1') `
             -ApkPath $apkSource `
-            -ExpectedAbi 'arm64-v8a'
+            -ExpectedAbi 'arm64-v8a' `
+            -BuildMode $Configuration
         $artifactName = if ($Configuration -eq 'Debug') {
             "PureLive-$artifactVersion-android-arm64-v8a-debug.apk"
         } elseif ($hasReleaseSigning) {

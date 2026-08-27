@@ -206,9 +206,18 @@ class LiveRecordTask {
   }
 
   void beginNewRecording({DateTime? now}) {
-    createTime = now ?? DateTime.now();
     recordedSeconds = 0;
     fileSize = 0;
+    beginNewAttempt(now: now);
+  }
+
+  /// Starts one native FFmpeg attempt without discarding the aggregate
+  /// duration/size of the user-initiated recording session. Live CDNs can end
+  /// a response or expire a signed URL while the room is still online; those
+  /// retries are file attempts, not new recordings from the user's point of
+  /// view.
+  void beginNewAttempt({DateTime? now}) {
+    createTime = now ?? DateTime.now();
     recordSpeed = 0;
     bitrate = 0;
     fps = 0;

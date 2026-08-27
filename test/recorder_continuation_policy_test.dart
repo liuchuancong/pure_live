@@ -64,6 +64,58 @@ void main() {
     );
   });
 
+  test('unexpected live EOF reconnects quickly without ignoring configured failures', () {
+    expect(
+      RecorderContinuationPolicy.reconnectDelay(
+        failureCount: 0,
+        configuredBaseSeconds: 120,
+        configuredMaximumSeconds: 600,
+        enableBackoff: true,
+        unexpectedEof: true,
+      ),
+      const Duration(seconds: 2),
+    );
+    expect(
+      RecorderContinuationPolicy.reconnectDelay(
+        failureCount: 5,
+        configuredBaseSeconds: 120,
+        configuredMaximumSeconds: 600,
+        enableBackoff: true,
+        unexpectedEof: true,
+      ),
+      const Duration(seconds: 15),
+    );
+    expect(
+      RecorderContinuationPolicy.reconnectDelay(
+        failureCount: 0,
+        configuredBaseSeconds: 120,
+        configuredMaximumSeconds: 600,
+        enableBackoff: true,
+        unexpectedEof: false,
+      ),
+      const Duration(seconds: 120),
+    );
+  });
+
+  test('unexpected live EOF never falls into the slow offline polling state', () {
+    expect(
+      RecorderContinuationPolicy.shouldEnterPollingAfterRetryLimit(
+        retryCount: 1000,
+        maximumRetries: 3,
+        unexpectedEof: true,
+      ),
+      isFalse,
+    );
+    expect(
+      RecorderContinuationPolicy.shouldEnterPollingAfterRetryLimit(
+        retryCount: 3,
+        maximumRetries: 3,
+        unexpectedEof: false,
+      ),
+      isTrue,
+    );
+  });
+
   test('a restarted recording gets a fresh timestamp and zeroed progress', () {
     final task = LiveRecordTask.fromRoom(LiveRoom(roomId: '1', platform: 'bilibili', title: 'title', nick: 'nick'))
       ..recordedSeconds = 120

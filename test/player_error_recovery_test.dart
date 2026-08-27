@@ -25,6 +25,15 @@ void main() {
 
   tearDown(Get.reset);
 
+  test('active content screenshot probing is opt-in', () async {
+    final mediaKit = _RecoveryFakePlayer(PlayerEngine.mediaKit, (_) => null);
+    final manager = _manager(<PlayerEngine, _RecoveryFakePlayer>{PlayerEngine.mediaKit: mediaKit});
+
+    expect(manager.enableActiveContentProbe, isFalse);
+
+    await manager.dispose();
+  });
+
   test('consecutive source failures drain through the next line and engine', () async {
     final mediaKit = _RecoveryFakePlayer(
       PlayerEngine.mediaKit,

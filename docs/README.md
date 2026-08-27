@@ -12,6 +12,7 @@
 - [上游同步审计（c7d99cc3）](UPSTREAM_AUDIT_C7D99CC3.md)：上游吸收维护分支后的返回、录制权限、初始化与 FFmpeg 参数冲突处置。
 - [竖屏比例与直播记录根因审计](BUG_AUDIT_2026_08_26_PORTRAIT_HISTORY.md)：移动端单一可信比例、完整观看日期与不限数量回归证据。
 - [直播连续性与录制中心根因审计](BUG_AUDIT_2026_08_28_PLAYBACK_RECORDER.md)：意外暂停、音频焦点、录制真实状态/大小、滚动边界与十一项发布门禁。
+- [v3.0.18 Android 真机播放与录制加固](STAGE_UPDATE_3_0_18.md)：硬解截图探测隔离、虎牙独立签名、跨重试录制统计和真机证据边界。
 - [v3.0.17 Android 阶段更新](STAGE_UPDATE_3_0_17.md)：直播连续性、录制真实统计、固定成本分片跟踪和录制中心边界。
 - [本地构建、测试与发布](BUILD_AND_RELEASE.md)：固定工具链、一键质量门禁、Android 签名、Windows 打包与本地发布。
 - [Windows 数据目录与升级](WINDOWS_DATA_AND_UPGRADE.md)：安装目录数据、旧版关注合并、换盘迁移与回滚。

@@ -10,19 +10,21 @@ class RecorderStatusTabBar extends StatelessWidget implements PreferredSizeWidge
 
   @override
   Widget build(BuildContext context) {
-    return ScrollConfiguration(
-      behavior: ScrollConfiguration.of(context).copyWith(overscroll: false, scrollbars: false),
-      child: TabBar(
-        isScrollable: true,
-        physics: const ClampingScrollPhysics(),
-        tabs: labels
-            .map(
-              (label) => Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Tab(text: label),
-              ),
-            )
-            .toList(growable: false),
+    return ClipRect(
+      child: ScrollConfiguration(
+        behavior: const _RecorderScrollBehavior(),
+        child: TabBar(
+          isScrollable: true,
+          physics: const ClampingScrollPhysics(),
+          tabs: labels
+              .map(
+                (label) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Tab(text: label),
+                ),
+              )
+              .toList(growable: false),
+        ),
       ),
     );
   }
@@ -43,8 +45,9 @@ class RecorderBoundedTaskList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ScrollConfiguration(
-      behavior: ScrollConfiguration.of(context).copyWith(overscroll: false, scrollbars: false),
+      behavior: const _RecorderScrollBehavior(),
       child: ListView.builder(
+        primary: false,
         physics: const ClampingScrollPhysics(),
         clipBehavior: Clip.hardEdge,
         padding: padding,
@@ -53,4 +56,14 @@ class RecorderBoundedTaskList extends StatelessWidget {
       ),
     );
   }
+}
+
+class _RecorderScrollBehavior extends MaterialScrollBehavior {
+  const _RecorderScrollBehavior();
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) => const ClampingScrollPhysics();
+
+  @override
+  Widget buildOverscrollIndicator(BuildContext context, Widget child, ScrollableDetails details) => child;
 }

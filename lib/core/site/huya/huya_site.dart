@@ -234,12 +234,16 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
     var antiCode = line.lineType == HuyaLineType.hls ? line.hlsAntiCode.trim() : line.flvAntiCode.trim();
     if (antiCode.isEmpty && line.lineType == HuyaLineType.flv) {
       antiCode = await getCndTokenInfoEx(line.streamName);
-      antiCode = buildAntiCode(line.streamName, line.presenterUid, antiCode);
     }
     if (antiCode.isEmpty) {
       final protocol = line.lineType == HuyaLineType.hls ? 'HLS' : 'FLV';
       throw StateError('Huya $protocol token is unavailable');
     }
+    // Huya HTTPS stream signatures are effectively single-connection tokens.
+    // Playback and recording can run at the same time, so every consumer must
+    // receive a freshly calculated seqid/wsSecret instead of reusing the room
+    // metadata token. Queries without `fm` are legacy fixtures and remain as-is.
+    antiCode = buildAntiCode(line.streamName, line.presenterUid, antiCode);
 
     final extension = line.lineType == HuyaLineType.hls ? 'm3u8' : 'flv';
     final cdnBase = secureHuyaCdnBase(line.line);
@@ -395,7 +399,10 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
                   hlsAntiCode: currentStream["sHlsAntiCode"].toString(),
                   streamName: currentStream["sStreamName"].toString(),
                   cdnType: item["sCdnType"].toString(),
-                  presenterUid: topSid,
+                  presenterUid:
+                      int.tryParse(currentStream['lPresenterUid']?.toString() ?? '') ??
+                      int.tryParse(data['profileInfo']?['uid']?.toString() ?? '') ??
+                      topSid,
                 ),
               );
             }
@@ -425,7 +432,10 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
                   hlsAntiCode: currentStream["sHlsAntiCode"].toString(),
                   streamName: currentStream["sStreamName"].toString(),
                   cdnType: item["sCdnType"].toString(),
-                  presenterUid: topSid,
+                  presenterUid:
+                      int.tryParse(currentStream['lPresenterUid']?.toString() ?? '') ??
+                      int.tryParse(data['profileInfo']?['uid']?.toString() ?? '') ??
+                      topSid,
                 ),
               );
             }
@@ -810,49 +820,54 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
   /// [stream] streamname [presenterUid] 用户id [antiCode] 页面anti
   ///
   /// return ture anticode
-  String buildAntiCode(String stream, int presenterUid, String antiCode) {
-    var mapAnti = Uri(query: antiCode).queryParametersAll;
-    if (!mapAnti.containsKey("fm")) {
+  String buildAntiCode(String stream, int presenterUid, String antiCode, {DateTime? now}) {
+    final mapAnti = Uri(query: antiCode).queryParametersAll;
+    final encodedFm = mapAnti['fm']?.firstOrNull?.trim() ?? '';
+    if (encodedFm.isEmpty) {
       return antiCode;
     }
 
-    var ctype = mapAnti["ctype"]?.first ?? "huya_pc_exe";
-    var platformId = int.tryParse(mapAnti["t"]?.first ?? "0");
+    final ctype = mapAnti['ctype']?.firstOrNull?.trim().isNotEmpty == true
+        ? mapAnti['ctype']!.first.trim()
+        : 'huya_live';
+    final platformId = mapAnti['t']?.firstOrNull?.trim().isNotEmpty == true ? mapAnti['t']!.first.trim() : '100';
+    final isWap = platformId == '103';
+    final timestamp = now ?? DateTime.now();
+    final currentMillis = timestamp.millisecondsSinceEpoch;
+    final currentSeconds = currentMillis ~/ 1000;
+    final uid = presenterUid > 0 ? presenterUid : getUid(SettingsService.to.cookieManager.huyaCookie.v, stream);
 
-    bool isWap = platformId == 103;
-    var clacStartTime = DateTime.now().millisecondsSinceEpoch;
-
-    CoreLog.i("using $presenterUid | ctype-{$ctype} | platformId - {$platformId} | isWap - {$isWap} | $clacStartTime");
-
-    var seqId = presenterUid + clacStartTime;
+    var wsTimeSeconds = int.tryParse(mapAnti['wsTime']?.firstOrNull ?? '', radix: 16);
+    if (wsTimeSeconds == null || wsTimeSeconds < currentSeconds + const Duration(minutes: 20).inSeconds) {
+      wsTimeSeconds = currentSeconds + const Duration(days: 1).inSeconds;
+    }
+    final wsTime = wsTimeSeconds.toRadixString(16);
+    final seqId = uid + currentMillis;
     final secretHash = md5.convert(utf8.encode('$seqId|$ctype|$platformId')).toString();
 
-    final convertUid = rotl64(presenterUid);
-    final calcUid = isWap ? presenterUid : convertUid;
-    final fm = Uri.decodeComponent(mapAnti['fm']!.first);
-    final secretPrefix = utf8.decode(base64.decode(fm)).split('_').first;
-    var wsTime = mapAnti['wsTime']!.first;
+    final convertUid = rotl64(uid);
+    final calcUid = isWap ? uid : convertUid;
+    final secretPrefix = utf8.decode(base64.decode(base64.normalize(Uri.decodeComponent(encodedFm)))).split('_').first;
     final secretStr = '${secretPrefix}_${calcUid}_${stream}_${secretHash}_$wsTime';
-
     final wsSecret = md5.convert(utf8.encode(secretStr)).toString();
 
     final rnd = Random();
-    final ct = ((int.parse(wsTime, radix: 16) + rnd.nextDouble()) * 1000).toInt();
+    final ct = ((wsTimeSeconds + rnd.nextDouble()) * 1000).toInt();
     final uuid = (((ct % 1e10) + rnd.nextDouble()) * 1e3 % 0xffffffff).toInt().toString();
-    final Map<String, dynamic> antiCodeRes = {
+    final antiCodeRes = <String, String>{
       'wsSecret': wsSecret,
       'wsTime': wsTime,
-      'seqid': seqId,
+      'seqid': seqId.toString(),
       'ctype': ctype,
       'ver': '1',
-      'fs': mapAnti['fs']!.first,
-      'fm': Uri.encodeComponent(mapAnti['fm']!.first),
+      'fs': mapAnti['fs']?.firstOrNull ?? 'bgct',
+      'fm': Uri.encodeComponent(encodedFm),
       't': platformId,
     };
     if (isWap) {
-      antiCodeRes.addAll({'uid': presenterUid, 'uuid': uuid});
+      antiCodeRes.addAll({'uid': uid.toString(), 'uuid': uuid});
     } else {
-      antiCodeRes['u'] = convertUid;
+      antiCodeRes['u'] = convertUid.toString();
     }
 
     return antiCodeRes.entries.map((e) => '${e.key}=${e.value}').join('&');

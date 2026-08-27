@@ -54,6 +54,7 @@ class PlayerManager {
   final Duration sourceReadyTimeout;
   final Duration unexpectedPauseGrace;
   final Duration unexpectedPauseFailureGrace;
+  final bool enableActiveContentProbe;
 
   /// How long a manual foreground audio session keeps video decode warm.
   /// `null` retains it until the app backgrounds; [Duration.zero] selects the
@@ -81,6 +82,12 @@ class PlayerManager {
     this.sourceReadyTimeout = Duration.zero,
     this.unexpectedPauseGrace = const Duration(milliseconds: 1200),
     this.unexpectedPauseFailureGrace = const Duration(seconds: 5),
+    // media_kit's screenshot path temporarily detaches the Android hardware
+    // decoder surface on several ColorOS/Qualcomm devices. Repeated probes
+    // then discard every frame and trigger the continuity recovery path,
+    // which looks like random pause/reload to the user. Decoder dimensions,
+    // platform hints and the manual per-room override remain available.
+    this.enableActiveContentProbe = false,
     this.audioModeVideoWarmRetention,
     UnifiedPlayerCreator? playerCreator,
     bool Function()? useHardStopOnExit,
@@ -491,7 +498,8 @@ class PlayerManager {
   void _scheduleActiveContentProbe() {
     final snapshot = videoGeometry.value;
     final needsCanvasInspection = shouldInspectActiveVideoContent(snapshot);
-    if (!PlatformUtils.isMobile ||
+    if (!enableActiveContentProbe ||
+        !PlatformUtils.isMobile ||
         _disposed ||
         _isClosing ||
         _runtimeAudioOnly ||
@@ -1598,6 +1606,17 @@ class PlayerManager {
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: () async {
+                        // Mobile overlays hide their controls after a short
+                        // delay.  Previously the next tap immediately opened
+                        // the room, so the close/pause controls could never be
+                        // revealed again without racing the three-second
+                        // timer.  Match native PiP behaviour: the first tap
+                        // reveals controls; a second tap resumes the room.
+                        if ((Platform.isAndroid || Platform.isIOS) && !isHovered.value) {
+                          isHovered.value = true;
+                          resetHideTimer();
+                          return;
+                        }
                         final room = currentFloatRoom;
                         if (room != null) {
                           await AppNavigator.toLiveRoomDetail(liveRoom: room);
