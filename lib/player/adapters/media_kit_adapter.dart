@@ -890,7 +890,7 @@ class MediaKitAdapter
       controller: _controller,
       controls: NoVideoControls,
       fit: effectiveFit,
-      // LivePlay's WidgetsBindingObserver is the single lifecycle authority.
+      // PlaybackLifecycleCoordinator is the single lifecycle authority.
       // Letting Video apply a second, settings-only policy paused audio-only
       // rooms on Home/lock even though the background policy kept them alive.
       pauseUponEnteringBackgroundMode: false,

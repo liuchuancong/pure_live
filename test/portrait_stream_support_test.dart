@@ -142,6 +142,20 @@ void main() {
       expect(insets.hasCrop, isFalse);
     });
 
+    test('frame inspection is reserved for a trusted portrait hint on a landscape canvas', () {
+      final hinted = PortraitStreamDetector();
+      hinted.observeSourceMetadata(1080, 1920, confidence: 0.995, source: 'douyin.selected_sdk_params');
+      final conflict = hinted.observe(1920, 1080);
+
+      final ordinaryLandscape = PortraitStreamDetector().observe(1920, 1080);
+      final directPortrait = PortraitStreamDetector().observe(1080, 1920);
+
+      expect(conflict.hasTrustedPortraitHintOnLandscapeCanvas, isTrue);
+      expect(shouldInspectActiveVideoContent(conflict), isTrue);
+      expect(shouldInspectActiveVideoContent(ordinaryLandscape), isFalse);
+      expect(shouldInspectActiveVideoContent(directPortrait), isFalse);
+    });
+
     test('selected landscape metadata never invents a crop for a portrait decoder canvas', () {
       final detector = PortraitStreamDetector();
       detector.observeSourceMetadata(1920, 1080, confidence: 0.995, source: 'douyin.selected_sdk_params');

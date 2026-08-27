@@ -11,7 +11,7 @@ On Android, `AndroidVideoController` owns the `vo`, `wid` and Surface lifecycle.
 PureLive's room-scoped audio mode also needs to select `vid=no` without replacing
 the player or reopening the live stream. Sending that property independently
 could race a rotation, PiP or Surface resize update and leave the UI waiting for
-a Surface refresh seek after the video track had already vanished.
+a video track or Surface that had already vanished.
 
 This patch adds `VideoController.setVideoOutputEnabled` and makes the Android
 controller the single owner of both the requested video-output state and the
@@ -22,9 +22,13 @@ can block Flutter's isolate before the audio presentation or timeout paints.
 Video mode always selects `vid=auto`, including while WID is temporarily zero;
 only an explicit audio-only request selects `vid=no`. This avoids a startup
 deadlock where disabling video before a Surface callback also prevented the
-callback that would restore it. The best-effort Surface refresh seek and the
-Android Surface-size MethodChannel request run outside the lock. Desktop
-platforms retain media_kit's existing
+callback that would restore it. Surface replacement follows Flutter's
+`SurfaceProducer` contract: every availability/resize queries `getSurface()`, a
+changed Java Surface receives a new JNI global reference, and the old WID is
+detached exactly once before delayed reference deletion. Geometry-only updates
+do not reset `vo`, and Surface changes do not seek a live stream merely to
+refresh rendering. The Android Surface-size MethodChannel request remains
+outside the controller lock. Desktop platforms retain media_kit's existing
 `setVideoTrack` behavior.
 
 ## Maintenance

@@ -450,8 +450,7 @@ class PlayerManager {
 
   void _scheduleActiveContentProbe() {
     final snapshot = videoGeometry.value;
-    final needsCanvasInspection =
-        snapshot.aspectRatio >= 1.10 || snapshot.hasActiveContentCrop || snapshot.sourceHintOverridesDecoder;
+    final needsCanvasInspection = shouldInspectActiveVideoContent(snapshot);
     if (!PlatformUtils.isMobile ||
         _disposed ||
         _isClosing ||

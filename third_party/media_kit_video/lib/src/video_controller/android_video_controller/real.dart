@@ -55,7 +55,6 @@ class AndroidVideoController extends PlatformVideoController {
 
   /// Listener for updating the --wid property.
   Future<void> widListener() async {
-    late final Duration currentPosition;
     await lock.synchronized(() async {
       final width = rect.value?.width.toInt() ?? 1;
       final height = rect.value?.height.toInt() ?? 1;
@@ -72,25 +71,19 @@ class AndroidVideoController extends PlatformVideoController {
       // which video can be restored, and [properties] always includes `vid` for
       // both gpu and mediacodec_embed output.
       await setProperties(properties);
-      // Instead of seeking to the start (Duration.zero), seek to the current playback position
-      // without jumping the user to the start of the media.
-      currentPosition = player.state.position;
     });
+  }
 
-    // Re-seeking the current position is only a render refresh after the
-    // Surface has changed. Native command replies can be delayed by a live
-    // demuxer, so keeping this await inside [lock] would also block an unrelated
-    // headphone-mode request. The ordered Surface/track properties above are
-    // already committed before this best-effort refresh is issued.
-    unawaited(
-      player.seek(currentPosition).catchError((
-        Object error,
-        StackTrace stackTrace,
-      ) {
-        debugPrint('media_kit: Surface refresh seek failed: $error');
-        debugPrintStack(stackTrace: stackTrace);
-      }),
-    );
+  /// Updates dimensions without resetting the output driver when Flutter kept
+  /// the same Surface/WID. Resetting `vo` for a geometry-only notification
+  /// creates a visible pause and may force a live decoder to reconnect.
+  Future<void> _updateSurfaceGeometry(Rect nextRect) {
+    return lock.synchronized(() async {
+      await setProperty(
+        'android-surface-size',
+        '${nextRect.width.toInt()}x${nextRect.height.toInt()}',
+      );
+    });
   }
 
   @override
@@ -171,6 +164,10 @@ class AndroidVideoController extends PlatformVideoController {
         width.toDouble(),
         height.toDouble(),
       );
+      // The Android callback is fire-and-forget and can arrive after this
+      // MethodChannel reply. Apply the mpv geometry here as well so retaining
+      // the same Surface object can never lose a size update.
+      await _updateSurfaceGeometry(rect.value!);
 
       if (!waitUntilFirstFrameRenderedCompleter.isCompleted) {
         waitUntilFirstFrameRenderedCompleter.complete();
@@ -306,9 +303,20 @@ class AndroidVideoController extends PlatformVideoController {
               );
               final int id = call.arguments['id'];
               final int wid = call.arguments['wid'];
-              _controllers[handle]?.rect.value = rect;
-              _controllers[handle]?.id.value = id;
-              _controllers[handle]?.wid.value = wid;
+              final controller = _controllers[handle];
+              if (controller == null) break;
+              final previousRect = controller.rect.value;
+              final bindingChanged = controller.wid.value != wid;
+              final geometryChanged = previousRect != rect;
+              controller.rect.value = rect;
+              controller.id.value = id;
+              if (bindingChanged) {
+                // The listener performs one ordered WID/vo/vid transaction.
+                // It reads [rect] after the new geometry was published above.
+                controller.wid.value = wid;
+              } else if (geometryChanged) {
+                await controller._updateSurfaceGeometry(rect);
+              }
               break;
             }
           case 'VideoOutput.WaitUntilFirstFrameRenderedNotify':

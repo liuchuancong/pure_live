@@ -154,6 +154,14 @@ class VideoGeometrySnapshot {
 
   bool get hasActiveContentCrop => hasActiveContentObservation && activeContentInsets.hasCrop;
 
+  /// A strong portrait stream hint paired with a plausible landscape decoder
+  /// canvas is the one case that needs pixel inspection. It may be a vertical
+  /// programme embedded inside pillar bars, or simply stale platform metadata.
+  /// Inspecting every ordinary landscape room is both expensive and unsafe: a
+  /// dark scene can otherwise be mistaken for black bars and resize all modes.
+  bool get hasTrustedPortraitHintOnLandscapeCanvas =>
+      hasTrustedSourceHint && sourceHintAspectRatio < 0.90 && aspectRatio >= 1.10;
+
   bool get sourceHintOverridesDecoder =>
       hasTrustedSourceHint && _sourceHintShouldOverrideDecoder(aspectRatio, sourceHintAspectRatio);
 
@@ -561,6 +569,13 @@ bool _sourceHintShouldOverrideDecoder(double encodedRatio, double sourceHintRati
   // aspect metadata; active-frame evidence handles real embedded content.
   return encodedRatio < PortraitPresentationPolicy.androidPipMinimumAspectRatio ||
       encodedRatio > PortraitPresentationPolicy.androidPipMaximumAspectRatio;
+}
+
+/// Whether an off-path frame probe can add evidence that decoder metadata does
+/// not already provide. Kept pure so the performance gate is regression-tested
+/// independently from player timers and native screenshot APIs.
+bool shouldInspectActiveVideoContent(VideoGeometrySnapshot snapshot) {
+  return snapshot.hasActiveContentCrop || snapshot.hasTrustedPortraitHintOnLandscapeCanvas;
 }
 
 bool _isPlausibleActiveContentCrop(double encodedRatio, NormalizedVideoInsets insets) {
