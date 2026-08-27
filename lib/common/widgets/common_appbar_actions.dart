@@ -54,18 +54,18 @@ class CommonAppBarActions extends StatelessWidget {
                 ],
               ),
             ),
-
-            PopupMenuItem(
-              value: 2,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: Row(
-                children: [
-                  Icon(Remix.layout_grid_line, size: 20, color: Theme.of(context).colorScheme.primary),
-                  const SizedBox(width: 12),
-                  Text(i18n("multiview_title"), style: AppTextStyles.t14),
-                ],
+            if (SettingsService.to.app.enableMultiView.v)
+              PopupMenuItem(
+                value: 2,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: Row(
+                  children: [
+                    Icon(Remix.layout_grid_line, size: 20, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: 12),
+                    Text(i18n("multiview_title"), style: AppTextStyles.t14),
+                  ],
+                ),
               ),
-            ),
           ],
         ),
 

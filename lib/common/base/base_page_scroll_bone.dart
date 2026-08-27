@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/base/base_controller.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
 
 abstract class BasePageScrollAndStateBone<T> extends BaseController {
   final ScrollController _ownedScrollController = createPureLiveScrollController();
@@ -35,7 +36,7 @@ abstract class BasePageScrollAndStateBone<T> extends BaseController {
     // available here.  Establishing the initial paging mode before the first
     // frame prevents BasePageView from starting a second network refresh from
     // inside build while the controller's initial request is still running.
-    final initialIsDesktop = Get.width > 680;
+    final initialIsDesktop = Get.width > 680 && !PlatformUtils.isMobile;
     _lastIsDesktop = initialIsDesktop;
     pageSize.value = initialIsDesktop && Get.isRegistered<SettingsService>()
         ? SettingsService.to.page.defaultPageSize.v
@@ -78,7 +79,7 @@ abstract class BasePageScrollAndStateBone<T> extends BaseController {
     _layoutRefreshTimer = Timer(const Duration(milliseconds: 120), () => unawaited(refreshData()));
   }
 
-  bool get usesDesktopPagination => _lastIsDesktop ?? Get.width > 680;
+  bool get usesDesktopPagination => _lastIsDesktop ?? Get.width > 680 && !PlatformUtils.isMobile;
 
   void _scrollListener() {
     _syncScrollFlags();
@@ -154,7 +155,7 @@ abstract class BasePageScrollAndStateBone<T> extends BaseController {
         curve: Curves.easeOutCubic,
       );
     } else {
-      if (_lastIsDesktop ?? Get.width > 680) {
+      if (_lastIsDesktop ?? Get.width > 680 && !PlatformUtils.isMobile) {
         refreshData();
       } else {
         easyRefreshController.callRefresh();

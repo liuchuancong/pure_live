@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
 
 abstract class LocalReactivePageController<T> extends BasePageScrollAndStateBone<T> {
   final List<T> _localRawPool = [];
@@ -71,7 +72,7 @@ abstract class LocalReactivePageController<T> extends BasePageScrollAndStateBone
   void _processDataDistribution() {
     totalCount.value = _localRawPool.length;
 
-    if (Get.width > 680) {
+    if (Get.width > 680 && !PlatformUtils.isMobile) {
       _processDesktopSlicing();
     } else {
       _processMobileDisplayAll();

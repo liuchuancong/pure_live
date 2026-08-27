@@ -1441,5 +1441,18 @@
     "portrait_orientation_landscape": "Landscape",
     "portrait_orientation_square": "Near square",
     "portrait_orientation_unknown": "Waiting for size",
-    "items": "items"
+    "items": "items",
+    "portrait_video_height_mode": "Portrait Video Height Mode",
+    "portrait_video_height_adaptive": "Adaptive (Auto)",
+    "portrait_video_height_custom": "Custom Height",
+    "portrait_video_height_full": "Full Screen (Ignore Notch)",
+    "portrait_custom_height": "Custom Height (px)",
+    "portrait_custom_height_desc": "Set the video display height in portrait mode (pixels)",
+    "portrait_custom_height_hint": "Enter a number greater than 0",
+    "portrait_custom_height_invalid": "Please enter a valid number",
+    "portrait_custom_height_current": "Current value: {height} px",
+    "portrait_custom_height_setting": "Adjust the video display height in pixels",
+    "portrait_reset_video_height": "Reset Portrait Video Height",
+    "portrait_reset_video_height_desc": "Reset to adaptive mode and clear custom height",
+    "portrait_height_presets": "Preset Height"
 }

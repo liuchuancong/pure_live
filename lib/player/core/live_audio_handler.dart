@@ -3,10 +3,10 @@ import 'dart:developer' as developer;
 
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
-import 'package:pure_live/player/interface/unified_player_interface.dart';
-import 'package:pure_live/player/core/background_playback_service.dart';
-import 'package:pure_live/player/core/background_playback_policy.dart';
 import 'package:pure_live/common/services/settings_service.dart';
+import 'package:pure_live/player/core/background_playback_policy.dart';
+import 'package:pure_live/player/core/background_playback_service.dart';
+import 'package:pure_live/player/interface/unified_player_interface.dart';
 
 class LiveAudioHandler extends BaseAudioHandler {
   UnifiedPlayer? _currentPlayer; // 动态绑定
@@ -15,6 +15,7 @@ class LiveAudioHandler extends BaseAudioHandler {
 
   StreamSubscription? _playStateSubscription;
   Timer? _sleepTimer;
+
   LiveAudioHandler() {
     _sessionReady = _initSession();
   }
@@ -32,11 +33,13 @@ class LiveAudioHandler extends BaseAudioHandler {
     // 音频中断（来电、通知）
     _session.interruptionEventStream.listen((event) {
       if (_currentPlayer == null) return;
+
       if (event.begin) {
         switch (event.type) {
           case AudioInterruptionType.pause:
-          case AudioInterruptionType.unknown:
             pause();
+            break;
+          case AudioInterruptionType.unknown:
             break;
           case AudioInterruptionType.duck:
             _currentPlayer!.setVolume(0.2);
@@ -63,7 +66,9 @@ class LiveAudioHandler extends BaseAudioHandler {
   /// 监听播放状态同步到通知栏
   void _listenPlayState() {
     if (_currentPlayer == null) return;
+
     _playStateSubscription?.cancel();
+
     _playStateSubscription = _currentPlayer!.onPlaying.listen((playing) {
       final keepAlive =
           playing &&
@@ -72,7 +77,9 @@ class LiveAudioHandler extends BaseAudioHandler {
             sleepSessionActive: BackgroundPlaybackService.sleepSessionActive,
             audioOnlySessionActive: BackgroundPlaybackService.audioOnlySessionActive,
           );
+
       unawaited(BackgroundPlaybackService.setKeepAlive(keepAlive));
+
       playbackState.add(
         playbackState.value.copyWith(
           controls: [playing ? MediaControl.pause : MediaControl.play, MediaControl.stop],
@@ -89,7 +96,9 @@ class LiveAudioHandler extends BaseAudioHandler {
   void configureSleepTimer(Duration? duration) {
     _sleepTimer?.cancel();
     _sleepTimer = null;
+
     if (duration == null || duration <= Duration.zero) return;
+
     _sleepTimer = Timer(duration, () async {
       BackgroundPlaybackService.sleepSessionActive = false;
       await stop();
@@ -112,6 +121,7 @@ class LiveAudioHandler extends BaseAudioHandler {
   @override
   Future<void> play() async {
     if (_currentPlayer == null) return;
+
     await activateSession();
     await _currentPlayer!.play();
   }
@@ -128,6 +138,7 @@ class LiveAudioHandler extends BaseAudioHandler {
 
     BackgroundPlaybackService.sleepSessionActive = false;
     BackgroundPlaybackService.audioOnlySessionActive = false;
+
     _sleepTimer?.cancel();
     _sleepTimer = null;
 
@@ -139,6 +150,7 @@ class LiveAudioHandler extends BaseAudioHandler {
       await _sessionReady;
       await _session.setActive(false);
       await BackgroundPlaybackService.setKeepAlive(false);
+
       playbackState.add(playbackState.value.copyWith(playing: false, processingState: AudioProcessingState.idle));
     }
   }
