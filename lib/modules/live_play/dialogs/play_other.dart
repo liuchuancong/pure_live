@@ -74,7 +74,7 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: SizedBox(
-        width: layout.size.width,
+        width: layout.size.width.clamp(200, 400),
         height: layout.size.height,
         child: Column(
           children: [

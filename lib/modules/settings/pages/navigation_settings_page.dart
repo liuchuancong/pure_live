@@ -1,7 +1,6 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
-import 'package:pure_live/common/global/platform_utils.dart';
 
 class NavigationSettingsPage extends StatelessWidget {
   const NavigationSettingsPage({super.key});

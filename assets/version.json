@@ -1,23 +1,23 @@
 {
-  "version": "3.0.4",
-  "build_number": 4092,
-  "version_num": 300044092,
+  "version": "3.0.5",
+  "build_number": 4093,
+  "version_num": 300054093,
   "android_abis": [
     "armeabi-v7a",
     "arm64-v8a",
     "x86_64"
   ],
-  "version_desc": "- 修正移动端比例。\n- 设置-> 视频添加沉沁选择。\n- 优化返回处理。\n- 增加小屏选择其他直播间。",
+  "version_desc": "- 优化windows的画中画只能区分横竖屏。\n- 添加浏览屏适配。\n- 备份添加cookie和webdav等用户数据。\n",
   "prerelease": false,
-  "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.4",
+  "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.5",
   "platforms": {
     "android": {
-      "version": "3.0.4",
-      "build_number": 4092,
-      "version_num": 300044092,
-      "version_desc": "- 修正移动端比例。\n- 设置-> 视频添加沉沁选择。\n- 优化返回处理。\n- 增加小屏选择其他直播间。",
+      "version": "3.0.5",
+      "build_number": 4093,
+      "version_num": 300054093,
+      "version_desc": "- 优化windows的画中画只能区分横竖屏。\n- 添加浏览屏适配。\n- 备份添加cookie和webdav等用户数据。\n",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.4",
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.5",
       "android_abis": [
         "armeabi-v7a",
         "arm64-v8a",
@@ -25,37 +25,37 @@
       ]
     },
     "windows": {
-      "version": "3.0.4",
-      "build_number": 4092,
-      "version_num": 300004092,
-      "version_desc": "- 修正移动端比例。\n- 设置-> 视频添加沉沁选择。\n- 优化返回处理。\n- 增加小屏选择其他直播间。",
+      "version": "3.0.5",
+      "build_number": 4093,
+      "version_num": 300054093,
+      "version_desc": "- 优化windows的画中画只能区分横竖屏。\n- 添加浏览屏适配。\n- 备份添加cookie和webdav等用户数据。\n",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.4",
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.5",
       "windows_msix_available": true
     },
     "linux": {
-      "version": "3.0.4",
-      "build_number": 4092,
-      "version_num": 300004092,
-      "version_desc": "- 修正移动端比例。\n- 设置-> 视频添加沉沁选择。\n- 优化返回处理。\n- 增加小屏选择其他直播间。",
+      "version": "3.0.5",
+      "build_number": 4093,
+      "version_num": 300054093,
+      "version_desc": "- 优化windows的画中画只能区分横竖屏。\n- 添加浏览屏适配。\n- 备份添加cookie和webdav等用户数据。\n",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.4"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.5"
     },
     "macos": {
-      "version": "3.0.4",
-      "build_number": 4092,
-      "version_num": 300004092,
-      "version_desc": "- 修正移动端比例。\n- 设置-> 视频添加沉沁选择。\n- 优化返回处理。\n- 增加小屏选择其他直播间。",
+      "version": "3.0.5",
+      "build_number": 4093,
+      "version_num": 300054093,
+      "version_desc": "- 优化windows的画中画只能区分横竖屏。\n- 添加浏览屏适配。\n- 备份添加cookie和webdav等用户数据。\n",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.4"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.5"
     },
     "ios": {
-      "version": "3.0.4",
-      "build_number": 4092,
-      "version_num": 300004092,
-      "version_desc": "- 修正移动端比例。\n- 设置-> 视频添加沉沁选择。\n- 优化返回处理。\n- 增加小屏选择其他直播间。",
+      "version": "3.0.5",
+      "build_number": 4093,
+      "version_num": 300054093,
+      "version_desc": "- 优化windows的画中画只能区分横竖屏。\n- 添加浏览屏适配。\n- 备份添加cookie和webdav等用户数据。\n",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.4"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.5"
     }
   }
 }

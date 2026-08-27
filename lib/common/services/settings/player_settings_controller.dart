@@ -10,6 +10,8 @@ String defaultVideoPlayerKeyForPlatform(TargetPlatform platform) => platform == 
 String get _defaultVideoPlayerKey => defaultVideoPlayerKeyForPlatform(defaultTargetPlatform);
 
 class PlayerSettingsController extends GetxController {
+  static PlayerSettingsController get to => Get.find<PlayerSettingsController>();
+
   final RxInt videoFitIndex = hiveInt('videoFitIndex', 0);
 
   final RxString videoPlayerKey = hiveString('videoPlayerKey', _defaultVideoPlayerKey);
@@ -36,9 +38,6 @@ class PlayerSettingsController extends GetxController {
 
   final RxBool enableRtxVsr = hiveBool('enableRtxVsr', false);
 
-  // Kept as an inert compatibility field for old backups.
-  // Audio-only is now room-scoped and controlled by the headphone action
-  // or ASMR auto-start.
   final RxBool audioOnly = false.obs;
 
   final RxBool useHardStopOnExit = hiveBool('useHardStopOnExit', false);
@@ -47,7 +46,6 @@ class PlayerSettingsController extends GetxController {
   // Portrait live settings
   // ---------------------------------------------------------------------------
 
-  /// Portrait stream layout mode.
   final RxString portraitLayoutModeName = hiveString('portraitLayoutMode', PortraitLayoutMode.balanced.name);
 
   PortraitLayoutMode get portraitLayoutMode =>
@@ -61,7 +59,6 @@ class PlayerSettingsController extends GetxController {
     portraitLayoutModeName.v = PortraitLayoutMode.balanced.name;
   }
 
-  /// Portrait stream danmaku mode.
   final RxString portraitDanmakuModeName = hiveString('portraitDanmakuMode', PortraitDanmakuMode.followGlobal.name);
 
   PortraitDanmakuMode get portraitDanmakuMode =>
@@ -73,6 +70,29 @@ class PlayerSettingsController extends GetxController {
 
   void resetPortraitDanmakuMode() {
     portraitDanmakuModeName.v = PortraitDanmakuMode.followGlobal.name;
+  }
+
+  final RxString portraitVideoHeightModeName = hiveString(
+    'portraitVideoHeightMode',
+    PortraitVideoHeightMode.adaptive.name,
+  );
+
+  PortraitVideoHeightMode get portraitVideoHeightMode =>
+      _enumByName(PortraitVideoHeightMode.values, portraitVideoHeightModeName.v, PortraitVideoHeightMode.adaptive);
+
+  void changePortraitVideoHeightMode(PortraitVideoHeightMode mode) {
+    portraitVideoHeightModeName.v = mode.name;
+  }
+
+  final RxDouble portraitCustomHeight = hiveDouble('portraitCustomHeight', 0.0);
+
+  void changePortraitCustomHeight(double height) {
+    portraitCustomHeight.v = height.clamp(0.0, double.infinity);
+  }
+
+  void resetPortraitVideoHeight() {
+    portraitVideoHeightModeName.v = PortraitVideoHeightMode.adaptive.name;
+    portraitCustomHeight.v = 0.0;
   }
 
   // ---------------------------------------------------------------------------
@@ -109,16 +129,9 @@ class PlayerSettingsController extends GetxController {
     audioOutputDriver.v = 'auto';
     videoHardwareDecoder.v = 'auto';
     enableRtxVsr.v = false;
-
     preferResolution.v = PlayerConsts.resolutions.first;
     preferResolutionCellular.v = PlayerConsts.resolutions.first;
-
     useHardStopOnExit.v = false;
-
-    // Portrait settings
-    portraitLayoutModeName.v = PortraitLayoutMode.balanced.name;
-
-    portraitDanmakuModeName.v = PortraitDanmakuMode.followGlobal.name;
   }
 
   // ---------------------------------------------------------------------------
@@ -129,29 +142,23 @@ class PlayerSettingsController extends GetxController {
     return {
       'videoFitIndex': videoFitIndex.v,
       'videoPlayerKey': videoPlayerKey.v,
-
       'preferResolution': preferResolution.v,
       'preferResolutionCellular': preferResolutionCellular.v,
-
       'enableCodec': enableCodec.v,
       'playerCompatMode': playerCompatMode.v,
       'customPlayerOutput': customPlayerOutput.v,
       'videoOutputDriver': videoOutputDriver.v,
       'audioOutputDriver': audioOutputDriver.v,
       'videoHardwareDecoder': videoHardwareDecoder.v,
-
       'floatPlay': floatPlay.v,
       'windowsPipAlwaysOnTop': windowsPipAlwaysOnTop.v,
       'enableRtxVsr': enableRtxVsr.v,
-
-      // Audio-only is intentionally not persisted as a global setting.
       'audioOnly': false,
-
       'useHardStopOnExit': useHardStopOnExit.v,
-
-      // Portrait live
       'portraitLayoutMode': portraitLayoutMode.name,
       'portraitDanmakuMode': portraitDanmakuMode.name,
+      'portraitVideoHeightMode': portraitVideoHeightMode.name,
+      'portraitCustomHeight': portraitCustomHeight.v,
     };
   }
 
@@ -186,24 +193,29 @@ class PlayerSettingsController extends GetxController {
 
     enableRtxVsr.v = json['enableRtxVsr'] ?? false;
 
-    // Audio-only is intentionally not restored globally.
     audioOnly.v = false;
 
     useHardStopOnExit.v = json['useHardStopOnExit'] ?? false;
 
-    // Portrait layout mode.
     portraitLayoutModeName.v = _enumName(
       PortraitLayoutMode.values,
       json['portraitLayoutMode'],
       PortraitLayoutMode.balanced,
     );
 
-    // Portrait danmaku mode.
     portraitDanmakuModeName.v = _enumName(
       PortraitDanmakuMode.values,
       json['portraitDanmakuMode'],
       PortraitDanmakuMode.followGlobal,
     );
+
+    portraitVideoHeightModeName.v = _enumName(
+      PortraitVideoHeightMode.values,
+      json['portraitVideoHeightMode'],
+      PortraitVideoHeightMode.adaptive,
+    );
+
+    portraitCustomHeight.v = (json['portraitCustomHeight'] as num?)?.toDouble() ?? 0.0;
   }
 
   // ---------------------------------------------------------------------------
@@ -238,31 +250,33 @@ class PlayerSettingsController extends GetxController {
 
       'windowsPipAlwaysOnTop': player['windowsPipAlwaysOnTop'] ?? false,
 
-      // Compatibility-only input for backups created before the ownership
-      // of this setting moved to WindowSizeController.
-      // New exports store it in the windowSize section.
       'rememberPipPosition': player['rememberPipPosition'] ?? true,
 
       'enableRtxVsr': player['enableRtxVsr'] ?? false,
 
-      // Audio-only is intentionally not restored globally.
       'audioOnly': false,
 
       'useHardStopOnExit': player['useHardStopOnExit'] ?? false,
 
-      // Portrait layout mode.
       'portraitLayoutMode': _enumName(
         PortraitLayoutMode.values,
         player['portraitLayoutMode'],
         PortraitLayoutMode.balanced,
       ),
 
-      // Portrait danmaku mode.
       'portraitDanmakuMode': _enumName(
         PortraitDanmakuMode.values,
         player['portraitDanmakuMode'],
         PortraitDanmakuMode.followGlobal,
       ),
+
+      'portraitVideoHeightMode': _enumName(
+        PortraitVideoHeightMode.values,
+        player['portraitVideoHeightMode'],
+        PortraitVideoHeightMode.adaptive,
+      ),
+
+      'portraitCustomHeight': (player['portraitCustomHeight'] as num?)?.toDouble() ?? 0.0,
     };
   }
 

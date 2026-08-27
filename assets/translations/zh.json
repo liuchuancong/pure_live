@@ -1424,5 +1424,18 @@
     "portrait_orientation_landscape": "横屏",
     "portrait_orientation_square": "近方形",
     "portrait_orientation_unknown": "等待尺寸",
-    "items": "条"
+    "items": "条",
+    "portrait_video_height_mode": "竖屏视频高度模式",
+    "portrait_video_height_adaptive": "自适应（根据安全区域）",
+    "portrait_video_height_custom": "自定义高度",
+    "portrait_video_height_full": "铺满（忽略刘海）",
+    "portrait_custom_height": "自定义高度",
+    "portrait_custom_height_desc": "设置视频在竖屏模式下的显示高度（像素）",
+    "portrait_custom_height_hint": "请输入大于 0 的数值",
+    "portrait_custom_height_invalid": "请输入有效的数字",
+    "portrait_custom_height_current": "当前值: {height} px",
+    "portrait_custom_height_setting": "调整视频显示的像素高度",
+    "portrait_reset_video_height": "重置竖屏视频高度",
+    "portrait_reset_video_height_desc": "恢复为自适应模式并重置自定义高度",
+    "portrait_height_presets": "预设高度"
 }
