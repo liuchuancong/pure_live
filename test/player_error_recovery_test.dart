@@ -268,12 +268,108 @@ void main() {
 
     await manager.dispose();
   });
+
+  test('unexpected native pause reasserts the current live source once', () async {
+    final mediaKit = _RecoveryFakePlayer(PlayerEngine.mediaKit, (_) => null);
+    final manager = _manager(<PlayerEngine, _RecoveryFakePlayer>{
+      PlayerEngine.mediaKit: mediaKit,
+    }, unexpectedPauseGrace: const Duration(milliseconds: 2));
+    manager.configureDefaultEngine(PlayerEngine.mediaKit);
+
+    await manager.play(
+      'https://cdn.example/live.flv',
+      const <String>['https://cdn.example/live.flv'],
+      const <String, String>{},
+      room: LiveRoom(roomId: 'continuity', platform: 'test'),
+    );
+    mediaKit.emitUnexpectedPlaying(false);
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+
+    expect(mediaKit.playCalls, 1);
+    expect(manager.isPlayingNow, isTrue);
+    await manager.dispose();
+  });
+
+  test('explicit pause is never reversed by the continuity supervisor', () async {
+    final mediaKit = _RecoveryFakePlayer(PlayerEngine.mediaKit, (_) => null);
+    final manager = _manager(<PlayerEngine, _RecoveryFakePlayer>{
+      PlayerEngine.mediaKit: mediaKit,
+    }, unexpectedPauseGrace: const Duration(milliseconds: 2));
+    manager.configureDefaultEngine(PlayerEngine.mediaKit);
+
+    await manager.play(
+      'https://cdn.example/live.flv',
+      const <String>['https://cdn.example/live.flv'],
+      const <String, String>{},
+      room: LiveRoom(roomId: 'manual-pause', platform: 'test'),
+    );
+    await manager.pause();
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+
+    expect(mediaKit.playCalls, 0);
+    expect(manager.isPlayingNow, isFalse);
+    await manager.dispose();
+  });
+
+  test('audio interruption resumes only the playback intent it suspended', () async {
+    final mediaKit = _RecoveryFakePlayer(PlayerEngine.mediaKit, (_) => null);
+    final manager = _manager(<PlayerEngine, _RecoveryFakePlayer>{
+      PlayerEngine.mediaKit: mediaKit,
+    }, unexpectedPauseGrace: const Duration(milliseconds: 2));
+    manager.configureDefaultEngine(PlayerEngine.mediaKit);
+
+    await manager.play(
+      'https://cdn.example/live.flv',
+      const <String>['https://cdn.example/live.flv'],
+      const <String, String>{},
+      room: LiveRoom(roomId: 'audio-focus', platform: 'test'),
+    );
+    final token = await manager.pauseForAudioInterruption();
+    expect(token, isNotNull);
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    expect(mediaKit.playCalls, 0);
+
+    expect(await manager.resumeFromAudioInterruption(token!), isTrue);
+    expect(mediaKit.playCalls, 1);
+
+    final staleToken = await manager.pauseForAudioInterruption();
+    expect(staleToken, isNotNull);
+    await manager.pause();
+    expect(await manager.resumeFromAudioInterruption(staleToken!), isFalse);
+    expect(mediaKit.playCalls, 1);
+    await manager.dispose();
+  });
+
+  test('unexpected live completion enters the existing engine fallback path', () async {
+    final mediaKit = _RecoveryFakePlayer(PlayerEngine.mediaKit, (_) => null);
+    final fijk = _RecoveryFakePlayer(PlayerEngine.fijk, (_) => null);
+    final manager = _manager(<PlayerEngine, _RecoveryFakePlayer>{
+      PlayerEngine.mediaKit: mediaKit,
+      PlayerEngine.fijk: fijk,
+    });
+    manager.configureDefaultEngine(PlayerEngine.mediaKit);
+
+    await manager.play(
+      'https://cdn.example/live.flv',
+      const <String>['https://cdn.example/live.flv'],
+      const <String, String>{},
+      room: LiveRoom(roomId: 'completed-live', platform: 'test'),
+    );
+    mediaKit.emitCompleted();
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+
+    expect(manager.currentEngine, PlayerEngine.fijk);
+    expect(fijk.openedUrls, <String>['https://cdn.example/live.flv']);
+    await manager.dispose();
+  });
 }
 
 PlayerManager _manager(
   Map<PlayerEngine, _RecoveryFakePlayer> players, {
   Duration sourceOpenTimeout = const Duration(seconds: 18),
   Duration sourceReadyTimeout = Duration.zero,
+  Duration unexpectedPauseGrace = const Duration(milliseconds: 1200),
+  Duration? unexpectedPauseFailureGrace,
 }) {
   return PlayerManager(
     playerCreator: (engine) => players[engine]!,
@@ -284,6 +380,8 @@ PlayerManager _manager(
     lineManager: LineFallbackManager(),
     sourceOpenTimeout: sourceOpenTimeout,
     sourceReadyTimeout: sourceReadyTimeout,
+    unexpectedPauseGrace: unexpectedPauseGrace,
+    unexpectedPauseFailureGrace: unexpectedPauseFailureGrace ?? unexpectedPauseGrace,
     useHardStopOnExit: () => false,
     audioModeServiceSync: (_, _) async {},
     audioSessionStart: (_) async {},
@@ -319,6 +417,18 @@ class _RecoveryFakePlayer implements UnifiedPlayer {
   final StreamController<int?> _height = StreamController<int?>.broadcast(sync: true);
   bool _initialized = false;
   bool _isPlaying = false;
+  int playCalls = 0;
+
+  void emitUnexpectedPlaying(bool playing) {
+    _isPlaying = playing;
+    _playing.add(playing);
+  }
+
+  void emitCompleted() {
+    _isPlaying = false;
+    _playing.add(false);
+    _complete.add(true);
+  }
 
   @override
   Future<void> init({bool audioOnly = false}) async {
@@ -365,6 +475,7 @@ class _RecoveryFakePlayer implements UnifiedPlayer {
 
   @override
   Future<void> play() async {
+    playCalls++;
     _isPlaying = true;
     _playing.add(true);
   }

@@ -21,10 +21,13 @@ import 'package:pure_live/recorder/pages/record_settings/record_settings_control
 import 'package:pure_live/recorder/services/cache_service.dart';
 import 'package:pure_live/recorder/services/ffmpeg_header_factory.dart';
 import 'package:pure_live/recorder/services/recorder_continuation_policy.dart';
+import 'package:pure_live/recorder/services/recording_output_metrics.dart';
 import 'package:pure_live/recorder/services/stream_resolver_service.dart';
 import 'package:pure_live/recorder/services/video_processor_service.dart';
 
 class RecorderController extends GetxService {
+  RecorderController([this._outputMetrics = const RecordingOutputMetrics()]);
+
   static RecorderController get to => Get.find<RecorderController>();
 
   final RecordSettingsController settings = Get.find<RecordSettingsController>();
@@ -40,6 +43,13 @@ class RecorderController extends GetxService {
   final Map<String, Completer<void>> _lifecycleCompleters = <String, Completer<void>>{};
   final Map<String, int> _activeSessionIds = <String, int>{};
   final Map<String, Future<void>> _finalizationFutures = <String, Future<void>>{};
+  final RecordingOutputMetrics _outputMetrics;
+  final Map<String, Timer> _outputMonitorTimers = <String, Timer>{};
+  final Set<String> _outputMonitorBusy = <String>{};
+  final Map<String, RecordingOutputTracker> _outputTrackers = <String, RecordingOutputTracker>{};
+  final Map<String, ({int bytes, DateTime sampledAt})> _outputSamples = <String, ({int bytes, DateTime sampledAt})>{};
+  final Map<String, DateTime> _outputStartedAt = <String, DateTime>{};
+  final Map<String, DateTime> _lastOutputPersist = <String, DateTime>{};
 
   Timer? _persistTimer;
   Timer? _resourceMonitor;
@@ -74,12 +84,24 @@ class RecorderController extends GetxService {
     }
 
     switch (event.type) {
+      case FFmpegEventType.startAck:
+        if (sessionId == null) return;
+        _activeSessionIds[event.taskId] = sessionId;
+        task.status = RecordStatus.preparing;
+        task.lastUpdate = DateTime.now();
+        task.clearFailure();
+        _startOutputMonitor(task, sessionId);
+        updateTask(task);
+        return;
       case FFmpegEventType.started:
         if (sessionId == null) return;
         // FFmpegService permits only one native session for a task ID. A new
         // started event is therefore authoritative and replaces stale state
         // left by a task removed before its delayed terminal callback.
-        _activeSessionIds[event.taskId] = sessionId;
+        if (_activeSessionIds[event.taskId] != sessionId) {
+          _activeSessionIds[event.taskId] = sessionId;
+          _startOutputMonitor(task, sessionId);
+        }
         task.status = RecordStatus.running;
         task.lastUpdate = DateTime.now();
         task.clearFailure();
@@ -88,18 +110,26 @@ class RecorderController extends GetxService {
       case FFmpegEventType.progress:
         if (!_isCurrentSession(event.taskId, sessionId)) return;
         final data = event.data;
-        task.recordedSeconds = ((data['time'] as num?)?.toInt() ?? 0) ~/ 1000;
-        task.fileSize = (data['size'] as num?)?.toInt() ?? 0;
-        task.bitrate = (data['bitrate'] as num?)?.toDouble() ?? 0;
-        task.recordSpeed = (data['speed'] as num?)?.toDouble() ?? 0;
-        task.fps = (data['fps'] as num?)?.toDouble() ?? 0;
+        final recordedSeconds = ((data['time'] as num?)?.toInt() ?? 0) ~/ 1000;
+        final fileSize = (data['size'] as num?)?.toInt() ?? 0;
+        final bitrate = (data['bitrate'] as num?)?.toDouble() ?? 0;
+        final speed = (data['speed'] as num?)?.toDouble() ?? 0;
+        final fps = (data['fps'] as num?)?.toDouble() ?? 0;
+        if (recordedSeconds > task.recordedSeconds) task.recordedSeconds = recordedSeconds;
+        if (fileSize > task.fileSize) task.fileSize = fileSize;
+        if (bitrate > 0) task.bitrate = bitrate;
+        if (speed > 0) task.recordSpeed = speed;
+        if (fps > 0) task.fps = fps;
+        task.status = RecordStatus.running;
         task.lastUpdate = DateTime.now();
         if (task.recordedSeconds >= 10) task.retryCount = 0;
-        updateTask(task);
+        updateTask(task, persist: _shouldPersistOutput(event.taskId));
         return;
       case FFmpegEventType.error:
       case FFmpegEventType.complete:
         if (!_isCurrentSession(event.taskId, sessionId)) return;
+        await _sampleOutput(task, sessionId!, forcePersist: true);
+        _stopOutputMonitor(event.taskId);
         _activeSessionIds.remove(event.taskId);
         final manuallyStopped = event.data['manualStop'] == true || task.wasStoppedByUser;
         final isError = event.type == FFmpegEventType.error;
@@ -138,6 +168,82 @@ class RecorderController extends GetxService {
   bool _isCurrentSession(String taskId, int? sessionId) {
     final current = _activeSessionIds[taskId];
     return current != null && sessionId != null && current == sessionId;
+  }
+
+  void _startOutputMonitor(LiveRecordTask task, int sessionId) {
+    _stopOutputMonitor(task.taskId);
+    final directoryPath = task.outputDir?.trim() ?? '';
+    if (directoryPath.isNotEmpty) {
+      _outputTrackers[task.taskId] = _outputMetrics.track(
+        directoryPath: directoryPath,
+        filePrefix: task.recordingFilePrefix,
+      );
+    }
+    _outputSamples[task.taskId] = (bytes: task.fileSize, sampledAt: DateTime.now());
+    unawaited(_sampleOutput(task, sessionId));
+    _outputMonitorTimers[task.taskId] = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => unawaited(_sampleOutput(task, sessionId)),
+    );
+  }
+
+  void _stopOutputMonitor(String taskId) {
+    _outputMonitorTimers.remove(taskId)?.cancel();
+    _outputMonitorBusy.remove(taskId);
+    _outputTrackers.remove(taskId);
+    _outputSamples.remove(taskId);
+    _outputStartedAt.remove(taskId);
+    _lastOutputPersist.remove(taskId);
+  }
+
+  bool _shouldPersistOutput(String taskId, {DateTime? now, bool force = false}) {
+    final sampledAt = now ?? DateTime.now();
+    final previous = _lastOutputPersist[taskId];
+    if (!force && previous != null && sampledAt.difference(previous) < const Duration(seconds: 10)) return false;
+    _lastOutputPersist[taskId] = sampledAt;
+    return true;
+  }
+
+  Future<void> _sampleOutput(LiveRecordTask task, int sessionId, {bool forcePersist = false}) async {
+    if (!_isCurrentSession(task.taskId, sessionId) || !_outputMonitorBusy.add(task.taskId)) return;
+    try {
+      final directoryPath = task.outputDir?.trim() ?? '';
+      if (directoryPath.isEmpty) return;
+      final now = DateTime.now();
+      final tracker = _outputTrackers.putIfAbsent(
+        task.taskId,
+        () => _outputMetrics.track(directoryPath: directoryPath, filePrefix: task.recordingFilePrefix),
+      );
+      final snapshot = await tracker.sample();
+      if (!_isCurrentSession(task.taskId, sessionId)) return;
+
+      final previous = _outputSamples[task.taskId];
+      _outputSamples[task.taskId] = (bytes: snapshot.bytes, sampledAt: now);
+      if (snapshot.bytes <= 0) return;
+
+      _outputStartedAt.putIfAbsent(task.taskId, () => now);
+      if (snapshot.bytes > task.fileSize) task.fileSize = snapshot.bytes;
+      if (previous != null && snapshot.bytes > previous.bytes) {
+        final elapsedMs = now.difference(previous.sampledAt).inMilliseconds;
+        if (elapsedMs > 0) {
+          task.bitrate = (snapshot.bytes - previous.bytes) * 8 / elapsedMs;
+        }
+      }
+      final wallSeconds = now.difference(_outputStartedAt[task.taskId]!).inSeconds;
+      if (wallSeconds > task.recordedSeconds) task.recordedSeconds = wallSeconds;
+      if (task.recordSpeed <= 0) task.recordSpeed = 1;
+      task
+        ..status = RecordStatus.running
+        ..lastUpdate = now;
+      updateTask(
+        task,
+        persist: _shouldPersistOutput(task.taskId, now: now, force: forcePersist),
+      );
+    } catch (error, stackTrace) {
+      developer.log('Recorder output monitor failed: $error', name: 'RecorderController', stackTrace: stackTrace);
+    } finally {
+      _outputMonitorBusy.remove(task.taskId);
+    }
   }
 
   Future<void> _finalizeAttempt(
@@ -241,7 +347,7 @@ class RecorderController extends GetxService {
     return false;
   }
 
-  void updateTask(LiveRecordTask task) {
+  void updateTask(LiveRecordTask task, {bool persist = true}) {
     final index = tasks.indexWhere((candidate) => candidate.taskId == task.taskId);
     if (index == -1) return;
     // Preserve the user's spatial context. Sorting on every status/progress
@@ -249,7 +355,7 @@ class RecorderController extends GetxService {
     // read or operated. Tabs already expose status-specific views; the all tab
     // therefore keeps insertion/restoration order stable.
     tasks[index] = task;
-    schedulePersist();
+    if (persist) schedulePersist();
   }
 
   void schedulePersist() {
@@ -537,6 +643,7 @@ class RecorderController extends GetxService {
     _stopPolling(task.taskId);
     _retryTimers.remove(task.taskId)?.cancel();
     await scheduler.cancel(task.taskId);
+    _stopOutputMonitor(task.taskId);
     task.status = RecordStatus.stopped;
     updateTask(task);
   }
@@ -619,6 +726,7 @@ class RecorderController extends GetxService {
     _stopPolling(task.taskId);
     _retryTimers.remove(task.taskId)?.cancel();
     await scheduler.cancel(task.taskId);
+    _stopOutputMonitor(task.taskId);
     _activeSessionIds.remove(task.taskId);
     _completeLifecycle(task.taskId);
     tasks.removeWhere((candidate) => candidate.taskId == task.taskId);
@@ -719,6 +827,15 @@ class RecorderController extends GetxService {
     }
     _pollTimers.clear();
     _retryTimers.clear();
+    for (final timer in _outputMonitorTimers.values) {
+      timer.cancel();
+    }
+    _outputMonitorTimers.clear();
+    _outputMonitorBusy.clear();
+    _outputTrackers.clear();
+    _outputSamples.clear();
+    _outputStartedAt.clear();
+    _lastOutputPersist.clear();
     _resourceMonitor?.cancel();
     _persistTimer?.cancel();
     _persistTimer = null;

@@ -110,6 +110,7 @@ class FFmpegRecordSession {
   final Completer<void> completion = Completer<void>();
 
   bool manualStop = false;
+  bool mediaStarted = false;
   int recordedSeconds = 0;
   int fileSize = 0;
   double bitrate = 0;
@@ -160,13 +161,23 @@ class FFmpegService {
 
     nativeSession.setStatisticsCallback((statistics) {
       if (!identical(_sessions[taskId], session)) return;
+      final recordedSeconds = statistics.time ~/ 1000;
+      final fileSize = statistics.size;
       session
-        ..recordedSeconds = statistics.time ~/ 1000
-        ..fileSize = statistics.size
-        ..bitrate = statistics.bitrate
-        ..speed = statistics.speed
-        ..fps = statistics.videoFps
+        ..recordedSeconds = recordedSeconds > session.recordedSeconds ? recordedSeconds : session.recordedSeconds
+        ..fileSize = fileSize > session.fileSize ? fileSize : session.fileSize
+        ..bitrate = statistics.bitrate > 0 ? statistics.bitrate : session.bitrate
+        ..speed = statistics.speed > 0 ? statistics.speed : session.speed
+        ..fps = statistics.videoFps > 0 ? statistics.videoFps : session.fps
         ..lastUpdate = DateTime.now();
+
+      if (!session.mediaStarted && (statistics.time > 0 || statistics.size > 0 || statistics.videoFrameNumber > 0)) {
+        session.mediaStarted = true;
+        _safeEmit(
+          onEvent,
+          FFmpegEvent(taskId: taskId, type: FFmpegEventType.started, data: {'sessionId': session.sessionId}),
+        );
+      }
 
       _safeEmit(
         onEvent,
@@ -223,7 +234,7 @@ class FFmpegService {
 
     _safeEmit(
       onEvent,
-      FFmpegEvent(taskId: taskId, type: FFmpegEventType.started, data: {'sessionId': session.sessionId}),
+      FFmpegEvent(taskId: taskId, type: FFmpegEventType.startAck, data: {'sessionId': session.sessionId}),
     );
 
     try {

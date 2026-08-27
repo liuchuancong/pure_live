@@ -44,12 +44,16 @@ import 'package:pure_live/modules/live_play/widgets/danmaku/compact_danmaku_over
 
 typedef UnifiedPlayerCreator = FutureOr<UnifiedPlayer> Function(PlayerEngine engine);
 
+enum _PlaybackSuspensionReason { lifecycle, audioInterruption }
+
 class PlayerManager {
   final EngineFallbackManager fallbackManager;
   final LineFallbackManager lineManager;
   final Duration audioModeSwitchTimeout;
   final Duration sourceOpenTimeout;
   final Duration sourceReadyTimeout;
+  final Duration unexpectedPauseGrace;
+  final Duration unexpectedPauseFailureGrace;
 
   /// How long a manual foreground audio session keeps video decode warm.
   /// `null` retains it until the app backgrounds; [Duration.zero] selects the
@@ -62,6 +66,11 @@ class PlayerManager {
   Future<void> _playerLifecycleQueue = Future.value();
   int _sessionId = 0;
   int _playbackIntentRevision = 0;
+  bool _playbackRequested = false;
+  bool _playbackIntentEstablished = false;
+  final Set<_PlaybackSuspensionReason> _playbackSuspensions = <_PlaybackSuspensionReason>{};
+  Timer? _continuityTimer;
+  int _continuityRevision = 0;
   bool _isClosing = false;
 
   PlayerManager({
@@ -70,6 +79,8 @@ class PlayerManager {
     this.audioModeSwitchTimeout = const Duration(seconds: 5),
     this.sourceOpenTimeout = const Duration(seconds: 18),
     this.sourceReadyTimeout = Duration.zero,
+    this.unexpectedPauseGrace = const Duration(milliseconds: 1200),
+    this.unexpectedPauseFailureGrace = const Duration(seconds: 5),
     this.audioModeVideoWarmRetention,
     UnifiedPlayerCreator? playerCreator,
     bool Function()? useHardStopOnExit,
@@ -194,25 +205,54 @@ class PlayerManager {
   /// intent. The token lets a later resume prove that neither the source nor
   /// the user's intent changed while the application was hidden.
   Future<PlaybackLifecyclePauseToken?> pauseForLifecycle() async {
-    final player = _currentPlayer;
-    if (player == null || _disposed || _isClosing || (!isPlayingNow && !player.isPlayingNow)) return null;
-    final token = (sessionId: _sessionId, intentRevision: _playbackIntentRevision);
-    await player.pause();
-    if (_disposed || _isClosing || _sessionId != token.sessionId) return null;
-    return token;
+    return _pauseForSuspension(_PlaybackSuspensionReason.lifecycle);
   }
 
   Future<bool> resumeFromLifecycle(PlaybackLifecyclePauseToken token) async {
+    return _resumeFromSuspension(_PlaybackSuspensionReason.lifecycle, token);
+  }
+
+  Future<PlaybackLifecyclePauseToken?> pauseForAudioInterruption() async {
+    return _pauseForSuspension(_PlaybackSuspensionReason.audioInterruption);
+  }
+
+  Future<bool> resumeFromAudioInterruption(PlaybackLifecyclePauseToken token) async {
+    return _resumeFromSuspension(_PlaybackSuspensionReason.audioInterruption, token);
+  }
+
+  Future<PlaybackLifecyclePauseToken?> _pauseForSuspension(_PlaybackSuspensionReason reason) async {
+    final player = _currentPlayer;
+    if (player == null || _disposed || _isClosing) return null;
+    if (!_playbackRequested) {
+      if (_playbackIntentEstablished || (!isPlayingNow && !player.isPlayingNow)) return null;
+      // Compatibility for an already-active adapter supplied by an explicit
+      // pre-warm/restore path. Once any public command establishes intent,
+      // native state alone never overrides that user decision.
+      _playbackRequested = true;
+    }
+    final token = (sessionId: _sessionId, intentRevision: _playbackIntentRevision);
+    _playbackSuspensions.add(reason);
+    _cancelContinuityRecovery();
+    if (isPlayingNow || player.isPlayingNow) await player.pause();
+    if (_disposed || _isClosing || _sessionId != token.sessionId) {
+      _playbackSuspensions.remove(reason);
+      return null;
+    }
+    return token;
+  }
+
+  Future<bool> _resumeFromSuspension(_PlaybackSuspensionReason reason, PlaybackLifecyclePauseToken token) async {
     final player = _currentPlayer;
     if (player == null ||
         _disposed ||
         _isClosing ||
         _sessionId != token.sessionId ||
         _playbackIntentRevision != token.intentRevision ||
-        isPlayingNow ||
-        player.isPlayingNow) {
+        !_playbackRequested ||
+        !_playbackSuspensions.remove(reason)) {
       return false;
     }
+    if (_playbackSuspensions.isNotEmpty || isPlayingNow || player.isPlayingNow) return true;
     await player.play();
     return !_disposed && !_isClosing && _sessionId == token.sessionId;
   }
@@ -712,6 +752,11 @@ class PlayerManager {
     LiveRoom? room,
     bool audioOnly = false,
   }) {
+    _playbackRequested = true;
+    _playbackIntentEstablished = true;
+    _playbackIntentRevision++;
+    _playbackSuspensions.clear();
+    _cancelContinuityRecovery();
     return _enqueuePlayerLifecycle(() => _playInternal(url, playUrls, headers, room: room, audioOnly: audioOnly));
   }
 
@@ -723,6 +768,7 @@ class PlayerManager {
     bool audioOnly = false,
   }) async {
     if (_disposed) return;
+    _cancelContinuityRecovery();
     _sourceReadyTimer?.cancel();
     _sourceReadyTimer = null;
     _audioModeVideoWarmTimer?.cancel();
@@ -851,6 +897,11 @@ class PlayerManager {
   }
 
   Future<void> replay() {
+    _playbackRequested = true;
+    _playbackIntentEstablished = true;
+    _playbackIntentRevision++;
+    _playbackSuspensions.clear();
+    _cancelContinuityRecovery();
     return _enqueuePlayerLifecycle(() async {
       if (_currentUrl == null) return;
 
@@ -1292,6 +1343,86 @@ class PlayerManager {
     );
   }
 
+  bool get _isContinuousLiveSource {
+    final room = currentFloatRoom;
+    return room != null && room.isRecord != true && room.isCatchUp != true;
+  }
+
+  bool _shouldMaintainPlayback(UnifiedPlayer player, int sessionId) {
+    return _isPlayerEventCurrent(player, sessionId) &&
+        _playbackRequested &&
+        _playbackSuspensions.isEmpty &&
+        _isContinuousLiveSource &&
+        _currentUrl?.isNotEmpty == true &&
+        !_loadingSubject.value &&
+        !hasError.value;
+  }
+
+  void _cancelContinuityRecovery() {
+    _continuityRevision++;
+    _continuityTimer?.cancel();
+    _continuityTimer = null;
+  }
+
+  void _scheduleContinuityRecovery(UnifiedPlayer player, int sessionId) {
+    if (!_shouldMaintainPlayback(player, sessionId) || player.isPlayingNow || isPlayingNow) return;
+    _continuityTimer?.cancel();
+    final revision = ++_continuityRevision;
+    _continuityTimer = Timer(unexpectedPauseGrace, () {
+      _continuityTimer = null;
+      unawaited(
+        _enqueuePlayerLifecycle(() async {
+          if (revision != _continuityRevision ||
+              !_shouldMaintainPlayback(player, sessionId) ||
+              player.isPlayingNow ||
+              isPlayingNow) {
+            return;
+          }
+          try {
+            // Some native live players briefly publish `playing=false` after
+            // an audio-focus hand-off or CDN discontinuity without raising an
+            // error. Reassert the existing source once before escalating to
+            // the normal line/engine recovery state machine.
+            await player.play();
+          } catch (error, stackTrace) {
+            _schedulePlayerError(
+              PlayerException(
+                message: 'Live playback did not resume after an unexpected pause',
+                type: PlayerErrorType.source,
+                code: 'unexpected_pause_resume_failed',
+                error: error,
+                stackTrace: stackTrace,
+              ),
+              sessionId,
+            );
+            return;
+          }
+          if (player.isPlayingNow || isPlayingNow || !_shouldMaintainPlayback(player, sessionId)) return;
+          final confirmationRevision = ++_continuityRevision;
+          _continuityTimer = Timer(unexpectedPauseFailureGrace, () {
+            _continuityTimer = null;
+            if (confirmationRevision != _continuityRevision ||
+                !_shouldMaintainPlayback(player, sessionId) ||
+                player.isPlayingNow ||
+                isPlayingNow) {
+              return;
+            }
+            _schedulePlayerError(
+              PlayerException(
+                message: 'Live playback remained paused after the continuity retry',
+                type: PlayerErrorType.source,
+                code: 'unexpected_pause_timeout',
+              ),
+              sessionId,
+            );
+          });
+        }).catchError((Object error, StackTrace stackTrace) {
+          log('Unexpected-pause recovery failed: $error', name: 'PlayerManager', stackTrace: stackTrace);
+        }),
+      );
+    });
+  }
+
   Future<void> togglePlayPause() async {
     if (_currentPlayer == null) return;
     if (isPlayingNow) {
@@ -1304,14 +1435,22 @@ class PlayerManager {
   Future<void> pause() async {
     final player = _currentPlayer;
     if (player == null) return;
+    _playbackRequested = false;
+    _playbackIntentEstablished = true;
     _playbackIntentRevision++;
+    _playbackSuspensions.clear();
+    _cancelContinuityRecovery();
     await player.pause();
   }
 
   Future<void> resume() async {
     final player = _currentPlayer;
     if (player == null) return;
+    _playbackRequested = true;
+    _playbackIntentEstablished = true;
     _playbackIntentRevision++;
+    _playbackSuspensions.clear();
+    _cancelContinuityRecovery();
     await player.play();
   }
 
@@ -1970,6 +2109,11 @@ class PlayerManager {
   }
 
   Future<void> _closeInternal() async {
+    _playbackRequested = false;
+    _playbackIntentEstablished = true;
+    _playbackIntentRevision++;
+    _playbackSuspensions.clear();
+    _cancelContinuityRecovery();
     _sourceReadyTimer?.cancel();
     _sourceReadyTimer = null;
     _audioModeVideoWarmTimer?.cancel();
@@ -2030,6 +2174,11 @@ class PlayerManager {
   }
 
   Future<void> retry() {
+    _playbackRequested = true;
+    _playbackIntentEstablished = true;
+    _playbackIntentRevision++;
+    _playbackSuspensions.clear();
+    _cancelContinuityRecovery();
     return _enqueuePlayerLifecycle(() async {
       final url = _currentUrl;
       if (url == null) return;
@@ -2039,6 +2188,7 @@ class PlayerManager {
 
   Future<void> _handleError(PlayerException error, {int? sessionId}) async {
     if (_disposed || _isClosing) return;
+    _cancelContinuityRecovery();
     final mySessionId = sessionId ?? _sessionId;
     if (!_isSessionValid(mySessionId)) return;
     _sourceReadyTimer?.cancel();
@@ -2174,6 +2324,9 @@ class PlayerManager {
   }
 
   void _publishTerminalPlayerError(PlayerException error) {
+    _playbackRequested = false;
+    _playbackSuspensions.clear();
+    _cancelContinuityRecovery();
     _sourceReadyTimer?.cancel();
     _sourceReadyTimer = null;
     hasError.value = true;
@@ -2193,6 +2346,7 @@ class PlayerManager {
         if (!_isPlayerEventCurrent(player, sessionId)) return;
         _playingSubject.add(event);
         if (event) {
+          _cancelContinuityRecovery();
           _sourceReadyTimer?.cancel();
           _sourceReadyTimer = null;
           hasError.value = false;
@@ -2207,6 +2361,7 @@ class PlayerManager {
           _scheduleActiveContentProbe();
         } else if (_stateSubject.value != PlayerState.preparing && _stateSubject.value != PlayerState.buffering) {
           _stateSubject.add(PlayerState.paused);
+          _scheduleContinuityRecovery(player, sessionId);
         }
       }),
     );
@@ -2215,7 +2370,10 @@ class PlayerManager {
         if (!_isPlayerEventCurrent(player, sessionId)) return;
         _loadingSubject.add(event);
         if (event && _stateSubject.value != PlayerState.buffering) {
+          _cancelContinuityRecovery();
           _stateSubject.add(PlayerState.buffering);
+        } else if (!event && !player.isPlayingNow && !isPlayingNow) {
+          _scheduleContinuityRecovery(player, sessionId);
         }
       }),
     );
@@ -2223,6 +2381,21 @@ class PlayerManager {
       player.onComplete.listen((event) {
         if (!_isPlayerEventCurrent(player, sessionId)) return;
         _completeSubject.add(event);
+        if (event &&
+            _playbackRequested &&
+            _playbackSuspensions.isEmpty &&
+            _isContinuousLiveSource &&
+            _stateSubject.value != PlayerState.preparing) {
+          _cancelContinuityRecovery();
+          _schedulePlayerError(
+            PlayerException(
+              message: 'Live source ended unexpectedly',
+              type: PlayerErrorType.source,
+              code: 'live_source_completed',
+            ),
+            sessionId,
+          );
+        }
       }),
     );
     _subscriptions.add(
@@ -2267,6 +2440,9 @@ class PlayerManager {
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
+    _playbackRequested = false;
+    _playbackSuspensions.clear();
+    _cancelContinuityRecovery();
     _sessionId++;
     _pendingPlayerError = null;
     _errorDedupeSignatures.clear();

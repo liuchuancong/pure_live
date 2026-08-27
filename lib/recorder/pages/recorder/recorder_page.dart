@@ -6,6 +6,7 @@ import 'package:pure_live/recorder/models/record_status.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/recorder/models/live_record_task.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
+import 'package:pure_live/recorder/widgets/recorder_bounded_scroll.dart';
 
 class RecorderPage extends GetView<RecorderController> {
   const RecorderPage({super.key});
@@ -52,33 +53,26 @@ class RecorderPage extends GetView<RecorderController> {
             preferredSize: const Size.fromHeight(54),
             child: Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: TabBar(
-                isScrollable: true,
-                tabs: tabs
-                    .map(
-                      (e) => Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: Tab(text: i18n(e)),
-                      ),
-                    )
-                    .toList(),
-              ),
+              child: RecorderStatusTabBar(labels: tabs.map(i18n).toList(growable: false)),
             ),
           ),
         ),
-        body: TabBarView(
-          physics: const PureLiveScrollPhysics(),
-          children: [
-            _TaskList(filter: null),
-            _TaskList(filter: (e) => e.status == RecordStatus.running),
-            _TaskList(filter: (e) => e.status == RecordStatus.waitingLive),
-            _TaskList(filter: (e) => e.status == RecordStatus.queued),
-            _TaskList(filter: (e) => e.status == RecordStatus.reconnecting),
-            _TaskList(filter: (e) => e.status == RecordStatus.processing),
-            _TaskList(filter: (e) => e.status == RecordStatus.completed),
-            _TaskList(filter: (e) => e.status == RecordStatus.failed),
-            _TaskList(filter: (e) => e.status == RecordStatus.stopped),
-          ],
+        body: ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context).copyWith(overscroll: false, scrollbars: false),
+          child: TabBarView(
+            physics: const PageScrollPhysics(parent: ClampingScrollPhysics()),
+            children: [
+              _TaskList(filter: null),
+              _TaskList(filter: (e) => e.status == RecordStatus.running),
+              _TaskList(filter: (e) => e.status == RecordStatus.waitingLive),
+              _TaskList(filter: (e) => e.status == RecordStatus.queued),
+              _TaskList(filter: (e) => e.status == RecordStatus.reconnecting),
+              _TaskList(filter: (e) => e.status == RecordStatus.processing),
+              _TaskList(filter: (e) => e.status == RecordStatus.completed),
+              _TaskList(filter: (e) => e.status == RecordStatus.failed),
+              _TaskList(filter: (e) => e.status == RecordStatus.stopped),
+            ],
+          ),
         ),
       ),
     );
@@ -103,8 +97,7 @@ class _TaskList extends GetView<RecorderController> {
         return const _EmptyView();
       }
 
-      return ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      return RecorderBoundedTaskList(
         itemCount: list.length,
         itemBuilder: (_, i) {
           return _TaskCard(key: ValueKey(list[i].taskId), task: list[i]);

@@ -48,6 +48,13 @@ class GlobalPlayerService {
       ),
       lineManager: LineFallbackManager(),
     );
+    LiveAudioService.configurePlaybackCommands(
+      play: playerManager.resume,
+      pause: playerManager.pause,
+      stop: playerManager.stop,
+      pauseForInterruption: playerManager.pauseForAudioInterruption,
+      resumeFromInterruption: playerManager.resumeFromAudioInterruption,
+    );
 
     // 2. Keep native decoders, network workers and textures cold until the
     // first room is opened. This avoids paying hundreds of MiB and background

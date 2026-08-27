@@ -6,6 +6,7 @@ import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/core/live_audio_handler.dart';
 import 'package:pure_live/player/core/background_playback_policy.dart';
 import 'package:pure_live/player/core/background_playback_service.dart';
+import 'package:pure_live/player/core/playback_lifecycle_coordinator.dart';
 import 'package:pure_live/player/interface/unified_player_interface.dart';
 import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 
@@ -14,6 +15,11 @@ class LiveAudioService {
   static UnifiedPlayer? _boundPlayer;
   static Future<LiveAudioHandler?>? _initializationFuture;
   static int _sleepMinutes = 60;
+  static Future<void> Function()? _playCommand;
+  static Future<void> Function()? _pauseCommand;
+  static Future<void> Function()? _stopCommand;
+  static Future<PlaybackLifecyclePauseToken?> Function()? _pauseForInterruption;
+  static Future<bool> Function(PlaybackLifecyclePauseToken token)? _resumeFromInterruption;
 
   static bool get isSleepSessionActive => BackgroundPlaybackService.sleepSessionActive;
 
@@ -54,7 +60,46 @@ class LiveAudioService {
       ),
     );
     _handler = handler;
+    _applyPlaybackCommands(handler);
     return handler;
+  }
+
+  static void configurePlaybackCommands({
+    required Future<void> Function() play,
+    required Future<void> Function() pause,
+    required Future<void> Function() stop,
+    required Future<PlaybackLifecyclePauseToken?> Function() pauseForInterruption,
+    required Future<bool> Function(PlaybackLifecyclePauseToken token) resumeFromInterruption,
+  }) {
+    _playCommand = play;
+    _pauseCommand = pause;
+    _stopCommand = stop;
+    _pauseForInterruption = pauseForInterruption;
+    _resumeFromInterruption = resumeFromInterruption;
+    final handler = _handler;
+    if (handler != null) _applyPlaybackCommands(handler);
+  }
+
+  static void _applyPlaybackCommands(LiveAudioHandler handler) {
+    final play = _playCommand;
+    final pause = _pauseCommand;
+    final stop = _stopCommand;
+    final pauseForInterruption = _pauseForInterruption;
+    final resumeFromInterruption = _resumeFromInterruption;
+    if (play == null ||
+        pause == null ||
+        stop == null ||
+        pauseForInterruption == null ||
+        resumeFromInterruption == null) {
+      return;
+    }
+    handler.configurePlaybackCommands(
+      play: play,
+      pause: pause,
+      stop: stop,
+      pauseForInterruption: pauseForInterruption,
+      resumeFromInterruption: resumeFromInterruption,
+    );
   }
 
   static Future<void> setPlayer(UnifiedPlayer player, {required bool audioOnly}) async {
@@ -117,7 +162,8 @@ class LiveAudioService {
     BackgroundPlaybackService.audioOnlySessionActive = false;
     if (_handler == null) return;
     if (!PlatformUtils.isMobile && !PlatformUtils.isMacOS) return;
-    await _handler!.stop();
+    await _handler!.releasePlayer();
+    _boundPlayer = null;
   }
 
   static Future<void> releaseKeepAlive() => BackgroundPlaybackService.setKeepAlive(false);
