@@ -368,8 +368,8 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
 
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: theme.colorScheme.primary,
-              foregroundColor: theme.colorScheme.onPrimary,
+              backgroundColor: theme.colorScheme.primaryContainer,
+              foregroundColor: theme.colorScheme.onPrimaryContainer,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
             ),
@@ -380,7 +380,10 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
                 await _showFontWeightSelector(context, fontModel);
               }
             },
-            child: Text(i18n("apply"), style: AppTextStyles.t13Bold),
+            child: Text(
+              i18n("apply"),
+              style: AppTextStyles.t13Bold.copyWith(color: theme.colorScheme.onPrimaryContainer),
+            ),
           ),
         ] else
           ElevatedButton.icon(

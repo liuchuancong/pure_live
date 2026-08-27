@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:pure_live/common/global/platform_utils.dart';
+
 class FFmpegCommandBuilder {
   static const String _protocolWhitelist = 'httpproxy,udp,rtp,rtsp,rtmp,rtmps,srt,tcp,tls,data,file,http,https,crypto';
 
@@ -22,6 +24,7 @@ class FFmpegCommandBuilder {
       '-hide_banner',
       '-loglevel',
       'info',
+      if (PlatformUtils.isAndroid) ...['-tls_verify', '0'],
       '-protocol_whitelist',
       _protocolWhitelist,
       ..._inputProtocolOptions(remoteStreamUrl, rwTimeout: rwTimeout),
@@ -67,6 +70,7 @@ class FFmpegCommandBuilder {
       '-hide_banner',
       '-loglevel',
       'info',
+      if (PlatformUtils.isAndroid) ...['-tls_verify', '0'],
       // Recording favours complete stream discovery over playback latency.
       '-analyzeduration',
       '5000000',
