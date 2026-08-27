@@ -1,21 +1,21 @@
 {
-  "version": "3.0.15",
-  "build_number": 4103,
-  "version_num": 300154103,
-  "version_desc": "- 修复 v3.0.14 播放器回归：原生 playing 恢复为权威状态，可选首帧属性不再阻断播放。\n- 来源切换只在 open 期间隔离旧事件；CDN 重定向、协议重写或没有 path 回调时仍发布当前尺寸与状态。\n- 下线适配器 10 秒与管理器 12 秒推测式就绪超时，避免正常缓冲直播被自动重开、暂停或黑屏。\n- 新来源打开后回读成对视频尺寸，恢复竖屏、横屏、全屏和小窗的当前来源几何链路。\n- 本轮正式产物仅为 Android arm64-v8a。",
+  "version": "3.0.16",
+  "build_number": 4104,
+  "version_num": 300164104,
+  "version_desc": "- 统一播放器生命周期所有权与来源代次，内核切换采用事务提交，旧来源事件不再覆盖当前播放状态。\n- Android 原生视频 Surface 按 Flutter SurfaceProducer 合同替换并保持稳定挂载，竖屏、横屏、全屏、小窗共享成对视频几何。\n- 录制首次只解析首选清晰度与当前线路；失败后按同档下一 CDN、下一清晰度推进，缩短启动并避免签名 URL 提前老化。\n- 修复斗鱼把 CDN 基础目录误交给 FFmpeg 的输入错误；斗鱼、虎牙录制改为单线路按需签名。\n- 修正 FFmpeg 输入 Invalid argument 分类、录制任务重试游标迁移与录制中心卡片跳动、伪 0 统计和常驻进度动画。\n- 审查并记录上游 e696bb79、9b1c0a6e；保留维护分支版本、依赖和发布策略。本轮正式产物仅为 Android arm64-v8a。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.15",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.16",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.0.15",
-      "build_number": 4103,
-      "version_num": 300154103,
-      "version_desc": "- 修复 v3.0.14 播放器回归：原生 playing 恢复为权威状态，可选首帧属性不再阻断播放。\n- 来源切换只在 open 期间隔离旧事件；CDN 重定向、协议重写或没有 path 回调时仍发布当前尺寸与状态。\n- 下线适配器 10 秒与管理器 12 秒推测式就绪超时，避免正常缓冲直播被自动重开、暂停或黑屏。\n- 新来源打开后回读成对视频尺寸，恢复竖屏、横屏、全屏和小窗的当前来源几何链路。\n- 本轮正式产物仅为 Android arm64-v8a。",
+      "version": "3.0.16",
+      "build_number": 4104,
+      "version_num": 300164104,
+      "version_desc": "- 统一播放器生命周期所有权与来源代次，内核切换采用事务提交，旧来源事件不再覆盖当前播放状态。\n- Android 原生视频 Surface 按 Flutter SurfaceProducer 合同替换并保持稳定挂载，竖屏、横屏、全屏、小窗共享成对视频几何。\n- 录制首次只解析首选清晰度与当前线路；失败后按同档下一 CDN、下一清晰度推进，缩短启动并避免签名 URL 提前老化。\n- 修复斗鱼把 CDN 基础目录误交给 FFmpeg 的输入错误；斗鱼、虎牙录制改为单线路按需签名。\n- 修正 FFmpeg 输入 Invalid argument 分类、录制任务重试游标迁移与录制中心卡片跳动、伪 0 统计和常驻进度动画。\n- 审查并记录上游 e696bb79、9b1c0a6e；保留维护分支版本、依赖和发布策略。本轮正式产物仅为 Android arm64-v8a。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.15",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.16",
       "android_abis": [
         "arm64-v8a"
       ]
