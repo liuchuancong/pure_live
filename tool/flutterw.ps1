@@ -22,6 +22,37 @@ if (-not $flutter) {
     throw "Flutter $expectedVersion was not found. Set PURE_LIVE_FLUTTER to flutter.bat."
 }
 
+# Dart Pub shells out to Git for pinned dependencies. A stale/broken Git that
+# happens to appear first on PATH makes a reproducible lockfile look like a
+# missing commit. Select the first executable that actually starts, then make
+# the same binary visible to every Flutter/Dart child process.
+$bundledGit = Join-Path $HOME '.cache\codex-runtimes\codex-primary-runtime\dependencies\native\git\cmd\git.exe'
+$gitCandidates = @(
+    $env:PURE_LIVE_GIT,
+    $bundledGit,
+    'C:\Program Files\Git\cmd\git.exe',
+    @((Get-Command git.exe -All -ErrorAction SilentlyContinue) | ForEach-Object { $_.Source })
+) | Where-Object { $_ } | Select-Object -Unique
+$workingGit = $null
+foreach ($candidate in $gitCandidates) {
+    if (-not (Test-Path -LiteralPath $candidate)) { continue }
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        & $candidate --version *> $null
+        if ($LASTEXITCODE -eq 0) {
+            $workingGit = $candidate
+            break
+        }
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+}
+if (-not $workingGit) {
+    throw 'A working Git executable is required for locked dependencies. Set PURE_LIVE_GIT to git.exe.'
+}
+$env:PATH = "$(Split-Path -Parent $workingGit);$env:PATH"
+
 if (-not $env:ANDROID_HOME) {
     $localSdk = Join-Path $env:LOCALAPPDATA 'Android\Sdk'
     if (Test-Path -LiteralPath $localSdk) {

@@ -4,6 +4,7 @@ param(
     [string] $Scope = 'Focused',
     [string[]] $TestPath = @(),
     [switch] $Analyze,
+    [switch] $OfflinePub,
     [switch] $SkipInterfaces,
     [switch] $SkipTestAssets,
     [ValidateRange(1, 20)]
@@ -37,6 +38,7 @@ $commandDescription = if ($Scope -eq 'Full') {
 } else {
     ".\tool\local_ci.ps1 -Scope Focused -TestPath $($resolvedTests -join ',')" +
         $(if ($shouldAnalyze) { ' -Analyze' } else { '' }) +
+        $(if ($OfflinePub) { ' -OfflinePub' } else { '' }) +
         $(if ($SkipTestAssets) { ' -SkipTestAssets' } else { '' })
 }
 $startedAt = [DateTime]::UtcNow
@@ -60,7 +62,9 @@ try {
     python (Join-Path $PSScriptRoot 'validate_device_ui_map.py')
     Assert-PureLiveCommandSucceeded 'Device UI map validation'
 
-    & $flutterw pub get --enforce-lockfile
+    [string[]] $pubArgs = @('pub', 'get', '--enforce-lockfile')
+    if ($OfflinePub) { $pubArgs += '--offline' }
+    & $flutterw @pubArgs
     Assert-PureLiveCommandSucceeded 'Locked dependency resolution'
 
     python (Join-Path $PSScriptRoot 'audit_repository.py') --output $repositoryAuditPath
