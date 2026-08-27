@@ -184,6 +184,10 @@ class PlayerManager {
         isPlayingNow;
   }
 
+  bool _isCurrentPlayerSession(UnifiedPlayer player, int sessionId) {
+    return !_disposed && !_isClosing && identical(_currentPlayer, player) && _sessionId == sessionId;
+  }
+
   void prepareRoomSessionReentry(LiveRoom room) {
     _pendingRoomReentry = isAppFloatingActive && currentFloatRoom == room ? room : null;
   }
@@ -448,10 +452,11 @@ class PlayerManager {
       if (!_isSessionValid(mySessionId)) {
         return;
       }
-
       throw PlayerException(message: 'Current player is null', type: PlayerErrorType.lifecycle);
     }
+    await _bindPlayerStreams(player, sessionId: mySessionId);
 
+    if (!_isSessionValid(mySessionId)) return;
     // Every bundled player has a native audio-only path.  Opening the original
     // live URL directly avoids a second FFmpeg decode pipeline and removes the
     // previous fixed two-second wait / 30-second pipe timeout.
@@ -1625,13 +1630,12 @@ class PlayerManager {
 
   Future<void> _bindPlayerStreams(UnifiedPlayer player, {required int sessionId}) async {
     await _clearSubscriptions();
-
+    final int bindSessionId = sessionId;
     _subscriptions.add(
       player.onPlaying.listen((event) async {
-        if (!_isSessionValid(sessionId) || !identical(_currentPlayer, player)) {
+        if (!_isCurrentPlayerSession(player, bindSessionId)) {
           return;
         }
-
         _playingSubject.add(event);
 
         if (event) {
