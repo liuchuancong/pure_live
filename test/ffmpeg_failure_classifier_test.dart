@@ -40,4 +40,20 @@ void main() {
     expect(input.kind, FFmpegFailureKind.inputOpen);
     expect(input.retryable, isTrue);
   });
+
+  test('input Invalid argument remains retryable unless option parsing proves a command defect', () {
+    final input = FFmpegFailureClassifier.classify(
+      code: 1,
+      logs: 'Error opening input https://cdn.example/live: Invalid argument',
+    );
+    final ambiguous = FFmpegFailureClassifier.classify(code: 1, logs: 'live input failed: Invalid argument');
+    final command = FFmpegFailureClassifier.classify(code: 1, logs: 'Unrecognized option rw_timeout');
+
+    expect(input.kind, FFmpegFailureKind.inputOpen);
+    expect(input.retryable, isTrue);
+    expect(ambiguous.kind, FFmpegFailureKind.native);
+    expect(ambiguous.retryable, isTrue);
+    expect(command.kind, FFmpegFailureKind.command);
+    expect(command.retryable, isFalse);
+  });
 }

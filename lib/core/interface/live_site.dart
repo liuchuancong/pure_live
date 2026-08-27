@@ -58,6 +58,22 @@ abstract interface class LivePlayUrlResolver {
   Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom detail, required LivePlayQuality quality});
 }
 
+/// Optional cursor contract for adapters that must make a separate network
+/// request for every CDN line.
+///
+/// The ordinary playback API intentionally resolves all lines for an on-screen
+/// selector. Recording needs a different latency contract: obtain only the one
+/// line used by the current FFmpeg attempt and request the next line only after
+/// failure. Implementations return an empty URL list when [lineIndex] is beyond
+/// the platform's advertised lines.
+abstract interface class LivePlayUrlCursorResolver {
+  Future<LivePlayUrlResolution> resolvePlayUrlAtRaw({
+    required LiveRoom detail,
+    required LivePlayQuality quality,
+    required int lineIndex,
+  });
+}
+
 class LiveSite {
   String id = "";
   String name = "";

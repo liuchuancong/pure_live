@@ -36,16 +36,6 @@ class FFmpegFailureClassifier {
       return const FFmpegFailureDiagnosis(kind: FFmpegFailureKind.outputPath, retryable: false);
     }
     if (_containsAny(value, const <String>[
-      'invalid argument',
-      'option not found',
-      'unrecognized option',
-      'unknown protocol',
-      'protocol not found',
-      'muxer not found',
-    ])) {
-      return const FFmpegFailureDiagnosis(kind: FFmpegFailureKind.command, retryable: false);
-    }
-    if (_containsAny(value, const <String>[
       'server returned 401',
       'server returned 403',
       'server returned 404',
@@ -91,6 +81,20 @@ class FFmpegFailureClassifier {
     if (_containsAny(value, const <String>['decoder', 'decode', 'codec', 'invalid nal'])) {
       return const FFmpegFailureDiagnosis(kind: FFmpegFailureKind.decoder, retryable: true);
     }
+    if (_containsAny(value, const <String>[
+      'option not found',
+      'unrecognized option',
+      'error parsing options',
+      'unknown protocol',
+      'protocol not found',
+      'muxer not found',
+    ])) {
+      return const FFmpegFailureDiagnosis(kind: FFmpegFailureKind.command, retryable: false);
+    }
+    // "Invalid argument" is also FFmpeg's terminal errno for malformed or
+    // expired inputs. Treat it as a command defect only when an option parser
+    // marker proves that the generated command is invalid; otherwise let the
+    // bounded retry path refresh the signed stream URL.
     return const FFmpegFailureDiagnosis(kind: FFmpegFailureKind.native, retryable: true);
   }
 

@@ -14,6 +14,13 @@ void main() {
     expect(RecorderContinuationPolicy.shouldRetryFailure(errorCode: -5, rawLogs: 'Input/output error'), isTrue);
     expect(RecorderContinuationPolicy.shouldRetryFailure(errorCode: 1, rawLogs: 'HTTP error 403 Forbidden'), isTrue);
     expect(RecorderContinuationPolicy.shouldRetryFailure(errorCode: 1, rawLogs: 'HTTP error 404 Not Found'), isTrue);
+    expect(
+      RecorderContinuationPolicy.shouldRetryFailure(
+        errorCode: 1,
+        rawLogs: 'Error opening input https://cdn.example/live: Invalid argument',
+      ),
+      isTrue,
+    );
   });
 
   test('local path and malformed output failures do not loop', () {

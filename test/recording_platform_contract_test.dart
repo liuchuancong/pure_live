@@ -9,4 +9,10 @@ void main() {
       expect(Sites.of(siteId).liveSite, isA<LiveSiteRecordRoomResolver>(), reason: siteId);
     }
   });
+
+  test('per-CDN signing platforms expose the lazy recording line cursor', () {
+    for (final siteId in const <String>[Sites.douyuSite, Sites.huyaSite]) {
+      expect(Sites.of(siteId).liveSite, isA<LivePlayUrlCursorResolver>(), reason: siteId);
+    }
+  });
 }

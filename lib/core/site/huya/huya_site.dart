@@ -28,7 +28,7 @@ import 'package:pure_live/core/tars/get_game_event_message_board_rsp.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 
-class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver {
+class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LivePlayUrlCursorResolver {
   @override
   String id = Sites.huyaSite;
   static const baseUrl = HuyaRequestParams.baseUrl;
@@ -192,6 +192,29 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
       if (url.isNotEmpty && !urls.contains(url)) urls.add(url);
     }
     return urls;
+  }
+
+  @override
+  Future<LivePlayUrlResolution> resolvePlayUrlAtRaw({
+    required LiveRoom detail,
+    required LivePlayQuality quality,
+    required int lineIndex,
+  }) async {
+    final data = quality.data;
+    final bitRate = data is Map ? int.tryParse(data['bitRate']?.toString() ?? '') : null;
+    final rawLines = data is Map ? data['urls'] : null;
+    if (bitRate == null || rawLines is! List || lineIndex < 0 || lineIndex >= rawLines.length) {
+      return LivePlayUrlResolution(urls: const <String>[], appliedQualityData: quality.selectionId);
+    }
+    final line = rawLines[lineIndex];
+    if (line is! HuyaLineModel) {
+      return LivePlayUrlResolution(urls: const <String>[], appliedQualityData: quality.selectionId);
+    }
+    final url = await getPlayUrl(line, bitRate);
+    return LivePlayUrlResolution(
+      urls: url.isEmpty ? const <String>[] : <String>[url],
+      appliedQualityData: quality.selectionId,
+    );
   }
 
   Future<String> getHuYaUA() async {

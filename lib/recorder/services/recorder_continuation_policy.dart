@@ -17,8 +17,6 @@ class RecorderContinuationPolicy {
 
     final normalizedLogs = rawLogs.toLowerCase();
     const fatalMarkers = <String>[
-      'invalid argument',
-      'no such file',
       'permission denied',
       'unable to open output',
       'error opening output',

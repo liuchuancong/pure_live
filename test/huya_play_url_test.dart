@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/core/site/huya/huya_site.dart';
+import 'package:pure_live/model/live_play_quality.dart';
 
 void main() {
   test('Huya treats only explicit inactive states as authoritative offline', () {
@@ -110,4 +112,38 @@ void main() {
     expect(qualities, hasLength(1));
     expect(qualities.single.selectionId, 0);
   });
+
+  test('Huya recording cursor signs only the requested line', () async {
+    final site = _FakeHuyaCursorSite();
+    final lines = <HuyaLineModel>[
+      line(HuyaLineType.flv, 'https://first.example/live'),
+      line(HuyaLineType.hls, 'https://second.example/live'),
+    ];
+    final quality = LivePlayQuality(quality: '原画', id: 0, data: <String, Object>{'urls': lines, 'bitRate': 0});
+
+    final resolved = await site.resolvePlayUrlAtRaw(
+      detail: LiveRoom(roomId: '123'),
+      quality: quality,
+      lineIndex: 1,
+    );
+    final beyond = await site.resolvePlayUrlAtRaw(
+      detail: LiveRoom(roomId: '123'),
+      quality: quality,
+      lineIndex: 2,
+    );
+
+    expect(resolved.urls, <String>['https://selected.example/stream.flv']);
+    expect(site.lines, <HuyaLineModel>[lines[1]]);
+    expect(beyond.urls, isEmpty);
+  });
+}
+
+class _FakeHuyaCursorSite extends HuyaSite {
+  final List<HuyaLineModel> lines = <HuyaLineModel>[];
+
+  @override
+  Future<String> getPlayUrl(HuyaLineModel line, int bitRate) async {
+    lines.add(line);
+    return 'https://selected.example/stream.flv';
+  }
 }

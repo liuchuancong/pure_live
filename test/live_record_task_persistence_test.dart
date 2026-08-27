@@ -81,7 +81,7 @@ void main() {
     );
 
     final json = task.toJson();
-    expect(json['schemaVersion'], 3);
+    expect(json['schemaVersion'], 4);
     expect(json['lastErrorStage'], 'ffmpeg');
     expect(json['lastError'], contains('[stream-url]'));
     expect(json['lastError'], isNot(contains('secret')));
@@ -116,5 +116,35 @@ void main() {
 
     expect(task.lastError, 'request failed token=[redacted] wsSecret=[redacted]');
     expect(task.lastErrorStage, 'stream');
+  });
+
+  test('recording retry cursor persists without persisting the signed URL', () {
+    final task = LiveRecordTask.fromJson(<String, dynamic>{'roomId': '1', 'platform': 'douyu'})
+      ..currentUrl = 'https://cdn.test/live.flv?token=secret'
+      ..selectedQualityId = 'source'
+      ..selectedLineIndex = 2
+      ..selectedQuality = '原画'
+      ..selectedLine = '线路3';
+
+    final json = task.toJson();
+    final restored = LiveRecordTask.fromJson(json);
+
+    expect(json, isNot(contains('currentUrl')));
+    expect(restored.currentUrl, isNull);
+    expect(restored.selectedQualityId, 'source');
+    expect(restored.selectedLineIndex, 2);
+    expect(restored.selectedQuality, '原画');
+    expect(restored.selectedLine, '线路3');
+  });
+
+  test('specific FFmpeg failure stages survive persistence', () {
+    final task = LiveRecordTask.fromJson(<String, dynamic>{
+      'roomId': '1',
+      'platform': 'douyu',
+      'lastError': 'input failed',
+      'lastErrorStage': 'ffmpeg.inputOpen',
+    });
+
+    expect(task.lastErrorStage, 'ffmpeg.inputopen');
   });
 }

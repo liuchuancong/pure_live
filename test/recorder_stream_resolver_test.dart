@@ -46,7 +46,8 @@ void main() {
       roomId: '1',
       platform: 'bilibili',
       preferredQuality: '原画',
-      previousUrl: first.url,
+      previousQualityId: first.qualityCursorId,
+      previousLineIndex: first.lineIndex,
     );
 
     expect(first.url, 'https://cdn-a.example/live.flv');
@@ -54,6 +55,7 @@ void main() {
     expect(first.lineLabel, '线路1');
     expect(second.url, 'https://cdn-b.example/live.flv');
     expect(second.candidateUrls, <String>['https://cdn-b.example/live.flv', 'https://cdn-a.example/live.flv']);
+    expect(site.resolveCalls, <String>['10000', '10000']);
   });
 
   test('temporary quality failure stays retryable and invalid URLs are rejected', () async {
@@ -90,14 +92,51 @@ void main() {
       roomId: '1',
       platform: 'douyu',
       preferredQuality: '原画',
-      previousUrl: first.url,
-      lineOffset: 1,
+      previousQualityId: first.qualityCursorId,
+      previousLineIndex: first.lineIndex,
     );
 
     expect(first.quality.selectionId, 'source');
     expect(first.url, contains('/source.flv?token='));
     expect(second.quality.selectionId, 'hd');
     expect(second.url, contains('/hd.flv?token='));
+    expect(site.calls, 2);
+  });
+
+  test('initial resolve requests only the selected quality instead of aging every candidate URL', () async {
+    final site = _FakeSite(
+      qualities: <LivePlayQuality>[
+        LivePlayQuality(quality: '原画', id: 'source', sort: 1000),
+        LivePlayQuality(quality: '高清', id: 'hd', sort: 500),
+        LivePlayQuality(quality: '流畅', id: 'sd', sort: 100),
+      ],
+      urls: const <String>['https://cdn.example/live.flv'],
+    );
+    final resolver = StreamResolverService(siteResolver: (_) => site);
+
+    final resolved = await resolver.resolveStream(roomId: '1', platform: 'douyu', preferredQuality: '原画');
+
+    expect(resolved.qualityCursorId, 'source');
+    expect(site.resolveCalls, <String>['source']);
+  });
+
+  test('cursor-capable adapters request only one CDN line per attempt', () async {
+    final site = _CursorSite();
+    final resolver = StreamResolverService(siteResolver: (_) => site);
+
+    final first = await resolver.resolveStream(roomId: '1', platform: 'douyu', preferredQuality: '原画');
+    final second = await resolver.resolveStream(
+      roomId: '1',
+      platform: 'douyu',
+      preferredQuality: '原画',
+      previousQualityId: first.qualityCursorId,
+      previousLineIndex: first.lineIndex,
+    );
+
+    expect(first.url, 'https://cdn-0.example/live.flv');
+    expect(second.url, 'https://cdn-1.example/live.flv');
+    expect(first.candidateUrls, <String>['https://cdn-0.example/live.flv']);
+    expect(site.cursorCalls, <String>['source:0', 'source:1']);
   });
 
   test('offline rooms and unknown platforms stop before FFmpeg', () async {
@@ -162,6 +201,7 @@ class _FakeSite extends LiveSite implements LivePlayUrlResolver {
   final List<String> urls;
   final Object? appliedQuality;
   final Object? qualityError;
+  final List<String> resolveCalls = <String>[];
 
   @override
   Future<LiveRoom> getRoomDetail({required String roomId, required String platform}) async {
@@ -181,6 +221,7 @@ class _FakeSite extends LiveSite implements LivePlayUrlResolver {
 
   @override
   Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom detail, required LivePlayQuality quality}) async {
+    resolveCalls.add(quality.selectionId.toString());
     return LivePlayUrlResolution(urls: urls, appliedQualityData: appliedQuality ?? quality.selectionId);
   }
 }
@@ -213,7 +254,7 @@ class _StrictFakeSite extends _FakeSite implements LiveSiteRecordRoomResolver {
   }
 }
 
-class _RotatingSignedSite extends LiveSite implements LivePlayUrlResolver {
+class _RotatingSignedSite extends LiveSite implements LivePlayUrlResolver, LivePlayUrlCursorResolver {
   int calls = 0;
 
   @override
@@ -234,6 +275,48 @@ class _RotatingSignedSite extends LiveSite implements LivePlayUrlResolver {
     calls++;
     return LivePlayUrlResolution(
       urls: <String>['https://cdn.example/${quality.selectionId}.flv?token=$calls'],
+      appliedQualityData: quality.selectionId,
+    );
+  }
+
+  @override
+  Future<LivePlayUrlResolution> resolvePlayUrlAtRaw({
+    required LiveRoom detail,
+    required LivePlayQuality quality,
+    required int lineIndex,
+  }) async {
+    if (lineIndex != 0) {
+      return LivePlayUrlResolution(urls: const <String>[], appliedQualityData: quality.selectionId);
+    }
+    return resolvePlayUrlsRaw(detail: detail, quality: quality);
+  }
+}
+
+class _CursorSite extends LiveSite implements LivePlayUrlCursorResolver {
+  final List<String> cursorCalls = <String>[];
+
+  @override
+  Future<LiveRoom> getRoomDetail({required String roomId, required String platform}) async {
+    return LiveRoom(roomId: roomId, platform: platform, liveStatus: LiveStatus.live, status: true);
+  }
+
+  @override
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
+    return <LivePlayQuality>[LivePlayQuality(quality: '原画', id: 'source', sort: 1000)];
+  }
+
+  @override
+  Future<LivePlayUrlResolution> resolvePlayUrlAtRaw({
+    required LiveRoom detail,
+    required LivePlayQuality quality,
+    required int lineIndex,
+  }) async {
+    cursorCalls.add('${quality.selectionId}:$lineIndex');
+    if (lineIndex >= 3) {
+      return LivePlayUrlResolution(urls: const <String>[], appliedQualityData: quality.selectionId);
+    }
+    return LivePlayUrlResolution(
+      urls: <String>['https://cdn-$lineIndex.example/live.flv'],
       appliedQualityData: quality.selectionId,
     );
   }

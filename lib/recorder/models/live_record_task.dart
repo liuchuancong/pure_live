@@ -39,6 +39,12 @@ class LiveRecordTask {
 
   String? selectedQuality;
 
+  /// Stable retry cursor. Unlike [currentUrl], these values contain no signed
+  /// stream data and can safely survive process restarts.
+  String? selectedQualityId;
+
+  int? selectedLineIndex;
+
   /// 输出目录
   String? outputDir;
 
@@ -107,6 +113,8 @@ class LiveRecordTask {
     this.currentUrl,
     this.selectedLine,
     this.selectedQuality,
+    this.selectedQualityId,
+    this.selectedLineIndex,
     this.outputDir,
 
     /// 实时信息
@@ -235,7 +243,7 @@ class LiveRecordTask {
   /// =========================
 
   Map<String, dynamic> toJson() => {
-    "schemaVersion": 3,
+    "schemaVersion": 4,
     "taskId": taskId,
     "roomId": roomId,
     "platform": platform,
@@ -257,6 +265,8 @@ class LiveRecordTask {
     // tokens. They are runtime-only and must not be written to local prefs.
     "selectedLine": selectedLine,
     "selectedQuality": selectedQuality,
+    "selectedQualityId": selectedQualityId,
+    "selectedLineIndex": selectedLineIndex,
     "outputDir": outputDir,
 
     /// 实时信息
@@ -320,6 +330,10 @@ class LiveRecordTask {
 
       selectedQuality: _nullableString(json["selectedQuality"]),
 
+      selectedQualityId: _nullableString(json["selectedQualityId"]),
+
+      selectedLineIndex: _nullableInt(json["selectedLineIndex"]),
+
       outputDir: _nullableString(json["outputDir"]),
 
       /// 实时录制
@@ -375,6 +389,7 @@ class LiveRecordTask {
 
   static String? _stage(dynamic value) {
     final normalized = value?.toString().trim().toLowerCase() ?? '';
+    if (normalized.startsWith('ffmpeg.')) return normalized;
     return const {
           'room',
           'quality',
@@ -393,6 +408,11 @@ class LiveRecordTask {
   static int _int(dynamic value) {
     if (value is num) return value.toInt();
     return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  static int? _nullableInt(dynamic value) {
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '');
   }
 
   static double _double(dynamic value) {

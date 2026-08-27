@@ -95,7 +95,7 @@ class RecorderController extends GetxService {
         task.fps = (data['fps'] as num?)?.toDouble() ?? 0;
         task.lastUpdate = DateTime.now();
         if (task.recordedSeconds >= 10) task.retryCount = 0;
-        updateTask(task, reorder: false);
+        updateTask(task);
         return;
       case FFmpegEventType.error:
       case FFmpegEventType.complete:
@@ -241,16 +241,14 @@ class RecorderController extends GetxService {
     return false;
   }
 
-  void updateTask(LiveRecordTask task, {bool reorder = true}) {
+  void updateTask(LiveRecordTask task) {
     final index = tasks.indexWhere((candidate) => candidate.taskId == task.taskId);
     if (index == -1) return;
-
-    if (reorder) {
-      final updated = [...tasks]..sort((left, right) => left.status.order.compareTo(right.status.order));
-      tasks.assignAll(updated);
-    } else {
-      tasks[index] = task;
-    }
+    // Preserve the user's spatial context. Sorting on every status/progress
+    // transition made recorder cards jump between rows while they were being
+    // read or operated. Tabs already expose status-specific views; the all tab
+    // therefore keeps insertion/restoration order stable.
+    tasks[index] = task;
     schedulePersist();
   }
 
@@ -351,6 +349,8 @@ class RecorderController extends GetxService {
   Future<bool> startTask(LiveRecordTask task) async {
     if (!await requestStoragePermission()) return false;
     task.retryCount = 0;
+    task.selectedQualityId = null;
+    task.selectedLineIndex = null;
     task.wasStoppedByUser = false;
     task.autoReconnect = settings.autoReconnect.value;
     await _startTask(task);
@@ -388,7 +388,8 @@ class RecorderController extends GetxService {
   }
 
   Future<void> _runTask(LiveRecordTask task, TaskCancelToken token) async {
-    final previousUrl = task.currentUrl;
+    final previousQualityId = task.selectedQualityId;
+    final previousLineIndex = task.selectedLineIndex;
     task.beginNewRecording();
     task.outputDir = null;
     task.status = RecordStatus.preparing;
@@ -411,8 +412,8 @@ class RecorderController extends GetxService {
         roomId: task.roomId,
         platform: task.platform,
         preferredQuality: settings.defaultQuality.value,
-        previousUrl: previousUrl,
-        lineOffset: task.retryCount,
+        previousQualityId: previousQualityId,
+        previousLineIndex: previousLineIndex,
       );
       if (token.isCancelled) return;
 
@@ -431,6 +432,8 @@ class RecorderController extends GetxService {
       task
         ..currentUrl = resolved.url
         ..selectedQuality = resolved.quality.quality
+        ..selectedQualityId = resolved.qualityCursorId
+        ..selectedLineIndex = resolved.lineIndex
         ..selectedLine = resolved.lineLabel
         ..outputDir = directory.path;
       updateTask(task);
@@ -577,7 +580,7 @@ class RecorderController extends GetxService {
     } catch (error) {
       _pollFailures[task.taskId] = (_pollFailures[task.taskId] ?? 0) + 1;
       task.markFailure(stage: 'status', error: error);
-      updateTask(task, reorder: false);
+      updateTask(task);
       developer.log('Recorder status poll failed: $error', name: 'RecorderController');
     } finally {
       _pollInFlight.remove(task.taskId);
