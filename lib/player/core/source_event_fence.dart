@@ -2,10 +2,14 @@
 ///
 /// A native player is intentionally reused for fast quality, line and room
 /// switches. Its callbacks, however, are not tagged with the Dart request that
-/// produced them. The fence accepts an event only after the replacement open
-/// has completed and the native `path` property reports the exact requested
-/// URL. The Dart playlist changes before libmpv starts loading and therefore
-/// is not a source-ownership signal.
+/// produced them. Events are therefore fenced while a replacement open is in
+/// progress and accepted again only after that open completes.
+///
+/// Native `path` remains useful diagnostic evidence, but it is deliberately not
+/// a playback gate. libmpv may expose a redirected, protocol-rewritten or
+/// normalized URL (and some Android builds expose no path at all). Requiring an
+/// exact string match made a healthy stream look permanently unopened, which in
+/// turn suppressed playing and geometry events and triggered false recovery.
 class SourceEventFence {
   int _generation = 0;
   bool _opening = false;
@@ -48,7 +52,7 @@ class SourceEventFence {
   }
 
   bool accepts(int eventGeneration) {
-    return isCurrentGeneration(eventGeneration) && _nativeSourceConfirmed;
+    return isCurrentGeneration(eventGeneration);
   }
 
   void clear() {

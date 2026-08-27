@@ -67,7 +67,7 @@ class PlayerManager {
     required this.lineManager,
     this.audioModeSwitchTimeout = const Duration(seconds: 5),
     this.sourceOpenTimeout = const Duration(seconds: 18),
-    this.sourceReadyTimeout = const Duration(seconds: 12),
+    this.sourceReadyTimeout = Duration.zero,
     this.audioModeVideoWarmRetention,
     UnifiedPlayerCreator? playerCreator,
     bool Function()? useHardStopOnExit,

@@ -27,6 +27,9 @@ import 'package:pure_live/player/core/source_event_fence.dart';
   return size == null ? null : (width: size.width, height: size.height);
 }
 
+@visibleForTesting
+bool shouldPublishMediaKitPlaying(bool nativePlaying) => nativePlaying;
+
 class MediaKitAdapter
     implements
         UnifiedPlayer,
@@ -127,8 +130,6 @@ class MediaKitAdapter
 
   bool _sourceHasVideoFrame = false;
 
-  bool _sourceHasVideoMetadata = false;
-
   bool _sourceHasAudioFrame = false;
 
   String _preferredHardwareDecoder = 'no';
@@ -138,8 +139,6 @@ class MediaKitAdapter
   int _sourceProgressRevision = 0;
 
   Timer? _pendingNativeErrorTimer;
-
-  Timer? _sourceReadyTimeoutTimer;
 
   _NativeDiagnostic? _openingNativeDiagnostic;
 
@@ -319,15 +318,12 @@ class MediaKitAdapter
 
   void _prepareSourceTransition({String? url}) {
     _pendingNativeErrorTimer?.cancel();
-    _sourceReadyTimeoutTimer?.cancel();
     _pendingNativeErrorTimer = null;
-    _sourceReadyTimeoutTimer = null;
     _pendingNativeError = null;
     _pendingNativeErrorGeneration = null;
     _pendingNativeErrorComponent = NativeDiagnosticComponent.either;
     _openingNativeDiagnostic = null;
     _sourceHasVideoFrame = false;
-    _sourceHasVideoMetadata = false;
     _sourceHasAudioFrame = false;
     _sourceProgressRevision = 0;
     _sourceFence.begin(url ?? _currentUrl);
@@ -356,7 +352,6 @@ class MediaKitAdapter
     _publishCurrentNativeSnapshot(generation);
     unawaited(_refreshCurrentNativeReadinessSnapshot(generation));
     _drainDeferredNativeDiagnostic();
-    _armSourceReadinessTimeout(generation);
   }
 
   Future<void> _refreshCurrentNativeReadinessSnapshot(int generation) async {
@@ -401,8 +396,6 @@ class MediaKitAdapter
     _sourceHasVideoFrame = true;
     _openingNativeDiagnostic = null;
     _sourceProgressRevision++;
-    _sourceReadyTimeoutTimer?.cancel();
-    _sourceReadyTimeoutTimer = null;
     _loadingSubject.add(false);
     if (_player.state.playing) {
       _playingSubject.add(true);
@@ -416,8 +409,6 @@ class MediaKitAdapter
     _sourceHasAudioFrame = true;
     _sourceProgressRevision++;
     if (_isAudioOnly && _player.state.playing) {
-      _sourceReadyTimeoutTimer?.cancel();
-      _sourceReadyTimeoutTimer = null;
       _loadingSubject.add(false);
       _playingSubject.add(true);
       _stateSubject.add(PlayerState.playing);
@@ -511,8 +502,6 @@ class MediaKitAdapter
       if (openingDiagnostic != null && !_isDiagnosticComponentReady(openingDiagnostic.prefix)) {
         _handleNativeDiagnostic(openingDiagnostic.message, nativePrefix: openingDiagnostic.prefix);
       }
-      _armSourceReadinessTimeout(sourceGeneration);
-
       _stateSubject.add(PlayerState.ready);
 
       if (PlatformUtils.isMobile) {
@@ -564,18 +553,18 @@ class MediaKitAdapter
         if (_disposed) return;
         final generation = _sourceFence.generation;
         if (!_sourceFence.accepts(generation)) return;
-        if (playing) {
+        final publishPlaying = shouldPublishMediaKitPlaying(playing);
+        _playingSubject.add(publishPlaying);
+        if (publishPlaying) {
           _sourceProgressRevision++;
-          if ((_isAudioOnly && _sourceHasAudioFrame) || (!_isAudioOnly && _sourceHasVideoFrame)) {
-            _playingSubject.add(true);
-            _loadingSubject.add(false);
-            _stateSubject.add(PlayerState.playing);
-            _cancelRecoveredNativeError(
-              _isAudioOnly ? NativeDiagnosticComponent.audio : NativeDiagnosticComponent.video,
-            );
-          }
+          // `Player.stream.playing` is the native playback authority. Optional
+          // mpv frame properties are not available on every Android backend and
+          // must never suppress this state or keep the manager's readiness
+          // deadline alive for a stream which is already playing.
+          _loadingSubject.add(false);
+          _stateSubject.add(PlayerState.playing);
+          _cancelRecoveredNativeError(_isAudioOnly ? NativeDiagnosticComponent.audio : NativeDiagnosticComponent.video);
         } else {
-          _playingSubject.add(false);
           if (!_loadingSubject.value) _stateSubject.add(PlayerState.paused);
         }
       },
@@ -598,9 +587,9 @@ class MediaKitAdapter
         if (loading) {
           _stateSubject.add(PlayerState.buffering);
         } else {
-          if (_sourceHasVideoFrame || (_isAudioOnly && _sourceHasAudioFrame)) {
-            _sourceProgressRevision++;
-            _stateSubject.add(_playingSubject.value ? PlayerState.playing : PlayerState.paused);
+          _sourceProgressRevision++;
+          _stateSubject.add(_playingSubject.value ? PlayerState.playing : PlayerState.paused);
+          if (_playingSubject.value) {
             _cancelRecoveredNativeError(
               _isAudioOnly ? NativeDiagnosticComponent.audio : NativeDiagnosticComponent.video,
             );
@@ -624,7 +613,6 @@ class MediaKitAdapter
       _widthSubject.add(size?.width);
       _heightSubject.add(size?.height);
       if (size != null) {
-        _sourceHasVideoMetadata = true;
         // Non-native backends do not expose mpv frame properties. Their video
         // parameter event remains the strongest available readiness signal.
         if (!_usesNativeFrameProbe) _markDecodedVideoFrame(generation);
@@ -709,7 +697,6 @@ class MediaKitAdapter
     if (!_sourceFence.accepts(generation) || _disposed) return;
     final size = resolveMediaKitDisplaySize(_player.state.videoParams);
     if (size != null) {
-      _sourceHasVideoMetadata = true;
       _widthSubject.add(size.width);
       _heightSubject.add(size.height);
       if (!_usesNativeFrameProbe) _markDecodedVideoFrame(generation);
@@ -720,7 +707,7 @@ class MediaKitAdapter
         (audioParams.channelCount ?? 0) > 0) {
       _markDecodedAudioFrame(generation);
     }
-    if (_player.state.playing && ((_isAudioOnly && _sourceHasAudioFrame) || (!_isAudioOnly && _sourceHasVideoFrame))) {
+    if (shouldPublishMediaKitPlaying(_player.state.playing)) {
       _playingSubject.add(true);
       _loadingSubject.add(false);
       _stateSubject.add(PlayerState.playing);
@@ -761,9 +748,9 @@ class MediaKitAdapter
         NativeDiagnosticComponent.audio => _sourceHasAudioFrame,
         NativeDiagnosticComponent.either => _sourceHasVideoFrame || _sourceHasAudioFrame,
       };
-      final recovered =
-          _sourceProgressRevision > _pendingNativeErrorProgressRevision && componentReady && _player.state.playing;
-      if (recovered || (_player.state.playing && !_loadingSubject.value && componentReady)) {
+      final playbackProgressed = _sourceProgressRevision > _pendingNativeErrorProgressRevision;
+      final recovered = playbackProgressed && _player.state.playing && (componentReady || !_loadingSubject.value);
+      if (recovered || (_player.state.playing && !_loadingSubject.value)) {
         return;
       }
       _emitConfirmedNativeError(pending, pendingGeneration);
@@ -799,32 +786,6 @@ class MediaKitAdapter
     if (prefix == 'ad' || prefix == 'ffmpeg/audio') return _sourceHasAudioFrame;
     if (prefix == 'vd' || prefix == 'ffmpeg/video') return _sourceHasVideoFrame;
     return _sourceHasVideoFrame || _sourceHasAudioFrame;
-  }
-
-  void _armSourceReadinessTimeout(int generation) {
-    _sourceReadyTimeoutTimer?.cancel();
-    _sourceReadyTimeoutTimer = null;
-    // Do not wait for playlist confirmation before arming the deadline. Native
-    // open failures can happen before mpv emits any playlist callback; the old
-    // implementation then remained in loading forever and never reached line
-    // or engine fallback.
-    final sourceReady = _isAudioOnly ? _sourceHasAudioFrame : _sourceHasVideoFrame;
-    if (sourceReady || !_sourceFence.isCurrentGeneration(generation)) return;
-    _sourceReadyTimeoutTimer = Timer(const Duration(seconds: 10), () {
-      _sourceReadyTimeoutTimer = null;
-      final ready = _isAudioOnly ? _sourceHasAudioFrame : _sourceHasVideoFrame;
-      if (!_sourceFence.isCurrentGeneration(generation) || ready || _disposed) return;
-      _emitCurrentSourceError(
-        PlayerException(
-          message: _isAudioOnly
-              ? 'Source opened but no decodable audio frame arrived within 10 seconds'
-              : 'Source opened but no decodable video frame arrived within 10 seconds',
-          type: !_isAudioOnly && _sourceHasVideoMetadata ? PlayerErrorType.codec : PlayerErrorType.source,
-          code: _isAudioOnly ? 'audio_readiness_timeout' : 'video_readiness_timeout',
-        ),
-        generation,
-      );
-    });
   }
 
   void _emitConfirmedNativeError(PlayerException exception, int generation) {
@@ -1069,11 +1030,7 @@ class MediaKitAdapter
 
     _pendingNativeErrorTimer?.cancel();
 
-    _sourceReadyTimeoutTimer?.cancel();
-
     _pendingNativeErrorTimer = null;
-
-    _sourceReadyTimeoutTimer = null;
 
     _sourceFence.clear();
 

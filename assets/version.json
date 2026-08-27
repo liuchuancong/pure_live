@@ -1,21 +1,21 @@
 {
-  "version": "3.0.14",
-  "build_number": 4102,
-  "version_num": 300144102,
-  "version_desc": "- 修复播放器来源代次与恢复所有权：旧房间/线路回调不再污染当前来源，中间错误不会提前覆盖页面。\n- 修复同一 URL 软件解码回退提前返回；视频硬解失败按软件解码一次、线路、播放器内核有界恢复，音频错误独立处理。\n- 增加原生打开与真实首帧截止时间，Fijk/BetterPlayer 捕获同步打开失败，内核切换和小窗清理支持回滚与有界完成。\n- 录制轮换全部清晰度与 CDN，FFmpeg 错误按输出、命令、HTTP、传输、输入、格式、解码和原生阶段显示。\n- FFmpegKit 使用锁文件驱动且校验 SHA-256 的固定原生 profile；本轮正式产物仅为 arm64-v8a。",
+  "version": "3.0.15",
+  "build_number": 4103,
+  "version_num": 300154103,
+  "version_desc": "- 修复 v3.0.14 播放器回归：原生 playing 恢复为权威状态，可选首帧属性不再阻断播放。\n- 来源切换只在 open 期间隔离旧事件；CDN 重定向、协议重写或没有 path 回调时仍发布当前尺寸与状态。\n- 下线适配器 10 秒与管理器 12 秒推测式就绪超时，避免正常缓冲直播被自动重开、暂停或黑屏。\n- 新来源打开后回读成对视频尺寸，恢复竖屏、横屏、全屏和小窗的当前来源几何链路。\n- 本轮正式产物仅为 Android arm64-v8a。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.14",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.15",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.0.14",
-      "build_number": 4102,
-      "version_num": 300144102,
-      "version_desc": "- 修复播放器来源代次与恢复所有权：旧房间/线路回调不再污染当前来源，中间错误不会提前覆盖页面。\n- 修复同一 URL 软件解码回退提前返回；视频硬解失败按软件解码一次、线路、播放器内核有界恢复，音频错误独立处理。\n- 增加原生打开与真实首帧截止时间，Fijk/BetterPlayer 捕获同步打开失败，内核切换和小窗清理支持回滚与有界完成。\n- 录制轮换全部清晰度与 CDN，FFmpeg 错误按输出、命令、HTTP、传输、输入、格式、解码和原生阶段显示。\n- FFmpegKit 使用锁文件驱动且校验 SHA-256 的固定原生 profile；本轮正式产物仅为 arm64-v8a。",
+      "version": "3.0.15",
+      "build_number": 4103,
+      "version_num": 300154103,
+      "version_desc": "- 修复 v3.0.14 播放器回归：原生 playing 恢复为权威状态，可选首帧属性不再阻断播放。\n- 来源切换只在 open 期间隔离旧事件；CDN 重定向、协议重写或没有 path 回调时仍发布当前尺寸与状态。\n- 下线适配器 10 秒与管理器 12 秒推测式就绪超时，避免正常缓冲直播被自动重开、暂停或黑屏。\n- 新来源打开后回读成对视频尺寸，恢复竖屏、横屏、全屏和小窗的当前来源几何链路。\n- 本轮正式产物仅为 Android arm64-v8a。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.14",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.15",
       "android_abis": [
         "arm64-v8a"
       ]

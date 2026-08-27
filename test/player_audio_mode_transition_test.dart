@@ -130,7 +130,7 @@ void main() {
       room: LiveRoom(roomId: 'portrait-room', platform: 'test'),
     );
     player.emitVideoSize(width: 1080, height: 1920);
-    await Future<void>.delayed(const Duration(milliseconds: 850));
+    await manager.isVerticalVideo.stream.firstWhere((vertical) => vertical).timeout(const Duration(seconds: 2));
 
     expect(manager.isVerticalVideo.value, isTrue);
     expect(manager.currentVideoRatio, closeTo(9 / 16, 0.001));

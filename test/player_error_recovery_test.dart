@@ -8,6 +8,7 @@ import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/player/core/engine_fallback_manager.dart';
 import 'package:pure_live/player/core/line_fallback_manager.dart';
 import 'package:pure_live/player/core/player_manager.dart';
+import 'package:pure_live/player/core/portrait_stream_support.dart';
 import 'package:pure_live/player/interface/unified_player_interface.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/player/models/player_error_type.dart';
@@ -144,6 +145,53 @@ void main() {
     await manager.dispose();
   });
 
+  test('default policy never reopens a source from an inferred readiness timeout', () async {
+    final mediaKit = _RecoveryFakePlayer(PlayerEngine.mediaKit, (_) => null, emitPlaying: false);
+    final fijk = _RecoveryFakePlayer(PlayerEngine.fijk, (_) => null);
+    final manager = _manager(<PlayerEngine, _RecoveryFakePlayer>{
+      PlayerEngine.mediaKit: mediaKit,
+      PlayerEngine.fijk: fijk,
+    });
+    manager.configureDefaultEngine(PlayerEngine.mediaKit);
+
+    await manager.play(
+      'https://cdn.example/slow-live.flv',
+      const <String>['https://cdn.example/slow-live.flv'],
+      const <String, String>{},
+      room: LiveRoom(roomId: '1', platform: 'test'),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+
+    expect(mediaKit.openedUrls, <String>['https://cdn.example/slow-live.flv']);
+    expect(fijk.openedUrls, isEmpty);
+    expect(manager.currentEngine, PlayerEngine.mediaKit);
+    expect(manager.hasError.value, isFalse);
+
+    await manager.dispose();
+  });
+
+  test('current source decoder dimensions reach portrait geometry without a path signal', () async {
+    final mediaKit = _RecoveryFakePlayer(PlayerEngine.mediaKit, (_) => null, emittedWidth: 720, emittedHeight: 1280);
+    final manager = _manager(<PlayerEngine, _RecoveryFakePlayer>{PlayerEngine.mediaKit: mediaKit});
+    manager.configureDefaultEngine(PlayerEngine.mediaKit);
+
+    await manager.play(
+      'https://api.example/portrait-live.flv',
+      const <String>['https://api.example/portrait-live.flv'],
+      const <String, String>{},
+      room: LiveRoom(roomId: 'portrait', platform: 'test'),
+    );
+    await manager.videoGeometry.stream
+        .firstWhere((snapshot) => snapshot.orientation == VideoSourceOrientation.portrait && snapshot.isStable)
+        .timeout(const Duration(seconds: 2));
+
+    expect(manager.videoGeometry.value.width, 720);
+    expect(manager.videoGeometry.value.height, 1280);
+    expect(manager.videoGeometry.value.orientation, VideoSourceOrientation.portrait);
+
+    await manager.dispose();
+  });
+
   test('a native open Future that stalls is bounded and replaced by the next engine', () async {
     final mediaKit = _RecoveryFakePlayer(PlayerEngine.mediaKit, (_) => null, hangWhileOpening: true);
     final fijk = _RecoveryFakePlayer(PlayerEngine.fijk, (_) => null);
@@ -225,7 +273,7 @@ void main() {
 PlayerManager _manager(
   Map<PlayerEngine, _RecoveryFakePlayer> players, {
   Duration sourceOpenTimeout = const Duration(seconds: 18),
-  Duration sourceReadyTimeout = const Duration(seconds: 12),
+  Duration sourceReadyTimeout = Duration.zero,
 }) {
   return PlayerManager(
     playerCreator: (engine) => players[engine]!,
@@ -249,6 +297,8 @@ class _RecoveryFakePlayer implements UnifiedPlayer {
     this.initFailure,
     this.emitPlaying = true,
     this.hangWhileOpening = false,
+    this.emittedWidth,
+    this.emittedHeight,
   });
 
   @override
@@ -257,6 +307,8 @@ class _RecoveryFakePlayer implements UnifiedPlayer {
   final Object? initFailure;
   final bool emitPlaying;
   final bool hangWhileOpening;
+  final int? emittedWidth;
+  final int? emittedHeight;
   final List<String> openedUrls = <String>[];
   final StreamController<PlayerState> _state = StreamController<PlayerState>.broadcast(sync: true);
   final StreamController<bool> _playing = StreamController<bool>.broadcast(sync: true);
@@ -287,6 +339,10 @@ class _RecoveryFakePlayer implements UnifiedPlayer {
     if (hangWhileOpening) await Completer<void>().future;
     final failure = failureForUrl(url);
     if (failure != null) throw failure;
+    if (emittedWidth != null && emittedHeight != null) {
+      _width.add(emittedWidth);
+      _height.add(emittedHeight);
+    }
     if (emitPlaying) {
       _isPlaying = true;
       _state.add(PlayerState.playing);

@@ -46,7 +46,7 @@ void main() {
   });
 
   group('SourceEventFence', () {
-    test('accepts events only after the exact replacement source is native-current', () {
+    test('accepts events after replacement open completes', () {
       final fence = SourceEventFence();
       final generation = fence.begin('https://cdn.example/live.flv?token=new');
 
@@ -62,14 +62,25 @@ void main() {
       expect(fence.accepts(generation), isTrue);
     });
 
-    test('a finished open can time out even when no native path event arrives', () {
+    test('a finished open remains usable when no native path event arrives', () {
       final fence = SourceEventFence();
       final generation = fence.begin('https://cdn.example/live.flv');
 
       fence.finishOpen(const <String>[]);
 
       expect(fence.isCurrentGeneration(generation), isTrue);
-      expect(fence.accepts(generation), isFalse);
+      expect(fence.accepts(generation), isTrue);
+      expect(fence.isNativeSourceConfirmed, isFalse);
+    });
+
+    test('redirected native path is diagnostic only and does not block playback', () {
+      final fence = SourceEventFence();
+      final generation = fence.begin('https://api.example/live.flv?token=request');
+
+      fence.finishOpen(const <String>['https://edge.example/live.flv?token=redirected']);
+
+      expect(fence.isNativeSourceConfirmed, isFalse);
+      expect(fence.accepts(generation), isTrue);
     });
 
     test('a later source generation invalidates every earlier callback', () {

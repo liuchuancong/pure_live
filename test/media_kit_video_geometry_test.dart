@@ -4,6 +4,16 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:pure_live/player/adapters/media_kit_adapter.dart';
 
 void main() {
+  group('MediaKit source readiness', () {
+    test('native playing is authoritative without optional mpv frame properties', () {
+      expect(shouldPublishMediaKitPlaying(true), isTrue);
+    });
+
+    test('native paused state is not promoted by synthetic readiness', () {
+      expect(shouldPublishMediaKitPlaying(false), isFalse);
+    });
+  });
+
   test('media_kit dimensions use one display-corrected decoder snapshot', () {
     expect(resolveMediaKitDisplaySize(const VideoParams(w: 1920, h: 1080, dw: 1920, dh: 1080)), (
       width: 1920,
