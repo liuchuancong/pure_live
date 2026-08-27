@@ -7,7 +7,7 @@
     "arm64-v8a",
     "x86_64"
   ],
-  "version_desc": "- 优化windows的画中画只能区分横竖屏。\n- 添加刘海屏适配。\n- 备份添加cookie和webdav等用户数据。\n- 优化Iptv的竖屏显示。\n- 修复快手直播源获取错误。",
+  "version_desc": "version: 3.0.6\n版本更新：\n- 优化windows的画中画只能区分横竖屏。\n- 添加刘海屏适配。\n- 备份添加cookie和webdav等用户数据。\n- 优化Iptv的竖屏显示。\n- 修复快手直播源获取错误。",
   "prerelease": false,
   "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.6",
   "platforms": {
@@ -15,7 +15,7 @@
       "version": "3.0.6",
       "build_number": 4094,
       "version_num": 300064094,
-      "version_desc": "- 优化windows的画中画只能区分横竖屏。\n- 添加浏览屏适配。\n- 备份添加cookie和webdav等用户数据。\n",
+      "version_desc": "version: 3.0.6\n版本更新：\n- 优化windows的画中画只能区分横竖屏。\n- 添加刘海屏适配。\n- 备份添加cookie和webdav等用户数据。\n- 优化Iptv的竖屏显示。\n- 修复快手直播源获取错误。",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.6",
       "android_abis": [
@@ -28,7 +28,7 @@
       "version": "3.0.6",
       "build_number": 4094,
       "version_num": 300064094,
-      "version_desc": "- 优化windows的画中画只能区分横竖屏。\n- 添加浏览屏适配。\n- 备份添加cookie和webdav等用户数据。\n",
+      "version_desc": "version: 3.0.6\n版本更新：\n- 优化windows的画中画只能区分横竖屏。\n- 添加刘海屏适配。\n- 备份添加cookie和webdav等用户数据。\n- 优化Iptv的竖屏显示。\n- 修复快手直播源获取错误。",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.6",
       "windows_msix_available": true
@@ -37,7 +37,7 @@
       "version": "3.0.6",
       "build_number": 4094,
       "version_num": 300064094,
-      "version_desc": "- 优化windows的画中画只能区分横竖屏。\n- 添加浏览屏适配。\n- 备份添加cookie和webdav等用户数据。\n",
+      "version_desc": "version: 3.0.6\n版本更新：\n- 优化windows的画中画只能区分横竖屏。\n- 添加刘海屏适配。\n- 备份添加cookie和webdav等用户数据。\n- 优化Iptv的竖屏显示。\n- 修复快手直播源获取错误。",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.6"
     },
@@ -45,7 +45,7 @@
       "version": "3.0.6",
       "build_number": 4094,
       "version_num": 300064094,
-      "version_desc": "- 优化windows的画中画只能区分横竖屏。\n- 添加浏览屏适配。\n- 备份添加cookie和webdav等用户数据。\n",
+      "version_desc": "version: 3.0.6\n版本更新：\n- 优化windows的画中画只能区分横竖屏。\n- 添加刘海屏适配。\n- 备份添加cookie和webdav等用户数据。\n- 优化Iptv的竖屏显示。\n- 修复快手直播源获取错误。",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.6"
     },
@@ -53,7 +53,7 @@
       "version": "3.0.6",
       "build_number": 4094,
       "version_num": 300064094,
-      "version_desc": "- 优化windows的画中画只能区分横竖屏。\n- 添加浏览屏适配。\n- 备份添加cookie和webdav等用户数据。\n",
+      "version_desc": "version: 3.0.6\n版本更新：\n- 优化windows的画中画只能区分横竖屏。\n- 添加刘海屏适配。\n- 备份添加cookie和webdav等用户数据。\n- 优化Iptv的竖屏显示。\n- 修复快手直播源获取错误。",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.6"
     }
