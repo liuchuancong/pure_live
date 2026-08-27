@@ -1,10 +1,11 @@
 import 'dart:developer';
+
 import '../models/player_engine.dart';
 import '../models/player_exception.dart';
 import '../models/player_error_type.dart';
 
 class EngineFallbackManager {
-  EngineFallbackManager({required this.defaultEngine, this.maxRetryCount = 2, required this.supportedEngines});
+  EngineFallbackManager({required this.defaultEngine, this.maxRetryCount = 1, required this.supportedEngines});
   final List<PlayerEngine> supportedEngines;
 
   final PlayerEngine defaultEngine;
@@ -13,10 +14,10 @@ class EngineFallbackManager {
   final Map<PlayerEngine, int> _retryMap = {};
   final Set<PlayerEngine> _permanentlyFailed = {};
 
-  late final List<PlayerEngine> _priority = [
+  late final List<PlayerEngine> _priority = <PlayerEngine>{
     defaultEngine,
     ...PlayerEngine.values,
-  ].where((e) => supportedEngines.contains(e)).toList();
+  }.where(supportedEngines.contains).toList(growable: false);
 
   bool shouldFallback(PlayerException error) {
     switch (error.type) {
@@ -39,7 +40,11 @@ class EngineFallbackManager {
     final nextRetry = currentRetry + 1;
     _retryMap[current] = nextRetry;
 
-    if (nextRetry < maxRetryCount) {
+    // Adapters emit only confirmed terminal failures. Requiring the same
+    // one-shot native error twice left the player permanently in error because
+    // most engines do not emit a second callback. A caller can still opt into
+    // same-engine retries by explicitly setting maxRetryCount above one.
+    if (nextRetry < maxRetryCount.clamp(1, 100)) {
       return current;
     }
 

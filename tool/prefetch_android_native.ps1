@@ -63,6 +63,92 @@ function Install-VerifiedAsset {
     Write-Host "Verified $Name (persistent cache: $persistentRoot)"
 }
 
+function Get-LockedPackageVersion {
+    param([Parameter(Mandatory = $true)][string]$PackageName)
+
+    $lockPath = Join-Path $repoRoot 'pubspec.lock'
+    if (-not (Test-Path -LiteralPath $lockPath)) {
+        throw "pubspec.lock is required before native dependency prefetch"
+    }
+
+    $lines = Get-Content -LiteralPath $lockPath
+    $insidePackage = $false
+    foreach ($line in $lines) {
+        if ($line -match '^  ([A-Za-z0-9_]+):$') {
+            $insidePackage = $Matches[1] -eq $PackageName
+            continue
+        }
+        if ($insidePackage -and $line -match '^    version: "([^"]+)"$') {
+            return $Matches[1]
+        }
+    }
+    throw "Locked package version not found: $PackageName"
+}
+
+function Get-FFmpegBuilderProfile {
+    $packageVersion = Get-LockedPackageVersion -PackageName 'ffmpeg_kit_extended_flutter'
+    $profiles = @{
+        # ffmpeg_kit_extended_flutter 0.5.13 / FFmpeg 8.1.2
+        '0.5.13' = @{
+            BuilderVersion = '0.10.5'
+            AndroidSha256 = 'c3cc680706a24669a41cb078f2d9983aac3d17188ebef1db50c73b388471000d'
+            WindowsSha256 = '8dd4bb294f4a99987e293ab0915a40e5e921edb64b56fe829a8a9f067be4c66c'
+        }
+        # ffmpeg_kit_extended_flutter 0.6.0 / FFmpeg 9.0.1
+        '0.6.0' = @{
+            BuilderVersion = '0.11.0'
+            AndroidSha256 = '2b66caaaefbe5032ffe6e32d87e1af398653ec8dbbc193f4481dd4f562f2182d'
+            WindowsSha256 = '2367fbc6ecd7c5df1995c5c0cf5d95f65a99396d4d3fe9d1968c683d3481c125'
+        }
+    }
+    $profile = $profiles[$packageVersion]
+    if ($null -eq $profile) {
+        throw "No reviewed native-asset profile for ffmpeg_kit_extended_flutter $packageVersion"
+    }
+    return @{
+        PackageVersion = $packageVersion
+        BuilderVersion = $profile.BuilderVersion
+        AndroidSha256 = $profile.AndroidSha256
+        WindowsSha256 = $profile.WindowsSha256
+    }
+}
+
+function Reset-FFmpegWindowsExtractionIfNeeded {
+    param(
+        [Parameter(Mandatory = $true)][string]$HookWindowsRoot,
+        [Parameter(Mandatory = $true)][string]$BuilderVersion
+    )
+
+    $stampPath = Join-Path $HookWindowsRoot '.pure-live-builder-version'
+    $installedVersion = if (Test-Path -LiteralPath $stampPath) {
+        (Get-Content -LiteralPath $stampPath -Raw).Trim()
+    } else {
+        ''
+    }
+    if ($installedVersion -eq $BuilderVersion) { return }
+
+    $extractionPath = Join-Path $HookWindowsRoot 'bundle-base-windows-x86_64-shared-lgpl'
+    if (Test-Path -LiteralPath $extractionPath) {
+        $resolvedRepo = [IO.Path]::GetFullPath($repoRoot).TrimEnd('\')
+        $resolvedTarget = [IO.Path]::GetFullPath($extractionPath)
+        $expectedRoot = [IO.Path]::GetFullPath(
+            (Join-Path $repoRoot '.dart_tool\hooks_runner\shared\ffmpeg_kit_extended_flutter\build\ffmpeg_kit_cache\windows')
+        ).TrimEnd('\')
+        if (-not $resolvedTarget.StartsWith("$expectedRoot\", [StringComparison]::OrdinalIgnoreCase) -or
+            -not $resolvedTarget.StartsWith("$resolvedRepo\", [StringComparison]::OrdinalIgnoreCase)) {
+            throw "Refusing to reset unexpected FFmpeg extraction path: $resolvedTarget"
+        }
+        Remove-Item -LiteralPath $resolvedTarget -Recurse -Force
+    }
+    New-Item -ItemType Directory -Force -Path $HookWindowsRoot | Out-Null
+    Set-Content -LiteralPath $stampPath -Value $BuilderVersion -NoNewline
+}
+
+$ffmpegProfile = Get-FFmpegBuilderProfile
+$ffmpegBuilderVersion = $ffmpegProfile.BuilderVersion
+$ffmpegHookCacheRoot = Join-Path $repoRoot '.dart_tool\hooks_runner\shared\ffmpeg_kit_extended_flutter\build\ffmpeg_kit_cache'
+Write-Host "FFmpeg native profile: package $($ffmpegProfile.PackageVersion), builder $ffmpegBuilderVersion"
+
 if (-not $SkipAndroidMedia) {
     $mediaKitAssets = @(
         @{ Name = 'default-arm64-v8a.jar'; Sha256 = '13e882d96b8cd235425172b022e4a94dfcae5f07985dff85c8d648e7369fa2d1' },
@@ -82,20 +168,25 @@ if (-not $SkipAndroidMedia) {
     $ffmpegAndroidName = 'bundle-base-shared-lgpl-release.aar'
     Install-VerifiedAsset `
         -Name $ffmpegAndroidName `
-        -Destination (Join-Path $repoRoot ".dart_tool\hooks_runner\shared\ffmpeg_kit_extended_flutter\build\ffmpeg_kit_cache\android\$ffmpegAndroidName") `
-        -CachePath (Join-Path $persistentRoot "ffmpeg-kit\v0.11.0-android\$ffmpegAndroidName") `
-        -Url "https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.11.0-android/$ffmpegAndroidName" `
-        -Sha256 '2b66caaaefbe5032ffe6e32d87e1af398653ec8dbbc193f4481dd4f562f2182d'
+        -Destination (Join-Path $ffmpegHookCacheRoot "android\$ffmpegAndroidName") `
+        -CachePath (Join-Path $persistentRoot "ffmpeg-kit\v$ffmpegBuilderVersion-android\$ffmpegAndroidName") `
+        -Url "https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v$ffmpegBuilderVersion-android/$ffmpegAndroidName" `
+        -Sha256 $ffmpegProfile.AndroidSha256
 }
 
 # The ffmpeg_kit Native Assets hook uses Dart HttpClient, which may stall on a
 # GitHub release-asset redirect on some Windows networks. Seed both platform
-# caches from verified persistent files before invoking Flutter. The checksums
-# match the v0.11.0 builder release used by ffmpeg_kit_extended_flutter 0.6.0.
+# caches from verified persistent files before invoking Flutter. Resolve the
+# builder version from pubspec.lock so rolling the Dart package backward or
+# forward can never silently mix another release's native FFmpeg binaries.
 $ffmpegWindowsName = 'bundle-base-windows-x86_64-shared-lgpl.zip'
+$ffmpegWindowsRoot = Join-Path $ffmpegHookCacheRoot 'windows'
+Reset-FFmpegWindowsExtractionIfNeeded `
+    -HookWindowsRoot $ffmpegWindowsRoot `
+    -BuilderVersion $ffmpegBuilderVersion
 Install-VerifiedAsset `
     -Name $ffmpegWindowsName `
-    -Destination (Join-Path $repoRoot ".dart_tool\hooks_runner\shared\ffmpeg_kit_extended_flutter\build\ffmpeg_kit_cache\windows\$ffmpegWindowsName") `
-    -CachePath (Join-Path $persistentRoot "ffmpeg-kit\v0.11.0-windows\$ffmpegWindowsName") `
-    -Url "https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.11.0-windows/$ffmpegWindowsName" `
-    -Sha256 '2367fbc6ecd7c5df1995c5c0cf5d95f65a99396d4d3fe9d1968c683d3481c125'
+    -Destination (Join-Path $ffmpegWindowsRoot $ffmpegWindowsName) `
+    -CachePath (Join-Path $persistentRoot "ffmpeg-kit\v$ffmpegBuilderVersion-windows\$ffmpegWindowsName") `
+    -Url "https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v$ffmpegBuilderVersion-windows/$ffmpegWindowsName" `
+    -Sha256 $ffmpegProfile.WindowsSha256

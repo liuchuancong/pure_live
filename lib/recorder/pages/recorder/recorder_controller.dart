@@ -105,12 +105,17 @@ class RecorderController extends GetxService {
         final isError = event.type == FFmpegEventType.error;
         final errorCode = (event.data['code'] as num?)?.toInt() ?? 0;
         final rawLogs = event.data['raw_logs']?.toString() ?? '';
+        final failureKind = event.data['failure_kind']?.toString();
+        final classifiedRetryable = event.data['retryable'];
         final shouldRetry =
-            !isError || RecorderContinuationPolicy.shouldRetryFailure(errorCode: errorCode, rawLogs: rawLogs);
+            !isError ||
+            (classifiedRetryable is bool
+                ? classifiedRetryable
+                : RecorderContinuationPolicy.shouldRetryFailure(errorCode: errorCode, rawLogs: rawLogs));
         if (isError) {
           final message = event.data['message']?.toString();
           task.markFailure(
-            stage: 'ffmpeg',
+            stage: failureKind?.isNotEmpty == true ? 'ffmpeg.$failureKind' : 'ffmpeg',
             error: message?.isNotEmpty == true ? message! : 'FFmpeg exit code $errorCode',
           );
           if (message?.isNotEmpty == true && (!shouldRetry || task.retryCount == 0)) {
