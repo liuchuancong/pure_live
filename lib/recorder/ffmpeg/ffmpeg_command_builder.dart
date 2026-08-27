@@ -4,9 +4,9 @@ import 'package:pure_live/common/global/platform_utils.dart';
 
 class FFmpegCommandBuilder {
   static const String _protocolWhitelist = 'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto';
+
   static String quoteArgument(String value) {
     final escaped = value.replaceAll('\r', '').replaceAll('\n', '').replaceAll('"', r'\"');
-
     return '"$escaped"';
   }
 
@@ -28,23 +28,15 @@ class FFmpegCommandBuilder {
     int rwTimeout = 15,
     Map<String, String>? headers,
   }) {
-    final normalizedHeaders = _normalizeHeaders(headers);
-
-    final userAgent = normalizedHeaders.remove('user-agent');
-    final headerString = _buildHeader(normalizedHeaders);
-
+    final ua = headers?['user-agent'];
+    final headerStr = _buildHeader(headers);
     final rwTimeoutMicro = (rwTimeout * 1000000).clamp(0, 2147483647);
 
     final args = <String>[
-      // 基础
       '-hide_banner',
       '-loglevel',
       'info',
-
-      // Android 录制/播放需要关闭 TLS 证书校验
       if (PlatformUtils.isAndroid) ...['-tls_verify', '0'],
-
-      // 重连
       '-reconnect',
       '1',
       '-reconnect_streamed',
@@ -53,36 +45,21 @@ class FFmpegCommandBuilder {
       '10',
       '-reconnect_at_eof',
       '1',
-
-      // 网络
       '-rw_timeout',
       rwTimeoutMicro.toString(),
-
-      // UA
-      if (userAgent != null && userAgent.isNotEmpty) ...['-user_agent', userAgent],
-
-      // Headers
-      if (headerString.isNotEmpty) ...['-headers', headerString],
-
-      // 输入流
+      if (ua != null && ua.isNotEmpty) ...['-user_agent', quoteArgument(ua)],
+      if (headerStr.isNotEmpty) ...['-headers', quoteArgument(headerStr)],
       '-i',
-      remoteStreamUrl,
-
+      quoteArgument(remoteStreamUrl),
       '-map',
       '0:a',
-
       '-vn',
-
       '-acodec',
       'copy',
-
       '-listen',
       '1',
-
-      // 输出 MPEGTS HTTP Server
       '-f',
       'mpegts',
-
       'http://0.0.0.0:$port/live.ts',
     ];
 
@@ -123,139 +100,87 @@ class FFmpegCommandBuilder {
     String? filePrefix,
     Map<String, String>? headers,
   }) {
-    final normalizedHeaders = _normalizeHeaders(headers);
+    final ua = headers?['user-agent'];
+    final headerStr = _buildHeader(headers);
 
-    final userAgent = normalizedHeaders.remove('user-agent');
-    final headerString = _buildHeader(normalizedHeaders);
+    String fileNamePattern;
+    if (filePrefix != null && filePrefix.isNotEmpty) {
+      fileNamePattern = '${filePrefix}_%Y%m%d_%H%M%S.ts';
+    } else {
+      fileNamePattern = '%Y%m%d_%H%M%S.ts';
+    }
 
-    final normalizedOutputPath = '$outputDir${Platform.pathSeparator}%Y%m%d_%H%M%S.ts';
-
+    final normalizedOutputPath = '$outputDir${Platform.pathSeparator}$fileNamePattern';
     final rwTimeoutMicro = (rwTimeout * 1000000).clamp(0, 2147483647);
 
     final args = <String>[
       '-y',
-
       '-hide_banner',
       '-loglevel',
       'info',
-      // Android 录制需要关闭 TLS 证书校验
       if (PlatformUtils.isAndroid) ...['-tls_verify', '0'],
       '-analyzeduration',
       '1000000',
-
       '-probesize',
       '1048576',
-
       '-fflags',
       'igndts+genpts+nobuffer+flush_packets+fastseek',
-
       '-flags',
       'low_delay',
-
       '-seekable',
       '1',
-
       '-protocol_whitelist',
       _protocolWhitelist,
-
       '-reconnect',
       '1',
-
       '-reconnect_streamed',
       '1',
-
       '-reconnect_delay_max',
       '10',
-
       '-reconnect_at_eof',
       '1',
-
       '-rw_timeout',
       rwTimeoutMicro.toString(),
-
       '-max_delay',
       '5000000',
-
       '-thread_queue_size',
       threadQueueSize.toString(),
-
-      // UA
-      if (userAgent != null && userAgent.isNotEmpty) ...['-user_agent', userAgent],
-
-      // Headers
-      if (headerString.isNotEmpty) ...['-headers', headerString],
-
-      // 输入
+      if (ua != null && ua.isNotEmpty) ...['-user_agent', quoteArgument(ua)],
+      if (headerStr.isNotEmpty) ...['-headers', quoteArgument(headerStr)],
       '-i',
-      url,
-
-      // 保持原来的 map
+      quoteArgument(url),
       '-map',
       preferBestStream ? '0:v:0?' : '0:v?',
-
       '-map',
       preferBestStream ? '0:a:0?' : '0:a?',
-
-      // 原来的 copy 模式
       '-c',
       'copy',
-
-      // 分段输出
       '-f',
       'segment',
-
       '-segment_format',
       'mpegts',
-
       '-segment_time',
       segmentTime.toString(),
-
       '-reset_timestamps',
       '1',
-
-      // 恢复原来的时间戳文件名
       '-strftime',
       '1',
-
-      normalizedOutputPath,
+      quoteArgument(normalizedOutputPath),
     ];
 
     return List<String>.unmodifiable(args);
   }
 
   static String formatArguments(Iterable<String> arguments) {
-    return arguments.map(quoteArgument).join(' ');
+    return arguments.join(' ');
   }
 
-  static Map<String, String> _normalizeHeaders(Map<String, String>? headers) {
-    if (headers == null || headers.isEmpty) {
-      return <String, String>{};
-    }
-
-    final normalized = <String, String>{};
-
-    final validName = RegExp(r'^[A-Za-z0-9-]+$');
-
-    for (final entry in headers.entries) {
-      final name = entry.key.trim().toLowerCase();
-
-      final value = entry.value.replaceAll(RegExp(r'[\r\n\u0000]+'), ' ').trim();
-
-      if (name.isEmpty || value.isEmpty || !validName.hasMatch(name)) {
-        continue;
-      }
-
-      normalized[name] = value;
-    }
-
-    return normalized;
-  }
-
-  static String _buildHeader(Map<String, String> headers) {
-    if (headers.isEmpty) {
-      return '';
-    }
-
-    return '${headers.entries.map((entry) => '${entry.key}: ${entry.value}').join('\r\n')}\r\n';
+  static String _buildHeader(Map<String, String>? headers) {
+    if (headers == null || headers.isEmpty) return '';
+    final lines = headers.entries
+        .where((e) => e.key.toLowerCase() != 'user-agent')
+        .map((e) => '${e.key}: ${e.value}')
+        .join('\r\n');
+    return lines.isEmpty ? '' : '$lines\r\n';
   }
 }
