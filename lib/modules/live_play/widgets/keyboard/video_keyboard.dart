@@ -27,18 +27,25 @@ class _VideoKeyboardShortcutsState extends State<VideoKeyboardShortcuts> {
   }
 
   bool _handleGlobalKey(KeyEvent event) {
-    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
-      _handleEscExit();
-      return true;
-    }
-    return false;
-  }
+    if (event is! KeyDownEvent || event.logicalKey != LogicalKeyboardKey.escape) return false;
 
-  void _handleEscExit() async {
-    if (GlobalPlayerState.to.isPipMode.value) {
-      return;
+    switch (resolveEscapePresentationAction(
+      pip: GlobalPlayerState.to.isPipMode.value,
+      fullscreen: GlobalPlayerState.to.isFullscreen.value,
+      widescreen: GlobalPlayerState.to.isWindowFullscreen.value,
+    )) {
+      case EscapePresentationAction.exitFullscreen:
+        widget.controller.toggleFullScreen();
+        return true;
+      case EscapePresentationAction.exitWidescreen:
+        widget.controller.toggleWindowFullScreen();
+        return true;
+      case EscapePresentationAction.none:
+        // Leave normal-route Escape handling to Flutter/Navigator instead of
+        // turning a normal room into fullscreen. PiP also owns its own close
+        // path and must not be mutated by the parent room shortcut.
+        return false;
     }
-    widget.controller.toggleFullScreen();
   }
 
   @override
@@ -69,4 +76,19 @@ class _VideoKeyboardShortcutsState extends State<VideoKeyboardShortcuts> {
       child: widget.child,
     );
   }
+}
+
+@visibleForTesting
+enum EscapePresentationAction { none, exitFullscreen, exitWidescreen }
+
+@visibleForTesting
+EscapePresentationAction resolveEscapePresentationAction({
+  required bool pip,
+  required bool fullscreen,
+  required bool widescreen,
+}) {
+  if (pip) return EscapePresentationAction.none;
+  if (fullscreen) return EscapePresentationAction.exitFullscreen;
+  if (widescreen) return EscapePresentationAction.exitWidescreen;
+  return EscapePresentationAction.none;
 }

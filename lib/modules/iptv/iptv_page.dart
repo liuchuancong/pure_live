@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/file_utils.dart';
@@ -7,6 +9,7 @@ import 'package:pure_live/modules/auth/utils/constants.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
 import 'package:pure_live/core/iptv/services/epg_import_manager.dart';
 import 'package:pure_live/core/iptv/services/iptv_import_manager.dart';
+import 'package:pure_live/core/iptv/services/auto_sync_scheduler.dart';
 
 class IptvPage extends StatefulWidget {
   const IptvPage({super.key});
@@ -28,7 +31,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _refreshData();
+    unawaited(_initializePageResources());
   }
 
   @override
@@ -47,6 +50,18 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
       SettingsService.to.iptv.selectedSourceId.v = activeSource.id;
       SettingsService.to.iptv.selectedSourceName.v = activeSource.name;
     }
+  }
+
+  Future<void> _initializePageResources() async {
+    await _refreshData();
+    if (!mounted || epgSources.isNotEmpty) return;
+
+    // Preserve the built-in EPG experience without performing a large network
+    // import on every ordinary application launch. The work begins only when
+    // the user opens IPTV settings and no EPG source exists yet.
+    await AutoSyncScheduler.instance.loadDefaultEpgResources();
+    if (!mounted) return;
+    await _refreshData();
   }
 
   void _showSourceSelectionDialog() async {
@@ -564,72 +579,72 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
     try {
       return await Get.dialog<String?>(
         AlertDialog(
-        title: Text(i18n("enter_download_url")),
-        content: SizedBox(
-          width: 400.0,
-          height: 300.0,
-          child: Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: Column(
-              children: [
-                TextField(
-                  controller: urlEditingController,
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    contentPadding: const EdgeInsets.all(12),
-                    hintText: i18n("download_url"),
+          title: Text(i18n("enter_download_url")),
+          content: SizedBox(
+            width: 400.0,
+            height: 300.0,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: urlEditingController,
+                    decoration: InputDecoration(
+                      border: const OutlineInputBorder(),
+                      contentPadding: const EdgeInsets.all(12),
+                      hintText: i18n("download_url"),
+                    ),
+                    autofocus: true,
                   ),
-                  autofocus: true,
-                ),
-                spacer(12.0),
-                TextField(
-                  controller: textEditingController,
-                  decoration: InputDecoration(
-                    border: const OutlineInputBorder(),
-                    contentPadding: const EdgeInsets.all(12),
-                    hintText: i18n("file_name"),
+                  spacer(12.0),
+                  TextField(
+                    controller: textEditingController,
+                    decoration: InputDecoration(
+                      border: const OutlineInputBorder(),
+                      contentPadding: const EdgeInsets.all(12),
+                      hintText: i18n("file_name"),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(Get.context!).pop(), child: Text(i18n("cancel"))),
-          TextButton(
-            onPressed: () async {
-              final urlText = urlEditingController.text.trim();
-              final fileNameText = textEditingController.text.trim();
+          actions: [
+            TextButton(onPressed: () => Navigator.of(Get.context!).pop(), child: Text(i18n("cancel"))),
+            TextButton(
+              onPressed: () async {
+                final urlText = urlEditingController.text.trim();
+                final fileNameText = textEditingController.text.trim();
 
-              if (urlText.isEmpty) {
-                ToastUtil.show(i18n("enter_download_link"));
-                return;
-              }
-              if (!FileUtils.isValidUrl(urlText)) {
-                ToastUtil.show(i18n("invalid_download_link"));
-                return;
-              }
-              if (fileNameText.isEmpty) {
-                ToastUtil.show(i18n("enter_file_name"));
-                return;
-              }
+                if (urlText.isEmpty) {
+                  ToastUtil.show(i18n("enter_download_link"));
+                  return;
+                }
+                if (!FileUtils.isValidUrl(urlText)) {
+                  ToastUtil.show(i18n("invalid_download_link"));
+                  return;
+                }
+                if (fileNameText.isEmpty) {
+                  ToastUtil.show(i18n("enter_file_name"));
+                  return;
+                }
 
-              bool isSuccess = false;
+                bool isSuccess = false;
 
-              if (isEpg) {
-                isSuccess = await EpgImportManager().importFromNetworkUrl(urlText, fileNameText);
-              } else {
-                isSuccess = await IptvImportManager().importFromNetworkUrl(urlText, fileNameText);
-              }
+                if (isEpg) {
+                  isSuccess = await EpgImportManager().importFromNetworkUrl(urlText, fileNameText);
+                } else {
+                  isSuccess = await IptvImportManager().importFromNetworkUrl(urlText, fileNameText);
+                }
 
-              if (isSuccess) {
-                Navigator.of(Get.context!).pop();
-                await _refreshData();
-              }
-            },
-            child: Text(i18n("confirm")),
-          ),
-        ],
+                if (isSuccess) {
+                  Navigator.of(Get.context!).pop();
+                  await _refreshData();
+                }
+              },
+              child: Text(i18n("confirm")),
+            ),
+          ],
         ),
         barrierDismissible: false,
       );

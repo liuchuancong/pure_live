@@ -96,10 +96,6 @@ class AppInitializer {
       await MobileManager.initialize();
     }
 
-    // Desktop startup has a heavier window/plugin path and did not exhibit
-    // the Android first-use failure, so it retains an idle warm-up.
-    if (PlatformUtils.isDesktop) _scheduleDesktopFFmpegPrewarm();
-
     if (PlatformUtils.isDesktopNotMac && instanceId.isEmpty) {
       _setupLaunchAtStartupSafe();
     }
@@ -117,14 +113,6 @@ class AppInitializer {
 
   @visibleForTesting
   static bool shouldStartRecorderPrewarmImmediately({required bool mobile}) => mobile;
-
-  void _scheduleDesktopFFmpegPrewarm() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Timer(const Duration(seconds: 2), () {
-        _startFFmpegPrewarm();
-      });
-    });
-  }
 
   Future<void> _initWindowsSingleInstance(List<String> args, String instanceId) async {
     if (!Platform.isWindows) return;

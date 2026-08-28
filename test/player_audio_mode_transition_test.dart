@@ -661,6 +661,41 @@ void main() {
     await manager.dispose();
   });
 
+  test('an idle soft-stopped player releases native resources after the grace window', () async {
+    final player = _FakePlayer();
+    final manager = _createManager(player, idleReleaseDelay: const Duration(milliseconds: 20));
+    await manager.initialize(engine: PlayerEngine.mediaKit);
+
+    await manager.close();
+    expect(manager.currentPlayer, same(player));
+    expect(player.hardDisposeCalls, 0);
+
+    await Future<void>.delayed(const Duration(milliseconds: 45));
+    expect(manager.currentPlayer, isNull);
+    expect(player.hardDisposeCalls, 1);
+    await manager.dispose();
+  });
+
+  test('reopening during the idle grace window keeps and reuses the current player', () async {
+    final player = _FakePlayer();
+    final manager = _createManager(player, idleReleaseDelay: const Duration(milliseconds: 50));
+    await manager.initialize(engine: PlayerEngine.mediaKit);
+
+    await manager.close();
+    await manager.play(
+      'https://example.invalid/reopen.flv',
+      const <String>['https://example.invalid/reopen.flv'],
+      const <String, String>{},
+      room: LiveRoom(roomId: 'reopen-room', platform: 'test'),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 75));
+
+    expect(manager.currentPlayer, same(player));
+    expect(player.hardDisposeCalls, 0);
+    expect(player.openedUrls, <String>['https://example.invalid/reopen.flv']);
+    await manager.dispose();
+  });
+
   test('floating re-entry handoff is explicit, room-scoped and single-use', () async {
     final player = _FakePlayer();
     final manager = _createManager(player);
@@ -747,6 +782,7 @@ PlayerManager _createManager(
   _FakePlayer player, {
   Duration timeout = const Duration(seconds: 1),
   Duration? warmRetention = Duration.zero,
+  Duration idleReleaseDelay = const Duration(seconds: 30),
   Future<void> Function(UnifiedPlayer player, bool audioOnly)? audioModeServiceSync,
   Future<void> Function(LiveRoom room)? audioSessionStart,
   UnifiedPlayerCreator? playerCreator,
@@ -760,6 +796,7 @@ PlayerManager _createManager(
     lineManager: LineFallbackManager(),
     audioModeSwitchTimeout: timeout,
     audioModeVideoWarmRetention: warmRetention,
+    idlePlayerReleaseDelay: idleReleaseDelay,
     useHardStopOnExit: () => false,
     audioModeServiceSync: audioModeServiceSync,
     audioSessionStart: audioSessionStart,

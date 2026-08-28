@@ -55,6 +55,7 @@ class PlayerManager {
   final Duration unexpectedPauseGrace;
   final Duration unexpectedPauseFailureGrace;
   final Duration bufferingStallTimeout;
+  final Duration idlePlayerReleaseDelay;
   final bool enableActiveContentProbe;
 
   /// How long a manual foreground audio session keeps video decode warm.
@@ -85,6 +86,7 @@ class PlayerManager {
     this.unexpectedPauseGrace = const Duration(milliseconds: 350),
     this.unexpectedPauseFailureGrace = const Duration(seconds: 5),
     this.bufferingStallTimeout = const Duration(seconds: 12),
+    this.idlePlayerReleaseDelay = const Duration(seconds: 45),
     // media_kit's screenshot path temporarily detaches the Android hardware
     // decoder surface on several ColorOS/Qualcomm devices. Repeated probes
     // then discard every frame and trigger the continuity recovery path,
@@ -123,6 +125,7 @@ class PlayerManager {
   bool _requestedAudioOnly = false;
   bool _nativeAudioOnly = false;
   Timer? _audioModeVideoWarmTimer;
+  Timer? _idlePlayerReleaseTimer;
   late final LatestAsyncValueQueue<bool> _audioModeTransitions;
   late final LatestAsyncValueQueue<_AudioServiceRequest> _audioServiceTransitions;
   LiveRoom? _pendingRoomReentry;
@@ -763,6 +766,7 @@ class PlayerManager {
     LiveRoom? room,
     bool audioOnly = false,
   }) {
+    _cancelIdlePlayerRelease();
     _playbackRequested = true;
     _playbackIntentEstablished = true;
     _playbackIntentRevision++;
@@ -779,6 +783,7 @@ class PlayerManager {
     bool audioOnly = false,
   }) async {
     if (_disposed) return;
+    _cancelIdlePlayerRelease();
     _cancelContinuityRecovery();
     _sourceReadyTimer?.cancel();
     _sourceReadyTimer = null;
@@ -2166,6 +2171,7 @@ class PlayerManager {
   }
 
   Future<void> _closeInternal() async {
+    _cancelIdlePlayerRelease();
     _playbackRequested = false;
     _playbackIntentEstablished = true;
     _playbackIntentRevision++;
@@ -2187,10 +2193,50 @@ class PlayerManager {
     await _awaitBoundedWidgetUnmount();
     try {
       await LiveAudioService.stop();
-      _useHardStopOnExit() ? await _hardDisposeInternal() : await softStop();
+      if (_useHardStopOnExit()) {
+        await _hardDisposeInternal();
+      } else {
+        await softStop();
+        _scheduleIdlePlayerRelease();
+      }
     } finally {
       _isClosing = false;
     }
+  }
+
+  void _cancelIdlePlayerRelease() {
+    _idlePlayerReleaseTimer?.cancel();
+    _idlePlayerReleaseTimer = null;
+  }
+
+  void _scheduleIdlePlayerRelease() {
+    _cancelIdlePlayerRelease();
+    if (_disposed || _currentPlayer == null) return;
+
+    final closedSessionId = _sessionId;
+    if (idlePlayerReleaseDelay <= Duration.zero) {
+      unawaited(_releaseIdlePlayer(closedSessionId));
+      return;
+    }
+
+    _idlePlayerReleaseTimer = Timer(idlePlayerReleaseDelay, () {
+      _idlePlayerReleaseTimer = null;
+      unawaited(_releaseIdlePlayer(closedSessionId));
+    });
+  }
+
+  Future<void> _releaseIdlePlayer(int closedSessionId) {
+    return _enqueuePlayerLifecycle(() async {
+      if (_disposed ||
+          _isClosing ||
+          _playbackRequested ||
+          _sessionId != closedSessionId ||
+          isCompactModeActive ||
+          isAppFloatingActive) {
+        return;
+      }
+      await _hardDisposeInternal();
+    });
   }
 
   Future<void> softStop() async {
@@ -2209,6 +2255,7 @@ class PlayerManager {
   }
 
   Future<void> _hardDisposeInternal() async {
+    _cancelIdlePlayerRelease();
     _sourceReadyTimer?.cancel();
     _sourceReadyTimer = null;
     _sessionId++;
@@ -2231,6 +2278,7 @@ class PlayerManager {
   }
 
   Future<void> retry() {
+    _cancelIdlePlayerRelease();
     _playbackRequested = true;
     _playbackIntentEstablished = true;
     _playbackIntentRevision++;
@@ -2552,6 +2600,7 @@ class PlayerManager {
     _geometryStabilityTimer?.cancel();
     _contentProbeTimer?.cancel();
     _audioModeVideoWarmTimer?.cancel();
+    _cancelIdlePlayerRelease();
     await closeAppFloating();
     await _pipSubscription?.cancel();
     await _pipStateSubscription?.cancel();

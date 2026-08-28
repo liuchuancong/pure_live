@@ -977,6 +977,23 @@ class LivePlayController extends GetxController
     await _disposeAppFloatingResourcesAsync(videoController);
   }
 
+  Future<void> _disposeNormalRouteResources() async {
+    try {
+      // A normal route pop is not a floating-player handoff. Explicitly stop
+      // the global source so decoder/network workers do not survive on the
+      // home page. PlayerManager keeps a short reopen grace window and then
+      // releases the native player completely.
+      await GlobalPlayerService.instance.player.close();
+    } finally {
+      try {
+        await disposeAppFloatingResources();
+      } finally {
+        _releaseChildControllers();
+        _closeReactiveState();
+      }
+    }
+  }
+
   Future<void> _disposeAppFloatingResourcesAsync(VideoController? videoController) async {
     await danmakuController.stopDanmaku();
     videoController?.dispose();
@@ -1018,9 +1035,7 @@ class LivePlayController extends GetxController
 
     final keepForAppFloating = GlobalPlayerService.instance.player.shouldKeepDanmakuForAppFloating;
     if (!keepForAppFloating) {
-      unawaited(disposeAppFloatingResources());
-      _releaseChildControllers();
-      _closeReactiveState();
+      unawaited(_disposeNormalRouteResources());
     }
     super.onClose();
   }

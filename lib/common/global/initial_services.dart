@@ -4,6 +4,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/modules/auth/auth_controller.dart';
+import 'package:pure_live/common/services/settings/iptv_settings_controller.dart';
 import 'package:pure_live/recorder/services/cache_service.dart';
 import 'package:pure_live/recorder/consts/recorder_config.dart';
 import 'package:pure_live/recorder/consts/recorder_keys.dart';
@@ -18,6 +19,12 @@ import 'package:pure_live/modules/live_play/widgets/local_interaction/local_inte
 class InitialServices {
   static void initGlobalServices() {
     Get.put(SettingsService(), permanent: true);
+    // Register IPTV only after SettingsService has finished its own onInit.
+    // Creating this controller from inside SettingsService.onInit can re-enter
+    // the dependency container during a cold Hive migration and stall the
+    // first frame. A direct, post-registration owner also avoids the old
+    // lazy-then-permanent collision in GetX.
+    Get.put(IptvSettingsController(), permanent: true);
     Get.put(LocalInteractionController(), permanent: true);
     Get.put(RouteObserverController(), permanent: true);
   }
