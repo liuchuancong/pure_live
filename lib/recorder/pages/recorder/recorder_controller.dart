@@ -1,30 +1,30 @@
+import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer' as developer;
-import 'dart:io';
 import 'dart:math' as math;
+import 'dart:developer' as developer;
 
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:path/path.dart' as p;
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/utils/hive_pref_util.dart';
-import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/plugins/file_utils.dart';
-import 'package:pure_live/recorder/consts/recorder_keys.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_command_builder.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:pure_live/core/interface/live_site.dart';
+import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_manager.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_scheduler.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
-import 'package:pure_live/recorder/models/live_record_task.dart';
+import 'package:pure_live/recorder/consts/recorder_keys.dart';
 import 'package:pure_live/recorder/models/record_status.dart';
-import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
+import 'package:pure_live/recorder/ffmpeg/ffmpeg_manager.dart';
 import 'package:pure_live/recorder/services/cache_service.dart';
+import 'package:pure_live/recorder/ffmpeg/ffmpeg_scheduler.dart';
+import 'package:pure_live/recorder/models/live_record_task.dart';
+import 'package:pure_live/recorder/ffmpeg/ffmpeg_command_builder.dart';
 import 'package:pure_live/recorder/services/ffmpeg_header_factory.dart';
-import 'package:pure_live/recorder/services/recorder_continuation_policy.dart';
-import 'package:pure_live/recorder/services/recording_output_metrics.dart';
 import 'package:pure_live/recorder/services/stream_resolver_service.dart';
 import 'package:pure_live/recorder/services/video_processor_service.dart';
+import 'package:pure_live/recorder/services/recording_output_metrics.dart';
+import 'package:pure_live/recorder/services/recorder_continuation_policy.dart';
+import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
 
 class RecorderController extends GetxService {
   RecorderController([this._outputMetrics = const RecordingOutputMetrics()]);
@@ -600,6 +600,7 @@ class RecorderController extends GetxService {
         rwTimeout: settings.rwTimeout.value,
         threadQueueSize: settings.threadQueueSize.value,
         filePrefix: task.recordingFilePrefix,
+        caFile: FFmpegManager.to.caFilePath,
       );
       if (token.isCancelled) return;
 

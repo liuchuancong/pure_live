@@ -1,5 +1,8 @@
 import 'dart:async';
 
+import 'android_ca_certificate_manager.dart';
+
+import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
 import 'package:pure_live/recorder/services/ffmpeg_service.dart';
 
@@ -18,17 +21,23 @@ class FFmpegManager {
 
   Future<void>? _initializeFuture;
 
+  String? _caFilePath;
+
+  /// Android CA bundle path used by FFmpeg HTTPS/TLS.
+  String? get caFilePath => _caFilePath;
+
   Future<void> initialize() {
     final inFlight = _initializeFuture;
     if (inFlight != null) return inFlight;
 
     late final Future<void> initialization;
-    initialization = _ffmpeg.initialize().catchError((Object error, StackTrace stackTrace) {
+    initialization = _initialize().catchError((Object error, StackTrace stackTrace) {
       // A transient native-library or filesystem failure must not poison the
       // singleton for the remainder of the process. A later recording action
       // gets one fresh attempt while concurrent callers still share this one.
       if (identical(_initializeFuture, initialization)) {
         _initializeFuture = null;
+        _caFilePath = null;
       }
       Error.throwWithStackTrace(error, stackTrace);
     });
@@ -36,9 +45,13 @@ class FFmpegManager {
     return initialization;
   }
 
-  Future<void> start({required String taskId, required List<String> arguments, bool liveRecording = false}) async {
-    await initialize();
+  Future<void> _initialize() async {
+    await _ffmpeg.initialize();
+    _caFilePath = await AndroidCaCertificateManager.ensureReady();
+    Log.d('[FFmpegManager] CA file: $_caFilePath');
+  }
 
+  Future<void> start({required String taskId, required List<String> arguments, bool liveRecording = false}) async {
     await _ffmpeg.start(
       taskId: taskId,
       arguments: arguments,
