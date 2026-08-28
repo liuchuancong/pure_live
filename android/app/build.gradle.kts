@@ -82,8 +82,7 @@ extensions.configure<com.android.build.api.dsl.ApplicationExtension> {
               )
         }
        debug {
-            isMinifyEnabled = false
-            isShrinkResources = false
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
