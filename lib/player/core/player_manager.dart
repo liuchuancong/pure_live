@@ -794,7 +794,8 @@ class PlayerManager {
       _runtimeAudioOnly = targetAudioOnly;
       _requestedAudioOnly = targetAudioOnly;
       _nativeAudioOnly = targetAudioOnly;
-
+      isInitialized.value = true;
+      videoPresentationRevision.value++;
       if (isManual) {
         _defaultEngine = engine;
       }
