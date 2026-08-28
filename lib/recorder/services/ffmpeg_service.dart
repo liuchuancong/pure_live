@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
+import 'dart:math' as math;
 
 import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart' hide Log;
 import 'package:flutter/foundation.dart';
@@ -8,6 +9,23 @@ import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
+
+/// Converts FFmpegKit's progress timestamp into a live-session duration.
+///
+/// Some MPEG-TS/HLS inputs expose a sentinel or source PTS close to
+/// `INT32_MAX` as the first statistics timestamp.  Treating that value as an
+/// elapsed duration produces counters such as `596523:14:08`.  A live capture
+/// cannot run materially ahead of its wall clock, so source/sentinel values
+/// fall back to wall time while ordinary FFmpeg progress remains authoritative.
+@visibleForTesting
+int normalizeLiveRecordedSeconds({required int rawMilliseconds, required int wallSeconds}) {
+  final wall = wallSeconds < 0 ? 0 : wallSeconds;
+  if (rawMilliseconds <= 0) return 0;
+  final rawSeconds = rawMilliseconds ~/ 1000;
+  if (rawSeconds < 0) return 0;
+  if (rawSeconds > wall + 15) return wall;
+  return rawSeconds;
+}
 
 enum FFmpegFailureKind { outputPath, command, httpAccess, transport, inputOpen, inputFormat, decoder, native }
 
@@ -143,6 +161,7 @@ class FFmpegRecordSession {
   final int sessionId;
   final FFmpegSession session;
   final bool liveRecording;
+  final DateTime createdAt = DateTime.now();
   final Completer<void> completion = Completer<void>();
   final List<String> _diagnosticLines = <String>[];
   var _diagnosticCharacters = 0;
@@ -218,7 +237,10 @@ class FFmpegService {
 
     nativeSession.setStatisticsCallback((statistics) {
       if (!identical(_sessions[taskId], session)) return;
-      final recordedSeconds = statistics.time ~/ 1000;
+      final wallSeconds = DateTime.now().difference(session.createdAt).inSeconds;
+      final recordedSeconds = session.liveRecording
+          ? normalizeLiveRecordedSeconds(rawMilliseconds: statistics.time, wallSeconds: wallSeconds)
+          : math.max(0, statistics.time ~/ 1000);
       final fileSize = statistics.size;
       session
         ..recordedSeconds = recordedSeconds > session.recordedSeconds ? recordedSeconds : session.recordedSeconds
@@ -243,7 +265,9 @@ class FFmpegService {
           type: FFmpegEventType.progress,
           data: {
             'sessionId': session.sessionId,
-            'time': statistics.time,
+            // Keep the event contract in milliseconds while shielding the
+            // recorder controller from source-PTS/sentinel timestamps.
+            'time': session.liveRecording ? recordedSeconds * 1000 : statistics.time,
             'size': statistics.size,
             'bitrate': statistics.bitrate,
             'speed': statistics.speed,

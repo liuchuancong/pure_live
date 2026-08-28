@@ -16,7 +16,9 @@ $aapt = Get-ChildItem (Join-Path $sdkRoot 'build-tools') -Directory -ErrorAction
 if (-not (Test-Path -LiteralPath $adb)) { throw "adb.exe was not found under $sdkRoot." }
 if (-not $aapt) { throw "aapt.exe was not found under $sdkRoot\build-tools." }
 
-$onlineDevices = & $adb devices | Select-String '^([^\s]+)\s+device$' | ForEach-Object { $_.Matches[0].Groups[1].Value }
+$onlineDevices = & $adb devices |
+    Select-String '^(.+?)\s+device\s*$' |
+    ForEach-Object { $_.Matches[0].Groups[1].Value.Trim() }
 if ($Device) {
     if ($Device -notin $onlineDevices) { throw "Android device $Device is not online." }
 } elseif ($onlineDevices.Count -eq 1) {

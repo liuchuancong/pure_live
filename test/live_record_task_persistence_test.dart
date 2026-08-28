@@ -147,4 +147,16 @@ void main() {
 
     expect(task.lastErrorStage, 'ffmpeg.inputopen');
   });
+
+  test('discard persisted FFmpeg timestamp sentinel duration', () {
+    final task = LiveRecordTask.fromJson({
+      'taskId': 'bilibili_1',
+      'roomId': '1',
+      'platform': 'bilibili',
+      'recordedSeconds': 2147483648,
+      'createTime': DateTime.now().toIso8601String(),
+    });
+
+    expect(task.recordedSeconds, 0);
+  });
 }

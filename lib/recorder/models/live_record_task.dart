@@ -346,7 +346,7 @@ class LiveRecordTask {
       outputDir: _nullableString(json["outputDir"]),
 
       /// 实时录制
-      recordedSeconds: _int(json["recordedSeconds"]),
+      recordedSeconds: _recordedSeconds(json["recordedSeconds"]),
 
       fileSize: _int(json["fileSize"]),
 
@@ -417,6 +417,15 @@ class LiveRecordTask {
   static int _int(dynamic value) {
     if (value is num) return value.toInt();
     return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  static int _recordedSeconds(dynamic value) {
+    final seconds = _int(value);
+    // Older builds could persist FFmpeg's INT32_MAX timestamp sentinel as an
+    // elapsed duration.  No single local capture should retain a counter above
+    // one year; reset corrupted telemetry while leaving the task itself intact.
+    const maximumPersistedSeconds = 365 * 24 * 60 * 60;
+    return seconds >= 0 && seconds <= maximumPersistedSeconds ? seconds : 0;
   }
 
   static int? _nullableInt(dynamic value) {
