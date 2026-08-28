@@ -3,8 +3,11 @@ param(
     [Parameter(Mandatory = $true)] [string] $Tag,
     [string] $ArtifactDirectory,
     [string] $Repository = 'wzgrx/pure_live',
+    [ValidateSet('Current', 'Android', 'Windows')]
+    [string] $Platform = 'Current',
     [switch] $CreateTag,
     [switch] $ReplaceExistingRelease,
+    [switch] $AppendAssets,
     [switch] $AllowQaArtifacts
 )
 
@@ -25,6 +28,15 @@ try {
     if (git status --porcelain) { throw 'Commit all changes before publishing.' }
     $versionLine = Select-String -Path 'pubspec.yaml' -Pattern '^version:\s*(\S+)' | Select-Object -First 1
     $fullVersion = $versionLine.Matches[0].Groups[1].Value
+    if ($Platform -ne 'Current') {
+        $versionFeed = Get-Content -LiteralPath 'assets\version.json' -Raw -Encoding utf8 | ConvertFrom-Json
+        $platformKey = $Platform.ToLowerInvariant()
+        $platformVersion = $versionFeed.platforms.$platformKey
+        if (-not $platformVersion.version -or -not $platformVersion.build_number) {
+            throw "assets/version.json is missing the $Platform platform version."
+        }
+        $fullVersion = "$($platformVersion.version)+$($platformVersion.build_number)"
+    }
     $displayVersion = $fullVersion.Split('+')[0]
     $artifactVersion = $fullVersion.Replace('+', '-')
     if ($Tag -ne "v$displayVersion") { throw "Tag $Tag does not match pubspec version v$displayVersion." }
@@ -32,8 +44,13 @@ try {
         throw "Artifact directory must be local-artifacts/$artifactVersion for $Tag."
     }
 
-    $metadataPath = Join-Path $ArtifactDirectory 'BUILD_METADATA.json'
-    if (-not (Test-Path -LiteralPath $metadataPath)) { throw 'BUILD_METADATA.json is missing.' }
+    if ($AppendAssets -and ($CreateTag -or $ReplaceExistingRelease)) {
+        throw '-AppendAssets cannot be combined with tag creation or release replacement.'
+    }
+    $metadataName = if ($Platform -eq 'Windows') { 'WINDOWS_BUILD_METADATA.json' } else { 'BUILD_METADATA.json' }
+    $checksumName = if ($Platform -eq 'Windows') { 'WINDOWS_SHA256SUMS.txt' } else { 'SHA256SUMS.txt' }
+    $metadataPath = Join-Path $ArtifactDirectory $metadataName
+    if (-not (Test-Path -LiteralPath $metadataPath)) { throw "$metadataName is missing." }
     $metadata = Get-Content -LiteralPath $metadataPath -Raw -Encoding utf8 | ConvertFrom-Json
     $headCommit = (git rev-parse HEAD).Trim()
     $releaseCommit = if ($metadata.release_commit) {
@@ -44,23 +61,24 @@ try {
     if ($releaseCommit -ne $headCommit -or $metadata.tracked_files_dirty) {
         throw 'Release metadata does not match the current clean commit.'
     }
-    $apks = Get-ChildItem $ArtifactDirectory -File -Filter '*.apk'
-    if ($apks -and $metadata.android_signing -ne 'release' -and -not $AllowQaArtifacts) {
-        throw 'Debug-signed APKs are blocked from an official Release. Configure the repository release key or publish Windows-only artifacts.'
-    }
-
-    $checksumPath = Join-Path $ArtifactDirectory 'SHA256SUMS.txt'
-    if (-not (Test-Path -LiteralPath $checksumPath)) { throw 'SHA256SUMS.txt is missing.' }
+    $checksumPath = Join-Path $ArtifactDirectory $checksumName
+    if (-not (Test-Path -LiteralPath $checksumPath)) { throw "$checksumName is missing." }
+    $assetPaths = @()
     foreach ($line in Get-Content -LiteralPath $checksumPath) {
         if ($line -notmatch '^([0-9a-fA-F]{64}) \*(.+)$') { throw "Invalid checksum line: $line" }
         $assetPath = Join-Path $ArtifactDirectory $Matches[2]
         if (-not (Test-Path -LiteralPath $assetPath)) { throw "Checksummed asset is missing: $($Matches[2])" }
         $actual = (Get-FileHash -LiteralPath $assetPath -Algorithm SHA256).Hash
         if ($actual -ne $Matches[1]) { throw "Checksum mismatch: $($Matches[2])" }
+        $assetPaths += [IO.Path]::GetFullPath($assetPath)
+    }
+    $apks = @($assetPaths | Where-Object { [IO.Path]::GetExtension($_) -eq '.apk' })
+    if ($apks -and $metadata.android_signing -ne 'release' -and -not $AllowQaArtifacts) {
+        throw 'Debug-signed APKs are blocked from an official Release. Configure the repository release key or publish Windows-only artifacts.'
     }
     $localTagExists = [bool](git tag --list $Tag)
     $localTagCommit = if ($localTagExists) { (git rev-parse "$Tag^{commit}").Trim() } else { $null }
-    if ($localTagExists -and $localTagCommit -ne $headCommit -and -not $ReplaceExistingRelease) {
+    if ($localTagExists -and $localTagCommit -ne $headCommit -and -not $ReplaceExistingRelease -and -not $AppendAssets) {
         throw "Tag $Tag points to $localTagCommit instead of HEAD. Use -ReplaceExistingRelease only for an explicit corrected same-version release."
     }
     if ($CreateTag -or $ReplaceExistingRelease) {
@@ -90,7 +108,7 @@ try {
         [Text.UTF8Encoding]::new($false)
     )
 
-    $files = Get-ChildItem $ArtifactDirectory -File | ForEach-Object FullName
+    $files = @($assetPaths + [IO.Path]::GetFullPath($checksumPath)) | Sort-Object -Unique
     if ($PSCmdlet.ShouldProcess($Tag, 'Publish GitHub release from local artifacts')) {
         $releaseList = gh release list --repo $Repository --limit 100 --json tagName | ConvertFrom-Json
         if ($LASTEXITCODE) { throw 'Failed to query existing GitHub Releases.' }
@@ -110,10 +128,11 @@ try {
             if ($LASTEXITCODE) { throw 'Failed to upload GitHub Release assets.' }
             if ($ReplaceExistingRelease) {
                 gh release edit $Tag --title "Pure Live $Tag" --notes-file $releaseNotesPath --draft=false --latest --repo $Repository
-            } else {
+            } elseif (-not $AppendAssets) {
                 gh release edit $Tag --title "Pure Live $Tag" --notes-file $releaseNotesPath --repo $Repository
             }
         } else {
+            if ($AppendAssets) { throw "Release $Tag does not exist; append mode requires an existing release." }
             gh release create $Tag @files --verify-tag --title "Pure Live $Tag" --notes-file $releaseNotesPath --repo $Repository
         }
         if ($LASTEXITCODE) { throw 'Failed to create or update the GitHub Release.' }

@@ -47,6 +47,9 @@ class FlutterWindow : public Win32Window {
 
   // The Flutter instance hosted by this window.
   std::unique_ptr<flutter::FlutterViewController> flutter_controller_;
+  // Prevents re-entrant parent-window messages from reaching a controller
+  // whose internal FlutterWindowsView is already being destroyed.
+  bool flutter_controller_destroying_ = false;
   std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>>
       display_mode_channel_;
   std::wstring last_display_device_;

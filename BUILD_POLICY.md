@@ -55,7 +55,7 @@
 
 构建脚本不传 `--no-daemon`，也不在每轮开始停止 Gradle daemon。保留 `.gradle`、`.dart_tool`、`build` 和原生依赖缓存；仅在缓存损坏、生成物与源码明显不一致或工具链迁移确有需要时执行针对性清理。`flutter clean` 与递归删除整个构建目录不属于常规步骤。
 
-Windows 长路径工作区由 `tool/flutterw.ps1` 优先映射到 `%LOCALAPPDATA%\Codex\workspaces` 下的稳定同盘目录联接，使工程与默认 Pub 缓存保持同一盘符，避免 Kotlin 插件增量缓存因跨盘相对路径失败而回退到完整编译；目录联接受限时才使用稳定 `SUBST` 盘符作为兼容后备。
+Android 长路径工作区由 `tool/flutterw.ps1` 优先映射到 `%LOCALAPPDATA%\Codex\workspaces` 下的稳定同盘目录联接，使工程与默认 Pub 缓存保持同一盘符，避免 Kotlin 插件增量缓存因跨盘相对路径失败而回退到完整编译。Windows/MSBuild 使用稳定 `SUBST` 盘符，避开 Visual Studio 在目录联接下写入 `ZERO_CHECK.tlog` 时解析到不存在目录的问题；Flutter 测试继续使用同一稳定盘符。
 
 Windows 增量构建目录可能保留已移除插件的旧 DLL 或资源。正式 ZIP/安装程序按当前
 `build/windows/x64/install_manifest.txt` 与经审查的 runner 运行时小型白名单建立独立打包

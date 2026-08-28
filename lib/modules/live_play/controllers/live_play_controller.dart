@@ -913,21 +913,24 @@ class LivePlayController extends GetxController
   void setWidescreen() => updateUI(screenMode: VideoMode.widescreen);
   void setFullScreen() => updateUI(screenMode: VideoMode.fullscreen);
 
-  /// Detaches media_kit's native surface before opening the recorder route.
+  /// Hides media_kit's native surface before opening the recorder route.
   ///
-  /// Keeping the live route mounted preserves playback and room state, while
-  /// removing the platform video layer for one frame avoids the native-surface
-  /// crash/overlay race during the route transition. The route observer also
-  /// restores the layer on pop; the finally block is a deterministic fallback.
+  /// Keeping the live route mounted preserves playback and room state.  The
+  /// video layer policy decides whether the native texture is retained
+  /// (Android) or detached (Windows). Restoration belongs to the route
+  /// observer, which waits for the recorder route's reverse
+  /// transition to finish before attaching a Windows texture again.
   Future<void> openRecordCenter() async {
     updateUI(displayVideoLayer: false);
     await SchedulerBinding.instance.endOfFrame;
     try {
       await Get.toNamed(RoutePath.kRecordPage);
-    } finally {
+    } catch (_) {
+      // A failed navigation never reaches the observer's didPop callback.
       if (!isClosed) {
         updateUI(displayVideoLayer: true);
       }
+      rethrow;
     }
   }
 

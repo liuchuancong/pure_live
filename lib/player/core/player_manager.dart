@@ -82,7 +82,7 @@ class PlayerManager {
     this.audioModeSwitchTimeout = const Duration(seconds: 5),
     this.sourceOpenTimeout = const Duration(seconds: 18),
     this.sourceReadyTimeout = Duration.zero,
-    this.unexpectedPauseGrace = const Duration(milliseconds: 1200),
+    this.unexpectedPauseGrace = const Duration(milliseconds: 350),
     this.unexpectedPauseFailureGrace = const Duration(seconds: 5),
     this.bufferingStallTimeout = const Duration(seconds: 12),
     // media_kit's screenshot path temporarily detaches the Android hardware
@@ -2417,7 +2417,16 @@ class PlayerManager {
           }
           _scheduleActiveContentProbe();
         } else {
-          if (_stateSubject.value != PlayerState.preparing && _stateSubject.value != PlayerState.buffering) {
+          // A transient native `playing=false` is not a user pause while the
+          // room still owns continuous playback. Keep the visible state in
+          // transport recovery instead of flashing (or getting stuck on) the
+          // paused control state. Explicit pause paths clear playback intent
+          // before invoking the native player and therefore still publish
+          // paused here.
+          final transportOwnsPause = _shouldOwnContinuousPlayback(player, sessionId);
+          if (!transportOwnsPause &&
+              _stateSubject.value != PlayerState.preparing &&
+              _stateSubject.value != PlayerState.buffering) {
             _stateSubject.add(PlayerState.paused);
           }
           // Native players commonly publish buffering=true before
@@ -2472,6 +2481,24 @@ class PlayerManager {
     _subscriptions.add(
       player.onStateChanged.listen((event) {
         if (!_isPlayerEventCurrent(player, sessionId)) return;
+        // media_kit can publish PlayerState.paused after onLoading(true) or
+        // after a transient onPlaying(false). For a live source whose owner
+        // still requests playback this is transport state, not user intent.
+        // Publishing it directly changes the control icon to "paused" and
+        // makes a short CDN/audio-focus discontinuity look like a random
+        // automatic pause. Preserve buffering/recovery state; explicit user,
+        // lifecycle and audio-interruption pauses all bypass this branch.
+        if (event == PlayerState.paused && _shouldOwnContinuousPlayback(player, sessionId)) {
+          if (_loadingSubject.value) {
+            if (_stateSubject.value != PlayerState.buffering) {
+              _stateSubject.add(PlayerState.buffering);
+            }
+            _scheduleBufferingStallRecovery(player, sessionId);
+          } else {
+            _scheduleContinuityRecovery(player, sessionId);
+          }
+          return;
+        }
         _stateSubject.add(event);
       }),
     );

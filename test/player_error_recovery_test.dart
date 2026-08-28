@@ -299,6 +299,55 @@ void main() {
     await manager.dispose();
   });
 
+  test('native paused state stays transport-owned while live recovery is pending', () async {
+    final mediaKit = _RecoveryFakePlayer(PlayerEngine.mediaKit, (_) => null);
+    final manager = _manager(<PlayerEngine, _RecoveryFakePlayer>{
+      PlayerEngine.mediaKit: mediaKit,
+    }, unexpectedPauseGrace: const Duration(milliseconds: 20));
+    manager.configureDefaultEngine(PlayerEngine.mediaKit);
+    final states = <PlayerState>[];
+    final subscription = manager.onStateChanged.listen(states.add);
+
+    await manager.play(
+      'https://cdn.example/live.flv',
+      const <String>['https://cdn.example/live.flv'],
+      const <String, String>{},
+      room: LiveRoom(roomId: 'transport-pause', platform: 'test'),
+    );
+    mediaKit.emitUnexpectedPlaying(false);
+    mediaKit.emitNativeState(PlayerState.paused);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(states.last, isNot(PlayerState.paused));
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(mediaKit.playCalls, 1);
+
+    await subscription.cancel();
+    await manager.dispose();
+  });
+
+  test('explicit user pause is still published as paused', () async {
+    final mediaKit = _RecoveryFakePlayer(PlayerEngine.mediaKit, (_) => null);
+    final manager = _manager(<PlayerEngine, _RecoveryFakePlayer>{PlayerEngine.mediaKit: mediaKit});
+    manager.configureDefaultEngine(PlayerEngine.mediaKit);
+    final states = <PlayerState>[];
+    final subscription = manager.onStateChanged.listen(states.add);
+
+    await manager.play(
+      'https://cdn.example/live.flv',
+      const <String>['https://cdn.example/live.flv'],
+      const <String, String>{},
+      room: LiveRoom(roomId: 'manual-state', platform: 'test'),
+    );
+    await manager.pause();
+    mediaKit.emitNativeState(PlayerState.paused);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(states.last, PlayerState.paused);
+    await subscription.cancel();
+    await manager.dispose();
+  });
+
   test('explicit pause is never reversed by the continuity supervisor', () async {
     final mediaKit = _RecoveryFakePlayer(PlayerEngine.mediaKit, (_) => null);
     final manager = _manager(<PlayerEngine, _RecoveryFakePlayer>{
@@ -461,6 +510,10 @@ class _RecoveryFakePlayer implements UnifiedPlayer {
 
   void emitLoading(bool loading) {
     _loading.add(loading);
+  }
+
+  void emitNativeState(PlayerState state) {
+    _state.add(state);
   }
 
   void emitCompleted() {

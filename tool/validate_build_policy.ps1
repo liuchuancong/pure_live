@@ -233,6 +233,20 @@ foreach ($marker in @(
     }
 }
 
+$windowsFlutterRunner = Get-Content -LiteralPath (Join-Path $repoRoot 'windows\runner\flutter_window.cpp') -Raw
+if ($windowsFlutterRunner -notmatch '(?s)FlutterWindow::~FlutterWindow\(\)\s*\{.*?Destroy\(\);.*?\}') {
+    throw 'Windows FlutterWindow must destroy its child controller while derived teardown guards are still alive.'
+}
+foreach ($marker in @(
+    'flutter_controller_destroying_ = true;',
+    'flutter_controller_.reset();',
+    'flutter_controller_ && !flutter_controller_destroying_'
+)) {
+    if (-not $windowsFlutterRunner.Contains($marker)) {
+        throw "Windows Flutter controller teardown guard is missing: $marker"
+    }
+}
+
 $androidVerifier = Get-Content -LiteralPath (Join-Path $repoRoot 'tool\verify_android_apk.ps1') -Raw
 foreach ($marker in @(
     'assets/flutter_assets/AssetManifest.bin',

@@ -11,12 +11,20 @@
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
 
-FlutterWindow::~FlutterWindow() {}
+FlutterWindow::~FlutterWindow() {
+  // Some Dart-side exit paths end the message loop before Windows has sent
+  // WM_DESTROY. Calling Destroy only from Win32Window's base destructor is too
+  // late: C++ has already destroyed flutter_controller_, while its child HWND
+  // can still synchronously notify the live parent window. Tear down through
+  // the derived virtual OnDestroy while every guard member is still alive.
+  Destroy();
+}
 
 bool FlutterWindow::OnCreate() {
   if (!Win32Window::OnCreate()) {
     return false;
   }
+  flutter_controller_destroying_ = false;
 
   RECT frame = GetClientArea();
 
@@ -61,10 +69,13 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  // FlutterViewController destruction synchronously destroys its child HWND,
+  // which sends WM_PARENTNOTIFY back to this top-level window. At that point
+  // the wrapper still exists but its internal view is null, so forwarding the
+  // re-entrant message would crash in FlutterWindowsView::GetEngine().
+  flutter_controller_destroying_ = true;
   display_mode_channel_.reset();
-  if (flutter_controller_) {
-    flutter_controller_ = nullptr;
-  }
+  flutter_controller_.reset();
 
   Win32Window::OnDestroy();
 }
@@ -79,7 +90,7 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
   }
 
   // Give Flutter, including plugins, an opportunity to handle window messages.
-  if (flutter_controller_) {
+  if (flutter_controller_ && !flutter_controller_destroying_) {
     std::optional<LRESULT> result =
         flutter_controller_->HandleTopLevelWindowProc(hwnd, message, wparam,
                                                       lparam);
@@ -90,7 +101,9 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
 
   switch (message) {
     case WM_FONTCHANGE:
-      flutter_controller_->engine()->ReloadSystemFonts();
+      if (flutter_controller_ && !flutter_controller_destroying_) {
+        flutter_controller_->engine()->ReloadSystemFonts();
+      }
       break;
   }
 

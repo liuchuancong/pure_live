@@ -471,12 +471,15 @@ class _TaskCard extends GetView<RecorderController> {
 
     final color = _statusColor();
 
-    final showRecordingStats = const <RecordStatus>{
-      RecordStatus.running,
-      RecordStatus.reconnecting,
-      RecordStatus.processing,
-      RecordStatus.preparing,
-    }.contains(task.status);
+    final showRecordingStats =
+        const <RecordStatus>{
+          RecordStatus.running,
+          RecordStatus.reconnecting,
+          RecordStatus.processing,
+          RecordStatus.preparing,
+        }.contains(task.status) ||
+        task.recordedSeconds > 0 ||
+        task.fileSize > 0;
     final isTransitioning = {RecordStatus.reconnecting, RecordStatus.preparing}.contains(task.status);
 
     return AnimatedContainer(

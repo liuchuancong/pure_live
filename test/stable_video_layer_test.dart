@@ -33,6 +33,36 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     expect(disposed, 1);
   });
+
+  testWidgets('Windows-style hiding disposes and recreates the native texture subtree', (tester) async {
+    var mounted = 0;
+    var disposed = 0;
+
+    Widget build(bool visible) {
+      return MaterialApp(
+        home: SizedBox(
+          width: 320,
+          height: 180,
+          child: StableVideoLayer(
+            visible: visible,
+            preserveMountedVideo: false,
+            video: _MountProbe(onMount: () => mounted++, onDispose: () => disposed++),
+            placeholder: const ColoredBox(color: Colors.black),
+          ),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(build(true));
+    expect(mounted, 1);
+
+    await tester.pumpWidget(build(false));
+    expect(disposed, 1);
+
+    await tester.pumpWidget(build(true));
+    expect(mounted, 2);
+    expect(disposed, 1);
+  });
 }
 
 class _MountProbe extends StatefulWidget {
