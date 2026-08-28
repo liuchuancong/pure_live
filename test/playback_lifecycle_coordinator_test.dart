@@ -85,6 +85,41 @@ void main() {
     expect(resumedSessions, <int>[1, 2]);
     await coordinator.dispose();
   });
+
+  test('a transient Android hidden state is coalesced without pausing playback', () async {
+    var pauses = 0;
+    final coordinator = _coordinator(
+      hiddenPauseDelay: const Duration(milliseconds: 20),
+      pause: () async {
+        pauses++;
+        return (sessionId: 3, intentRevision: 9);
+      },
+    );
+
+    await coordinator.handleState(AppLifecycleState.hidden);
+    await coordinator.handleState(AppLifecycleState.resumed);
+    await Future<void>.delayed(const Duration(milliseconds: 40));
+
+    expect(pauses, 0);
+    await coordinator.dispose();
+  });
+
+  test('a persistent hidden state still pauses after the coalescing window', () async {
+    var pauses = 0;
+    final coordinator = _coordinator(
+      hiddenPauseDelay: const Duration(milliseconds: 5),
+      pause: () async {
+        pauses++;
+        return (sessionId: 5, intentRevision: 2);
+      },
+    );
+
+    await coordinator.handleState(AppLifecycleState.paused);
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+
+    expect(pauses, 1);
+    await coordinator.dispose();
+  });
 }
 
 PlaybackLifecycleCoordinator _coordinator({
@@ -95,6 +130,7 @@ PlaybackLifecycleCoordinator _coordinator({
   bool sleepSessionActive = false,
   Future<void> Function()? commitPowerSaving,
   Future<void> Function()? prepareVideoRestore,
+  Duration hiddenPauseDelay = Duration.zero,
 }) {
   return PlaybackLifecycleCoordinator(
     pauseForLifecycle: pause,
@@ -104,5 +140,6 @@ PlaybackLifecycleCoordinator _coordinator({
     isSleepSessionActive: () => sleepSessionActive,
     commitAudioOnlyPowerSaving: commitPowerSaving ?? () async {},
     prepareAudioOnlyVideoRestore: prepareVideoRestore ?? () async {},
+    hiddenPauseDelay: hiddenPauseDelay,
   );
 }

@@ -63,7 +63,10 @@ class GlobalPlayerService {
     playbackLifecycle = PlaybackLifecycleCoordinator(
       pauseForLifecycle: playerManager.pauseForLifecycle,
       resumeFromLifecycle: playerManager.resumeFromLifecycle,
-      shouldContinueInBackground: () => LiveAudioService.shouldContinueInBackground,
+      // PiP/app-floating is still a visible playback presentation even though
+      // Android may report the hosting Activity as hidden during transition.
+      shouldContinueInBackground: () =>
+          LiveAudioService.shouldContinueInBackground || playerManager.isCompactModeActive,
       isAudioOnly: () => playerManager.isAudioOnlyMode,
       isSleepSessionActive: () => LiveAudioService.isSleepSessionActive,
       commitAudioOnlyPowerSaving: playerManager.commitAudioOnlyPowerSaving,

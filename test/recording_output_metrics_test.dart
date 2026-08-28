@@ -59,4 +59,22 @@ void main() {
     expect(snapshot.bytes, 210);
     expect(snapshot.segmentCount, 2);
   });
+
+  test('incremental tracker discovers a non-zero first segment after recovery', () async {
+    final directory = await Directory.systemTemp.createTemp('pure-live-recording-recovery-');
+    addTearDown(() => directory.delete(recursive: true));
+    final third = File('${directory.path}${Platform.pathSeparator}attempt_000003.ts');
+    final fourth = File('${directory.path}${Platform.pathSeparator}attempt_000004.ts');
+    final tracker = const RecordingOutputMetrics().track(directoryPath: directory.path, filePrefix: 'attempt');
+
+    await third.writeAsBytes(List<int>.filled(70, 1));
+    var snapshot = await tracker.sample();
+    expect(snapshot.bytes, 70);
+    expect(snapshot.segmentCount, 1);
+
+    await fourth.writeAsBytes(List<int>.filled(30, 2));
+    snapshot = await tracker.sample();
+    expect(snapshot.bytes, 100);
+    expect(snapshot.segmentCount, 2);
+  });
 }

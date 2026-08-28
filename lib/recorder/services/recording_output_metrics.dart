@@ -82,6 +82,7 @@ class RecordingOutputTracker {
   final String _directoryPath;
   final String _filePrefix;
   var _currentIndex = 0;
+  var _firstIndex = 0;
   var _finalizedBytes = 0;
   RecordingOutputSnapshot _lastSnapshot = RecordingOutputSnapshot.empty;
 
@@ -90,7 +91,10 @@ class RecordingOutputTracker {
 
     while (true) {
       final current = File(_segmentPath(_currentIndex));
-      if (!await current.exists()) return _lastSnapshot;
+      if (!await current.exists()) {
+        if (_lastSnapshot.segmentCount > 0 || !await _locateFirstExistingSegment()) return _lastSnapshot;
+        continue;
+      }
       try {
         final currentStat = await current.stat();
         final next = File(_segmentPath(_currentIndex + 1));
@@ -101,7 +105,7 @@ class RecordingOutputTracker {
         }
         _lastSnapshot = RecordingOutputSnapshot(
           bytes: _finalizedBytes + currentStat.size,
-          segmentCount: _currentIndex + 1,
+          segmentCount: _currentIndex - _firstIndex + 1,
           latestModified: currentStat.modified,
         );
         return _lastSnapshot;
@@ -109,6 +113,32 @@ class RecordingOutputTracker {
         return _lastSnapshot;
       }
     }
+  }
+
+  /// Normally FFmpeg starts at 000000. Recovery after a process restart or a
+  /// platform-specific segment-number override may leave the first visible
+  /// segment at another index. Discover that index once, then return to the
+  /// O(1) sequential tracker path.
+  Future<bool> _locateFirstExistingSegment() async {
+    final directory = Directory(_directoryPath);
+    if (!await directory.exists()) return false;
+    final matcher = RegExp('^${RegExp.escape(_filePrefix)}_(\\d{6})\\.ts\$', caseSensitive: false);
+    int? firstIndex;
+    try {
+      await for (final entity in directory.list(followLinks: false)) {
+        if (entity is! File) continue;
+        final match = matcher.firstMatch(p.basename(entity.path));
+        if (match == null) continue;
+        final index = int.tryParse(match.group(1)!);
+        if (index != null && (firstIndex == null || index < firstIndex)) firstIndex = index;
+      }
+    } on FileSystemException {
+      return false;
+    }
+    if (firstIndex == null) return false;
+    _currentIndex = firstIndex;
+    _firstIndex = firstIndex;
+    return true;
   }
 
   String _segmentPath(int index) {

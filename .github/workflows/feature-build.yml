@@ -49,7 +49,7 @@ on:
         description: Release tag (e.g. v1.0.0) – required if create_release is true
         required: true
         type: string
-        default: 'v3.0.18'
+        default: 'v3.0.19'
 
   push:
     tags:

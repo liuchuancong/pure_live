@@ -61,6 +61,16 @@ void main() {
       );
     });
 
+    test('keeps an absolute signed rtmp_live URL instead of prefixing a CDN base', () {
+      final url = DouyuSite.parsePlayUrl(<String, dynamic>{
+        'rtmp_url': 'https://cdn.example.test/live',
+        'flv_url': 'https://backup.example.test/live',
+        'rtmp_live': 'https://signed.example.test/room.flv?wsAuth=a&amp;token=b',
+      });
+
+      expect(url, 'https://signed.example.test/room.flv?wsAuth=a&token=b');
+    });
+
     test('never mistakes a bare flv CDN base for the media input', () {
       expect(
         DouyuSite.parsePlayUrl(<String, dynamic>{

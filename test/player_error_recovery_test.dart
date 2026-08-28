@@ -320,6 +320,30 @@ void main() {
     await manager.dispose();
   });
 
+  test('a live buffering stall enters bounded source recovery', () async {
+    final mediaKit = _RecoveryFakePlayer(PlayerEngine.mediaKit, (_) => null);
+    final fijk = _RecoveryFakePlayer(PlayerEngine.fijk, (_) => null);
+    final manager = _manager(<PlayerEngine, _RecoveryFakePlayer>{
+      PlayerEngine.mediaKit: mediaKit,
+      PlayerEngine.fijk: fijk,
+    }, bufferingStallTimeout: const Duration(milliseconds: 3));
+    manager.configureDefaultEngine(PlayerEngine.mediaKit);
+
+    await manager.play(
+      'https://cdn.example/stalled-live.flv',
+      const <String>['https://cdn.example/stalled-live.flv'],
+      const <String, String>{},
+      room: LiveRoom(roomId: 'buffering-stall', platform: 'test'),
+    );
+    mediaKit.emitLoading(true);
+    mediaKit.emitUnexpectedPlaying(false);
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+
+    expect(manager.currentEngine, PlayerEngine.fijk);
+    expect(fijk.openedUrls, <String>['https://cdn.example/stalled-live.flv']);
+    await manager.dispose();
+  });
+
   test('audio interruption resumes only the playback intent it suspended', () async {
     final mediaKit = _RecoveryFakePlayer(PlayerEngine.mediaKit, (_) => null);
     final manager = _manager(<PlayerEngine, _RecoveryFakePlayer>{
@@ -379,6 +403,7 @@ PlayerManager _manager(
   Duration sourceReadyTimeout = Duration.zero,
   Duration unexpectedPauseGrace = const Duration(milliseconds: 1200),
   Duration? unexpectedPauseFailureGrace,
+  Duration bufferingStallTimeout = const Duration(seconds: 12),
 }) {
   return PlayerManager(
     playerCreator: (engine) => players[engine]!,
@@ -391,6 +416,7 @@ PlayerManager _manager(
     sourceReadyTimeout: sourceReadyTimeout,
     unexpectedPauseGrace: unexpectedPauseGrace,
     unexpectedPauseFailureGrace: unexpectedPauseFailureGrace ?? unexpectedPauseGrace,
+    bufferingStallTimeout: bufferingStallTimeout,
     useHardStopOnExit: () => false,
     audioModeServiceSync: (_, _) async {},
     audioSessionStart: (_) async {},
@@ -431,6 +457,10 @@ class _RecoveryFakePlayer implements UnifiedPlayer {
   void emitUnexpectedPlaying(bool playing) {
     _isPlaying = playing;
     _playing.add(playing);
+  }
+
+  void emitLoading(bool loading) {
+    _loading.add(loading);
   }
 
   void emitCompleted() {

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:path/path.dart' as p;
@@ -235,23 +236,30 @@ class RecorderController extends GetxService {
       final snapshot = await tracker.sample();
       if (!_isCurrentSession(task.taskId, sessionId)) return;
 
+      final nativeSession = ffmpeg.getSession(task.taskId);
+      final attemptBytes = math.max(snapshot.bytes, nativeSession?.fileSize ?? 0);
       final previous = _outputSamples[task.taskId];
-      _outputSamples[task.taskId] = (bytes: snapshot.bytes, sampledAt: now);
-      if (snapshot.bytes <= 0) return;
+      _outputSamples[task.taskId] = (bytes: attemptBytes, sampledAt: now);
+      final mediaStarted = attemptBytes > 0 || nativeSession?.mediaStarted == true;
+      if (!mediaStarted) return;
 
       _outputStartedAt.putIfAbsent(task.taskId, () => now);
       final attempt = _attemptProgress[task.taskId] ?? const RecordingAttemptProgress(baseBytes: 0, baseSeconds: 0);
-      final totalBytes = attempt.totalBytes(snapshot.bytes);
+      final totalBytes = attempt.totalBytes(attemptBytes);
       if (totalBytes > task.fileSize) task.fileSize = totalBytes;
-      if (previous != null && snapshot.bytes > previous.bytes) {
+      if (previous != null && attemptBytes > previous.bytes) {
         final elapsedMs = now.difference(previous.sampledAt).inMilliseconds;
         if (elapsedMs > 0) {
-          task.bitrate = (snapshot.bytes - previous.bytes) * 8 / elapsedMs;
+          task.bitrate = (attemptBytes - previous.bytes) * 8 / elapsedMs;
         }
       }
+      if (task.bitrate <= 0 && (nativeSession?.bitrate ?? 0) > 0) task.bitrate = nativeSession!.bitrate;
       final wallSeconds = now.difference(_outputStartedAt[task.taskId]!).inSeconds;
-      final totalSeconds = attempt.totalSeconds(wallSeconds);
+      final attemptSeconds = math.max(wallSeconds, nativeSession?.recordedSeconds ?? 0);
+      final totalSeconds = attempt.totalSeconds(attemptSeconds);
       if (totalSeconds > task.recordedSeconds) task.recordedSeconds = totalSeconds;
+      if ((nativeSession?.speed ?? 0) > 0) task.recordSpeed = nativeSession!.speed;
+      if ((nativeSession?.fps ?? 0) > 0) task.fps = nativeSession!.fps;
       if (task.recordSpeed <= 0) task.recordSpeed = 1;
       task
         ..status = RecordStatus.running

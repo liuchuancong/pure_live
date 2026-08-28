@@ -701,8 +701,8 @@ class MediaKitAdapter
       _videoParamsSub!,
       _audioParamsSub!,
       _completeSub!,
-      if (_errorSub != null) _errorSub!,
-      if (_logSub != null) _logSub!,
+      ?_errorSub,
+      ?_logSub,
     ]);
   }
 

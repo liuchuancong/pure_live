@@ -1,3 +1,7 @@
+// Public named arguments intentionally keep descriptive names while the
+// callback fields remain private implementation details.
+// ignore_for_file: prefer_initializing_formals
+
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
@@ -27,6 +31,7 @@ class PlaybackLifecycleCoordinator with WidgetsBindingObserver {
     required bool Function() isSleepSessionActive,
     required Future<void> Function() commitAudioOnlyPowerSaving,
     required Future<void> Function() prepareAudioOnlyVideoRestore,
+    this.hiddenPauseDelay = const Duration(milliseconds: 1500),
   }) : _pauseForLifecycle = pauseForLifecycle,
        _resumeFromLifecycle = resumeFromLifecycle,
        _shouldContinueInBackground = shouldContinueInBackground,
@@ -34,6 +39,12 @@ class PlaybackLifecycleCoordinator with WidgetsBindingObserver {
        _isSleepSessionActive = isSleepSessionActive,
        _commitAudioOnlyPowerSaving = commitAudioOnlyPowerSaving,
        _prepareAudioOnlyVideoRestore = prepareAudioOnlyVideoRestore;
+
+  /// Coalesces the short hidden/paused pair emitted by Android while changing
+  /// orientation, entering picture-in-picture or replacing a platform Surface.
+  /// A real background transition remains hidden beyond this window and is
+  /// still paused according to the configured background policy.
+  final Duration hiddenPauseDelay;
 
   final LifecyclePauseCallback _pauseForLifecycle;
   final LifecycleResumeCallback _resumeFromLifecycle;
@@ -48,6 +59,8 @@ class PlaybackLifecycleCoordinator with WidgetsBindingObserver {
   bool _started = false;
   bool _disposed = false;
   bool _hiddenApplied = false;
+  Timer? _hiddenPauseTimer;
+  int _hiddenPauseRevision = 0;
 
   AppLifecycleState? get lastState => _lastState;
   AppLifecycleState? _lastState;
@@ -69,7 +82,7 @@ class PlaybackLifecycleCoordinator with WidgetsBindingObserver {
   Future<void> handleState(AppLifecycleState state) {
     if (_disposed) return Future<void>.value();
     final operation = _transitionQueue.then((_) => _applyState(state));
-    _transitionQueue = operation.catchError((Object _, StackTrace __) {});
+    _transitionQueue = operation.catchError((Object _, StackTrace _) {});
     return operation;
   }
 
@@ -100,10 +113,35 @@ class PlaybackLifecycleCoordinator with WidgetsBindingObserver {
     }
 
     if (_shouldContinueInBackground() || _pendingPause != null) return;
+    _hiddenPauseTimer?.cancel();
+    final revision = ++_hiddenPauseRevision;
+    if (hiddenPauseDelay <= Duration.zero) {
+      await _applyHiddenPause(revision);
+      return;
+    }
+    _hiddenPauseTimer = Timer(hiddenPauseDelay, () {
+      _hiddenPauseTimer = null;
+      final operation = _transitionQueue.then((_) => _applyHiddenPause(revision));
+      _transitionQueue = operation.catchError((Object _, StackTrace _) {});
+    });
+  }
+
+  Future<void> _applyHiddenPause(int revision) async {
+    if (_disposed ||
+        revision != _hiddenPauseRevision ||
+        !_hiddenApplied ||
+        (_lastState != AppLifecycleState.hidden && _lastState != AppLifecycleState.paused) ||
+        _shouldContinueInBackground() ||
+        _pendingPause != null) {
+      return;
+    }
     _pendingPause = await _pauseForLifecycle();
   }
 
   Future<void> _enterResumedState() async {
+    _hiddenPauseTimer?.cancel();
+    _hiddenPauseTimer = null;
+    _hiddenPauseRevision++;
     _hiddenApplied = false;
     if (_isAudioOnly() && !_isSleepSessionActive()) {
       await _prepareAudioOnlyVideoRestore();
@@ -120,6 +158,9 @@ class PlaybackLifecycleCoordinator with WidgetsBindingObserver {
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
+    _hiddenPauseTimer?.cancel();
+    _hiddenPauseTimer = null;
+    _hiddenPauseRevision++;
     if (_started) {
       WidgetsBinding.instance.removeObserver(this);
       _started = false;

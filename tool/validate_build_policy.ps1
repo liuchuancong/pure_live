@@ -213,10 +213,24 @@ foreach ($marker in @(
     "Join-Path `$PSScriptRoot 'prefetch_windows_native.ps1'",
     '/DArtifactVersion=$artifactVersion',
     'build\windows\x64\install_manifest.txt',
+    '$manifestSourceMarker = "\build\windows\x64\runner\$configurationDirectory\"',
+    'Keep dependency resolution single-owner',
     'Retired QuickJS runtime files appeared in the Windows package',
     'automatic_follow_up = $false'
 )) {
     if (-not $buildScript.Contains($marker)) { throw "Build script policy marker is missing: $marker" }
+}
+
+$windowsInstaller = Get-Content -LiteralPath (Join-Path $repoRoot 'windows\packaging\exe\local_release.iss') -Raw
+foreach ($marker in @(
+    '[InstallDelete]',
+    'Type: filesandordirs; Name: "{app}\data"',
+    'Type: files; Name: "{app}\*.dll"',
+    'Name: "{app}\AppData"; Flags: uninsneveruninstall'
+)) {
+    if (-not $windowsInstaller.Contains($marker)) {
+        throw "Windows installer upgrade-cleanup marker is missing: $marker"
+    }
 }
 
 $androidVerifier = Get-Content -LiteralPath (Join-Path $repoRoot 'tool\verify_android_apk.ps1') -Raw
@@ -511,11 +525,13 @@ if ($pubspecText -notmatch '(?m)^version:\s*([0-9]+\.[0-9]+\.[0-9]+)\+([0-9]+)\s
 $displayVersion = $Matches[1]
 $buildNumber = [int]$Matches[2]
 $releaseTag = "v$displayVersion"
-$msixConfig = Get-Content -LiteralPath (Join-Path $repoRoot 'windows\packaging\msix\make_config.yaml') -Raw
-if ($msixConfig -notmatch "(?m)^msix_version:\s*$([regex]::Escape($displayVersion))\.$buildNumber\s*$") {
-    throw 'Windows MSIX version must match pubspec.yaml display version and build number.'
-}
 $versionFeed = Get-Content -LiteralPath (Join-Path $repoRoot 'assets\version.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+$msixConfig = Get-Content -LiteralPath (Join-Path $repoRoot 'windows\packaging\msix\make_config.yaml') -Raw
+$windowsDisplayVersion = $versionFeed.platforms.windows.version
+$windowsBuildNumber = [int]$versionFeed.platforms.windows.build_number
+if ($msixConfig -notmatch "(?m)^msix_version:\s*$([regex]::Escape($windowsDisplayVersion))\.$windowsBuildNumber\s*$") {
+    throw 'Windows MSIX version must match the Windows platform entry in assets/version.json.'
+}
 if ($versionFeed.version -ne $displayVersion -or [int]$versionFeed.build_number -ne $buildNumber) {
     throw 'assets/version.json top-level version must match pubspec.yaml.'
 }

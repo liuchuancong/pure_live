@@ -268,6 +268,11 @@ class DouyuSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRe
   static String parsePlayUrl(Map<String, dynamic> data) {
     final unescape = HtmlUnescape();
     final live = unescape.convert(data['rtmp_live']?.toString().trim() ?? '');
+    // Some current H5 responses return a complete signed FLV address in
+    // rtmp_live. It must win over the separate CDN base fields; prefixing a
+    // second absolute URL produces a syntactically valid but unopenable input
+    // such as `https://cdn/live/https://other/live.flv`.
+    if (_isPlayableUrl(live)) return live;
     // getH5PlayV1 normally separates the CDN base (`rtmp_url`, and on
     // variants `flv_url`) from the signed media path (`rtmp_live`). A base URL
     // is syntactically valid HTTP but is not an FFmpeg input. Returning it
@@ -279,7 +284,6 @@ class DouyuSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRe
       if (_isPlayableUrl(combined)) return combined;
     }
 
-    if (_isPlayableUrl(live)) return live;
     for (final key in const <String>['player_1', 'stream_url', 'url']) {
       final value = unescape.convert(data[key]?.toString().trim() ?? '');
       if (_isPlayableUrl(value)) return value;

@@ -54,6 +54,7 @@ class PlayerManager {
   final Duration sourceReadyTimeout;
   final Duration unexpectedPauseGrace;
   final Duration unexpectedPauseFailureGrace;
+  final Duration bufferingStallTimeout;
   final bool enableActiveContentProbe;
 
   /// How long a manual foreground audio session keeps video decode warm.
@@ -71,6 +72,7 @@ class PlayerManager {
   bool _playbackIntentEstablished = false;
   final Set<_PlaybackSuspensionReason> _playbackSuspensions = <_PlaybackSuspensionReason>{};
   Timer? _continuityTimer;
+  Timer? _bufferingStallTimer;
   int _continuityRevision = 0;
   bool _isClosing = false;
 
@@ -82,6 +84,7 @@ class PlayerManager {
     this.sourceReadyTimeout = Duration.zero,
     this.unexpectedPauseGrace = const Duration(milliseconds: 1200),
     this.unexpectedPauseFailureGrace = const Duration(seconds: 5),
+    this.bufferingStallTimeout = const Duration(seconds: 12),
     // media_kit's screenshot path temporarily detaches the Android hardware
     // decoder surface on several ColorOS/Qualcomm devices. Repeated probes
     // then discard every frame and trigger the continuity recovery path,
@@ -1357,12 +1360,15 @@ class PlayerManager {
   }
 
   bool _shouldMaintainPlayback(UnifiedPlayer player, int sessionId) {
+    return _shouldOwnContinuousPlayback(player, sessionId) && !_loadingSubject.value;
+  }
+
+  bool _shouldOwnContinuousPlayback(UnifiedPlayer player, int sessionId) {
     return _isPlayerEventCurrent(player, sessionId) &&
         _playbackRequested &&
         _playbackSuspensions.isEmpty &&
         _isContinuousLiveSource &&
         _currentUrl?.isNotEmpty == true &&
-        !_loadingSubject.value &&
         !hasError.value;
   }
 
@@ -1370,6 +1376,38 @@ class PlayerManager {
     _continuityRevision++;
     _continuityTimer?.cancel();
     _continuityTimer = null;
+    _bufferingStallTimer?.cancel();
+    _bufferingStallTimer = null;
+  }
+
+  void _scheduleBufferingStallRecovery(UnifiedPlayer player, int sessionId) {
+    if (bufferingStallTimeout <= Duration.zero ||
+        !_loadingSubject.value ||
+        player.isPlayingNow ||
+        isPlayingNow ||
+        !_shouldOwnContinuousPlayback(player, sessionId)) {
+      return;
+    }
+    _bufferingStallTimer?.cancel();
+    final revision = ++_continuityRevision;
+    _bufferingStallTimer = Timer(bufferingStallTimeout, () {
+      _bufferingStallTimer = null;
+      if (revision != _continuityRevision ||
+          !_loadingSubject.value ||
+          player.isPlayingNow ||
+          isPlayingNow ||
+          !_shouldOwnContinuousPlayback(player, sessionId)) {
+        return;
+      }
+      _schedulePlayerError(
+        PlayerException(
+          message: 'Live playback remained buffered without media progress',
+          type: PlayerErrorType.source,
+          code: 'buffering_stall_timeout',
+        ),
+        sessionId,
+      );
+    });
   }
 
   void _scheduleContinuityRecovery(UnifiedPlayer player, int sessionId) {
@@ -2378,9 +2416,20 @@ class PlayerManager {
             _isSwitchingDueToFallback = false;
           }
           _scheduleActiveContentProbe();
-        } else if (_stateSubject.value != PlayerState.preparing && _stateSubject.value != PlayerState.buffering) {
-          _stateSubject.add(PlayerState.paused);
-          _scheduleContinuityRecovery(player, sessionId);
+        } else {
+          if (_stateSubject.value != PlayerState.preparing && _stateSubject.value != PlayerState.buffering) {
+            _stateSubject.add(PlayerState.paused);
+          }
+          // Native players commonly publish buffering=true before
+          // playing=false. The first event still observes the player's old
+          // playing flag; schedule the watchdog again after false becomes the
+          // authoritative state instead of leaving the stream buffered for
+          // the rest of the room session.
+          if (_loadingSubject.value) {
+            _scheduleBufferingStallRecovery(player, sessionId);
+          } else {
+            _scheduleContinuityRecovery(player, sessionId);
+          }
         }
       }),
     );
@@ -2391,7 +2440,10 @@ class PlayerManager {
         if (event && _stateSubject.value != PlayerState.buffering) {
           _cancelContinuityRecovery();
           _stateSubject.add(PlayerState.buffering);
+          _scheduleBufferingStallRecovery(player, sessionId);
         } else if (!event && !player.isPlayingNow && !isPlayingNow) {
+          _bufferingStallTimer?.cancel();
+          _bufferingStallTimer = null;
           _scheduleContinuityRecovery(player, sessionId);
         }
       }),

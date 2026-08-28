@@ -49,34 +49,28 @@ class RecorderPage extends GetView<RecorderController> {
             ),
             const SizedBox(width: 8),
           ],
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(54),
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: RecorderStatusTabBar(labels: tabs.map(i18n).toList(growable: false)),
-            ),
-          ),
         ),
-        body: ScrollConfiguration(
-          behavior: const MaterialScrollBehavior().copyWith(
-            overscroll: false,
-            scrollbars: false,
-            physics: const ClampingScrollPhysics(),
-          ),
-          child: TabBarView(
-            physics: const PageScrollPhysics(parent: ClampingScrollPhysics()),
-            children: [
-              _TaskList(filter: null),
-              _TaskList(filter: (e) => e.status == RecordStatus.running),
-              _TaskList(filter: (e) => e.status == RecordStatus.waitingLive),
-              _TaskList(filter: (e) => e.status == RecordStatus.queued),
-              _TaskList(filter: (e) => e.status == RecordStatus.reconnecting),
-              _TaskList(filter: (e) => e.status == RecordStatus.processing),
-              _TaskList(filter: (e) => e.status == RecordStatus.completed),
-              _TaskList(filter: (e) => e.status == RecordStatus.failed),
-              _TaskList(filter: (e) => e.status == RecordStatus.stopped),
-            ],
-          ),
+        body: Column(
+          children: [
+            RecorderStatusSelector(labels: tabs.map(i18n).toList(growable: false)),
+            const Divider(height: 1),
+            Expanded(
+              child: TabBarView(
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  _TaskList(filter: null),
+                  _TaskList(filter: (e) => e.status == RecordStatus.running),
+                  _TaskList(filter: (e) => e.status == RecordStatus.waitingLive),
+                  _TaskList(filter: (e) => e.status == RecordStatus.queued),
+                  _TaskList(filter: (e) => e.status == RecordStatus.reconnecting),
+                  _TaskList(filter: (e) => e.status == RecordStatus.processing),
+                  _TaskList(filter: (e) => e.status == RecordStatus.completed),
+                  _TaskList(filter: (e) => e.status == RecordStatus.failed),
+                  _TaskList(filter: (e) => e.status == RecordStatus.stopped),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -477,14 +471,12 @@ class _TaskCard extends GetView<RecorderController> {
 
     final color = _statusColor();
 
-    final showRecordingStats =
-        task.fileSize > 0 &&
-        const <RecordStatus>{
-          RecordStatus.running,
-          RecordStatus.reconnecting,
-          RecordStatus.processing,
-          RecordStatus.preparing,
-        }.contains(task.status);
+    final showRecordingStats = const <RecordStatus>{
+      RecordStatus.running,
+      RecordStatus.reconnecting,
+      RecordStatus.processing,
+      RecordStatus.preparing,
+    }.contains(task.status);
     final isTransitioning = {RecordStatus.reconnecting, RecordStatus.preparing}.contains(task.status);
 
     return AnimatedContainer(

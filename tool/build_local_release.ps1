@@ -206,6 +206,12 @@ try {
 
         $windowsArgs = @(
             'build', 'windows', "--$configurationLower",
+            # The locked pub stage above has already generated the Windows
+            # plugin links from the physical repository path. Re-running pub
+            # while Flutter is using the short junction can delete that tree
+            # and then fail to recreate `.plugin_symlinks` through the
+            # reparse point. Keep dependency resolution single-owner.
+            '--no-pub',
             '--dart-define=PURELIVE_BUILD_SOURCE=local'
         )
         $buildExitCode = Invoke-PureLiveLoggedFlutter -Arguments $windowsArgs -LogPath $commandLog
@@ -250,7 +256,7 @@ try {
             throw 'Windows install manifest is empty.'
         }
         $windowsSourcePrefix = $windowsSourceFull.TrimEnd('\') + '\'
-        $manifestSourceMarker = '\build\windows\x64\runner\Release\'
+        $manifestSourceMarker = "\build\windows\x64\runner\$configurationDirectory\"
         foreach ($entry in $manifestEntries) {
             # Flutter may invoke CMake through its short/substituted P: path,
             # while this script runs from the long workspace path. Resolve the
