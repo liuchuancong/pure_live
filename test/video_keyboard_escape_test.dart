@@ -2,10 +2,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/modules/live_play/widgets/keyboard/video_keyboard.dart';
 
 void main() {
-  test('Escape does not enter fullscreen from a normal room', () {
+  test('Escape pops a normal live room route', () {
     expect(
       resolveEscapePresentationAction(pip: false, fullscreen: false, widescreen: false),
-      EscapePresentationAction.none,
+      EscapePresentationAction.popRoute,
     );
   });
 

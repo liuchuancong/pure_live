@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
@@ -40,10 +42,17 @@ class _VideoKeyboardShortcutsState extends State<VideoKeyboardShortcuts> {
       case EscapePresentationAction.exitWidescreen:
         widget.controller.toggleWindowFullScreen();
         return true;
+      case EscapePresentationAction.popRoute:
+        // Desktop Flutter does not translate an unhandled Escape key into a
+        // Navigator pop. Returning false here left a normal live room open,
+        // even though the same key correctly exited fullscreen. Route the
+        // normal-room action explicitly while preserving the page's existing
+        // PopScope/lifecycle cleanup.
+        unawaited(Navigator.of(context).maybePop());
+        return true;
       case EscapePresentationAction.none:
-        // Leave normal-route Escape handling to Flutter/Navigator instead of
-        // turning a normal room into fullscreen. PiP also owns its own close
-        // path and must not be mutated by the parent room shortcut.
+        // PiP owns its own close path and must not be mutated by the parent
+        // room shortcut.
         return false;
     }
   }
@@ -79,7 +88,7 @@ class _VideoKeyboardShortcutsState extends State<VideoKeyboardShortcuts> {
 }
 
 @visibleForTesting
-enum EscapePresentationAction { none, exitFullscreen, exitWidescreen }
+enum EscapePresentationAction { none, exitFullscreen, exitWidescreen, popRoute }
 
 @visibleForTesting
 EscapePresentationAction resolveEscapePresentationAction({
@@ -90,5 +99,5 @@ EscapePresentationAction resolveEscapePresentationAction({
   if (pip) return EscapePresentationAction.none;
   if (fullscreen) return EscapePresentationAction.exitFullscreen;
   if (widescreen) return EscapePresentationAction.exitWidescreen;
-  return EscapePresentationAction.none;
+  return EscapePresentationAction.popRoute;
 }

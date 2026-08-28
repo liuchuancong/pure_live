@@ -788,48 +788,64 @@ def bilibili_playback_probe() -> None:
         {"areaId": 0, "parent_area_id": 0, "sort": "online", "pageSize": 10, "page": 1},
     )
     rooms = recommendation.get("data", []) if isinstance(recommendation, dict) else []
-    if not rooms or not isinstance(rooms[0], dict):
+    if not rooms or not any(isinstance(room, dict) for room in rooms):
         raise ValueError("Bilibili playback probe has no live room")
-    room_id = str(rooms[0].get("roomid", "")).strip()
-    if not room_id:
-        raise ValueError("Bilibili playback room id missing")
 
-    response = request_json(
-        "https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo",
-        {
-            "room_id": room_id,
-            "protocol": "0,1",
-            "format": "0,1,2",
-            "codec": "0,1",
-            "qn": 10000,
-            "platform": "web",
-            "ptype": 8,
-        },
-    )
-    if not isinstance(response, dict) or response.get("code") != 0:
-        raise ValueError("Bilibili playback request was rejected")
-    data = response.get("data", {})
-    playurl_info = data.get("playurl_info", {}) if isinstance(data, dict) else {}
-    playurl = playurl_info.get("playurl", {}) if isinstance(playurl_info, dict) else {}
-    streams = playurl.get("stream", []) if isinstance(playurl, dict) else []
-    qualities = playurl.get("g_qn_desc", []) if isinstance(playurl, dict) else []
-    if not isinstance(streams, list) or not streams or not isinstance(qualities, list) or not qualities:
-        raise ValueError("Bilibili stream/quality descriptors missing")
+    # The popularity endpoint is eventually consistent with the playback
+    # service: a room can remain in the feed for a short period after its play
+    # envelope becomes empty. Probe a bounded set instead of making the entire
+    # release gate depend on the first transient room.
+    failures: list[str] = []
+    for room in (item for item in rooms[:5] if isinstance(item, dict)):
+        room_id = str(room.get("roomid", "")).strip()
+        if not room_id:
+            failures.append("missing room id")
+            continue
+        try:
+            response = request_json(
+                "https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo",
+                {
+                    "room_id": room_id,
+                    "protocol": "0,1",
+                    "format": "0,1,2",
+                    "codec": "0,1",
+                    "qn": 10000,
+                    "platform": "web",
+                    "ptype": 8,
+                },
+            )
+            if not isinstance(response, dict) or response.get("code") != 0:
+                failures.append(f"{room_id}: rejected")
+                continue
+            data = response.get("data", {})
+            playurl_info = data.get("playurl_info", {}) if isinstance(data, dict) else {}
+            playurl = playurl_info.get("playurl", {}) if isinstance(playurl_info, dict) else {}
+            streams = playurl.get("stream", []) if isinstance(playurl, dict) else []
+            qualities = playurl.get("g_qn_desc", []) if isinstance(playurl, dict) else []
+            if not isinstance(streams, list) or not streams or not isinstance(qualities, list) or not qualities:
+                failures.append(f"{room_id}: descriptors missing")
+                continue
 
-    for stream in streams:
-        formats = stream.get("format", []) if isinstance(stream, dict) else []
-        for format_item in formats if isinstance(formats, list) else []:
-            codecs = format_item.get("codec", []) if isinstance(format_item, dict) else []
-            for codec in codecs if isinstance(codecs, list) else []:
-                if not isinstance(codec, dict) or not codec.get("base_url"):
-                    continue
-                url_info = codec.get("url_info", [])
-                if isinstance(url_info, list) and any(
-                    isinstance(item, dict) and str(item.get("host", "")).startswith(("http://", "https://"))
-                    for item in url_info
-                ):
-                    return
-    raise ValueError("Bilibili playback response has no usable CDN URL")
+            for stream in streams:
+                formats = stream.get("format", []) if isinstance(stream, dict) else []
+                for format_item in formats if isinstance(formats, list) else []:
+                    codecs = format_item.get("codec", []) if isinstance(format_item, dict) else []
+                    for codec in codecs if isinstance(codecs, list) else []:
+                        if not isinstance(codec, dict) or not codec.get("base_url"):
+                            continue
+                        url_info = codec.get("url_info", [])
+                        if isinstance(url_info, list) and any(
+                            isinstance(item, dict)
+                            and str(item.get("host", "")).startswith(("http://", "https://"))
+                            for item in url_info
+                        ):
+                            return
+            failures.append(f"{room_id}: CDN URL missing")
+        except Exception as error:  # noqa: BLE001 - retain per-room diagnostics
+            failures.append(f"{room_id}: {error}")
+
+    summary = "; ".join(failures[-5:]) or "no usable room id"
+    raise ValueError(f"Bilibili playback candidates failed: {summary}")
 
 
 def huya_danmaku_identity_probe() -> None:

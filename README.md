@@ -120,6 +120,7 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 | [v3.0.13 Android 阶段更新](docs/STAGE_UPDATE_3_0_13.md) | 版本范围、关键修复、质量门禁与正式交付要求 |
 | [v3.0.15 播放器回归修复审计](docs/PLAYER_RECOVERY_AUDIT_3_0_15.md) | 3.0.14 回归来源、路径/首帧门控撤除、竖屏几何恢复、推测式超时下线与回滚策略 |
 | [v3.0.18 Android 真机播放与录制加固](docs/STAGE_UPDATE_3_0_18.md) | Android 硬解截图探测隔离、虎牙单连接签名刷新、跨重试录制统计与录制中心真机边界验证 |
+| [v3.0.19 Windows x64 稳定版](docs/STAGE_UPDATE_3_0_19_WINDOWS.md) | Windows 启动按需初始化、播放器资源释放、录制统计、Escape、弹幕交互与正式安装/便携包验证 |
 | [v3.0.17 播放与录制连续性更新](docs/STAGE_UPDATE_3_0_17.md) | 用户播放意图/音频焦点统一、直播暂停/EOF 恢复、分片真实大小与录制中心有界滚动 |
 | [v3.0.16 播放器与录制阶段更新](docs/STAGE_UPDATE_3_0_16.md) | 生命周期单一所有权、Android Surface/几何、录制按需清晰度/线路、斗鱼输入与录制中心稳定性 |
 | [2026-08-27 录制链路审计](docs/RECORDER_REPAIR_AUDIT_2026-08-27.md) | 十个平台录制契约、斗鱼/虎牙线路游标、FFmpeg 错误分类、持久化和回滚 |

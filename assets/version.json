@@ -21,12 +21,12 @@
       ]
     },
     "windows": {
-      "version": "3.0.18",
-      "build_number": 4106,
-      "version_num": 300184106,
-      "version_desc": "- Windows 构建在锁定依赖后使用 --no-pub，避免长路径目录联接下重复生成插件符号链接导致构建中断。\n- Windows Debug/Release 包装均按对应 CMake install manifest 组装，排除 .lib/.exp/.pdb 等开发文件和已退役 QuickJS 运行库。\n- Windows EXE 覆盖安装会先替换 data 与根目录 DLL，清除旧版残留插件；AppData 始终保留关注、设置、历史、IPTV 与录制数据。\n- Windows 播放器、弹幕、录制、搜索、平滑滚动、窗口全屏/小窗、多实例与升级迁移纳入专项回归和真实 Win11 客户端验证。",
+      "version": "3.0.19",
+      "build_number": 4107,
+      "version_num": 300194107,
+      "version_desc": "- 修复 Windows 普通启动提前预热 FFmpeg、无条件导入 IPTV 资源和设置控制器重复注册，降低空闲线程、内存与磁盘活动。\n- 普通直播页退出会关闭当前播放源；45 秒空闲宽限后释放原生播放器资源，重复进入仍可快速复用且资源会回落。\n- 修复普通直播间 Escape 误入全屏或留在当前页、录制源时间戳污染实时统计、同房间画质/线路重载丢弃本地弹幕，以及弹幕列表首次滚轮上移仍自动跟随。\n- 控制条上下命中区与画面弹幕手势隔离；全屏返回、录制中心边界、画质线路、实时弹幕和本地互动完成 Win11 实机与确定性回归。\n- Windows x64 提供可选安装目录的 EXE 安装包与便携 ZIP；覆盖安装保留安装目录 AppData 中的关注、设置、历史、IPTV 与录制数据。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.18",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.19",
       "windows_msix_available": false
     },
     "linux": {

@@ -42,9 +42,9 @@
 
 软停止有利于立即重开直播，但旧实现永久保留播放器。新增 45 秒空闲宽限期：期间重新开播会复用当前播放器；超过宽限且没有播放、小窗或 PiP 会话时执行完整原生释放。立即释放设置仍保持原行为。
 
-### 7. 普通直播间按 Escape 反而进入全屏
+### 7. 普通直播间 Escape 路由动作错误
 
-桌面全局键盘处理器对所有 Escape 都无条件调用 `toggleFullScreen()`。因此普通房间会被切进全屏，宽屏状态也会错误地进入系统全屏。现按状态解析动作：只退出已经激活的全屏或宽屏；普通房间把事件交还 Flutter 路由，PiP 保留自己的关闭路径。旧 Release 已完成实机复现，修复后的 Debug 实例确认普通房间按 Escape 不再改变显示模式。
+桌面全局键盘处理器最初对所有 Escape 都调用 `toggleFullScreen()`，普通房间会误入全屏，宽屏也会错误进入系统全屏。第一次修复虽然把普通状态返回为未处理，但 Windows Flutter 不会自动把该键转换成 Navigator pop，页面仍然停留。最终按状态解析动作：全屏/宽屏只退出对应展示层，普通房间显式执行当前 Navigator 的 `maybePop`，PiP 保留自己的关闭路径。修复后的 Debug 实例已确认真实直播页按 Escape 返回首页。
 
 ## 实机证据
 
@@ -80,7 +80,7 @@
 ## 自动化结果
 
 - `flutter analyze`：0 issue。
-- 完整 Flutter 测试：584 项通过。
+- 完整 Flutter 测试：593 项通过。
 - 启动、IPTV 策略、single-flight、设置生命周期、播放器音频切换/路由重开/空闲释放及 Escape 状态解析：修复后 39 项定向测试通过。
 - 公共接口探针：42/42 通过。
 - 仓库静态审计：0 error；空 catch 仅作为既有清单警告。
@@ -109,3 +109,17 @@
 - 新增 4 项时间归一化/旧数据迁移测试；相关两个测试文件合计 13 项通过，`flutter analyze` 仍为 0 issue。
 - Windows Debug 增量构建耗时 173.83 秒，构建记录：`local-artifacts/build-records/20260828T062009674Z-build-windowsx64-debug.json`。
 - `matrix2` 退出直播后的 55 秒资源趋势：工作集 `860.0 → 765.7 MiB`，Private `1091.9 → 980.2 MiB`，句柄 `1691 → 1345`，线程 `237 → 156`；原生媒体空闲释放再次生效。Debug CPU 不作为 Release 功耗结论，正式性能仍引用上方 Release 混合负载结果。
+
+## 续测：v3.0.19 Windows 稳定版收口
+
+- 对当前维护分支执行 30 分钟虎牙真实播放与高密度弹幕 Debug 长稳，期间完成 3 轮普通窗口→全屏→Escape 返回循环。181 个采样全部 `Responding=true`，进程没有退出；CPU 平均 `3.58%`、P95 `4.12%`、最大 `5.06%`，线程 `243 → 243`，句柄 `1698 → 1607`。
+- 30 分钟样本的 Working Set 为 `949.7 → 1054.9 MiB`，Private Bytes 为 `1204.3 → 1296.4 MiB`。Debug 图片/弹幕缓存预热期间存在约 `2.95 / 1.46 MiB/分钟` 的正斜率，但没有线程或句柄同步增长；退出直播后的 120 秒进一步验证是否可释放，而不是把单一斜率直接判为泄漏。
+- 退出直播后 120 秒：CPU `2.54% → 0.65%`，Working Set `992.8 → 820.8 MiB`，Private Bytes `1222.6 → 1020.4 MiB`，句柄 `1538 → 1184`，线程 `233 → 150`。45 秒空闲释放后资源持续回落，证明播放器、纹理与解码线程没有随页面永久保留。
+- 实机续测发现普通直播间按 Escape 虽不再误入全屏，但仍停留在直播页。第一个错误状态是 `HardwareKeyboard` 返回 `false` 后，Windows Flutter 没有把未处理 Escape 自动转换为 Navigator pop。
+- 修复新增 `EscapePresentationAction.popRoute`：全屏/宽屏仍只退出展示层，PiP 保留自己的关闭路径，普通房间显式执行当前 Navigator 的 `maybePop`。4 项状态解析测试通过；重新构建 `3.0.19+4107` Windows Debug 后，真实直播页按 Escape 已返回首页。
+- 最终完整质量门禁首次运行时，哔哩哔哩推荐首项短暂返回空播放描述，41/42 通过；直接复核显示同批其他实时房间正常。接口门禁已改为有界检查最多 5 个推荐房间，同时继续强制验证画质、流和 CDN 三类描述。修复后接口探针恢复为 42/42，避免把推荐/播放服务的短暂最终一致性误判成平台整体失效。
+- 证据：
+  - `local-artifacts/diagnostics/full-regression-20260828/windows/runtime/20260828T115750181Z-win3019-debug-live-danmaku-30m-pid56240-summary.json`
+  - `local-artifacts/diagnostics/full-regression-20260828/windows/runtime/20260828T122853986Z-win3019-debug-post-live-recovery-pid56240-summary.json`
+  - `local-artifacts/build-records/20260828T123259810Z-quality-focused.json`
+  - `local-artifacts/build-records/20260828T123546159Z-build-windowsx64-debug.json`
