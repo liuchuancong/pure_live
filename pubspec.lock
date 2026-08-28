@@ -1479,9 +1479,11 @@ packages:
   niuma_player:
     dependency: "direct main"
     description:
-      path: "C:\\Users\\XA-158\\projects\\flutter\\niuma_player"
-      relative: false
-    source: path
+      path: "."
+      ref: HEAD
+      resolved-ref: "863023cb6dae8e0d4c23a75a908e156a82584e2f"
+      url: "https://github.com/liuchuancong/niuma_player.git"
+    source: git
     version: "0.5.2"
   nm:
     dependency: transitive
