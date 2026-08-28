@@ -1,5 +1,43 @@
 [
   {
+    "version": "3.0.21",
+    "title": "Pure Live v3.0.21",
+    "date": "2026-08-28",
+    "github": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.21",
+    "author": {
+      "name": "wzgrx",
+      "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
+      "profile": "https://github.com/wzgrx"
+    },
+    "changelog": "# Pure Live v3.0.21\r\n\r\nv3.0.21 build 4109 修复分类页顶部标签左右拖动没有明确边界的问题，并把同类平台、筛选与分页导航统一到同一套有界滚动行为。本轮只更新 Android `arm64-v8a`；Windows 继续使用 v3.0.19 稳定安装版与便携版。\r\n\r\n## 分类与导航边界\r\n\r\n- 分类页的一级平台栏、二级分类栏和对应页面都使用硬边界：到达第一项或最后一项后不再产生额外位移，标签内容动态缩短时旧偏移会立即夹回新范围。\r\n- 分类页外层平台通过顶部标签切换，内层分类保留左右页面手势，消除两个同方向分页容器同时争抢一次拖动造成的卡住和方向跳变。\r\n- 热门、关注、收藏分区、搜索平台、搜索筛选、WebDAV 路径、直播间分页与播放器横向控制条同步使用相同规则，避免同一种交互在不同页面表现不一致。\r\n- 关注页“直播中/录制中/未开播”固定为三等分标签，不再创建没有必要的横向滚动范围；录制中心任务列表复用公共边界实现。\r\n\r\n## 左右与上下滑动流畅度\r\n\r\n- 分类数据首次进入页面时已经完整加载；切换分类改为同步选择本地数据切片，不再重新进入异步加载入口，减少标签、页面和网格分帧更新造成的顿挫。\r\n- 分类、热门与关注的页面切换动画统一为 220 ms；普通内容列表保持 Android 原生 Clamping 滚动和 Flutter 快速滑动延迟解码策略。\r\n- Android 搜索结果移除维护分支误加的 iOS 弹性滚动，恢复与其他纵向列表一致的有界行为；网格继续使用懒构建、重绘隔离和有限缓存范围。\r\n\r\n## 回归\r\n\r\n- 新增横向标签首尾、分页首尾、标签数量缩短以及分类本地同步切换回归。\r\n- 分类、搜索、关注标签与录制列表定向测试通过；正式 APK 继续执行完整静态分析、完整测试和公开平台接口探测。",
+    "files": [
+      {
+        "name": "ANDROID_SHA256SUM.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.21/ANDROID_SHA256SUM.txt"
+      },
+      {
+        "name": "BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.21/BUILD_METADATA.json"
+      },
+      {
+        "name": "PureLive-3.0.21-4109-android-arm64-v8a",
+        "size": "112.98mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.21/PureLive-3.0.21-4109-android-arm64-v8a-release.apk"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.21/SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
     "version": "3.0.20",
     "title": "Pure Live v3.0.20",
     "date": "2026-08-28",
@@ -26,7 +64,7 @@
       {
         "name": "PureLive-3.0.20-4108-android-arm64-v8a",
         "size": "112.98mb",
-        "downloads": 5,
+        "downloads": 46,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.20/PureLive-3.0.20-4108-android-arm64-v8a-release.apk"
       },
       {
@@ -64,19 +102,19 @@
       {
         "name": "PureLive-3.0.19-4107-android-arm64-v8a",
         "size": "112.97mb",
-        "downloads": 229,
+        "downloads": 233,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.19/PureLive-3.0.19-4107-android-arm64-v8a-release.apk"
       },
       {
         "name": "PureLive-3.0.19-4107-windows-x64-portable.zip",
         "size": "68.9mb",
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.19/PureLive-3.0.19-4107-windows-x64-portable.zip"
       },
       {
         "name": "PureLive-3.0.19-4107-windows-x64-setup.exe",
         "size": "53.4mb",
-        "downloads": 5,
+        "downloads": 7,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.19/PureLive-3.0.19-4107-windows-x64-setup.exe"
       },
       {
@@ -138,7 +176,7 @@
       {
         "name": "PureLive-3.0.18-4106-windows-x64-setup.exe",
         "size": "53.4mb",
-        "downloads": 29,
+        "downloads": 30,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.18/PureLive-3.0.18-4106-windows-x64-setup.exe"
       },
       {
@@ -264,7 +302,7 @@
       {
         "name": "PureLive-3.0.15-4103-android-arm64-v8a",
         "size": "113.1mb",
-        "downloads": 285,
+        "downloads": 286,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.15/PureLive-3.0.15-4103-android-arm64-v8a-release.apk"
       },
       {
@@ -864,7 +902,7 @@
       {
         "name": "PureLive-2.9.8-4087-android-arm64-v8a",
         "size": "112.74mb",
-        "downloads": 2664,
+        "downloads": 2666,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.8/PureLive-2.9.8-4087-android-arm64-v8a-release.apk"
       },
       {
