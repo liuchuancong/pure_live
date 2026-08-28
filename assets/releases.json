@@ -1,5 +1,43 @@
 [
   {
+    "version": "3.0.19",
+    "title": "Pure Live v3.0.19",
+    "date": "2026-08-28",
+    "github": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.19",
+    "author": {
+      "name": "wzgrx",
+      "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
+      "profile": "https://github.com/wzgrx"
+    },
+    "changelog": "# Pure Live v3.0.19\n\nv3.0.19 build 4107 以用户实际回归暴露的问题为准，修正 v3.0.18 仍存在的随机暂停、录制进度不可见与录制中心拖动越界。本轮只发布 Android `arm64-v8a` Release APK；已恢复正常的竖屏画面几何不再改动。\n\n## 播放连续性\n\n- 找到缓冲事件的顺序竞争：原生播放器经常先报告 `buffering=true`、随后才报告 `playing=false`，旧监督器在第一次事件仍看到旧播放状态，第二次事件又因页面已是缓冲态而跳过，最终没有恢复计时器。现在以第二个权威状态重新挂载缓冲看门狗，持续卡住时进入现有线路/内核恢复。\n- Android 旋转、Surface 替换和进入小窗产生的短暂 `hidden/paused` 合并为 1.5 秒生命周期窗口；应用内小窗继续视为可见播放载体，避免切换过程中被后台策略误暂停。\n- 用户主动暂停、系统音频中断与真正进入后台仍使用独立意图令牌，不会被连续性监督器误恢复。\n\n## 录制与实时统计\n\n- 斗鱼当前 H5 响应若在 `rtmp_live` 直接返回完整签名地址，优先采用该地址；避免再次拼接 CDN 基址而形成 `.../https://...` 的错误 FFmpeg 输入。\n- 录制卡片从“准备中”开始就显示 `00:00 / 0 B / 码率 / 速度`，每秒把 FFmpeg 原生统计与磁盘 TS 分片取较大值，不再因 segment muxer 报零而隐藏整个统计区域。\n- 分片跟踪器可发现恢复后首个编号不是 `000000` 的文件，之后继续使用固定成本的顺序采样；签名刷新后的会话累计值保持单调。\n\n## 录制中心边界\n\n- “全部/录制中/等待开播”等九个状态改为固定自适应网格，不再嵌套可横向拖动的标签栏和分页视图；状态只通过明确点击切换。\n- 任务列表持有独立控制器与硬边界物理效果；筛选或删除任务导致列表缩短时，在布局完成后立即把旧偏移夹回有效范围。\n- 新增生命周期竞争、缓冲事件顺序、斗鱼完整地址、非零首分片、固定状态选择器及列表缩短边界回归。",
+    "files": [
+      {
+        "name": "ANDROID_SHA256SUM.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.19/ANDROID_SHA256SUM.txt"
+      },
+      {
+        "name": "BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.19/BUILD_METADATA.json"
+      },
+      {
+        "name": "PureLive-3.0.19-4107-android-arm64-v8a",
+        "size": "112.97mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.19/PureLive-3.0.19-4107-android-arm64-v8a-release.apk"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.19/SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
     "version": "3.0.18",
     "title": "Pure Live v3.0.18",
     "date": "2026-08-27",
@@ -14,25 +52,25 @@
       {
         "name": "ANDROID_SHA256SUM.txt",
         "size": "0.0mb",
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.18/ANDROID_SHA256SUM.txt"
       },
       {
         "name": "BUILD_METADATA.json",
         "size": "0.0mb",
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.18/BUILD_METADATA.json"
       },
       {
         "name": "PureLive-3.0.18-4106-android-arm64-v8a",
         "size": "112.91mb",
-        "downloads": 0,
+        "downloads": 22,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.18/PureLive-3.0.18-4106-android-arm64-v8a-release.apk"
       },
       {
         "name": "SHA256SUMS.txt",
         "size": "0.0mb",
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.18/SHA256SUMS.txt"
       }
     ]
@@ -64,7 +102,7 @@
       {
         "name": "PureLive-3.0.17-4105-android-arm64-v8a",
         "size": "113.1mb",
-        "downloads": 23,
+        "downloads": 24,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.17/PureLive-3.0.17-4105-android-arm64-v8a-release.apk"
       },
       {
@@ -140,7 +178,7 @@
       {
         "name": "PureLive-3.0.15-4103-android-arm64-v8a",
         "size": "113.1mb",
-        "downloads": 277,
+        "downloads": 280,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.15/PureLive-3.0.15-4103-android-arm64-v8a-release.apk"
       },
       {
@@ -514,7 +552,7 @@
       {
         "name": "PureLive-3.0.4-4092-android-arm64-v8a",
         "size": "112.9mb",
-        "downloads": 267,
+        "downloads": 268,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.4/PureLive-3.0.4-4092-android-arm64-v8a-release.apk"
       },
       {
@@ -702,7 +740,7 @@
       {
         "name": "PureLive-3.0.0-4088-windows-x64-setup.exe",
         "size": "53.31mb",
-        "downloads": 125,
+        "downloads": 126,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.0/PureLive-3.0.0-4088-windows-x64-setup.exe"
       },
       {
@@ -728,7 +766,7 @@
       {
         "name": "ANDROID_SHA256SUM.txt",
         "size": "0.0mb",
-        "downloads": 141,
+        "downloads": 142,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.8/ANDROID_SHA256SUM.txt"
       },
       {
@@ -740,7 +778,7 @@
       {
         "name": "PureLive-2.9.8-4087-android-arm64-v8a",
         "size": "112.74mb",
-        "downloads": 2655,
+        "downloads": 2658,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.8/PureLive-2.9.8-4087-android-arm64-v8a-release.apk"
       },
       {
