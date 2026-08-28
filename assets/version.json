@@ -1,7 +1,7 @@
 {
-  "version": "3.0.6",
-  "build_number": 4094,
-  "version_num": 300064094,
+  "version": "3.0.5",
+  "build_number": 4093,
+  "version_num": 300064093,
   "android_abis": [
     "armeabi-v7a",
     "arm64-v8a",
