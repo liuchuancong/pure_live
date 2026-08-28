@@ -106,7 +106,12 @@ class AreasController extends GetxController with GetTickerProviderStateMixin {
       tabController.dispose();
     }
 
-    tabController = TabController(length: sites.length, vsync: this, initialIndex: index);
+    tabController = TabController(
+      length: sites.length,
+      vsync: this,
+      initialIndex: index,
+      animationDuration: pureLiveTabTransitionDuration,
+    );
 
     tabController.addListener(_handleTabChange);
 

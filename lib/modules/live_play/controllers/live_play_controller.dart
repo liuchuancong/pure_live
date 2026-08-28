@@ -212,7 +212,7 @@ class LivePlayController extends GetxController
   }
 
   void _initTab() {
-    tabController = TabController(length: tabs.length, vsync: this);
+    tabController = TabController(length: tabs.length, vsync: this, animationDuration: pureLiveTabTransitionDuration);
   }
 
   Future<void> _initCore() async {

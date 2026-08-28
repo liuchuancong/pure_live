@@ -314,7 +314,7 @@ class _WebDavPageState extends State<WebDavPage> {
               () => ListView(
                 controller: _breadcrumbScrollController,
                 primary: false,
-                physics: const ClampingScrollPhysics(),
+                physics: const PureLiveBoundedScrollPhysics(),
                 scrollDirection: Axis.horizontal,
                 children: _buildBreadcrumbs(),
               ),

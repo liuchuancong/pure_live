@@ -1634,7 +1634,8 @@ class BottomActionBar extends StatelessWidget {
 
               return SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                physics: const PureLiveScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                physics: const PureLiveBoundedScrollPhysics(),
+                clipBehavior: Clip.hardEdge,
                 child: ConstrainedBox(
                   constraints: BoxConstraints(minWidth: constraints.maxWidth),
                   child: Padding(

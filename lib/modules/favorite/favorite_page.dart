@@ -23,8 +23,11 @@ class FavoritePage extends GetView<FavoriteController> {
               leading: showAction ? const MenuButton() : null,
               actions: showAction ? [CommonAppBarActions()] : null,
               title: TabBar(
+                key: const ValueKey('favorite-status-tabs'),
                 controller: controller.tabController,
-                isScrollable: true,
+                isScrollable: false,
+                tabAlignment: TabAlignment.fill,
+                physics: const PureLiveBoundedScrollPhysics(),
                 tabs: [
                   Tab(text: i18n("online_room_title")),
                   Tab(text: i18n("recording_room_title")),
@@ -77,8 +80,12 @@ class _FavoriteSiteTabsState extends State<_FavoriteSiteTabs> with SingleTickerP
       selectedSiteId: widget.controller.selectedPlatformId,
       fallback: widget.controller.tabSiteIndex.value,
     );
-    _tabController = TabController(length: widget.availableSitesList.length, initialIndex: initialIndex, vsync: this)
-      ..addListener(_handleTabChanged);
+    _tabController = TabController(
+      length: widget.availableSitesList.length,
+      initialIndex: initialIndex,
+      vsync: this,
+      animationDuration: pureLiveTabTransitionDuration,
+    )..addListener(_handleTabChanged);
     widget.controller.bindActiveScrollController(_scrollControllerFor(widget.availableSitesList[initialIndex].id));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) widget.controller.selectSiteIndex(initialIndex);
@@ -115,9 +122,10 @@ class _FavoriteSiteTabsState extends State<_FavoriteSiteTabs> with SingleTickerP
     return Column(
       children: [
         TabBar(
+          key: const ValueKey('favorite-platform-tabs'),
           controller: _tabController,
           isScrollable: true,
-          physics: const PureLiveScrollPhysics(),
+          physics: const PureLiveBoundedScrollPhysics(),
           tabs: availableSitesList.map((e) => Tab(text: e.name)).toList(),
         ),
         FavoriteTagStrip(
@@ -140,6 +148,7 @@ class _FavoriteSiteTabsState extends State<_FavoriteSiteTabs> with SingleTickerP
               final activeSiteIndex = controller.tabSiteIndex.value;
               return TabBarView(
                 controller: _tabController,
+                physics: const PureLiveBoundedScrollPhysics(),
                 children: availableSitesList.asMap().entries.map((entry) {
                   final site = entry.value;
                   return Builder(
@@ -202,7 +211,8 @@ class FavoriteTagStrip extends StatelessWidget {
         width: double.infinity,
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
-          physics: const PureLiveScrollPhysics(),
+          physics: const PureLiveBoundedScrollPhysics(),
+          clipBehavior: Clip.hardEdge,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           itemCount: visibleTags.length + 1,
           itemBuilder: (context, index) {

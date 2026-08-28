@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:remixicon/remixicon.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/common/index.dart';
@@ -52,7 +50,12 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
     int initialIndex = widget.controller.tabIndex.value;
     if (initialIndex >= list.length) initialIndex = 0;
 
-    _tabController = TabController(length: list.length, vsync: this, initialIndex: initialIndex);
+    _tabController = TabController(
+      length: list.length,
+      vsync: this,
+      initialIndex: initialIndex,
+      animationDuration: pureLiveTabTransitionDuration,
+    );
     _tabController!.addListener(_handleInternalTabChange);
     widget.controller.bindActiveScrollController(_scrollControllerFor(list[initialIndex].id));
 
@@ -72,9 +75,7 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
       if (target >= 0 && target < categories.length) {
         widget.controller.bindActiveScrollController(_scrollControllerFor(categories[target].id));
       }
-      widget.controller.tabIndex.value = _tabController!.index;
-      widget.controller.currentPage = 1;
-      unawaited(widget.controller.loadData());
+      widget.controller.selectCategory(_tabController!.index);
     }
   }
 
@@ -153,8 +154,10 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
       return Column(
         children: [
           TabBar(
+            key: const ValueKey('area-category-tabs'),
             controller: _tabController,
             isScrollable: true,
+            physics: const PureLiveBoundedScrollPhysics(),
             tabs: categoriesList.map((e) => Tab(text: e.name)).toList(),
           ),
           Expanded(
@@ -176,6 +179,7 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
                 final activeIndex = widget.controller.tabIndex.value;
                 return TabBarView(
                   controller: _tabController,
+                  physics: const PureLiveBoundedScrollPhysics(),
                   children: categoriesList.asMap().entries.map((entry) {
                     final category = entry.value;
                     return Builder(

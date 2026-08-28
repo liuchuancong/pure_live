@@ -50,6 +50,19 @@ class AreasListController extends ServerAllPageController<LiveArea> {
     return _serverRawBackup[catId] ?? [];
   }
 
+  /// Switches a category from the catalogue already returned by the server.
+  ///
+  /// Re-entering [loadData] for every settled horizontal swipe needlessly
+  /// passed through the asynchronous loading pipeline and published extra
+  /// reactive frames. Category contents are local at this point, so update the
+  /// active slice synchronously and keep the finger-to-page transition linear.
+  void selectCategory(int index) {
+    if (isFlatten || index < 0 || index >= categories.length || tabIndex.value == index) return;
+    tabIndex.value = index;
+    currentPage = 1;
+    processLocalPaging();
+  }
+
   @override
   void processLocalPaging() {
     if (isFlatten) {

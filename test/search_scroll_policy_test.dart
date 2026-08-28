@@ -44,7 +44,7 @@ void main() {
   });
 
   test('search results rebound on touch platforms and retain desktop policy', () {
-    expect(resolveSearchResultScrollPhysics(TargetPlatform.android), isA<BouncingScrollPhysics>());
+    expect(resolveSearchResultScrollPhysics(TargetPlatform.android), isA<PureLiveScrollPhysics>());
     expect(resolveSearchResultScrollPhysics(TargetPlatform.iOS), isA<BouncingScrollPhysics>());
     expect(resolveSearchResultScrollPhysics(TargetPlatform.windows), isA<PureLiveScrollPhysics>());
     expect(resolveSearchResultScrollPhysics(TargetPlatform.linux), isA<PureLiveScrollPhysics>());

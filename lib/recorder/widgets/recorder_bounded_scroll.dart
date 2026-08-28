@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pure_live/common/widgets/pure_live_scroll_physics.dart';
 
 /// A fixed, adaptive status selector.
 ///
@@ -138,7 +139,7 @@ class _RecorderBoundedTaskListState extends State<RecorderBoundedTaskList> {
         child: ListView.builder(
           controller: _controller,
           primary: false,
-          physics: const _RecorderHardBoundaryPhysics(),
+          physics: const PureLiveBoundedScrollPhysics(),
           clipBehavior: Clip.hardEdge,
           padding: widget.padding,
           itemCount: widget.itemCount,
@@ -149,37 +150,11 @@ class _RecorderBoundedTaskListState extends State<RecorderBoundedTaskList> {
   }
 }
 
-class _RecorderHardBoundaryPhysics extends ClampingScrollPhysics {
-  const _RecorderHardBoundaryPhysics({super.parent});
-
-  @override
-  _RecorderHardBoundaryPhysics applyTo(ScrollPhysics? ancestor) {
-    return _RecorderHardBoundaryPhysics(parent: buildParent(ancestor));
-  }
-
-  @override
-  double applyBoundaryConditions(ScrollMetrics position, double value) {
-    if (value < position.pixels && position.pixels <= position.minScrollExtent) {
-      return value - position.pixels;
-    }
-    if (position.maxScrollExtent <= position.pixels && position.pixels < value) {
-      return value - position.pixels;
-    }
-    if (value < position.minScrollExtent && position.minScrollExtent < position.pixels) {
-      return value - position.minScrollExtent;
-    }
-    if (position.pixels < position.maxScrollExtent && position.maxScrollExtent < value) {
-      return value - position.maxScrollExtent;
-    }
-    return 0;
-  }
-}
-
 class _RecorderScrollBehavior extends MaterialScrollBehavior {
   const _RecorderScrollBehavior();
 
   @override
-  ScrollPhysics getScrollPhysics(BuildContext context) => const _RecorderHardBoundaryPhysics();
+  ScrollPhysics getScrollPhysics(BuildContext context) => const PureLiveBoundedScrollPhysics();
 
   @override
   Widget buildOverscrollIndicator(BuildContext context, Widget child, ScrollableDetails details) => child;

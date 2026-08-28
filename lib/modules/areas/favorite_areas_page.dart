@@ -18,14 +18,17 @@ class FavoriteAreasPage extends GetView<FavoriteAreasController> {
           body: Column(
             children: [
               TabBar(
+                key: const ValueKey('favorite-areas-platform-tabs'),
                 controller: controller.tabSiteController,
                 isScrollable: true,
+                physics: const PureLiveBoundedScrollPhysics(),
                 tabs: Sites().availableSites(containsAll: true).map<Widget>((e) => Tab(text: e.name)).toList(),
               ),
               Expanded(
                 child: Obx(() {
                   return TabBarView(
                     controller: controller.tabSiteController,
+                    physics: const PureLiveBoundedScrollPhysics(),
                     children: Sites()
                         .availableSites(containsAll: true)
                         .map((e) => e.id)
@@ -50,6 +53,7 @@ class FavoriteAreasPage extends GetView<FavoriteAreasController> {
       return areas.isNotEmpty
           ? WaterfallFlow.builder(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+              physics: const PureLiveScrollPhysics(),
               gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
                 lastChildLayoutTypeBuilder: (index) => LastChildLayoutType.none,
                 crossAxisCount: crossAxisCount,

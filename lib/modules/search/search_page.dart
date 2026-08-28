@@ -6,7 +6,6 @@ import 'package:pure_live/modules/search/search_platform_strip.dart';
 
 ScrollPhysics resolveSearchResultScrollPhysics(TargetPlatform platform) {
   return switch (platform) {
-    TargetPlatform.android ||
     TargetPlatform.iOS => const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
     _ => const PureLiveScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
   };
@@ -203,7 +202,8 @@ class _SearchOptions extends StatelessWidget {
           children: [
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              physics: const PureLiveScrollPhysics(),
+              physics: const PureLiveBoundedScrollPhysics(),
+              clipBehavior: Clip.hardEdge,
               child: Row(
                 children: [
                   FilterChip(

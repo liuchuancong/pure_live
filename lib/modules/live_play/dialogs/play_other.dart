@@ -28,7 +28,9 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
   @override
   void initState() {
     super.initState();
-    tabController = TabController(length: 3, vsync: this);
+
+    tabController = TabController(length: 3, vsync: this, animationDuration: pureLiveTabTransitionDuration);
+
     _updateRooms();
     subscription = EventBus.instance.listen('refresh_favorite_finish', (_) => _updateRooms());
   }
@@ -127,6 +129,7 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
               height: 38,
               child: TabBar(
                 controller: tabController,
+                physics: const PureLiveBoundedScrollPhysics(),
                 labelColor: theme.colorScheme.primary,
                 unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
                 indicatorSize: TabBarIndicatorSize.label,
@@ -147,6 +150,7 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
                     () => loadingFinish.value
                         ? TabBarView(
                             controller: tabController,
+                            physics: const PureLiveBoundedScrollPhysics(),
                             children: [
                               _buildRoomGrid(onlineRooms, history: false),
                               _buildRoomGrid(recordingRooms, history: false),
