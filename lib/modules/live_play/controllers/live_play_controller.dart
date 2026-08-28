@@ -533,14 +533,27 @@ class LivePlayController extends GetxController
 
   void emitLocalMessage(LiveMessage msg, {required bool showAsDanmaku, Duration delay = Duration.zero}) {
     if (!localInteractionController.enabled.v) return;
+    final targetRoom = state.value.room.detail;
+    if (targetRoom == null) return;
     _localMessageDeliveryQueue.schedule(
-      LocalMessageDelivery(message: msg, showAsDanmaku: showAsDanmaku, roomEpoch: _roomLoadEpoch),
+      LocalMessageDelivery(
+        message: msg,
+        showAsDanmaku: showAsDanmaku,
+        roomId: targetRoom.roomId,
+        platform: targetRoom.platform,
+      ),
       delay: delay,
     );
   }
 
   void _deliverLocalMessage(LocalMessageDelivery delivery) {
-    if (isClosed || _ownerClosed || delivery.roomEpoch != _roomLoadEpoch) return;
+    final currentRoom = state.value.room.detail;
+    if (isClosed ||
+        _ownerClosed ||
+        currentRoom == null ||
+        !delivery.matchesRoom(roomId: currentRoom.roomId, platform: currentRoom.platform)) {
+      return;
+    }
     final msg = delivery.message;
     addDanmakuMessage(msg, immediate: true);
     if (delivery.showAsDanmaku) state.value.player.videoController?.sendDanmaku(msg);

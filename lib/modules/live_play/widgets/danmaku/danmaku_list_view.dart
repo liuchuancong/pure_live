@@ -221,8 +221,6 @@ class DanmakuListViewState extends State<DanmakuListView> {
 
   void onScrollNotification(ScrollNotification notification) {
     if (!_scrollController.hasClients) return;
-    final position = _scrollController.position;
-    final distanceToBottom = position.pixels - position.minScrollExtent;
 
     // A UserScrollNotification is emitted before the first drag has produced a
     // useful pixel distance. Waiting for a 24 px offset let the 80 ms live
@@ -240,12 +238,13 @@ class DanmakuListViewState extends State<DanmakuListView> {
       hasActivePointer: _activeScrollPointers > 0,
     )) {
       _pauseAutoScroll();
-    } else if ((notification is ScrollEndNotification ||
-            (notification is UserScrollNotification && notification.direction == ScrollDirection.idle)) &&
-        distanceToBottom <= 12 &&
-        !_autoScrollEnabled) {
-      _resumeAutoScroll();
     }
+
+    // Keep the snapshot stable after every deliberate drag, including a drag
+    // that begins at the live edge and cannot move away from minScrollExtent.
+    // Auto-resuming on ScrollEnd made that first swipe look ignored because
+    // the next message batch immediately replaced the rows. The explicit
+    // "return to live" button is the sole resume action.
   }
 
   void _sendLocalMessage() {

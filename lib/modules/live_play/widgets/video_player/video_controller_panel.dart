@@ -61,6 +61,23 @@ List<TopActionTrailingSlot> resolveTopActionTrailingSlots({
   ];
 }
 
+/// The full-surface gesture layer sits below the visible controller bars, but
+/// platform accessibility/input bridges can still deliver a tap to that layer
+/// while a control is animating. Never reinterpret a tap inside either bar as
+/// an on-video danmaku interaction. This also protects the audio/cast/PiP and
+/// quality/fullscreen actions from opening a danmaku action sheet instead.
+@visibleForTesting
+bool shouldHandleVideoSurfaceTap({
+  required Offset localPosition,
+  required Size surfaceSize,
+  required bool controlsVisible,
+  double controlBarHeight = 56,
+}) {
+  if (!controlsVisible || surfaceSize.height <= 0) return true;
+  final guardedHeight = controlBarHeight.clamp(0.0, surfaceSize.height / 2).toDouble();
+  return localPosition.dy > guardedHeight && localPosition.dy < surfaceSize.height - guardedHeight;
+}
+
 class VideoControllerPanel extends StatefulWidget {
   final VideoController controller;
 
@@ -72,7 +89,8 @@ class VideoControllerPanel extends StatefulWidget {
 
 class _VideoControllerPanelState extends State<VideoControllerPanel> {
   static const barHeight = 56.0;
-  Offset? _lastTapPosition;
+  Offset? _lastTapGlobalPosition;
+  Offset? _lastTapLocalPosition;
 
   VideoController get controller => widget.controller;
 
@@ -156,10 +174,26 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                   );
                 }),
                 GestureDetector(
-                  onTapDown: (details) => _lastTapPosition = details.globalPosition,
+                  onTapDown: (details) {
+                    _lastTapGlobalPosition = details.globalPosition;
+                    _lastTapLocalPosition = details.localPosition;
+                  },
                   onTap: () {
-                    final position = _lastTapPosition;
-                    if (position != null && controller.handleDanmakuPointer(position, longPress: false)) return;
+                    final globalPosition = _lastTapGlobalPosition;
+                    final localPosition = _lastTapLocalPosition;
+                    if (localPosition != null &&
+                        !shouldHandleVideoSurfaceTap(
+                          localPosition: localPosition,
+                          surfaceSize: context.size ?? Size.zero,
+                          controlsVisible: controller.showController.value,
+                          controlBarHeight: barHeight,
+                        )) {
+                      controller.enableController();
+                      return;
+                    }
+                    if (globalPosition != null && controller.handleDanmakuPointer(globalPosition, longPress: false)) {
+                      return;
+                    }
                     // A buffering/paused player must not swallow the only way
                     // to reveal its controls. Always expose the action bar; a
                     // tap on a paused surface keeps the historical resume
@@ -170,6 +204,15 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                     }
                   },
                   onLongPressStart: (details) {
+                    if (!shouldHandleVideoSurfaceTap(
+                      localPosition: details.localPosition,
+                      surfaceSize: context.size ?? Size.zero,
+                      controlsVisible: controller.showController.value,
+                      controlBarHeight: barHeight,
+                    )) {
+                      controller.enableController();
+                      return;
+                    }
                     controller.handleDanmakuPointer(details.globalPosition, longPress: true);
                   },
                   onDoubleTap: () {

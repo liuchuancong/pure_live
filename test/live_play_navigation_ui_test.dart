@@ -55,6 +55,30 @@ void main() {
     }
   });
 
+  test('visible playback bars reserve their hit area from danmaku interactions', () {
+    const size = Size(800, 450);
+
+    expect(
+      shouldHandleVideoSurfaceTap(localPosition: const Offset(400, 20), surfaceSize: size, controlsVisible: true),
+      isFalse,
+      reason: 'top actions such as audio, cast and PiP must keep the tap',
+    );
+    expect(
+      shouldHandleVideoSurfaceTap(localPosition: const Offset(400, 430), surfaceSize: size, controlsVisible: true),
+      isFalse,
+      reason: 'bottom playback actions must keep the tap',
+    );
+    expect(
+      shouldHandleVideoSurfaceTap(localPosition: const Offset(400, 225), surfaceSize: size, controlsVisible: true),
+      isTrue,
+    );
+    expect(
+      shouldHandleVideoSurfaceTap(localPosition: const Offset(400, 20), surfaceSize: size, controlsVisible: false),
+      isTrue,
+      reason: 'hidden bars leave the whole video surface interactive',
+    );
+  });
+
   test('landscape playback panels occupy the compact right half of a phone viewport', () {
     const viewport = Size(915, 412);
     final rooms = resolveContentFirstPanelLayout(viewport, ContentFirstPanelKind.roomHistory);

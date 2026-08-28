@@ -8,6 +8,10 @@ import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import android.view.Display
+import android.window.BackEvent
+import android.window.OnBackAnimationCallback
+import android.window.OnBackInvokedCallback
+import android.window.OnBackInvokedDispatcher
 import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -16,6 +20,7 @@ class MainActivity : AudioServiceActivity() {
     companion object {
         private const val DISPLAY_MODE_CHANNEL = "pure_live/display_mode"
         private const val BACKGROUND_PLAYBACK_CHANNEL = "pure_live/background_playback"
+        private const val PREDICTIVE_BACK_CHANNEL = "pure_live/predictive_back"
         private var playbackWakeLock: PowerManager.WakeLock? = null
         private var playbackWifiLock: WifiManager.WifiLock? = null
     }
@@ -24,6 +29,9 @@ class MainActivity : AudioServiceActivity() {
     // active touch/scroll/transition bursts when the user setting is enabled.
     private var highRefreshRateEnabled = false
     private var displayModeChannel: MethodChannel? = null
+    private var predictiveBackChannel: MethodChannel? = null
+    private var predictiveBackEnabled = false
+    private var predictiveBackRegistered = false
     private var displayListenerRegistered = false
     private var lastPublishedDisplayModeInfo: Map<String, Any>? = null
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -46,6 +54,41 @@ class MainActivity : AudioServiceActivity() {
             }
         }
     }
+
+    private val predictiveBackCallback =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            @Suppress("NewApi")
+            OnBackInvokedCallback { dispatchPresentationBack() }
+        } else {
+            null
+        }
+
+    @Suppress("NewApi")
+    private val predictiveBackAnimationCallback =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            object : OnBackAnimationCallback {
+                override fun onBackStarted(backEvent: BackEvent) {
+                    predictiveBackChannel?.invokeMethod("backStarted", null)
+                }
+
+                override fun onBackProgressed(backEvent: BackEvent) {
+                    predictiveBackChannel?.invokeMethod(
+                        "backProgress",
+                        mapOf("progress" to backEvent.progress.toDouble()),
+                    )
+                }
+
+                override fun onBackCancelled() {
+                    predictiveBackChannel?.invokeMethod("backCancelled", null)
+                }
+
+                override fun onBackInvoked() {
+                    dispatchPresentationBack()
+                }
+            }
+        } else {
+            null
+        }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -79,7 +122,76 @@ class MainActivity : AudioServiceActivity() {
                 else -> result.notImplemented()
             }
         }
+        predictiveBackChannel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            PREDICTIVE_BACK_CHANNEL,
+        ).also { channel ->
+            channel.setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "setEnabled" -> {
+                        setPredictiveBackEnabled(call.argument<Boolean>("enabled") ?: false)
+                        result.success(null)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+        }
         applyPreferredDisplayMode(highRefreshRateEnabled)
+    }
+
+    private fun dispatchPresentationBack() {
+        if (predictiveBackEnabled) {
+            predictiveBackChannel?.invokeMethod("backInvoked", null)
+        }
+    }
+
+    private fun setPredictiveBackEnabled(enabled: Boolean) {
+        if (predictiveBackEnabled == enabled) return
+        predictiveBackEnabled = enabled
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (enabled) registerPredictiveBack() else unregisterPredictiveBack()
+        }
+    }
+
+    @Suppress("NewApi")
+    private fun registerPredictiveBack() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || predictiveBackRegistered) return
+        val callback = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            predictiveBackAnimationCallback
+        } else {
+            predictiveBackCallback
+        } ?: return
+        onBackInvokedDispatcher.registerOnBackInvokedCallback(
+            // Flutter registers its Activity callback at DEFAULT. The live
+            // route must run first so fullscreen Back restores the normal
+            // room instead of popping the route and starting the app float.
+            OnBackInvokedDispatcher.PRIORITY_OVERLAY,
+            callback,
+        )
+        predictiveBackRegistered = true
+    }
+
+    @Suppress("NewApi")
+    private fun unregisterPredictiveBack() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || !predictiveBackRegistered) return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            predictiveBackAnimationCallback?.let(onBackInvokedDispatcher::unregisterOnBackInvokedCallback)
+        } else {
+            predictiveBackCallback?.let(onBackInvokedDispatcher::unregisterOnBackInvokedCallback)
+        }
+        predictiveBackRegistered = false
+    }
+
+    @Suppress("DEPRECATION")
+    override fun onBackPressed() {
+        // Hardware Back and `adb input keyevent BACK` may still arrive through
+        // this legacy entry point on Android 13+ vendor builds. Keep the same
+        // live-route arbitration as the predictive gesture callback.
+        if (predictiveBackEnabled) {
+            dispatchPresentationBack()
+            return
+        }
+        super.onBackPressed()
     }
 
     override fun onStart() {
@@ -121,16 +233,22 @@ class MainActivity : AudioServiceActivity() {
     override fun onResume() {
         super.onResume()
         scheduleDisplayModeRefresh(delayMillis = 0)
+        if (predictiveBackEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerPredictiveBack()
+        }
     }
 
     override fun onStop() {
         unregisterDisplayListener()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) unregisterPredictiveBack()
         super.onStop()
     }
 
     override fun onDestroy() {
         mainHandler.removeCallbacks(displayModeRefresh)
         displayModeChannel = null
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) unregisterPredictiveBack()
+        predictiveBackChannel = null
         super.onDestroy()
     }
 
