@@ -1,18 +1,18 @@
 import 'dart:async';
+
 import 'package:rxdart/rxdart.dart';
+
 import '../models/player_state.dart';
 import '../models/player_exception.dart';
 import '../models/player_error_type.dart';
+
 import 'package:pure_live/common/index.dart';
+
 import '../interface/unified_player_interface.dart';
+
 import 'package:pure_live/player/utils/fijk_helper.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/player/interface/fijk_player_accessor.dart';
-
-
-
-
-
 
 class FijkAdapter implements UnifiedPlayer, FijkPlayerAccessor {
   late final FijkPlayer _player;
@@ -100,6 +100,7 @@ class FijkAdapter implements UnifiedPlayer, FijkPlayerAccessor {
           break;
         case FijkState.error:
           _loadingSubject.add(false);
+          print('Fijk native error: ${_player.state.toString()}');
           final exception = PlayerException(message: 'Fijk native error', type: PlayerErrorType.native);
           _safeAddError(exception);
           _player.reset();
@@ -157,7 +158,11 @@ class FijkAdapter implements UnifiedPlayer, FijkPlayerAccessor {
         await _player.reset();
       }
       await _setupProxy();
-      await FijkHelper.setFijkOption(_player, enableCodec: SettingsService.to.player.enableCodec.v, headers: headers);
+      await FijkHelper.setFijkOption(
+        _player,
+        enableHardwareCodec: SettingsService.to.player.enableCodec.v,
+        headers: headers,
+      );
 
       await _player.setDataSource(url, autoPlay: true);
       _stateSubject.add(PlayerState.ready);
