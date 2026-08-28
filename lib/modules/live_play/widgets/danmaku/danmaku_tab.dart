@@ -23,6 +23,7 @@ class DanmakuTabView extends GetView<LivePlayController> {
             Expanded(
               child: TabBarView(
                 controller: controller.tabController,
+                physics: const PureLiveBoundedScrollPhysics(),
                 children: [
                   SettingsService.to.danmaku.enableDanmakuDisplay.v
                       ? DanmakuListView(room: state.room.detail!)
@@ -65,6 +66,7 @@ class DanmakuSectionTabBar extends StatelessWidget {
         key: const ValueKey('live-danmaku-section-tabs'),
         isScrollable: false,
         tabAlignment: TabAlignment.fill,
+        physics: const PureLiveBoundedScrollPhysics(),
         labelPadding: const EdgeInsets.symmetric(horizontal: 4),
         controller: controller,
         tabs: tabs.map((name) => Tab(text: name)).toList(growable: false),

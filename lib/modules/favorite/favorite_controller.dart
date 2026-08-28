@@ -58,7 +58,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   void onInit() {
     super.onInit();
 
-    tabController = TabController(length: 3, vsync: this);
+    tabController = TabController(length: 3, vsync: this, animationDuration: pureLiveTabTransitionDuration);
     WidgetsBinding.instance.addObserver(this);
     tagController.migrateLegacyRoomTagKeys(SettingsService.to.fav.favoriteRooms.v);
 

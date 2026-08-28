@@ -154,7 +154,12 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
     }
     // Update the source list before exposing the new TabController.
     sites.assignAll(newSites);
-    tabController = TabController(length: newSites.length, vsync: this, initialIndex: index);
+    tabController = TabController(
+      length: newSites.length,
+      vsync: this,
+      initialIndex: index,
+      animationDuration: pureLiveTabTransitionDuration,
+    );
     tabController.addListener(_handleTabChange);
     _isTabControllerInitialized = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {

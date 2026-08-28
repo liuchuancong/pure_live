@@ -23,13 +23,19 @@ class AreasPage extends GetView<AreasController> {
               leading: showAction ? const MenuButton() : null,
               actions: showAction ? [CommonAppBarActions()] : null,
               title: TabBar(
+                key: const ValueKey('areas-platform-tabs'),
                 controller: controller.tabController,
                 isScrollable: true,
+                physics: const PureLiveBoundedScrollPhysics(),
                 tabs: availableSitesList.map((e) => Tab(text: e.name)).toList(),
               ),
             ),
             body: TabBarView(
               controller: controller.tabController,
+              // This route already contains a horizontal category PageView.
+              // Let the top platform tabs switch the outer page explicitly so
+              // two same-axis gesture recognizers never fight over one drag.
+              physics: const NeverScrollableScrollPhysics(),
               children: availableSitesList.map((e) => AreaGridView(e.id)).toList(),
             ),
             floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,

@@ -1,6 +1,5 @@
 import 'popular_grid_view.dart';
 
-import 'package:flutter/gestures.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/widgets/common_appbar_actions.dart';
 
@@ -26,17 +25,16 @@ class PopularPage extends GetView<PopularController> {
               leading: showAction ? const MenuButton() : null,
               actions: showAction ? [CommonAppBarActions()] : null,
               title: TabBar(
+                key: const ValueKey('popular-platform-tabs'),
                 controller: controller.tabController,
                 isScrollable: true,
-                physics: const PureLiveScrollPhysics(),
-                dragStartBehavior: DragStartBehavior.down,
+                physics: const PureLiveBoundedScrollPhysics(),
                 tabs: sites.map((e) => Tab(text: e.name)).toList(),
               ),
             ),
             body: TabBarView(
               controller: controller.tabController,
-              physics: const PureLiveScrollPhysics(),
-              dragStartBehavior: DragStartBehavior.down,
+              physics: const PureLiveBoundedScrollPhysics(),
               children: sites.map((e) => PopularGridView(e.id)).toList(),
             ),
           );
