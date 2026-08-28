@@ -81,8 +81,8 @@ dependencies:
   audio_session: ^0.2.3 # 音频会话管理
   ffmpeg_kit_extended_flutter: ^0.6.0
 
-  niuma_player:
-    git: https://github.com/liuchuancong/niuma_player.git
+  flv_lzc:
+    path: plugins/flv_lzc # Vendored from liuchuancong/flv_lzc@030d611
   # -------------------------- UI组件/界面样式 --------------------------
   flutter_svg: ^2.2.1 # SVG图片渲染
   lottie: ^3.3.3 #动画

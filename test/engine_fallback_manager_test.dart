@@ -8,7 +8,7 @@ void main() {
   test('the first confirmed terminal decoder failure selects another engine', () async {
     final manager = EngineFallbackManager(
       defaultEngine: PlayerEngine.mediaKit,
-      supportedEngines: const <PlayerEngine>[PlayerEngine.mediaKit, PlayerEngine.niuma],
+      supportedEngines: const <PlayerEngine>[PlayerEngine.mediaKit, PlayerEngine.fijk],
     );
 
     final next = await manager.fallback(
@@ -16,7 +16,7 @@ void main() {
       PlayerException(message: 'decoder initialization failed', type: PlayerErrorType.codec),
     );
 
-    expect(next, PlayerEngine.niuma);
+    expect(next, PlayerEngine.fijk);
   });
 
   test('an explicit retry budget can retain the same engine before fallback', () async {
@@ -33,11 +33,11 @@ void main() {
 
   test('fallback priority starts from the configured user engine', () async {
     final manager = EngineFallbackManager(
-      defaultEngine: PlayerEngine.niuma,
-      supportedEngines: const <PlayerEngine>[PlayerEngine.mediaKit, PlayerEngine.niuma, PlayerEngine.exo],
+      defaultEngine: PlayerEngine.fijk,
+      supportedEngines: const <PlayerEngine>[PlayerEngine.mediaKit, PlayerEngine.fijk, PlayerEngine.exo],
     );
     final error = PlayerException(message: 'decoder failed', type: PlayerErrorType.codec);
 
-    expect(await manager.fallback(PlayerEngine.niuma, error), PlayerEngine.mediaKit);
+    expect(await manager.fallback(PlayerEngine.fijk, error), PlayerEngine.mediaKit);
   });
 }

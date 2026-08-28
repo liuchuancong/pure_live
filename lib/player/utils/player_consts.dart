@@ -6,7 +6,7 @@ class PlayerConsts {
 
   static const Map<String, PlayerEngine> engines = {
     'mpv': PlayerEngine.mediaKit,
-    'ijk': PlayerEngine.niuma,
+    'ijk': PlayerEngine.fijk,
     'exo': PlayerEngine.exo,
   };
 
