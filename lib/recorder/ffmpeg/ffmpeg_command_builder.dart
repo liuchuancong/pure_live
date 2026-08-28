@@ -34,8 +34,6 @@ class FFmpegCommandBuilder {
     Map<String, String>? headers,
     String? caFile,
   }) {
-    print('caFile');
-    print(caFile);
     final normalizedHeaders = _normalizeHeaders(headers);
     final userAgent = normalizedHeaders.remove('user-agent');
     final headerString = _buildHeader(normalizedHeaders);
