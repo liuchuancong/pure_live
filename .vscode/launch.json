@@ -7,9 +7,6 @@
             "type": "dart",
             "toolArgs": [
                 "-v",
-            ],
-            "args": [
-                "--android-skip-build-dependency-validation"
             ]
             // Set proxy variables in your local VS Code user settings when needed.
         }
