@@ -79,7 +79,7 @@ dependencies:
   audio_service: ^0.18.18 # 后台音频服务
   audio_service_win: ^0.0.3
   audio_session: ^0.2.3 # 音频会话管理
-  ffmpeg_kit_extended_flutter: 0.5.7
+  ffmpeg_kit_extended_flutter: ^0.6.0
 
   flv_lzc:
     path: plugins/flv_lzc # Vendored from liuchuancong/flv_lzc@030d611

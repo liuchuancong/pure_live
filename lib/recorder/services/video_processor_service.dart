@@ -79,6 +79,15 @@ class VideoProcessorService extends GetxService {
         _emitFailed(taskId, i18n('video_ts_empty'));
         return false;
       }
+      var inputBytes = 0;
+      for (final segment in segments) {
+        try {
+          inputBytes += await segment.length();
+        } on FileSystemException {
+          // FFmpeg will report the concrete input error if a segment vanishes
+          // after the stable snapshot.
+        }
+      }
 
       log('$taskId: ${i18n("video_ts_total", args: {"count": segments.length.toString()})}');
       _emit(VideoProcessEvent(taskId: taskId, type: VideoProcessEventType.started));
@@ -144,7 +153,9 @@ class VideoProcessorService extends GetxService {
       ];
 
       await _ffmpeg.start(taskId: ffmpegTaskId, arguments: arguments);
-      final event = await terminalEvent.future.timeout(const Duration(seconds: 5));
+      final event = await terminalEvent.future.timeout(
+        mergeTimeout(inputBytes: inputBytes, recordedSeconds: task.recordedSeconds),
+      );
       if (_cancelledTasks.contains(taskId) ||
           event.type != FFmpegEventType.complete ||
           !await partialFile.exists() ||
@@ -220,6 +231,23 @@ class VideoProcessorService extends GetxService {
       manifest.writeln("file '${_escapeConcatPath(path)}'");
     }
     return manifest.toString();
+  }
+
+  /// Copy-remux speed varies substantially with external storage, encryption
+  /// and file count. A fixed five-second timeout marked healthy long recordings
+  /// as failed and cancelled their MP4 finalization. Keep a conservative floor
+  /// and scale with both media size and duration while retaining a hard cap.
+  @visibleForTesting
+  static Duration mergeTimeout({required int inputBytes, required int recordedSeconds}) {
+    const bytesPerSecondFloor = 8 * 1024 * 1024;
+    final bySize = (inputBytes.clamp(0, 1 << 62) / bytesPerSecondFloor).ceil() + 20;
+    final byDuration = (recordedSeconds.clamp(0, 86400 * 30) / 20).ceil() + 20;
+    final timeoutSeconds = [
+      30,
+      bySize,
+      byDuration,
+    ].reduce((left, right) => left > right ? left : right).clamp(30, 3600).toInt();
+    return Duration(seconds: timeoutSeconds);
   }
 
   Future<void> _deleteFiles(List<File> files, String taskId) async {

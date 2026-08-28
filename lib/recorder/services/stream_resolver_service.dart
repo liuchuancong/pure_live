@@ -28,12 +28,19 @@ class ResolvedRecordStream {
   const ResolvedRecordStream({
     required this.url,
     required this.quality,
+    required this.qualityCursorId,
     required this.lineIndex,
     required this.candidateUrls,
   });
 
   final String url;
   final LivePlayQuality quality;
+
+  /// Identifier of the quality request that produced [url]. This is kept
+  /// separate from [quality] because a platform may transparently downgrade
+  /// the applied quality while the retry cursor must still advance through the
+  /// request tiers deterministically.
+  final String qualityCursorId;
   final int lineIndex;
   final List<String> candidateUrls;
 
@@ -67,8 +74,8 @@ class StreamResolverService extends GetxService {
     required String roomId,
     required String platform,
     required String preferredQuality,
-    String? previousUrl,
-    int lineOffset = 0,
+    String? previousQualityId,
+    int? previousLineIndex,
   }) async {
     final normalizedPlatform = platform.trim().toLowerCase();
     final normalizedRoomId = roomId.trim();
@@ -135,40 +142,73 @@ class StreamResolverService extends GetxService {
       }
 
       final orderedQualities = orderQualities(qualities, preferredQuality);
+      // Stream URLs are often signed and short lived. Resolving every quality
+      // and every CDN before FFmpeg starts used to perform N sequential API
+      // calls, delaying first byte and aging the first URL. Resolve only the
+      // cursor tier needed for this attempt: next CDN of the same quality,
+      // then the first CDN of the next quality. A complete failure may wrap to
+      // line 1 of the previous tier with a fresh signature.
       Object? lastError;
-      final candidates = <_ResolvedCandidate>[];
-      final seenCandidates = <String>{};
-      for (final requestedQuality in orderedQualities) {
-        try {
-          final resolution = await site.resolvePlayUrls(detail: detail, quality: requestedQuality);
-          final validUrls = resolution.urls.where(_isRecordableUrl).toList(growable: false);
-          if (validUrls.isEmpty) continue;
+      final usesLineCursor = site is LivePlayUrlCursorResolver;
+      final previousQualityIndex = previousQualityId == null
+          ? -1
+          : orderedQualities.indexWhere((quality) => quality.selectionId.toString() == previousQualityId);
+      _ResolvedQuality? previousResolution;
 
-          final appliedQuality = _appliedQuality(orderedQualities, requestedQuality, resolution.appliedQualityData);
-          for (final (lineIndex, url) in validUrls.indexed) {
-            final identity = '${appliedQuality.selectionId}:${_streamIdentity(url)}';
-            if (!seenCandidates.add(identity)) continue;
-            candidates.add(_ResolvedCandidate(url: url, quality: appliedQuality, lineIndex: lineIndex));
+      if (previousQualityIndex >= 0) {
+        try {
+          final nextLine = (previousLineIndex ?? -1) + 1;
+          previousResolution = await _resolveQuality(
+            site: site,
+            detail: detail,
+            orderedQualities: orderedQualities,
+            requestedQuality: orderedQualities[previousQualityIndex],
+            lineIndex: usesLineCursor ? nextLine : null,
+          );
+          if (usesLineCursor && previousResolution.urls.isNotEmpty) {
+            return previousResolution.select(0);
+          }
+          if (!usesLineCursor && nextLine >= 0 && nextLine < previousResolution.urls.length) {
+            return previousResolution.select(nextLine);
           }
         } catch (error) {
           lastError = error;
         }
       }
 
-      if (candidates.isNotEmpty) {
-        final selectedIndex = _selectCandidateIndex(candidates, previousUrl: previousUrl, lineOffset: lineOffset);
-        final selected = candidates[selectedIndex];
-        final rotatedCandidates = <_ResolvedCandidate>[
-          selected,
-          for (var offset = 1; offset < candidates.length; offset++)
-            candidates[(selectedIndex + offset) % candidates.length],
-        ];
-        return ResolvedRecordStream(
-          url: selected.url,
-          quality: selected.quality,
-          lineIndex: selected.lineIndex,
-          candidateUrls: List<String>.unmodifiable(rotatedCandidates.map((candidate) => candidate.url)),
-        );
+      final startQualityIndex = previousQualityIndex < 0 ? 0 : previousQualityIndex + 1;
+      final qualitiesToTry = previousQualityIndex < 0 ? orderedQualities.length : orderedQualities.length - 1;
+      for (var offset = 0; offset < qualitiesToTry; offset++) {
+        final qualityIndex = (startQualityIndex + offset) % orderedQualities.length;
+        try {
+          final resolved = await _resolveQuality(
+            site: site,
+            detail: detail,
+            orderedQualities: orderedQualities,
+            requestedQuality: orderedQualities[qualityIndex],
+            lineIndex: usesLineCursor ? 0 : null,
+          );
+          if (resolved.urls.isNotEmpty) return resolved.select(0);
+        } catch (error) {
+          lastError = error;
+        }
+      }
+
+      if (previousQualityIndex >= 0) {
+        try {
+          final wrapped = usesLineCursor
+              ? await _resolveQuality(
+                  site: site,
+                  detail: detail,
+                  orderedQualities: orderedQualities,
+                  requestedQuality: orderedQualities[previousQualityIndex],
+                  lineIndex: 0,
+                )
+              : previousResolution;
+          if (wrapped?.urls.isNotEmpty == true) return wrapped!.select(0);
+        } catch (error) {
+          lastError = error;
+        }
       }
 
       throw StreamException(
@@ -246,18 +286,35 @@ class StreamResolverService extends GetxService {
     return qualities.firstWhere((quality) => quality.selectionId.toString() == normalized, orElse: () => requested);
   }
 
-  static int _selectCandidateIndex(
-    List<_ResolvedCandidate> candidates, {
-    String? previousUrl,
-    required int lineOffset,
-  }) {
-    if (candidates.length == 1) return 0;
-    final previousIdentity = previousUrl == null ? null : _streamIdentity(previousUrl);
-    final previousIndex = previousIdentity == null
-        ? -1
-        : candidates.indexWhere((candidate) => _streamIdentity(candidate.url) == previousIdentity);
-    if (previousIndex >= 0) return (previousIndex + 1) % candidates.length;
-    return lineOffset.abs() % candidates.length;
+  static Future<_ResolvedQuality> _resolveQuality({
+    required LiveSite site,
+    required LiveRoom detail,
+    required List<LivePlayQuality> orderedQualities,
+    required LivePlayQuality requestedQuality,
+    int? lineIndex,
+  }) async {
+    final resolution = site is LivePlayUrlCursorResolver && lineIndex != null
+        ? await (site as LivePlayUrlCursorResolver).resolvePlayUrlAtRaw(
+            detail: detail,
+            quality: requestedQuality,
+            lineIndex: lineIndex,
+          )
+        : await site.resolvePlayUrls(detail: detail, quality: requestedQuality);
+    final seen = <String>{};
+    final validUrls = resolution.urls
+        .map((url) => url.trim())
+        .where(_isRecordableUrl)
+        .where((url) => seen.add(_streamIdentity(url)))
+        .toList(growable: false);
+    final appliedQuality = _appliedQuality(orderedQualities, requestedQuality, resolution.appliedQualityData);
+    return _ResolvedQuality(
+      requestedQualityId: requestedQuality.selectionId.toString(),
+      appliedQuality: appliedQuality,
+      urls: validUrls,
+      lineIndexes: lineIndex == null
+          ? List<int>.generate(validUrls.length, (index) => index, growable: false)
+          : List<int>.filled(validUrls.length, lineIndex, growable: false),
+    );
   }
 
   /// Signed query parameters are refreshed on every platform resolve. Compare
@@ -277,10 +334,27 @@ class StreamResolverService extends GetxService {
   }
 }
 
-class _ResolvedCandidate {
-  const _ResolvedCandidate({required this.url, required this.quality, required this.lineIndex});
+class _ResolvedQuality {
+  const _ResolvedQuality({
+    required this.requestedQualityId,
+    required this.appliedQuality,
+    required this.urls,
+    required this.lineIndexes,
+  });
 
-  final String url;
-  final LivePlayQuality quality;
-  final int lineIndex;
+  final String requestedQualityId;
+  final LivePlayQuality appliedQuality;
+  final List<String> urls;
+  final List<int> lineIndexes;
+
+  ResolvedRecordStream select(int position) {
+    final normalizedPosition = position.clamp(0, urls.length - 1);
+    return ResolvedRecordStream(
+      url: urls[normalizedPosition],
+      quality: appliedQuality,
+      qualityCursorId: requestedQualityId,
+      lineIndex: lineIndexes[normalizedPosition],
+      candidateUrls: List<String>.unmodifiable([...urls.skip(normalizedPosition), ...urls.take(normalizedPosition)]),
+    );
+  }
 }

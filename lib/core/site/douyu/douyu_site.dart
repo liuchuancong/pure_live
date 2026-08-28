@@ -13,7 +13,7 @@ import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 
-class DouyuSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver {
+class DouyuSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LivePlayUrlCursorResolver {
   @override
   String id = Sites.douyuSite;
 
@@ -183,6 +183,27 @@ class DouyuSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRe
     return urls;
   }
 
+  @override
+  Future<LivePlayUrlResolution> resolvePlayUrlAtRaw({
+    required LiveRoom detail,
+    required LivePlayQuality quality,
+    required int lineIndex,
+  }) async {
+    final data = quality.data;
+    if (data is! DouyuPlayData || lineIndex < 0 || lineIndex >= data.cdns.length) {
+      return LivePlayUrlResolution(urls: const <String>[], appliedQualityData: quality.selectionId);
+    }
+    final roomId = detail.roomId?.trim() ?? '';
+    if (roomId.isEmpty) {
+      return LivePlayUrlResolution(urls: const <String>[], appliedQualityData: quality.selectionId);
+    }
+    final url = await getPlayUrl(roomId, data.rate, data.cdns[lineIndex]);
+    return LivePlayUrlResolution(
+      urls: url.isEmpty ? const <String>[] : <String>[url],
+      appliedQualityData: quality.selectionId,
+    );
+  }
+
   Future<String> getPlayUrl(String roomId, int rate, String cdn) async {
     final playData = await _requestPlayData(roomId, rate: rate, cdn: cdn);
     return parsePlayUrl(playData);
@@ -246,18 +267,33 @@ class DouyuSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRe
   @visibleForTesting
   static String parsePlayUrl(Map<String, dynamic> data) {
     final unescape = HtmlUnescape();
-    for (final key in const <String>['flv_url', 'stream_url', 'url']) {
+    final live = unescape.convert(data['rtmp_live']?.toString().trim() ?? '');
+    // Some current H5 responses return a complete signed FLV address in
+    // rtmp_live. It must win over the separate CDN base fields; prefixing a
+    // second absolute URL produces a syntactically valid but unopenable input
+    // such as `https://cdn/live/https://other/live.flv`.
+    if (_isPlayableUrl(live)) return live;
+    // getH5PlayV1 normally separates the CDN base (`rtmp_url`, and on
+    // variants `flv_url`) from the signed media path (`rtmp_live`). A base URL
+    // is syntactically valid HTTP but is not an FFmpeg input. Returning it
+    // early was the direct cause of "input stream address format" failures.
+    for (final baseKey in const <String>['rtmp_url', 'flv_url']) {
+      final base = unescape.convert(data[baseKey]?.toString().trim() ?? '');
+      if (base.isEmpty || live.isEmpty) continue;
+      final combined = '${base.replaceFirst(RegExp(r'/+$'), '')}/${live.replaceFirst(RegExp(r'^/+'), '')}';
+      if (_isPlayableUrl(combined)) return combined;
+    }
+
+    for (final key in const <String>['player_1', 'stream_url', 'url']) {
       final value = unescape.convert(data[key]?.toString().trim() ?? '');
       if (_isPlayableUrl(value)) return value;
     }
 
-    final live = unescape.convert(data['rtmp_live']?.toString().trim() ?? '');
-    if (_isPlayableUrl(live)) return live;
-    final base = unescape.convert(data['rtmp_url']?.toString().trim() ?? '');
-    if (base.isNotEmpty && live.isNotEmpty) {
-      final combined = '${base.replaceFirst(RegExp(r'/+$'), '')}/${live.replaceFirst(RegExp(r'^/+'), '')}';
-      if (_isPlayableUrl(combined)) return combined;
-    }
+    // Compatibility with payloads that expose a complete FLV address without
+    // rtmp_live. Require a media-looking path so a bare CDN directory is never
+    // handed to the recorder again.
+    final flvUrl = unescape.convert(data['flv_url']?.toString().trim() ?? '');
+    if (_isDirectMediaUrl(flvUrl)) return flvUrl;
     throw const DouyuPlayApiException('H5 play response has no playable URL');
   }
 
@@ -269,6 +305,12 @@ class DouyuSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRe
   static bool _isPlayableUrl(String value) {
     final uri = Uri.tryParse(value);
     return uri != null && uri.host.isNotEmpty && const {'http', 'https', 'rtmp'}.contains(uri.scheme);
+  }
+
+  static bool _isDirectMediaUrl(String value) {
+    if (!_isPlayableUrl(value)) return false;
+    final path = Uri.parse(value).path.toLowerCase();
+    return path.endsWith('.flv') || path.endsWith('.m3u8') || path.endsWith('.mp4');
   }
 
   @override

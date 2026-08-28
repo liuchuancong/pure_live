@@ -36,12 +36,13 @@ class FFmpegManager {
     return initialization;
   }
 
-  Future<void> start({required String taskId, required List<String> arguments}) async {
+  Future<void> start({required String taskId, required List<String> arguments, bool liveRecording = false}) async {
     await initialize();
 
     await _ffmpeg.start(
       taskId: taskId,
       arguments: arguments,
+      liveRecording: liveRecording,
       onEvent: (event) {
         if (!_eventController.isClosed) {
           _eventController.add(event);

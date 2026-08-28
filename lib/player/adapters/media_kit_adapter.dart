@@ -36,9 +36,19 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
   /// 都必须使用同一套属性（seek 白名单、探测时长、LiveBufferPolicy 缓冲上限、
   /// 网络超时、音频驱动、代理、macOS 硬解关闭），避免两处配置漂移。
   static Future<void> applyNativeLiveProperties(dynamic native) async {
-    await native.setProperty('protocol_whitelist', 'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto');
+    await native.setProperty('force-seekable', 'yes');
+
+    await native.setProperty(
+      'protocol_whitelist',
+      'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto,rtmp,rtmps,rtsp,srt',
+    );
 
     await native.setProperty('demuxer-lavf-probesize', '2097152');
+
+    // Live FLV/HLS streams need a short probe rather than a long-file
+    // analysis pass.  This reduces the black-screen interval before the
+    // first decoded frame while retaining enough data for codec detection.
+    await native.setProperty('demuxer-lavf-analyzeduration', '2');
 
     // mpv's generic defaults keep a large seek-oriented forward/backward
     // cache. Live rooms are not meaningfully seekable, so retaining that
@@ -52,6 +62,13 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     await native.setProperty('demuxer-readahead-secs', LiveBufferPolicy.readaheadSeconds.toString());
 
     await native.setProperty('network-timeout', '15');
+
+    // Ask mpv to abandon a broken hardware decoder after the first consecutive
+    // frame failure. This preserves the low-power fast path on compatible
+    // devices while making unsupported profiles fall back to software instead
+    // of leaving a black Surface behind. mpv's larger default can skip several
+    // live packets before the fallback is attempted.
+    await native.setProperty('hwdec-software-fallback', '1');
 
     if (SettingsService.to.player.customPlayerOutput.v) {
       await native.setProperty('ao', SettingsService.to.player.audioOutputDriver.v);

@@ -17,8 +17,6 @@ class RecorderContinuationPolicy {
 
     final normalizedLogs = rawLogs.toLowerCase();
     const fatalMarkers = <String>[
-      'invalid argument',
-      'no such file',
       'permission denied',
       'unable to open output',
       'error opening output',
@@ -47,5 +45,32 @@ class RecorderContinuationPolicy {
     final exponent = failureCount.clamp(0, 20);
     final seconds = (base * (1 << exponent)).clamp(base, maximum);
     return Duration(seconds: seconds);
+  }
+
+  static Duration reconnectDelay({
+    required int failureCount,
+    required int configuredBaseSeconds,
+    required int configuredMaximumSeconds,
+    required bool enableBackoff,
+    required bool unexpectedEof,
+  }) {
+    return pollingDelay(
+      failureCount: failureCount,
+      baseSeconds: unexpectedEof ? 2 : configuredBaseSeconds,
+      maximumSeconds: unexpectedEof ? 15 : configuredMaximumSeconds,
+      enableBackoff: enableBackoff,
+    );
+  }
+
+  /// A live-stream EOF after FFmpeg has opened the media does not prove that
+  /// the room went offline. Keep resolving a fresh signed URL with bounded
+  /// delay instead of moving the task into the much slower offline poll loop.
+  static bool shouldEnterPollingAfterRetryLimit({
+    required int retryCount,
+    required int maximumRetries,
+    required bool unexpectedEof,
+  }) {
+    if (unexpectedEof) return false;
+    return retryCount >= maximumRetries.clamp(1, 100);
   }
 }

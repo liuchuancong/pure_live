@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:developer';
-
 import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/core/player_manager.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/utils/fullscreen.dart' show WindowService;
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
+
 
 class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
   @override
@@ -30,7 +30,7 @@ class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
         _onLivePlayExit(route);
         break;
       case RoutePath.kRecordPage:
-        _setVideoLayerVisible(true);
+        _restoreVideoLayerAfterRouteExit(route);
         break;
     }
   }
@@ -71,6 +71,24 @@ class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
         controller.updateUI(displayVideoLayer: visible);
       }
     });
+  }
+
+  /// A popped route remains in the overlay during its reverse transition.
+  /// Reattaching media_kit's Windows texture in didPop used to overlap that
+  /// transition and produced a reproducible flutter_windows.dll access
+  /// violation when returning from the recorder centre.  Wait for the route
+  /// to be fully removed, then cross one more frame boundary before restoring
+  /// the live surface.
+  void _restoreVideoLayerAfterRouteExit(Route<dynamic> route) {
+    unawaited(
+      _waitForRouteExit(route).then((_) async {
+        await SchedulerBinding.instance.endOfFrame;
+        final controller = _findLivePlayController();
+        if (controller != null && !controller.isClosed) {
+          controller.updateUI(displayVideoLayer: true);
+        }
+      }),
+    );
   }
 
   bool _shouldShowFloating(bool preventFloating) {
