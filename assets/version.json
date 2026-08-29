@@ -1,23 +1,23 @@
 {
-  "version": "3.0.7",
-  "build_number": 4095,
-  "version_num": 300074095,
+  "version": "3.0.8",
+  "build_number": 4096,
+  "version_num": 300084096,
   "android_abis": [
     "armeabi-v7a",
     "arm64-v8a",
     "x86_64"
   ],
-  "version_desc": "version: 3.0.7\n版本更新：\n- 优化windows的画中画只能区分横竖屏。\n- 添加刘海屏适配。\n- 备份添加cookie和webdav等用户数据。\n- 优化Iptv的竖屏显示。\n- 优化IJK播放器。\n- 修复录制中android证书问题。\n- 修复快手直播源获取错误。",
+  "version_desc": "version: 3.0.8\n版本更新：\n- 修复huya断流",
   "prerelease": false,
-  "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.7",
+  "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.8",
   "platforms": {
     "android": {
-      "version": "3.0.7",
-      "build_number": 4095,
-      "version_num": 300074095,
-      "version_desc": "version: 3.0.7\n版本更新：\n- 优化windows的画中画只能区分横竖屏。\n- 添加刘海屏适配。\n- 备份添加cookie和webdav等用户数据。\n- 优化Iptv的竖屏显示。\n- 优化IJK播放器。\n- 修复录制中android证书问题。\n- 修复快手直播源获取错误。",
+      "version": "3.0.8",
+      "build_number": 4096,
+      "version_num": 300084096,
+      "version_desc": "version: 3.0.8\n版本更新：\n- 修复huya断流",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.7",
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.8",
       "android_abis": [
         "armeabi-v7a",
         "arm64-v8a",
@@ -25,37 +25,37 @@
       ]
     },
     "windows": {
-      "version": "3.0.7",
-      "build_number": 4095,
-      "version_num": 300074095,
-      "version_desc": "version: 3.0.7\n版本更新：\n- 优化windows的画中画只能区分横竖屏。\n- 添加刘海屏适配。\n- 备份添加cookie和webdav等用户数据。\n- 优化Iptv的竖屏显示。\n- 优化IJK播放器。\n- 修复录制中android证书问题。\n- 修复快手直播源获取错误。",
+      "version": "3.0.8",
+      "build_number": 4096,
+      "version_num": 300084096,
+      "version_desc": "version: 3.0.8\n版本更新：\n- 修复huya断流",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.7",
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.8",
       "windows_msix_available": true
     },
     "linux": {
-      "version": "3.0.7",
-      "build_number": 4095,
-      "version_num": 300074095,
-      "version_desc": "version: 3.0.7\n版本更新：\n- 优化windows的画中画只能区分横竖屏。\n- 添加刘海屏适配。\n- 备份添加cookie和webdav等用户数据。\n- 优化Iptv的竖屏显示。\n- 优化IJK播放器。\n- 修复录制中android证书问题。\n- 修复快手直播源获取错误。",
+      "version": "3.0.8",
+      "build_number": 4096,
+      "version_num": 300084096,
+      "version_desc": "version: 3.0.8\n版本更新：\n- 修复huya断流",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.7"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.8"
     },
     "macos": {
-      "version": "3.0.7",
-      "build_number": 4095,
-      "version_num": 300074095,
-      "version_desc": "version: 3.0.7\n版本更新：\n- 优化windows的画中画只能区分横竖屏。\n- 添加刘海屏适配。\n- 备份添加cookie和webdav等用户数据。\n- 优化Iptv的竖屏显示。\n- 优化IJK播放器。\n- 修复录制中android证书问题。\n- 修复快手直播源获取错误。",
+      "version": "3.0.8",
+      "build_number": 4096,
+      "version_num": 300084096,
+      "version_desc": "version: 3.0.8\n版本更新：\n- 修复huya断流",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.7"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.8"
     },
     "ios": {
-      "version": "3.0.7",
-      "build_number": 4095,
-      "version_num": 300074095,
-      "version_desc": "version: 3.0.7\n版本更新：\n- 优化windows的画中画只能区分横竖屏。\n- 添加刘海屏适配。\n- 备份添加cookie和webdav等用户数据。\n- 优化Iptv的竖屏显示。\n- 优化IJK播放器。\n- 修复录制中android证书问题。\n- 修复快手直播源获取错误。",
+      "version": "3.0.8",
+      "build_number": 4096,
+      "version_num": 300084096,
+      "version_desc": "version: 3.0.8\n版本更新：\n- 修复huya断流",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.7"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.8"
     }
   }
 }

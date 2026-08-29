@@ -26,7 +26,7 @@ class FavoritePage extends GetView<FavoriteController> {
                 key: const ValueKey('favorite-status-tabs'),
                 controller: controller.tabController,
                 isScrollable: false,
-                tabAlignment: TabAlignment.fill,
+                tabAlignment: TabAlignment.center,
                 physics: const PureLiveBoundedScrollPhysics(),
                 tabs: [
                   Tab(text: i18n("online_room_title")),
