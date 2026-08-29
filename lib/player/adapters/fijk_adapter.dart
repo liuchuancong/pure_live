@@ -100,7 +100,6 @@ class FijkAdapter implements UnifiedPlayer, FijkPlayerAccessor {
           break;
         case FijkState.error:
           _loadingSubject.add(false);
-          print('Fijk native error: ${_player.state.toString()}');
           final exception = PlayerException(message: 'Fijk native error', type: PlayerErrorType.native);
           _safeAddError(exception);
           _player.reset();
