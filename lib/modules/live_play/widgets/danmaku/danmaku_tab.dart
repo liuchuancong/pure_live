@@ -65,7 +65,7 @@ class DanmakuSectionTabBar extends StatelessWidget {
       child: TabBar(
         key: const ValueKey('live-danmaku-section-tabs'),
         isScrollable: false,
-        tabAlignment: TabAlignment.center,
+        tabAlignment: TabAlignment.fill,
         physics: const PureLiveBoundedScrollPhysics(),
         labelPadding: const EdgeInsets.symmetric(horizontal: 4),
         controller: controller,
