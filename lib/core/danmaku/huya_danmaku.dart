@@ -8,7 +8,6 @@ import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/core/tars/huya_danmaku.dart';
 import 'package:pure_live/core/site/huya/huya_utils.dart';
 import 'package:pure_live/pkg/tars/tup/tars_message.dart';
-import 'package:pure_live/common/models/live_message.dart';
 import 'package:pure_live/core/common/web_socket_util.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/pkg/tars/tup/request_packet.dart';
