@@ -370,7 +370,8 @@ class LivePlayController extends GetxController
     _handlingSystemBackPresentation = true;
 
     final globalState = GlobalPlayerState.to;
-    final wasFullscreen = globalState.isFullscreen.value || state.value.ui.screenMode == VideoMode.fullscreen;
+    final mode = state.value.ui.screenMode;
+    final wasFullscreen = globalState.isFullscreen.value || requiresSystemFullscreenExit(mode);
     try {
       setNormalScreen();
       globalState.isWindowFullscreen.value = false;
@@ -925,6 +926,7 @@ class LivePlayController extends GetxController
   void setNormalScreen() => updateUI(screenMode: VideoMode.normal);
   void setWidescreen() => updateUI(screenMode: VideoMode.widescreen);
   void setFullScreen() => updateUI(screenMode: VideoMode.fullscreen);
+  void setPortraitFullScreen() => updateUI(screenMode: VideoMode.portraitFullscreen);
 
   /// Hides media_kit's native surface before opening the recorder route.
   ///

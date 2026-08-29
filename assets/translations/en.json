@@ -1454,5 +1454,7 @@
     "portrait_custom_height_setting": "Adjust the video display height in pixels",
     "portrait_reset_video_height": "Reset Portrait Video Height",
     "portrait_reset_video_height_desc": "Reset to adaptive mode and clear custom height",
-    "portrait_height_presets": "Preset Height"
+    "portrait_height_presets": "Preset Height",
+    "portrait_fullscreen_enter_hint": "Swipe down for portrait fullscreen",
+    "portrait_fullscreen_restore_hint": "Portrait fullscreen · Swipe up to restore danmaku"
 }

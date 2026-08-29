@@ -113,6 +113,93 @@ void main() {
     expect(after, inInclusiveRange(range.minimum, range.maximum));
   });
 
+  testWidgets('portrait sheet can dismiss downward into portrait fullscreen', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 780));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    var requestCount = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PortraitLiveRoomLayout(
+            mode: PortraitLayoutMode.balanced,
+            video: const ColoredBox(color: Colors.black),
+            resolution: const SizedBox(height: 44),
+            danmaku: const ColoredBox(color: Colors.white),
+            onEnterPortraitFullscreen: () => requestCount++,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const ValueKey('portrait-fullscreen-enter-hint')), findsOneWidget);
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byKey(const ValueKey('live-play-portrait-sheet-handle'))),
+    );
+    await gesture.moveBy(const Offset(0, 160));
+    await tester.pump();
+    await gesture.moveBy(const Offset(0, 120));
+    await tester.pump();
+    final slide = tester.widget<AnimatedSlide>(find.byType(AnimatedSlide));
+    expect(slide.offset.dy, greaterThan(0.30));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(requestCount, 1);
+  });
+
+  testWidgets('short downward pull restores the portrait sheet', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 780));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    var requestCount = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PortraitLiveRoomLayout(
+            mode: PortraitLayoutMode.balanced,
+            video: const ColoredBox(color: Colors.black),
+            resolution: const SizedBox(height: 44),
+            danmaku: const ColoredBox(color: Colors.white),
+            onEnterPortraitFullscreen: () => requestCount++,
+          ),
+        ),
+      ),
+    );
+
+    await tester.timedDrag(
+      find.byKey(const ValueKey('live-play-portrait-sheet-handle')),
+      const Offset(0, 150),
+      const Duration(milliseconds: 700),
+    );
+    await tester.pumpAndSettle();
+
+    final sheet = tester.getRect(find.byKey(const ValueKey('live-play-portrait-sheet')));
+    expect(requestCount, 0);
+    expect(sheet.bottom, closeTo(780, 0.1));
+  });
+
+  testWidgets('ordinary landscape source never exposes portrait fullscreen dismissal', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 780));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    var requestCount = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: LivePlayNormalLayout(
+            isPortraitSource: false,
+            adaptivePortraitHeight: true,
+            onEnterPortraitFullscreen: () => requestCount++,
+            video: const ColoredBox(key: ValueKey('landscape-video'), color: Colors.black),
+            resolution: const SizedBox(height: 44),
+            danmaku: const ColoredBox(color: Colors.white),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const ValueKey('portrait-fullscreen-enter-hint')), findsNothing);
+    expect(find.byKey(const ValueKey('live-play-portrait-sheet')), findsNothing);
+    expect(requestCount, 0);
+  });
+
   testWidgets('portrait room keeps an explicit landscape fullscreen action above the sheet', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 780));
     addTearDown(() => tester.binding.setSurfaceSize(null));

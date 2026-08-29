@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/live_play/states/ui_state.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
@@ -11,6 +12,7 @@ import 'package:pure_live/modules/live_play/widgets/layout/live_play_video.dart'
 import 'package:pure_live/modules/live_play/widgets/layout/live_play_header.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/resolution_selector/resolutions_row.dart';
+import 'package:pure_live/modules/live_play/widgets/layout/portrait_fullscreen_interaction.dart';
 
 enum LivePlayNormalLayoutKind { portraitStack, desktopSplit }
 
@@ -36,6 +38,7 @@ class LivePlayNormalLayout extends StatelessWidget {
     this.adaptivePortraitHeight = false,
     this.portraitLayoutMode = PortraitLayoutMode.balanced,
     this.onEnterLandscapeFullscreen,
+    this.onEnterPortraitFullscreen,
   });
 
   final Widget video;
@@ -47,6 +50,7 @@ class LivePlayNormalLayout extends StatelessWidget {
   final bool adaptivePortraitHeight;
   final PortraitLayoutMode portraitLayoutMode;
   final VoidCallback? onEnterLandscapeFullscreen;
+  final VoidCallback? onEnterPortraitFullscreen;
 
   @override
   Widget build(BuildContext context) {
@@ -69,6 +73,7 @@ class LivePlayNormalLayout extends StatelessWidget {
               danmaku: danmaku,
               mode: portraitLayoutMode,
               onEnterLandscapeFullscreen: onEnterLandscapeFullscreen,
+              onEnterPortraitFullscreen: onEnterPortraitFullscreen,
             );
           }
           return Column(
@@ -122,6 +127,7 @@ class PortraitLiveRoomLayout extends StatefulWidget {
     required this.danmaku,
     required this.mode,
     this.onEnterLandscapeFullscreen,
+    this.onEnterPortraitFullscreen,
   });
 
   final Widget video;
@@ -129,6 +135,7 @@ class PortraitLiveRoomLayout extends StatefulWidget {
   final Widget danmaku;
   final PortraitLayoutMode mode;
   final VoidCallback? onEnterLandscapeFullscreen;
+  final VoidCallback? onEnterPortraitFullscreen;
 
   @override
   State<PortraitLiveRoomLayout> createState() => _PortraitLiveRoomLayoutState();
@@ -136,11 +143,77 @@ class PortraitLiveRoomLayout extends StatefulWidget {
 
 class _PortraitLiveRoomLayoutState extends State<PortraitLiveRoomLayout> {
   double? _panelHeight;
+  double _dismissOffset = 0;
+  bool _settling = false;
+  bool _entryPending = false;
 
   @override
   void didUpdateWidget(covariant PortraitLiveRoomLayout oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.mode != widget.mode) _panelHeight = null;
+    if (oldWidget.mode != widget.mode) {
+      _panelHeight = null;
+      _dismissOffset = 0;
+      _entryPending = false;
+    }
+  }
+
+  void _updatePanelDrag(DragUpdateDetails details, double current, double minimum, double maximum) {
+    if (_entryPending) return;
+    final delta = details.delta.dy;
+    if (delta == 0) return;
+    setState(() {
+      _settling = false;
+      final panelHeight = (_panelHeight ?? current).clamp(minimum, maximum).toDouble();
+      if (delta > 0) {
+        final collapsible = (panelHeight - minimum).clamp(0.0, double.infinity).toDouble();
+        final collapseDelta = delta.clamp(0.0, collapsible).toDouble();
+        _panelHeight = panelHeight - collapseDelta;
+        final remaining = delta - collapseDelta;
+        if (widget.onEnterPortraitFullscreen != null && remaining > 0) {
+          _dismissOffset = (_dismissOffset + remaining).clamp(0.0, panelHeight + 36).toDouble();
+        }
+        return;
+      }
+
+      var upward = -delta;
+      final revealDelta = upward.clamp(0.0, _dismissOffset).toDouble();
+      _dismissOffset -= revealDelta;
+      upward -= revealDelta;
+      if (upward > 0) {
+        _panelHeight = (panelHeight + upward).clamp(minimum, maximum).toDouble();
+      }
+    });
+  }
+
+  void _finishPanelDrag(DragEndDetails details, double current, double minimum, double middle, double maximum) {
+    if (_entryPending) return;
+    final panelHeight = (_panelHeight ?? current).clamp(minimum, maximum).toDouble();
+    final disposition = resolvePortraitPanelDragEnd(
+      entryEnabled: widget.onEnterPortraitFullscreen != null,
+      dismissOffset: _dismissOffset,
+      panelHeight: panelHeight,
+      velocity: details.primaryVelocity ?? 0,
+    );
+    if (disposition == PortraitPanelDragDisposition.enterFullscreen) {
+      setState(() {
+        _entryPending = true;
+        _settling = true;
+        _dismissOffset = panelHeight + 36;
+      });
+      Future<void>.delayed(const Duration(milliseconds: 180), () {
+        if (mounted) widget.onEnterPortraitFullscreen?.call();
+      });
+      return;
+    }
+
+    final dragEndHeight = panelHeight;
+    final stops = <double>[minimum, middle, maximum];
+    stops.sort((a, b) => (a - dragEndHeight).abs().compareTo((b - dragEndHeight).abs()));
+    setState(() {
+      _settling = true;
+      _dismissOffset = 0;
+      _panelHeight = stops.first;
+    });
   }
 
   @override
@@ -165,53 +238,82 @@ class _PortraitLiveRoomLayoutState extends State<PortraitLiveRoomLayout> {
               right: 0,
               bottom: 0,
               height: current,
-              child: Material(
-                key: const ValueKey('live-play-portrait-sheet'),
-                color: Theme.of(context).colorScheme.surface,
-                elevation: 10,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-                clipBehavior: Clip.antiAlias,
-                child: Column(
-                  children: [
-                    GestureDetector(
-                      key: const ValueKey('live-play-portrait-sheet-handle'),
-                      behavior: HitTestBehavior.opaque,
-                      onVerticalDragUpdate: (details) {
-                        setState(() {
-                          _panelHeight = (current - details.delta.dy).clamp(range.minimum, range.maximum).toDouble();
-                        });
-                      },
-                      onVerticalDragEnd: (_) {
-                        final dragEndHeight = (_panelHeight ?? current).clamp(range.minimum, range.maximum).toDouble();
-                        final stops = <double>[range.minimum, range.middle, range.maximum];
-                        stops.sort((a, b) => (a - dragEndHeight).abs().compareTo((b - dragEndHeight).abs()));
-                        setState(() => _panelHeight = stops.first);
-                      },
-                      child: SizedBox(
-                        height: 24,
-                        child: Center(
-                          child: Container(
-                            width: 38,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.30),
-                              borderRadius: BorderRadius.circular(99),
-                            ),
+              child: AnimatedSlide(
+                offset: Offset(0, current <= 0 ? 0 : (_dismissOffset / current).clamp(0.0, 1.2).toDouble()),
+                duration: _settling ? const Duration(milliseconds: 180) : Duration.zero,
+                curve: Curves.easeOutCubic,
+                child: Material(
+                  key: const ValueKey('live-play-portrait-sheet'),
+                  color: Theme.of(context).colorScheme.surface,
+                  elevation: 10,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    children: [
+                      GestureDetector(
+                        key: const ValueKey('live-play-portrait-sheet-handle'),
+                        behavior: HitTestBehavior.opaque,
+                        onVerticalDragUpdate: (details) =>
+                            _updatePanelDrag(details, current, range.minimum, range.maximum),
+                        onVerticalDragEnd: (details) =>
+                            _finishPanelDrag(details, current, range.minimum, range.middle, range.maximum),
+                        onVerticalDragCancel: () {
+                          setState(() {
+                            _settling = true;
+                            _dismissOffset = 0;
+                          });
+                        },
+                        child: SizedBox(
+                          height: widget.onEnterPortraitFullscreen == null ? 24 : 40,
+                          child: Center(
+                            child: widget.onEnterPortraitFullscreen == null
+                                ? Container(
+                                    width: 38,
+                                    height: 4,
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.30),
+                                      borderRadius: BorderRadius.circular(99),
+                                    ),
+                                  )
+                                : Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.keyboard_arrow_down_rounded,
+                                        size: 20,
+                                        color: Theme.of(context).colorScheme.primary,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Flexible(
+                                        child: Text(
+                                          i18n('portrait_fullscreen_enter_hint'),
+                                          key: const ValueKey('portrait-fullscreen-enter-hint'),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.primary,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                           ),
                         ),
                       ),
-                    ),
-                    widget.resolution,
-                    const Divider(height: 1),
-                    Expanded(key: const ValueKey('live-play-portrait-danmaku'), child: widget.danmaku),
-                  ],
+                      widget.resolution,
+                      const Divider(height: 1),
+                      Expanded(key: const ValueKey('live-play-portrait-danmaku'), child: widget.danmaku),
+                    ],
+                  ),
                 ),
               ),
             ),
             if (widget.onEnterLandscapeFullscreen != null)
               Positioned(
                 right: 12,
-                bottom: current + 12,
+                bottom: current + 12 - _dismissOffset,
                 child: Material(
                   color: Colors.black.withValues(alpha: 0.68),
                   borderRadius: BorderRadius.circular(24),
@@ -285,28 +387,36 @@ class LivePlayContent extends StatelessWidget {
       final settings = SettingsService.to.player;
       manager.videoPresentationRevision.value;
       final isPortrait = manager.isVerticalVideo.value && settings.enablePortraitStreamAdaptation.v;
+      Widget presentation;
       if (!isPortrait) {
-        return Container(
+        presentation = Container(
           key: const ValueKey('fullscreen-standard-video'),
           color: Colors.black,
           child: LivePlayVideo(controller: controller, expandToParent: true),
         );
+      } else {
+        final detail = controller.state.value.room.detail;
+        final cover = resolvePortraitFullscreenBackgroundUrl(
+          detailCover: detail?.cover,
+          roomCover: controller.room.cover,
+          detailAvatar: detail?.avatar,
+          roomAvatar: controller.room.avatar,
+        );
+        presentation = PortraitFullscreenPresentation(
+          coverUrl: cover,
+          child: LivePlayVideo(
+            controller: controller,
+            expandToParent: true,
+            transparentSurface: true,
+            videoViewportAspectRatio: manager.currentPresentationAspectRatio,
+          ),
+        );
       }
-      final detail = controller.state.value.room.detail;
-      final cover = resolvePortraitFullscreenBackgroundUrl(
-        detailCover: detail?.cover,
-        roomCover: controller.room.cover,
-        detailAvatar: detail?.avatar,
-        roomAvatar: controller.room.avatar,
-      );
-      return PortraitFullscreenPresentation(
-        coverUrl: cover,
-        child: LivePlayVideo(
-          controller: controller,
-          expandToParent: true,
-          transparentSurface: true,
-          videoViewportAspectRatio: manager.currentPresentationAspectRatio,
-        ),
+      if (mode != VideoMode.portraitFullscreen) return presentation;
+      return Stack(
+        key: const ValueKey('portrait-panel-fullscreen'),
+        fit: StackFit.expand,
+        children: [presentation, const PortraitFullscreenEntryHint()],
       );
     });
   }
@@ -341,6 +451,12 @@ class LivePlayContent extends StatelessWidget {
               final videoController = controller.state.value.player.videoController;
               if (videoController != null) unawaited(videoController.enterLandscapeFullScreen());
             },
+            onEnterPortraitFullscreen: PlatformUtils.isAndroid
+                ? () {
+                    final videoController = controller.state.value.player.videoController;
+                    if (videoController != null) unawaited(videoController.enterPortraitFullScreen());
+                  }
+                : null,
           );
         }),
       ),

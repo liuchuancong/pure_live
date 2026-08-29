@@ -1454,5 +1454,7 @@
     "portrait_custom_height_setting": "调整视频显示的像素高度",
     "portrait_reset_video_height": "重置竖屏视频高度",
     "portrait_reset_video_height_desc": "恢复为自适应模式并重置自定义高度",
-    "portrait_height_presets": "预设高度"
+    "portrait_height_presets": "预设高度",
+    "portrait_fullscreen_enter_hint": "下滑进入竖屏全屏",
+    "portrait_fullscreen_restore_hint": "已进入竖屏全屏 · 上滑恢复弹幕栏"
 }

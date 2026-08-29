@@ -12,6 +12,7 @@ import 'package:pure_live/common/utils/live_url_tool.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:scrollview_observer/scrollview_observer.dart';
 import 'package:pure_live/modules/live_play/states/load_type.dart';
+import 'package:pure_live/modules/live_play/states/ui_state.dart';
 import 'package:pure_live/modules/live_play/dialogs/play_other.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
@@ -23,6 +24,7 @@ import 'package:pure_live/modules/live_play/widgets/video_player/video_controlle
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_settings_binding.dart';
 import 'package:pure_live/modules/live_play/widgets/local_interaction/local_danmaku_style_editor.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
+import 'package:pure_live/modules/live_play/widgets/layout/portrait_fullscreen_interaction.dart';
 
 @visibleForTesting
 enum TopActionLeadingSlot { back, datetime, battery }
@@ -919,6 +921,8 @@ class BrightnessVolumnDargAreaState extends State<BrightnessVolumnDargArea> {
   bool _hideBVStuff = true;
   bool _isDargLeft = true;
   double _updateDargVarVal = 1.0;
+  bool _portraitRestoreGesture = false;
+  double _portraitRestoreDistance = 0;
 
   @override
   void initState() {
@@ -992,6 +996,34 @@ class BrightnessVolumnDargAreaState extends State<BrightnessVolumnDargArea> {
     }
   }
 
+  void _onVerticalDragStart(DragStartDetails details) {
+    final size = context.size ?? MediaQuery.sizeOf(context);
+    _portraitRestoreGesture =
+        controller.livePlayController.state.value.ui.screenMode == VideoMode.portraitFullscreen &&
+        details.localPosition.dy >= size.height - portraitFullscreenRestoreGestureZone;
+    _portraitRestoreDistance = 0;
+  }
+
+  void _onVerticalDragDetails(DragUpdateDetails details) {
+    if (_portraitRestoreGesture) {
+      _portraitRestoreDistance = (_portraitRestoreDistance - details.delta.dy).clamp(0.0, double.infinity).toDouble();
+      return;
+    }
+    _onVerticalDragUpdate(details.localPosition, details.delta);
+  }
+
+  void _onVerticalDragEnd(DragEndDetails details) {
+    final shouldRestore =
+        _portraitRestoreGesture &&
+        shouldRestorePortraitPanelFromSwipe(
+          upwardDistance: _portraitRestoreDistance,
+          velocity: details.primaryVelocity ?? 0,
+        );
+    _portraitRestoreGesture = false;
+    _portraitRestoreDistance = 0;
+    if (shouldRestore) unawaited(controller.exitPortraitFullScreen());
+  }
+
   @override
   Widget build(BuildContext context) {
     IconData iconData;
@@ -1018,7 +1050,13 @@ class BrightnessVolumnDargAreaState extends State<BrightnessVolumnDargArea> {
         }
       },
       child: GestureDetector(
-        onVerticalDragUpdate: (details) => _onVerticalDragUpdate(details.localPosition, details.delta),
+        onVerticalDragStart: _onVerticalDragStart,
+        onVerticalDragUpdate: _onVerticalDragDetails,
+        onVerticalDragEnd: _onVerticalDragEnd,
+        onVerticalDragCancel: () {
+          _portraitRestoreGesture = false;
+          _portraitRestoreDistance = 0;
+        },
         child: Container(
           color: Colors.transparent,
           alignment: Alignment.center,
