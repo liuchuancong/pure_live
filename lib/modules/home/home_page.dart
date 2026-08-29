@@ -15,6 +15,7 @@ import 'package:pure_live/modules/popular/popular_page.dart';
 import 'package:pure_live/modules/favorite/favorite_page.dart';
 import 'package:pure_live/modules/about/widgets/version_dialog.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_page.dart';
+import 'package:pure_live/common/services/settings/refresh_config_controller.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -124,6 +125,10 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
       return;
     }
     if (state != AppLifecycleState.resumed) return;
+    final RefreshConfigController refreshConfigController = Get.find<RefreshConfigController>();
+    if (!refreshConfigController.refreshFavoriteOnResume.value) {
+      return;
+    }
     final backgroundedAt = _backgroundedAt;
     _backgroundedAt = null;
     if (backgroundedAt == null || DateTime.now().difference(backgroundedAt) < const Duration(seconds: 15)) return;
