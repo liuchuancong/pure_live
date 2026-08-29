@@ -621,6 +621,29 @@
           "x": 1260,
           "y": 3008,
           "label": "底部动态导航第 4 项（具体菜单由用户设置决定）"
+        },
+        "live.portrait_sheet_handle": {
+          "x": 720,
+          "y": 2000,
+          "label": "竖屏直播：下滑进入竖屏全屏的弹幕面板手柄",
+          "semantic": "下滑进入竖屏全屏",
+          "bounds": [
+            0,
+            1940,
+            1440,
+            2060
+          ]
+        },
+        "live.portrait_fullscreen_restore_zone": {
+          "x": 720,
+          "y": 3070,
+          "label": "竖屏全屏：底部上滑恢复弹幕栏手势区",
+          "bounds": [
+            0,
+            2784,
+            1440,
+            3168
+          ]
         }
       },
       "gestures": {
@@ -655,6 +678,22 @@
           "y2": 900,
           "durationMs": 380,
           "label": "首页直播间列表向上滚动"
+        },
+        "live.portrait_fullscreen_down": {
+          "x1": 720,
+          "y1": 2000,
+          "x2": 720,
+          "y2": 3050,
+          "durationMs": 650,
+          "label": "竖屏直播弹幕面板下滑进入竖屏全屏"
+        },
+        "live.portrait_fullscreen_up": {
+          "x1": 720,
+          "y1": 3100,
+          "x2": 720,
+          "y2": 2420,
+          "durationMs": 420,
+          "label": "竖屏全屏底部上滑恢复弹幕栏"
         }
       },
       "sequences": {
@@ -820,6 +859,18 @@
           {
             "swipe": "settings.scroll_up",
             "waitMs": 450
+          }
+        ],
+        "enter_portrait_fullscreen": [
+          {
+            "swipe": "live.portrait_fullscreen_down",
+            "waitMs": 900
+          }
+        ],
+        "restore_portrait_panel": [
+          {
+            "swipe": "live.portrait_fullscreen_up",
+            "waitMs": 900
           }
         ]
       },

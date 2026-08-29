@@ -85,3 +85,14 @@ deliberately skipped on this fast path because it can outlive the control layer.
    `-Validate` before device regression.
 5. Verify player state through app logs/semantics after each action. A successful
    tap alone is not a playback result.
+
+## v3.0.22 竖屏全屏手势
+
+连接 PJZ110 并进入已经稳定识别的竖屏直播间后，可直接复用：
+
+```powershell
+.\tool\android_ui.ps1 -Sequence enter_portrait_fullscreen
+.\tool\android_ui.ps1 -Sequence restore_portrait_panel
+```
+
+两个流程分别从竖屏弹幕面板手柄下滑进入沉浸展示、从屏幕底部上滑恢复弹幕栏。它们只记录确定坐标与等待时间；直播源是否为稳定竖屏仍由应用自身状态机判定，脚本不会强制普通直播进入该模式。
