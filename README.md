@@ -44,7 +44,7 @@
 - 每个完成的 Bug 修复批次默认递增版本，优先构建 Android `arm64-v8a` 正式更新包，并同步源码、版本标签、安装包与校验文件到本仓库 GitHub Release；其他平台仍按本轮明确范围串行构建。
 - 每次同步上游、分析 Bug 和审查原项目 Issue 的来源判定、根因、兼容、验证与回滚流程见[维护范围与问题处置策略](MAINTENANCE_POLICY.md)及[上游同步审查策略](UPSTREAM_REVIEW_POLICY.md)。
 
-- **最新稳定版**：[v3.0.18](https://github.com/wzgrx/pure_live/releases/tag/v3.0.18)
+- **最新稳定版**：[v3.0.23](https://github.com/wzgrx/pure_live/releases/tag/v3.0.23)
 - **当前 Android 构建版本**：`3.0.18+4106`（关闭会干扰硬件解码的自动截图探测，刷新虎牙单连接签名，累积录制重试数据并完成录制中心真机边界复核；竖屏画面几何保持冻结）
 - **Android 系统要求**：Android 8.0 / API 26 及以上（与当前 FFmpegKit 原生录制依赖一致）
 - **v3.0.0 上游源码基线**：`liuchuancong/pure_live@e808dcae`；完整记录见 `docs/STAGE_UPDATE_3_0_0.md`

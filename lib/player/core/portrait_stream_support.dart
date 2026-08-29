@@ -10,6 +10,14 @@ enum PortraitLayoutMode { balanced, immersive, compatibility }
 
 enum PortraitFullscreenPolicy { followSource, followSystem, landscape }
 
+/// How a confirmed portrait programme uses a tall phone while the dedicated
+/// portrait-fullscreen route is active.
+///
+/// This is intentionally independent from the shared player fit setting. The
+/// latter still controls ordinary rooms and landscape fullscreen, while these
+/// modes only decide how the unavoidable aspect-ratio gap is presented.
+enum PortraitFullscreenDisplayMode { complete, ambient, balanced, cover }
+
 enum PortraitDanmakuMode { followGlobal, upperQuarter, reduced, hidden }
 
 /// Evidence currently driving the effective video geometry.

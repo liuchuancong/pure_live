@@ -7,6 +7,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/player/core/player_manager.dart';
+import 'package:pure_live/player/core/portrait_stream_support.dart';
 import 'package:pure_live/player/models/player_state.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/player/models/player_exception.dart';
@@ -602,6 +603,65 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
     unawaited(manager.dispose());
+  });
+
+  testWidgets('portrait fullscreen balanced mode applies a bounded video-only zoom', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1440, 3168));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: buildPresentationVideoViewport(
+          aspectRatio: 9 / 16,
+          mode: PortraitFullscreenDisplayMode.balanced,
+          child: const ColoredBox(color: Colors.green),
+        ),
+      ),
+    );
+
+    final transform = tester.widget<Transform>(find.byKey(const ValueKey('presentation-video-balanced-scale')));
+    final viewport = tester.getSize(find.byKey(const ValueKey('presentation-video-viewport')));
+    expect(transform.transform.getMaxScaleOnAxis(), closeTo(1.08, 0.0001));
+    expect(viewport, const Size(1440, 2560));
+    expect(tester.getSize(find.byKey(const ValueKey('presentation-video-balanced-clip'))), const Size(1440, 3168));
+  });
+
+  testWidgets('portrait fullscreen cover delegates the whole surface to the native cover fit', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final player = _FakePlayer(
+      videoWidget: const ColoredBox(key: ValueKey('portrait-cover-native-video'), color: Colors.green),
+    );
+    final manager = _createManager(player);
+    await manager.initialize(engine: PlayerEngine.mediaKit);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: manager.getVideoWidget(
+          0,
+          fitList: const <BoxFit>[BoxFit.contain],
+          videoViewportAspectRatio: 9 / 16,
+          portraitFullscreenDisplayMode: PortraitFullscreenDisplayMode.cover,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('presentation-video-viewport')), findsNothing);
+    expect(find.byKey(const ValueKey('presentation-video-cover')), findsOneWidget);
+    expect(tester.getSize(find.byKey(const ValueKey('portrait-cover-native-video'))), const Size(390, 844));
+    expect(player.videoFitRequests.last, BoxFit.cover);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    unawaited(manager.dispose());
+  });
+
+  test('balanced portrait fullscreen scale stops when the display is already filled', () {
+    expect(resolvePortraitFullscreenBalancedScale(viewportSize: const Size(1080, 1920), contentAspectRatio: 9 / 16), 1);
+    expect(
+      resolvePortraitFullscreenBalancedScale(viewportSize: const Size(1440, 3168), contentAspectRatio: 9 / 16),
+      closeTo(1.08, 0.0001),
+    );
   });
 
   test('a room re-entry request supersedes an in-flight audio-only request', () async {

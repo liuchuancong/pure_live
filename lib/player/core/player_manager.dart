@@ -2078,6 +2078,7 @@ class PlayerManager {
     bool? audioOnlyOverride,
     Color surfaceColor = Colors.black,
     double? videoViewportAspectRatio,
+    PortraitFullscreenDisplayMode? portraitFullscreenDisplayMode,
   }) {
     // Floating/PiP callers already wrap this factory in Obx; keep their
     // dependency registered while the inner observer covers direct callers.
@@ -2117,7 +2118,13 @@ class PlayerManager {
                           color: surfaceColor,
                           child: buildPresentationVideoViewport(
                             aspectRatio: videoViewportAspectRatio,
-                            child: _buildVideoWidget(player, boxFit),
+                            mode: portraitFullscreenDisplayMode,
+                            child: _buildVideoWidget(
+                              player,
+                              portraitFullscreenDisplayMode == PortraitFullscreenDisplayMode.cover
+                                  ? BoxFit.cover
+                                  : boxFit,
+                            ),
                           ),
                         ),
                       ),
@@ -2757,11 +2764,64 @@ Widget buildUnifiedMobileVideoFrame({
 /// player/controller lets inactive normal, fullscreen and floating trees race
 /// over one adapter state during transitions.
 @visibleForTesting
-Widget buildPresentationVideoViewport({required Widget child, double? aspectRatio}) {
+Widget buildPresentationVideoViewport({
+  required Widget child,
+  double? aspectRatio,
+  PortraitFullscreenDisplayMode? mode,
+}) {
   if (aspectRatio == null || !aspectRatio.isFinite || aspectRatio <= 0) return child;
-  return Center(
-    child: AspectRatio(key: const ValueKey('presentation-video-viewport'), aspectRatio: aspectRatio, child: child),
+  if (mode == PortraitFullscreenDisplayMode.cover) {
+    return SizedBox.expand(key: const ValueKey('presentation-video-cover'), child: child);
+  }
+  final viewport = AspectRatio(
+    key: const ValueKey('presentation-video-viewport'),
+    aspectRatio: aspectRatio,
+    child: child,
   );
+  if (mode != PortraitFullscreenDisplayMode.balanced) return Center(child: viewport);
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      final scale = resolvePortraitFullscreenBalancedScale(
+        viewportSize: Size(constraints.maxWidth, constraints.maxHeight),
+        contentAspectRatio: aspectRatio,
+      );
+      return ClipRect(
+        key: const ValueKey('presentation-video-balanced-clip'),
+        child: Center(
+          child: Transform.scale(
+            key: const ValueKey('presentation-video-balanced-scale'),
+            scale: scale,
+            child: viewport,
+          ),
+        ),
+      );
+    },
+  );
+}
+
+/// Applies only enough zoom to soften a phone's letterbox gap while keeping a
+/// strict crop budget. The rest of the gap remains available for the ambient
+/// background, so a very tall display never silently discards 20% of a stream.
+@visibleForTesting
+double resolvePortraitFullscreenBalancedScale({
+  required Size viewportSize,
+  required double contentAspectRatio,
+  double maximumScale = 1.08,
+}) {
+  if (viewportSize.isEmpty ||
+      !viewportSize.width.isFinite ||
+      !viewportSize.height.isFinite ||
+      !contentAspectRatio.isFinite ||
+      contentAspectRatio <= 0 ||
+      !maximumScale.isFinite ||
+      maximumScale <= 1) {
+    return 1;
+  }
+  final viewportAspectRatio = viewportSize.width / viewportSize.height;
+  final coverScale = viewportAspectRatio < contentAspectRatio
+      ? contentAspectRatio / viewportAspectRatio
+      : viewportAspectRatio / contentAspectRatio;
+  return coverScale.clamp(1.0, maximumScale).toDouble();
 }
 
 class _AudioServiceRequest {

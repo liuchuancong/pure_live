@@ -3,6 +3,7 @@ import 'package:pure_live/modules/live_play/controllers/live_play_controller.dar
 import 'package:pure_live/modules/live_play/widgets/video_player/video_player.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_loading.dart';
 import 'package:pure_live/modules/live_play/widgets/placeholder/not_living_video_widget.dart';
+import 'package:pure_live/player/core/portrait_stream_support.dart';
 
 class LivePlayVideo extends StatelessWidget {
   const LivePlayVideo({
@@ -11,12 +12,14 @@ class LivePlayVideo extends StatelessWidget {
     this.expandToParent = false,
     this.transparentSurface = false,
     this.videoViewportAspectRatio,
+    this.portraitFullscreenDisplayMode,
   });
 
   final LivePlayController controller;
   final bool expandToParent;
   final bool transparentSurface;
   final double? videoViewportAspectRatio;
+  final PortraitFullscreenDisplayMode? portraitFullscreenDisplayMode;
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +45,7 @@ class LivePlayVideo extends StatelessWidget {
                   controller: videoController,
                   surfaceColor: transparentSurface ? Colors.transparent : Colors.black,
                   videoViewportAspectRatio: videoViewportAspectRatio,
+                  portraitFullscreenDisplayMode: portraitFullscreenDisplayMode,
                 ),
               ),
             ],

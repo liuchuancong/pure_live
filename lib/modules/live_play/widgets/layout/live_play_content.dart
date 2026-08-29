@@ -396,6 +396,9 @@ class LivePlayContent extends StatelessWidget {
         );
       } else {
         final detail = controller.state.value.room.detail;
+        final fullscreenDisplayMode = mode == VideoMode.portraitFullscreen
+            ? settings.portraitFullscreenDisplayMode
+            : PortraitFullscreenDisplayMode.ambient;
         final cover = resolvePortraitFullscreenBackgroundUrl(
           detailCover: detail?.cover,
           roomCover: controller.room.cover,
@@ -404,11 +407,13 @@ class LivePlayContent extends StatelessWidget {
         );
         presentation = PortraitFullscreenPresentation(
           coverUrl: cover,
+          mode: fullscreenDisplayMode,
           child: LivePlayVideo(
             controller: controller,
             expandToParent: true,
             transparentSurface: true,
             videoViewportAspectRatio: manager.currentPresentationAspectRatio,
+            portraitFullscreenDisplayMode: mode == VideoMode.portraitFullscreen ? fullscreenDisplayMode : null,
           ),
         );
       }
@@ -497,46 +502,56 @@ String resolvePortraitFullscreenBackgroundUrl({
 /// fitted to its trusted portrait geometry. A dim cached cover replaces harsh
 /// empty side columns without duplicating or continuously sampling video.
 class PortraitFullscreenPresentation extends StatelessWidget {
-  const PortraitFullscreenPresentation({super.key, required this.coverUrl, required this.child});
+  const PortraitFullscreenPresentation({
+    super.key,
+    required this.coverUrl,
+    required this.child,
+    this.mode = PortraitFullscreenDisplayMode.ambient,
+  });
 
   final String coverUrl;
   final Widget child;
+  final PortraitFullscreenDisplayMode mode;
 
   @override
   Widget build(BuildContext context) {
+    final showAmbient = mode == PortraitFullscreenDisplayMode.ambient || mode == PortraitFullscreenDisplayMode.balanced;
     return ColoredBox(
       key: const ValueKey('fullscreen-portrait-presentation'),
       color: Colors.black,
       child: Stack(
+        key: ValueKey('fullscreen-portrait-mode-${mode.name}'),
         fit: StackFit.expand,
         children: [
-          const DecoratedBox(
-            key: ValueKey('fullscreen-portrait-ambient-fallback'),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF171A22), Color(0xFF07080B)],
-              ),
-            ),
-          ),
-          if (coverUrl.isNotEmpty)
-            ImageFiltered(
-              key: const ValueKey('fullscreen-portrait-ambient-image'),
-              imageFilter: ui.ImageFilter.blur(sigmaX: 28, sigmaY: 28),
-              child: Transform.scale(
-                scale: 1.12,
-                child: CachedNetworkImage(
-                  imageUrl: coverUrl,
-                  fit: BoxFit.cover,
-                  fadeInDuration: Duration.zero,
-                  filterQuality: FilterQuality.low,
-                  placeholder: (_, _) => const SizedBox.expand(),
-                  errorWidget: (_, _, _) => const SizedBox.expand(),
+          if (showAmbient) ...[
+            const DecoratedBox(
+              key: ValueKey('fullscreen-portrait-ambient-fallback'),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF342B3A), Color(0xFF171B27), Color(0xFF2A202B)],
                 ),
               ),
             ),
-          const ColoredBox(color: Color(0x73000000)),
+            if (coverUrl.isNotEmpty)
+              ImageFiltered(
+                key: const ValueKey('fullscreen-portrait-ambient-image'),
+                imageFilter: ui.ImageFilter.blur(sigmaX: 28, sigmaY: 28, tileMode: TileMode.mirror),
+                child: Transform.scale(
+                  scale: 1.14,
+                  child: CachedNetworkImage(
+                    imageUrl: coverUrl,
+                    fit: BoxFit.cover,
+                    fadeInDuration: Duration.zero,
+                    filterQuality: FilterQuality.low,
+                    placeholder: (_, _) => const SizedBox.expand(),
+                    errorWidget: (_, _, _) => const SizedBox.expand(),
+                  ),
+                ),
+              ),
+            const ColoredBox(key: ValueKey('fullscreen-portrait-ambient-veil'), color: Color(0x26000000)),
+          ],
           RepaintBoundary(child: child),
         ],
       ),

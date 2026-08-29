@@ -80,6 +80,26 @@ class PortraitLiveSettingsPage extends StatelessWidget {
                 ),
               ),
             ),
+            Obx(
+              () => context.buildTile(
+                icon: Icons.fit_screen_rounded,
+                title: i18n('portrait_fullscreen_display_mode'),
+                subtitle: i18n('portrait_fullscreen_display_mode_desc'),
+                isLong: true,
+                trailing: Text(
+                  portraitFullscreenDisplayModeLabel(settings.portraitFullscreenDisplayMode),
+                  style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
+                ),
+                onTap: () => _selectEnum<PortraitFullscreenDisplayMode>(
+                  context,
+                  title: i18n('portrait_fullscreen_display_mode'),
+                  values: PortraitFullscreenDisplayMode.values,
+                  selected: settings.portraitFullscreenDisplayMode,
+                  label: portraitFullscreenDisplayModeLabel,
+                  onSelected: (value) => settings.portraitFullscreenDisplayModeName.v = value.name,
+                ),
+              ),
+            ),
             if (Platform.isAndroid)
               context.buildSwitchTile(
                 icon: Icons.picture_in_picture_alt_rounded,
@@ -201,3 +221,10 @@ class PortraitLiveSettingsPage extends StatelessWidget {
     PortraitDanmakuMode.hidden => i18n('portrait_danmaku_hidden'),
   };
 }
+
+String portraitFullscreenDisplayModeLabel(PortraitFullscreenDisplayMode value) => switch (value) {
+  PortraitFullscreenDisplayMode.complete => i18n('portrait_fullscreen_display_complete'),
+  PortraitFullscreenDisplayMode.ambient => i18n('portrait_fullscreen_display_ambient'),
+  PortraitFullscreenDisplayMode.balanced => i18n('portrait_fullscreen_display_balanced'),
+  PortraitFullscreenDisplayMode.cover => i18n('portrait_fullscreen_display_cover'),
+};

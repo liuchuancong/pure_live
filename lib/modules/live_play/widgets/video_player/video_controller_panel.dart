@@ -792,6 +792,100 @@ class PortraitOrientationButton extends StatelessWidget {
   }
 }
 
+/// A portrait-fullscreen-only display selector. Keeping it beside the existing
+/// orientation override makes the distinction explicit: one decides what the
+/// source is, while this control decides how a confirmed portrait source uses
+/// the remaining phone surface.
+class PortraitFullscreenDisplayModeButton extends StatelessWidget {
+  const PortraitFullscreenDisplayModeButton({super.key, required this.controller});
+
+  final VideoController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final manager = GlobalPlayerService.instance.player;
+      final screenMode = controller.livePlayController.state.value.ui.screenMode;
+      if (screenMode != VideoMode.portraitFullscreen || !manager.isVerticalVideo.value) {
+        return const SizedBox.shrink();
+      }
+      final selected = SettingsService.to.player.portraitFullscreenDisplayMode;
+      return IconButton(
+        key: const ValueKey('portrait-fullscreen-display-mode'),
+        tooltip: i18n('portrait_fullscreen_display_mode'),
+        visualDensity: VisualDensity.compact,
+        color: selected == PortraitFullscreenDisplayMode.ambient ? Colors.white : const Color(0xFFFFD166),
+        onPressed: () => _showPicker(context, selected),
+        icon: Icon(_portraitFullscreenDisplayModeIcon(selected), size: 21),
+      );
+    });
+  }
+
+  Future<void> _showPicker(BuildContext context, PortraitFullscreenDisplayMode selected) async {
+    controller.isMenuOpen.value = true;
+    controller.stopHideController();
+    try {
+      final value = await showDialog<PortraitFullscreenDisplayMode>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(i18n('portrait_fullscreen_display_mode')),
+          contentPadding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 380),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final item in PortraitFullscreenDisplayMode.values)
+                  ListTile(
+                    key: ValueKey('portrait-fullscreen-display-${item.name}'),
+                    dense: true,
+                    leading: Icon(
+                      item == selected ? Icons.radio_button_checked_rounded : _portraitFullscreenDisplayModeIcon(item),
+                      color: item == selected ? Theme.of(dialogContext).colorScheme.primary : null,
+                    ),
+                    title: Text(_portraitFullscreenDisplayModeLabel(item)),
+                    subtitle: Text(_portraitFullscreenDisplayModeDescription(item)),
+                    onTap: () => Navigator.of(dialogContext).pop(item),
+                  ),
+              ],
+            ),
+          ),
+          actions: [TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(i18n('cancel')))],
+        ),
+      );
+      if (value != null) {
+        SettingsService.to.player.portraitFullscreenDisplayModeName.v = value.name;
+      }
+    } finally {
+      if (controller.status != PlayerStatus.disposed) {
+        controller.isMenuOpen.value = false;
+        controller.enableController();
+      }
+    }
+  }
+}
+
+IconData _portraitFullscreenDisplayModeIcon(PortraitFullscreenDisplayMode value) => switch (value) {
+  PortraitFullscreenDisplayMode.complete => Icons.crop_free_rounded,
+  PortraitFullscreenDisplayMode.ambient => Icons.blur_on_rounded,
+  PortraitFullscreenDisplayMode.balanced => Icons.fit_screen_rounded,
+  PortraitFullscreenDisplayMode.cover => Icons.fullscreen_rounded,
+};
+
+String _portraitFullscreenDisplayModeLabel(PortraitFullscreenDisplayMode value) => switch (value) {
+  PortraitFullscreenDisplayMode.complete => i18n('portrait_fullscreen_display_complete'),
+  PortraitFullscreenDisplayMode.ambient => i18n('portrait_fullscreen_display_ambient'),
+  PortraitFullscreenDisplayMode.balanced => i18n('portrait_fullscreen_display_balanced'),
+  PortraitFullscreenDisplayMode.cover => i18n('portrait_fullscreen_display_cover'),
+};
+
+String _portraitFullscreenDisplayModeDescription(PortraitFullscreenDisplayMode value) => switch (value) {
+  PortraitFullscreenDisplayMode.complete => i18n('portrait_fullscreen_display_complete_desc'),
+  PortraitFullscreenDisplayMode.ambient => i18n('portrait_fullscreen_display_ambient_desc'),
+  PortraitFullscreenDisplayMode.balanced => i18n('portrait_fullscreen_display_balanced_desc'),
+  PortraitFullscreenDisplayMode.cover => i18n('portrait_fullscreen_display_cover_desc'),
+};
+
 class PortraitStreamDiagnosticsBadge extends StatelessWidget {
   const PortraitStreamDiagnosticsBadge({super.key});
 
@@ -1895,6 +1989,7 @@ class BottomActionBar extends StatelessWidget {
         if (GlobalPlayerState.to.isWindowFullscreen.value || GlobalPlayerState.to.isFullscreen.value) ...[
           FullscreenStreamSelectorButton(controller: controller),
         ],
+        if (PlatformUtils.isMobile) PortraitFullscreenDisplayModeButton(controller: controller),
         if (PlatformUtils.isMobile) PortraitOrientationButton(controller: controller),
         if (!compact) VideoFitSetting(controller: controller),
         if (Platform.isWindows) OverlayVolumeControl(controller: controller),

@@ -241,6 +241,30 @@ void main() {
     expect(find.byKey(const ValueKey('portrait-fullscreen-video')), findsOneWidget);
   });
 
+  testWidgets('portrait fullscreen presentation exposes ambient only for the two non-destructive modes', (
+    tester,
+  ) async {
+    for (final mode in PortraitFullscreenDisplayMode.values) {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PortraitFullscreenPresentation(
+            coverUrl: '',
+            mode: mode,
+            child: const ColoredBox(color: Colors.transparent),
+          ),
+        ),
+      );
+      final expectsAmbient =
+          mode == PortraitFullscreenDisplayMode.ambient || mode == PortraitFullscreenDisplayMode.balanced;
+      expect(
+        find.byKey(const ValueKey('fullscreen-portrait-ambient-fallback')),
+        expectsAmbient ? findsOneWidget : findsNothing,
+        reason: mode.name,
+      );
+      expect(find.byKey(ValueKey('fullscreen-portrait-mode-${mode.name}')), findsOneWidget);
+    }
+  });
+
   test('portrait fullscreen background falls back through cover and avatar metadata', () {
     expect(
       resolvePortraitFullscreenBackgroundUrl(

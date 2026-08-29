@@ -42,6 +42,10 @@ class PlayerSettingsController extends GetxController {
     'portraitFullscreenPolicy',
     PortraitFullscreenPolicy.followSource.name,
   );
+  final RxString portraitFullscreenDisplayModeName = hiveString(
+    'portraitFullscreenDisplayMode',
+    PortraitFullscreenDisplayMode.ambient.name,
+  );
   final RxBool portraitPipFollowSource = hiveBool('portraitPipFollowSource', true);
   final RxString portraitDanmakuModeName = hiveString('portraitDanmakuMode', PortraitDanmakuMode.followGlobal.name);
   final RxBool rememberPortraitRoomOverride = hiveBool('rememberPortraitRoomOverride', true);
@@ -57,6 +61,12 @@ class PlayerSettingsController extends GetxController {
     PortraitFullscreenPolicy.values,
     portraitFullscreenPolicyName.v,
     PortraitFullscreenPolicy.followSource,
+  );
+
+  PortraitFullscreenDisplayMode get portraitFullscreenDisplayMode => _enumByName(
+    PortraitFullscreenDisplayMode.values,
+    portraitFullscreenDisplayModeName.v,
+    PortraitFullscreenDisplayMode.ambient,
   );
 
   PortraitDanmakuMode get portraitDanmakuMode =>
@@ -104,6 +114,7 @@ class PlayerSettingsController extends GetxController {
     portraitAdaptiveHeight.v = true;
     portraitLayoutModeName.v = PortraitLayoutMode.balanced.name;
     portraitFullscreenPolicyName.v = PortraitFullscreenPolicy.followSource.name;
+    portraitFullscreenDisplayModeName.v = PortraitFullscreenDisplayMode.ambient.name;
     portraitPipFollowSource.v = true;
     portraitDanmakuModeName.v = PortraitDanmakuMode.followGlobal.name;
     rememberPortraitRoomOverride.v = true;
@@ -183,6 +194,7 @@ class PlayerSettingsController extends GetxController {
       'portraitAdaptiveHeight': portraitAdaptiveHeight.v,
       'portraitLayoutMode': portraitLayoutMode.name,
       'portraitFullscreenPolicy': portraitFullscreenPolicy.name,
+      'portraitFullscreenDisplayMode': portraitFullscreenDisplayMode.name,
       'portraitPipFollowSource': portraitPipFollowSource.v,
       'portraitDanmakuMode': portraitDanmakuMode.name,
       'rememberPortraitRoomOverride': rememberPortraitRoomOverride.v,
@@ -218,6 +230,11 @@ class PlayerSettingsController extends GetxController {
       PortraitFullscreenPolicy.values,
       json['portraitFullscreenPolicy'],
       PortraitFullscreenPolicy.followSource,
+    );
+    portraitFullscreenDisplayModeName.v = _enumName(
+      PortraitFullscreenDisplayMode.values,
+      json['portraitFullscreenDisplayMode'],
+      PortraitFullscreenDisplayMode.ambient,
     );
     portraitPipFollowSource.v = json['portraitPipFollowSource'] ?? true;
     portraitDanmakuModeName.v = _enumName(
@@ -263,6 +280,11 @@ class PlayerSettingsController extends GetxController {
         PortraitFullscreenPolicy.values,
         player['portraitFullscreenPolicy'],
         PortraitFullscreenPolicy.followSource,
+      ),
+      'portraitFullscreenDisplayMode': _enumName(
+        PortraitFullscreenDisplayMode.values,
+        player['portraitFullscreenDisplayMode'],
+        PortraitFullscreenDisplayMode.ambient,
       ),
       'portraitPipFollowSource': player['portraitPipFollowSource'] ?? true,
       'portraitDanmakuMode': _enumName(
