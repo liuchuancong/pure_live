@@ -20,13 +20,13 @@ import 'package:pure_live/core/danmaku/huya_danmaku.dart';
 import 'package:pure_live/common/utils/githup_mirror.dart';
 import 'package:pure_live/pkg/tars/net/base_tars_http.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
+import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/core/tars/get_cdn_token_ex_req.dart';
 import 'package:pure_live/core/tars/get_cdn_token_ex_resp.dart';
 import 'package:pure_live/core/site/huya/huya_request_params.dart';
 import 'package:pure_live/core/tars/get_game_event_message_board_req.dart';
 import 'package:pure_live/core/tars/get_game_event_message_board_rsp.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
-import 'package:pure_live/core/utils/live_quality_label.dart';
 
 class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LivePlayUrlCursorResolver {
   @override
@@ -45,12 +45,6 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
   static Map<String, String> requestHeaders = {'Origin': baseUrl, 'Referer': baseUrl, 'User-Agent': HYSDK_UA};
   final BaseTarsHttp tupClient = BaseTarsHttp("http://wup.huya.com", "liveui", headers: requestHeaders);
 
-  /// Huya's public room detail currently returns `userCount` and
-  /// `totalCount` as the same multi-million popularity value. Treating
-  /// `userCount` as a concurrent head count relabels heat as people online.
-  /// Current website captures show URI 8006 `iAttendeeCount` in the same
-  /// multi-million range, so it is also kept as popularity rather than a
-  /// concurrent-viewer head count.
   static ({String popularity, String onlineViewers}) parseRoomAudience(Map<String, dynamic>? liveData) {
     final totalCount = liveData?['totalCount']?.toString().trim() ?? '';
     final userCount = liveData?['userCount']?.toString().trim() ?? '';
@@ -65,7 +59,6 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
       LiveCategory(id: "8", name: "娱乐", children: []),
       LiveCategory(id: "3", name: "手游", children: []),
     ];
-
     for (var item in categories) {
       var items = await getSubCategores(item);
       item.children.addAll(items);
@@ -81,7 +74,6 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
       "https://live.cdn.huya.com/liveconfig/game/bussLive",
       queryParameters: {"bussType": liveCategory.id},
     );
-
     List<LiveArea> subs = [];
     for (var item in result["data"]) {
       var gid = (item["gid"])?.toInt().toString();
@@ -95,7 +87,6 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
       );
       subs.add(subCategory);
     }
-
     return subs;
   }
 
@@ -149,9 +140,6 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
     return Future.value(parsePlayQualities(data));
   }
 
-  /// Exposes only rates returned by Huya. The old fallback invented a 2000
-  /// kbps "高清" option when the room returned no rate list, so tapping it
-  /// could only reopen the same source stream while the UI claimed a change.
   @visibleForTesting
   static List<LivePlayQuality> parsePlayQualities(HuyaUrlDataModel data) {
     final rates = data.bitRates.isEmpty ? <HuyaBitRateModel>[HuyaBitRateModel(name: '原画', bitRate: 0)] : data.bitRates;
@@ -239,19 +227,10 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
       final protocol = line.lineType == HuyaLineType.hls ? 'HLS' : 'FLV';
       throw StateError('Huya $protocol token is unavailable');
     }
-    // Huya HTTPS stream signatures are effectively single-connection tokens.
-    // Playback and recording can run at the same time, so every consumer must
-    // receive a freshly calculated seqid/wsSecret instead of reusing the room
-    // metadata token. Queries without `fm` are legacy fixtures and remain as-is.
     antiCode = buildAntiCode(line.streamName, line.presenterUid, antiCode);
-
     final extension = line.lineType == HuyaLineType.hls ? 'm3u8' : 'flv';
     final cdnBase = secureHuyaCdnBase(line.line);
     if (!RegExp(r'(^|&)codec=').hasMatch(antiCode)) antiCode = '$antiCode&codec=264';
-    // Huya reuses one anti-leech query for every quality. `ratio`, when
-    // already present, describes the URL captured from the page rather than
-    // the user's new selection. Always replace it for a transcode and remove
-    // it for source quality (bitRate=0), matching the current web extractor.
     antiCode = replaceQueryParameter(antiCode, 'ratio', bitRate > 0 ? '$bitRate' : null);
     return '$cdnBase/${line.streamName}.$extension?$antiCode';
   }
@@ -296,7 +275,6 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
           "Referer": "https://www.huya.com/",
         },
       );
-
       var result = json.decode(resultText);
       var items = <LiveRoom>[];
       for (var item in result["data"]["datas"]) {
@@ -345,152 +323,158 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
     required String roomId,
     required bool allowUiFallback,
   }) async {
-    var resultText = await HttpClient.instance.getText(
-      'https://mp.huya.com/cache.php?m=Live&do=profileRoom&roomid=$roomId&showSecret=1',
-      header: {
-        'Accept': '*/*',
-        'Origin': 'https://www.huya.com',
-        'Referer': 'https://www.huya.com/',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-site',
-        "user-agent": kUserAgent,
-        "Cookie": SettingsService.to.cookieManager.huyaCookie.v,
-      },
-    );
-    final result = json.decode(resultText);
-    final statusCode = result is Map ? int.tryParse(result['status']?.toString() ?? '') : null;
-    final responseData = result is Map && result['data'] is Map ? result['data'] as Map : null;
-    final normalizedLiveState = responseData?['liveStatus']?.toString().trim().toUpperCase() ?? '';
-    if (statusCode == 200 && responseData != null && isExplicitOfflineState(responseData['liveStatus'])) {
-      return _buildInactiveRoom(responseData, platform: platform, roomId: roomId);
-    }
-    if (statusCode == 200 && responseData != null && responseData['stream'] != null) {
-      dynamic data = responseData;
-      var topSid = 0;
-      var subSid = 0;
-      var huyaLines = <HuyaLineModel>[];
-      var huyaBiterates = <HuyaBitRateModel>[];
-      //读取可用线路
-
-      var baseSteamInfoList = data['stream']['baseSteamInfoList'] as List<dynamic>;
-
-      var flvLines = data['stream']['flv']['multiLine'];
-      var hlsLines = data['stream']['hls']['multiLine'];
-      if (flvLines != null) {
-        for (var item in flvLines) {
-          if ((item["url"]?.toString() ?? "").isNotEmpty) {
-            var currentStream = baseSteamInfoList.firstWhere(
-              (element) => element["sCdnType"] == item["cdnType"],
-              orElse: () => null,
+    try {
+      final resultText = await HttpClient.instance.getText(
+        '$baseUrl/$roomId',
+        queryParameters: const {},
+        header: {
+          'Accept': '*/*',
+          'Origin': 'https://www.huya.com',
+          'Referer': 'https://www.huya.com/',
+          'Sec-Fetch-Dest': 'empty',
+          'Sec-Fetch-Mode': 'cors',
+          'Sec-Fetch-Site': 'same-origin',
+          'user-agent': kUserAgent,
+          'Cookie': SettingsService.to.cookieManager.huyaCookie.v,
+        },
+      );
+      final roomData = RegExp(
+        r'var\s+TT_ROOM_DATA\s*=\s*(\{[\s\S]*?\})',
+        multiLine: false,
+      ).firstMatch(resultText)?.group(1);
+      final streamData = RegExp(r'stream:\s*(\{[\s\S]*?\n\s*\})', multiLine: false).firstMatch(resultText)?.group(1);
+      if (roomData == null || streamData == null) {
+        throw const FormatException('Huya room page does not contain room/stream data');
+      }
+      final roomDataJson = json.decode(roomData) as Map<String, dynamic>;
+      final streamJson = json.decode(streamData) as Map<String, dynamic>;
+      final streamDataJson = streamJson['data'][0];
+      if (streamDataJson is! Map) {
+        throw const FormatException('Huya stream data format is invalid');
+      }
+      final streamDataGameLiveInfo = streamDataJson['gameLiveInfo'];
+      if (streamDataGameLiveInfo is! Map) {
+        throw const FormatException('Huya gameLiveInfo is unavailable');
+      }
+      final state = roomDataJson['state']?.toString().trim().toUpperCase() ?? '';
+      final isReplay = roomDataJson['isReplay'] == true;
+      final isLive = state == 'ON' && !isReplay;
+      final title = streamDataGameLiveInfo['introduction']?.toString() ?? '';
+      final cover = streamDataGameLiveInfo['screenshot']?.toString() ?? '';
+      final nick = streamDataGameLiveInfo['nick']?.toString() ?? '';
+      final avatar = streamDataGameLiveInfo['avatar180']?.toString() ?? '';
+      final popularity = streamDataGameLiveInfo['totalCount']?.toString() ?? '';
+      final uid = int.tryParse(streamDataGameLiveInfo['uid']?.toString() ?? '') ?? 0;
+      if (!isLive) {
+        return LiveRoom(
+          cover: cover,
+          watching: popularity,
+          onlineViewers: '',
+          popularity: popularity,
+          audienceMetricType: AudienceMetricType.popularity,
+          roomId: roomId,
+          area: streamDataGameLiveInfo['gameName']?.toString() ?? '',
+          title: title,
+          nick: nick,
+          avatar: avatar,
+          introduction: title,
+          notice: streamDataGameLiveInfo['introduction']?.toString() ?? '',
+          isRecord: isReplay,
+          status: false,
+          liveStatus: LiveStatus.offline,
+          platform: platform,
+          link: 'https://www.huya.com/$roomId',
+          danmakuData: HuyaDanmakuArgs(ayyuid: uid, topSid: 0, subSid: 0),
+        );
+      }
+      final streamDataGameStreamInfo = streamDataJson['gameStreamInfoList'][0];
+      if (streamDataGameStreamInfo is! Map) {
+        throw const FormatException('Huya gameStreamInfoList is unavailable');
+      }
+      final topSid = int.tryParse(streamDataGameStreamInfo['lChannelId'].toString()) ?? 0;
+      final subSid = int.tryParse(streamDataGameStreamInfo['lSubChannelId'].toString()) ?? 0;
+      final huyaLines = <HuyaLineModel>[];
+      const lineTypes = {'sFlvUrl': HuyaLineType.flv, 'sHlsUrl': HuyaLineType.hls};
+      final lines = streamDataJson['gameStreamInfoList'];
+      if (lines is! List) {
+        throw const FormatException('Huya gameStreamInfoList is unavailable');
+      }
+      for (final item in lines) {
+        if (item is! Map) continue;
+        lineTypes.forEach((key, type) {
+          final url = item[key]?.toString() ?? '';
+          if (url.isNotEmpty) {
+            huyaLines.add(
+              HuyaLineModel(
+                line: url,
+                lineType: type,
+                flvAntiCode: item['sFlvAntiCode']?.toString() ?? '',
+                hlsAntiCode: item['sHlsAntiCode']?.toString() ?? '',
+                streamName: item['sStreamName']?.toString() ?? '',
+                cdnType: item['sCdnType']?.toString() ?? '',
+                presenterUid: topSid,
+              ),
             );
-            if (currentStream != null) {
-              topSid = currentStream["lChannelId"].runtimeType == String
-                  ? int.tryParse(currentStream["lChannelId"].toString()) ?? 0
-                  : currentStream["lChannelId"];
-              subSid = currentStream["lSubChannelId"].runtimeType == String
-                  ? int.tryParse(currentStream["lSubChannelId"].toString()) ?? 0
-                  : currentStream["lSubChannelId"];
-              huyaLines.add(
-                HuyaLineModel(
-                  line: currentStream['sFlvUrl'],
-                  lineType: HuyaLineType.flv,
-                  flvAntiCode: currentStream["sFlvAntiCode"].toString(),
-                  hlsAntiCode: currentStream["sHlsAntiCode"].toString(),
-                  streamName: currentStream["sStreamName"].toString(),
-                  cdnType: item["sCdnType"].toString(),
-                  presenterUid:
-                      int.tryParse(currentStream['lPresenterUid']?.toString() ?? '') ??
-                      int.tryParse(data['profileInfo']?['uid']?.toString() ?? '') ??
-                      topSid,
-                ),
-              );
-            }
           }
+        });
+      }
+      final huyaBitRates = <HuyaBitRateModel>[];
+      final biterates = streamJson['vMultiStreamInfo'];
+      if (biterates is List) {
+        for (final item in biterates) {
+          if (item is! Map) continue;
+          final name = item['sDisplayName']?.toString() ?? '';
+          if (name.contains('HDR')) continue;
+          final bitRate = int.tryParse(item['iBitRate']?.toString() ?? '');
+          if (bitRate == null || name.isEmpty) continue;
+          huyaBitRates.add(HuyaBitRateModel(bitRate: bitRate, name: name));
         }
       }
-
-      if (hlsLines != null) {
-        for (var item in hlsLines) {
-          if ((item["url"]?.toString() ?? "").isNotEmpty) {
-            var currentStream = baseSteamInfoList.firstWhere(
-              (element) => element["sCdnType"] == item["cdnType"],
-              orElse: () => null,
-            );
-            if (currentStream != null) {
-              topSid = currentStream["lChannelId"].runtimeType == String
-                  ? int.tryParse(currentStream["lChannelId"].toString()) ?? 0
-                  : currentStream["lChannelId"];
-              subSid = currentStream["lSubChannelId"].runtimeType == String
-                  ? int.tryParse(currentStream["lSubChannelId"].toString()) ?? 0
-                  : currentStream["lSubChannelId"];
-              huyaLines.add(
-                HuyaLineModel(
-                  line: currentStream['sHlsUrl'],
-                  lineType: HuyaLineType.hls,
-                  flvAntiCode: currentStream["sFlvAntiCode"].toString(),
-                  hlsAntiCode: currentStream["sHlsAntiCode"].toString(),
-                  streamName: currentStream["sStreamName"].toString(),
-                  cdnType: item["sCdnType"].toString(),
-                  presenterUid:
-                      int.tryParse(currentStream['lPresenterUid']?.toString() ?? '') ??
-                      int.tryParse(data['profileInfo']?['uid']?.toString() ?? '') ??
-                      topSid,
-                ),
-              );
-            }
-          }
-        }
-      }
-      //清晰度
-      final encodedBitRates = data['liveData']['bitRateInfo'];
-      dynamic rawBitRates;
-      if (encodedBitRates is String && encodedBitRates.trim().isNotEmpty) {
-        try {
-          rawBitRates = jsonDecode(encodedBitRates);
-        } catch (error) {
-          CoreLog.error('Huya bitRateInfo decode failed: $error');
-        }
-      } else if (encodedBitRates is List) {
-        rawBitRates = encodedBitRates;
-      }
-      rawBitRates ??= data['stream']['flv']['rateArray'];
-      huyaBiterates.addAll(parseBitRates(rawBitRates));
-      bool isXingxiu = data['liveData']['gid'] == 1663;
-      final audience = parseRoomAudience(Map<String, dynamic>.from(data['liveData'] as Map));
+      final liveData = <String, dynamic>{
+        'gid': streamDataGameLiveInfo['gid'],
+        'gameFullName': streamDataGameLiveInfo['gameFullName'],
+        'screenshot': cover,
+        'introduction': title,
+        'totalCount': popularity,
+        'userCount': streamDataGameLiveInfo['userCount'],
+      };
+      final audience = parseRoomAudience(liveData);
+      final isXingxiu = streamDataGameLiveInfo['gid']?.toString() == '1663';
       return LiveRoom(
-        cover: data['liveData']?['screenshot'] ?? '',
+        cover: cover,
         watching: audience.popularity,
         onlineViewers: audience.onlineViewers,
         popularity: audience.popularity,
         audienceMetricType: AudienceMetricType.popularity,
         roomId: roomId,
-        area: data['liveData']?['gameFullName'] ?? '',
-        title: data['liveData']?['introduction'] ?? '',
-        nick: data['profileInfo']?['nick'] ?? '',
-        avatar: data['profileInfo']?['avatar180'] ?? '',
-        introduction: data['liveData']?['introduction'] ?? '',
-        notice: data['welcomeText'] ?? '',
-        isRecord: normalizedLiveState == 'REPLAY',
-        status: normalizedLiveState == 'ON' || normalizedLiveState == 'REPLAY',
-        liveStatus: normalizedLiveState == 'ON' || normalizedLiveState == 'REPLAY'
-            ? LiveStatus.live
-            : LiveStatus.offline,
-        platform: Sites.huyaSite,
-        data: HuyaUrlDataModel(url: "", lines: huyaLines, bitRates: huyaBiterates, uid: "", isXingxiu: isXingxiu),
-        danmakuData: HuyaDanmakuArgs(
-          uid: int.tryParse(data["profileInfo"]?["uid"]?.toString() ?? "") ?? 0,
-          topSid: topSid,
-          subSid: subSid,
+        area: streamDataGameLiveInfo['gameFullName']?.toString() ?? '',
+        title: title,
+        nick: nick,
+        avatar: avatar,
+        introduction: title,
+        notice: streamDataGameLiveInfo['introduction']?.toString() ?? '',
+        isRecord: false,
+        status: true,
+        liveStatus: LiveStatus.live,
+        platform: platform,
+        data: HuyaUrlDataModel(
+          url: '',
+          lines: huyaLines,
+          bitRates: huyaBitRates,
+          uid: uid.toString(),
+          isXingxiu: isXingxiu,
         ),
-        link: "https://www.huya.com/$roomId",
+        danmakuData: HuyaDanmakuArgs(ayyuid: uid, topSid: topSid, subSid: subSid),
+        link: 'https://www.huya.com/$roomId',
       );
-    } else {
+    } catch (e, stackTrace) {
+      CoreLog.error('Huya room detail failed: $e');
+      CoreLog.error(stackTrace.toString());
       if (!allowUiFallback) {
         throw const FormatException('Huya room playback metadata is unavailable');
       }
       if (Get.isRegistered<PlayerController>()) {
-        final PlayerController playerController = Get.find<PlayerController>();
+        final playerController = Get.find<PlayerController>();
         final currentRoom = playerController.currentRoom;
         if (currentRoom?.hasIdentity(platform: platform, roomId: roomId) == true) {
           return currentRoom!.getLiveRoomWithError();
@@ -504,33 +488,6 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
   static bool isExplicitOfflineState(Object? value) {
     final normalized = value?.toString().trim().toUpperCase() ?? '';
     return const {'OFF', 'OFFLINE', 'CLOSED'}.contains(normalized);
-  }
-
-  LiveRoom _buildInactiveRoom(Map<dynamic, dynamic> data, {required String platform, required String roomId}) {
-    final liveData = data['liveData'] is Map
-        ? Map<String, dynamic>.from(data['liveData'] as Map)
-        : const <String, dynamic>{};
-    final profile = data['profileInfo'] is Map ? data['profileInfo'] as Map : const <dynamic, dynamic>{};
-    final audience = parseRoomAudience(liveData);
-    return LiveRoom(
-      cover: liveData['screenshot']?.toString() ?? '',
-      watching: audience.popularity,
-      popularity: audience.popularity,
-      onlineViewers: audience.onlineViewers,
-      audienceMetricType: AudienceMetricType.popularity,
-      roomId: roomId,
-      area: liveData['gameFullName']?.toString() ?? '',
-      title: liveData['introduction']?.toString() ?? '',
-      nick: profile['nick']?.toString() ?? '',
-      avatar: profile['avatar180']?.toString() ?? '',
-      introduction: liveData['introduction']?.toString() ?? '',
-      notice: data['welcomeText']?.toString() ?? '',
-      isRecord: false,
-      status: false,
-      liveStatus: LiveStatus.offline,
-      platform: platform,
-      link: 'https://www.huya.com/$roomId',
-    );
   }
 
   @visibleForTesting
@@ -598,7 +555,7 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
     try {
       final matchingObject = list.firstWhere(
         (item) => item['uid'] == targetUid && item['yyid'] == targetYyid,
-        orElse: () => throw StateError("No matching object found"), // 当找不到匹配项时抛出错误
+        orElse: () => throw StateError("No matching object found"),
       );
       return matchingObject["room_id"].toString();
     } catch (e) {
@@ -632,7 +589,6 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
       if (!cover.contains("?")) {
         cover += "?x-oss-process=style/w338_h190&";
       }
-
       var title = item["game_introduction"]?.toString() ?? "";
       if (title.isEmpty) {
         title = item["game_roomName"]?.toString() ?? "";
@@ -690,28 +646,33 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
 
   @override
   Future<bool> getLiveStatus({required String platform, required String roomId}) async {
-    var resultText = await HttpClient.instance.getText(
-      "https://m.huya.com/$roomId",
-      queryParameters: {},
-      header: {
-        "user-agent": kUserAgent,
-        'Accept': '*/*',
-        'Origin': 'https://www.huya.com',
-        'Referer': 'https://www.huya.com/',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-site',
-      },
-    );
-    var text = RegExp(
-      r"window\.HNF_GLOBAL_INIT.=.\{(.*?)\}.</script>",
-      multiLine: false,
-    ).firstMatch(resultText)?.group(1);
-    var jsonObj = json.decode("{$text}");
-    return jsonObj["roomInfo"]["eLiveStatus"] == 2;
+    try {
+      final resultText = await HttpClient.instance.getText(
+        '$baseUrl/$roomId',
+        queryParameters: const {},
+        header: {
+          'Accept': '*/*',
+          'Origin': 'https://www.huya.com',
+          'Referer': 'https://www.huya.com/',
+          'user-agent': kUserAgent,
+          'Cookie': SettingsService.to.cookieManager.huyaCookie.v,
+        },
+      );
+      final jsonString = RegExp(
+        r'var\s+TT_ROOM_DATA\s*=\s*(\{[\s\S]*?\})',
+        multiLine: false,
+      ).firstMatch(resultText)?.group(1);
+      if (jsonString == null) {
+        return false;
+      }
+      final roomData = json.decode(jsonString) as Map<String, dynamic>;
+      return roomData['state'] == 'ON' && roomData['isReplay'] == false;
+    } catch (e) {
+      CoreLog.error('Huya getLiveStatus failed: $e');
+      return false;
+    }
   }
 
-  /// 匿名登录获取uid
   Future<String> getAnonymousUid() async {
     var result = await HttpClient.instance.postJson(
       "https://udblgn.huya.com/web/anonymousLogin",
@@ -749,12 +710,10 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
         }
       }
     } catch (e) {
-      // 在这里可以选择打印错误信息或采取其他措施
       debugPrint('An error occurred: $e');
     }
-    // 如果没有找到有效的UID，则生成一个随机数
     final random = Random();
-    return 1400000000000 + random.nextInt(100000000000); // 生成范围内的随机整数
+    return 1400000000000 + random.nextInt(100000000000);
   }
 
   String processAnticode(String anticode, String streamName) {
@@ -762,10 +721,8 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
     final uid = int.parse(getUUid(SettingsService.to.cookieManager.huyaCookie.v, streamName));
     query["ctype"] = "huya_live";
     query["t"] = "100";
-
     final convertUid = (uid << 8 | uid >> 24) & 0xFFFFFFFF;
     final wsTime = query["wsTime"]!;
-
     final seqId = (DateTime.now().millisecondsSinceEpoch + uid).toString();
     int ct = ((int.parse(wsTime, radix: 16) + Random().nextDouble()) * 1000).toInt();
     final fm = utf8.decode(base64.decode(Uri.decodeComponent(query['fm']!)));
@@ -780,8 +737,6 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
     final formatter = DateFormat('yyyyMMddHH');
     final formatted = formatter.format(now);
     DateFormat timeStampFormat = DateFormat("yyyy-MM-dd_HH:mm:ss.SSS");
-
-    // 格式化当前时间
     String formattedDate = timeStampFormat.format(now);
     return Uri(
       queryParameters: {
@@ -816,17 +771,12 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
     return ls;
   }
 
-  // 构造 anticode, python转写
-  /// [stream] streamname [presenterUid] 用户id [antiCode] 页面anti
-  ///
-  /// return ture anticode
   String buildAntiCode(String stream, int presenterUid, String antiCode, {DateTime? now}) {
     final mapAnti = Uri(query: antiCode).queryParametersAll;
     final encodedFm = mapAnti['fm']?.firstOrNull?.trim() ?? '';
     if (encodedFm.isEmpty) {
       return antiCode;
     }
-
     final ctype = mapAnti['ctype']?.firstOrNull?.trim().isNotEmpty == true
         ? mapAnti['ctype']!.first.trim()
         : 'huya_live';
@@ -836,7 +786,6 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
     final currentMillis = timestamp.millisecondsSinceEpoch;
     final currentSeconds = currentMillis ~/ 1000;
     final uid = presenterUid > 0 ? presenterUid : getUid(SettingsService.to.cookieManager.huyaCookie.v, stream);
-
     var wsTimeSeconds = int.tryParse(mapAnti['wsTime']?.firstOrNull ?? '', radix: 16);
     if (wsTimeSeconds == null || wsTimeSeconds < currentSeconds + const Duration(minutes: 20).inSeconds) {
       wsTimeSeconds = currentSeconds + const Duration(days: 1).inSeconds;
@@ -844,13 +793,11 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
     final wsTime = wsTimeSeconds.toRadixString(16);
     final seqId = uid + currentMillis;
     final secretHash = md5.convert(utf8.encode('$seqId|$ctype|$platformId')).toString();
-
     final convertUid = rotl64(uid);
     final calcUid = isWap ? uid : convertUid;
     final secretPrefix = utf8.decode(base64.decode(base64.normalize(Uri.decodeComponent(encodedFm)))).split('_').first;
     final secretStr = '${secretPrefix}_${calcUid}_${stream}_${secretHash}_$wsTime';
     final wsSecret = md5.convert(utf8.encode(secretStr)).toString();
-
     final rnd = Random();
     final ct = ((wsTimeSeconds + rnd.nextDouble()) * 1000).toInt();
     final uuid = (((ct % 1e10) + rnd.nextDouble()) * 1e3 % 0xffffffff).toInt().toString();
@@ -869,11 +816,9 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
     } else {
       antiCodeRes['u'] = convertUid.toString();
     }
-
     return antiCodeRes.entries.map((e) => '${e.key}=${e.value}').join('&');
   }
 
-  /// return sFlvToken
   Future<String> getCndTokenInfoEx(String stream) {
     return _tokenCache.putIfAbsent(stream, () async {
       var func = "getCdnTokenInfoEx";
@@ -914,22 +859,17 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
       if (content.isEmpty) {
         continue;
       }
-      // start_time---cur--->end_time
       final remainSec = item.iCountDown > 0 ? item.iCountDown : item.iTotalSec;
       if (remainSec <= 0) {
         continue;
       }
-
       final totalSeconds = item.iTotalSec > 0 ? item.iTotalSec : remainSec;
-
       var price = item.iCost;
       if (price <= 0 && item.iCostPay > 0) {
         price = max(1, (item.iCostPay / 100).round());
       }
-
       final endTime = now.add(Duration(seconds: remainSec));
       final startTime = endTime.subtract(Duration(seconds: totalSeconds));
-
       final message = LiveSuperChatMessage(
         backgroundBottomColor: "#246488",
         backgroundColor: "#ffffff",
@@ -940,7 +880,6 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
         startTime: startTime,
         userName: item.tMessageUser.sNick.trim(),
       );
-
       messages.add(message);
     }
     if (first) {
@@ -957,6 +896,7 @@ class HuyaUrlDataModel {
   List<HuyaLineModel> lines;
   List<HuyaBitRateModel> bitRates;
   final bool isXingxiu;
+
   HuyaUrlDataModel({
     required this.bitRates,
     required this.lines,
@@ -977,6 +917,7 @@ class HuyaLineModel {
   final HuyaLineType lineType;
   final int presenterUid;
   int bitRate;
+
   HuyaLineModel({
     required this.line,
     required this.lineType,
@@ -987,6 +928,7 @@ class HuyaLineModel {
     required this.presenterUid,
     this.bitRate = 0,
   });
+
   @override
   String toString() {
     return 'HuyaLineModel{line: $line, flvAntiCode: $flvAntiCode, hlsAntiCode: $hlsAntiCode, streamName: $streamName, lineType: $lineType, presenterUid: $presenterUid}';
@@ -996,5 +938,6 @@ class HuyaLineModel {
 class HuyaBitRateModel {
   final String name;
   final int bitRate;
+
   HuyaBitRateModel({required this.bitRate, required this.name});
 }

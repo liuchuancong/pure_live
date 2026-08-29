@@ -1,32 +1,37 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
+
+import 'package:pure_live/core/tars/types.dart';
 import 'package:pure_live/core/common/core_log.dart';
+import 'package:pure_live/core/tars/huya_danmaku.dart';
 import 'package:pure_live/core/site/huya/huya_utils.dart';
+import 'package:pure_live/pkg/tars/tup/tars_message.dart';
 import 'package:pure_live/common/models/live_message.dart';
-import 'package:pure_live/pkg/tars/codec/tars_struct.dart';
 import 'package:pure_live/core/common/web_socket_util.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
+import 'package:pure_live/pkg/tars/tup/request_packet.dart';
 import 'package:pure_live/pkg/tars/codec/tars_input_stream.dart';
 import 'package:pure_live/pkg/tars/codec/tars_output_stream.dart';
-
-
-// ignore_for_file: no_leading_underscores_for_local_identifiers
+import 'package:pure_live/core/danmaku/models/huya_damaku_model.dart';
 
 class HuyaDanmakuArgs {
-  final int uid;
+  final int ayyuid;
   final int topSid;
   final int subSid;
-  HuyaDanmakuArgs({required this.uid, required this.topSid, required this.subSid});
+
+  HuyaDanmakuArgs({required this.ayyuid, required this.topSid, required this.subSid});
+
   @override
   String toString() {
-    return json.encode({"uid": uid, "topSid": topSid, "subSid": subSid});
+    return json.encode({"ayyuid": ayyuid, "topSid": topSid, "subSid": subSid});
   }
 }
 
 class HuyaDanmaku implements LiveDanmaku {
   @override
   int heartbeatTime = 60 * 1000;
+
   bool _connected = false;
 
   @override
@@ -44,335 +49,455 @@ class HuyaDanmaku implements LiveDanmaku {
 
   @override
   Function(LiveMessage msg)? onMessage;
+
   @override
   Function(String msg)? onClose;
+
   @override
   Function()? onReady;
-  String serverUrl = "wss://wsapi.huya.com";
+
+  String serverUrl = "wss://cdnws.api.huya.com:443";
+
+  String device = "chrome";
+
+  String cookie =
+      "__yamid_new=CB839821F9D0000153B312C11F40C3A0; "
+      "game_did=c2NmeJsovdYnQ--7ekVF9JDx9YgQBaX9Xb4; "
+      "SoundValue=0.50; "
+      "guid=0a7d4b0826af6c69380199dc9adc6b50; "
+      "__yamid_tt1=0.6713380860053619; "
+      "alphaValue=0.80; "
+      "_qimei_fingerprint=f573835586d8fec5ce3c6cc8a9ae286e; "
+      "guid=0a7d4b0826af6c69380199dc9adc6b50; "
+      "udb_guiddata=1a85f8398bc4400eb85f02564f4f321f; "
+      "udb_appid=5002; "
+      "udb_deviceid=w_1143239981674745856; "
+      "isInLiveRoom=true; "
+      "__yasmid=0.6713380860053619; "
+      "_yasids=__rootsid%3DCBC935D812800001D2591C504BA0A320; "
+      "udb_passdata=3; "
+      "rep_cnt=38; "
+      "_rep_cnt=3; "
+      "sdid=csid_beac615f0cf34135b6ea6e1530a0853f; "
+      "huya_flash_rep_cnt=60; "
+      "huya_web_rep_cnt=214; "
+      "huya_ua=webh5&0.1.0&websocket";
 
   WebScoketUtils? webScoketUtils;
 
-  /// Current website heartbeat: `EWSCmdC2S_HeartBeatReq` (20).
-  List<int> get heartbeatData {
-    final command = TarsOutputStream();
-    command.write(20, 0);
-    command.write(Uint8List(0), 1);
-    return command.toUint8List();
-  }
-
-  late HuyaDanmakuArgs danmakuArgs;
   int _generation = 0;
 
-  @override
-  Future start(dynamic args) async {
-    final generation = ++_generation;
-    await webScoketUtils?.close();
-    webScoketUtils = null;
-    if (generation != _generation) return;
-    danmakuArgs = args as HuyaDanmakuArgs;
-    markDisconnected();
-    webScoketUtils = WebScoketUtils(
-      url: serverUrl,
-      heartBeatTime: heartbeatTime,
-      onMessage: (e) {
-        if (generation == _generation) decodeMessage(e);
-      },
-      onReady: () {
-        if (generation != _generation) return;
-        markConnected();
-        onReady?.call();
-        joinRoom();
-        // Keep the new room-group connection alive immediately.
-        heartbeat();
-      },
-      onHeartBeat: () {
-        heartbeat();
-      },
-      onReconnect: () {
-        if (generation != _generation) return;
-        markDisconnected();
-        onClose?.call("与服务器断开连接，正在尝试重连");
-      },
-      onClose: (e) {
-        if (generation != _generation) return;
-        markDisconnected();
-        onClose?.call("服务器连接失败$e");
-      },
-    );
-    await webScoketUtils?.connect();
+  late HuyaDanmakuArgs danmakuArgs;
+
+  String get dHuyaUa {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+
+    final now = DateTime.now();
+
+    return "webh5&"
+        "${(now.year % 100).toString().padLeft(2, '0')}"
+        "${twoDigits(now.month)}"
+        "${twoDigits(now.day)}"
+        "${twoDigits(now.hour)}"
+        "${twoDigits(now.minute)}"
+        "&websocket";
   }
 
-  void joinRoom() {
-    var joinData = getJoinData(danmakuArgs.uid);
-    webScoketUtils?.sendMessage(joinData);
-  }
+  List<int> get heartbeatData {
+    final cmd = WebSocketCommand()
+      ..cmdType = EWebSocketCommandType.EWSCmdC2S_HeartBeatReq.value
+      ..data = TarsOutputStream().toUint8List();
 
-  List<int> getJoinData(int uid) {
-    try {
-      final group = TarsOutputStream();
-      group.write(<String>['live:$uid', 'chat:$uid'], 0);
-      group.write('', 1);
-
-      final command = TarsOutputStream();
-      command.write(16, 0); // EWSCmdC2S_RegisterGroupReq
-      command.write(group.toUint8List(), 1);
-      return command.toUint8List();
-    } catch (e) {
-      CoreLog.error(e);
-      return [];
-    }
+    return cmd.toByteArray();
   }
 
   @override
   void heartbeat() {
-    webScoketUtils?.sendMessage(heartbeatData);
+    final socket = webScoketUtils;
+
+    if (socket == null) {
+      return;
+    }
+
+    if (!_connected) {
+      return;
+    }
+
+    try {
+      socket.sendMessage(heartbeatData);
+    } catch (e) {
+      CoreLog.error("huya_heartbeat_error: $e");
+    }
   }
 
   @override
-  Future stop() async {
-    _generation++;
+  Future<void> start(dynamic args) async {
+    final generation = ++_generation;
+
     markDisconnected();
+
+    final oldSocket = webScoketUtils;
+
+    webScoketUtils = null;
+
+    if (oldSocket != null) {
+      try {
+        await oldSocket.close();
+      } catch (e) {
+        CoreLog.error("huya_close_old_socket_error: $e");
+      }
+    }
+
+    if (generation != _generation) {
+      return;
+    }
+
+    danmakuArgs = args as HuyaDanmakuArgs;
+
+    late final WebScoketUtils socket;
+
+    socket = WebScoketUtils(
+      url: serverUrl,
+      heartBeatTime: heartbeatTime,
+      onMessage: (data) {
+        if (generation != _generation) {
+          return;
+        }
+
+        unawaited(decodeMessage(data, generation: generation));
+      },
+      onReady: () {
+        if (generation != _generation) {
+          return;
+        }
+
+        markConnected();
+
+        onReady?.call();
+
+        joinRoom(socket: socket, generation: generation);
+
+        sendHeartbeat(socket: socket, generation: generation);
+      },
+      onHeartBeat: () {
+        if (generation != _generation) {
+          return;
+        }
+
+        sendHeartbeat(socket: socket, generation: generation);
+      },
+      onReconnect: () {
+        if (generation != _generation) {
+          return;
+        }
+
+        markDisconnected();
+
+        onClose?.call("与服务器断开连接，正在尝试重连");
+      },
+      onClose: (e) {
+        if (generation != _generation) {
+          return;
+        }
+
+        markDisconnected();
+
+        onClose?.call("服务器连接失败$e");
+      },
+    );
+
+    if (generation != _generation) {
+      return;
+    }
+
+    webScoketUtils = socket;
+
+    try {
+      await socket.connect();
+    } catch (e) {
+      if (generation != _generation) {
+        return;
+      }
+
+      markDisconnected();
+
+      CoreLog.error("huya_connect_error: $e");
+
+      onClose?.call("服务器连接失败$e");
+    }
+  }
+
+  @override
+  Future<void> stop() async {
+    ++_generation;
+
+    markDisconnected();
+
+    final socket = webScoketUtils;
+
+    webScoketUtils = null;
+
     onMessage = null;
     onClose = null;
     onReady = null;
-    await webScoketUtils?.close();
-    webScoketUtils = null;
+
+    try {
+      await socket?.close();
+    } catch (e) {
+      CoreLog.error("huya_stop_close_error: $e");
+    }
   }
 
-  Future<void> decodeMessage(List<int> data) async {
+  void sendHeartbeat({required WebScoketUtils socket, required int generation}) {
+    if (generation != _generation) {
+      return;
+    }
+
+    if (!_connected) {
+      return;
+    }
+
+    try {
+      socket.sendMessage(heartbeatData);
+    } catch (e) {
+      CoreLog.error("huya_send_heartbeat_error: $e");
+    }
+  }
+
+  void joinRoom({required WebScoketUtils socket, required int generation}) {
+    if (generation != _generation) {
+      return;
+    }
+
+    try {
+      final pid = danmakuArgs.topSid;
+
+      final data = buildJoinGroupData(pid: pid);
+
+      if (generation != _generation) {
+        return;
+      }
+
+      socket.sendMessage(data);
+    } catch (e) {
+      CoreLog.error("join_data_error:$e");
+    }
+  }
+
+  List<int> buildJoinGroupData({required int pid}) {
+    final wsReq = WsRegisterGroupReq()
+      ..groupId = ["live:$pid", "chat:$pid"]
+      ..token = "";
+
+    final wsReqByte = wsReq.toByteArray();
+
+    final socketCmd = WebSocketCommand()
+      ..cmdType = 16
+      ..data = wsReqByte;
+
+    return socketCmd.toByteArray();
+  }
+
+  List<int> buildLiveInfoData({required int pid, required String ua, required String device}) {
+    final userId = HuyaUserId()
+      ..lUid = 0
+      ..sGuid = "0a7d4b0826af6c69380199dc9adc6b50"
+      ..sToken = ""
+      ..sCookie = cookie
+      ..sHuYaUA = ua
+      ..sDeviceInfo = device;
+
+    final req = GetLivingInfoReq()
+      ..lPresenterUid = pid
+      ..tId = userId;
+
+    final bodyMap = {'tReq': req.toByteArray()};
+
+    final message = TarsMessage()
+      ..header = RequestPacket(
+        iVersion: 3,
+        iRequestId: 0,
+        sServantName: 'huyaliveui',
+        sFuncName: 'getLivingInfo',
+        sBuffer: RequestPacket.cache_sBuffer,
+        context: RequestPacket.cache_context,
+        status: RequestPacket.cache_status,
+      )
+      ..body = bodyMap;
+
+    final messageByte = message.toByteArray();
+
+    final socketCmd = WebSocketCommand()
+      ..cmdType = 3
+      ..data = messageByte;
+
+    return socketCmd.toByteArray();
+  }
+
+  List<int> buildDoLaunchData({required String ua, required String device}) {
+    final userId = HuyaUserId()
+      ..lUid = 0
+      ..sGuid = "0a7d4b0826af6c69380199dc9adc6b50"
+      ..sToken = ""
+      ..sCookie = cookie
+      ..sHuYaUA = ua
+      ..sDeviceInfo = device;
+
+    final userBase = LiveUserBase()
+      ..eSource = 3
+      ..eType = 0
+      ..uaEx = LiveAppUAEx();
+
+    final liveLaunchReq = LiveLaunchReq()
+      ..id = userId
+      ..liveUb = userBase
+      ..supportDomain = true;
+
+    final bodyBytes = liveLaunchReq.toByteArray();
+
+    final bodyMap = {'tReq': bodyBytes};
+
+    final message = TarsMessage()
+      ..header = RequestPacket(
+        iVersion: 3,
+        cPacketType: 0,
+        iMessageType: 0,
+        iRequestId: 0,
+        sServantName: "liveui",
+        sFuncName: "doLaunch",
+        sBuffer: RequestPacket.cache_sBuffer,
+        context: RequestPacket.cache_context,
+        status: RequestPacket.cache_status,
+      )
+      ..body = bodyMap;
+
+    final messageByte = message.toByteArray();
+
+    final socketCmd = WebSocketCommand()
+      ..cmdType = 3
+      ..data = messageByte;
+
+    return socketCmd.toByteArray();
+  }
+
+  Future<void> decodeMessage(List<int> data, {required int generation}) async {
+    if (generation != _generation) {
+      return;
+    }
+
     try {
       var stream = TarsInputStream(Uint8List.fromList(data));
-      var type = stream.read(0, 0, false);
+
+      final type = stream.read(0, 0, false);
+
       if (type == 7) {
         stream = TarsInputStream(stream.readBytes(1, false));
-        HYPushMessage wSPushMessage = HYPushMessage();
-        wSPushMessage.readFrom(stream);
-        await _decodePush(wSPushMessage.uri, wSPushMessage.msg);
+
+        final wsPushMessage = HYPushMessage();
+
+        wsPushMessage.readFrom(stream);
+
+        if (generation != _generation) {
+          return;
+        }
+
+        if (wsPushMessage.uri == 1400) {
+          await _decodeChatMessage(wsPushMessage.msg, generation: generation);
+        } else if (wsPushMessage.uri == 8006) {
+          await _decodeOnlineMessage(wsPushMessage.msg, generation: generation);
+        }
       } else if (type == 22) {
-        final push = HYPushMessageV2();
-        push.readFrom(TarsInputStream(stream.readBytes(1, false)));
-        for (final item in push.items) {
-          await _decodePush(item.uri, item.msg, messageId: item.messageId);
+        final wsPushMessageV2 = WSPushMessageV2();
+
+        stream = TarsInputStream(stream.readBytes(1, false));
+
+        wsPushMessageV2.readFrom(stream);
+
+        for (final item in wsPushMessageV2.vMsgItem) {
+          if (generation != _generation) {
+            return;
+          }
+
+          if (item.iUri == 2001314) {
+            await _decodeSuperChat(generation: generation);
+          }
         }
       }
-    } catch (e) {
-      CoreLog.error(e);
+    } catch (e, stackTrace) {
+      CoreLog.error("huya_decode_error: $e\n$stackTrace");
     }
   }
 
-  Future<void> _decodePush(int uri, List<int> payload, {int messageId = 0}) async {
-    if (uri == 1400) {
-      final messageNotice = HYMessage();
-      messageNotice.readFrom(TarsInputStream(Uint8List.fromList(payload)));
-      final color = messageNotice.bulletFormat.fontColor;
-      onMessage?.call(
-        LiveMessage(
-          type: LiveMessageType.chat,
-          color: color <= 0 ? LiveMessageColor.white : LiveMessageColor.numberToColor(color),
-          message: messageNotice.content,
-          userName: messageNotice.userInfo.nickName,
-          userId: messageNotice.userInfo.uid.toString(),
-          messageId: messageId > 0 ? 'huya:$messageId' : '',
-        ),
-      );
-    } else if (uri == 8006) {
-      final attendeeCount = TarsInputStream(Uint8List.fromList(payload)).read(0, 0, false);
-      onMessage?.call(
-        LiveMessage(
-          type: LiveMessageType.online,
-          // Current website captures keep iAttendeeCount in the same
-          // multi-million popularity range as the list value.
-          data: LiveAudienceUpdate(kind: LiveAudienceMetricKind.popularity, value: attendeeCount),
-          color: LiveMessageColor.white,
-          message: '',
-          userName: '',
-          messageId: messageId > 0 ? 'huya:$messageId' : '',
-        ),
-      );
-    } else if (uri == 2001314) {
-      var sc = await getHuyaSuperChatMessageList(lPid: danmakuArgs.topSid);
-      if (sc.isNotEmpty) {
-        onMessage?.call(
-          LiveMessage(
-            type: LiveMessageType.superChat,
-            userName: "SUPER_CHAT_MESSAGE",
-            message: "SUPER_CHAT_MESSAGE",
-            color: LiveMessageColor.white,
-            data: sc.first,
-          ),
-        );
-      }
+  Future<void> _decodeChatMessage(List<int> data, {required int generation}) async {
+    if (generation != _generation) {
+      return;
     }
-  }
-}
 
-class HYPushMessage extends TarsStruct {
-  int pushType = 0;
-  int uri = 0;
-  List<int> msg = <int>[];
-  int protocolType = 0;
+    final messageNotice = HYMessage();
 
-  @override
-  void readFrom(TarsInputStream inputStream) {
-    pushType = inputStream.read(pushType, 0, false);
-    uri = inputStream.read(uri, 1, false);
-    msg = inputStream.readBytes(2, false);
-    protocolType = inputStream.read(protocolType, 3, false);
-  }
+    messageNotice.readFrom(TarsInputStream(Uint8List.fromList(data)));
 
-  @override
-  void writeTo(TarsOutputStream outputStream) {}
+    if (generation != _generation) {
+      return;
+    }
 
-  @override
-  Object deepCopy() {
-    return HYPushMessage()
-      ..pushType = pushType
-      ..uri = uri
-      ..msg = List<int>.from(msg)
-      ..protocolType = protocolType;
+    final uname = messageNotice.userInfo.sNickName;
+
+    final content = messageNotice.content;
+
+    final color = messageNotice.bulletFormat.fontColor;
+
+    onMessage?.call(
+      LiveMessage(
+        type: LiveMessageType.chat,
+        color: color <= 0 ? LiveMessageColor.white : LiveMessageColor.numberToColor(color),
+        message: content,
+        userName: uname,
+      ),
+    );
   }
 
-  @override
-  void displayAsString(StringBuffer sb, int level) {}
-}
+  Future<void> _decodeOnlineMessage(List<int> data, {required int generation}) async {
+    if (generation != _generation) {
+      return;
+    }
 
-class HYPushMessageV2 extends TarsStruct {
-  String groupId = '';
-  List<HYMessageItem> items = <HYMessageItem>[];
+    final stream = TarsInputStream(Uint8List.fromList(data));
 
-  @override
-  void readFrom(TarsInputStream inputStream) {
-    groupId = inputStream.read(groupId, 0, false);
-    items = inputStream.readList<HYMessageItem>(<HYMessageItem>[HYMessageItem()], 1, false);
+    final online = stream.read(0, 0, false);
+
+    if (generation != _generation) {
+      return;
+    }
+
+    onMessage?.call(
+      LiveMessage(type: LiveMessageType.online, data: online, color: LiveMessageColor.white, message: "", userName: ""),
+    );
   }
 
-  @override
-  void writeTo(TarsOutputStream outputStream) {
-    outputStream.write(groupId, 0);
-    outputStream.write(items, 1);
+  Future<void> _decodeSuperChat({required int generation}) async {
+    if (generation != _generation) {
+      return;
+    }
+
+    final sc = await getHuyaSuperChatMessageList(lPid: danmakuArgs.topSid);
+
+    if (generation != _generation) {
+      return;
+    }
+
+    if (sc.isEmpty) {
+      return;
+    }
+
+    onMessage?.call(
+      LiveMessage(
+        type: LiveMessageType.superChat,
+        userName: "SUPER_CHAT_MESSAGE",
+        message: "SUPER_CHAT_MESSAGE",
+        color: LiveMessageColor.white,
+        data: sc.first,
+      ),
+    );
   }
-
-  @override
-  Object deepCopy() => HYPushMessageV2()
-    ..groupId = groupId
-    ..items = items.map((item) => item.deepCopy() as HYMessageItem).toList();
-
-  @override
-  void displayAsString(StringBuffer sb, int level) {}
-}
-
-class HYMessageItem extends TarsStruct {
-  int uri = 0;
-  List<int> msg = <int>[];
-  int messageId = 0;
-
-  @override
-  void readFrom(TarsInputStream inputStream) {
-    uri = inputStream.read(uri, 0, false);
-    msg = inputStream.readBytes(1, false);
-    messageId = inputStream.read(messageId, 2, false);
-  }
-
-  @override
-  void writeTo(TarsOutputStream outputStream) {
-    outputStream.write(uri, 0);
-    outputStream.write(Uint8List.fromList(msg), 1);
-    outputStream.write(messageId, 2);
-  }
-
-  @override
-  Object deepCopy() => HYMessageItem()
-    ..uri = uri
-    ..msg = List<int>.from(msg)
-    ..messageId = messageId;
-
-  @override
-  void displayAsString(StringBuffer sb, int level) {}
-}
-
-class HYSender extends TarsStruct {
-  int uid = 0;
-  int lMid = 0;
-  String nickName = "";
-  int gender = 0;
-
-  @override
-  void readFrom(TarsInputStream inputStream) {
-    uid = inputStream.read(uid, 0, false);
-    lMid = inputStream.read(lMid, 0, false);
-    nickName = inputStream.read(nickName, 2, false);
-    gender = inputStream.read(gender, 3, false);
-  }
-
-  @override
-  void writeTo(TarsOutputStream outputStream) {}
-
-  @override
-  Object deepCopy() {
-    return HYSender()
-      ..uid = uid
-      ..lMid = lMid
-      ..nickName = nickName
-      ..gender = gender;
-  }
-
-  @override
-  void displayAsString(StringBuffer sb, int level) {}
-}
-
-class HYMessage extends TarsStruct {
-  HYSender userInfo = HYSender();
-  String content = "";
-  HYBulletFormat bulletFormat = HYBulletFormat();
-
-  @override
-  void readFrom(TarsInputStream inputStream) {
-    userInfo = inputStream.readTarsStruct(userInfo, 0, false) as HYSender;
-    content = inputStream.read(content, 3, false);
-    bulletFormat = inputStream.readTarsStruct(bulletFormat, 6, false) as HYBulletFormat;
-  }
-
-  @override
-  void writeTo(TarsOutputStream outputStream) {}
-
-  @override
-  Object deepCopy() {
-    return HYMessage()
-      ..userInfo = userInfo.deepCopy() as HYSender
-      ..content = content
-      ..bulletFormat = bulletFormat.deepCopy() as HYBulletFormat;
-  }
-
-  @override
-  void displayAsString(StringBuffer sb, int level) {}
-}
-
-class HYBulletFormat extends TarsStruct {
-  int fontColor = 0;
-  int fontSize = 4;
-  int textSpeed = 0;
-  int transitionType = 1;
-
-  @override
-  void readFrom(TarsInputStream inputStream) {
-    fontColor = inputStream.read(fontColor, 0, false);
-    fontSize = inputStream.read(fontSize, 1, false);
-    textSpeed = inputStream.read(textSpeed, 2, false);
-    transitionType = inputStream.read(transitionType, 3, false);
-  }
-
-  @override
-  void writeTo(TarsOutputStream outputStream) {}
-
-  @override
-  Object deepCopy() {
-    return HYBulletFormat()
-      ..fontColor = fontColor
-      ..fontSize = fontSize
-      ..textSpeed = textSpeed
-      ..transitionType = transitionType;
-  }
-
-  @override
-  void displayAsString(StringBuffer sb, int level) {}
 }
