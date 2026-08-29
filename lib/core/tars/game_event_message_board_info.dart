@@ -1,10 +1,8 @@
-import 'package:pure_live/core/tars/types.dart';
+﻿import 'package:pure_live/core/tars/types.dart';
 import 'package:pure_live/pkg/tars/codec/tars_struct.dart';
 import 'package:pure_live/pkg/tars/codec/tars_displayer.dart';
 import 'package:pure_live/pkg/tars/codec/tars_input_stream.dart';
 import 'package:pure_live/pkg/tars/codec/tars_output_stream.dart';
-
-
 
 class GameEventMessageBoardInfo extends TarsStruct {
   MessageUser tMessageUser = MessageUser(); //tag 0
@@ -17,13 +15,13 @@ class GameEventMessageBoardInfo extends TarsStruct {
 
   @override
   void readFrom(TarsInputStream tarsInputStream) {
-    tMessageUser         = tarsInputStream.read(tMessageUser, 0, false);
-    sContent             = tarsInputStream.read(sContent, 1, false);
-    iCost                = tarsInputStream.read(iCost, 2, false);
-    iTotalSec            = tarsInputStream.read(iTotalSec, 4, false);
-    iCountDown           = tarsInputStream.read(iCountDown, 5, false);
-    lMessageId           = tarsInputStream.read(lMessageId, 9, false);
-    iCostPay             = tarsInputStream.read(iCostPay, 12, false);
+    tMessageUser = tarsInputStream.read(tMessageUser, 0, false);
+    sContent = tarsInputStream.read(sContent, 1, false);
+    iCost = tarsInputStream.read(iCost, 2, false);
+    iTotalSec = tarsInputStream.read(iTotalSec, 4, false);
+    iCountDown = tarsInputStream.read(iCountDown, 5, false);
+    lMessageId = tarsInputStream.read(lMessageId, 9, false);
+    iCostPay = tarsInputStream.read(iCostPay, 12, false);
   }
 
   @override
@@ -46,8 +44,7 @@ class GameEventMessageBoardInfo extends TarsStruct {
       ..iTotalSec = iTotalSec
       ..iCountDown = iCountDown
       ..lMessageId = lMessageId
-      ..iCostPay = iCostPay
-    ;
+      ..iCostPay = iCostPay;
   }
 
   @override

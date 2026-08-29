@@ -1,9 +1,8 @@
-import 'package:pure_live/core/tars/types.dart';
+﻿import 'package:pure_live/core/tars/types.dart';
 import 'package:pure_live/pkg/tars/codec/tars_struct.dart';
 import 'package:pure_live/pkg/tars/codec/tars_displayer.dart';
 import 'package:pure_live/pkg/tars/codec/tars_input_stream.dart';
 import 'package:pure_live/pkg/tars/codec/tars_output_stream.dart';
-
 
 class GetCdnTokenExReq extends TarsStruct {
   String sFlvUrl = ""; //tag 0
@@ -13,21 +12,21 @@ class GetCdnTokenExReq extends TarsStruct {
   int iAppId = 66; //tag 4
 
   @override
-  void readFrom(TarsInputStream inputStream) {
-    sFlvUrl = inputStream.read(sFlvUrl, 0, false);
-    sStreamName = inputStream.read(sStreamName, 1, false);
-    iLoopTime = inputStream.read(iLoopTime, 2, false);
-    tId = inputStream.read(tId, 3, false);
-    iAppId = inputStream.read(iAppId, 4, false);
+  void readFrom(TarsInputStream tarsInputStream) {
+    sFlvUrl = tarsInputStream.read(sFlvUrl, 0, false);
+    sStreamName = tarsInputStream.read(sStreamName, 1, false);
+    iLoopTime = tarsInputStream.read(iLoopTime, 2, false);
+    tId = tarsInputStream.read(tId, 3, false);
+    iAppId = tarsInputStream.read(iAppId, 4, false);
   }
 
   @override
-  void writeTo(TarsOutputStream outputStream) {
-    outputStream.write(sFlvUrl, 0);
-    outputStream.write(sStreamName, 1);
-    outputStream.write(iLoopTime, 2);
-    outputStream.write(tId, 3);
-    outputStream.write(iAppId, 4);
+  void writeTo(TarsOutputStream tarsOutputStream) {
+    tarsOutputStream.write(sFlvUrl, 0);
+    tarsOutputStream.write(sStreamName, 1);
+    tarsOutputStream.write(iLoopTime, 2);
+    tarsOutputStream.write(tId, 3);
+    tarsOutputStream.write(iAppId, 4);
   }
 
   @override
@@ -42,11 +41,11 @@ class GetCdnTokenExReq extends TarsStruct {
 
   @override
   displayAsString(StringBuffer sb, int level) {
-    TarsDisplayer ds = TarsDisplayer(sb, level: level);
-    ds.DisplayString(sFlvUrl, "sFlvUrl");
-    ds.DisplayString(sStreamName, "sStreamName");
-    ds.DisplayInt(iLoopTime, "iLoopTime");
-    ds.DisplayTarsStruct(tId, "tId");
-    ds.DisplayInt(iAppId, "iAppId");
+    TarsDisplayer tarsDisplayer = TarsDisplayer(sb, level: level);
+    tarsDisplayer.DisplayString(sFlvUrl, "sFlvUrl");
+    tarsDisplayer.DisplayString(sStreamName, "sStreamName");
+    tarsDisplayer.DisplayInt(iLoopTime, "iLoopTime");
+    tarsDisplayer.DisplayTarsStruct(tId, "tId");
+    tarsDisplayer.DisplayInt(iAppId, "iAppId");
   }
 }

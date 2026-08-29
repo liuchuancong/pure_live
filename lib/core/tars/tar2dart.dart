@@ -1,12 +1,12 @@
-import 'dart:io';
+﻿import 'dart:io';
 
-// ignore_for_file: no_leading_underscores_for_local_identifiers
+// 需要所有字段有 //tag n 注释方便定位-多行编辑生成
+// 可以自动生成这个tag,懒得弄了
 final fieldRegex = RegExp(r'^\s*(\w+(?:<[^>]+>)?)\s+(\w+)\s*=\s*[^;]+;\s*//\s*tag\s*(\d+)');
 final classRegex = RegExp(r'class\s+(\w+)\s+extends\s+TarsStruct');
 
 void main(List<String> args) {
   if (args.isEmpty) {
-    // print('Usage: dart run tars_codegen.dart <file.dart>');
     exit(1);
   }
 
@@ -32,8 +32,6 @@ void main(List<String> args) {
   }
 
   fields.sort((a, b) => a.tag.compareTo(b.tag));
-
-  // print(generate(fields));
 }
 
 String generate(List<Field> fields) {
@@ -41,17 +39,17 @@ String generate(List<Field> fields) {
 
   // readFrom
   sb.writeln('@override');
-  sb.writeln('void readFrom(TarsInputStream inputStream) {');
+  sb.writeln('void readFrom(TarsInputStream tarsInputStream) {');
   for (final f in fields) {
-    sb.writeln('  ${padRight(f.name, 20)} = inputStream.read(${f.name}, ${f.tag}, false);');
+    sb.writeln('  ${padRight(f.name, 20)} = tarsInputStream.read(${f.name}, ${f.tag}, false);');
   }
   sb.writeln('}\n');
 
   // writeTo
   sb.writeln('@override');
-  sb.writeln('void writeTo(TarsOutputStream outputStream) {');
+  sb.writeln('void writeTo(TarsOutputStream _os) {');
   for (final f in fields) {
-    sb.writeln('  outputStream.write(${f.name}, ${f.tag});');
+    sb.writeln('  _os.write(${f.name}, ${f.tag});');
   }
   sb.writeln('}\n');
 
@@ -68,10 +66,10 @@ String generate(List<Field> fields) {
   // display
   sb.writeln('@override');
   sb.writeln('displayAsString(StringBuffer sb, int level) {');
-  sb.writeln('  TarsDisplayer ds = TarsDisplayer(sb, level: level);');
+  sb.writeln('  TarsDisplayer _ds = TarsDisplayer(sb, level: level);');
 
   for (final f in fields) {
-    sb.writeln('  ds.${displayMethod(f.type)}(${f.name}, "${f.name}");');
+    sb.writeln('  _ds.${displayMethod(f.type)}(${f.name}, "${f.name}");');
   }
   sb.writeln('}');
 
