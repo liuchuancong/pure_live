@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/tars/types.dart';
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/core/tars/huya_danmaku.dart';
@@ -24,7 +25,7 @@ class HuyaDanmakuArgs {
 
   @override
   String toString() {
-    return json.encode({"ayyuid": ayyuid, "topSid": topSid, "subSid": subSid});
+    return json.encode({'ayyuid': ayyuid, 'topSid': topSid, 'subSid': subSid});
   }
 }
 
@@ -56,11 +57,9 @@ class HuyaDanmaku implements LiveDanmaku {
   @override
   Function()? onReady;
 
-  String serverUrl = "wss://cdnws.api.huya.com:443";
+  String serverUrl = 'wss://cdnws.api.huya.com:443';
 
-  String device = "chrome";
-
-  String cookie =
+  String defaultCookie =
       "__yamid_new=CB839821F9D0000153B312C11F40C3A0; "
       "game_did=c2NmeJsovdYnQ--7ekVF9JDx9YgQBaX9Xb4; "
       "SoundValue=0.50; "
@@ -83,24 +82,22 @@ class HuyaDanmaku implements LiveDanmaku {
       "huya_web_rep_cnt=214; "
       "huya_ua=webh5&0.1.0&websocket";
 
-  WebScoketUtils? webScoketUtils;
+  String get cookie => SettingsService.to.cookieManager.huyaCookie.value.isNotEmpty
+      ? SettingsService.to.cookieManager.huyaCookie.value
+      : defaultCookie;
 
-  int _generation = 0;
+  String device = "chrome";
+
+  WebScoketUtils? webScoketUtils;
 
   late HuyaDanmakuArgs danmakuArgs;
 
+  int _generation = 0;
+
   String get dHuyaUa {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
-
     final now = DateTime.now();
-
-    return "webh5&"
-        "${(now.year % 100).toString().padLeft(2, '0')}"
-        "${twoDigits(now.month)}"
-        "${twoDigits(now.day)}"
-        "${twoDigits(now.hour)}"
-        "${twoDigits(now.minute)}"
-        "&websocket";
+    return "webh5&${(now.year % 100).toString().padLeft(2, '0')}${twoDigits(now.month)}${twoDigits(now.day)}${twoDigits(now.hour)}${twoDigits(now.minute)}&websocket";
   }
 
   List<int> get heartbeatData {
@@ -126,13 +123,15 @@ class HuyaDanmaku implements LiveDanmaku {
     try {
       socket.sendMessage(heartbeatData);
     } catch (e) {
-      CoreLog.error("huya_heartbeat_error: $e");
+      CoreLog.error('huya_heartbeat_error: $e');
     }
   }
 
   @override
   Future<void> start(dynamic args) async {
     final generation = ++_generation;
+
+    CoreLog.i('huya_danmaku_start generation=$generation');
 
     markDisconnected();
 
@@ -144,7 +143,7 @@ class HuyaDanmaku implements LiveDanmaku {
       try {
         await oldSocket.close();
       } catch (e) {
-        CoreLog.error("huya_close_old_socket_error: $e");
+        CoreLog.error('huya_close_old_socket_error: $e');
       }
     }
 
@@ -173,18 +172,38 @@ class HuyaDanmaku implements LiveDanmaku {
 
         markConnected();
 
-        onReady?.call();
+        try {
+          onReady?.call();
 
-        joinRoom(socket: socket, generation: generation);
+          if (generation != _generation) {
+            return;
+          }
 
-        sendHeartbeat(socket: socket, generation: generation);
+          joinRoom(socket: socket, generation: generation);
+
+          CoreLog.i(
+            'huya handshake completed '
+            'generation=$generation '
+            'pid=${danmakuArgs.topSid}',
+          );
+        } catch (e, stackTrace) {
+          if (generation != _generation) {
+            return;
+          }
+
+          markDisconnected();
+
+          CoreLog.error('huya_handshake_error: $e\n$stackTrace');
+
+          onClose?.call('虎牙弹幕握手失败$e');
+        }
       },
       onHeartBeat: () {
         if (generation != _generation) {
           return;
         }
 
-        sendHeartbeat(socket: socket, generation: generation);
+        heartbeat();
       },
       onReconnect: () {
         if (generation != _generation) {
@@ -193,7 +212,9 @@ class HuyaDanmaku implements LiveDanmaku {
 
         markDisconnected();
 
-        onClose?.call("与服务器断开连接，正在尝试重连");
+        CoreLog.i('huya reconnecting generation=$generation');
+
+        onClose?.call('与服务器断开连接，正在尝试重连');
       },
       onClose: (e) {
         if (generation != _generation) {
@@ -202,7 +223,13 @@ class HuyaDanmaku implements LiveDanmaku {
 
         markDisconnected();
 
-        onClose?.call("服务器连接失败$e");
+        CoreLog.i(
+          'huya socket closed '
+          'generation=$generation '
+          'error=$e',
+        );
+
+        onClose?.call('服务器连接失败$e');
       },
     );
 
@@ -221,9 +248,9 @@ class HuyaDanmaku implements LiveDanmaku {
 
       markDisconnected();
 
-      CoreLog.error("huya_connect_error: $e");
+      CoreLog.error('huya_connect_error: $e');
 
-      onClose?.call("服务器连接失败$e");
+      onClose?.call('服务器连接失败$e');
     }
   }
 
@@ -237,35 +264,21 @@ class HuyaDanmaku implements LiveDanmaku {
 
     webScoketUtils = null;
 
-    onMessage = null;
-    onClose = null;
-    onReady = null;
+    CoreLog.i('huya_danmaku_stop generation=$_generation');
 
     try {
       await socket?.close();
     } catch (e) {
-      CoreLog.error("huya_stop_close_error: $e");
-    }
-  }
-
-  void sendHeartbeat({required WebScoketUtils socket, required int generation}) {
-    if (generation != _generation) {
-      return;
-    }
-
-    if (!_connected) {
-      return;
-    }
-
-    try {
-      socket.sendMessage(heartbeatData);
-    } catch (e) {
-      CoreLog.error("huya_send_heartbeat_error: $e");
+      CoreLog.error('huya_stop_close_error: $e');
     }
   }
 
   void joinRoom({required WebScoketUtils socket, required int generation}) {
     if (generation != _generation) {
+      return;
+    }
+
+    if (!identical(socket, webScoketUtils)) {
       return;
     }
 
@@ -279,15 +292,21 @@ class HuyaDanmaku implements LiveDanmaku {
       }
 
       socket.sendMessage(data);
+
+      CoreLog.i(
+        'huya register group sent '
+        'generation=$generation '
+        'pid=$pid',
+      );
     } catch (e) {
-      CoreLog.error("join_data_error:$e");
+      CoreLog.error('join_data_error: $e');
     }
   }
 
   List<int> buildJoinGroupData({required int pid}) {
     final wsReq = WsRegisterGroupReq()
-      ..groupId = ["live:$pid", "chat:$pid"]
-      ..token = "";
+      ..groupId = ['live:$pid', 'chat:$pid']
+      ..token = '';
 
     final wsReqByte = wsReq.toByteArray();
 
@@ -301,8 +320,8 @@ class HuyaDanmaku implements LiveDanmaku {
   List<int> buildLiveInfoData({required int pid, required String ua, required String device}) {
     final userId = HuyaUserId()
       ..lUid = 0
-      ..sGuid = "0a7d4b0826af6c69380199dc9adc6b50"
-      ..sToken = ""
+      ..sGuid = '0a7d4b0826af6c69380199dc9adc6b50'
+      ..sToken = ''
       ..sCookie = cookie
       ..sHuYaUA = ua
       ..sDeviceInfo = device;
@@ -337,8 +356,8 @@ class HuyaDanmaku implements LiveDanmaku {
   List<int> buildDoLaunchData({required String ua, required String device}) {
     final userId = HuyaUserId()
       ..lUid = 0
-      ..sGuid = "0a7d4b0826af6c69380199dc9adc6b50"
-      ..sToken = ""
+      ..sGuid = '0a7d4b0826af6c69380199dc9adc6b50'
+      ..sToken = ''
       ..sCookie = cookie
       ..sHuYaUA = ua
       ..sDeviceInfo = device;
@@ -363,8 +382,8 @@ class HuyaDanmaku implements LiveDanmaku {
         cPacketType: 0,
         iMessageType: 0,
         iRequestId: 0,
-        sServantName: "liveui",
-        sFuncName: "doLaunch",
+        sServantName: 'liveui',
+        sFuncName: 'doLaunch',
         sBuffer: RequestPacket.cache_sBuffer,
         context: RequestPacket.cache_context,
         status: RequestPacket.cache_status,
@@ -402,11 +421,50 @@ class HuyaDanmaku implements LiveDanmaku {
         }
 
         if (wsPushMessage.uri == 1400) {
-          await _decodeChatMessage(wsPushMessage.msg, generation: generation);
+          final messageNotice = HYMessage();
+
+          messageNotice.readFrom(TarsInputStream(Uint8List.fromList(wsPushMessage.msg)));
+
+          if (generation != _generation) {
+            return;
+          }
+
+          final uname = messageNotice.userInfo.sNickName;
+          final content = messageNotice.content;
+          final color = messageNotice.bulletFormat.fontColor;
+
+          onMessage?.call(
+            LiveMessage(
+              type: LiveMessageType.chat,
+              color: color <= 0 ? LiveMessageColor.white : LiveMessageColor.numberToColor(color),
+              message: content,
+              userName: uname,
+            ),
+          );
         } else if (wsPushMessage.uri == 8006) {
-          await _decodeOnlineMessage(wsPushMessage.msg, generation: generation);
+          final s = TarsInputStream(Uint8List.fromList(wsPushMessage.msg));
+
+          final online = s.read(0, 0, false);
+
+          if (generation != _generation) {
+            return;
+          }
+
+          onMessage?.call(
+            LiveMessage(
+              type: LiveMessageType.online,
+              data: online,
+              color: LiveMessageColor.white,
+              message: '',
+              userName: '',
+            ),
+          );
         }
-      } else if (type == 22) {
+
+        return;
+      }
+
+      if (type == 22) {
         final wsPushMessageV2 = WSPushMessageV2();
 
         stream = TarsInputStream(stream.readBytes(1, false));
@@ -419,85 +477,30 @@ class HuyaDanmaku implements LiveDanmaku {
           }
 
           if (item.iUri == 2001314) {
-            await _decodeSuperChat(generation: generation);
+            final sc = await getHuyaSuperChatMessageList(lPid: danmakuArgs.topSid);
+
+            if (generation != _generation) {
+              return;
+            }
+
+            if (sc.isNotEmpty) {
+              onMessage?.call(
+                LiveMessage(
+                  type: LiveMessageType.superChat,
+                  userName: 'SUPER_CHAT_MESSAGE',
+                  message: 'SUPER_CHAT_MESSAGE',
+                  color: LiveMessageColor.white,
+                  data: sc.first,
+                ),
+              );
+            }
           }
         }
+
+        return;
       }
     } catch (e, stackTrace) {
-      CoreLog.error("huya_decode_error: $e\n$stackTrace");
+      CoreLog.error('huya_decode_error: $e\n$stackTrace');
     }
-  }
-
-  Future<void> _decodeChatMessage(List<int> data, {required int generation}) async {
-    if (generation != _generation) {
-      return;
-    }
-
-    final messageNotice = HYMessage();
-
-    messageNotice.readFrom(TarsInputStream(Uint8List.fromList(data)));
-
-    if (generation != _generation) {
-      return;
-    }
-
-    final uname = messageNotice.userInfo.sNickName;
-
-    final content = messageNotice.content;
-
-    final color = messageNotice.bulletFormat.fontColor;
-
-    onMessage?.call(
-      LiveMessage(
-        type: LiveMessageType.chat,
-        color: color <= 0 ? LiveMessageColor.white : LiveMessageColor.numberToColor(color),
-        message: content,
-        userName: uname,
-      ),
-    );
-  }
-
-  Future<void> _decodeOnlineMessage(List<int> data, {required int generation}) async {
-    if (generation != _generation) {
-      return;
-    }
-
-    final stream = TarsInputStream(Uint8List.fromList(data));
-
-    final online = stream.read(0, 0, false);
-
-    if (generation != _generation) {
-      return;
-    }
-
-    onMessage?.call(
-      LiveMessage(type: LiveMessageType.online, data: online, color: LiveMessageColor.white, message: "", userName: ""),
-    );
-  }
-
-  Future<void> _decodeSuperChat({required int generation}) async {
-    if (generation != _generation) {
-      return;
-    }
-
-    final sc = await getHuyaSuperChatMessageList(lPid: danmakuArgs.topSid);
-
-    if (generation != _generation) {
-      return;
-    }
-
-    if (sc.isEmpty) {
-      return;
-    }
-
-    onMessage?.call(
-      LiveMessage(
-        type: LiveMessageType.superChat,
-        userName: "SUPER_CHAT_MESSAGE",
-        message: "SUPER_CHAT_MESSAGE",
-        color: LiveMessageColor.white,
-        data: sc.first,
-      ),
-    );
   }
 }
