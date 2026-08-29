@@ -80,6 +80,13 @@ bool shouldHandleVideoSurfaceTap({
   return localPosition.dy > guardedHeight && localPosition.dy < surfaceSize.height - guardedHeight;
 }
 
+const double portraitFullscreenBottomBarHeight = 104;
+
+@visibleForTesting
+double resolveBottomActionBarHeight(VideoMode screenMode, {double regularHeight = 56}) {
+  return screenMode == VideoMode.portraitFullscreen ? portraitFullscreenBottomBarHeight : regularHeight;
+}
+
 class VideoControllerPanel extends StatefulWidget {
   final VideoController controller;
 
@@ -113,6 +120,8 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
         child: Obx(() {
           final double currentVolume = controller.currentVolume.value;
           final int percentage = (currentVolume * 100).round();
+          final screenMode = controller.livePlayController.state.value.ui.screenMode;
+          final bottomBarHeight = resolveBottomActionBarHeight(screenMode, regularHeight: barHeight);
 
           final IconData iconData = currentVolume <= 0
               ? Icons.volume_mute
@@ -188,7 +197,7 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                           localPosition: localPosition,
                           surfaceSize: context.size ?? Size.zero,
                           controlsVisible: controller.showController.value,
-                          controlBarHeight: barHeight,
+                          controlBarHeight: bottomBarHeight,
                         )) {
                       controller.enableController();
                       return;
@@ -210,7 +219,7 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                       localPosition: details.localPosition,
                       surfaceSize: context.size ?? Size.zero,
                       controlsVisible: controller.showController.value,
-                      controlBarHeight: barHeight,
+                      controlBarHeight: bottomBarHeight,
                     )) {
                       controller.enableController();
                       return;
@@ -229,7 +238,7 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                 LockButton(controller: controller),
                 const PortraitStreamDiagnosticsBadge(),
                 TopActionBar(controller: controller, barHeight: barHeight),
-                BottomActionBar(controller: controller, barHeight: barHeight),
+                BottomActionBar(controller: controller, barHeight: bottomBarHeight),
               ],
             ),
           );
@@ -1573,9 +1582,10 @@ class ResolutionSelectorButton extends StatelessWidget {
 /// live in one landscape panel, avoiding two narrow menus competing for the
 /// bottom-right safe area.
 class FullscreenStreamSelectorButton extends StatelessWidget {
-  const FullscreenStreamSelectorButton({super.key, required this.controller});
+  const FullscreenStreamSelectorButton({super.key, required this.controller, this.compact = false});
 
   final VideoController controller;
+  final bool compact;
 
   Future<void> _showSelector(BuildContext context) async {
     final layout = resolveContentFirstPanelLayout(MediaQuery.sizeOf(context), ContentFirstPanelKind.streamSelector);
@@ -1739,7 +1749,7 @@ class FullscreenStreamSelectorButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
             onTap: switching ? null : () => unawaited(_showSelector(context)),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+              padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 11, vertical: 7),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -1752,7 +1762,7 @@ class FullscreenStreamSelectorButton extends StatelessWidget {
                       : const Icon(Icons.tune_rounded, size: 17, color: Colors.white),
                   const SizedBox(width: 6),
                   ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 150),
+                    constraints: BoxConstraints(maxWidth: compact ? 90 : 150),
                     child: Text(
                       label,
                       maxLines: 1,
@@ -1921,6 +1931,11 @@ class BottomActionBar extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final fullscreen = GlobalPlayerState.to.fullscreenUI;
+              final portraitFullscreen =
+                  controller.livePlayController.state.value.ui.screenMode == VideoMode.portraitFullscreen;
+              if (portraitFullscreen) {
+                return _buildPortraitFullscreenLayout();
+              }
               final compact = constraints.maxWidth < 760;
               final left = _buildLeftActions(compact: fullscreen && compact);
               final right = _buildRightActions(compact: fullscreen && compact);
@@ -1965,6 +1980,44 @@ class BottomActionBar extends StatelessWidget {
         ),
       );
     });
+  }
+
+  Widget _buildPortraitFullscreenLayout() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 38,
+            child: Row(
+              children: [
+                Expanded(child: FullscreenLocalDanmakuComposer(controller: controller)),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: FullscreenStreamSelectorButton(controller: controller, compact: true),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 2),
+          SizedBox(
+            height: 48,
+            child: Row(
+              children: [
+                _buildLeftActions(compact: true),
+                const Spacer(),
+                if (PlatformUtils.isMobile) PortraitFullscreenDisplayModeButton(controller: controller),
+                if (PlatformUtils.isMobile) PortraitOrientationButton(controller: controller),
+                if (!GlobalPlayerState.to.isWindowFullscreen.value) ExpandButton(controller: controller),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildLeftActions({required bool compact}) {

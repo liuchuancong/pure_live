@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_tab.dart';
 import 'package:pure_live/modules/live_play/widgets/content_first_panel_layout.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller_panel.dart';
+import 'package:pure_live/modules/live_play/states/ui_state.dart';
 
 void main() {
   testWidgets('portrait danmaku section tabs fill the row and stay horizontally fixed', (tester) async {
@@ -76,6 +77,23 @@ void main() {
       shouldHandleVideoSurfaceTap(localPosition: const Offset(400, 20), surfaceSize: size, controlsVisible: false),
       isTrue,
       reason: 'hidden bars leave the whole video surface interactive',
+    );
+  });
+
+  test('portrait fullscreen reserves a two-row bottom controller while other modes keep one row', () {
+    expect(resolveBottomActionBarHeight(VideoMode.portraitFullscreen), portraitFullscreenBottomBarHeight);
+    expect(resolveBottomActionBarHeight(VideoMode.normal), 56);
+
+    const size = Size(360, 780);
+    expect(
+      shouldHandleVideoSurfaceTap(
+        localPosition: const Offset(300, 700),
+        surfaceSize: size,
+        controlsVisible: true,
+        controlBarHeight: resolveBottomActionBarHeight(VideoMode.portraitFullscreen),
+      ),
+      isFalse,
+      reason: 'both portrait controller rows must receive taps instead of the video/danmaku layer',
     );
   });
 
