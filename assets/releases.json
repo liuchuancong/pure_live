@@ -1,5 +1,43 @@
 [
   {
+    "version": "3.0.23",
+    "title": "Pure Live v3.0.23",
+    "date": "2026-08-29",
+    "github": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.23",
+    "author": {
+      "name": "wzgrx",
+      "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
+      "profile": "https://github.com/wzgrx"
+    },
+    "changelog": "# Pure Live v3.0.23\n\nv3.0.23 build 4111 完善 Android 全面屏上的竖屏全屏呈现。9:16 直播源与约 20:9 手机屏幕的比例差会自然产生上下剩余区域；旧版又用过重黑色蒙层压暗封面，使其看起来像两条黑边。本轮只更新 Android `arm64-v8a`；Windows 继续使用 v3.0.19。\n\n## 四种画面模式\n\n- **完整画面**：保持全部直播内容和原始比例。\n- **沉浸背景（默认）**：前景完整不裁剪，上下区域使用缓存封面模糊延展；封面缺失时使用非纯黑渐变。\n- **平衡填充**：最多等比放大 8%，只裁剪少量左右内容，剩余区域保留沉浸背景。\n- **铺满裁剪**：原生 `cover` 铺满屏幕，可能裁掉左右内容，仅由用户主动选择。\n\n## 实机发现并修复的交互问题\n\n- 首轮 PJZ110（1440×3168 / 360 dp）验证发现：旧横屏单行控制栏在竖屏宽度下发生 `Row` 溢出，右侧按钮虽然能被绘制，部分区域实际点不到。\n- 竖屏全屏现在使用 104 dp 双层控制区：第一行放本地弹幕与画质线路，第二行放播放、弹幕、设置、画面模式、方向和退出。\n- 双层区域全部纳入视频/弹幕手势隔离，画面模式选择器、方向与退出不再被画面点击层截获；横屏仍保持 56 dp 单行布局。\n\n## 验证\n\n- `flutter analyze`：通过，无问题。\n- 完整 Flutter 回归：610 项通过；公开平台接口探针沿用同批 42/42 通过证据。\n- Android arm64 Release：APK 内容、唯一 ABI、Flutter 资源与关键原生库完整性通过。\n- PJZ110 真机：沉浸背景、平衡填充、模式选择器、双层控制区、上滑恢复弹幕栏均通过；切换不重建播放器，采样日志无 FATAL、Unhandled、RenderFlex、SIGSEGV 或 ANR 标记。\n- 源码提交：`0ba8abeefb2b20e3e6109ee465ebae36fc609a16`\n- APK SHA-256：`011d45ebfb33a92da9622a6cd237b2065f96e8fabd120ad80a9bc6722cc594e9`\n- 正式签名证书 SHA-256：`c0bb95744c81f9c7dd4535a9552775038eb5a59c5922f791d1695f45ac34ceaf`",
+    "files": [
+      {
+        "name": "ANDROID_SHA256SUM.txt",
+        "size": "0.0mb",
+        "downloads": 1,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.23/ANDROID_SHA256SUM.txt"
+      },
+      {
+        "name": "BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 1,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.23/BUILD_METADATA.json"
+      },
+      {
+        "name": "PureLive-3.0.23-4111-android-arm64-v8a",
+        "size": "112.98mb",
+        "downloads": 33,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.23/PureLive-3.0.23-4111-android-arm64-v8a-release.apk"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 1,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.23/SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
     "version": "3.0.22",
     "title": "Pure Live v3.0.22",
     "date": "2026-08-29",
@@ -14,25 +52,25 @@
       {
         "name": "ANDROID_SHA256SUM.txt",
         "size": "0.0mb",
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.22/ANDROID_SHA256SUM.txt"
       },
       {
         "name": "BUILD_METADATA.json",
         "size": "0.0mb",
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.22/BUILD_METADATA.json"
       },
       {
         "name": "PureLive-3.0.22-4110-android-arm64-v8a",
         "size": "112.98mb",
-        "downloads": 0,
+        "downloads": 77,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.22/PureLive-3.0.22-4110-android-arm64-v8a-release.apk"
       },
       {
         "name": "SHA256SUMS.txt",
         "size": "0.0mb",
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.22/SHA256SUMS.txt"
       }
     ]
@@ -64,7 +102,7 @@
       {
         "name": "PureLive-3.0.21-4109-android-arm64-v8a",
         "size": "112.98mb",
-        "downloads": 130,
+        "downloads": 147,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.21/PureLive-3.0.21-4109-android-arm64-v8a-release.apk"
       },
       {
@@ -146,13 +184,13 @@
       {
         "name": "PureLive-3.0.19-4107-windows-x64-portable.zip",
         "size": "68.9mb",
-        "downloads": 5,
+        "downloads": 8,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.19/PureLive-3.0.19-4107-windows-x64-portable.zip"
       },
       {
         "name": "PureLive-3.0.19-4107-windows-x64-setup.exe",
         "size": "53.4mb",
-        "downloads": 19,
+        "downloads": 25,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.19/PureLive-3.0.19-4107-windows-x64-setup.exe"
       },
       {
@@ -2810,19 +2848,19 @@
       {
         "name": "arm64-v8a",
         "size": "122.25mb",
-        "downloads": 14264,
+        "downloads": 14265,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.22/app-arm64-v8a-release.apk"
       },
       {
         "name": "armeabi-v7a",
         "size": "109.11mb",
-        "downloads": 2118,
+        "downloads": 2120,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.22/app-armeabi-v7a-release.apk"
       },
       {
         "name": "x86_64",
         "size": "136.7mb",
-        "downloads": 1140,
+        "downloads": 1141,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.22/app-x86_64-release.apk"
       },
       {
@@ -2960,7 +2998,7 @@
       {
         "name": "arm64-v8a",
         "size": "126.31mb",
-        "downloads": 513,
+        "downloads": 515,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.19/app-arm64-v8a-release.apk"
       },
       {
