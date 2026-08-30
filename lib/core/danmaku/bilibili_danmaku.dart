@@ -46,6 +46,12 @@ class BiliBiliDanmakuArgs {
 }
 
 class BiliBiliDanmaku implements LiveDanmaku {
+  static const int _packetHeaderLength = 16;
+  static const int _maxTransportMessageBytes = 8 * 1024 * 1024;
+  static const int _maxDecompressedMessageBytes = 16 * 1024 * 1024;
+  static const int _maxPacketsPerMessage = 4096;
+  static const int _maxCompressedNestingDepth = 2;
+
   @override
   int heartbeatTime = 30 * 1000;
   bool _connected = false;
@@ -225,6 +231,9 @@ class BiliBiliDanmaku implements LiveDanmaku {
 
   void decodeMessage(List<int> data) {
     try {
+      if (data.length > _maxTransportMessageBytes) {
+        throw FormatException('Bilibili danmaku message is too large: ${data.length} bytes');
+      }
       _decodePacketStream(data, depth: 0);
     } catch (e) {
       CoreLog.error(e);
@@ -237,18 +246,28 @@ class BiliBiliDanmaku implements LiveDanmaku {
   /// bytes away from the JSON decoder and prevents valid DANMU_MSG events from
   /// being dropped.
   void _decodePacketStream(List<int> data, {required int depth}) {
-    if (depth > 8) {
+    if (depth > _maxCompressedNestingDepth) {
       throw const FormatException('Bilibili danmaku packet nesting is too deep');
     }
 
     var offset = 0;
-    while (offset + 16 <= data.length) {
+    var packetCount = 0;
+    while (offset + _packetHeaderLength <= data.length) {
+      packetCount++;
+      if (packetCount > _maxPacketsPerMessage) {
+        throw const FormatException('Bilibili danmaku message contains too many packets');
+      }
       final packetLength = readInt(data, offset, 4);
       final headerLength = readInt(data, offset + 4, 2);
       final protocolVersion = readInt(data, offset + 6, 2);
       final operation = readInt(data, offset + 8, 4);
 
-      if (headerLength < 16 || packetLength < headerLength || offset + packetLength > data.length) {
+      // Validate both sides of the frame before slicing. In particular,
+      // packetLength=0 must not leave [offset] unchanged and spin forever.
+      if (headerLength < _packetHeaderLength ||
+          packetLength < headerLength ||
+          packetLength > _maxTransportMessageBytes ||
+          offset + packetLength > data.length) {
         throw FormatException(
           'Invalid Bilibili danmaku frame: offset=$offset, packet=$packetLength, header=$headerLength, total=${data.length}',
         );
@@ -282,7 +301,7 @@ class BiliBiliDanmaku implements LiveDanmaku {
 
     if (operation == 5) {
       if (protocolVersion == 2 || protocolVersion == 3) {
-        final decoded = protocolVersion == 2 ? zlib.decode(body) : brotli.decode(body);
+        final decoded = _decodeCompressedBody(body, protocolVersion);
         _decodePacketStream(decoded, depth: depth + 1);
       } else {
         final text = utf8.decode(body, allowMalformed: true).trim();
@@ -308,6 +327,15 @@ class BiliBiliDanmaku implements LiveDanmaku {
         unawaited(_refreshCredentialsAndReconnect());
       }
     }
+  }
+
+  List<int> _decodeCompressedBody(List<int> body, int protocolVersion) {
+    final sink = _BoundedBytesSink(_maxDecompressedMessageBytes);
+    final decoder = protocolVersion == 2 ? zlib.decoder : brotli.decoder;
+    final conversion = decoder.startChunkedConversion(sink);
+    conversion.add(body);
+    conversion.close();
+    return sink.takeBytes();
   }
 
   void parseMessage(String jsonMessage) {
@@ -445,4 +473,33 @@ class BiliBiliDanmaku implements LiveDanmaku {
 
     return result;
   }
+}
+
+/// Accumulates decompressed protocol bytes while enforcing a hard output cap.
+/// Both zlib and Brotli stream into this sink, so a highly-compressible frame
+/// is rejected before it can materialize an unbounded output list.
+class _BoundedBytesSink implements Sink<List<int>> {
+  _BoundedBytesSink(this.limit);
+
+  final int limit;
+  final BytesBuilder _builder = BytesBuilder(copy: false);
+  int _length = 0;
+  bool _closed = false;
+
+  @override
+  void add(List<int> data) {
+    if (_closed) throw StateError('Bilibili decompression sink is closed');
+    if (data.length > limit - _length) {
+      throw FormatException('Bilibili decompressed message exceeds $limit bytes');
+    }
+    _length += data.length;
+    _builder.add(data);
+  }
+
+  @override
+  void close() {
+    _closed = true;
+  }
+
+  Uint8List takeBytes() => _builder.takeBytes();
 }

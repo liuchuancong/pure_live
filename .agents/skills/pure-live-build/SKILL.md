@@ -42,3 +42,7 @@ When the build follows a Bug fix, upstream Issue review or upstream merge, first
 9. Report the generated build record and artifacts. For a Bug-fix batch, continue only through the predeclared Android signing, GitHub Release, and index-sync stages; do not append another platform or a second full regression. For ordinary build requests, stop after the requested target.
 
 Use `tool/local_ci.ps1` for focused/full validation and `tool/build_local_release.ps1` for the single explicitly selected local target.
+For a focused regression only, add `-SkipPubGet` when no root or local-plugin
+`pubspec.yaml`/`pubspec.lock` changed and `.dart_tool/package_config.json` already
+exists. The script enforces these conditions. Full validation always resolves
+the locked graph.

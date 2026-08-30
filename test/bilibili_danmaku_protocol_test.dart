@@ -48,6 +48,40 @@ void main() {
       expect(readyCount, 1);
     });
 
+    test('malformed zero-length frame cannot loop or discard an earlier valid packet', () {
+      final danmaku = BiliBiliDanmaku();
+      final received = <LiveMessage>[];
+      danmaku.onMessage = received.add;
+
+      final malformed = Uint8List(16);
+      final header = ByteData.sublistView(malformed);
+      header.setUint32(0, 0, Endian.big);
+      header.setUint16(4, 16, Endian.big);
+      final stream = BytesBuilder(copy: false)
+        ..add(_chatPacket('before malformed frame', 'alice'))
+        ..add(malformed);
+
+      danmaku.decodeMessage(stream.takeBytes());
+      danmaku.decodeMessage(_chatPacket('next websocket message', 'bob'));
+
+      expect(received.map((message) => message.message), ['before malformed frame', 'next websocket message']);
+    });
+
+    test('compressed packet recursion is bounded and a later message still parses', () {
+      final danmaku = BiliBiliDanmaku();
+      final received = <LiveMessage>[];
+      danmaku.onMessage = received.add;
+
+      List<int> nested = _chatPacket('too deep', 'alice');
+      for (var index = 0; index < 4; index++) {
+        nested = _packet(zlib.encode(nested), operation: 5, protocolVersion: 2);
+      }
+      danmaku.decodeMessage(nested);
+      danmaku.decodeMessage(_chatPacket('connection survives', 'bob'));
+
+      expect(received.map((message) => message.message), ['connection survives']);
+    });
+
     test('prefers the complete rich username over a masked legacy field', () {
       final danmaku = BiliBiliDanmaku();
       final received = <LiveMessage>[];

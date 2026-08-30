@@ -178,7 +178,7 @@
     "restore_video_mode": "恢复视频画面",
     "custom_sleep_minutes": "自定义播放时长",
     "custom_sleep_minutes_range": "请输入 1 分钟至 365 天之间的分钟数",
-    "enable_background_play_subtitle": "当暂时切出APP时，允许后台播放",
+    "enable_background_play_subtitle": "暂时切出 APP 时继续播放；手动纯音频同样遵循此开关，自动助眠会话按计时继续",
     "enable_backoff": "启用指数退避",
     "enable_backoff_desc": "失败次数越多，检测间隔越长",
     "enable_cache_limit": "启用缓存限制",
