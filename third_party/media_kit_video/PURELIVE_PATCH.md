@@ -27,14 +27,36 @@ Android Surface-size MethodChannel request run outside the lock. Desktop
 platforms retain media_kit's existing
 `setVideoTrack` behavior.
 
+On Windows, PureLive also exposes a throttled `frameRevision` liveness signal.
+The native D3D11 mailbox emits it only after a fence-confirmed frame has been
+promoted for Flutter consumption; software rendering emits it after a completed
+render. This lets `PlayerManager` distinguish “libmpv still says playing” from
+“the presentation surface has stopped advancing”, recreate the renderer once,
+then fall through to the existing CDN-line recovery. The signal carries no
+pixels, is limited to two events per second, and does not alter normal frame
+delivery or aspect-ratio policy.
+
+`VideoController.setSize` also accepts an opt-in `force` flag on every platform
+(only the Windows native implementation changes behavior). PureLive uses it on
+the first layout after a Windows `Texture` remount so the current native output
+receives a viewport even when its controller cache still contains equal width
+and height. Normal resize calls keep the upstream equality fast path. Together
+with the frame-progress fence, this prevents a 0×0 replacement output from
+being treated as presentation-ready after an overlay route or transport retry.
+
 ## Maintenance
 
 When updating the pinned media-kit revision:
 
 1. Replace this directory with the new upstream package.
-2. Reapply the small controller API and Android state-owner patch.
+2. Reapply the controller API, Android state-owner patch, and Windows
+   fence-confirmed frame-progress callback.
 3. Compare every file against the new upstream commit; only the files described
    above, `pubspec.yaml`, this note and the policy helper should differ.
 4. Run `flutter analyze`, the full test suite, Windows release build and Android
    ARM64 release build.
 5. On Android, repeat video/audio toggles plus rotation, PiP and room re-entry.
+6. On Windows, verify a deliberately stalled renderer is recreated once, a
+   stalled CDN advances to the next line, a 0×0 candidate never replaces the
+   active texture, remounting reasserts viewport size, and explicit pause never
+   triggers the watchdog.

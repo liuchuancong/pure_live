@@ -779,7 +779,7 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   @override
   Future<bool> getLiveStatus({required String platform, required String roomId}) async {
     final room = await _fetchRoomDetail(platform: platform, roomId: roomId);
-    return room.status == true && room.liveStatus == LiveStatus.live;
+    return room.isLiveNow;
   }
 
   @override

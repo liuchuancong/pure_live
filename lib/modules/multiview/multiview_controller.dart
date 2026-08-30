@@ -6,6 +6,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
+import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 import 'package:pure_live/modules/multiview/cells/multiview_cell_player.dart';
@@ -77,7 +78,24 @@ class MultiviewController extends GetxController {
     final platform = room.platform!;
     final site = Sites.of(platform);
 
-    final detail = await site.liveSite.getRoomDetail(roomId: room.roomId!, platform: platform);
+    // Multiview must not use the UI-oriented fallback lookup for platforms
+    // that expose a strict playback-complete resolver. The fallback can turn
+    // a transport/shape failure into an offline-looking room; the strict path
+    // preserves the difference between "platform says offline" and "request
+    // failed" while retaining all signed playback fields.
+    final liveSite = site.liveSite;
+    final detail = liveSite is LiveSiteRecordRoomResolver
+        ? await (liveSite as LiveSiteRecordRoomResolver).getRoomDetailForRecording(
+            roomId: room.roomId!,
+            platform: platform,
+          )
+        : await liveSite.getRoomDetail(roomId: room.roomId!, platform: platform);
+    if (detail.isExplicitlyOfflineNow) {
+      throw MultiviewRoomOffline(detail);
+    }
+    if (!detail.isPlayableNow) {
+      throw StateError('multiview: room status is ${detail.effectiveLiveStatus.name} for $platform/${room.roomId}');
+    }
     final qualities = await site.liveSite.getPlayQualites(detail: detail);
     if (qualities.isEmpty) {
       throw StateError('multiview: no play qualities for $platform/${room.roomId}');
@@ -422,6 +440,14 @@ class MultiviewController extends GetxController {
       ),
     );
 
+    // A room already verified as offline is a valid picker result. Do not hit
+    // playback APIs or construct a native decoder only to surface a generic
+    // error card.
+    if (room.isExplicitlyOfflineNow) {
+      _setOfflineCell(cellIndex, epoch, room);
+      return;
+    }
+
     // 小格自动降质联动（仅 focus 布局）：向非大画面格分配时默认取最低档。
     final preferLowest =
         smallCellsLowQuality.value && layout.value == MultiviewLayout.focus && cellIndex != focusedCellIndex.value;
@@ -429,6 +455,9 @@ class MultiviewController extends GetxController {
     final MultiviewStreamSource source;
     try {
       source = await _streamResolver(room, preferLowest: preferLowest);
+    } on MultiviewRoomOffline catch (offline) {
+      _setOfflineCell(cellIndex, epoch, offline.room.fillFromDetail(room));
+      return;
     } catch (error, stackTrace) {
       developer.log(
         'MultiviewController: resolve stream failed for ${room.platform}/${room.roomId}',
@@ -764,6 +793,22 @@ class MultiviewController extends GetxController {
     if (layout.value == MultiviewLayout.focus && cellIndex == focusedCellIndex.value) {
       unawaited(_syncDanmakuSession());
     }
+  }
+
+  void _setOfflineCell(int cellIndex, int epoch, LiveRoom room) {
+    if (_isStale(cellIndex, epoch)) return;
+    playingFlags[cellIndex] = false;
+    _updateCell(
+      cellIndex,
+      cells[cellIndex].copyWith(
+        room: room,
+        status: MultiviewCellStatus.offline,
+        clearError: true,
+        clearVideoController: true,
+        clearQuality: true,
+      ),
+    );
+    unawaited(_syncDanmakuSession());
   }
 
   /// 统一释放路径：捕获句柄置空 → pause → 销毁播放内核

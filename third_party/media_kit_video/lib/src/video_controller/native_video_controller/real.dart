@@ -211,9 +211,10 @@ class NativeVideoController extends PlatformVideoController {
   Future<void> setSize({
     int? width,
     int? height,
+    bool force = false,
   }) async {
     final handle = await player.handle;
-    if (this.width == width && this.height == height) {
+    if (!force && this.width == width && this.height == height) {
       // No need to resize if the requested size is same as the current size.
       return;
     }
@@ -289,6 +290,15 @@ class NativeVideoController extends PlatformVideoController {
                       if (!(completer?.isCompleted ?? true)) {
                         completer?.complete();
                       }
+                    }
+                    break;
+                  }
+                case 'VideoOutput.Frame':
+                  {
+                    final int handle = call.arguments['handle'];
+                    final controller = _controllers[handle];
+                    if (controller != null) {
+                      controller.frameRevision.value++;
                     }
                     break;
                   }

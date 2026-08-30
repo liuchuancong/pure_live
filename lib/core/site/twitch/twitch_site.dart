@@ -191,7 +191,7 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
   Future<bool> getLiveStatus({required String platform, required String roomId}) async {
     try {
       var detail = await getRoomDetail(platform: platform, roomId: roomId);
-      return detail.status ?? false;
+      return detail.isLiveNow;
     } catch (e) {
       return false;
     }
@@ -200,7 +200,7 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
   @override
   Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
     List<LivePlayQuality> qualities = <LivePlayQuality>[];
-    if (detail.status != true) return qualities;
+    if (!detail.isLiveNow) return qualities;
 
     var liveGpl = buildPersistedRequest(
       "PlaybackAccessToken",

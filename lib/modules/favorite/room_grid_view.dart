@@ -74,7 +74,7 @@ class RoomGridView extends GetView<FavoriteController> {
                   key: ValueKey('${room.platform}:${room.roomId}'),
                   room: room,
                   dense: dense,
-                  statusPending: isVerifyingFavorites || room.liveStatus == LiveStatus.unknown,
+                  statusPending: isVerifyingFavorites || room.isLiveStatusPending,
                   statusPendingLabel: isVerifyingFavorites
                       ? i18n('favorite_status_verifying')
                       : i18n('favorite_status_unknown'),

@@ -373,7 +373,7 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
             roomId: room.roomId ?? '',
             avatar: room.avatar ?? '',
             userName: room.nick ?? '',
-            liveStatus: room.liveStatus == LiveStatus.live,
+            liveStatus: room.isLiveNow,
           ),
         )
         .toList();

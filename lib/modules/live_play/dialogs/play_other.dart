@@ -37,9 +37,10 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
 
   void _updateRooms() {
     final allRooms = SettingsService.to.fav.favoriteRooms.v;
-    final liveList = allRooms.where((room) => room.liveStatus == LiveStatus.live && room.isRecord == false).toList()
+
+    final liveList = allRooms.where((room) => room.isLiveNow && room.isRecord == false).toList()
       ..sort(_compareAudience);
-    final recordList = allRooms.where((room) => room.liveStatus == LiveStatus.live && room.isRecord == true).toList()
+    final recordList = allRooms.where((room) => room.effectiveLiveStatus == LiveStatus.replay).toList()
       ..sort(_compareAudience);
     onlineRooms.assignAll(liveList);
     recordingRooms.assignAll(recordList);

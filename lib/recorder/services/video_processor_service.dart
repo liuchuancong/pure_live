@@ -36,6 +36,8 @@ class VideoProcessorService extends GetxService {
     required LiveRecordTask task,
     bool deleteSourceTs = true,
     bool allowLegacySegments = false,
+    String? directoryPath,
+    String? filePrefix,
   }) async {
     final taskId = task.taskId;
     if (!_processingTasks.add(taskId)) return false;
@@ -44,13 +46,16 @@ class VideoProcessorService extends GetxService {
     File? listFile;
     File? partialFile;
     try {
-      final directoryPath = task.outputDir?.trim() ?? '';
-      if (directoryPath.isEmpty) {
+      final resolvedDirectoryPath = directoryPath?.trim().isNotEmpty == true
+          ? directoryPath!.trim()
+          : (task.outputDir?.trim() ?? '');
+      final resolvedFilePrefix = filePrefix?.trim().isNotEmpty == true ? filePrefix!.trim() : task.recordingFilePrefix;
+      if (resolvedDirectoryPath.isEmpty) {
         _emitFailed(taskId, i18n('video_dir_not_exist'));
         return false;
       }
 
-      final tsDirectory = Directory(directoryPath);
+      final tsDirectory = Directory(resolvedDirectoryPath);
       if (!await tsDirectory.exists()) {
         _emitFailed(taskId, i18n('video_dir_not_exist'));
         return false;
@@ -71,7 +76,7 @@ class VideoProcessorService extends GetxService {
       // interrupted recording created by an older installed version.
       final segments = selectAttemptSegments(
         candidates: legacySegments,
-        filePrefix: task.recordingFilePrefix,
+        filePrefix: resolvedFilePrefix,
         allowLegacySegments: allowLegacySegments,
       );
       segments.sort((left, right) => p.basename(left.path).compareTo(p.basename(right.path)));
@@ -92,17 +97,17 @@ class VideoProcessorService extends GetxService {
       log('$taskId: ${i18n("video_ts_total", args: {"count": segments.length.toString()})}');
       _emit(VideoProcessEvent(taskId: taskId, type: VideoProcessEventType.started));
 
-      listFile = File(p.join(tsDirectory.path, '.${task.recordingFilePrefix}.ffconcat'));
+      listFile = File(p.join(tsDirectory.path, '.$resolvedFilePrefix.ffconcat'));
       await listFile.writeAsString(
         buildConcatManifest(segments.map((segment) => p.absolute(segment.path))),
         flush: true,
       );
 
-      final outputFile = await _uniqueOutputFile(tsDirectory, task.recordingFilePrefix);
+      final outputFile = await _uniqueOutputFile(tsDirectory, resolvedFilePrefix);
       partialFile = File('${outputFile.path}.partial');
       if (await partialFile.exists()) await partialFile.delete();
 
-      final ffmpegTaskId = 'merge_${taskId}_${task.recordingFilePrefix}';
+      final ffmpegTaskId = 'merge_${taskId}_$resolvedFilePrefix';
       _ffmpegTaskIds[taskId] = ffmpegTaskId;
       final terminalEvent = Completer<FFmpegEvent>();
       subscription = _ffmpeg.stream.listen((event) {

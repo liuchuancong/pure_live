@@ -70,6 +70,9 @@ class VideoController {
   /// [Rect] of the video output, received from the native implementation.
   final ValueNotifier<Rect?> rect = ValueNotifier<Rect?>(null);
 
+  /// Throttled native-render progress revision when supported by the platform.
+  final ValueNotifier<int> frameRevision = ValueNotifier<int>(0);
+
   /// {@macro video_controller}
   VideoController(
     this.player, {
@@ -117,14 +120,18 @@ class VideoController {
           // Add listeners.
           void fn0() => id.value = controller.id.value;
           void fn1() => rect.value = controller.rect.value;
+          void fn2() => frameRevision.value = controller.frameRevision.value;
           fn0();
           fn1();
+          fn2();
           controller.id.addListener(fn0);
           controller.rect.addListener(fn1);
+          controller.frameRevision.addListener(fn2);
           // Remove listeners upon [Player.dispose].
           player.platform?.release.add(() async {
             controller.id.removeListener(fn0);
             controller.rect.removeListener(fn1);
+            controller.frameRevision.removeListener(fn2);
           });
         } else {
           platform.completeError(
@@ -151,9 +158,9 @@ class VideoController {
   /// Remember:
   /// * “Premature optimization is the root of all evil”
   /// * “With great power comes great responsibility”
-  Future<void> setSize({int? width, int? height}) async {
+  Future<void> setSize({int? width, int? height, bool force = false}) async {
     final instance = await platform.future;
-    return instance.setSize(width: width, height: height);
+    return instance.setSize(width: width, height: height, force: force);
   }
 
   /// Enables or disables decoded video output on the existing controller.

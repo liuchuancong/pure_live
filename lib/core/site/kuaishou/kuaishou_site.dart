@@ -402,7 +402,7 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
     try {
       final loaded = await _loadRoom(roomId, includePlaybackData: true, ensureSession: true);
-      if (loaded.status == true) return loaded;
+      if (loaded.isLiveNow) return loaded;
 
       // The public recommendation feed intentionally includes replay cards.
       // Their room page reports offline but the selected card carries signed
@@ -441,7 +441,7 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   @override
   Future<LiveRoom> getRoomDetailForRecording({required String platform, required String roomId}) async {
     final loaded = await _loadRoom(roomId, includePlaybackData: true, ensureSession: true);
-    if (loaded.status == true) return loaded;
+    if (loaded.isLiveNow) return loaded;
 
     // Recommendation cards can represent a replay whose room page reports
     // offline. Preserve only a matching card with an actual playable stream;
@@ -546,7 +546,7 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   @override
   Future<bool> getLiveStatus({required String platform, required String roomId}) async {
     final room = await getRoomDetailForRefresh(platform: platform, roomId: roomId);
-    return room.status == true;
+    return room.isLiveNow;
   }
 
   @override

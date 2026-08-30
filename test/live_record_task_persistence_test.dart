@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/common/models/live_room.dart';
-import 'package:pure_live/recorder/models/live_record_task.dart';
 import 'package:pure_live/recorder/models/record_status.dart';
+import 'package:pure_live/recorder/models/live_record_task.dart';
 
 void main() {
   test('record task schema survives numeric drift and prefers enum names', () {
@@ -81,7 +81,7 @@ void main() {
     );
 
     final json = task.toJson();
-    expect(json['schemaVersion'], 3);
+    expect(json['schemaVersion'], 5);
     expect(json['lastErrorStage'], 'ffmpeg');
     expect(json['lastError'], contains('[stream-url]'));
     expect(json['lastError'], isNot(contains('secret')));
@@ -116,5 +116,62 @@ void main() {
 
     expect(task.lastError, 'request failed token=[redacted] wsSecret=[redacted]');
     expect(task.lastErrorStage, 'stream');
+  });
+
+  test('recording retry cursor persists without persisting the signed URL', () {
+    final task = LiveRecordTask.fromJson(<String, dynamic>{'roomId': '1', 'platform': 'douyu'})
+      ..currentUrl = 'https://cdn.test/live.flv?token=secret'
+      ..selectedQualityId = 'source'
+      ..selectedLineIndex = 2
+      ..selectedQuality = '原画'
+      ..selectedLine = '线路3';
+
+    final json = task.toJson();
+    final restored = LiveRecordTask.fromJson(json);
+
+    expect(json, isNot(contains('currentUrl')));
+    expect(restored.currentUrl, isNull);
+    expect(restored.selectedQualityId, 'source');
+    expect(restored.selectedLineIndex, 2);
+    expect(restored.selectedQuality, '原画');
+    expect(restored.selectedLine, '线路3');
+  });
+
+  test('deferred recording attempts persist as deduplicated local artifacts', () {
+    final task = LiveRecordTask.fromJson(<String, dynamic>{'roomId': '1', 'platform': 'huya'});
+    task.queuePendingAttempt(directoryPath: r'D:\PureLive\room', filePrefix: '20260830_070000_001');
+    task.queuePendingAttempt(directoryPath: r'D:\PureLive\room', filePrefix: '20260830_070000_001');
+
+    final json = task.toJson();
+    final restored = LiveRecordTask.fromJson(json);
+
+    expect(restored.pendingAttempts, hasLength(1));
+    expect(restored.pendingAttempts.single.directoryPath, r'D:\PureLive\room');
+    expect(restored.pendingAttempts.single.filePrefix, '20260830_070000_001');
+    restored.removePendingAttempt(restored.pendingAttempts.single);
+    expect(restored.pendingAttempts, isEmpty);
+  });
+
+  test('specific FFmpeg failure stages survive persistence', () {
+    final task = LiveRecordTask.fromJson(<String, dynamic>{
+      'roomId': '1',
+      'platform': 'douyu',
+      'lastError': 'input failed',
+      'lastErrorStage': 'ffmpeg.inputOpen',
+    });
+
+    expect(task.lastErrorStage, 'ffmpeg.inputopen');
+  });
+
+  test('discard persisted FFmpeg timestamp sentinel duration', () {
+    final task = LiveRecordTask.fromJson({
+      'taskId': 'bilibili_1',
+      'roomId': '1',
+      'platform': 'bilibili',
+      'recordedSeconds': 2147483648,
+      'createTime': DateTime.now().toIso8601String(),
+    });
+
+    expect(task.recordedSeconds, 0);
   });
 }

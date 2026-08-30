@@ -111,7 +111,7 @@ class MailboxSwapChain final : public IDXGISwapChain {
   // has already completed it, promotes it to completed and updates
   // latest_completed_slot_ (release store).  This is the sole site that
   // advances latest_completed_slot_; ConsumerAcquire never touches the fence.
-  void ProducerCommit();
+  bool ProducerCommit();
 
   // Called from the consumer thread (Flutter GpuSurfaceTexture callback).
   // Returns the DXGI shared HANDLE of the most recent fence-confirmed frame.

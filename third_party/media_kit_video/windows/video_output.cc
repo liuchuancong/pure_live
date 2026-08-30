@@ -162,11 +162,12 @@ void VideoOutput::NotifyRender() {
 
 void VideoOutput::Render() {
   if (texture_id_) {
+    bool completed_frame_available = false;
     // H/W
     if (d3d11_renderer_ != nullptr) {
       mpv_render_context_render(render_context_, nullptr);
       mpv_render_context_report_swap(render_context_);
-      d3d11_renderer_->ProducerCommit();
+      completed_frame_available = d3d11_renderer_->ProducerCommit();
     }
     // S/W
     if (pixel_buffer_ != nullptr) {
@@ -183,12 +184,21 @@ void VideoOutput::Render() {
           {MPV_RENDER_PARAM_INVALID, nullptr},
       };
       mpv_render_context_render(render_context_, params);
+      completed_frame_available = true;
     }
     try {
       // Notify Flutter that a new frame is available.
       registrar_->texture_registrar()->MarkTextureFrameAvailable(texture_id_);
     } catch (...) {
       // Prevent any redundant exceptions if the texture is unregistered etc.
+    }
+    if (completed_frame_available) {
+      const auto now = std::chrono::steady_clock::now();
+      if (last_frame_update_.time_since_epoch().count() == 0 ||
+          now - last_frame_update_ >= std::chrono::milliseconds(500)) {
+        last_frame_update_ = now;
+        frame_update_callback_();
+      }
     }
   }
 }
@@ -197,6 +207,10 @@ void VideoOutput::SetTextureUpdateCallback(
     std::function<void(int64_t, int64_t, int64_t)> callback) {
   texture_update_callback_ = callback;
   texture_update_callback_(texture_id_, GetVideoWidth(), GetVideoHeight());
+}
+
+void VideoOutput::SetFrameUpdateCallback(std::function<void()> callback) {
+  frame_update_callback_ = std::move(callback);
 }
 
 void VideoOutput::SetSize(std::optional<int64_t> width,

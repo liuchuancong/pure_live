@@ -40,6 +40,10 @@ class RecorderController extends GetxService {
   final Map<String, int> _pollFailures = <String, int>{};
   final Set<String> _pollInFlight = <String>{};
   final Map<String, Timer> _retryTimers = <String, Timer>{};
+  final Map<String, Timer> _leasePrefetchTimers = <String, Timer>{};
+  final Map<String, Timer> _leaseRotationTimers = <String, Timer>{};
+  final Map<String, _PrefetchedRecorderLease> _prefetchedRecorderLeases = <String, _PrefetchedRecorderLease>{};
+  final Map<String, _PendingRecorderLease> _pendingRecorderLeases = <String, _PendingRecorderLease>{};
   final Set<String> _startingTasks = <String>{};
   final Set<String> _rapidRecoveryTasks = <String>{};
   final Map<String, Completer<void>> _lifecycleCompleters = <String, Completer<void>>{};
@@ -90,6 +94,10 @@ class RecorderController extends GetxService {
       case FFmpegEventType.startAck:
         if (sessionId == null) return;
         _activeSessionIds[event.taskId] = sessionId;
+        final pendingLease = _pendingRecorderLeases.remove(event.taskId);
+        if (pendingLease != null && pendingLease.sourceUrl == task.currentUrl) {
+          _scheduleRecorderLeaseRefresh(task, pendingLease.stream, sessionId);
+        }
         task.status = RecordStatus.preparing;
         task.lastUpdate = DateTime.now();
         task.clearFailure();
@@ -139,14 +147,18 @@ class RecorderController extends GetxService {
         if (!_isCurrentSession(event.taskId, sessionId)) return;
         await _sampleOutput(task, sessionId!, forcePersist: true);
         _stopOutputMonitor(event.taskId);
+        _cancelRecorderLeaseTimers(event.taskId);
+        _pendingRecorderLeases.remove(event.taskId);
         _activeSessionIds.remove(event.taskId);
         final manuallyStopped = event.data['manualStop'] == true || task.wasStoppedByUser;
         final isError = event.type == FFmpegEventType.error;
         final errorCode = (event.data['code'] as num?)?.toInt() ?? 0;
         final rawLogs = event.data['raw_logs']?.toString() ?? '';
         final failureKind = event.data['failure_kind']?.toString();
-        final refreshSignedStream = failureKind == 'unexpectedEof' || failureKind == 'httpAccess';
+        final refreshSignedStream =
+            failureKind == 'leaseRefresh' || failureKind == 'unexpectedEof' || failureKind == 'httpAccess';
         if (refreshSignedStream) _rapidRecoveryTasks.add(task.taskId);
+        if (failureKind != 'leaseRefresh') _prefetchedRecorderLeases.remove(task.taskId);
         final fastReconnect = refreshSignedStream || _rapidRecoveryTasks.contains(task.taskId);
         final classifiedRetryable = event.data['retryable'];
         final shouldRetry =
@@ -309,16 +321,36 @@ class RecorderController extends GetxService {
     required bool shouldRetry,
     required bool fastReconnect,
   }) async {
-    var mergeSucceeded = true;
     try {
-      if (await _hasRecordedSegments(task)) {
+      await _queueCurrentAttempt(task);
+      final stoppedByUser = manuallyStopped || task.wasStoppedByUser;
+      final willReconnect = failed && shouldRetry && task.autoReconnect && !stoppedByUser;
+      if (willReconnect) {
+        // MP4 remux used to block this path for 10-20 seconds. Huya's short
+        // transport lease therefore produced a real hole between attempts even
+        // though the reconnect timer itself was only two seconds. Persist the
+        // completed segment group and reconnect first; finalization happens
+        // after the user-visible recording session ends.
+        _completeLifecycle(task.taskId);
+        _scheduleReconnect(task, fast: fastReconnect);
+        return;
+      }
+
+      var mergeSucceeded = true;
+      if (task.pendingAttempts.isNotEmpty) {
         task.status = RecordStatus.processing;
         updateTask(task);
-        mergeSucceeded = await VideoProcessorService.to.convertToMp4(task: task);
+        mergeSucceeded = await _finalizePendingAttempts(task);
         await settings.refreshCacheSize();
       }
 
-      final stoppedByUser = manuallyStopped || task.wasStoppedByUser;
+      if (!mergeSucceeded) {
+        task.markFailure(stage: 'merge', error: i18n('video_ffmpeg_failed'));
+        task.status = RecordStatus.failed;
+        updateTask(task);
+        return;
+      }
+
       if (stoppedByUser) {
         task.status = RecordStatus.stopped;
         updateTask(task);
@@ -326,20 +358,8 @@ class RecorderController extends GetxService {
       }
 
       if (failed) {
-        if (!shouldRetry || !task.autoReconnect) {
-          task.status = RecordStatus.failed;
-          task.retryCount = 0;
-          updateTask(task);
-          return;
-        }
-        _completeLifecycle(task.taskId);
-        _scheduleReconnect(task, fast: fastReconnect);
-        return;
-      }
-
-      if (!mergeSucceeded) {
-        task.markFailure(stage: 'merge', error: i18n('video_ffmpeg_failed'));
         task.status = RecordStatus.failed;
+        task.retryCount = 0;
         updateTask(task);
         return;
       }
@@ -366,12 +386,53 @@ class RecorderController extends GetxService {
     }
   }
 
-  Future<bool> _hasRecordedSegments(LiveRecordTask task, {bool allowLegacy = false}) async {
-    final directoryPath = task.outputDir;
-    if (directoryPath == null || directoryPath.trim().isEmpty) return false;
-    final directory = Directory(directoryPath);
+  Future<void> _queueCurrentAttempt(LiveRecordTask task, {bool allowLegacy = false}) async {
+    final directoryPath = task.outputDir?.trim() ?? '';
+    if (directoryPath.isEmpty) return;
+    final filePrefix = task.recordingFilePrefix;
+    if (!await _hasRecordedSegments(
+      task,
+      allowLegacy: allowLegacy,
+      directoryPath: directoryPath,
+      filePrefix: filePrefix,
+    )) {
+      return;
+    }
+    task.queuePendingAttempt(directoryPath: directoryPath, filePrefix: filePrefix);
+    updateTask(task);
+  }
+
+  Future<bool> _finalizePendingAttempts(LiveRecordTask task, {bool allowLegacy = false}) async {
+    var allSucceeded = true;
+    for (final attempt in List<PendingRecordingAttempt>.of(task.pendingAttempts)) {
+      final merged = await VideoProcessorService.to.convertToMp4(
+        task: task,
+        allowLegacySegments: allowLegacy,
+        directoryPath: attempt.directoryPath,
+        filePrefix: attempt.filePrefix,
+      );
+      if (merged) {
+        task.removePendingAttempt(attempt);
+        updateTask(task);
+      } else {
+        allSucceeded = false;
+      }
+    }
+    return allSucceeded;
+  }
+
+  Future<bool> _hasRecordedSegments(
+    LiveRecordTask task, {
+    bool allowLegacy = false,
+    String? directoryPath,
+    String? filePrefix,
+  }) async {
+    final resolvedDirectoryPath = directoryPath ?? task.outputDir;
+    final resolvedFilePrefix = filePrefix ?? task.recordingFilePrefix;
+    if (resolvedDirectoryPath == null || resolvedDirectoryPath.trim().isEmpty) return false;
+    final directory = Directory(resolvedDirectoryPath);
     if (!await directory.exists()) return false;
-    final prefix = '${task.recordingFilePrefix}_';
+    final prefix = '${resolvedFilePrefix}_';
     try {
       await for (final entity in directory.list(followLinks: false)) {
         if (entity is! File || !entity.path.toLowerCase().endsWith('.ts')) continue;
@@ -497,6 +558,7 @@ class RecorderController extends GetxService {
     task.beginNewRecording();
     _attemptProgress.remove(task.taskId);
     _rapidRecoveryTasks.remove(task.taskId);
+    _cancelRecorderLease(task.taskId);
     task.retryCount = 0;
     task.selectedQualityId = null;
     task.selectedLineIndex = null;
@@ -537,6 +599,7 @@ class RecorderController extends GetxService {
   }
 
   Future<void> _runTask(LiveRecordTask task, TaskCancelToken token) async {
+    final previousUrl = task.currentUrl;
     final previousQualityId = task.selectedQualityId;
     final previousLineIndex = task.selectedLineIndex;
     _attemptProgress[task.taskId] = RecordingAttemptProgress(
@@ -561,13 +624,23 @@ class RecorderController extends GetxService {
 
     try {
       if (token.isCancelled) return;
-      final resolved = await StreamResolverService.to.resolveStream(
-        roomId: task.roomId,
-        platform: task.platform,
-        preferredQuality: settings.defaultQuality.value,
-        previousQualityId: previousQualityId,
-        previousLineIndex: previousLineIndex,
-      );
+      final renewCurrent = _rapidRecoveryTasks.contains(task.taskId);
+      final prefetched = _prefetchedRecorderLeases.remove(task.taskId);
+      final prefetchedStillValid =
+          prefetched != null &&
+          renewCurrent &&
+          prefetched.sourceUrl == previousUrl &&
+          (prefetched.stream.invalidAt == null || prefetched.stream.invalidAt!.isAfter(DateTime.now().toUtc()));
+      final resolved = prefetchedStillValid
+          ? prefetched.stream
+          : await StreamResolverService.to.resolveStream(
+              roomId: task.roomId,
+              platform: task.platform,
+              preferredQuality: settings.defaultQuality.value,
+              previousQualityId: previousQualityId,
+              previousLineIndex: previousLineIndex,
+              renewCurrent: renewCurrent,
+            );
       if (token.isCancelled) return;
 
       final directory = await CacheService.to.getRoomDir(
@@ -591,6 +664,9 @@ class RecorderController extends GetxService {
         ..outputDir = directory.path;
       updateTask(task);
 
+      final pendingLease = _PendingRecorderLease(sourceUrl: resolved.url, stream: resolved);
+      _pendingRecorderLeases[task.taskId] = pendingLease;
+
       final arguments = FFmpegCommandBuilder.buildRecordArguments(
         headers: headers,
         url: resolved.url,
@@ -605,6 +681,9 @@ class RecorderController extends GetxService {
       if (token.isCancelled) return;
 
       await ffmpeg.start(taskId: task.taskId, arguments: arguments, liveRecording: true);
+      if (identical(_pendingRecorderLeases[task.taskId], pendingLease)) {
+        _pendingRecorderLeases.remove(task.taskId);
+      }
       await lifecycle.future;
     } on StreamException catch (error) {
       developer.log('Stream resolution failed: ${error.message}', name: 'RecorderController');
@@ -637,6 +716,10 @@ class RecorderController extends GetxService {
       }
       _completeLifecycle(task.taskId);
     } finally {
+      final pendingLease = _pendingRecorderLeases[task.taskId];
+      if (pendingLease?.sourceUrl == task.currentUrl) {
+        _pendingRecorderLeases.remove(task.taskId);
+      }
       if (token.isCancelled && task.status != RecordStatus.stopped) {
         task.status = RecordStatus.stopped;
         updateTask(task);
@@ -648,6 +731,78 @@ class RecorderController extends GetxService {
       }
       if (protectedDirectory != null) CacheService.to.releaseDirectory(protectedDirectory);
     }
+  }
+
+  void _scheduleRecorderLeaseRefresh(LiveRecordTask task, ResolvedRecordStream stream, int sessionId) {
+    _cancelRecorderLeaseTimers(task.taskId);
+    final refreshAt = stream.refreshAt?.toUtc();
+    if (refreshAt == null || task.currentUrl?.isNotEmpty != true) return;
+    final sourceUrl = task.currentUrl!;
+    final now = DateTime.now().toUtc();
+    developer.log(
+      'Signed transport scheduled: platform=${task.platform}; '
+      'refreshInMs=${math.max(0, refreshAt.difference(now).inMilliseconds)}; '
+      'invalidInMs=${stream.invalidAt == null ? -1 : math.max(0, stream.invalidAt!.toUtc().difference(now).inMilliseconds)}',
+      name: 'RecorderLease',
+    );
+
+    final prefetchDelay = RecorderContinuationPolicy.leasePrefetchDelay(now: now, refreshAt: refreshAt);
+    _leasePrefetchTimers[task.taskId] = Timer(prefetchDelay, () {
+      _leasePrefetchTimers.remove(task.taskId);
+      unawaited(_prefetchRecorderLease(task, sourceUrl: sourceUrl, sessionId: sessionId));
+    });
+
+    final rotationDelay = RecorderContinuationPolicy.leaseRotationDelay(now: now, refreshAt: refreshAt);
+    _leaseRotationTimers[task.taskId] = Timer(rotationDelay, () {
+      _leaseRotationTimers.remove(task.taskId);
+      if (!_isCurrentSession(task.taskId, sessionId) ||
+          task.wasStoppedByUser ||
+          task.currentUrl != sourceUrl ||
+          ffmpeg.getSession(task.taskId)?.sessionId != sessionId) {
+        return;
+      }
+      // The platform lease is a transport boundary, not an offline signal.
+      // End the old input before the server does so the controller can consume
+      // the prefetched same-quality/same-CDN URL without waiting for EOF.
+      unawaited(ffmpeg.refreshLease(task.taskId));
+    });
+  }
+
+  Future<void> _prefetchRecorderLease(LiveRecordTask task, {required String sourceUrl, required int sessionId}) async {
+    if (!_isCurrentSession(task.taskId, sessionId) || task.wasStoppedByUser || task.currentUrl != sourceUrl) return;
+    try {
+      final renewed = await StreamResolverService.to.resolveStream(
+        roomId: task.roomId,
+        platform: task.platform,
+        preferredQuality: settings.defaultQuality.value,
+        previousQualityId: task.selectedQualityId,
+        previousLineIndex: task.selectedLineIndex,
+        renewCurrent: true,
+      );
+      if (!_isCurrentSession(task.taskId, sessionId) || task.wasStoppedByUser || task.currentUrl != sourceUrl) return;
+      final invalidAt = renewed.invalidAt?.toUtc();
+      if (invalidAt != null && !invalidAt.isAfter(DateTime.now().toUtc())) return;
+      _prefetchedRecorderLeases[task.taskId] = _PrefetchedRecorderLease(sourceUrl: sourceUrl, stream: renewed);
+    } catch (error, stackTrace) {
+      // Prefetch is opportunistic. The scheduled rotation still performs a
+      // synchronous fresh resolve, while ordinary EOF recovery remains armed.
+      developer.log(
+        'Recorder signed-stream prefetch failed: $error',
+        name: 'RecorderController',
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  void _cancelRecorderLeaseTimers(String taskId) {
+    _leasePrefetchTimers.remove(taskId)?.cancel();
+    _leaseRotationTimers.remove(taskId)?.cancel();
+  }
+
+  void _cancelRecorderLease(String taskId) {
+    _cancelRecorderLeaseTimers(taskId);
+    _prefetchedRecorderLeases.remove(taskId);
+    _pendingRecorderLeases.remove(taskId);
   }
 
   void _completeLifecycle(String taskId) {
@@ -699,11 +854,23 @@ class RecorderController extends GetxService {
     task.wasStoppedByUser = true;
     _stopPolling(task.taskId);
     _retryTimers.remove(task.taskId)?.cancel();
+    _cancelRecorderLease(task.taskId);
     await scheduler.cancel(task.taskId);
+    final finalization = _finalizationFutures[task.taskId];
+    if (finalization != null) await finalization;
     _stopOutputMonitor(task.taskId);
     _attemptProgress.remove(task.taskId);
     _rapidRecoveryTasks.remove(task.taskId);
-    task.status = RecordStatus.stopped;
+    if (task.pendingAttempts.isNotEmpty) {
+      task.status = RecordStatus.processing;
+      updateTask(task);
+      final merged = await _finalizePendingAttempts(task);
+      await settings.refreshCacheSize();
+      task.status = merged ? RecordStatus.stopped : RecordStatus.failed;
+      if (!merged) task.markFailure(stage: 'merge', error: i18n('video_ffmpeg_failed'));
+    } else {
+      task.status = RecordStatus.stopped;
+    }
     updateTask(task);
   }
 
@@ -734,7 +901,7 @@ class RecorderController extends GetxService {
           : await site.getRoomDetail(roomId: task.roomId, platform: task.platform);
       task.updateFromRoom(room);
       updateTask(task);
-      if (room.liveStatus == LiveStatus.live || room.isRecord == true) {
+      if (room.isPlayableNow) {
         _pollFailures.remove(task.taskId);
         task.retryCount = 0;
         await _startTask(task);
@@ -781,13 +948,7 @@ class RecorderController extends GetxService {
   }
 
   Future<void> unRecorder(LiveRecordTask task) async {
-    task.wasStoppedByUser = true;
-    _stopPolling(task.taskId);
-    _retryTimers.remove(task.taskId)?.cancel();
-    await scheduler.cancel(task.taskId);
-    _stopOutputMonitor(task.taskId);
-    _attemptProgress.remove(task.taskId);
-    _rapidRecoveryTasks.remove(task.taskId);
+    await stopTask(task);
     _activeSessionIds.remove(task.taskId);
     _completeLifecycle(task.taskId);
     tasks.removeWhere((candidate) => candidate.taskId == task.taskId);
@@ -844,7 +1005,9 @@ class RecorderController extends GetxService {
     // A process kill cannot run FFmpeg's completion callback. Finish only
     // tasks that were persisted in an active lifecycle; completed/manual
     // tasks are never reprocessed merely because a TS file still exists.
-    for (final task in restored.where((candidate) => interruptedTaskIds.contains(candidate.taskId))) {
+    for (final task in restored.where(
+      (candidate) => interruptedTaskIds.contains(candidate.taskId) || candidate.pendingAttempts.isNotEmpty,
+    )) {
       await _recoverInterruptedRecording(task);
     }
     if (!settings.autoStartOnBoot.value || restored.isEmpty || !await requestStoragePermission()) return;
@@ -856,18 +1019,26 @@ class RecorderController extends GetxService {
 
   Future<void> _recoverInterruptedRecording(LiveRecordTask task) async {
     final directory = task.outputDir?.trim() ?? '';
-    if (directory.isEmpty || !await _hasRecordedSegments(task, allowLegacy: true)) return;
+    if (directory.isNotEmpty) {
+      await _queueCurrentAttempt(task, allowLegacy: true);
+    }
+    if (task.pendingAttempts.isEmpty) return;
 
-    CacheService.to.protectDirectory(directory);
+    final directories = task.pendingAttempts.map((attempt) => attempt.directoryPath).toSet();
+    for (final path in directories) {
+      CacheService.to.protectDirectory(path);
+    }
     try {
       task.status = RecordStatus.processing;
       updateTask(task);
-      final merged = await VideoProcessorService.to.convertToMp4(task: task, allowLegacySegments: true);
+      final merged = await _finalizePendingAttempts(task, allowLegacy: true);
       task.status = merged ? RecordStatus.stopped : RecordStatus.failed;
       updateTask(task);
       await settings.refreshCacheSize();
     } finally {
-      CacheService.to.releaseDirectory(directory);
+      for (final path in directories) {
+        CacheService.to.releaseDirectory(path);
+      }
     }
   }
 
@@ -888,6 +1059,16 @@ class RecorderController extends GetxService {
     }
     _pollTimers.clear();
     _retryTimers.clear();
+    for (final timer in _leasePrefetchTimers.values) {
+      timer.cancel();
+    }
+    for (final timer in _leaseRotationTimers.values) {
+      timer.cancel();
+    }
+    _leasePrefetchTimers.clear();
+    _leaseRotationTimers.clear();
+    _prefetchedRecorderLeases.clear();
+    _pendingRecorderLeases.clear();
     for (final timer in _outputMonitorTimers.values) {
       timer.cancel();
     }
@@ -911,4 +1092,18 @@ class RecorderController extends GetxService {
     }
     super.onClose();
   }
+}
+
+class _PrefetchedRecorderLease {
+  const _PrefetchedRecorderLease({required this.sourceUrl, required this.stream});
+
+  final String sourceUrl;
+  final ResolvedRecordStream stream;
+}
+
+class _PendingRecorderLease {
+  const _PendingRecorderLease({required this.sourceUrl, required this.stream});
+
+  final String sourceUrl;
+  final ResolvedRecordStream stream;
 }

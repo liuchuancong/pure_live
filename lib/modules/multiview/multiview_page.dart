@@ -81,7 +81,7 @@ class _MultiviewPageState extends State<MultiviewPage> {
   @override
   void initState() {
     super.initState();
-    _targetCell = _firstEmptyCell();
+    _targetCell = _firstAssignableCell();
     _layoutWorker = ever<MultiviewLayout>(controller.layout, (_) => _clampTargetCell());
     // 桌面端 Esc 退沉浸/全屏。用全局键盘钩子而非 Focus 节点：
     // 选台面板搜索框等输入焦点不应抢占 Esc 处理权；
@@ -188,9 +188,9 @@ class _MultiviewPageState extends State<MultiviewPage> {
   /// 恢复系统 UI / 退出窗口全屏；幂等，供所有退出路径与 dispose 防御复用。
   Future<void> _restoreSystemFullscreen() => WindowService().doExitFullScreen();
 
-  int _firstEmptyCell() {
+  int _firstAssignableCell() {
     for (final cell in controller.cells) {
-      if (cell.status == MultiviewCellStatus.empty) return cell.index;
+      if (isMultiviewCellAssignable(cell.status)) return cell.index;
     }
     return 0;
   }
@@ -208,7 +208,7 @@ class _MultiviewPageState extends State<MultiviewPage> {
     final count = controller.cells.length;
     for (var step = 1; step < count; step++) {
       final index = (justAssigned + step) % count;
-      if (controller.cells[index].status == MultiviewCellStatus.empty) {
+      if (isMultiviewCellAssignable(controller.cells[index].status)) {
         setState(() => _targetCell = index);
         return;
       }
@@ -783,8 +783,7 @@ class _MultiviewPageState extends State<MultiviewPage> {
       key: _cellKey(index),
       state: state,
       isAudioFocus: controller.audioFocusIndex == index && status == MultiviewCellStatus.playing,
-      isPickTarget:
-          _targetCell == index && (status == MultiviewCellStatus.empty || status == MultiviewCellStatus.error),
+      isPickTarget: _targetCell == index && isMultiviewCellAssignable(status),
       showDanmaku: showDanmaku && status == MultiviewCellStatus.playing && state.videoController != null,
       barrageController: controller.barrageController,
       showQualityEntry: showQualityEntry,
@@ -809,7 +808,7 @@ class _MultiviewPageState extends State<MultiviewPage> {
             unawaited(controller.setAudioFocus(index));
             // audioFocusIndex 非 Rx，焦点标识需要手动触发一次重绘。
             setState(() {});
-          case MultiviewCellStatus.empty || MultiviewCellStatus.error:
+          case MultiviewCellStatus.empty || MultiviewCellStatus.offline || MultiviewCellStatus.error:
             _openPickerFor(index, isWide: isWide);
           case MultiviewCellStatus.resolving:
             break;
@@ -934,6 +933,7 @@ class _MultiviewCellView extends StatelessWidget {
     return switch (state.status) {
       MultiviewCellStatus.empty => _buildEmptyContent(theme),
       MultiviewCellStatus.resolving => _buildResolvingContent(),
+      MultiviewCellStatus.offline => _buildOfflineContent(theme),
       MultiviewCellStatus.error => _buildErrorContent(theme),
       // playing 但渲染控制器尚未就绪的瞬间：黑场等待即可。
       MultiviewCellStatus.playing => const SizedBox.shrink(),
@@ -1018,6 +1018,26 @@ class _MultiviewCellView extends StatelessWidget {
             const SizedBox(height: 10),
             Text(state.room!.nick!, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTextStyles.t12Muted),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOfflineContent(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Remix.live_line, size: 30, color: theme.colorScheme.onSurfaceVariant),
+          const SizedBox(height: 10),
+          Text(i18n('multiview_room_offline'), style: AppTextStyles.t14Bold, textAlign: TextAlign.center),
+          if ((state.room?.nick ?? '').isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(state.room!.nick!, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTextStyles.t12Muted),
+          ],
+          const SizedBox(height: 6),
+          Text(i18n('multiview_room_offline_hint'), style: AppTextStyles.t12Muted, textAlign: TextAlign.center),
         ],
       ),
     );

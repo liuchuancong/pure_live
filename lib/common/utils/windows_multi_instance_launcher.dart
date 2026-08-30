@@ -70,9 +70,9 @@ class WindowsMultiInstanceLauncher {
       'totalViewers': room.totalViewers,
       'followers': room.followers,
       'platform': room.platform,
-      'liveStatus': room.liveStatus?.index ?? LiveStatus.unknown.index,
+      'liveStatus': room.effectiveLiveStatus.index,
       'isRecord': room.isRecord,
-      'status': room.status,
+      'status': room.isLiveNow,
     };
     return '$roomPrefix${base64Url.encode(utf8.encode(jsonEncode(payload))).replaceAll('=', '')}';
   }

@@ -31,6 +31,8 @@ class ResolvedRecordStream {
     required this.qualityCursorId,
     required this.lineIndex,
     required this.candidateUrls,
+    this.refreshAt,
+    this.invalidAt,
   });
 
   final String url;
@@ -43,6 +45,15 @@ class ResolvedRecordStream {
   final String qualityCursorId;
   final int lineIndex;
   final List<String> candidateUrls;
+
+  /// Platform-advertised instant to acquire a new signed transport. This is
+  /// metadata, never a persisted credential. A null value keeps ordinary
+  /// long-lived platforms on the error-driven recorder path.
+  final DateTime? refreshAt;
+
+  /// Last safe instant for opening this exact URL, when the adapter can derive
+  /// one. It is retained for diagnostics and future bounded retry decisions.
+  final DateTime? invalidAt;
 
   String get lineLabel => '线路${lineIndex + 1}';
 }
@@ -76,6 +87,7 @@ class StreamResolverService extends GetxService {
     required String preferredQuality,
     String? previousQualityId,
     int? previousLineIndex,
+    bool renewCurrent = false,
   }) async {
     final normalizedPlatform = platform.trim().toLowerCase();
     final normalizedRoomId = roomId.trim();
@@ -107,15 +119,11 @@ class StreamResolverService extends GetxService {
         throw StreamException(type: StreamErrorType.networkError, message: '${i18n('stream_get_room_failed')}: $error');
       }
 
-      if (detail.liveStatus == LiveStatus.banned) {
+      if (detail.effectiveLiveStatus == LiveStatus.banned) {
         throw StreamException(type: StreamErrorType.banned, message: i18n('stream_room_banned'), retryable: false);
       }
-      final explicitlyPlayable =
-          detail.liveStatus == LiveStatus.live ||
-          detail.liveStatus == LiveStatus.replay ||
-          detail.status == true ||
-          detail.isRecord == true;
-      if (!explicitlyPlayable && detail.liveStatus == LiveStatus.offline) {
+      final explicitlyPlayable = detail.isPlayableNow;
+      if (!explicitlyPlayable && detail.isExplicitlyOfflineNow) {
         throw StreamException(type: StreamErrorType.notLive, message: i18n('stream_not_live'), retryable: false);
       }
       if (!explicitlyPlayable) {
@@ -156,6 +164,28 @@ class StreamResolverService extends GetxService {
       _ResolvedQuality? previousResolution;
 
       if (previousQualityIndex >= 0) {
+        if (renewCurrent) {
+          try {
+            final renewed = await _resolveQuality(
+              site: site,
+              detail: detail,
+              orderedQualities: orderedQualities,
+              requestedQuality: orderedQualities[previousQualityIndex],
+              lineIndex: usesLineCursor ? (previousLineIndex ?? 0).clamp(0, 1 << 20).toInt() : null,
+            );
+            if (renewed.urls.isNotEmpty) {
+              final sameLinePosition = usesLineCursor
+                  ? 0
+                  : (previousLineIndex ?? 0).clamp(0, renewed.urls.length - 1).toInt();
+              return renewed.select(sameLinePosition);
+            }
+          } catch (error) {
+            // Renewal prefers the current quality/CDN so codecs and output
+            // remain stable. If that exact route vanished, continue through
+            // the ordinary bounded line/quality fallback below.
+            lastError = error;
+          }
+        }
         try {
           final nextLine = (previousLineIndex ?? -1) + 1;
           previousResolution = await _resolveQuality(
@@ -307,10 +337,13 @@ class StreamResolverService extends GetxService {
         .where((url) => seen.add(_streamIdentity(url)))
         .toList(growable: false);
     final appliedQuality = _appliedQuality(orderedQualities, requestedQuality, resolution.appliedQualityData);
+    final leaseMetadata = site is LivePlayLeaseMetadata ? site as LivePlayLeaseMetadata : null;
     return _ResolvedQuality(
       requestedQualityId: requestedQuality.selectionId.toString(),
       appliedQuality: appliedQuality,
       urls: validUrls,
+      refreshTimes: validUrls.map((url) => leaseMetadata?.getPlayUrlRefreshAt(url)?.toUtc()).toList(growable: false),
+      invalidTimes: validUrls.map((url) => leaseMetadata?.getPlayUrlInvalidAt(url)?.toUtc()).toList(growable: false),
       lineIndexes: lineIndex == null
           ? List<int>.generate(validUrls.length, (index) => index, growable: false)
           : List<int>.filled(validUrls.length, lineIndex, growable: false),
@@ -340,12 +373,16 @@ class _ResolvedQuality {
     required this.appliedQuality,
     required this.urls,
     required this.lineIndexes,
+    required this.refreshTimes,
+    required this.invalidTimes,
   });
 
   final String requestedQualityId;
   final LivePlayQuality appliedQuality;
   final List<String> urls;
   final List<int> lineIndexes;
+  final List<DateTime?> refreshTimes;
+  final List<DateTime?> invalidTimes;
 
   ResolvedRecordStream select(int position) {
     final normalizedPosition = position.clamp(0, urls.length - 1);
@@ -355,6 +392,8 @@ class _ResolvedQuality {
       qualityCursorId: requestedQualityId,
       lineIndex: lineIndexes[normalizedPosition],
       candidateUrls: List<String>.unmodifiable([...urls.skip(normalizedPosition), ...urls.take(normalizedPosition)]),
+      refreshAt: refreshTimes[normalizedPosition],
+      invalidAt: invalidTimes[normalizedPosition],
     );
   }
 }

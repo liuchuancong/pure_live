@@ -146,7 +146,7 @@ class LiveRoom {
   /// 是否录播
   bool? isRecord = false;
   // 直播状态
-  LiveStatus? liveStatus = LiveStatus.offline;
+  LiveStatus? liveStatus;
 
   /// EPG channel id
   String? epgId;
@@ -182,7 +182,7 @@ class LiveRoom {
     this.totalViewers = '',
     this.followers = '0',
     this.platform,
-    this.liveStatus,
+    LiveStatus? liveStatus,
     this.data,
     this.danmakuData,
     this.isRecord = false,
@@ -198,7 +198,8 @@ class LiveRoom {
     this.catchUpEnd,
     this.lastWatchedAt,
     List<String>? tagIds,
-  }) : tagIds = tagIds ?? [];
+  }) : liveStatus = liveStatus ?? _legacyStatusToLiveStatus(status: status, isRecord: isRecord),
+       tagIds = tagIds ?? [];
 
   LiveRoom.fromJson(Map<String, dynamic> json)
     : roomId = json['roomId'] ?? '',
@@ -220,7 +221,7 @@ class LiveRoom {
       followers = json['followers']?.toString() ?? '0',
       platform = json['platform'] ?? 'UNKNOWN',
       tagIds = List<String>.from(json['tagIds'] ?? []),
-      liveStatus = LiveStatus.values.firstWhere((e) => e.index == json['liveStatus'], orElse: () => LiveStatus.unknown),
+      liveStatus = _liveStatusFromJson(json),
       status = json['status'] ?? false,
       notice = json['notice'] ?? '',
       introduction = json['introduction'] ?? '',
@@ -318,6 +319,39 @@ class LiveRoom {
 
   String get normalizedRoomId => roomId?.trim() ?? '';
 
+  /// Canonical room state used by presentation and playback decisions.
+  ///
+  /// The project historically carried the same fact in both [status] and
+  /// [liveStatus]. A number of adapters and persisted favourites only wrote
+  /// one of them, so sorting by `status` while painting the badge from
+  /// `liveStatus` could label the same room both live and offline. Keep the
+  /// legacy boolean readable for backup compatibility, but collapse every
+  /// consumer onto this single semantic value.
+  ///
+  /// New instances and legacy JSON without [liveStatus] derive the enum from
+  /// [status] in the constructor/deserializer. Once an enum is present it is
+  /// therefore authoritative: letting a stale boolean override an explicit
+  /// offline response is exactly how an ended room remained painted as live.
+  /// Recording/replay rooms are playable but are not classified as a current
+  /// live broadcast.
+  LiveStatus get effectiveLiveStatus {
+    if (isRecord == true || liveStatus == LiveStatus.replay) {
+      return LiveStatus.replay;
+    }
+    final canonical = liveStatus;
+    if (canonical != null) return canonical;
+    return _legacyStatusToLiveStatus(status: status, isRecord: isRecord) ?? LiveStatus.unknown;
+  }
+
+  bool get isLiveNow => effectiveLiveStatus == LiveStatus.live;
+
+  bool get isPlayableNow => effectiveLiveStatus == LiveStatus.live || effectiveLiveStatus == LiveStatus.replay;
+
+  bool get isExplicitlyOfflineNow =>
+      effectiveLiveStatus == LiveStatus.offline || effectiveLiveStatus == LiveStatus.banned;
+
+  bool get isLiveStatusPending => effectiveLiveStatus == LiveStatus.unknown;
+
   /// Stable room identity used by favourites, tags and refresh merges.
   /// Room numbers are only unique inside one platform.
   String get identityKey => '$normalizedPlatformId:$normalizedRoomId';
@@ -369,9 +403,11 @@ class LiveRoom {
       'followers': followers,
       'platform': platform,
       'tagIds': tagIds,
-      'liveStatus': liveStatus?.index ?? LiveStatus.offline.index,
+      'liveStatus': effectiveLiveStatus.index,
       'isRecord': isRecord,
-      'status': status,
+      // Persist the canonical state instead of carrying a contradictory legacy
+      // boolean into the next process or backup restore.
+      'status': isLiveNow,
       'notice': notice,
       'introduction': introduction,
       'epgId': epgId,
@@ -383,6 +419,29 @@ class LiveRoom {
       'catchUpEnd': catchUpEnd,
       'lastWatchedAt': lastWatchedAt,
     };
+  }
+
+  static LiveStatus? _legacyStatusToLiveStatus({required bool? status, required bool? isRecord}) {
+    if (isRecord == true) return LiveStatus.replay;
+    if (status == true) return LiveStatus.live;
+    if (status == false) return LiveStatus.offline;
+    // A sparse merge object deliberately uses null to mean "not provided".
+    // Preserve that distinction; callers needing an explicit pending state pass
+    // LiveStatus.unknown and effectiveLiveStatus still normalizes null to it.
+    return null;
+  }
+
+  static LiveStatus _liveStatusFromJson(Map<String, dynamic> json) {
+    final raw = json['liveStatus'];
+    final index = raw is int ? raw : int.tryParse(raw?.toString() ?? '');
+    if (index != null && index >= 0 && index < LiveStatus.values.length) {
+      return LiveStatus.values[index];
+    }
+    return _legacyStatusToLiveStatus(
+          status: json['status'] is bool ? json['status'] as bool : null,
+          isRecord: json['isRecord'] is bool ? json['isRecord'] as bool : null,
+        ) ??
+        LiveStatus.unknown;
   }
 
   AudienceMetricType get effectiveAudienceMetricType {

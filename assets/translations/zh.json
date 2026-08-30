@@ -1367,6 +1367,8 @@
     "multiview_change_room": "换台",
     "multiview_close_cell": "关闭该格",
     "multiview_play_failed": "播放失败",
+    "multiview_room_offline": "该直播间未开播",
+    "multiview_room_offline_hint": "点击此格可重新选台",
     "multiview_error_resolve": "解析播放地址失败：{detail}",
     "multiview_error_start": "起播失败：{detail}",
     "multiview_search_hint": "搜索主播或标题",

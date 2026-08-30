@@ -278,7 +278,7 @@ class LivePlayController extends GetxController
       final current = state.value.room.detail;
       if (current?.roomId != roomId || current?.platform != platform) return;
       final refreshed = fetched.withAudienceFallbackFrom(current!);
-      final isLiving = refreshed.status == true || refreshed.isRecord == true;
+      final isLiving = refreshed.isPlayableNow;
       updateRoom(detail: refreshed, isLiving: isLiving, success: true, isLoading: false);
     } catch (error, stackTrace) {
       // The already-playing session stays usable when a metadata refresh fails.
@@ -370,7 +370,8 @@ class LivePlayController extends GetxController
     _handlingSystemBackPresentation = true;
 
     final globalState = GlobalPlayerState.to;
-    final wasFullscreen = globalState.isFullscreen.value || state.value.ui.screenMode == VideoMode.fullscreen;
+    final mode = state.value.ui.screenMode;
+    final wasFullscreen = globalState.isFullscreen.value || requiresSystemFullscreenExit(mode);
     try {
       setNormalScreen();
       globalState.isWindowFullscreen.value = false;
@@ -653,12 +654,12 @@ class LivePlayController extends GetxController
 
       _handleCurrentLineAndQuality(reloadDataType, line, isReCalculate);
 
-      if (liveRoom.liveStatus == LiveStatus.unknown) {
+      if (liveRoom.isLiveStatusPending) {
         _handleUnknownStatus();
         return liveRoom;
       }
 
-      final liveStatus = liveRoom.status == true || liveRoom.isRecord == true;
+      final liveStatus = liveRoom.isPlayableNow;
 
       if (liveStatus) {
         await _handleLiveRoom(liveRoom, loadEpoch: loadEpoch);
@@ -729,7 +730,7 @@ class LivePlayController extends GetxController
       EventBus.instance.emit('refresh_room_changed', true);
     }
     ToastUtil.show(
-      liveRoom.liveStatus == LiveStatus.banned ? i18n('server_error_retry_later') : i18n('stream_not_live'),
+      liveRoom.effectiveLiveStatus == LiveStatus.banned ? i18n('server_error_retry_later') : i18n('stream_not_live'),
     );
     _restoreQualityAndLines();
   }

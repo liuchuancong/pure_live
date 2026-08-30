@@ -15,7 +15,7 @@ class LiveSearchRanking {
     final platformRanks = <String, int>{
       for (var index = 0; index < platformOrder.length; index++) platformOrder[index].trim().toLowerCase(): index,
     };
-    final ranked = rooms.where((room) => includeOffline || room.liveStatus == LiveStatus.live).toList();
+    final ranked = rooms.where((room) => includeOffline || room.isLiveNow).toList();
     ranked.sort((a, b) => compare(a, b, mode: mode, platformRanks: platformRanks, audienceCompare: audienceCompare));
     return ranked;
   }
@@ -49,7 +49,7 @@ class LiveSearchRanking {
     return '${a.platform}:${a.roomId}'.compareTo('${b.platform}:${b.roomId}');
   }
 
-  static int _isLive(LiveRoom room) => room.liveStatus == LiveStatus.live ? 1 : 0;
+  static int _isLive(LiveRoom room) => room.isLiveNow ? 1 : 0;
 
   static int _platformRank(LiveRoom room, Map<String, int> platformRanks) {
     return platformRanks[room.normalizedPlatformId] ?? platformRanks.length;

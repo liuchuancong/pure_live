@@ -74,6 +74,37 @@ abstract interface class LivePlayUrlCursorResolver {
   });
 }
 
+/// Optional recovery contract for signed platforms whose room metadata and
+/// playback URLs have a shorter lifetime than the visible room session.
+///
+/// Implementations must reacquire every identity/token/room field needed for
+/// a new connection. Returning the same cached URL list defeats the purpose of
+/// this contract and can reopen an already-expired source indefinitely.
+abstract interface class LivePlayRecoveryResolver {
+  Future<LivePlayUrlResolution> resolvePlayUrlsForRecoveryRaw({
+    required LiveRoom detail,
+    required LivePlayQuality quality,
+  });
+}
+
+/// Optional lease metadata for short-lived signed playback URLs.
+///
+/// A player can refresh the token before this timestamp rather than waiting for
+/// the server to reject a later reconnect. Windows can use its first-frame
+/// gated replacement transaction for sources whose transport lease is shorter
+/// than the signed URL; other platforms may cache the lease for recovery.
+/// Returning `null` keeps ordinary long-lived sources on the error-driven path.
+abstract interface class LivePlayLeaseMetadata {
+  DateTime? getPlayUrlRefreshAt(String url, {DateTime? now});
+
+  /// The final instant at which a prefetched URL can start a new connection.
+  ///
+  /// This is deliberately separate from [getPlayUrlRefreshAt]. A source
+  /// prefetched shortly before the active connection fails remains usable until
+  /// this deadline, while an expired cache entry must be discarded.
+  DateTime? getPlayUrlInvalidAt(String url, {DateTime? now});
+}
+
 class LiveSite {
   String id = "";
   String name = "";
@@ -108,9 +139,12 @@ class LiveSite {
         cover: '',
         watching: '0',
         roomId: '',
-        status: false,
+        // The base implementation has no platform evidence. Treat it as
+        // pending/unknown instead of fabricating an authoritative offline
+        // response; concrete adapters must explicitly report offline/banned.
+        status: null,
         platform: platform,
-        liveStatus: LiveStatus.offline,
+        liveStatus: LiveStatus.unknown,
         title: '',
         link: '',
         avatar: '',
@@ -163,6 +197,24 @@ extension LiveSitePlayUrlResolution on LiveSite {
       urls: normalizeResolvedPlayUrls(await getPlayUrls(detail: detail, quality: quality)),
       appliedQualityData: quality.selectionId,
     );
+  }
+
+  Future<LivePlayUrlResolution> resolvePlayUrlsForRecovery({
+    required LiveRoom detail,
+    required LivePlayQuality quality,
+  }) async {
+    final site = this;
+    if (site is LivePlayRecoveryResolver) {
+      final resolution = await (site as LivePlayRecoveryResolver).resolvePlayUrlsForRecoveryRaw(
+        detail: detail,
+        quality: quality,
+      );
+      return LivePlayUrlResolution(
+        urls: normalizeResolvedPlayUrls(resolution.urls),
+        appliedQualityData: resolution.appliedQualityData,
+      );
+    }
+    return resolvePlayUrls(detail: detail, quality: quality);
   }
 }
 

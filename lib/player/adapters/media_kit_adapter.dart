@@ -121,6 +121,8 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
 
   final _heightSubject = BehaviorSubject<int?>.seeded(null);
 
+  final _videoFrameProgressSubject = PublishSubject<int>();
+
   // =========================
   // subscriptions
   // =========================
@@ -654,6 +656,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
       _completeSubject.close(),
       _widthSubject.close(),
       _heightSubject.close(),
+      _videoFrameProgressSubject.close(),
     ]);
   }
 
@@ -668,19 +671,25 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
   bool get isPlayingNow => _playingSubject.value;
 
   @override
-  bool get isReusable => false;
+  // Windows keeps the libmpv/D3D renderer valid after [softStop]; only the
+  // current Media (and therefore the CDN transport, demuxer and decoder
+  // buffers) is unloaded.  The Huya first-frame-gated hand-off can therefore
+  // alternate two initialized players instead of allocating another native
+  // renderer every lease period.  Keep the contract Windows-only until the
+  // surface-backed mobile implementations have equivalent lifecycle proof.
+  bool get isReusable => PlatformUtils.isWindows;
 
   @override
   Stream<PlayerState> get onStateChanged => _stateSubject.stream;
 
   @override
-  Stream<bool> get onPlaying => _playingSubject.stream;
+  Stream<bool> get onPlaying => _playingSubject.stream.distinct();
 
   @override
   Stream<PlayerException> get onError => _errorSubject.stream;
 
   @override
-  Stream<bool> get onLoading => _loadingSubject.stream;
+  Stream<bool> get onLoading => _loadingSubject.stream.distinct();
 
   @override
   Stream<bool> get onComplete => _completeSubject.stream;
@@ -690,6 +699,12 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
 
   @override
   Stream<int?> get height => _heightSubject.stream;
+
+  @override
+  bool get supportsVideoFrameProgress => PlatformUtils.isWindows;
+
+  @override
+  Stream<int> get onVideoFrameProgress => _videoFrameProgressSubject.stream;
 
   @override
   PlayerEngine get engine => PlayerEngine.mediaKit;
