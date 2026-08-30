@@ -5,6 +5,7 @@ param(
     [string[]] $TestPath = @(),
     [switch] $Analyze,
     [switch] $OfflinePub,
+    [switch] $SkipPubGet,
     [switch] $SkipInterfaces,
     [switch] $SkipTestAssets,
     [ValidateRange(1, 20)]
@@ -20,6 +21,9 @@ $shouldAnalyze = $Analyze.IsPresent -or $Scope -eq 'Full'
 $resolvedTests = @($TestPath | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
 if ($Scope -eq 'Focused' -and $resolvedTests.Count -eq 0 -and -not $shouldAnalyze) {
     throw 'Focused validation requires -TestPath and/or -Analyze.'
+}
+if ($Scope -eq 'Full' -and $SkipPubGet) {
+    throw 'Full validation must resolve the locked dependency graph.'
 }
 foreach ($path in $resolvedTests) {
     if (-not (Test-Path -LiteralPath (Join-Path $repoRoot $path))) {
@@ -39,6 +43,7 @@ $commandDescription = if ($Scope -eq 'Full') {
     ".\tool\local_ci.ps1 -Scope Focused -TestPath $($resolvedTests -join ',')" +
         $(if ($shouldAnalyze) { ' -Analyze' } else { '' }) +
         $(if ($OfflinePub) { ' -OfflinePub' } else { '' }) +
+        $(if ($SkipPubGet) { ' -SkipPubGet' } else { '' }) +
         $(if ($SkipTestAssets) { ' -SkipTestAssets' } else { '' })
 }
 $startedAt = [DateTime]::UtcNow
@@ -62,10 +67,27 @@ try {
     python (Join-Path $PSScriptRoot 'validate_device_ui_map.py')
     Assert-PureLiveCommandSucceeded 'Device UI map validation'
 
-    [string[]] $pubArgs = @('pub', 'get', '--enforce-lockfile')
-    if ($OfflinePub) { $pubArgs += '--offline' }
-    & $flutterw @pubArgs
-    Assert-PureLiveCommandSucceeded 'Locked dependency resolution'
+    if ($SkipPubGet) {
+        $packageConfig = Join-Path $repoRoot '.dart_tool\package_config.json'
+        if (-not (Test-Path -LiteralPath $packageConfig)) {
+            throw '-SkipPubGet requires an existing .dart_tool/package_config.json.'
+        }
+        [string[]] $dependencyChanges = @(
+            git status --porcelain=v1 --untracked-files=all |
+                ForEach-Object { if ($_.Length -gt 3) { $_.Substring(3).Trim('"') } } |
+                Where-Object { $_ -match '(^|/)pubspec\.(yaml|lock)$' }
+        )
+        if ($dependencyChanges.Count -gt 0) {
+            throw "-SkipPubGet is invalid because dependency manifests changed: $($dependencyChanges -join ', ')"
+        }
+        Write-Host 'Locked dependency resolution skipped: manifests unchanged and package_config is present.'
+    }
+    else {
+        [string[]] $pubArgs = @('pub', 'get', '--enforce-lockfile')
+        if ($OfflinePub) { $pubArgs += '--offline' }
+        & $flutterw @pubArgs
+        Assert-PureLiveCommandSucceeded 'Locked dependency resolution'
+    }
 
     python (Join-Path $PSScriptRoot 'audit_repository.py') --output $repositoryAuditPath
     Assert-PureLiveCommandSucceeded 'Whole repository integrity audit'

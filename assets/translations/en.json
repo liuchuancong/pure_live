@@ -177,7 +177,7 @@
     "restore_video_mode": "Restore video",
     "custom_sleep_minutes": "Custom playback duration",
     "custom_sleep_minutes_range": "Enter 1 minute to 365 days",
-    "enable_background_play_subtitle": "When leave app, allow video play background",
+    "enable_background_play_subtitle": "Continue after leaving the app; manual audio-only follows this switch, while a timed sleep session continues until its timer ends",
     "enable_backoff": "Enable Exponential Backoff",
     "enable_backoff_desc": "Longer intervals after repeated failures",
     "enable_cache_limit": "Enable Cache Limit",

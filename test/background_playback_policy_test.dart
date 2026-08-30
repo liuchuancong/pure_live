@@ -14,14 +14,14 @@ void main() {
       );
     });
 
-    test('manual audio-only session keeps playing without global toggle', () {
+    test('manual audio-only session respects the background playback switch', () {
       expect(
         BackgroundPlaybackPolicy.shouldContinue(
           backgroundPlaybackEnabled: false,
           sleepSessionActive: false,
           audioOnlySessionActive: true,
         ),
-        isTrue,
+        isFalse,
       );
     });
 

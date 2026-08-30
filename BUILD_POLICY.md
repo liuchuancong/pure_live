@@ -71,6 +71,9 @@ Windows Firebase C++ SDK 由 `tool/prefetch_windows_native.ps1` 在构建前按�
 - `flutter analyze` 在本轮代码修改完成后执行一次，避免每个小改动后重复启动分析服务器。
 - 定向测试使用一个 Flutter 命令承载全部目标文件，并从 `--concurrency=12` 开始。
 - 完整回归由 `tool/local_ci.ps1 -Scope Full` 显式触发；日常定向检查使用 `-Scope Focused -TestPath ...`。
+- 聚焦回归在根/本地插件 `pubspec.yaml` 与 `pubspec.lock` 均未变化且
+  `.dart_tool/package_config.json` 已存在时，可显式传入 `-SkipPubGet`，避免对同一锁文件重复执行
+  分钟级依赖求解。脚本会自行核对前置条件；完整回归始终重新解析并校验锁定依赖。
 - 打包脚本要求显式传入 `-Target` 与 `-Configuration`，每次调用只生成该目标产物。
 - Android APK 在复制、签名和发布前必须通过内容完整性门禁：核对唯一目标 ABI、Flutter AssetManifest/版本清单/翻译与表情资源，以及 FFmpegKit、SQLite、MediaKit、Flutter 和应用原生库。仅验证包名、版本、ABI 与签名不构成完整交付证据。
 - Android 正式打包复用同一源码提交质量门已经锁定的 `.dart_tool/package_config.json`，目标构建使用 `--no-pub`，避免为 Android 打包重建 Windows/iOS/macOS 插件链接，也避免 Windows 长路径目录联接与 SUBST 盘符在同一增量图中混用。
@@ -114,7 +117,7 @@ daemon 让后续阶段长期误排队。
 ```powershell
 # 日常定向验证：同一命令运行受影响测试，修改完成后附加一次 Analyze
 PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1 `
-  -Scope Focused -TestPath test/example_test.dart -Analyze
+  -Scope Focused -TestPath test/example_test.dart -Analyze -SkipPubGet
 
 # Android 交互 Debug（一次只构建这一目标）
 PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
