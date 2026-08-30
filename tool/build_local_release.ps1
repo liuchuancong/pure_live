@@ -65,6 +65,7 @@ $stopwatch = [Diagnostics.Stopwatch]::StartNew()
 $status = 'failed'
 $failureMessage = $null
 $artifactPaths = @()
+$packageMetadata = $null
 $commandLog = Join-Path $recordDirectory "$([DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ'))-$($Target.ToLowerInvariant())-$configurationLower.log"
 Set-Content -LiteralPath $commandLog -Value '' -Encoding utf8
 $incrementalStateBefore = if ($Target -eq 'AndroidArm64') {
@@ -199,10 +200,13 @@ try {
         if (-not (Test-Path -LiteralPath $apkSource -PathType Leaf)) {
             throw "Expected Android artifact was not produced: $apkSource"
         }
-        & (Join-Path $PSScriptRoot 'verify_android_apk.ps1') `
+        $packageMetadata = & (Join-Path $PSScriptRoot 'verify_android_apk.ps1') `
             -ApkPath $apkSource `
             -ExpectedAbi 'arm64-v8a' `
-            -BuildMode $Configuration
+            -BuildMode $Configuration `
+            -ExpectedVersionName $displayVersion `
+            -ExpectedBaseVersionCode $buildNumber `
+            -ExpectedAbiVersionOffset 2000
         $artifactName = if ($Configuration -eq 'Debug') {
             "PureLive-$artifactVersion-android-arm64-v8a-debug.apk"
         } elseif ($hasReleaseSigning) {
@@ -424,6 +428,7 @@ try {
         peak_resources = $resourceSummary
         active_heavy_processes_after = $remainingHeavyProcesses
         outputs = $artifactPaths
+        package_metadata = $packageMetadata
         automatic_follow_up = $false
     }
     $recordPath = Write-PureLiveTaskRecord -RepoRoot $repoRoot -Record $record

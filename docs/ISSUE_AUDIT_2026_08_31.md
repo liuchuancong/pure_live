@@ -8,7 +8,7 @@
 
 | Issue | 类型与归因 | 当前证据 | v3.1.0 处理 |
 |---|---|---|---|
-| [#818 后台播放关闭后仍播放](https://github.com/liuchuancong/pure_live/issues/818) | Android 策略缺陷；最初由维护分支 `2ca7ff6a` 的纯音频稳定化策略引入，后来进入上游 | PJZ110 / Android 16 / 正式 v3.0.24：普通视频在开关关闭后切桌面会于 1.5 秒后暂停并释放保活；手动纯音频仍为 `PLAYING`，同时持有 AudioService、CPU 与 Wi-Fi 锁。根因是 `audioOnlySessionActive` 无条件绕过总开关 | 手动纯音频遵循后台播放开关；明确启动的自动助眠会话仍按计时继续。加入纯策略回归并在新 APK 上复测视频、纯音频、助眠、系统 PiP 四种组合 |
+| [#818 后台播放关闭后仍播放](https://github.com/liuchuancong/pure_live/issues/818) | Android 策略缺陷；最初由维护分支 `2ca7ff6a` 的纯音频稳定化策略引入，后来进入上游 | PJZ110 / Android 16 / `6458d541` arm64 Release：关闭开关后手动纯音频退桌面由 `PLAYING` 转 `PAUSED` 且当前 Wake Lock 为 0；回前台恢复。开启开关时普通视频后台继续；关闭开关后主动系统 PiP 继续；关闭开关时 1 分钟自动助眠在后台按时停止，媒体状态为 `NONE`，Pure Live 保活锁释放，CPU 样本为 0% | 原复现链及视频、纯音频、自动助眠、系统 PiP 四组合均已实机通过，记入 v3.1.0 发布闭环 |
 | [#817 iOS 定时结束后屏幕不立即熄灭](https://github.com/liuchuancong/pure_live/issues/817) | 平台能力与预期边界，不是播放器停止失败 | Issue 没有日志；当前计时结束会停止播放并释放媒体资源。iOS 未向普通第三方应用开放立即锁屏入口，屏幕熄灭由系统自动锁定策略决定 | 验证停止播放、释放屏幕常亮和音频会话；文案明确“停止播放并恢复系统自动锁屏”，不伪造锁屏动作 |
 | [#819 小红书直播](https://github.com/liuchuancong/pure_live/issues/819) | 新平台请求，被错误标为 Bug | 当前平台目录、接口探针、画质、弹幕、录制、登录与故障语义均没有小红书合同 | 进入平台研究清单；先形成公开入口、登录依赖、直播源寿命与协议证据，再决定是否进入稳定版，避免只加一个不完整首页入口 |
 | [#810 新窗口使用现有配置](https://github.com/liuchuancong/pure_live/issues/810) | Windows 体验缺口，现有隔离是有意设计 | `WindowsMultiInstanceLauncher` 为每个窗口生成独立 instance 目录，避免多个进程并发写同一 Hive；因此新窗口从默认配置启动 | 设计“只读配置快照 + 独立运行时状态”：创建窗口时复制主题、播放器、弹幕、代理和平台设置，不共享可变数据库；收藏、历史和窗口位置按字段决定是否导入。先加迁移/并发测试，再做实机 |

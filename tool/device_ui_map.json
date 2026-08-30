@@ -733,8 +733,11 @@
         ],
         "toggle_audio": [
           {
+            "waitMs": 2600
+          },
+          {
             "tap": "live.show_controls",
-            "waitMs": 700
+            "waitMs": 300
           },
           {
             "tap": "live.audio_toggle",
@@ -743,8 +746,11 @@
         ],
         "toggle_cast": [
           {
+            "waitMs": 2600
+          },
+          {
             "tap": "live.show_controls",
-            "waitMs": 700
+            "waitMs": 300
           },
           {
             "tap": "live.cast",
@@ -753,8 +759,11 @@
         ],
         "enter_pip": [
           {
+            "waitMs": 2600
+          },
+          {
             "tap": "live.show_controls",
-            "waitMs": 700
+            "waitMs": 300
           },
           {
             "tap": "live.pip",
@@ -2532,8 +2541,11 @@
       "sequences": {
         "toggle_audio": [
           {
+            "waitMs": 2600
+          },
+          {
             "tap": "live.show_controls",
-            "waitMs": 700
+            "waitMs": 300
           },
           {
             "tap": "live.audio_toggle",
@@ -2542,8 +2554,11 @@
         ],
         "toggle_cast": [
           {
+            "waitMs": 2600
+          },
+          {
             "tap": "live.show_controls",
-            "waitMs": 700
+            "waitMs": 300
           },
           {
             "tap": "live.cast",
@@ -2552,8 +2567,11 @@
         ],
         "enter_pip": [
           {
+            "waitMs": 2600
+          },
+          {
             "tap": "live.show_controls",
-            "waitMs": 700
+            "waitMs": 300
           },
           {
             "tap": "live.pip",

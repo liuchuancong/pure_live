@@ -20,7 +20,7 @@
 
 1. 将语义版本补丁位和数字 build 各递增一次，并同步 `pubspec.yaml`、`assets/version.json`、工作流默认标签、MSIX 版本、README、Release Notes 与阶段文档。
 2. 在干净提交上执行一次完整质量门禁；同一业务源码已通过完整门禁而后续只修改发布脚本或文档时，可引用该证据并使用 `-SkipQuality` 重建最终提交。
-3. 仅在本机串行构建 Android `arm64-v8a` Release，执行 APK 内容、包名、版本、ABI、关键原生库、文件大小和 SHA-256 核验。
+3. 仅在本机串行构建 Android `arm64-v8a` Release，执行 APK 内容、包名、版本、ABI、关键原生库、文件大小和 SHA-256 核验。`--split-per-abi` 会由 Flutter 为 arm64 Manifest `versionCode` 增加 2000；构建门禁必须同时记录并核对 pubspec 基础 build 与 APK Manifest 实际 code，禁止只凭文件名判断升级顺序。
 4. 推送最终 `master`，创建与源码提交一致的版本 tag 和草稿 Release，上传本机暂存 APK、构建元数据与校验文件。
 5. 仅调用 `sign-staged-android` 使用 GitHub Secrets 完成短时正式签名；核对固定证书指纹和最终 APK 哈希后发布 Release。
 6. 刷新 `assets/releases.json`，以独立的 `[skip ci]` 索引提交同步 GitHub；确认 Release 页面、附件、下载地址和源码提交一致后结束。
@@ -107,7 +107,7 @@ daemon 让后续阶段长期误排队。
 - 开始时间、耗时和结果；
 - Gradle/配置缓存启用状态、日志中可观察到的命中与 `UP-TO-DATE` 数量；
 - 重型进程峰值 CPU、峰值内存与进程数；
-- 产物绝对路径或验证范围；
+- 产物绝对路径或验证范围；Android 同时记录包名、`versionName`、pubspec 基础 build、ABI 偏移、Manifest 实际 `versionCode`、文件大小和 SHA-256；
 - 任务结束后的活跃重型进程数。
 
 监控任务、临时脚本与互斥锁在 `finally` 中释放。构建结束后确认后台 CPU 回落。Bug 修复批次只继续既定的 Android 签名、GitHub 发布和索引同步，不追加下一轮完整回归或其他平台打包；普通构建任务在目标产物完成后结束。
