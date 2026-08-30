@@ -329,11 +329,20 @@ function Test-Map {
     }
     foreach ($sequence in $SelectedProfile.Data.sequences.PSObject.Properties) {
         foreach ($step in $sequence.Value) {
+            $actions = @('tap', 'tapSemantic', 'swipe', 'wait') | Where-Object {
+                $step.PSObject.Properties[$_]
+            }
+            if ($actions.Count -ne 1) {
+                $errors.Add("Sequence '$($sequence.Name)' must declare exactly one action per step.")
+            }
             if ($step.PSObject.Properties['tap'] -and -not $SelectedProfile.Data.points.PSObject.Properties[$step.tap]) {
                 $errors.Add("Sequence '$($sequence.Name)' references missing point '$($step.tap)'.")
             }
             if ($step.PSObject.Properties['swipe'] -and -not $SelectedProfile.Data.gestures.PSObject.Properties[$step.swipe]) {
                 $errors.Add("Sequence '$($sequence.Name)' references missing gesture '$($step.swipe)'.")
+            }
+            if ($step.PSObject.Properties['wait'] -and ((-not [bool]$step.wait) -or $step.waitMs -le 0)) {
+                $errors.Add("Sequence '$($sequence.Name)' has an invalid wait action.")
             }
         }
     }
@@ -400,6 +409,12 @@ try {
                 }
                 elseif ($step.PSObject.Properties['swipe']) {
                     Invoke-SwipeGesture $selected $step.swipe
+                }
+                elseif ($step.PSObject.Properties['wait']) {
+                    if (-not [bool]$step.wait -or $step.waitMs -le 0) {
+                        throw "Sequence '$Sequence' has an invalid wait action."
+                    }
+                    Write-Host "wait $($step.waitMs)ms"
                 }
                 if ($step.waitMs -gt 0 -and -not $DryRun) { Start-Sleep -Milliseconds $step.waitMs }
             }

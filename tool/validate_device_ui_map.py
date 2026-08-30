@@ -63,7 +63,7 @@ def main() -> None:
         for sequence_name, sequence in sequences.items():
             require(isinstance(sequence, list) and sequence, f"{profile_name}.{sequence_name}: empty sequence")
             for index, step in enumerate(sequence):
-                actions = [key for key in ("tap", "tapSemantic", "swipe") if key in step]
+                actions = [key for key in ("tap", "tapSemantic", "swipe", "wait") if key in step]
                 require(len(actions) == 1, f"{profile_name}.{sequence_name}[{index}]: expected one action")
                 if "tap" in step:
                     require(step["tap"] in points, f"{profile_name}.{sequence_name}: missing point {step['tap']}")
@@ -74,6 +74,9 @@ def main() -> None:
                     )
                 wait_ms = step.get("waitMs", 0)
                 require(isinstance(wait_ms, int) and wait_ms >= 0, f"{profile_name}.{sequence_name}: invalid waitMs")
+                if "wait" in step:
+                    require(step["wait"] is True, f"{profile_name}.{sequence_name}[{index}]: wait must be true")
+                    require(wait_ms > 0, f"{profile_name}.{sequence_name}[{index}]: wait action requires waitMs")
 
         for screen_name, screen in profile.get("screens", {}).items():
             require(screen.get("orientation") == orientation, f"{profile_name}.{screen_name}: orientation mismatch")

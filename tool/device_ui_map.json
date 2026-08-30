@@ -733,6 +733,7 @@
         ],
         "toggle_audio": [
           {
+            "wait": true,
             "waitMs": 2600
           },
           {
@@ -746,6 +747,7 @@
         ],
         "toggle_cast": [
           {
+            "wait": true,
             "waitMs": 2600
           },
           {
@@ -759,6 +761,7 @@
         ],
         "enter_pip": [
           {
+            "wait": true,
             "waitMs": 2600
           },
           {
@@ -2541,6 +2544,7 @@
       "sequences": {
         "toggle_audio": [
           {
+            "wait": true,
             "waitMs": 2600
           },
           {
@@ -2554,6 +2558,7 @@
         ],
         "toggle_cast": [
           {
+            "wait": true,
             "waitMs": 2600
           },
           {
@@ -2567,6 +2572,7 @@
         ],
         "enter_pip": [
           {
+            "wait": true,
             "waitMs": 2600
           },
           {
